@@ -36,8 +36,8 @@ from __future__ import print_function
 
 #------------------------------------------------------------------------------
 
-_Debug = False
-_DebugLevel = 10
+_Debug = True
+_DebugLevel = 8
 
 #------------------------------------------------------------------------------
 
@@ -63,8 +63,6 @@ from logs import lg
 
 from system import bpio
 
-from storage import tar_file
-
 #------------------------------------------------------------------------------
 
 # Bytes Loop States:
@@ -79,6 +77,7 @@ class BytesLoop:
     def __init__(self, s=b''):
         self._buffer = s
         self._reader = None
+        self._last_read = -1
         self._finished = False
         self._closed = False
 
@@ -105,6 +104,7 @@ class BytesLoop:
         chunk = self._buffer[:n]
         self._buffer = self._buffer[n:]
         after_bytes = len(self._buffer)
+        self._last_read = len(chunk)
         if _Debug:
             lg.args(_DebugLevel, before_bytes=before_bytes, after_bytes=after_bytes, chunk_bytes=len(chunk))
         return chunk
@@ -144,6 +144,8 @@ class BytesLoop:
             if self._reader:
                 return BYTES_LOOP_EMPTY
             return BYTES_LOOP_READY2READ
+        if self._last_read > 0:
+            return BYTES_LOOP_READY2READ
         if self._finished:
             return BYTES_LOOP_EMPTY
         if not self._reader:
@@ -165,6 +167,7 @@ def backuptarfile_thread(filepath, arcname=None, compress=None):
     p = BytesLoop()
 
     def _run():
+        from storage import tar_file
         ret = tar_file.writetar(
             sourcepath=filepath,
             arcname=arcname,
@@ -195,6 +198,7 @@ def backuptardir_thread(directorypath, arcname=None, recursive_subfolders=True, 
     p = BytesLoop()
 
     def _run():
+        from storage import tar_file
         ret = tar_file.writetar(
             sourcepath=directorypath,
             arcname=arcname,
@@ -223,6 +227,7 @@ def extracttar_thread(tarfile, outdir):
         lg.out(_DebugLevel, "backup_tar.extracttar_thread %s %s" % (tarfile, outdir))
 
     def _run():
+        from storage import tar_file
         return tar_file.readtar(
             archivepath=tarfile,
             outputdir=outdir,

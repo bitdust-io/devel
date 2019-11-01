@@ -12,6 +12,7 @@ from logs import lg
 from main import settings
 
 from system import bpio
+from system import local_fs
 from system import tmpfile
 
 from crypt import key
@@ -77,34 +78,36 @@ class Test(TestCase):
     def setUp(self):
         try:
             bpio.rmdir_recursive('/tmp/.bitdust_tmp')
-        except FileNotFoundError:
+        except Exception:
             pass
         lg.set_debug_level(30)
         settings.init(base_dir='/tmp/.bitdust_tmp')
+        try:
+            os.makedirs('/tmp/.bitdust_tmp/metadata')
+        except:
+            pass
         self.my_current_key = None
-        if key.isMyKeyExists():
-            os.rename(settings.KeyFileName(), '/tmp/_current_priv_key')
         fout = open('/tmp/_some_priv_key', 'w')
         fout.write(_some_priv_key)
         fout.close()
-        if my_id.isLocalIdentityExists():
-            os.rename(settings.LocalIdentityFilename(), '/tmp/_current_localidentity')
         fout = open(settings.LocalIdentityFilename(), 'w')
         fout.write(_some_identity_xml)
         fout.close()
         self.assertTrue(key.LoadMyKey(keyfilename='/tmp/_some_priv_key'))
         self.assertTrue(my_id.loadLocalIdentity())
         my_id.init()
+        try:
+            os.makedirs('/tmp/.bitdust_tmp/logs')
+        except:
+            pass
+        local_fs.WriteTextFile('/tmp/.bitdust_tmp/logs/parallelp.log', '')
         tmpfile.init(temp_dir_path='/tmp/.bitdust_tmp/tmp/')
         os.makedirs('/tmp/.bitdust_tmp/backups/master$alice@127.0.0.1_8084/1/F1234')
 
     def tearDown(self):
+        tmpfile.shutdown()
         key.ForgetMyKey()
         my_id.forgetLocalIdentity()
-        if os.path.isfile('/tmp/_current_localidentity'):
-            os.rename('/tmp/_current_localidentity', settings.LocalIdentityFilename())
-        if os.path.isfile('/tmp/_current_priv_key'):
-            os.rename('/tmp/_current_priv_key', settings.KeyFileName())
         os.remove('/tmp/_some_priv_key')
         bpio.rmdir_recursive('/tmp/.bitdust_tmp')
         os.remove('/tmp/random_file')
@@ -120,8 +123,7 @@ class Test(TestCase):
         def _extract_done(retcode, backupID, source_filename, output_location):
             assert retcode is True
             assert bpio.ReadBinaryFile('/tmp/random_file') == bpio.ReadBinaryFile('/tmp/.bitdust_tmp/random_file')
-            raid_worker.A('shutdown')
-            tmpfile.shutdown()
+            reactor.callLater(0, raid_worker.A, 'shutdown')  # @UndefinedVariable
             test_done.callback(True)
 
         def _restore_done(result, backupID, outfd, tarfilename, outputlocation):

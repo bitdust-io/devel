@@ -115,16 +115,24 @@ _another_identity_xml = """<?xml version="1.0" encoding="utf-8"?>
 class Test(TestCase):
 
     def setUp(self):
+        try:
+            bpio.rmdir_recursive('/tmp/.bitdust_tmp')
+        except Exception:
+            pass
         lg.set_debug_level(30)
         settings.init(base_dir='/tmp/.bitdust_tmp')
         self.my_current_key = None
-        if key.isMyKeyExists():
-            os.rename(settings.KeyFileName(), '/tmp/_current_priv_key')
+        try:
+            os.makedirs('/tmp/.bitdust_tmp/metadata/')
+        except:
+            pass
+        try:
+            os.makedirs('/tmp/.bitdust_tmp/identitycache/')
+        except:
+            pass
         fout = open('/tmp/_some_priv_key', 'w')
         fout.write(_some_priv_key)
         fout.close()
-        if my_id.isLocalIdentityExists():
-            os.rename(settings.LocalIdentityFilename(), '/tmp/_current_localidentity')
         fout = open(settings.LocalIdentityFilename(), 'w')
         fout.write(_some_identity_xml)
         fout.close()
@@ -136,10 +144,6 @@ class Test(TestCase):
     def tearDown(self):
         key.ForgetMyKey()
         my_id.forgetLocalIdentity()
-        if os.path.isfile('/tmp/_current_localidentity'):
-            os.rename('/tmp/_current_localidentity', settings.LocalIdentityFilename())
-        if os.path.isfile('/tmp/_current_priv_key'):
-            os.rename('/tmp/_current_priv_key', settings.KeyFileName())
         os.remove('/tmp/_some_priv_key')
         bpio.rmdir_recursive('/tmp/.bitdust_tmp')
 

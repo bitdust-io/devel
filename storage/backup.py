@@ -82,7 +82,7 @@ from io import BytesIO
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -273,8 +273,6 @@ class backup(automat.Automat):
         if self.pipe is None:
             lg.warn('pipe is None')
             return False
-        if hasattr(self.pipe, 'read'):
-            return True
         return self.pipe.state() in [nonblocking.PIPE_CLOSED, nonblocking.PIPE_READY2READ]
 
     def isBlockReady(self, *args, **kwargs):

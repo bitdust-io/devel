@@ -8,7 +8,34 @@ from twisted.internet.base import DelayedCall
 DelayedCall.debug = True
 
 
+from raid import raid_worker
+
+from logs import lg
+
+from system import bpio
+
+from system import local_fs
+
+from main import settings
+
+
 class TestRaidWorker(TestCase):
+
+    def setUp(self):
+        try:
+            bpio.rmdir_recursive('/tmp/.bitdust_tmp')
+        except Exception:
+            pass
+        settings.init(base_dir='/tmp/.bitdust_tmp')
+        lg.set_debug_level(30)
+        try:
+            os.makedirs('/tmp/.bitdust_tmp/logs')
+        except:
+            pass
+        local_fs.WriteTextFile('/tmp/.bitdust_tmp/logs/parallelp.log', '')
+
+    def tearDown(self):
+        bpio.rmdir_recursive('/tmp/.bitdust_tmp')
 
     def _test_make_rebuild_read(self, target_ecc_map, num_suppliers, dead_suppliers, read_success, rebuild_one_success, filesize):
         test_result = Deferred()
@@ -16,11 +43,6 @@ class TestRaidWorker(TestCase):
         curdir = os.getcwd()
         if curdir.count('_trial_temp'):
             os.chdir(os.path.abspath(os.path.join(curdir, '..')))
-
-        from raid import raid_worker
-
-        from logs import lg
-        lg.set_debug_level(20)
 
         def _read_done(cmd, taskdata, result):
             if read_success:
