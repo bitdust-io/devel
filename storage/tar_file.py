@@ -149,7 +149,13 @@ def printlog(txt, mode='a'):
     Write a line to the log file.
     """
     # try:
-    LogFile = open(logfilepath(), mode)
+    path = logfilepath()
+    if not os.path.isfile(path):
+        try:
+            os.makedirs(os.path.dirname(path))
+        except:
+            pass
+    LogFile = open(path, mode)
     LogFile.write(to_text(txt))
     LogFile.close()
     # except:
