@@ -2,6 +2,12 @@ Change Log
 ==========
 
 
+2019-11-02 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* switching backup tar stream from pipe to in-memory buffer  (#440)
+
+
+
 2019-10-29 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * moved local_tester from subprocess into thread (#438)
