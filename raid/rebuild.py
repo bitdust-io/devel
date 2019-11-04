@@ -42,7 +42,7 @@ _Debug = False
 
 #------------------------------------------------------------------------------
 
-def rebuild(backupID, blockNum, eccMap, availableSuppliers, remoteMatrix, localMatrix, localBackupsDir):
+def rebuild(backupID, blockNum, eccMap, availableSuppliers, remoteMatrix, localMatrix, localBackupsDir, threshold_control=None):
     try:
         customer, _, localPath = backupID.rpartition(':')
         if '$' not in customer:
@@ -110,7 +110,7 @@ def rebuild(backupID, blockNum, eccMap, availableSuppliers, remoteMatrix, localM
                                 if os.path.isfile(filename):
                                     rebuildFileList.append(filename)
                         # lg.out(10, '    rebuilding file %s from %d files' % (os.path.basename(dataFileName), len(rebuildFileList)))
-                        raid.read.RebuildOne(rebuildFileList, len(rebuildFileList), dataFileName)
+                        raid.read.RebuildOne(rebuildFileList, len(rebuildFileList), dataFileName, threshold_control=threshold_control)
                     if os.path.exists(dataFileName):
                         localData[supplierNum] = 1
                         madeProgress = True
@@ -141,7 +141,7 @@ def rebuild(backupID, blockNum, eccMap, availableSuppliers, remoteMatrix, localM
                         if os.path.isfile(filename):
                             rebuildFileList.append(filename)
                     # lg.out(10, '    rebuilding file %s from %d files' % (os.path.basename(parityFileName), len(rebuildFileList)))
-                    raid.read.RebuildOne(rebuildFileList, len(rebuildFileList), parityFileName)
+                    raid.read.RebuildOne(rebuildFileList, len(rebuildFileList), parityFileName, threshold_control=threshold_control)
                     if os.path.exists(parityFileName):
                         # lg.out(10, '        Parity file %s found after rebuilding for supplier %d' % (os.path.basename(parityFileName), supplierNum))
                         localParity[supplierNum] = 1

@@ -17,9 +17,10 @@ from system import bpio
 from system import local_fs
 
 from main import settings
+from main import config
 
 
-class TestRaidWorker(TestCase):
+class _Helper(object):
 
     def setUp(self):
         try:
@@ -33,11 +34,15 @@ class TestRaidWorker(TestCase):
         except:
             pass
         local_fs.WriteTextFile('/tmp/.bitdust_tmp/logs/parallelp.log', '')
+        if self.child_processes_enabled:
+            config.conf().setBool('services/rebuilding/child-processes-enabled', True)
+        else:
+            config.conf().setBool('services/rebuilding/child-processes-enabled', False)
 
     def tearDown(self):
         bpio.rmdir_recursive('/tmp/.bitdust_tmp')
 
-    def _test_make_rebuild_read(self, target_ecc_map, num_suppliers, dead_suppliers, read_success, rebuild_one_success, filesize):
+    def _test_make_rebuild_read(self, target_ecc_map, num_suppliers, dead_suppliers, read_success, rebuild_one_success, filesize, skip_rebuild=False):
         test_result = Deferred()
 
         curdir = os.getcwd()
@@ -68,7 +73,7 @@ class TestRaidWorker(TestCase):
             return True
 
         def _make_done(cmd, taskdata, result):
-            self.assertEqual(result, [num_suppliers, num_suppliers])
+            self.assertEqual(list(result), [num_suppliers, num_suppliers])
             # remove few fragments and try to rebuild the whole block
             for supplier_position in range(dead_suppliers):
                 os.system("rm -rf '/tmp/raidtest/master$alice@somehost.com/0/F12345678/5-%d-Data'" % supplier_position)
@@ -82,8 +87,12 @@ class TestRaidWorker(TestCase):
                 'D': [0, ] * dead_suppliers + [1, ] * alive_suppliers,
                 'P': [0, ] * dead_suppliers + [1, ] * alive_suppliers,
             }
-            reactor.callLater(0.5, raid_worker.add_task, 'rebuild', (  # @UndefinedVariable
-                'master$alice@somehost.com:0/F12345678', '5', target_ecc_map, [1, ] * num_suppliers, remote_fragments, local_fragments, '/tmp/raidtest'), _rebuild_done)
+            if skip_rebuild:
+                reactor.callLater(0.5, raid_worker.add_task, 'read', (  # @UndefinedVariable
+                    '/tmp/destination.txt', target_ecc_map, 'F12345678', '5', '/tmp/raidtest/master$alice@somehost.com/0'), _read_done)
+            else:
+                reactor.callLater(0.5, raid_worker.add_task, 'rebuild', (  # @UndefinedVariable
+                    'master$alice@somehost.com:0/F12345678', '5', target_ecc_map, [1, ] * num_suppliers, remote_fragments, local_fragments, '/tmp/raidtest'), _rebuild_done)
             return True
 
         os.system('rm -rf /tmp/source.txt')
@@ -135,3 +144,49 @@ class TestRaidWorker(TestCase):
             read_success=True,
             filesize=10000,
         )
+
+    def test_ecc64x64_with_10_dead_suppliers_success_no_rebuild(self):
+        return self._test_make_rebuild_read(
+            target_ecc_map='ecc/64x64',
+            num_suppliers=64,
+            dead_suppliers=10,  # for 64 suppliers max 10 "correctable" errors are possible, see raid/eccmap.py
+            rebuild_one_success=True,
+            read_success=True,
+            filesize=10000,
+            skip_rebuild=True,
+        )
+
+    def test_task_cancel(self):
+        test_result = Deferred()
+        os.system('rm -rf /tmp/source.txt')
+        os.system('rm -rf /tmp/destination.txt')
+        os.system('rm -rf /tmp/raidtest')
+        os.system("mkdir -p '/tmp/raidtest/master$alice@somehost.com/0/F12345678'")
+        open('/tmp/source1.txt', 'w').write(base64.b64encode(os.urandom(1000000)).decode())
+        reactor.callWhenRunning(raid_worker.A, 'init')  # @UndefinedVariable
+
+        def _task_failed(c, t, r):
+            self.assertTrue(r == (-1, -1) or r is None)
+            os.system('rm -rf /tmp/source1.txt')
+            os.system('rm -rf /tmp/raidtest')
+            reactor.callLater(0, raid_worker.A, 'shutdown')  # @UndefinedVariable
+            reactor.callLater(0.1, test_result.callback, True)  # @UndefinedVariable
+
+        reactor.callLater(0.5, raid_worker.add_task, 'make', (  # @UndefinedVariable
+            '/tmp/source1.txt', 'ecc/64x64', 'F12345678', '5', '/tmp/raidtest/master$alice@somehost.com/0/F12345678'), _task_failed)
+        reactor.callLater(0.55, raid_worker.cancel_task, 'make', '/tmp/source1.txt')  # @UndefinedVariable
+
+        return test_result
+
+
+
+class TestRaidWorkerWithParallelP(_Helper, TestCase):
+
+    child_processes_enabled = True
+
+
+
+class TestRaidWorkerWithThreads(_Helper, TestCase):
+
+    child_processes_enabled = False
+

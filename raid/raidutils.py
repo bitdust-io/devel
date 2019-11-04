@@ -32,7 +32,7 @@
 import array
 
 
-def build_parity(sds, iters, datasegments, myeccmap, paritysegments):
+def build_parity(sds, iters, datasegments, myeccmap, paritysegments, threshold_control=None):
     psds_list = {seg_num: array.array('i') for seg_num in range(myeccmap.paritysegments)}
 
     for i in range(iters):
@@ -47,6 +47,10 @@ def build_parity(sds, iters, datasegments, myeccmap, paritysegments):
                     raise Exception("eccmap error")
 
                 parities[PSegNum] = parities[PSegNum] ^ b
+
+                if threshold_control:
+                    if not threshold_control(1):
+                        raise Exception('task cancelled')
 
         for PSegNum in range(myeccmap.paritysegments):
             psds_list[PSegNum].append(parities[PSegNum])

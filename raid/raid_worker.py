@@ -61,6 +61,7 @@ _DebugLevel = 8
 
 import os
 import sys
+import time
 import threading
 
 from six.moves import range
@@ -69,6 +70,8 @@ try:
     from twisted.internet import reactor  # @UnresolvedImport
 except:
     sys.exit('Error initializing twisted.internet.reactor in raid_worker.py')
+
+from twisted.internet import threads
 
 #------------------------------------------------------------------------------
 
@@ -85,6 +88,7 @@ from automats import automat
 from system import bpio
 
 from main import settings
+from main import config
 
 from raid import read
 from raid import make
@@ -135,7 +139,7 @@ def cancel_task(cmd, first_parameter):
         if cmd == t_cmd and first_parameter == t_params[0]:
             try:
                 A().tasks.remove(t_id, t_cmd, t_params)
-                lg.out(10, 'raid_worker.cancel_task found pending task %d, canceling %s' % (t_id, first_parameter))
+                lg.out(10, 'raid_worker.cancel_task found pending task %r, canceling %r' % (t_id, first_parameter))
             except:
                 lg.warn('failed removing pending task %d, %s' % (t_id, first_parameter))
             found = True
@@ -150,7 +154,7 @@ def cancel_task(cmd, first_parameter):
     for task_id, task_data in A().activetasks.items():
         t_proc, t_cmd, t_params = task_data
         if cmd == t_cmd and first_parameter == t_params[0]:
-            lg.out(10, 'raid_worker.cancel_task found started task %d, aborting process %d' % (task_id, t_proc.tid))
+            lg.out(10, 'raid_worker.cancel_task found started task %r, aborting process %r' % (task_id, t_proc.tid))
             A().processor.cancel(t_proc.tid)
             found = True
             break
@@ -295,7 +299,6 @@ class RaidWorker(automat.Automat):
         """
         Action method.
         """
-        os.environ['PYTHONUNBUFFERED'] = '1'
         ncpus = bpio.detect_number_of_cpu_cores()
         if ncpus > 1:
             # do not use all CPU cors at once
@@ -304,7 +307,10 @@ class RaidWorker(automat.Automat):
             # TODO: make an option in the software settings
             ncpus = int(ncpus / 2.0)
 
-        if True:
+        if bpio.Android() or not config.conf().getBool('services/rebuilding/child-processes-enabled'):
+            self.processor = ThreadedRaidProcessor()
+        else:
+            os.environ['PYTHONUNBUFFERED'] = '1'
             from parallelp import pp
             self.processor = pp.Server(
                 secret='bitdust',
@@ -312,9 +318,9 @@ class RaidWorker(automat.Automat):
                 loglevel=lg.get_loging_level(_DebugLevel),
                 logfile=settings.ParallelPLogFilename(),
             )
-        else:
-            from raid import worker
-            self.processor = worker.Manager(ncpus=ncpus)
+        # else:
+        #     from raid import worker
+        #     self.processor = worker.Manager(ncpus=ncpus)
 
         self.automat('process-started')
 
@@ -365,7 +371,7 @@ class RaidWorker(automat.Automat):
 
         self.activetasks[task_id] = (proc, cmd, params)
         if _Debug:
-            lg.out(_DebugLevel, 'raid_worker.doStartTask %r active=%d cpus=%d %s' % (
+            lg.out(_DebugLevel, 'raid_worker.doStartTask job_id=%r active=%d cpus=%d %s' % (
                 task_id, len(self.activetasks), self.processor.get_ncpus(), threading.currentThread().getName()))
 
         reactor.callLater(0.01, self.automat, 'task-started', task_id)  # @UndefinedVariable
@@ -425,6 +431,122 @@ class RaidWorker(automat.Automat):
             if _Debug:
                 lg.out(_DebugLevel, 'raid_worker._kill_processor processor was destroyed')
 
+
+#------------------------------------------------------------------------------
+
+class RaidTask(object):
+
+    def __init__(self, task_id, worker_method, worker_args=None, on_success=None, on_fail=None):
+        self.task_id = task_id
+        self.result = None
+        self._on_success = on_success
+        self._on_fail = on_fail
+        self._worker_method = worker_method
+        self._worker_args = worker_args or ()
+        self._stopped = False
+        self._bytes_processed = 0
+        self._started = None
+
+    def threshold_control(self, more_bytes):
+        if self._stopped:
+            return False
+        self._bytes_processed += more_bytes
+        time_running = time.time() - self._started
+        if self._bytes_processed % 10000 == 0:
+            if _Debug:
+                lg.args(_DebugLevel, bytes_processed=self._bytes_processed, time_running=time_running)
+            time.sleep(0.01)
+        return True
+
+    def run(self):
+        args = self._worker_args + (self.threshold_control, )
+        self.result = self._worker_method(*args)
+        return self.result
+
+    def start(self):
+        self._started = time.time()
+        d = threads.deferToThread(self.run)  # @UndefinedVariable
+        if self._on_success:
+            d.addCallback(self._on_success)
+        if self._on_fail:
+            d.addErrback(self._on_fail)
+
+    def stop(self):
+        self._stopped = True
+
+#------------------------------------------------------------------------------
+
+class RaidTaskInfo(object):
+
+    def __init__(self, task_id):
+        self.tid = task_id
+
+
+#------------------------------------------------------------------------------
+
+class ThreadedRaidProcessor(object):
+
+    def __init__(self):
+        self.latest_task_id = 0
+        self.tasks = {}
+        self.active_tasks = {}
+        self.max_simultaneous_tasks = 1
+
+    def cancel(self, task_id):
+        if task_id not in self.active_tasks:
+            raise Exception('active task not found')
+        self.active_tasks[task_id].stop()
+
+    def destroy(self):
+        for ts in self.active_tasks.values():
+            ts.stop()
+
+    def get_ncpus(self):
+        return self.max_simultaneous_tasks
+
+    def on_success(self, task_id, result, callback):
+        ts = self.active_tasks.pop(task_id)
+        if _Debug:
+            lg.args(_DebugLevel, task_id=task_id, result=result, bytes_processed=ts._bytes_processed, active_tasks=list(self.active_tasks.keys()))
+        reactor.callLater(0, callback, result)  # @UndefinedVariable
+        reactor.callLater(0, self.process)  # @UndefinedVariable
+        return None
+
+    def on_fail(self, task_id, result, callback):
+        ts = self.active_tasks.pop(task_id)
+        if _Debug:
+            lg.args(_DebugLevel, task_id=task_id, result=result, bytes_processed=ts._bytes_processed, active_tasks=list(self.active_tasks.keys()))
+        reactor.callLater(0, callback, result)  # @UndefinedVariable
+        reactor.callLater(0, self.process)  # @UndefinedVariable
+        return None
+
+    def process(self):
+        if len(self.active_tasks) >= self.max_simultaneous_tasks:
+            return False
+        if not self.tasks:
+            return False
+        next_task_id = list(self.tasks.keys())[0]
+        ts = self.tasks.pop(next_task_id)
+        self.active_tasks[next_task_id] = ts
+        ts.start()
+
+    def submit(self, func, args=None, depfuncs=None, modules=None, callback=None):
+        task_id = self.latest_task_id + 1
+        if task_id in self.tasks:
+            raise Exception('RaidTask already exists')
+        rt = RaidTask(
+            task_id=task_id,
+            worker_method=func,
+            worker_args=args,
+            on_success=lambda result: self.on_success(task_id, result, callback),
+            on_fail=lambda result: self.on_fail(task_id, result, callback),
+        )
+        self.tasks[task_id] = rt
+        self.latest_task_id = task_id
+        if _Debug:
+            lg.args(_DebugLevel, task_id=task_id, func=func, total_tasks=len(self.tasks))
+        reactor.callLater(0, self.process)  # @UndefinedVariable
+        return RaidTaskInfo(task_id)
 
 #------------------------------------------------------------------------------
 
