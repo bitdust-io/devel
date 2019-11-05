@@ -2,6 +2,12 @@ Change Log
 ==========
 
 
+2019-11-05 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* make possible to run RAID tasks inside a thread, not only inside a child process (#443)
+
+
+
 2019-11-02 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * switching backup tar stream from pipe to in-memory buffer  (#440)
