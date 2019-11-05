@@ -180,6 +180,7 @@ def defaults():
         'services/proxy-transport/preferred-routers': TYPE_TEXT,
         'services/proxy-transport/router-lifetime-seconds': TYPE_POSITIVE_INTEGER,
         'services/rebuilding/enabled': TYPE_BOOLEAN,
+        'services/rebuilding/child-processes-enabled': TYPE_BOOLEAN,
         'services/restores/enabled': TYPE_BOOLEAN,
         'services/shared-data/enabled': TYPE_BOOLEAN,
         'services/supplier/donated-space': TYPE_DISK_SPACE,

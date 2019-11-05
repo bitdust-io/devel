@@ -141,7 +141,7 @@ def ReadBinaryFileAsArray(filename):
     return values
 
 
-def do_in_memory(filename, eccmapname, version, blockNumber, targetDir):
+def do_in_memory(filename, eccmapname, version, blockNumber, targetDir, threshold_control=None):
     try:
         if _Debug:
             open('/tmp/raid.log', 'a').write(u'do_in_memory filename=%s eccmapname=%s blockNumber=%s\n' % (repr(filename), eccmapname, blockNumber))
@@ -153,7 +153,7 @@ def do_in_memory(filename, eccmapname, version, blockNumber, targetDir):
         length = len(wholefile)
         length = length * 4
         seglength = (length + myeccmap.datasegments - 1) / myeccmap.datasegments
-    
+
         #: dict of data segments
         sds = {}
         for seg_num, chunk in enumerate(raid.raidutils.chunks(wholefile, int(seglength / 4))):
@@ -163,18 +163,24 @@ def do_in_memory(filename, eccmapname, version, blockNumber, targetDir):
                 chunk_to_write.byteswap()
                 sds[seg_num] = iter(chunk)
                 f.write(chunk_to_write)
-    
+
         psds_list = raid.raidutils.build_parity(
-            sds, int(seglength / INTSIZE), myeccmap.datasegments, myeccmap, myeccmap.paritysegments)
-    
+            sds,
+            int(seglength / INTSIZE),
+            myeccmap.datasegments,
+            myeccmap,
+            myeccmap.paritysegments,
+            threshold_control=threshold_control,
+        )
+
         dataNum = len(sds)
         parityNum = len(psds_list)
-    
+
         for PSegNum, _ in psds_list.items():
             FileName = targetDir + '/' + str(blockNumber) + '-' + str(PSegNum) + '-Parity'
             with open(FileName, 'wb') as f:
                 f.write(psds_list[PSegNum])
-    
+
         return dataNum, parityNum
 
     except:

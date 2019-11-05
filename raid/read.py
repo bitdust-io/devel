@@ -96,7 +96,7 @@ def ReadBinaryFile(filename):
     return data
 
 
-def RebuildOne(inlist, listlen, outfilename):
+def RebuildOne(inlist, listlen, outfilename, threshold_control=None):
     readsize = 1  # vary from 1 byte to 4 bytes
     raidfiles = [''] * listlen  # just need a list of this size
     raidreads = [''] * listlen
@@ -130,6 +130,11 @@ def RebuildOne(inlist, listlen, outfilename):
             rebuildfile.write(out_byte)
             i += readsize
             progress += 1
+
+            if threshold_control:
+                if not threshold_control(readsize):
+                    raise Exception('task cancelled')
+
     for filenum in range(listlen):
         raidfiles[filenum].close()
     rebuildfile.close()
@@ -152,7 +157,9 @@ def raidread(
         eccmapname,
         version,
         blockNumber,
-        data_parity_dir):
+        data_parity_dir,
+        threshold_control=None,
+    ):
     try:
         if _Debug:
             open('/tmp/raid.log', 'a').write(u'raidread OutputFileName=%s blockNumber=%s eccmapname=%s\n' % (repr(OutputFileName), blockNumber, eccmapname))
@@ -191,7 +198,7 @@ def raidread(
                         MakingProgress = 1
                         GoodFiles[GoodDSegs] = PFileName
                         GoodDSegs += 1
-                        RebuildOne(GoodFiles, GoodDSegs, BadName)
+                        RebuildOne(GoodFiles, GoodDSegs, BadName, threshold_control=threshold_control)
         #  Count up the good segments and combine
         GoodDSegs = 0
         output = open(OutputFileName, "wb")
