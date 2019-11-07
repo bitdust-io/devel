@@ -36,8 +36,8 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = True
-_DebugLevel = 6
+_Debug = False
+_DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
@@ -49,6 +49,7 @@ from twisted.application.strports import listen
 from logs import lg
 
 from lib import txws
+from lib import serialization
 
 from main import events
 from main import settings
@@ -70,7 +71,8 @@ def init(port=None):
         if not port:
             port = settings.DefaultWebSocketPort()
         try:
-            _WebSocketListener = listen("tcp:%d" % port, txws.WebSocketFactory(BitDustWebSocketFactory()))
+            ws = txws.WebSocketFactory(BitDustWebSocketFactory())
+            _WebSocketListener = listen("tcp:%d" % port, ws)
         except:
             lg.exc()
     events.add_subscriber(on_event, event_id='*')
@@ -102,11 +104,14 @@ class BitDustWebSocketProtocol(Protocol):
         Protocol.connectionMade(self)
         global _WebSocketTransport
         _WebSocketTransport = self.transport
+        peer = _WebSocketTransport.getPeer()
+        events.send('web-socket-connected', data=dict(peer='%s://%s:%s' % (peer.type, peer.host, peer.port)))
 
     def connectionLost(self, *args, **kwargs):
         Protocol.connectionLost(self, *args, **kwargs)
         global _WebSocketTransport
         _WebSocketTransport = None
+        events.send('web-socket-disconnected', data=dict())
 
 #------------------------------------------------------------------------------
 
@@ -120,20 +125,18 @@ class BitDustWebSocketFactory(Factory):
         """
         global _WebSocketTransport
         if _WebSocketTransport:
-            lg.warn('refused connection to web socket - another connection already exist')
+            lg.warn('refused connection to web socket - another connection already made')
             return None
         if addr.host != '127.0.0.1':
             lg.err('refused connection from remote host: %r' % addr.host)
             return None
-        return Factory.buildProtocol(self, addr)
+        proto = Factory.buildProtocol(self, addr)
+        return proto
 
 #------------------------------------------------------------------------------
 
 def on_event(evt):
-    push({
-        'event_id': evt.event_id,
-        'data': evt.data,
-    })
+    push({'event_id': evt.event_id, 'data': evt.data, })
 
 #------------------------------------------------------------------------------
 
@@ -141,7 +144,8 @@ def push(json_data):
     global _WebSocketTransport
     if not _WebSocketTransport:
         return False
-    from lib import serialization
     raw_bytes = serialization.DictToBytes(json_data)
     _WebSocketTransport.write(raw_bytes)
+    if _Debug:
+        lg.dbg(_DebugLevel, 'sent %d bytes to web socket' % len(raw_bytes))
     return True

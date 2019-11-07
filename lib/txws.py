@@ -239,18 +239,25 @@ def make_hybi07_frame(buf, opcode=0x1):
     """
 
     if len(buf) > 0xffff:
-        length = "\x7f%s" % pack(">Q", len(buf))
+        length = b'\x7f' + pack(">Q", len(buf))
     elif len(buf) > 0x7d:
-        length = "\x7e%s" % pack(">H", len(buf))
+        length = b'\x7e' + pack(">H", len(buf))
     else:
-        length = chr(len(buf))
+        if six.PY2:
+            length = chr(len(buf))
+        else:
+            length = bytes([len(buf), ])
 
     if isinstance(buf, six.text_type):
         buf = buf.encode('utf-8')
 
     # Always make a normal packet.
-    header = chr(0x80 | opcode)
-    return six.b(header + length) + buf
+    if six.PY2:
+        header = chr(0x80 | opcode)
+    else:
+        header = bytes([0x80 | opcode, ])
+
+    return header + length + buf
 
 def make_hybi07_frame_dwim(buf):
     """
