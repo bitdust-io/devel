@@ -276,6 +276,12 @@ class Initializer(automat.Automat):
                 api_rest_http_server.init(port=settings.getRESTHTTPServerPort())
             except:
                 lg.exc()
+        if settings.enableWebSocketServer():
+            try:
+                from interface import api_web_socket
+                api_web_socket.init(port=settings.getWebSocketServerPort())
+            except:
+                lg.exc()
         reactor.callLater(0, self.automat, 'init-interfaces-done')  # @UndefinedVariable
 
     def doInitModules(self, *args, **kwargs):

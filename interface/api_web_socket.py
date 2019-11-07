@@ -41,43 +41,107 @@ _DebugLevel = 6
 
 #------------------------------------------------------------------------------
 
-import os
-
-#------------------------------------------------------------------------------
-
 from twisted.internet.protocol import Protocol, Factory
 from twisted.application.strports import listen
 
 #------------------------------------------------------------------------------
 
+from logs import lg
+
 from lib import txws
+
+from main import events
+from main import settings
 
 #------------------------------------------------------------------------------
 
 _WebSocketListener = None
+_WebSocketTransport = None
 
 #------------------------------------------------------------------------------
 
-def init():
-    """
-    """
+def init(port=None):
     global _WebSocketListener
-    _WebSocketListener = listen("tcp:5600", txws.WebSocketFactory(EchoFactory()))
+    if _Debug:
+        lg.out(_DebugLevel, 'api_web_socket.init  _WebSocketListener=%r' % _WebSocketListener)
+    if _WebSocketListener is not None:
+        lg.warn('_WebSocketListener already initialized')
+    else:
+        if not port:
+            port = settings.DefaultWebSocketPort()
+        try:
+            _WebSocketListener = listen("tcp:%d" % port, txws.WebSocketFactory(BitDustWebSocketFactory()))
+        except:
+            lg.exc()
+    events.add_subscriber(on_event, event_id='*')
 
 
 def shutdown():
-    """
-    """
     global _WebSocketListener
-    _WebSocketListener
+    events.remove_subscriber(on_event, event_id='*')
+    if _WebSocketListener:
+        if _Debug:
+            lg.out(_DebugLevel, 'api_web_socket.shutdown calling _WebSocketListener.stopListening()')
+        _WebSocketListener.stopListening()
+        del _WebSocketListener
+        _WebSocketListener = None
+        if _Debug:
+            lg.out(_DebugLevel, '    _WebSocketListener destroyed')
+    else:
+        lg.warn('_WebSocketListener is None')
 
 #------------------------------------------------------------------------------
 
-class EchoProtocol(Protocol):
+class BitDustWebSocketProtocol(Protocol):
+
     def dataReceived(self, data):
-        self.transport.write(data)
+        if _Debug:
+            lg.dbg(_DebugLevel, 'received %d bytes from web socket' % len(len(data)))
 
-class EchoFactory(Factory):
-    protocol = EchoProtocol
+    def connectionMade(self):
+        Protocol.connectionMade(self)
+        global _WebSocketTransport
+        _WebSocketTransport = self.transport
+
+    def connectionLost(self, *args, **kwargs):
+        Protocol.connectionLost(self, *args, **kwargs)
+        global _WebSocketTransport
+        _WebSocketTransport = None
 
 #------------------------------------------------------------------------------
+
+class BitDustWebSocketFactory(Factory):
+
+    protocol = BitDustWebSocketProtocol
+
+    def buildProtocol(self, addr):
+        """
+        Only accepting connections from local machine!
+        """
+        global _WebSocketTransport
+        if _WebSocketTransport:
+            lg.warn('refused connection to web socket - another connection already exist')
+            return None
+        if addr.host != '127.0.0.1':
+            lg.err('refused connection from remote host: %r' % addr.host)
+            return None
+        return Factory.buildProtocol(self, addr)
+
+#------------------------------------------------------------------------------
+
+def on_event(evt):
+    push({
+        'event_id': evt.event_id,
+        'data': evt.data,
+    })
+
+#------------------------------------------------------------------------------
+
+def push(json_data):
+    global _WebSocketTransport
+    if not _WebSocketTransport:
+        return False
+    from lib import serialization
+    raw_bytes = serialization.DictToBytes(json_data)
+    _WebSocketTransport.write(raw_bytes)
+    return True

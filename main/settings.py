@@ -1339,6 +1339,13 @@ def DefaultRESTHTTPPort():
     return 8180
 
 
+def DefaultWebSocketPort():
+    """
+    Only Local! Never expose to outside of localhost.
+    """
+    return 8280
+
+
 def DefaultFTPPort():
     """
     Only Local! Never expose to outside of localhost.
@@ -1588,6 +1595,14 @@ def enableRESTHTTPServer(enable=None):
     config.conf().setData('interface/api/rest-http-enabled', str(enable))
 
 
+def enableWebSocketServer(enable=None):
+    """
+    """
+    if enable is None:
+        return config.conf().getBool('interface/api/web-socket-enabled')
+    config.conf().setData('interface/api/web-socket-enabled', str(enable))
+
+
 def enableJsonRPCServer(enable=None):
     """
     """
@@ -1650,6 +1665,18 @@ def setRESTHTTPServerPort(rest_http_port):
     """
     """
     return config.conf().setInt("interface/api/rest-http-port", rest_http_port)
+
+
+def getWebSocketServerPort():
+    """
+    """
+    return config.conf().getInt('interface/api/web-socket-port', DefaultWebSocketPort())
+
+
+def setWebSocketServerPort(rest_http_port):
+    """
+    """
+    return config.conf().setInt("interface/api/web-socket-port", rest_http_port)
 
 
 def getJsonRPCServerPort():

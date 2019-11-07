@@ -18,6 +18,9 @@ def reset(conf_obj):
     conf_obj.setDefaultValue('interface/api/rest-http-enabled', 'true')
     conf_obj.setDefaultValue('interface/api/rest-http-port', settings.DefaultRESTHTTPPort())
 
+    conf_obj.setDefaultValue('interface/api/web-socket-enabled', 'true')
+    conf_obj.setDefaultValue('interface/api/web-socket-port', settings.DefaultWebSocketPort())
+
     conf_obj.setDefaultValue('interface/ftp/enabled', 'true')
     conf_obj.setDefaultValue('interface/ftp/port', settings.DefaultFTPPort())
 
