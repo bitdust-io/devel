@@ -816,13 +816,6 @@ def DefaultReceiptsDir():
     return os.path.join(BaseDir(), 'receipts')
 
 
-def Q2QDir():
-    """
-    I was playing with vertex protocol, this is a place for q2q config files.
-    """
-    return os.path.join(BaseDir(), 'q2qcerts')
-
-
 def LogsDir():
     """
     Place for log files.
@@ -883,6 +876,12 @@ def KeyStoreDir():
 
 
 def BlockchainDir():
+    """
+    """
+    return os.path.join(BaseDir(), 'blockchain')
+
+
+def APICertificatesDir():
     """
     """
     return os.path.join(BaseDir(), 'blockchain')
@@ -1230,6 +1229,30 @@ def FTPServerCredentialsFile():
     """
     """
     return os.path.join(MetaDataDir(), 'ftpcredentials')
+
+
+def APIServerCertificateKeyFile():
+    """
+    """
+    return os.path.join(MetaDataDir(), 'apiservercertkey')
+
+
+def APIServerCertificateFile():
+    """
+    """
+    return os.path.join(MetaDataDir(), 'apiservercert')
+
+
+def APIClientCertificateKeyFile():
+    """
+    """
+    return os.path.join(MetaDataDir(), 'apiclientcertkey')
+
+
+def APIClientCertificateFile():
+    """
+    """
+    return os.path.join(MetaDataDir(), 'apiclientcert')
 
 #------------------------------------------------------------------------------
 #--- BINARY FILES -------------------------------------------------------------

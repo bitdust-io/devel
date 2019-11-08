@@ -20,14 +20,14 @@
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
 
-
+import os
 import time
 import datetime
 import subprocess
 import asyncio
 import json
 import pprint
-
+import ssl
 
 #------------------------------------------------------------------------------
 
@@ -174,7 +174,7 @@ def tunnel_port(node):
 def tunnel_url(node, endpoint):
     print('\n%s [%s]: tunnel_url %d - %s' % (
         datetime.datetime.now().strftime("%H:%M:%S.%f"), node, tunnel_port(node), endpoint, ))
-    return f'http://127.0.0.1:{tunnel_port(node)}/{endpoint.lstrip("/")}'
+    return f'https://127.0.0.1:{tunnel_port(node)}/{endpoint.lstrip("/")}'
 
 #------------------------------------------------------------------------------
 
@@ -202,13 +202,42 @@ async def start_daemon_async(node, loop):
 
 #------------------------------------------------------------------------------
 
+def get_client_certificate(node):
+    time.sleep(0.5)
+    os.makedirs(f'/app/certificates/{node}/')
+    apiclientcert = run_ssh_command_and_wait(node, 'cat /root/.bitdust/metadata/apiclientcert')[0]
+    open(f'/app/certificates/{node}/apiclientcert', 'w').write(apiclientcert)
+    apiclientcertkey = run_ssh_command_and_wait(node, 'cat /root/.bitdust/metadata/apiclientcertkey')[0]
+    open(f'/app/certificates/{node}/apiclientcertkey', 'w').write(apiclientcertkey)
+    apiservercert = run_ssh_command_and_wait(node, 'cat /root/.bitdust/metadata/apiservercert')[0]
+    open(f'/app/certificates/{node}/apiservercert', 'w').write(apiservercert)
+    print(f'\nget_client_certificate [{node}] OK\n')
+
+
+async def get_client_certificate_async(node, loop):
+    await asyncio.sleep(0.5)
+    os.makedirs(f'/app/certificates/{node}/')
+    apiclientcert = await run_ssh_command_and_wait_async(node, 'cat /root/.bitdust/metadata/apiclientcert', loop)[0]
+    open(f'/app/certificates/{node}/apiclientcert', 'w').write(apiclientcert)
+    apiclientcertkey = await run_ssh_command_and_wait_async(node, 'cat /root/.bitdust/metadata/apiclientcertkey', loop)[0]
+    open(f'/app/certificates/{node}/apiclientcertkey', 'w').write(apiclientcertkey)
+    apiservercert = await run_ssh_command_and_wait_async(node, 'cat /root/.bitdust/metadata/apiservercert', loop)[0]
+    open(f'/app/certificates/{node}/apiservercert', 'w').write(apiservercert)
+    print(f'\nget_client_certificate_async [{node}] OK\n')
+
+#------------------------------------------------------------------------------
+
 def health_check(node):
     count = 0
     while True:
         if count > 60:
             assert False, f'node {node} is not healthy after many attempts'
         try:
-            response = requests.get(tunnel_url(node, 'process/health/v1'))
+            response = requests.get(
+                tunnel_url(node, 'process/health/v1'),
+                cert=(f'/app/certificates/{node}/apiclientcert', f'/app/certificates/{node}/apiclientcertkey'),
+                verify=f'/app/certificates/{node}/apiservercert',
+            )
         except Exception as exc:
             response = None
         if response and response.status_code == 200 and response.json()['status'] == 'OK':
@@ -220,7 +249,10 @@ def health_check(node):
 
 
 async def health_check_async(node, event_loop):
-    async with aiohttp.ClientSession(loop=event_loop) as client:
+    ssl_ctx = ssl.create_default_context(cafile=f'/app/certificates/{node}/apiservercert')
+    ssl_ctx.load_cert_chain(f'/app/certificates/{node}/apiclientcert', f'/app/certificates/{node}/apiclientcertkey')
+    conn = aiohttp.TCPConnector(ssl_context=ssl_ctx)
+    async with aiohttp.ClientSession(loop=event_loop, connector=conn) as client:
         count = 0
         while True:
             print(f'health_check_async {node}  with count={count}\n')
@@ -228,7 +260,9 @@ async def health_check_async(node, event_loop):
                 print(f'node {node} is not healthy after many attempts')
                 assert False, f'node {node} is not healthy after many attempts'
             try:
-                response = await client.get(tunnel_url(node, 'process/health/v1'))
+                response = await client.get(
+                    tunnel_url(node, 'process/health/v1'),
+                )
                 response_json = await response.json()
             except (
                 aiohttp.ServerDisconnectedError,
@@ -255,6 +289,8 @@ def create_identity(node, identity_name):
             json={
                 'username': identity_name,
             },
+            cert=(f'/app/certificates/{node}/apiclientcert', f'/app/certificates/{node}/apiclientcertkey'),
+            verify=f'/app/certificates/{node}/apiservercert',
         )
         if response.json()['status'] == 'OK':
             break
@@ -268,10 +304,15 @@ def create_identity(node, identity_name):
 
 
 async def create_identity_async(node, identity_name, event_loop):
-    async with aiohttp.ClientSession(loop=event_loop) as client:
+    ssl_ctx = ssl.create_default_context(cafile=f'/app/certificates/{node}/apiservercert')
+    ssl_ctx.load_cert_chain(f'/app/certificates/{node}/apiclientcert', f'/app/certificates/{node}/apiclientcertkey')
+    conn = aiohttp.TCPConnector(ssl_context=ssl_ctx)
+    async with aiohttp.ClientSession(loop=event_loop, connector=conn) as client:
         for i in range(60):
-            response_identity = await client.post(tunnel_url(node, 'identity/create/v1'),
-                                                  json={'username': identity_name})
+            response_identity = await client.post(
+                tunnel_url(node, 'identity/create/v1'),
+                json={'username': identity_name},
+            )
             assert response_identity.status == 200
             response_json = await response_identity.json()
             if response_json['status'] == 'OK':
@@ -289,7 +330,11 @@ async def create_identity_async(node, identity_name, event_loop):
 
 def connect_network(node):
     count = 0
-    response = requests.get(url=tunnel_url(node, 'network/connected/v1?wait_timeout=1'))
+    response = requests.get(
+        url=tunnel_url(node, 'network/connected/v1?wait_timeout=1'),
+        cert=(f'/app/certificates/{node}/apiclientcert', f'/app/certificates/{node}/apiclientcertkey'),
+        verify=f'/app/certificates/{node}/apiservercert',
+    )
     assert response.json()['status'] == 'ERROR'
     while True:
         if count > 60:
@@ -419,6 +464,7 @@ async def start_identity_server_async(node, loop):
     cmd += 'bitdust set services/identity-server/enabled true;'
     await run_ssh_command_and_wait_async(node, cmd, loop)
     await start_daemon_async(node, loop)
+    await get_client_certificate_async(node, loop)
     await health_check_async(node, loop)
     print(f'\nSTARTED IDENTITY SERVER [{node}]\n')
 
@@ -448,6 +494,7 @@ def start_dht_seed(node, wait_seconds=0, dht_seeds=''):
     print(f'sleep {wait_seconds} seconds')
     time.sleep(wait_seconds)
     start_daemon(node)
+    get_client_certificate(node)
     health_check(node)
     print(f'\nSTARTED DHT SEED (with STUN SERVER) [{node}]\n')
 
@@ -475,6 +522,7 @@ async def start_stun_server_async(node, loop, dht_seeds=''):
     await run_ssh_command_and_wait_async(node, cmd, loop)
     # start BitDust daemon
     await start_daemon_async(node, loop)
+    await get_client_certificate_async(node, loop)
     await health_check_async(node, loop)
     print(f'\nSTARTED STUN SERVER [{node}]\n')
 
@@ -503,6 +551,7 @@ async def start_proxy_server_async(node, identity_name, loop, known_servers='', 
     await run_ssh_command_and_wait_async(node, cmd, loop)
     # start BitDust daemon and create new identity for proxy server
     await start_daemon_async(node, loop)
+    await get_client_certificate_async(node, loop)
     await health_check_async(node, loop)
     await create_identity_async(node, identity_name, loop)
     await connect_network_async(node, loop)
@@ -541,6 +590,7 @@ async def start_supplier_async(node, identity_name, loop, join_network=True,
     await run_ssh_command_and_wait_async(node, cmd, loop)
     # start BitDust daemon and create new identity for supplier
     await start_daemon_async(node, loop)
+    await get_client_certificate_async(node, loop)
     await health_check_async(node, loop)
     if join_network:
         await create_identity_async(node, identity_name, loop)
@@ -593,6 +643,7 @@ async def start_customer_async(node, identity_name, loop, join_network=True, num
     await run_ssh_command_and_wait_async(node, cmd, loop)
     # start BitDust daemon and create new identity for supplier
     await start_daemon_async(node, loop)
+    await get_client_certificate_async(node, loop)
     await health_check_async(node, loop)
     if join_network:
         await create_identity_async(node, identity_name, loop)

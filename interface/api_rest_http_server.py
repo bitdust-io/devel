@@ -46,6 +46,7 @@ import os
 #------------------------------------------------------------------------------
 
 from twisted.internet import reactor  # @UnresolvedImport
+from twisted.internet import ssl
 from twisted.web.server import Site
 
 #------------------------------------------------------------------------------
@@ -57,6 +58,12 @@ from interface import api
 from lib import strng
 from lib import jsn
 from lib import serialization
+
+from system import local_fs
+
+from crypt import certificate
+
+from main import settings
 
 from lib.txrestapi.txrestapi.json_resource import JsonAPIResource
 from lib.txrestapi.txrestapi.methods import GET, POST, PUT, DELETE, ALL
@@ -72,14 +79,64 @@ def init(port=None):
     if _APIListener is not None:
         lg.warn('_APIListener already initialized')
         return
+    # server private key
+    if os.path.exists(settings.APIServerCertificateKeyFile()):
+        server_key_pem = local_fs.ReadBinaryFile(settings.APIServerCertificateKeyFile())
+        server_key = certificate.load_private_key(server_key_pem)
+    else:
+        server_key, server_key_pem = certificate.generate_private_key()
+        local_fs.WriteBinaryFile(settings.APIServerCertificateKeyFile(), server_key_pem)
+    # server certificate
+    if os.path.exists(settings.APIServerCertificateFile()):
+        server_cert_pem = local_fs.ReadBinaryFile(settings.APIServerCertificateFile())
+    else:
+        server_cert_pem = certificate.generate_self_signed_cert(
+            hostname=u'localhost',
+            ip_addresses=[u'127.0.0.1', ],
+            server_key=server_key,
+        )
+        local_fs.WriteBinaryFile(settings.APIServerCertificateFile(), server_cert_pem)
+    # client private key
+    if os.path.exists(settings.APIClientCertificateKeyFile()):
+        client_key_pem = local_fs.ReadBinaryFile(settings.APIClientCertificateKeyFile())
+        client_key = certificate.load_private_key(client_key_pem)
+    else:
+        client_key, client_key_pem = certificate.generate_private_key()
+        local_fs.WriteBinaryFile(settings.APIClientCertificateKeyFile(), client_key_pem)
+    # client certificate
+    if os.path.exists(settings.APIClientCertificateFile()):
+        client_cert_pem = local_fs.ReadBinaryFile(settings.APIClientCertificateFile())
+        ca_cert_pem = local_fs.ReadBinaryFile(settings.APIServerCertificateFile())
+    else:
+        ca_cert_pem = local_fs.ReadBinaryFile(settings.APIServerCertificateFile())
+        ca_cert = certificate.load_certificate(ca_cert_pem)
+        client_cert_pem = certificate.generate_csr_client_cert(
+            hostname=u'localhost',
+            server_ca_cert=ca_cert,
+            server_key=server_key,
+            client_key=client_key,
+        )
+        local_fs.WriteBinaryFile(settings.APIClientCertificateFile(), client_cert_pem)
+
     if not port:
         port = 8180
+
+#     try:
+#         api_resource = BitDustRESTHTTPServer()
+#         site = BitDustAPISite(api_resource, timeout=None)
+#         _APIListener = reactor.listenTCP(port, site)  # @UndefinedVariable
+#     except:
+#         lg.exc()
+
     try:
         api_resource = BitDustRESTHTTPServer()
         site = BitDustAPISite(api_resource, timeout=None)
-        _APIListener = reactor.listenTCP(port, site)  # @UndefinedVariable
+        auth = ssl.Certificate.loadPEM(server_cert_pem)
+        cert = ssl.PrivateCertificate.loadPEM(server_cert_pem + server_key_pem)
+        _APIListener = reactor.listenSSL(port, site, cert.options(auth), interface='127.0.0.1')  # @UndefinedVariable
     except:
         lg.exc()
+
     lg.out(4, 'api_rest_http_server.init')
 
 
