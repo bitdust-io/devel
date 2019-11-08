@@ -174,12 +174,6 @@ def dispatch(evt):
                 lg.exc()
                 continue
             handled += 1
-    if _Debug:
-        if not handled:
-            lg.warn('event {} was not handled'.format(evt.event_id))
-        else:
-            lg.out(_DebugLevel, 'events.dispatch {} was handled by {} subscribers'.format(
-                evt.event_id, handled))
     if _EventLogFileEnabled:
         if _EventLogUseColors is None:
             _EventLogUseColors = os.environ.get('BITDUST_LOG_USE_COLORS', '1') != '0'
@@ -187,6 +181,16 @@ def dispatch(evt):
             lg.out(2, '\033[0;49;91m%s\033[0m  %r' % (evt.event_id, str(evt.data)), log_name='event', showtime=True)
         else:
             lg.out(2, '%s  %r' % (evt.event_id, str(evt.data)), log_name='event', showtime=True)
+    if _Debug:
+        if not handled:
+            lg.warn('event "{}" was not handled'.format(evt.event_id))
+        else:
+            if _EventLogUseColors:
+                lg.out(_DebugLevel, '\033[0;49;36mevents.dispatch "{}" was handled by {} subscribers\033[0m'.format(
+                    evt.event_id, handled))
+            else:
+                lg.out(_DebugLevel, 'events.dispatch "{}" was handled by {} subscribers'.format(
+                    evt.event_id, handled))
     return handled
 
 

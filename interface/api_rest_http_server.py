@@ -171,11 +171,8 @@ class BitDustAPISite(Site):
         """
         Only accepting connections from local machine!
         """
-        if addr.host == '127.0.0.1':
-            return Site.buildProtocol(self, addr)
-        if not _Debug:
-            return None
-        if os.environ.get('BITDUST_API_PASS_EXTERNAL_CONNECTIONS', '0') != '1':
+        if addr.host != '127.0.0.1':
+            lg.err('refused connection from remote host: %r' % addr.host)
             return None
         return Site.buildProtocol(self, addr)
 

@@ -102,9 +102,9 @@ def shutdown(x=None):
         from updates import git_proc
         from interface import api_jsonrpc_server
         from interface import api_rest_http_server
+        from interface import api_web_socket
         from interface import ftp_server
         from userid import my_id
-        from userid import id_url
         from contacts import identitydb
         from crypt import my_keys
         my_keys.shutdown()
@@ -113,13 +113,13 @@ def shutdown(x=None):
         ftp_server.shutdown()
         api_jsonrpc_server.shutdown()
         api_rest_http_server.shutdown()
+        api_web_socket.shutdown()
         driver.shutdown()
         eccmap.shutdown()
         run_upnpc.shutdown()
         net_misc.shutdown()
         git_proc.shutdown()
         events.clear_subscribers()
-        # id_url.shutdown()
         tmpfile.shutdown()
         control.shutdown()
         try:

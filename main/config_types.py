@@ -70,6 +70,8 @@ def defaults():
         'interface/api/json-rpc-port': TYPE_PORT_NUMBER,
         'interface/api/rest-http-enabled': TYPE_BOOLEAN,
         'interface/api/rest-http-port': TYPE_PORT_NUMBER,
+        'interface/api/web-socket-enabled': TYPE_BOOLEAN,
+        'interface/api/web-socket-port': TYPE_PORT_NUMBER,
         'interface/ftp/enabled': TYPE_BOOLEAN,
         'interface/ftp/port': TYPE_PORT_NUMBER,
         'logs/debug-level': TYPE_POSITIVE_INTEGER,
