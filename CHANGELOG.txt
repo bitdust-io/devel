@@ -2,6 +2,12 @@ Change Log
 ==========
 
 
+2019-11-08 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* built api_web_socket interface and added events to the web socket API  (#445)
+
+
+
 2019-11-05 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * make possible to run RAID tasks inside a thread, not only inside a child process (#443)
