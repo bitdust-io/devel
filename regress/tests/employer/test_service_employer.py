@@ -22,12 +22,10 @@
 
 import os
 import pytest
-import time
-import requests
 
-from testsupport import tunnel_url, run_ssh_command_and_wait
+from testsupport import request_get, run_ssh_command_and_wait
 from keywords import supplier_list_v1, share_create_v1, file_upload_start_v1, file_download_start_v1, \
-    service_info_v1, file_create_v1, transfer_list_v1, packet_list_v1
+    service_info_v1, file_create_v1
 
 
 def test_customer_1_replace_supplier_at_position_0():
@@ -57,12 +55,12 @@ def test_customer_1_replace_supplier_at_position_0():
 
     file_download_start_v1('customer-1', remote_path=remote_path_customer_1, destination=volume_customer_1)
 
-    response = requests.get(tunnel_url('customer-1', '/supplier/list/v1'))
+    response = request_get('customer-1', '/supplier/list/v1')
     assert response.status_code == 200
     supplier_list = response.json()['result']
     suppliers = set(x['idurl'] for x in supplier_list)
     assert len(suppliers) == 2
 
-    response = requests.post(tunnel_url('customer-1', '/supplier/replace/v1'), json={'position': '0'})
+    response = request_get('customer-1', '/supplier/replace/v1', json={'position': '0'})
 
     # TODO: ...

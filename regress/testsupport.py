@@ -39,6 +39,7 @@ import requests
 _SSHTunnels = {}
 _NodeTunnelPort = {} 
 _NextSSHTunnelPort = 10000
+_SSLContexts = {}
 
 #------------------------------------------------------------------------------
 
@@ -76,6 +77,41 @@ def run_ssh_command_and_wait(host: object, cmd: str) -> object:
     if err:
         print('\nSTDERR: %r' % err.decode())
     return output.decode(), err.decode()
+
+#------------------------------------------------------------------------------
+
+def request_get(node, url, timeout=None):
+    return requests.get(
+        tunnel_url(node, url),
+        timeout=timeout,
+        cert=(f'/app/certificates/{node}/apiclientcert', f'/app/certificates/{node}/apiclientcertkey'),
+        verify=f'/app/certificates/{node}/apiservercert',
+    )
+
+def request_post(node, url, json={}, timeout=None):
+    return requests.post(
+        url=tunnel_url(node, url),
+        json=json,
+        timeout=timeout,
+        cert=(f'/app/certificates/{node}/apiclientcert', f'/app/certificates/{node}/apiclientcertkey'),
+        verify=f'/app/certificates/{node}/apiservercert',
+    )
+
+def request_put(node, url, json={}, timeout=None):
+    return requests.put(
+        url=tunnel_url(node, url),
+        json=json,
+        timeout=timeout,
+        cert=(f'/app/certificates/{node}/apiclientcert', f'/app/certificates/{node}/apiclientcertkey'),
+        verify=f'/app/certificates/{node}/apiservercert',
+    )
+
+#------------------------------------------------------------------------------
+
+def ssl_connection(node):
+    ssl_ctx = ssl.create_default_context(cafile=f'/app/certificates/{node}/apiservercert')
+    ssl_ctx.load_cert_chain(f'/app/certificates/{node}/apiclientcert', f'/app/certificates/{node}/apiclientcertkey')
+    return aiohttp.TCPConnector(ssl=ssl_ctx)
 
 #------------------------------------------------------------------------------
 
@@ -203,26 +239,64 @@ async def start_daemon_async(node, loop):
 #------------------------------------------------------------------------------
 
 def get_client_certificate(node):
-    time.sleep(0.5)
-    os.makedirs(f'/app/certificates/{node}/')
-    apiclientcert = run_ssh_command_and_wait(node, 'cat /root/.bitdust/metadata/apiclientcert')[0]
-    open(f'/app/certificates/{node}/apiclientcert', 'w').write(apiclientcert)
-    apiclientcertkey = run_ssh_command_and_wait(node, 'cat /root/.bitdust/metadata/apiclientcertkey')[0]
-    open(f'/app/certificates/{node}/apiclientcertkey', 'w').write(apiclientcertkey)
-    apiservercert = run_ssh_command_and_wait(node, 'cat /root/.bitdust/metadata/apiservercert')[0]
-    open(f'/app/certificates/{node}/apiservercert', 'w').write(apiservercert)
+    print(f'\nget_client_certificate [{node}]\n')
+    if not os.path.isdir(f'/app/certificates/{node}/'):
+        os.makedirs(f'/app/certificates/{node}/')
+    while True:
+        print(f'\nchecking /root/.bitdust/metadata/apiclientcert from [{node}]\n')
+        apiclientcert = run_ssh_command_and_wait(node, 'cat /root/.bitdust/metadata/apiclientcert')[0]
+        if not apiclientcert:
+            time.sleep(0.5)
+            continue
+        open(f'/app/certificates/{node}/apiclientcert', 'w').write(apiclientcert)
+        break
+    while True:
+        print(f'\nchecking /root/.bitdust/metadata/apiclientcertkey from [{node}]\n')
+        apiclientcertkey = run_ssh_command_and_wait(node, 'cat /root/.bitdust/metadata/apiclientcertkey')[0]
+        if not apiclientcertkey:
+            time.sleep(0.5)
+            continue
+        open(f'/app/certificates/{node}/apiclientcertkey', 'w').write(apiclientcertkey)
+        break
+    while True:
+        print(f'\nchecking /root/.bitdust/metadata/apiservercert from [{node}]\n')
+        apiservercert = run_ssh_command_and_wait(node, 'cat /root/.bitdust/metadata/apiservercert')[0]
+        if not apiservercert:
+            time.sleep(0.5)
+            continue
+        open(f'/app/certificates/{node}/apiservercert', 'w').write(apiservercert)
+        break
     print(f'\nget_client_certificate [{node}] OK\n')
 
 
 async def get_client_certificate_async(node, loop):
-    await asyncio.sleep(0.5)
-    os.makedirs(f'/app/certificates/{node}/')
-    apiclientcert = await run_ssh_command_and_wait_async(node, 'cat /root/.bitdust/metadata/apiclientcert', loop)[0]
-    open(f'/app/certificates/{node}/apiclientcert', 'w').write(apiclientcert)
-    apiclientcertkey = await run_ssh_command_and_wait_async(node, 'cat /root/.bitdust/metadata/apiclientcertkey', loop)[0]
-    open(f'/app/certificates/{node}/apiclientcertkey', 'w').write(apiclientcertkey)
-    apiservercert = await run_ssh_command_and_wait_async(node, 'cat /root/.bitdust/metadata/apiservercert', loop)[0]
-    open(f'/app/certificates/{node}/apiservercert', 'w').write(apiservercert)
+    print(f'\nget_client_certificate_async [{node}]\n')
+    if not os.path.isdir(f'/app/certificates/{node}/'):
+        os.makedirs(f'/app/certificates/{node}/')
+    while True:
+        print(f'\nchecking /root/.bitdust/metadata/apiclientcert from [{node}]\n')
+        apiclientcert = (await run_ssh_command_and_wait_async(node, 'cat /root/.bitdust/metadata/apiclientcert', loop))[0]
+        if not apiclientcert:
+            await asyncio.sleep(0.5)
+            continue
+        open(f'/app/certificates/{node}/apiclientcert', 'w').write(apiclientcert)
+        break
+    while True:
+        print(f'\nchecking /root/.bitdust/metadata/apiclientcertkey from [{node}]\n')
+        apiclientcertkey = (await run_ssh_command_and_wait_async(node, 'cat /root/.bitdust/metadata/apiclientcertkey', loop))[0]
+        if not apiclientcertkey:
+            await asyncio.sleep(0.5)
+            continue
+        open(f'/app/certificates/{node}/apiclientcertkey', 'w').write(apiclientcertkey)
+        break
+    while True:
+        print(f'\nchecking /root/.bitdust/metadata/apiservercert from [{node}]\n')
+        apiservercert = (await run_ssh_command_and_wait_async(node, 'cat /root/.bitdust/metadata/apiservercert', loop))[0]
+        if not apiservercert:
+            await asyncio.sleep(0.5)
+            continue
+        open(f'/app/certificates/{node}/apiservercert', 'w').write(apiservercert)
+        break
     print(f'\nget_client_certificate_async [{node}] OK\n')
 
 #------------------------------------------------------------------------------
@@ -233,13 +307,10 @@ def health_check(node):
         if count > 60:
             assert False, f'node {node} is not healthy after many attempts'
         try:
-            response = requests.get(
-                tunnel_url(node, 'process/health/v1'),
-                cert=(f'/app/certificates/{node}/apiclientcert', f'/app/certificates/{node}/apiclientcertkey'),
-                verify=f'/app/certificates/{node}/apiservercert',
-            )
+            response = request_get(node, 'process/health/v1')
         except Exception as exc:
             response = None
+            print(f'node {node} is not started yet, count={count} : {exc}\n')
         if response and response.status_code == 200 and response.json()['status'] == 'OK':
             break
         print(f'\nnode {node} process not started yet, try again after 1 sec.\n')
@@ -249,10 +320,7 @@ def health_check(node):
 
 
 async def health_check_async(node, event_loop):
-    ssl_ctx = ssl.create_default_context(cafile=f'/app/certificates/{node}/apiservercert')
-    ssl_ctx.load_cert_chain(f'/app/certificates/{node}/apiclientcert', f'/app/certificates/{node}/apiclientcertkey')
-    conn = aiohttp.TCPConnector(ssl_context=ssl_ctx)
-    async with aiohttp.ClientSession(loop=event_loop, connector=conn) as client:
+    async with aiohttp.ClientSession(loop=event_loop, connector=ssl_connection(node)) as client:
         count = 0
         while True:
             print(f'health_check_async {node}  with count={count}\n')
@@ -260,9 +328,7 @@ async def health_check_async(node, event_loop):
                 print(f'node {node} is not healthy after many attempts')
                 assert False, f'node {node} is not healthy after many attempts'
             try:
-                response = await client.get(
-                    tunnel_url(node, 'process/health/v1'),
-                )
+                response = await client.get(tunnel_url(node, 'process/health/v1'))
                 response_json = await response.json()
             except (
                 aiohttp.ServerDisconnectedError,
@@ -284,14 +350,9 @@ def create_identity(node, identity_name):
     while True:
         if count > 60:
             assert False, f'node {node} failed to create identity after many retries'
-        response = requests.post(
-            url=tunnel_url(node, 'identity/create/v1'),
-            json={
-                'username': identity_name,
-            },
-            cert=(f'/app/certificates/{node}/apiclientcert', f'/app/certificates/{node}/apiclientcertkey'),
-            verify=f'/app/certificates/{node}/apiservercert',
-        )
+        response = request_post(node, 'identity/create/v1', json={
+            'username': identity_name,
+        })
         if response.json()['status'] == 'OK':
             break
         if not response.status_code == 200 or (
@@ -304,15 +365,9 @@ def create_identity(node, identity_name):
 
 
 async def create_identity_async(node, identity_name, event_loop):
-    ssl_ctx = ssl.create_default_context(cafile=f'/app/certificates/{node}/apiservercert')
-    ssl_ctx.load_cert_chain(f'/app/certificates/{node}/apiclientcert', f'/app/certificates/{node}/apiclientcertkey')
-    conn = aiohttp.TCPConnector(ssl_context=ssl_ctx)
-    async with aiohttp.ClientSession(loop=event_loop, connector=conn) as client:
+    async with aiohttp.ClientSession(loop=event_loop, connector=ssl_connection(node)) as client:
         for i in range(60):
-            response_identity = await client.post(
-                tunnel_url(node, 'identity/create/v1'),
-                json={'username': identity_name},
-            )
+            response_identity = await client.post(tunnel_url(node, 'identity/create/v1'), json={'username': identity_name})
             assert response_identity.status == 200
             response_json = await response_identity.json()
             if response_json['status'] == 'OK':
@@ -330,16 +385,12 @@ async def create_identity_async(node, identity_name, event_loop):
 
 def connect_network(node):
     count = 0
-    response = requests.get(
-        url=tunnel_url(node, 'network/connected/v1?wait_timeout=1'),
-        cert=(f'/app/certificates/{node}/apiclientcert', f'/app/certificates/{node}/apiclientcertkey'),
-        verify=f'/app/certificates/{node}/apiservercert',
-    )
+    response = request_get(node, 'network/connected/v1?wait_timeout=1')
     assert response.json()['status'] == 'ERROR'
     while True:
         if count > 60:
             assert False, f'node {node} failed to connect to the network after many retries'
-        response = requests.get(tunnel_url(node, 'network/connected/v1?wait_timeout=5'))
+        response = request_get(node, 'network/connected/v1?wait_timeout=5')
         if response.json()['status'] == 'OK':
             break
         count += 1
@@ -348,7 +399,7 @@ def connect_network(node):
 
 
 async def connect_network_async(node, loop, attempts=30, delay=1, timeout=10):
-    async with aiohttp.ClientSession(loop=loop) as client:
+    async with aiohttp.ClientSession(loop=loop, connector=ssl_connection(node)) as client:
         response = await client.get(tunnel_url(node, 'network/connected/v1?wait_timeout=1'), timeout=timeout)
         response_json = await response.json()
         print(f'\nnetwork/connected/v1 [{node}] : %s' % pprint.pformat(response_json))
@@ -372,12 +423,11 @@ async def connect_network_async(node, loop, attempts=30, delay=1, timeout=10):
 
 
 async def service_started_async(node, service_name, loop, expected_state='ON', attempts=60, delay=3):
-    async with aiohttp.ClientSession(loop=loop) as client:
+    async with aiohttp.ClientSession(loop=loop, connector=ssl_connection(node)) as client:
         current_state = None
         count = 0
         while current_state is None or current_state != expected_state:
             response = await client.get(tunnel_url(node, f'service/info/{service_name}/v1'))
-            assert response.status == 200
             response_json = await response.json()
             assert response_json['status'] == 'OK', response_json
             current_state = response_json['result'][0]['state']
@@ -393,10 +443,9 @@ async def service_started_async(node, service_name, loop, expected_state='ON', a
 
 
 async def packet_list_async(node, loop, wait_all_finish=True, attempts=60, delay=3):
-    async with aiohttp.ClientSession(loop=loop) as client:
+    async with aiohttp.ClientSession(loop=loop, connector=ssl_connection(node)) as client:
         for i in range(attempts):
-            response = await client.get(url=tunnel_url(node, 'packet/list/v1'), timeout=20)
-            assert response.status == 200
+            response = await client.get(tunnel_url(node, 'packet/list/v1'), timeout=20)
             response_json = await response.json()
             print('\npacket/list/v1 [%s] : %s\n' % (node, pprint.pformat(response_json), ))
             assert response_json['status'] == 'OK', response_json

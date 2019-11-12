@@ -24,10 +24,9 @@
 import os
 import pytest
 import time
-import requests
 
-from testsupport import tunnel_url, run_ssh_command_and_wait
-from keywords import service_info_v1, file_create_v1, file_upload_start_v1, transfer_list_v1, packet_list_v1
+from testsupport import run_ssh_command_and_wait, request_get, request_post
+from keywords import service_info_v1, file_create_v1, file_upload_start_v1
 
 
 def test_customer_1_upload_download_file_with_master_key():
@@ -50,7 +49,7 @@ def test_customer_1_upload_download_file_with_master_key():
         if count > 10:
             assert False, 'customer-1 failed to hire enough suppliers after many attempts'
             return 
-        response = requests.get(url=tunnel_url('customer-1', 'supplier/list/v1'))
+        response = request_get('customer-1', 'supplier/list/v1')
         assert response.status_code == 200
         assert response.json()['status'] == 'OK', response.json()
         print('\n\nsupplier/list/v1 : %s\n' % response.json())
@@ -69,9 +68,8 @@ def test_customer_1_upload_download_file_with_master_key():
 
     file_upload_start_v1('customer-1', remote_path, local_path, wait_result=True, )
 
-    for i in range(20):
-        response = requests.post(
-            url=tunnel_url('customer-1', 'file/download/start/v1'),
+    for _ in range(20):
+        response = request_post('customer-1', 'file/download/start/v1',
             json={
                 'remote_path': remote_path,
                 'destination_folder': download_volume,

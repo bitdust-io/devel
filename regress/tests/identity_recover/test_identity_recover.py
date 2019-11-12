@@ -24,17 +24,11 @@ import os
 import pytest
 import time
 import shutil
-import requests
-import base64
-import threading
 
-from testsupport import tunnel_url, run_ssh_command_and_wait, create_identity, connect_network, stop_daemon
+from testsupport import run_ssh_command_and_wait, request_get, request_post
 
 from keywords import service_info_v1, file_create_v1, file_upload_start_v1, file_download_start_v1, \
-    supplier_list_v1, transfer_list_v1, packet_list_v1, file_list_all_v1, supplier_list_dht_v1, \
-    user_ping_v1, identity_get_v1, identity_rotate_v1, key_list_v1, share_create_v1, share_open_v1, \
-    supplier_switch_v1, file_sync_v1, friend_add_v1, friend_list_v1, message_send_v1, message_receive_v1, \
-    config_set_v1, network_reconnect_v1
+    supplier_list_v1, transfer_list_v1, packet_list_v1, file_list_all_v1, supplier_list_dht_v1
 
 
 def test_identity_recover_from_customer_backup_to_customer_restore():
@@ -99,8 +93,7 @@ def test_identity_recover_from_customer_backup_to_customer_restore():
     backup_file_directory_c3 = '/customer_restore/identity.backup'
     assert not os.path.exists(backup_file_directory_c2)
 
-    response = requests.post(
-        url=tunnel_url('customer-backup', 'identity/backup/v1'),
+    response = request_post('customer-backup', 'identity/backup/v1',
         json={
             'destination_path': backup_file_directory_c2,
         },
@@ -118,15 +111,14 @@ def test_identity_recover_from_customer_backup_to_customer_restore():
     file_list_all_v1('customer-backup')
 
     try:
-        response = requests.get(url=tunnel_url('customer-backup', 'process/stop/v1'))
+        response = request_get('customer-backup', 'process/stop/v1')
         assert response.json()['status'] == 'OK', response.json()
     except Exception as exc:
-        print('\n\nprocess/stop/v1 failed with ')
+        print(f'\n\nprocess/stop/v1 failed with {exc}')
 
     # step3: recover key on customer-restore container and join network
-    for i in range(5):
-        response = requests.post(
-            url=tunnel_url('customer-restore', 'identity/recover/v1'),
+    for _ in range(5):
+        response = request_post('customer-restore', 'identity/recover/v1',
             json={
                 'private_key_local_file': backup_file_directory_c3,
             },
@@ -138,11 +130,11 @@ def test_identity_recover_from_customer_backup_to_customer_restore():
     else:
         assert False, 'customer-restore was not able to recover identity after few seconds'
 
-    response = requests.get(url=tunnel_url('customer-restore', 'network/connected/v1?wait_timeout=1'))
+    response = request_get('customer-restore', 'network/connected/v1?wait_timeout=1')
     assert response.json()['status'] == 'ERROR'
 
-    for i in range(5):
-        response = requests.get(url=tunnel_url('customer-restore', 'network/connected/v1?wait_timeout=5'))
+    for _ in range(5):
+        response = request_get('customer-restore', 'network/connected/v1?wait_timeout=5')
         if response.json()['status'] == 'OK':
             break
         time.sleep(5)
@@ -182,9 +174,8 @@ def test_identity_recover_from_customer_backup_to_customer_restore():
     virtual_file = 'virtual_file.txt'
     remote_path = '%s:%s' % (key_id, virtual_file)
     recovered_file = '%s/%s' % (recover_volume, virtual_file)
-    for i in range(20):
-        response = requests.post(
-            url=tunnel_url('customer-restore', 'file/download/start/v1'),
+    for _ in range(20):
+        response = request_post('customer-restore', 'file/download/start/v1',
             json={
                 'remote_path': remote_path,
                 'destination_folder': recover_volume,
