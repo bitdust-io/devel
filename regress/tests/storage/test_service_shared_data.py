@@ -22,10 +22,9 @@
 
 import os
 import pytest
-import time
 import requests
 
-from testsupport import tunnel_url, run_ssh_command_and_wait
+from testsupport import request_get, request_put, run_ssh_command_and_wait
 from keywords import supplier_list_v1, share_create_v1, file_upload_start_v1, file_download_start_v1, \
     service_info_v1, file_create_v1, transfer_list_v1, packet_list_v1
 
@@ -86,8 +85,7 @@ def test_customer_1_share_file_to_customer_2_same_name_as_existing():
 
     file_download_start_v1('customer-2', remote_path=remote_path_customer_2, destination=volume_customer_2)
 
-    response = requests.put(
-        url=tunnel_url('customer-1', 'share/grant/v1'),
+    response = request_put('customer-1', 'share/grant/v1',
         json={
             'trusted_global_id': 'customer-2@id-a_8084',
             'key_id': share_id_customer_1,
@@ -98,7 +96,7 @@ def test_customer_1_share_file_to_customer_2_same_name_as_existing():
     assert response.json()['status'] == 'OK', response.json()
     print('\n\nshare/grant/v1 trusted_global_id=%s key_id=%s : %s\n' % ('customer-2@id-a_8084', share_id_customer_1, response.json(),))
 
-    response = requests.get(tunnel_url('customer-2', 'file/list/all/v1'))
+    response = request_get('customer-2', 'file/list/all/v1')
     assert response.status_code == 200, response.json()
 
     run_ssh_command_and_wait('customer-2', f'mkdir {volume_customer_2}/sharesamename')
@@ -151,8 +149,7 @@ def test_customer_1_share_file_to_customer_3():
 
     file_download_start_v1('customer-1', remote_path=remote_path, destination='/customer_1')
 
-    response = requests.put(
-        url=tunnel_url('customer-1', 'share/grant/v1'),
+    response = request_put('customer-1', 'share/grant/v1',
         json={
             'trusted_global_id': 'customer-3@id-a_8084',
             'key_id': key_id,

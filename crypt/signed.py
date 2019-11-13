@@ -78,7 +78,6 @@ from lib import serialization
 from contacts import contactsdb
 
 from crypt import key
-from crypt import my_keys
 
 from userid import my_id
 from userid import id_url
