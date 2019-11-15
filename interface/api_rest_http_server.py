@@ -60,8 +60,6 @@ from lib import serialization
 
 from system import local_fs
 
-from crypt import certificate
-
 from main import settings
 
 from lib.txrestapi.txrestapi.json_resource import JsonAPIResource
@@ -102,6 +100,8 @@ def shutdown():
 
 def serve_https(port):
     global _APIListener
+    from crypt import certificate
+
     # server private key
     if os.path.exists(settings.APIServerCertificateKeyFile()):
         server_key_pem = local_fs.ReadBinaryFile(settings.APIServerCertificateKeyFile())
