@@ -34,7 +34,7 @@ setup(**{'author': 'Veselin Penev',
  'description': 'BitDust is a decentralized on-line storage network for safe, '
                 'independent and private communications.',
  'include_package_data': True,
- 'install_requires': ['twisted==18.7.0',
+ 'install_requires': ['twisted==19.7.0',
                       'service_identity',
                       'pycryptodomex',
                       'pyparsing',

@@ -1,4 +1,4 @@
-twisted==19.2.1
+twisted==19.7.0
 # pyOpenSSL
 service_identity
 pycryptodomex
