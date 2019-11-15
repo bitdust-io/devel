@@ -13,6 +13,9 @@ from twisted.internet.defer import Deferred
 from twisted.python import log as twlog
 
 
+_Debug = True
+
+
 def _to_text(v):
     if isinstance(v, six.binary_type):
         v = v.decode()
@@ -47,7 +50,10 @@ class _JsonResource(Resource):
             https://en.wikipedia.org/wiki/Cross-origin_resource_sharing
         """
         request.responseHeaders.addRawHeader(b('content-type'), b('application/json'))
-        request.responseHeaders.addRawHeader(b('Access-Control-Allow-Origin'), b('*'))
+        allow_origin = 'localhost'
+        if _Debug:
+            allow_origin = 'http://localhost:8080'            
+        request.responseHeaders.addRawHeader(b('Access-Control-Allow-Origin'), b(allow_origin))
         request.responseHeaders.addRawHeader(b('Access-Control-Allow-Methods'), b('GET, POST, PUT, DELETE'))
         request.responseHeaders.addRawHeader(b('Access-Control-Allow-Headers'), b('x-prototype-version,x-requested-with'))
         request.responseHeaders.addRawHeader(b('Access-Control-Max-Age'), b('2520'))

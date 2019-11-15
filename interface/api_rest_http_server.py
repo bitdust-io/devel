@@ -46,7 +46,6 @@ import os
 #------------------------------------------------------------------------------
 
 from twisted.internet import reactor  # @UnresolvedImport
-from twisted.internet import ssl
 from twisted.web.server import Site
 
 #------------------------------------------------------------------------------
@@ -79,6 +78,30 @@ def init(port=None):
     if _APIListener is not None:
         lg.warn('_APIListener already initialized')
         return
+
+    if not port:
+        port = 8180
+
+    serve_http(port)
+    # serve_https(port)
+
+    lg.out(4, 'api_rest_http_server.init')
+
+
+def shutdown():
+    global _APIListener
+    if _APIListener is None:
+        lg.warn('_APIListener is None')
+        return
+    lg.out(4, 'api_rest_http_server.shutdown calling _APIListener.stopListening()')
+    _APIListener.stopListening()
+    del _APIListener
+    _APIListener = None
+    lg.out(4, '    _APIListener destroyed')
+
+
+def serve_https(port):
+    global _APIListener
     # server private key
     if os.path.exists(settings.APIServerCertificateKeyFile()):
         server_key_pem = local_fs.ReadBinaryFile(settings.APIServerCertificateKeyFile())
@@ -118,17 +141,8 @@ def init(port=None):
         )
         local_fs.WriteBinaryFile(settings.APIClientCertificateFile(), client_cert_pem)
 
-    if not port:
-        port = 8180
-
-#     try:
-#         api_resource = BitDustRESTHTTPServer()
-#         site = BitDustAPISite(api_resource, timeout=None)
-#         _APIListener = reactor.listenTCP(port, site)  # @UndefinedVariable
-#     except:
-#         lg.exc()
-
     try:
+        from twisted.internet import ssl
         api_resource = BitDustRESTHTTPServer()
         site = BitDustAPISite(api_resource, timeout=None)
         auth = ssl.Certificate.loadPEM(server_cert_pem)
@@ -137,19 +151,15 @@ def init(port=None):
     except:
         lg.exc()
 
-    lg.out(4, 'api_rest_http_server.init')
 
-
-def shutdown():
+def serve_http(port):
     global _APIListener
-    if _APIListener is None:
-        lg.warn('_APIListener is None')
-        return
-    lg.out(4, 'api_rest_http_server.shutdown calling _APIListener.stopListening()')
-    _APIListener.stopListening()
-    del _APIListener
-    _APIListener = None
-    lg.out(4, '    _APIListener destroyed')
+    try:
+        api_resource = BitDustRESTHTTPServer()
+        site = BitDustAPISite(api_resource, timeout=None)
+        _APIListener = reactor.listenTCP(port, site)  # @UndefinedVariable
+    except:
+        lg.exc()
 
 #------------------------------------------------------------------------------
 

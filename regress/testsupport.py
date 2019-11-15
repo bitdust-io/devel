@@ -84,8 +84,8 @@ def request_get(node, url, timeout=None):
     return requests.get(
         tunnel_url(node, url),
         timeout=timeout,
-        cert=(f'/app/certificates/{node}/apiclientcert', f'/app/certificates/{node}/apiclientcertkey'),
-        verify=f'/app/certificates/{node}/apiservercert',
+        # cert=(f'/app/certificates/{node}/apiclientcert', f'/app/certificates/{node}/apiclientcertkey'),
+        # verify=f'/app/certificates/{node}/apiservercert',
     )
 
 def request_post(node, url, json={}, timeout=None):
@@ -93,8 +93,8 @@ def request_post(node, url, json={}, timeout=None):
         url=tunnel_url(node, url),
         json=json,
         timeout=timeout,
-        cert=(f'/app/certificates/{node}/apiclientcert', f'/app/certificates/{node}/apiclientcertkey'),
-        verify=f'/app/certificates/{node}/apiservercert',
+        # cert=(f'/app/certificates/{node}/apiclientcert', f'/app/certificates/{node}/apiclientcertkey'),
+        # verify=f'/app/certificates/{node}/apiservercert',
     )
 
 def request_put(node, url, json={}, timeout=None):
@@ -102,16 +102,17 @@ def request_put(node, url, json={}, timeout=None):
         url=tunnel_url(node, url),
         json=json,
         timeout=timeout,
-        cert=(f'/app/certificates/{node}/apiclientcert', f'/app/certificates/{node}/apiclientcertkey'),
-        verify=f'/app/certificates/{node}/apiservercert',
+        # cert=(f'/app/certificates/{node}/apiclientcert', f'/app/certificates/{node}/apiclientcertkey'),
+        # verify=f'/app/certificates/{node}/apiservercert',
     )
 
 #------------------------------------------------------------------------------
 
 def ssl_connection(node):
-    ssl_ctx = ssl.create_default_context(cafile=f'/app/certificates/{node}/apiservercert')
-    ssl_ctx.load_cert_chain(f'/app/certificates/{node}/apiclientcert', f'/app/certificates/{node}/apiclientcertkey')
-    return aiohttp.TCPConnector(ssl=ssl_ctx)
+    # ssl_ctx = ssl.create_default_context(cafile=f'/app/certificates/{node}/apiservercert')
+    # ssl_ctx.load_cert_chain(f'/app/certificates/{node}/apiclientcert', f'/app/certificates/{node}/apiclientcertkey')
+    # return aiohttp.TCPConnector(ssl=ssl_ctx)
+    return None
 
 #------------------------------------------------------------------------------
 
@@ -210,7 +211,8 @@ def tunnel_port(node):
 def tunnel_url(node, endpoint):
     print('\n%s [%s]: tunnel_url %d - %s' % (
         datetime.datetime.now().strftime("%H:%M:%S.%f"), node, tunnel_port(node), endpoint, ))
-    return f'https://127.0.0.1:{tunnel_port(node)}/{endpoint.lstrip("/")}'
+    # return f'https://127.0.0.1:{tunnel_port(node)}/{endpoint.lstrip("/")}'
+    return f'http://127.0.0.1:{tunnel_port(node)}/{endpoint.lstrip("/")}'
 
 #------------------------------------------------------------------------------
 
@@ -513,7 +515,7 @@ async def start_identity_server_async(node, loop):
     cmd += 'bitdust set services/identity-server/enabled true;'
     await run_ssh_command_and_wait_async(node, cmd, loop)
     await start_daemon_async(node, loop)
-    await get_client_certificate_async(node, loop)
+    # await get_client_certificate_async(node, loop)
     await health_check_async(node, loop)
     print(f'\nSTARTED IDENTITY SERVER [{node}]\n')
 
@@ -543,7 +545,7 @@ def start_dht_seed(node, wait_seconds=0, dht_seeds=''):
     print(f'sleep {wait_seconds} seconds')
     time.sleep(wait_seconds)
     start_daemon(node)
-    get_client_certificate(node)
+    # get_client_certificate(node)
     health_check(node)
     print(f'\nSTARTED DHT SEED (with STUN SERVER) [{node}]\n')
 
@@ -571,7 +573,7 @@ async def start_stun_server_async(node, loop, dht_seeds=''):
     await run_ssh_command_and_wait_async(node, cmd, loop)
     # start BitDust daemon
     await start_daemon_async(node, loop)
-    await get_client_certificate_async(node, loop)
+    # await get_client_certificate_async(node, loop)
     await health_check_async(node, loop)
     print(f'\nSTARTED STUN SERVER [{node}]\n')
 
@@ -600,7 +602,7 @@ async def start_proxy_server_async(node, identity_name, loop, known_servers='', 
     await run_ssh_command_and_wait_async(node, cmd, loop)
     # start BitDust daemon and create new identity for proxy server
     await start_daemon_async(node, loop)
-    await get_client_certificate_async(node, loop)
+    # await get_client_certificate_async(node, loop)
     await health_check_async(node, loop)
     await create_identity_async(node, identity_name, loop)
     await connect_network_async(node, loop)
@@ -639,7 +641,7 @@ async def start_supplier_async(node, identity_name, loop, join_network=True,
     await run_ssh_command_and_wait_async(node, cmd, loop)
     # start BitDust daemon and create new identity for supplier
     await start_daemon_async(node, loop)
-    await get_client_certificate_async(node, loop)
+    # await get_client_certificate_async(node, loop)
     await health_check_async(node, loop)
     if join_network:
         await create_identity_async(node, identity_name, loop)
@@ -692,7 +694,7 @@ async def start_customer_async(node, identity_name, loop, join_network=True, num
     await run_ssh_command_and_wait_async(node, cmd, loop)
     # start BitDust daemon and create new identity for supplier
     await start_daemon_async(node, loop)
-    await get_client_certificate_async(node, loop)
+    # await get_client_certificate_async(node, loop)
     await health_check_async(node, loop)
     if join_network:
         await create_identity_async(node, identity_name, loop)

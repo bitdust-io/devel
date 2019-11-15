@@ -1,5 +1,5 @@
 twisted==19.2.1
-pyOpenSSL
+# pyOpenSSL
 service_identity
 pycryptodomex
 pyparsing
