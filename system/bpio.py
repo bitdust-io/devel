@@ -91,6 +91,7 @@ def shutdown():
     """
     lg.restore_original_stdout()
     lg.close_log_file()
+    lg.close_intercepted_log_file()
     lg.disable_logs()
 
 

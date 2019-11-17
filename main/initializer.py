@@ -408,8 +408,8 @@ class Initializer(automat.Automat):
             # import twisted.python.failure as twisted_failure
             # twisted_failure.startDebugMode()
             # twisted_log.defaultObserver.stop()
-        if settings.getDebugLevel() > 10:
-            defer.setDebugging(True)
+        # if settings.getDebugLevel() > 10:
+        #     defer.setDebugging(True)
         if settings.enableMemoryProfile():
             try:
                 from guppy import hpy  # @UnresolvedImport

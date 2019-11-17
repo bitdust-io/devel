@@ -697,7 +697,10 @@ class Task():
                 lg.out(_DebugLevel, 'backup_control.Task.run ERROR creating destination folder for %s' % self.pathID)
             err = 'failed creating destination folder for "%s"' % self.backupID
             return OnTaskFailed(self.backupID, err)
-        compress_mode = 'bz2'  # 'none' # 'gz'
+        if bpio.Android():
+            compress_mode = 'none'
+        else:
+            compress_mode = 'bz2'  # 'none' # 'gz'
         arcname = os.path.basename(sourcePath)
         from storage import backup_tar
         if bpio.pathIsDir(self.localPath):

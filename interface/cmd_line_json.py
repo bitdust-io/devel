@@ -458,8 +458,8 @@ def cmd_identity(opts, args, overDict, running, executablePath):
         if not misc.ValidUserName(args[2]):
             print_text('invalid user name')
             return 0
-        automat.LifeBegins(lg.when_life_begins())
-        automat.OpenLogFile(settings.AutomatsLog())
+        # automat.LifeBegins(lg.when_life_begins())
+        # automat.OpenLogFile(settings.AutomatsLog())
         initializer.A('run-cmd-line-register', {'username': args[2], 'pksize': pksize})
         reactor.run()  # @UndefinedVariable
         automat.objects().clear()

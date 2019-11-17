@@ -59,16 +59,17 @@ from lib import strng
 #------------------------------------------------------------------------------
 
 if six.PY2:
-    from CodernityDB.hash_index import HashIndex
+    from CodernityDB.hash_index import HashIndex, UniqueHashIndex
     from CodernityDB.tree_index import TreeBasedIndex, MultiTreeBasedIndex
 else:
-    from CodernityDB3.hash_index import HashIndex
+    from CodernityDB3.hash_index import HashIndex, UniqueHashIndex
     from CodernityDB3.tree_index import TreeBasedIndex, MultiTreeBasedIndex
 
 #------------------------------------------------------------------------------
 
 def definitions():
     return [
+        # ('id', MessageID, ),
         ('sender_glob_id', SenderGlobID, ),
         ('recipient_glob_id', RecipientGlobID, ),
         ('sender_recipient_glob_id', SenderRecipientGlobID, ),
@@ -176,6 +177,10 @@ class BaseMD5DoubleKeyIndex(MultiTreeBasedIndex):
         return self.transform_key(key)
 
 #------------------------------------------------------------------------------
+
+class MessageID(UniqueHashIndex):
+    pass
+
 
 class SenderGlobID(BaseMD5Index):
     role = 'sender'

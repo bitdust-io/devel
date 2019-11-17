@@ -213,9 +213,7 @@ def SetStateChangedCallback(cb):
 
 def RedirectLogFile(stream):
     """
-    You can simple send all output to the stdout:
-
-    import sys RedirectLogFile(sys.stdout)
+    You can simple send all output to the stdout: import sys; RedirectLogFile(sys.stdout)
     """
     global _LogFile
     _LogFile = stream
@@ -613,7 +611,6 @@ class Automat(object):
                 _LogFile.close()
                 _LogFile = open(_LogFilename, 'w')
                 _LogsCount = 0
-
             s = ' ' * level + text + '\n'
             tm_str = time.strftime('%H:%M:%S')
             if _LifeBeginsTime != 0:
