@@ -368,10 +368,10 @@ def contacts_remote():
     """
     Return ID's list of all known peers.
     """
-    allcontactslist = contacts_full()
-    if my_id.getLocalID() in allcontactslist:
-        allcontactslist.remove(my_id.getLocalID())
-    return allcontactslist
+    allcontactslist = id_url.to_bin_list(contacts_full())
+    if my_id.getLocalID().to_bin() in allcontactslist:
+        allcontactslist.remove(my_id.getLocalID().to_bin())
+    return id_url.fields_list(allcontactslist)
 
 #------------------------------------------------------------------------------
 

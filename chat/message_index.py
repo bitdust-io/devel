@@ -68,15 +68,26 @@ else:
 #------------------------------------------------------------------------------
 
 def definitions():
+    if six.PY2:
+        return [
+            # ('id', MessageID, ),
+            ('sender_glob_id', SenderGlobID, ),
+            ('recipient_glob_id', RecipientGlobID, ),
+            ('sender_recipient_glob_id', SenderRecipientGlobID, ),
+            ('payload_type', PayloadType, ),
+            ('payload_time', PayloadTime, ),
+            ('payload_message_id', PayloadMessageID, ),
+            ('payload_body_hash', PayloadBodyHash, ),
+        ]
     return [
-        # ('id', MessageID, ),
-        ('sender_glob_id', SenderGlobID, ),
-        ('recipient_glob_id', RecipientGlobID, ),
-        ('sender_recipient_glob_id', SenderRecipientGlobID, ),
-        ('payload_type', PayloadType, ),
-        ('payload_time', PayloadTime, ),
-        ('payload_message_id', PayloadMessageID, ),
-        ('payload_body_hash', PayloadBodyHash, ),
+        ('id', '00id.py', ),
+        ('sender_glob_id', '01sender_glob_id.py', ),
+        ('recipient_glob_id', '02recipient_glob_id.py', ),
+        ('sender_recipient_glob_id', '03sender_recipient_glob_id.py', ),
+        ('payload_type', '04payload_type.py', ),
+        ('payload_time', '05payload_time.py', ),
+        ('payload_message_id', '06payload_message_id.py', ),
+        ('payload_body_hash', '07payload_body_hash.py', ),
     ]
 
 #------------------------------------------------------------------------------

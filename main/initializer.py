@@ -257,6 +257,9 @@ class Initializer(automat.Automat):
         d.addBoth(lambda x: self.automat('init-services-done'))
 
     def doInitInterfaces(self, *args, **kwargs):
+        if bpio.Android():
+            lg.close_intercepted_log_file()
+            lg.open_intercepted_log_file(os.path.join(settings.LogsDir(), 'android.log'))
         lg.out(2, 'initializer.doInitInterfaces')
         if settings.enableFTPServer():
             try:
@@ -402,9 +405,9 @@ class Initializer(automat.Automat):
         run_upnpc.init()
         eccmap.init()
         my_keys.init()
-        if sys.argv.count('--twisted'):
-            from twisted.python import log as twisted_log
-            twisted_log.startLogging(MyTwistedOutputLog(), setStdout=0)
+        # if sys.argv.count('--twisted'):
+        #     from twisted.python import log as twisted_log
+        #     twisted_log.startLogging(MyTwistedOutputLog(), setStdout=0)
             # import twisted.python.failure as twisted_failure
             # twisted_failure.startDebugMode()
             # twisted_log.defaultObserver.stop()
