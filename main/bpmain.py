@@ -67,10 +67,10 @@ def init(UI='', options=None, args=None, overDict=None, executablePath=None):
     global AppDataDir
 
     from logs import lg
-    lg.out(4, 'bpmain.run UI="%s"' % UI)
+    lg.out(4, 'bpmain.init UI="%s"' % UI)
 
     from system import bpio
-    lg.out(4, 'bpmain.run ostype=%r' % bpio.ostype())
+    lg.out(4, 'bpmain.init ostype=%r' % bpio.ostype())
 
     #---settings---
     from main import settings
@@ -104,7 +104,7 @@ def init(UI='', options=None, args=None, overDict=None, executablePath=None):
     if USE_TRAY_ICON:
         from system import tray_icon
         icons_path = bpio.portablePath(os.path.join(bpio.getExecutableDir(), 'icons'))
-        lg.out(4, 'bpmain.run call tray_icon.init(%s)' % icons_path)
+        lg.out(4, 'bpmain.init call tray_icon.init(%s)' % icons_path)
         tray_icon.init(icons_path)
 
         def _tray_control_func(cmd):
@@ -118,28 +118,28 @@ def init(UI='', options=None, args=None, overDict=None, executablePath=None):
         try:
             from win32event import CreateMutex  # @UnresolvedImport
             mutex = CreateMutex(None, False, "BitDust")
-            lg.out(4, 'bpmain.run created a Mutex: %s' % str(mutex))
+            lg.out(4, 'bpmain.init created a Mutex: %s' % str(mutex))
         except:
             lg.exc()
 
     #---twisted reactor---
-    lg.out(4, 'bpmain.run want to import twisted.internet.reactor')
+    lg.out(4, 'bpmain.init want to import twisted.internet.reactor')
     try:
         from twisted.internet import reactor  # @UnresolvedImport
     except:
         lg.exc()
         sys.exit('Error initializing reactor in bpmain.py\n')
 
-    #---logfile----
-    if lg.logs_enabled() and lg.log_file():
-        lg.out(2, 'bpmain.run want to switch log files')
-        if bpio.Windows() and bpio.isFrozen():
-            lg.stdout_stop_redirecting()
-        lg.close_log_file()
-        lg.open_log_file(settings.MainLogFilename())
-        # lg.open_log_file(settings.MainLogFilename() + '-' + time.strftime('%y%m%d%H%M%S') + '.log')
-        if bpio.Windows() and bpio.isFrozen():
-            lg.stdout_start_redirecting()
+#     #---logfile----
+#     if (lg.logs_enabled() and lg.log_file()) and not bpio.Android():
+#         lg.out(2, 'bpmain.run want to switch log files')
+#         if bpio.Windows() and bpio.isFrozen():
+#             lg.stdout_stop_redirecting()
+#         lg.close_log_file()
+#         lg.open_log_file(settings.MainLogFilename())
+#         # lg.open_log_file(settings.MainLogFilename() + '-' + time.strftime('%y%m%d%H%M%S') + '.log')
+#         if bpio.Windows() and bpio.isFrozen():
+#             lg.stdout_start_redirecting()
 
     #---memdebug---
     if config.conf().getBool('logs/memdebug-enabled'):
@@ -148,7 +148,7 @@ def init(UI='', options=None, args=None, overDict=None, executablePath=None):
             memdebug_port = int(config.conf().getData('logs/memdebug-port'))
             memdebug.start(memdebug_port)
             reactor.addSystemEventTrigger('before', 'shutdown', memdebug.stop)  # @UndefinedVariable
-            lg.out(2, 'bpmain.run memdebug web server started on port %d' % memdebug_port)
+            lg.out(2, 'bpmain.init memdebug web server started on port %d' % memdebug_port)
         except:
             lg.exc()
 
@@ -157,7 +157,7 @@ def init(UI='', options=None, args=None, overDict=None, executablePath=None):
         pid = os.getpid()
         pid_file_path = os.path.join(settings.MetaDataDir(), 'processid')
         bpio.WriteTextFile(pid_file_path, str(pid))
-        lg.out(2, 'bpmain.run wrote process id [%s] in the file %s' % (str(pid), pid_file_path))
+        lg.out(2, 'bpmain.init wrote process id [%s] in the file %s' % (str(pid), pid_file_path))
     except:
         lg.exc()
 
@@ -170,12 +170,12 @@ def init(UI='', options=None, args=None, overDict=None, executablePath=None):
     lg.out(2, "    python version is:\n%s" % sys.version)
     lg.out(2, "    python sys.path is:\n                %s" % ('\n                '.join(sys.path)))
 
-    lg.out(2, "bpmain.run UI=[%s]" % UI)
+    lg.out(2, "bpmain.init UI=[%s]" % UI)
 
     if lg.is_debug(20):
         lg.out(0, '\n' + bpio.osinfofull())
 
-    lg.out(4, 'import automats')
+    lg.out(4, 'bpmain.init going to import automats')
 
     #---START!---
     from automats import automat
@@ -187,8 +187,11 @@ def init(UI='', options=None, args=None, overDict=None, executablePath=None):
 
     from main import initializer
     IA = initializer.A()
-    lg.out(4, 'sending event "run" to initializer()')
-    reactor.callWhenRunning(IA.automat, 'run', UI)  # @UndefinedVariable
+    lg.out(4, 'bpmain.init is sending event "run" to initializer()')
+    if bpio.Android():
+        IA.automat('run', UI)
+    else:
+        reactor.callWhenRunning(IA.automat, 'run', UI)  # @UndefinedVariable
     return IA
 
 #------------------------------------------------------------------------------
@@ -226,6 +229,8 @@ def shutdown():
     automat.CloseLogFile()
 
     lg.close_log_file()
+
+    lg.close_intercepted_log_file()
 
     if bpio.Windows() and bpio.isFrozen():
         lg.stdout_stop_redirecting()
@@ -638,24 +643,25 @@ def main(executable_path=None, start_reactor=True):
         lg.disable_logs()
 
     #---logpath---
-    logpath = os.path.join(appdata, 'logs', 'start.log')
     if opts.output:
         logpath = opts.output
+    else:
+        logpath = os.path.join(appdata, 'logs', 'main.log')
 
-    need_redirecting = False
+    # need_redirecting = False
 
-    if bpio.Windows() and not bpio.isConsoled():
-        need_redirecting = True
+    # if bpio.Windows() and not bpio.isConsoled():
+    #     need_redirecting = True
 
     if logpath != '':
         lg.open_log_file(logpath)
         lg.out(2, 'bpmain.main log file opened ' + logpath)
-        if bpio.Windows() and bpio.isFrozen():
-            need_redirecting = True
+        # if bpio.Windows() and bpio.isFrozen():
+        #     need_redirecting = True
 
-    if need_redirecting:
-        lg.stdout_start_redirecting()
-        lg.out(2, 'bpmain.main redirecting started')
+    # if need_redirecting:
+    #     lg.stdout_start_redirecting()
+    #     lg.out(2, 'bpmain.main redirecting started')
 
     # very basic solution to record run-time errors
     try:

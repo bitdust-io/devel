@@ -61,7 +61,6 @@ from logs import lg
 
 from userid import my_id
 from userid import identity
-from userid import global_id
 
 from contacts import contactsdb
 
@@ -72,7 +71,6 @@ from p2p import commands
 from lib import packetid
 from lib import nameurl
 from lib import serialization
-from lib import strng
 
 from crypt import signed
 from crypt import my_keys

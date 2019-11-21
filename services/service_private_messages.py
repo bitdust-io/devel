@@ -83,10 +83,12 @@ class PrivateMessagesService(LocalService):
         from contacts import contactsdb
         from userid import id_url
         old_idurl = id_url.field(evt.data['old_idurl'])
+        new_idurl = id_url.field(evt.data['new_idurl'])
         contacts_changed = False
         for idurl, alias in list(contactsdb.correspondents()):
-            if old_idurl == idurl:
-                idurl.refresh()
+            if old_idurl == id_url.field(idurl):
+                contactsdb.remove_correspondent(idurl)
+                contactsdb.add_correspondent(new_idurl.to_bin(), alias)
                 contacts_changed = True
                 lg.info('found correspond idurl rotated : %r -> %r' % (
                     evt.data['old_idurl'], evt.data['new_idurl'], ))

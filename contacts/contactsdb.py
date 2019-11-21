@@ -368,10 +368,10 @@ def contacts_remote():
     """
     Return ID's list of all known peers.
     """
-    allcontactslist = contacts_full()
-    if my_id.getLocalID() in allcontactslist:
-        allcontactslist.remove(my_id.getLocalID())
-    return allcontactslist
+    allcontactslist = id_url.to_bin_list(contacts_full())
+    if my_id.getLocalID().to_bin() in allcontactslist:
+        allcontactslist.remove(my_id.getLocalID().to_bin())
+    return id_url.fields_list(allcontactslist)
 
 #------------------------------------------------------------------------------
 
@@ -405,7 +405,7 @@ def set_correspondents(idlist):
     Set correspondents from list of tuples without notification.
     """
     global _CorrespondentsList
-    _CorrespondentsList = [(id_url.field(idurl_name[0]), idurl_name[1]) for idurl_name in idlist]
+    _CorrespondentsList = [(id_url.field(idurl_name[0]).to_bin(), idurl_name[1]) for idurl_name in idlist]
 
 
 def clear_correspondents():
@@ -425,7 +425,7 @@ def add_correspondent(idurl, nickname=''):
     global _CorrespondentsChangedCallback
     curlist = list(_CorrespondentsList)
     idurl = id_url.field(idurl)
-    _CorrespondentsList.append((idurl, nickname, ))
+    _CorrespondentsList.append((idurl.to_bin(), nickname, ))
     if _CorrespondentsChangedCallback is not None:
         _CorrespondentsChangedCallback(curlist, _CorrespondentsList)
     return len(curlist)
@@ -441,7 +441,7 @@ def remove_correspondent(idurl):
     curlist = list(_CorrespondentsList)
     idurl = id_url.field(idurl)
     for tupl in _CorrespondentsList:
-        if idurl == tupl[0]:
+        if idurl.to_bin() == id_url.field(tupl[0]).to_bin():
             _CorrespondentsList.remove(tupl)
             if _CorrespondentsChangedCallback is not None:
                 _CorrespondentsChangedCallback(curlist, _CorrespondentsList)

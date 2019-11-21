@@ -52,6 +52,8 @@ _RedirectStdOut = False
 _NoOutput = False
 _OriginalStdOut = None
 _StdOutPrev = None
+_IsAndroid = None
+_InterceptedLogFile = None
 _LogFile = None
 _LogFileName = None
 _AllLogFiles = {}
@@ -84,8 +86,11 @@ def out(level, msg, nl='\n', log_name='main', showtime=False):
     :param nl: this string is added at the end,
                set to empty string to avoid new line.
     """
+    global _IsAndroid
+    global _InterceptedLogFile
     global _WebStreamFunc
     global _LogFile
+    global _LogFileName
     global _RedirectStdOut
     global _ShowTime
     global _LifeBeginsTime
@@ -95,8 +100,6 @@ def out(level, msg, nl='\n', log_name='main', showtime=False):
     global _UseColors
     global _GlobalDebugLevel
     global _AllLogFiles
-    if not _LogsEnabled:
-        return
     s = msg
     s_ = s
     if level < 0:
@@ -105,6 +108,10 @@ def out(level, msg, nl='\n', log_name='main', showtime=False):
         level -= 1
     if level:
         s = ' ' * level + s
+    if _IsAndroid is None:
+        _IsAndroid = sys.executable == 'android_python'
+    # if _IsAndroid and not _InterceptedLogFile:
+    #     open_intercepted_log_file('/storage/emulated/0/.bitdust/logs/android_%d.log' % int(time.time()))
     if ( _ShowTime and level > 0 ) or showtime:
         tm_string = time.strftime('%H:%M:%S')
         if _LifeBeginsTime != 0:
@@ -125,6 +132,13 @@ def out(level, msg, nl='\n', log_name='main', showtime=False):
     if is_debug(30):
         currentThreadName = threading.currentThread().getName()
         s = s + ' {%s}' % currentThreadName.lower()
+    if _InterceptedLogFile:
+        if is_debug(level):
+            _InterceptedLogFile.write(log_name + ': ' + s + nl)
+            _InterceptedLogFile.flush()
+        return
+    if not _LogsEnabled:
+        return
     if is_debug(level):
         if log_name == 'main':
             if _LogFile is not None:
@@ -546,8 +560,8 @@ def open_log_file(filename, append_mode=False):
             _LogFile = open(os.path.abspath(filename), 'w')
         _LogFileName = os.path.abspath(filename)
     except:
-        out(0, 'cant open ' + filename)
-        exc()
+        _LogFile = None
+        _LogFileName = None
 
 
 def close_log_file():
@@ -565,6 +579,24 @@ def close_log_file():
         logfile.flush()
         logfile.close()
     _AllLogFiles.clear()
+
+
+def open_intercepted_log_file(filename):
+    global _InterceptedLogFile
+    if not _InterceptedLogFile:
+        _InterceptedLogFile = open(os.path.abspath(filename), 'w')
+    else:
+        warn('intercepted log file %r already opened' % _InterceptedLogFile)
+
+
+def close_intercepted_log_file():
+    global _InterceptedLogFile
+    if _InterceptedLogFile:
+        _InterceptedLogFile.flush()
+        _InterceptedLogFile.close()
+        _InterceptedLogFile = None
+        return True
+    return False
 
 
 def log_file():

@@ -136,7 +136,13 @@ class BitDustWebSocketFactory(Factory):
 #------------------------------------------------------------------------------
 
 def on_event(evt):
-    push({'event_id': evt.event_id, 'data': evt.data, })
+    push({
+        'type': 'event',
+        'payload': {
+            'event_id': evt.event_id,
+            'data': evt.data,
+        },
+    })
 
 #------------------------------------------------------------------------------
 

@@ -59,23 +59,35 @@ from lib import strng
 #------------------------------------------------------------------------------
 
 if six.PY2:
-    from CodernityDB.hash_index import HashIndex
+    from CodernityDB.hash_index import HashIndex, UniqueHashIndex
     from CodernityDB.tree_index import TreeBasedIndex, MultiTreeBasedIndex
 else:
-    from CodernityDB3.hash_index import HashIndex
+    from CodernityDB3.hash_index import HashIndex, UniqueHashIndex
     from CodernityDB3.tree_index import TreeBasedIndex, MultiTreeBasedIndex
 
 #------------------------------------------------------------------------------
 
 def definitions():
+    if six.PY2 or True:
+        return [
+            # ('id', MessageID, ),
+            ('sender_glob_id', SenderGlobID, ),
+            ('recipient_glob_id', RecipientGlobID, ),
+            ('sender_recipient_glob_id', SenderRecipientGlobID, ),
+            ('payload_type', PayloadType, ),
+            ('payload_time', PayloadTime, ),
+            ('payload_message_id', PayloadMessageID, ),
+            ('payload_body_hash', PayloadBodyHash, ),
+        ]
     return [
-        ('sender_glob_id', SenderGlobID, ),
-        ('recipient_glob_id', RecipientGlobID, ),
-        ('sender_recipient_glob_id', SenderRecipientGlobID, ),
-        ('payload_type', PayloadType, ),
-        ('payload_time', PayloadTime, ),
-        ('payload_message_id', PayloadMessageID, ),
-        ('payload_body_hash', PayloadBodyHash, ),
+        ('id', '00id.py', ),
+        ('sender_glob_id', '01sender_glob_id.py', ),
+        ('recipient_glob_id', '02recipient_glob_id.py', ),
+        ('sender_recipient_glob_id', '03sender_recipient_glob_id.py', ),
+        ('payload_type', '04payload_type.py', ),
+        ('payload_time', '05payload_time.py', ),
+        ('payload_message_id', '06payload_message_id.py', ),
+        ('payload_body_hash', '07payload_body_hash.py', ),
     ]
 
 #------------------------------------------------------------------------------
@@ -176,6 +188,10 @@ class BaseMD5DoubleKeyIndex(MultiTreeBasedIndex):
         return self.transform_key(key)
 
 #------------------------------------------------------------------------------
+
+class MessageID(UniqueHashIndex):
+    pass
+
 
 class SenderGlobID(BaseMD5Index):
     role = 'sender'
