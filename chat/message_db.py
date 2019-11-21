@@ -154,8 +154,10 @@ def refresh_indexes(db_instance, rewrite=True, reindex=True):
     ok = True
     for ind, ind_class_or_filename in message_index.definitions():
         if isinstance(ind_class_or_filename, str):
-            chat_history_dir = os.path.join(settings.ChatHistoryDir(), 'current')
+            chat_history_dir = db_instance.path
             target_index_filepath = os.path.join(chat_history_dir, '_indexes', ind_class_or_filename)
+            if not os.path.exists(os.path.dirname(target_index_filepath)):
+                bpio._dirs_make(os.path.dirname(target_index_filepath))
             bpio.WriteTextFile(
                 target_index_filepath,
                 bpio.ReadTextFile(os.path.join(bpio.getExecutableDir(), 'chat', 'indexes', ind_class_or_filename)),

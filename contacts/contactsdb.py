@@ -441,7 +441,7 @@ def remove_correspondent(idurl):
     curlist = list(_CorrespondentsList)
     idurl = id_url.field(idurl)
     for tupl in _CorrespondentsList:
-        if idurl.to_bin() == tupl[0].to_bin():
+        if idurl.to_bin() == id_url.field(tupl[0]).to_bin():
             _CorrespondentsList.remove(tupl)
             if _CorrespondentsChangedCallback is not None:
                 _CorrespondentsChangedCallback(curlist, _CorrespondentsList)

@@ -68,7 +68,7 @@ else:
 #------------------------------------------------------------------------------
 
 def definitions():
-    if six.PY2:
+    if six.PY2 or True:
         return [
             # ('id', MessageID, ),
             ('sender_glob_id', SenderGlobID, ),
