@@ -173,7 +173,7 @@ def reset(conf_obj):
     conf_obj.setDefaultValue('services/proxy-transport/current-router', '')
 
     conf_obj.setDefaultValue('services/rebuilding/enabled', 'true')
-    conf_obj.setDefaultValue('services/rebuilding/child-processes-enabled', 'true')
+    conf_obj.setDefaultValue('services/rebuilding/child-processes-enabled', 'false')
 
     conf_obj.setDefaultValue('services/restores/enabled', 'true')
 
