@@ -1,6 +1,13 @@
 Change Log
 ==========
 
+2019-11-23 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* more Android fixes (#449)
+* idurl fix in service_private_messages()
+* use Access-Control-Allow-Origin response header to protect REST HTTP Api (#448)
+
+
 
 2019-11-08 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
