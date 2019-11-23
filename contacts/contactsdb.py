@@ -800,7 +800,6 @@ def load_contacts():
     Load all my contacts from disk.
     """
     load_suppliers(all_customers=True)
-    # load_suppliers()
     if _SuppliersChangedCallback is not None:
         _SuppliersChangedCallback([], suppliers())
     load_customers()

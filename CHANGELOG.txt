@@ -1,6 +1,13 @@
 Change Log
 ==========
 
+
+2019-11-23 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* bump twisted to 19.10.0 in requirements.txt
+
+
+
 2019-11-23 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * more Android fixes (#449)
