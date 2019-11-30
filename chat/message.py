@@ -188,8 +188,8 @@ class PrivateMessage(object):
     """
 
     def __init__(self, recipient_global_id, sender=None, encrypted_session=None, encrypted_body=None):
-        self.sender = sender or my_id.getGlobalID(key_alias='master')
-        self.recipient = recipient_global_id
+        self.sender = strng.to_text(sender or my_id.getGlobalID(key_alias='master'))
+        self.recipient = strng.to_text(recipient_global_id)
         self.encrypted_session = encrypted_session
         self.encrypted_body = encrypted_body
         if _Debug:
@@ -280,8 +280,8 @@ class PrivateMessage(object):
     def deserialize(input_string):
         try:
             dct = serialization.BytesToDict(input_string, keys_to_text=True, encoding='utf-8')
-            _recipient = dct['r']
-            _sender = dct['s']
+            _recipient = strng.to_text(dct['r'])
+            _sender = strng.to_text(dct['s'])
             _encrypted_session_key=base64.b64decode(strng.to_bin(dct['k']))
             _encrypted_body = dct['p']
             message_obj = PrivateMessage(
@@ -340,7 +340,7 @@ def on_ping_success(ok, idurl):
     global _LastUserPingTime
     idurl = id_url.to_bin(idurl)
     _LastUserPingTime[idurl] = time.time()
-    lg.info('shaked up hands %r before sending a message : %s' % (idurl, ok, ))
+    lg.info('shake up hands %r before sending a message : %s' % (idurl, ok, ))
     return ok
 
 

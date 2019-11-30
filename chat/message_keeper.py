@@ -60,7 +60,7 @@ from userid import global_id
 from crypt import my_keys
 
 from chat import message
-from chat import message_db
+from chat import message_database
 
 #------------------------------------------------------------------------------
 
@@ -173,13 +173,13 @@ def backup_outgoing_message(private_message_object, message_id):
 def cache_message(data, message_id, sender, recipient):
     """
     """
-    message_json = message_db.build_json_message(
+    message_json = message_database.build_json_message(
         data=data,
         message_id=message_id,
         sender=sender,
         recipient=recipient,
     )
-    message_db.insert(message_json)
+    message_database.insert(message_json)
     if _Debug:
         lg.out(_DebugLevel, 'message_keeper.cache_message "%s"' % str(message_json))
     # print(list(message_db.get_all(index_name='sender_glob_id', )))

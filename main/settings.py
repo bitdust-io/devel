@@ -862,6 +862,12 @@ def ContractChainDir():
     return os.path.join(BaseDir(), 'contracts')
 
 
+def ChatMessagesDir():
+    """
+    """
+    return os.path.join(BaseDir(), 'messages')
+
+
 def ChatChannelsDir():
     """
     """
@@ -1258,6 +1264,12 @@ def APIClientCertificateFile():
     """
     """
     return os.path.join(MetaDataDir(), 'apiclientcert')
+
+
+def ChatMessagesHistoryDatabaseFile():
+    """
+    """
+    return os.path.join(ChatMessagesDir(), 'local.db')
 
 #------------------------------------------------------------------------------
 #--- BINARY FILES -------------------------------------------------------------

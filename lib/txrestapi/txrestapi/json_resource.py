@@ -52,7 +52,8 @@ class _JsonResource(Resource):
         request.responseHeaders.addRawHeader(b('content-type'), b('application/json'))
         allow_origin = 'localhost'
         if _Debug:
-            allow_origin = 'http://localhost:8080'            
+            allow_origin = 'http://localhost:8080'
+            # allow_origin = '*'
         request.responseHeaders.addRawHeader(b('Access-Control-Allow-Origin'), b(allow_origin))
         request.responseHeaders.addRawHeader(b('Access-Control-Allow-Methods'), b('GET, POST, PUT, DELETE'))
         request.responseHeaders.addRawHeader(b('Access-Control-Allow-Headers'), b('x-prototype-version,x-requested-with'))
