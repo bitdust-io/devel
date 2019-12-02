@@ -51,20 +51,20 @@ class KeysStorageService(LocalService):
 
     def start(self):
         from main import events
-        from chat import message_db
+        from chat import message_database
         from chat import message_keeper
-        message_db.init()
+        message_database.init()
         message_keeper.init()
         events.add_subscriber(self._on_my_keys_synchronized, 'my-keys-synchronized')
         return True
 
     def stop(self):
         from main import events
-        from chat import message_db
+        from chat import message_database
         from chat import message_keeper
         events.remove_subscriber(self._on_my_keys_synchronized, 'my-keys-synchronized')
         message_keeper.shutdown()
-        message_db.shutdown()
+        message_database.shutdown()
         return True
 
     def health_check(self):

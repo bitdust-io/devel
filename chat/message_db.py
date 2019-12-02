@@ -28,6 +28,12 @@
 ..
 
 module:: message_db
+
+
+DEPRECATED!
+
+switched to sqlite3 in message_database.py
+
 """
 
 #------------------------------------------------------------------------------

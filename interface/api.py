@@ -3209,13 +3209,13 @@ def nickname_set(nickname):
 
 #------------------------------------------------------------------------------
 
-def message_history(user):
+def message_history(user, offset=0, limit=100):
     """
     Returns chat history with that user.
     """
     if not driver.is_on('service_message_history'):
         return ERROR('service_message_history() is not started')
-    from chat import message_db
+    from chat import message_database
     from userid import my_id, global_id
     from crypt import my_keys
     if user is None:
@@ -3234,9 +3234,13 @@ def message_history(user):
         return ERROR('invalid key_id: %s' % target_glob_id)
     if _Debug:
         lg.out(_DebugLevel, 'api.message_history with "%s"' % target_glob_id)
-    key = '{}:{}'.format(my_id.getGlobalID(key_alias='master'), target_glob_id)
-    messages = [m for m in message_db.get_many(index_name='sender_recipient_glob_id', key=key)]
-    messages.reverse()
+    messages = [{'doc': m, } for m in message_database.query(
+        sender_id=my_id.getGlobalID(key_alias='master'),
+        recipient_id=target_glob_id,
+        bidirectional=True,
+        offset=offset,
+        limit=limit,
+    )]
     return RESULT(messages)
 
 
@@ -3338,15 +3342,6 @@ def message_receive(consumer_id):
     if _Debug:
         lg.out(_DebugLevel, 'api.message_receive "%s"' % consumer_id)
     return ret
-
-
-def messages_get_all(index_name, limit, offset, with_doc, with_storage):
-    if not driver.is_on('service_private_messages'):
-        return ERROR('service_private_messages() is not started')
-    from chat import message_db
-    r = [m for m in message_db.get_all(index_name, limit, offset, with_doc, with_storage)]
-    return RESULT(r)
-
 
 #------------------------------------------------------------------------------
 
