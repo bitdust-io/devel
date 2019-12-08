@@ -53,7 +53,9 @@ class _JsonResource(Resource):
         allow_origin = 'localhost'
         if _Debug:
             allow_origin = 'http://localhost:8080'
-            # allow_origin = '*'
+        if True:
+            # TODO: !!! Find a solution here to protect API from non-bitdust UI apps !!!
+            allow_origin = '*'
         request.responseHeaders.addRawHeader(b('Access-Control-Allow-Origin'), b(allow_origin))
         request.responseHeaders.addRawHeader(b('Access-Control-Allow-Methods'), b('GET, POST, PUT, DELETE'))
         request.responseHeaders.addRawHeader(b('Access-Control-Allow-Headers'), b('x-prototype-version,x-requested-with'))
