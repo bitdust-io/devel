@@ -2,6 +2,12 @@ Change Log
 ==========
 
 
+2019-12-02 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* switching chat messages database from CodernityDB to sqlite3 (#454)
+
+
+
 2019-11-26 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * set services/rebuilding/child-processes-enabled to "false" by default (#452)
