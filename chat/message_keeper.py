@@ -51,6 +51,7 @@ from system import bpio
 from main import settings
 
 from interface import api
+from interface import api_web_socket
 
 from services import driver
 
@@ -180,6 +181,7 @@ def cache_message(data, message_id, sender, recipient):
         recipient=recipient,
     )
     message_database.insert(message_json)
+    api_web_socket.on_private_message(message_json)
     if _Debug:
         lg.out(_DebugLevel, 'message_keeper.cache_message "%s"' % str(message_json))
     # print(list(message_db.get_all(index_name='sender_glob_id', )))

@@ -1,1 +1,0 @@
-pip install zope.interface pyOpenSSL pyasn1 twisted six>=1.5.2 cryptography>=0.7 idna enum34 ipaddress cffi>=0.8 pycparser Django==1.7
