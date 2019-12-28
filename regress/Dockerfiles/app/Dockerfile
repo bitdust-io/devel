@@ -54,7 +54,7 @@ RUN echo '#!/bin/sh\n /root/.bitdust/venv/bin/python /app/bitdust/bitdust.py "$@
 
 RUN chmod +x /bin/bitdust
 
-RUN /root/.bitdust/venv/bin/pip install coverage coverage-enable-subprocess
+RUN /root/.bitdust/venv/bin/pip install "coverage<5" coverage-enable-subprocess
 
 ADD ./regress/ssh /app/ssh
 
