@@ -120,18 +120,20 @@ def RESULT(result=[], message=None, status='OK', errors=None, source=None, extra
 
 
 def ERROR(errors=[], message=None, status='ERROR', extra_fields=None, **kwargs):
-    if isinstance(errors, Exception):
-        try:
-            errors = strng.to_text(errors)
-        except:
-            errors = 'unknown exception'
-    elif isinstance(errors, Failure):
-        try:
-            errors = errors.getErrorMessage()
-        except:
-            errors = 'unknown failure'
-    o = {'status': status,
-         'errors': errors if isinstance(errors, list) else [errors, ]}
+    if not isinstance(errors, list):
+        errors = [errors, ]
+    for i in range(len(errors)):
+        if isinstance(errors[i], Failure):
+            try:
+                errors[i] = errors[i].getErrorMessage()
+            except:
+                errors[i] = 'unknown failure'
+        else:
+            try:
+                errors[i] = strng.to_text(errors[i])
+            except:
+                errors[i] = 'unknown exception'
+    o = {'status': status, 'errors': errors, }
     if message is not None:
         o['message'] = message
     if extra_fields is not None:
@@ -449,7 +451,7 @@ def identity_recover(private_key_source, known_idurl=None):
         # TODO: iterate over idurl_list to find at least one reliable source
     except Exception as exc:
         lg.exc()
-        ret.callback(ERROR(strng.to_text(exc), api_method='identity_recover'))
+        ret.callback(ERROR(exc, api_method='identity_recover'))
     return ret
 
 
@@ -713,7 +715,7 @@ def key_share(key_id, trusted_global_id_or_idurl, include_private=False, timeout
     ret = Deferred()
     d = key_ring.share_key(key_id=full_key_id, trusted_idurl=idurl, include_private=include_private, timeout=timeout)
     d.addCallback(lambda resp: ret.callback(OK(strng.to_text(resp), api_method='key_share')))
-    d.addErrback(lambda err: ret.callback(ERROR(err.getErrorMessage(), api_method='key_share')))
+    d.addErrback(lambda err: ret.callback(ERROR(err, api_method='key_share')))
     return ret
 
 
@@ -748,7 +750,7 @@ def key_audit(key_id, untrusted_global_id_or_idurl, is_private=False, timeout=10
     else:
         d = key_ring.audit_public_key(key_id=key_id, untrusted_idurl=idurl, timeout=timeout)
     d.addCallback(lambda resp: ret.callback(OK(strng.to_text(resp), api_method='key_audit')))
-    d.addErrback(lambda err: ret.callback(ERROR(err.getErrorMessage(), api_method='key_audit')))
+    d.addErrback(lambda err: ret.callback(ERROR(err, api_method='key_audit')))
     return ret
 
 #------------------------------------------------------------------------------
@@ -1173,7 +1175,7 @@ def file_create(remote_path, as_folder=False):
     if pathID:
         return ERROR('remote path "%s" already exist in catalog: "%s"' % (path, pathID))
     if as_folder:
-        newPathID, parent_iter, parent_iterID = backup_fs.AddDir(
+        newPathID, _, _ = backup_fs.AddDir(
             path,
             read_stats=False,
             iter=backup_fs.fs(parts['idurl']),
@@ -1912,11 +1914,11 @@ def share_grant(trusted_remote_user, key_id, timeout=30):
     ret = Deferred()
 
     def _on_shared_access_donor_success(result):
-        ret.callback(OK(api_method='share_grant') if result else ERROR(result, api_method='share_grant'))
+        ret.callback(OK(api_method='share_grant') if result else ERROR('share grant failed', api_method='share_grant'))
         return None
 
     def _on_shared_access_donor_failed(err):
-        ret.callback(ERROR(strng.to_text(err)))
+        ret.callback(ERROR(err))
         return None
 
     d = Deferred()
@@ -2252,7 +2254,7 @@ def supplier_change(index_or_idurl_or_global_id, new_supplier_idurl_or_global_id
         keep_alive=True,
     )
     d.addCallback(_do_change)
-    d.addErrback(lambda err: ret.callback(ERROR([err, ])))
+    d.addErrback(lambda err: ret.callback(ERROR(err)))
     return ret
 
 
@@ -2292,7 +2294,7 @@ def suppliers_dht_lookup(customer_idurl_or_global_id):
     ret = Deferred()
     d = dht_relations.read_customer_suppliers(customer_idurl, as_fields=False)
     d.addCallback(lambda result: ret.callback(RESULT(result, api_method='suppliers_dht_lookup')))
-    d.addErrback(lambda err: ret.callback(ERROR([err, ])))
+    d.addErrback(lambda err: ret.callback(ERROR(err)))
     return ret
 
 #------------------------------------------------------------------------------
@@ -2711,7 +2713,7 @@ def service_restart(service_name, wait_timeout=10):
     ret = Deferred()
     d = driver.restart(service_name, wait_timeout=wait_timeout)
     d.addCallback(lambda resp: ret.callback(OK(resp, api_method='service_restart')))
-    d.addErrback(lambda err: ret.callback(ERROR(err.getErrorMessage(), api_method='service_restart')))
+    d.addErrback(lambda err: ret.callback(ERROR(err, api_method='service_restart')))
     return ret
 
 #------------------------------------------------------------------------------
@@ -3013,8 +3015,8 @@ def user_ping(idurl_or_global_id, timeout=15, retries=2):
         channel='api_user_ping',
         keep_alive=False,
     )
-    d.addCallback(lambda ok: ret.callback(OK(strng.to_text(ok or 'connected'), api_method='user_ping')))
-    d.addErrback(lambda err: ret.callback(ERROR(err.getErrorMessage(), api_method='user_ping')))
+    d.addCallback(lambda ok: ret.callback(OK(ok or 'connected', api_method='user_ping')))
+    d.addErrback(lambda err: ret.callback(ERROR(err, api_method='user_ping')))
     return ret
 
 
@@ -3244,7 +3246,7 @@ def message_history(user, offset=0, limit=100):
     return RESULT(messages)
 
 
-def message_send(recipient, json_data, timeout=15):
+def message_send(recipient, json_data, ping_timeout=30, message_ack_timeout=15):
     """
     Sends a text message to remote peer, `recipient` is a string with nickname or global_id.
 
@@ -3272,16 +3274,17 @@ def message_send(recipient, json_data, timeout=15):
 #     if not my_keys.is_key_registered(target_glob_id):
 #         return ERROR('unknown key_id: %s' % target_glob_id)
     if _Debug:
-        lg.out(_DebugLevel, 'api.message_send to "%s"' % target_glob_id)
+        lg.out(_DebugLevel, 'api.message_send to "%s" ping_timeout=%d message_ack_timeout=%d' % (
+            target_glob_id, ping_timeout, message_ack_timeout, ))
     result = message.send_message(
         json_data=json_data,
         recipient_global_id=target_glob_id,
-        ping_timeout=timeout,
-        message_ack_timeout=timeout,
+        ping_timeout=ping_timeout,
+        message_ack_timeout=message_ack_timeout,
     )
     ret = Deferred()
     result.addCallback(lambda packet: ret.callback(OK(strng.to_text(packet), api_method='message_send')))
-    result.addErrback(lambda err: ret.callback(ERROR(err.getErrorMessage(), api_method='message_send')))
+    result.addErrback(lambda err: ret.callback(ERROR(err, api_method='message_send')))
     return ret
 
 
@@ -3338,7 +3341,7 @@ def message_receive(consumer_id):
 
     d = message.consume_messages(consumer_id)
     d.addCallback(_on_pending_messages)
-    d.addErrback(lambda err: ret.callback(ERROR(strng.to_text(err))))
+    d.addErrback(lambda err: ret.callback(ERROR(err)))
     if _Debug:
         lg.out(_DebugLevel, 'api.message_receive "%s"' % consumer_id)
     return ret
@@ -3580,7 +3583,7 @@ def network_connected(wait_timeout=5):
         d = service_restart(service_name, wait_timeout=wait_timeout)
         d.addCallback(_on_service_restarted, service_name)
         d.addErrback(lambda err: ret.callback(dict(
-            list(ERROR(err.getErrorMessage(), api_method='network_connected').items()) + list({'reason': '{}_restart_error'.format(service_name)}.items()))))
+            list(ERROR(err, api_method='network_connected').items()) + list({'reason': '{}_restart_error'.format(service_name)}.items()))))
         return None
 
     def _do_service_test(service_name):

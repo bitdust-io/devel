@@ -569,7 +569,7 @@ class OnlineStatus(automat.Automat):
 
     timers = {
         'timer-1min': (60, ['CONNECTED']),
-        'timer-20sec': (20.0, ['PING?']),
+        # 'timer-20sec': (20.0, ['PING?']),
         }
 
     def __init__(self, idurl, name, state, debug_level=0, log_events=False, log_transitions=False, **kwargs):
@@ -779,7 +779,7 @@ class OnlineStatus(automat.Automat):
         """
         Action method.
         """
-        err = args[0] if (args and args[0]) else Failure(Exception('user is offline'))
+        err = args[0] if (args and args[0]) else Exception('user is offline')
         try:
             err_msg = err.getErrorMessage()
         except:

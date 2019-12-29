@@ -11,6 +11,7 @@ from twisted.web.resource import Resource
 from twisted.web.server import NOT_DONE_YET
 from twisted.internet.defer import Deferred
 from twisted.python import log as twlog
+from twisted.python.failure import Failure
 
 
 _Debug = True
@@ -95,7 +96,8 @@ class _DelayedJsonResource(_JsonResource):
         twlog.err('txrestapi error : %r' % err)
         self._setHeaders(request)
         execution = '%3.6f' % (time.time() - self._executed)
-        raw = _to_json(dict(status='ERROR', execution=execution, errors=[str(err), ]))
+        err_msg = err.getErrorMessage() if isinstance(err, Failure) else str(err)
+        raw = _to_json(dict(status='ERROR', execution=execution, errors=[err_msg, ]))
         if not request.channel:
             twlog.err('REST API connection channel already closed')
             return None

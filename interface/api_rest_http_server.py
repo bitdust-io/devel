@@ -897,7 +897,8 @@ class BitDustRESTHTTPServer(JsonAPIResource):
         return api.message_send(
             recipient=data.get('global_id') or data.get('idurl') or data.get('id'),
             json_data=data['data'],
-            timeout=data.get('timeout', 15),
+            ping_timeout=data.get('ping_timeout', 30),
+            message_ack_timeout=data.get('message_ack_timeout', 15),
         )
 
     #------------------------------------------------------------------------------
