@@ -1,6 +1,13 @@
 Change Log
 ==========
 
+2019-12-30 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* added incoming API calls from UI to WebSocket API inteface (#459)
+* added private messages to WebSocket API and /v1/*** aliases for Papitto (#458)
+* set "Access-Control-Allow-Origin" in API to "*" : another protection method to be implemented  (#455)
+
+
 
 2019-12-02 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
