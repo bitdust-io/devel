@@ -238,6 +238,13 @@ def on_private_message(message_json):
         'payload': message_json,
     })
 
+
+def on_online_status_changed(status_info):
+    return push({
+        'type': 'online_status',
+        'payload': status_info,
+    })
+
 #------------------------------------------------------------------------------
 
 def push(json_data):
