@@ -42,6 +42,7 @@ _DebugLevel = 6
 #------------------------------------------------------------------------------
 
 import os
+import time
 
 #------------------------------------------------------------------------------
 
@@ -62,12 +63,13 @@ from system import local_fs
 
 from main import settings
 
-from lib.txrestapi.txrestapi.json_resource import JsonAPIResource
+from lib.txrestapi.txrestapi.json_resource import JsonAPIResource, _to_json, _JsonResource
 from lib.txrestapi.txrestapi.methods import GET, POST, PUT, DELETE, ALL
 
 #------------------------------------------------------------------------------
 
 _APIListener = None
+_APISecret = None
 
 #------------------------------------------------------------------------------
 
@@ -80,6 +82,7 @@ def init(port=None):
     if not port:
         port = 8180
 
+    read_api_secret()
     serve_http(port)
     # serve_https(port)
 
@@ -96,6 +99,12 @@ def shutdown():
     del _APIListener
     _APIListener = None
     lg.out(4, '    _APIListener destroyed')
+
+#------------------------------------------------------------------------------
+
+def read_api_secret():
+    global _APISecret
+    _APISecret = local_fs.ReadTextFile(settings.APISecretFile())
 
 
 def serve_https(port):
@@ -250,6 +259,14 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     """
 
     #------------------------------------------------------------------------------
+
+    def getChild(self, name, request):
+        global _APISecret
+        if _APISecret:
+            api_secret_header = request.getHeader('api_secret')
+            if api_secret_header != _APISecret:
+                return _JsonResource(dict(status='ERROR', errors=['access denied', ]), time.time())
+        return JsonAPIResource.getChild(self, name, request)
 
     def log_request(self, request, callback, args):
         if _Debug:

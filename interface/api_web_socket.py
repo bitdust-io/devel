@@ -53,6 +53,8 @@ from logs import lg
 from lib import txws
 from lib import serialization
 
+from system import local_fs
+
 from main import events
 from main import settings
 
@@ -63,6 +65,7 @@ from interface import api
 _WebSocketListener = None
 _WebSocketTransport = None
 _AllAPIMethods = []
+_APISecret = None
 
 #------------------------------------------------------------------------------
 
@@ -77,7 +80,7 @@ def init(port=None):
     if not port:
         port = settings.DefaultWebSocketPort()
     try:
-        ws = txws.WebSocketFactory(BitDustWebSocketFactory())
+        ws = BitDistWrappedWebSocketFactory(BitDustWebSocketFactory())
         _WebSocketListener = listen("tcp:%d" % port, ws)
     except:
         lg.exc()
@@ -91,6 +94,7 @@ def init(port=None):
         'absolute_import', 'driver', 'filemanager', 'jsn', 'lg',
         'event_listen', 'message_receive', 'process_debug', 
     ])
+    read_api_secret()
     events.add_subscriber(on_event, event_id='*')
 
 
@@ -107,6 +111,33 @@ def shutdown():
             lg.out(_DebugLevel, '    _WebSocketListener destroyed')
     else:
         lg.warn('_WebSocketListener is None')
+
+#------------------------------------------------------------------------------
+
+def read_api_secret():
+    global _APISecret
+    _APISecret = local_fs.ReadTextFile(settings.APISecretFile())
+
+#------------------------------------------------------------------------------
+
+class BitDustWrappedWebSocketProtocol(txws.WebSocketProtocol):
+
+    def validateHeaders(self):
+        global _APISecret
+        if _APISecret:
+            _, _, api_secret_parameter = self.location.partition('?')
+            _, _, api_secret_parameter = api_secret_parameter.partition('=')
+            if api_secret_parameter != _APISecret:
+                events.send('web-socket-access-denied', data=dict())
+                self.loseConnection()
+                return
+        return txws.WebSocketProtocol.validateHeaders(self)
+
+
+class BitDistWrappedWebSocketFactory(txws.WebSocketFactory):
+
+    protocol = BitDustWrappedWebSocketProtocol
+
 
 #------------------------------------------------------------------------------
 
