@@ -191,7 +191,7 @@ def communicate(index, event, *args, **kwargs):
     """
     A = objects().get(index, None)
     if not A:
-        return fail(Failure(Exception('state machine with index %d not exist' % index)))
+        return fail(Exception('state machine with index %d not exist' % index))
     d = Deferred()
     args = tuple(list(args) + [d, ])
     A.automat(event, *args, **kwargs)

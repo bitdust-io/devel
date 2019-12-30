@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+   <head>
+      <script type="text/javascript">
+         var socket = null;
+         var isopen = false;
+         var call_id = 0;
+         window.onload = function() {
+            socket = new WebSocket("ws://127.0.0.1:8280");
+            socket.binaryType = "arraybuffer";
+            socket.onopen = function() {
+               console.log("Connected!");
+               isopen = true;
+            }
+            socket.onmessage = function(e) {
+               if (typeof e.data == "string") {
+                  console.log("Text message received: " + e.data);
+               } else {
+                  var arr = new Uint8Array(e.data);
+                  var hex = '';
+                  for (var i = 0; i < arr.length; i++) {
+                     hex += ('00' + arr[i].toString(16)).substr(-2);
+                  }
+                  console.log("Binary message received: " + hex);
+               }
+            }
+            socket.onclose = function(e) {
+               console.log("Connection closed.");
+               socket = null;
+               isopen = false;
+            }
+         };
+         function message_send() {
+            if (isopen) {
+               call_id = call_id + 1;
+               socket.send('{"command": "api_call", "method": "message_send", "kwargs": {"recipient": "severino@p2p-id.ru", "message_ack_timeout": 10, "json_data": {"message": "Tell me some fresh joke, Dude!"}}, "call_id": "' + call_id + '"}');
+            } else {
+               console.log("Connection not opened.")
+            }
+         };
+         function message_history() {
+            if (isopen) {
+               call_id = call_id + 1;
+               socket.send('{"command": "api_call", "method": "message_history", "kwargs": {"user": "severino@p2p-id.ru"}, "call_id": "' + call_id + '"}');
+            } else {
+               console.log("Connection not opened.")
+            }
+         };
+         function friend_list() {
+            if (isopen) {
+               call_id = call_id + 1;
+               socket.send('{"command": "api_call", "method": "friend_list", "kwargs": {}, "call_id": "' + call_id + '"}');
+            } else {
+               console.log("Connection not opened.")
+            }
+         };
+      </script>
+   </head>
+   <body>
+      <p>Open your browser's JavaScript console to see what's happening (hit F12).</p>
+      <button onclick='message_send();'>message_send</button>
+      <button onclick='message_history();'>message_history</button>
+      <button onclick='friend_list();'>friend_list</button>
+   </body>
+</html>

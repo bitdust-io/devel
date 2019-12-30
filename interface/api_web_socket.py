@@ -36,13 +36,15 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
-from twisted.internet.protocol import Protocol, Factory
 from twisted.application.strports import listen
+from twisted.internet.defer import Deferred
+from twisted.internet.protocol import Protocol, Factory
+from twisted.python.failure import Failure
 
 #------------------------------------------------------------------------------
 
@@ -54,27 +56,41 @@ from lib import serialization
 from main import events
 from main import settings
 
+from interface import api
+
 #------------------------------------------------------------------------------
 
 _WebSocketListener = None
 _WebSocketTransport = None
+_AllAPIMethods = []
 
 #------------------------------------------------------------------------------
 
 def init(port=None):
     global _WebSocketListener
+    global _AllAPIMethods
     if _Debug:
         lg.out(_DebugLevel, 'api_web_socket.init  _WebSocketListener=%r' % _WebSocketListener)
     if _WebSocketListener is not None:
         lg.warn('_WebSocketListener already initialized')
-    else:
-        if not port:
-            port = settings.DefaultWebSocketPort()
-        try:
-            ws = txws.WebSocketFactory(BitDustWebSocketFactory())
-            _WebSocketListener = listen("tcp:%d" % port, ws)
-        except:
-            lg.exc()
+        return
+    if not port:
+        port = settings.DefaultWebSocketPort()
+    try:
+        ws = txws.WebSocketFactory(BitDustWebSocketFactory())
+        _WebSocketListener = listen("tcp:%d" % port, ws)
+    except:
+        lg.exc()
+        return
+    _AllAPIMethods = set(dir(api))
+    _AllAPIMethods.difference_update([
+        # TODO: keep that list up to date when changing the api
+        'on_api_result_prepared', 'Deferred', 'ERROR', 'Failure', 'OK', 'RESULT', '_Debug', '_DebugLevel',
+        'strng', 'sys', 'time', 'gc', 'map', 'os',
+        '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__spec__',
+        'absolute_import', 'driver', 'filemanager', 'jsn', 'lg',
+        'event_listen', 'message_receive', 'process_debug', 
+    ])
     events.add_subscriber(on_event, event_id='*')
 
 
@@ -97,8 +113,15 @@ def shutdown():
 class BitDustWebSocketProtocol(Protocol):
 
     def dataReceived(self, data):
+        try:
+            json_data = serialization.BytesToDict(data, keys_to_text=True, values_to_text=True)
+        except:
+            lg.exc()
+            return
         if _Debug:
-            lg.dbg(_DebugLevel, 'received %d bytes from web socket' % len(len(data)))
+            lg.dbg(_DebugLevel, 'received %d bytes from web socket: %r' % (len(data), json_data))
+        if not do_process_incoming_message(json_data):
+            lg.warn('failed processing incoming message from web socket: %r' % json_data)
 
     def connectionMade(self):
         Protocol.connectionMade(self)
@@ -135,6 +158,70 @@ class BitDustWebSocketFactory(Factory):
 
 #------------------------------------------------------------------------------
 
+def do_process_incoming_message(json_data):
+    global _AllAPIMethods
+    command = json_data.get('command')
+    if command == 'api_call':
+        method = json_data.get('method', None)
+        kwargs = json_data.get('kwargs', {})
+        call_id = json_data.get('call_id', None)
+
+        if not method:
+            return False
+
+        if method not in _AllAPIMethods:
+            return False
+
+        func = getattr(api, method)
+        try:
+            response = func(**kwargs)
+        except Exception as err:
+            lg.exc()
+            return push({
+                    'type': 'api_call',
+                    'payload': {
+                        'call_id': call_id,
+                        'errors': [str(err), ],
+                    },
+                })
+
+        if isinstance(response, Deferred):
+
+            def _cb(r):
+                return push({
+                    'type': 'api_call',
+                    'payload': {
+                        'call_id': call_id,
+                        'response': r,
+                    },
+                })
+
+            def _eb(err):
+                err_msg = err.getErrorMessage() if isinstance(err, Failure) else str(err)
+                return push({
+                    'type': 'api_call',
+                    'payload': {
+                        'call_id': call_id,
+                        'errors': [err_msg, ],
+                    },
+                })
+                
+            response.addCallback(_cb)
+            response.addErrback(_eb)
+            return True
+
+        return push({
+            'type': 'api_call',
+            'payload': {
+                'call_id': call_id,
+                'response': response,
+            },
+        })
+
+    return False
+
+#------------------------------------------------------------------------------
+
 def on_event(evt):
     return push({
         'type': 'event',
@@ -160,5 +247,5 @@ def push(json_data):
     raw_bytes = serialization.DictToBytes(json_data)
     _WebSocketTransport.write(raw_bytes)
     if _Debug:
-        lg.dbg(_DebugLevel, 'sent %d bytes to web socket' % len(raw_bytes))
+        lg.dbg(_DebugLevel, 'sent %d bytes to web socket: %r' % (len(raw_bytes), json_data))
     return True

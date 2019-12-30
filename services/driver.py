@@ -438,7 +438,7 @@ def restart(service_name, wait_timeout=None):
             lg.out(_DebugLevel, 'driver.restart._on_timeout : %s' % service_name)
         all_states = [_svc.state for _svc in services().values()]
         if 'INFLUENCE' in all_states or 'STARTING' in all_states or 'STOPPING' in all_states:
-            restart_result.errback(failure.Failure(Exception('timeout')))
+            restart_result.errback(Exception('timeout'))
             return err
         _do_stop()
         return None

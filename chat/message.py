@@ -361,7 +361,8 @@ def on_message_failed(idurl, json_data, recipient_global_id, packet_id, response
     if idurl in _LastUserPingTime:
         _LastUserPingTime[idurl] = 0
     if result_defer and not result_defer.called:
-        result_defer.errback(Exception(response or error))
+        err = Exception(response) if response else error
+        result_defer.errback(err)
 
 #------------------------------------------------------------------------------
 
@@ -379,7 +380,8 @@ def do_send_message(json_data, recipient_global_id, packet_id, timeout, result_d
         encoding='utf-8',
     )
     if _Debug:
-        lg.out(_DebugLevel, "message.do_send_message to %s with %d bytes message" % (recipient_global_id, len(message_body)))
+        lg.out(_DebugLevel, "message.do_send_message to %s with %d bytes message timeout=%d" % (
+            recipient_global_id, len(message_body), timeout))
     try:
         private_message_object = PrivateMessage(recipient_global_id=recipient_global_id)
         private_message_object.encrypt(message_body)
@@ -426,7 +428,8 @@ def send_message(json_data, recipient_global_id, packet_id=None, message_ack_tim
     if not packet_id:
         packet_id = packetid.UniqueID()
     if _Debug:
-        lg.out(_DebugLevel, "message.send_message to %s with PackteID=%s" % (recipient_global_id, packet_id))
+        lg.out(_DebugLevel, "message.send_message to %s with PackteID=%s ping_timeout=%d message_ack_timeout=%r ping_retries=%d" % (
+            recipient_global_id, packet_id, ping_timeout, message_ack_timeout, ping_retries, ))
     remote_idurl = global_id.GlobalUserToIDURL(recipient_global_id, as_field=False)
     if not remote_idurl:
         lg.warn('invalid recipient')
