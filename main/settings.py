@@ -1266,6 +1266,12 @@ def APIClientCertificateFile():
     return os.path.join(MetaDataDir(), 'apiclientcert')
 
 
+def APISecretFile():
+    """
+    """
+    return os.path.join(MetaDataDir(), 'apisecret')
+
+
 def ChatMessagesHistoryDatabaseFile():
     """
     """

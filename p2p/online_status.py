@@ -84,7 +84,6 @@ except:
 
 from twisted.internet.task import LoopingCall
 from twisted.internet.defer import Deferred
-from twisted.python.failure import Failure
 
 #------------------------------------------------------------------------------
 
@@ -93,6 +92,8 @@ from logs import lg
 from automats import automat
 
 from lib import strng
+
+from interface import api_web_socket
 
 from contacts import contactsdb
 
@@ -569,7 +570,7 @@ class OnlineStatus(automat.Automat):
 
     timers = {
         'timer-1min': (60, ['CONNECTED']),
-        # 'timer-20sec': (20.0, ['PING?']),
+        'timer-20sec': (20.0, ['PING?']),
         }
 
     def __init__(self, idurl, name, state, debug_level=0, log_events=False, log_transitions=False, **kwargs):
@@ -577,6 +578,7 @@ class OnlineStatus(automat.Automat):
         Builds `online_status()` state machine.
         """
         self.idurl = idurl
+        self.glob_id = global_id.ParseIDURL(self.idurl)
         self.latest_inbox_time = None
         self.latest_check_time = None
         self.keep_alive = False
@@ -605,8 +607,20 @@ class OnlineStatus(automat.Automat):
             lg.out(_DebugLevel - 2, '%s : [%s]->[%s]' % (self.name, oldstate, newstate))
         if newstate == 'CONNECTED' and newstate != oldstate:
             lg.info('remote node connected : %s' % self.idurl)
+            api_web_socket.on_online_status_changed({
+                'global_id': self.glob_id,
+                'idurl': self.idurl,
+                'oldstate': oldstate,
+                'newstate': newstate,
+            })
         if newstate == 'OFFLINE' and oldstate != 'AT_STARTUP' and newstate != oldstate:
             lg.info('remote node disconnected : %s' % self.idurl)
+            api_web_socket.on_online_status_changed({
+                'global_id': self.glob_id,
+                'idurl': self.idurl,
+                'oldstate': oldstate,
+                'newstate': newstate,
+            })
 
     def state_not_changed(self, curstate, event, *args, **kwargs):
         """

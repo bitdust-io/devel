@@ -6,7 +6,7 @@
          var isopen = false;
          var call_id = 0;
          window.onload = function() {
-            socket = new WebSocket("ws://127.0.0.1:8280");
+            socket = new WebSocket("ws://127.0.0.1:8280?api_secret=abc");
             socket.binaryType = "arraybuffer";
             socket.onopen = function() {
                console.log("Connected!");
