@@ -569,7 +569,7 @@ class OnlineStatus(automat.Automat):
 
     timers = {
         'timer-1min': (60, ['CONNECTED']),
-        # 'timer-20sec': (20.0, ['PING?']),
+        'timer-20sec': (20.0, ['PING?']),
         }
 
     def __init__(self, idurl, name, state, debug_level=0, log_events=False, log_transitions=False, **kwargs):
