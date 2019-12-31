@@ -1,6 +1,12 @@
 Change Log
 ==========
 
+2019-12-31 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* protect REST HTTP and WebSocket interfaces with /metadata/apisecret file (#460)
+
+
+
 2019-12-30 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * added incoming API calls from UI to WebSocket API inteface (#459)

@@ -552,7 +552,7 @@ def Retrieve(request):
             request.RemoteID, request.OwnerID, request.CreatorID))
 
 
-def SendRetreive(ownerID, creatorID, packetID, remoteID, payload='', callbacks={}):
+def SendRetreive(ownerID, creatorID, packetID, remoteID, payload='', response_timeout=None, callbacks={}):
     """
     """
     newpacket = signed.Packet(
@@ -563,7 +563,7 @@ def SendRetreive(ownerID, creatorID, packetID, remoteID, payload='', callbacks={
         Payload=payload,
         RemoteID=remoteID,
     )
-    result = gateway.outbox(newpacket, callbacks=callbacks)
+    result = gateway.outbox(newpacket, callbacks=callbacks, response_timeout=response_timeout)
     if _Debug:
         lg.out(_DebugLevel, 'p2p_service.SendRetreive packetID=%s' % packetID)
         lg.out(_DebugLevel, '  remoteID=%s  ownerID=%s  creatorID=%s' % (remoteID, ownerID, creatorID))

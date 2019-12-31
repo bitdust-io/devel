@@ -156,7 +156,7 @@ def WriteTextFile(filepath, data):
         except:
             lg.exc()
             return False
-    fout = open(temp_path, 'wt')
+    fout = open(temp_path, 'wt', encoding="utf-8")
     text_data = strng.to_text(data)
     fout.write(text_data)
     fout.flush()
@@ -182,7 +182,7 @@ def ReadTextFile(filename):
     if not os.access(filename, os.R_OK):
         return u''
     try:
-        infile = open(filename, 'rt')
+        infile = open(filename, 'rt', encoding="utf-8")
         data = infile.read()
         infile.close()
         return strng.to_text(data)
@@ -216,51 +216,3 @@ def RoundupFile(filename, stepsize):
         fil.close()
     return increase
 
-#------------------------------------------------------------------------------
-
-
-# def _write_data(path, src):
-#     """
-#     Write data to text file.
-#     Very close to ``WriteBinaryFile`` but do some checking before write.
-#     """
-#     temp_path = path + '.tmp'
-#     if os.path.exists(temp_path):
-#         if not os.access(temp_path, os.W_OK):
-#             return False
-#     if os.path.exists(path):
-#         if not os.access(path, os.W_OK):
-#             return False
-#         try:
-#             os.remove(path)
-#         except:
-#             lg.out(2, 'bpio._write_data ERROR removing ' + str(path))
-#             lg.exc()
-#             return False
-#     fout = open(temp_path, 'w')
-#     fout.write(strng.to_text(src))
-#     fout.flush()
-#     os.fsync(fout)
-#     fout.close()
-#     try:
-#         os.rename(temp_path, path)
-#     except:
-#         lg.out(2, 'bpio._write_data ERROR renaming %s to %s' % (str(temp_path), str(path)))
-#         lg.exc()
-#         return False
-#     return True
-
-
-# def _append_data(path, src):
-#     """
-#     Append data to text file.
-#     """
-#     if os.path.exists(path):
-#         if not os.access(path, os.W_OK):
-#             return False
-#     fout = open(path, 'a')
-#     fout.write(strng.to_text(src))
-#     fout.flush()
-#     os.fsync(fout)
-#     fout.close()
-#     return True
