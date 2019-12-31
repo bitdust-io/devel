@@ -1998,13 +1998,13 @@ def friend_list():
     result = []
     for idurl, alias in contactsdb.correspondents():
         glob_id = global_id.ParseIDURL(idurl)
-        contact_status_label = None
-        contact_state = None
+        contact_status = 'offline'
+        contact_state = 'OFFLINE'
         if driver.is_on('service_identity_propagate'):
             from p2p import online_status
             if online_status.isKnown(idurl):
                 contact_state = online_status.getCurrentState(idurl)
-                contact_status_label = online_status.getStatusLabel(idurl)
+                contact_status = online_status.getStatusLabel(idurl)
             # state_machine_inst = contact_status.getInstance(idurl)
             # if state_machine_inst:
             #     contact_status_label = contact_status.stateToLabel(state_machine_inst.state)
@@ -2015,7 +2015,7 @@ def friend_list():
             'idhost': glob_id['idhost'],
             'username': glob_id['user'],
             'alias': alias,
-            'contact_status': contact_status_label,
+            'contact_status': contact_status,
             'contact_state': contact_state,
         })
     return RESULT(result)
@@ -2139,8 +2139,8 @@ def suppliers_list(customer_idurl_or_global_id=None, verbose=False):
                 'global_id': '',
                 'supplier_state': None,
                 'connected': None,
-                'contact_status': None,
-                'contact_state': None,
+                'contact_status': 'offline',
+                'contact_state': 'OFFLINE',
             }
             results.append(r)
             continue
@@ -2152,8 +2152,8 @@ def suppliers_list(customer_idurl_or_global_id=None, verbose=False):
                 None if not supplier_connector.is_supplier(supplier_idurl, customer_idurl)
                 else supplier_connector.by_idurl(supplier_idurl, customer_idurl).state,
             'connected': misc.readSupplierData(supplier_idurl, 'connected', customer_idurl),
-            'contact_status': None,
-            'contact_state': None,
+            'contact_status': 'offline',
+            'contact_state': 'OFFLINE',
         }
         if online_status.isKnown(supplier_idurl):
             r['contact_status'] = online_status.getStatusLabel(supplier_idurl)
@@ -2324,8 +2324,8 @@ def customers_list(verbose=False):
                 'position': pos,
                 'global_id': '',
                 'idurl': '',
-                'contact_status': None,
-                'contact_state': None,
+                'contact_status': 'offline',
+                'contact_state': 'OFFLINE',
             }
             results.append(r)
             continue
@@ -2333,8 +2333,8 @@ def customers_list(verbose=False):
             'position': pos,
             'global_id': global_id.UrlToGlobalID(customer_idurl),
             'idurl': customer_idurl,
-            'contact_status': None,
-            'contact_state': None,
+            'contact_status': 'offline',
+            'contact_state': 'OFFLINE',
         }
         if online_status.isKnown(customer_idurl):
             r['contact_status'] = online_status.getStatusLabel(customer_idurl)

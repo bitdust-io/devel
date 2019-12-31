@@ -9,7 +9,7 @@
 
 echo "running 'kill $1'"
 
-LINES=`ps auxww | grep "$1" | grep -v grep`
+LINES=`ps auxww | grep "$1" | grep -v grep | grep -v ssh`
 [ -n "$LINES" ] && echo "$LINES"
 NUM=`echo "$LINES" | awk '{print $2}'`
 [ -n "$NUM" ] && kill -9 $NUM

@@ -133,6 +133,8 @@ class JSONRPCServer(resource.Resource):
 
         try:
             request_content = self._getRequestContent(request)
+            if not request_content:
+                raise jsonrpc.JSONRPCError('Empty request', jsonrpc.INVALID_REQUEST)
         except jsonrpc.JSONRPCError:
             self._parseError(request)
             return server.NOT_DONE_YET
