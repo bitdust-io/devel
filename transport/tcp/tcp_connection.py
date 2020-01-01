@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # tcp_connection.py
 #
-# Copyright (C) 2008-2019 Veselin Penev, https://bitdust.io
+# Copyright (C) 2008 Veselin Penev, https://bitdust.io
 #
 # This file (tcp_connection.py) is part of BitDust Software.
 #

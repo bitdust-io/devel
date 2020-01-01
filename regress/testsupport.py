@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # testsupport.py
 #
-# Copyright (C) 2008-2019 Stanislav Evseev, Veselin Penev  https://bitdust.io
+# Copyright (C) 2008 Stanislav Evseev, Veselin Penev  https://bitdust.io
 #
 # This file (testsupport.py) is part of BitDust Software.
 #

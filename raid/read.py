@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # read.py
 #
-# Copyright (C) 2008-2019 Veselin Penev, https://bitdust.io
+# Copyright (C) 2008 Veselin Penev, https://bitdust.io
 #
 # This file (read.py) is part of BitDust Software.
 #
