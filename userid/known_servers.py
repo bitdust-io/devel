@@ -24,8 +24,6 @@
 
 from __future__ import absolute_import
 
-import os
-
 #------------------------------------------------------------------------------
 
 _KnownServers = None
@@ -34,31 +32,14 @@ _KnownServers = None
 
 def default_nodes():
     """
-    A set of identity servers currently maintained, see file `networks.json` in the root folder.
+    A set of identity servers currently maintained, see file `default_network.json` in the root folder.
     """
-    from system import bpio
-    from system import local_fs
-    from lib import serialization
     from lib import strng
-    from main import settings
-    networks_json_path = os.path.join(settings.MetaDataDir(), 'networks.json')
-    if not os.path.isfile(networks_json_path):
-        networks_json_path = os.path.join(bpio.getExecutableDir(), 'networks.json')
-    networks_json = serialization.BytesToDict(
-        local_fs.ReadBinaryFile(networks_json_path),
-        keys_to_text=True,
-        values_to_text=True,
-    )
-    my_network = local_fs.ReadTextFile(settings.NetworkFileName()).strip()
-    if not my_network:
-        my_network = 'main'
-    if my_network not in networks_json:
-        my_network = 'main'
-    network_info = networks_json[my_network]
+    from main import network_config
+    network_info = network_config.read_network_config_file()
     identity_servers = {}
-    for identity_server in network_info['identity-servers']:
+    for identity_server in network_info['service_identity_propagate']['known_servers']:
         identity_servers[strng.to_bin(identity_server['host'])] = (identity_server['http_port'], identity_server['tcp_port'], )
-    # lg.info('Active network is [%s]   identity_servers=%s' % (my_network, identity_servers, ))
     return identity_servers
 
 
@@ -81,7 +62,7 @@ def by_host():
             "myfirstserver.net:80:6661, secondmachine.net:8080:6662, thirdnode.gov.eu:80:16661",
         )
 
-    Also check file `networks.json` in the repository root.
+    Also check file `default_network.json` in the repository root.
 
     Both ways you can create your own BitDust network, under your full control.
     """

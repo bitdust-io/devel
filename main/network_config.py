@@ -47,39 +47,19 @@ from main import settings
 
 #------------------------------------------------------------------------------
 
-def detect_network_name():
-    my_network = local_fs.ReadTextFile(settings.NetworkFileName()).strip()
-    if not my_network:
-        my_network = 'main'
-    return my_network
-
-
 def find_network_config_file():
     networks_json_path = os.path.join(settings.MetaDataDir(), 'networkconfig')
     if not os.path.isfile(networks_json_path):
-        # use hard-coded networks.json file from the repository root
+        # use hard-coded default_network.json file from the repository root
         networks_json_path = os.path.join(bpio.getExecutableDir(), 'default_network.json')
     return networks_json_path
 
 
 def read_network_config_file():
     networks_json_path = find_network_config_file()
-    networks_json = serialization.BytesToDict(
+    network_info = serialization.BytesToDict(
         local_fs.ReadBinaryFile(networks_json_path),
         keys_to_text=True,
         values_to_text=True,
     )
-    my_network = detect_network_name()
-    if my_network not in networks_json:
-        my_network = 'main'
-    network_info = networks_json[my_network]
     return network_info
-
-
-def build_network_config_file():
-    from services import driver 
-    network_name = local_fs.ReadTextFile(settings.NetworkFileName()).strip()
-    # services_info = drivet.
-    network_info = {network_name: {}}
-    return network_info
-

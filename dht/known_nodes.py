@@ -34,7 +34,6 @@ module:: known_nodes
 
 from __future__ import absolute_import
 
-import os
 import re
 
 #------------------------------------------------------------------------------
@@ -42,31 +41,12 @@ import re
 
 def network_info():
     """
-    Returns correct and full network info from networks.json file.
+    Returns correct and full network info from `default_network.json` file in the repository root.
+    If file `~/.bitdust/metadata/networkconfig` exists - use it instead.
     """
-    from system import bpio
-    from system import local_fs
-    from lib import serialization
-    from main import settings
-    networks_json_path = os.path.join(settings.MetaDataDir(), 'networks.json')
-    if not os.path.isfile(networks_json_path):
-        networks_json_path = os.path.join(bpio.getExecutableDir(), 'networks.json')
-    networks_json_raw = local_fs.ReadBinaryFile(networks_json_path)
-    if networks_json_raw:
-        networks_json = serialization.BytesToDict(
-            networks_json_raw,
-            keys_to_text=True,
-            values_to_text=True,
-        )
-    else:
-        networks_json = {}
-    my_network = local_fs.ReadTextFile(settings.NetworkFileName()).strip()
-    if not my_network:
-        my_network = 'main'
-    if my_network not in networks_json:
-        my_network = 'main'
-    nw_info = networks_json[my_network]
-    return nw_info
+    from main import network_config
+    network_config = network_config.read_network_config_file()
+    return network_config['service_entangled_dht']
 
 
 def default_nodes():
@@ -74,9 +54,8 @@ def default_nodes():
     List of DHT nodes currently maintained : (host, UDP port number)
     """
     from lib import strng
-    nw_info = network_info()
     dht_seeds = []
-    for dht_seed in nw_info['dht-seeds']:
+    for dht_seed in network_info()['known_nodes']:
         dht_seeds.append((strng.to_bin(dht_seed['host']), dht_seed['udp_port'], ))
     return dht_seeds
 
