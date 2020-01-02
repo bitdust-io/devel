@@ -218,7 +218,7 @@ def tunnel_url(node, endpoint):
 
 def start_daemon(node):
     run_ssh_command_and_wait(node, 'mkdir -pv /root/.bitdust/metadata/')
-    run_ssh_command_and_wait(node, 'echo "docker" > /root/.bitdust/metadata/networkname')
+    # run_ssh_command_and_wait(node, 'echo "docker" > /root/.bitdust/metadata/networkname')
     bitdust_daemon = run_ssh_command_and_wait(node, 'BITDUST_LOG_USE_COLORS=0 COVERAGE_PROCESS_START=/app/bitdust/.coverage_config bitdust daemon')
     print('\n' + bitdust_daemon[0].strip())
     assert (
@@ -229,7 +229,7 @@ def start_daemon(node):
 
 async def start_daemon_async(node, loop):
     await run_ssh_command_and_wait_async(node, 'mkdir -pv /root/.bitdust/metadata/', loop)
-    await run_ssh_command_and_wait_async(node, 'echo "docker" > /root/.bitdust/metadata/networkname', loop)
+    # await run_ssh_command_and_wait_async(node, 'echo "docker" > /root/.bitdust/metadata/networkname', loop)
     bitdust_daemon = await run_ssh_command_and_wait_async(node, 'BITDUST_LOG_USE_COLORS=0 COVERAGE_PROCESS_START=/app/bitdust/.coverage_config bitdust daemon', loop)
     print('\n' + bitdust_daemon[0].strip())
     assert (
