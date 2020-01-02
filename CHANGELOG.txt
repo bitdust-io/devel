@@ -1,6 +1,13 @@
 Change Log
 ==========
 
+2020-01-02 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* added main/network_config.py
+* set copyright year to 2008 instead of range as no necessary
+
+
+
 2019-12-31 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * protect REST HTTP and WebSocket interfaces with /metadata/apisecret file (#460)
