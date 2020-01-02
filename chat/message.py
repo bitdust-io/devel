@@ -216,7 +216,7 @@ class PrivateMessage(object):
         return self.encrypted_body
 
     def encrypt(self, message_body, encrypt_session_func=None):
-        new_sessionkey = key.NewSessionKey()
+        new_sessionkey = key.NewSessionKey(session_key_type=key.SessionKeyType())
         if not encrypt_session_func:
             if my_keys.is_key_registered(self.recipient):
                 if _Debug:
@@ -246,7 +246,7 @@ class PrivateMessage(object):
         if not encrypt_session_func:
             raise Exception('can not find key for given recipient')
         self.encrypted_session = encrypt_session_func(new_sessionkey)
-        self.encrypted_body = key.EncryptWithSessionKey(new_sessionkey, message_body)
+        self.encrypted_body = key.EncryptWithSessionKey(new_sessionkey, message_body, session_key=key.SessionKeyType())
         return self.encrypted_session, self.encrypted_body
 
     def decrypt(self, decrypt_session_func=None):
@@ -265,7 +265,7 @@ class PrivateMessage(object):
         if not decrypt_session_func:
             raise Exception('can not find key for given recipient: %s' % self.recipient)
         decrypted_sessionkey = decrypt_session_func(self.encrypted_session)
-        return key.DecryptWithSessionKey(decrypted_sessionkey, self.encrypted_body)
+        return key.DecryptWithSessionKey(decrypted_sessionkey, self.encrypted_body, session_key_type=key.SessionKeyType())
 
     def serialize(self):
         dct = {

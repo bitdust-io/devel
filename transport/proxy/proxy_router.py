@@ -528,7 +528,7 @@ class ProxyRouter(automat.Automat):
             CreatorID=my_id.getLocalID(),
             BackupID='routed incoming data',
             BlockNumber=0,
-            SessionKey=key.NewSessionKey(),
+            SessionKey=key.NewSessionKey(session_key_type=key.SessionKeyType()),
             SessionKeyType=key.SessionKeyType(),
             LastBlock=True,
             Data=newpacket.Serialize(),
@@ -617,7 +617,7 @@ class ProxyRouter(automat.Automat):
             return
         try:
             session_key = key.DecryptLocalPrivateKey(block.EncryptedSessionKey)
-            padded_data = key.DecryptWithSessionKey(session_key, block.EncryptedData)
+            padded_data = key.DecryptWithSessionKey(session_key, block.EncryptedData, session_key_type=block.SessionKeyType)
             inpt = BytesIO(padded_data[:int(block.Length)])
             # see proxy_sender.ProxySender : _on_first_outbox_packet() for sending part
             json_payload = serialization.BytesToDict(inpt.read(), keys_to_text=True)

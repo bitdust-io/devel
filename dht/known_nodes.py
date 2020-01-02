@@ -84,7 +84,7 @@ def default_nodes():
 def nodes():
     """
     Here is a well known DHT nodes, this is "genesis" network.
-    Every new node in the network will first connect one or several of those nodes,
+    Every new node in the network will first connect to those nodes,
     and then will be routed to some other nodes already registered.
 
     Right now we have started several BitDust nodes on vps hosting across the world.
@@ -93,7 +93,7 @@ def nodes():
     So other nodes will be able to use your machine to connect to DHT network.
 
     The load is not big, but as network will grow we will have more machines listed here,
-    so all traffic, maintanance and ownership will be distributed across the world.
+    so all traffic and ownership will be distributed across the world.
 
     You can override those "genesis" nodes (before you join network first time)
     by configuring list of your preferred DHT nodes (host or IP address) in the program settings:

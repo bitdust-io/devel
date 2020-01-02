@@ -375,7 +375,7 @@ def IncomingSupplierBackupIndex(newpacket):
         return None
     try:
         session_key = key.DecryptLocalPrivateKey(b.EncryptedSessionKey)
-        padded_data = key.DecryptWithSessionKey(session_key, b.EncryptedData)
+        padded_data = key.DecryptWithSessionKey(session_key, b.EncryptedData, session_key_type=b.SessionKeyType)
         inpt = StringIO(strng.to_text(padded_data[:int(b.Length)]))
         supplier_revision = inpt.readline().rstrip('\n')
         if supplier_revision:

@@ -55,6 +55,34 @@ class IdentityPropagateService(LocalService):
             return False
         return True
 
+    def network_configuration(self):
+        import re
+        from main import config
+        known_identity_servers_str = str(config.conf().getData('services/identity-propagate/known-servers'))
+        known_identity_servers = []
+        for id_server_str in re.split('\n|;|,| ', known_identity_servers_str):
+            if id_server_str.strip():
+                try:
+                    id_server = id_server_str.strip().split(':')
+                    id_server_host = id_server[0].strip()
+                    id_server_http_port = int(id_server[1].strip())
+                    id_server_tcp_port = int(id_server[2].strip())
+                except:
+                    continue
+                known_identity_servers.apppend({
+                    "host": id_server_host,
+                    "tcp_port": id_server_tcp_port,
+                    "http_port": id_server_http_port,
+                })
+        if not known_identity_servers:
+            from main import network_config
+            default_network_config = network_config.read_network_config_file()
+            known_identity_servers = default_network_config['service_identity_propagate']['known_servers']
+        return {
+            "known_servers": known_identity_servers,
+            "whitelisted_servers": [],
+        }
+
     def start(self):
         from logs import lg
         from userid import my_id

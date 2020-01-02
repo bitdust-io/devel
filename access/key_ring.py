@@ -182,7 +182,8 @@ def transfer_key(key_id, trusted_idurl, include_private=False, timeout=10, resul
     block = encrypted.Block(
         BackupID=key_id,
         Data=key_data,
-        SessionKey=key.NewSessionKey(),
+        SessionKey=key.NewSessionKey(session_key_type=key.SessionKeyType()),
+        SessionKeyType=key.SessionKeyType(),
         # encrypt data using public key of recipient
         EncryptKey=lambda inp: recipient_id_obj.encrypt(inp),
     )
@@ -277,7 +278,7 @@ def audit_public_key(key_id, untrusted_idurl, timeout=10):
             lg.warn('unknown key: "%s"' % key_id)
             result.errback(Exception('unknown key: "%s"' % key_id))
             return result
-    public_test_sample = key.NewSessionKey()
+    public_test_sample = key.NewSessionKey(session_key_type=key.SessionKeyType())
     json_payload = {
         'key_id': key_id,
         'audit': {
@@ -289,7 +290,8 @@ def audit_public_key(key_id, untrusted_idurl, timeout=10):
     block = encrypted.Block(
         BackupID=key_id,
         Data=raw_payload,
-        SessionKey=key.NewSessionKey(),
+        SessionKey=key.NewSessionKey(session_key_type=key.SessionKeyType()),
+        SessionKeyType=key.SessionKeyType(),
         # encrypt data using public key of recipient
         EncryptKey=lambda inp: recipient_id_obj.encrypt(inp),
     )
@@ -348,7 +350,7 @@ def audit_private_key(key_id, untrusted_idurl, timeout=10):
         lg.warn('wrong key_id')
         result.errback(Exception('wrong key_id'))
         return result
-    private_test_sample = key.NewSessionKey()
+    private_test_sample = key.NewSessionKey(session_key_type=key.SessionKeyType())
     if untrusted_idurl == creator_idurl and key_alias == 'master':
         lg.info('doing audit of master key (private part) of remote user')
         private_test_encrypted_sample = recipient_id_obj.encrypt(private_test_sample)
@@ -369,7 +371,8 @@ def audit_private_key(key_id, untrusted_idurl, timeout=10):
     block = encrypted.Block(
         BackupID=key_id,
         Data=raw_payload,
-        SessionKey=key.NewSessionKey(),
+        SessionKey=key.NewSessionKey(session_key_type=key.SessionKeyType()),
+        SessionKeyType=key.SessionKeyType(),
         # encrypt data using public key of recipient
         EncryptKey=lambda inp: recipient_id_obj.encrypt(inp),
     )

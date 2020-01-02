@@ -150,7 +150,7 @@ class Block(object):
             self.EncryptedData = EncryptedData
         else:
             self.Length = len(Data)
-            self.EncryptedData = key.EncryptWithSessionKey(SessionKey, Data)
+            self.EncryptedData = key.EncryptWithSessionKey(SessionKey, Data, session_key_type=self.SessionKeyType)
         if Signature:
             self.Signature = Signature
         else:
@@ -245,7 +245,7 @@ class Block(object):
         ``EncryptedSessionKey``.
         """
         SessionKey = self.SessionKey()
-        ClearLongData = key.DecryptWithSessionKey(SessionKey, self.EncryptedData)
+        ClearLongData = key.DecryptWithSessionKey(SessionKey, self.EncryptedData, session_key_type=self.SessionKeyType)
         return ClearLongData[0:self.Length]    # remove padding
 
     def Serialize(self):

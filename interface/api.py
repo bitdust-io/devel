@@ -33,7 +33,6 @@ Here is a bunch of methods to interact with BitDust software.
 #------------------------------------------------------------------------------
 
 from __future__ import absolute_import
-from six.moves import map
 
 #------------------------------------------------------------------------------
 
@@ -633,7 +632,7 @@ def key_create(key_alias, key_size=None, label='', include_private=False):
         include_private=include_private
     )
     key_info.pop('include_private', None)
-    return OK(key_info, message='new private key "%s" was generated successfully' % key_alias, )
+    return RESULT([key_info,] , message='new private key "%s" was generated successfully' % key_alias, )
 
 
 def key_label(key_id, label):
@@ -3828,6 +3827,10 @@ def network_status(show_suppliers=True, show_customers=True, show_cache=True,
                 'contacts': dht_service.node()._routingTable.totalContacts(),
             })
     return RESULT([r, ])
+
+
+def network_configuration():
+    return RESULT([driver.get_network_configuration(), ])
 
 #------------------------------------------------------------------------------
 

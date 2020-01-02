@@ -378,7 +378,7 @@ class IndexSynchronizer(automat.Automat):
             CreatorID=localID,
             BackupID=packetID,
             BlockNumber=0,
-            SessionKey=key.NewSessionKey(),
+            SessionKey=key.NewSessionKey(session_key_type=key.SessionKeyType()),
             SessionKeyType=key.SessionKeyType(),
             LastBlock=True,
             Data=bpio.ReadBinaryFile(settings.BackupIndexFilePath()),

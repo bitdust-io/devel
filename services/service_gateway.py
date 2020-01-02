@@ -54,6 +54,12 @@ class GatewayService(LocalService):
             return False
         return True
 
+    def network_configuration(self):
+        from crypt import key
+        return {
+            'session_key_type': key.SessionKeyType(),
+        }
+
     def start(self):
         from transport import packet_out
         from transport import packet_in

@@ -603,7 +603,7 @@ class ProxyReceiver(automat.Automat):
             return
         try:
             session_key = key.DecryptLocalPrivateKey(block.EncryptedSessionKey)
-            padded_data = key.DecryptWithSessionKey(session_key, block.EncryptedData)
+            padded_data = key.DecryptWithSessionKey(session_key, block.EncryptedData, session_key_type=block.SessionKeyType)
             inpt = BytesIO(padded_data[:int(block.Length)])
             data = inpt.read()
         except:

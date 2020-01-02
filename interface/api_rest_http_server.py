@@ -1080,6 +1080,12 @@ class BitDustRESTHTTPServer(JsonAPIResource):
             show_dht=bool(_request_arg(request, 'dht', '1') in ['1', 'true', ]),
         )
 
+    @GET('^/nw/cf$')
+    @GET('^/v1/network/configuration$')
+    @GET('^/network/configuration/v1$')
+    def network_configuration_v1(self, request):
+        return api.network_configuration()
+
     #------------------------------------------------------------------------------
 
     @GET('^/d/v/g$')

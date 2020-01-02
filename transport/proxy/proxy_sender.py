@@ -352,7 +352,7 @@ class ProxySender(automat.Automat):
             CreatorID=my_id.getLocalID(),
             BackupID='routed outgoing data',
             BlockNumber=0,
-            SessionKey=key.NewSessionKey(),
+            SessionKey=key.NewSessionKey(session_key_type=key.SessionKeyType()),
             SessionKeyType=key.SessionKeyType(),
             LastBlock=True,
             Data=raw_bytes,

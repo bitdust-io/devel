@@ -123,6 +123,9 @@ class LocalService(automat.Automat):
     def health_check(self):
         raise RequireSubclass()
 
+    def network_configuration(self):
+        return None
+
     def add_callback(self, cb):
         if not self.result_deferred:
             self.result_deferred = Deferred()
