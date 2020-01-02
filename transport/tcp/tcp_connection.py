@@ -42,7 +42,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -376,6 +376,10 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         """
         if _Debug:
             lg.out(_DebugLevel, 'tcp_connection.doDisconnect with %s %s' % (str(self.peer_address), self.peer_idurl))
+        if self.factory:
+            for filename, description, result_defer, keep_alive in self.factory.pendingoutboxfiles:
+                result_defer.callback((None, 'failed', 'disconnected', ))
+            self.factory.pendingoutboxfiles = []
         try:
             self.transport.stopListening()
         except:
@@ -397,8 +401,6 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
             tcp_node.decrease_connections_counter()
         else:
             raise Exception('not found %r in the opened connections' % self.peer_address)
-        if self.stream:
-            self.stream.close()
         self.stream = None
         self.peer_address = None
         self.peer_external_address = None
