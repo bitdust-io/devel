@@ -268,7 +268,7 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
             peerip, peerport = peeraddress.split(b':')
             peerport = int(peerport)
             if not peerip:
-                lg.warn('unknown peer IP from Hello packet: %r' % args[0])
+                lg.warn('unknown peer IP from Hello packet: %r' % args)
                 peerip = self.peer_external_address[0]
             peeraddress = (peerip, peerport)
         except:
