@@ -59,10 +59,10 @@ from logs import lg
 from p2p import commands
 from p2p import online_status
 
-from lib import strng
 from lib import packetid
 from lib import utime
 from lib import serialization
+from lib import strng
 
 from crypt import signed
 from crypt import key
@@ -246,7 +246,7 @@ class PrivateMessage(object):
         if not encrypt_session_func:
             raise Exception('can not find key for given recipient')
         self.encrypted_session = encrypt_session_func(new_sessionkey)
-        self.encrypted_body = key.EncryptWithSessionKey(new_sessionkey, message_body, session_key=key.SessionKeyType())
+        self.encrypted_body = key.EncryptWithSessionKey(new_sessionkey, message_body, session_key_type=key.SessionKeyType())
         return self.encrypted_session, self.encrypted_body
 
     def decrypt(self, decrypt_session_func=None):
@@ -361,7 +361,7 @@ def on_message_failed(idurl, json_data, recipient_global_id, packet_id, response
     if idurl in _LastUserPingTime:
         _LastUserPingTime[idurl] = 0
     if result_defer and not result_defer.called:
-        err = Exception(response) if response else error
+        err = Exception(response) if response else (error if not strng.is_string(error) else Exception(error))
         result_defer.errback(err)
 
 #------------------------------------------------------------------------------

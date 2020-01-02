@@ -3466,7 +3466,6 @@ def network_connected(wait_timeout=5):
                 proxy_receiver_machine = automat.objects().get(proxy_receiver_lookup[0])
                 if proxy_receiver_machine and proxy_receiver_machine.state == 'LISTEN':
                     wait_timeout_defer = Deferred()
-                    wait_timeout_defer.addTimeout(wait_timeout, clock=reactor)
                     wait_timeout_defer.addBoth(lambda _: ret.callback(OK({
                         'service_network': 'started',
                         'service_gateway': 'started',
@@ -3474,10 +3473,10 @@ def network_connected(wait_timeout=5):
                         'service_proxy_transport': 'started',
                         'proxy_receiver_state': proxy_receiver_machine.state,
                     }, api_method='network_connected')))
+                    wait_timeout_defer.addTimeout(wait_timeout, clock=reactor)
                     return ret
             else:
                 wait_timeout_defer = Deferred()
-                wait_timeout_defer.addTimeout(wait_timeout, clock=reactor)
                 wait_timeout_defer.addBoth(lambda _: ret.callback(OK({
                     'service_network': 'started',
                     'service_gateway': 'started',
@@ -3485,6 +3484,7 @@ def network_connected(wait_timeout=5):
                     'service_proxy_transport': 'disabled',
                     'p2p_connector_state': p2p_connector_machine.state,
                 }, api_method='network_connected')))
+                wait_timeout_defer.addTimeout(wait_timeout, clock=reactor)
                 return ret
 
     if not my_id.isLocalIdentityReady():

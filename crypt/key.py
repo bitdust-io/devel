@@ -399,7 +399,7 @@ def SpeedTest():
         Data = os.urandom(dataSZ)
         SessionKey = NewSessionKey(session_key_type=SessionKeyType())
         EncryptedSessionKey = EncryptLocalPublicKey(SessionKey)
-        EncryptedData = EncryptWithSessionKey(SessionKey, Data, SessionKeyType())
+        EncryptedData = EncryptWithSessionKey(SessionKey, Data, session_key_type=SessionKeyType())
         Signature = Sign(Hash(EncryptedData))
         packets.append((Data, len(Data), EncryptedSessionKey, EncryptedData, Signature))
         print('.', end=' ')
@@ -410,7 +410,7 @@ def SpeedTest():
     i = 0
     for Data, Length, EncryptedSessionKey, EncryptedData, Signature in packets:
         SessionKey = DecryptLocalPrivateKey(EncryptedSessionKey)
-        paddedData = DecryptWithSessionKey(SessionKey, EncryptedData, SessionKeyType())
+        paddedData = DecryptWithSessionKey(SessionKey, EncryptedData, session_key_type=SessionKeyType())
         newData = paddedData[:Length]
         if not VerifySignature(MyPublicKey(), Hash(EncryptedData), Signature):
             raise Exception()

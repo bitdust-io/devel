@@ -282,9 +282,8 @@ def SendServers():
             # by default use "expected" port numbers
             settings.IdentityWebPort(), settings.IdentityServerPort()))
         normalized_address = net_misc.normalize_address((host, int(tcpport), ))
-        dlist.append(tcp_node.send(
-            sendfilename, normalized_address, 'Identity', keep_alive=False,
-        ))
+        d = tcp_node.send(sendfilename, normalized_address, 'Identity', keep_alive=False)
+        dlist.append(d)
         if _Debug:
             lg.args(_DebugLevel, normalized_address=normalized_address, filename=filename)
     dl = DeferredList(dlist, consumeErrors=True)

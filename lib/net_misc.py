@@ -536,6 +536,7 @@ def getPageTwisted(url, timeout=10, method=b'GET'):
     d.addCallback(ConnectionDone, 'http', 'getPageTwisted %r' % url)
     d.addErrback(ConnectionFailed, 'http', 'getPageTwisted %r' % url)
     d.addCallback(readResponse)
+    d.addTimeout(timeout=timeout, clock=reactor)
     return d
 
 #------------------------------------------------------------------------------

@@ -458,8 +458,8 @@ def restart(service_name, wait_timeout=None):
         all_states = [_svc.state for _svc in services().values()]
         if 'INFLUENCE' in all_states or 'STARTING' in all_states or 'STOPPING' in all_states:
             wait_timeout_defer = Deferred()
-            wait_timeout_defer.addTimeout(wait_timeout, clock=reactor)
             wait_timeout_defer.addErrback(_on_wait_timeout)
+            wait_timeout_defer.addTimeout(wait_timeout, clock=reactor)
             dl.append(wait_timeout_defer)
     if not dl:
         dl.append(succeed(True))
