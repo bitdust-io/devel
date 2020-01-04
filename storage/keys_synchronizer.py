@@ -104,7 +104,7 @@ def A(event=None, *args, **kwargs):
     global _KeysSynchronizer
     if event is None:
         return _KeysSynchronizer
-    if _KeysSynchronizer is None and event != 'shutdown':
+    if _KeysSynchronizer is None:
         _KeysSynchronizer = KeysSynchronizer(
             name='keys_synchronizer',
             state='AT_STARTUP',

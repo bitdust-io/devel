@@ -79,7 +79,7 @@ def nodes():
 
         api.config_set(
             "services/entangled-dht/known-nodes",
-            "firstnode.net:14441, secondmachine.com:1234, 123.45.67.89:9999",
+            "firstnode.net:14441,secondmachine.com:1234,123.45.67.89:9999",
         )
 
     This way you can create your own DHT network, inside BitDust, under your full control.

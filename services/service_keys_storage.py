@@ -67,10 +67,10 @@ class KeysStorageService(LocalService):
         events.add_subscriber(self._on_key_erased, 'key-erased')
         events.add_subscriber(self._on_my_backup_index_synchronized, 'my-backup-index-synchronized')
         events.add_subscriber(self._on_my_backup_index_out_of_sync, 'my-backup-index-out-of-sync')
-        if index_synchronizer.A().state == 'NO_INFO':
+        if index_synchronizer.A() and index_synchronizer.A().state == 'NO_INFO':
             # it seems I am offline...  must start here, but expect to be online soon and sync keys later 
             return True
-        if index_synchronizer.A().state == 'IN_SYNC!':
+        if index_synchronizer.A() and index_synchronizer.A().state == 'IN_SYNC!':
             # if I am already online and backup index in sync - refresh keys ASAP
             self._do_synchronize_keys()
         return self.starting_deferred
@@ -84,7 +84,8 @@ class KeysStorageService(LocalService):
         events.remove_subscriber(self._on_key_registered, 'key-registered')
         events.remove_subscriber(self._on_key_generated, 'key-generated')
         events.remove_subscriber(self._on_identity_url_changed, 'identity-url-changed')
-        keys_synchronizer.A('shutdown')
+        if keys_synchronizer.A():
+            keys_synchronizer.A('shutdown')
         return True
 
     def health_check(self):
