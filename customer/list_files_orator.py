@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # list_files_orator.py
 #
-# Copyright (C) 2008-2019 Veselin Penev, https://bitdust.io
+# Copyright (C) 2008 Veselin Penev, https://bitdust.io
 #
 # This file (list_files_orator.py) is part of BitDust Software.
 #
@@ -45,7 +45,8 @@ EVENTS:
     * :red:`local-files-done`
     * :red:`need-files`
     * :red:`supplier-connected`
-    * :red:`timer-10sec`
+    * :red:`timer-20sec`
+    * :red:`timer-2sec`
 """
 
 #------------------------------------------------------------------------------
@@ -142,7 +143,8 @@ class ListFilesOrator(automat.Automat):
     """
 
     timers = {
-        'timer-10sec': (10.0, ['REMOTE_FILES']),
+        'timer-2sec': (2.0, ['REMOTE_FILES']),
+        'timer-20sec': (20.0, ['REMOTE_FILES']),
     }
 
     def init(self):
@@ -189,12 +191,12 @@ class ListFilesOrator(automat.Automat):
                 self.state = 'NO_FILES'
         #---REMOTE_FILES---
         elif self.state == 'REMOTE_FILES':
-            if ( event == 'timer-10sec' and self.isEnoughListFilesReceived(*args, **kwargs) ) or ( event == 'inbox-files' and self.isAllListFilesReceived(*args, **kwargs) ):
-                self.state = 'SAW_FILES'
-            elif event == 'supplier-connected':
+            if event == 'supplier-connected':
                 self.doRequestFilesOneSupplier(*args, **kwargs)
-            elif event == 'timer-10sec' and not self.isEnoughListFilesReceived(*args, **kwargs) and not self.isSomeConnecting(*args, **kwargs):
+            elif event == 'timer-20sec' and not self.isEnoughListFilesReceived(*args, **kwargs) and not self.isSomeConnecting(*args, **kwargs):
                 self.state = 'NO_FILES'
+            elif ( event == 'timer-2sec' and self.isEnoughListFilesReceived(*args, **kwargs) ) or ( event == 'inbox-files' and self.isAllListFilesReceived(*args, **kwargs) ):
+                self.state = 'SAW_FILES'
         #---SAW_FILES---
         elif self.state == 'SAW_FILES':
             if event == 'need-files':

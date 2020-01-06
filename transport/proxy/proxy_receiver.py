@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # proxy_receiver.py
 #
-# Copyright (C) 2008-2019 Veselin Penev, https://bitdust.io
+# Copyright (C) 2008 Veselin Penev, https://bitdust.io
 #
 # This file (proxy_receiver.py) is part of BitDust Software.
 #
@@ -603,7 +603,7 @@ class ProxyReceiver(automat.Automat):
             return
         try:
             session_key = key.DecryptLocalPrivateKey(block.EncryptedSessionKey)
-            padded_data = key.DecryptWithSessionKey(session_key, block.EncryptedData)
+            padded_data = key.DecryptWithSessionKey(session_key, block.EncryptedData, session_key_type=block.SessionKeyType)
             inpt = BytesIO(padded_data[:int(block.Length)])
             data = inpt.read()
         except:

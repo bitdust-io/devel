@@ -2,7 +2,7 @@
 # driver.py
 #
 #
-# Copyright (C) 2008-2019 Veselin Penev, https://bitdust.io
+# Copyright (C) 2008 Veselin Penev, https://bitdust.io
 #
 # This file (driver.py) is part of BitDust Software.
 #
@@ -458,8 +458,8 @@ def restart(service_name, wait_timeout=None):
         all_states = [_svc.state for _svc in services().values()]
         if 'INFLUENCE' in all_states or 'STARTING' in all_states or 'STOPPING' in all_states:
             wait_timeout_defer = Deferred()
-            wait_timeout_defer.addTimeout(wait_timeout, clock=reactor)
             wait_timeout_defer.addErrback(_on_wait_timeout)
+            wait_timeout_defer.addTimeout(wait_timeout, clock=reactor)
             dl.append(wait_timeout_defer)
     if not dl:
         dl.append(succeed(True))
@@ -568,6 +568,8 @@ def health_check(services_list=[]):
         svc = services().get(name, None)
         if not svc:
             continue
+        if not svc.enabled():
+            continue
         service_health = svc.health_check()
         if isinstance(service_health, Deferred):
             dl.append(service_health)
@@ -577,7 +579,24 @@ def health_check(services_list=[]):
             dl.append(service_health)
     health_result = DeferredList(dl, consumeErrors=True)
     return health_result
- 
+
+
+def get_network_configuration(services_list=[]):
+    if not services_list:
+        services_list.extend(reversed(boot_up_order()))
+    if _Debug:
+        lg.out(_DebugLevel, 'driver.get_network_info with %d services' % len(services_list))
+    result = {}
+    for name in services_list:
+        svc = services().get(name, None)
+        if not svc:
+            continue
+        if not svc.enabled():
+            continue
+        network_configuration = svc.network_configuration()
+        if network_configuration:
+            result[name] = network_configuration
+    return result
 
 #------------------------------------------------------------------------------
 

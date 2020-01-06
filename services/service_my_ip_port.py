@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # service_my_ip_port.py
 #
-# Copyright (C) 2008-2019 Veselin Penev, https://bitdust.io
+# Copyright (C) 2008 Veselin Penev, https://bitdust.io
 #
 # This file (service_my_ip_port.py) is part of BitDust Software.
 #

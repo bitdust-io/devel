@@ -2,7 +2,7 @@
 # net_misc.py
 #
 #
-# Copyright (C) 2008-2019 Veselin Penev, https://bitdust.io
+# Copyright (C) 2008 Veselin Penev, https://bitdust.io
 #
 # This file (net_misc.py) is part of BitDust Software.
 #
@@ -536,6 +536,7 @@ def getPageTwisted(url, timeout=10, method=b'GET'):
     d.addCallback(ConnectionDone, 'http', 'getPageTwisted %r' % url)
     d.addErrback(ConnectionFailed, 'http', 'getPageTwisted %r' % url)
     d.addCallback(readResponse)
+    d.addTimeout(timeout=timeout, clock=reactor)
     return d
 
 #------------------------------------------------------------------------------

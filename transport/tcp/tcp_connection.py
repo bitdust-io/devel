@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # tcp_connection.py
 #
-# Copyright (C) 2008-2019 Veselin Penev, https://bitdust.io
+# Copyright (C) 2008 Veselin Penev, https://bitdust.io
 #
 # This file (tcp_connection.py) is part of BitDust Software.
 #
@@ -268,7 +268,7 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
             peerip, peerport = peeraddress.split(b':')
             peerport = int(peerport)
             if not peerip:
-                lg.warn('unknown peer IP from Hello packet: %r' % args[0])
+                lg.warn('unknown peer IP from Hello packet: %r' % args)
                 peerip = self.peer_external_address[0]
             peeraddress = (peerip, peerport)
         except:
@@ -376,6 +376,10 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         """
         if _Debug:
             lg.out(_DebugLevel, 'tcp_connection.doDisconnect with %s %s' % (str(self.peer_address), self.peer_idurl))
+        if self.factory:
+            for filename, description, result_defer, keep_alive in self.factory.pendingoutboxfiles:
+                result_defer.callback((None, 'failed', 'disconnected', ))
+            self.factory.pendingoutboxfiles = []
         try:
             self.transport.stopListening()
         except:

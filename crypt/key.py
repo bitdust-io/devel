@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # key.py
 #
-# Copyright (C) 2008-2019 Veselin Penev, https://bitdust.io
+# Copyright (C) 2008 Veselin Penev, https://bitdust.io
 #
 # This file (key.py) is part of BitDust Software.
 #
@@ -67,7 +67,7 @@ from main import settings
 
 from crypt import rsa_key
 from crypt import hashes
-from crypt import aes_cbc
+from crypt import cipher
 
 #------------------------------------------------------------------------------
 
@@ -307,26 +307,26 @@ def SessionKeyType():
     return 'AES'
 
 
-def NewSessionKey():
+def NewSessionKey(session_key_type):
     """
     Return really random string for making AES cipher objects when needed.
     """
-    return aes_cbc.make_key()
+    return cipher.make_key(session_key_type)
 
 #------------------------------------------------------------------------------
 
-def EncryptWithSessionKey(session_key, inp):
+def EncryptWithSessionKey(session_key, inp, session_key_type):
     """
     Encrypt input string with Session Key.
 
     :param session_key: randomly generated session key
     :param inp: input string to encrypt
     """
-    ret = aes_cbc.encrypt_json(inp, session_key)
+    ret = cipher.encrypt_json(inp, session_key, session_key_type)
     return ret
 
 
-def DecryptWithSessionKey(session_key, inp):
+def DecryptWithSessionKey(session_key, inp, session_key_type):
     """
     Decrypt string with given session key.
 
@@ -334,7 +334,7 @@ def DecryptWithSessionKey(session_key, inp):
         here it must be already decrypted
     :param inp: input string to decrypt
     """
-    ret = aes_cbc.decrypt_json(inp, session_key)
+    ret = cipher.decrypt_json(inp, session_key, session_key_type)
     return ret
 
 #------------------------------------------------------------------------------
@@ -397,9 +397,9 @@ def SpeedTest():
     print('encrypt %d pieces of %d bytes' % (loops, dataSZ))
     for i in range(loops):
         Data = os.urandom(dataSZ)
-        SessionKey = NewSessionKey()
+        SessionKey = NewSessionKey(session_key_type=SessionKeyType())
         EncryptedSessionKey = EncryptLocalPublicKey(SessionKey)
-        EncryptedData = EncryptWithSessionKey(SessionKey, Data)
+        EncryptedData = EncryptWithSessionKey(SessionKey, Data, session_key_type=SessionKeyType())
         Signature = Sign(Hash(EncryptedData))
         packets.append((Data, len(Data), EncryptedSessionKey, EncryptedData, Signature))
         print('.', end=' ')
@@ -410,7 +410,7 @@ def SpeedTest():
     i = 0
     for Data, Length, EncryptedSessionKey, EncryptedData, Signature in packets:
         SessionKey = DecryptLocalPrivateKey(EncryptedSessionKey)
-        paddedData = DecryptWithSessionKey(SessionKey, EncryptedData)
+        paddedData = DecryptWithSessionKey(SessionKey, EncryptedData, session_key_type=SessionKeyType())
         newData = paddedData[:Length]
         if not VerifySignature(MyPublicKey(), Hash(EncryptedData), Signature):
             raise Exception()

@@ -2,7 +2,7 @@
 # backup.py
 #
 #
-# Copyright (C) 2008-2019 Veselin Penev, https://bitdust.io
+# Copyright (C) 2008 Veselin Penev, https://bitdust.io
 #
 # This file (backup.py) is part of BitDust Software.
 #
@@ -369,7 +369,7 @@ class backup(automat.Automat):
                 CreatorID=my_id.getLocalID(),
                 BackupID=self.backupID,
                 BlockNumber=self.blockNumber,
-                SessionKey=key.NewSessionKey(),
+                SessionKey=key.NewSessionKey(session_key_type=key.SessionKeyType()),
                 SessionKeyType=key.SessionKeyType(),
                 LastBlock=self.stateEOF,
                 Data=raw_bytes,

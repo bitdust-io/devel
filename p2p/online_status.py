@@ -2,7 +2,7 @@
 # online_status.py
 #
 #
-# Copyright (C) 2008-2019 Veselin Penev, https://bitdust.io
+# Copyright (C) 2008 Veselin Penev, https://bitdust.io
 #
 # This file (online_status.py) is part of BitDust Software.
 #
@@ -182,6 +182,12 @@ def check_create(idurl, keep_alive=True):
 
 #------------------------------------------------------------------------------
 
+def on_ping_failed(err, idurl=None, channel=None):
+    if _Debug:
+        lg.args(_DebugLevel, err=err, idurl=idurl, channel=channel)
+    return err
+
+
 def ping(idurl, channel=None, ack_timeout=15, ping_retries=0, keep_alive=False):
     """
     Doing handshake with remote node only if it is currently not connected.
@@ -191,6 +197,7 @@ def ping(idurl, channel=None, ack_timeout=15, ping_retries=0, keep_alive=False):
     if _Debug:
         lg.args(_DebugLevel, idurl=idurl, keep_alive=keep_alive, channel=channel)
     result = Deferred()
+    result.addErrback(on_ping_failed, idurl=idurl, channel=channel)
     if id_url.is_empty(idurl):
         result.errback(Exception('empty idurl provided'))
         return result
@@ -208,7 +215,6 @@ def ping(idurl, channel=None, ack_timeout=15, ping_retries=0, keep_alive=False):
     if not isKnown(idurl):
         if not check_create(idurl, keep_alive=keep_alive):
             raise Exception('can not create instance')
-    result = Deferred()
     A(idurl, 'ping-now', result, channel=channel, ack_timeout=ack_timeout, ping_retries=ping_retries, original_idurl=idurl.to_original())
     return result
 
@@ -223,6 +229,7 @@ def handshake(idurl, channel=None, ack_timeout=20, ping_retries=2, keep_alive=Fa
     if _Debug:
         lg.args(_DebugLevel, idurl=idurl, keep_alive=keep_alive, channel=channel, ack_timeout=ack_timeout, ping_retries=ping_retries)
     result = Deferred()
+    result.addErrback(on_ping_failed, idurl=idurl, channel=channel)
     if id_url.is_empty(idurl):
         result.errback(Exception('empty idurl provided'))
         return result

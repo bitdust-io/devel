@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # service_gateway.py
 #
-# Copyright (C) 2008-2019 Veselin Penev, https://bitdust.io
+# Copyright (C) 2008 Veselin Penev, https://bitdust.io
 #
 # This file (service_gateway.py) is part of BitDust Software.
 #
@@ -53,6 +53,12 @@ class GatewayService(LocalService):
         if not my_id.isLocalIdentityReady():
             return False
         return True
+
+    def network_configuration(self):
+        from crypt import key
+        return {
+            'session_key_type': key.SessionKeyType(),
+        }
 
     def start(self):
         from transport import packet_out

@@ -334,7 +334,8 @@ class SharedAccessDonor(automat.Automat):
             CreatorID=my_id.getLocalID(),
             BackupID=self.key_id,
             Data=raw_list_files,
-            SessionKey=key.NewSessionKey(),
+            SessionKey=key.NewSessionKey(session_key_type=key.SessionKeyType()),
+            SessionKeyType=key.SessionKeyType(),
             EncryptKey=self.key_id,
         )
         encrypted_list_files = block.Serialize()

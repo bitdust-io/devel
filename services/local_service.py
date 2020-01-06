@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # local_service.py
 #
-# Copyright (C) 2008-2019 Veselin Penev, https://bitdust.io
+# Copyright (C) 2008 Veselin Penev, https://bitdust.io
 #
 # This file (local_service.py) is part of BitDust Software.
 #
@@ -122,6 +122,9 @@ class LocalService(automat.Automat):
 
     def health_check(self):
         raise RequireSubclass()
+
+    def network_configuration(self):
+        return None
 
     def add_callback(self, cb):
         if not self.result_deferred:

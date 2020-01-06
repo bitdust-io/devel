@@ -134,11 +134,9 @@ If you are installing BitDust on Windows platforms, you may require some binary 
 
 * cygwin: [cygwin.com](https://cygwin.com/install.html)
 * git: [git-scm.com](https://git-scm.com/download/win)
-* python 2.7 (python3 is not supported yet): [python.org](http://python.org/download/releases)
-* twisted 11.0 or higher: [twistedmatrix.com](http://twistedmatrix.com)
+* python2.7 or python3: [python.org](http://python.org/download/releases)
+* twisted: [twistedmatrix.com](http://twistedmatrix.com)
 * pyasn1: [pyasn1.sourceforge.net](http://pyasn1.sourceforge.net)
-* pyOpenSSL: [launchpad.net/pyopenssl](https://launchpad.net/pyopenssl)
-* pycrypto: [dlitz.net/software/pycrypto](https://www.dlitz.net/software/pycrypto/)
 * miniupnpc: [miniupnp.tuxfamily.org](http://miniupnp.tuxfamily.org/)
 
 

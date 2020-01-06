@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # service_entangled_dht.py
 #
-# Copyright (C) 2008-2019 Veselin Penev, https://bitdust.io
+# Copyright (C) 2008 Veselin Penev, https://bitdust.io
 #
 # This file (service_entangled_dht.py) is part of BitDust Software.
 #
@@ -47,6 +47,39 @@ class EntangledDHTService(LocalService):
         return [
             'service_udp_datagrams',
         ]
+
+    def network_configuration(self):
+        import re
+        from main import config
+        from dht.entangled.kademlia import constants  # @UnresolvedImport
+        known_dht_nodes_str = config.conf().getData('services/entangled-dht/known-nodes').strip()
+        known_dht_nodes = []
+        if known_dht_nodes_str:
+            for dht_node_str in re.split('\n|;|,| ', known_dht_nodes_str):
+                if dht_node_str.strip():
+                    try:
+                        dht_node = dht_node_str.strip().split(':')
+                        dht_node_host = dht_node[0].strip()
+                        dht_node_port = int(dht_node[1].strip())
+                    except:
+                        continue
+                    known_dht_nodes.append({
+                        "host": dht_node_host,
+                        "udp_port": dht_node_port,
+                    })
+        if not known_dht_nodes:
+            from main import network_config
+            default_network_config = network_config.read_network_config_file()
+            known_dht_nodes = default_network_config['service_entangled_dht']['known_nodes']
+        return {
+            "bucket_size": constants.k,
+            "default_age": constants.dataExpireSecondsDefaut,
+            "max_age": constants.dataExpireTimeout,
+            "parallel_calls": constants.alpha,
+            "refresh_timeout": constants.refreshTimeout,
+            "rpc_timeout": constants.rpcTimeout,
+            "known_nodes": known_dht_nodes,
+        }
 
     def start(self):
         from logs import lg

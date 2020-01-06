@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # id_rotator.py
 #
-# Copyright (C) 2008-2019 Veselin Penev, https://bitdust.io
+# Copyright (C) 2008 Veselin Penev, https://bitdust.io
 #
 # This file (id_rotator.py) is part of BitDust Software.
 #

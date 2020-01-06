@@ -74,7 +74,7 @@ _one_up_test_coverage_down:
 	@$(MAKE) --no-print-directory _one_prepare && $(MAKE) --no-print-directory _one_up && $(MAKE) --no-print-directory _one_test && $(MAKE) --no-print-directory _one_coverage && $(MAKE) --no-print-directory _one_down
 
 _one_up_test_log_down:
-	@$(MAKE) _one_prepare && $(MAKE) _one_up && $(MAKE) _one_test && $(MAKE) _one_log && $(MAKE) _one_down
+	@$(MAKE) _one_prepare && $(MAKE) _one_up && $(MAKE) _one_test && $(MAKE) _one_coverage && $(MAKE) _one_log && $(MAKE) _one_down
 
 up/%:
 	@$(MAKE) TEST_NAME=$* _one_up
@@ -107,7 +107,7 @@ run_all:
 	@echo "$(ALL_TESTS)"; rm -rf coverage/*; rm -rf coverage_all/*; for ONE_TEST in $(ALL_TESTS); do $(MAKE) --no-print-directory run/$$ONE_TEST || exit 1; done;
 
 run_all_log:
-	@echo "$(ALL_TESTS)"; mkdir -p logs; for ONE_TEST in $(ALL_TESTS); do $(MAKE) run_log/$$ONE_TEST || exit 1; done;
+	@echo "$(ALL_TESTS)"; rm -rf coverage/*; rm -rf coverage_all/*; rm -rf logs/; mkdir -p logs/; for ONE_TEST in $(ALL_TESTS); do $(MAKE) run_log/$$ONE_TEST || exit 1; done;
 
 prepare: build_app build_tester
 

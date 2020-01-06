@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # settings.py
 #
-# Copyright (C) 2008-2019 Veselin Penev, https://bitdust.io
+# Copyright (C) 2008 Veselin Penev, https://bitdust.io
 #
 # This file (settings.py) is part of BitDust Software.
 #
@@ -900,19 +900,6 @@ def APICertificatesDir():
 #------------------------------------------------------------------------------
 #--- FILES --------------------------------------------------------------------
 #------------------------------------------------------------------------------
-
-
-def NetworkFileName():
-    """
-    Location of the file where selected network name is stored.
-    It is possible to have multiple independent BitDust networks:
-    Main network, Test network, local Docker network, Private networks, etc...
-    They are defined in networks.json file and each network must have a unique name.
-    NetworkFileName() defines text file location, where network name is stored.
-    If that file is not exists, BitDust will try to connect to the main network by default.    
-    """
-    return os.path.join(MetaDataDir(), "networkname")
-
 
 def KeyFileName():
     """

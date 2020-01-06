@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # index_synchronizer.py
 #
-# Copyright (C) 2008-2019 Veselin Penev, https://bitdust.io
+# Copyright (C) 2008 Veselin Penev, https://bitdust.io
 #
 # This file (index_synchronizer.py) is part of BitDust Software.
 #
@@ -378,7 +378,7 @@ class IndexSynchronizer(automat.Automat):
             CreatorID=localID,
             BackupID=packetID,
             BlockNumber=0,
-            SessionKey=key.NewSessionKey(),
+            SessionKey=key.NewSessionKey(session_key_type=key.SessionKeyType()),
             SessionKeyType=key.SessionKeyType(),
             LastBlock=True,
             Data=bpio.ReadBinaryFile(settings.BackupIndexFilePath()),

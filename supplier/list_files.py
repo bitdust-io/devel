@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # list_files.py
 #
-# Copyright (C) 2008-2019 Veselin Penev, https://bitdust.io
+# Copyright (C) 2008 Veselin Penev, https://bitdust.io
 #
 # This file (list_files.py) is part of BitDust Software.
 #
@@ -95,7 +95,8 @@ def send(customer_idurl, packet_id, format_type, key_id, remote_idurl):
         CreatorID=my_id.getLocalID(),
         BackupID=key_id,
         Data=raw_list_files,
-        SessionKey=key.NewSessionKey(),
+        SessionKey=key.NewSessionKey(session_key_type=key.SessionKeyType()),
+        SessionKeyType=key.SessionKeyType(),
         EncryptKey=key_id,
     )
     encrypted_list_files = block.Serialize()

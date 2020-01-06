@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # dht_service.py
 #
-# Copyright (C) 2008-2019 Veselin Penev, https://bitdust.io
+# Copyright (C) 2008 Veselin Penev, https://bitdust.io
 #
 # This file (dht_service.py) is part of BitDust Software.
 #
@@ -109,19 +109,18 @@ def init(udp_port, db_file_path=None):
             lg.out(_DebugLevel, 'dht_service.init SKIP, DHTNode already exist')
         return
     nw_info = known_nodes.network_info()
-    if nw_info.get('dht-constants'):
-        if 'bucket_size' in nw_info['dht-constants']:
-            constants.k = nw_info['dht-constants']['bucket_size']
-        if 'parallel_calls' in nw_info['dht-constants']:
-            constants.alpha = nw_info['dht-constants']['parallel_calls']
-        if 'rpc_timeout' in nw_info['dht-constants']:
-            constants.rpcTimeout = nw_info['dht-constants']['rpc_timeout']
-        if 'refresh_timeout' in nw_info['dht-constants']:
-            constants.refreshTimeout = nw_info['dht-constants']['refresh_timeout']
-        if 'max_age' in nw_info['dht-constants']:
-            constants.dataExpireTimeout = nw_info['dht-constants']['max_age']
-        if 'default_age' in nw_info['dht-constants']:
-            constants.dataExpireSecondsDefaut = nw_info['dht-constants']['default_age']
+    if 'bucket_size' in nw_info:
+        constants.k = nw_info['bucket_size']
+    if 'parallel_calls' in nw_info:
+        constants.alpha = nw_info['parallel_calls']
+    if 'rpc_timeout' in nw_info:
+        constants.rpcTimeout = nw_info['rpc_timeout']
+    if 'refresh_timeout' in nw_info:
+        constants.refreshTimeout = nw_info['refresh_timeout']
+    if 'max_age' in nw_info:
+        constants.dataExpireTimeout = nw_info['max_age']
+    if 'default_age' in nw_info:
+        constants.dataExpireSecondsDefaut = nw_info['default_age']
     if db_file_path is None:
         db_file_path = settings.DHTDBFile()
     dbPath = bpio.portablePath(db_file_path)

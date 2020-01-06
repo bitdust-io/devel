@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # conftest.py
 #
-# Copyright (C) 2008-2019 Stanislav Evseev, Veselin Penev  https://bitdust.io
+# Copyright (C) 2008 Stanislav Evseev, Veselin Penev  https://bitdust.io
 #
 # This file (conftest.py) is part of BitDust Software.
 #

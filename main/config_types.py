@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # config_defaults.py
 #
-# Copyright (C) 2008-2019 Veselin Penev, https://bitdust.io
+# Copyright (C) 2008 Veselin Penev, https://bitdust.io
 #
 # This file (config_types.py) is part of BitDust Software.
 #
@@ -154,6 +154,7 @@ def defaults():
         'services/keys-registry/enabled': TYPE_BOOLEAN,
         'services/keys-storage/enabled': TYPE_BOOLEAN,
         'services/list-files/enabled': TYPE_BOOLEAN,
+        'services/message-history/enabled': TYPE_BOOLEAN,
         'services/miner/enabled': TYPE_BOOLEAN,
         'services/my-data/enabled': TYPE_BOOLEAN,
         'services/my-ip-port/enabled': TYPE_BOOLEAN,

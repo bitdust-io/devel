@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # api_rest_http_server.py
 #
-# Copyright (C) 2008-2019 Veselin Penev, https://bitdust.io
+# Copyright (C) 2008 Veselin Penev, https://bitdust.io
 #
 # This file (api_rest_http_server.py) is part of BitDust Software.
 #
@@ -1079,6 +1079,12 @@ class BitDustRESTHTTPServer(JsonAPIResource):
             show_proxy=bool(_request_arg(request, 'proxy', '1') in ['1', 'true', ]),
             show_dht=bool(_request_arg(request, 'dht', '1') in ['1', 'true', ]),
         )
+
+    @GET('^/nw/cf$')
+    @GET('^/v1/network/configuration$')
+    @GET('^/network/configuration/v1$')
+    def network_configuration_v1(self, request):
+        return api.network_configuration()
 
     #------------------------------------------------------------------------------
 

@@ -141,7 +141,7 @@ class Test(TestCase):
             CreatorID=my_id.getLocalID(),
             BackupID='BackupABC',
             BlockNumber=123,
-            SessionKey=key.NewSessionKey(),
+            SessionKey=key.NewSessionKey(session_key_type=key.SessionKeyType()),
             SessionKeyType=key.SessionKeyType(),
             LastBlock=True,
             Data=data1,

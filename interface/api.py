@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # api.py
 #
-# Copyright (C) 2008-2019 Veselin Penev, https://bitdust.io
+# Copyright (C) 2008 Veselin Penev, https://bitdust.io
 #
 # This file (api.py) is part of BitDust Software.
 #
@@ -33,7 +33,6 @@ Here is a bunch of methods to interact with BitDust software.
 #------------------------------------------------------------------------------
 
 from __future__ import absolute_import
-from six.moves import map
 
 #------------------------------------------------------------------------------
 
@@ -633,7 +632,7 @@ def key_create(key_alias, key_size=None, label='', include_private=False):
         include_private=include_private
     )
     key_info.pop('include_private', None)
-    return OK(key_info, message='new private key "%s" was generated successfully' % key_alias, )
+    return RESULT([key_info,] , message='new private key "%s" was generated successfully' % key_alias, )
 
 
 def key_label(key_id, label):
@@ -3467,7 +3466,6 @@ def network_connected(wait_timeout=5):
                 proxy_receiver_machine = automat.objects().get(proxy_receiver_lookup[0])
                 if proxy_receiver_machine and proxy_receiver_machine.state == 'LISTEN':
                     wait_timeout_defer = Deferred()
-                    wait_timeout_defer.addTimeout(wait_timeout, clock=reactor)
                     wait_timeout_defer.addBoth(lambda _: ret.callback(OK({
                         'service_network': 'started',
                         'service_gateway': 'started',
@@ -3475,10 +3473,10 @@ def network_connected(wait_timeout=5):
                         'service_proxy_transport': 'started',
                         'proxy_receiver_state': proxy_receiver_machine.state,
                     }, api_method='network_connected')))
+                    wait_timeout_defer.addTimeout(wait_timeout, clock=reactor)
                     return ret
             else:
                 wait_timeout_defer = Deferred()
-                wait_timeout_defer.addTimeout(wait_timeout, clock=reactor)
                 wait_timeout_defer.addBoth(lambda _: ret.callback(OK({
                     'service_network': 'started',
                     'service_gateway': 'started',
@@ -3486,6 +3484,7 @@ def network_connected(wait_timeout=5):
                     'service_proxy_transport': 'disabled',
                     'p2p_connector_state': p2p_connector_machine.state,
                 }, api_method='network_connected')))
+                wait_timeout_defer.addTimeout(wait_timeout, clock=reactor)
                 return ret
 
     if not my_id.isLocalIdentityReady():
@@ -3828,6 +3827,10 @@ def network_status(show_suppliers=True, show_customers=True, show_cache=True,
                 'contacts': dht_service.node()._routingTable.totalContacts(),
             })
     return RESULT([r, ])
+
+
+def network_configuration():
+    return RESULT([driver.get_network_configuration(), ])
 
 #------------------------------------------------------------------------------
 

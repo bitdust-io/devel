@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # message.py
 #
-# Copyright (C) 2008-2019 Veselin Penev, https://bitdust.io
+# Copyright (C) 2008 Veselin Penev, https://bitdust.io
 #
 # This file (message.py) is part of BitDust Software.
 #
@@ -59,10 +59,10 @@ from logs import lg
 from p2p import commands
 from p2p import online_status
 
-from lib import strng
 from lib import packetid
 from lib import utime
 from lib import serialization
+from lib import strng
 
 from crypt import signed
 from crypt import key
@@ -216,7 +216,7 @@ class PrivateMessage(object):
         return self.encrypted_body
 
     def encrypt(self, message_body, encrypt_session_func=None):
-        new_sessionkey = key.NewSessionKey()
+        new_sessionkey = key.NewSessionKey(session_key_type=key.SessionKeyType())
         if not encrypt_session_func:
             if my_keys.is_key_registered(self.recipient):
                 if _Debug:
@@ -246,7 +246,7 @@ class PrivateMessage(object):
         if not encrypt_session_func:
             raise Exception('can not find key for given recipient')
         self.encrypted_session = encrypt_session_func(new_sessionkey)
-        self.encrypted_body = key.EncryptWithSessionKey(new_sessionkey, message_body)
+        self.encrypted_body = key.EncryptWithSessionKey(new_sessionkey, message_body, session_key_type=key.SessionKeyType())
         return self.encrypted_session, self.encrypted_body
 
     def decrypt(self, decrypt_session_func=None):
@@ -265,7 +265,7 @@ class PrivateMessage(object):
         if not decrypt_session_func:
             raise Exception('can not find key for given recipient: %s' % self.recipient)
         decrypted_sessionkey = decrypt_session_func(self.encrypted_session)
-        return key.DecryptWithSessionKey(decrypted_sessionkey, self.encrypted_body)
+        return key.DecryptWithSessionKey(decrypted_sessionkey, self.encrypted_body, session_key_type=key.SessionKeyType())
 
     def serialize(self):
         dct = {
@@ -361,7 +361,7 @@ def on_message_failed(idurl, json_data, recipient_global_id, packet_id, response
     if idurl in _LastUserPingTime:
         _LastUserPingTime[idurl] = 0
     if result_defer and not result_defer.called:
-        err = Exception(response) if response else error
+        err = Exception(response) if response else (error if not strng.is_string(error) else Exception(error))
         result_defer.errback(err)
 
 #------------------------------------------------------------------------------

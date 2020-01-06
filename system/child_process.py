@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # child_process.py
 #
-# Copyright (C) 2008-2019 Veselin Penev, https://bitdust.io
+# Copyright (C) 2008 Veselin Penev, https://bitdust.io
 #
 # This file (child_process.py) is part of BitDust Software.
 #

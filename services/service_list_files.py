@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # service_list_files.py
 #
-# Copyright (C) 2008-2019 Veselin Penev, https://bitdust.io
+# Copyright (C) 2008 Veselin Penev, https://bitdust.io
 #
 # This file (service_list_files.py) is part of BitDust Software.
 #

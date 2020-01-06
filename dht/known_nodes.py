@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # known_nodes.py
 #
-# Copyright (C) 2008-2019 Veselin Penev, https://bitdust.io
+# Copyright (C) 2008 Veselin Penev, https://bitdust.io
 #
 # This file (known_nodes.py) is part of BitDust Software.
 #
@@ -34,7 +34,6 @@ module:: known_nodes
 
 from __future__ import absolute_import
 
-import os
 import re
 
 #------------------------------------------------------------------------------
@@ -42,31 +41,12 @@ import re
 
 def network_info():
     """
-    Returns correct and full network info from networks.json file.
+    Returns correct and full network info from `default_network.json` file in the repository root.
+    If file `~/.bitdust/metadata/networkconfig` exists - use it instead.
     """
-    from system import bpio
-    from system import local_fs
-    from lib import serialization
-    from main import settings
-    networks_json_path = os.path.join(settings.MetaDataDir(), 'networks.json')
-    if not os.path.isfile(networks_json_path):
-        networks_json_path = os.path.join(bpio.getExecutableDir(), 'networks.json')
-    networks_json_raw = local_fs.ReadBinaryFile(networks_json_path)
-    if networks_json_raw:
-        networks_json = serialization.BytesToDict(
-            networks_json_raw,
-            keys_to_text=True,
-            values_to_text=True,
-        )
-    else:
-        networks_json = {}
-    my_network = local_fs.ReadTextFile(settings.NetworkFileName()).strip()
-    if not my_network:
-        my_network = 'main'
-    if my_network not in networks_json:
-        my_network = 'main'
-    nw_info = networks_json[my_network]
-    return nw_info
+    from main import network_config
+    network_config = network_config.read_network_config_file()
+    return network_config['service_entangled_dht']
 
 
 def default_nodes():
@@ -74,9 +54,8 @@ def default_nodes():
     List of DHT nodes currently maintained : (host, UDP port number)
     """
     from lib import strng
-    nw_info = network_info()
     dht_seeds = []
-    for dht_seed in nw_info['dht-seeds']:
+    for dht_seed in network_info()['known_nodes']:
         dht_seeds.append((strng.to_bin(dht_seed['host']), dht_seed['udp_port'], ))
     return dht_seeds
 
@@ -84,7 +63,7 @@ def default_nodes():
 def nodes():
     """
     Here is a well known DHT nodes, this is "genesis" network.
-    Every new node in the network will first connect one or several of those nodes,
+    Every new node in the network will first connect to those nodes,
     and then will be routed to some other nodes already registered.
 
     Right now we have started several BitDust nodes on vps hosting across the world.
@@ -93,14 +72,14 @@ def nodes():
     So other nodes will be able to use your machine to connect to DHT network.
 
     The load is not big, but as network will grow we will have more machines listed here,
-    so all traffic, maintanance and ownership will be distributed across the world.
+    so all traffic and ownership will be distributed across the world.
 
     You can override those "genesis" nodes (before you join network first time)
     by configuring list of your preferred DHT nodes (host or IP address) in the program settings:
 
         api.config_set(
             "services/entangled-dht/known-nodes",
-            "firstnode.net:14441, secondmachine.com:1234, 123.45.67.89:9999",
+            "firstnode.net:14441,secondmachine.com:1234,123.45.67.89:9999",
         )
 
     This way you can create your own DHT network, inside BitDust, under your full control.
