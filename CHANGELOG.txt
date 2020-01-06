@@ -1,6 +1,18 @@
 Change Log
 ==========
 
+
+2020-01-06 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* new file: main/network_config.py (#462)
+* make possible to use DES3 encryption for session keys
+* new default_network.json file instead of networks.json
+* bug fix in tcp_connection(), make sure pending transfers are properly closed
+* adjusted timers in list_files_orator() automat
+* freeze requirements.txt
+
+
+
 2020-01-02 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * added main/network_config.py
