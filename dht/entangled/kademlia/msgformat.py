@@ -88,3 +88,40 @@ class DefaultFormat(MessageTranslator):
             msg[self.headerType] = self.typeResponse
             msg[self.headerPayload] = message.response
         return msg
+
+
+class MultiLayerFormat(MessageTranslator):
+    typeRequest, typeResponse, typeError = list(range(3))
+    headerType, headerMsgID, headerNodeID, headerPayload, headerArgs, headerLayer = list(range(6))
+
+    def fromPrimitive(self, msgPrimitive):
+        msgType = msgPrimitive[self.headerType]
+        if msgType == self.typeRequest:
+            msg = msgtypes.RequestMessage(msgPrimitive[self.headerNodeID], msgPrimitive[self.headerPayload], msgPrimitive[self.headerArgs], msgPrimitive[self.headerMsgID], layerID=msgPrimitive[self.headerLayer])
+        elif msgType == self.typeResponse:
+            msg = msgtypes.ResponseMessage(msgPrimitive[self.headerMsgID], msgPrimitive[self.headerNodeID], msgPrimitive[self.headerPayload], layerID=msgPrimitive[self.headerLayer])
+        elif msgType == self.typeError:
+            msg = msgtypes.ErrorMessage(msgPrimitive[self.headerMsgID], msgPrimitive[self.headerNodeID], msgPrimitive[self.headerPayload], msgPrimitive[self.headerArgs], layerID=msgPrimitive[self.headerLayer])
+        else:
+            # Unknown message, no payload
+            msg = msgtypes.Message(msgPrimitive[self.headerMsgID], msgPrimitive[self.headerNodeID])
+        return msg
+
+    def toPrimitive(self, message):
+        msg = {self.headerMsgID: message.id,
+               self.headerNodeID: message.nodeID}
+        if isinstance(message, msgtypes.RequestMessage):
+            msg[self.headerType] = self.typeRequest
+            msg[self.headerPayload] = message.request
+            msg[self.headerArgs] = message.args
+            msg[self.headerLayer] = message.layerID
+        elif isinstance(message, msgtypes.ErrorMessage):
+            msg[self.headerType] = self.typeError
+            msg[self.headerPayload] = message.exceptionType
+            msg[self.headerArgs] = message.response
+            msg[self.headerLayer] = message.layerID
+        elif isinstance(message, msgtypes.ResponseMessage):
+            msg[self.headerType] = self.typeResponse
+            msg[self.headerPayload] = message.response
+            msg[self.headerLayer] = message.layerID
+        return msg

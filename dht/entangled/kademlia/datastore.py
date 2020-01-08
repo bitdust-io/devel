@@ -39,7 +39,7 @@ PROTOCOL_VERSION = 1
 
 PICKLE_PROTOCOL = 2
 
-_Debug = False
+_Debug = True
 
 
 class DataStore(DictMixin):
@@ -211,6 +211,8 @@ class SQLiteVersionedJsonDataStore(DataStore):
         @type dbFile: str
         """
         createDB = not os.path.exists(dbFile)
+        if _Debug:
+            print('[DHT DB] dbFile=%r   createDB=%r' % (dbFile, createDB, ))
         self._db = sqlite3.connect(dbFile)
         self._db.isolation_level = None
         self._db.text_factory = encoding.to_text

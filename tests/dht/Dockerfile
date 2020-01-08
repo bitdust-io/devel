@@ -5,3 +5,5 @@ ENV dht_seed_2='dht_seed_2:14441'
 ENV delayed='0'
 
 ENTRYPOINT /root/.bitdust/venv/bin/python /app/bitdust/dht/dht_service.py --seeds "$dht_seed_1, $dht_seed_2" --wait "$delayed"
+
+#  1>/tmp/out 2>/tmp/err

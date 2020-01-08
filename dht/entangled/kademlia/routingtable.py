@@ -24,7 +24,7 @@ from . import kbucket  # @UnresolvedImport
 from .protocol import TimeoutError  # @UnresolvedImport
 
 
-_Debug = False
+_Debug = True
 
 
 class RoutingTable(object):
@@ -251,7 +251,8 @@ class TreeRoutingTable(RoutingTable):
 
         if _Debug:
             print('                        findCloseNodes %r   _rpcNodeID=%r   bucketIndex=%d' % (
-                key, _rpcNodeID if _rpcNodeID else None, bucketIndex, ))   
+                key, _rpcNodeID if _rpcNodeID else None, bucketIndex, ))
+            print('                            buckets: %r' % self._buckets)
 
         closestNodes = self._buckets[bucketIndex].getContacts(constants.k, _rpcNodeID)
         # This method must return k contacts (even if we have the node with the specified key as node ID),
@@ -261,6 +262,8 @@ class TreeRoutingTable(RoutingTable):
         canGoHigher = bucketIndex + i < len(self._buckets)
         # Fill up the node list to k nodes, starting with the closest neighbouring nodes known
         while len(closestNodes) < constants.k and (canGoLower or canGoHigher):
+            if _Debug:
+                print('                        closestNodes=%r' % closestNodes)
             # TODO: this may need to be optimized
             more_contacts = []
             if canGoLower:

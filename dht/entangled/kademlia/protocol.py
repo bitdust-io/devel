@@ -30,11 +30,11 @@ from . import constants  # @UnresolvedImport
 from . import encoding  # @UnresolvedImport
 from . import msgtypes  # @UnresolvedImport
 from . import msgformat  # @UnresolvedImport
-from .contact import Contact  # @UnresolvedImport
+from .contact import Contact, LayeredContact  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 
 #------------------------------------------------------------------------------
 
@@ -351,12 +351,12 @@ class KademliaProtocol(protocol.DatagramProtocol):
         # Execute the RPC
         func = getattr(self._node, method, None)
 
-        if callable(func) and hasattr(func, 'rpcmethod'):
+        if func and callable(func) and hasattr(func, 'rpcmethod'):
             # Call the exposed Node method and return the result to the deferred callback chain
             try:
                 try:
                     # Try to pass the sender's node id to the function...
-                    result = func(*args, **{'_rpcNodeID': senderContact.id})
+                    result = func(*args, **{'_rpcNodeID': senderContact.id, 'layerID': senderContact.layerID})
                 except TypeError:
                     # ...or simply call it if that fails
                     result = func(*args)
@@ -410,3 +410,125 @@ class KademliaProtocol(protocol.DatagramProtocol):
         else:
             # This should never be reached
             print("ERROR: deferred timed out, but is not present in sent messages list!")
+
+
+class KademliaMultiLayerProtocol(KademliaProtocol):
+
+    def __init__(self, node, msgEncoder=encoding.Bencode(), msgTranslator=msgformat.MultiLayerFormat()):
+        KademliaProtocol.__init__(self, node, msgEncoder=msgEncoder, msgTranslator=msgTranslator)
+
+    def sendRPC(self, contact, method, args, rawResponse=False, layerID=0, **kwargs):
+        msg = msgtypes.RequestMessage(self._node.layers[layerID], method, args, layerID=layerID)
+        msgPrimitive = self._translator.toPrimitive(msg)
+        encodedMsg = self._encoder.encode(msgPrimitive, encoding='utf-8')
+        df = defer.Deferred()
+        if rawResponse:
+            df._rpcRawResponse = True
+        if _Debug:
+            print('        <<< [%s] sendRPC' % time.time(), (method, msg.id, contact.address, contact.port))
+        if self._counter:
+            self._counter('sendRPC')
+        timeoutCall = reactor.callLater(constants.rpcTimeout * 3, self._msgTimeout, msg.id)  # IGNORE:E1101
+        self._sentMessages[msg.id] = (contact.id, df, timeoutCall)
+        self._send(encodedMsg, msg.id, (contact.address, contact.port))
+        return df
+
+    def dispatch(self, datagram, address):
+        if _Debug:
+            print('                    datagram of %d bytes to dispatch from %r' % (len(datagram), address))
+        msgPrimitive = self._encoder.decode(datagram, encoding='utf-8')
+        if _Debug:
+            print('                        msgPrimitive: %r' % msgPrimitive)
+        message = self._translator.fromPrimitive(msgPrimitive)
+        layerID = message.layerID
+
+        remoteContact = LayeredContact(encoding.to_text(message.nodeID), address[0], address[1], self, layerID=layerID)
+        # Refresh the remote node's details in the local node's k-buckets
+        self._node.addContact(remoteContact)
+        if _Debug:                                                                                                                                                                                                                                
+            print('        >>> [%s] dht.dispatch %r from %r' % (
+                time.time(), message.id, address, ))
+
+        if isinstance(message, msgtypes.RequestMessage):
+            # This is an RPC method request
+            message_request = message.request
+            if isinstance(message_request, six.binary_type):
+                message_request = message_request.decode()
+            self._handleRPC(remoteContact, message.id, message_request, message.args)
+            if message.id in self._sentMessages:
+                if _Debug:
+                    print('                    RPC Request message received [%s]' % message_request)
+                # Cancel timeout timer for this RPC
+                df, timeoutCall = self._sentMessages[message.id][1:3]
+                timeoutCall.cancel()
+                del self._sentMessages[message.id]
+            else:
+                if _Debug:
+                    print('                     RPC Request message %r is not a reply, latest outgoing messages: %r' % (
+                        message.id, [k for k in self._sentMessages.keys()], ))
+
+        elif isinstance(message, msgtypes.ResponseMessage):
+            message_response = message.response
+            if isinstance(message_response, six.binary_type):
+                message_response = message_response.decode()
+            # Find the message that triggered this response
+            if message.id in self._sentMessages:
+                # Cancel timeout timer for this RPC
+                df, timeoutCall = self._sentMessages[message.id][1:3]
+                timeoutCall.cancel()
+                del self._sentMessages[message.id]
+
+                if hasattr(df, '_rpcRawResponse'):
+                    if _Debug:
+                        print('                        respond with tuple (%r, %r)' % (message, address))
+                    # The RPC requested that the raw response message and originating address be returned; do not interpret it
+                    df.callback((message, address))
+                elif isinstance(message, msgtypes.ErrorMessage):
+                    # The RPC request raised a remote exception; raise it locally
+                    remoteException = None
+                    exc_msg = message_response
+                    remoteException = Exception(exc_msg)
+                    if _Debug:
+                        print('                    respond with error "%s"' % exc_msg)
+                    df.errback(remoteException)
+                else:
+                    # We got a result from the RPC
+                    if _Debug:
+                        print('                    respond with message_response: %r' % message_response)
+                    df.callback(message_response)
+            else:
+                # If the original message isn't found, it must have timed out
+                # TODO: we should probably do something with this...
+                if _Debug:
+                    print('                    message %r was not identified, currently sent: %r' % (
+                        message.id, [k for k in self._sentMessages.keys()], ))
+        return True
+
+    def _sendResponse(self, contact, rpcID, response):
+        """
+        Send a RPC response to the specified contact.
+        """
+        layerID = contact.layerID
+        msg = msgtypes.ResponseMessage(rpcID, self._node.layers[layerID], response, layerID=layerID)
+        msgPrimitive = self._translator.toPrimitive(msg)
+        encodedMsg = self._encoder.encode(msgPrimitive, encoding='utf-8')
+        if _Debug:
+            print('                    _sendResponse', (contact.address, contact.port), rpcID, response)
+        if self._counter:
+            self._counter('_sendResponse')
+        self._send(encodedMsg, rpcID, (contact.address, contact.port))
+
+    def _sendError(self, contact, rpcID, exceptionType, exceptionMessage):
+        """
+        Send an RPC error message to the specified contact.
+        """
+        layerID = contact.layerID
+        msg = msgtypes.ErrorMessage(rpcID, self._node.layers[layerID], exceptionType, exceptionMessage, layerID=layerID)
+        msgPrimitive = self._translator.toPrimitive(msg)
+        encodedMsg = self._encoder.encode(msgPrimitive, encoding='utf-8')
+        if _Debug:
+            print('                    _sendError', (contact.address, contact.port), rpcID, exceptionType, exceptionMessage)
+        if self._counter:
+            self._counter('_sendError')
+        self._send(encodedMsg, rpcID, (contact.address, contact.port))
+

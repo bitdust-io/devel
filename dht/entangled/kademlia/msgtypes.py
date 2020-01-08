@@ -36,7 +36,7 @@ class RequestMessage(Message):
     Message containing an RPC request.
     """
 
-    def __init__(self, nodeID, method, methodArgs, rpcID=None):
+    def __init__(self, nodeID, method, methodArgs, rpcID=None, layerID=0):
         if rpcID is None:
             hsh = hashlib.sha1()
             hsh.update(str(random.getrandbits(255)).encode())
@@ -44,6 +44,7 @@ class RequestMessage(Message):
         Message.__init__(self, rpcID, nodeID)
         self.request = method
         self.args = methodArgs
+        self.layerID = layerID
 
 
 class ResponseMessage(Message):
@@ -51,9 +52,10 @@ class ResponseMessage(Message):
     Message containing the result from a successful RPC request.
     """
 
-    def __init__(self, rpcID, nodeID, response):
+    def __init__(self, rpcID, nodeID, response, layerID=0):
         Message.__init__(self, rpcID, nodeID)
         self.response = response
+        self.layerID = layerID
 
 
 class ErrorMessage(ResponseMessage):
@@ -61,8 +63,8 @@ class ErrorMessage(ResponseMessage):
     Message containing the error from an unsuccessful RPC request.
     """
 
-    def __init__(self, rpcID, nodeID, exceptionType, errorMessage):
-        ResponseMessage.__init__(self, rpcID, nodeID, errorMessage)
+    def __init__(self, rpcID, nodeID, exceptionType, errorMessage, layerID=0):
+        ResponseMessage.__init__(self, rpcID, nodeID, errorMessage, layerID=layerID)
         if isinstance(exceptionType, type):
             self.exceptionType = '%s.%s' % (exceptionType.__module__, exceptionType.__name__)
         else:

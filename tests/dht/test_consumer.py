@@ -57,7 +57,7 @@ def main():
 
     lg.set_debug_level(12)
 
-    dht_service.init(udp_port=14441, db_file_path=settings.DHTDBFile())
+    dht_service.init(udp_port=14441)
 
     seeds = []
 

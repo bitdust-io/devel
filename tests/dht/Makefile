@@ -31,5 +31,5 @@ consume:
 	docker-compose exec dht_consumer /root/.bitdust/venv/bin/python /app/bitdust/tests/dht/test_consumer.py 1 15
 
 dumpdb:
-	docker-compose exec dht_seed_1 /root/.bitdust/venv/bin/python -c "import sqlite3; db=sqlite3.connect('/root/.bitdust/metadata/dhtdb'); cur=db.cursor(); cur.execute('SELECT * FROM data'); import pprint; pprint.pprint(cur.fetchall());"
+	docker-compose exec dht_seed_1 /root/.bitdust/venv/bin/python -c "import sqlite3; db=sqlite3.connect('/root/.bitdust/dht/db_0'); cur=db.cursor(); cur.execute('SELECT * FROM data'); import pprint; pprint.pprint(cur.fetchall());"
 	# python -c "import sqlite3; db=sqlite3.connect('/tmp/db4'); cur=db.cursor(); cur.execute('SELECT * FROM data'); import pprint, pickle; pprint.pprint([(r[0], pickle.loads(r[1])) for r in cur.fetchall()]);"

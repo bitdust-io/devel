@@ -135,16 +135,22 @@ dht_network_up:
 	docker-compose -f tests/dht/docker-compose.yml up --force-recreate --build
 
 dht_network_run_producer:
-	docker-compose -f tests/dht/docker-compose.yml exec dht_producer bash -c "/root/.bitdust/venv/bin/python /bitdust/tests/dht/test_producer.py 1 5"
+	docker-compose -f tests/dht/docker-compose.yml exec dht_producer bash -c "/root/.bitdust/venv/bin/python /app/bitdust/tests/dht/test_producer.py 1 5"
 
 dht_network_run_producer/%:
-	docker-compose -f tests/dht/docker-compose.yml exec dht_producer bash -c "/root/.bitdust/venv/bin/python /bitdust/tests/dht/test_producer.py 1 $*"
+	docker-compose -f tests/dht/docker-compose.yml exec dht_producer bash -c "/root/.bitdust/venv/bin/python /app/bitdust/tests/dht/test_producer.py 1 $*"
 
 dht_network_run_consumer:
-	docker-compose -f tests/dht/docker-compose.yml exec dht_consumer bash -c "/root/.bitdust/venv/bin/python /bitdust/tests/dht/test_consumer.py 1 5"
+	docker-compose -f tests/dht/docker-compose.yml exec dht_consumer bash -c "/root/.bitdust/venv/bin/python /app/bitdust/tests/dht/test_consumer.py 1 5"
 
 dht_network_run_consumer/%:
-	docker-compose -f tests/dht/docker-compose.yml exec dht_consumer bash -c "/root/.bitdust/venv/bin/python /bitdust/tests/dht/test_consumer.py 1 $*"
+	docker-compose -f tests/dht/docker-compose.yml exec dht_consumer bash -c "/root/.bitdust/venv/bin/python /app/bitdust/tests/dht/test_consumer.py 1 $*"
+
+dht_network_ssh_base:
+	docker-compose -f tests/dht/docker-compose.yml exec dht_base bash
+
+dht_network_ssh_seed_1:
+	docker-compose -f tests/dht/docker-compose.yml exec dht_seed_1 bash
 
 dht_network_ssh_producer:
 	docker-compose -f tests/dht/docker-compose.yml exec dht_producer bash

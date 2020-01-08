@@ -20,6 +20,9 @@ import six
 from . import constants  # @UnresolvedImport
 
 
+_Debug = True
+
+
 class BucketFull(Exception):
     """
     Raised when the bucket is full.
@@ -59,8 +62,12 @@ class KBucket(object):
             # - using the new contact to allow add-on data (e.g. optimization-specific stuff) to pe updated as well
             self._contacts.remove(contact)
             self._contacts.append(contact)
+            if _Debug:
+                print('[DHT KBUCKET]    moved contact to the end of the bucket %r' % contact)
         elif len(self._contacts) < constants.k:
             self._contacts.append(contact)
+            if _Debug:
+                print('[DHT KBUCKET]    added new contact %r' % contact)
         else:
             raise BucketFull("No space in bucket to insert contact")
 
@@ -131,6 +138,8 @@ class KBucket(object):
         @raise ValueError: The specified contact is not in this bucket
         """
         self._contacts.remove(contact)
+        if _Debug:
+            print('[DHT KBUCKET]    removed contact %r' % contact)
 
     def keyInRange(self, key):
         """

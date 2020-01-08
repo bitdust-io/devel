@@ -90,7 +90,7 @@ class EntangledDHTService(LocalService):
         from main.config import conf
         from userid import my_id
         conf().addConfigNotifier('services/entangled-dht/udp-port', self._on_udp_port_modified)
-        dht_service.init(udp_port=settings.getDHTPort(), db_file_path=settings.DHTDBFile())
+        dht_service.init(udp_port=settings.getDHTPort(), dht_dir_path=settings.DHTDataDir())
         known_seeds = known_nodes.nodes()
         lg.info('DHT known seed nodes are : %r' % known_seeds)
         d = dht_service.connect(seed_nodes=known_seeds)
