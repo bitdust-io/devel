@@ -17,6 +17,8 @@ args = parser.parse_args()
 
 
 def run(nodes):
+    print('run:', nodes)
+
     def callback(*args, **kwargs):
         print('callback', args)
         l = args[0]
@@ -61,11 +63,11 @@ def main():
 
     seeds = []
 
-    for seed_env in (os.environ.get('DHT_SEED_1'), os.environ.get('DHT_SEED_2')):
+    for seed_env in os.environ.get('DHT_SEEDS').split(','):
         seed = seed_env.split(':')
         seeds.append((seed[0], int(seed[1])))
 
-    print(seeds)
+    print('seeds:', seeds)
 
     dht_service.connect(seeds).addBoth(run)
     reactor.run()

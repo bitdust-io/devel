@@ -92,21 +92,21 @@ def getErrorMessage(x):
 def storeFailed(x, key):
     errmsg = getErrorMessage(x)
     if _Debug:
-        print('    [DHT NODE]    storeFailed', key, errmsg)
+        print('    [DHT NODE]    storeFailed', key, errmsg, x)
     return errmsg
 
 
 def findNodeFailed(x):
     errmsg = getErrorMessage(x)
     if _Debug:
-        print('    [DHT NODE]    findNodeFailed', errmsg)
+        print('    [DHT NODE]    findNodeFailed', errmsg, x)
     return errmsg
 
 
 def lookupFailed(x):
     errmsg = getErrorMessage(x)
     if _Debug:
-        print('    [DHT NODE]    lookupFailed', errmsg)
+        print('    [DHT NODE]    lookupFailed', errmsg, x)
     return errmsg
 
 
@@ -1092,7 +1092,7 @@ class MultiLayerNode(Node):
             if len(nodes) >= constants.k:
                 # If this node itself is closer to the key than the last (furthest) node in the list,
                 # we should store the value at ourselves as well
-                if self._routingTables[layerID].distance(key, self.layers[layerID]) < self._routingTables[layerID].distance(key, nodes[-1].layers[layerID]):
+                if self._routingTables[layerID].distance(key, self.layers[layerID]) < self._routingTables[layerID].distance(key, nodes[-1].id):
                     nodes.pop()
                     try:
                         ok = self.store(key, value, originalPublisherID=originalPublisherID,
@@ -1125,7 +1125,7 @@ class MultiLayerNode(Node):
             return dl
  
         # Find k nodes closest to the key...
-        df = self.iterativeFindNode(key, layerID)
+        df = self.iterativeFindNode(key, layerID=layerID)
         # ...and send them STORE RPCs as soon as they've been found
         df.addCallback(executeStoreRPCs)
         df.addErrback(findNodeFailed)

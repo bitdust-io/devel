@@ -1159,11 +1159,14 @@ def main(options=None, args=None):
 
             elif len(args) > 0:
 
-                def _r(x):
-                    lg.info(x)
-                    # reactor.stop()  #@UndefinedVariable
-
                 cmd = args[0]
+
+                lg.info('COMMAND: %r' % cmd)
+
+                def _r(x):
+                    lg.info('RESULT "%s": %r' % (cmd, x, ))
+                    reactor.stop()  #@UndefinedVariable
+
                 if cmd == 'get':
                     get_value(args[1]).addBoth(_r)
                 elif cmd == 'set':

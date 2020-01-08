@@ -20,16 +20,36 @@
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
 
+stop:
+	@docker stop $$(docker ps -a -q) || exit 0
+
+clean:
+	@docker rm $$(docker ps -a -q) || exit 0
+
+kill:
+	@docker rmi -f $$(docker images -a -q) || exit 0
 
 build:
 	docker-compose up -d --build --force-recreate --remove-orphans
 
-produce:
-	docker-compose exec dht_producer /root/.bitdust/venv/bin/python /app/bitdust/tests/dht/test_producer.py 1 10
+run:
+	docker-compose up --build --force-recreate --remove-orphans
 
-consume:
-	docker-compose exec dht_consumer /root/.bitdust/venv/bin/python /app/bitdust/tests/dht/test_consumer.py 1 15
+ps:
+	docker-compose exec producer bash -c "ps aux"
+
+shell:
+	docker-compose exec producer bash
+
+produce:
+	docker-compose exec producer bash -c "/root/.bitdust/venv/bin/python /app/bitdust/dht/dht_service.py $(cmd)"
+
+produce_sample_data:
+	docker-compose exec producer /root/.bitdust/venv/bin/python /app/bitdust/tests/dht/test_producer.py 1 10
+
+consume_sample_data:
+	docker-compose exec consumer /root/.bitdust/venv/bin/python /app/bitdust/tests/dht/test_consumer.py 1 15
 
 dumpdb:
-	docker-compose exec dht_seed_1 /root/.bitdust/venv/bin/python -c "import sqlite3; db=sqlite3.connect('/root/.bitdust/dht/db_0'); cur=db.cursor(); cur.execute('SELECT * FROM data'); import pprint; pprint.pprint(cur.fetchall());"
+	docker-compose exec seed1 /root/.bitdust/venv/bin/python -c "import sqlite3; db=sqlite3.connect('/root/.bitdust/dht/db_0'); cur=db.cursor(); cur.execute('SELECT * FROM data'); import pprint; pprint.pprint(cur.fetchall());"
 	# python -c "import sqlite3; db=sqlite3.connect('/tmp/db4'); cur=db.cursor(); cur.execute('SELECT * FROM data'); import pprint, pickle; pprint.pprint([(r[0], pickle.loads(r[1])) for r in cur.fetchall()]);"
