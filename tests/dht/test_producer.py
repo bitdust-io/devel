@@ -1,6 +1,6 @@
 import os
 import time
-import argparse
+import optparse
 
 from twisted.internet import reactor
 from twisted.internet.defer import DeferredList
@@ -10,17 +10,32 @@ from main import settings
 from dht import dht_service
 
 
-parser = argparse.ArgumentParser(description="Generate and place records to DHT")
-parser.add_argument("start", type=int, help="start number", default=1)
-parser.add_argument("end", type=int, help="end number", default=10)
-args = parser.parse_args()
+parser = optparse.OptionParser()
+parser.add_option("-s", "--start", dest="start", type="int", help="start position", default=1)
+parser.add_option("-e", "--end", dest="end", type="int", help="end position", default=3)
+parser.add_option("-l", "--layer", dest="layer", type="int", help="layer number", default=0)
+(options, args) = parser.parse_args()
 
 
-def run(nodes):
-    print('run:', nodes)
+
+def connected(nodes, seeds=[]):
+    print('connected:', nodes, seeds)
+    if options.layer != 0:
+        dht_service.connect(seeds, layer_id=options.layer).addBoth(layer_connected)
+    else:
+        run()
+
+
+def layer_connected(nodes):
+    print('layer_connected:', options.layer, nodes)
+    run()
+
+
+def run():
+    print('run')
 
     def callback(*args, **kwargs):
-        print('callback', args)
+        print('callback', args, kwargs)
         l = args[0]
         assert len(l) > 0
 
@@ -37,9 +52,9 @@ def run(nodes):
 
     try:
         list_of_deffered_set_value = []
-        for i in range(args.start, args.end):
+        for i in range(options.start, options.end + 1):
             j = {'key'+str(i): 'value'+str(i), }
-            d = dht_service.set_json_value(str(i), j, 60 * 60)
+            d = dht_service.set_json_value(str(i), json_data=j, age=60 * 60, layer_id=options.layer)
             d.addBoth(callback, j)
             d.addErrback(errback)
             list_of_deffered_set_value.append(d)
@@ -48,8 +63,8 @@ def run(nodes):
         dfl.addCallback(callback_dfl)
         dfl.addErrback(errback_dfl)
 
-    except:
-        print('ERRRORO!!')
+    except Exception as exc:
+        print('ERROR in run()', exc)
         reactor.stop()
 
 
@@ -59,7 +74,10 @@ def main():
 
     lg.set_debug_level(12)
 
-    dht_service.init(udp_port=14441)
+    connect_layers = []
+    if options.layer != 0:
+        connect_layers.append(options.layer)
+    dht_service.init(udp_port=14441, open_layers=connect_layers)
 
     seeds = []
 
@@ -69,7 +87,7 @@ def main():
 
     print('seeds:', seeds)
 
-    dht_service.connect(seeds).addBoth(run)
+    dht_service.connect(seeds).addBoth(connected, seeds=seeds)
     reactor.run()
 
 

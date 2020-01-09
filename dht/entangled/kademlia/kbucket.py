@@ -45,6 +45,12 @@ class KBucket(object):
         self.rangeMax = rangeMax
         self._contacts = list()
 
+    def __repr__(self, *args, **kwargs):
+        return str(self)
+
+    def __str__(self):
+        return '<KBucket %d %r to %r>' % (len(self._contacts), self.rangeMin, self.rangeMax)
+
     def addContact(self, contact):
         """
         Add contact to _contact list in the right order. This will move the
@@ -63,11 +69,11 @@ class KBucket(object):
             self._contacts.remove(contact)
             self._contacts.append(contact)
             if _Debug:
-                print('[DHT KBUCKET]    moved contact to the end of the bucket %r' % contact)
+                print('                [DHT KBUCKET]    moved contact to the end of the bucket %r' % contact)
         elif len(self._contacts) < constants.k:
             self._contacts.append(contact)
             if _Debug:
-                print('[DHT KBUCKET]    added new contact %r' % contact)
+                print('                [DHT KBUCKET]    added new contact %r' % contact)
         else:
             raise BucketFull("No space in bucket to insert contact")
 
@@ -139,7 +145,7 @@ class KBucket(object):
         """
         self._contacts.remove(contact)
         if _Debug:
-            print('[DHT KBUCKET]    removed contact %r' % contact)
+            print('                [DHT KBUCKET]    removed contact %r' % contact)
 
     def keyInRange(self, key):
         """

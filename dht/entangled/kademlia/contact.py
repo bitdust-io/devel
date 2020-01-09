@@ -17,7 +17,7 @@
 
 import six
 
-_Debug = True
+_Debug = False
 
 
 class Contact(object):
@@ -87,8 +87,8 @@ class LayeredContact(Contact):
             print('        [DHT CONTACT]: %r' % self)
 
     def __str__(self):
-        return '<%s(%d) at %r:%d>' % (
-            self.id[:6], self.layerID, self.address, self.port)
+        return '<Contact(%d) %s at %r:%d>' % (
+             self.layerID, self.id[:6], self.address, self.port)
 
     def __getattr__(self, name):
         def _sendRPC(*args, **kwargs):

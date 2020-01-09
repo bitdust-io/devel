@@ -45,11 +45,10 @@ produce:
 	docker-compose exec producer bash -c "/root/.bitdust/venv/bin/python /app/bitdust/dht/dht_service.py $(cmd)"
 
 produce_sample_data:
-	docker-compose exec producer /root/.bitdust/venv/bin/python /app/bitdust/tests/dht/test_producer.py 1 10
+	docker-compose exec producer /root/.bitdust/venv/bin/python /app/bitdust/tests/dht/test_producer.py --start=1 --end=2 --layer=$(layer)
 
 consume_sample_data:
-	docker-compose exec consumer /root/.bitdust/venv/bin/python /app/bitdust/tests/dht/test_consumer.py 1 15
+	docker-compose exec consumer /root/.bitdust/venv/bin/python /app/bitdust/tests/dht/test_consumer.py --start=1 --end=2 --layer=$(layer)
 
 dumpdb:
-	docker-compose exec seed1 /root/.bitdust/venv/bin/python -c "import sqlite3; db=sqlite3.connect('/root/.bitdust/dht/db_0'); cur=db.cursor(); cur.execute('SELECT * FROM data'); import pprint; pprint.pprint(cur.fetchall());"
-	# python -c "import sqlite3; db=sqlite3.connect('/tmp/db4'); cur=db.cursor(); cur.execute('SELECT * FROM data'); import pprint, pickle; pprint.pprint([(r[0], pickle.loads(r[1])) for r in cur.fetchall()]);"
+	docker-compose exec $(node) /root/.bitdust/venv/bin/python -c "import sqlite3; db=sqlite3.connect('/root/.bitdust/dht/db_$(layer)'); cur=db.cursor(); cur.execute('SELECT * FROM data'); import pprint; pprint.pprint(cur.fetchall());"

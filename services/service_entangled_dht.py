@@ -102,9 +102,12 @@ class EntangledDHTService(LocalService):
         return d
 
     def stop(self):
+        from dht import dht_records
         from dht import dht_service
         from main import events
         from main.config import conf
+        for layer_id in dht_records.LAYERS_REGISTRY.keys():
+            dht_service.close_layer(layer_id)
         events.remove_subscriber(self._on_my_identity_url_changed, 'my-identity-url-changed')
         dht_service.node().remove_rpc_callback('request')
         dht_service.node().remove_rpc_callback('store')
@@ -123,11 +126,16 @@ class EntangledDHTService(LocalService):
             dht_service.set_node_data('idurl', my_id.getLocalID().to_text())
 
     def _on_connected(self, nodes):
+        from dht import dht_records
         from dht import dht_service
+        from dht import known_nodes
         from logs import lg
         lg.info('DHT node connected  ID=[%s]  known nodes: %r' % (dht_service.node().id, nodes))
         dht_service.node().add_rpc_callback('store', self._on_dht_rpc_store)
         dht_service.node().add_rpc_callback('request', self._on_dht_rpc_request)
+        known_seeds = known_nodes.nodes()
+        for layer_id in dht_records.LAYERS_REGISTRY.keys():
+            dht_service.open_layer(layer_id, seed_nodes=known_seeds)
         return nodes
 
     def _on_connect_failed(self, err):

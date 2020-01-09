@@ -36,7 +36,7 @@ services:
       context: .
     environment:
       dht_seeds: genesis:14441
-      delayed: 5
+      delayed: 3
 
   seed3:
     image: bitdust_perf/app
@@ -44,7 +44,7 @@ services:
       context: .
     environment:
       dht_seeds: genesis:14441
-      delayed: 10
+      delayed: 5
 
   seed4:
     image: bitdust_perf/app
@@ -52,35 +52,39 @@ services:
       context: .
     environment:
       dht_seeds: genesis:14441
-      delayed: 15
+      delayed: 7
 
   node1:
     image: bitdust_perf/app
     build:
       context: .
     environment:
-      delayed: 20
+      dht_seeds: seed1:14441,seed3:14441
+      delayed: 11
 
   node2:
     image: bitdust_perf/app
     build:
       context: .
     environment:
-      delayed: 20
+      dht_seeds: seed2:14441,seed4:14441
+      delayed: 13
 
   node3:
     image: bitdust_perf/app
     build:
       context: .
     environment:
-      delayed: 20
+      dht_seeds: seed3:14441
+      delayed: 15
 
   node4:
     image: bitdust_perf/app
     build:
       context: .
     environment:
-      delayed: 20
+      dht_seeds: seed4:14441
+      delayed: 17
 
   producer:
     image: bitdust_perf/producer

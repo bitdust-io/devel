@@ -30,6 +30,9 @@ class Message(object):
         self.id = encoding.to_text(rpcID)
         self.nodeID = encoding.to_text(nodeID)
 
+    def __repr__(self, *args, **kwargs):
+        return str(self)
+
 
 class RequestMessage(Message):
     """
@@ -46,6 +49,10 @@ class RequestMessage(Message):
         self.args = methodArgs
         self.layerID = layerID
 
+    def __str__(self):
+        return '<RequestMessage %s %s %d with %r>' % (
+            self.id[:6], self.nodeID[:6], self.layerID, self.args)
+
 
 class ResponseMessage(Message):
     """
@@ -56,6 +63,10 @@ class ResponseMessage(Message):
         Message.__init__(self, rpcID, nodeID)
         self.response = response
         self.layerID = layerID
+
+    def __str__(self):
+        return '<ResponseMessage %s %s %d with %r>' % (
+            self.id[:6], self.nodeID[:6], self.layerID, self.response)
 
 
 class ErrorMessage(ResponseMessage):
@@ -71,3 +82,7 @@ class ErrorMessage(ResponseMessage):
             self.exceptionType = exceptionType
             if isinstance(self.exceptionType, six.binary_type):
                 self.exceptionType = self.exceptionType.decode()
+
+    def __str__(self):
+        return '<ErrorMessage %s %s %d with %r>' % (
+            self.id[:6], self.nodeID[:6], self.layerID, self.exceptionType)
