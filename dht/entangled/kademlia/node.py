@@ -1015,6 +1015,7 @@ class MultiLayerNode(Node):
         self._dataStores = {}
         self.layers = {}
         self.refreshers = {}
+        self.active_layers = set()
 
         # This will contain a deferred created when joining the network, to enable publishing/retrieving information from
         # the DHT as soon as the node is part of the network (add callbacks to this deferred if scheduling such operations
@@ -1064,6 +1065,8 @@ class MultiLayerNode(Node):
             json_state = self._dataStores[layer_id][self.nodeStateKey]
             state = json.loads(json_state)
             self.layers[layer_id] = state['id']
+            if layer_id not in self._routingTables:
+                self._routingTables[layer_id] = routingTable or routingtable.TreeRoutingTable(self.layers[layer_id], layerID=layer_id)
             for contactTriple in state['closestNodes']:
                 contact = LayeredContact(encoding.to_text(contactTriple[0]), contactTriple[1], contactTriple[2], self._protocol, layerID=layer_id)
                 self._routingTables[layer_id].addContact(contact)
@@ -1073,7 +1076,8 @@ class MultiLayerNode(Node):
             loaded = True
         if not self.layers[layer_id]:
             self.layers[layer_id] = self._generateID()
-        self._routingTables[layer_id] = routingTable or routingtable.TreeRoutingTable(self.layers[layer_id], layerID=layer_id)
+        if layer_id not in self._routingTables:
+            self._routingTables[layer_id] = routingTable or routingtable.TreeRoutingTable(self.layers[layer_id], layerID=layer_id)
         if _Debug:
             print('    [DHT NODE]    createLayer : layer %d created,  loaded=%r' % (layer_id, loaded, ))
         return True
@@ -1100,6 +1104,7 @@ class MultiLayerNode(Node):
             bootstrapContacts = None
         if _Debug:
             print('    [DHT NODE]    joinNetwork bootstrapContacts=%r layerID=%r' % (bootstrapContacts, layerID, ))
+        self.active_layers.add(layerID)
         self._joinDeferreds[layerID] = self._iterativeFind(self.layers[layerID], bootstrapContacts, layerID=layerID)
         self._joinDeferreds[layerID].addCallback(self._persistState, layerID=layerID)
         self._joinDeferreds[layerID].addErrback(self._joinNetworkFailed, layerID)
@@ -1107,6 +1112,15 @@ class MultiLayerNode(Node):
             self.refreshers[layerID].cancel()
         self.refreshers[layerID] = twisted.internet.reactor.callLater(constants.checkRefreshInterval, self._refreshNode, layerID=layerID)  # IGNORE:E1101  @UndefinedVariable
         return self._joinDeferreds[layerID]
+
+    def leaveNetwork(self, layerID):
+        if not layerID in self.active_layers:
+            return False
+        self.active_layers.remove(layerID)
+        if self.refreshers.get(layerID, None) and not self.refreshers[layerID].called:
+            self.refreshers[layerID].cancel()
+        self.refreshers.pop(layerID)
+        return True
 
     def iterativeStore(self, key, value, originalPublisherID=None,
                        age=0, expireSeconds=constants.dataExpireSecondsDefaut, layerID=0, **kwargs):
@@ -1335,6 +1349,10 @@ class MultiLayerNode(Node):
             layerID = kwargs['layerID']
         else:
             layerID = 0
+        if layerID not in self.active_layers:
+            if _Debug:
+                print('    [DHT NODE]    rpcmethod.store %r layerID=%d SKIP because layer is not active' % (key, layerID, ))
+            raise ValueError('Layer is not active')
         if _Debug:
             print('    [DHT NODE]    rpcmethod.store %r layerID=%d' % (key, layerID, ))
         # Get the sender's ID (if any)
@@ -1358,6 +1376,10 @@ class MultiLayerNode(Node):
             layerID = kwargs['layerID']
         else:
             layerID = 0
+        if layerID not in self.active_layers:
+            if _Debug:
+                print('    [DHT NODE]    rpcmethod.delete %r layerID=%d SKIP because layer is not active' % (key, layerID, ))
+            return []
         if _Debug:
             print('    [DHT NODE]    rpcmethod.delete %r layerID=%d : %r' % (key, layerID, kwargs))
         # Delete our own copy of the data (if we have one)...
@@ -1372,6 +1394,10 @@ class MultiLayerNode(Node):
             layerID = kwargs['layerID']
         else:
             layerID = 0
+        if layerID not in self.active_layers:
+            if _Debug:
+                print('    [DHT NODE]    rpcmethod.findNode %r layerID=%d SKIP because layer is not active' % (key, layerID, ))
+            return []
         if _Debug:
             print('    [DHT NODE]    rpcmethod.findNode %r layerID=%d : %r' % (key, layerID, kwargs))
         # Get the sender's ID (if any)
@@ -1397,7 +1423,12 @@ class MultiLayerNode(Node):
             layerID = kwargs['layerID']
         else:
             layerID = 0
-        if _Debug: print('    [DHT NODE]    rpcmethod.findValue %r layerID=%r : %r' % (key, layerID, kwargs))
+        if layerID not in self.active_layers:
+            if _Debug:
+                print('    [DHT NODE]    rpcmethod.findValue %r layerID=%d SKIP because layer is not active' % (key, layerID, ))
+            return []
+        if _Debug:
+            print('    [DHT NODE]    rpcmethod.findValue %r layerID=%r : %r' % (key, layerID, kwargs))
         if key in self._dataStores[layerID]:
             exp = None
             expireSecondsCall = getattr(self._dataStores[layerID], 'expireSeconds')

@@ -1,7 +1,7 @@
 #
 # Makefile
 #
-# Copyright (C) 2008-2018 Stanislav Evseev, Veselin Penev  https://bitdust.io
+# Copyright (C) 2018 Stanislav Evseev, Veselin Penev  https://bitdust.io
 #
 # This file (Makefile) is part of BitDust Software.
 #
@@ -45,10 +45,10 @@ produce:
 	docker-compose exec producer bash -c "/root/.bitdust/venv/bin/python /app/bitdust/dht/dht_service.py $(cmd)"
 
 produce_sample_data:
-	docker-compose exec producer /root/.bitdust/venv/bin/python /app/bitdust/tests/dht/test_producer.py --start=1 --end=2 --layer=$(layer)
+	docker-compose exec producer /root/.bitdust/venv/bin/python /app/bitdust/tests/dht/test_producer.py --start=1 --end=1 --layer=$(layer)
 
 consume_sample_data:
-	docker-compose exec consumer /root/.bitdust/venv/bin/python /app/bitdust/tests/dht/test_consumer.py --start=1 --end=2 --layer=$(layer)
+	docker-compose exec consumer /root/.bitdust/venv/bin/python /app/bitdust/tests/dht/test_consumer.py --start=1 --end=1 --layer=$(layer)
 
 dumpdb:
 	docker-compose exec $(node) /root/.bitdust/venv/bin/python -c "import sqlite3; db=sqlite3.connect('/root/.bitdust/dht/db_$(layer)'); cur=db.cursor(); cur.execute('SELECT * FROM data'); import pprint; pprint.pprint(cur.fetchall());"

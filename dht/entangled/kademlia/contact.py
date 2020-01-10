@@ -17,7 +17,7 @@
 
 import six
 
-_Debug = False
+_Debug = True
 
 
 class Contact(object):
@@ -83,8 +83,8 @@ class LayeredContact(Contact):
     def __init__(self, id, ipAddress, udpPort, networkProtocol, firstComm=0, layerID=0):
         self.layerID = layerID
         super(LayeredContact, self).__init__(id, ipAddress, udpPort, networkProtocol, firstComm)
-        if _Debug:
-            print('        [DHT CONTACT]: %r' % self)
+        # if _Debug:
+        #     print('        [DHT CONTACT]: %r' % self)
 
     def __str__(self):
         return '<Contact(%d) %s at %r:%d>' % (

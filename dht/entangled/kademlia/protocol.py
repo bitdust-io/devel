@@ -34,7 +34,7 @@ from .contact import Contact, LayeredContact  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 
 #------------------------------------------------------------------------------
 
@@ -139,8 +139,8 @@ class KademliaProtocol(protocol.DatagramProtocol):
                 del self._sentMessages[message.id]
             else:
                 if _Debug:
-                    print('         [DHT PROTO]             RPC Request message %r was not identified, currently sent: %r' % (
-                        message.id, [k for k in self._sentMessages.keys()], ))
+                    print('         [DHT PROTO]             RPC Request message %r was not identified, recently sent: %d' % (
+                        message.id, len([k for k in self._sentMessages.keys()]), ))
 
         elif isinstance(message, msgtypes.ResponseMessage):
             message_response = message.response
@@ -155,7 +155,7 @@ class KademliaProtocol(protocol.DatagramProtocol):
 
                 if hasattr(df, '_rpcRawResponse'):
                     if _Debug:
-                        print('          [DHT PROTO]               respond with tuple (%r, %r)' % (message, address))
+                        print('          [DHT PROTO]          sent  rpcRawResponse (%r, %r)' % (message, address))
                     # The RPC requested that the raw response message and originating address be returned; do not interpret it
                     df.callback((message, address))
                 elif isinstance(message, msgtypes.ErrorMessage):
@@ -164,19 +164,19 @@ class KademliaProtocol(protocol.DatagramProtocol):
                     exc_msg = message_response
                     remoteException = Exception(exc_msg)
                     if _Debug:
-                        print('          [DHT PROTO]           respond with error "%s"' % exc_msg)
+                        print('          [DHT PROTO]         sent   ErrorMessage "%s"' % exc_msg)
                     df.errback(remoteException)
                 else:
                     # We got a result from the RPC
                     if _Debug:
-                        print('          [DHT PROTO]           respond with message_response: %r' % message_response)
+                        print('          [DHT PROTO]         sent     message response: %r' % message_response)
                     df.callback(message_response)
             else:
                 # If the original message isn't found, it must have timed out
                 # TODO: we should probably do something with this...
                 if _Debug:
-                    print('       [DHT PROTO]              message %r was not identified, currently sent: %r' % (
-                        message.id, [k for k in self._sentMessages.keys()], ))
+                    print('       [DHT PROTO]             SKIP    message %r was not identified, recently sent: %d' % (
+                        message.id, len([k for k in self._sentMessages.keys()]), ))
         return True
 
     def datagramReceived(self, datagram, address):
