@@ -452,7 +452,7 @@ def SendToIDs(idlist, wide=False, ack_handler=None, timeout_handler=None, respon
     inqueue = {}
     found_previous_packets = 0
     for pkt_out in packet_out.queue():
-        if id_url.is_in(pkt_out.remote_idurl, idlist):
+        if id_url.is_in(pkt_out.remote_idurl, idlist, as_field=False):
             if pkt_out.description.count('Identity'):
                 if pkt_out.remote_idurl not in inqueue:
                     inqueue[pkt_out.remote_idurl] = 0

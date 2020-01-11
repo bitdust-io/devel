@@ -1,7 +1,7 @@
 #
 # Dockerfile
 #
-# Copyright (C) 2008-2018 Stanislav Evseev, Veselin Penev  https://bitdust.io
+# Copyright (C) 2018 Stanislav Evseev, Veselin Penev  https://bitdust.io
 #
 # This file (Dockerfile) is part of BitDust Software.
 #

@@ -492,12 +492,12 @@ def udp_dht_stun(udp_port=None, dht_port=None, result_defer=None):
 
     from dht import dht_service
 
-    if dht_service.node()._joinDeferred and not dht_service.node()._joinDeferred.called:
+    if dht_service.node().connectingTask() and not dht_service.node().connectingTask().called:
         if _Debug:
             lg.out(_DebugLevel, 'stun_client.udp_dht_stun   SKIP and run later because dht_service is still joining the network')
-        dht_service.node()._joinDeferred.addCallback(lambda ok: udp_dht_stun(udp_port=udp_port, dht_port=dht_port, result_defer=result_defer))
+        dht_service.node().connectingTask().addCallback(lambda ok: udp_dht_stun(udp_port=udp_port, dht_port=dht_port, result_defer=result_defer))
         if result_defer:
-            dht_service.node()._joinDeferred.addErrback(result_defer.errback)
+            dht_service.node().connectingTask().addErrback(result_defer.errback)
         return True
 
     dht_port = dht_port or settings.getDHTPort()

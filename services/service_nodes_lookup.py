@@ -56,9 +56,11 @@ class NodesLookupService(LocalService):
 
     def start(self):
         from p2p import lookup
-        lookup.init(lookup_method=lookup.lookup_in_dht,
-                    observe_method=lookup.observe_dht_node,
-                    process_method=lookup.process_idurl)
+        lookup.init(
+            lookup_method=lookup.lookup_in_dht,
+            observe_method=lookup.observe_dht_node,
+            process_method=lookup.process_idurl,
+        )
         lookup.start(count=2, consume=False)
         return True
 

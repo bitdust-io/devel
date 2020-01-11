@@ -387,9 +387,8 @@ def last_time_cached(idurl):
 
 
 def on_caching_task_failed(err, idurl):
-    if _Debug:
-        lg.dbg(_DebugLevel, 'failed caching %s : %r' % (idurl, err))
-    return err
+    lg.warn('failed caching %s : %r' % (idurl, err))
+    return None
 
 
 def immediatelyCaching(idurl, timeout=10, try_other_sources=True):

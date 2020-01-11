@@ -83,6 +83,7 @@ class EntangledDHTService(LocalService):
 
     def start(self):
         from logs import lg
+        from dht import dht_records
         from dht import dht_service
         from dht import known_nodes
         from main import settings
@@ -90,9 +91,14 @@ class EntangledDHTService(LocalService):
         from main.config import conf
         from userid import my_id
         conf().addConfigNotifier('services/entangled-dht/udp-port', self._on_udp_port_modified)
-        dht_service.init(udp_port=settings.getDHTPort(), dht_dir_path=settings.DHTDataDir())
         known_seeds = known_nodes.nodes()
-        lg.info('DHT known seed nodes are : %r' % known_seeds)
+        dht_layers = list(dht_records.LAYERS_REGISTRY.keys())
+        dht_service.init(
+            udp_port=settings.getDHTPort(),
+            dht_dir_path=settings.DHTDataDir(),
+            open_layers=dht_layers,
+        )
+        lg.info('DHT known seed nodes are : %r   DHT layers are : %r' % (known_seeds, dht_layers, ))
         d = dht_service.connect(seed_nodes=known_seeds)
         d.addCallback(self._on_connected)
         d.addErrback(self._on_connect_failed)
@@ -130,12 +136,12 @@ class EntangledDHTService(LocalService):
         from dht import dht_service
         from dht import known_nodes
         from logs import lg
-        lg.info('DHT node connected  ID=[%s]  known nodes: %r' % (dht_service.node().id, nodes))
+        lg.info('DHT node connected  ID0=[%s]  known nodes: %r' % (dht_service.node().layers[0], nodes))
         dht_service.node().add_rpc_callback('store', self._on_dht_rpc_store)
         dht_service.node().add_rpc_callback('request', self._on_dht_rpc_request)
         known_seeds = known_nodes.nodes()
-        for layer_id in dht_records.LAYERS_REGISTRY.keys():
-            dht_service.open_layer(layer_id, seed_nodes=known_seeds)
+        for layer_id in dht_records.ENABLED_LAYERS:
+            dht_service.connect(seed_nodes=known_seeds, layer_id=layer_id)
         return nodes
 
     def _on_connect_failed(self, err):
