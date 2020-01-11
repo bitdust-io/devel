@@ -34,7 +34,7 @@ from .contact import Contact, LayeredContact  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 
 #------------------------------------------------------------------------------
 
@@ -113,7 +113,7 @@ class KademliaProtocol(protocol.DatagramProtocol):
             print('        [DHT PROTO]             datagram of %d bytes to dispatch from %r' % (len(datagram), address))
         msgPrimitive = self._encoder.decode(datagram, encoding='utf-8')
         if _Debug:
-            print('                        msgPrimitive: %r' % msgPrimitive)
+            print('        [DHT PROTO]         msgPrimitive: %r' % msgPrimitive)
         message = self._translator.fromPrimitive(msgPrimitive)
 
         remoteContact = Contact(encoding.to_text(message.nodeID), address[0], address[1], self)
@@ -237,7 +237,7 @@ class KademliaProtocol(protocol.DatagramProtocol):
     
             self.dispatch(datagram, address)
         except Exception as exc:
-            print(exc)
+            print('        [DHT PROTO] datagramReceived error:', exc)
 
 
     def _send(self, data, rpcID, address):
@@ -408,7 +408,7 @@ class KademliaProtocol(protocol.DatagramProtocol):
             df.errback(failure.Failure(TimeoutError(remoteContactID)))
         else:
             # This should never be reached
-            print("ERROR: deferred timed out, but is not present in sent messages list!")
+            print("       [DHT PROTO]  ERROR: deferred timed out, but is not present in sent messages list!")
 
 
 class KademliaMultiLayerProtocol(KademliaProtocol):
@@ -535,4 +535,58 @@ class KademliaMultiLayerProtocol(KademliaProtocol):
         if self._counter:
             self._counter('_sendError')
         self._send(encodedMsg, rpcID, (contact.address, contact.port))
+
+    def datagramReceived(self, datagram, address):
+        try:
+            if _Debug:
+                _t = time.time()
+            # we must consistently rely on "pagination" logic actually ( or not rely at all )
+            # we can't just check those two bytes in the header and say that packet is "paginated"! 
+            # what if a small data packet accidentally have those bytes set to \x00 just randomly?
+            # so I change the protocol so it will always include such header.
+            # if those two bytes are not set - it is a data coming from "late and not updated" node and we must reject it
+            header_ok = False
+            if datagram[0:1] == b'\x00' and datagram[45:46] == b'\x00':
+                header_ok = True
+            if not header_ok:
+                if _Debug:
+                    print('        [DHT PROTO]  WARNING, dispatching old-style datagram, remote use is running old version')
+                self.dispatch(datagram, address)
+                return
+   
+            header = datagram[0:46]
+            totalPackets = (ord(encoding.to_text(header[1:2])) << 8) | ord(encoding.to_text(header[2:3]))
+            seqNumber = (ord(encoding.to_text(header[3:4])) << 8) | ord(encoding.to_text(header[4:5]))
+            msgID = encoding.to_text(header[5:45], encoding='utf-8')
+    
+            if _Debug:
+                print('         [DHT PROTO]     datagramReceived with %d bytes   totalPackets=%d seqNumber=%d msgID=%r from %r' % (
+                    len(datagram), totalPackets, seqNumber, msgID, address))
+    
+            if seqNumber < 0 or seqNumber >= totalPackets:
+                if _Debug:
+                    print('         [DHT PROTO]    skip, seqNumber with totalPackets')
+                return
+    
+            if msgID not in self._partialMessages:
+                self._partialMessages[msgID] = {}
+            self._partialMessages[msgID][seqNumber] = datagram[46:]
+    
+            if len(self._partialMessages[msgID]) < totalPackets:
+                if _Debug:
+                    print('       [DHT PROTO]   skip, _partialMessages=%r' % self._partialMessages)
+                return
+    
+            keys = sorted(self._partialMessages[msgID].keys())
+            data = b''
+            for key in keys:
+                data += self._partialMessages[msgID][key]
+            datagram = data
+            if _Debug:
+                print('      [DHT PROTO]      finished message of %d pieces: %r' % (totalPackets, keys))
+            del self._partialMessages[msgID]
+    
+            self.dispatch(datagram, address)
+        except Exception as exc:
+            print('        [DHT PROTO] datagramReceived error:', exc)
 

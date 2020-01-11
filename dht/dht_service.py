@@ -158,7 +158,7 @@ def init(udp_port, dht_dir_path=None, open_layers=[]):
         # nodeID=config.conf().getString('services/entangled-dht/node-id', '').strip(),
     )
     for layer_id in open_layers:
-        open_layer(layer_id=layer_id, dht_dir_path=dht_dir_path)
+        open_layer(layer_id=layer_id, dht_dir_path=dht_dir_path, connect_now=False)
     # config.conf().setString('services/entangled-dht/node-id', _MyNode.layers[0])
     if _Debug:
         lg.out(_DebugLevel, 'dht_service.init UDP port is %d, DB file path is %s, my DHT ID is %s' % (
@@ -168,7 +168,6 @@ def init(udp_port, dht_dir_path=None, open_layers=[]):
 def shutdown():
     global _MyNode
     if _MyNode is not None:
-        # _MyNode._dataStore._db.close()
         for ds in _MyNode._dataStores.values():
             ds._db.close()
         _MyNode._protocol.node = None
@@ -195,7 +194,7 @@ def connect(seed_nodes=[], layer_id=0):
         result.errback(Exception('node is not initialized'))
         return result
 
-    joinDeferred = node()._joinDeferreds.get(layer_id, None)
+    joinDeferred = node().connectingTask(layer_id)
     if joinDeferred:
         if joinDeferred.called:
             result.callback(True)
@@ -236,7 +235,7 @@ def connect(seed_nodes=[], layer_id=0):
                 else:
                     lg.out(_DebugLevel, 'dht_service.connect DHT JOINED, but still OFFLINE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
                     lg.warn('No live DHT contacts found...  your node is NOT CONNECTED TO DHT NETWORK')
-            lg.out(_DebugLevel, 'alive DHT nodes: %s' % pprint.pformat(live_contacts))
+            lg.out(_DebugLevel, 'for layer %d found DHT nodes: %s' % (_layer_id, live_contacts))
             lg.out(_DebugLevel, 'resolved SEED nodes: %r' % resolved_seed_nodes)
             lg.out(_DebugLevel, 'DHT node is active, ID%d=[%s]' % (_layer_id, node().layers[_layer_id]))
         result.callback(resolved_seed_nodes)
@@ -272,6 +271,15 @@ def connect(seed_nodes=[], layer_id=0):
     d.addCallback(_on_hosts_resolved, _layer_id=layer_id)
     d.addErrback(_on_hosts_resolve_failed)
     return result
+
+
+def suspend(layer_id):
+    if not node():
+        return False
+    if _Debug:
+        lg.out(_DebugLevel, 'dht_service.suspend    layer %d' % layer_id)
+    node().leaveNetwork(layer_id)
+    return True
 
 
 def disconnect():
@@ -546,7 +554,7 @@ def set_json_value(key, json_data, age=0, expire=KEY_EXPIRE_MAX_SECONDS, collect
     except:
         return fail(Exception('bad input json data'))
     if _Debug:
-        lg.out(_DebugLevel, 'dht_service.set_json_value key=[%s] layer_id=[%d] with %d bytes' % (key, layer_id, len(str(value))))
+        lg.out(_DebugLevel, 'dht_service.set_json_value key=[%r] layer_id=[%d] with %d bytes' % (key, layer_id, len(str(value))))
     return set_value(key=key, value=value, age=age, expire=expire, collect_results=collect_results, layer_id=layer_id)
 
 #------------------------------------------------------------------------------
@@ -644,11 +652,12 @@ def validate_before_store(key, value, originalPublisherID, age, expireSeconds, *
         if _Debug:
             lg.out(_DebugLevel, '        new json data do not have "type" field present, store operation FAILED')
         raise ValueError('input data do not have "type" field present: %r' % json_new_value)
-    if key not in node()._dataStore:
+    layer_id = kwargs.get('layerID', 0)
+    if key not in node()._dataStores[layer_id]:
         if _Debug:
             lg.out(_DebugLevel, '        previous value not exists yet, store OK')
         return True
-    prev_value = node()._dataStore[key]
+    prev_value = node()._dataStores[layer_id][key]
     try:
         json_prev_value = jsn.loads(prev_value)
     except:
@@ -961,6 +970,8 @@ def set_node_data(key, value, layer_id=0):
             lg.out(_DebugLevel, 'dht_service.set_node_data local node is not ready')
         return False
     count('set_node_data')
+    if layer_id not in node().data:
+        node().data[layer_id] = {}
     key = strng.to_text(key)
     node().data[layer_id][key] = value
     if _Debug:
@@ -975,6 +986,8 @@ def delete_node_data(key, layer_id=0):
             lg.out(_DebugLevel, 'dht_service.delete_node_data local node is not ready')
         return False
     count('delete_node_data')
+    if layer_id not in node().data:
+        node().data[layer_id] = {}
     key = strng.to_text(key)
     if key not in node().data[layer_id]:
         if _Debug:
@@ -1058,7 +1071,7 @@ class DHTNode(MultiLayerNode):
             lg.out(_DebugLevel, 'dht_service.DHTNode.store key=[%s] for %d seconds, counter=%d' % (
                 key, expireSeconds, counter('store')))
 
-        if 'store' in self.rpc_callbacks:
+        if 'store' in self.rpc_callbacks and layerID in self.active_layers:
             # TODO: add signature validation to be sure this is the owner of that key:value pair
             self.rpc_callbacks['store'](
                 key=key,
@@ -1084,11 +1097,15 @@ class DHTNode(MultiLayerNode):
     def request(self, key, **kwargs):
         count('request')
         layerID = kwargs.get('layerID', 0)
+        if layerID not in self.active_layers:
+            if _Debug:
+                lg.out(_DebugLevel, 'dht_service.DHTNode.request key=[%r] SKIP because layer %d is not active' % (key, layerID, ))
+            return {key: 0, layerID:layerID, }
         if _Debug:
-            lg.out(_DebugLevel, 'dht_service.DHTNode.request key=[%r]' % key)
+            lg.out(_DebugLevel, 'dht_service.DHTNode.request key=[%r] from layer %d' % (key, layerID, ))
         if 'request' in self.rpc_callbacks:
             self.rpc_callbacks['request'](key=key, layerID=layerID)
-        value = get_node_data(key, layerID=layerID)
+        value = get_node_data(key, layer_id=layerID)
         if value is None:
             value = 0
         if _Debug:

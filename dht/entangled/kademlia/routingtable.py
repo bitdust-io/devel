@@ -464,11 +464,13 @@ class OptimizedTreeRoutingTable(TreeRoutingTable):
         contact.failedRPCs = 0
 
         bucketIndex = self._kbucketIndex(contact.id)
-        if _Debug: print('addContact %r at %r' % (contact.id, bucketIndex))
+        if _Debug:
+            print('            [DHT RTABLE]   addContact %r at %r' % (contact.id, bucketIndex))
         try:
             self._buckets[bucketIndex].addContact(contact)
         except kbucket.BucketFull:
-            if _Debug: print('    BucketFull!')
+            if _Debug:
+                print('            [DHT RTABLE]    BucketFull!')
             # The bucket is full; see if it can be split (by checking if its range includes the host node's id)
             if self._buckets[bucketIndex].keyInRange(self._parentNodeID):
                 self._splitBucket(bucketIndex)

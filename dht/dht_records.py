@@ -43,12 +43,8 @@ _DebugLevel = 10
 
 from logs import lg
 
-from system import bpio
-
 from lib import utime
 from lib import strng
-
-from main import settings
 
 from dht import dht_service
 
@@ -69,6 +65,11 @@ LAYERS_REGISTRY = {
     LAYER_BROADCASTERS: 'BROADCASTERS',
     LAYER_MERCHANTS: 'MERCHANTS',
 }
+
+ENABLED_LAYERS = [
+    LAYER_PROXY_ROUTERS,
+    LAYER_SUPPLIERS,
+]
 
 #------------------------------------------------------------------------------
 
