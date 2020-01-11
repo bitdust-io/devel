@@ -65,6 +65,7 @@ from logs import lg
 from system import bpio
 
 from main import settings
+from main import events
 
 from lib import strng
 from lib import utime
@@ -223,12 +224,25 @@ def connect(seed_nodes=[], layer_id=0):
         if _Debug:
             lg.out(_DebugLevel, 'dht_service.connect  SKIP : no seed nodes provided')
         result.callback(True)
+        events.send('dht-layer-connected', data=dict(layer_id=layer_id, ))
         return result
+
+#     if layer_id in node().active_layers:
+#         if _Debug:
+#             lg.out(_DebugLevel, 'dht_service.connect  SKIP : layer %d already active' % layer_id)
+#         result.callback(True)
+#         return result
+
+    def _on_connected(ok):
+        events.send('dht-layer-connected', data=dict(layer_id=layer_id, ))
+        return ok
+
+    result.addCallback(_on_connected)
 
     def _on_join_success(live_contacts, resolved_seed_nodes, _layer_id):
         if _Debug:
             if isinstance(live_contacts, dict):
-                lg.warn('Unexpected result from joinNetwork: %s' % pprint.pformat(live_contacts))
+                lg.err('Unexpected result from joinNetwork: %s' % pprint.pformat(live_contacts))
             else: 
                 if live_contacts and len(live_contacts) > 0 and live_contacts[0]:
                     lg.out(_DebugLevel, 'dht_service.connect DHT JOIN SUCCESS !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
@@ -238,13 +252,13 @@ def connect(seed_nodes=[], layer_id=0):
             lg.out(_DebugLevel, 'for layer %d found DHT nodes: %s' % (_layer_id, live_contacts))
             lg.out(_DebugLevel, 'resolved SEED nodes: %r' % resolved_seed_nodes)
             lg.out(_DebugLevel, 'DHT node is active, ID%d=[%s]' % (_layer_id, node().layers[_layer_id]))
-        result.callback(resolved_seed_nodes)
+        result.callback(True)
         return live_contacts
 
     def _on_join_failed(x):
         if _Debug:
             lg.out(_DebugLevel, 'dht_service.connect DHT JOIN FAILED : %s' % x)
-        result.callback(False)
+        result.errback(x)
         return None
 
     def _on_hosts_resolved(resolved_seed_nodes, _layer_id):
@@ -253,7 +267,7 @@ def connect(seed_nodes=[], layer_id=0):
             for onenode in resolved_seed_nodes:
                 lg.out(_DebugLevel, '    %s:%s' % onenode)
         if not resolved_seed_nodes:
-            resolved_seed_nodes = [] 
+            resolved_seed_nodes = []
         d = node().joinNetwork(resolved_seed_nodes, layerID=_layer_id)
         d.addCallback(_on_join_success, resolved_seed_nodes, _layer_id=_layer_id)
         d.addErrback(_on_join_failed)
@@ -264,8 +278,8 @@ def connect(seed_nodes=[], layer_id=0):
     def _on_hosts_resolve_failed(x):
         if _Debug:
             lg.out(_DebugLevel, 'dht_service.connect ERROR : hosts not resolved: %s' % x)
-        result.callback(False)
-        return x
+        result.errback(x)
+        return None
 
     d = resolve_hosts(seed_nodes)
     d.addCallback(_on_hosts_resolved, _layer_id=layer_id)
@@ -538,7 +552,7 @@ def read_json_response(response, key, result_defer=None, as_bytes=False):
 
 def get_json_value(key, as_bytes=False, layer_id=0):
     if _Debug:
-        lg.out(_DebugLevel, 'dht_service.get_json_value key=[%r] layer_id=[%d]' % (key, layer_id, ))
+        lg.out(_DebugLevel, 'dht_service.get_json_value key=[%r] layer_id=%d' % (key, layer_id, ))
     ret = Deferred()
     d = get_value(key, layer_id=layer_id)
     d.addCallback(read_json_response, key, ret, as_bytes)
@@ -554,7 +568,7 @@ def set_json_value(key, json_data, age=0, expire=KEY_EXPIRE_MAX_SECONDS, collect
     except:
         return fail(Exception('bad input json data'))
     if _Debug:
-        lg.out(_DebugLevel, 'dht_service.set_json_value key=[%r] layer_id=[%d] with %d bytes' % (key, layer_id, len(str(value))))
+        lg.out(_DebugLevel, 'dht_service.set_json_value key=[%r] layer_id=%d with %d bytes' % (key, layer_id, len(str(value))))
     return set_value(key=key, value=value, age=age, expire=expire, collect_results=collect_results, layer_id=layer_id)
 
 #------------------------------------------------------------------------------
@@ -811,6 +825,7 @@ def validate_after_receive(value, key, rules, result_defer, raise_for_result, po
             response['type'] = rules['type'][0]['arg']
     return response
 
+#------------------------------------------------------------------------------
 
 def get_valid_data(key, rules={}, raise_for_result=False, return_details=False, layer_id=0):
     ret = Deferred()
@@ -831,6 +846,7 @@ def set_valid_data(key, json_data, age=0, expire=KEY_EXPIRE_MAX_SECONDS, rules={
     d.addErrback(ret.errback)
     return ret
 
+#------------------------------------------------------------------------------
 
 def write_verify_republish_data(key, json_data, age=0, expire=KEY_EXPIRE_MAX_SECONDS, rules={}, layer_id=0):
     """
@@ -901,11 +917,11 @@ def write_verify_republish_data(key, json_data, age=0, expire=KEY_EXPIRE_MAX_SEC
         return None
 
     new_key = random_key()
-    d_observer = find_node(new_key)
+    d_observer = find_node(new_key, layer_id=layer_id)
     d_observer.addCallback(_some_nodes_found)
     d_observer.addErrback(_nodes_not_found)
 
-    d_write = set_valid_data(key=key, json_data=json_data, age=age, expire=expire, rules=rules)
+    d_write = set_valid_data(key=key, json_data=json_data, age=age, expire=expire, rules=rules, layer_id=layer_id)
     d_write.addCallback(_write_ok)
     d_write.addErrback(_write_failed)
 
@@ -936,7 +952,8 @@ def find_node(node_id, layer_id=0):
     count('find_node')
     node_id64 = node_id
     if _Debug:
-        lg.out(_DebugLevel, 'dht_service.find_node   node_id=[%s]  counter=%d' % (node_id64, counter('find_node')))
+        lg.out(_DebugLevel, 'dht_service.find_node   node_id=[%s]  layer_id=%d' % (
+            node_id64, layer_id))
     if not node():
         return fail(Exception('DHT service is off'))
     _ActiveLookup = node().iterativeFindNode(node_id, layerID=layer_id)
@@ -955,12 +972,12 @@ def get_node_data(key, layer_id=0):
     key = strng.to_text(key)
     if key not in node().data[layer_id]:
         if _Debug:
-            lg.out(_DebugLevel, 'dht_service.get_node_data key=[%s] not exist' % key)
+            lg.out(_DebugLevel, 'dht_service.get_node_data   key=[%s] not exist   layer_id=%d' % (key, layer_id, ))
         return None
     value = node().data[layer_id][key]
     if _Debug:
-        lg.out(_DebugLevel, 'dht_service.get_node_data key=[%s] read %d bytes, counter=%d' % (
-            key, len(str(value)), counter('get_node_data')))
+        lg.out(_DebugLevel, 'dht_service.get_node_data key=[%s] read %d bytes   layer_id=%d' % (
+            key, len(str(value)), layer_id, ))
     return value
 
 
@@ -975,8 +992,8 @@ def set_node_data(key, value, layer_id=0):
     key = strng.to_text(key)
     node().data[layer_id][key] = value
     if _Debug:
-        lg.out(_DebugLevel, 'dht_service.set_node_data key=[%s] wrote %d bytes, counter=%d' % (
-            key, len(str(value)), counter('set_node_data')))
+        lg.out(_DebugLevel, 'dht_service.set_node_data key=[%s] wrote %d bytes  layer_id=%d' % (
+            key, len(str(value)), layer_id, ))
     return True
 
 
@@ -995,7 +1012,8 @@ def delete_node_data(key, layer_id=0):
         return False
     node().data[layer_id].pop(key)
     if _Debug:
-        lg.out(_DebugLevel, 'dht_service.delete_node_data key=[%s], counter=%d' % (key, counter('delete_node_data')))
+        lg.out(_DebugLevel, 'dht_service.delete_node_data key=[%s]   layer_id=%d' % (
+            key, layer_id, ))
     return True
 
 

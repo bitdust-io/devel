@@ -74,6 +74,7 @@ class P2PHookupsService(LocalService):
         callback.append_inbox_callback(self._on_inbox_packet_received)
         callback.append_inbox_callback(p2p_service.inbox)
         events.add_subscriber(self._on_identity_url_changed, 'identity-url-changed')
+        events.add_subscriber(self._on_my_identity_url_changed, 'my-identity-url-changed')
         return True
 
     def stop(self):
@@ -83,6 +84,7 @@ class P2PHookupsService(LocalService):
         from p2p import p2p_service
         from p2p import p2p_connector
         from p2p import network_connector
+        events.remove_subscriber(self._on_my_identity_url_changed, 'my-identity-url-changed')
         events.remove_subscriber(self._on_identity_url_changed, 'identity-url-changed')
         callback.remove_inbox_callback(self._on_inbox_packet_received)
         callback.remove_inbox_callback(p2p_service.inbox)
@@ -214,3 +216,11 @@ class P2PHookupsService(LocalService):
                 inst.automat('shook-up-hands')
                 reactor.callLater(0, inst.automat, 'ping-now')  # @UndefinedVariable
                 lg.info('found %r with rotated identity and refreshed: %r' % (inst, idurl, ))
+
+    def _on_my_identity_url_changed(self, evt):
+        from services import driver
+        if driver.is_on('service_entangled_dht'):
+            from dht import dht_service
+            from userid import my_id
+            if my_id.getLocalID():
+                dht_service.set_node_data('idurl', my_id.getLocalID().to_text())

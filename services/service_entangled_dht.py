@@ -82,14 +82,15 @@ class EntangledDHTService(LocalService):
         }
 
     def start(self):
+        from twisted.internet.defer import Deferred
         from logs import lg
         from dht import dht_records
         from dht import dht_service
         from dht import known_nodes
         from main import settings
-        from main import events
+        # from main import events
         from main.config import conf
-        from userid import my_id
+        # from userid import my_id
         conf().addConfigNotifier('services/entangled-dht/udp-port', self._on_udp_port_modified)
         known_seeds = known_nodes.nodes()
         dht_layers = list(dht_records.LAYERS_REGISTRY.keys())
@@ -99,22 +100,23 @@ class EntangledDHTService(LocalService):
             open_layers=dht_layers,
         )
         lg.info('DHT known seed nodes are : %r   DHT layers are : %r' % (known_seeds, dht_layers, ))
+        self.starting_deferred = Deferred()
         d = dht_service.connect(seed_nodes=known_seeds)
         d.addCallback(self._on_connected)
         d.addErrback(self._on_connect_failed)
-        if my_id.getLocalID():
-            dht_service.set_node_data('idurl', my_id.getLocalID().to_text())
-        events.add_subscriber(self._on_my_identity_url_changed, 'my-identity-url-changed')
-        return d
+        # if my_id.getLocalID():
+        #     dht_service.set_node_data('idurl', my_id.getLocalID().to_text())
+        # events.add_subscriber(self._on_my_identity_url_changed, 'my-identity-url-changed')
+        return self.starting_deferred
 
     def stop(self):
         from dht import dht_records
         from dht import dht_service
-        from main import events
+        # from main import events
         from main.config import conf
         for layer_id in dht_records.LAYERS_REGISTRY.keys():
             dht_service.close_layer(layer_id)
-        events.remove_subscriber(self._on_my_identity_url_changed, 'my-identity-url-changed')
+        # events.remove_subscriber(self._on_my_identity_url_changed, 'my-identity-url-changed')
         dht_service.node().remove_rpc_callback('request')
         dht_service.node().remove_rpc_callback('store')
         conf().removeConfigNotifier('services/entangled-dht/udp-port')
@@ -125,28 +127,34 @@ class EntangledDHTService(LocalService):
     def health_check(self):
         return True
 
-    def _on_my_identity_url_changed(self, evt):
-        from dht import dht_service
-        from userid import my_id
-        if my_id.getLocalID():
-            dht_service.set_node_data('idurl', my_id.getLocalID().to_text())
+#     def _on_my_identity_url_changed(self, evt):
+#         from dht import dht_service
+#         from userid import my_id
+#         if my_id.getLocalID():
+#             dht_service.set_node_data('idurl', my_id.getLocalID().to_text())
 
-    def _on_connected(self, nodes):
-        from dht import dht_records
-        from dht import dht_service
-        from dht import known_nodes
+    def _on_connected(self, ok):
         from logs import lg
-        lg.info('DHT node connected  ID0=[%s]  known nodes: %r' % (dht_service.node().layers[0], nodes))
+        # from dht import dht_records
+        from dht import dht_service
+        # from dht import known_nodes
+        lg.info('DHT node connected  ID0=[%s] : %r' % (dht_service.node().layers[0], ok))
         dht_service.node().add_rpc_callback('store', self._on_dht_rpc_store)
         dht_service.node().add_rpc_callback('request', self._on_dht_rpc_request)
-        known_seeds = known_nodes.nodes()
-        for layer_id in dht_records.ENABLED_LAYERS:
-            dht_service.connect(seed_nodes=known_seeds, layer_id=layer_id)
-        return nodes
+        # known_seeds = known_nodes.nodes()
+        # for layer_id in dht_records.ENABLED_LAYERS:
+        #     dht_service.connect(seed_nodes=known_seeds, layer_id=layer_id)
+        if self.starting_deferred:
+            self.starting_deferred.callback(True)
+            self.starting_deferred = None
+        return ok
 
     def _on_connect_failed(self, err):
         from logs import lg
         lg.err('DHT connect failed : %r' % err)
+        if self.starting_deferred:
+            self.starting_deferred.callback(err)
+            self.starting_deferred = None
         return err
 
     def _on_udp_port_modified(self, path, value, oldvalue, result):

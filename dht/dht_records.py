@@ -66,11 +66,6 @@ LAYERS_REGISTRY = {
     LAYER_MERCHANTS: 'MERCHANTS',
 }
 
-ENABLED_LAYERS = [
-    LAYER_PROXY_ROUTERS,
-    LAYER_SUPPLIERS,
-]
-
 #------------------------------------------------------------------------------
 
 _Rules = {

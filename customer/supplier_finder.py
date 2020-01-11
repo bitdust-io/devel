@@ -270,10 +270,9 @@ class SupplierFinder(automat.Automat):
         """
         Action method.
         """
-        from dht import dht_records
-        t = lookup.start(layer_id=dht_records.LAYER_SUPPLIERS)
-        t.result_defer.addCallback(self._nodes_lookup_finished)
-        t.result_defer.addErrback(lambda err: self.automat('users-not-found'))
+        tsk = lookup.random_supplier()
+        tsk.result_defer.addCallback(self._nodes_lookup_finished)
+        tsk.result_defer.addErrback(lambda err: self.automat('users-not-found'))
 
     def doCleanPrevUser(self, *args, **kwargs):
         """

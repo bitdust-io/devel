@@ -79,21 +79,17 @@ class SupplierService(LocalService):
                 position=known_customer_meta_info.get('position'),
             ))
         if driver.is_on('service_entangled_dht'):
-            from dht import dht_service
-            from dht import dht_records
-            from dht import known_nodes
-            known_seeds = known_nodes.nodes()
-            d = dht_service.connect(seed_nodes=known_seeds, layer_id=dht_records.LAYER_SUPPLIERS)
-            d.addCallback(self._on_dht_layer_supplier_connected)
-            d.addErrback(lambda *args: lg.err(str(args)))
+            self._do_connect_suppliers_dht_layer()
         else:
             lg.warn('service service_entangled_dht is OFF')
+        events.add_subscriber(self._on_dht_layer_connected, event_id='dht-layer-connected')
         return True
 
     def stop(self):
         from transport import callback
         from main import events
         from services import driver
+        events.remove_subscriber(self._on_dht_layer_connected, event_id='dht-layer-connected')
         if driver.is_on('service_entangled_dht'):
             from dht import dht_service
             from dht import dht_records
@@ -373,6 +369,16 @@ class SupplierService(LocalService):
             lg.info('new customer public key registered: %r' % customer_public_key_id)
         else:
             lg.err('failed to register customer public key: %r' % customer_public_key_id)
+
+    def _do_connect_suppliers_dht_layer(self):
+        from logs import lg
+        from dht import dht_service
+        from dht import dht_records
+        from dht import known_nodes
+        known_seeds = known_nodes.nodes()
+        d = dht_service.connect(seed_nodes=known_seeds, layer_id=dht_records.LAYER_SUPPLIERS)
+        d.addCallback(self._on_suppliers_dht_layer_connected)
+        d.addErrback(lambda *args: lg.err(str(args)))
 
     def _on_inbox_packet_received(self, newpacket, info, status, error_message):
         from p2p import commands
@@ -854,11 +860,16 @@ class SupplierService(LocalService):
         # update customer idurl in "spaceused" file
         local_tester.TestSpaceTime()
 
-    def _on_dht_layer_supplier_connected(self, nodes):
+    def _on_suppliers_dht_layer_connected(self, ok):
         from logs import lg
         from dht import dht_service
         from dht import dht_records
         from userid import my_id
-        lg.info('connected to DHT layer for suppliers: %r' % nodes)
+        lg.info('connected to DHT layer for suppliers: %r' % ok)
         if my_id.getLocalID():
             dht_service.set_node_data('idurl', my_id.getLocalID().to_text(), layer_id=dht_records.LAYER_SUPPLIERS)
+        return ok
+
+    def _on_dht_layer_connected(self, evt):
+        if evt.data['layer_id'] == 0:
+            self._do_connect_suppliers_dht_layer()

@@ -49,7 +49,7 @@ def run():
 
     def callback_dfl(*args):
         print('callback_dfl', args)
-        reactor.stop()
+        reactor.stop()  # @UndefinedVariable
 
     errback_dfl = errback
     time.sleep(3)
@@ -68,7 +68,7 @@ def run():
 
     except Exception as exc:
         print('ERROR in run()', exc)
-        reactor.stop()
+        reactor.stop()  # @UndefinedVariable
 
 
 def main():
@@ -88,7 +88,7 @@ def main():
         seeds.append((seed[0], int(seed[1])))
 
     dht_service.connect(seeds).addBoth(connected, seeds=seeds)
-    reactor.run()
+    reactor.run()  # @UndefinedVariable
 
 
 if __name__ == '__main__':
