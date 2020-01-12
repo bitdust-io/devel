@@ -1048,6 +1048,7 @@ class MultiLayerNode(Node):
         self.layers = {}
         self.refreshers = {}
         self.active_layers = set()
+        self.warm_layers = set()
 
         # This will contain a deferred created when joining the network, to enable publishing/retrieving information from
         # the DHT as soon as the node is part of the network (add callbacks to this deferred if scheduling such operations
@@ -1075,7 +1076,7 @@ class MultiLayerNode(Node):
 
         self.active_layers.add(0)
 
-    def createLayer(self, layer_id, dataStore, nodeID=None, routingTable=None):
+    def createLayer(self, layer_id, dataStore, nodeID=None, routingTable=None, warmUp=False):
         if layer_id in self.layers or layer_id in self._dataStores or layer_id in self._routingTables:
             if _Debug:
                 print('    [DHT NODE]    createLayer : layer %d already exist' % layer_id)
@@ -1100,6 +1101,8 @@ class MultiLayerNode(Node):
             self.layers[layer_id] = self._generateID()
         if layer_id not in self._routingTables:
             self._routingTables[layer_id] = routingTable or routingtable.TreeRoutingTable(self.layers[layer_id], layerID=layer_id)
+        if layer_id != 0 and not loaded and warmUp:
+            loaded = self.warmUpLayer(layer_id)
         if _Debug:
             print('    [DHT NODE]    createLayer : layer %d created,  loaded=%r' % (layer_id, loaded, ))
         return True
@@ -1145,9 +1148,33 @@ class MultiLayerNode(Node):
             return False
         if layerID != 0:
             self.active_layers.remove(layerID)
+        self.warm_layers.remove(layerID)
         if self.refreshers.get(layerID, None) and not self.refreshers[layerID].called:
             self.refreshers[layerID].cancel()
         self.refreshers.pop(layerID)
+        return True
+
+    def warmUpLayer(self, layerID):
+        if layerID == 0:
+            return True
+        if layerID not in self._routingTables:
+            return False
+        json_state = None
+        if self.nodeStateKey in self._dataStores[layerID]:
+            json_state = self._dataStores[layerID][self.nodeStateKey]
+        if not json_state and self.nodeStateKey in self._dataStores[0]:
+            json_state = self._dataStores[0][self.nodeStateKey]
+        if not json_state:
+            return False
+        state = json.loads(json_state)
+        self.layers[layerID] = state['id']
+        for contactTriple in state['closestNodes']:
+            contact = LayeredContact(encoding.to_text(contactTriple[0]), contactTriple[1], contactTriple[2], self._protocol, layerID=layerID)
+            self._routingTables[layerID].addContact(contact)
+        self.warm_layers.add(layerID)
+        if _Debug:
+            print('    [DHT NODE]    warmUpLayer %d : found "nodeState" key in local db of layer 0 and added %d contacts to routing table' % (
+                layerID, len(state['closestNodes']), ))
         return True
 
     def iterativeStore(self, key, value, originalPublisherID=None,
@@ -1691,12 +1718,7 @@ class MultiLayerNode(Node):
             print('    [DHT NODE]    _persistState  layerID=%d id=%r state=%r' % (layerID, self.layers[layerID], state, ))
         json_value = json.dumps(state)
         now = int(time.time())
-
-        h = hashlib.sha1()
-        h.update(b'nodeState')
-        nodeStateKey = h.hexdigest()
-
-        self._dataStores[layerID].setItem(nodeStateKey, json_value, now, now, self.layers[layerID])
+        self._dataStores[layerID].setItem(self.nodeStateKey, json_value, now, now, self.layers[layerID])
         return args
     
     def _refreshNode(self, layerID=0):
