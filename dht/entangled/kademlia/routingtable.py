@@ -189,7 +189,7 @@ class TreeRoutingTable(RoutingTable):
         try:
             self._buckets[bucketIndex].addContact(contact)
             if _Debug:
-                print('            [DHT RTABLE] %d added %r to bucket %d' % (self._layerID, contact, bucketIndex))
+                print('[DHT RTABLE] layerID=%d   added %r to bucket %d' % (self._layerID, contact, bucketIndex))
         except kbucket.BucketFull:
             # The bucket is full; see if it can be split (by checking if its range includes the host node's id)
             if self._buckets[bucketIndex].keyInRange(self._parentNodeID):
@@ -218,7 +218,7 @@ class TreeRoutingTable(RoutingTable):
                     # Remove the old contact...
                     deadContactID = failure.getErrorMessage()
                     if _Debug:
-                        print('            [DHT RTABLE] %d  replacing dead contact %r' % (self._layerID, deadContactID, ))
+                        print('[DHT RTABLE] layerID=%d   replacing dead contact %r' % (self._layerID, deadContactID, ))
                     try:
                         self._buckets[bucketIndex].removeContact(deadContactID)
                     except ValueError:
@@ -260,7 +260,7 @@ class TreeRoutingTable(RoutingTable):
         bucketIndex = self._kbucketIndex(key)
 
         if _Debug:
-            print('            [DHT RTABLE] %d   findCloseNodes %r   _rpcNodeID=%r   bucketIndex=%d buckets=%d' % (
+            print('[DHT RTABLE] layerID=%d   findCloseNodes %r   _rpcNodeID=%r   bucketIndex=%d buckets=%d' % (
                 self._layerID, key, _rpcNodeID if _rpcNodeID else None, bucketIndex, len(self._buckets), ))
 
         closestNodes = self._buckets[bucketIndex].getContacts(constants.k, _rpcNodeID)
@@ -272,7 +272,7 @@ class TreeRoutingTable(RoutingTable):
         # Fill up the node list to k nodes, starting with the closest neighbouring nodes known
         while len(closestNodes) < constants.k and (canGoLower or canGoHigher):
             if _Debug:
-                print('            [DHT RTABLE] %d  closestNodes=%r' % (self._layerID, closestNodes, ))
+                print('[DHT RTABLE] layerID=%d  closestNodes=%r' % (self._layerID, closestNodes, ))
             # TODO: this may need to be optimized
             more_contacts = []
             if canGoLower:
@@ -285,10 +285,10 @@ class TreeRoutingTable(RoutingTable):
                 canGoHigher = bucketIndex + (i + 1) < len(self._buckets)
             i += 1
             if _Debug:
-                print('            [DHT RTABLE] %d  canGoLower=%s canGoHigher=%s more_contacts=%r' % (
+                print('[DHT RTABLE] layerID=%d   canGoLower=%s canGoHigher=%s more_contacts=%r' % (
                     self._layerID, canGoLower, canGoHigher, more_contacts, ))
         if _Debug:
-            print('            [DHT RTABLE] %d result=%r' % (self._layerID, closestNodes, ))
+            print('[DHT RTABLE] layerID=%d   result=%r' % (self._layerID, closestNodes, ))
         return closestNodes
 
     def getContact(self, contactID):
@@ -348,10 +348,10 @@ class TreeRoutingTable(RoutingTable):
         try:
             self._buckets[bucketIndex].removeContact(contactID)
             if _Debug:
-                print('            [DHT RTABLE] %d  removeContact(%r) from bucket %d' % (self._layerID, contactID, bucketIndex))
+                print('[DHT RTABLE] layerID=%d   removeContact(%r) from bucket %d' % (self._layerID, contactID, bucketIndex))
         except ValueError:
             if _Debug:
-                print('            [DHT RTABLE] %d  removeContact(%r): Contact not in routing table bucketIndex=%r' % (
+                print('[DHT RTABLE] layerID=%d   removeContact(%r): Contact not in routing table bucketIndex=%r' % (
                     self._layerID, contactID, bucketIndex))
             return
 
@@ -382,12 +382,12 @@ class TreeRoutingTable(RoutingTable):
         for bucket in self._buckets:
             if bucket.keyInRange(valKey):
                 # if _Debug:
-                #     print('            [DHT RTABLE] _kbucketIndex  %r  %r  returning %r' % (key, valKey, i, ))
+                #     print('[DHT RTABLE] _kbucketIndex  %r  %r  returning %r' % (key, valKey, i, ))
                 return i
             else:
                 i += 1
         # if _Debug:
-        #     print('            [DHT RTABLE] _kbucketIndex  %r  %r  finishing with %r' % (key, valKey, i, ))
+        #     print('[DHT RTABLE] _kbucketIndex  %r  %r  finishing with %r' % (key, valKey, i, ))
         return i
 
     def _randomIDInBucketRange(self, bucketIndex):
@@ -432,7 +432,7 @@ class TreeRoutingTable(RoutingTable):
         for contact in newBucket._contacts:
             oldBucket.removeContact(contact)
         if _Debug:
-            print('            [DHT RTABLE] %d   split bucket %d,    old: %d     new: %d / %d' % (
+            print('[DHT RTABLE] layerID=%d   split bucket %d,    old: %d     new: %d / %d' % (
                 self._layerID, oldBucketIndex, oldCount, len(oldBucket), len(newBucket), ))
 
 
@@ -465,12 +465,12 @@ class OptimizedTreeRoutingTable(TreeRoutingTable):
 
         bucketIndex = self._kbucketIndex(contact.id)
         if _Debug:
-            print('            [DHT RTABLE]   addContact %r at %r' % (contact.id, bucketIndex))
+            print('[DHT RTABLE]   addContact %r at %r' % (contact.id, bucketIndex))
         try:
             self._buckets[bucketIndex].addContact(contact)
         except kbucket.BucketFull:
             if _Debug:
-                print('            [DHT RTABLE]    BucketFull!')
+                print('[DHT RTABLE]    BucketFull!')
             # The bucket is full; see if it can be split (by checking if its range includes the host node's id)
             if self._buckets[bucketIndex].keyInRange(self._parentNodeID):
                 self._splitBucket(bucketIndex)

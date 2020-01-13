@@ -156,11 +156,9 @@ def init(udp_port, dht_dir_path=None, open_layers=[]):
         udpPort=udp_port,
         dataStores=layerStores,
         networkProtocol=DHTProtocol,
-        # nodeID=config.conf().getString('services/entangled-dht/node-id', '').strip(),
     )
     for layer_id in open_layers:
         open_layer(layer_id=layer_id, dht_dir_path=dht_dir_path, connect_now=False)
-    # config.conf().setString('services/entangled-dht/node-id', _MyNode.layers[0])
     if _Debug:
         lg.out(_DebugLevel, 'dht_service.init UDP port is %d, DB file path is %s, my DHT ID is %s' % (
             udp_port, dht_dir_path, _MyNode.layers[0]))
@@ -231,12 +229,6 @@ def connect(seed_nodes=[], layer_id=0, attach=False):
         result.callback(True)
         events.send('dht-layer-connected', data=dict(layer_id=layer_id, ))
         return result
-
-#     if layer_id in node().active_layers:
-#         if _Debug:
-#             lg.out(_DebugLevel, 'dht_service.connect  SKIP : layer %d already active' % layer_id)
-#         result.callback(True)
-#         return result
 
     def _on_connected(ok):
         events.send('dht-layer-connected', data=dict(layer_id=layer_id, ))
@@ -1174,8 +1166,6 @@ class DHTNode(MultiLayerNode):
         if not self.listener:
             d.errback(Exception('Listener is not started yet'))
             return d
-        # if self.refresher and self.refresher.active():
-        #     self.refresher.reset(0)
         d.callback(1)
         return d
 
@@ -1186,11 +1176,11 @@ class DHTProtocol(KademliaMultiLayerProtocol):
 
     def __init__(self, node, msgEncoder=encoding.Bencode(), msgTranslator=msgformat.MultiLayerFormat()):
         KademliaMultiLayerProtocol.__init__(self, node, msgEncoder=msgEncoder, msgTranslator=msgTranslator)
-        self.receiving_queue = []
-        self.receiving_worker = None
-        self.sending_queue = []
-        self.sending_worker = None
         self._counter = count
+#         self.receiving_queue = []
+#         self.receiving_worker = None
+#         self.sending_queue = []
+#         self.sending_worker = None
 
 #     def datagramReceived(self, datagram, address):
 #         count('dht_datagramReceived')
@@ -1200,16 +1190,16 @@ class DHTProtocol(KademliaMultiLayerProtocol):
 #         if self.receiving_worker is None:
 #             self._process_incoming()  # self.receiving_worker = reactor.callLater(0, self._process_incoming)
 
-    def _process_incoming(self):
-        if len(self.receiving_queue) == 0:
-            self.receiving_worker = None
-            return
-        datagram, address = self.receiving_queue.pop(0)
-        KademliaMultiLayerProtocol.datagramReceived(self, datagram, address)
-        t = 0
-        if len(self.receiving_queue) > RECEIVING_QUEUE_LENGTH_CRITICAL / 2:
-            t = RECEIVING_FREQUENCY_SEC
-        self.receiving_worker = reactor.callLater(t, self._process_incoming)  #@UndefinedVariable
+#     def _process_incoming(self):
+#         if len(self.receiving_queue) == 0:
+#             self.receiving_worker = None
+#             return
+#         datagram, address = self.receiving_queue.pop(0)
+#         KademliaMultiLayerProtocol.datagramReceived(self, datagram, address)
+#         t = 0
+#         if len(self.receiving_queue) > RECEIVING_QUEUE_LENGTH_CRITICAL / 2:
+#             t = RECEIVING_FREQUENCY_SEC
+#         self.receiving_worker = reactor.callLater(t, self._process_incoming)  #@UndefinedVariable
 
 #     def _send(self, data, rpcID, address):
 #         count('dht_send')
@@ -1220,16 +1210,16 @@ class DHTProtocol(KademliaMultiLayerProtocol):
 #         if self.receiving_worker is None:
 #             self._process_outgoing() # self.receiving_worker = reactor.callLater(0, self._process_outgoing)
 
-    def _process_outgoing(self):
-        if len(self.sending_queue) == 0:
-            self.sending_worker = None
-            return
-        data, rpcID, address = self.sending_queue.pop(0)
-        KademliaMultiLayerProtocol._send(self, data, rpcID, address)
-        t = 0
-        if len(self.sending_queue) > SENDING_QUEUE_LENGTH_CRITICAL:
-            t = SENDING_FREQUENCY_SEC
-        self.sending_worker = reactor.callLater(t, self._process_outgoing)  #@UndefinedVariable
+#     def _process_outgoing(self):
+#         if len(self.sending_queue) == 0:
+#             self.sending_worker = None
+#             return
+#         data, rpcID, address = self.sending_queue.pop(0)
+#         KademliaMultiLayerProtocol._send(self, data, rpcID, address)
+#         t = 0
+#         if len(self.sending_queue) > SENDING_QUEUE_LENGTH_CRITICAL:
+#             t = SENDING_FREQUENCY_SEC
+#         self.sending_worker = reactor.callLater(t, self._process_outgoing)  #@UndefinedVariable
 
 #------------------------------------------------------------------------------
 
@@ -1279,7 +1269,6 @@ def main(options=None, args=None):
     seeds = []
 
     def _go():
-#         lg.out(_DebugLevel, 'Connected nodes: %r' % nodes)
         lg.out(_DebugLevel, 'DHT node is active, layers: %r' % node().layers)
 
         try:
@@ -1375,16 +1364,9 @@ def main(options=None, args=None):
                 seeds.append((dht_node_host, dht_node_port, ))
         
         if not seeds:
-            from dht import known_nodes
             seeds = known_nodes.nodes()
 
         lg.out(_DebugLevel, 'Seed nodes: %s' % seeds)
-
-#     layers_list = [int(l) for l in options.layers.split(',') if l]
-#     lg.out(_DebugLevel, 'Layers: %s' % layers_list)
-#     for layer_id in layers_list:
-#         if layer_id != 0:
-#             open_layer(layer_id, seed_nodes=seeds, dht_dir_path=options.dhtdb, connect_now=False)
 
     if options.delayed:
         lg.out(_DebugLevel, 'Wait %d seconds before join the network' % options.delayed)

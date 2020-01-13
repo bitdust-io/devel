@@ -38,7 +38,7 @@ from . import encoding  # @UnresolvedImport
 from .contact import Contact, LayeredContact  # @UnresolvedImport
 
 
-_Debug = True
+_Debug = False
 
 
 def rpcmethod(func):
@@ -63,7 +63,7 @@ def storeSuccess(ok, key):
     except:
         ok = 'Unknown Error'
     if _Debug:
-        print('    [DHT NODE]    storeSuccess', key, ok)
+        print('[DHT NODE]    storeSuccess', key, ok)
     return ok
 
 
@@ -92,21 +92,21 @@ def getErrorMessage(x):
 def storeFailed(x, key):
     errmsg = getErrorMessage(x)
     if _Debug:
-        print('    [DHT NODE]    storeFailed', key, errmsg, x)
+        print('[DHT NODE]    storeFailed', key, errmsg, x)
     return errmsg
 
 
 def findNodeFailed(x):
     errmsg = getErrorMessage(x)
     if _Debug:
-        print('    [DHT NODE]    findNodeFailed', errmsg, x)
+        print('[DHT NODE]    findNodeFailed', errmsg, x)
     return errmsg
 
 
 def lookupFailed(x):
     errmsg = getErrorMessage(x)
     if _Debug:
-        print('    [DHT NODE]    lookupFailed', errmsg, x)
+        print('[DHT NODE]    lookupFailed', errmsg, x)
     return errmsg
 
 
@@ -183,7 +183,7 @@ class Node(object):
                     contact = Contact(encoding.to_text(contactTriple[0]), contactTriple[1], contactTriple[2], self._protocol)
                     self._routingTable.addContact(contact)
                 if _Debug:
-                    print('    [DHT NODE]    found "nodeState" key in local db and added %d contacts to routing table' % len(state['closestNodes']))
+                    print('[DHT NODE]    found "nodeState" key in local db and added %d contacts to routing table' % len(state['closestNodes']))
         self._counter = None
 
     def __del__(self):
@@ -274,7 +274,7 @@ class Node(object):
 
         def storeRPCsCollected(store_results, store_nodes):
             if _Debug:
-                print('    [DHT NODE]    storeRPCsCollected', store_results, store_nodes)
+                print('[DHT NODE]    storeRPCsCollected', store_results, store_nodes)
             ret.callback((store_nodes, store_results, ))
             return None
 
@@ -298,7 +298,7 @@ class Node(object):
                 except:
                     errmsg = errmsg.decode(errors='ignore')
             if _Debug:
-                print('    [DHT NODE]    storeRPCsFailed', errmsg)
+                print('[DHT NODE]    storeRPCsFailed', errmsg)
             ret.errback(x)
             return errmsg
 
@@ -393,17 +393,17 @@ class Node(object):
 
         def refreshRevisionSuccess(ok):
             if _Debug:
-                print('    [DHT NODE]    iterativeFindValue.refreshRevisionSuccess', ok)
+                print('[DHT NODE]    iterativeFindValue.refreshRevisionSuccess', ok)
 
         def refreshRevisionFailed(x):
             errmsg = getErrorMessage(x)
             if _Debug:
-                print('    [DHT NODE]    iterativeFindValue.refreshRevisionFailed', errmsg)
+                print('[DHT NODE]    iterativeFindValue.refreshRevisionFailed', errmsg)
             return errmsg
 
         def checkResult(result):
             if _Debug:
-                print('    [DHT NODE]    iterativeFindValue.checkResult key=%s' % key, result)
+                print('[DHT NODE]    iterativeFindValue.checkResult key=%s' % key, result)
             if isinstance(result, dict):
                 if key in result:
                     latest_revision = 0
@@ -418,7 +418,7 @@ class Node(object):
                         if 'expireSeconds' in result:
                             expireSeconds = result['expireSeconds']
                         if _Debug:
-                            print('    [DHT NODE]    republish %s to closest node with %d expire seconds' % (key, expireSeconds))
+                            print('[DHT NODE]    republish %s to closest node with %d expire seconds' % (key, expireSeconds))
                         contact.store(key, result[key], None, 0, expireSeconds, revision=latest_revision).addErrback(storeFailed)
                     if refresh_revision:
                         # need to refresh nodes who has old version of that value
@@ -426,7 +426,7 @@ class Node(object):
                             if v[1] < latest_revision:
                                 _contact = Contact(encoding.to_text(v[2]), v[3][0], v[3][1], self._protocol)
                                 if _Debug:
-                                    print('    [DHT NODE]    will refresh revision %d on %r' % (latest_revision, _contact))
+                                    print('[DHT NODE]    will refresh revision %d on %r' % (latest_revision, _contact))
                                 d = _contact.store(key, result[key], None, 0, expireSeconds, revision=latest_revision)
                                 d.addCallback(refreshRevisionSuccess)
                                 d.addErrback(refreshRevisionFailed)
@@ -444,7 +444,7 @@ class Node(object):
                         if len(result['activeContacts']) > 0:
                             contact = result['activeContacts'][0]
                             if _Debug:
-                                print('    [DHT NODE]    refresh %s : %r with %d to %r' % (key, item['value'], expireSeconds, contact))
+                                print('[DHT NODE]    refresh %s : %r with %d to %r' % (key, item['value'], expireSeconds, contact))
                             contact.store(key, item['value'], None, 0, expireSeconds).addErrback(storeFailed)
                         outerDf.callback({
                             'key': item['value'],
@@ -458,7 +458,7 @@ class Node(object):
                         })
                     else:
                         if _Debug:
-                            print('    [DHT NODE]    key %s does not exist in DHT' % key)
+                            print('[DHT NODE]    key %s does not exist in DHT' % key)
                         outerDf.callback(result)
             else:
                 # The value wasn't found, but a list of contacts was returned
@@ -473,7 +473,7 @@ class Node(object):
                     if len(result) > 0:
                         contact = result[0]
                         if _Debug:
-                            print('    [DHT NODE]    refresh %s on closest node : %r with %d to %r' % (key, item['value'], expireSeconds, contact))
+                            print('[DHT NODE]    refresh %s on closest node : %r with %d to %r' % (key, item['value'], expireSeconds, contact))
                         contact.store(key, item['value'], None, 0, expireSeconds).addErrback(storeFailed)
                     ret = {
                         'key': item['value'],
@@ -486,11 +486,11 @@ class Node(object):
                         'activeContacts': result['activeContacts'],
                     }
                     if _Debug:
-                        print('    [DHT NODE]    key %s found in my local data store : %r' % (key, ret))
+                        print('[DHT NODE]    key %s found in my local data store : %r' % (key, ret))
                     outerDf.callback(ret)
                 else:
                     if _Debug:
-                        print('    [DHT NODE]    key %s does not exist in DHT' % key)
+                        print('[DHT NODE]    key %s does not exist in DHT' % key)
                     outerDf.callback(result)
 
         # Execute the search
@@ -591,7 +591,7 @@ class Node(object):
         # if self._counter:
         #     self._counter('rpc_node_store')
         if _Debug:
-            print('    [DHT NODE]   OLD   rpcmethod.store %r' % key)
+            print('[DHT NODE]  SINGLE  rpcmethod.store %r' % key)
         # Get the sender's ID (if any)
         if '_rpcNodeID' in kwargs:
             rpcSenderID = kwargs['_rpcNodeID']
@@ -627,7 +627,7 @@ class Node(object):
         # if self._counter:
         #     self._counter('rpc_node_findNode')
         if _Debug:
-            print('    [DHT NODE]   OLD  rpcmethod.findNode %r' % key)
+            print('[DHT NODE]  SINGLE rpcmethod.findNode %r' % key)
         # Get the sender's ID (if any)
         if '_rpcNodeID' in kwargs:
             rpcSenderID = kwargs['_rpcNodeID']
@@ -655,7 +655,7 @@ class Node(object):
         # if self._counter:
         #     self._counter('rpc_node_findValue')
         if _Debug:
-            print('    [DHT NODE]  OLD  rpcmethod.findValue %r' % key)
+            print('[DHT NODE] SINGLE rpcmethod.findValue %r' % key)
         if key in self._dataStore:
             exp = None
             expireSecondsCall = getattr(self._dataStore, 'expireSeconds')
@@ -666,10 +666,10 @@ class Node(object):
             if originalPublishTimeCall:
                 published = originalPublishTimeCall(key)
             if _Debug:
-                print('    [DHT NODE]        found key in local dataStore %r' % self._dataStore[key])
+                print('[DHT NODE]  SINGLE    found key in local dataStore %r' % self._dataStore[key])
             return {key: self._dataStore[key], 'expireSeconds': exp, 'originallyPublished': published, }
         if _Debug:
-            print('    [DHT NODE]        NOT found key in local dataStore')
+            print('[DHT NODE] SINGLE     NOT found key in local dataStore')
         return self.findNode(key, **kwargs)
 
     def _generateID(self):
@@ -713,7 +713,7 @@ class Node(object):
         @rtype: twisted.internet.defer.Deferred
         """
         if _Debug:
-            print('    [DHT NODE]   OLD  _iterativeFind rpc=%r   key=%r  startupShortlist=%r' % (rpc, key, startupShortlist, ))
+            print('[DHT NODE]  SINGLE _iterativeFind rpc=%r   key=%r  startupShortlist=%r' % (rpc, key, startupShortlist, ))
         # if self._counter:
         #     self._counter('_iterativeFind')
         if rpc != 'findNode':
@@ -728,7 +728,7 @@ class Node(object):
                 self._routingTable.touchKBucket(key)
             if len(shortlist) == 0:
                 if _Debug:
-                    print("    [DHT NODE]    This node doesn't know of any other nodes !!!!!")
+                    print('[DHT NODE]  SINGLE  This node does not know of any other nodes !!!!!')
                 # This node doesn't know of any other nodes
                 fakeDf = defer.Deferred()
                 fakeDf.callback([])
@@ -737,7 +737,7 @@ class Node(object):
             # This is used during the bootstrap process; node ID's are most probably fake
             shortlist = startupShortlist
         if _Debug:
-            print('    [DHT NODE]    shortlist=%r' % shortlist)
+            print('[DHT NODE]  SINGLE  shortlist=%r' % shortlist)
         # List of active queries; len() indicates number of active probes
         # - using lists for these variables, because Python doesn't allow binding a new value to a name in an enclosing (non-global) scope
         activeProbes = []
@@ -759,13 +759,13 @@ class Node(object):
             originAddress = responseTuple[1]  # tuple: (ip adress, udp port)
             # Make sure the responding node is valid, and abort the operation if it isn't
             if _Debug: 
-                print('    [DHT NODE]        extendShortlist', (responseMsg.nodeID, type(responseMsg.nodeID)))
+                print('[DHT NODE]   SINGLE   extendShortlist', (responseMsg.nodeID, type(responseMsg.nodeID)))
             if responseMsg.nodeID in activeContacts or responseMsg.nodeID == self.id:
                 if _Debug:
                     if responseMsg.nodeID == self.id:
-                        print('    [DHT NODE]            response from my own node')
+                        print('[DHT NODE]   SINGLE       response from my own node')
                     else:
-                        print('    [DHT NODE]            response from active contact')
+                        print('[DHT NODE]   SINGLE       response from active contact')
                 return responseMsg.nodeID
 
             # Mark this node as active
@@ -820,7 +820,7 @@ class Node(object):
             deadContactID = failure.getErrorMessage()
             if deadContactID in shortlist:
                 if _Debug:
-                    print('    [DHT NODE]    removing %r' % deadContactID)
+                    print('[DHT NODE]  SINGLE removing %r' % deadContactID)
                 shortlist.remove(deadContactID)
             return deadContactID
 
@@ -831,7 +831,7 @@ class Node(object):
                 pendingIterationCalls[0].cancel()
                 del pendingIterationCalls[0]
                 if _Debug:
-                    print('    [DHT NODE]    forcing iteration =================')
+                    print('[DHT NODE] SINGLE forcing iteration =================')
                 searchIteration()
 
         # Send parallel, asynchronous FIND_NODE RPCs to the shortlist of contacts
@@ -840,14 +840,14 @@ class Node(object):
             # Sort the discovered active nodes from closest to furthest
             activeContacts.sort(key=lambda cont: self._routingTable.distance(cont.id, key))
             if _Debug:
-                print('    [DHT NODE]    ==> searchiteration %r' % activeContacts)
+                print('[DHT NODE] SINGLE ==> searchiteration %r' % activeContacts)
             # This makes sure a returning probe doesn't force calling this function by mistake
             while len(pendingIterationCalls):
                 del pendingIterationCalls[0]
             # See if should continue the search
             if key in findValueResult and not deep:
                 if _Debug:
-                    print('    [DHT NODE]    ++++++++++++++ DONE (findValue found) +++++++++++++++\n\n')
+                    print('[DHT NODE] SINGLE ++++++++++++++ DONE (findValue found) +++++++++++++++\n\n')
                 findValueResult['activeContacts'] = activeContacts
                 outerDf.callback(findValueResult)
                 return
@@ -857,10 +857,10 @@ class Node(object):
                     # Ok, we're done; either we have accumulated k active contacts or no improvement in closestNode has been noted
                     if len(activeContacts) >= constants.k:
                         if _Debug:
-                            print('    [DHT NODE]    ++++++++++++++ DONE (test for k active contacts) +++++++++++++++\n\n')
+                            print('[DHT NODE] SINGLE ++++++++++++++ DONE (test for k active contacts) +++++++++++++++\n\n')
                     else:
                         if _Debug:
-                            print('    [DHT NODE]    ++++++++++++++ DONE (test for closest node) +++++++++++++++\n\n')
+                            print('[DHT NODE] SINGLE ++++++++++++++ DONE (test for closest node) +++++++++++++++\n\n')
                     if findValue:
                         findValueResult['activeContacts'] = activeContacts
                         outerDf.callback(findValueResult)
@@ -889,7 +889,7 @@ class Node(object):
             if len(activeProbes) > slowNodeCount[0] \
                     or (len(shortlist) < constants.k and len(activeContacts) < len(shortlist) and len(activeProbes) > 0):
                 if _Debug:
-                    print('    [DHT NODE]    ----------- scheduling next call -------------')
+                    print('[DHT NODE] SINGLE ----------- scheduling next call -------------')
                 # Schedule the next iteration if there are any active calls (Kademlia uses loose parallelism)
                 call = twisted.internet.reactor.callLater(constants.iterativeLookupDelay, searchIteration)  # IGNORE:E1101  @UndefinedVariable
                 pendingIterationCalls.append(call)
@@ -899,7 +899,7 @@ class Node(object):
                 searchIteration()
             else:
                 if _Debug:
-                    print('    [DHT NODE]    ++++++++++++++ DONE (logically) +++++++++++++\n\n')
+                    print('[DHT NODE] SINGLE ++++++++++++++ DONE (logically) +++++++++++++\n\n')
                 # If no probes were sent, there will not be any improvement, so we're done
                 if findValue:
                     findValueResult['activeContacts'] = activeContacts
@@ -920,7 +920,7 @@ class Node(object):
             'type': 'skip_validation',
         }
         if _Debug:
-            print('    [DHT NODE]   OLD  _persistState id=%r state=%r' % (self.id, state, ))
+            print('[DHT NODE]  SINGLE _persistState id=%r state=%r' % (self.id, state, ))
         json_value = json.dumps(state)
         now = int(time.time())
 
@@ -933,7 +933,7 @@ class Node(object):
 
     def _joinNetworkFailed(self, err):
         if _Debug:
-            print('    [DHT NODE]  OLD   failed joining DHT network', err)
+            print('[DHT NODE] SINGLE  failed joining DHT network', err)
 
     def _refreshNode(self):
         """
@@ -949,13 +949,13 @@ class Node(object):
     def _refreshRoutingTable(self):
         nodeIDs = self._routingTable.getRefreshList(0, False)
         if _Debug:
-            print('    [DHT NODE]    _refreshRoutingTable', nodeIDs)
+            print('[DHT NODE] SINGLE _refreshRoutingTable', nodeIDs)
 
         outerDf = defer.Deferred()
 
         def searchFailed(err):
             if _Debug:
-                print('    [DHT NODE]    searchFailed', err)
+                print('[DHT NODE] SINGLE searchFailed', err)
 
         def searchForNextNodeID(dfResult=None):
             if len(nodeIDs) > 0:
@@ -985,11 +985,11 @@ class Node(object):
         This method should run in a deferred thread
         """
         if _Debug:
-            print('    [DHT NODE]    republishData called, node: %r' % self.id)
+            print('[DHT NODE]  SINGLE republishData called, node: %r' % self.id)
         expiredKeys = []
         for key in self._dataStore.keys():
             if _Debug:
-                print('    [DHT NODE]        %r' % key)
+                print('[DHT NODE]  SINGLE    %r' % key)
             # Filter internal variables stored in the datastore
             if key == 'nodeState':
                 continue
@@ -1080,7 +1080,7 @@ class MultiLayerNode(Node):
     def createLayer(self, layer_id, dataStore, nodeID=None, routingTable=None, warmUp=False):
         if layer_id in self.layers or layer_id in self._dataStores or layer_id in self._routingTables:
             if _Debug:
-                print('    [DHT NODE]    createLayer : layer %d already exist' % layer_id)
+                print('[DHT NODE]    createLayer : layer %d already exist' % layer_id)
             return False
         self._dataStores[layer_id] = dataStore
         self.layers[layer_id] = nodeID
@@ -1095,7 +1095,7 @@ class MultiLayerNode(Node):
                 contact = LayeredContact(encoding.to_text(contactTriple[0]), contactTriple[1], contactTriple[2], self._protocol, layerID=layer_id)
                 self._routingTables[layer_id].addContact(contact)
             if _Debug:
-                print('    [DHT NODE]    createLayer : layer %d : found "nodeState" key in local db and added %d contacts to routing table' % (
+                print('[DHT NODE]    createLayer : layer %d : found "nodeState" key in local db and added %d contacts to routing table' % (
                     layer_id, len(state['closestNodes']), ))
             loaded = True
         if not self.layers[layer_id]:
@@ -1105,19 +1105,19 @@ class MultiLayerNode(Node):
 #         if layer_id != 0 and not loaded and warmUp:
 #             loaded = self.warmUpLayer(layer_id)
         if _Debug:
-            print('    [DHT NODE]    createLayer : layer %d created,  loaded=%r' % (layer_id, loaded, ))
+            print('[DHT NODE]    createLayer : layer %d created,  loaded=%r' % (layer_id, loaded, ))
         return True
 
     def destroyLayer(self, layer_id):
         if layer_id not in self.layers and layer_id not in self._dataStores and layer_id not in self._routingTables:
             if _Debug:
-                print('    [DHT NODE]    destroyLayer : layer %d not exist' % layer_id)
+                print('[DHT NODE]    destroyLayer : layer %d not exist' % layer_id)
             return False
         self.layers.pop(layer_id, None)
         self._routingTables.pop(layer_id, None)
         self._dataStores.pop(layer_id, None)
         if _Debug:
-            print('    [DHT NODE]    destroyLayer : layer %d destroyed' % layer_id)
+            print('[DHT NODE]    destroyLayer : layer %d destroyed' % layer_id)
         return True
 
     def connectingTask(self, layerID=0):
@@ -1134,7 +1134,7 @@ class MultiLayerNode(Node):
         else:
             bootstrapContacts = None
         if _Debug:
-            print('    [DHT NODE]    joinNetwork bootstrapContacts=%r layerID=%r' % (bootstrapContacts, layerID, ))
+            print('[DHT NODE]    joinNetwork bootstrapContacts=%r layerID=%r' % (bootstrapContacts, layerID, ))
         self.active_layers.add(layerID)
         if attach:
             self.attachLayer(layerID)
@@ -1150,7 +1150,7 @@ class MultiLayerNode(Node):
         if not layerID in self.active_layers:
             return False
         if _Debug:
-            print('    [DHT NODE]    leaveNetwork layerID=%d' % layerID)
+            print('[DHT NODE]    leaveNetwork layerID=%d' % layerID)
         if layerID != 0:
             self.active_layers.remove(layerID)
             self.detachLayer(layerID)
@@ -1161,12 +1161,12 @@ class MultiLayerNode(Node):
 
     def attachLayer(self, layerID):
         if _Debug:
-            print('    [DHT NODE]    attachLayer %d' % layerID)
+            print('[DHT NODE]    attachLayer %d' % layerID)
         self.attached_layers.add(layerID)
 
     def detachLayer(self, layerID):
         if _Debug:
-            print('    [DHT NODE]    detachLayer %d' % layerID)
+            print('[DHT NODE]    detachLayer %d' % layerID)
         self.attached_layers.remove(layerID)
 
 #     def warmUpLayer(self, layerID):
@@ -1183,7 +1183,7 @@ class MultiLayerNode(Node):
 #             return False
 #         state = json.loads(json_state)
 #         if _Debug:
-#             print('    [DHT NODE]    warmUpLayer %d   found saved data: %r' % (layerID, state, ))
+#             print('[DHT NODE]    warmUpLayer %d   found saved data: %r' % (layerID, state, ))
 #         if not state['closestNodes']:
 #             return False
 #         self.layers[layerID] = state['id']
@@ -1192,7 +1192,7 @@ class MultiLayerNode(Node):
 #             self._routingTables[layerID].addContact(contact)
 #         self.warm_layers.add(layerID)
 #         if _Debug:
-#             print('    [DHT NODE]    warmUpLayer %d : found "nodeState" key in local db of layer 0 and added %d contacts to routing table' % (
+#             print('[DHT NODE]    warmUpLayer %d : found "nodeState" key in local db of layer 0 and added %d contacts to routing table' % (
 #                 layerID, len(state['closestNodes']), ))
 #         return True
 
@@ -1206,19 +1206,19 @@ class MultiLayerNode(Node):
             kwargs['layerID'] = layerID
 
         if _Debug:
-            print('    [DHT NODE]   iterativeStore layerID=%d  key=%r' % (layerID, key, ))
+            print('[DHT NODE]   iterativeStore layerID=%d  key=%r' % (layerID, key, ))
         # Prepare a callback for doing "STORE" RPC calls
 
         def storeRPCsCollected(store_results, store_nodes):
             if _Debug:
-                print('    [DHT NODE]    iterativeStore.storeRPCsCollected', store_results, store_nodes)
+                print('[DHT NODE]    iterativeStore.storeRPCsCollected', store_results, store_nodes)
             ret.callback((store_nodes, store_results, ))
             return None
 
         def storeRPCsFailed(x):
             errmsg = storeFailed(x)
             if _Debug:
-                print('    [DHT NODE]    iterativeStore.storeRPCsFailed', errmsg)
+                print('[DHT NODE]    iterativeStore.storeRPCsFailed', errmsg)
             ret.errback(x)
             return errmsg
 
@@ -1286,22 +1286,22 @@ class MultiLayerNode(Node):
         def storeFailed(x):
             errmsg = getErrorMessage(x)
             if _Debug:
-                print('    [DHT NODE]    iterativeFindValue.storeFailed', errmsg)
+                print('[DHT NODE]    iterativeFindValue.storeFailed', errmsg)
             return errmsg
 
         def refreshRevisionSuccess(ok):
             if _Debug:
-                print('    [DHT NODE]    iterativeFindValue.refreshRevisionSuccess', ok)
+                print('[DHT NODE]    iterativeFindValue.refreshRevisionSuccess', ok)
 
         def refreshRevisionFailed(x):
             errmsg = getErrorMessage(x)
             if _Debug:
-                print('    [DHT NODE]    iterativeFindValue.refreshRevisionFailed', errmsg)
+                print('[DHT NODE]    iterativeFindValue.refreshRevisionFailed', errmsg)
             return errmsg
 
         def checkResult(result):
             if _Debug:
-                print('    [DHT NODE]    iterativeFindValue.checkResult key=%s' % key, result)
+                print('[DHT NODE]    iterativeFindValue.checkResult key=%s' % key, result)
             if isinstance(result, dict):
                 if key in result:
                     latest_revision = 0
@@ -1316,7 +1316,7 @@ class MultiLayerNode(Node):
                         if 'expireSeconds' in result:
                             expireSeconds = result['expireSeconds']
                         if _Debug:
-                            print('    [DHT NODE]    republish %s to closest node with %d expire seconds' % (key, expireSeconds))
+                            print('[DHT NODE]    republish %s to closest node with %d expire seconds' % (key, expireSeconds))
                         contact.store(key, result[key], None, 0, expireSeconds, revision=latest_revision, layerID=layerID).addErrback(storeFailed)
                     if refresh_revision:
                         # need to refresh nodes who has old version of that value
@@ -1324,7 +1324,7 @@ class MultiLayerNode(Node):
                             if v[1] < latest_revision:
                                 _contact = LayeredContact(encoding.to_text(v[2]), v[3][0], v[3][1], self._protocol, layerID=layerID)
                                 if _Debug:
-                                    print('    [DHT NODE]    will refresh revision %d on %r' % (latest_revision, _contact))
+                                    print('[DHT NODE]    will refresh revision %d on %r' % (latest_revision, _contact))
                                 d = _contact.store(key, result[key], None, 0, expireSeconds, revision=latest_revision, layerID=layerID)
                                 d.addCallback(refreshRevisionSuccess)
                                 d.addErrback(refreshRevisionFailed)
@@ -1342,7 +1342,7 @@ class MultiLayerNode(Node):
                         if len(result['activeContacts']) > 0:
                             contact = result['activeContacts'][0]
                             if _Debug:
-                                print('    [DHT NODE]    refresh %s : %r with %d to %r' % (key, item['value'], expireSeconds, contact))
+                                print('[DHT NODE]    refresh %s : %r with %d to %r' % (key, item['value'], expireSeconds, contact))
                             contact.store(key, item['value'], None, 0, expireSeconds, layerID=layerID).addErrback(storeFailed)
                         outerDf.callback({
                             'key': item['value'],
@@ -1356,7 +1356,7 @@ class MultiLayerNode(Node):
                         })
                     else:
                         if _Debug:
-                            print('    [DHT NODE]    key %s does not exist in DHT' % key)
+                            print('[DHT NODE]    key %s does not exist in DHT' % key)
                         outerDf.callback(result)
             else:
                 # The value wasn't found, but a list of contacts was returned
@@ -1371,7 +1371,7 @@ class MultiLayerNode(Node):
                     if len(result) > 0:
                         contact = result[0]
                         if _Debug:
-                            print('    [DHT NODE]    refresh %s on closest node : %r with %d to %r' % (key, item['value'], expireSeconds, contact))
+                            print('[DHT NODE]    refresh %s on closest node : %r with %d to %r' % (key, item['value'], expireSeconds, contact))
                         contact.store(key, item['value'], None, 0, expireSeconds, layerID=layerID).addErrback(storeFailed)
                     ret = {
                         'key': item['value'],
@@ -1384,11 +1384,11 @@ class MultiLayerNode(Node):
                         'activeContacts': result['activeContacts'],
                     }
                     if _Debug:
-                        print('    [DHT NODE]    key %s found in my local data store : %r' % (key, ret))
+                        print('[DHT NODE]    key %s found in my local data store : %r' % (key, ret))
                     outerDf.callback(ret)
                 else:
                     if _Debug:
-                        print('    [DHT NODE]    key %s does not exist in DHT' % key)
+                        print('[DHT NODE]    key %s does not exist in DHT' % key)
                     outerDf.callback(result)
 
         # Execute the search
@@ -1428,10 +1428,10 @@ class MultiLayerNode(Node):
             layerID = 0
         if layerID not in self.active_layers:
             if _Debug:
-                print('    [DHT NODE]    rpcmethod.store %r layerID=%d SKIP because layer is not active' % (key, layerID, ))
+                print('[DHT NODE]    rpcmethod.store %r layerID=%d SKIP because layer is not active' % (key, layerID, ))
             raise ValueError('Layer is not active')
         if _Debug:
-            print('    [DHT NODE]    rpcmethod.store %r layerID=%d' % (key, layerID, ))
+            print('[DHT NODE]    rpcmethod.store %r layerID=%d' % (key, layerID, ))
         # Get the sender's ID (if any)
         if '_rpcNodeID' in kwargs:
             rpcSenderID = kwargs['_rpcNodeID']
@@ -1455,10 +1455,10 @@ class MultiLayerNode(Node):
             layerID = 0
         if layerID not in self.active_layers:
             if _Debug:
-                print('    [DHT NODE]    rpcmethod.delete %r layerID=%d SKIP because layer is not active' % (key, layerID, ))
+                print('[DHT NODE]    rpcmethod.delete %r layerID=%d SKIP because layer is not active' % (key, layerID, ))
             return []
         if _Debug:
-            print('    [DHT NODE]    rpcmethod.delete %r layerID=%d : %r' % (key, layerID, kwargs))
+            print('[DHT NODE]    rpcmethod.delete %r layerID=%d : %r' % (key, layerID, kwargs))
         # Delete our own copy of the data (if we have one)...
         if key in self._dataStores[layerID]:
             del self._dataStores[layerID][key]
@@ -1473,10 +1473,10 @@ class MultiLayerNode(Node):
             layerID = 0
         if layerID not in self.active_layers:
             if _Debug:
-                print('    [DHT NODE]    rpcmethod.findNode %r layerID=%d SKIP because layer is not active' % (key, layerID, ))
+                print('[DHT NODE]    rpcmethod.findNode %r layerID=%d SKIP because layer is not active' % (key, layerID, ))
             return []
         if _Debug:
-            print('    [DHT NODE]    rpcmethod.findNode %r layerID=%d : %r' % (key, layerID, kwargs))
+            print('[DHT NODE]    rpcmethod.findNode %r layerID=%d : %r' % (key, layerID, kwargs))
         # Get the sender's ID (if any)
         if '_rpcNodeID' in kwargs:
             rpcSenderID = kwargs['_rpcNodeID']
@@ -1484,14 +1484,14 @@ class MultiLayerNode(Node):
             rpcSenderID = None
         if layerID not in self._routingTables:
             if _Debug:
-                print('    [DHT NODE]    layer %d not exist' % layerID)
+                print('[DHT NODE]    layer %d not exist' % layerID)
             return []
         contacts = self._routingTables[layerID].findCloseNodes(key, constants.k, rpcSenderID)
         contactTriples = []
         for contact in contacts:
             contactTriples.append((contact.id, encoding.to_text(contact.address), contact.port, layerID))
         if _Debug:
-            print('    [DHT NODE]        result is %r' % contactTriples)
+            print('[DHT NODE]        result is %r' % contactTriples)
         return contactTriples
 
     @rpcmethod
@@ -1502,10 +1502,10 @@ class MultiLayerNode(Node):
             layerID = 0
         if layerID not in self.active_layers:
             if _Debug:
-                print('    [DHT NODE]    rpcmethod.findValue %r layerID=%d SKIP because layer is not active' % (key, layerID, ))
+                print('[DHT NODE]    rpcmethod.findValue %r layerID=%d SKIP because layer is not active' % (key, layerID, ))
             return []
         if _Debug:
-            print('    [DHT NODE]    rpcmethod.findValue %r layerID=%r : %r' % (key, layerID, kwargs))
+            print('[DHT NODE]    rpcmethod.findValue %r layerID=%r : %r' % (key, layerID, kwargs))
         if key in self._dataStores[layerID]:
             exp = None
             expireSecondsCall = getattr(self._dataStores[layerID], 'expireSeconds')
@@ -1516,15 +1516,15 @@ class MultiLayerNode(Node):
             if originalPublishTimeCall:
                 published = originalPublishTimeCall(key)
             if _Debug:
-                print('    [DHT NODE]        found key in local dataStore %r' % self._dataStores[layerID][key])
+                print('[DHT NODE]        found key in local dataStore %r' % self._dataStores[layerID][key])
             return {key: self._dataStores[layerID][key], 'expireSeconds': exp, 'originallyPublished': published, }
         if _Debug:
-            print('    [DHT NODE]        NOT found key in local dataStore')
+            print('[DHT NODE]        NOT found key in local dataStore')
         return self.findNode(key, **kwargs)
 
     def _iterativeFind(self, key, startupShortlist=None, rpc='findNode', deep=False, layerID=0):
         if _Debug:
-            print('    [DHT NODE]    _iterativeFind   layerID=%d   rpc=%r   key=%r  startupShortlist=%r routingTables=%r' % (
+            print('[DHT NODE]    _iterativeFind   layerID=%d   rpc=%r   key=%r  startupShortlist=%r routingTables=%r' % (
                 layerID, rpc, key, startupShortlist, self._routingTables))
         if rpc != 'findNode':
             findValue = True
@@ -1538,7 +1538,7 @@ class MultiLayerNode(Node):
                 self._routingTables[layerID].touchKBucket(key)
             if len(shortlist) == 0:
                 if _Debug:
-                    print('    [DHT NODE]  layerID=%d   This node doesnt know of any other nodes !!!!!' % layerID)
+                    print('[DHT NODE]  layerID=%d   This node doesnt know of any other nodes !!!!!' % layerID)
                 # This node doesn't know of any other nodes
                 fakeDf = defer.Deferred()
                 fakeDf.callback([])
@@ -1547,7 +1547,7 @@ class MultiLayerNode(Node):
             # This is used during the bootstrap process; node ID's are most probably fake
             shortlist = startupShortlist
         if _Debug:
-            print('    [DHT NODE]   _iterativeFind  shortlist=%r' % shortlist)
+            print('[DHT NODE]   _iterativeFind  shortlist=%r' % shortlist)
         # List of active queries; len() indicates number of active probes
         # - using lists for these variables, because Python doesn't allow binding a new value to a name in an enclosing (non-global) scope
         activeProbes = []
@@ -1569,13 +1569,13 @@ class MultiLayerNode(Node):
             originAddress = responseTuple[1]  # tuple: (ip adress, udp port)
             # Make sure the responding node is valid, and abort the operation if it isn't
             if _Debug: 
-                print('    [DHT NODE]        responseTuple:', responseTuple)
+                print('[DHT NODE]        responseTuple:', responseTuple)
             if responseMsg.nodeID in activeContacts or responseMsg.nodeID == self.layers[layerID]:
                 if _Debug:
                     if responseMsg.nodeID == self.layers[layerID]:
-                        print('    [DHT NODE]            response from my own node')
+                        print('[DHT NODE]            response from my own node')
                     else:
-                        print('    [DHT NODE]            response from active contact')
+                        print('[DHT NODE]            response from active contact')
                 return responseMsg.nodeID
 
             # Mark this node as active
@@ -1630,7 +1630,7 @@ class MultiLayerNode(Node):
             deadContactID = failure.getErrorMessage()
             if deadContactID in shortlist:
                 if _Debug:
-                    print('    [DHT NODE]    removing %r' % deadContactID)
+                    print('[DHT NODE]    removing %r' % deadContactID)
                 shortlist.remove(deadContactID)
             return deadContactID
 
@@ -1641,7 +1641,7 @@ class MultiLayerNode(Node):
                 pendingIterationCalls[0].cancel()
                 del pendingIterationCalls[0]
                 if _Debug:
-                    print('    [DHT NODE]    forcing iteration =================')
+                    print('[DHT NODE]    forcing iteration =================')
                 searchIteration()
 
         # Send parallel, asynchronous FIND_NODE RPCs to the shortlist of contacts
@@ -1650,14 +1650,14 @@ class MultiLayerNode(Node):
             # Sort the discovered active nodes from closest to furthest
             activeContacts.sort(key=lambda cont: self._routingTables[layerID].distance(cont.id, key))
             if _Debug:
-                print('    [DHT NODE]    ==> searchiteration %r' % activeContacts)
+                print('[DHT NODE]    ==> searchiteration %r' % activeContacts)
             # This makes sure a returning probe doesn't force calling this function by mistake
             while len(pendingIterationCalls):
                 del pendingIterationCalls[0]
             # See if should continue the search
             if key in findValueResult and not deep:
                 if _Debug:
-                    print('    [DHT NODE]    ++++++++++++++ DONE (findValue found) +++++++++++++++\n\n')
+                    print('[DHT NODE]    ++++++++++++++ DONE (findValue found) +++++++++++++++\n\n')
                 findValueResult['activeContacts'] = activeContacts
                 outerDf.callback(findValueResult)
                 return
@@ -1667,10 +1667,10 @@ class MultiLayerNode(Node):
                     # Ok, we're done; either we have accumulated k active contacts or no improvement in closestNode has been noted
                     if len(activeContacts) >= constants.k:
                         if _Debug:
-                            print('    [DHT NODE]    ++++++++++++++ DONE (test for k active contacts) +++++++++++++++\n\n')
+                            print('[DHT NODE]    ++++++++++++++ DONE (test for k active contacts) +++++++++++++++\n\n')
                     else:
                         if _Debug:
-                            print('    [DHT NODE]    ++++++++++++++ DONE (test for closest node) +++++++++++++++\n\n')
+                            print('[DHT NODE]    ++++++++++++++ DONE (test for closest node) +++++++++++++++\n\n')
                     if findValue:
                         findValueResult['activeContacts'] = activeContacts
                         outerDf.callback(findValueResult)
@@ -1689,7 +1689,7 @@ class MultiLayerNode(Node):
                     activeProbes.append(contact.id)
                     rpcMethod = getattr(contact, rpc)
                     if _Debug:
-                        print('    [DHT NODE] calling RPC method %r with key=%r layerID=%d at %r' % (
+                        print('[DHT NODE] calling RPC method %r with key=%r layerID=%d at %r' % (
                             rpc, key, layerID, contact))
                     df = rpcMethod(
                         key,
@@ -1706,7 +1706,7 @@ class MultiLayerNode(Node):
             if len(activeProbes) > slowNodeCount[0] \
                     or (len(shortlist) < constants.k and len(activeContacts) < len(shortlist) and len(activeProbes) > 0):
                 if _Debug:
-                    print('    [DHT NODE]    ----------- scheduling next call -------------')
+                    print('[DHT NODE]    ----------- scheduling next call -------------')
                 # Schedule the next iteration if there are any active calls (Kademlia uses loose parallelism)
                 call = twisted.internet.reactor.callLater(constants.iterativeLookupDelay, searchIteration)  # IGNORE:E1101  @UndefinedVariable
                 pendingIterationCalls.append(call)
@@ -1716,7 +1716,7 @@ class MultiLayerNode(Node):
                 searchIteration()
             else:
                 if _Debug:
-                    print('    [DHT NODE]    ++++++++++++++ DONE (logically) +++++++++++++\n\n')
+                    print('[DHT NODE]    ++++++++++++++ DONE (logically) +++++++++++++\n\n')
                 # If no probes were sent, there will not be any improvement, so we're done
                 if findValue:
                     findValueResult['activeContacts'] = activeContacts
@@ -1739,7 +1739,7 @@ class MultiLayerNode(Node):
             'type': 'skip_validation',
         }
         if _Debug:
-            print('    [DHT NODE]    _persistState  layerID=%d id=%r closestNodes=%r state=%r' % (
+            print('[DHT NODE]    _persistState  layerID=%d id=%r closestNodes=%r state=%r' % (
                 layerID, self.layers[layerID], closestNodes, state, ))
         json_value = json.dumps(state)
         now = int(time.time())
@@ -1762,13 +1762,13 @@ class MultiLayerNode(Node):
     def _refreshRoutingTable(self, layerID=0):
         nodeIDs = self._routingTables[layerID].getRefreshList(0, False)
         if _Debug:
-            print('    [DHT NODE]    _refreshRoutingTable', nodeIDs)
+            print('[DHT NODE]    _refreshRoutingTable', nodeIDs)
 
         outerDf = defer.Deferred()
 
         def searchFailed(err):
             if _Debug:
-                print('    [DHT NODE]    searchFailed', err)
+                print('[DHT NODE]    searchFailed', err)
 
         def searchForNextNodeID(dfResult=None):
             if len(nodeIDs) > 0:
@@ -1789,7 +1789,7 @@ class MultiLayerNode(Node):
 
     def _scheduleNextNodeRefresh(self, *args, **kwargs):
         if _Debug:
-            print('    [DHT NODE] will refresh layer %d in %d seconds' % (kwargs['layerID'], constants.checkRefreshInterval, ))
+            print('[DHT NODE] will refresh layer %d in %d seconds' % (kwargs['layerID'], constants.checkRefreshInterval, ))
         self.refreshers[kwargs['layerID']] = twisted.internet.reactor.callLater(constants.checkRefreshInterval, self._refreshNode, layerID=kwargs['layerID'])  # @UndefinedVariable
 
     def _threadedRepublishData(self, *args, **kwargs):
@@ -1801,11 +1801,11 @@ class MultiLayerNode(Node):
         """
         layerID = kwargs['layerID']
         if _Debug:
-            print('    [DHT NODE]    republishData called, node: %r' % self.layers[layerID])
+            print('[DHT NODE]    republishData called, node: %r' % self.layers[layerID])
         expiredKeys = []
         for key in self._dataStores[layerID].keys():
             if _Debug:
-                print('    [DHT NODE]        %r' % key)
+                print('[DHT NODE]        %r' % key)
             # Filter internal variables stored in the datastore
             if key == 'nodeState':
                 continue

@@ -83,8 +83,6 @@ class LayeredContact(Contact):
     def __init__(self, id, ipAddress, udpPort, networkProtocol, firstComm=0, layerID=0):
         self.layerID = layerID
         super(LayeredContact, self).__init__(id, ipAddress, udpPort, networkProtocol, firstComm)
-        # if _Debug:
-        #     print('        [DHT CONTACT]: %r' % self)
 
     def __str__(self):
         return '<Contact(%d) %s at %r:%d>' % (
@@ -94,6 +92,6 @@ class LayeredContact(Contact):
         def _sendRPC(*args, **kwargs):
             kwargs['layerID'] = self.layerID
             if _Debug:
-                print('        [DHT CONTACT]: %r sending RPC %r args=%r kwargs=%r' % (self, name, args, kwargs))
+                print('[DHT CONTACT]: %r sending RPC %r args=%r kwargs=%r' % (self, name, args, kwargs))
             return self._networkProtocol.sendRPC(self, name, args, **kwargs)
         return _sendRPC

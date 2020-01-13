@@ -38,8 +38,8 @@ def run():
         if not isinstance(d, dict):
             print('NOT FOUND')
             return
-        # assert isinstance(d, dict), 'result value is not dictionary, key-value not found'
-        # assert len(d) == 1
+        assert isinstance(d, dict), 'result value is not dictionary, key-value not found'
+        assert len(d) == 1
         k, v = d.popitem()
         assert k.replace('key', '') == v.replace('value', '')
 

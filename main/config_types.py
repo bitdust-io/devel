@@ -128,7 +128,6 @@ def defaults():
         'services/entangled-dht/enabled': TYPE_BOOLEAN,
         'services/entangled-dht/udp-port': TYPE_PORT_NUMBER,
         'services/entangled-dht/known-nodes': TYPE_STRING,
-        'services/entangled-dht/node-id': TYPE_STRING,
         'services/entangled-dht/attached-layers': TYPE_STRING,
         'services/employer/enabled': TYPE_BOOLEAN,
         'services/employer/candidates': TYPE_STRING,
