@@ -39,13 +39,13 @@ ps:
 	docker-compose exec producer bash -c "ps aux"
 
 shell:
-	docker-compose exec producer bash
+	docker-compose exec $(node) bash
 
 produce:
 	docker-compose exec producer bash -c "/root/.bitdust/venv/bin/python /app/bitdust/dht/dht_service.py $(cmd)"
 
 produce_sample_data:
-	docker-compose exec producer /root/.bitdust/venv/bin/python /app/bitdust/tests/dht/test_producer.py --start=1 --end=1 --layer=$(layer)
+	docker-compose exec producer /root/.bitdust/venv/bin/python /app/bitdust/tests/dht/test_producer.py --start=1 --end=3 --layer=$(layer)
 
 consume_sample_data:
 	docker-compose exec consumer /root/.bitdust/venv/bin/python /app/bitdust/tests/dht/test_consumer.py --start=1 --end=1 --layer=$(layer)

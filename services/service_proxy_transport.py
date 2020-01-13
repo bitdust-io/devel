@@ -78,7 +78,7 @@ class ProxyTransportService(LocalService):
         conf().addConfigNotifier('services/proxy-transport/sending-enabled', self._on_sending_enabled_disabled)
         conf().addConfigNotifier('services/proxy-transport/receiving-enabled', self._on_receiving_enabled_disabled)
         if driver.is_on('service_entangled_dht'):
-            self._do_warm_up_proxy_routers_dht_layer()
+            self._do_join_proxy_routers_dht_layer()
         else:
             lg.warn('service service_entangled_dht is OFF')
         events.add_subscriber(self._on_dht_layer_connected, event_id='dht-layer-connected')
@@ -170,12 +170,18 @@ class ProxyTransportService(LocalService):
             lg.warn('all of "my-original-identity" contacts is found in local identity: need to RESET!')
             self._reset_my_original_identity()
 
-    def _do_warm_up_proxy_routers_dht_layer(self):
+    def _do_join_proxy_routers_dht_layer(self):
         from logs import lg
         from dht import dht_service
         from dht import dht_records
-        lg.info('going to warm up proxy routers DHT layer: %d' % dht_records.LAYER_PROXY_ROUTERS)
-        dht_service.node().warmUpLayer(layerID=dht_records.LAYER_PROXY_ROUTERS)
+        from dht import known_nodes
+        lg.info('going to join proxy routers DHT layer: %d' % dht_records.LAYER_PROXY_ROUTERS)
+        known_seeds = known_nodes.nodes()
+        dht_service.connect(
+            seed_nodes=known_seeds,
+            layer_id=dht_records.LAYER_PROXY_ROUTERS,
+            attach=False,
+        )
 
     def _on_transport_state_changed(self, transport, oldstate, newstate):
         from p2p import p2p_connector
@@ -203,4 +209,4 @@ class ProxyTransportService(LocalService):
 
     def _on_dht_layer_connected(self, evt):
         if evt.data['layer_id'] == 0:
-            self._do_warm_up_proxy_routers_dht_layer()
+            self._do_join_proxy_routers_dht_layer()

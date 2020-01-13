@@ -116,3 +116,6 @@ report: coverage_combine coverage_report
 test_log: prepare run_all_log
 
 test: prepare run_all report
+
+shell:
+	docker-compose --file tests/$(test)/docker-compose.yml exec $(node) bash

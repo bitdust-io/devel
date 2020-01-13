@@ -101,7 +101,11 @@ class EntangledDHTService(LocalService):
         )
         lg.info('DHT known seed nodes are : %r   DHT layers are : %r' % (known_seeds, dht_layers, ))
         self.starting_deferred = Deferred()
-        d = dht_service.connect(seed_nodes=known_seeds)
+        d = dht_service.connect(
+            seed_nodes=known_seeds,
+            layer_id=0,
+            attach=True,
+        )
         d.addCallback(self._on_connected)
         d.addErrback(self._on_connect_failed)
         # if my_id.getLocalID():
@@ -134,16 +138,37 @@ class EntangledDHTService(LocalService):
 #             dht_service.set_node_data('idurl', my_id.getLocalID().to_text())
 
     def _on_connected(self, ok):
+        from twisted.internet.defer import DeferredList
         from logs import lg
-        # from dht import dht_records
         from dht import dht_service
-        # from dht import known_nodes
+        from dht import known_nodes
+        from main.config import conf
         lg.info('DHT node connected  ID0=[%s] : %r' % (dht_service.node().layers[0], ok))
         dht_service.node().add_rpc_callback('store', self._on_dht_rpc_store)
         dht_service.node().add_rpc_callback('request', self._on_dht_rpc_request)
-        # known_seeds = known_nodes.nodes()
-        # for layer_id in dht_records.ENABLED_LAYERS:
-        #     dht_service.connect(seed_nodes=known_seeds, layer_id=layer_id)
+        known_seeds = known_nodes.nodes()
+        dl = []
+        attached_layers = conf().getData('services/entangled-dht/attached-layers', default='')
+        if attached_layers:
+            lg.info('more DHT layers to be attached: %r' % attached_layers)
+            for layer_id in attached_layers.split(','):
+                if layer_id.strip():
+                    dl.append(dht_service.connect(
+                        seed_nodes=known_seeds,
+                        layer_id=int(layer_id.strip()),
+                        attach=True,
+                    ))
+        if dl:
+            d = DeferredList(dl)
+            d.addCallback(self._on_layers_attached)
+            d.addErrback(self._on_connect_failed)
+        else:
+            if self.starting_deferred:
+                self.starting_deferred.callback(True)
+                self.starting_deferred = None
+        return ok
+
+    def _on_layers_attached(self, ok):
         if self.starting_deferred:
             self.starting_deferred.callback(True)
             self.starting_deferred = None
@@ -153,7 +178,7 @@ class EntangledDHTService(LocalService):
         from logs import lg
         lg.err('DHT connect failed : %r' % err)
         if self.starting_deferred:
-            self.starting_deferred.callback(err)
+            self.starting_deferred.errback(err)
             self.starting_deferred = None
         return err
 

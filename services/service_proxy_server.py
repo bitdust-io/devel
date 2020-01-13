@@ -97,7 +97,11 @@ class ProxyServerService(LocalService):
         from dht import dht_records
         from dht import known_nodes
         known_seeds = known_nodes.nodes()
-        d = dht_service.connect(seed_nodes=known_seeds, layer_id=dht_records.LAYER_PROXY_ROUTERS)
+        d = dht_service.connect(
+            seed_nodes=known_seeds,
+            layer_id=dht_records.LAYER_PROXY_ROUTERS,
+            attach=True,
+        )
         d.addCallback(self._on_dht_proxy_routers_layer_connected)
         d.addErrback(lambda *args: lg.err(str(args)))
 

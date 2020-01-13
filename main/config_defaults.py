@@ -125,6 +125,7 @@ def reset(conf_obj):
     conf_obj.setDefaultValue('services/entangled-dht/udp-port', settings.DefaultDHTPort())
     conf_obj.setDefaultValue('services/entangled-dht/known-nodes', '')
     conf_obj.setDefaultValue('services/entangled-dht/node-id', '')
+    conf_obj.setDefaultValue('services/entangled-dht/attached-layers', '')
 
     conf_obj.setDefaultValue('services/employer/enabled', 'true')
     conf_obj.setDefaultValue('services/employer/candidates', '')

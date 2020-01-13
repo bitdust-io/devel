@@ -29,6 +29,7 @@ services:
     environment:
       dht_seeds: genesis:14441
       delayed: 1
+      attach_layer: 1
 
   seed2:
     image: bitdust_perf/app
@@ -36,7 +37,8 @@ services:
       context: .
     environment:
       dht_seeds: genesis:14441
-      delayed: 3
+      delayed: 2
+      attach_layer: 1
 
   seed3:
     image: bitdust_perf/app
@@ -44,7 +46,8 @@ services:
       context: .
     environment:
       dht_seeds: genesis:14441
-      delayed: 5
+      delayed: 3
+      attach_layer: 1
 
   seed4:
     image: bitdust_perf/app
@@ -52,39 +55,80 @@ services:
       context: .
     environment:
       dht_seeds: genesis:14441
-      delayed: 7
+      delayed: 4
+      attach_layer: 1
 
   node1:
     image: bitdust_perf/app
     build:
       context: .
     environment:
-      dht_seeds: seed1:14441,seed3:14441
-      delayed: 11
+      dht_seeds: seed1:14441,seed2:14441,seed3:14441,seed4:14441
+      delayed: 10
+      attach_layer: 1
 
   node2:
     image: bitdust_perf/app
     build:
       context: .
     environment:
-      dht_seeds: seed2:14441,seed4:14441
-      delayed: 13
+      dht_seeds: seed1:14441,seed2:14441,seed3:14441,seed4:14441
+      delayed: 10
+      attach_layer: 1
 
   node3:
     image: bitdust_perf/app
     build:
       context: .
     environment:
-      dht_seeds: seed3:14441
-      delayed: 15
+      dht_seeds: seed1:14441,seed2:14441,seed3:14441,seed4:14441
+      delayed: 10
+      attach_layer: 1
 
   node4:
     image: bitdust_perf/app
     build:
       context: .
     environment:
-      dht_seeds: seed4:14441
-      delayed: 17
+      dht_seeds: seed1:14441,seed2:14441,seed3:14441,seed4:14441
+      delayed: 10
+      attach_layer: 1
+
+  node5:
+    image: bitdust_perf/app
+    build:
+      context: .
+    environment:
+      dht_seeds: seed1:14441,seed2:14441,seed3:14441,seed4:14441
+      delayed: 10
+      join_layer: 1
+
+  node6:
+    image: bitdust_perf/app
+    build:
+      context: .
+    environment:
+      dht_seeds: seed1:14441,seed2:14441,seed3:14441,seed4:14441
+      delayed: 10
+      join_layer: 1
+
+  node7:
+    image: bitdust_perf/app
+    build:
+      context: .
+    environment:
+      dht_seeds: seed1:14441,seed2:14441,seed3:14441,seed4:14441
+      delayed: 10
+      join_layer: 1
+
+  node8:
+    image: bitdust_perf/app
+    build:
+      context: .
+    environment:
+      dht_seeds: seed1:14441,seed2:14441,seed3:14441,seed4:14441
+      delayed: 10
+      join_layer: 1
 
   producer:
     image: bitdust_perf/producer

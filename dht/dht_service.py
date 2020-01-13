@@ -187,9 +187,12 @@ def node():
     return _MyNode
 
 
-def connect(seed_nodes=[], layer_id=0):
+def connect(seed_nodes=[], layer_id=0, attach=False):
     global _MyNode
     result = Deferred()
+
+    if _Debug:
+        lg.args(_DebugLevel, seed_nodes=seed_nodes, layer_id=layer_id, attach=attach)
 
     if not node():
         result.errback(Exception('node is not initialized'))
@@ -197,6 +200,8 @@ def connect(seed_nodes=[], layer_id=0):
 
     joinDeferred = node().connectingTask(layer_id)
     if joinDeferred:
+        if _Debug:
+            lg.out(_DebugLevel, 'dht_service.connect SKIP, already joining layer %d' % layer_id)
         if joinDeferred.called:
             result.callback(True)
         else:
@@ -206,7 +211,7 @@ def connect(seed_nodes=[], layer_id=0):
     if node().refreshers.get(layer_id, None) and node().refreshers[layer_id].active():
         node().refreshers[layer_id].reset(0)
         if _Debug:
-            lg.out(_DebugLevel, 'dht_service.connect seems like DHT already active : skip and RESET current refresher task')
+            lg.out(_DebugLevel, 'dht_service.connect SKIP seems like DHT already active, RESET current refresher task')
         result.callback(True)
         return result
 
@@ -268,7 +273,7 @@ def connect(seed_nodes=[], layer_id=0):
                 lg.out(_DebugLevel, '    %s:%s' % onenode)
         if not resolved_seed_nodes:
             resolved_seed_nodes = []
-        d = node().joinNetwork(resolved_seed_nodes, layerID=_layer_id)
+        d = node().joinNetwork(resolved_seed_nodes, layerID=_layer_id, attach=attach)
         d.addCallback(_on_join_success, resolved_seed_nodes, _layer_id=_layer_id)
         d.addErrback(_on_join_failed)
         if not node().expire_task.running:
@@ -1086,8 +1091,8 @@ class DHTNode(MultiLayerNode):
         count('store_dht_service')
         layerID = kwargs.pop('layerID', 0)
         if _Debug:
-            lg.out(_DebugLevel, 'dht_service.DHTNode.store key=[%s] for %d seconds, counter=%d' % (
-                key, expireSeconds, counter('store')))
+            lg.out(_DebugLevel, 'dht_service.DHTNode.store key=[%s] for %d seconds layerID=%d' % (
+                key, expireSeconds, layerID))
 
         if 'store' in self.rpc_callbacks and layerID in self.active_layers:
             # TODO: add signature validation to be sure this is the owner of that key:value pair
@@ -1120,7 +1125,7 @@ class DHTNode(MultiLayerNode):
                 lg.out(_DebugLevel, 'dht_service.DHTNode.request key=[%r] SKIP because layer %d is not active' % (key, layerID, ))
             return {key: 0, layerID:layerID, }
         if _Debug:
-            lg.out(_DebugLevel, 'dht_service.DHTNode.request key=[%r] from layer %d' % (key, layerID, ))
+            lg.out(_DebugLevel, 'dht_service.DHTNode.request key=[%r] layerID=%d' % (key, layerID, ))
         if 'request' in self.rpc_callbacks:
             self.rpc_callbacks['request'](key=key, layerID=layerID)
         value = get_node_data(key, layer_id=layerID)
@@ -1133,9 +1138,33 @@ class DHTNode(MultiLayerNode):
     @rpcmethod
     def verify_update(self, key, value, originalPublisherID=None,
                             age=0, expireSeconds=KEY_EXPIRE_MAX_SECONDS, **kwargs):
-        count('request')
+        count('verify_update')
         if _Debug:
             lg.out(_DebugLevel, 'dht_service.DHTNode.verify_update key=[%s]' % strng.to_text(key, errors='ignore')[:10])
+        return True
+
+    @rpcmethod
+    def findNode(self, key, **kwargs):
+        count('findNode')
+        layerID = kwargs.get('layerID', 0)
+        if _Debug:
+            lg.out(_DebugLevel, 'dht_service.DHTNode.findNode key=[%s] layerID=%d' % (key, layerID,))
+        return super(DHTNode, self).findNode(key, **kwargs)
+
+    @rpcmethod
+    def findValue(self, key, **kwargs):
+        count('findValue')
+        layerID = kwargs.get('layerID', 0)
+        if _Debug:
+            lg.out(_DebugLevel, 'dht_service.DHTNode.findValue key=[%s] layerID=%d' % (key, layerID,))
+        return super(DHTNode, self).findValue(key, **kwargs)
+
+    @rpcmethod
+    def ping(self):
+        count('ping')
+        if _Debug:
+            lg.out(_DebugLevel, 'dht_service.DHTNode.ping')
+        return super(DHTNode, self).ping()
 
     def reconnect(self, knownNodeAddresses=None):
         """
@@ -1215,6 +1244,10 @@ def parseCommandLine():
     oparser.set_default('seeds', '')
     oparser.add_option("-l", "--layers", dest="layers", help="specify list of layers to be created")
     oparser.set_default('layers', '')
+    oparser.add_option("-a", "--attach_layer", dest="attach_layer", help="specify which layer to be attached at start")
+    oparser.set_default('attach_layer', '')
+    oparser.add_option("-j", "--join_layer", dest="join_layer", help="specify which layer to be joined at start")
+    oparser.set_default('join_layer', '')
     oparser.add_option("-w", "--wait", dest="delayed", type="int", help="wait N seconds before join the network")
     oparser.set_default('delayed', 0)
     
@@ -1347,11 +1380,11 @@ def main(options=None, args=None):
 
         lg.out(_DebugLevel, 'Seed nodes: %s' % seeds)
 
-    layers_list = [int(l) for l in options.layers.split(',') if l]
-    lg.out(_DebugLevel, 'Layers: %s' % layers_list)
-    for layer_id in layers_list:
-        if layer_id != 0:
-            open_layer(layer_id, seed_nodes=seeds, dht_dir_path=options.dhtdb, connect_now=False)
+#     layers_list = [int(l) for l in options.layers.split(',') if l]
+#     lg.out(_DebugLevel, 'Layers: %s' % layers_list)
+#     for layer_id in layers_list:
+#         if layer_id != 0:
+#             open_layer(layer_id, seed_nodes=seeds, dht_dir_path=options.dhtdb, connect_now=False)
 
     if options.delayed:
         lg.out(_DebugLevel, 'Wait %d seconds before join the network' % options.delayed)
@@ -1365,9 +1398,12 @@ def main(options=None, args=None):
     def _connected(nodes):
         lg.out(_DebugLevel, 'Connected, known contacts: %r' % nodes)
         l = []
-        for layer_id in node().layers.keys():
-            if layer_id != 0:
-                l.append(connect(seeds, layer_id=layer_id))
+        if options.attach_layer:
+            layer_id = int(options.attach_layer)
+            l.append(connect(seeds, layer_id=layer_id, attach=True))
+        if options.join_layer:
+            layer_id = int(options.join_layer)
+            l.append(connect(seeds, layer_id=layer_id, attach=False))
         d = DeferredList(l)
         d.addBoth(_layers_connected)
 

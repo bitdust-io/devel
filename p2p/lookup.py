@@ -36,7 +36,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -181,7 +181,7 @@ def start(count=1, consume=True, lookup_method=None, observe_method=None, proces
     _LookupTasks.append(t)
     reactor.callLater(0, work)  # @UndefinedVariable
     if _Debug:
-        lg.out(_DebugLevel - 4, 'lookup.start  new DiscoveryTask created for %d nodes' % count)
+        lg.out(_DebugLevel - 4, 'lookup.start  new DiscoveryTask created for %d nodes at layer %d' % (count, layer_id, ))
     return t
 
 #------------------------------------------------------------------------------
@@ -237,7 +237,7 @@ def lookup_in_dht(layer_id=0):
     Generates
     """
     if _Debug:
-        lg.out(_DebugLevel, 'lookup.lookup_in_dht')
+        lg.out(_DebugLevel, 'lookup.lookup_in_dht layer_id=%d' % (layer_id, ))
     return dht_service.find_node(dht_service.random_key(), layer_id=layer_id)
 
 
@@ -260,7 +260,8 @@ def on_idurl_response(response, result):
 
 def observe_dht_node(node, layer_id=0):
     if _Debug:
-        lg.out(_DebugLevel, 'lookup.observe_dht_node %s' % node)
+        lg.out(_DebugLevel, 'lookup.observe_dht_node   %s  layer_id=%d' % (
+            node, layer_id, ))
     result = Deferred()
     d = node.request('idurl', layerID=layer_id)
     d.addCallback(on_idurl_response, result)
@@ -330,7 +331,7 @@ class DiscoveryTask(object):
             lg.warn('lookup_nodes() method already called')
             return self.lookup_task
         if _Debug:
-            lg.out(_DebugLevel, 'lookup.DiscoveryTask.start')
+            lg.out(_DebugLevel, 'lookup.DiscoveryTask.start  layer_id=%d' % self.layer_id)
         return self._lookup_nodes()
 
     def stop(self):
@@ -352,14 +353,14 @@ class DiscoveryTask(object):
             lg.out(_DebugLevel, 'lookup.close finished in %f seconds' % round(time.time() - self.started, 3))
 
     def _lookup_nodes(self):
-        if _Debug:
-            lg.out(_DebugLevel, 'lookup._lookup_nodes')
         if self.lookup_task and not self.lookup_task.called:
             if _Debug:
-                lg.out(_DebugLevel, '    SKIP, already started')
+                lg.out(_DebugLevel, 'lookup._lookup_nodes    SKIP, already started')
             return self.lookup_task
+        if _Debug:
+            lg.out(_DebugLevel, 'lookup._lookup_nodes layer_id=%d' % self.layer_id)
         self.lookup_now = True
-        self.lookup_task = self.lookup_method(self.layer_id)
+        self.lookup_task = self.lookup_method(layer_id=self.layer_id)
         self.lookup_task.addCallback(self._on_nodes_discovered)
         self.lookup_task.addErrback(self._on_lookup_failed)
         return self.lookup_task
@@ -370,7 +371,7 @@ class DiscoveryTask(object):
                 lg.warn('discovery process already stopped')
             return
         if _Debug:
-            lg.out(_DebugLevel, 'lookup._observe_nodes on %d items' % len(nodes))
+            lg.out(_DebugLevel, 'lookup._observe_nodes on %d items layer_id=%d' % (len(nodes), self.layer_id, ))
         observe_list = []
         for node in nodes:
             d = self.observe_method(node, layer_id=self.layer_id)

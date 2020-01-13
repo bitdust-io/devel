@@ -60,7 +60,7 @@ class NodesLookupService(LocalService):
             observe_method=lookup.observe_dht_node,
             process_method=lookup.process_idurl,
         )
-        lookup.start(count=1, consume=False)
+        # lookup.start(count=1, consume=False)
         return True
 
     def stop(self):

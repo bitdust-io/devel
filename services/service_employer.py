@@ -62,7 +62,7 @@ class EmployerService(LocalService):
             self.service_name, err.getErrorMessage() if err else 'unknown reason')))
         self.all_suppliers_hired_event_sent = False 
         if driver.is_on('service_entangled_dht'):
-            self._do_warm_up_suppliers_dht_layer()
+            self._do_join_suppliers_dht_layer()
         else:
             lg.warn('service service_entangled_dht is OFF')
         eccmap.Update()
@@ -149,12 +149,18 @@ class EmployerService(LocalService):
             },
         )
 
-    def _do_warm_up_suppliers_dht_layer(self):
+    def _do_join_suppliers_dht_layer(self):
         from logs import lg
         from dht import dht_service
         from dht import dht_records
-        lg.info('going to warm up suppliers DHT layer: %d' % dht_records.LAYER_SUPPLIERS)
-        dht_service.node().warmUpLayer(layerID=dht_records.LAYER_SUPPLIERS)
+        from dht import known_nodes
+        lg.info('going to join suppliers DHT layer: %d' % dht_records.LAYER_SUPPLIERS)
+        known_seeds = known_nodes.nodes()
+        dht_service.connect(
+            seed_nodes=known_seeds,
+            layer_id=dht_records.LAYER_SUPPLIERS,
+            attach=False,
+        )
 
     def _on_fire_hire_ready(self, oldstate, newstate, evt, *args, **kwargs):
         self._do_check_all_hired()
@@ -225,4 +231,4 @@ class EmployerService(LocalService):
 
     def _on_dht_layer_connected(self, evt):
         if evt.data['layer_id'] == 0:
-            self._do_warm_up_suppliers_dht_layer()
+            self._do_join_suppliers_dht_layer()

@@ -526,6 +526,7 @@ def udp_dht_stun(udp_port=None, dht_port=None, result_defer=None):
             lg.out(_DebugLevel, 'stun_client.udp_dht_stun   GO with nodes: %r' % live_nodes)
         A('init', udp_port)
         A('start', _cb)
+        return live_nodes
 
     d.addCallback(_go)
     if result_defer:

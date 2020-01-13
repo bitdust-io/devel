@@ -38,7 +38,7 @@ from . import encoding  # @UnresolvedImport
 from .contact import Contact, LayeredContact  # @UnresolvedImport
 
 
-_Debug = False
+_Debug = True
 
 
 def rpcmethod(func):
@@ -1048,7 +1048,7 @@ class MultiLayerNode(Node):
         self.layers = {}
         self.refreshers = {}
         self.active_layers = set()
-        self.warm_layers = set()
+        self.attached_layers = set()
 
         # This will contain a deferred created when joining the network, to enable publishing/retrieving information from
         # the DHT as soon as the node is part of the network (add callbacks to this deferred if scheduling such operations
@@ -1075,6 +1075,7 @@ class MultiLayerNode(Node):
             self.createLayer(0, dataStore=datastore.DictDataStore())
 
         self.active_layers.add(0)
+        self.attachLayer(0)
 
     def createLayer(self, layer_id, dataStore, nodeID=None, routingTable=None, warmUp=False):
         if layer_id in self.layers or layer_id in self._dataStores or layer_id in self._routingTables:
@@ -1101,8 +1102,8 @@ class MultiLayerNode(Node):
             self.layers[layer_id] = self._generateID()
         if layer_id not in self._routingTables:
             self._routingTables[layer_id] = routingTable or routingtable.TreeRoutingTable(self.layers[layer_id], layerID=layer_id)
-        if layer_id != 0 and not loaded and warmUp:
-            loaded = self.warmUpLayer(layer_id)
+#         if layer_id != 0 and not loaded and warmUp:
+#             loaded = self.warmUpLayer(layer_id)
         if _Debug:
             print('    [DHT NODE]    createLayer : layer %d created,  loaded=%r' % (layer_id, loaded, ))
         return True
@@ -1124,7 +1125,7 @@ class MultiLayerNode(Node):
             return None
         return self._joinDeferreds[layerID]
 
-    def joinNetwork(self, knownNodeAddresses=None, layerID=0):
+    def joinNetwork(self, knownNodeAddresses=None, layerID=0, attach=False):
         if knownNodeAddresses is not None:
             bootstrapContacts = []
             for address, port in knownNodeAddresses:
@@ -1135,6 +1136,8 @@ class MultiLayerNode(Node):
         if _Debug:
             print('    [DHT NODE]    joinNetwork bootstrapContacts=%r layerID=%r' % (bootstrapContacts, layerID, ))
         self.active_layers.add(layerID)
+        if attach:
+            self.attachLayer(layerID)
         self._joinDeferreds[layerID] = self._iterativeFind(self.layers[layerID], bootstrapContacts, layerID=layerID)
         self._joinDeferreds[layerID].addCallback(self._persistState, layerID=layerID)
         self._joinDeferreds[layerID].addErrback(self._joinNetworkFailed, layerID)
@@ -1146,36 +1149,52 @@ class MultiLayerNode(Node):
     def leaveNetwork(self, layerID):
         if not layerID in self.active_layers:
             return False
+        if _Debug:
+            print('    [DHT NODE]    leaveNetwork layerID=%d' % layerID)
         if layerID != 0:
             self.active_layers.remove(layerID)
-        self.warm_layers.remove(layerID)
+            self.detachLayer(layerID)
         if self.refreshers.get(layerID, None) and not self.refreshers[layerID].called:
             self.refreshers[layerID].cancel()
         self.refreshers.pop(layerID)
         return True
 
-    def warmUpLayer(self, layerID):
-        if layerID == 0:
-            return True
-        if layerID not in self._routingTables:
-            return False
-        json_state = None
-        if self.nodeStateKey in self._dataStores[layerID]:
-            json_state = self._dataStores[layerID][self.nodeStateKey]
-        if not json_state and self.nodeStateKey in self._dataStores[0]:
-            json_state = self._dataStores[0][self.nodeStateKey]
-        if not json_state:
-            return False
-        state = json.loads(json_state)
-        self.layers[layerID] = state['id']
-        for contactTriple in state['closestNodes']:
-            contact = LayeredContact(encoding.to_text(contactTriple[0]), contactTriple[1], contactTriple[2], self._protocol, layerID=layerID)
-            self._routingTables[layerID].addContact(contact)
-        self.warm_layers.add(layerID)
+    def attachLayer(self, layerID):
         if _Debug:
-            print('    [DHT NODE]    warmUpLayer %d : found "nodeState" key in local db of layer 0 and added %d contacts to routing table' % (
-                layerID, len(state['closestNodes']), ))
-        return True
+            print('    [DHT NODE]    attachLayer %d' % layerID)
+        self.attached_layers.add(layerID)
+
+    def detachLayer(self, layerID):
+        if _Debug:
+            print('    [DHT NODE]    detachLayer %d' % layerID)
+        self.attached_layers.remove(layerID)
+
+#     def warmUpLayer(self, layerID):
+#         if layerID == 0:
+#             return True
+#         if layerID not in self._routingTables:
+#             return False
+#         json_state = None
+#         if self.nodeStateKey in self._dataStores[layerID]:
+#             json_state = self._dataStores[layerID][self.nodeStateKey]
+#         if not json_state and self.nodeStateKey in self._dataStores[0]:
+#             json_state = self._dataStores[0][self.nodeStateKey]
+#         if not json_state:
+#             return False
+#         state = json.loads(json_state)
+#         if _Debug:
+#             print('    [DHT NODE]    warmUpLayer %d   found saved data: %r' % (layerID, state, ))
+#         if not state['closestNodes']:
+#             return False
+#         self.layers[layerID] = state['id']
+#         for contactTriple in state['closestNodes']:
+#             contact = LayeredContact(encoding.to_text(contactTriple[0]), contactTriple[1], contactTriple[2], self._protocol, layerID=layerID)
+#             self._routingTables[layerID].addContact(contact)
+#         self.warm_layers.add(layerID)
+#         if _Debug:
+#             print('    [DHT NODE]    warmUpLayer %d : found "nodeState" key in local db of layer 0 and added %d contacts to routing table' % (
+#                 layerID, len(state['closestNodes']), ))
+#         return True
 
     def iterativeStore(self, key, value, originalPublisherID=None,
                        age=0, expireSeconds=constants.dataExpireSecondsDefaut, layerID=0, **kwargs):
@@ -1670,9 +1689,13 @@ class MultiLayerNode(Node):
                     activeProbes.append(contact.id)
                     rpcMethod = getattr(contact, rpc)
                     if _Debug:
-                        print('    [DHT NODE] calling rpc method %r with key=%r layerID=%d at %r' % (
+                        print('    [DHT NODE] calling RPC method %r with key=%r layerID=%d at %r' % (
                             rpc, key, layerID, contact))
-                    df = rpcMethod(key, rawResponse=True, layerID=layerID)
+                    df = rpcMethod(
+                        key,
+                        rawResponse=True,
+                        layerID=layerID,
+                    )
                     df.addCallback(extendShortlist)
                     df.addErrback(removeFromShortlist)
                     df.addCallback(cancelActiveProbe)
@@ -1708,14 +1731,16 @@ class MultiLayerNode(Node):
 
     def _persistState(self, *args, **kwargs):
         layerID = kwargs.get('layerID', 0)
+        closestNodes = list(self.findNode(self.layers[layerID], **kwargs))
         state = {
             'id': self.layers[layerID],
-            'closestNodes': self.findNode(self.layers[layerID], **kwargs),
+            'closestNodes': closestNodes,
             'key': 'nodeState',
             'type': 'skip_validation',
         }
         if _Debug:
-            print('    [DHT NODE]    _persistState  layerID=%d id=%r state=%r' % (layerID, self.layers[layerID], state, ))
+            print('    [DHT NODE]    _persistState  layerID=%d id=%r closestNodes=%r state=%r' % (
+                layerID, self.layers[layerID], closestNodes, state, ))
         json_value = json.dumps(state)
         now = int(time.time())
         self._dataStores[layerID].setItem(self.nodeStateKey, json_value, now, now, self.layers[layerID])

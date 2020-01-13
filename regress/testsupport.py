@@ -62,7 +62,7 @@ async def run_ssh_command_and_wait_async(host, cmd, loop):
     return stdout.decode(), stderr.decode()
 
 
-def run_ssh_command_and_wait(host: object, cmd: str) -> object:
+def run_ssh_command_and_wait(host, cmd) -> object:
     if host in [None, '', b'', 'localhost', ]:
         cmd_args = cmd
     else:
@@ -76,6 +76,7 @@ def run_ssh_command_and_wait(host: object, cmd: str) -> object:
     output, err = ssh_proc.communicate()
     if err:
         print('\nSTDERR: %r' % err.decode())
+    print(f'\nssh_command on [{host}] : {cmd}')
     return output.decode(), err.decode()
 
 #------------------------------------------------------------------------------
@@ -520,7 +521,7 @@ async def start_identity_server_async(node, loop):
     print(f'\nSTARTED IDENTITY SERVER [{node}]\n')
 
 
-def start_dht_seed(node, wait_seconds=0, dht_seeds=''):
+def start_dht_seed(node, wait_seconds=0, dht_seeds='', attached_layers=''):
     print(f'\nNEW DHT SEED (with STUN SERVER) at [{node}]\n')
     cmd = ''
     cmd += 'bitdust set logs/packet-enabled true;'
@@ -538,6 +539,8 @@ def start_dht_seed(node, wait_seconds=0, dht_seeds=''):
     cmd += 'bitdust set services/entangled-dht/udp-port "14441";'
     if dht_seeds:
         cmd += f'bitdust set services/entangled-dht/known-nodes "{dht_seeds}";'
+    if attached_layers:
+        cmd += f'bitdust set services/entangled-dht/attached-layers "{attached_layers}";'
     # enable Stun server
     cmd += 'bitdust set services/ip-port-responder/enabled true;'
     run_ssh_command_and_wait(node, cmd)
@@ -717,6 +720,7 @@ def start_one_dht_seed(dht_seed, wait_seconds):
     start_dht_seed(
         node=dht_seed['name'],
         dht_seeds=dht_seed.get('known_dht_seeds', ''),
+        attached_layers='2,3',
         wait_seconds=wait_seconds,
     )
 

@@ -50,8 +50,28 @@ class RequestMessage(Message):
         self.layerID = layerID
 
     def __str__(self):
-        return '<RequestMessage %s %s %d with %r>' % (
-            self.id[:6], self.nodeID[:6], self.layerID, self.args)
+        return '<RequestMessage(%d) %s %s with %r>' % (
+            self.layerID, self.id[:6], self.nodeID[:6], self.args)
+
+
+class QuestionMessage(Message):
+    """
+    Message containing an RPC request from a node which do not want to be included in DHT layer.
+    """
+
+    def __init__(self, nodeID, method, methodArgs, rpcID=None, layerID=0):
+        if rpcID is None:
+            hsh = hashlib.sha1()
+            hsh.update(str(random.getrandbits(255)).encode())
+            rpcID = hsh.hexdigest()
+        Message.__init__(self, rpcID, nodeID)
+        self.request = method
+        self.args = methodArgs
+        self.layerID = layerID
+
+    def __str__(self):
+        return '<QuestionMessage(%d) %s %s with %r>' % (
+            self.layerID, self.id[:6], self.nodeID[:6], self.args)
 
 
 class ResponseMessage(Message):
@@ -65,8 +85,8 @@ class ResponseMessage(Message):
         self.layerID = layerID
 
     def __str__(self):
-        return '<ResponseMessage %s %s %d with %r>' % (
-            self.id[:6], self.nodeID[:6], self.layerID, self.response)
+        return '<ResponseMessage(%d) %s %s with %r>' % (
+            self.layerID, self.id[:6], self.nodeID[:6], self.response)
 
 
 class ErrorMessage(ResponseMessage):
@@ -84,5 +104,5 @@ class ErrorMessage(ResponseMessage):
                 self.exceptionType = self.exceptionType.decode()
 
     def __str__(self):
-        return '<ErrorMessage %s %s %d with %r>' % (
-            self.id[:6], self.nodeID[:6], self.layerID, self.exceptionType)
+        return '<ErrorMessage(%d) %s %s with %r>' % (
+            self.layerID, self.id[:6], self.nodeID[:6], self.exceptionType)
