@@ -74,9 +74,9 @@ class GatewayService(LocalService):
         bandwidth.init()
         callback.insert_inbox_callback(0, bandwidth.INfile)
         callback.add_finish_file_sending_callback(bandwidth.OUTfile)
-        if driver.is_on('service_entangled_dht'):
-            from dht import dht_service
-            dht_service.set_node_data('idurl', my_id.getLocalID().to_text())
+#         if driver.is_on('service_entangled_dht'):
+#             from dht import dht_service
+#             dht_service.set_node_data('idurl', my_id.getLocalID().to_text())
         return True
 
     def stop(self):

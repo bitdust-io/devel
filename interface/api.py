@@ -3819,12 +3819,12 @@ def network_status(show_suppliers=True, show_customers=True, show_cache=True,
         r['dht'] = {}
         if driver.is_on('service_entangled_dht'):
             r['dht'].update({
-                'data_store_items': len(dht_service.node()._dataStore.keys()),
+                'data_store_items': len(dht_service.node()._dataStores[0].keys()),
                 'node_items': len(dht_service.node().data),
-                'node_id': dht_service.node().id,
+                'node_id': dht_service.node().layers[0],
                 'udp_port': dht_service.node().port,
-                'buckets': len(dht_service.node()._routingTable._buckets),
-                'contacts': dht_service.node()._routingTable.totalContacts(),
+                'buckets': len(dht_service.node()._routingTables[0]._buckets),
+                'contacts': dht_service.node()._routingTables[0].totalContacts(),
             })
     return RESULT([r, ])
 
@@ -3834,7 +3834,7 @@ def network_configuration():
 
 #------------------------------------------------------------------------------
 
-def dht_node_find(node_id_64=None):
+def dht_node_find(node_id_64=None, layer_id=0):
     if not driver.is_on('service_entangled_dht'):
         return ERROR('service_entangled_dht() is not started')
     from dht import dht_service
@@ -3849,7 +3849,7 @@ def dht_node_find(node_id_64=None):
         try:
             if isinstance(response, list):
                 return ret.callback(OK({
-                    'my_dht_id': dht_service.node().id,
+                    'my_dht_id': dht_service.node().layers[0],
                     'lookup': node_id_64, 
                     'closest_nodes': [{
                         'dht_id': c.id,
@@ -3866,13 +3866,13 @@ def dht_node_find(node_id_64=None):
         ret.callback(ERROR(err, api_method='dht_node_find'))
         return None
 
-    d = dht_service.find_node(node_id)
+    d = dht_service.find_node(node_id, layer_id=layer_id)
     d.addCallback(_cb)
     d.addErrback(_eb)
     return ret
 
 
-def dht_value_get(key, record_type='skip_validation'):
+def dht_value_get(key, record_type='skip_validation', layer_id=0):
     if not driver.is_on('service_entangled_dht'):
         return ERROR('service_entangled_dht() is not started')
     from dht import dht_service
@@ -3889,7 +3889,7 @@ def dht_value_get(key, record_type='skip_validation'):
                 lg.out(_DebugLevel, 'api.dht_value_get OK: %r' % value)
             return ret.callback(OK({
                 'read': 'success',
-                'my_dht_id': dht_service.node().id,
+                'my_dht_id': dht_service.node().layers[0],
                 'key': strng.to_text(key, errors='ignore'),
                 'value': value,
             }, api_method='dht_value_get'))
@@ -3900,7 +3900,7 @@ def dht_value_get(key, record_type='skip_validation'):
             lg.out(_DebugLevel, 'api.dht_value_get ERROR: %r' % value)
         return ret.callback(OK({
             'read': 'failed',
-            'my_dht_id': dht_service.node().id,
+            'my_dht_id': dht_service.node().layers[0],
             'key': strng.to_text(key, errors='ignore'),
             'closest_nodes': [{
                 'dht_id': c.id,
@@ -3918,13 +3918,14 @@ def dht_value_get(key, record_type='skip_validation'):
         rules=record_rules,
         raise_for_result=False,
         return_details=True,
+        layer_id=layer_id,
     )
     d.addCallback(_cb)
     d.addErrback(_eb)
     return ret
 
 
-def dht_value_set(key, value, expire=None, record_type='skip_validation'):
+def dht_value_set(key, value, expire=None, record_type='skip_validation', layer_id=0):
     if not driver.is_on('service_entangled_dht'):
         return ERROR('service_entangled_dht() is not started')
 
@@ -3954,7 +3955,7 @@ def dht_value_set(key, value, expire=None, record_type='skip_validation'):
                     lg.out(_DebugLevel, 'api.dht_value_set OK: %r' % response)
                 return ret.callback(OK({
                     'write': 'success' if len(response) > 0 else 'failed',
-                    'my_dht_id': dht_service.node().id,
+                    'my_dht_id': dht_service.node().layers[0],
                     'key': strng.to_text(key, errors='ignore'),
                     'value': value,
                     'closest_nodes': [{
@@ -3993,7 +3994,7 @@ def dht_value_set(key, value, expire=None, record_type='skip_validation'):
                 lg.out(_DebugLevel, 'api.dht_value_set ERROR: %r' % errmsg)
             return ret.callback(ERROR(errmsg, extra_fields={
                 'write': 'failed',
-                'my_dht_id': dht_service.node().id,
+                'my_dht_id': dht_service.node().layers[0],
                 'key': strng.to_text(key, errors='ignore'),
                 'closest_nodes': closest_nodes,
             }, api_method='dht_value_set'))
@@ -4007,6 +4008,7 @@ def dht_value_set(key, value, expire=None, record_type='skip_validation'):
         expire=expire or dht_service.KEY_EXPIRE_MAX_SECONDS,
         rules=record_rules,
         collect_results=True,
+        layer_id=layer_id,
     )
     d.addCallback(_cb)
     d.addErrback(_eb)

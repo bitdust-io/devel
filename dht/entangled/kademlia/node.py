@@ -35,7 +35,7 @@ from . import routingtable  # @UnresolvedImport
 from . import datastore  # @UnresolvedImport
 from . import protocol  # @UnresolvedImport
 from . import encoding  # @UnresolvedImport
-from .contact import Contact  # @UnresolvedImport
+from .contact import Contact, LayeredContact  # @UnresolvedImport
 
 
 _Debug = False
@@ -50,6 +50,65 @@ def rpcmethod(func):
     """
     func.rpcmethod = True
     return func
+
+
+def storeSuccess(ok, key):
+    try:
+        if isinstance(ok, six.binary_type):
+            try:
+                ok = ok.decode()
+            except:
+                ok = ok.decode(errors='ignore')
+        ok = str(ok)
+    except:
+        ok = 'Unknown Error'
+    if _Debug:
+        print('[DHT NODE]    storeSuccess', key, ok)
+    return ok
+
+
+def getErrorMessage(x):
+    try:
+        errmsg = x.value.subFailure.getErrorMessage()
+    except:
+        try:
+            errmsg = x.getErrorMessage()
+        except:
+            try:
+                errmsg = x.value
+            except:
+                try:
+                    errmsg = str(x)
+                except:
+                    errmsg = 'Unknown Error'
+    if isinstance(errmsg, six.binary_type):
+        try:
+            errmsg = errmsg.decode()
+        except:
+            errmsg = errmsg.decode(errors='ignore')
+    return errmsg
+
+
+def storeFailed(x, key):
+    errmsg = getErrorMessage(x)
+    if _Debug:
+        print('[DHT NODE]    storeFailed', key, errmsg, x)
+    return errmsg
+
+
+def findNodeFailed(x):
+    errmsg = getErrorMessage(x)
+    if _Debug:
+        print('[DHT NODE]    findNodeFailed', errmsg, x)
+    return errmsg
+
+
+def lookupFailed(x):
+    errmsg = getErrorMessage(x)
+    if _Debug:
+        print('[DHT NODE]    lookupFailed', errmsg, x)
+    return errmsg
+
 
 
 class Node(object):
@@ -123,7 +182,8 @@ class Node(object):
                 for contactTriple in state['closestNodes']:
                     contact = Contact(encoding.to_text(contactTriple[0]), contactTriple[1], contactTriple[2], self._protocol)
                     self._routingTable.addContact(contact)
-                if _Debug: print('    [DHT NODE]    found "nodeState" key in local db and added %d contacts to routing table' % len(state['closestNodes']))
+                if _Debug:
+                    print('[DHT NODE]    found "nodeState" key in local db and added %d contacts to routing table' % len(state['closestNodes']))
         self._counter = None
 
     def __del__(self):
@@ -173,11 +233,14 @@ class Node(object):
         return self._joinDeferred
 
     def printContacts(self):
-        if _Debug: print('\n\nNODE CONTACTS\n===============')
+        if _Debug:
+            print('\n\nNODE CONTACTS\n===============')
         for i in range(len(self._routingTable._buckets)):
             for contact in self._routingTable._buckets[i]._contacts:
-                if _Debug: print(contact)
-        if _Debug: print('==================================')
+                if _Debug:
+                    print(contact)
+        if _Debug:
+            print('==================================')
         #twisted.internet.reactor.callLater(10, self.printContacts)
 
     def iterativeStore(self, key, value, originalPublisherID=None,
@@ -207,71 +270,11 @@ class Node(object):
         collect_results = kwargs.pop('collect_results', False)
         ret = defer.Deferred()
 
-        def storeSuccess(ok, key):
-            try:
-                if isinstance(ok, six.binary_type):
-                    try:
-                        ok = ok.decode()
-                    except:
-                        ok = ok.decode(errors='ignore')
-                ok = str(ok)
-            except:
-                ok = 'Unknown Error'
-            if _Debug:
-                print('    [DHT NODE]    storeSuccess', key, ok)
-            return ok
-
-        def storeFailed(x, key):
-            try:
-                errmsg = x.value.subFailure.getErrorMessage()
-            except:
-                try:
-                    errmsg = x.getErrorMessage()
-                except:
-                    try:
-                        errmsg = x.value
-                    except:
-                        try:
-                            errmsg = str(x)
-                        except:
-                            errmsg = 'Unknown Error'
-            if isinstance(errmsg, six.binary_type):
-                try:
-                    errmsg = errmsg.decode()
-                except:
-                    errmsg = errmsg.decode(errors='ignore')
-            if _Debug:
-                print('    [DHT NODE]    storeFailed', key, errmsg)
-            return errmsg
-
         # Prepare a callback for doing "STORE" RPC calls
-
-        def findNodeFailed(x):
-            try:
-                errmsg = x.value.subFailure.getErrorMessage()
-            except:
-                try:
-                    errmsg = x.getErrorMessage()
-                except:
-                    try:
-                        errmsg = x.value
-                    except:
-                        try:
-                            errmsg = str(x)
-                        except:
-                            errmsg = 'Unknown Error'
-            if isinstance(errmsg, six.binary_type):
-                try:
-                    errmsg = errmsg.decode()
-                except:
-                    errmsg = errmsg.decode(errors='ignore')
-            if _Debug:
-                print('    [DHT NODE]    findNodeFailed', errmsg)
-            return errmsg
 
         def storeRPCsCollected(store_results, store_nodes):
             if _Debug:
-                print('    [DHT NODE]    storeRPCsCollected', store_results, store_nodes)
+                print('[DHT NODE]    storeRPCsCollected', store_results, store_nodes)
             ret.callback((store_nodes, store_results, ))
             return None
 
@@ -295,7 +298,7 @@ class Node(object):
                 except:
                     errmsg = errmsg.decode(errors='ignore')
             if _Debug:
-                print('    [DHT NODE]    storeRPCsFailed', errmsg)
+                print('[DHT NODE]    storeRPCsFailed', errmsg)
             ret.errback(x)
             return errmsg
 
@@ -388,80 +391,19 @@ class Node(object):
         # Prepare a callback for this operation
         outerDf = defer.Deferred()
 
-        def lookupFailed(x):
-            try:
-                errmsg = x.value.subFailure.getErrorMessage()
-            except:
-                try:
-                    errmsg = x.getErrorMessage()
-                except:
-                    try:
-                        errmsg = x.value
-                    except:
-                        try:
-                            errmsg = str(x)
-                        except:
-                            errmsg = 'Unknown Error'
-            if isinstance(errmsg, six.binary_type):
-                try:
-                    errmsg = errmsg.decode()
-                except:
-                    errmsg = errmsg.decode(errors='ignore')
-            if _Debug:
-                print('    [DHT NODE]    iterativeFindValue.lookupFailed', errmsg)
-            return errmsg
-
-        def storeFailed(x):
-            try:
-                errmsg = x.value.subFailure.getErrorMessage()
-            except:
-                try:
-                    errmsg = x.getErrorMessage()
-                except:
-                    try:
-                        errmsg = x.value
-                    except:
-                        try:
-                            errmsg = str(x)
-                        except:
-                            errmsg = 'Unknown Error'
-            if isinstance(errmsg, six.binary_type):
-                try:
-                    errmsg = errmsg.decode()
-                except:
-                    errmsg = errmsg.decode(errors='ignore')
-            if _Debug:
-                print('    [DHT NODE]    iterativeFindValue.storeFailed', errmsg)
-            return errmsg
-
         def refreshRevisionSuccess(ok):
-            if _Debug: print('    [DHT NODE]    iterativeFindValue.refreshRevisionSuccess', ok)
+            if _Debug:
+                print('[DHT NODE]    iterativeFindValue.refreshRevisionSuccess', ok)
 
         def refreshRevisionFailed(x):
-            try:
-                errmsg = x.value.subFailure.getErrorMessage()
-            except:
-                try:
-                    errmsg = x.getErrorMessage()
-                except:
-                    try:
-                        errmsg = x.value
-                    except:
-                        try:
-                            errmsg = str(x)
-                        except:
-                            errmsg = 'Unknown Error'
-            if isinstance(errmsg, six.binary_type):
-                try:
-                    errmsg = errmsg.decode()
-                except:
-                    errmsg = errmsg.decode(errors='ignore')
+            errmsg = getErrorMessage(x)
             if _Debug:
-                print('    [DHT NODE]    iterativeFindValue.refreshRevisionFailed', errmsg)
+                print('[DHT NODE]    iterativeFindValue.refreshRevisionFailed', errmsg)
             return errmsg
 
         def checkResult(result):
-            if _Debug: print('    [DHT NODE]    iterativeFindValue.checkResult key=%s' % key, result)
+            if _Debug:
+                print('[DHT NODE]    iterativeFindValue.checkResult key=%s' % key, result)
             if isinstance(result, dict):
                 if key in result:
                     latest_revision = 0
@@ -475,14 +417,16 @@ class Node(object):
                         expireSeconds = constants.dataExpireSecondsDefaut
                         if 'expireSeconds' in result:
                             expireSeconds = result['expireSeconds']
-                        if _Debug: print('    [DHT NODE]    republish %s to closest node with %d expire seconds' % (key, expireSeconds))
+                        if _Debug:
+                            print('[DHT NODE]    republish %s to closest node with %d expire seconds' % (key, expireSeconds))
                         contact.store(key, result[key], None, 0, expireSeconds, revision=latest_revision).addErrback(storeFailed)
                     if refresh_revision:
                         # need to refresh nodes who has old version of that value
                         for v in result['values']:
                             if v[1] < latest_revision:
                                 _contact = Contact(encoding.to_text(v[2]), v[3][0], v[3][1], self._protocol)
-                                if _Debug: print('    [DHT NODE]    will refresh revision %d on %r' % (latest_revision, _contact))
+                                if _Debug:
+                                    print('[DHT NODE]    will refresh revision %d on %r' % (latest_revision, _contact))
                                 d = _contact.store(key, result[key], None, 0, expireSeconds, revision=latest_revision)
                                 d.addCallback(refreshRevisionSuccess)
                                 d.addErrback(refreshRevisionFailed)
@@ -499,7 +443,8 @@ class Node(object):
                         # Send this value to the closest node without it
                         if len(result['activeContacts']) > 0:
                             contact = result['activeContacts'][0]
-                            if _Debug: print('    [DHT NODE]    refresh %s : %r with %d to %r' % (key, item['value'], expireSeconds, contact))
+                            if _Debug:
+                                print('[DHT NODE]    refresh %s : %r with %d to %r' % (key, item['value'], expireSeconds, contact))
                             contact.store(key, item['value'], None, 0, expireSeconds).addErrback(storeFailed)
                         outerDf.callback({
                             'key': item['value'],
@@ -512,7 +457,8 @@ class Node(object):
                             'activeContacts': result['activeContacts'],
                         })
                     else:
-                        if _Debug: print('    [DHT NODE]    key %s does not exist in DHT' % key)
+                        if _Debug:
+                            print('[DHT NODE]    key %s does not exist in DHT' % key)
                         outerDf.callback(result)
             else:
                 # The value wasn't found, but a list of contacts was returned
@@ -526,7 +472,8 @@ class Node(object):
                     # Send this value to the closest node without it
                     if len(result) > 0:
                         contact = result[0]
-                        if _Debug: print('    [DHT NODE]    refresh %s on closest node : %r with %d to %r' % (key, item['value'], expireSeconds, contact))
+                        if _Debug:
+                            print('[DHT NODE]    refresh %s on closest node : %r with %d to %r' % (key, item['value'], expireSeconds, contact))
                         contact.store(key, item['value'], None, 0, expireSeconds).addErrback(storeFailed)
                     ret = {
                         'key': item['value'],
@@ -538,10 +485,12 @@ class Node(object):
                         ),],
                         'activeContacts': result['activeContacts'],
                     }
-                    if _Debug: print('    [DHT NODE]    key %s found in my local data store : %r' % (key, ret))
+                    if _Debug:
+                        print('[DHT NODE]    key %s found in my local data store : %r' % (key, ret))
                     outerDf.callback(ret)
                 else:
-                    if _Debug: print('    [DHT NODE]    key %s does not exist in DHT' % key)
+                    if _Debug:
+                        print('[DHT NODE]    key %s does not exist in DHT' % key)
                     outerDf.callback(result)
 
         # Execute the search
@@ -641,7 +590,8 @@ class Node(object):
         """
         # if self._counter:
         #     self._counter('rpc_node_store')
-        if _Debug: print('    [DHT NODE]    rpcmethod.store %r' % key)
+        if _Debug:
+            print('[DHT NODE]  SINGLE  rpcmethod.store %r' % key)
         # Get the sender's ID (if any)
         if '_rpcNodeID' in kwargs:
             rpcSenderID = kwargs['_rpcNodeID']
@@ -676,7 +626,8 @@ class Node(object):
         """
         # if self._counter:
         #     self._counter('rpc_node_findNode')
-        if _Debug: print('    [DHT NODE]    rpcmethod.findNode %r' % key)
+        if _Debug:
+            print('[DHT NODE]  SINGLE rpcmethod.findNode %r' % key)
         # Get the sender's ID (if any)
         if '_rpcNodeID' in kwargs:
             rpcSenderID = kwargs['_rpcNodeID']
@@ -703,7 +654,8 @@ class Node(object):
         """
         # if self._counter:
         #     self._counter('rpc_node_findValue')
-        if _Debug: print('    [DHT NODE]    rpcmethod.findValue %r' % key)
+        if _Debug:
+            print('[DHT NODE] SINGLE rpcmethod.findValue %r' % key)
         if key in self._dataStore:
             exp = None
             expireSecondsCall = getattr(self._dataStore, 'expireSeconds')
@@ -714,12 +666,11 @@ class Node(object):
             if originalPublishTimeCall:
                 published = originalPublishTimeCall(key)
             if _Debug:
-                print('    [DHT NODE]        found key in local dataStore %r' % self._dataStore[key])
+                print('[DHT NODE]  SINGLE    found key in local dataStore %r' % self._dataStore[key])
             return {key: self._dataStore[key], 'expireSeconds': exp, 'originallyPublished': published, }
-        else:
-            if _Debug:
-                print('    [DHT NODE]        NOT found key in local dataStore')
-            return self.findNode(key, **kwargs)
+        if _Debug:
+            print('[DHT NODE] SINGLE     NOT found key in local dataStore')
+        return self.findNode(key, **kwargs)
 
     def _generateID(self):
         """
@@ -761,7 +712,8 @@ class Node(object):
                  return a list of the k closest nodes to the specified key
         @rtype: twisted.internet.defer.Deferred
         """
-        if _Debug: print('    [DHT NODE]    _iterativeFind rpc=%r   key=%r  startupShortlist=%r' % (rpc, key, startupShortlist, ))
+        if _Debug:
+            print('[DHT NODE]  SINGLE _iterativeFind rpc=%r   key=%r  startupShortlist=%r' % (rpc, key, startupShortlist, ))
         # if self._counter:
         #     self._counter('_iterativeFind')
         if rpc != 'findNode':
@@ -775,7 +727,8 @@ class Node(object):
                 # Update the "last accessed" timestamp for the appropriate k-bucket
                 self._routingTable.touchKBucket(key)
             if len(shortlist) == 0:
-                if _Debug: print("    [DHT NODE]    This node doesn't know of any other nodes !!!!!")
+                if _Debug:
+                    print('[DHT NODE]  SINGLE  This node does not know of any other nodes !!!!!')
                 # This node doesn't know of any other nodes
                 fakeDf = defer.Deferred()
                 fakeDf.callback([])
@@ -783,7 +736,8 @@ class Node(object):
         else:
             # This is used during the bootstrap process; node ID's are most probably fake
             shortlist = startupShortlist
-        if _Debug: print('    [DHT NODE]    shortlist=%r' % shortlist)
+        if _Debug:
+            print('[DHT NODE]  SINGLE  shortlist=%r' % shortlist)
         # List of active queries; len() indicates number of active probes
         # - using lists for these variables, because Python doesn't allow binding a new value to a name in an enclosing (non-global) scope
         activeProbes = []
@@ -805,13 +759,13 @@ class Node(object):
             originAddress = responseTuple[1]  # tuple: (ip adress, udp port)
             # Make sure the responding node is valid, and abort the operation if it isn't
             if _Debug: 
-                print('    [DHT NODE]        extendShortlist', (responseMsg.nodeID, type(responseMsg.nodeID)))
+                print('[DHT NODE]   SINGLE   extendShortlist', (responseMsg.nodeID, type(responseMsg.nodeID)))
             if responseMsg.nodeID in activeContacts or responseMsg.nodeID == self.id:
                 if _Debug:
                     if responseMsg.nodeID == self.id:
-                        print('    [DHT NODE]            response from my own node')
+                        print('[DHT NODE]   SINGLE       response from my own node')
                     else:
-                        print('    [DHT NODE]            response from active contact')
+                        print('[DHT NODE]   SINGLE       response from active contact')
                 return responseMsg.nodeID
 
             # Mark this node as active
@@ -865,7 +819,8 @@ class Node(object):
             failure.trap(protocol.TimeoutError)
             deadContactID = failure.getErrorMessage()
             if deadContactID in shortlist:
-                if _Debug: print('    [DHT NODE]    removing %r' % deadContactID)
+                if _Debug:
+                    print('[DHT NODE]  SINGLE removing %r' % deadContactID)
                 shortlist.remove(deadContactID)
             return deadContactID
 
@@ -875,7 +830,8 @@ class Node(object):
                 # Force the iteration
                 pendingIterationCalls[0].cancel()
                 del pendingIterationCalls[0]
-                if _Debug: print('    [DHT NODE]    forcing iteration =================')
+                if _Debug:
+                    print('[DHT NODE] SINGLE forcing iteration =================')
                 searchIteration()
 
         # Send parallel, asynchronous FIND_NODE RPCs to the shortlist of contacts
@@ -883,13 +839,15 @@ class Node(object):
             slowNodeCount[0] = len(activeProbes)
             # Sort the discovered active nodes from closest to furthest
             activeContacts.sort(key=lambda cont: self._routingTable.distance(cont.id, key))
-            if _Debug: print('    [DHT NODE]    ==> searchiteration %r' % activeContacts)
+            if _Debug:
+                print('[DHT NODE] SINGLE ==> searchiteration %r' % activeContacts)
             # This makes sure a returning probe doesn't force calling this function by mistake
             while len(pendingIterationCalls):
                 del pendingIterationCalls[0]
             # See if should continue the search
             if key in findValueResult and not deep:
-                if _Debug: print('    [DHT NODE]    ++++++++++++++ DONE (findValue found) +++++++++++++++\n\n')
+                if _Debug:
+                    print('[DHT NODE] SINGLE ++++++++++++++ DONE (findValue found) +++++++++++++++\n\n')
                 findValueResult['activeContacts'] = activeContacts
                 outerDf.callback(findValueResult)
                 return
@@ -898,9 +856,11 @@ class Node(object):
                     # TODO: Re-send the FIND_NODEs to all of the k closest nodes not already queried
                     # Ok, we're done; either we have accumulated k active contacts or no improvement in closestNode has been noted
                     if len(activeContacts) >= constants.k:
-                        if _Debug: print('    [DHT NODE]    ++++++++++++++ DONE (test for k active contacts) +++++++++++++++\n\n')
+                        if _Debug:
+                            print('[DHT NODE] SINGLE ++++++++++++++ DONE (test for k active contacts) +++++++++++++++\n\n')
                     else:
-                        if _Debug: print('    [DHT NODE]    ++++++++++++++ DONE (test for closest node) +++++++++++++++\n\n')
+                        if _Debug:
+                            print('[DHT NODE] SINGLE ++++++++++++++ DONE (test for closest node) +++++++++++++++\n\n')
                     if findValue:
                         findValueResult['activeContacts'] = activeContacts
                         outerDf.callback(findValueResult)
@@ -928,7 +888,8 @@ class Node(object):
                     break
             if len(activeProbes) > slowNodeCount[0] \
                     or (len(shortlist) < constants.k and len(activeContacts) < len(shortlist) and len(activeProbes) > 0):
-                if _Debug: print('    [DHT NODE]    ----------- scheduling next call -------------')
+                if _Debug:
+                    print('[DHT NODE] SINGLE ----------- scheduling next call -------------')
                 # Schedule the next iteration if there are any active calls (Kademlia uses loose parallelism)
                 call = twisted.internet.reactor.callLater(constants.iterativeLookupDelay, searchIteration)  # IGNORE:E1101  @UndefinedVariable
                 pendingIterationCalls.append(call)
@@ -937,7 +898,8 @@ class Node(object):
                 # Ensure that the closest contacts are taken from the updated shortList
                 searchIteration()
             else:
-                if _Debug: print('    [DHT NODE]    ++++++++++++++ DONE (logically) +++++++++++++\n\n')
+                if _Debug:
+                    print('[DHT NODE] SINGLE ++++++++++++++ DONE (logically) +++++++++++++\n\n')
                 # If no probes were sent, there will not be any improvement, so we're done
                 if findValue:
                     findValueResult['activeContacts'] = activeContacts
@@ -957,7 +919,8 @@ class Node(object):
             'key': 'nodeState',
             'type': 'skip_validation',
         }
-        if _Debug: print('    [DHT NODE]    _persistState id=%r state=%r' % (self.id, state, ))
+        if _Debug:
+            print('[DHT NODE]  SINGLE _persistState id=%r state=%r' % (self.id, state, ))
         json_value = json.dumps(state)
         now = int(time.time())
 
@@ -969,8 +932,8 @@ class Node(object):
         return args
 
     def _joinNetworkFailed(self, err):
-        if _Debug: print('    [DHT NODE]    failed joining DHT network')
-        if _Debug: print(err)
+        if _Debug:
+            print('[DHT NODE] SINGLE  failed joining DHT network', err)
 
     def _refreshNode(self):
         """
@@ -986,12 +949,13 @@ class Node(object):
     def _refreshRoutingTable(self):
         nodeIDs = self._routingTable.getRefreshList(0, False)
         if _Debug:
-            print('    [DHT NODE]    _refreshRoutingTable', nodeIDs)
+            print('[DHT NODE] SINGLE _refreshRoutingTable', nodeIDs)
 
         outerDf = defer.Deferred()
 
         def searchFailed(err):
-            if _Debug: print('    [DHT NODE]    searchFailed', err)
+            if _Debug:
+                print('[DHT NODE] SINGLE searchFailed', err)
 
         def searchForNextNodeID(dfResult=None):
             if len(nodeIDs) > 0:
@@ -1020,10 +984,12 @@ class Node(object):
 
         This method should run in a deferred thread
         """
-        if _Debug: print('    [DHT NODE]    republishData called, node: %r' % self.id)
+        if _Debug:
+            print('[DHT NODE]  SINGLE republishData called, node: %r' % self.id)
         expiredKeys = []
         for key in self._dataStore.keys():
-            if _Debug: print('    [DHT NODE]        %r' % key)
+            if _Debug:
+                print('[DHT NODE]  SINGLE    %r' % key)
             # Filter internal variables stored in the datastore
             if key == 'nodeState':
                 continue
@@ -1065,6 +1031,825 @@ class Node(object):
                     )
         for key in expiredKeys:
             del self._dataStore[key]
+
+
+class MultiLayerNode(Node):
+
+    def __init__(self, udpPort=4000, dataStores=None, routingTables=None, networkProtocol=None, **kwargs):
+        self._counter = None
+        self.port = udpPort
+        self.listener = None
+        h = hashlib.sha1()
+        h.update(b'nodeState')
+        self.nodeStateKey = h.hexdigest()
+
+        self._routingTables = {}
+        self._dataStores = {}
+        self.layers = {}
+        self.refreshers = {}
+        self.active_layers = set()
+        self.attached_layers = set()
+
+        # This will contain a deferred created when joining the network, to enable publishing/retrieving information from
+        # the DHT as soon as the node is part of the network (add callbacks to this deferred if scheduling such operations
+        # before the node has finished joining the network)
+        self._joinDeferreds = {}
+
+        # Initialize this node's network access mechanisms
+        if networkProtocol is None:
+            self._protocol = protocol.KademliaMultiLayerProtocol(self)
+        else:
+            self._protocol = networkProtocol(self)
+
+        if dataStores:
+            for layer_id, dataStore in dataStores.items():
+                nodeID = None
+                if layer_id == 0:
+                    nodeID = kwargs.get('id')
+                routingTable = None
+                if routingTables:
+                    routingTable = routingTables.get(layer_id, None)
+                self.createLayer(layer_id, dataStore=dataStore, nodeID=nodeID, routingTable=routingTable)
+
+        if not self._dataStores or 0 not in self._dataStores:
+            self.createLayer(0, dataStore=datastore.DictDataStore())
+
+        self.active_layers.add(0)
+        self.attachLayer(0)
+
+    def createLayer(self, layer_id, dataStore, nodeID=None, routingTable=None, warmUp=False):
+        if layer_id in self.layers or layer_id in self._dataStores or layer_id in self._routingTables:
+            if _Debug:
+                print('[DHT NODE]    createLayer : layer %d already exist' % layer_id)
+            return False
+        self._dataStores[layer_id] = dataStore
+        self.layers[layer_id] = nodeID
+        loaded = False
+        if self.nodeStateKey in self._dataStores[layer_id]:
+            json_state = self._dataStores[layer_id][self.nodeStateKey]
+            state = json.loads(json_state)
+            self.layers[layer_id] = state['id']
+            if layer_id not in self._routingTables:
+                self._routingTables[layer_id] = routingTable or routingtable.TreeRoutingTable(self.layers[layer_id], layerID=layer_id)
+            for contactTriple in state['closestNodes']:
+                contact = LayeredContact(encoding.to_text(contactTriple[0]), contactTriple[1], contactTriple[2], self._protocol, layerID=layer_id)
+                self._routingTables[layer_id].addContact(contact)
+            if _Debug:
+                print('[DHT NODE]    createLayer : layer %d : found "nodeState" key in local db and added %d contacts to routing table' % (
+                    layer_id, len(state['closestNodes']), ))
+            loaded = True
+        if not self.layers[layer_id]:
+            self.layers[layer_id] = self._generateID()
+        if layer_id not in self._routingTables:
+            self._routingTables[layer_id] = routingTable or routingtable.TreeRoutingTable(self.layers[layer_id], layerID=layer_id)
+#         if layer_id != 0 and not loaded and warmUp:
+#             loaded = self.warmUpLayer(layer_id)
+        if _Debug:
+            print('[DHT NODE]    createLayer : layer %d created,  loaded=%r' % (layer_id, loaded, ))
+        return True
+
+    def destroyLayer(self, layer_id):
+        if layer_id not in self.layers and layer_id not in self._dataStores and layer_id not in self._routingTables:
+            if _Debug:
+                print('[DHT NODE]    destroyLayer : layer %d not exist' % layer_id)
+            return False
+        self.layers.pop(layer_id, None)
+        self._routingTables.pop(layer_id, None)
+        self._dataStores.pop(layer_id, None)
+        if _Debug:
+            print('[DHT NODE]    destroyLayer : layer %d destroyed' % layer_id)
+        return True
+
+    def connectingTask(self, layerID=0):
+        if layerID not in self._joinDeferreds:
+            return None
+        return self._joinDeferreds[layerID]
+
+    def joinNetwork(self, knownNodeAddresses=None, layerID=0, attach=False):
+        if knownNodeAddresses is not None:
+            bootstrapContacts = []
+            for address, port in knownNodeAddresses:
+                contact = LayeredContact(self._generateID(), address, port, self._protocol, layerID=layerID)
+                bootstrapContacts.append(contact)
+        else:
+            bootstrapContacts = None
+        if _Debug:
+            print('[DHT NODE]    joinNetwork bootstrapContacts=%r layerID=%r' % (bootstrapContacts, layerID, ))
+        self.active_layers.add(layerID)
+        if attach:
+            self.attachLayer(layerID)
+        self._joinDeferreds[layerID] = self._iterativeFind(self.layers[layerID], bootstrapContacts, layerID=layerID)
+        self._joinDeferreds[layerID].addCallback(self._persistState, layerID=layerID)
+        self._joinDeferreds[layerID].addErrback(self._joinNetworkFailed, layerID)
+        if self.refreshers.get(layerID, None) and not self.refreshers[layerID].called:
+            self.refreshers[layerID].cancel()
+        self.refreshers[layerID] = twisted.internet.reactor.callLater(constants.checkRefreshInterval, self._refreshNode, layerID=layerID)  # IGNORE:E1101  @UndefinedVariable
+        return self._joinDeferreds[layerID]
+
+    def leaveNetwork(self, layerID):
+        if not layerID in self.active_layers:
+            return False
+        if _Debug:
+            print('[DHT NODE]    leaveNetwork layerID=%d' % layerID)
+        if layerID != 0:
+            self.active_layers.remove(layerID)
+            self.detachLayer(layerID)
+        if self.refreshers.get(layerID, None) and not self.refreshers[layerID].called:
+            self.refreshers[layerID].cancel()
+        self.refreshers.pop(layerID)
+        return True
+
+    def attachLayer(self, layerID):
+        if _Debug:
+            print('[DHT NODE]    attachLayer %d' % layerID)
+        self.attached_layers.add(layerID)
+
+    def detachLayer(self, layerID):
+        if _Debug:
+            print('[DHT NODE]    detachLayer %d' % layerID)
+        self.attached_layers.remove(layerID)
+
+#     def warmUpLayer(self, layerID):
+#         if layerID == 0:
+#             return True
+#         if layerID not in self._routingTables:
+#             return False
+#         json_state = None
+#         if self.nodeStateKey in self._dataStores[layerID]:
+#             json_state = self._dataStores[layerID][self.nodeStateKey]
+#         if not json_state and self.nodeStateKey in self._dataStores[0]:
+#             json_state = self._dataStores[0][self.nodeStateKey]
+#         if not json_state:
+#             return False
+#         state = json.loads(json_state)
+#         if _Debug:
+#             print('[DHT NODE]    warmUpLayer %d   found saved data: %r' % (layerID, state, ))
+#         if not state['closestNodes']:
+#             return False
+#         self.layers[layerID] = state['id']
+#         for contactTriple in state['closestNodes']:
+#             contact = LayeredContact(encoding.to_text(contactTriple[0]), contactTriple[1], contactTriple[2], self._protocol, layerID=layerID)
+#             self._routingTables[layerID].addContact(contact)
+#         self.warm_layers.add(layerID)
+#         if _Debug:
+#             print('[DHT NODE]    warmUpLayer %d : found "nodeState" key in local db of layer 0 and added %d contacts to routing table' % (
+#                 layerID, len(state['closestNodes']), ))
+#         return True
+
+    def iterativeStore(self, key, value, originalPublisherID=None,
+                       age=0, expireSeconds=constants.dataExpireSecondsDefaut, layerID=0, **kwargs):
+        if originalPublisherID is None:
+            originalPublisherID = self.layers[layerID]
+        collect_results = kwargs.pop('collect_results', False)
+        ret = defer.Deferred()
+        if 'layerID' not in kwargs:
+            kwargs['layerID'] = layerID
+
+        if _Debug:
+            print('[DHT NODE]   iterativeStore layerID=%d  key=%r' % (layerID, key, ))
+        # Prepare a callback for doing "STORE" RPC calls
+
+        def storeRPCsCollected(store_results, store_nodes):
+            if _Debug:
+                print('[DHT NODE]    iterativeStore.storeRPCsCollected', store_results, store_nodes)
+            ret.callback((store_nodes, store_results, ))
+            return None
+
+        def storeRPCsFailed(x):
+            errmsg = storeFailed(x)
+            if _Debug:
+                print('[DHT NODE]    iterativeStore.storeRPCsFailed', errmsg)
+            ret.errback(x)
+            return errmsg
+
+        def executeStoreRPCs(nodes):
+            l = []
+            if len(nodes) >= constants.k:
+                # If this node itself is closer to the key than the last (furthest) node in the list,
+                # we should store the value at ourselves as well
+                if self._routingTables[layerID].distance(key, self.layers[layerID]) < self._routingTables[layerID].distance(key, nodes[-1].id):
+                    nodes.pop()
+                    try:
+                        ok = self.store(key, value, originalPublisherID=originalPublisherID,
+                                        age=age, expireSeconds=expireSeconds, **kwargs)
+                        l.append(defer.succeed(ok))
+                    except Exception as exc:
+                        if _Debug: traceback.print_exc()
+                        l.append(defer.fail(exc))
+            else:
+                try:
+                    ok = self.store(key, value, originalPublisherID=originalPublisherID,
+                                    age=age, expireSeconds=expireSeconds, **kwargs)
+                    l.append(defer.succeed(ok))
+                except Exception as exc:
+                    if _Debug: traceback.print_exc()
+                    l.append(defer.fail(exc))
+                    
+            for contact in nodes:
+                d = contact.store(key, value, originalPublisherID, age, expireSeconds, **kwargs)
+                d.addCallback(storeSuccess, key)
+                d.addErrback(storeFailed, key)
+                l.append(d)
+
+            if not collect_results:
+                return nodes
+
+            dl = defer.DeferredList(l, fireOnOneErrback=True, consumeErrors=True)
+            dl.addCallback(storeRPCsCollected, nodes)
+            dl.addErrback(storeRPCsFailed)
+            return dl
+ 
+        # Find k nodes closest to the key...
+        df = self.iterativeFindNode(key, layerID=layerID)
+        # ...and send them STORE RPCs as soon as they've been found
+        df.addCallback(executeStoreRPCs)
+        df.addErrback(findNodeFailed)
+        
+        if not collect_results:
+            return df
+
+        return ret
+
+    def iterativeFindNode(self, key, layerID=0):
+        return self._iterativeFind(key, layerID=layerID)
+
+    def iterativeDelete(self, key, layerID=0):
+        # Delete our own copy of the data
+        if key in self._dataStores[layerID]:
+            del self._dataStores[layerID][key]
+        df = self._iterativeFind(key, rpc='delete', layerID=layerID)
+        return df
+
+    def iterativeFindValue(self, key, rpc='findValue', refresh_revision=False, layerID=0):
+        outerDf = defer.Deferred()
+
+        def storeFailed(x):
+            errmsg = getErrorMessage(x)
+            if _Debug:
+                print('[DHT NODE]    iterativeFindValue.storeFailed', errmsg)
+            return errmsg
+
+        def refreshRevisionSuccess(ok):
+            if _Debug:
+                print('[DHT NODE]    iterativeFindValue.refreshRevisionSuccess', ok)
+
+        def refreshRevisionFailed(x):
+            errmsg = getErrorMessage(x)
+            if _Debug:
+                print('[DHT NODE]    iterativeFindValue.refreshRevisionFailed', errmsg)
+            return errmsg
+
+        def checkResult(result):
+            if _Debug:
+                print('[DHT NODE]    iterativeFindValue.checkResult key=%s' % key, result)
+            if isinstance(result, dict):
+                if key in result:
+                    latest_revision = 0
+                    for v in result['values']:
+                        if v[1] > latest_revision:
+                            latest_revision = v[1]
+                    # We have found the value; now see who was the closest contact without it...
+                    if 'closestNodeNoValue' in result:
+                        # ...and store the key/value pair
+                        contact = result['closestNodeNoValue']
+                        expireSeconds = constants.dataExpireSecondsDefaut
+                        if 'expireSeconds' in result:
+                            expireSeconds = result['expireSeconds']
+                        if _Debug:
+                            print('[DHT NODE]    republish %s to closest node with %d expire seconds' % (key, expireSeconds))
+                        contact.store(key, result[key], None, 0, expireSeconds, revision=latest_revision, layerID=layerID).addErrback(storeFailed)
+                    if refresh_revision:
+                        # need to refresh nodes who has old version of that value
+                        for v in result['values']:
+                            if v[1] < latest_revision:
+                                _contact = LayeredContact(encoding.to_text(v[2]), v[3][0], v[3][1], self._protocol, layerID=layerID)
+                                if _Debug:
+                                    print('[DHT NODE]    will refresh revision %d on %r' % (latest_revision, _contact))
+                                d = _contact.store(key, result[key], None, 0, expireSeconds, revision=latest_revision, layerID=layerID)
+                                d.addCallback(refreshRevisionSuccess)
+                                d.addErrback(refreshRevisionFailed)
+                    outerDf.callback(result)
+                else:
+                    # we was looking for value but did not found it
+                    # Now, see if we have the value (it might seem wasteful to search on the network
+                    # first, but it ensures that all values are properly propagated through the
+                    # network
+                    if key in self._dataStores[layerID]:
+                        # Ok, we have the value locally, so use that
+                        item = self._dataStores[layerID].getItem(key)
+                        expireSeconds = item.get('expireSeconds', constants.dataExpireSecondsDefaut)
+                        # Send this value to the closest node without it
+                        if len(result['activeContacts']) > 0:
+                            contact = result['activeContacts'][0]
+                            if _Debug:
+                                print('[DHT NODE]    refresh %s : %r with %d to %r' % (key, item['value'], expireSeconds, contact))
+                            contact.store(key, item['value'], None, 0, expireSeconds, layerID=layerID).addErrback(storeFailed)
+                        outerDf.callback({
+                            'key': item['value'],
+                            'values': [(
+                                item['value'],
+                                item['revision'],
+                                self.layers[layerID],
+                                (b'127.0.0.1', self.port),
+                            ),],
+                            'activeContacts': result['activeContacts'],
+                        })
+                    else:
+                        if _Debug:
+                            print('[DHT NODE]    key %s does not exist in DHT' % key)
+                        outerDf.callback(result)
+            else:
+                # The value wasn't found, but a list of contacts was returned
+                # Now, see if we have the value (it might seem wasteful to search on the network
+                # first, but it ensures that all values are properly propagated through the
+                # network
+                if key in self._dataStores[layerID]:
+                    # Ok, we have the value locally, so use that
+                    item = self._dataStores[layerID].getItem(key)
+                    expireSeconds = item.get('expireSeconds', constants.dataExpireSecondsDefaut)
+                    # Send this value to the closest node without it
+                    if len(result) > 0:
+                        contact = result[0]
+                        if _Debug:
+                            print('[DHT NODE]    refresh %s on closest node : %r with %d to %r' % (key, item['value'], expireSeconds, contact))
+                        contact.store(key, item['value'], None, 0, expireSeconds, layerID=layerID).addErrback(storeFailed)
+                    ret = {
+                        'key': item['value'],
+                        'values': [(
+                            item['value'],
+                            item['revision'],
+                            self.layers[layerID],
+                            (b'127.0.0.1', self.port),
+                        ),],
+                        'activeContacts': result['activeContacts'],
+                    }
+                    if _Debug:
+                        print('[DHT NODE]    key %s found in my local data store : %r' % (key, ret))
+                    outerDf.callback(ret)
+                else:
+                    if _Debug:
+                        print('[DHT NODE]    key %s does not exist in DHT' % key)
+                    outerDf.callback(result)
+
+        # Execute the search
+        df = self._iterativeFind(key, rpc=rpc, layerID=layerID)
+        df.addCallback(checkResult)
+        df.addErrback(lookupFailed)
+        return outerDf
+
+    def addContact(self, contact, layerID=0):
+        self._routingTables[layerID].addContact(contact)
+
+    def removeContact(self, contactID, layerID=0):
+        self._routingTables[layerID].removeContact(contactID)
+
+    def findContact(self, contactID, layerID=0):
+        try:
+            contact = self._routingTables[layerID].getContact(contactID)
+            df = defer.Deferred()
+            df.callback(contact)
+        except ValueError:
+            def parseResults(nodes):
+                if contactID in nodes:
+                    contact = nodes[nodes.index(contactID)]
+                    return contact
+                else:
+                    return None
+            df = self.iterativeFindNode(contactID, layerID=layerID)
+            df.addCallback(parseResults)
+        return df
+
+    @rpcmethod
+    def store(self, key, value, originalPublisherID=None,
+              age=0, expireSeconds=constants.dataExpireSecondsDefaut, **kwargs):
+        if 'layerID' in kwargs:
+            layerID = kwargs['layerID']
+        else:
+            layerID = 0
+        if layerID not in self.active_layers:
+            if _Debug:
+                print('[DHT NODE]    rpcmethod.store %r layerID=%d SKIP because layer is not active' % (key, layerID, ))
+            raise ValueError('Layer is not active')
+        if _Debug:
+            print('[DHT NODE]    rpcmethod.store %r layerID=%d' % (key, layerID, ))
+        # Get the sender's ID (if any)
+        if '_rpcNodeID' in kwargs:
+            rpcSenderID = kwargs['_rpcNodeID']
+        else:
+            rpcSenderID = None
+        if originalPublisherID is None:
+            if rpcSenderID is not None:
+                originalPublisherID = rpcSenderID
+            else:
+                raise TypeError('No publisher specifed, and RPC caller ID not available. Data requires an original publisher.')
+        now = int(time.time())
+        originallyPublished = now - age
+        self._dataStores[layerID].setItem(key, value, now, originallyPublished, originalPublisherID, expireSeconds=expireSeconds, **kwargs)
+        return 'OK'
+
+    @rpcmethod
+    def delete(self, key, **kwargs):
+        if 'layerID' in kwargs:
+            layerID = kwargs['layerID']
+        else:
+            layerID = 0
+        if layerID not in self.active_layers:
+            if _Debug:
+                print('[DHT NODE]    rpcmethod.delete %r layerID=%d SKIP because layer is not active' % (key, layerID, ))
+            return []
+        if _Debug:
+            print('[DHT NODE]    rpcmethod.delete %r layerID=%d : %r' % (key, layerID, kwargs))
+        # Delete our own copy of the data (if we have one)...
+        if key in self._dataStores[layerID]:
+            del self._dataStores[layerID][key]
+        # ...and make this RPC propagate through the network (like a FIND_VALUE for a non-existant value)
+        return self.findNode(key, **kwargs)
+
+    @rpcmethod
+    def findNode(self, key, **kwargs):
+        if 'layerID' in kwargs:
+            layerID = kwargs['layerID']
+        else:
+            layerID = 0
+        if layerID not in self.active_layers:
+            if _Debug:
+                print('[DHT NODE]    rpcmethod.findNode %r layerID=%d SKIP because layer is not active' % (key, layerID, ))
+            return []
+        if _Debug:
+            print('[DHT NODE]    rpcmethod.findNode %r layerID=%d : %r' % (key, layerID, kwargs))
+        # Get the sender's ID (if any)
+        if '_rpcNodeID' in kwargs:
+            rpcSenderID = kwargs['_rpcNodeID']
+        else:
+            rpcSenderID = None
+        if layerID not in self._routingTables:
+            if _Debug:
+                print('[DHT NODE]    layer %d not exist' % layerID)
+            return []
+        contacts = self._routingTables[layerID].findCloseNodes(key, constants.k, rpcSenderID)
+        contactTriples = []
+        for contact in contacts:
+            contactTriples.append((contact.id, encoding.to_text(contact.address), contact.port, layerID))
+        if _Debug:
+            print('[DHT NODE]        result is %r' % contactTriples)
+        return contactTriples
+
+    @rpcmethod
+    def findValue(self, key, **kwargs):
+        if 'layerID' in kwargs:
+            layerID = kwargs['layerID']
+        else:
+            layerID = 0
+        if layerID not in self.active_layers:
+            if _Debug:
+                print('[DHT NODE]    rpcmethod.findValue %r layerID=%d SKIP because layer is not active' % (key, layerID, ))
+            return []
+        if _Debug:
+            print('[DHT NODE]    rpcmethod.findValue %r layerID=%r : %r' % (key, layerID, kwargs))
+        if key in self._dataStores[layerID]:
+            exp = None
+            expireSecondsCall = getattr(self._dataStores[layerID], 'expireSeconds')
+            if expireSecondsCall:
+                exp = expireSecondsCall(key)
+            originalPublishTimeCall = getattr(self._dataStores[layerID], 'originalPublishTime')
+            published = None
+            if originalPublishTimeCall:
+                published = originalPublishTimeCall(key)
+            if _Debug:
+                print('[DHT NODE]        found key in local dataStore %r' % self._dataStores[layerID][key])
+            return {key: self._dataStores[layerID][key], 'expireSeconds': exp, 'originallyPublished': published, }
+        if _Debug:
+            print('[DHT NODE]        NOT found key in local dataStore')
+        return self.findNode(key, **kwargs)
+
+    def _iterativeFind(self, key, startupShortlist=None, rpc='findNode', deep=False, layerID=0):
+        if _Debug:
+            print('[DHT NODE]    _iterativeFind   layerID=%d   rpc=%r   key=%r  startupShortlist=%r routingTables=%r' % (
+                layerID, rpc, key, startupShortlist, self._routingTables))
+        if rpc != 'findNode':
+            findValue = True
+        else:
+            findValue = False
+        shortlist = []
+        if startupShortlist is None:
+            shortlist = self._routingTables[layerID].findCloseNodes(key, constants.alpha)
+            if key != self.layers[layerID]:
+                # Update the "last accessed" timestamp for the appropriate k-bucket
+                self._routingTables[layerID].touchKBucket(key)
+            if len(shortlist) == 0:
+                if _Debug:
+                    print('[DHT NODE]  layerID=%d   This node doesnt know of any other nodes !!!!!' % layerID)
+                # This node doesn't know of any other nodes
+                fakeDf = defer.Deferred()
+                fakeDf.callback([])
+                return fakeDf
+        else:
+            # This is used during the bootstrap process; node ID's are most probably fake
+            shortlist = startupShortlist
+        if _Debug:
+            print('[DHT NODE]   _iterativeFind  shortlist=%r' % shortlist)
+        # List of active queries; len() indicates number of active probes
+        # - using lists for these variables, because Python doesn't allow binding a new value to a name in an enclosing (non-global) scope
+        activeProbes = []
+        # List of contact IDs that have already been queried
+        alreadyContacted = []
+        # Probes that were active during the previous iteration
+        # A list of found and known-to-be-active remote nodes
+        activeContacts = []
+        # This should only contain one entry; the next scheduled iteration call
+        pendingIterationCalls = []
+        prevClosestNode = [None]
+        findValueResult = {'values': [], }
+        slowNodeCount = [0]
+
+        def extendShortlist(responseTuple):
+            """ @type responseMsg: kademlia.msgtypes.ResponseMessage """
+            # The "raw response" tuple contains the response message, and the originating address info
+            responseMsg = responseTuple[0]
+            originAddress = responseTuple[1]  # tuple: (ip adress, udp port)
+            # Make sure the responding node is valid, and abort the operation if it isn't
+            if _Debug: 
+                print('[DHT NODE]        responseTuple:', responseTuple)
+            if responseMsg.nodeID in activeContacts or responseMsg.nodeID == self.layers[layerID]:
+                if _Debug:
+                    if responseMsg.nodeID == self.layers[layerID]:
+                        print('[DHT NODE]            response from my own node')
+                    else:
+                        print('[DHT NODE]            response from active contact')
+                return responseMsg.nodeID
+
+            # Mark this node as active
+            if responseMsg.nodeID in shortlist:
+                # Get the contact information from the shortlist...
+                aContact = shortlist[shortlist.index(responseMsg.nodeID)]
+            else:
+                # If it's not in the shortlist; we probably used a fake ID to reach it
+                # - reconstruct the contact, using the real node ID this time
+                aContact = LayeredContact(encoding.to_text(responseMsg.nodeID), originAddress[0], originAddress[1], self._protocol, layerID=layerID)
+            activeContacts.append(aContact)
+            # This makes sure "bootstrap"-nodes with "fake" IDs don't get queried twice
+            if responseMsg.nodeID not in alreadyContacted:
+                alreadyContacted.append(responseMsg.nodeID)
+            # Now grow extend the (unverified) shortlist with the returned contacts
+            result = responseMsg.response
+            # TODO: some validation on the result (for guarding against attacks)
+            # If we are looking for a value, first see if this result is the value
+            # we are looking for before treating it as a list of contact triples
+            if findValue and isinstance(result, dict):
+                # We have found the value
+                findValueResult[key] = result[key]
+                findValueResult['values'].append((
+                    result[key],
+                    result.get('revision', 0),
+                    responseMsg.nodeID,
+                    originAddress,
+                ))
+                if 'expireSeconds' in result:
+                    findValueResult['expireSeconds'] = result['expireSeconds']
+            else:
+                if findValue:
+                    # We are looking for a value, and the remote node didn't have it
+                    # - mark it as the closest "empty" node, if it is
+                    if 'closestNodeNoValue' in findValueResult:
+                        if self._routingTables[layerID].distance(key, responseMsg.nodeID) < self._routingTables[layerID].distance(key, activeContacts[0].id):
+                            findValueResult['closestNodeNoValue'] = aContact
+                    else:
+                        findValueResult['closestNodeNoValue'] = aContact
+                for contactTriple in result:
+                    try:
+                        testContact = LayeredContact(encoding.to_text(contactTriple[0]), contactTriple[1], contactTriple[2], self._protocol, layerID=layerID)
+                    except:
+                        continue
+                    if testContact not in shortlist:
+                        shortlist.append(testContact)
+            return responseMsg.nodeID
+
+        def removeFromShortlist(failure):
+            """ @type failure: twisted.python.failure.Failure """
+            failure.trap(protocol.TimeoutError)
+            deadContactID = failure.getErrorMessage()
+            if deadContactID in shortlist:
+                if _Debug:
+                    print('[DHT NODE]    removing %r' % deadContactID)
+                shortlist.remove(deadContactID)
+            return deadContactID
+
+        def cancelActiveProbe(contactID):
+            activeProbes.pop()
+            if len(activeProbes) <= constants.alpha / 2 and len(pendingIterationCalls):
+                # Force the iteration
+                pendingIterationCalls[0].cancel()
+                del pendingIterationCalls[0]
+                if _Debug:
+                    print('[DHT NODE]    forcing iteration =================')
+                searchIteration()
+
+        # Send parallel, asynchronous FIND_NODE RPCs to the shortlist of contacts
+        def searchIteration():
+            slowNodeCount[0] = len(activeProbes)
+            # Sort the discovered active nodes from closest to furthest
+            activeContacts.sort(key=lambda cont: self._routingTables[layerID].distance(cont.id, key))
+            if _Debug:
+                print('[DHT NODE]    ==> searchiteration %r' % activeContacts)
+            # This makes sure a returning probe doesn't force calling this function by mistake
+            while len(pendingIterationCalls):
+                del pendingIterationCalls[0]
+            # See if should continue the search
+            if key in findValueResult and not deep:
+                if _Debug:
+                    print('[DHT NODE]    ++++++++++++++ DONE (findValue found) +++++++++++++++\n\n')
+                findValueResult['activeContacts'] = activeContacts
+                outerDf.callback(findValueResult)
+                return
+            if len(activeContacts) and findValue == False:
+                if (len(activeContacts) >= constants.k) or (activeContacts[0] == prevClosestNode[0] and len(activeProbes) == slowNodeCount[0]):
+                    # TODO: Re-send the FIND_NODEs to all of the k closest nodes not already queried
+                    # Ok, we're done; either we have accumulated k active contacts or no improvement in closestNode has been noted
+                    if len(activeContacts) >= constants.k:
+                        if _Debug:
+                            print('[DHT NODE]    ++++++++++++++ DONE (test for k active contacts) +++++++++++++++\n\n')
+                    else:
+                        if _Debug:
+                            print('[DHT NODE]    ++++++++++++++ DONE (test for closest node) +++++++++++++++\n\n')
+                    if findValue:
+                        findValueResult['activeContacts'] = activeContacts
+                        outerDf.callback(findValueResult)
+                    else:
+                        outerDf.callback(activeContacts)
+                    return
+            # The search continues...
+            if len(activeContacts):
+                prevClosestNode[0] = activeContacts[0]
+            contactedNow = 0
+            activeContacts.sort(key=lambda cont: self._routingTables[layerID].distance(cont.id, key))
+            # Store the current shortList length before contacting other nodes
+            prevShortlistLength = len(shortlist)
+            for contact in shortlist:
+                if contact.id not in alreadyContacted:
+                    activeProbes.append(contact.id)
+                    rpcMethod = getattr(contact, rpc)
+                    if _Debug:
+                        print('[DHT NODE] calling RPC method %r with key=%r layerID=%d at %r' % (
+                            rpc, key, layerID, contact))
+                    df = rpcMethod(
+                        key,
+                        rawResponse=True,
+                        layerID=layerID,
+                    )
+                    df.addCallback(extendShortlist)
+                    df.addErrback(removeFromShortlist)
+                    df.addCallback(cancelActiveProbe)
+                    alreadyContacted.append(contact.id)
+                    contactedNow += 1
+                if contactedNow == constants.alpha:
+                    break
+            if len(activeProbes) > slowNodeCount[0] \
+                    or (len(shortlist) < constants.k and len(activeContacts) < len(shortlist) and len(activeProbes) > 0):
+                if _Debug:
+                    print('[DHT NODE]    ----------- scheduling next call -------------')
+                # Schedule the next iteration if there are any active calls (Kademlia uses loose parallelism)
+                call = twisted.internet.reactor.callLater(constants.iterativeLookupDelay, searchIteration)  # IGNORE:E1101  @UndefinedVariable
+                pendingIterationCalls.append(call)
+            # Check for a quick contact response that made an update to the shortList
+            elif prevShortlistLength < len(shortlist):
+                # Ensure that the closest contacts are taken from the updated shortList
+                searchIteration()
+            else:
+                if _Debug:
+                    print('[DHT NODE]    ++++++++++++++ DONE (logically) +++++++++++++\n\n')
+                # If no probes were sent, there will not be any improvement, so we're done
+                if findValue:
+                    findValueResult['activeContacts'] = activeContacts
+                    outerDf.callback(findValueResult)
+                else:
+                    outerDf.callback(activeContacts)
+
+        outerDf = defer.Deferred()
+        # Start the iterations
+        searchIteration()
+        return outerDf
+
+    def _persistState(self, *args, **kwargs):
+        layerID = kwargs.get('layerID', 0)
+        closestNodes = list(self.findNode(self.layers[layerID], **kwargs))
+        state = {
+            'id': self.layers[layerID],
+            'closestNodes': closestNodes,
+            'key': 'nodeState',
+            'type': 'skip_validation',
+        }
+        if _Debug:
+            print('[DHT NODE]    _persistState  layerID=%d id=%r closestNodes=%r state=%r' % (
+                layerID, self.layers[layerID], closestNodes, state, ))
+        json_value = json.dumps(state)
+        now = int(time.time())
+        self._dataStores[layerID].setItem(self.nodeStateKey, json_value, now, now, self.layers[layerID])
+        return args
+    
+    def _refreshNode(self, layerID=0):
+        """
+        Periodically called to perform k-bucket refreshes and data
+        replication/republishing as necessary.
+        """
+        # if self._counter:
+        #     self._counter('_refreshNode')
+        if layerID not in self.layers:
+            return
+        df = self._refreshRoutingTable(layerID=layerID)
+        df.addCallback(self._republishData, layerID=layerID)
+        df.addCallback(self._scheduleNextNodeRefresh, layerID=layerID)
+
+    def _refreshRoutingTable(self, layerID=0):
+        nodeIDs = self._routingTables[layerID].getRefreshList(0, False)
+        if _Debug:
+            print('[DHT NODE]    _refreshRoutingTable', nodeIDs)
+
+        outerDf = defer.Deferred()
+
+        def searchFailed(err):
+            if _Debug:
+                print('[DHT NODE]    searchFailed', err)
+
+        def searchForNextNodeID(dfResult=None):
+            if len(nodeIDs) > 0:
+                searchID = nodeIDs.pop()
+                df = self.iterativeFindNode(searchID, layerID=layerID)
+                df.addCallback(searchForNextNodeID)
+                df.addErrback(searchFailed)
+            else:
+                # If this is reached, we have finished refreshing the routing table
+                outerDf.callback(None)
+        # Start the refreshing cycle
+        searchForNextNodeID()
+        return outerDf
+
+    def _republishData(self, *args, **kwargs):
+        df = twisted.internet.threads.deferToThread(self._threadedRepublishData, *args, **kwargs)
+        return df
+
+    def _scheduleNextNodeRefresh(self, *args, **kwargs):
+        if _Debug:
+            print('[DHT NODE] will refresh layer %d in %d seconds' % (kwargs['layerID'], constants.checkRefreshInterval, ))
+        self.refreshers[kwargs['layerID']] = twisted.internet.reactor.callLater(constants.checkRefreshInterval, self._refreshNode, layerID=kwargs['layerID'])  # @UndefinedVariable
+
+    def _threadedRepublishData(self, *args, **kwargs):
+        """
+        Republishes and expires any stored data (i.e. stored C{(key, value
+        pairs)} that need to be republished/expired.
+
+        This method should run in a deferred thread
+        """
+        layerID = kwargs['layerID']
+        if _Debug:
+            print('[DHT NODE]    republishData called, node: %r' % self.layers[layerID])
+        expiredKeys = []
+        for key in self._dataStores[layerID].keys():
+            if _Debug:
+                print('[DHT NODE]        %r' % key)
+            # Filter internal variables stored in the datastore
+            if key == 'nodeState':
+                continue
+            
+            now = int(time.time())
+            itemData = self._dataStores[layerID].getItem(key)
+            originallyPublished = itemData['originallyPublished']
+            originalPublisherID = itemData['originalPublisherID']
+            lastPublished = itemData['lastPublished']
+            expireSeconds = itemData['expireSeconds']
+            age = now - originallyPublished
+            if originalPublisherID == self.layers[layerID]:
+                # This node is the original publisher; it has to republish
+                # the data before it expires (24 hours in basic Kademlia)
+                if age >= constants.dataExpireTimeout:
+                    twisted.internet.reactor.callFromThread(  # @UndefinedVariable
+                        self.iterativeStore,
+                        key=key,
+                        value=itemData['value'],
+                        expireSeconds=expireSeconds,
+                        layerID=layerID,
+                    )
+            else:
+                # This node needs to replicate the data at set intervals,
+                # until it expires, without changing the metadata associated with it
+                # First, check if the data has expired
+                if age >= constants.dataExpireTimeout:
+                    # This key/value pair has expired (and it has not been republished by the original publishing node
+                    # - remove it
+                    expiredKeys.append(key)
+                elif now - lastPublished >= constants.replicateInterval:
+                    # ...data has not yet expired, and we need to replicate it
+                    twisted.internet.reactor.callFromThread(  # @UndefinedVariable
+                        self.iterativeStore,
+                        key=key,
+                        value=self._dataStore[key],
+                        originalPublisherID=originalPublisherID,
+                        age=age,
+                        expireSeconds=expireSeconds,
+                        layerID=layerID,
+                    )
+        for key in expiredKeys:
+            del self._dataStores[layerID][key]
+
 
 
 if __name__ == '__main__':

@@ -270,9 +270,9 @@ class SupplierFinder(automat.Automat):
         """
         Action method.
         """
-        t = lookup.start()
-        t.result_defer.addCallback(self._nodes_lookup_finished)
-        t.result_defer.addErrback(lambda err: self.automat('users-not-found'))
+        tsk = lookup.random_supplier()
+        tsk.result_defer.addCallback(self._nodes_lookup_finished)
+        tsk.result_defer.addErrback(lambda err: self.automat('users-not-found'))
 
     def doCleanPrevUser(self, *args, **kwargs):
         """
@@ -341,7 +341,7 @@ class SupplierFinder(automat.Automat):
             return
         found_idurl = None
         for idurl in idurls:
-            if id_url.is_in(idurl, contactsdb.suppliers()):
+            if id_url.is_in(idurl, contactsdb.suppliers(), as_field=False):
                 if _Debug:
                     lg.out('    skip %r because already my supplier' % idurl)
                 continue

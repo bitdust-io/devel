@@ -62,6 +62,8 @@ class ProxyTransportService(LocalService):
         from transport.proxy import proxy_interface
         from transport import network_transport
         from transport import gateway
+        from services import driver
+        from main import events
         from main.config import conf
         if len(self._available_transports()) == 0:
             lg.warn('no transports available')
@@ -75,11 +77,18 @@ class ProxyTransportService(LocalService):
         conf().addConfigNotifier('services/proxy-transport/enabled', self._on_enabled_disabled)
         conf().addConfigNotifier('services/proxy-transport/sending-enabled', self._on_sending_enabled_disabled)
         conf().addConfigNotifier('services/proxy-transport/receiving-enabled', self._on_receiving_enabled_disabled)
+        if driver.is_on('service_entangled_dht'):
+            self._do_join_proxy_routers_dht_layer()
+        else:
+            lg.warn('service service_entangled_dht is OFF')
+        events.add_subscriber(self._on_dht_layer_connected, event_id='dht-layer-connected')
         return self.starting_deferred
 
     def stop(self):
         from twisted.internet.defer import succeed
+        from main import events
         from main.config import conf
+        events.remove_subscriber(self._on_dht_layer_connected, event_id='dht-layer-connected')
         conf().removeConfigNotifier('services/proxy-transport/enabled')
         conf().removeConfigNotifier('services/proxy-transport/sending-enabled')
         conf().removeConfigNotifier('services/proxy-transport/receiving-enabled')
@@ -161,6 +170,19 @@ class ProxyTransportService(LocalService):
             lg.warn('all of "my-original-identity" contacts is found in local identity: need to RESET!')
             self._reset_my_original_identity()
 
+    def _do_join_proxy_routers_dht_layer(self):
+        from logs import lg
+        from dht import dht_service
+        from dht import dht_records
+        from dht import known_nodes
+        lg.info('going to join proxy routers DHT layer: %d' % dht_records.LAYER_PROXY_ROUTERS)
+        known_seeds = known_nodes.nodes()
+        dht_service.connect(
+            seed_nodes=known_seeds,
+            layer_id=dht_records.LAYER_PROXY_ROUTERS,
+            attach=False,
+        )
+
     def _on_transport_state_changed(self, transport, oldstate, newstate):
         from p2p import p2p_connector
         if self.starting_deferred:
@@ -184,3 +206,7 @@ class ProxyTransportService(LocalService):
     def _on_sending_enabled_disabled(self, path, value, oldvalue, result):
         from p2p import network_connector
         network_connector.A('reconnect')
+
+    def _on_dht_layer_connected(self, evt):
+        if evt.data['layer_id'] == 0:
+            self._do_join_proxy_routers_dht_layer()

@@ -140,6 +140,28 @@ If you are installing BitDust on Windows platforms, you may require some binary 
 * miniupnpc: [miniupnp.tuxfamily.org](http://miniupnp.tuxfamily.org/)
 
 
+
+#### Docker Hub container image
+
+You can also run bitdust inside Docker. We prepared a container which have BitDust installed and easy to run. You will have to SSH into the running container after start it and manually configure bitdust as you wish and run it:
+
+        docker run -d -P --name bdnode bitdust/app1
+        docker port bdnode 22
+        0.0.0.0:32771  <-  learn which SSH port was opened on your host
+
+
+Now you can ssh to the container, password is `bitdust`:
+
+        ssh root@localhost -p 32771
+        password: bitdust
+
+
+Inside the container you will have BitDust installed and ready to use, so you can run it directly:
+
+        root@1ef6a46c3042:~# bitdust
+
+
+
 ## Feedback
 
 You can contact [BitDust contributors](https://github.com/bitdust-io) on GitHub if you have any questions or ideas.

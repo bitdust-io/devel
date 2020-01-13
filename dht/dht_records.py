@@ -50,6 +50,24 @@ from dht import dht_service
 
 #------------------------------------------------------------------------------
 
+LAYER_ID_SERVERS = 1
+LAYER_PROXY_ROUTERS = 2
+LAYER_SUPPLIERS = 3
+LAYER_REBUILDERS = 4
+LAYER_BROADCASTERS = 5
+LAYER_MERCHANTS = 6
+
+LAYERS_REGISTRY = {
+    LAYER_ID_SERVERS: 'ID_SERVERS',
+    LAYER_PROXY_ROUTERS: 'PROXY_ROUTERS',
+    LAYER_SUPPLIERS: 'SUPPLIERS',
+    LAYER_REBUILDERS: 'REBUILDERS',
+    LAYER_BROADCASTERS: 'BROADCASTERS',
+    LAYER_MERCHANTS: 'MERCHANTS',
+}
+
+#------------------------------------------------------------------------------
+
 _Rules = {
     'nickname': {
         'key': [{'op': 'exist', }, ],

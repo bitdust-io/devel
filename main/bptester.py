@@ -118,7 +118,7 @@ def SpaceTime():
     Check if he use more space than we gave him and if packets is too
     old.
     """
-    printlog('SpaceTime ' + str(time.strftime("%a, %d %b %Y %H:%M:%S +0000")))
+    printlog('SpaceTime %r' % time.strftime("%a, %d %b %Y %H:%M:%S +0000"))
     space, _ = accounting.read_customers_quotas()
     if space is None:
         printlog('SpaceTime ERROR customers quotas file can not be read or it is empty, skip')
@@ -198,7 +198,7 @@ def SpaceTime():
                 bpio._dir_remove(path)
                 printlog('SpaceTime %r dir removed (%s)' % (path, remove_list[path]))
             except:
-                printlog('SpaceTime ERROR removing ' + path)
+                printlog('SpaceTime ERROR removing %r' % path)
             continue
         try:
             if not os.access(path, os.W_OK):
@@ -209,7 +209,7 @@ def SpaceTime():
             os.remove(path)
             printlog('SpaceTime %r file removed (%s)' % (path, remove_list[path]))
         except:
-            printlog('SpaceTime ERROR removing ' + path)
+            printlog('SpaceTime ERROR removing %r' % path)
     del remove_list
 
     accounting.update_customers_usage(used_space)
@@ -253,9 +253,9 @@ def UpdateCustomers():
         if os.path.isdir(path):
             try:
                 bpio._dir_remove(path)
-                printlog('UpdateCustomers ' + path + ' folder removed (%s)' % (remove_list[path]))
+                printlog('UpdateCustomers %r folder removed (%s)' % (path, remove_list[path], ))
             except:
-                printlog('UpdateCustomers ERROR removing ' + path)
+                printlog('UpdateCustomers ERROR removing %r' % path)
             continue
         try:
             if not os.access(path, os.W_OK):
@@ -264,10 +264,10 @@ def UpdateCustomers():
             pass
         try:
             os.remove(path)
-            printlog('UpdateCustomers ' + path + ' file removed (%s)' % (remove_list[path]))
+            printlog('UpdateCustomers %r file removed (%s)' % (path, remove_list[path], ))
         except:
-            printlog('UpdateCustomers ERROR removing ' + path)
-    printlog('UpdateCustomers ' + str(time.strftime("%a, %d %b %Y %H:%M:%S +0000")))
+            printlog('UpdateCustomers ERROR removing %r' % path)
+    printlog('UpdateCustomers %r' % time.strftime("%a, %d %b %Y %H:%M:%S +0000"))
     
     return True
 
@@ -278,7 +278,7 @@ def Validate():
     """
     Check all packets to be valid.
     """
-    printlog('Validate ' + str(time.strftime("%a, %d %b %Y %H:%M:%S +0000")))
+    printlog('Validate %r' % time.strftime("%a, %d %b %Y %H:%M:%S +0000"))
     customers_dir = settings.getCustomersFilesDir()
     if not os.path.exists(customers_dir):
         return False
@@ -299,17 +299,17 @@ def Validate():
                 if not packetsrc:
                     try:
                         os.remove(path)  # if is is no good it is of no use to anyone
-                        printlog('Validate ' + path + ' removed (empty file)')
+                        printlog('Validate %r removed (empty file)' % path)
                     except:
-                        printlog('Validate ERROR removing ' + path)
+                        printlog('Validate ERROR removing %r' % path)
                         return False
                 p = signed.Unserialize(packetsrc)
                 if p is None:
                     try:
                         os.remove(path)  # if is is no good it is of no use to anyone
-                        printlog('Validate ' + path + ' removed (unserialize error)')
+                        printlog('Validate %r removed (unserialize error)' % path)
                     except:
-                        printlog('Validate ERROR removing ' + path)
+                        printlog('Validate ERROR removing %r')
                         return False
                 result = p.Valid()
                 packetsrc = ''
@@ -317,9 +317,9 @@ def Validate():
                 if not result:
                     try:
                         os.remove(path)  # if is is no good it is of no use to anyone
-                        printlog('Validate ' + path + ' removed (invalid packet)')
+                        printlog('Validate %r removed (invalid packet)' % path)
                     except:
-                        printlog('Validate ERROR removing ' + path)
+                        printlog('Validate ERROR removing %r' % path)
                         return False
                 time.sleep(0.1)
                 return False
@@ -350,7 +350,7 @@ def main():
     }
     cmd = commands.get(sys.argv[1], None)
     if not cmd:
-        printlog('ERROR wrong command: ' + str(sys.argv))
+        printlog('ERROR wrong command: %r' % sys.argv)
         return
     cmd()
 

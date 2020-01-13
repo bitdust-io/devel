@@ -55,17 +55,23 @@ class EmployerService(LocalService):
         from main.config import conf
         from main import events
         from raid import eccmap
+        from services import driver
         from customer import fire_hire
         self.starting_deferred = Deferred()
         self.starting_deferred.addErrback(lambda err: lg.warn('service %r was not started: %r' % (
             self.service_name, err.getErrorMessage() if err else 'unknown reason')))
         self.all_suppliers_hired_event_sent = False 
+        if driver.is_on('service_entangled_dht'):
+            self._do_join_suppliers_dht_layer()
+        else:
+            lg.warn('service service_entangled_dht is OFF')
         eccmap.Update()
         fire_hire.A('init')
         fire_hire.A().addStateChangedCallback(self._on_fire_hire_ready, None, 'READY')
         conf().addConfigNotifier('services/customer/suppliers-number', self._on_suppliers_number_modified)
         conf().addConfigNotifier('services/customer/needed-space', self._on_needed_space_modified)
         events.add_subscriber(self._on_supplier_modified, 'supplier-modified')
+        events.add_subscriber(self._on_dht_layer_connected, event_id='dht-layer-connected')
         if fire_hire.IsAllHired():
             self.starting_deferred.callback(True)
             self.starting_deferred = None
@@ -79,6 +85,7 @@ class EmployerService(LocalService):
         from main import events
         from customer import fire_hire
         fire_hire.A().removeStateChangedCallback(self._on_fire_hire_ready)
+        events.remove_subscriber(self._on_dht_layer_connected, event_id='dht-layer-connected')
         events.remove_subscriber(self._on_supplier_modified, 'supplier-modified')
         conf().removeConfigNotifier('services/customer/suppliers-number')
         conf().removeConfigNotifier('services/customer/needed-space')
@@ -140,6 +147,19 @@ class EmployerService(LocalService):
                 'supplier_idurl': supplier_idurl,
                 'supplier_position': supplier_position,
             },
+        )
+
+    def _do_join_suppliers_dht_layer(self):
+        from logs import lg
+        from dht import dht_service
+        from dht import dht_records
+        from dht import known_nodes
+        lg.info('going to join suppliers DHT layer: %d' % dht_records.LAYER_SUPPLIERS)
+        known_seeds = known_nodes.nodes()
+        dht_service.connect(
+            seed_nodes=known_seeds,
+            layer_id=dht_records.LAYER_SUPPLIERS,
+            attach=False,
         )
 
     def _on_fire_hire_ready(self, oldstate, newstate, evt, *args, **kwargs):
@@ -208,3 +228,7 @@ class EmployerService(LocalService):
     def _on_my_dht_relations_failed(self, err):
         from logs import lg
         lg.err(err)
+
+    def _on_dht_layer_connected(self, evt):
+        if evt.data['layer_id'] == 0:
+            self._do_join_suppliers_dht_layer()

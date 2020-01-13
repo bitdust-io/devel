@@ -45,10 +45,9 @@ class NodesLookupService(LocalService):
 
     def dependent_on(self):
         # TODO:
-        # in future we can use other methods to discover nodes
-        # it can be hard-coded list of nodes
-        # blockchains, or some kind of broadcasting solution, or other ways
-        # then we redefine that logic in lookup_method
+        # in the future we can use other methods to discover nodes
+        # it can be hard-coded list of nodes, a blockchain, some broadcasting solution, etc...
+        # then we redefine that logic in lookup_method and observe_method
         return [
             'service_entangled_dht',
             'service_p2p_hookups',
@@ -56,10 +55,12 @@ class NodesLookupService(LocalService):
 
     def start(self):
         from p2p import lookup
-        lookup.init(lookup_method=lookup.lookup_in_dht,
-                    observe_method=lookup.observe_dht_node,
-                    process_method=lookup.process_idurl)
-        lookup.start(count=2, consume=False)
+        lookup.init(
+            lookup_method=lookup.lookup_in_dht,
+            observe_method=lookup.observe_dht_node,
+            process_method=lookup.process_idurl,
+        )
+        # lookup.start(count=1, consume=False)
         return True
 
     def stop(self):

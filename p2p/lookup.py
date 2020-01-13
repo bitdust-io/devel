@@ -36,7 +36,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -66,7 +66,7 @@ from userid import id_url
 #------------------------------------------------------------------------------
 
 _KnownIDURLsDict = {}
-_DiscoveredIDURLsList = []
+_DiscoveredIDURLsList = {}
 _LookupTasks = []
 _CurrentLookupTask = None
 # _NextLookupTask = None
@@ -110,39 +110,52 @@ def known_idurls():
     return _KnownIDURLsDict
 
 
-def discovered_idurls():
+def discovered_idurls(layer_id=0):
     global _DiscoveredIDURLsList
-    return _DiscoveredIDURLsList
+    if layer_id not in _DiscoveredIDURLsList:
+        _DiscoveredIDURLsList[layer_id] = []
+    return _DiscoveredIDURLsList[layer_id]
 
 #------------------------------------------------------------------------------
 
 
-def consume_discovered_idurls(count=1):
-    if not discovered_idurls():
+def consume_discovered_idurls(count=1, layer_id=0):
+    if not discovered_idurls(layer_id=layer_id):
         if _Debug:
             lg.out(_DebugLevel, 'lookup.consume_discovered_idurls returns empty list')
         return []
     results = []
-    while len(results) < count and discovered_idurls():
-        results.append(id_url.to_bin(discovered_idurls().pop(0)))
+    while len(results) < count and discovered_idurls(layer_id=layer_id):
+        results.append(id_url.to_bin(discovered_idurls(layer_id=layer_id).pop(0)))
     if _Debug:
         lg.out(_DebugLevel, 'lookup.consume_discovered_idurls : %s' % results)
     return results
 
 
-def extract_discovered_idurls(count=1):
-    if not discovered_idurls():
+def extract_discovered_idurls(count=1, layer_id=0):
+    if not discovered_idurls(layer_id=layer_id):
         if _Debug:
             lg.out(_DebugLevel, 'lookup.extract_discovered_idurls returns empty list')
         return []
-    results = id_url.to_bin_list(discovered_idurls()[:count])
+    results = id_url.to_bin_list(discovered_idurls(layer_id=layer_id)[:count])
     if _Debug:
         lg.out(_DebugLevel, 'lookup.extract_discovered_idurls : %s' % results)
     return results
 
 #------------------------------------------------------------------------------
 
-def start(count=1, consume=True, lookup_method=None, observe_method=None, process_method=None,):
+def random_proxy_router():
+    from dht import dht_records
+    return start(layer_id=dht_records.LAYER_PROXY_ROUTERS)
+
+
+def random_supplier():
+    from dht import dht_records
+    return start(layer_id=dht_records.LAYER_SUPPLIERS)
+
+#------------------------------------------------------------------------------
+
+def start(count=1, consume=True, lookup_method=None, observe_method=None, process_method=None, layer_id=0):
     """
     NOTE: no parallel threads, DHT lookup can be started only one at time.
     """
@@ -153,22 +166,22 @@ def start(count=1, consume=True, lookup_method=None, observe_method=None, proces
         lookup_method=lookup_method,
         observe_method=observe_method,
         process_method=process_method,
+        layer_id=layer_id,
     )
-    if len(discovered_idurls()) > count:
+    if len(discovered_idurls(layer_id=layer_id)) > count:
         if _Debug:
             lg.out(_DebugLevel - 4, 'lookup.start  knows %d discovered nodes, SKIP and return %d nodes' % (
-                len(discovered_idurls()), count))
+                len(discovered_idurls(layer_id=layer_id)), count))
         if consume:
-            idurls = consume_discovered_idurls(count)
+            idurls = consume_discovered_idurls(count, layer_id=layer_id)
         else:
-            idurls = extract_discovered_idurls(count)
+            idurls = extract_discovered_idurls(count, layer_id=layer_id)
         reactor.callLater(0, t.result_defer.callback, idurls)  # @UndefinedVariable
         return t
     _LookupTasks.append(t)
     reactor.callLater(0, work)  # @UndefinedVariable
-    # reset_next_lookup()
     if _Debug:
-        lg.out(_DebugLevel - 4, 'lookup.start  new DiscoveryTask created for %d nodes' % count)
+        lg.out(_DebugLevel - 4, 'lookup.start  new DiscoveryTask created for %d nodes at layer %d' % (count, layer_id, ))
     return t
 
 #------------------------------------------------------------------------------
@@ -218,14 +231,14 @@ def work():
 
 #------------------------------------------------------------------------------
 
-def lookup_in_dht():
+def lookup_in_dht(layer_id=0):
     """
     Pick random node from Distributed Hash Table.
     Generates
     """
     if _Debug:
-        lg.out(_DebugLevel, 'lookup.lookup_in_dht')
-    return dht_service.find_node(dht_service.random_key())
+        lg.out(_DebugLevel, 'lookup.lookup_in_dht layer_id=%d' % (layer_id, ))
+    return dht_service.find_node(dht_service.random_key(), layer_id=layer_id)
 
 
 def on_idurl_response(response, result):
@@ -245,11 +258,12 @@ def on_idurl_response(response, result):
     return response
 
 
-def observe_dht_node(node):
+def observe_dht_node(node, layer_id=0):
     if _Debug:
-        lg.out(_DebugLevel, 'lookup.observe_dht_node %s' % node)
+        lg.out(_DebugLevel, 'lookup.observe_dht_node   %s  layer_id=%d' % (
+            node, layer_id, ))
     result = Deferred()
-    d = node.request('idurl')
+    d = node.request('idurl', layerID=layer_id)
     d.addCallback(on_idurl_response, result)
     d.addErrback(result.errback)
     return result
@@ -270,7 +284,6 @@ def process_idurl(idurl, node):
         result.errback(Exception(idurl))
         return result
     d = identitycache.immediatelyCaching(idurl)
-    # d.addCallback(lambda src: result.callback(idurl))
     d.addCallback(on_identity_cached, idurl, result)
     d.addErrback(result.errback)
     return result
@@ -279,12 +292,15 @@ def process_idurl(idurl, node):
 
 class DiscoveryTask(object):
 
-    def __init__(self,
-                 count,
-                 consume=True,
-                 lookup_method=None,
-                 observe_method=None,
-                 process_method=None,):
+    def __init__(
+        self,
+        count,
+        consume=True,
+        lookup_method=None,
+        observe_method=None,
+        process_method=None,
+        layer_id=0,
+    ):
         global _LookupMethod
         global _ObserveMethod
         global _ProcessMethod
@@ -292,6 +308,7 @@ class DiscoveryTask(object):
         self.observe_method = observe_method or _ObserveMethod
         self.process_method = process_method or _ProcessMethod
         self.started = time.time()
+        self.layer_id = layer_id
         self.count = count
         self.consume = consume
         self.succeed = 0
@@ -314,7 +331,7 @@ class DiscoveryTask(object):
             lg.warn('lookup_nodes() method already called')
             return self.lookup_task
         if _Debug:
-            lg.out(_DebugLevel, 'lookup.DiscoveryTask.start')
+            lg.out(_DebugLevel, 'lookup.DiscoveryTask.start  layer_id=%d' % self.layer_id)
         return self._lookup_nodes()
 
     def stop(self):
@@ -336,14 +353,14 @@ class DiscoveryTask(object):
             lg.out(_DebugLevel, 'lookup.close finished in %f seconds' % round(time.time() - self.started, 3))
 
     def _lookup_nodes(self):
-        if _Debug:
-            lg.out(_DebugLevel, 'lookup._lookup_nodes')
         if self.lookup_task and not self.lookup_task.called:
             if _Debug:
-                lg.out(_DebugLevel, '    SKIP, already started')
+                lg.out(_DebugLevel, 'lookup._lookup_nodes    SKIP, already started')
             return self.lookup_task
+        if _Debug:
+            lg.out(_DebugLevel, 'lookup._lookup_nodes layer_id=%d' % self.layer_id)
         self.lookup_now = True
-        self.lookup_task = self.lookup_method()
+        self.lookup_task = self.lookup_method(layer_id=self.layer_id)
         self.lookup_task.addCallback(self._on_nodes_discovered)
         self.lookup_task.addErrback(self._on_lookup_failed)
         return self.lookup_task
@@ -354,10 +371,10 @@ class DiscoveryTask(object):
                 lg.warn('discovery process already stopped')
             return
         if _Debug:
-            lg.out(_DebugLevel, 'lookup._observe_nodes on %d items' % len(nodes))
+            lg.out(_DebugLevel, 'lookup._observe_nodes on %d items layer_id=%d' % (len(nodes), self.layer_id, ))
         observe_list = []
         for node in nodes:
-            d = self.observe_method(node)
+            d = self.observe_method(node, layer_id=self.layer_id)
             d.addCallback(self._on_node_observed, node)
             d.addErrback(self._on_node_observe_failed, node)
             observe_list.append(d)
@@ -369,11 +386,11 @@ class DiscoveryTask(object):
             lg.out(_DebugLevel, 'lookup._report_result %s, result_defer=%s' % (str(results), self.result_defer))
         if results is None:
             if self.consume:
-                results = consume_discovered_idurls(self.count)
+                results = consume_discovered_idurls(self.count, layer_id=self.layer_id)
                 if _Debug:
                     lg.out(_DebugLevel, '    %d results consumed, %d were requested' % (len(results), self.count))
             else:
-                results = extract_discovered_idurls(self.count)
+                results = extract_discovered_idurls(self.count, layer_id=self.layer_id)
                 if _Debug:
                     lg.out(_DebugLevel, '    %d results extracted, %d were requested' % (len(results), self.count))
         if self.result_defer:
@@ -436,7 +453,7 @@ class DiscoveryTask(object):
 
     def _on_node_processed(self, node, idurl):
         if _Debug:
-            if len(discovered_idurls()) < self.count:
+            if len(discovered_idurls(layer_id=self.layer_id)) < self.count:
                 lg.out(_DebugLevel, 'lookup._on_node_processed %s, but need more nodes' % idurl)
             else:
                 lg.out(_DebugLevel, 'lookup._on_node_processed %s, have enough nodes now' % idurl)
@@ -448,19 +465,7 @@ class DiscoveryTask(object):
             return
         if _Debug:
             lg.out(_DebugLevel, 'lookup._on_all_nodes_observed results: %d, discovered nodes: %d' % (
-                len(observe_results), len(discovered_idurls())))
-#         results = []
-#         for item in observe_results:
-#             if item[0]:
-#                 results.append(item[1])
-#         if len(discovered_idurls()) == 0:
-#             self._report_result([])
-#             self._close()
-#             return
-        # if len(discovered_idurls()) < self.count:
-        #     # self.lookup_task = self.lookup_nodes()
-        #     self.start()
-        #     return
+                len(observe_results), len(discovered_idurls(layer_id=self.layer_id))))
         self._report_result()
         self._close()
 
@@ -470,7 +475,7 @@ class DiscoveryTask(object):
         if idurl is None:
             return None
         idurl = id_url.to_bin(idurl)
-        discovered_idurls().append(idurl)
+        discovered_idurls(layer_id=self.layer_id).append(idurl)
         known_idurls()[idurl] = time.time()
         self._on_node_succeed(node, idurl)
         reactor.callLater(0, self._on_node_processed, node, idurl)  # @UndefinedVariable
@@ -486,9 +491,6 @@ class DiscoveryTask(object):
             lg.warn('on_nodes_discovered finished, but discovery process was already stopped')
             self._close()
             return None
-        # if not nodes or len(discovered_idurls()) + len(nodes) < self.count:
-            # self.lookup_task = self.lookup_nodes()
-            # self.start()
         if not nodes:
             self._report_result()
             self._close()

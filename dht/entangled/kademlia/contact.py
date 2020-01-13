@@ -17,6 +17,8 @@
 
 import six
 
+_Debug = False
+
 
 class Contact(object):
     """
@@ -72,5 +74,24 @@ class Contact(object):
         host Node's C{_protocol} object).
         """
         def _sendRPC(*args, **kwargs):
+            return self._networkProtocol.sendRPC(self, name, args, **kwargs)
+        return _sendRPC
+
+
+class LayeredContact(Contact):
+
+    def __init__(self, id, ipAddress, udpPort, networkProtocol, firstComm=0, layerID=0):
+        self.layerID = layerID
+        super(LayeredContact, self).__init__(id, ipAddress, udpPort, networkProtocol, firstComm)
+
+    def __str__(self):
+        return '<Contact(%d) %s at %r:%d>' % (
+             self.layerID, self.id[:6], self.address, self.port)
+
+    def __getattr__(self, name):
+        def _sendRPC(*args, **kwargs):
+            kwargs['layerID'] = self.layerID
+            if _Debug:
+                print('[DHT CONTACT]: %r sending RPC %r args=%r kwargs=%r' % (self, name, args, kwargs))
             return self._networkProtocol.sendRPC(self, name, args, **kwargs)
         return _sendRPC

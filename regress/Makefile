@@ -1,7 +1,7 @@
 #
 # Makefile
 #
-# Copyright (C) 2008-2018 Stanislav Evseev, Veselin Penev  https://bitdust.io
+# Copyright (C) 2018 Stanislav Evseev, Veselin Penev  https://bitdust.io
 #
 # This file (Makefile) is part of BitDust Software.
 #
@@ -116,3 +116,6 @@ report: coverage_combine coverage_report
 test_log: prepare run_all_log
 
 test: prepare run_all report
+
+shell:
+	docker-compose --file tests/$(test)/docker-compose.yml exec $(node) bash

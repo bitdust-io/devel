@@ -1,7 +1,7 @@
 #
 # Makefile
 #
-# Copyright (C) 2008-2018 Veselin Penev  https://bitdust.io
+# Copyright (C) 2008 Veselin Penev  https://bitdust.io
 #
 # This file (Makefile) is part of BitDust Software.
 #
@@ -126,6 +126,9 @@ regress_run:
 regress_run_log:
 	PYTHON_VERSION=$(REGRESSION_PY_VER) make -C regress/ run_all_log
 
+regress_run_log_one/%:
+	PYTHON_VERSION=$(REGRESSION_PY_VER) make -C regress/ TEST_NAME=$* _one_up_test_coverage_down
+
 regress_report:
 	PYTHON_VERSION=$(REGRESSION_PY_VER) make -C regress/ report
 
@@ -135,16 +138,22 @@ dht_network_up:
 	docker-compose -f tests/dht/docker-compose.yml up --force-recreate --build
 
 dht_network_run_producer:
-	docker-compose -f tests/dht/docker-compose.yml exec dht_producer bash -c "/root/.bitdust/venv/bin/python /bitdust/tests/dht/test_producer.py 1 5"
+	docker-compose -f tests/dht/docker-compose.yml exec dht_producer bash -c "/root/.bitdust/venv/bin/python /app/bitdust/tests/dht/test_producer.py 1 5"
 
 dht_network_run_producer/%:
-	docker-compose -f tests/dht/docker-compose.yml exec dht_producer bash -c "/root/.bitdust/venv/bin/python /bitdust/tests/dht/test_producer.py 1 $*"
+	docker-compose -f tests/dht/docker-compose.yml exec dht_producer bash -c "/root/.bitdust/venv/bin/python /app/bitdust/tests/dht/test_producer.py 1 $*"
 
 dht_network_run_consumer:
-	docker-compose -f tests/dht/docker-compose.yml exec dht_consumer bash -c "/root/.bitdust/venv/bin/python /bitdust/tests/dht/test_consumer.py 1 5"
+	docker-compose -f tests/dht/docker-compose.yml exec dht_consumer bash -c "/root/.bitdust/venv/bin/python /app/bitdust/tests/dht/test_consumer.py 1 5"
 
 dht_network_run_consumer/%:
-	docker-compose -f tests/dht/docker-compose.yml exec dht_consumer bash -c "/root/.bitdust/venv/bin/python /bitdust/tests/dht/test_consumer.py 1 $*"
+	docker-compose -f tests/dht/docker-compose.yml exec dht_consumer bash -c "/root/.bitdust/venv/bin/python /app/bitdust/tests/dht/test_consumer.py 1 $*"
+
+dht_network_ssh_base:
+	docker-compose -f tests/dht/docker-compose.yml exec dht_base bash
+
+dht_network_ssh_seed_1:
+	docker-compose -f tests/dht/docker-compose.yml exec dht_seed_1 bash
 
 dht_network_ssh_producer:
 	docker-compose -f tests/dht/docker-compose.yml exec dht_producer bash

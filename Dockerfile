@@ -1,7 +1,7 @@
 #
 # Dockerfile
 #
-# Copyright (C) 2018 Stanislav Evseev, Veselin Penev  https://bitdust.io
+# Copyright (C) 2008 Veselin Penev  https://bitdust.io
 #
 # This file (Dockerfile) is part of BitDust Software.
 #
@@ -20,20 +20,23 @@
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
 
-ARG PYTHON_VERSION=2.7.15
 
-FROM python:${PYTHON_VERSION}
+FROM ubuntu:16.04
 
-RUN apt-get update && apt-get install -y \
-    curl openssh-server mosh nano \
- && rm -rf /var/lib/apt/lists/* \
- && pip install virtualenv
+RUN apt-get update && apt-get install -y curl openssh-server mosh nano git python-dev python-pip
+RUN rm -rf /var/lib/apt/lists/*
+RUN pip install virtualenv
 
-RUN mkdir /var/run/sshd \
-    && echo 'AuthorizedKeysFile %h/.ssh/authorized_keys' >> /etc/ssh/sshd_config \
-    && sed -i 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' /etc/pam.d/sshd \
-    && sed -ri 's/^PermitRootLogin\s+.*/PermitRootLogin yes/' /etc/ssh/sshd_config \
-    && sed -ri 's/UsePAM yes/#UsePAM yes/g' /etc/ssh/sshd_config
+RUN mkdir /var/run/sshd
+RUN echo 'root:bitdust' | chpasswd
+RUN sed -i 's/PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
+
+# SSH login fix. Otherwise user is kicked off after login
+RUN sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd
+
+ENV NOTVISIBLE "in users profile"
+RUN echo "export VISIBLE=now" >> /etc/profile
+
 
 ENV COVERAGE_PROCESS_START=/app/bitdust/.coverage_config
 
@@ -46,7 +49,9 @@ COPY . /app/bitdust
 COPY ./regress/.coverage_config /app/bitdust/
 COPY ./regress/bitdust.py /app/bitdust/
 
-RUN find /app/bitdust -type f -name "*.py" -exec sed -i -e 's/_Debug = True/_Debug = False/g' {} +
+
+# Uncomment to hide all logs in the output
+# RUN find /app/bitdust -type f -name "*.py" -exec sed -i -e 's/_Debug = True/_Debug = False/g' {} +
 
 RUN python /app/bitdust/bitdust.py install
 
@@ -56,8 +61,7 @@ RUN chmod +x /bin/bitdust
 
 RUN /root/.bitdust/venv/bin/pip install "coverage<5" coverage-enable-subprocess
 
-ADD ./regress/ssh /app/ssh
 
 EXPOSE 22
+CMD ["/usr/sbin/sshd", "-D"]
 
-CMD /app/ssh/sshd.sh
