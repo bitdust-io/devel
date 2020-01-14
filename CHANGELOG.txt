@@ -2,6 +2,20 @@ Change Log
 ==========
 
 
+2020-01-13 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* introduce new feature: multi layered DHT network inside BitDust !
+* remove option "services/entangled-dht/node-id"
+* added new option "services/entangled-dht/attached-layers"
+* make possible to only "join" to DHT layer instead of "attach" directly
+* use DHT layer_id=2 for proxy routers lookups
+* use DHT layer_id=3 for suppliers lookups
+* make possible to activate and suspend DHT layers
+* docker files updated for DHT producer/consumer performance tests
+* added Dockerfile to be able to publish on docker hub
+
+
+
 2020-01-06 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * new file: main/network_config.py (#462)
