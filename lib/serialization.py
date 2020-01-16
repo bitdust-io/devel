@@ -41,7 +41,8 @@ def DictToBytes(dct, encoding='latin1', errors='strict', keys_to_text=False, val
     Respective feature `unpack_types` of `BytesToDict()` method can be used to "extract" exactly same dict from bytes. 
     Can be used to serialize dictionaries of mixed types - with binary and text values.   
     """
-    return strng.to_bin(
+
+    result = strng.to_bin(
         jsn.dumps(
             jsn.pack_dict(dct, encoding=encoding, errors=errors) if pack_types else dct,
             separators=(',', ':'),
@@ -55,6 +56,7 @@ def DictToBytes(dct, encoding='latin1', errors='strict', keys_to_text=False, val
         encoding=encoding,
         errors=errors,
     )
+    return result
 
 
 def BytesToDict(inp, encoding='latin1', errors='strict', keys_to_text=False, values_to_text=False, unpack_types=False):

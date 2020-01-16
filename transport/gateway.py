@@ -70,7 +70,7 @@ from io import open
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 _PacketLogFileEnabled = False
@@ -993,20 +993,47 @@ def on_unregister_file_receiving(transfer_id, status, bytes_received, error_mess
     """
     Called from transport plug-in after finish receiving a single file.
     """
-    pkt_in = packet_in.get(transfer_id)
-    if not pkt_in:
-        lg.exc(exc_value=Exception('incoming packet with transfer_id=%r not exist' % transfer_id))
-        return False
-    if status == 'finished':
-        if _Debug:
-            lg.out(_DebugLevel, '<<< IN <<< (%d) [%s://%s] %s with %d bytes' % (
-                transfer_id, pkt_in.proto, pkt_in.host, status.upper(), bytes_received))
+
+    if _Debug:
+
+        def _unregister_packet_in(pkt_in):
+            pkt_in.automat('unregister-item', (status, bytes_received, error_message))
+            control.request_update([('stream', transfer_id)])
+
+        def _get_packet_in(trid):
+            pkt_in = packet_in.get(trid)
+            if not pkt_in:
+                lg.exc(exc_value=Exception('incoming packet with transfer_id=%r not exist' % trid))
+                return False
+            if status == 'finished':
+                if _Debug:
+                    lg.out(_DebugLevel, '<<< IN <<< (%d) [%s://%s] %s with %d bytes' % (
+                        trid, pkt_in.proto, pkt_in.host, status.upper(), bytes_received))
+            else:
+                if _Debug:
+                    lg.out(_DebugLevel, '<<< IN <<< (%d) [%s://%s] %s : %s' % (
+                        trid, pkt_in.proto, pkt_in.host, status.upper(), error_message))
+            reactor.callLater(0, _unregister_packet_in, pkt_in)  # @UndefinedVariable
+            return True
+
+        reactor.callLater(0, _get_packet_in, transfer_id)  # @UndefinedVariable
+
     else:
-        if _Debug:
-            lg.out(_DebugLevel, '<<< IN <<< (%d) [%s://%s] %s : %s' % (
-                transfer_id, pkt_in.proto, pkt_in.host, status.upper(), error_message))
-    pkt_in.automat('unregister-item', (status, bytes_received, error_message))
-    control.request_update([('stream', transfer_id)])
+        pkt_in = packet_in.get(transfer_id)
+        if not pkt_in:
+            lg.exc(exc_value=Exception('incoming packet with transfer_id=%r not exist' % transfer_id))
+            return False
+        if status == 'finished':
+            if _Debug:
+                lg.out(_DebugLevel, '<<< IN <<< (%d) [%s://%s] %s with %d bytes' % (
+                    transfer_id, pkt_in.proto, pkt_in.host, status.upper(), bytes_received))
+        else:
+            if _Debug:
+                lg.out(_DebugLevel, '<<< IN <<< (%d) [%s://%s] %s : %s' % (
+                    transfer_id, pkt_in.proto, pkt_in.host, status.upper(), error_message))
+        pkt_in.automat('unregister-item', (status, bytes_received, error_message))
+        control.request_update([('stream', transfer_id)])
+
     return True
 
 #------------------------------------------------------------------------------
@@ -1085,11 +1112,12 @@ class TransportGateLocalProxy():
             return fail(Exception('unsupported method: %s' % method))
         _d = Deferred()
 
-        def _call():
+        def _call(meth):
             r = maybeDeferred(m, *args)
             r.addCallback(_d.callback)
             r.addErrback(_d.errback)
-        reactor.callLater(0, _call)  # @UndefinedVariable
+
+        reactor.callLater(0, _call, method)  # @UndefinedVariable
         return _d
 
 #------------------------------------------------------------------------------

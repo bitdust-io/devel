@@ -365,10 +365,12 @@ class Automat(object):
         if _StateChangedCallback is not None:
             _StateChangedCallback(index, automatid, name, '')
         debug_level = max(_DebugLevel or 0, self.debug_level or 0)
-        erase_index(automatid)
+        if erase_index:
+            erase_index(automatid)
         if _Debug and self.log_transitions:
-            self.log(debug_level, 'DESTROYED AUTOMAT with index %d, total running %d' % (
-                index, len(objects())))
+            if self.log:
+                self.log(debug_level, 'DESTROYED AUTOMAT with index %d, total running %d' % (
+                    index, len(objects())))
 
     def __repr__(self):
         """
@@ -485,7 +487,7 @@ class Automat(object):
         Use ``fast = True`` flag to skip call to reactor.callLater(0, self.event, ...).
         """
         global _StateChangedCallback
-        if _LogEvents and getattr(self, 'log_events', False) and _Debug:
+        if _LogEvents and _Debug and getattr(self, 'log_events', False):
             if self.log_events or not event_string.startswith('timer-'):
 #                 self.log(max(self.debug_level, _DebugLevel), '%s fired with event "%s", refs=%d' % (
 #                     repr(self), event_string, sys.getrefcount(self)))

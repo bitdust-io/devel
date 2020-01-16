@@ -34,6 +34,14 @@ This is the entry point of the program, see method ``main()`` bellow.
 
 from __future__ import absolute_import
 from __future__ import print_function
+
+#------------------------------------------------------------------------------
+
+_Debug = False
+_DebugLevel = 6
+
+#------------------------------------------------------------------------------
+
 import os
 import sys
 import time
@@ -50,7 +58,7 @@ def show():
     """
     Just calls ``p2p.web.control.show()`` to open the GUI.
     """
-    from main import control
+    # from main import control
     # TODO: raise up electron window?
     return 0
 
@@ -67,10 +75,12 @@ def init(UI='', options=None, args=None, overDict=None, executablePath=None):
     global AppDataDir
 
     from logs import lg
-    lg.out(4, 'bpmain.init UI="%s"' % UI)
+    if _Debug:
+        lg.out(_DebugLevel, 'bpmain.init UI="%s"' % UI)
 
     from system import bpio
-    lg.out(4, 'bpmain.init ostype=%r' % bpio.ostype())
+    if _Debug:
+        lg.out(_DebugLevel, 'bpmain.init ostype=%r' % bpio.ostype())
 
     #---settings---
     from main import settings
@@ -88,23 +98,28 @@ def init(UI='', options=None, args=None, overDict=None, executablePath=None):
         try:
             from system.tray_icon import USE_TRAY_ICON
             if bpio.Mac() or not bpio.isGUIpossible():
-                lg.out(4, '    GUI is not possible')
+                if _Debug:
+                    lg.out(_DebugLevel, '    GUI is not possible')
                 USE_TRAY_ICON = False
             if USE_TRAY_ICON:
                 from twisted.internet import wxreactor
                 wxreactor.install()
-                lg.out(4, '    wxreactor installed')
+                if _Debug:
+                    lg.out(_DebugLevel, '    wxreactor installed')
         except:
             USE_TRAY_ICON = False
             lg.exc()
     else:
-        lg.out(4, '    local identity or key file is not ready')
+        if _Debug:
+            lg.out(_DebugLevel, '    local identity or key file is not ready')
         USE_TRAY_ICON = False
-    lg.out(4, '    USE_TRAY_ICON=' + str(USE_TRAY_ICON))
+    if _Debug:
+        lg.out(_DebugLevel, '    USE_TRAY_ICON=' + str(USE_TRAY_ICON))
     if USE_TRAY_ICON:
         from system import tray_icon
         icons_path = bpio.portablePath(os.path.join(bpio.getExecutableDir(), 'icons'))
-        lg.out(4, 'bpmain.init call tray_icon.init(%s)' % icons_path)
+        if _Debug:
+            lg.out(_DebugLevel, 'bpmain.init call tray_icon.init(%s)' % icons_path)
         tray_icon.init(icons_path)
 
         def _tray_control_func(cmd):
@@ -118,12 +133,14 @@ def init(UI='', options=None, args=None, overDict=None, executablePath=None):
         try:
             from win32event import CreateMutex  # @UnresolvedImport
             mutex = CreateMutex(None, False, "BitDust")
-            lg.out(4, 'bpmain.init created a Mutex: %s' % str(mutex))
+            if _Debug:
+                lg.out(_DebugLevel, 'bpmain.init created a Mutex: %s' % str(mutex))
         except:
             lg.exc()
 
     #---twisted reactor---
-    lg.out(4, 'bpmain.init want to import twisted.internet.reactor')
+    if _Debug:
+        lg.out(_DebugLevel, 'bpmain.init want to import twisted.internet.reactor')
     try:
         from twisted.internet import reactor  # @UnresolvedImport
     except:
@@ -148,7 +165,8 @@ def init(UI='', options=None, args=None, overDict=None, executablePath=None):
             memdebug_port = int(config.conf().getData('logs/memdebug-port'))
             memdebug.start(memdebug_port)
             reactor.addSystemEventTrigger('before', 'shutdown', memdebug.stop)  # @UndefinedVariable
-            lg.out(2, 'bpmain.init memdebug web server started on port %d' % memdebug_port)
+            if _Debug:
+                lg.out(_DebugLevel, 'bpmain.init memdebug web server started on port %d' % memdebug_port)
         except:
             lg.exc()
 
@@ -157,25 +175,26 @@ def init(UI='', options=None, args=None, overDict=None, executablePath=None):
         pid = os.getpid()
         pid_file_path = os.path.join(settings.MetaDataDir(), 'processid')
         bpio.WriteTextFile(pid_file_path, str(pid))
-        lg.out(2, 'bpmain.init wrote process id [%s] in the file %s' % (str(pid), pid_file_path))
+        if _Debug:
+            lg.out(_DebugLevel, 'bpmain.init wrote process id [%s] in the file %s' % (str(pid), pid_file_path))
     except:
         lg.exc()
 
 #    #---reactor.callLater patch---
-#    if lg.is_debug(12):
-#        patchReactorCallLater(reactor)
-#        monitorDelayedCalls(reactor)
+    if _Debug:
+        patchReactorCallLater(reactor)
+        monitorDelayedCalls(reactor)
 
-    lg.out(2, "    python executable is: %s" % sys.executable)
-    lg.out(2, "    python version is:\n%s" % sys.version)
-    lg.out(2, "    python sys.path is:\n                %s" % ('\n                '.join(sys.path)))
+    if _Debug:
+        lg.out(_DebugLevel, "    python executable is: %s" % sys.executable)
+        lg.out(_DebugLevel, "    python version is:\n%s" % sys.version)
+        lg.out(_DebugLevel, "    python sys.path is:\n                %s" % ('\n                '.join(sys.path)))
+        lg.out(_DebugLevel, "bpmain.init UI=[%s]" % UI)
+        if lg.is_debug(12):
+            lg.out(_DebugLevel, '\n' + bpio.osinfofull())
 
-    lg.out(2, "bpmain.init UI=[%s]" % UI)
-
-    if lg.is_debug(20):
-        lg.out(0, '\n' + bpio.osinfofull())
-
-    lg.out(4, 'bpmain.init going to import automats')
+    if _Debug:
+        lg.out(_DebugLevel, 'bpmain.init going to import automats')
 
     #---START!---
     from automats import automat
@@ -187,7 +206,8 @@ def init(UI='', options=None, args=None, overDict=None, executablePath=None):
 
     from main import initializer
     IA = initializer.A()
-    lg.out(4, 'bpmain.init is sending event "run" to initializer()')
+    if _Debug:
+        lg.out(_DebugLevel, 'bpmain.init is sending event "run" to initializer()')
     if bpio.Android():
         IA.automat('run', UI)
     else:
@@ -201,7 +221,8 @@ def shutdown():
     from logs import lg
     from main import config
     from system import bpio
-    lg.out(2, 'bpmain.shutdown')
+    if _Debug:
+        lg.out(_DebugLevel, 'bpmain.shutdown')
 
     from . import shutdowner
     shutdowner.A('reactor-stopped')
@@ -214,17 +235,22 @@ def shutdown():
     if len(automat.index()) > 0:
         lg.warn('%d automats was not cleaned' % len(automat.index()))
         for a in automat.index().keys():
-            lg.out(2, '    %r' % a)
+            if _Debug:
+                lg.out(_DebugLevel, '    %r' % a)
     else:
-        lg.out(2, 'bpmain.shutdown automat.objects().clear() SUCCESS, no state machines left in memory')
+        if _Debug:
+            lg.out(_DebugLevel, 'bpmain.shutdown automat.objects().clear() SUCCESS, no state machines left in memory')
 
     config.conf().removeConfigNotifier('logs/debug-level')
 
-    lg.out(2, 'bpmain.shutdown currently %d threads running:' % len(threading.enumerate()))
+    if _Debug:
+        lg.out(_DebugLevel, 'bpmain.shutdown currently %d threads running:' % len(threading.enumerate()))
     for t in threading.enumerate():
-        lg.out(2, '    ' + str(t))
+        if _Debug:
+            lg.out(_DebugLevel, '    ' + str(t))
 
-    lg.out(2, 'bpmain.shutdown finishing and closing log file, EXIT')
+    if _Debug:
+        lg.out(_DebugLevel, 'bpmain.shutdown finishing and closing log file, EXIT')
 
     automat.CloseLogFile()
 
@@ -247,18 +273,37 @@ def run_twisted_reactor():
     except:
         lg.exc()
         sys.exit('Error initializing reactor in bpmain.py\n')
-    lg.out(2, 'bpmain.run_twisted_reactor calling Twisted reactor.run()')
+    if _Debug:
+        lg.out(_DebugLevel, 'bpmain.run_twisted_reactor calling Twisted reactor.run()')
     reactor.run()  # @UndefinedVariable
-    lg.out(2, 'bpmain.run_twisted_reactor Twisted reactor stopped')
+    if _Debug:
+        lg.out(_DebugLevel, 'bpmain.run_twisted_reactor Twisted reactor stopped')
 
 
 def run(UI='', options=None, args=None, overDict=None, executablePath=None, start_reactor=True):
+    """
+    """
+    if options.cpu_profile:
+        import cProfile, pstats, io
+        from pstats import SortKey  # @UnresolvedImport
+        pr = cProfile.Profile()
+        pr.enable()
+
     init(UI, options, args, overDict, executablePath)
     if start_reactor:
         run_twisted_reactor()
         result = shutdown()
     else:
         result = True
+
+    if options.cpu_profile:
+        pr.disable()
+        s = io.StringIO()
+        sortby = SortKey.CUMULATIVE
+        ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+        ps.print_stats()
+        open('/tmp/bitdust.profile', 'w').write(s.getvalue())
+
     return result
 
 #------------------------------------------------------------------------------
@@ -315,6 +360,10 @@ def parser():
                      dest='twisted',
                      action='store_true',
                      help='show twisted log messages too',)
+    group.add_option('--cpu-profile',
+                     dest='cpu_profile',
+                     action='store_true',
+                     help='use cProfile to profile performance, output is in the file /tmp/bitdust.profile',)
 #    group.add_option('--memdebug',
 #                        dest='memdebug',
 #                        action='store_true',
@@ -437,7 +486,6 @@ def wait_then_kill(x):
 
 
 _OriginalCallLater = None
-_DelayedCallsIndex = {}
 _LastCallableID = 0
 
 
@@ -448,19 +496,13 @@ class _callable():
     I tried to decrease the number of delayed calls.
     """
 
-    def __init__(self, callabl, *args, **kw):
-        global _DelayedCallsIndex
+    def __init__(self, delay, callabl, *args, **kw):
         self.callabl = callabl
-        if self.callabl not in _DelayedCallsIndex:
-            _DelayedCallsIndex[self.callabl] = [0, 0.0]
         self.to_call = lambda: self.run(*args, **kw)
 
     def run(self, *args, **kw):
-        tm = time.time()
-        self.callabl(*args, **kw)
-        exec_time = time.time() - tm
-        _DelayedCallsIndex[self.callabl][0] += 1
-        _DelayedCallsIndex[self.callabl][1] += exec_time
+        from logs import measure_it
+        measure_it.run(self.callabl, *args, **kw)
 
     def call(self):
         self.to_call()
@@ -471,36 +513,35 @@ def _callLater(delay, callabl, *args, **kw):
     A wrapper around Twisted ``reactor.callLater()`` method.
     """
     global _OriginalCallLater
-    _call = _callable(callabl, *args, **kw)
+    _call = _callable(delay, callabl, *args, **kw)
     delayed_call = _OriginalCallLater(delay, _call.call)
     return delayed_call
 
 
-def patchReactorCallLater(r):
+def patchReactorCallLater(r, apply=True):
     """
     Replace original ``reactor.callLater()`` with my hacked solution to monitor
     overall performance.
     """
     global _OriginalCallLater
-    _OriginalCallLater = r.callLater
-    r.callLater = _callLater
+    if apply:
+        _OriginalCallLater = r.callLater
+        r.callLater = _callLater
+    else:
+        r.callLater = _OriginalCallLater
+        _OriginalCallLater = None
 
 
 def monitorDelayedCalls(r):
     """
     Print out all delayed calls.
     """
-    from six.moves import range
-    global _DelayedCallsIndex
+    from logs import measure_it
     from logs import lg
-    keys = list(_DelayedCallsIndex.keys())
-    keys.sort(key=lambda cb: -_DelayedCallsIndex[cb][1])
-    s = ''
-    for i in range(0, min(10, len(_DelayedCallsIndex))):
-        cb = keys[i]
-        s += '        %d %d %s\n' % (_DelayedCallsIndex[cb][0], _DelayedCallsIndex[cb][1], cb)
-    lg.out(8, '    delayed calls: %d\n%s' % (len(_DelayedCallsIndex), s))
-    r.callLater(10, monitorDelayedCalls, r)
+    stats = measure_it.top_calls()
+    if _Debug:
+        lg.out(_DebugLevel, '\nslowest calls:\n%s' % stats)
+    r.callLater(30, monitorDelayedCalls, r)
 
 #-------------------------------------------------------------------------------
 
@@ -543,7 +584,7 @@ def copyright_text():
     """
     Prints the copyright string.
     """
-    print('Copyright BitDust, 2014. All rights reserved.')
+    print('Copyright (C) 2008 Veselin Penev, https://bitdust.io')
 
 #--- THIS IS THE ENTRY POINT OF THE PROGRAM! ---------------------------------------------------------
 
@@ -655,7 +696,8 @@ def main(executable_path=None, start_reactor=True):
 
     if logpath != '':
         lg.open_log_file(logpath)
-        lg.out(2, 'bpmain.main log file opened ' + logpath)
+        if _Debug:
+            lg.out(_DebugLevel, 'bpmain.main log file opened ' + logpath)
         # if bpio.Windows() and bpio.isFrozen():
         #     need_redirecting = True
 
@@ -679,8 +721,9 @@ def main(executable_path=None, start_reactor=True):
     if opts.verbose:
         copyright_text()
 
-    lg.out(2, 'bpmain.main started ' + time.asctime())
-    lg.out(2, 'bpmain.main args=%s' % str(args))
+    if _Debug:
+        lg.out(_DebugLevel, 'bpmain.main started ' + time.asctime())
+        lg.out(_DebugLevel, 'bpmain.main args=%s' % str(args))
 
     #---start---
     if cmd == '' or cmd == 'start' or cmd == 'go':

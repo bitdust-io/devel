@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# log.py
+# lg.py
 #
 # Copyright (C) 2008 Veselin Penev, https://bitdust.io
 #

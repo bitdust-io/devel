@@ -273,11 +273,11 @@ def run_inbox_callbacks(newpacket, info, status, error_message):
     global _InboxPacketCallbacksList
     if _Debug:
         lg.out(_DebugLevel, 'callback.run_inbox_callbacks for %s from %s' % (newpacket, info))
-        # lg.out(_DebugLevel, '    %s' % _InboxPacketCallbacksList)
     handled = False
     for cb in _InboxPacketCallbacksList:
         try:
-            if cb(newpacket, info, status, error_message):
+            _ok = cb(newpacket, info, status, error_message)
+            if _ok:
                 handled = True
         except:
             lg.exc()
