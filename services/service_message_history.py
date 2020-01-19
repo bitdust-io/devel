@@ -45,7 +45,7 @@ class KeysStorageService(LocalService):
 
     def dependent_on(self):
         return [
-            'service_keys_storage',
+            'service_my_data',
             'service_private_messages',
         ]
 

@@ -270,6 +270,11 @@ def observe_dht_node(node, layer_id=0):
 
 
 def on_identity_cached(src, idurl, result):
+    if not src:
+        if _Debug:
+            lg.out(_DebugLevel, 'lookup.on_identity_cached FAILED with empty identity source for %r' % idurl)
+        result.errback(Exception(idurl))
+        return None
     if _Debug:
         lg.out(_DebugLevel, 'lookup.on_identity_cached %r with %d bytes' % (idurl, len(src)))
     result.callback(id_url.field(idurl))

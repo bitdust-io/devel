@@ -491,6 +491,7 @@ class PacketIn(automat.Automat):
         if _Debug:
             lg.out(_DebugLevel, 'packet_in.doReadAndUnserialize: %s' % newpacket)
         self.automat('valid-inbox-packet', newpacket)
+
         if False:
             events.send('inbox-packet-recevied', data=dict(
                 packet_id=newpacket.PacketID,

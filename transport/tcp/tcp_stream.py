@@ -62,7 +62,7 @@ from lib import strng
 #------------------------------------------------------------------------------
 
 MIN_PROCESS_STREAMS_DELAY = 0.1
-MAX_PROCESS_STREAMS_DELAY = 1
+MAX_PROCESS_STREAMS_DELAY = 5
 
 MAX_SIMULTANEOUS_OUTGOING_FILES = 20
 
