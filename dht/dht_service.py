@@ -957,12 +957,14 @@ def find_node(node_id, layer_id=0):
             lg.out(_DebugLevel, 'dht_service.find_node SKIP, already started')
         return _ActiveLookup
     count('find_node')
+    if not node():
+        return fail(Exception('DHT service is off'))
+    if layer_id not in node().active_layers:
+        return fail(Exception('DHT layer %d is not active' % layer_id))
     node_id64 = node_id
     if _Debug:
         lg.out(_DebugLevel, 'dht_service.find_node   node_id=[%s]  layer_id=%d' % (
             node_id64, layer_id))
-    if not node():
-        return fail(Exception('DHT service is off'))
     _ActiveLookupLayerID = layer_id
     _ActiveLookup = node().iterativeFindNode(node_id, layerID=layer_id)
     _ActiveLookup.addErrback(on_lookup_failed, node_id64)

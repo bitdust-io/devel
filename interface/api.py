@@ -3911,7 +3911,7 @@ def dht_user_random(layer_id=0, count=1):
     tsk = lookup.start(
         count=count,
         layer_id=layer_id,
-        consume=False,
+        consume=True,
         force_discovery=True,
         process_method=_process,
     )

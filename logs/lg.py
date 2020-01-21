@@ -280,9 +280,18 @@ def exc(msg='', level=0, maxTBlevel=100, exc_info=None, exc_value=None, **kwargs
     return exception(level, maxTBlevel, exc_info)
 
 
+# def errback(*args, **kwargs):
+#     err('Error occurred during deferred operation:\n%s' % traceback.format_exc())
+#     #  args: %s   kwargs: %s' % (str(*args), str(**kwargs)))
+#     return None
+
+
 def errback(*args, **kwargs):
-    err('Error occurred during deferred operation:\n%s' % traceback.format_exc())
-    #  args: %s   kwargs: %s' % (str(*args), str(**kwargs)))
+    _debug = kwargs.pop('debug', 0)
+    _debug_level = kwargs.pop('debug_level', 0)
+    _method = kwargs.pop('method', 'unknown')
+    if _debug and is_debug(_debug_level):
+        dbg(_debug_level, 'from "%s" method : args=%r  kwargs=%r' % (_method, args, kwargs, ))
     return None
 
 
