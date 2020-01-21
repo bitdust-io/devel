@@ -160,6 +160,8 @@ def reset(conf_obj):
 
     conf_obj.setDefaultValue('services/list-files/enabled', 'true')
 
+    conf_obj.setDefaultValue('services/message-broker/enabled', 'true')
+
     conf_obj.setDefaultValue('services/message-history/enabled', 'true')
 
     conf_obj.setDefaultValue('services/miner/enabled', 'false')
@@ -204,8 +206,6 @@ def reset(conf_obj):
     # in the future we can split all files more structural way into ~/.bitdust/services/*/ sub folders
     conf_obj.setDefaultValue('services/proxy-transport/my-original-identity', '')
     conf_obj.setDefaultValue('services/proxy-transport/current-router', '')
-
-    conf_obj.setDefaultValue('services/queue-keeper/enabled', 'true')
 
     conf_obj.setDefaultValue('services/rebuilding/enabled', 'true')
     conf_obj.setDefaultValue('services/rebuilding/child-processes-enabled', 'false')

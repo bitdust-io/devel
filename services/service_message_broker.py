@@ -1,9 +1,9 @@
 #!/usr/bin/python
-# service_queue_keeper.py
+# service_message_broker.py
 #
 # Copyright (C) 2008 Veselin Penev, https://bitdust.io
 #
-# This file (service_queue_keeper.py) is part of BitDust Software.
+# This file (service_message_broker.py) is part of BitDust Software.
 #
 # BitDust is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -27,7 +27,7 @@
 """
 ..
 
-module:: service_queue_keeper
+module:: service_message_broker
 """
 
 from __future__ import absolute_import
@@ -35,13 +35,13 @@ from services.local_service import LocalService
 
 
 def create_service():
-    return QueueKeeperService()
+    return MessageBrokerService()
 
 
-class QueueKeeperService(LocalService):
+class MessageBrokerService(LocalService):
 
-    service_name = 'service_queue_keeper'
-    config_path = 'services/queue-keeper/enabled'
+    service_name = 'service_message_broker'
+    config_path = 'services/message-broker/enabled'
 
     last_time_keys_synchronized = None
 
@@ -59,3 +59,16 @@ class QueueKeeperService(LocalService):
 
     def health_check(self):
         return True
+
+    def request(self, json_payload, newpacket, info):
+        from logs import lg
+        from p2p import p2p_service
+        from userid import global_id
+        customer_idurl = newpacket.OwnerID
+        customer_id = global_id.UrlToGlobalID(customer_idurl)
+        try:
+            queue_id = int(json_payload['queue_id'])
+        except:
+            lg.warn("wrong payload" % newpacket.Payload)
+            return p2p_service.SendFail(newpacket, 'wrong payload')
+        # TODO: ...
