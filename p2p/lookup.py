@@ -153,9 +153,14 @@ def random_supplier():
     from dht import dht_records
     return start(layer_id=dht_records.LAYER_SUPPLIERS)
 
+
+def random_message_broker():
+    from dht import dht_records
+    return start(layer_id=dht_records.LAYER_SUPPLIERS)
+
 #------------------------------------------------------------------------------
 
-def start(count=1, consume=True, lookup_method=None, observe_method=None, process_method=None, layer_id=0):
+def start(count=1, consume=True, lookup_method=None, observe_method=None, process_method=None, force_discovery=False, layer_id=0):
     """
     NOTE: no parallel threads, DHT lookup can be started only one at time.
     """
@@ -168,7 +173,7 @@ def start(count=1, consume=True, lookup_method=None, observe_method=None, proces
         process_method=process_method,
         layer_id=layer_id,
     )
-    if len(discovered_idurls(layer_id=layer_id)) > count:
+    if not force_discovery and len(discovered_idurls(layer_id=layer_id)) > count:
         if _Debug:
             lg.out(_DebugLevel - 4, 'lookup.start  knows %d discovered nodes, SKIP and return %d nodes' % (
                 len(discovered_idurls(layer_id=layer_id)), count))

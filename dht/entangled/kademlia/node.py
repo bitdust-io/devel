@@ -1050,6 +1050,13 @@ class MultiLayerNode(Node):
         self.active_layers = set()
         self.attached_layers = set()
 
+        self.rpc_calls = {}
+        self.rpc_responses = {}
+        self.packets_in = {}
+        self.packets_out = {}
+        self.bytes_in = 0
+        self.bytes_out = 0
+
         # This will contain a deferred created when joining the network, to enable publishing/retrieving information from
         # the DHT as soon as the node is part of the network (add callbacks to this deferred if scheduling such operations
         # before the node has finished joining the network)

@@ -46,7 +46,7 @@ import sys
 import time
 import gc
 
-from twisted.internet.defer import Deferred
+from twisted.internet.defer import Deferred, succeed
 from twisted.python.failure import Failure
 
 #------------------------------------------------------------------------------
@@ -3818,13 +3818,27 @@ def network_status(show_suppliers=True, show_customers=True, show_cache=True,
         from dht import dht_service
         r['dht'] = {}
         if driver.is_on('service_entangled_dht'):
+            layers = []
+            for layer_id in sorted(dht_service.node().layers):
+                layers.append({
+                    'layer_id': layer_id,
+                    'data_store_items': len(dht_service.node()._dataStores[layer_id].keys()),
+                    'node_items': len(dht_service.node().data[layer_id]),
+                    'node_id': dht_service.node().layers[layer_id],
+                    'buckets': len(dht_service.node()._routingTables[layer_id]._buckets),
+                    'contacts': dht_service.node()._routingTables[layer_id].totalContacts(),
+                    'attached': (layer_id in dht_service.node().attached_layers),
+                    'active': (layer_id in dht_service.node().active_layers),
+                    'packets_received': dht_service.node().packets_in.get(layer_id, 0),
+                    'packets_sent': dht_service.node().packets_out.get(layer_id, 0),
+                    'rpc_calls': dht_service.node().rpc_calls.get(layer_id, {}),
+                    'rpc_responses': dht_service.node().rpc_responses.get(layer_id, {}),
+                })
             r['dht'].update({
-                'data_store_items': len(dht_service.node()._dataStores[0].keys()),
-                'node_items': len(dht_service.node().data),
-                'node_id': dht_service.node().layers[0],
                 'udp_port': dht_service.node().port,
-                'buckets': len(dht_service.node()._routingTables[0]._buckets),
-                'contacts': dht_service.node()._routingTables[0].totalContacts(),
+                'bytes_received': dht_service.node().bytes_in,
+                'bytes_sent': dht_service.node().bytes_out,
+                'layers': layers,
             })
     return RESULT([r, ])
 
@@ -3869,6 +3883,40 @@ def dht_node_find(node_id_64=None, layer_id=0):
     d = dht_service.find_node(node_id, layer_id=layer_id)
     d.addCallback(_cb)
     d.addErrback(_eb)
+    return ret
+
+
+def dht_user_random(layer_id=0, count=1):
+    if not driver.is_on('service_nodes_lookup'):
+        return ERROR('service_nodes_lookup() is not started')
+    from p2p import lookup
+    ret = Deferred()
+
+    def _cb(idurls):
+        if not idurls:
+            ret.callback(ERROR('no users found', api_method='dht_user_random'))
+            return None
+        return ret.callback(RESULT(result=idurls, api_method='dht_user_random'))
+
+    def _eb(err):
+        lg.err(err)
+        ret.callback(ERROR(err, api_method='dht_user_random'))
+        return None
+
+    def _process(idurl, node):
+        result = Deferred()
+        result.callback(idurl)
+        return result
+
+    tsk = lookup.start(
+        count=count,
+        layer_id=layer_id,
+        consume=False,
+        force_discovery=True,
+        process_method=_process,
+    )
+    tsk.result_defer.addCallback(_cb)
+    tsk.result_defer.addErrback(_eb)
     return ret
 
 

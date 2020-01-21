@@ -96,6 +96,7 @@ SENDING_QUEUE_LENGTH_CRITICAL = 50
 
 _MyNode = None
 _ActiveLookup = None
+_ActiveLookupLayerID = None
 _Counters = {}
 _ProtocolVersion = 7
 
@@ -927,22 +928,31 @@ def write_verify_republish_data(key, json_data, age=0, expire=KEY_EXPIRE_MAX_SEC
 #------------------------------------------------------------------------------
 
 def on_nodes_found(result, node_id64):
+    global _ActiveLookup
+    global _ActiveLookupLayerID
     on_success(result, 'find_node', node_id64)
     if _Debug:
         lg.out(_DebugLevel, 'dht_service.on_nodes_found   node_id=[%s], %d nodes found' % (node_id64, len(result)))
+    # _ActiveLookupLayerID = None
+    # _ActiveLookup = None
     return result
 
 
 def on_lookup_failed(result, node_id64):
+    global _ActiveLookup
+    global _ActiveLookupLayerID
     on_error(result, 'find_node', node_id64)
     if _Debug:
         lg.out(_DebugLevel, 'dht_service.on_lookup_failed   node_id=[%s], result=%s' % (node_id64, result))
+    # _ActiveLookupLayerID = None
+    # _ActiveLookup = None
     return result
 
 
 def find_node(node_id, layer_id=0):
     global _ActiveLookup
-    if _ActiveLookup and not _ActiveLookup.called:
+    global _ActiveLookupLayerID
+    if _ActiveLookup and not _ActiveLookup.called and _ActiveLookupLayerID == layer_id:
         if _Debug:
             lg.out(_DebugLevel, 'dht_service.find_node SKIP, already started')
         return _ActiveLookup
@@ -953,9 +963,10 @@ def find_node(node_id, layer_id=0):
             node_id64, layer_id))
     if not node():
         return fail(Exception('DHT service is off'))
+    _ActiveLookupLayerID = layer_id
     _ActiveLookup = node().iterativeFindNode(node_id, layerID=layer_id)
-    _ActiveLookup.addCallback(on_nodes_found, node_id64)
     _ActiveLookup.addErrback(on_lookup_failed, node_id64)
+    _ActiveLookup.addCallback(on_nodes_found, node_id64)
     return _ActiveLookup
 
 #------------------------------------------------------------------------------
@@ -966,6 +977,10 @@ def get_node_data(key, layer_id=0):
             lg.out(_DebugLevel, 'dht_service.get_node_data local node is not ready')
         return None
     count('get_node_data')
+    if layer_id not in node().data:
+        if _Debug:
+            lg.out(_DebugLevel, 'dht_service.get_node_data   layer_id=%d   is not exist' % layer_id)
+        return None
     key = strng.to_text(key)
     if key not in node().data[layer_id]:
         if _Debug:
@@ -1001,7 +1016,9 @@ def delete_node_data(key, layer_id=0):
         return False
     count('delete_node_data')
     if layer_id not in node().data:
-        node().data[layer_id] = {}
+        if _Debug:
+            lg.out(_DebugLevel, 'dht_service.delete_node_data layer_id=%d  is not exist' % layer_id)
+        return False
     key = strng.to_text(key)
     if key not in node().data[layer_id]:
         if _Debug:
@@ -1048,6 +1065,9 @@ class DHTNode(MultiLayerNode):
         super(DHTNode, self).__init__(udpPort=udpPort, dataStores=dataStores, routingTables=routingTables, networkProtocol=networkProtocol, id=nodeID, )
         self._counter = count
         self.data = {0: {}, }
+        if dataStores:
+            for layer_id in dataStores.keys():
+                self.data[layer_id] = {}
         self.expire_task = LoopingCall(self.expire)
         self.rpc_callbacks = {}
 
