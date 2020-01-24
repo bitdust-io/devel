@@ -1084,7 +1084,7 @@ class MultiLayerNode(Node):
         self.active_layers.add(0)
         self.attachLayer(0)
 
-    def createLayer(self, layer_id, dataStore, nodeID=None, routingTable=None, warmUp=False):
+    def createLayer(self, layer_id, dataStore, nodeID=None, routingTable=None):
         if layer_id in self.layers or layer_id in self._dataStores or layer_id in self._routingTables:
             if _Debug:
                 print('[DHT NODE]    createLayer : layer %d already exist' % layer_id)
@@ -1116,10 +1116,14 @@ class MultiLayerNode(Node):
         return True
 
     def destroyLayer(self, layer_id):
+        if layer_id == 0:
+            return False
         if layer_id not in self.layers and layer_id not in self._dataStores and layer_id not in self._routingTables:
             if _Debug:
                 print('[DHT NODE]    destroyLayer : layer %d not exist' % layer_id)
             return False
+        self.detachLayer(layer_id)
+        self.active_layers.discard(layer_id)
         self.layers.pop(layer_id, None)
         self._routingTables.pop(layer_id, None)
         self._dataStores.pop(layer_id, None)
@@ -1141,7 +1145,7 @@ class MultiLayerNode(Node):
         else:
             bootstrapContacts = None
         if _Debug:
-            print('[DHT NODE]    joinNetwork bootstrapContacts=%r layerID=%r' % (bootstrapContacts, layerID, ))
+            print('[DHT NODE]    joinNetwork bootstrapContacts=%r  layerID=%r  attach=%r' % (bootstrapContacts, layerID, attach))
         self.active_layers.add(layerID)
         if attach:
             self.attachLayer(layerID)
@@ -1159,7 +1163,7 @@ class MultiLayerNode(Node):
         if _Debug:
             print('[DHT NODE]    leaveNetwork layerID=%d' % layerID)
         if layerID != 0:
-            self.active_layers.remove(layerID)
+            self.active_layers.discard(layerID)
             self.detachLayer(layerID)
         if self.refreshers.get(layerID, None) and not self.refreshers[layerID].called:
             self.refreshers[layerID].cancel()
@@ -1174,7 +1178,7 @@ class MultiLayerNode(Node):
     def detachLayer(self, layerID):
         if _Debug:
             print('[DHT NODE]    detachLayer %d' % layerID)
-        self.attached_layers.remove(layerID)
+        self.attached_layers.discard(layerID)
 
 #     def warmUpLayer(self, layerID):
 #         if layerID == 0:

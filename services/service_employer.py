@@ -156,11 +156,17 @@ class EmployerService(LocalService):
         from dht import known_nodes
         lg.info('going to join suppliers DHT layer: %d' % dht_records.LAYER_SUPPLIERS)
         known_seeds = known_nodes.nodes()
-        dht_service.connect(
+        dht_service.open_layer(
             seed_nodes=known_seeds,
             layer_id=dht_records.LAYER_SUPPLIERS,
+            connect_now=True,
             attach=False,
         )
+#         dht_service.connect(
+#             seed_nodes=known_seeds,
+#             layer_id=dht_records.LAYER_SUPPLIERS,
+#             attach=False,
+#         )
 
     def _on_fire_hire_ready(self, oldstate, newstate, evt, *args, **kwargs):
         self._do_check_all_hired()

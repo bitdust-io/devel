@@ -476,6 +476,8 @@ class StunClient(automat.Automat):
         except:
             lg.exc()
             return
+        if port == 0:
+            return
         if _Debug:
             lg.out(_DebugLevel, '        new stun port server found  %s:%s' % (address, port, ))
         self.automat('port-number-received', (address, port))

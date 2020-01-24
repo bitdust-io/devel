@@ -43,52 +43,26 @@ services:
     links:
       - dht-1
 
-  dht-3:
-    image: bitdust/app
-    ports:
-      - "10513:22"
-    links:
-      - dht-1
-      - dht-2
-
-  dht-4:
-    image: bitdust/app
-    ports:
-      - "10514:22"
-    links:
-      - dht-1
-      - dht-2
-      - dht-3
-
   stun-1:
     image: bitdust/app
     ports:
       - "10521:22"
     links:
-      - dht-1
       - dht-2
-      - dht-3
 
   stun-2:
     image: bitdust/app
     ports:
       - "10522:22"
     links:
-      - dht-1
       - dht-2
-      - dht-3
 
   proxy-1:
     image: bitdust/app
     ports:
       - "10531:22"
     links:
-      - dht-1
       - dht-2
-      - dht-3
-      - dht-4
-      - stun-1
-      - stun-2
       - id-a
 
   proxy-2:
@@ -96,12 +70,7 @@ services:
     ports:
       - "10532:22"
     links:
-      - dht-1
       - dht-2
-      - dht-3
-      - dht-4
-      - stun-1
-      - stun-2
       - id-a
 
   supplier-1:
@@ -109,12 +78,7 @@ services:
     ports:
       - "10541:22"
     links:
-      - dht-1
       - dht-2
-      - dht-3
-      - dht-4
-      - stun-1
-      - stun-2
       - id-a
 
   supplier-2:
@@ -122,12 +86,7 @@ services:
     ports:
       - "10542:22"
     links:
-      - dht-1
       - dht-2
-      - dht-3
-      - dht-4
-      - stun-1
-      - stun-2
       - id-a
 
   supplier-3:
@@ -135,12 +94,7 @@ services:
     ports:
       - "10543:22"
     links:
-      - dht-1
       - dht-2
-      - dht-3
-      - dht-4
-      - stun-1
-      - stun-2
       - id-a
 
   supplier-4:
@@ -148,12 +102,7 @@ services:
     ports:
       - "10544:22"
     links:
-      - dht-1
       - dht-2
-      - dht-3
-      - dht-4
-      - stun-1
-      - stun-2
       - id-a
 
   supplier-5:
@@ -161,12 +110,7 @@ services:
     ports:
       - "10545:22"
     links:
-      - dht-1
       - dht-2
-      - dht-3
-      - dht-4
-      - stun-1
-      - stun-2
       - id-a
 
   supplier-6:
@@ -174,12 +118,23 @@ services:
     ports:
       - "10546:22"
     links:
-      - dht-1
       - dht-2
-      - dht-3
-      - dht-4
-      - stun-1
-      - stun-2
+      - id-a
+
+  supplier-7:
+    image: bitdust/app
+    ports:
+      - "10547:22"
+    links:
+      - dht-2
+      - id-a
+
+  supplier-8:
+    image: bitdust/app
+    ports:
+      - "10548:22"
+    links:
+      - dht-2
       - id-a
 
   customer-1:
@@ -189,12 +144,7 @@ services:
     volumes:
       - customer_1:/customer_1
     links:
-      - dht-1
       - dht-2
-      - dht-3
-      - dht-4
-      - stun-1
-      - stun-2
       - id-a
 
   customer-2:
@@ -204,12 +154,7 @@ services:
     volumes:
       - customer_2:/customer_2
     links:
-      - dht-1
       - dht-2
-      - dht-3
-      - dht-4
-      - stun-1
-      - stun-2
       - id-a
 
   customer-3:
@@ -219,12 +164,7 @@ services:
     volumes:
       - customer_3:/customer_3
     links:
-      - dht-1
       - dht-2
-      - dht-3
-      - dht-4
-      - stun-1
-      - stun-2
       - id-a
 
 
@@ -239,8 +179,6 @@ services:
     links:
       - dht-1
       - dht-2
-      - dht-3
-      - dht-4
       - stun-1
       - stun-2
       - id-a
@@ -250,6 +188,8 @@ services:
       - supplier-4
       - supplier-5
       - supplier-6
+      - supplier-7
+      - supplier-8
       - customer-1
       - customer-2
       - customer-3

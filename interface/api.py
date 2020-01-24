@@ -3823,7 +3823,7 @@ def network_status(show_suppliers=True, show_customers=True, show_cache=True,
                 layers.append({
                     'layer_id': layer_id,
                     'data_store_items': len(dht_service.node()._dataStores[layer_id].keys()),
-                    'node_items': len(dht_service.node().data[layer_id]),
+                    'node_items': len(dht_service.node().data.get(layer_id, {})),
                     'node_id': dht_service.node().layers[layer_id],
                     'buckets': len(dht_service.node()._routingTables[layer_id]._buckets),
                     'contacts': dht_service.node()._routingTables[layer_id].totalContacts(),

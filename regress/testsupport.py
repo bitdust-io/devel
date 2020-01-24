@@ -27,7 +27,6 @@ import subprocess
 import asyncio
 import json
 import pprint
-import ssl
 
 #------------------------------------------------------------------------------
 
@@ -220,6 +219,8 @@ def tunnel_url(node, endpoint):
 def start_daemon(node):
     run_ssh_command_and_wait(node, 'mkdir -pv /root/.bitdust/metadata/')
     # run_ssh_command_and_wait(node, 'echo "docker" > /root/.bitdust/metadata/networkname')
+    # if os.environ.get('_DEBUG', '0') == '0':
+    #     run_ssh_command_and_wait(node, "find /app/bitdust -type f -name '*.py' -exec sed -i -e 's/_Debug = True/_Debug = False/g' {} +")
     bitdust_daemon = run_ssh_command_and_wait(node, 'BITDUST_LOG_USE_COLORS=0 COVERAGE_PROCESS_START=/app/bitdust/.coverage_config bitdust daemon')
     print('\n' + bitdust_daemon[0].strip())
     assert (
@@ -231,6 +232,8 @@ def start_daemon(node):
 async def start_daemon_async(node, loop):
     await run_ssh_command_and_wait_async(node, 'mkdir -pv /root/.bitdust/metadata/', loop)
     # await run_ssh_command_and_wait_async(node, 'echo "docker" > /root/.bitdust/metadata/networkname', loop)
+    # if os.environ.get('_DEBUG', '0') == '0':
+    #     await run_ssh_command_and_wait_async(node, "find /app/bitdust -type f -name '*.py' -exec sed -i -e 's/_Debug = True/_Debug = False/g' {} +", loop)
     bitdust_daemon = await run_ssh_command_and_wait_async(node, 'BITDUST_LOG_USE_COLORS=0 COVERAGE_PROCESS_START=/app/bitdust/.coverage_config bitdust daemon', loop)
     print('\n' + bitdust_daemon[0].strip())
     assert (
@@ -457,7 +460,6 @@ async def packet_list_async(node, loop, wait_all_finish=True, attempts=60, delay
             await asyncio.sleep(delay)
         else:
             assert False, 'some packets are still have in/out progress on [%s]' % node
-
 
 #------------------------------------------------------------------------------
 
@@ -720,7 +722,7 @@ def start_one_dht_seed(dht_seed, wait_seconds):
     start_dht_seed(
         node=dht_seed['name'],
         dht_seeds=dht_seed.get('known_dht_seeds', ''),
-        attached_layers='2,3',
+        attached_layers=dht_seed.get('attached_layers', '2,3'),
         wait_seconds=wait_seconds,
     )
 
@@ -863,3 +865,12 @@ async def collect_coverage_one_node_async(node, event_loop, wait_before=3):
         ['scp', '-o', 'StrictHostKeyChecking=no', '-P', '22', 'root@%s:/tmp/.coverage.*' % node, '/app/coverage/%s/.' % node, ],
         event_loop,
     )
+
+#------------------------------------------------------------------------------
+
+async def log_network_info_one_node_async(node, event_loop):
+    async with aiohttp.ClientSession(loop=event_loop, connector=ssl_connection(node)) as client:
+        response = await client.get(tunnel_url(node, 'network/info/v1'), timeout=20)
+        response_json = await response.json()
+        print('\nnetwork/info/v1 [%s] : %s\n' % (node, pprint.pformat(response_json), ))
+        assert response_json['status'] == 'OK', response_json

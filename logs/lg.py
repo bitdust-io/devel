@@ -229,7 +229,7 @@ def info(message):
     return message
 
 
-def warn(message, level=2):
+def warn(message, level=0):
     global _UseColors
     if _UseColors is None:
         _UseColors = platform.uname()[0] != 'Windows' and os.environ.get('BITDUST_LOG_USE_COLORS', '1') != '0'
@@ -241,6 +241,7 @@ def warn(message, level=2):
     else:
         output_string = 'WARNING %s in %s.%s()' % (message, modul, caller, )
     out(level, output_string)
+    out(level, output_string, log_name='warn')
     return message
 
 
@@ -264,6 +265,7 @@ def err(message, level=0):
     if _UseColors:
         message = '\033[6;37;41m%s\033[0m' % message
     out(level, message)
+    out(level, message, log_name='err')
     return message
 
 
@@ -271,19 +273,14 @@ def exc(msg='', level=0, maxTBlevel=100, exc_info=None, exc_value=None, **kwargs
     global _UseColors
     if _UseColors is None:
         _UseColors = platform.uname()[0] != 'Windows' and os.environ.get('BITDUST_LOG_USE_COLORS', '1') != '0'
-    if _UseColors:
-        msg = '\033[1;31m%s\033[0m' % msg
     if msg:
+        if _UseColors:
+            msg = '\033[1;31m%s\033[0m' % msg
         out(level, msg)
+        out(level, msg, log_name='exc')
     if exc_value:
         return exception(level, maxTBlevel, exc_info=('', exc_value, []))
     return exception(level, maxTBlevel, exc_info)
-
-
-# def errback(*args, **kwargs):
-#     err('Error occurred during deferred operation:\n%s' % traceback.format_exc())
-#     #  args: %s   kwargs: %s' % (str(*args), str(**kwargs)))
-#     return None
 
 
 def errback(*args, **kwargs):

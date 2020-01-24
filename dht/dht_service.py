@@ -243,9 +243,9 @@ def connect(seed_nodes=[], layer_id=0, attach=False):
                 lg.err('Unexpected result from joinNetwork: %s' % pprint.pformat(live_contacts))
             else: 
                 if live_contacts and len(live_contacts) > 0 and live_contacts[0]:
-                    lg.out(_DebugLevel, 'dht_service.connect DHT JOIN SUCCESS !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+                    lg.out(_DebugLevel, 'dht_service.connect DHT JOIN SUCCESS   layer_id=%d attach=%r' % (_layer_id, attach))
                 else:
-                    lg.out(_DebugLevel, 'dht_service.connect DHT JOINED, but still OFFLINE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+                    lg.out(_DebugLevel, 'dht_service.connect DHT JOINED, but still OFFLINE   layer_id=%d attach=%r' % (_layer_id, attach))
                     lg.warn('No live DHT contacts found...  your node is NOT CONNECTED TO DHT NETWORK')
             lg.out(_DebugLevel, 'for layer %d found DHT nodes: %s' % (_layer_id, live_contacts))
             lg.out(_DebugLevel, 'resolved SEED nodes: %r' % resolved_seed_nodes)
@@ -319,7 +319,7 @@ def reconnect():
 
 #------------------------------------------------------------------------------
 
-def open_layer(layer_id, seed_nodes=[], dht_dir_path=None, connect_now=False):
+def open_layer(layer_id, seed_nodes=[], dht_dir_path=None, connect_now=False, attach=False):
     global _MyNode
     if not node():
         result = Deferred()
@@ -339,7 +339,7 @@ def open_layer(layer_id, seed_nodes=[], dht_dir_path=None, connect_now=False):
         result = Deferred()
         result.callback(True)
         return result
-    result = connect(seed_nodes=seed_nodes, layerID=layer_id)
+    result = connect(seed_nodes=seed_nodes, layer_id=layer_id, attach=attach)
     lg.info('DHT layer %d opened and connecting to the seed nodes: %r' % (layer_id, seed_nodes, ))
     return result
 
@@ -859,7 +859,7 @@ def write_verify_republish_data(key, json_data, age=0, expire=KEY_EXPIRE_MAX_SEC
     _write_response = None
     _join = Deferred()
     _join.addCallback(_do_verify)
-    _join.addErrback(lg.errback)
+    _join.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='write_verify_republish_data')
 
     def _some_nodes_found(nodes):
         global _write_response
