@@ -826,7 +826,7 @@ class Node(object):
 
         def cancelActiveProbe(contactID):
             activeProbes.pop()
-            if len(activeProbes) <= constants.alpha / 2 and len(pendingIterationCalls):
+            if len(activeProbes) <= int(constants.alpha / 2.0) and len(pendingIterationCalls):
                 # Force the iteration
                 pendingIterationCalls[0].cancel()
                 del pendingIterationCalls[0]
@@ -1136,7 +1136,7 @@ class MultiLayerNode(Node):
             return None
         return self._joinDeferreds[layerID]
 
-    def joinNetwork(self, knownNodeAddresses=None, layerID=0, attach=False):
+    def joinNetwork(self, knownNodeAddresses=None, layerID=0, attach=False, parallel_calls=None):
         if knownNodeAddresses is not None:
             bootstrapContacts = []
             for address, port in knownNodeAddresses:
@@ -1149,7 +1149,12 @@ class MultiLayerNode(Node):
         self.active_layers.add(layerID)
         if attach:
             self.attachLayer(layerID)
-        self._joinDeferreds[layerID] = self._iterativeFind(self.layers[layerID], bootstrapContacts, layerID=layerID)
+        self._joinDeferreds[layerID] = self._iterativeFind(
+            key=self.layers[layerID],
+            startupShortlist=bootstrapContacts,
+            layerID=layerID,
+            parallel_calls=parallel_calls,
+        )
         self._joinDeferreds[layerID].addCallback(self._persistState, layerID=layerID)
         self._joinDeferreds[layerID].addErrback(self._joinNetworkFailed, layerID)
         if self.refreshers.get(layerID, None) and not self.refreshers[layerID].called:
@@ -1212,6 +1217,7 @@ class MultiLayerNode(Node):
         if originalPublisherID is None:
             originalPublisherID = self.layers[layerID]
         collect_results = kwargs.pop('collect_results', False)
+        parallel_calls = kwargs.pop('parallel_calls', None)
         ret = defer.Deferred()
         if 'layerID' not in kwargs:
             kwargs['layerID'] = layerID
@@ -1271,7 +1277,7 @@ class MultiLayerNode(Node):
             return dl
  
         # Find k nodes closest to the key...
-        df = self.iterativeFindNode(key, layerID=layerID)
+        df = self.iterativeFindNode(key, layerID=layerID, parallel_calls=parallel_calls)
         # ...and send them STORE RPCs as soon as they've been found
         df.addCallback(executeStoreRPCs)
         df.addErrback(findNodeFailed)
@@ -1281,17 +1287,17 @@ class MultiLayerNode(Node):
 
         return ret
 
-    def iterativeFindNode(self, key, layerID=0):
-        return self._iterativeFind(key, layerID=layerID)
+    def iterativeFindNode(self, key, layerID=0, parallel_calls=None):
+        return self._iterativeFind(key, layerID=layerID, parallel_calls=parallel_calls)
 
-    def iterativeDelete(self, key, layerID=0):
+    def iterativeDelete(self, key, layerID=0, parallel_calls=None):
         # Delete our own copy of the data
         if key in self._dataStores[layerID]:
             del self._dataStores[layerID][key]
-        df = self._iterativeFind(key, rpc='delete', layerID=layerID)
+        df = self._iterativeFind(key, rpc='delete', layerID=layerID, parallel_calls=parallel_calls)
         return df
 
-    def iterativeFindValue(self, key, rpc='findValue', refresh_revision=False, layerID=0):
+    def iterativeFindValue(self, key, rpc='findValue', refresh_revision=False, layerID=0, parallel_calls=None):
         outerDf = defer.Deferred()
 
         def storeFailed(x):
@@ -1403,7 +1409,7 @@ class MultiLayerNode(Node):
                     outerDf.callback(result)
 
         # Execute the search
-        df = self._iterativeFind(key, rpc=rpc, layerID=layerID)
+        df = self._iterativeFind(key, rpc=rpc, layerID=layerID, parallel_calls=parallel_calls)
         df.addCallback(checkResult)
         df.addErrback(lookupFailed)
         return outerDf
@@ -1414,7 +1420,7 @@ class MultiLayerNode(Node):
     def removeContact(self, contactID, layerID=0):
         self._routingTables[layerID].removeContact(contactID)
 
-    def findContact(self, contactID, layerID=0):
+    def findContact(self, contactID, layerID=0, parallel_calls=None):
         try:
             contact = self._routingTables[layerID].getContact(contactID)
             df = defer.Deferred()
@@ -1426,7 +1432,7 @@ class MultiLayerNode(Node):
                     return contact
                 else:
                     return None
-            df = self.iterativeFindNode(contactID, layerID=layerID)
+            df = self.iterativeFindNode(contactID, layerID=layerID, parallel_calls=parallel_calls)
             df.addCallback(parseResults)
         return df
 
@@ -1533,17 +1539,17 @@ class MultiLayerNode(Node):
             print('[DHT NODE]        NOT found key in local dataStore')
         return self.findNode(key, **kwargs)
 
-    def _iterativeFind(self, key, startupShortlist=None, rpc='findNode', deep=False, layerID=0):
+    def _iterativeFind(self, key, startupShortlist=None, rpc='findNode', deep=False, layerID=0, parallel_calls=None):
         if _Debug:
-            print('[DHT NODE]    _iterativeFind   layerID=%d   rpc=%r   key=%r  startupShortlist=%r routingTables=%r' % (
-                layerID, rpc, key, startupShortlist, self._routingTables))
+            print('[DHT NODE]    _iterativeFind   layerID=%d   rpc=%r   key=%r  startupShortlist=%r routingTables=%r parallel_calls=%r' % (
+                layerID, rpc, key, startupShortlist, self._routingTables, parallel_calls))
         if rpc != 'findNode':
             findValue = True
         else:
             findValue = False
         shortlist = []
         if startupShortlist is None:
-            shortlist = self._routingTables[layerID].findCloseNodes(key, constants.alpha)
+            shortlist = self._routingTables[layerID].findCloseNodes(key, parallel_calls or constants.alpha)
             if key != self.layers[layerID]:
                 # Update the "last accessed" timestamp for the appropriate k-bucket
                 self._routingTables[layerID].touchKBucket(key)
@@ -1647,7 +1653,7 @@ class MultiLayerNode(Node):
 
         def cancelActiveProbe(contactID):
             activeProbes.pop()
-            if len(activeProbes) <= constants.alpha / 2 and len(pendingIterationCalls):
+            if len(activeProbes) <= int((parallel_calls or constants.alpha) / 2.0) and len(pendingIterationCalls):
                 # Force the iteration
                 pendingIterationCalls[0].cancel()
                 del pendingIterationCalls[0]
@@ -1712,7 +1718,7 @@ class MultiLayerNode(Node):
                     df.addCallback(cancelActiveProbe)
                     alreadyContacted.append(contact.id)
                     contactedNow += 1
-                if contactedNow == constants.alpha:
+                if contactedNow == (parallel_calls or constants.alpha):
                     break
             if len(activeProbes) > slowNodeCount[0] \
                     or (len(shortlist) < constants.k and len(activeContacts) < len(shortlist) and len(activeProbes) > 0):
@@ -1770,7 +1776,7 @@ class MultiLayerNode(Node):
         df.addCallback(self._republishData, layerID=layerID)
         df.addCallback(self._scheduleNextNodeRefresh, layerID=layerID)
 
-    def _refreshRoutingTable(self, layerID=0):
+    def _refreshRoutingTable(self, layerID=0, parallel_calls=None):
         nodeIDs = self._routingTables[layerID].getRefreshList(0, False)
         if _Debug:
             print('[DHT NODE]    _refreshRoutingTable', nodeIDs)
@@ -1784,7 +1790,7 @@ class MultiLayerNode(Node):
         def searchForNextNodeID(dfResult=None):
             if len(nodeIDs) > 0:
                 searchID = nodeIDs.pop()
-                df = self.iterativeFindNode(searchID, layerID=layerID)
+                df = self.iterativeFindNode(searchID, layerID=layerID, parallel_calls=parallel_calls)
                 df.addCallback(searchForNextNodeID)
                 df.addErrback(searchFailed)
             else:

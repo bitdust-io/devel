@@ -73,7 +73,7 @@ class RoutingTable(object):
         @param count: the amount of contacts to return
         @type count: int
         @param _rpcNodeID: Used during RPC, this is be the sender's Node ID
-                           Whatever ID is passed in the paramater will get
+                           Whatever ID is passed in the parameter will get
                            excluded from the list of returned contacts.
         @type _rpcNodeID: str
 

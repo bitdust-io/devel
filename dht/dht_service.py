@@ -127,7 +127,8 @@ def init(udp_port, dht_dir_path=None, open_layers=[]):
     if os.path.isdir(dht_dir_path):
         list_layers = os.listdir(dht_dir_path)
     if _Debug:
-        lg.dbg(_DebugLevel, 'dht_dir_path=%r list_layers=%r' % (dht_dir_path, list_layers, ))
+        lg.dbg(_DebugLevel, 'dht_dir_path=%r list_layers=%r network_info=%r' % (
+            dht_dir_path, list_layers, nw_info))
     layerStores = {}
     for layer_filename in list_layers:
         if not layer_filename.startswith('db_'):
@@ -464,19 +465,24 @@ def on_error(x, method, key):
 
 #------------------------------------------------------------------------------
 
-def get_value(key, layer_id=0):
+def get_value(key, layer_id=0, parallel_calls=None):
     if not node():
         return fail(Exception('DHT service is off'))
     count('get_value_%s' % key)
     if _Debug:
         lg.out(_DebugLevel, 'dht_service.get_value key=[%r]' % key)
-    d = node().iterativeFindValue(key_to_hash(key), rpc='findValue', layerID=layer_id)
+    d = node().iterativeFindValue(
+        key=key_to_hash(key),
+        rpc='findValue',
+        layerID=layer_id,
+        parallel_calls=parallel_calls,
+    )
     d.addCallback(on_success, 'get_value', key)
     d.addErrback(on_error, 'get_value', key)
     return d
 
 
-def set_value(key, value, age=0, expire=KEY_EXPIRE_MAX_SECONDS, collect_results=True, layer_id=0):
+def set_value(key, value, age=0, expire=KEY_EXPIRE_MAX_SECONDS, collect_results=True, layer_id=0, parallel_calls=None):
     if not node():
         return fail(Exception('DHT service is off'))
     count('set_value_%s' % key)
@@ -487,19 +493,27 @@ def set_value(key, value, age=0, expire=KEY_EXPIRE_MAX_SECONDS, collect_results=
         expire = KEY_EXPIRE_MIN_SECONDS
     if expire > KEY_EXPIRE_MAX_SECONDS:
         expire = KEY_EXPIRE_MAX_SECONDS
-    d = node().iterativeStore(key_to_hash(key), value, age=age, expireSeconds=expire, collect_results=collect_results, layerID=layer_id)
+    d = node().iterativeStore(
+        key=key_to_hash(key),
+        value=value,
+        age=age,
+        expireSeconds=expire,
+        collect_results=collect_results,
+        layerID=layer_id,
+        parallel_calls=parallel_calls,
+    )
     d.addCallback(on_success, 'set_value', key, value)
     d.addErrback(on_error, 'set_value', key)
     return d
 
 
-def delete_key(key, layer_id=0):
+def delete_key(key, layer_id=0, parallel_calls=None):
     if not node():
         return fail(Exception('DHT service is off'))
     count('delete_key_%s' % key)
     if _Debug:
         lg.out(_DebugLevel, 'dht_service.delete_key [%s]' % key)
-    d = node().iterativeDelete(key_to_hash(key), layerID=layer_id)
+    d = node().iterativeDelete(key_to_hash(key), layerID=layer_id, parallel_calls=parallel_calls)
     d.addCallback(on_success, 'delete_value', key)
     d.addErrback(on_error, 'delete_key', key)
     return d

@@ -341,7 +341,7 @@ def identity_get(include_xml_source=False):
     r = my_id.getLocalIdentity().serialize_json()
     if include_xml_source:
         r['xml'] = my_id.getLocalIdentity().serialize(as_text=True)
-    return RESULT([r, ])
+    return OK(r)
 
 
 def identity_create(username, preferred_servers=[]):
@@ -370,7 +370,7 @@ def identity_create(username, preferred_servers=[]):
                 return ERROR('identity creation failed, please try again later', api_method='identity_create')
             r = my_id.getLocalIdentity().serialize_json()
             r['xml'] = my_id.getLocalIdentity().serialize(as_text=True)
-            ret.callback(RESULT([r, ], api_method='identity_create'))
+            ret.callback(OK(r, api_method='identity_create'))
             return
 
     my_id_registrator.addStateChangedCallback(_id_registrator_state_changed)
@@ -2043,8 +2043,8 @@ def friend_add(idurl_or_global_id, alias=''):
             added = True
         online_status.handshake(idurl, channel='friend_add', keep_alive=True)
         if added:
-            return OK('new friend has been added', api_method='friend_add')
-        return OK('this friend has been already added', api_method='friend_add')
+            return OK(message='new friend has been added', api_method='friend_add')
+        return OK(message='this friend has been already added', api_method='friend_add')
 
     if id_url.is_cached(idurl):
         return _add()
@@ -2075,7 +2075,7 @@ def friend_remove(idurl_or_global_id):
         if contactsdb.is_correspondent(idurl):
             contactsdb.remove_correspondent(idurl)
             contactsdb.save_correspondents()
-            return OK('friend has been removed', api_method='friend_remove')
+            return OK(message='friend has been removed', api_method='friend_remove')
         return ERROR('friend not found', api_method='friend_remove')
 
     if id_url.is_cached(idurl):
