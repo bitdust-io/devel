@@ -30,6 +30,7 @@
 
 ALL_TESTS := $(patsubst tests/%,%,$(wildcard tests/*))
 
+SOME_TESTS := chat storage dht
 
 .PHONY: test
 
@@ -62,25 +63,32 @@ _one_down:
 	@echo "DOWN ${TEST_NAME}"; docker-compose --file tests/${TEST_NAME}/docker-compose.yml down -v -t 1 1> /dev/null 2> /dev/null
 
 _one_test:
-	@echo "TEST ${TEST_NAME} DEBUG=${_DEBUG}"; mkdir -p logs; docker-compose --file tests/${TEST_NAME}/docker-compose.yml exec tester sh -c "TEST_NAME=${TEST_NAME} _DEBUG=${_DEBUG} python -u -m pytest /app/tests/${TEST_NAME}/ -v -s" > logs/tester.${TEST_NAME}.log || (cat logs/tester.${TEST_NAME}.log && exit 1)
+	# @echo "TEST ${TEST_NAME} DEBUG=${_DEBUG}"; mkdir -p logs; COMPOSE_INTERACTIVE_NO_CLI=0 docker-compose --file tests/${TEST_NAME}/docker-compose.yml exec tester sh -c "TEST_NAME=${TEST_NAME} _DEBUG=${_DEBUG} python -u -m pytest /app/tests/${TEST_NAME}/ -v -s" > logs/tester.${TEST_NAME}.log || (cat logs/tester.${TEST_NAME}.log && exit 1)
+	@# echo "TEST ${TEST_NAME} DEBUG=${_DEBUG}";
+	@mkdir -p logs;
+	@COMPOSE_INTERACTIVE_NO_CLI=1 docker-compose --file tests/${TEST_NAME}/docker-compose.yml exec -T tester sh -c "TEST_NAME=${TEST_NAME} _DEBUG=${_DEBUG} python -u -m pytest /app/tests/${TEST_NAME}/ -v -s" 1> logs/${TEST_NAME}.out 2> logs/${TEST_NAME}.err || (echo "error" > logs/error.${TEST_NAME}.log && exit 1)
 
 _one_coverage:
-	@echo "COVERAGE ${TEST_NAME}"; mkdir -p ./coverage/${TEST_NAME}/; docker cp $$(docker-compose --file tests/${TEST_NAME}/docker-compose.yml ps -q tester):/app/coverage/. ./coverage/${TEST_NAME}/
+	@# echo "COVERAGE ${TEST_NAME}";
+	@mkdir -p ./coverage/${TEST_NAME}/;
+	@docker cp $$(docker-compose --file tests/${TEST_NAME}/docker-compose.yml ps -q tester):/app/coverage/. ./coverage/${TEST_NAME}/
 
 _one_log:
-	@echo "LOG ${TEST_NAME}"; /bin/bash fetch_logs.sh ${TEST_NAME} > /dev/null;
+	@# echo "LOG ${TEST_NAME}";
+	@/bin/bash fetch_logs.sh ${TEST_NAME} > /dev/null;
 
 _one_post_report:
-	@echo "LOG ${TEST_NAME}"; /bin/bash build_report.sh ${TEST_NAME} > /dev/null;
+	@# @echo "LOG ${TEST_NAME}";
+	@/bin/bash build_report.sh ${TEST_NAME} > /dev/null;
 
 _one_up_test_coverage_down:
-	@$(MAKE) --no-print-directory _one_prepare && $(MAKE) --no-print-directory _one_up && $(MAKE) --no-print-directory _one_test && $(MAKE) --no-print-directory _one_coverage && $(MAKE) --no-print-directory _one_down
+	@$(MAKE) --no-print-directory --output-sync=recurse _one_prepare && $(MAKE) --no-print-directory --output-sync=recurse _one_up && $(MAKE) --no-print-directory --output-sync=recurse _one_test && $(MAKE) --no-print-directory --output-sync=recurse && $(MAKE) --no-print-directory --output-sync=recurse _one_down
 
 _one_up_test_log_down:
-	@$(MAKE) _one_prepare && $(MAKE) _one_up && $(MAKE) _one_test && $(MAKE) _one_coverage && $(MAKE) _one_log && $(MAKE) _one_down
+	@$(MAKE) --no-print-directory --output-sync=recurse _one_prepare && $(MAKE) --no-print-directory --output-sync=recurse _one_up && $(MAKE) --no-print-directory --output-sync=recurse _one_test && $(MAKE) --no-print-directory --output-sync=recurse _one_coverage && $(MAKE) --no-print-directory --output-sync=recurse _one_log && $(MAKE) --no-print-directory --output-sync=recurse _one_down
 
 _one_up_test_log:
-	@$(MAKE) _one_prepare && $(MAKE) _one_up && $(MAKE) _one_test && $(MAKE) _one_log
+	@$(MAKE) --no-print-directory --output-sync=recurse _one_prepare && $(MAKE) --no-print-directory --output-sync=recurse _one_up && $(MAKE) --no-print-directory --output-sync=recurse _one_test && $(MAKE) --no-print-directory --output-sync=recurse _one_log
 
 up/%:
 	@$(MAKE) TEST_NAME=$* _one_up
@@ -98,10 +106,10 @@ log/%:
 	@$(MAKE) TEST_NAME=$* _one_log
 
 run/%:
-	@$(MAKE) --no-print-directory TEST_NAME=$* _one_up_test_coverage_down
+	@$(MAKE) --no-print-directory --output-sync=recurse TEST_NAME=$* _one_up_test_coverage_down
 
 run_log/%:
-	@$(MAKE) TEST_NAME=$* _DEBUG=1 _one_up_test_log_down
+	@$(MAKE) --no-print-directory --output-sync=recurse TEST_NAME=$* _DEBUG=1 _one_up_test_log_down
 
 run_log_up/%:
 	@$(MAKE) TEST_NAME=$* _DEBUG=1 _one_up_test_log
@@ -115,7 +123,7 @@ coverage_combine:
 coverage_report:
 	@echo "COVERAGE REPORT"; cd ..; ~/.bitdust/venv/bin/python -m coverage report -i --omit="transport/http/*,transport/udp/*,tests/*,regress/*,coins/*,broadcast/*,updates/os_windows_update.py,storage/filemanager_api.py,setup.py,setup_gen.py,raid/worker.py,storage/backup_schedule.py,parallelp/pp/*,main/install_wizard.py,lib/txrestapi/txrestapi/*,lib/schedule.py,lib/jsontemplate.py,lib/fastjsonrpc/*,interface/jsonrpc_client.py,interface/cmd_line_json.py,interface/cmd_line_json_templates.py,dht/entangled/dtuple.py,currency/*,chat/terminal_chat.py,CodernityDB/*,CodernityDB3/*",lib/txws.py; cd regress;
 
-post_report_all:
+build_report_all:
 	@echo "$(ALL_TESTS)"; for ONE_TEST in $(ALL_TESTS); do $(MAKE) --no-print-directory post_report/$$ONE_TEST || exit 1; done;
 
 run_all:
@@ -123,6 +131,8 @@ run_all:
 
 run_all_log:
 	@echo "$(ALL_TESTS)"; rm -rf coverage/*; rm -rf coverage_all/*; rm -rf logs/; mkdir -p logs/; for ONE_TEST in $(ALL_TESTS); do $(MAKE) run_log/$$ONE_TEST || exit 1; done;
+
+run_parallel: $(ALL_TESTS)
 
 prepare: build_app build_tester
 
@@ -134,3 +144,7 @@ test: prepare run_all report
 
 shell:
 	docker-compose --file tests/$(test)/docker-compose.yml exec $(node) bash
+
+$(ALL_TESTS):
+	@$(MAKE) --no-print-directory --output-sync=target run_log/$@
+
