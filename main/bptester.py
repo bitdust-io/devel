@@ -88,9 +88,18 @@ def printlog(txt):
     """
     Write a line to the log file.
     """
-    lf = open(logfilepath(), 'a')
-    lf.write(txt + '\n')
-    lf.close()
+    try:
+        if sys.version_info[0] == 3:
+            if not isinstance(txt, str):
+                txt = txt.decode()
+        else:
+            if not isinstance(txt, unicode):  # @UndefinedVariable
+                txt = txt.decode()
+        lf = open(logfilepath(), 'a')
+        lf.write(txt + '\n')
+        lf.close()
+    except:
+        pass
 
 #------------------------------------------------------------------------------
 

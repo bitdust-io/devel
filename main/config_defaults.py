@@ -160,6 +160,8 @@ def reset(conf_obj):
 
     conf_obj.setDefaultValue('services/list-files/enabled', 'true')
 
+    conf_obj.setDefaultValue('services/message-broker/enabled', 'true')
+
     conf_obj.setDefaultValue('services/message-history/enabled', 'true')
 
     conf_obj.setDefaultValue('services/miner/enabled', 'false')
@@ -183,6 +185,8 @@ def reset(conf_obj):
     conf_obj.setDefaultValue('services/p2p-hookups/enabled', 'true')
 
     conf_obj.setDefaultValue('services/p2p-notifications/enabled', 'true')
+
+    conf_obj.setDefaultValue('services/private-groups/enabled', 'true')
 
     conf_obj.setDefaultValue('services/private-messages/enabled', 'true')
 

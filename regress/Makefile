@@ -62,7 +62,7 @@ _one_down:
 	@echo "DOWN ${TEST_NAME}"; docker-compose --file tests/${TEST_NAME}/docker-compose.yml down -v -t 1 1> /dev/null 2> /dev/null
 
 _one_test:
-	@echo "TEST ${TEST_NAME}"; mkdir -p logs; docker-compose --file tests/${TEST_NAME}/docker-compose.yml exec tester sh -c "TEST_NAME=${TEST_NAME} python -u -m pytest /app/tests/${TEST_NAME}/ -v -s" > logs/tester.${TEST_NAME}.log || (cat logs/tester.${TEST_NAME}.log && exit 1)
+	@echo "TEST ${TEST_NAME} DEBUG=${_DEBUG}"; mkdir -p logs; docker-compose --file tests/${TEST_NAME}/docker-compose.yml exec tester sh -c "TEST_NAME=${TEST_NAME} _DEBUG=${_DEBUG} python -u -m pytest /app/tests/${TEST_NAME}/ -v -s" > logs/tester.${TEST_NAME}.log || (cat logs/tester.${TEST_NAME}.log && exit 1)
 
 _one_coverage:
 	@echo "COVERAGE ${TEST_NAME}"; mkdir -p ./coverage/${TEST_NAME}/; docker cp $$(docker-compose --file tests/${TEST_NAME}/docker-compose.yml ps -q tester):/app/coverage/. ./coverage/${TEST_NAME}/
@@ -70,11 +70,17 @@ _one_coverage:
 _one_log:
 	@echo "LOG ${TEST_NAME}"; /bin/bash fetch_logs.sh ${TEST_NAME} > /dev/null;
 
+_one_post_report:
+	@echo "LOG ${TEST_NAME}"; /bin/bash build_report.sh ${TEST_NAME} > /dev/null;
+
 _one_up_test_coverage_down:
 	@$(MAKE) --no-print-directory _one_prepare && $(MAKE) --no-print-directory _one_up && $(MAKE) --no-print-directory _one_test && $(MAKE) --no-print-directory _one_coverage && $(MAKE) --no-print-directory _one_down
 
 _one_up_test_log_down:
 	@$(MAKE) _one_prepare && $(MAKE) _one_up && $(MAKE) _one_test && $(MAKE) _one_coverage && $(MAKE) _one_log && $(MAKE) _one_down
+
+_one_up_test_log:
+	@$(MAKE) _one_prepare && $(MAKE) _one_up && $(MAKE) _one_test && $(MAKE) _one_log
 
 up/%:
 	@$(MAKE) TEST_NAME=$* _one_up
@@ -95,13 +101,22 @@ run/%:
 	@$(MAKE) --no-print-directory TEST_NAME=$* _one_up_test_coverage_down
 
 run_log/%:
-	@$(MAKE) TEST_NAME=$* _one_up_test_log_down
+	@$(MAKE) TEST_NAME=$* _DEBUG=1 _one_up_test_log_down
+
+run_log_up/%:
+	@$(MAKE) TEST_NAME=$* _DEBUG=1 _one_up_test_log
+
+post_report/%:
+	@$(MAKE) TEST_NAME=$* _DEBUG=1 _one_post_report
 
 coverage_combine:
 	@echo "COVERAGE COMBINE"; mkdir -p ./coverage_all/; rm -rf ./coverage_all/*; for ONE_TEST in $(ALL_TESTS); do cp -r ./coverage/$$ONE_TEST/*/.coverage* ./coverage_all/; done; mv -f ../.coverage ./coverage_all/.coverage_unit_tests; ~/.bitdust/venv/bin/python -m pip install "coverage<5"; cd coverage_all; ~/.bitdust/venv/bin/python -m coverage combine; cd ../../; python3 -c "import os; cur=os.path.abspath('.'); fin=open('regress/coverage_all/.coverage'); s=fin.read(); fin.close(); s=s.replace('/app/bitdust', cur); open('.coverage', 'w').write(s);" cd regress/;
 
 coverage_report:
 	@echo "COVERAGE REPORT"; cd ..; ~/.bitdust/venv/bin/python -m coverage report -i --omit="transport/http/*,transport/udp/*,tests/*,regress/*,coins/*,broadcast/*,updates/os_windows_update.py,storage/filemanager_api.py,setup.py,setup_gen.py,raid/worker.py,storage/backup_schedule.py,parallelp/pp/*,main/install_wizard.py,lib/txrestapi/txrestapi/*,lib/schedule.py,lib/jsontemplate.py,lib/fastjsonrpc/*,interface/jsonrpc_client.py,interface/cmd_line_json.py,interface/cmd_line_json_templates.py,dht/entangled/dtuple.py,currency/*,chat/terminal_chat.py,CodernityDB/*,CodernityDB3/*",lib/txws.py; cd regress;
+
+post_report_all:
+	@echo "$(ALL_TESTS)"; for ONE_TEST in $(ALL_TESTS); do $(MAKE) --no-print-directory post_report/$$ONE_TEST || exit 1; done;
 
 run_all:
 	@echo "$(ALL_TESTS)"; rm -rf coverage/*; rm -rf coverage_all/*; for ONE_TEST in $(ALL_TESTS); do $(MAKE) --no-print-directory run/$$ONE_TEST || exit 1; done;

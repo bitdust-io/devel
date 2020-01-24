@@ -73,18 +73,18 @@ def read_customer_suppliers(customer_idurl, as_fields=True):
                 _supplier_idurl = id_url.to_bin(_supplier_idurl)
                 if not id_url.is_cached(_supplier_idurl) or not identitycache.HasFile(_supplier_idurl):
                     one_supplier_story = identitycache.immediatelyCaching(_supplier_idurl)
-                    one_supplier_story.addErrback(lg.errback)
+                    one_supplier_story.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='read_customer_suppliers._do_identity_cache')
                     all_stories.append(one_supplier_story)
         _customer_idurl = id_url.to_bin(ret['customer_idurl'])
         if _customer_idurl and ( not id_url.is_cached(_customer_idurl) or not identitycache.HasFile(_customer_idurl) ):
             one_customer_story = identitycache.immediatelyCaching(_customer_idurl)
-            one_customer_story.addErrback(lg.errback)
+            one_customer_story.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='read_customer_suppliers._do_identity_cache')
             all_stories.append(one_customer_story)
         if _Debug:
             lg.args(_DebugLevel, all_stories=len(all_stories), ret=ret)
         id_cache_story = DeferredList(all_stories, consumeErrors=True)
         id_cache_story.addCallback(_do_save_customer_suppliers, ret)
-        id_cache_story.addErrback(lg.errback)
+        id_cache_story.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='read_customer_suppliers._do_identity_cache')
         id_cache_story.addErrback(result.errback)
         return id_cache_story
 

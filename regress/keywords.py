@@ -507,6 +507,14 @@ def network_reconnect_v1(node):
     return response.json()
 
 
+def network_info_v1(node):
+    response = request_get(node, 'network/info/v1', timeout=20)
+    assert response.status_code == 200
+    print('\nnetwork/info/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
+    assert response.json()['status'] == 'OK', response.json()
+    return response.json()
+
+
 def key_list_v1(node):
     response = request_get(node, 'key/list/v1', timeout=20)
     assert response.status_code == 200

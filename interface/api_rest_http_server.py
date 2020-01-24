@@ -1088,13 +1088,22 @@ class BitDustRESTHTTPServer(JsonAPIResource):
 
     #------------------------------------------------------------------------------
 
-    @GET('^/d/v/g$')
+    @GET('^/d/n/f$')
     @GET('^/v1/dht/node/find$')
     @GET('^/dht/node/find/v1$')
     def dht_node_find_v1(self, request):
         return api.dht_node_find(
             node_id_64=_request_arg(request, 'dht_id', mandatory=False, default=None),
             layer_id=int(_request_arg(request, 'layer_id', mandatory=False, default=0)),
+        )
+
+    @GET('^/d/u/r$')
+    @GET('^/v1/dht/user/random$')
+    @GET('^/dht/user/random/v1$')
+    def dht_user_random_v1(self, request):
+        return api.dht_user_random(
+            layer_id=int(_request_arg(request, 'layer_id', mandatory=False, default=0)),
+            count=int(_request_arg(request, 'count', mandatory=False, default=1)),
         )
 
     @GET('^/d/v/g$')

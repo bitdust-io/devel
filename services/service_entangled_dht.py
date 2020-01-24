@@ -140,11 +140,17 @@ class EntangledDHTService(LocalService):
             lg.info('more DHT layers to be attached: %r' % attached_layers)
             for layer_id in attached_layers.split(','):
                 if layer_id.strip():
-                    dl.append(dht_service.connect(
-                        seed_nodes=known_seeds,
+                    dl.append(dht_service.open_layer(
                         layer_id=int(layer_id.strip()),
+                        seed_nodes=known_seeds, 
+                        connect_now=True,
                         attach=True,
                     ))
+                    # dl.append(dht_service.connect(
+                    #     seed_nodes=known_seeds,
+                    #     layer_id=int(layer_id.strip()),
+                    #     attach=True,
+                    # ))
         if dl:
             d = DeferredList(dl)
             d.addCallback(self._on_layers_attached)

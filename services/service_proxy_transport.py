@@ -177,11 +177,29 @@ class ProxyTransportService(LocalService):
         from dht import known_nodes
         lg.info('going to join proxy routers DHT layer: %d' % dht_records.LAYER_PROXY_ROUTERS)
         known_seeds = known_nodes.nodes()
-        dht_service.connect(
-            seed_nodes=known_seeds,
+        d = dht_service.open_layer(
             layer_id=dht_records.LAYER_PROXY_ROUTERS,
+            seed_nodes=known_seeds,
+            connect_now=True,
             attach=False,
         )
+#         dht_service.connect(
+#             seed_nodes=known_seeds,
+#             layer_id=dht_records.LAYER_PROXY_ROUTERS,
+#             attach=False,
+#         )
+        d.addCallback(self._on_proxy_routers_dht_layer_connected)
+        d.addErrback(lambda *args: lg.err(str(args)))
+
+    def _on_proxy_routers_dht_layer_connected(self, ok):
+        from logs import lg
+        from dht import dht_service
+        from dht import dht_records
+        from userid import my_id
+        lg.info('connected to DHT layer for proxy routers: %r' % ok)
+        if my_id.getLocalID():
+            dht_service.set_node_data('idurl', my_id.getLocalID().to_text(), layer_id=dht_records.LAYER_PROXY_ROUTERS)
+        return ok
 
     def _on_transport_state_changed(self, transport, oldstate, newstate):
         from p2p import p2p_connector

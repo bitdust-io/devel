@@ -32,7 +32,7 @@ import json
 from testsupport import open_one_tunnel_async, clean_one_node_async, clean_one_customer_async, \
     start_one_dht_seed, start_one_identity_server_async, start_one_stun_server_async, start_one_proxy_server_async, \
     start_one_supplier_async, start_one_customer_async, stop_daemon_async, run_ssh_command_and_wait, \
-    print_exceptions_one_node, report_one_node, collect_coverage_one_node_async
+    print_exceptions_one_node, report_one_node, collect_coverage_one_node_async, log_network_info_one_node_async
 
 #------------------------------------------------------------------------------
 
@@ -118,6 +118,15 @@ def stop_all_nodes(event_loop):
     print('\nALL NODES STOPPED in %5.3f seconds\n' % (time.time() - _begin))
 
 
+def log_network_info_all_nodes(event_loop):
+    _begin = time.time()
+    print('\nget network info from all nodes\n')
+    event_loop.run_until_complete(asyncio.gather(*[
+        log_network_info_one_node_async(node, event_loop) for node in ALL_NODES
+    ]))
+    print('\nALL NODES STOPPED in %5.3f seconds\n' % (time.time() - _begin))
+
+
 def kill_all_nodes():
     for node in ALL_NODES:
         print('Shutdown %s' % node)
@@ -192,6 +201,7 @@ def global_wrapper(event_loop):
 
     # TODO: use ENV variables to control stop / coverage / report / cleanup
 
+    # log_network_info_all_nodes(event_loop)
     stop_all_nodes(event_loop)
     collect_coverage_all_nodes(event_loop)
     report_all_nodes(event_loop)
@@ -201,3 +211,4 @@ def global_wrapper(event_loop):
     # kill_all_nodes()
 
     print('\nAll done in %5.3f seconds\n' % (time.time() - _begin))
+

@@ -69,7 +69,7 @@ class IdentityPropagateService(LocalService):
                     id_server_tcp_port = int(id_server[2].strip())
                 except:
                     continue
-                known_identity_servers.apppend({
+                known_identity_servers.append({
                     "host": id_server_host,
                     "tcp_port": id_server_tcp_port,
                     "http_port": id_server_http_port,

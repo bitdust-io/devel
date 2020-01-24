@@ -31,11 +31,11 @@
 Methods to establish a messages queue between two or more nodes.:
 
     + Producers will send a messages to the queue
-    + Consumers will listen to the queue and read the messages comming
+    + Consumers will listen to the queue and read the messages coming in
     + Producer only start sending if he have a Public Key
     + Consumer can only listen if he possess the correct Private Key
     + Queue is only stored on given node: both producer and consumer must be connected to that machine
-    + Global queue ID is unique : mykey$alice@somehost.net:.queue/xyz
+    + Global queue ID is unique : queue_alias&alice@somehost.net&bob@anotherhost.com
     + Queue size is limited by a parameter, you can not publish when queue is overloaded
 
 """
@@ -447,7 +447,7 @@ def finish_notification(consumer_id, queue_id, message_id, success):
         queue(queue_id)[message_id].failed_notifications += 1
         consumer(consumer_id).failed_notifications += 1
     if not defer_result.called:
-        lg.info('cancelling not-finished notification')
+        lg.info('canceling not-finished notification in the queue %s' % queue_id)
         defer_result.cancel()
     del defer_result
     return True

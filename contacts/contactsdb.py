@@ -98,7 +98,7 @@ def init():
         lg.out(_DebugLevel, "contactsdb.init")
     d = cache_contacts()
     d.addCallback(lambda _: load_contacts())
-    d.addErrback(lg.errback)
+    d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='contactsdb.init')
     return d
 
 
