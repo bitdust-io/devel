@@ -211,16 +211,14 @@ def tunnel_port(node):
 def tunnel_url(node, endpoint):
     print('\n%s [%s]: tunnel_url %d - %s' % (
         datetime.datetime.now().strftime("%H:%M:%S.%f"), node, tunnel_port(node), endpoint, ))
-    # return f'https://127.0.0.1:{tunnel_port(node)}/{endpoint.lstrip("/")}'
     return f'http://127.0.0.1:{tunnel_port(node)}/{endpoint.lstrip("/")}'
 
 #------------------------------------------------------------------------------
 
 def start_daemon(node):
     run_ssh_command_and_wait(node, 'mkdir -pv /root/.bitdust/metadata/')
-    # run_ssh_command_and_wait(node, 'echo "docker" > /root/.bitdust/metadata/networkname')
-    # if os.environ.get('_DEBUG', '0') == '0':
-    #     run_ssh_command_and_wait(node, "find /app/bitdust -type f -name '*.py' -exec sed -i -e 's/_Debug = True/_Debug = False/g' {} +")
+    if os.environ.get('_DEBUG', '0') == '0':
+        run_ssh_command_and_wait(node, "find /app/bitdust -type f -name '*.py' -exec sed -i -e 's/_Debug = True/_Debug = False/g' {} +")
     bitdust_daemon = run_ssh_command_and_wait(node, 'BITDUST_LOG_USE_COLORS=0 COVERAGE_PROCESS_START=/app/bitdust/.coverage_config bitdust daemon')
     print('\n' + bitdust_daemon[0].strip())
     assert (
@@ -231,9 +229,8 @@ def start_daemon(node):
 
 async def start_daemon_async(node, loop):
     await run_ssh_command_and_wait_async(node, 'mkdir -pv /root/.bitdust/metadata/', loop)
-    # await run_ssh_command_and_wait_async(node, 'echo "docker" > /root/.bitdust/metadata/networkname', loop)
-    # if os.environ.get('_DEBUG', '0') == '0':
-    #     await run_ssh_command_and_wait_async(node, "find /app/bitdust -type f -name '*.py' -exec sed -i -e 's/_Debug = True/_Debug = False/g' {} +", loop)
+    if os.environ.get('_DEBUG', '0') == '0':
+        await run_ssh_command_and_wait_async(node, "find /app/bitdust -type f -name '*.py' -exec sed -i -e 's/_Debug = True/_Debug = False/g' {} +", loop)
     bitdust_daemon = await run_ssh_command_and_wait_async(node, 'BITDUST_LOG_USE_COLORS=0 COVERAGE_PROCESS_START=/app/bitdust/.coverage_config bitdust daemon', loop)
     print('\n' + bitdust_daemon[0].strip())
     assert (

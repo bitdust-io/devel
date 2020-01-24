@@ -494,14 +494,16 @@ class DiscoveryTask(object):
             lg.out(_DebugLevel, 'lookup.DiscoveryTask[%r]._on_node_processed  %r  discovered_idurls=%d count=%d  idurl=%s' % (
                 self.id, node, len(discovered_idurls(layer_id=self.layer_id)), self.count, idurl))
         if self.succeed + self.failed >= self.count:
-            lg.out(_DebugLevel, 'lookup.DiscoveryTask[%r]._on_node_processed   enough node processed : succeed=%d  failed=%d' % (
-                self.id, self.succeed, self.failed))
+            if _Debug:
+                lg.out(_DebugLevel, 'lookup.DiscoveryTask[%r]._on_node_processed   enough node processed : succeed=%d  failed=%d' % (
+                    self.id, self.succeed, self.failed))
             self._report_result()
             # self._close()
             return node
         if self.succeed + self.failed >= self.observed_count:
-            lg.out(_DebugLevel, 'lookup.DiscoveryTask[%r]._on_node_processed   all observed nodes are processed : succeed=%d  failed=%d observed_count=%d' % (
-                self.id, self.succeed, self.failed, self.observed_count))
+            if _Debug:
+                lg.out(_DebugLevel, 'lookup.DiscoveryTask[%r]._on_node_processed   all observed nodes are processed : succeed=%d  failed=%d observed_count=%d' % (
+                    self.id, self.succeed, self.failed, self.observed_count))
             self._report_result()
             self._close()
             return node

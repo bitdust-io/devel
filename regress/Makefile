@@ -62,7 +62,7 @@ _one_down:
 	@echo "DOWN ${TEST_NAME}"; docker-compose --file tests/${TEST_NAME}/docker-compose.yml down -v -t 1 1> /dev/null 2> /dev/null
 
 _one_test:
-	@echo "TEST ${TEST_NAME}"; mkdir -p logs; docker-compose --file tests/${TEST_NAME}/docker-compose.yml exec tester sh -c "TEST_NAME=${TEST_NAME} python -u -m pytest /app/tests/${TEST_NAME}/ -v -s" > logs/tester.${TEST_NAME}.log || (cat logs/tester.${TEST_NAME}.log && exit 1)
+	@echo "TEST ${TEST_NAME} DEBUG=${_DEBUG}"; mkdir -p logs; docker-compose --file tests/${TEST_NAME}/docker-compose.yml exec tester sh -c "TEST_NAME=${TEST_NAME} _DEBUG=${_DEBUG} python -u -m pytest /app/tests/${TEST_NAME}/ -v -s" > logs/tester.${TEST_NAME}.log || (cat logs/tester.${TEST_NAME}.log && exit 1)
 
 _one_coverage:
 	@echo "COVERAGE ${TEST_NAME}"; mkdir -p ./coverage/${TEST_NAME}/; docker cp $$(docker-compose --file tests/${TEST_NAME}/docker-compose.yml ps -q tester):/app/coverage/. ./coverage/${TEST_NAME}/
@@ -78,6 +78,9 @@ _one_up_test_coverage_down:
 
 _one_up_test_log_down:
 	@$(MAKE) _one_prepare && $(MAKE) _one_up && $(MAKE) _one_test && $(MAKE) _one_coverage && $(MAKE) _one_log && $(MAKE) _one_down
+
+_one_up_test_log:
+	@$(MAKE) _one_prepare && $(MAKE) _one_up && $(MAKE) _one_test && $(MAKE) _one_log
 
 up/%:
 	@$(MAKE) TEST_NAME=$* _one_up
@@ -99,6 +102,9 @@ run/%:
 
 run_log/%:
 	@$(MAKE) TEST_NAME=$* _DEBUG=1 _one_up_test_log_down
+
+run_log_up/%:
+	@$(MAKE) TEST_NAME=$* _DEBUG=1 _one_up_test_log
 
 post_report/%:
 	@$(MAKE) TEST_NAME=$* _DEBUG=1 _one_post_report
