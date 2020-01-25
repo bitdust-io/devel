@@ -5,7 +5,7 @@ test_name="$1"
 rm -rf logs/$test_name
 mkdir logs/$test_name
 
-echo "$test_name" | python3 -c "import json,sys; tst=sys.stdin.read().strip(); containers=json.loads(open(f'tests/{tst}/conf.json').read())['containers'].keys(); open('allnodes', 'w').write(' '.join(containers));"
+echo "$test_name" | python -c "import json,sys; tst=sys.stdin.read().strip(); containers=json.loads(open('tests/%s/conf.json' % tst).read())['containers'].keys(); open('allnodes', 'w').write(' '.join(containers));"
 
 allnodesfile="allnodes"
 nodes=`cat $allnodesfile`

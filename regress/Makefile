@@ -63,22 +63,21 @@ _one_down:
 	@echo "DOWN ${TEST_NAME}"; docker-compose --file tests/${TEST_NAME}/docker-compose.yml down -v -t 1 1> /dev/null 2> /dev/null
 
 _one_test:
-	# @echo "TEST ${TEST_NAME} DEBUG=${_DEBUG}"; mkdir -p logs; COMPOSE_INTERACTIVE_NO_CLI=0 docker-compose --file tests/${TEST_NAME}/docker-compose.yml exec tester sh -c "TEST_NAME=${TEST_NAME} _DEBUG=${_DEBUG} python -u -m pytest /app/tests/${TEST_NAME}/ -v -s" > logs/tester.${TEST_NAME}.log || (cat logs/tester.${TEST_NAME}.log && exit 1)
-	@# echo "TEST ${TEST_NAME} DEBUG=${_DEBUG}";
+	@echo "TEST ${TEST_NAME} DEBUG=${_DEBUG}";
 	@mkdir -p logs;
 	@COMPOSE_INTERACTIVE_NO_CLI=1 docker-compose --file tests/${TEST_NAME}/docker-compose.yml exec -T tester sh -c "TEST_NAME=${TEST_NAME} _DEBUG=${_DEBUG} python -u -m pytest /app/tests/${TEST_NAME}/ -v -s" 1> logs/${TEST_NAME}.out 2> logs/${TEST_NAME}.err || (echo "error" > logs/error.${TEST_NAME}.log && exit 1)
 
 _one_coverage:
-	@# echo "COVERAGE ${TEST_NAME}";
+	@echo "COVERAGE ${TEST_NAME}";
 	@mkdir -p ./coverage/${TEST_NAME}/;
 	@docker cp $$(docker-compose --file tests/${TEST_NAME}/docker-compose.yml ps -q tester):/app/coverage/. ./coverage/${TEST_NAME}/
 
 _one_log:
-	@# echo "LOG ${TEST_NAME}";
+	@echo "LOG ${TEST_NAME}";
 	@/bin/bash fetch_logs.sh ${TEST_NAME} > /dev/null;
 
 _one_post_report:
-	@# @echo "LOG ${TEST_NAME}";
+	@echo "LOG ${TEST_NAME}";
 	@/bin/bash build_report.sh ${TEST_NAME} > /dev/null;
 
 _one_up_test_coverage_down:
