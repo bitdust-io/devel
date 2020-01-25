@@ -478,8 +478,9 @@ class Initializer(automat.Automat):
                             reactor.callLater(5, tray_icon.restore_icon)  # @UndefinedVariable
                             return
                         tray_icon.restore_icon()
+
                     tray_icon.draw_icon('sync')
-                    git_proc.sync(_sync_callback)
+                    git_proc.sync(_sync_callback, update_method='reset')
                 except:
                     lg.exc()
 
