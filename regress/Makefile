@@ -75,7 +75,7 @@ _one_down:
 _one_test:
 	@echo "TEST ${TEST_NAME} DEBUG=${_DEBUG}";
 	@mkdir -p logs;
-	@docker-compose --file tests/${TEST_NAME}/docker-compose.yml exec -T tester sh -c "TEST_NAME=${TEST_NAME} _DEBUG=${_DEBUG} python -u -m pytest /app/tests/${TEST_NAME}/ -v -s" 1> logs/${TEST_NAME}.stdout 2> logs/${TEST_NAME}.stderr || (echo "test ${TEST_NAME} FAILED !!!!!!!" && echo "FAIL" > logs/${TEST_NAME}.fail && exit 1)
+	@docker-compose --file tests/${TEST_NAME}/docker-compose.yml exec -T tester sh -c "TEST_NAME=${TEST_NAME} _DEBUG=${_DEBUG} python -u -m pytest /app/tests/${TEST_NAME}/ -v -s"  2> logs/${TEST_NAME}.stderr || (echo "test ${TEST_NAME} FAILED !!!!!!!" && echo "FAIL" > logs/${TEST_NAME}.fail && exit 1)
 
 _one_coverage:
 	@echo "COVERAGE ${TEST_NAME}";
@@ -141,7 +141,7 @@ run_all: clean_coverage clean_logs
 run_all_log: clean_coverage clean_logs
 	@echo "$(ALL_TESTS)"; rm -rf coverage/*; rm -rf coverage_all/*; for ONE_TEST in $(ALL_TESTS); do $(MAKE) run_log/$$ONE_TEST || exit 1; done;
 
-run_parallel: clean_coverage clean_logs $(ALL_TESTS)
+run_parallel: $(ALL_TESTS)
 
 check_parallel_results:
 	@test ! -f logs/*.fail || { echo FAILED; exit 1; }

@@ -124,7 +124,7 @@ regress_run:
 	PYTHON_VERSION=$(REGRESSION_PY_VER) make -C regress/ run_all
 
 regress_run_parallel:
-	PYTHON_VERSION=$(REGRESSION_PY_VER) make -j 2 -C regress/ run_parallel
+	PYTHON_VERSION=$(REGRESSION_PY_VER) make -j 3 -C regress/ run_parallel
 
 regress_run_log:
 	PYTHON_VERSION=$(REGRESSION_PY_VER) make -C regress/ run_all_log
