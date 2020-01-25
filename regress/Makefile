@@ -32,6 +32,8 @@ ALL_TESTS := $(patsubst tests/%,%,$(wildcard tests/*))
 
 SOME_TESTS := chat storage dht
 
+assert-is-file = $(if $(realpath $1/),$(error Assertion failure: [$1] is a file!))
+
 .PHONY: test
 
 
@@ -46,6 +48,14 @@ remove_all:
 
 prune:
 	@docker system prune
+
+clean_logs:
+	@rm -rf logs/;
+	@mkdir -p logs/;
+
+clean_coverage:
+	@rm -rf coverage/*;
+	@rm -rf coverage_all/*;
 
 build_tester:
 	@docker-compose build --build-arg tester_image
@@ -65,7 +75,7 @@ _one_down:
 _one_test:
 	@echo "TEST ${TEST_NAME} DEBUG=${_DEBUG}";
 	@mkdir -p logs;
-	@COMPOSE_INTERACTIVE_NO_CLI=1 docker-compose --file tests/${TEST_NAME}/docker-compose.yml exec -T tester sh -c "TEST_NAME=${TEST_NAME} _DEBUG=${_DEBUG} python -u -m pytest /app/tests/${TEST_NAME}/ -v -s" 1> logs/${TEST_NAME}.out 2> logs/${TEST_NAME}.err || (echo "error" > logs/error.${TEST_NAME}.log && exit 1)
+	@docker-compose --file tests/${TEST_NAME}/docker-compose.yml exec -T tester sh -c "TEST_NAME=${TEST_NAME} _DEBUG=${_DEBUG} python -u -m pytest /app/tests/${TEST_NAME}/ -v -s" 1> logs/${TEST_NAME}.stdout 2> logs/${TEST_NAME}.stderr || (echo "test ${TEST_NAME} FAILED !!!!!!!" && echo "FAIL" > logs/${TEST_NAME}.fail && exit 1)
 
 _one_coverage:
 	@echo "COVERAGE ${TEST_NAME}";
@@ -125,17 +135,21 @@ coverage_report:
 build_report_all:
 	@echo "$(ALL_TESTS)"; for ONE_TEST in $(ALL_TESTS); do $(MAKE) --no-print-directory post_report/$$ONE_TEST || exit 1; done;
 
-run_all:
-	@echo "$(ALL_TESTS)"; rm -rf coverage/*; rm -rf coverage_all/*; for ONE_TEST in $(ALL_TESTS); do $(MAKE) --no-print-directory run/$$ONE_TEST || exit 1; done;
+run_all: clean_coverage clean_logs
+	@echo "$(ALL_TESTS)";  for ONE_TEST in $(ALL_TESTS); do $(MAKE) --no-print-directory run/$$ONE_TEST || exit 1; done;
 
-run_all_log:
-	@echo "$(ALL_TESTS)"; rm -rf coverage/*; rm -rf coverage_all/*; rm -rf logs/; mkdir -p logs/; for ONE_TEST in $(ALL_TESTS); do $(MAKE) run_log/$$ONE_TEST || exit 1; done;
+run_all_log: clean_coverage clean_logs
+	@echo "$(ALL_TESTS)"; rm -rf coverage/*; rm -rf coverage_all/*; for ONE_TEST in $(ALL_TESTS); do $(MAKE) run_log/$$ONE_TEST || exit 1; done;
 
-run_parallel: $(ALL_TESTS)
+run_parallel: clean_coverage clean_logs $(ALL_TESTS)
+
+check_parallel_results:
+	@test ! -f logs/*.fail || { echo FAILED; exit 1; }
+	@echo SUCCESS!!!
 
 prepare: build_app build_tester
 
-report: coverage_combine coverage_report
+report: coverage_combine coverage_report check_parallel_results
 
 test_log: prepare run_all_log
 
