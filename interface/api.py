@@ -2025,6 +2025,7 @@ def friend_add(idurl_or_global_id, alias=''):
     """
     from contacts import contactsdb
     from contacts import identitycache
+    from main import events
     from p2p import online_status
     from userid import global_id
     from userid import id_url
@@ -2041,6 +2042,11 @@ def friend_add(idurl_or_global_id, alias=''):
             contactsdb.add_correspondent(idurl, alias)
             contactsdb.save_correspondents()
             added = True
+            events.send('friend-added', data=dict(
+                idurl=idurl,
+                global_id=global_id.idurl2glob(idurl),
+                alias=alias,
+            ))
         online_status.handshake(idurl, channel='friend_add', keep_alive=True)
         if added:
             return OK(message='new friend has been added', api_method='friend_add')
@@ -2062,6 +2068,7 @@ def friend_remove(idurl_or_global_id):
     """
     from contacts import contactsdb
     from contacts import identitycache
+    from main import events
     from userid import global_id
     from userid import id_url
     idurl = idurl_or_global_id
@@ -2075,6 +2082,10 @@ def friend_remove(idurl_or_global_id):
         if contactsdb.is_correspondent(idurl):
             contactsdb.remove_correspondent(idurl)
             contactsdb.save_correspondents()
+            events.send('friend-removed', data=dict(
+                idurl=idurl,
+                global_id=global_id.idurl2glob(idurl),
+            ))
             return OK(message='friend has been removed', api_method='friend_remove')
         return ERROR('friend not found', api_method='friend_remove')
 
