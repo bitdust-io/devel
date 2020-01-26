@@ -129,8 +129,11 @@ regress_run_parallel:
 regress_run_log:
 	PYTHON_VERSION=$(REGRESSION_PY_VER) make -C regress/ run_all_log
 
-regress_run_log_one/%:
+regress_run_one/%:
 	PYTHON_VERSION=$(REGRESSION_PY_VER) make -C regress/ TEST_NAME=$* _one_up_test_coverage_down
+
+regress_run_log_one/%:
+	PYTHON_VERSION=$(REGRESSION_PY_VER) make -C regress/ TEST_NAME=$* _one_up_test_log_down
 
 regress_report:
 	PYTHON_VERSION=$(REGRESSION_PY_VER) make -C regress/ report

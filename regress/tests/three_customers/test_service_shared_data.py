@@ -34,7 +34,7 @@ def test_customer_1_share_file_to_customer_2_same_name_as_existing():
         return pytest.skip()  # @UndefinedVariable
 
     supplier_list_v1('customer-1', expected_min_suppliers=2, expected_max_suppliers=2)
-    supplier_list_v1('customer-2', expected_min_suppliers=2, expected_max_suppliers=2)
+    supplier_list_v1('customer-2', expected_min_suppliers=4, expected_max_suppliers=4)
 
     service_info_v1('customer-1', 'service_shared_data', 'ON')
     service_info_v1('customer-2', 'service_shared_data', 'ON')
