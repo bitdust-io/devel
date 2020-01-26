@@ -42,15 +42,16 @@ def supplier_list_v1(customer: str, expected_min_suppliers=None, expected_max_su
         if expected_min_suppliers is None and expected_max_suppliers is None:
             break
         num_connected = 0
+        num_total = len(response.json()['result'])
         for s in response.json()['result']:
             if s['supplier_state'] == 'CONNECTED' and s['contact_state'] == 'CONNECTED':
                 num_connected += 1
         print('\nfound %d connected suppliers at the moment\n' % num_connected)
-        if expected_min_suppliers is not None and num_connected < expected_min_suppliers:
+        if expected_min_suppliers is not None and (num_connected < expected_min_suppliers or num_total < expected_min_suppliers):
             count += 1
             time.sleep(delay)
             continue
-        if expected_max_suppliers is not None and num_connected > expected_max_suppliers:
+        if expected_max_suppliers is not None and (num_connected > expected_max_suppliers or num_total > expected_max_suppliers):
             count += 1
             time.sleep(delay)
             continue
@@ -102,12 +103,12 @@ def supplier_list_dht_v1(customer_id, observers_ids, expected_ecc_map, expected_
             break
         return True
 
-    count = 1
+    count = 0
     for observer_id in observers_ids:
         observer_node = observer_id.split('@')[0]
         if _validate(observer_node):
-            print('customer family [%s] [%s] info is correct for %d observer [%s]\n' % (
-                customer_node, expected_ecc_map, count, observer_node, ))
+            print('customer family [%s] [%s] info is correct for observer [%s] count=%d\n' % (
+                customer_node, expected_ecc_map, observer_node, count, ))
             return True
         count += 1
 

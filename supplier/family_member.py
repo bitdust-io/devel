@@ -196,14 +196,18 @@ class FamilyMember(automat.Automat):
                 self.state = 'CONNECTED'
                 self.Attempts=0
                 self.doNotifyConnected(*args, **kwargs)
-            elif ( event == 'dht-value-exist' and self.isMyPositionOK(*args, **kwargs) and self.isLeaving(*args, **kwargs) ) or event == 'shutdown':
-                self.state = 'CLOSED'
-                self.doDestroyMe(*args, **kwargs)
             elif event == 'dht-value-not-exist' or ( event == 'dht-value-exist' and not self.isMyPositionOK(*args, **kwargs) ):
                 self.state = 'SUPPLIERS'
                 self.Attempts+=1
                 self.doRebuildFamily(*args, **kwargs)
                 self.doRequestSuppliersReview(*args, **kwargs)
+            elif event == 'shutdown':
+                self.state = 'CLOSED'
+                self.doDestroyMe(*args, **kwargs)
+            elif event == 'dht-value-exist' and self.isMyPositionOK(*args, **kwargs) and self.isLeaving(*args, **kwargs):
+                self.state = 'DHT_WRITE'
+                self.doRebuildFamily(*args, **kwargs)
+                self.doDHTWrite(*args, **kwargs)
         #---SUPPLIERS---
         elif self.state == 'SUPPLIERS':
             if event == 'shutdown':
@@ -225,21 +229,21 @@ class FamilyMember(automat.Automat):
                 self.doRequestSuppliersReview(*args, **kwargs)
         #---DHT_WRITE---
         elif self.state == 'DHT_WRITE':
-            if event == 'shutdown':
-                self.state = 'CLOSED'
-                self.doDestroyMe(*args, **kwargs)
-            elif event == 'family-refresh' or event == 'family-join' or event == 'family-leave':
+            if event == 'family-refresh' or event == 'family-join' or event == 'family-leave':
                 self.doPush(event, *args, **kwargs)
             elif event == 'contacts-received':
                 self.doCheckReply(*args, **kwargs)
-            elif event == 'dht-write-fail' and self.Attempts>3:
+            elif event == 'dht-write-fail' and not self.isLeaving(*args, **kwargs) and self.Attempts>3:
                 self.state = 'DISCONNECTED'
                 self.Attempts=0
                 self.doNotifyDisconnected(*args, **kwargs)
-            elif event == 'dht-write-fail' and self.Attempts<=3:
+            elif event == 'dht-write-fail' and not self.isLeaving(*args, **kwargs) and self.Attempts<=3:
                 self.state = 'DHT_READ'
                 self.doDHTRead(*args, **kwargs)
-            elif event == 'dht-write-ok':
+            elif event == 'shutdown' or ( ( event == 'dht-write-fail' or event == 'dht-write-ok' ) and self.isLeaving(*args, **kwargs) ):
+                self.state = 'CLOSED'
+                self.doDestroyMe(*args, **kwargs)
+            elif event == 'dht-write-ok' and not self.isLeaving(*args, **kwargs):
                 self.state = 'CONNECTED'
                 self.Attempts=0
                 self.doNotifyConnected(*args, **kwargs)
