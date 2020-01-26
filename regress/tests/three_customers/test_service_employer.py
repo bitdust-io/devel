@@ -25,7 +25,7 @@ import pytest
 
 from testsupport import request_get, run_ssh_command_and_wait
 from keywords import supplier_list_v1, share_create_v1, file_upload_start_v1, file_download_start_v1, \
-    service_info_v1, file_create_v1
+    service_info_v1, file_create_v1, supplier_list_dht_v1
 
 
 def test_customer_1_replace_supplier_at_position_0():
@@ -35,6 +35,27 @@ def test_customer_1_replace_supplier_at_position_0():
     return True
 
     supplier_list_v1('customer-1', expected_min_suppliers=2, expected_max_suppliers=2)
+
+    supplier_list_dht_v1(
+        customer_id='customer-1@id-a_8084',
+        observers_ids=['customer-1@id-a_8084', 'customer-3@id-a_8084', ],
+        expected_ecc_map='ecc/2x2',
+        expected_suppliers_number=2,
+    )
+
+    supplier_list_dht_v1(
+        customer_id='customer-1@id-a_8084',
+        observers_ids=['customer-3@id-a_8084', 'customer-1@id-a_8084', ],
+        expected_ecc_map='ecc/2x2',
+        expected_suppliers_number=2,
+    )
+    supplier_list_dht_v1(
+        customer_id='customer-1@id-a_8084',
+        observers_ids=['supplier-2@id-a_8084', 'customer-3@id-a_8084', 'customer-1@id-a_8084', ],
+        expected_ecc_map='ecc/2x2',
+        expected_suppliers_number=2,
+    )
+
     share_id_customer_1 = share_create_v1('customer-1')
 
     filename = 'file_to_be_distributed.txt'
@@ -63,4 +84,25 @@ def test_customer_1_replace_supplier_at_position_0():
 
     response = request_get('customer-1', '/supplier/replace/v1', json={'position': '0'})
 
-    # TODO: ...
+    supplier_list_v1('customer-1', expected_min_suppliers=2, expected_max_suppliers=2)
+
+    service_info_v1('customer-1', 'service_shared_data', 'ON')
+
+    supplier_list_dht_v1(
+        customer_id='customer-1@id-a_8084',
+        observers_ids=['customer-1@id-a_8084', 'customer-3@id-a_8084', ],
+        expected_ecc_map='ecc/2x2',
+        expected_suppliers_number=2,
+    )
+    supplier_list_dht_v1(
+        customer_id='customer-1@id-a_8084',
+        observers_ids=['customer-3@id-a_8084', 'customer-1@id-a_8084', ],
+        expected_ecc_map='ecc/2x2',
+        expected_suppliers_number=2,
+    )
+    supplier_list_dht_v1(
+        customer_id='customer-1@id-a_8084',
+        observers_ids=['supplier-2@id-a_8084', 'customer-3@id-a_8084', 'customer-1@id-a_8084', ],
+        expected_ecc_map='ecc/2x2',
+        expected_suppliers_number=2,
+    )

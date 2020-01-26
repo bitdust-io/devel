@@ -59,6 +59,8 @@ def test_customer_1_upload_download_file_with_master_key():
                 assert s['contact_state'] == 'CONNECTED'
             assert True
             break
+        else:
+            print('\nstill see %d suppliers, expect 2 suppliers\n' % len(response.json()['result']))
         count += 1
         time.sleep(5)
 

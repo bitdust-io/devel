@@ -60,9 +60,9 @@ def supplier_list_v1(customer: str, expected_min_suppliers=None, expected_max_su
     return [s['idurl'] for s in response.json()['result']]
 
 
-def supplier_list_dht_v1(customer_id, observer_id, expected_ecc_map, expected_suppliers_number, retries=40, delay=3, accepted_mistakes=0):
+def supplier_list_dht_v1(customer_id, observers_ids, expected_ecc_map, expected_suppliers_number, retries=40, delay=3, accepted_mistakes=0):
     customer_node = customer_id.split('@')[0]
-    observer_node = observer_id.split('@')[0]
+    # observer_node = observer_id.split('@')[0]
 
     def _validate(obs):
         response = None
@@ -102,12 +102,17 @@ def supplier_list_dht_v1(customer_id, observer_id, expected_ecc_map, expected_su
             break
         return True
 
-    if not _validate(observer_node):
-        if not _validate('supplier-1'):
-            assert False, 'customer family [%s] [%s] was not re-published correctly, observer [%s] and another node still see wrong info' % (
-                customer_node, expected_ecc_map, observer_node, )
+    count = 1
+    for observer_id in observers_ids:
+        observer_node = observer_id.split('@')[0]
+        if _validate(observer_node):
+            print('customer family [%s] [%s] info is correct for %d observer [%s]\n' % (
+                customer_node, expected_ecc_map, count, observer_node, ))
+            return True
+        count += 1
 
-    return True
+    assert False, 'customer family [%s] [%s] was not re-published correctly, %d observers still see a wrong info' % (
+        customer_node, expected_ecc_map, count, )
 
 
 def supplier_switch_v1(customer: str, supplier_idurl: str, position: int, validate_retries=30, delay=3):
