@@ -81,13 +81,14 @@ def test_customer_1_replace_supplier_at_position_0():
 
     file_download_start_v1('customer-1', remote_path=remote_path_customer_1, destination=volume_customer_1)
 
-    response = request_get('customer-1', '/supplier/list/v1')
-    assert response.status_code == 200
-    supplier_list = response.json()['result']
-    suppliers_before = list(x['global_id'] for x in supplier_list)
+    response_before = request_get('customer-1', '/supplier/list/v1')
+    assert response_before.status_code == 200
+    supplier_list_before = response_before.json()['result']
+    suppliers_before = list([x['global_id'] for x in supplier_list_before])
     assert len(suppliers_before) == 2
 
     response = request_post('customer-1', '/supplier/replace/v1', json={'position': '0'})
+    assert response.status_code == 200
 
     supplier_list_v1('customer-1', expected_min_suppliers=2, expected_max_suppliers=2)
 
@@ -112,10 +113,10 @@ def test_customer_1_replace_supplier_at_position_0():
         expected_suppliers_number=2,
     )
 
-    response = request_get('customer-1', '/supplier/list/v1')
-    assert response.status_code == 200
-    supplier_list = response.json()['result']
-    suppliers_after = list(x['global_id'] for x in supplier_list)
+    response_after = request_get('customer-1', '/supplier/list/v1')
+    assert response_after.status_code == 200
+    supplier_list_after = response_after.json()['result']
+    suppliers_after = list([x['global_id'] for x in supplier_list_after])
     assert len(suppliers_after) == 2
 
     assert suppliers_after[0] != suppliers_before[0]
@@ -132,10 +133,10 @@ def test_customer_2_switch_supplier_at_position_0():
 
     supplier_list_v1('customer-2', expected_min_suppliers=4, expected_max_suppliers=4)
 
-    response = request_get('customer-2', '/supplier/list/v1')
-    assert response.status_code == 200
-    supplier_list = response.json()['result']
-    suppliers_before = list(x['global_id'] for x in supplier_list)
+    response_before = request_get('customer-2', '/supplier/list/v1')
+    assert response_before.status_code == 200
+    supplier_list_before = response_before.json()['result']
+    suppliers_before = list([x['global_id'] for x in supplier_list_before])
     assert len(suppliers_before) == 4
 
     possible_suppliers = set([
@@ -204,6 +205,7 @@ def test_customer_2_switch_supplier_at_position_0():
         'position': '0',
         'new_global_id': new_supplier,
     })
+    assert response.status_code == 200
 
     supplier_list_v1('customer-2', expected_min_suppliers=4, expected_max_suppliers=4)
 
@@ -234,10 +236,10 @@ def test_customer_2_switch_supplier_at_position_0():
         expected_suppliers_number=4,
     )
 
-    response = request_get('customer-2', '/supplier/list/v1')
-    assert response.status_code == 200
-    supplier_list = response.json()['result']
-    suppliers_after = list(x['global_id'] for x in supplier_list)
+    response_after = request_get('customer-2', '/supplier/list/v1')
+    assert response_after.status_code == 200
+    supplier_list_after = response_after.json()['result']
+    suppliers_after = list([x['global_id'] for x in supplier_list_after])
     assert len(suppliers_after) == 4
 
     assert suppliers_after[0] == new_supplier
