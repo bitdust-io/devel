@@ -296,7 +296,7 @@ class ProxySender(automat.Automat):
                 lg.out(_DebugLevel, 'proxy_sender._on_first_outbox_packet SKIP sending %r because proxy_receiver() not exist' % outpacket)
             return None
         if outpacket.Command == commands.Identity() and outpacket.CreatorID == my_id.getLocalID():
-            if proxy_receiver.GetPossibleRouterIDURL() and proxy_receiver.GetPossibleRouterIDURL() == outpacket.RemoteID:
+            if proxy_receiver.GetPossibleRouterIDURL() and proxy_receiver.GetPossibleRouterIDURL().to_bin() == outpacket.RemoteID.to_bin():
                 if network_connector.A().state is 'DISCONNECTED':
                     if _Debug:
                         lg.out(_DebugLevel, 'proxy_sender._on_first_outbox_packet SKIP sending %r because network_connector() is DISCONNECTED' % outpacket)
