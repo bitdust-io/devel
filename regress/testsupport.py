@@ -42,7 +42,7 @@ _SSLContexts = {}
 
 #------------------------------------------------------------------------------
 
-async def run_ssh_command_and_wait_async(host, cmd, loop):
+async def run_ssh_command_and_wait_async(host, cmd, loop, verbose=True):
     if host in [None, '', b'', 'localhost', ]:
         cmd_args = cmd
     else:
@@ -56,12 +56,14 @@ async def run_ssh_command_and_wait_async(host, cmd, loop):
     ssh_proc = await create
     stdout, stderr = await ssh_proc.communicate()
     if stderr:
-        print(f'STDERR at {host}: %r' % stderr.decode())
-    print(f'\nssh_command on [{host}] : {cmd}')
+        if verbose:
+            print(f'STDERR at {host}: %r' % stderr.decode())
+    if verbose:
+        print(f'\nssh_command on [{host}] : {cmd}')
     return stdout.decode(), stderr.decode()
 
 
-def run_ssh_command_and_wait(host, cmd) -> object:
+def run_ssh_command_and_wait(host, cmd, verbose=True) -> object:
     if host in [None, '', b'', 'localhost', ]:
         cmd_args = cmd
     else:
@@ -74,8 +76,10 @@ def run_ssh_command_and_wait(host, cmd) -> object:
     )
     output, err = ssh_proc.communicate()
     if err:
-        print('\nSTDERR: %r' % err.decode())
-    print(f'\nssh_command on [{host}] : {cmd}')
+        if verbose:
+            print('\nSTDERR: %r' % err.decode())
+    if verbose:
+        print(f'\nssh_command on [{host}] : {cmd}')
     return output.decode(), err.decode()
 
 #------------------------------------------------------------------------------
@@ -461,8 +465,8 @@ async def packet_list_async(node, loop, wait_all_finish=True, attempts=60, delay
 #------------------------------------------------------------------------------
 
 def stop_daemon(node, skip_checks=False):
-    bitdust_stop = run_ssh_command_and_wait(node, 'bitdust stop')
-    print('\n' + bitdust_stop[0].strip())
+    bitdust_stop = run_ssh_command_and_wait(node, 'bitdust stop', verbose=False)
+    # print('\n' + bitdust_stop[0].strip())
     if not skip_checks:
         assert (
             (
@@ -778,7 +782,7 @@ async def start_one_customer_async(customer, loop, sleep_before_start=None):
 #------------------------------------------------------------------------------
 
 def report_one_node(node):
-    main_log = run_ssh_command_and_wait(node, 'cat /root/.bitdust/logs/main.log')[0].strip()
+    main_log = run_ssh_command_and_wait(node, 'cat /root/.bitdust/logs/main.log', verbose=False)[0].strip()
     num_warnings = main_log.count('WARNING')
     num_errors = main_log.count('ERROR!!!')
     num_exceptions = main_log.count('Exception:')
@@ -806,11 +810,11 @@ async def report_one_node_async(node, event_loop):
 def print_exceptions_one_node(node):
     #TODO: find the root cause of invalid signature
     # run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/logs/exception*invalid*signature.log')[0].strip()
-    exceptions_out = run_ssh_command_and_wait(node, 'cat /root/.bitdust/logs/exception_*.log 2>/dev/null')[0].strip()
+    exceptions_out = run_ssh_command_and_wait(node, 'cat /root/.bitdust/logs/exception_*.log 2>/dev/null', verbose=False)[0].strip()
     if exceptions_out:
         print(f'\n[{node}]:\n\n{exceptions_out}\n\n')
-    else:
-        print(f'\n[{node}]: no exceptions found\n')
+    # else:
+    #     print(f'\n[{node}]: no exceptions found\n')
     return exceptions_out
 
 
@@ -818,12 +822,12 @@ async def print_exceptions_one_node_async(node, event_loop):
     print(f'\nsearching errors at {node} in the folder: /root/.bitdust/logs/exception_*.log')
     #TODO: find the root cause of invalid signature
     # await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/logs/exception*invalid*signature.log', event_loop)
-    exceptions_out = await run_ssh_command_and_wait_async(node, 'cat /root/.bitdust/logs/exception_*.log 2>/dev/null', event_loop)
+    exceptions_out = await run_ssh_command_and_wait_async(node, 'cat /root/.bitdust/logs/exception_*.log 2>/dev/null', event_loop, verbose=False)
     exceptions_out = exceptions_out[0].strip()
     if exceptions_out:
         print(f'\n[{node}]:\n\n{exceptions_out}\n\n')
-    else:
-        print(f'\n[{node}]: no exceptions found\n')
+    # else:
+    #     print(f'\n[{node}]: no exceptions found\n')
     return exceptions_out
 
 

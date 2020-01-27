@@ -23,7 +23,7 @@
 import os
 import pytest
 
-from testsupport import request_get, run_ssh_command_and_wait
+from testsupport import request_get, request_post, request_put, run_ssh_command_and_wait
 from keywords import supplier_list_v1, share_create_v1, file_upload_start_v1, file_download_start_v1, \
     service_info_v1, file_create_v1, supplier_list_dht_v1, packet_list_v1, transfer_list_v1
 
@@ -87,7 +87,7 @@ def test_customer_1_replace_supplier_at_position_0():
     suppliers_before = list(x['idurl'] for x in supplier_list)
     assert len(suppliers_before) == 2
 
-    response = request_get('customer-1', '/supplier/replace/v1', json={'position': '0'})
+    response = request_post('customer-1', '/supplier/replace/v1', json={'position': '0'})
 
     supplier_list_v1('customer-1', expected_min_suppliers=2, expected_max_suppliers=2)
 
@@ -200,7 +200,7 @@ def test_customer_2_switch_supplier_at_position_0():
 
     file_download_start_v1('customer-2', remote_path=remote_path_customer_2, destination=volume_customer_2)
 
-    response = request_get('customer-2', '/supplier/switch/v1', json={
+    response = request_put('customer-2', '/supplier/switch/v1', json={
         'position': '0',
         'new_global_id': new_supplier,
     })
