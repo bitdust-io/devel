@@ -25,14 +25,16 @@ import pytest
 
 from testsupport import request_get, run_ssh_command_and_wait
 from keywords import supplier_list_v1, share_create_v1, file_upload_start_v1, file_download_start_v1, \
-    service_info_v1, file_create_v1, supplier_list_dht_v1
+    service_info_v1, file_create_v1, supplier_list_dht_v1, packet_list_v1, transfer_list_v1
 
 
 def test_customer_1_replace_supplier_at_position_0():
     if os.environ.get('RUN_TESTS', '1') == '0':
         return pytest.skip()  # @UndefinedVariable
 
-    return True
+    packet_list_v1('customer-1', wait_all_finish=True)
+
+    transfer_list_v1('customer-1', wait_all_finish=True)
 
     supplier_list_v1('customer-1', expected_min_suppliers=2, expected_max_suppliers=2)
 
@@ -42,7 +44,6 @@ def test_customer_1_replace_supplier_at_position_0():
         expected_ecc_map='ecc/2x2',
         expected_suppliers_number=2,
     )
-
     supplier_list_dht_v1(
         customer_id='customer-1@id-a_8084',
         observers_ids=['customer-3@id-a_8084', 'customer-1@id-a_8084', ],
@@ -74,13 +75,17 @@ def test_customer_1_replace_supplier_at_position_0():
 
     service_info_v1('customer-1', 'service_shared_data', 'ON')
 
+    packet_list_v1('customer-1', wait_all_finish=True)
+
+    transfer_list_v1('customer-1', wait_all_finish=True)
+
     file_download_start_v1('customer-1', remote_path=remote_path_customer_1, destination=volume_customer_1)
 
     response = request_get('customer-1', '/supplier/list/v1')
     assert response.status_code == 200
     supplier_list = response.json()['result']
-    suppliers = set(x['idurl'] for x in supplier_list)
-    assert len(suppliers) == 2
+    suppliers_before = list(x['idurl'] for x in supplier_list)
+    assert len(suppliers_before) == 2
 
     response = request_get('customer-1', '/supplier/replace/v1', json={'position': '0'})
 
@@ -106,3 +111,137 @@ def test_customer_1_replace_supplier_at_position_0():
         expected_ecc_map='ecc/2x2',
         expected_suppliers_number=2,
     )
+
+    response = request_get('customer-1', '/supplier/list/v1')
+    assert response.status_code == 200
+    supplier_list = response.json()['result']
+    suppliers_after = list(x['idurl'] for x in supplier_list)
+    assert len(suppliers_after) == 2
+
+    assert suppliers_after[0] != suppliers_before[0]
+    assert suppliers_after[1] == suppliers_before[1]
+
+
+def test_customer_2_switch_supplier_at_position_0():
+    if os.environ.get('RUN_TESTS', '1') == '0':
+        return pytest.skip()  # @UndefinedVariable
+
+    packet_list_v1('customer-2', wait_all_finish=True)
+
+    transfer_list_v1('customer-2', wait_all_finish=True)
+
+    supplier_list_v1('customer-2', expected_min_suppliers=4, expected_max_suppliers=4)
+
+    response = request_get('customer-2', '/supplier/list/v1')
+    assert response.status_code == 200
+    supplier_list = response.json()['result']
+    suppliers_before = list(x['idurl'] for x in supplier_list)
+    assert len(suppliers_before) == 4
+
+    possible_suppliers = set([
+        'supplier-1@id-a_8084',
+        'supplier-2@id-a_8084',
+        'supplier-3@id-a_8084',
+        'supplier-4@id-a_8084',
+        'supplier-5@id-a_8084',
+        'supplier-6@id-a_8084',
+        'supplier-7@id-a_8084',
+        'supplier-8@id-a_8084',
+    ])
+    possible_suppliers.difference_update(set(suppliers_before))
+    new_supplier = list(possible_suppliers)[0]
+
+    supplier_list_dht_v1(
+        customer_id='customer-2@id-a_8084',
+        observers_ids=[new_supplier, 'customer-2@id-a_8084', 'customer-3@id-a_8084', ],
+        expected_ecc_map='ecc/4x4',
+        expected_suppliers_number=4,
+    )
+    supplier_list_dht_v1(
+        customer_id='customer-2@id-a_8084',
+        observers_ids=['customer-2@id-a_8084', 'customer-3@id-a_8084', ],
+        expected_ecc_map='ecc/4x4',
+        expected_suppliers_number=4,
+    )
+    supplier_list_dht_v1(
+        customer_id='customer-2@id-a_8084',
+        observers_ids=['customer-3@id-a_8084', 'customer-1@id-a_8084', ],
+        expected_ecc_map='ecc/4x4',
+        expected_suppliers_number=4,
+    )
+    supplier_list_dht_v1(
+        customer_id='customer-2@id-a_8084',
+        observers_ids=['supplier-2@id-a_8084', 'customer-3@id-a_8084', 'customer-1@id-a_8084', ],
+        expected_ecc_map='ecc/4x4',
+        expected_suppliers_number=4,
+    )
+
+    share_id_customer_2 = share_create_v1('customer-2')
+
+    filename = 'file_to_be_distributed.txt'
+    virtual_filename = filename
+
+    volume_customer_2 = '/customer_2'
+    filepath_customer_2 = f'{volume_customer_2}/{filename}'
+
+    remote_path_customer_2 = f'{share_id_customer_2}:{virtual_filename}'
+
+    run_ssh_command_and_wait('customer-2', f'echo customer_2 > {filepath_customer_2}')
+
+    file_create_v1('customer-2', remote_path_customer_2)
+
+    file_upload_start_v1('customer-2', remote_path_customer_2, filepath_customer_2)
+
+    service_info_v1('customer-2', 'service_shared_data', 'ON')
+
+    packet_list_v1('customer-2', wait_all_finish=True)
+
+    transfer_list_v1('customer-2', wait_all_finish=True)
+
+    file_download_start_v1('customer-2', remote_path=remote_path_customer_2, destination=volume_customer_2)
+
+    response = request_get('customer-2', '/supplier/switch/v1', json={
+        'position': '0',
+        'new_global_id': new_supplier,
+    })
+
+    supplier_list_v1('customer-2', expected_min_suppliers=4, expected_max_suppliers=4)
+
+    service_info_v1('customer-2', 'service_shared_data', 'ON')
+
+    supplier_list_dht_v1(
+        customer_id='customer-2@id-a_8084',
+        observers_ids=[new_supplier, 'customer-2@id-a_8084', 'customer-3@id-a_8084', ],
+        expected_ecc_map='ecc/4x4',
+        expected_suppliers_number=4,
+    )
+    supplier_list_dht_v1(
+        customer_id='customer-2@id-a_8084',
+        observers_ids=['customer-2@id-a_8084', 'customer-3@id-a_8084', ],
+        expected_ecc_map='ecc/4x4',
+        expected_suppliers_number=4,
+    )
+    supplier_list_dht_v1(
+        customer_id='customer-2@id-a_8084',
+        observers_ids=['customer-3@id-a_8084', 'customer-1@id-a_8084', ],
+        expected_ecc_map='ecc/4x4',
+        expected_suppliers_number=4,
+    )
+    supplier_list_dht_v1(
+        customer_id='customer-2@id-a_8084',
+        observers_ids=['supplier-2@id-a_8084', 'customer-3@id-a_8084', 'customer-1@id-a_8084', ],
+        expected_ecc_map='ecc/4x4',
+        expected_suppliers_number=4,
+    )
+
+    response = request_get('customer-2', '/supplier/list/v1')
+    assert response.status_code == 200
+    supplier_list = response.json()['result']
+    suppliers_after = list(x['idurl'] for x in supplier_list)
+    assert len(suppliers_after) == 4
+
+    assert suppliers_after[0] == new_supplier
+    assert suppliers_after[0] != suppliers_before[0]
+    assert suppliers_after[1] == suppliers_before[1]
+    assert suppliers_after[2] == suppliers_before[2]
+    assert suppliers_after[3] == suppliers_before[3]

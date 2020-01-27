@@ -22,7 +22,6 @@
 
 import os
 import pytest
-import requests
 
 from testsupport import request_get, request_put, run_ssh_command_and_wait
 from keywords import supplier_list_v1, share_create_v1, file_upload_start_v1, file_download_start_v1, \

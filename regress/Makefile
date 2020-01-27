@@ -64,6 +64,11 @@ build_tester:
 build_app:
 	@docker-compose build --build-arg PYTHON_VERSION=$(PYTHON_VERSION) app_image
 
+$(ALL_TESTS):
+	@$(MAKE) --no-print-directory --output-sync=target spawn_run_log/$@
+
+_all_tests: $(ALL_TESTS)
+
 _one_prepare:
 	@echo "PREPARE ${TEST_NAME}"; python3 prepare_test.py ${TEST_NAME};
 
@@ -148,7 +153,7 @@ run_all: clean_coverage clean_logs
 run_all_log: clean_coverage clean_logs
 	@echo "ALL TESTS: $(ALL_TESTS)"; for ONE_TEST in $(ALL_TESTS); do $(MAKE) run_log/$$ONE_TEST || exit 1; done;
 
-run_parallel: $(ALL_TESTS)
+run_parallel: clean_coverage clean_logs _all_tests
 
 check_parallel_results:
 	@test ! -f logs/*.fail || { echo FAILED; exit 1; }
@@ -164,6 +169,3 @@ test: prepare run_all report
 
 shell:
 	docker-compose --file tests/$(test)/docker-compose.yml exec $(node) bash
-
-$(ALL_TESTS):
-	@$(MAKE) --no-print-directory --output-sync=target spawn_run_log/$@
