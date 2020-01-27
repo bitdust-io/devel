@@ -109,19 +109,19 @@ _one_up_test_log:
 	@$(MAKE) --no-print-directory --output-sync=line _one_prepare && $(MAKE) --no-print-directory --output-sync=line _one_up && $(MAKE) --no-print-directory --output-sync=none _one_test && $(MAKE) --no-print-directory --output-sync=line _one_log
 
 up/%:
-	@$(MAKE) TEST_NAME=$* _one_up
+	@$(MAKE) --no-print-directory TEST_NAME=$* _one_up
 
 down/%:
-	@$(MAKE) TEST_NAME=$* _one_down
+	@$(MAKE) --no-print-directory TEST_NAME=$* _one_down
 
 test/%:
-	@$(MAKE) TEST_NAME=$* _one_test
+	@$(MAKE) --no-print-directory TEST_NAME=$* _one_test
 
 cover/%:
-	@$(MAKE) TEST_NAME=$* _one_coverage
+	@$(MAKE) --no-print-directory TEST_NAME=$* _one_coverage
 
 log/%:
-	@$(MAKE) TEST_NAME=$* _one_log
+	@$(MAKE) --no-print-directory TEST_NAME=$* _one_log
 
 run/%:
 	@$(MAKE) --no-print-directory --output-sync=line TEST_NAME=$* _one_up_test_coverage_down
@@ -133,10 +133,10 @@ spawn_run_log/%:
 	@$(MAKE) --no-print-directory --output-sync=recurse TEST_NAME=$* _DEBUG=1 _one_up_test_log_down_parallel
 
 run_log_up/%:
-	@$(MAKE) TEST_NAME=$* _DEBUG=1 _one_up_test_log
+	@$(MAKE) --no-print-directory TEST_NAME=$* _DEBUG=1 _one_up_test_log
 
 post_report/%:
-	@$(MAKE) TEST_NAME=$* _DEBUG=1 _one_post_report
+	@$(MAKE) --no-print-directory TEST_NAME=$* _DEBUG=1 _one_post_report
 
 coverage_combine:
 	@echo "COVERAGE COMBINE"; for ONE_TEST in $(ALL_TESTS); do cp -r ./coverage/$$ONE_TEST/*/.coverage* ./coverage_all/ 2>/dev/null; done; mv -f ../.coverage ./coverage_all/.coverage_unit_tests 2>/dev/null; ~/.bitdust/venv/bin/python -m pip install "coverage<5"; cd coverage_all; ~/.bitdust/venv/bin/python -m coverage combine; cd ../../; python3 -c "import os; cur=os.path.abspath('.'); fin=open('regress/coverage_all/.coverage'); s=fin.read(); fin.close(); s=s.replace('/app/bitdust', cur); open('.coverage', 'w').write(s);"; cd regress;
@@ -151,7 +151,7 @@ run_all: clean_coverage clean_logs
 	@echo "ALL TESTS: $(ALL_TESTS)"; for ONE_TEST in $(ALL_TESTS); do $(MAKE) --no-print-directory run/$$ONE_TEST || exit 1; done;
 
 run_all_log: clean_coverage clean_logs
-	@echo "ALL TESTS: $(ALL_TESTS)"; for ONE_TEST in $(ALL_TESTS); do $(MAKE) run_log/$$ONE_TEST || exit 1; done;
+	@echo "ALL TESTS: $(ALL_TESTS)"; for ONE_TEST in $(ALL_TESTS); do $(MAKE) --no-print-directory run_log/$$ONE_TEST || exit 1; done;
 
 run_parallel: clean_coverage clean_logs _all_tests
 

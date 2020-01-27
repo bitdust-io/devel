@@ -479,12 +479,12 @@ def stop_daemon(node, skip_checks=False):
                 bitdust_stop[0].strip() == 'BitDust is not running at the moment'
             )
         )
-    print(f'stop_daemon [{node}] OK\n')
+    # print(f'stop_daemon [{node}] OK\n')
 
 
 async def stop_daemon_async(node, loop, skip_checks=False):
-    bitdust_stop = await run_ssh_command_and_wait_async(node, 'bitdust stop', loop)
-    print('\n' + bitdust_stop[0].strip())
+    bitdust_stop = await run_ssh_command_and_wait_async(node, 'bitdust stop', loop, verbose=False)
+    # print('\n' + bitdust_stop[0].strip())
     if not skip_checks:
         assert (
             (
@@ -497,7 +497,7 @@ async def stop_daemon_async(node, loop, skip_checks=False):
                 bitdust_stop[0].strip() == 'BitDust is not running at the moment'
             )
         )
-    print(f'stop_daemon [{node}] OK\n')
+    # print(f'stop_daemon [{node}] OK\n')
 
 #------------------------------------------------------------------------------
 

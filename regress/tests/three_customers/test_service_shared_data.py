@@ -84,6 +84,16 @@ def test_customer_1_share_file_to_customer_2_same_name_as_existing():
 
     file_download_start_v1('customer-2', remote_path=remote_path_customer_2, destination=volume_customer_2)
 
+    service_info_v1('customer-2', 'service_shared_data', 'ON')
+
+    packet_list_v1('customer-1', wait_all_finish=True)
+
+    transfer_list_v1('customer-1', wait_all_finish=True)
+
+    packet_list_v1('customer-2', wait_all_finish=True)
+
+    transfer_list_v1('customer-2', wait_all_finish=True)
+
     response = request_put('customer-1', 'share/grant/v1',
         json={
             'trusted_global_id': 'customer-2@id-a_8084',
@@ -134,8 +144,6 @@ def test_customer_1_share_file_to_customer_3():
 
     service_info_v1('customer-1', 'service_shared_data', 'ON')
 
-    service_info_v1('customer-3', 'service_shared_data', 'ON')
-
     file_create_v1('customer-1', remote_path)
 
     file_upload_start_v1('customer-1', remote_path, local_path)
@@ -144,9 +152,17 @@ def test_customer_1_share_file_to_customer_3():
 
     transfer_list_v1('customer-1', wait_all_finish=True)
 
-    service_info_v1('customer-1', 'service_shared_data', 'ON')
-
     file_download_start_v1('customer-1', remote_path=remote_path, destination='/customer_1')
+
+    packet_list_v1('customer-1', wait_all_finish=True)
+
+    transfer_list_v1('customer-1', wait_all_finish=True)
+
+    service_info_v1('customer-3', 'service_shared_data', 'ON')
+
+    packet_list_v1('customer-3', wait_all_finish=True)
+
+    transfer_list_v1('customer-3', wait_all_finish=True)
 
     response = request_put('customer-1', 'share/grant/v1',
         json={
@@ -159,8 +175,6 @@ def test_customer_1_share_file_to_customer_3():
     assert response.json()['status'] == 'OK', response.json()
     print('\n\nshare/grant/v1 trusted_global_id=%s key_id=%s : %s\n' % ('customer-3@id-a_8084', key_id, response.json(), ))
 
-    service_info_v1('customer-3', 'service_shared_data', 'ON')
-
     file_download_start_v1('customer-3', remote_path=remote_path, destination=download_volume)
 
     local_file_src = run_ssh_command_and_wait('customer-1', 'cat %s' % local_path)[0].strip()
@@ -169,4 +183,4 @@ def test_customer_1_share_file_to_customer_3():
     downloaded_file_src = run_ssh_command_and_wait('customer-3', 'cat %s' % downloaded_file)[0].strip()
     print('customer-3: file %s is %d bytes long' % (downloaded_file, len(downloaded_file_src)))
 
-    assert local_file_src == downloaded_file_src, "source file and received file content is not equal"
+    assert local_file_src == downloaded_file_src, "source file and shared file content is not equal"

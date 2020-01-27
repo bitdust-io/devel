@@ -98,8 +98,18 @@ def supplier_list_dht_v1(customer_id, observers_ids, expected_ecc_map, expected_
                 count += 1
                 time.sleep(delay)
                 continue
-            assert response.json()['result']['customer_idurl'].count('%s.xml' % customer_node), response.json()['result']['customer_idurl']
-            assert response.json()['result']['ecc_map'] == expected_ecc_map, response.json()['result']['ecc_map']
+            if not response.json()['result']['customer_idurl'].count('%s.xml' % customer_node):
+                print('\ncurrently see customer_idurl=%r, but expect family owner to be %r\n' % (
+                    response.json()['result']['customer_idurl'], customer_node))
+                count += 1
+                time.sleep(delay)
+                continue
+            if not response.json()['result']['ecc_map'] == expected_ecc_map:
+                print('\ncurrently see ecc_map=%r, but expect to be %r\n' % (
+                    response.json()['result']['ecc_map'], expected_ecc_map))
+                count += 1
+                time.sleep(delay)
+                continue
             break
         return True
 
@@ -450,11 +460,13 @@ def event_listen_v1(node, expected_event_id, consumer_id='regression_tests_wait_
     return found
 
 
-def packet_list_v1(node, wait_all_finish=False, attempts=60, delay=3):
+def packet_list_v1(node, wait_all_finish=False, attempts=60, delay=3, verbose=False):
+    print('\npacket/list/v1 [%s]\n' % node)
     for _ in range(attempts):
         response = request_get(node, 'packet/list/v1', timeout=20)
         assert response.status_code == 200
-        print('\npacket/list/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
+        if verbose:
+            print('\npacket/list/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
         assert response.json()['status'] == 'OK', response.json()
         if len(response.json()['result']) == 0 or not wait_all_finish:
             break
@@ -464,11 +476,13 @@ def packet_list_v1(node, wait_all_finish=False, attempts=60, delay=3):
     return response.json()
 
 
-def transfer_list_v1(node, wait_all_finish=False, attempts=60, delay=3):
+def transfer_list_v1(node, wait_all_finish=False, attempts=60, delay=3, verbose=False):
+    print('\ntransfer/list/v1 [%s]\n' % node)
     for _ in range(attempts):
         response = request_get(node, 'transfer/list/v1', timeout=20)
         assert response.status_code == 200
-        print('\ntransfer/list/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
+        if verbose:
+            print('\ntransfer/list/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
         assert response.json()['status'] == 'OK', response.json()
         if not wait_all_finish:
             break
