@@ -84,7 +84,7 @@ def test_customer_1_replace_supplier_at_position_0():
     response = request_get('customer-1', '/supplier/list/v1')
     assert response.status_code == 200
     supplier_list = response.json()['result']
-    suppliers_before = list(x['idurl'] for x in supplier_list)
+    suppliers_before = list(x['global_id'] for x in supplier_list)
     assert len(suppliers_before) == 2
 
     response = request_post('customer-1', '/supplier/replace/v1', json={'position': '0'})
@@ -115,7 +115,7 @@ def test_customer_1_replace_supplier_at_position_0():
     response = request_get('customer-1', '/supplier/list/v1')
     assert response.status_code == 200
     supplier_list = response.json()['result']
-    suppliers_after = list(x['idurl'] for x in supplier_list)
+    suppliers_after = list(x['global_id'] for x in supplier_list)
     assert len(suppliers_after) == 2
 
     assert suppliers_after[0] != suppliers_before[0]
@@ -135,7 +135,7 @@ def test_customer_2_switch_supplier_at_position_0():
     response = request_get('customer-2', '/supplier/list/v1')
     assert response.status_code == 200
     supplier_list = response.json()['result']
-    suppliers_before = list(x['idurl'] for x in supplier_list)
+    suppliers_before = list(x['global_id'] for x in supplier_list)
     assert len(suppliers_before) == 4
 
     possible_suppliers = set([
@@ -237,7 +237,7 @@ def test_customer_2_switch_supplier_at_position_0():
     response = request_get('customer-2', '/supplier/list/v1')
     assert response.status_code == 200
     supplier_list = response.json()['result']
-    suppliers_after = list(x['idurl'] for x in supplier_list)
+    suppliers_after = list(x['global_id'] for x in supplier_list)
     assert len(suppliers_after) == 4
 
     assert suppliers_after[0] == new_supplier
