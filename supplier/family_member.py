@@ -698,9 +698,13 @@ class FamilyMember(automat.Automat):
         if self.dht_info:
             if self.dht_info['suppliers'] == possible_transaction['suppliers']:
                 if self.dht_info['ecc_map'] == possible_transaction['ecc_map']:
-                    if _Debug:
-                        lg.out(_DebugLevel, 'family_member._do_increment_revision did not found any changes, skip transaction')
-                    return None
+                    if self.current_request and self.current_request['command'] == 'family-leave':
+                        if _Debug:
+                            lg.out(_DebugLevel, 'family_member._do_increment_revision will re-publish latest DHT info because processing "family-leave" request')
+                    else:
+                        if _Debug:
+                            lg.out(_DebugLevel, 'family_member._do_increment_revision did not found any changes, skip transaction')
+                        return None
         possible_transaction['revision'] += 1
         possible_transaction['publisher_idurl'] = my_id.getLocalID()
         return possible_transaction
@@ -800,10 +804,17 @@ class FamilyMember(automat.Automat):
         except ValueError:
             existing_position = -1
         if existing_position < 0:
-            lg.warn('skip "family-leave" request, did not found supplier %r in customer family %r' % (
-                current_request['supplier_idurl'], self.customer_idurl, ))
-            return None
-        merged_info['suppliers'][existing_position] = b''
+            # lg.warn('skip "family-leave" request, did not found supplier %r in customer family %r' % (
+            #     current_request['supplier_idurl'], self.customer_idurl, ))
+            # return None
+            if _Debug:
+                lg.dbg(_DebugLevel, 'supplier %r not found in customer family %r, probably already leaving' % (
+                       current_request['supplier_idurl'], self.customer_idurl, ))
+        else:
+            merged_info['suppliers'][existing_position] = b''
+            if _Debug:
+                lg.dbg(_DebugLevel, 'erasing supplier %r from customer family %r' % (
+                       current_request['supplier_idurl'], self.customer_idurl, ))
         return merged_info
 
     def _do_process_family_refresh_request(self, merged_info):

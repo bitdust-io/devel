@@ -245,7 +245,7 @@ def handle(newpacket, info):
     handled = False
     # check that signed by a contact of ours
     try:
-        is_signature_valid = newpacket.Valid(raise_signature_invalid=True)
+        is_signature_valid = newpacket.Valid(raise_signature_invalid=False)
     except:
         is_signature_valid = False
         # lg.exc('new packet from %s://%s is NOT VALID:\n\n%r\n' % (

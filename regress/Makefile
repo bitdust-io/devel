@@ -134,7 +134,7 @@ post_report/%:
 	@$(MAKE) TEST_NAME=$* _DEBUG=1 _one_post_report
 
 coverage_combine:
-	@echo "COVERAGE COMBINE"; for ONE_TEST in $(ALL_TESTS); do cp -vr ./coverage/$$ONE_TEST/*/.coverage* ./coverage_all/ 2>/dev/null; done; mv -vf ../.coverage ./coverage_all/.coverage_unit_tests 2>/dev/null; ~/.bitdust/venv/bin/python -m pip install "coverage<5"; cd coverage_all; ~/.bitdust/venv/bin/python -m coverage combine; cd ../../; python3 -c "import os; cur=os.path.abspath('.'); fin=open('regress/coverage_all/.coverage'); s=fin.read(); fin.close(); s=s.replace('/app/bitdust', cur); open('.coverage', 'w').write(s);"; cd regress;
+	@echo "COVERAGE COMBINE"; for ONE_TEST in $(ALL_TESTS); do cp -r ./coverage/$$ONE_TEST/*/.coverage* ./coverage_all/ 2>/dev/null; done; mv -f ../.coverage ./coverage_all/.coverage_unit_tests 2>/dev/null; ~/.bitdust/venv/bin/python -m pip install "coverage<5"; cd coverage_all; ~/.bitdust/venv/bin/python -m coverage combine; cd ../../; python3 -c "import os; cur=os.path.abspath('.'); fin=open('regress/coverage_all/.coverage'); s=fin.read(); fin.close(); s=s.replace('/app/bitdust', cur); open('.coverage', 'w').write(s);"; cd regress;
 
 coverage_report:
 	@echo "COVERAGE REPORT"; cd ..; ~/.bitdust/venv/bin/python -m coverage report -i --omit="transport/http/*,transport/udp/*,tests/*,regress/*,coins/*,broadcast/*,updates/os_windows_update.py,storage/filemanager_api.py,setup.py,setup_gen.py,raid/worker.py,storage/backup_schedule.py,parallelp/pp/*,main/install_wizard.py,lib/txrestapi/txrestapi/*,lib/schedule.py,lib/jsontemplate.py,lib/fastjsonrpc/*,interface/jsonrpc_client.py,interface/cmd_line_json.py,interface/cmd_line_json_templates.py,dht/entangled/dtuple.py,currency/*,chat/terminal_chat.py,CodernityDB/*,CodernityDB3/*",lib/txws.py; cd regress;
@@ -167,4 +167,3 @@ shell:
 
 $(ALL_TESTS):
 	@$(MAKE) --no-print-directory --output-sync=target spawn_run_log/$@
-
