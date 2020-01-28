@@ -70,8 +70,8 @@ def supplier_list_dht_v1(customer_id, observers_ids, expected_ecc_map, expected_
         response = None
         num_suppliers = 0
         count = 0
-        mistakes = 0
         while True:
+            mistakes = 0
             if count >= retries:
                 print('\nDHT info still wrong after %d retries, currently see %d suppliers, but expected %d' % (
                     count, num_suppliers, expected_suppliers_number))
@@ -111,7 +111,7 @@ def supplier_list_dht_v1(customer_id, observers_ids, expected_ecc_map, expected_
                 mistakes += ss.count('')
                 print('\nfound empty suppliers\n')
             if len(list(filter(None, ss))) != expected_suppliers_number:
-                mistakes +=  abs(expected_suppliers_number - len(list(filter(None, ss))))
+                mistakes += abs(expected_suppliers_number - len(list(filter(None, ss))))
                 print('\nfound missing suppliers\n')
             if not response.json()['result']['ecc_map'] == expected_ecc_map:
                 mistakes += 1

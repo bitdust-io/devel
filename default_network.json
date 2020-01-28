@@ -1,6 +1,6 @@
 {
   "service_entangled_dht": {
-    "bucket_size": 4,
+    "bucket_size": 2,
     "default_age": 43200,
     "known_nodes": [
       {
