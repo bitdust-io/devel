@@ -308,7 +308,7 @@ async def get_client_certificate_async(node, loop):
 
 #------------------------------------------------------------------------------
 
-def health_check(node):
+def health_check(node, verbose=False):
     count = 0
     while True:
         if count > 60:
@@ -317,10 +317,12 @@ def health_check(node):
             response = request_get(node, 'process/health/v1')
         except Exception as exc:
             response = None
-            print(f'node {node} is not started yet, count={count} : {exc}\n')
+            if verbose:
+                print(f'node {node} is not started yet, count={count} : {exc}\n')
         if response and response.status_code == 200 and response.json()['status'] == 'OK':
             break
-        print(f'\nnode {node} process not started yet, try again after 1 sec.\n')
+        if verbose:
+            print(f'\nnode {node} process not started yet, try again after 1 sec.\n')
         time.sleep(1)
         count += 1
     print(f'\nprocess/health/v1 [{node}] : OK')
@@ -405,11 +407,12 @@ def connect_network(node):
     print(f'network/connected/v1 [{node}] : OK\n')
 
 
-async def connect_network_async(node, loop, attempts=30, delay=1, timeout=10):
+async def connect_network_async(node, loop, attempts=30, delay=1, timeout=10, verbose=False):
     async with aiohttp.ClientSession(loop=loop, connector=ssl_connection(node)) as client:
         response = await client.get(tunnel_url(node, 'network/connected/v1?wait_timeout=1'), timeout=timeout)
         response_json = await response.json()
-        print(f'\nnetwork/connected/v1 [{node}] : %s' % pprint.pformat(response_json))
+        if verbose:
+            print(f'\nnetwork/connected/v1 [{node}] : %s' % pprint.pformat(response_json))
         if response_json['status'] == 'OK':
             print(f"network/connected/v1 {node}: got status OK from the first call\n")
             return
@@ -418,18 +421,20 @@ async def connect_network_async(node, loop, attempts=30, delay=1, timeout=10):
             counter += 1
             response = await client.get(tunnel_url(node, '/network/connected/v1?wait_timeout=1'), timeout=timeout)
             response_json = await response.json()
-            print(f'\nnetwork/connected/v1 [{node}] : %s' % pprint.pformat(response_json))
+            if verbose:
+                print(f'\nnetwork/connected/v1 [{node}] : %s' % pprint.pformat(response_json))
             if response_json['status'] == 'OK':
                 print(f"network/connected/v1 {node}: got status OK\n")
                 break
-            print(f"connect network attempt {counter} at {node}: sleep 1 sec\n")
+            if verbose:
+                print(f"connect network attempt {counter} at {node}: sleep 1 sec\n")
             await asyncio.sleep(delay)
         else:
             print(f"connect network {node}: FAILED\n")
             assert False
 
 
-async def service_started_async(node, service_name, loop, expected_state='ON', attempts=60, delay=3):
+async def service_started_async(node, service_name, loop, expected_state='ON', attempts=60, delay=3, verbose=False):
     async with aiohttp.ClientSession(loop=loop, connector=ssl_connection(node)) as client:
         current_state = None
         count = 0
@@ -438,7 +443,8 @@ async def service_started_async(node, service_name, loop, expected_state='ON', a
             response_json = await response.json()
             assert response_json['status'] == 'OK', response_json
             current_state = response_json['result'][0]['state']
-            print(f'\nservice/info/{service_name}/v1 [{node}] : %s' % pprint.pformat(response_json))
+            if verbose:
+                print(f'\nservice/info/{service_name}/v1 [{node}] : %s' % pprint.pformat(response_json))
             if current_state == expected_state:
                 break
             count += 1
@@ -449,12 +455,13 @@ async def service_started_async(node, service_name, loop, expected_state='ON', a
         print(f'service/info/{service_name}/v1 [{node}] : OK\n')
 
 
-async def packet_list_async(node, loop, wait_all_finish=True, attempts=60, delay=3):
+async def packet_list_async(node, loop, wait_all_finish=True, attempts=60, delay=3, verbose=False):
     async with aiohttp.ClientSession(loop=loop, connector=ssl_connection(node)) as client:
         for i in range(attempts):
             response = await client.get(tunnel_url(node, 'packet/list/v1'), timeout=20)
             response_json = await response.json()
-            print('\npacket/list/v1 [%s] : %s\n' % (node, pprint.pformat(response_json), ))
+            if verbose:
+                print('\npacket/list/v1 [%s] : %s\n' % (node, pprint.pformat(response_json), ))
             assert response_json['status'] == 'OK', response_json
             if len(response_json['result']) == 0 or not wait_all_finish:
                 break

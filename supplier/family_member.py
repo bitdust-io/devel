@@ -885,6 +885,8 @@ class FamilyMember(automat.Automat):
         return None
 
     def _do_write_transaction(self, retries):
+        if _Debug:
+            lg.out(_DebugLevel, 'family_member._do_write_transaction   retries=%d' % retries)
         d = dht_relations.write_customer_suppliers(
             customer_idurl=self.customer_idurl,
             suppliers_list=self.transaction['suppliers'],
@@ -928,6 +930,8 @@ class FamilyMember(automat.Automat):
         self.automat('dht-write-ok', dht_result)
 
     def _on_dht_write_failed(self, err, retries):
+        if _Debug:
+            lg.out(_DebugLevel, 'family_member._on_dht_write_failed  err: %r' % err)
         try:
             errmsg = err.value.subFailure.getErrorMessage()
         except:
