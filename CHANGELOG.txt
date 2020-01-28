@@ -2,6 +2,27 @@ Change Log
 ==========
 
 
+2020-01-28 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* fix in family_member() state machine
+* set DHT bucket size to 4
+* refactoring in regression tests
+* fix in shared_access_donor() state machine
+* changes in API responses for Renato
+* warnings all to be logged with debug level 2 and also stored in a separate file
+* populate friend-connected/friend-disconnected events
+* populate friend-add/friend-remove events
+* force git_proc.sync to RESET instead of REBASE
+* make possible to run regression tests in 2 parallel threads
+* logging improvements and boost in p2p/lookup.py
+* added few methods for DHT to the API interface
+* renamed service_queue_keeper() into service_message_broker()
+* added empty service_message_broker and service_private_groups() for the future
+* change dependency of service_message_history()
+* try to investigate most CPU consuming calls
+
+
+
 2020-01-13 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * introduce new feature: multi layered DHT network inside BitDust !
