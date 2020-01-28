@@ -107,9 +107,6 @@ def supplier_list_dht_v1(customer_id, observers_ids, expected_ecc_map, expected_
                 count += 1
                 time.sleep(delay)
                 continue
-            if ss.count(''):
-                mistakes += ss.count('')
-                print('\nfound empty suppliers\n')
             if len(list(filter(None, ss))) != expected_suppliers_number:
                 mistakes += abs(expected_suppliers_number - len(list(filter(None, ss))))
                 print('\nfound missing suppliers\n')

@@ -65,16 +65,15 @@ services:
     ports:
       - "10721:22"
     links:
-      - dht-1
       - dht-2
       - dht-3
+      - dht-4
 
   proxy-1:
     image: bitdust/app
     ports:
       - "10731:22"
     links:
-      - dht-1
       - dht-2
       - dht-3
       - dht-4
@@ -86,7 +85,6 @@ services:
     ports:
       - "10732:22"
     links:
-      - dht-1
       - dht-2
       - dht-3
       - dht-4
@@ -98,7 +96,6 @@ services:
     ports:
       - "10741:22"
     links:
-      - dht-1
       - dht-2
       - dht-3
       - dht-4
@@ -110,7 +107,6 @@ services:
     ports:
       - "10742:22"
     links:
-      - dht-1
       - dht-2
       - dht-3
       - dht-4
@@ -124,7 +120,6 @@ services:
     volumes:
       - customer_1:/customer_1
     links:
-      - dht-1
       - dht-2
       - dht-3
       - dht-4
@@ -138,7 +133,6 @@ services:
     volumes:
       - customer_2:/customer_2
     links:
-      - dht-1
       - dht-2
       - dht-3
       - dht-4
@@ -152,7 +146,6 @@ services:
     volumes:
       - customer_3:/customer_3
     links:
-      - dht-1
       - dht-2
       - dht-3
       - dht-4

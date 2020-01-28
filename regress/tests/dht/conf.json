@@ -14,6 +14,7 @@
             "node": {
                 "role": "dht-seed",
                 "name": "dht-1",
+                "attached_layers": "2,3",
                 "known_dht_seeds": "genesis"
             }
         },
@@ -25,6 +26,7 @@
             "node": {
                 "role": "dht-seed",
                 "name": "dht-2",
+                "attached_layers": "2,3",
                 "known_dht_seeds": "dht-1:14441"
             }
         },
@@ -37,7 +39,8 @@
             "node": {
                 "role": "dht-seed",
                 "name": "dht-3",
-                "known_dht_seeds": "dht-1:14441"
+                "attached_layers": "2,3",
+                "known_dht_seeds": "dht-1:14441,dht-2:14441"
             }
         },
         "dht-4": {
@@ -50,25 +53,25 @@
             "node": {
                 "role": "dht-seed",
                 "name": "dht-4",
-                "known_dht_seeds": "dht-1:14441"
+                "attached_layers": "2,3",
+                "known_dht_seeds": "dht-1:14441,dht-2:14441,dht-3:14441"
             }
         },
         "stun-1": {
             "links": [
-                "dht-1",
                 "dht-2",
-                "dht-3"
+                "dht-3",
+                "dht-4"
             ],
             "ports": "10021:22",
             "node": {
                 "role": "stun-server",
                 "name": "stun-1",
-                "known_dht_seeds": "dht-1:14441,dht-2:14441,dht-3:14441,dht-4:14441"
+                "known_dht_seeds": "dht-2:14441,dht-3:14441,dht-4:14441"
             }
         },
         "proxy-1": {
             "links": [
-                "dht-1",
                 "dht-2",
                 "dht-3",
                 "dht-4",
@@ -80,12 +83,11 @@
                 "role": "proxy-server",
                 "name": "proxy-1",
                 "known_id_servers": "id-a:8084:6661",
-                "known_dht_seeds": "dht-1:14441,dht-2:14441,dht-3:14441,dht-4:14441"
+                "known_dht_seeds": "dht-2:14441,dht-3:14441,dht-4:14441"
             }
         },
         "proxy-2": {
             "links": [
-                "dht-1",
                 "dht-2",
                 "dht-3",
                 "dht-4",
@@ -97,12 +99,11 @@
                 "role": "proxy-server",
                 "name": "proxy-2",
                 "known_id_servers": "id-a:8084:6661",
-                "known_dht_seeds": "dht-1:14441,dht-2:14441,dht-3:14441,dht-4:14441"
+                "known_dht_seeds": "dht-2:14441,dht-3:14441,dht-4:14441"
             }
         },
         "supplier-1": {
             "links": [
-                "dht-1",
                 "dht-2",
                 "dht-3",
                 "dht-4",
@@ -114,13 +115,12 @@
                 "role": "supplier",
                 "name": "supplier-1",
                 "known_id_servers": "id-a:8084:6661",
-                "known_dht_seeds": "dht-1:14441,dht-2:14441,dht-3:14441,dht-4:14441",
+                "known_dht_seeds": "dht-2:14441,dht-3:14441,dht-4:14441",
                 "preferred_routers": "http://id-a:8084/proxy-1.xml"
             }
         },
         "supplier-2": {
             "links": [
-                "dht-1",
                 "dht-2",
                 "dht-3",
                 "dht-4",
@@ -132,13 +132,12 @@
                 "role": "supplier",
                 "name": "supplier-2",
                 "known_id_servers": "id-a:8084:6661",
-                "known_dht_seeds": "dht-1:14441,dht-2:14441,dht-3:14441,dht-4:14441",
+                "known_dht_seeds": "dht-2:14441,dht-3:14441,dht-4:14441",
                 "preferred_routers": "http://id-a:8084/proxy-2.xml"
             }
         },
         "customer-1": {
             "links": [
-                "dht-1",
                 "dht-2",
                 "dht-3",
                 "dht-4",
@@ -157,13 +156,12 @@
                 "num_suppliers": 2,
                 "supplier_candidates": "http://id-a:8084/supplier-1.xml,http://id-a:8084/supplier-2.xml",
                 "known_id_servers": "id-a:8084:6661",
-                "known_dht_seeds": "dht-1:14441,dht-2:14441,dht-3:14441,dht-4:14441",
+                "known_dht_seeds": "dht-2:14441,dht-3:14441,dht-4:14441",
                 "preferred_routers": "http://id-a:8084/proxy-1.xml"
             }
         },
         "customer-2": {
             "links": [
-                "dht-1",
                 "dht-2",
                 "dht-3",
                 "dht-4",
@@ -181,13 +179,12 @@
                 "num_suppliers": 2,
                 "supplier_candidates": "http://id-a:8084/supplier-1.xml,http://id-a:8084/supplier-2.xml",
                 "known_id_servers": "id-a:8084:6661",
-                "known_dht_seeds": "dht-1:14441,dht-2:14441,dht-3:14441,dht-4:14441",
+                "known_dht_seeds": "dht-2:14441,dht-3:14441,dht-4:14441",
                 "preferred_routers": "http://id-a:8084/proxy-2.xml"
             }
         },
         "customer-3": {
             "links": [
-                "dht-1",
                 "dht-2",
                 "dht-3",
                 "dht-4",
@@ -205,7 +202,7 @@
                 "num_suppliers": 2,
                 "supplier_candidates": "http://id-a:8084/supplier-1.xml,http://id-a:8084/supplier-2.xml",
                 "known_id_servers": "id-a:8084:6661",
-                "known_dht_seeds": "dht-1:14441,dht-2:14441,dht-3:14441,dht-4:14441",
+                "known_dht_seeds": "dht-2:14441,dht-3:14441,dht-4:14441",
                 "preferred_routers": "http://id-a:8084/proxy-1.xml"
             }
         }
