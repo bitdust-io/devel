@@ -42,15 +42,16 @@ def supplier_list_v1(customer: str, expected_min_suppliers=None, expected_max_su
         if expected_min_suppliers is None and expected_max_suppliers is None:
             break
         num_connected = 0
+        num_total = len(response.json()['result'])
         for s in response.json()['result']:
             if s['supplier_state'] == 'CONNECTED' and s['contact_state'] == 'CONNECTED':
                 num_connected += 1
         print('\nfound %d connected suppliers at the moment\n' % num_connected)
-        if expected_min_suppliers is not None and num_connected < expected_min_suppliers:
+        if expected_min_suppliers is not None and (num_connected < expected_min_suppliers or num_total < expected_min_suppliers):
             count += 1
             time.sleep(delay)
             continue
-        if expected_max_suppliers is not None and num_connected > expected_max_suppliers:
+        if expected_max_suppliers is not None and (num_connected > expected_max_suppliers or num_total > expected_max_suppliers):
             count += 1
             time.sleep(delay)
             continue
@@ -60,9 +61,9 @@ def supplier_list_v1(customer: str, expected_min_suppliers=None, expected_max_su
     return [s['idurl'] for s in response.json()['result']]
 
 
-def supplier_list_dht_v1(customer_id, observer_id, expected_ecc_map, expected_suppliers_number, retries=40, delay=3, accepted_mistakes=0):
+def supplier_list_dht_v1(customer_id, observers_ids, expected_ecc_map, expected_suppliers_number, retries=40, delay=3, accepted_mistakes=0):
     customer_node = customer_id.split('@')[0]
-    observer_node = observer_id.split('@')[0]
+    # observer_node = observer_id.split('@')[0]
 
     def _validate(obs):
         response = None
@@ -97,17 +98,32 @@ def supplier_list_dht_v1(customer_id, observer_id, expected_ecc_map, expected_su
                 count += 1
                 time.sleep(delay)
                 continue
-            assert response.json()['result']['customer_idurl'].count('%s.xml' % customer_node), response.json()['result']['customer_idurl']
-            assert response.json()['result']['ecc_map'] == expected_ecc_map, response.json()['result']['ecc_map']
+            if not response.json()['result']['customer_idurl'].count('%s.xml' % customer_node):
+                print('\ncurrently see customer_idurl=%r, but expect family owner to be %r\n' % (
+                    response.json()['result']['customer_idurl'], customer_node))
+                count += 1
+                time.sleep(delay)
+                continue
+            if not response.json()['result']['ecc_map'] == expected_ecc_map:
+                print('\ncurrently see ecc_map=%r, but expect to be %r\n' % (
+                    response.json()['result']['ecc_map'], expected_ecc_map))
+                count += 1
+                time.sleep(delay)
+                continue
             break
         return True
 
-    if not _validate(observer_node):
-        if not _validate('supplier-1'):
-            assert False, 'customer family [%s] [%s] was not re-published correctly, observer [%s] and another node still see wrong info' % (
-                customer_node, expected_ecc_map, observer_node, )
+    count = 0
+    for observer_id in observers_ids:
+        observer_node = observer_id.split('@')[0]
+        if _validate(observer_node):
+            print('customer family [%s] [%s] info is correct for observer [%s] count=%d\n' % (
+                customer_node, expected_ecc_map, observer_node, count, ))
+            return True
+        count += 1
 
-    return True
+    assert False, 'customer family [%s] [%s] was not re-published correctly, %d observers still see a wrong info' % (
+        customer_node, expected_ecc_map, count, )
 
 
 def supplier_switch_v1(customer: str, supplier_idurl: str, position: int, validate_retries=30, delay=3):
@@ -444,11 +460,13 @@ def event_listen_v1(node, expected_event_id, consumer_id='regression_tests_wait_
     return found
 
 
-def packet_list_v1(node, wait_all_finish=False, attempts=60, delay=3):
+def packet_list_v1(node, wait_all_finish=False, attempts=60, delay=3, verbose=False):
+    print('\npacket/list/v1 [%s]\n' % node)
     for _ in range(attempts):
         response = request_get(node, 'packet/list/v1', timeout=20)
         assert response.status_code == 200
-        print('\npacket/list/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
+        if verbose:
+            print('\npacket/list/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
         assert response.json()['status'] == 'OK', response.json()
         if len(response.json()['result']) == 0 or not wait_all_finish:
             break
@@ -458,11 +476,13 @@ def packet_list_v1(node, wait_all_finish=False, attempts=60, delay=3):
     return response.json()
 
 
-def transfer_list_v1(node, wait_all_finish=False, attempts=60, delay=3):
+def transfer_list_v1(node, wait_all_finish=False, attempts=60, delay=3, verbose=False):
+    print('\ntransfer/list/v1 [%s]\n' % node)
     for _ in range(attempts):
         response = request_get(node, 'transfer/list/v1', timeout=20)
         assert response.status_code == 200
-        print('\ntransfer/list/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
+        if verbose:
+            print('\ntransfer/list/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
         assert response.json()['status'] == 'OK', response.json()
         if not wait_all_finish:
             break

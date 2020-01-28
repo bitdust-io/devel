@@ -71,7 +71,6 @@ services:
     ports:
       - "10121:22"
     links:
-      - dht-1
       - dht-2
       - dht-3
 
@@ -80,7 +79,6 @@ services:
     ports:
       - "10122:22"
     links:
-      - dht-1
       - dht-2
       - dht-3
 
@@ -89,7 +87,6 @@ services:
     ports:
       - "10131:22"
     links:
-      - dht-1
       - dht-2
       - dht-3
       - stun-1
@@ -104,7 +101,6 @@ services:
     ports:
       - "10132:22"
     links:
-      - dht-1
       - dht-2
       - dht-3
       - stun-1
@@ -119,7 +115,6 @@ services:
     ports:
       - "10141:22"
     links:
-      - dht-1
       - dht-2
       - dht-3
       - stun-1
@@ -134,7 +129,6 @@ services:
     ports:
       - "10142:22"
     links:
-      - dht-1
       - dht-2
       - dht-3
       - stun-1
@@ -149,7 +143,6 @@ services:
     ports:
       - "10143:22"
     links:
-      - dht-1
       - dht-2
       - dht-3
       - stun-1
@@ -164,7 +157,6 @@ services:
     ports:
       - "10144:22"
     links:
-      - dht-1
       - dht-2
       - dht-3
       - stun-1
@@ -181,7 +173,6 @@ services:
     volumes:
       - customer_1:/customer_1
     links:
-      - dht-1
       - dht-2
       - dht-3
       - stun-1
@@ -198,7 +189,6 @@ services:
     volumes:
       - customer_2:/customer_2
     links:
-      - dht-1
       - dht-2
       - dht-3
       - stun-1
@@ -215,7 +205,6 @@ services:
     volumes:
       - customer_3:/customer_3
     links:
-      - dht-1
       - dht-2
       - dht-3
       - stun-1

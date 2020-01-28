@@ -26,12 +26,16 @@ import pytest
 import time
 
 from testsupport import run_ssh_command_and_wait, request_get, request_post
-from keywords import service_info_v1, file_create_v1, file_upload_start_v1
+from keywords import service_info_v1, file_create_v1, file_upload_start_v1, packet_list_v1, transfer_list_v1
 
 
 def test_customer_1_upload_download_file_with_master_key():
     if os.environ.get('RUN_TESTS', '1') == '0':
         return pytest.skip()  # @UndefinedVariable
+
+    packet_list_v1('customer-1', wait_all_finish=True)
+
+    transfer_list_v1('customer-1', wait_all_finish=True)
 
     key_id = 'master$customer-1@id-a_8084'
     shared_volume = '/customer_1'
@@ -59,6 +63,8 @@ def test_customer_1_upload_download_file_with_master_key():
                 assert s['contact_state'] == 'CONNECTED'
             assert True
             break
+        else:
+            print('\nstill see %d suppliers, expect 2 suppliers\n' % len(response.json()['result']))
         count += 1
         time.sleep(5)
 
@@ -67,6 +73,10 @@ def test_customer_1_upload_download_file_with_master_key():
     file_create_v1('customer-1', remote_path)
 
     file_upload_start_v1('customer-1', remote_path, local_path, wait_result=True, )
+
+    packet_list_v1('customer-1', wait_all_finish=True)
+
+    transfer_list_v1('customer-1', wait_all_finish=True)
 
     for _ in range(20):
         response = request_post('customer-1', 'file/download/start/v1',

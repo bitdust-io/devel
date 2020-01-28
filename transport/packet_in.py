@@ -244,15 +244,21 @@ def handle(newpacket, info):
     from transport import packet_out
     handled = False
     # check that signed by a contact of ours
-    if not newpacket.Valid(raise_signature_invalid=True):
+    try:
+        is_signature_valid = newpacket.Valid(raise_signature_invalid=False)
+    except:
+        is_signature_valid = False
+        # lg.exc('new packet from %s://%s is NOT VALID:\n\n%r\n' % (
+        #     info.proto, info.host, newpacket.Serialize()))
+    if not is_signature_valid:
         if _Debug:
             lg.args(_DebugLevel,
                     PacketID=newpacket.PacketID,
                     OwnerID=newpacket.OwnerID,
                     CreatorID=newpacket.CreatorID,
                     RemoteID=newpacket.RemoteID, )
-        lg.exc('new packet from %s://%s is NOT VALID:\n\n%r\n' % (
-            info.proto, info.host, newpacket.Serialize()))
+        lg.warn('signature is not valid for %r from %r|%r to %r' % (
+            newpacket, newpacket.OwnerID, newpacket.CreatorID, newpacket.RemoteID))
         return None
     try:
         for p in packet_out.search_by_response_packet(newpacket, info.proto, info.host):

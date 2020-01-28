@@ -51,21 +51,21 @@ def test_identity_recover_from_customer_backup_to_customer_restore():
 
     supplier_list_dht_v1(
         customer_id='customer-backup@id-a_8084',
-        observer_id='customer-backup@id-a_8084',
+        observers_ids=['customer-backup@id-a_8084', 'supplier-1@id-a_8084', 'supplier-2@id-a_8084', ],
         expected_ecc_map='ecc/2x2',
         expected_suppliers_number=2,
     )
 
     supplier_list_dht_v1(
         customer_id='customer-backup@id-a_8084',
-        observer_id='supplier-1@id-a_8084',
+        observers_ids=['supplier-1@id-a_8084', 'supplier-2@id-a_8084', 'customer-backup@id-a_8084', ],
         expected_ecc_map='ecc/2x2',
         expected_suppliers_number=2,
     )
 
     supplier_list_dht_v1(
         customer_id='customer-backup@id-a_8084',
-        observer_id='supplier-2@id-a_8084',
+        observers_ids=['supplier-2@id-a_8084', 'customer-backup@id-a_8084', 'supplier-1@id-a_8084', ],
         expected_ecc_map='ecc/2x2',
         expected_suppliers_number=2,
     )
@@ -147,21 +147,21 @@ def test_identity_recover_from_customer_backup_to_customer_restore():
 
     supplier_list_dht_v1(
         customer_id='customer-backup@id-a_8084',
-        observer_id='customer-restore@id-a_8084',
+        observers_ids=['customer-restore@id-a_8084', 'supplier-3@id-a_8084', 'supplier-1@id-a_8084', ],
         expected_ecc_map='ecc/2x2',
         expected_suppliers_number=2,
     )
 
     supplier_list_dht_v1(
         customer_id='customer-backup@id-a_8084',
-        observer_id='supplier-3@id-a_8084',
+        observers_ids=['supplier-3@id-a_8084', 'supplier-1@id-a_8084', 'customer-restore@id-a_8084', ],
         expected_ecc_map='ecc/2x2',
         expected_suppliers_number=2,
     )
 
     supplier_list_dht_v1(
         customer_id='customer-backup@id-a_8084',
-        observer_id='supplier-1@id-a_8084',
+        observers_ids=['supplier-1@id-a_8084', 'customer-restore@id-a_8084', 'supplier-3@id-a_8084', ],
         expected_ecc_map='ecc/2x2',
         expected_suppliers_number=2,
     )

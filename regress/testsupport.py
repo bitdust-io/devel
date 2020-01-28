@@ -42,7 +42,7 @@ _SSLContexts = {}
 
 #------------------------------------------------------------------------------
 
-async def run_ssh_command_and_wait_async(host, cmd, loop):
+async def run_ssh_command_and_wait_async(host, cmd, loop, verbose=False):
     if host in [None, '', b'', 'localhost', ]:
         cmd_args = cmd
     else:
@@ -56,12 +56,14 @@ async def run_ssh_command_and_wait_async(host, cmd, loop):
     ssh_proc = await create
     stdout, stderr = await ssh_proc.communicate()
     if stderr:
-        print(f'STDERR at {host}: %r' % stderr.decode())
-    print(f'\nssh_command on [{host}] : {cmd}')
+        if verbose:
+            print(f'STDERR at {host}: %r' % stderr.decode())
+    if verbose:
+        print(f'\nssh_command on [{host}] : {cmd}')
     return stdout.decode(), stderr.decode()
 
 
-def run_ssh_command_and_wait(host, cmd) -> object:
+def run_ssh_command_and_wait(host, cmd, verbose=False) -> object:
     if host in [None, '', b'', 'localhost', ]:
         cmd_args = cmd
     else:
@@ -74,8 +76,10 @@ def run_ssh_command_and_wait(host, cmd) -> object:
     )
     output, err = ssh_proc.communicate()
     if err:
-        print('\nSTDERR: %r' % err.decode())
-    print(f'\nssh_command on [{host}] : {cmd}')
+        if verbose:
+            print('\nSTDERR: %r' % err.decode())
+    if verbose:
+        print(f'\nssh_command on [{host}] : {cmd}')
     return output.decode(), err.decode()
 
 #------------------------------------------------------------------------------
@@ -209,8 +213,9 @@ def tunnel_port(node):
 
 
 def tunnel_url(node, endpoint):
-    print('\n%s [%s]: tunnel_url %d - %s' % (
-        datetime.datetime.now().strftime("%H:%M:%S.%f"), node, tunnel_port(node), endpoint, ))
+    print('\n%s [%s]   /%s   %s' % (
+        datetime.datetime.now().strftime("%H:%M:%S.%f"), node, endpoint,
+        os.environ['PYTEST_CURRENT_TEST'].replace(' (setup)', '').replace(' (call)', ''), ))
     return f'http://127.0.0.1:{tunnel_port(node)}/{endpoint.lstrip("/")}'
 
 #------------------------------------------------------------------------------
@@ -304,7 +309,7 @@ async def get_client_certificate_async(node, loop):
 
 #------------------------------------------------------------------------------
 
-def health_check(node):
+def health_check(node, verbose=False):
     count = 0
     while True:
         if count > 60:
@@ -313,10 +318,12 @@ def health_check(node):
             response = request_get(node, 'process/health/v1')
         except Exception as exc:
             response = None
-            print(f'node {node} is not started yet, count={count} : {exc}\n')
+            if verbose:
+                print(f'node {node} is not started yet, count={count} : {exc}\n')
         if response and response.status_code == 200 and response.json()['status'] == 'OK':
             break
-        print(f'\nnode {node} process not started yet, try again after 1 sec.\n')
+        if verbose:
+            print(f'\nnode {node} process not started yet, try again after 1 sec.\n')
         time.sleep(1)
         count += 1
     print(f'\nprocess/health/v1 [{node}] : OK')
@@ -401,31 +408,34 @@ def connect_network(node):
     print(f'network/connected/v1 [{node}] : OK\n')
 
 
-async def connect_network_async(node, loop, attempts=30, delay=1, timeout=10):
+async def connect_network_async(node, loop, attempts=30, delay=1, timeout=10, verbose=False):
     async with aiohttp.ClientSession(loop=loop, connector=ssl_connection(node)) as client:
         response = await client.get(tunnel_url(node, 'network/connected/v1?wait_timeout=1'), timeout=timeout)
         response_json = await response.json()
-        print(f'\nnetwork/connected/v1 [{node}] : %s' % pprint.pformat(response_json))
+        if verbose:
+            print(f'\nnetwork/connected/v1 [{node}] : %s' % pprint.pformat(response_json))
         if response_json['status'] == 'OK':
             print(f"network/connected/v1 {node}: got status OK from the first call\n")
             return
         counter = 0
         for i in range(attempts):
             counter += 1
-            response = await client.get(tunnel_url(node, '/network/connected/v1?wait_timeout=1'), timeout=timeout)
+            response = await client.get(tunnel_url(node, 'network/connected/v1?wait_timeout=1'), timeout=timeout)
             response_json = await response.json()
-            print(f'\nnetwork/connected/v1 [{node}] : %s' % pprint.pformat(response_json))
+            if verbose:
+                print(f'\nnetwork/connected/v1 [{node}] : %s' % pprint.pformat(response_json))
             if response_json['status'] == 'OK':
                 print(f"network/connected/v1 {node}: got status OK\n")
                 break
-            print(f"connect network attempt {counter} at {node}: sleep 1 sec\n")
+            if verbose:
+                print(f"connect network attempt {counter} at {node}: sleep 1 sec\n")
             await asyncio.sleep(delay)
         else:
             print(f"connect network {node}: FAILED\n")
             assert False
 
 
-async def service_started_async(node, service_name, loop, expected_state='ON', attempts=60, delay=3):
+async def service_started_async(node, service_name, loop, expected_state='ON', attempts=60, delay=3, verbose=False):
     async with aiohttp.ClientSession(loop=loop, connector=ssl_connection(node)) as client:
         current_state = None
         count = 0
@@ -434,7 +444,8 @@ async def service_started_async(node, service_name, loop, expected_state='ON', a
             response_json = await response.json()
             assert response_json['status'] == 'OK', response_json
             current_state = response_json['result'][0]['state']
-            print(f'\nservice/info/{service_name}/v1 [{node}] : %s' % pprint.pformat(response_json))
+            if verbose:
+                print(f'\nservice/info/{service_name}/v1 [{node}] : %s' % pprint.pformat(response_json))
             if current_state == expected_state:
                 break
             count += 1
@@ -445,12 +456,13 @@ async def service_started_async(node, service_name, loop, expected_state='ON', a
         print(f'service/info/{service_name}/v1 [{node}] : OK\n')
 
 
-async def packet_list_async(node, loop, wait_all_finish=True, attempts=60, delay=3):
+async def packet_list_async(node, loop, wait_all_finish=True, attempts=60, delay=3, verbose=False):
     async with aiohttp.ClientSession(loop=loop, connector=ssl_connection(node)) as client:
         for i in range(attempts):
             response = await client.get(tunnel_url(node, 'packet/list/v1'), timeout=20)
             response_json = await response.json()
-            print('\npacket/list/v1 [%s] : %s\n' % (node, pprint.pformat(response_json), ))
+            if verbose:
+                print('\npacket/list/v1 [%s] : %s\n' % (node, pprint.pformat(response_json), ))
             assert response_json['status'] == 'OK', response_json
             if len(response_json['result']) == 0 or not wait_all_finish:
                 break
@@ -461,8 +473,8 @@ async def packet_list_async(node, loop, wait_all_finish=True, attempts=60, delay
 #------------------------------------------------------------------------------
 
 def stop_daemon(node, skip_checks=False):
-    bitdust_stop = run_ssh_command_and_wait(node, 'bitdust stop')
-    print('\n' + bitdust_stop[0].strip())
+    bitdust_stop = run_ssh_command_and_wait(node, 'bitdust stop', verbose=False)
+    # print('\n' + bitdust_stop[0].strip())
     if not skip_checks:
         assert (
             (
@@ -475,12 +487,12 @@ def stop_daemon(node, skip_checks=False):
                 bitdust_stop[0].strip() == 'BitDust is not running at the moment'
             )
         )
-    print(f'stop_daemon [{node}] OK\n')
+    # print(f'stop_daemon [{node}] OK\n')
 
 
 async def stop_daemon_async(node, loop, skip_checks=False):
-    bitdust_stop = await run_ssh_command_and_wait_async(node, 'bitdust stop', loop)
-    print('\n' + bitdust_stop[0].strip())
+    bitdust_stop = await run_ssh_command_and_wait_async(node, 'bitdust stop', loop, verbose=False)
+    # print('\n' + bitdust_stop[0].strip())
     if not skip_checks:
         assert (
             (
@@ -493,7 +505,7 @@ async def stop_daemon_async(node, loop, skip_checks=False):
                 bitdust_stop[0].strip() == 'BitDust is not running at the moment'
             )
         )
-    print(f'stop_daemon [{node}] OK\n')
+    # print(f'stop_daemon [{node}] OK\n')
 
 #------------------------------------------------------------------------------
 
@@ -778,7 +790,7 @@ async def start_one_customer_async(customer, loop, sleep_before_start=None):
 #------------------------------------------------------------------------------
 
 def report_one_node(node):
-    main_log = run_ssh_command_and_wait(node, 'cat /root/.bitdust/logs/main.log')[0].strip()
+    main_log = run_ssh_command_and_wait(node, 'cat /root/.bitdust/logs/main.log', verbose=False)[0].strip()
     num_warnings = main_log.count('WARNING')
     num_errors = main_log.count('ERROR!!!')
     num_exceptions = main_log.count('Exception:')
@@ -805,25 +817,25 @@ async def report_one_node_async(node, event_loop):
 
 def print_exceptions_one_node(node):
     #TODO: find the root cause of invalid signature
-    run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/logs/exception*invalid*signature.log')[0].strip()
-    exceptions_out = run_ssh_command_and_wait(node, 'cat /root/.bitdust/logs/exception_*.log')[0].strip()
+    # run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/logs/exception*invalid*signature.log')[0].strip()
+    exceptions_out = run_ssh_command_and_wait(node, 'cat /root/.bitdust/logs/exception_*.log 2>/dev/null', verbose=False)[0].strip()
     if exceptions_out:
         print(f'\n[{node}]:\n\n{exceptions_out}\n\n')
-    else:
-        print(f'\n[{node}]: no exceptions found\n')
+    # else:
+    #     print(f'\n[{node}]: no exceptions found\n')
     return exceptions_out
 
 
 async def print_exceptions_one_node_async(node, event_loop):
     print(f'\nsearching errors at {node} in the folder: /root/.bitdust/logs/exception_*.log')
     #TODO: find the root cause of invalid signature
-    await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/logs/exception*invalid*signature.log', event_loop)
-    exceptions_out = await run_ssh_command_and_wait_async(node, 'cat /root/.bitdust/logs/exception_*.log', event_loop)
+    # await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/logs/exception*invalid*signature.log', event_loop)
+    exceptions_out = await run_ssh_command_and_wait_async(node, 'cat /root/.bitdust/logs/exception_*.log 2>/dev/null', event_loop, verbose=False)
     exceptions_out = exceptions_out[0].strip()
     if exceptions_out:
         print(f'\n[{node}]:\n\n{exceptions_out}\n\n')
-    else:
-        print(f'\n[{node}]: no exceptions found\n')
+    # else:
+    #     print(f'\n[{node}]: no exceptions found\n')
     return exceptions_out
 
 

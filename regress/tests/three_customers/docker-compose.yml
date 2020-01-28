@@ -29,142 +29,165 @@ services:
   id-a:
     image: bitdust/app
     ports:
-      - "10501:22"
+      - "11001:22"
 
   dht-1:
     image: bitdust/app
     ports:
-      - "10511:22"
+      - "11011:22"
 
   dht-2:
     image: bitdust/app
     ports:
-      - "10512:22"
+      - "11012:22"
     links:
       - dht-1
+
+  dht-3:
+    image: bitdust/app
+    ports:
+      - "11013:22"
+    links:
+      - dht-1
+      - dht-2
 
   stun-1:
     image: bitdust/app
     ports:
-      - "10521:22"
+      - "11021:22"
     links:
       - dht-2
+      - dht-3
 
   stun-2:
     image: bitdust/app
     ports:
-      - "10522:22"
+      - "11022:22"
     links:
       - dht-2
+      - dht-3
 
   proxy-1:
     image: bitdust/app
     ports:
-      - "10531:22"
+      - "11031:22"
     links:
       - dht-2
+      - dht-3
       - id-a
 
   proxy-2:
     image: bitdust/app
     ports:
-      - "10532:22"
+      - "11032:22"
     links:
       - dht-2
+      - dht-3
       - id-a
 
   supplier-1:
     image: bitdust/app
     ports:
-      - "10541:22"
+      - "11041:22"
     links:
       - dht-2
+      - dht-3
       - id-a
 
   supplier-2:
     image: bitdust/app
     ports:
-      - "10542:22"
+      - "11042:22"
     links:
       - dht-2
+      - dht-3
       - id-a
 
   supplier-3:
     image: bitdust/app
     ports:
-      - "10543:22"
+      - "11043:22"
     links:
       - dht-2
+      - dht-3
       - id-a
 
   supplier-4:
     image: bitdust/app
     ports:
-      - "10544:22"
+      - "11044:22"
     links:
       - dht-2
+      - dht-3
       - id-a
 
   supplier-5:
     image: bitdust/app
     ports:
-      - "10545:22"
+      - "11045:22"
     links:
       - dht-2
+      - dht-3
       - id-a
 
   supplier-6:
     image: bitdust/app
     ports:
-      - "10546:22"
+      - "11046:22"
     links:
       - dht-2
+      - dht-3
       - id-a
 
   supplier-7:
     image: bitdust/app
     ports:
-      - "10547:22"
+      - "11047:22"
     links:
       - dht-2
+      - dht-3
       - id-a
 
   supplier-8:
     image: bitdust/app
     ports:
-      - "10548:22"
+      - "11048:22"
     links:
       - dht-2
+      - dht-3
       - id-a
 
   customer-1:
     image: bitdust/app
     ports:
-      - "10551:22"
+      - "11051:22"
     volumes:
       - customer_1:/customer_1
     links:
       - dht-2
+      - dht-3
       - id-a
 
   customer-2:
     image: bitdust/app
     ports:
-      - "10552:22"
+      - "11052:22"
     volumes:
       - customer_2:/customer_2
     links:
       - dht-2
+      - dht-3
       - id-a
 
   customer-3:
     image: bitdust/app
     ports:
-      - "10553:22"
+      - "11053:22"
     volumes:
       - customer_3:/customer_3
     links:
       - dht-2
+      - dht-3
       - id-a
 
 
@@ -179,6 +202,7 @@ services:
     links:
       - dht-1
       - dht-2
+      - dht-3
       - stun-1
       - stun-2
       - id-a

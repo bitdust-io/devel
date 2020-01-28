@@ -23,77 +23,89 @@
 import os
 import pytest
 
-from keywords import supplier_list_dht_v1, config_set_v1, supplier_list_v1, service_info_v1
+from keywords import supplier_list_dht_v1, config_set_v1, supplier_list_v1, service_info_v1, packet_list_v1, transfer_list_v1
 
 
 def test_customer_family_increase_decrese_customer_1():
     if os.environ.get('RUN_TESTS', '1') == '0':
         return pytest.skip()  # @UndefinedVariable
 
+    packet_list_v1('customer-1', wait_all_finish=True)
+
+    transfer_list_v1('customer-1', wait_all_finish=True)
+
     supplier_list_v1('customer-1', expected_min_suppliers=2, expected_max_suppliers=2)
+
     supplier_list_dht_v1(
         customer_id='customer-1@id-a_8084',
-        observer_id='customer-1@id-a_8084',
+        observers_ids=['customer-1@id-a_8084', 'customer-3@id-a_8084', ],
         expected_ecc_map='ecc/2x2',
         expected_suppliers_number=2,
     )
     supplier_list_dht_v1(
         customer_id='customer-1@id-a_8084',
-        observer_id='customer-3@id-a_8084',
+        observers_ids=['customer-3@id-a_8084', 'customer-1@id-a_8084', ],
         expected_ecc_map='ecc/2x2',
         expected_suppliers_number=2,
     )
     supplier_list_dht_v1(
         customer_id='customer-1@id-a_8084',
-        observer_id='supplier-2@id-a_8084',
+        observers_ids=['supplier-2@id-a_8084', 'customer-3@id-a_8084', 'customer-1@id-a_8084', ],
         expected_ecc_map='ecc/2x2',
         expected_suppliers_number=2,
     )
+
     service_info_v1('customer-1', 'service_shared_data', 'ON')
 
     config_set_v1('customer-1', 'services/customer/suppliers-number', '4')
-    supplier_list_dht_v1(
-        customer_id='customer-1@id-a_8084',
-        observer_id='customer-1@id-a_8084',
-        expected_ecc_map='ecc/4x4',
-        expected_suppliers_number=4,
-    )
-    supplier_list_dht_v1(
-        customer_id='customer-1@id-a_8084',
-        observer_id='customer-3@id-a_8084',
-        expected_ecc_map='ecc/4x4',
-        expected_suppliers_number=4,
-    )
-    supplier_list_dht_v1(
-        customer_id='customer-1@id-a_8084',
-        observer_id='supplier-2@id-a_8084',
-        expected_ecc_map='ecc/4x4',
-        expected_suppliers_number=4,
-    )
+
     supplier_list_v1('customer-1', expected_min_suppliers=4, expected_max_suppliers=4)
+
     service_info_v1('customer-1', 'service_shared_data', 'ON')
 
+    supplier_list_dht_v1(
+        customer_id='customer-1@id-a_8084',
+        observers_ids=['customer-1@id-a_8084', 'customer-3@id-a_8084', ],
+        expected_ecc_map='ecc/4x4',
+        expected_suppliers_number=4,
+    )
+    supplier_list_dht_v1(
+        customer_id='customer-1@id-a_8084',
+        observers_ids=['customer-3@id-a_8084', 'customer-1@id-a_8084', ],
+        expected_ecc_map='ecc/4x4',
+        expected_suppliers_number=4,
+    )
+    supplier_list_dht_v1(
+        customer_id='customer-1@id-a_8084',
+        observers_ids=['supplier-2@id-a_8084', 'customer-3@id-a_8084', 'customer-1@id-a_8084', ],
+        expected_ecc_map='ecc/4x4',
+        expected_suppliers_number=4,
+    )
+
     config_set_v1('customer-1', 'services/customer/suppliers-number', '2')
-    supplier_list_dht_v1(
-        customer_id='customer-1@id-a_8084',
-        observer_id='customer-1@id-a_8084',
-        expected_ecc_map='ecc/2x2',
-        expected_suppliers_number=2,
-    )
-    supplier_list_dht_v1(
-        customer_id='customer-1@id-a_8084',
-        observer_id='customer-3@id-a_8084',
-        expected_ecc_map='ecc/2x2',
-        expected_suppliers_number=2,
-    )
-    supplier_list_dht_v1(
-        customer_id='customer-1@id-a_8084',
-        observer_id='supplier-2@id-a_8084',
-        expected_ecc_map='ecc/2x2',
-        expected_suppliers_number=2,
-    )
+
     supplier_list_v1('customer-1', expected_min_suppliers=2, expected_max_suppliers=2)
+
     service_info_v1('customer-1', 'service_shared_data', 'ON')
+
+    supplier_list_dht_v1(
+        customer_id='customer-1@id-a_8084',
+        observers_ids=['customer-1@id-a_8084', 'customer-3@id-a_8084', ],
+        expected_ecc_map='ecc/2x2',
+        expected_suppliers_number=2,
+    )
+    supplier_list_dht_v1(
+        customer_id='customer-1@id-a_8084',
+        observers_ids=['customer-3@id-a_8084', 'customer-1@id-a_8084', ],
+        expected_ecc_map='ecc/2x2',
+        expected_suppliers_number=2,
+    )
+    supplier_list_dht_v1(
+        customer_id='customer-1@id-a_8084',
+        observers_ids=['supplier-2@id-a_8084', 'customer-3@id-a_8084', 'customer-1@id-a_8084', ],
+        expected_ecc_map='ecc/2x2',
+        expected_suppliers_number=2,
+    )
 
 
 
@@ -101,67 +113,79 @@ def test_customer_family_decrease_increase_customer_2():
     if os.environ.get('RUN_TESTS', '1') == '0':
         return pytest.skip()  # @UndefinedVariable
 
+    packet_list_v1('customer-2', wait_all_finish=True)
+
+    transfer_list_v1('customer-2', wait_all_finish=True)
+
     supplier_list_v1('customer-2', expected_min_suppliers=4, expected_max_suppliers=4)
+
     supplier_list_dht_v1(
         customer_id='customer-2@id-a_8084',
-        observer_id='customer-2@id-a_8084',
+        observers_ids=['customer-2@id-a_8084', 'customer-3@id-a_8084', ],
         expected_ecc_map='ecc/4x4',
         expected_suppliers_number=4,
     )
     supplier_list_dht_v1(
         customer_id='customer-2@id-a_8084',
-        observer_id='customer-3@id-a_8084',
+        observers_ids=['customer-3@id-a_8084', 'customer-2@id-a_8084', ],
         expected_ecc_map='ecc/4x4',
         expected_suppliers_number=4,
     )
     supplier_list_dht_v1(
         customer_id='customer-2@id-a_8084',
-        observer_id='supplier-1@id-a_8084',
+        observers_ids=['supplier-1@id-a_8084', 'customer-3@id-a_8084', 'customer-2@id-a_8084', ],
         expected_ecc_map='ecc/4x4',
         expected_suppliers_number=4,
     )
+
     service_info_v1('customer-2', 'service_shared_data', 'ON')
 
     config_set_v1('customer-2', 'services/customer/suppliers-number', '2')
-    supplier_list_dht_v1(
-        customer_id='customer-2@id-a_8084',
-        observer_id='customer-2@id-a_8084',
-        expected_ecc_map='ecc/2x2',
-        expected_suppliers_number=2,
-    )
-    supplier_list_dht_v1(
-        customer_id='customer-2@id-a_8084',
-        observer_id='customer-3@id-a_8084',
-        expected_ecc_map='ecc/2x2',
-        expected_suppliers_number=2,
-    )
-    supplier_list_dht_v1(
-        customer_id='customer-2@id-a_8084',
-        observer_id='supplier-1@id-a_8084',
-        expected_ecc_map='ecc/2x2',
-        expected_suppliers_number=2,
-    )
+
     supplier_list_v1('customer-2', expected_min_suppliers=2, expected_max_suppliers=2)
+
     service_info_v1('customer-2', 'service_shared_data', 'ON')
 
+    supplier_list_dht_v1(
+        customer_id='customer-2@id-a_8084',
+        observers_ids=['customer-2@id-a_8084', 'customer-3@id-a_8084', ],
+        expected_ecc_map='ecc/2x2',
+        expected_suppliers_number=2,
+    )
+    supplier_list_dht_v1(
+        customer_id='customer-2@id-a_8084',
+        observers_ids=['customer-3@id-a_8084', 'customer-2@id-a_8084', ],
+        expected_ecc_map='ecc/2x2',
+        expected_suppliers_number=2,
+    )
+    supplier_list_dht_v1(
+        customer_id='customer-2@id-a_8084',
+        observers_ids=['supplier-1@id-a_8084', 'customer-3@id-a_8084', 'customer-2@id-a_8084', ],
+        expected_ecc_map='ecc/2x2',
+        expected_suppliers_number=2,
+    )
+
     config_set_v1('customer-2', 'services/customer/suppliers-number', '4')
-    supplier_list_dht_v1(
-        customer_id='customer-2@id-a_8084',
-        observer_id='customer-2@id-a_8084',
-        expected_ecc_map='ecc/4x4',
-        expected_suppliers_number=4,
-    )
-    supplier_list_dht_v1(
-        customer_id='customer-2@id-a_8084',
-        observer_id='customer-3@id-a_8084',
-        expected_ecc_map='ecc/4x4',
-        expected_suppliers_number=4,
-    )
-    supplier_list_dht_v1(
-        customer_id='customer-2@id-a_8084',
-        observer_id='supplier-1@id-a_8084',
-        expected_ecc_map='ecc/4x4',
-        expected_suppliers_number=4,
-    )
+
     supplier_list_v1('customer-2', expected_min_suppliers=4, expected_max_suppliers=4)
+
     service_info_v1('customer-2', 'service_shared_data', 'ON')
+
+    supplier_list_dht_v1(
+        customer_id='customer-2@id-a_8084',
+        observers_ids=['customer-2@id-a_8084', 'customer-3@id-a_8084', ],
+        expected_ecc_map='ecc/4x4',
+        expected_suppliers_number=4,
+    )
+    supplier_list_dht_v1(
+        customer_id='customer-2@id-a_8084',
+        observers_ids=['customer-3@id-a_8084', 'customer-2@id-a_8084', ],
+        expected_ecc_map='ecc/4x4',
+        expected_suppliers_number=4,
+    )
+    supplier_list_dht_v1(
+        customer_id='customer-2@id-a_8084',
+        observers_ids=['supplier-1@id-a_8084', 'customer-3@id-a_8084', 'customer-2@id-a_8084', ],
+        expected_ecc_map='ecc/4x4',
+        expected_suppliers_number=4,
+    )

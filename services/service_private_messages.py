@@ -58,6 +58,8 @@ class PrivateMessagesService(LocalService):
         nickname_holder.A('set')
         callback.append_inbox_callback(self._on_inbox_packet_received)
         events.add_subscriber(self._on_identity_url_changed, 'identity-url-changed')
+        events.add_subscriber(self._on_user_connected, 'user-connected')
+        events.add_subscriber(self._on_user_disconnected, 'user-disconnected')
         return True
 
     def stop(self):
@@ -65,6 +67,8 @@ class PrivateMessagesService(LocalService):
         from transport import callback
         from chat import message
         from chat import nickname_holder
+        events.remove_subscriber(self._on_user_connected, 'user-connected')
+        events.remove_subscriber(self._on_user_disconnected, 'user-disconnected')
         events.remove_subscriber(self._on_identity_url_changed, 'identity-url-changed')
         callback.remove_inbox_callback(self._on_inbox_packet_received)
         nickname_holder.Destroy()
@@ -94,3 +98,21 @@ class PrivateMessagesService(LocalService):
                     evt.data['old_idurl'], evt.data['new_idurl'], ))
         if contacts_changed:
             contactsdb.save_correspondents()
+
+    def _on_user_connected(self, evt):
+        from main import events
+        from contacts import contactsdb
+        if contactsdb.is_correspondent(evt.data['idurl']):
+            events.send('friend-connected', data=dict(
+                idurl=evt.data['idurl'],
+                global_id=evt.data['global_id'],
+            ))
+
+    def _on_user_disconnected(self, evt):
+        from main import events
+        from contacts import contactsdb
+        if contactsdb.is_correspondent(evt.data['idurl']):
+            events.send('friend-disconnected', data=dict(
+                idurl=evt.data['idurl'],
+                global_id=evt.data['global_id'],
+            ))

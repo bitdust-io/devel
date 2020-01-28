@@ -137,7 +137,7 @@ def sync_callback(result):
 
 def run_sync():
     lg.out(6, 'git_proc.run_sync')
-    reactor.callLater(0, sync, sync_callback)
+    reactor.callLater(0, sync, sync_callback, update_method='reset')
     reactor.callLater(0, loop)
 
 

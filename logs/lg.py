@@ -229,7 +229,7 @@ def info(message):
     return message
 
 
-def warn(message, level=0):
+def warn(message, level=2):
     global _UseColors
     if _UseColors is None:
         _UseColors = platform.uname()[0] != 'Windows' and os.environ.get('BITDUST_LOG_USE_COLORS', '1') != '0'

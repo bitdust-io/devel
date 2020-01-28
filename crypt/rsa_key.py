@@ -211,9 +211,11 @@ class RSAKey(object):
                     pkcs1_15.new(self.keyObject).verify(h, signature_bytes)
                     result = True
                 except:
-                    lg.err('signature verification failed: %r' % signature)
-                    lg.exc(msg='signature=%r\nmessage=%r\nsignature_as_digits=%r\n' % (
+                    # lg.err('signature verification failed: %r' % signature)
+                    lg.err('signature=%r   message=%r   signature_as_digits=%r' % (
                         signature, message, signature_as_digits))
+                    # lg.exc(msg='signature=%r\nmessage=%r\nsignature_as_digits=%r\n' % (
+                    #     signature, message, signature_as_digits))
                     # do not raise any exception...
         return result
 

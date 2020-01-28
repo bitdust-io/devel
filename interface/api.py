@@ -328,7 +328,7 @@ def config_tree():
                 cursor[part] = {}
             cursor = cursor[part]
         cursor.update(config.conf().toJson(key))
-    return RESULT(result=[r, ])
+    return RESULT([r, ])
 
 #------------------------------------------------------------------------------
 
@@ -441,7 +441,7 @@ def identity_recover(private_key_source, known_idurl=None):
                 return ERROR('identity recovery FAILED', api_method='identity_recover')
             r = my_id.getLocalIdentity().serialize_json()
             r['xml'] = my_id.getLocalIdentity().serialize(as_text=True)
-            ret.callback(RESULT([r, ], api_method='identity_recover'))
+            ret.callback(OK(r, api_method='identity_recover'))
             return
 
     try:
@@ -471,7 +471,7 @@ def identity_rotate():
             return None
         r = my_id.getLocalIdentity().serialize_json()
         r['old_sources'] = old_sources
-        ret.callback(RESULT([r, ], api_method='identity_rotate'))
+        ret.callback(OK(r, api_method='identity_rotate'))
         return None
 
     def _eb(e):
@@ -526,7 +526,7 @@ def key_get(key_id, include_private=False):
         key_info.pop('include_private', None)
     except Exception as exc:
         return ERROR(exc)
-    return RESULT([key_info, ])
+    return OK(key_info)
 
 
 def keys_list(sort=False, include_private=False):
@@ -632,7 +632,7 @@ def key_create(key_alias, key_size=None, label='', include_private=False):
         include_private=include_private
     )
     key_info.pop('include_private', None)
-    return RESULT([key_info,] , message='new private key "%s" was generated successfully' % key_alias, )
+    return OK(key_info, message='new private key "%s" was generated successfully' % key_alias, )
 
 
 def key_label(key_id, label):
@@ -2025,6 +2025,7 @@ def friend_add(idurl_or_global_id, alias=''):
     """
     from contacts import contactsdb
     from contacts import identitycache
+    from main import events
     from p2p import online_status
     from userid import global_id
     from userid import id_url
@@ -2041,6 +2042,11 @@ def friend_add(idurl_or_global_id, alias=''):
             contactsdb.add_correspondent(idurl, alias)
             contactsdb.save_correspondents()
             added = True
+            events.send('friend-added', data=dict(
+                idurl=idurl,
+                global_id=global_id.idurl2glob(idurl),
+                alias=alias,
+            ))
         online_status.handshake(idurl, channel='friend_add', keep_alive=True)
         if added:
             return OK(message='new friend has been added', api_method='friend_add')
@@ -2062,6 +2068,7 @@ def friend_remove(idurl_or_global_id):
     """
     from contacts import contactsdb
     from contacts import identitycache
+    from main import events
     from userid import global_id
     from userid import id_url
     idurl = idurl_or_global_id
@@ -2075,6 +2082,10 @@ def friend_remove(idurl_or_global_id):
         if contactsdb.is_correspondent(idurl):
             contactsdb.remove_correspondent(idurl)
             contactsdb.save_correspondents()
+            events.send('friend-removed', data=dict(
+                idurl=idurl,
+                global_id=global_id.idurl2glob(idurl),
+            ))
             return OK(message='friend has been removed', api_method='friend_remove')
         return ERROR('friend not found', api_method='friend_remove')
 
@@ -2442,7 +2453,7 @@ def space_donated():
         if _Debug:
             lg.out(_DebugLevel, '    %s' % err)
     errors = result.pop('errors', [])
-    return RESULT([result, ], errors=errors,)
+    return OK(result, errors=errors,)
 
 
 def space_consumed():
@@ -2473,7 +2484,7 @@ def space_consumed():
     result = accounting.report_consumed_storage()
     if _Debug:
         lg.out(_DebugLevel, 'api.space_consumed finished')
-    return RESULT([result, ])
+    return OK(result)
 
 
 def space_local():
@@ -2504,7 +2515,7 @@ def space_local():
     result = accounting.report_local_storage()
     if _Debug:
         lg.out(_DebugLevel, 'api.space_local finished')
-    return RESULT([result, ],)
+    return OK(result)
 
 #------------------------------------------------------------------------------
 
@@ -2611,7 +2622,7 @@ def service_info(service_name):
         svc = driver.services().get(service_name, None)
     if svc is None:
         return ERROR('service "%s" not found' % service_name)
-    return RESULT([{
+    return OK({
         'index': svc.index,
         'name': svc.service_name,
         'state': svc.state,
@@ -2619,7 +2630,7 @@ def service_info(service_name):
         'installed': svc.installed(),
         'config_path': svc.config_path,
         'depends': svc.dependent_on()
-    }])
+    })
 
 
 def service_start(service_name):
@@ -2746,10 +2757,10 @@ def packets_stats():
     if not driver.is_on('service_gateway'):
         return ERROR('service_gateway() is not started')
     from p2p import p2p_stats
-    return RESULT([{
+    return OK({
         'in': p2p_stats.counters_in(),
         'out': p2p_stats.counters_out(),
-    }])
+    })
 
 
 def packets_list():
@@ -3036,12 +3047,12 @@ def user_status(idurl_or_global_id):
     # state_machine_inst = contact_status.getInstance(idurl)
     # if not state_machine_inst:
     #     return ERROR('error fetching user status')
-    return RESULT([{
+    return OK({
         'contact_status': online_status.getStatusLabel(idurl),
         'contact_state': online_status.getCurrentState(idurl),
         'idurl': idurl,
         'global_id': global_id.UrlToGlobalID(idurl),
-    }])
+    })
 
 
 def user_status_check(idurl_or_global_id, timeout=5):
@@ -3420,7 +3431,7 @@ def network_stun(udp_port=None, dht_port=None):
     from stun import stun_client
     ret = Deferred()
     d = stun_client.safe_stun(udp_port=udp_port, dht_port=dht_port)
-    d.addBoth(lambda r: ret.callback(RESULT([r, ], api_method='network_stun')))
+    d.addBoth(lambda r: ret.callback(OK(r, api_method='network_stun')))
     return ret
 
 
@@ -3840,11 +3851,11 @@ def network_status(show_suppliers=True, show_customers=True, show_cache=True,
                 'bytes_sent': dht_service.node().bytes_out,
                 'layers': layers,
             })
-    return RESULT([r, ])
+    return OK(r)
 
 
 def network_configuration():
-    return RESULT([driver.get_network_configuration(), ])
+    return OK(driver.get_network_configuration())
 
 #------------------------------------------------------------------------------
 
