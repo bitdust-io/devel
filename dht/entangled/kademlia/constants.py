@@ -24,7 +24,7 @@ specific constants, and do not affect general Kademlia operation.
 ######### KADEMLIA CONSTANTS ###########
 
 #: Small number Representing the degree of parallelism in network calls
-alpha = 2
+alpha = 4
 
 #: Maximum number of contacts stored in a bucket; this should be an even number
 k = 4

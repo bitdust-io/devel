@@ -42,7 +42,7 @@ _SSLContexts = {}
 
 #------------------------------------------------------------------------------
 
-async def run_ssh_command_and_wait_async(host, cmd, loop, verbose=True):
+async def run_ssh_command_and_wait_async(host, cmd, loop, verbose=False):
     if host in [None, '', b'', 'localhost', ]:
         cmd_args = cmd
     else:
@@ -63,7 +63,7 @@ async def run_ssh_command_and_wait_async(host, cmd, loop, verbose=True):
     return stdout.decode(), stderr.decode()
 
 
-def run_ssh_command_and_wait(host, cmd, verbose=True) -> object:
+def run_ssh_command_and_wait(host, cmd, verbose=False) -> object:
     if host in [None, '', b'', 'localhost', ]:
         cmd_args = cmd
     else:
@@ -213,8 +213,9 @@ def tunnel_port(node):
 
 
 def tunnel_url(node, endpoint):
-    print('\n%s [%s]: tunnel_url %d - %s' % (
-        datetime.datetime.now().strftime("%H:%M:%S.%f"), node, tunnel_port(node), endpoint, ))
+    print('\n%s [%s]   /%s   %s' % (
+        datetime.datetime.now().strftime("%H:%M:%S.%f"), node, endpoint,
+        os.environ['PYTEST_CURRENT_TEST'].replace(' (setup)', '').replace(' (call)', ''), ))
     return f'http://127.0.0.1:{tunnel_port(node)}/{endpoint.lstrip("/")}'
 
 #------------------------------------------------------------------------------
@@ -419,7 +420,7 @@ async def connect_network_async(node, loop, attempts=30, delay=1, timeout=10, ve
         counter = 0
         for i in range(attempts):
             counter += 1
-            response = await client.get(tunnel_url(node, '/network/connected/v1?wait_timeout=1'), timeout=timeout)
+            response = await client.get(tunnel_url(node, 'network/connected/v1?wait_timeout=1'), timeout=timeout)
             response_json = await response.json()
             if verbose:
                 print(f'\nnetwork/connected/v1 [{node}] : %s' % pprint.pformat(response_json))

@@ -22,6 +22,7 @@
 
 import os
 import pytest
+import time
 
 from testsupport import request_get, request_post, request_put, run_ssh_command_and_wait
 from keywords import supplier_list_v1, share_create_v1, file_upload_start_v1, file_download_start_v1, \
@@ -113,14 +114,21 @@ def test_customer_1_replace_supplier_at_position_0():
         expected_suppliers_number=2,
     )
 
-    response_after = request_get('customer-1', '/supplier/list/v1')
-    assert response_after.status_code == 200
-    supplier_list_after = response_after.json()['result']
-    suppliers_after = list([x['global_id'] for x in supplier_list_after])
-    assert len(suppliers_after) == 2
-
-    assert suppliers_after[0] != suppliers_before[0]
-    assert suppliers_after[1] == suppliers_before[1]
+    count = 0
+    while True:
+        if count > 20:
+            assert False, 'supplier was not replaced after many attempts'
+            break
+        response_after = request_get('customer-1', '/supplier/list/v1')
+        assert response_after.status_code == 200
+        supplier_list_after = response_after.json()['result']
+        suppliers_after = list([x['global_id'] for x in supplier_list_after])
+        assert len(suppliers_after) == 2
+        assert suppliers_after[1] == suppliers_before[1]
+        if suppliers_after[0] != suppliers_before[0]:
+            break
+        count += 1
+        time.sleep(1)
 
 
 def test_customer_2_switch_supplier_at_position_0():
@@ -236,14 +244,20 @@ def test_customer_2_switch_supplier_at_position_0():
         expected_suppliers_number=4,
     )
 
-    response_after = request_get('customer-2', '/supplier/list/v1')
-    assert response_after.status_code == 200
-    supplier_list_after = response_after.json()['result']
-    suppliers_after = list([x['global_id'] for x in supplier_list_after])
-    assert len(suppliers_after) == 4
-
-    assert suppliers_after[0] == new_supplier
-    assert suppliers_after[0] != suppliers_before[0]
-    assert suppliers_after[1] == suppliers_before[1]
-    assert suppliers_after[2] == suppliers_before[2]
-    assert suppliers_after[3] == suppliers_before[3]
+    count = 0
+    while True:
+        if count > 20:
+            assert False, 'supplier was not switched after many attempts'
+            break
+        response_after = request_get('customer-2', '/supplier/list/v1')
+        assert response_after.status_code == 200
+        supplier_list_after = response_after.json()['result']
+        suppliers_after = list([x['global_id'] for x in supplier_list_after])
+        assert len(suppliers_after) == 4
+        assert suppliers_after[1] == suppliers_before[1]
+        assert suppliers_after[2] == suppliers_before[2]
+        assert suppliers_after[3] == suppliers_before[3]
+        if suppliers_after[0] != suppliers_before[0] and suppliers_after[0] == new_supplier:
+            break
+        count += 1
+        time.sleep(1)
