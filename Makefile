@@ -130,12 +130,18 @@ regress_run_log:
 	PYTHON_VERSION=$(REGRESSION_PY_VER) make --no-print-directory -C regress/ run_all_log
 
 regress_run_one/%:
+	make --no-print-directory -C regress/ clean_coverage
+	make --no-print-directory -C regress/ clean_logs
 	PYTHON_VERSION=$(REGRESSION_PY_VER) make --no-print-directory -C regress/ TEST_NAME=$* _one_up_test_coverage_down
 
 regress_run_try_one/%:
+	make --no-print-directory -C regress/ clean_coverage
+	make --no-print-directory -C regress/ clean_logs
 	PYTHON_VERSION=$(REGRESSION_PY_VER) make --no-print-directory -C regress/ TEST_NAME=$* _one_up_test_log
 
 regress_run_log_one/%:
+	make --no-print-directory -C regress/ clean_coverage
+	make --no-print-directory -C regress/ clean_logs
 	PYTHON_VERSION=$(REGRESSION_PY_VER) make --no-print-directory -C regress/ TEST_NAME=$* _one_up_test_log_down
 
 regress_report:

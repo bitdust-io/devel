@@ -125,7 +125,7 @@ async def open_tunnel_async(node, local_port, loop):
     global _NodeTunnelPort
     cmd_args = ['ssh', '-4', '-o', 'StrictHostKeyChecking=no', '-p', '22', '-N', '-L',
                 '%d:localhost:%d' % (local_port, 8180, ), 'root@%s' % node, ]
-    print('\n[%s]:%s %s' % (node, time.time(), ' '.join(cmd_args), ))
+    # print('\n[%s]:%s %s' % (node, time.time(), ' '.join(cmd_args), ))
     tunnel = asyncio.create_subprocess_exec(
         *cmd_args,
         stdout=asyncio.subprocess.PIPE,
@@ -135,7 +135,7 @@ async def open_tunnel_async(node, local_port, loop):
     ssh_proc = await tunnel
     _SSHTunnels[node] = ssh_proc
     _NodeTunnelPort[node] = local_port
-    print(f'\nopen_tunnel [{node}] on port {local_port} with {ssh_proc}')
+    # print(f'\nopen_tunnel [{node}] on port {local_port} with {ssh_proc}')
     return ssh_proc
 
 
@@ -148,7 +148,7 @@ def open_tunnel(node):
     _SSHTunnels[node] = ssh_proc
     _NodeTunnelPort[node] = local_port
     _NextSSHTunnelPort += 1
-    print(f'\nopen_tunnel [{node}] on port {local_port} with {ssh_proc}')
+    # print(f'\nopen_tunnel [{node}] on port {local_port} with {ssh_proc}')
 
 
 async def open_one_tunnel_async(node, local_port, loop):
@@ -161,7 +161,7 @@ def close_tunnel(node):
         assert False, 'ssh tunnel process for that node was not found'
     close_ssh_port_forwarding(node, _SSHTunnels[node])
     _SSHTunnels.pop(node)
-    print(f'\nclose_tunnel [{node}] OK')
+    # print(f'\nclose_tunnel [{node}] OK')
 
 
 def save_tunnels_ports():

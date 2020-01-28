@@ -46,29 +46,31 @@ def supplier_list_v1(customer: str, expected_min_suppliers=None, expected_max_su
         for s in response.json()['result']:
             if s['supplier_state'] == 'CONNECTED' and s['contact_state'] == 'CONNECTED':
                 num_connected += 1
-        print('\nfound %d connected suppliers at the moment\n' % num_connected)
         if expected_min_suppliers is not None and (num_connected < expected_min_suppliers or num_total < expected_min_suppliers):
+            print('\nfound %d connected suppliers at the moment, but expect at least %d\n' % (num_connected, expected_min_suppliers))
             count += 1
             time.sleep(delay)
             continue
         if expected_max_suppliers is not None and (num_connected > expected_max_suppliers or num_total > expected_max_suppliers):
+            print('\nfound %d connected suppliers at the moment, but expect no more than %d\n' % (num_connected, expected_max_suppliers))
             count += 1
             time.sleep(delay)
             continue
+        print('\nfound %d connected suppliers at the moment\n' % num_connected)
         break
     if not extract_suppliers:
         return response.json()
     return [s['idurl'] for s in response.json()['result']]
 
 
-def supplier_list_dht_v1(customer_id, observers_ids, expected_ecc_map, expected_suppliers_number, retries=40, delay=3, accepted_mistakes=0):
+def supplier_list_dht_v1(customer_id, observers_ids, expected_ecc_map, expected_suppliers_number, retries=30, delay=3, accepted_mistakes=1):
     customer_node = customer_id.split('@')[0]
-    # observer_node = observer_id.split('@')[0]
 
     def _validate(obs):
         response = None
         num_suppliers = 0
         count = 0
+        mistakes = 0
         while True:
             if count >= retries:
                 print('\nDHT info still wrong after %d retries, currently see %d suppliers, but expected %d' % (
@@ -79,10 +81,22 @@ def supplier_list_dht_v1(customer_id, observers_ids, expected_ecc_map, expected_
             except requests.exceptions.ConnectionError as exc:
                 print('\nconnection error: %r' % exc)
                 return False
-            assert response.status_code == 200
+            if response.status_code != 200:
+                count += 1
+                time.sleep(delay)
+                continue
             print('\nsupplier/list/dht/v1?id=%s from %s\n%s\n' % (customer_id, obs, pprint.pformat(response.json())))
-            assert response.json()['status'] == 'OK', response.json()
+            if not response.json()['status'] == 'OK':
+                count += 1
+                time.sleep(delay)
+                continue
             if not response.json()['result']:
+                count += 1
+                time.sleep(delay)
+                continue
+            if not response.json()['result']['customer_idurl'].count('%s.xml' % customer_node):
+                print('\ncurrently see customer_idurl=%r, but expect family owner to be %r\n' % (
+                    response.json()['result']['customer_idurl'], customer_node))
                 count += 1
                 time.sleep(delay)
                 continue
@@ -93,20 +107,18 @@ def supplier_list_dht_v1(customer_id, observers_ids, expected_ecc_map, expected_
                 count += 1
                 time.sleep(delay)
                 continue
-            if ss.count('') > accepted_mistakes or len(list(filter(None, ss))) != expected_suppliers_number:
-                print('\ncurrently see %d empty suppliers\n' % ss.count(''))
-                count += 1
-                time.sleep(delay)
-                continue
-            if not response.json()['result']['customer_idurl'].count('%s.xml' % customer_node):
-                print('\ncurrently see customer_idurl=%r, but expect family owner to be %r\n' % (
-                    response.json()['result']['customer_idurl'], customer_node))
-                count += 1
-                time.sleep(delay)
-                continue
+            if ss.count(''):
+                mistakes += ss.count('')
+                print('\nfound empty suppliers\n')
+            if len(list(filter(None, ss))) != expected_suppliers_number:
+                mistakes +=  abs(expected_suppliers_number - len(list(filter(None, ss))))
+                print('\nfound missing suppliers\n')
             if not response.json()['result']['ecc_map'] == expected_ecc_map:
+                mistakes += 1
                 print('\ncurrently see ecc_map=%r, but expect to be %r\n' % (
                     response.json()['result']['ecc_map'], expected_ecc_map))
+            if mistakes > accepted_mistakes:
+                print('\ncurrently see %d mistakes\n' % mistakes)
                 count += 1
                 time.sleep(delay)
                 continue
