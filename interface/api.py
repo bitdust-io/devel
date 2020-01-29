@@ -2372,6 +2372,7 @@ def customer_reject(idurl_or_global_id):
     from main import settings
     from main import events
     from supplier import local_tester
+    from raid import eccmap
     from p2p import p2p_service
     from lib import packetid
     from userid import global_id
@@ -2397,7 +2398,10 @@ def customer_reject(idurl_or_global_id):
     accounting.write_customers_quotas(space_dict, new_free_space)
     contactsdb.update_customers(current_customers)
     contactsdb.save_customers()
-    events.send('existing-customer-terminated', dict(idurl=customer_idurl))
+    events.send('existing-customer-terminated', dict(
+        idurl=customer_idurl,
+        ecc_map=eccmap.Current().name,
+    ))
     # restart local tester
     local_tester.TestUpdateCustomers()
     return OK('customer "%s" rejected, "%s" bytes were freed' % (customer_idurl, consumed_by_cutomer))

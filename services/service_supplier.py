@@ -274,6 +274,7 @@ class SupplierService(LocalService):
         except:
             customer_public_key = None
             customer_public_key_id = None
+        customer_ecc_map = json_payload.get('ecc_map')
         if not contactsdb.is_customer(customer_idurl):
             lg.warn("got packet from %s, but he is not a customer" % customer_idurl)
             return p2p_service.SendFail(newpacket, 'not a customer')
@@ -301,7 +302,7 @@ class SupplierService(LocalService):
         from supplier import local_tester
         reactor.callLater(0, local_tester.TestUpdateCustomers)  # @UndefinedVariable
         lg.out(8, "    OLD CUSTOMER: TERMINATED !!!!!!!!!!!!!!")
-        events.send('existing-customer-terminated', dict(idurl=customer_idurl))
+        events.send('existing-customer-terminated', dict(idurl=customer_idurl, ecc_map=customer_ecc_map))
         return p2p_service.SendAck(newpacket, 'accepted')
 
     def _do_construct_filename(self, customerGlobID, packetID, keyAlias=None):

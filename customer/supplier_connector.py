@@ -438,6 +438,9 @@ class SupplierConnector(automat.Automat):
                 key_id=my_customer_key_id,
                 include_private=False,
             )
+        ecc_map = kwargs.get('ecc_map')
+        if ecc_map:
+            service_info['ecc_map'] = ecc_map
         request = p2p_service.SendCancelService(
             remote_idurl=self.supplier_idurl,
             service_name='service_supplier',

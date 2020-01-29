@@ -177,8 +177,8 @@ class EmployerService(LocalService):
         from customer import fire_hire
         from raid import eccmap
         lg.info('my desired suppliers number changed')
-        self._do_check_all_hired()
         eccmap.Update()
+        self._do_check_all_hired()
         fire_hire.ClearLastFireTime()
         fire_hire.A('restart')
 

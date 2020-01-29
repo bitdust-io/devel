@@ -1,6 +1,6 @@
 {
   "service_entangled_dht": {
-    "bucket_size": 2,
+    "bucket_size": 4,
     "default_age": 43200,
     "known_nodes": [
       {
@@ -33,7 +33,7 @@
       }
     ],
     "max_age": 86400,
-    "parallel_calls": 2,
+    "parallel_calls": 4,
     "refresh_timeout": 600,
     "rpc_timeout": 10
   },
