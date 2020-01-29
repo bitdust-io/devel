@@ -1,0 +1,5 @@
+#!/bin/bash
+
+echo "running 'restart' on $1"
+
+bitdust restart

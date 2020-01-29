@@ -1085,7 +1085,9 @@ class TransportGateLocalProxy():
         _d = Deferred()
 
         def _call(meth):
-            r = maybeDeferred(meth, *args)
+            if _Debug:
+                lg.dbg(_DebugLevel, method=meth, args=args)
+            r = maybeDeferred(m, *args)
             r.addCallback(_d.callback)
             r.addErrback(_d.errback)
 
