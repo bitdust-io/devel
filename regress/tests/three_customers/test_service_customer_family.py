@@ -30,6 +30,15 @@ def test_customer_family_increase_decrese_customer_1():
     if os.environ.get('RUN_TESTS', '1') == '0':
         return pytest.skip()  # @UndefinedVariable
 
+    packet_list_v1('supplier-1', wait_all_finish=True)
+    packet_list_v1('supplier-2', wait_all_finish=True)
+    packet_list_v1('supplier-3', wait_all_finish=True)
+    packet_list_v1('supplier-4', wait_all_finish=True)
+    packet_list_v1('supplier-5', wait_all_finish=True)
+    packet_list_v1('supplier-6', wait_all_finish=True)
+    packet_list_v1('supplier-7', wait_all_finish=True)
+    packet_list_v1('supplier-8', wait_all_finish=True)
+
     packet_list_v1('customer-1', wait_all_finish=True)
 
     transfer_list_v1('customer-1', wait_all_finish=True)
@@ -59,6 +68,15 @@ def test_customer_family_increase_decrese_customer_1():
 
     config_set_v1('customer-1', 'services/customer/suppliers-number', '4')
 
+    packet_list_v1('supplier-1', wait_all_finish=True)
+    packet_list_v1('supplier-2', wait_all_finish=True)
+    packet_list_v1('supplier-3', wait_all_finish=True)
+    packet_list_v1('supplier-4', wait_all_finish=True)
+    packet_list_v1('supplier-5', wait_all_finish=True)
+    packet_list_v1('supplier-6', wait_all_finish=True)
+    packet_list_v1('supplier-7', wait_all_finish=True)
+    packet_list_v1('supplier-8', wait_all_finish=True)
+
     supplier_list_v1('customer-1', expected_min_suppliers=4, expected_max_suppliers=4)
 
     service_info_v1('customer-1', 'service_shared_data', 'ON')
@@ -83,6 +101,15 @@ def test_customer_family_increase_decrese_customer_1():
     )
 
     config_set_v1('customer-1', 'services/customer/suppliers-number', '2')
+
+    packet_list_v1('supplier-1', wait_all_finish=True)
+    packet_list_v1('supplier-2', wait_all_finish=True)
+    packet_list_v1('supplier-3', wait_all_finish=True)
+    packet_list_v1('supplier-4', wait_all_finish=True)
+    packet_list_v1('supplier-5', wait_all_finish=True)
+    packet_list_v1('supplier-6', wait_all_finish=True)
+    packet_list_v1('supplier-7', wait_all_finish=True)
+    packet_list_v1('supplier-8', wait_all_finish=True)
 
     supplier_list_v1('customer-1', expected_min_suppliers=2, expected_max_suppliers=2)
 
@@ -113,6 +140,15 @@ def test_customer_family_decrease_increase_customer_2():
     if os.environ.get('RUN_TESTS', '1') == '0':
         return pytest.skip()  # @UndefinedVariable
 
+    packet_list_v1('supplier-1', wait_all_finish=True)
+    packet_list_v1('supplier-2', wait_all_finish=True)
+    packet_list_v1('supplier-3', wait_all_finish=True)
+    packet_list_v1('supplier-4', wait_all_finish=True)
+    packet_list_v1('supplier-5', wait_all_finish=True)
+    packet_list_v1('supplier-6', wait_all_finish=True)
+    packet_list_v1('supplier-7', wait_all_finish=True)
+    packet_list_v1('supplier-8', wait_all_finish=True)
+
     packet_list_v1('customer-2', wait_all_finish=True)
 
     transfer_list_v1('customer-2', wait_all_finish=True)
@@ -142,6 +178,15 @@ def test_customer_family_decrease_increase_customer_2():
 
     config_set_v1('customer-2', 'services/customer/suppliers-number', '2')
 
+    packet_list_v1('supplier-1', wait_all_finish=True)
+    packet_list_v1('supplier-2', wait_all_finish=True)
+    packet_list_v1('supplier-3', wait_all_finish=True)
+    packet_list_v1('supplier-4', wait_all_finish=True)
+    packet_list_v1('supplier-5', wait_all_finish=True)
+    packet_list_v1('supplier-6', wait_all_finish=True)
+    packet_list_v1('supplier-7', wait_all_finish=True)
+    packet_list_v1('supplier-8', wait_all_finish=True)
+
     supplier_list_v1('customer-2', expected_min_suppliers=2, expected_max_suppliers=2)
 
     service_info_v1('customer-2', 'service_shared_data', 'ON')
@@ -166,6 +211,15 @@ def test_customer_family_decrease_increase_customer_2():
     )
 
     config_set_v1('customer-2', 'services/customer/suppliers-number', '4')
+
+    packet_list_v1('supplier-1', wait_all_finish=True)
+    packet_list_v1('supplier-2', wait_all_finish=True)
+    packet_list_v1('supplier-3', wait_all_finish=True)
+    packet_list_v1('supplier-4', wait_all_finish=True)
+    packet_list_v1('supplier-5', wait_all_finish=True)
+    packet_list_v1('supplier-6', wait_all_finish=True)
+    packet_list_v1('supplier-7', wait_all_finish=True)
+    packet_list_v1('supplier-8', wait_all_finish=True)
 
     supplier_list_v1('customer-2', expected_min_suppliers=4, expected_max_suppliers=4)
 

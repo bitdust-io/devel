@@ -155,6 +155,7 @@ class SupplierRelationsService(LocalService):
             return
         reactor.callLater(0, fm.automat, 'family-leave', {  # @UndefinedVariable
             'supplier_idurl': my_id.getLocalID().to_bin(),
+            'ecc_map': evt.data.get('ecc_map'),
         })
 
     def _on_incoming_contacts_packet(self, newpacket, info):

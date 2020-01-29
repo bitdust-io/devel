@@ -803,18 +803,40 @@ class FamilyMember(automat.Automat):
             existing_position = merged_info['suppliers'].index(current_request['supplier_idurl'])
         except ValueError:
             existing_position = -1
+
+        if current_request.get('ecc_map'):
+            if merged_info['ecc_map'] and current_request.get('ecc_map') and current_request.get('ecc_map') != merged_info['ecc_map']:
+                lg.info('from "family-leave" request, detected ecc_map change %s -> %s for customer %s' % (
+                    merged_info['ecc_map'], current_request['ecc_map'], self.customer_idurl))
+                merged_info['ecc_map'] = current_request['ecc_map']
+            if not merged_info['ecc_map'] and current_request['ecc_map']:
+                lg.info('from "family-leave" request, detected ecc_map was set to %s for the first time for customer %s' % (
+                    current_request['ecc_map'], self.customer_idurl))
+                merged_info['ecc_map'] = current_request['ecc_map']
+
+        if not merged_info['ecc_map']:
+            lg.warn('still did not found actual ecc_map from DHT or from the request')
+            return None
+
+        expected_suppliers_count = eccmap.GetEccMapSuppliersNumber(merged_info['ecc_map'])
+        if not merged_info['suppliers']:
+            merged_info['suppliers'] = [b'', ] * expected_suppliers_count
+
+        if len(merged_info['suppliers']) < expected_suppliers_count:
+            merged_info['suppliers'] += [b'', ] * (expected_suppliers_count - len(merged_info['suppliers']))
+        else:
+            merged_info['suppliers'] = merged_info['suppliers'][:expected_suppliers_count]
+
         if existing_position < 0:
-            # lg.warn('skip "family-leave" request, did not found supplier %r in customer family %r' % (
-            #     current_request['supplier_idurl'], self.customer_idurl, ))
-            # return None
             if _Debug:
-                lg.dbg(_DebugLevel, 'supplier %r not found in customer family %r, probably already leaving' % (
+                lg.dbg(_DebugLevel, 'supplier %r not found in customer family %r, probably already left' % (
                        current_request['supplier_idurl'], self.customer_idurl, ))
         else:
-            merged_info['suppliers'][existing_position] = b''
-            if _Debug:
-                lg.dbg(_DebugLevel, 'erasing supplier %r from customer family %r' % (
-                       current_request['supplier_idurl'], self.customer_idurl, ))
+            if existing_position < expected_suppliers_count:
+                merged_info['suppliers'][existing_position] = b''
+                if _Debug:
+                    lg.info('erasing supplier %r from customer family %r' % (
+                        current_request['supplier_idurl'], self.customer_idurl, ))
         return merged_info
 
     def _do_process_family_refresh_request(self, merged_info):

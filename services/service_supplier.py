@@ -185,8 +185,17 @@ class SupplierService(LocalService):
             lg.warn("broken space file")
             return p2p_service.SendFail(newpacket, 'broken space file')
         if (customer_idurl in current_customers and customer_idurl.to_bin() not in list(space_dict.keys())):
-            lg.warn("broken customers file")
-            return p2p_service.SendFail(newpacket, 'broken customers file')
+            # seems like customer's idurl was rotated, but space file still have the old idurl
+            # need to find that old idurl value and replace with the new one
+            for other_customer_idurl in space_dict.keys():
+                if other_customer_idurl and other_customer_idurl != 'free' and id_url.field(other_customer_idurl) == customer_idurl:
+                    lg.info('found rotated customer identity in space file, switching: %r -> %r' % (
+                        other_customer_idurl, customer_idurl.to_bin()))
+                    space_dict[customer_idurl.to_bin()] = space_dict.pop(other_customer_idurl)
+                    break
+            if customer_idurl.to_bin() not in list(space_dict.keys()):
+                lg.warn("broken customers file")
+                return p2p_service.SendFail(newpacket, 'broken customers file')
         if customer_idurl in current_customers:
             free_bytes += int(space_dict.get(customer_idurl.to_bin(), 0))
             current_customers.remove(customer_idurl)
@@ -265,6 +274,7 @@ class SupplierService(LocalService):
         except:
             customer_public_key = None
             customer_public_key_id = None
+        customer_ecc_map = json_payload.get('ecc_map')
         if not contactsdb.is_customer(customer_idurl):
             lg.warn("got packet from %s, but he is not a customer" % customer_idurl)
             return p2p_service.SendFail(newpacket, 'not a customer')
@@ -292,7 +302,7 @@ class SupplierService(LocalService):
         from supplier import local_tester
         reactor.callLater(0, local_tester.TestUpdateCustomers)  # @UndefinedVariable
         lg.out(8, "    OLD CUSTOMER: TERMINATED !!!!!!!!!!!!!!")
-        events.send('existing-customer-terminated', dict(idurl=customer_idurl))
+        events.send('existing-customer-terminated', dict(idurl=customer_idurl, ecc_map=customer_ecc_map))
         return p2p_service.SendAck(newpacket, 'accepted')
 
     def _do_construct_filename(self, customerGlobID, packetID, keyAlias=None):

@@ -115,6 +115,8 @@ def test_customer_1_share_file_to_customer_2_same_name_as_existing():
 
     file_download_start_v1('customer-2', remote_path=remote_path_customer_1, destination=f'{volume_customer_2}/sharesamename')
 
+    service_info_v1('customer-2', 'service_shared_data', 'ON')
+
     file_download_start_v1('customer-2', remote_path=remote_path_customer_2, destination=f'{volume_customer_2}/sharesamename2')
 
     file_1 = run_ssh_command_and_wait('customer-2', f'cat {volume_customer_2}/sharesamename/cat.txt')[0].strip()

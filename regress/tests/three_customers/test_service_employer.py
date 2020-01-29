@@ -33,6 +33,15 @@ def test_customer_1_replace_supplier_at_position_0():
     if os.environ.get('RUN_TESTS', '1') == '0':
         return pytest.skip()  # @UndefinedVariable
 
+    packet_list_v1('supplier-1', wait_all_finish=True)
+    packet_list_v1('supplier-2', wait_all_finish=True)
+    packet_list_v1('supplier-3', wait_all_finish=True)
+    packet_list_v1('supplier-4', wait_all_finish=True)
+    packet_list_v1('supplier-5', wait_all_finish=True)
+    packet_list_v1('supplier-6', wait_all_finish=True)
+    packet_list_v1('supplier-7', wait_all_finish=True)
+    packet_list_v1('supplier-8', wait_all_finish=True)
+
     packet_list_v1('customer-1', wait_all_finish=True)
 
     transfer_list_v1('customer-1', wait_all_finish=True)
@@ -82,14 +91,23 @@ def test_customer_1_replace_supplier_at_position_0():
 
     file_download_start_v1('customer-1', remote_path=remote_path_customer_1, destination=volume_customer_1)
 
-    response_before = request_get('customer-1', '/supplier/list/v1')
+    response_before = request_get('customer-1', 'supplier/list/v1')
     assert response_before.status_code == 200
     supplier_list_before = response_before.json()['result']
     suppliers_before = list([x['global_id'] for x in supplier_list_before])
     assert len(suppliers_before) == 2
 
-    response = request_post('customer-1', '/supplier/replace/v1', json={'position': '0'})
+    response = request_post('customer-1', 'supplier/replace/v1', json={'position': '0'})
     assert response.status_code == 200
+
+    packet_list_v1('supplier-1', wait_all_finish=True)
+    packet_list_v1('supplier-2', wait_all_finish=True)
+    packet_list_v1('supplier-3', wait_all_finish=True)
+    packet_list_v1('supplier-4', wait_all_finish=True)
+    packet_list_v1('supplier-5', wait_all_finish=True)
+    packet_list_v1('supplier-6', wait_all_finish=True)
+    packet_list_v1('supplier-7', wait_all_finish=True)
+    packet_list_v1('supplier-8', wait_all_finish=True)
 
     supplier_list_v1('customer-1', expected_min_suppliers=2, expected_max_suppliers=2)
 
@@ -119,7 +137,7 @@ def test_customer_1_replace_supplier_at_position_0():
         if count > 20:
             assert False, 'supplier was not replaced after many attempts'
             break
-        response_after = request_get('customer-1', '/supplier/list/v1')
+        response_after = request_get('customer-1', 'supplier/list/v1')
         assert response_after.status_code == 200
         supplier_list_after = response_after.json()['result']
         suppliers_after = list([x['global_id'] for x in supplier_list_after])
@@ -135,13 +153,22 @@ def test_customer_2_switch_supplier_at_position_0():
     if os.environ.get('RUN_TESTS', '1') == '0':
         return pytest.skip()  # @UndefinedVariable
 
+    packet_list_v1('supplier-1', wait_all_finish=True)
+    packet_list_v1('supplier-2', wait_all_finish=True)
+    packet_list_v1('supplier-3', wait_all_finish=True)
+    packet_list_v1('supplier-4', wait_all_finish=True)
+    packet_list_v1('supplier-5', wait_all_finish=True)
+    packet_list_v1('supplier-6', wait_all_finish=True)
+    packet_list_v1('supplier-7', wait_all_finish=True)
+    packet_list_v1('supplier-8', wait_all_finish=True)
+
     packet_list_v1('customer-2', wait_all_finish=True)
 
     transfer_list_v1('customer-2', wait_all_finish=True)
 
     supplier_list_v1('customer-2', expected_min_suppliers=4, expected_max_suppliers=4)
 
-    response_before = request_get('customer-2', '/supplier/list/v1')
+    response_before = request_get('customer-2', 'supplier/list/v1')
     assert response_before.status_code == 200
     supplier_list_before = response_before.json()['result']
     suppliers_before = list([x['global_id'] for x in supplier_list_before])
@@ -209,11 +236,20 @@ def test_customer_2_switch_supplier_at_position_0():
 
     file_download_start_v1('customer-2', remote_path=remote_path_customer_2, destination=volume_customer_2)
 
-    response = request_put('customer-2', '/supplier/switch/v1', json={
+    response = request_put('customer-2', 'supplier/switch/v1', json={
         'position': '0',
         'new_global_id': new_supplier,
     })
     assert response.status_code == 200
+
+    packet_list_v1('supplier-1', wait_all_finish=True)
+    packet_list_v1('supplier-2', wait_all_finish=True)
+    packet_list_v1('supplier-3', wait_all_finish=True)
+    packet_list_v1('supplier-4', wait_all_finish=True)
+    packet_list_v1('supplier-5', wait_all_finish=True)
+    packet_list_v1('supplier-6', wait_all_finish=True)
+    packet_list_v1('supplier-7', wait_all_finish=True)
+    packet_list_v1('supplier-8', wait_all_finish=True)
 
     supplier_list_v1('customer-2', expected_min_suppliers=4, expected_max_suppliers=4)
 
@@ -249,7 +285,7 @@ def test_customer_2_switch_supplier_at_position_0():
         if count > 20:
             assert False, 'supplier was not switched after many attempts'
             break
-        response_after = request_get('customer-2', '/supplier/list/v1')
+        response_after = request_get('customer-2', 'supplier/list/v1')
         assert response_after.status_code == 200
         supplier_list_after = response_after.json()['result']
         suppliers_after = list([x['global_id'] for x in supplier_list_after])

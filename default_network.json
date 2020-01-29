@@ -33,7 +33,7 @@
       }
     ],
     "max_age": 86400,
-    "parallel_calls": 2,
+    "parallel_calls": 4,
     "refresh_timeout": 600,
     "rpc_timeout": 10
   },

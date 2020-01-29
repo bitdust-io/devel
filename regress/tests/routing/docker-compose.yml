@@ -56,21 +56,11 @@ services:
       - dht-1
       - dht-2
 
-  dht-4:
-    image: bitdust/app
-    ports:
-      - "10914:22"
-    links:
-      - dht-1
-      - dht-2
-      - dht-3
-
   stun-1:
     image: bitdust/app
     ports:
       - "10921:22"
     links:
-      - dht-1
       - dht-2
       - dht-3
 
@@ -79,7 +69,6 @@ services:
     ports:
       - "10922:22"
     links:
-      - dht-1
       - dht-2
       - dht-3
 
@@ -88,10 +77,8 @@ services:
     ports:
       - "10931:22"
     links:
-      - dht-1
       - dht-2
       - dht-3
-      - dht-4
       - stun-1
       - stun-2
       - id-a
@@ -102,10 +89,8 @@ services:
     ports:
       - "10932:22"
     links:
-      - dht-1
       - dht-2
       - dht-3
-      - dht-4
       - stun-1
       - stun-2
       - id-a
@@ -116,10 +101,8 @@ services:
     ports:
       - "10941:22"
     links:
-      - dht-1
       - dht-2
       - dht-3
-      - dht-4
       - stun-1
       - stun-2
       - id-a
@@ -130,10 +113,8 @@ services:
     ports:
       - "10942:22"
     links:
-      - dht-1
       - dht-2
       - dht-3
-      - dht-4
       - stun-1
       - stun-2
       - id-a
@@ -144,10 +125,8 @@ services:
     ports:
       - "10943:22"
     links:
-      - dht-1
       - dht-2
       - dht-3
-      - dht-4
       - stun-1
       - stun-2
       - id-a
@@ -158,10 +137,8 @@ services:
     ports:
       - "10944:22"
     links:
-      - dht-1
       - dht-2
       - dht-3
-      - dht-4
       - stun-1
       - stun-2
       - id-a
@@ -172,10 +149,8 @@ services:
     ports:
       - "10945:22"
     links:
-      - dht-1
       - dht-2
       - dht-3
-      - dht-4
       - stun-1
       - stun-2
       - id-a
@@ -186,10 +161,8 @@ services:
     ports:
       - "10946:22"
     links:
-      - dht-1
       - dht-2
       - dht-3
-      - dht-4
       - stun-1
       - stun-2
       - id-a
@@ -202,10 +175,8 @@ services:
     volumes:
       - customer_1:/customer_1
     links:
-      - dht-1
       - dht-2
       - dht-3
-      - dht-4
       - stun-1
       - stun-2
       - id-a
@@ -218,10 +189,8 @@ services:
     volumes:
       - customer_2:/customer_2
     links:
-      - dht-1
       - dht-2
       - dht-3
-      - dht-4
       - stun-1
       - stun-2
       - id-a
@@ -240,7 +209,6 @@ services:
       - dht-1
       - dht-2
       - dht-3
-      - dht-4
       - stun-1
       - stun-2
       - id-a

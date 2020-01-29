@@ -782,7 +782,10 @@ class FireHire(automat.Automat):
             sc = supplier_connector.by_idurl(supplier_idurl)
             if sc:
                 sc.set_callback('fire_hire', self._on_supplier_connector_state_changed)
-                sc.automat('disconnect')
+                sc.automat(
+                    'disconnect',
+                    ecc_map=eccmap.Current().name,
+                )
             else:
                 lg.warn('supplier_connector must exist, but not found %s' % supplier_idurl)
             online_status.remove_online_status_listener_callback(

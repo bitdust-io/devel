@@ -85,30 +85,80 @@ def run_ssh_command_and_wait(host, cmd, verbose=False) -> object:
 #------------------------------------------------------------------------------
 
 def request_get(node, url, timeout=None):
-    return requests.get(
-        tunnel_url(node, url),
-        timeout=timeout,
-        # cert=(f'/app/certificates/{node}/apiclientcert', f'/app/certificates/{node}/apiclientcertkey'),
-        # verify=f'/app/certificates/{node}/apiservercert',
-    )
+    resp = None
+    err = None
+    count = 0
+    while True:
+        if count > 3:
+            print('\nGET request failed after few attempts :  node=%r   url=%r   err=%r\n' % (node, url, err))
+            assert False, 'GET request failed after few attempts :  node=%r   url=%r    err=%r' % (node, url, err)
+            break
+        try:
+            resp = requests.get(
+                tunnel_url(node, url),
+                timeout=timeout,
+                # cert=(f'/app/certificates/{node}/apiclientcert', f'/app/certificates/{node}/apiclientcertkey'),
+                # verify=f'/app/certificates/{node}/apiservercert',
+            )
+        except Exception as exc:
+            resp = None
+            err = exc
+        if resp:
+            break
+        count += 1
+    return resp
+
 
 def request_post(node, url, json={}, timeout=None):
-    return requests.post(
-        url=tunnel_url(node, url),
-        json=json,
-        timeout=timeout,
-        # cert=(f'/app/certificates/{node}/apiclientcert', f'/app/certificates/{node}/apiclientcertkey'),
-        # verify=f'/app/certificates/{node}/apiservercert',
-    )
+    resp = None
+    err = None
+    count = 0
+    while True:
+        if count > 3:
+            print('\nPOST request failed after few attempts :  node=%r   url=%r   json=%r   err=%r\n' % (node, url, json, err))
+            assert False, 'POST request failed after few attempts :  node=%r   url=%r   json=%r   err=%r' % (node, url, json, err)
+            break
+        try:
+            resp = requests.post(
+                url=tunnel_url(node, url),
+                json=json,
+                timeout=timeout,
+                # cert=(f'/app/certificates/{node}/apiclientcert', f'/app/certificates/{node}/apiclientcertkey'),
+                # verify=f'/app/certificates/{node}/apiservercert',
+            )
+        except Exception as exc:
+            resp = None
+            err = exc
+        if resp:
+            break
+        count += 1
+    return resp
+
 
 def request_put(node, url, json={}, timeout=None):
-    return requests.put(
-        url=tunnel_url(node, url),
-        json=json,
-        timeout=timeout,
-        # cert=(f'/app/certificates/{node}/apiclientcert', f'/app/certificates/{node}/apiclientcertkey'),
-        # verify=f'/app/certificates/{node}/apiservercert',
-    )
+    resp = None
+    err = None
+    count = 0
+    while True:
+        if count > 3:
+            print('\nPUT request failed after few attempts :  node=%r   url=%r   json=%r   err=%r\n' % (node, url, json, err))
+            assert False, 'PUT request failed after few attempts :  node=%r   url=%r   json=%r   err=%r' % (node, url, json, err)
+            break
+        try:
+            resp = requests.put(
+                url=tunnel_url(node, url),
+                json=json,
+                timeout=timeout,
+                # cert=(f'/app/certificates/{node}/apiclientcert', f'/app/certificates/{node}/apiclientcertkey'),
+                # verify=f'/app/certificates/{node}/apiservercert',
+            )
+        except Exception as exc:
+            resp = None
+            err = exc
+        if resp:
+            break
+        count += 1
+    return resp
 
 #------------------------------------------------------------------------------
 
@@ -125,7 +175,7 @@ async def open_tunnel_async(node, local_port, loop):
     global _NodeTunnelPort
     cmd_args = ['ssh', '-4', '-o', 'StrictHostKeyChecking=no', '-p', '22', '-N', '-L',
                 '%d:localhost:%d' % (local_port, 8180, ), 'root@%s' % node, ]
-    print('\n[%s]:%s %s' % (node, time.time(), ' '.join(cmd_args), ))
+    # print('\n[%s]:%s %s' % (node, time.time(), ' '.join(cmd_args), ))
     tunnel = asyncio.create_subprocess_exec(
         *cmd_args,
         stdout=asyncio.subprocess.PIPE,
@@ -135,7 +185,7 @@ async def open_tunnel_async(node, local_port, loop):
     ssh_proc = await tunnel
     _SSHTunnels[node] = ssh_proc
     _NodeTunnelPort[node] = local_port
-    print(f'\nopen_tunnel [{node}] on port {local_port} with {ssh_proc}')
+    # print(f'\nopen_tunnel [{node}] on port {local_port} with {ssh_proc}')
     return ssh_proc
 
 
@@ -148,7 +198,7 @@ def open_tunnel(node):
     _SSHTunnels[node] = ssh_proc
     _NodeTunnelPort[node] = local_port
     _NextSSHTunnelPort += 1
-    print(f'\nopen_tunnel [{node}] on port {local_port} with {ssh_proc}')
+    # print(f'\nopen_tunnel [{node}] on port {local_port} with {ssh_proc}')
 
 
 async def open_one_tunnel_async(node, local_port, loop):
@@ -161,7 +211,7 @@ def close_tunnel(node):
         assert False, 'ssh tunnel process for that node was not found'
     close_ssh_port_forwarding(node, _SSHTunnels[node])
     _SSHTunnels.pop(node)
-    print(f'\nclose_tunnel [{node}] OK')
+    # print(f'\nclose_tunnel [{node}] OK')
 
 
 def save_tunnels_ports():
