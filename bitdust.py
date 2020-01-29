@@ -45,20 +45,4 @@ def main():
 
 
 if __name__ == "__main__":
-
-#     import cProfile
-#     cProfile.run('main()', 'bitdust.profile')
-
-#     import cProfile, pstats, io
-#     from pstats import SortKey
-#     pr = cProfile.Profile()
-#     pr.enable()
-#     main()
-#     pr.disable()
-#     s = io.StringIO()
-#     sortby = SortKey.CUMULATIVE
-#     ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
-#     ps.print_stats()
-#     open('/tmp/bitdust.profile', 'w').write(s.getvalue())
-
     main()
