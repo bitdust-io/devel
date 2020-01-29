@@ -33,6 +33,15 @@ def test_customer_1_replace_supplier_at_position_0():
     if os.environ.get('RUN_TESTS', '1') == '0':
         return pytest.skip()  # @UndefinedVariable
 
+    packet_list_v1('supplier-1', wait_all_finish=True)
+    packet_list_v1('supplier-2', wait_all_finish=True)
+    packet_list_v1('supplier-3', wait_all_finish=True)
+    packet_list_v1('supplier-4', wait_all_finish=True)
+    packet_list_v1('supplier-5', wait_all_finish=True)
+    packet_list_v1('supplier-6', wait_all_finish=True)
+    packet_list_v1('supplier-7', wait_all_finish=True)
+    packet_list_v1('supplier-8', wait_all_finish=True)
+
     packet_list_v1('customer-1', wait_all_finish=True)
 
     transfer_list_v1('customer-1', wait_all_finish=True)
@@ -91,6 +100,15 @@ def test_customer_1_replace_supplier_at_position_0():
     response = request_post('customer-1', 'supplier/replace/v1', json={'position': '0'})
     assert response.status_code == 200
 
+    packet_list_v1('supplier-1', wait_all_finish=True)
+    packet_list_v1('supplier-2', wait_all_finish=True)
+    packet_list_v1('supplier-3', wait_all_finish=True)
+    packet_list_v1('supplier-4', wait_all_finish=True)
+    packet_list_v1('supplier-5', wait_all_finish=True)
+    packet_list_v1('supplier-6', wait_all_finish=True)
+    packet_list_v1('supplier-7', wait_all_finish=True)
+    packet_list_v1('supplier-8', wait_all_finish=True)
+
     supplier_list_v1('customer-1', expected_min_suppliers=2, expected_max_suppliers=2)
 
     service_info_v1('customer-1', 'service_shared_data', 'ON')
@@ -134,6 +152,15 @@ def test_customer_1_replace_supplier_at_position_0():
 def test_customer_2_switch_supplier_at_position_0():
     if os.environ.get('RUN_TESTS', '1') == '0':
         return pytest.skip()  # @UndefinedVariable
+
+    packet_list_v1('supplier-1', wait_all_finish=True)
+    packet_list_v1('supplier-2', wait_all_finish=True)
+    packet_list_v1('supplier-3', wait_all_finish=True)
+    packet_list_v1('supplier-4', wait_all_finish=True)
+    packet_list_v1('supplier-5', wait_all_finish=True)
+    packet_list_v1('supplier-6', wait_all_finish=True)
+    packet_list_v1('supplier-7', wait_all_finish=True)
+    packet_list_v1('supplier-8', wait_all_finish=True)
 
     packet_list_v1('customer-2', wait_all_finish=True)
 
@@ -214,6 +241,15 @@ def test_customer_2_switch_supplier_at_position_0():
         'new_global_id': new_supplier,
     })
     assert response.status_code == 200
+
+    packet_list_v1('supplier-1', wait_all_finish=True)
+    packet_list_v1('supplier-2', wait_all_finish=True)
+    packet_list_v1('supplier-3', wait_all_finish=True)
+    packet_list_v1('supplier-4', wait_all_finish=True)
+    packet_list_v1('supplier-5', wait_all_finish=True)
+    packet_list_v1('supplier-6', wait_all_finish=True)
+    packet_list_v1('supplier-7', wait_all_finish=True)
+    packet_list_v1('supplier-8', wait_all_finish=True)
 
     supplier_list_v1('customer-2', expected_min_suppliers=4, expected_max_suppliers=4)
 
