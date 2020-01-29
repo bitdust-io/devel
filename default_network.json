@@ -28,6 +28,14 @@
         "udp_port": 14441
       },
       {
+        "host": "peer2peer.ai",
+        "udp_port": 14441
+      },
+      {
+        "host": "webapp.ai",
+        "udp_port": 14441
+      },
+      {
         "host": "seed.bitdust.io",
         "udp_port": 14441
       }
@@ -69,6 +77,16 @@
       },
       {
         "host": "bahamas.ai",
+        "http_port": 80,
+        "tcp_port": 6661
+      },
+      {
+        "host": "peer2peer.ai",
+        "http_port": 80,
+        "tcp_port": 6661
+      },
+      {
+        "host": "webapp.ai",
         "http_port": 80,
         "tcp_port": 6661
       },
