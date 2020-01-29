@@ -39,7 +39,6 @@ EVENTS:
     * :red:`timer-10sec`
     * :red:`timer-15sec`
     * :red:`timer-2sec`
-    * :red:`timer-5sec`
     * :red:`user-identity-cached`
 """
 
@@ -96,9 +95,8 @@ class SharedAccessDonor(automat.Automat):
 
     timers = {
         'timer-2sec': (2.0, ['PUB_KEY']),
-        'timer-10sec': (10.0, ['PRIV_KEY', 'LIST_FILES']),
-        'timer-15sec': (25.0, ['PUB_KEY']),
-        'timer-5sec': (5.0, ['PING', 'AUDIT', 'CACHE']),
+        'timer-10sec': (10.0, ['CACHE']),
+        'timer-15sec': (15.0, ['PUB_KEY', 'PING', 'PRIV_KEY', 'AUDIT', 'LIST_FILES']),
     }
 
     def __init__(self, debug_level=0, log_events=False, publish_events=False, **kwargs):
@@ -157,7 +155,7 @@ class SharedAccessDonor(automat.Automat):
             if event == 'priv-key-ok':
                 self.state = 'LIST_FILES'
                 self.doSendMyListFiles(*args, **kwargs)
-            elif event == 'fail' or event == 'timer-10sec':
+            elif event == 'fail' or event == 'timer-15sec':
                 self.state = 'CLOSED'
                 self.doReportFailed(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
@@ -180,7 +178,7 @@ class SharedAccessDonor(automat.Automat):
             if event == 'ack':
                 self.state = 'BLOCKCHAIN'
                 self.doBlockchainLookupVerifyUserPubKey(*args, **kwargs)
-            elif event == 'fail' or event == 'timer-5sec':
+            elif event == 'fail' or event == 'timer-15sec':
                 self.state = 'CLOSED'
                 self.doReportFailed(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
@@ -189,7 +187,7 @@ class SharedAccessDonor(automat.Automat):
             if event == 'user-identity-cached':
                 self.state = 'PING'
                 self.doSendMyIdentityToUser(*args, **kwargs)
-            elif event == 'fail' or event == 'timer-5sec':
+            elif event == 'fail' or event == 'timer-10sec':
                 self.state = 'CLOSED'
                 self.doReportFailed(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
@@ -208,19 +206,19 @@ class SharedAccessDonor(automat.Automat):
                 self.state = 'CLOSED'
                 self.doReportDone(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'fail' or event == 'timer-10sec':
+            elif event == 'fail' or event == 'timer-15sec':
                 self.state = 'CLOSED'
                 self.doReportFailed(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
         #---AUDIT---
         elif self.state == 'AUDIT':
-            if event == 'fail' or event == 'timer-5sec':
+            if event == 'audit-ok':
+                self.state = 'PUB_KEY'
+                self.doSendPubKeyToSuppliers(*args, **kwargs)
+            elif event == 'fail' or event == 'timer-15sec':
                 self.state = 'CLOSED'
                 self.doReportFailed(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'audit-ok':
-                self.state = 'PUB_KEY'
-                self.doSendPubKeyToSuppliers(*args, **kwargs)
         return None
 
     def isSomeSuppliersAcked(self, *args, **kwargs):
@@ -262,17 +260,6 @@ class SharedAccessDonor(automat.Automat):
         def _on_fail(err):
             self.automat('fail', err)
             return None
-
-#         p2p_service.SendIdentity(
-#             remote_idurl=self.remote_idurl,
-#             wide=True,
-#             timeout=5,
-#             callbacks={
-#                 commands.Ack(): _on_ack,
-#                 commands.Fail(): lambda response, _: self.automat('fail', Exception(str(response))),
-#                 None: lambda pkt_out: self.automat('fail', Exception('remote node not responding')),
-#             },
-#         )
 
         d = online_status.ping(
             idurl=self.remote_idurl,
