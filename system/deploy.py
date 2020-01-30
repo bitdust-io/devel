@@ -281,7 +281,7 @@ def run(args):
 
     script = u"#!/bin/sh\n"
     script += u'# This is a short shell script to create an alias in OS for BitDust software.\n'
-    script += u'# NOTICE: BitDust software do not require root permissions to run, please start as normal user.\n\n'
+    script += u'# NOTICE: BitDust software do not require root permissions to run, please start it as normal user.\n\n'
     script += u'{}/bin/python {}/bitdust.py "$@"\n\n'.format(venv_path, source_dir)
     fil = open(script_path, mode='w')
     fil.write(script)

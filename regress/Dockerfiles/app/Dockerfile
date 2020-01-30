@@ -20,7 +20,7 @@
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
 
-ARG PYTHON_VERSION=2.7.15
+ARG PYTHON_VERSION
 
 FROM python:${PYTHON_VERSION}
 
@@ -46,7 +46,7 @@ COPY . /app/bitdust
 COPY ./regress/.coverage_config /app/bitdust/
 COPY ./regress/bitdust.py /app/bitdust/
 
-#  RUN find /app/bitdust -type f -name "*.py" -exec sed -i -e 's/_Debug = True/_Debug = False/g' {} +
+# RUN find /app/bitdust -type f -name "*.py" -exec sed -i -e 's/_Debug = True/_Debug = False/g' {} +
 
 RUN python /app/bitdust/bitdust.py install
 
