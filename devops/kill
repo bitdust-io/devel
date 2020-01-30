@@ -1,0 +1,11 @@
+#!/bin/bash
+
+echo "running 'kill'"
+
+LINES=`ps auxww | grep "bitdust.py" | grep "python" | grep -v grep | grep -v ssh`
+[ -n "$LINES" ] && echo "$LINES"
+NUM=`echo "$LINES" | awk '{print $2}'`
+[ -n "$NUM" ] && kill -9 $NUM
+[ -n "$NUM" ] && echo "killed process $NUM"
+
+exit 0

@@ -392,11 +392,6 @@ class SupplierService(LocalService):
             connect_now=True,
             attach=True,
         )
-#         d = dht_service.connect(
-#             seed_nodes=known_seeds,
-#             layer_id=dht_records.LAYER_SUPPLIERS,
-#             attach=True,
-#         )
         d.addCallback(self._on_suppliers_dht_layer_connected)
         d.addErrback(lambda *args: lg.err(str(args)))
 

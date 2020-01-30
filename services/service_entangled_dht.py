@@ -146,11 +146,6 @@ class EntangledDHTService(LocalService):
                         connect_now=True,
                         attach=True,
                     ))
-                    # dl.append(dht_service.connect(
-                    #     seed_nodes=known_seeds,
-                    #     layer_id=int(layer_id.strip()),
-                    #     attach=True,
-                    # ))
         if dl:
             d = DeferredList(dl)
             d.addCallback(self._on_layers_attached)

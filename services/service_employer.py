@@ -162,11 +162,6 @@ class EmployerService(LocalService):
             connect_now=True,
             attach=False,
         )
-#         dht_service.connect(
-#             seed_nodes=known_seeds,
-#             layer_id=dht_records.LAYER_SUPPLIERS,
-#             attach=False,
-#         )
 
     def _on_fire_hire_ready(self, oldstate, newstate, evt, *args, **kwargs):
         self._do_check_all_hired()

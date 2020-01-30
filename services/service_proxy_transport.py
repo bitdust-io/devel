@@ -183,11 +183,6 @@ class ProxyTransportService(LocalService):
             connect_now=True,
             attach=False,
         )
-#         dht_service.connect(
-#             seed_nodes=known_seeds,
-#             layer_id=dht_records.LAYER_PROXY_ROUTERS,
-#             attach=False,
-#         )
         d.addCallback(self._on_proxy_routers_dht_layer_connected)
         d.addErrback(lambda *args: lg.err(str(args)))
 
