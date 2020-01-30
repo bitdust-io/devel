@@ -33,7 +33,7 @@ from .contact import Contact, LayeredContact  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 
 #------------------------------------------------------------------------------
 
@@ -257,34 +257,38 @@ class KademliaProtocol(protocol.DatagramProtocol):
                future, into something similar to a message translator/encoder
                class (see C{kademlia.msgformat} and C{kademlia.encoding}).
         """
-        if len(data) > self.msgSizeLimit:
-            # We have to spread the data over multiple UDP datagrams, and provide sequencing information
-            # 1st byte is transmission type id, bytes 2 & 3 are the total number of packets in this transmission,
-            # bytes 4 & 5 are the sequence number for this specific packet
-            totalPackets = int(len(data) / self.msgSizeLimit)
-            if len(data) % self.msgSizeLimit > 0:
-                totalPackets += 1
-            encTotalPackets = chr(totalPackets >> 8) + chr(totalPackets & 0xff)
-            seqNumber = 0
-            startPos = 0
-            while seqNumber < totalPackets:
-                # reactor.iterate() #IGNORE:E1101
-                packetData = data[startPos:startPos + self.msgSizeLimit]
+        try:
+            if len(data) > self.msgSizeLimit:
+                # We have to spread the data over multiple UDP datagrams, and provide sequencing information
+                # 1st byte is transmission type id, bytes 2 & 3 are the total number of packets in this transmission,
+                # bytes 4 & 5 are the sequence number for this specific packet
+                totalPackets = int(len(data) / self.msgSizeLimit)
+                if len(data) % self.msgSizeLimit > 0:
+                    totalPackets += 1
+                encTotalPackets = chr(totalPackets >> 8) + chr(totalPackets & 0xff)
+                seqNumber = 0
+                startPos = 0
+                while seqNumber < totalPackets:
+                    # reactor.iterate() #IGNORE:E1101
+                    packetData = data[startPos:startPos + self.msgSizeLimit]
+                    encSeqNumber = chr(seqNumber >> 8) + chr(seqNumber & 0xff)
+                    # actually we must always pass a header!
+                    txHeader = encoding.to_bin(encTotalPackets) + encoding.to_bin(encSeqNumber) + encoding.to_bin(rpcID)
+                    txData = b'\x00' + txHeader + b'\x00' + packetData 
+                    reactor.callLater(self.maxToSendDelay * seqNumber + self.minToSendDelay, self._write, txData, address)  # IGNORE:E1101
+                    startPos += self.msgSizeLimit
+                    seqNumber += 1
+            else:
+                totalPackets = 1
+                encTotalPackets = chr(totalPackets >> 8) + chr(totalPackets & 0xff)
+                seqNumber = 0
                 encSeqNumber = chr(seqNumber >> 8) + chr(seqNumber & 0xff)
-                # actually we must always pass a header!
                 txHeader = encoding.to_bin(encTotalPackets) + encoding.to_bin(encSeqNumber) + encoding.to_bin(rpcID)
-                txData = b'\x00' + txHeader + b'\x00' + packetData 
-                reactor.callLater(self.maxToSendDelay * seqNumber + self.minToSendDelay, self._write, txData, address)  # IGNORE:E1101
-                startPos += self.msgSizeLimit
-                seqNumber += 1
-        else:
-            totalPackets = 1
-            encTotalPackets = chr(totalPackets >> 8) + chr(totalPackets & 0xff)
-            seqNumber = 0
-            encSeqNumber = chr(seqNumber >> 8) + chr(seqNumber & 0xff)
-            txHeader = encoding.to_bin(encTotalPackets) + encoding.to_bin(encSeqNumber) + encoding.to_bin(rpcID)
-            txData = b'\x00' + txHeader + b'\x00' + data 
-            self._write(txData, address)
+                txData = b'\x00' + txHeader + b'\x00' + data 
+                self._write(txData, address)
+        except:
+            import traceback
+            traceback.print_exc()
 
     def _write(self, data, address):
         if self._counter:

@@ -152,34 +152,38 @@ class Bencode(Encoding):
         @return: The encoded data
         @rtype: str
         """
-        if type(data) in six.integer_types:
-            return b'i%de' % data
-        elif isinstance(data, six.text_type):
-            return b'%d:%s' % (len(data.encode(encoding=encoding)), data.encode(encoding=encoding))
-        elif isinstance(data, six.binary_type):
-            return b'%d:%s' % (len(data), data)
-        elif type(data) in (list, tuple):
-            encodedListItems = b''
-            for item in data:
-                encodedListItems += self.encode(item)
-            return b'l%se' % encodedListItems
-        elif isinstance(data, dict):
-            encodedDictItems = b''
-            _d = {(k.encode() if k and isinstance(k, six.text_type) else k) : v for k, v in data.items()}
-            keys = sorted(_d.keys())
-            for key in keys:
-                e_key = self.encode(key)
-                e_data = self.encode(_d[key])
-                encodedDictItems += e_key
-                encodedDictItems += e_data
-            return b'd%se' % encodedDictItems
-        elif isinstance(data, float):
-            # This (float data type) is a non-standard extension to the original Bencode algorithm
-            return b'f%fe' % data
-        elif data is None:
-            return b'i0e'  # return 0
-        else:
-            raise TypeError("Cannot bencode '%s' object" % type(data))
+        try:
+            if type(data) in six.integer_types:
+                return b'i%de' % data
+            elif isinstance(data, six.text_type):
+                return b'%d:%s' % (len(data), data.encode(encoding=encoding))
+            elif isinstance(data, six.binary_type):
+                return b'%d:%s' % (len(data), data)
+            elif type(data) in (list, tuple):
+                encodedListItems = b''
+                for item in data:
+                    encodedListItems += self.encode(item)
+                return b'l%se' % encodedListItems
+            elif isinstance(data, dict):
+                encodedDictItems = b''
+                _d = {(k.encode() if k and isinstance(k, six.text_type) else k) : v for k, v in data.items()}
+                keys = sorted(_d.keys())
+                for key in keys:
+                    e_key = self.encode(key)
+                    e_data = self.encode(_d[key])
+                    encodedDictItems += e_key
+                    encodedDictItems += e_data
+                return b'd%se' % encodedDictItems
+            elif isinstance(data, float):
+                # This (float data type) is a non-standard extension to the original Bencode algorithm
+                return b'f%fe' % data
+            elif data is None:
+                return b'i0e'  # return 0
+            else:
+                raise TypeError("Cannot bencode '%s' object" % type(data))
+        except:
+            import traceback
+            traceback.print_exc()
 
 
     def decode(self, data, encoding=None):
@@ -195,7 +199,11 @@ class Bencode(Encoding):
         @return: The decoded data, as a native Python type
         @rtype:  int, list, dict or str
         """
-        return self._decodeRecursive(data, encoding=encoding)[0]
+        try:
+            return self._decodeRecursive(data, encoding=encoding)[0]
+        except:
+            import traceback
+            traceback.print_exc()
 
     @staticmethod
     def _decodeRecursive(data, startIndex=0, encoding=None):
