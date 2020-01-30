@@ -412,8 +412,9 @@ class StunClient(automat.Automat):
         """
         global _StunClient
         _StunClient = None
-        for d in self.deferreds.values():
-            d.cancel()
+        for d in list(self.deferreds.values()):
+            if d and not d.called:
+                d.cancel()
         self.deferreds.clear()
         if udp.proto(self.listen_port):
             udp.proto(self.listen_port).remove_callback(self._datagram_received)
