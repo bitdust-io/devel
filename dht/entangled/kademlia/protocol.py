@@ -356,16 +356,19 @@ class KademliaProtocol(protocol.DatagramProtocol):
                     # Try to pass the sender's node id to the function...
                     result = func(*args, **{'_rpcNodeID': senderContact.id, 'layerID': senderContact.layerID})
                 except TypeError:
+                    # import traceback
+                    # traceback.print_exc()
                     # ...or simply call it if that fails
                     result = func(*args)
             except Exception as e:
                 if _Debug:
                     print('[DHT PROTO]                      failed with %r' % e)
+                    # import traceback
                     # traceback.print_exc()
                 df.errback(failure.Failure(e))
             else:
                 if _Debug:
-                    print('[DHT PROTO]                   result is OK')
+                    print('[DHT PROTO]                   result is OK', result)
                 df.callback(result)
         else:
             if _Debug:

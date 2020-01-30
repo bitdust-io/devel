@@ -471,7 +471,7 @@ class StunClient(automat.Automat):
         if not isinstance(result, dict):
             return
         try:
-            port = int(result['stun_port'])
+            port = int(strng.to_text(result['stun_port']))
             address = node.address
         except:
             lg.exc()

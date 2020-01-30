@@ -133,8 +133,11 @@ def init(udp_port, dht_dir_path=None, open_layers=[]):
     for layer_filename in list_layers:
         if not layer_filename.startswith('db_'):
             continue
-        layer_name = layer_filename.replace('db_', '')
-        layer_id = int(layer_name)
+        try:
+            layer_name = layer_filename.replace('db_', '')
+            layer_id = int(layer_name)
+        except:
+            continue
         db_file_path = settings.DHTDataLayerFile(layer_id)
         dbPath = bpio.portablePath(db_file_path)
         if _Debug:
@@ -1005,7 +1008,7 @@ def get_node_data(key, layer_id=0):
     value = node().data[layer_id][key]
     if _Debug:
         lg.out(_DebugLevel, 'dht_service.get_node_data key=[%s] read %d bytes   layer_id=%d' % (
-            key, len(str(value)), layer_id, ))
+            key, len(strng.to_text(value) or ''), layer_id, ))
     return value
 
 
@@ -1021,7 +1024,7 @@ def set_node_data(key, value, layer_id=0):
     node().data[layer_id][key] = value
     if _Debug:
         lg.out(_DebugLevel, 'dht_service.set_node_data key=[%s] wrote %d bytes  layer_id=%d' % (
-            key, len(str(value)), layer_id, ))
+            key, len(strng.to_text(value) or ''), layer_id, ))
     return True
 
 
