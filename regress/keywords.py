@@ -288,6 +288,10 @@ def file_download_start_v1(customer: str, remote_path: str, destination: str,
             print('\nfile/download/start/v1 [%s] remote_path=%s destination_folder=%s : %s\n' % (
                 customer, remote_path, destination, pprint.pformat(response.json()), ))
             break
+        if response.json()['errors'][0].count('downloading') and response.json()['errors'][0].count('already scheduled'):
+            print('\nfile/download/start/v1 [%s] remote_path=%s destination_folder=%s : %s\n' % (
+                customer, remote_path, destination, 'ALREADY STARTED', ))
+            break
         if response.json()['errors'][0].count('failed') and response.json()['errors'][0].count('downloading'):
             time.sleep(delay)
         else:

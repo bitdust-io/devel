@@ -64,9 +64,11 @@ def test_customer_1_share_file_to_customer_2_same_name_as_existing():
     file_create_v1('customer-2', remote_path_customer_2)
 
     # upload file for customer_1
+    service_info_v1('customer-1', 'service_shared_data', 'ON')
     file_upload_start_v1('customer-1', remote_path_customer_1, filepath_customer_1)
 
     # upload file for customer_2
+    service_info_v1('customer-2', 'service_shared_data', 'ON')
     file_upload_start_v1('customer-2', remote_path_customer_2, filepath_customer_2)
 
     packet_list_v1('customer-2', wait_all_finish=True)
@@ -77,11 +79,9 @@ def test_customer_1_share_file_to_customer_2_same_name_as_existing():
     # time.sleep(5)
 
     service_info_v1('customer-1', 'service_shared_data', 'ON')
-
     file_download_start_v1('customer-1', remote_path=remote_path_customer_1, destination=volume_customer_1)
 
     service_info_v1('customer-2', 'service_shared_data', 'ON')
-
     file_download_start_v1('customer-2', remote_path=remote_path_customer_2, destination=volume_customer_2)
 
     service_info_v1('customer-2', 'service_shared_data', 'ON')
@@ -112,11 +112,9 @@ def test_customer_1_share_file_to_customer_2_same_name_as_existing():
     run_ssh_command_and_wait('customer-2', f'mkdir {volume_customer_2}/sharesamename2')
 
     service_info_v1('customer-2', 'service_shared_data', 'ON')
-
     file_download_start_v1('customer-2', remote_path=remote_path_customer_1, destination=f'{volume_customer_2}/sharesamename')
 
     service_info_v1('customer-2', 'service_shared_data', 'ON')
-
     file_download_start_v1('customer-2', remote_path=remote_path_customer_2, destination=f'{volume_customer_2}/sharesamename2')
 
     file_1 = run_ssh_command_and_wait('customer-2', f'cat {volume_customer_2}/sharesamename/cat.txt')[0].strip()

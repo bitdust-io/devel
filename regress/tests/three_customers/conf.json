@@ -9,6 +9,13 @@
                 "name": "id-a"
             }
         },
+        "id-b": {
+            "ports": "10002:22",
+            "node": {
+                "role": "identity-server",
+                "name": "id-b"
+            }
+        },
         "dht-1": {
             "ports": "10011:22",
             "node": {
@@ -92,6 +99,20 @@
                 "role": "proxy-server",
                 "name": "proxy-2",
                 "known_id_servers": "id-a:8084:6661",
+                "known_dht_seeds": "dht-2:14441,dht-3:14441"
+            }
+        },
+        "proxy-3": {
+            "links": [
+                "dht-2",
+                "dht-3",
+                "id-b"
+            ],
+            "ports": "10033:22",
+            "node": {
+                "role": "proxy-server",
+                "name": "proxy-3",
+                "known_id_servers": "id-b:8084:6661",
                 "known_dht_seeds": "dht-2:14441,dht-3:14441"
             }
         },
@@ -189,7 +210,8 @@
             "links": [
                 "dht-2",
                 "dht-3",
-                "id-a"
+                "id-a",
+                "id-b"
             ],
             "ports": "10047:22",
             "node": {
@@ -197,14 +219,15 @@
                 "name": "supplier-7",
                 "known_id_servers": "id-a:8084:6661",
                 "known_dht_seeds": "dht-2:14441,dht-3:14441",
-                "preferred_routers": "http://id-a:8084/proxy-1.xml"
+                "preferred_routers": "http://id-b:8084/proxy-3.xml"
             }
         },
         "supplier-8": {
             "links": [
                 "dht-2",
                 "dht-3",
-                "id-a"
+                "id-a",
+                "id-b"
             ],
             "ports": "10048:22",
             "node": {
@@ -212,7 +235,7 @@
                 "name": "supplier-8",
                 "known_id_servers": "id-a:8084:6661",
                 "known_dht_seeds": "dht-2:14441,dht-3:14441",
-                "preferred_routers": "http://id-a:8084/proxy-2.xml"
+                "preferred_routers": "http://id-b:8084/proxy-3.xml"
             }
         },
         "customer-1": {
@@ -284,12 +307,16 @@
         "customer_3:"
     ],
     "tester_links": [
+        "id-a",
+        "id-b",
         "dht-1",
         "dht-2",
         "dht-3",
         "stun-1",
         "stun-2",
-        "id-a",
+        "proxy-1",
+        "proxy-2",
+        "proxy-3",
         "supplier-1",
         "supplier-2",
         "supplier-3",
