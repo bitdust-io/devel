@@ -33,7 +33,7 @@ from .contact import Contact, LayeredContact  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 
 #------------------------------------------------------------------------------
 
@@ -258,6 +258,9 @@ class KademliaProtocol(protocol.DatagramProtocol):
                class (see C{kademlia.msgformat} and C{kademlia.encoding}).
         """
         try:
+            if data is None:
+                print('[DHT PROTO]       SENDING EMPTY DATA to %r at %r' % (rpcID, address, ))
+                data = b'' 
             if len(data) > self.msgSizeLimit:
                 # We have to spread the data over multiple UDP datagrams, and provide sequencing information
                 # 1st byte is transmission type id, bytes 2 & 3 are the total number of packets in this transmission,

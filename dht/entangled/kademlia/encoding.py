@@ -30,6 +30,10 @@ else:
     binary_type = str
 
 
+_Debug = False
+
+
+
 def is_text(s):
     """
     Return `True` if `s` is a text value:
@@ -152,8 +156,11 @@ class Bencode(Encoding):
         @return: The encoded data
         @rtype: str
         """
-        try:
-            if type(data) in six.integer_types:
+        
+        def _e():
+            if data is None:
+                return b'i0e'  # return 0
+            elif type(data) in six.integer_types:
                 return b'i%de' % data
             elif isinstance(data, six.text_type):
                 return b'%d:%s' % (len(data), data.encode(encoding=encoding))
@@ -166,24 +173,32 @@ class Bencode(Encoding):
                 return b'l%se' % encodedListItems
             elif isinstance(data, dict):
                 encodedDictItems = b''
-                _d = {(k.encode() if k and isinstance(k, six.text_type) else k) : v for k, v in data.items()}
+                _d = {}
+                for k, v in data.items():
+                    e_key = self.encode(k)
+                    _d[e_key] = v
+                # _d = {(k.encode() if k and isinstance(k, six.text_type) else k) : v for k, v in data.items()}
                 keys = sorted(_d.keys())
-                for key in keys:
-                    e_key = self.encode(key)
-                    e_data = self.encode(_d[key])
+                for e_key in keys:
+                    e_data = self.encode(_d[e_key])
                     encodedDictItems += e_key
                     encodedDictItems += e_data
                 return b'd%se' % encodedDictItems
             elif isinstance(data, float):
                 # This (float data type) is a non-standard extension to the original Bencode algorithm
                 return b'f%fe' % data
-            elif data is None:
-                return b'i0e'  # return 0
             else:
                 raise TypeError("Cannot bencode '%s' object" % type(data))
-        except:
-            import traceback
-            traceback.print_exc()
+
+        try:
+            ret = _e()
+            if _Debug:
+                print('[DHT ENCODING]         encode  %r  into  %d bytes' % (type(data), len(ret), ))
+            return ret
+        except Exception as exc:
+            if _Debug:
+                print('[DHT ENCODING]         encode failed with: %r' % exc)
+
 
 
     def decode(self, data, encoding=None):
@@ -200,10 +215,14 @@ class Bencode(Encoding):
         @rtype:  int, list, dict or str
         """
         try:
-            return self._decodeRecursive(data, encoding=encoding)[0]
-        except:
-            import traceback
-            traceback.print_exc()
+            ret, endPos = self._decodeRecursive(data, encoding=encoding)
+            if _Debug:
+                print('[DHT ENCODING]         decode %r  endPos=%d' % (type(ret), endPos, ))
+            return ret
+        except Exception as exc:
+            if _Debug:
+                print('[DHT ENCODING]         decode failed with: %r' % exc)
+
 
     @staticmethod
     def _decodeRecursive(data, startIndex=0, encoding=None):
@@ -214,7 +233,7 @@ class Bencode(Encoding):
         """
         if data[startIndex:startIndex+1] == b'i':
             endPos = data[startIndex:].find(b'e') + startIndex
-            return (int(to_text(data[startIndex + 1:endPos])), endPos + 1)
+            return (int(to_text(data[startIndex + 1:endPos]) or '0'), endPos + 1)
         elif data[startIndex:startIndex+1] == b'l':
             startIndex += 1
             decodedList = []
@@ -236,7 +255,7 @@ class Bencode(Encoding):
             return (float(to_text(data[startIndex + 1:endPos])), endPos + 1)
         else:
             splitPos = data[startIndex:].find(b':') + startIndex
-            length = int(to_text(data[startIndex:splitPos]))
+            length = int(to_text(data[startIndex:splitPos]) or '0')
             startIndex = splitPos + 1
             endPos = startIndex + length
             byts = data[startIndex:endPos]
