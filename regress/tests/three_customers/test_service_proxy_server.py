@@ -27,39 +27,39 @@ import pytest
 from keywords import user_ping_v1
 
 
-def test_ping_proxy_1_towards_proxy_2():
+def test_ping_proxy_1_towards_proxy_3():
     if os.environ.get('RUN_TESTS', '1') == '0':
         return pytest.skip()  # @UndefinedVariable
 
-    user_ping_v1('proxy-1', 'proxy-2@id-b_8084')
+    user_ping_v1('proxy-1', 'proxy-3@id-b_8084')
 
 
-def test_ping_proxy_2_towards_proxy_1():
+def test_ping_proxy_3_towards_proxy_1():
     if os.environ.get('RUN_TESTS', '1') == '0':
         return pytest.skip()  # @UndefinedVariable
 
-    user_ping_v1('proxy-2', 'proxy-1@id-a_8084')
+    user_ping_v1('proxy-3', 'proxy-1@id-a_8084')
 
 
 def test_ping_proxy_1_towards_customer_2():
     if os.environ.get('RUN_TESTS', '1') == '0':
         return pytest.skip()  # @UndefinedVariable
 
-    user_ping_v1('proxy-1', 'customer-2@id-b_8084')
+    user_ping_v1('proxy-1', 'customer-2@id-a_8084')
 
 
-def test_ping_customer_1_towards_proxy_2():
+def test_ping_customer_1_towards_proxy_3():
     if os.environ.get('RUN_TESTS', '1') == '0':
         return pytest.skip()  # @UndefinedVariable
 
-    user_ping_v1('customer-1', 'proxy-2@id-b_8084')
+    user_ping_v1('customer-1', 'proxy-3@id-b_8084')
 
 
 def test_ping_supplier_1_towards_supplier_2():
     if os.environ.get('RUN_TESTS', '1') == '0':
         return pytest.skip()  # @UndefinedVariable
 
-    user_ping_v1('supplier-1', 'supplier-2@id-b_8084')
+    user_ping_v1('supplier-1', 'supplier-2@id-a_8084')
 
 
 def test_ping_supplier_2_towards_supplier_1():
@@ -73,7 +73,7 @@ def test_ping_customer_1_towards_customer_2():
     if os.environ.get('RUN_TESTS', '1') == '0':
         return pytest.skip()  # @UndefinedVariable
 
-    user_ping_v1('customer-1', 'customer-2@id-b_8084')
+    user_ping_v1('customer-1', 'customer-2@id-a_8084')
 
 
 def test_ping_customer_2_towards_customer_1():
@@ -94,14 +94,14 @@ def test_ping_customer_1_towards_supplier_2():
     if os.environ.get('RUN_TESTS', '1') == '0':
         return pytest.skip()  # @UndefinedVariable
 
-    user_ping_v1('customer-1', 'supplier-2@id-b_8084')
+    user_ping_v1('customer-1', 'supplier-2@id-a_8084')
 
 
 def test_ping_supplier_2_towards_customer_2():
     if os.environ.get('RUN_TESTS', '1') == '0':
         return pytest.skip()  # @UndefinedVariable
 
-    user_ping_v1('supplier-2', 'customer-2@id-b_8084')
+    user_ping_v1('supplier-2', 'customer-2@id-a_8084')
 
 
 def test_ping_supplier_2_towards_customer_1():
@@ -115,4 +115,4 @@ def test_ping_supplier_1_towards_customer_2():
     if os.environ.get('RUN_TESTS', '1') == '0':
         return pytest.skip()  # @UndefinedVariable
 
-    user_ping_v1('supplier-1', 'customer-2@id-b_8084')
+    user_ping_v1('supplier-1', 'customer-2@id-a_8084')

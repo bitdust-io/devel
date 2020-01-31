@@ -412,8 +412,9 @@ class StunClient(automat.Automat):
         """
         global _StunClient
         _StunClient = None
-        for d in self.deferreds.values():
-            d.cancel()
+        for d in list(self.deferreds.values()):
+            if d and not d.called:
+                d.cancel()
         self.deferreds.clear()
         if udp.proto(self.listen_port):
             udp.proto(self.listen_port).remove_callback(self._datagram_received)
@@ -466,12 +467,14 @@ class StunClient(automat.Automat):
 
     def _stun_port_received(self, result, node):
         if _Debug:
-            lg.out(_DebugLevel, 'stun_client._stun_port_received  %r from %s' % (result, node, ))
+            lg.out(_DebugLevel, 'stun_client._stun_port_received  %r from %s node_id=%r' % (result, node, node.id, ))
         self.deferreds.pop(node.id, None)
         if not isinstance(result, dict):
+            if _Debug:
+                lg.dbg('empty result received from node %r : %r' % (node, result, ))
             return
         try:
-            port = int(result['stun_port'])
+            port = int(strng.to_text(result['stun_port']))
             address = node.address
         except:
             lg.exc()

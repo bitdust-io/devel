@@ -59,7 +59,7 @@ clean_coverage:
 	@rm -rf coverage_all/*;
 
 build_tester:
-	@docker-compose build --build-arg tester_image
+	@docker-compose build tester_image
 
 build_app:
 	@docker-compose build --build-arg PYTHON_VERSION=$(PYTHON_VERSION) app_image

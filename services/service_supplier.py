@@ -835,26 +835,28 @@ class SupplierService(LocalService):
         meta_info_changed = False
         all_meta_info = contactsdb.read_customers_meta_info_all()
         for customer_idurl_bin in list(all_meta_info.keys()):
-            if old_idurl == id_url.field(customer_idurl_bin):
-                latest_customer_idurl_bin = id_url.field(customer_idurl_bin).to_bin()
-                if latest_customer_idurl_bin != customer_idurl_bin:
-                    all_meta_info[latest_customer_idurl_bin] = all_meta_info.pop(customer_idurl_bin)
-                    meta_info_changed = True
-                    lg.info('found customer idurl rotated in customers meta info : %r -> %r' % (
-                        latest_customer_idurl_bin, customer_idurl_bin, ))
+            if id_url.is_cached(old_idurl) and id_url.is_cached(customer_idurl_bin):
+                if old_idurl == id_url.field(customer_idurl_bin):
+                    latest_customer_idurl_bin = id_url.field(customer_idurl_bin).to_bin()
+                    if latest_customer_idurl_bin != customer_idurl_bin:
+                        all_meta_info[latest_customer_idurl_bin] = all_meta_info.pop(customer_idurl_bin)
+                        meta_info_changed = True
+                        lg.info('found customer idurl rotated in customers meta info : %r -> %r' % (
+                            latest_customer_idurl_bin, customer_idurl_bin, ))
         if meta_info_changed:
             contactsdb.write_customers_meta_info_all(all_meta_info)
         # update customer idurl in "space" file
         space_dict, free_space = accounting.read_customers_quotas()
         space_changed = False
         for customer_idurl_bin in list(space_dict.keys()):
-            if id_url.field(customer_idurl_bin) == old_idurl:
-                latest_customer_idurl_bin = id_url.field(customer_idurl_bin).to_bin()
-                if latest_customer_idurl_bin != customer_idurl_bin:
-                    space_dict[latest_customer_idurl_bin] = space_dict.pop(customer_idurl_bin)
-                    space_changed = True
-                    lg.info('found customer idurl rotated in customer quotas dictionary : %r -> %r' % (
-                        latest_customer_idurl_bin, customer_idurl_bin, ))
+            if id_url.is_cached(old_idurl) and id_url.is_cached(customer_idurl_bin):
+                if id_url.field(customer_idurl_bin) == old_idurl:
+                    latest_customer_idurl_bin = id_url.field(customer_idurl_bin).to_bin()
+                    if latest_customer_idurl_bin != customer_idurl_bin:
+                        space_dict[latest_customer_idurl_bin] = space_dict.pop(customer_idurl_bin)
+                        space_changed = True
+                        lg.info('found customer idurl rotated in customer quotas dictionary : %r -> %r' % (
+                            latest_customer_idurl_bin, customer_idurl_bin, ))
         if space_changed:
             accounting.write_customers_quotas(space_dict, free_space)
         # rename customer folder where I store all his files

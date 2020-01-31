@@ -236,7 +236,7 @@ class KademliaProtocol(protocol.DatagramProtocol):
     
             self.dispatch(datagram, address)
         except Exception as exc:
-            print('[DHT PROTO] datagramReceived error:', exc)
+            print('[DHT PROTO]       datagramReceived error:', exc)
 
 
     def _send(self, data, rpcID, address):
@@ -257,34 +257,40 @@ class KademliaProtocol(protocol.DatagramProtocol):
                future, into something similar to a message translator/encoder
                class (see C{kademlia.msgformat} and C{kademlia.encoding}).
         """
-        if len(data) > self.msgSizeLimit:
-            # We have to spread the data over multiple UDP datagrams, and provide sequencing information
-            # 1st byte is transmission type id, bytes 2 & 3 are the total number of packets in this transmission,
-            # bytes 4 & 5 are the sequence number for this specific packet
-            totalPackets = int(len(data) / self.msgSizeLimit)
-            if len(data) % self.msgSizeLimit > 0:
-                totalPackets += 1
-            encTotalPackets = chr(totalPackets >> 8) + chr(totalPackets & 0xff)
-            seqNumber = 0
-            startPos = 0
-            while seqNumber < totalPackets:
-                # reactor.iterate() #IGNORE:E1101
-                packetData = data[startPos:startPos + self.msgSizeLimit]
+        try:
+            if data is None:
+                print('[DHT PROTO]       SENDING EMPTY DATA to %r at %r' % (rpcID, address, ))
+                data = b'' 
+            if len(data) > self.msgSizeLimit:
+                # We have to spread the data over multiple UDP datagrams, and provide sequencing information
+                # 1st byte is transmission type id, bytes 2 & 3 are the total number of packets in this transmission,
+                # bytes 4 & 5 are the sequence number for this specific packet
+                totalPackets = int(len(data) / self.msgSizeLimit)
+                if len(data) % self.msgSizeLimit > 0:
+                    totalPackets += 1
+                encTotalPackets = chr(totalPackets >> 8) + chr(totalPackets & 0xff)
+                seqNumber = 0
+                startPos = 0
+                while seqNumber < totalPackets:
+                    # reactor.iterate() #IGNORE:E1101
+                    packetData = data[startPos:startPos + self.msgSizeLimit]
+                    encSeqNumber = chr(seqNumber >> 8) + chr(seqNumber & 0xff)
+                    # actually we must always pass a header!
+                    txHeader = encoding.to_bin(encTotalPackets) + encoding.to_bin(encSeqNumber) + encoding.to_bin(rpcID)
+                    txData = b'\x00' + txHeader + b'\x00' + packetData 
+                    reactor.callLater(self.maxToSendDelay * seqNumber + self.minToSendDelay, self._write, txData, address)  # IGNORE:E1101
+                    startPos += self.msgSizeLimit
+                    seqNumber += 1
+            else:
+                totalPackets = 1
+                encTotalPackets = chr(totalPackets >> 8) + chr(totalPackets & 0xff)
+                seqNumber = 0
                 encSeqNumber = chr(seqNumber >> 8) + chr(seqNumber & 0xff)
-                # actually we must always pass a header!
                 txHeader = encoding.to_bin(encTotalPackets) + encoding.to_bin(encSeqNumber) + encoding.to_bin(rpcID)
-                txData = b'\x00' + txHeader + b'\x00' + packetData 
-                reactor.callLater(self.maxToSendDelay * seqNumber + self.minToSendDelay, self._write, txData, address)  # IGNORE:E1101
-                startPos += self.msgSizeLimit
-                seqNumber += 1
-        else:
-            totalPackets = 1
-            encTotalPackets = chr(totalPackets >> 8) + chr(totalPackets & 0xff)
-            seqNumber = 0
-            encSeqNumber = chr(seqNumber >> 8) + chr(seqNumber & 0xff)
-            txHeader = encoding.to_bin(encTotalPackets) + encoding.to_bin(encSeqNumber) + encoding.to_bin(rpcID)
-            txData = b'\x00' + txHeader + b'\x00' + data 
-            self._write(txData, address)
+                txData = b'\x00' + txHeader + b'\x00' + data 
+                self._write(txData, address)
+        except Exception as exc:
+            print('[DHT PROTO]         _send failed with: %r' % exc)
 
     def _write(self, data, address):
         if self._counter:
@@ -356,16 +362,19 @@ class KademliaProtocol(protocol.DatagramProtocol):
                     # Try to pass the sender's node id to the function...
                     result = func(*args, **{'_rpcNodeID': senderContact.id, 'layerID': senderContact.layerID})
                 except TypeError:
+                    # import traceback
+                    # traceback.print_exc()
                     # ...or simply call it if that fails
                     result = func(*args)
             except Exception as e:
                 if _Debug:
                     print('[DHT PROTO]                      failed with %r' % e)
+                    # import traceback
                     # traceback.print_exc()
                 df.errback(failure.Failure(e))
             else:
                 if _Debug:
-                    print('[DHT PROTO]                   result is OK')
+                    print('[DHT PROTO]                   result is OK', result)
                 df.callback(result)
         else:
             if _Debug:
@@ -584,8 +593,6 @@ class KademliaMultiLayerProtocol(KademliaProtocol):
     def datagramReceived(self, datagram, address):
         self._node.bytes_in += len(datagram)
         try:
-            if _Debug:
-                _t = time.time()
             # we must consistently rely on "pagination" logic actually ( or not rely at all )
             # we can't just check those two bytes in the header and say that packet is "paginated"! 
             # what if a small data packet accidentally have those bytes set to \x00 just randomly?
@@ -634,7 +641,7 @@ class KademliaMultiLayerProtocol(KademliaProtocol):
 
             self.dispatch(datagram, address)
         except Exception as exc:
-            print('[DHT PROTO] datagramReceived error:', exc)
+            print('[DHT PROTO]         datagramReceived error:', exc)
 
     def _msgTimeout(self, messageID):
         """

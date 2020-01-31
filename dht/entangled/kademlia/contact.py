@@ -93,5 +93,8 @@ class LayeredContact(Contact):
             kwargs['layerID'] = self.layerID
             if _Debug:
                 print('[DHT CONTACT]: %r sending RPC %r args=%r kwargs=%r' % (self, name, args, kwargs))
-            return self._networkProtocol.sendRPC(self, name, args, **kwargs)
+            ret = self._networkProtocol.sendRPC(self, name, args, **kwargs)
+            if _Debug:
+                print('[DHT CONTACT]: %r RPC result is %r' % (self, ret))
+            return ret
         return _sendRPC

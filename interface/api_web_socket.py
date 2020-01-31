@@ -39,6 +39,8 @@ from __future__ import absolute_import
 _Debug = True
 _DebugLevel = 10
 
+_APILogFileEnabled = True
+
 #------------------------------------------------------------------------------
 
 from twisted.application.strports import listen
@@ -198,10 +200,16 @@ def do_process_incoming_message(json_data):
         call_id = json_data.get('call_id', None)
 
         if not method:
+            lg.warn('no api method provided in the call')
             return False
 
         if method not in _AllAPIMethods:
+            lg.warn('wrong api method called: %r' % method)
             return False
+
+        if _APILogFileEnabled:
+            lg.out(0, '*** %s  WS IN  %s(%r)' % (
+                call_id, method, kwargs), log_name='api', showtime=True)
 
         func = getattr(api, method)
         try:
@@ -286,4 +294,6 @@ def push(json_data):
     _WebSocketTransport.write(raw_bytes)
     if _Debug:
         lg.dbg(_DebugLevel, 'sent %d bytes to web socket: %r' % (len(raw_bytes), json_data))
+    if _APILogFileEnabled:
+        lg.out(0, '*** WS PUSH  %d bytes : %r' % (len(json_data), json_data, ), log_name='api', showtime=True)
     return True
