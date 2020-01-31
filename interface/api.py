@@ -96,7 +96,7 @@ def OK(result='', message=None, status='OK', extra_fields=None, **kwargs):
         ] or _DebugLevel > 10:
             lg.out(_DebugLevel, 'api.%s return OK(%s)' % (api_method, sample[:150]))
     if _APILogFileEnabled:
-        lg.out(0, 'api.%s return OK(%s)' % (api_method, sample, ), log_name='api')
+        lg.out(0, 'api.%s return OK(%s)\n' % (api_method, sample, ), log_name='api', showtime=True)
     return o
 
 
@@ -125,7 +125,7 @@ def RESULT(result=[], message=None, status='OK', errors=None, source=None, extra
                 api_method = sys._getframe(1).f_back.f_code.co_name
         lg.out(_DebugLevel, 'api.%s return RESULT(%s)' % (api_method, sample[:150], ))
     if _APILogFileEnabled:
-        lg.out(0, 'api.%s return RESULT(%s)' % (api_method, sample, ), log_name='api')
+        lg.out(0, 'api.%s return RESULT(%s)\n' % (api_method, sample, ), log_name='api', showtime=True)
     return o
 
 
@@ -162,7 +162,7 @@ def ERROR(errors=[], message=None, status='ERROR', extra_fields=None, **kwargs):
                 api_method = sys._getframe(1).f_back.f_code.co_name
         lg.out(_DebugLevel, 'api.%s return ERROR(%s)' % (api_method, sample[:150], ))
     if _APILogFileEnabled:
-        lg.out(0, 'api.%s return ERROR(%s)' % (api_method, sample, ), log_name='api')
+        lg.out(0, 'api.%s return ERROR(%s)\n' % (api_method, sample, ), log_name='api', showtime=True)
     return o
 
 #------------------------------------------------------------------------------

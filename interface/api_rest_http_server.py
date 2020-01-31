@@ -295,7 +295,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
                         request.method.decode(), uri, func_name, _args))
         if _APILogFileEnabled:
             lg.out(0, '*** %s:%s  HTTP  %s(%r)' % (
-                request.method.decode(), uri, func_name, _args), log_name='api')
+                request.method.decode(), uri, func_name, _args), log_name='api', showtime=True)
         return None
 
     #------------------------------------------------------------------------------

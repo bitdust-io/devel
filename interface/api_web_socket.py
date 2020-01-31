@@ -209,7 +209,7 @@ def do_process_incoming_message(json_data):
 
         if _APILogFileEnabled:
             lg.out(0, '*** %s  WS IN  %s(%r)' % (
-                call_id, method, kwargs), log_name='api')
+                call_id, method, kwargs), log_name='api', showtime=True)
 
         func = getattr(api, method)
         try:
@@ -295,5 +295,5 @@ def push(json_data):
     if _Debug:
         lg.dbg(_DebugLevel, 'sent %d bytes to web socket: %r' % (len(raw_bytes), json_data))
     if _APILogFileEnabled:
-        lg.out(0, '*** WS PUSH  %d bytes : %r' % (len(json_data), json_data, ), log_name='api')
+        lg.out(0, '*** WS PUSH  %d bytes : %r' % (len(json_data), json_data, ), log_name='api', showtime=True)
     return True
