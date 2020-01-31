@@ -39,6 +39,8 @@ from __future__ import absolute_import
 _Debug = True
 _DebugLevel = 6
 
+_APILogFileEnabled = True
+
 #------------------------------------------------------------------------------
 
 import os
@@ -288,9 +290,12 @@ class BitDustRESTHTTPServer(JsonAPIResource):
                     '/event/listen/electron/v1',
                     '/network/connected/v1',
                     '/process/health/v1',
-                ] or _DebugLevel > 10: 
-                    lg.out(_DebugLevel, '*** %s:%s   will execute   api.%s(%r)' % (
+                ] or _DebugLevel > 10:
+                    lg.out(_DebugLevel, '*** %s:%s  API REST  %s(%r)' % (
                         request.method.decode(), uri, func_name, _args))
+        if _APILogFileEnabled:
+            lg.out(0, '*** %s:%s  HTTP  %s(%r)' % (
+                request.method.decode(), uri, func_name, _args), log_name='api')
         return None
 
     #------------------------------------------------------------------------------

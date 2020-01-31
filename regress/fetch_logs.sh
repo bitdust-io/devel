@@ -15,6 +15,7 @@ nodes=`cat $allnodesfile`
 for node in $nodes; do
     echo "[$node]";
     docker-compose --file tests/$test_name/docker-compose.yml exec -T $node sh -c "cat /root/.bitdust/logs/automats.log" 1> logs/$test_name/automats.$node.log 2>/dev/null;
+    docker-compose --file tests/$test_name/docker-compose.yml exec -T $node sh -c "cat /root/.bitdust/logs/api.log" 1> logs/$test_name/api.$node.log 2>/dev/null;
     docker-compose --file tests/$test_name/docker-compose.yml exec -T $node sh -c "cat /root/.bitdust/logs/event.log" 1> logs/$test_name/event.$node.log 2>/dev/null;
     docker-compose --file tests/$test_name/docker-compose.yml exec -T $node sh -c "cat /root/.bitdust/logs/packet.log" 1> logs/$test_name/packet.$node.log 2>/dev/null;
     docker-compose --file tests/$test_name/docker-compose.yml exec -T $node sh -c "cat /root/.bitdust/logs/stdout.log" 1> logs/$test_name/stdout.$node.log 2>/dev/null;

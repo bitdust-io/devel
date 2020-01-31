@@ -33,7 +33,7 @@ from .contact import Contact, LayeredContact  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 
 #------------------------------------------------------------------------------
 
@@ -236,7 +236,7 @@ class KademliaProtocol(protocol.DatagramProtocol):
     
             self.dispatch(datagram, address)
         except Exception as exc:
-            print('[DHT PROTO] datagramReceived error:', exc)
+            print('[DHT PROTO]       datagramReceived error:', exc)
 
 
     def _send(self, data, rpcID, address):
@@ -286,9 +286,8 @@ class KademliaProtocol(protocol.DatagramProtocol):
                 txHeader = encoding.to_bin(encTotalPackets) + encoding.to_bin(encSeqNumber) + encoding.to_bin(rpcID)
                 txData = b'\x00' + txHeader + b'\x00' + data 
                 self._write(txData, address)
-        except:
-            import traceback
-            traceback.print_exc()
+        except Exception as exc:
+            print('[DHT PROTO]         _send failed with: %r' % exc)
 
     def _write(self, data, address):
         if self._counter:
@@ -591,8 +590,6 @@ class KademliaMultiLayerProtocol(KademliaProtocol):
     def datagramReceived(self, datagram, address):
         self._node.bytes_in += len(datagram)
         try:
-            if _Debug:
-                _t = time.time()
             # we must consistently rely on "pagination" logic actually ( or not rely at all )
             # we can't just check those two bytes in the header and say that packet is "paginated"! 
             # what if a small data packet accidentally have those bytes set to \x00 just randomly?
@@ -641,7 +638,7 @@ class KademliaMultiLayerProtocol(KademliaProtocol):
 
             self.dispatch(datagram, address)
         except Exception as exc:
-            print('[DHT PROTO] datagramReceived error:', exc)
+            print('[DHT PROTO]         datagramReceived error:', exc)
 
     def _msgTimeout(self, messageID):
         """

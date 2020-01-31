@@ -17,7 +17,7 @@
 
 import six
 
-_Debug = False
+_Debug = True
 
 
 class Contact(object):

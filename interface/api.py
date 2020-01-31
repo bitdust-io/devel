@@ -39,6 +39,8 @@ from __future__ import absolute_import
 _Debug = True
 _DebugLevel = 8
 
+_APILogFileEnabled = True
+
 #------------------------------------------------------------------------------
 
 import os
@@ -77,6 +79,11 @@ def OK(result='', message=None, status='OK', extra_fields=None, **kwargs):
     if extra_fields is not None:
         o.update(extra_fields)
     o = on_api_result_prepared(o)
+    try:
+        sample = jsn.dumps(o, ensure_ascii=True, sort_keys=True)
+    except:
+        lg.exc()
+        sample = strng.to_text(o, errors='ignore')
     if _Debug:
         api_method = kwargs.get('api_method', None)
         if not api_method:
@@ -87,7 +94,9 @@ def OK(result='', message=None, status='OK', extra_fields=None, **kwargs):
             'process_health',
             'network_connected',
         ] or _DebugLevel > 10:
-            lg.out(_DebugLevel, 'api.%s return OK(%s)' % (api_method, jsn.dumps(o, sort_keys=True)[:150]))
+            lg.out(_DebugLevel, 'api.%s return OK(%s)' % (api_method, sample[:150]))
+    if _APILogFileEnabled:
+        lg.out(0, 'api.%s return OK(%s)' % (api_method, sample, ), log_name='api')
     return o
 
 
@@ -103,18 +112,20 @@ def RESULT(result=[], message=None, status='OK', errors=None, source=None, extra
     if extra_fields is not None:
         o.update(extra_fields)
     o = on_api_result_prepared(o)
+    try:
+        sample = jsn.dumps(o, ensure_ascii=True, sort_keys=True)
+    except:
+        lg.exc()
+        sample = strng.to_text(o, errors='ignore')
     if _Debug:
         api_method = kwargs.get('api_method', None)
         if not api_method:
             api_method = sys._getframe().f_back.f_code.co_name
             if api_method.count('lambda') or api_method.startswith('_'):
                 api_method = sys._getframe(1).f_back.f_code.co_name
-        try:
-            sample = jsn.dumps(o, ensure_ascii=True, sort_keys=True)[:150]
-        except:
-            lg.exc()
-            sample = strng.to_text(o, errors='ignore')[:150]
-        lg.out(_DebugLevel, 'api.%s return RESULT(%s)' % (api_method, sample))
+        lg.out(_DebugLevel, 'api.%s return RESULT(%s)' % (api_method, sample[:150], ))
+    if _APILogFileEnabled:
+        lg.out(0, 'api.%s return RESULT(%s)' % (api_method, sample, ), log_name='api')
     return o
 
 
@@ -138,13 +149,20 @@ def ERROR(errors=[], message=None, status='ERROR', extra_fields=None, **kwargs):
     if extra_fields is not None:
         o.update(extra_fields)
     o = on_api_result_prepared(o)
+    try:
+        sample = jsn.dumps(o, ensure_ascii=True, sort_keys=True)
+    except:
+        lg.exc()
+        sample = strng.to_text(o, errors='ignore')
     if _Debug:
         api_method = kwargs.get('api_method', None)
         if not api_method:
             api_method = sys._getframe().f_back.f_code.co_name
             if api_method.count('lambda') or api_method.startswith('_'):
                 api_method = sys._getframe(1).f_back.f_code.co_name
-        lg.out(_DebugLevel, 'api.%s return ERROR(%s)' % (api_method, jsn.dumps(o, sort_keys=True)[:150]))
+        lg.out(_DebugLevel, 'api.%s return ERROR(%s)' % (api_method, sample[:150], ))
+    if _APILogFileEnabled:
+        lg.out(0, 'api.%s return ERROR(%s)' % (api_method, sample, ), log_name='api')
     return o
 
 #------------------------------------------------------------------------------
