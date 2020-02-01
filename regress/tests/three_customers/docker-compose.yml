@@ -31,6 +31,11 @@ services:
     ports:
       - "11001:22"
 
+  id-b:
+    image: bitdust/app
+    ports:
+      - "11002:22"
+
   dht-1:
     image: bitdust/app
     ports:
@@ -84,6 +89,15 @@ services:
       - dht-2
       - dht-3
       - id-a
+
+  proxy-3:
+    image: bitdust/app
+    ports:
+      - "11033:22"
+    links:
+      - dht-2
+      - dht-3
+      - id-b
 
   supplier-1:
     image: bitdust/app
@@ -147,6 +161,7 @@ services:
       - dht-2
       - dht-3
       - id-a
+      - id-b
 
   supplier-8:
     image: bitdust/app
@@ -156,6 +171,7 @@ services:
       - dht-2
       - dht-3
       - id-a
+      - id-b
 
   customer-1:
     image: bitdust/app
@@ -200,12 +216,16 @@ services:
     stdin_open: true
     tty: true
     links:
+      - id-a
+      - id-b
       - dht-1
       - dht-2
       - dht-3
       - stun-1
       - stun-2
-      - id-a
+      - proxy-1
+      - proxy-2
+      - proxy-3
       - supplier-1
       - supplier-2
       - supplier-3

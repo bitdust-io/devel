@@ -117,12 +117,12 @@ def RESULT(result=[], message=None, status='OK', errors=None, source=None, extra
     except:
         lg.exc()
         sample = strng.to_text(o, errors='ignore')
+    api_method = kwargs.get('api_method', None)
+    if not api_method:
+        api_method = sys._getframe().f_back.f_code.co_name
+        if api_method.count('lambda') or api_method.startswith('_'):
+            api_method = sys._getframe(1).f_back.f_code.co_name
     if _Debug:
-        api_method = kwargs.get('api_method', None)
-        if not api_method:
-            api_method = sys._getframe().f_back.f_code.co_name
-            if api_method.count('lambda') or api_method.startswith('_'):
-                api_method = sys._getframe(1).f_back.f_code.co_name
         lg.out(_DebugLevel, 'api.%s return RESULT(%s)' % (api_method, sample[:150], ))
     if _APILogFileEnabled:
         lg.out(0, 'api.%s return RESULT(%s)\n' % (api_method, sample, ), log_name='api', showtime=True)
@@ -154,12 +154,12 @@ def ERROR(errors=[], message=None, status='ERROR', extra_fields=None, **kwargs):
     except:
         lg.exc()
         sample = strng.to_text(o, errors='ignore')
+    api_method = kwargs.get('api_method', None)
+    if not api_method:
+        api_method = sys._getframe().f_back.f_code.co_name
+        if api_method.count('lambda') or api_method.startswith('_'):
+            api_method = sys._getframe(1).f_back.f_code.co_name
     if _Debug:
-        api_method = kwargs.get('api_method', None)
-        if not api_method:
-            api_method = sys._getframe().f_back.f_code.co_name
-            if api_method.count('lambda') or api_method.startswith('_'):
-                api_method = sys._getframe(1).f_back.f_code.co_name
         lg.out(_DebugLevel, 'api.%s return ERROR(%s)' % (api_method, sample[:150], ))
     if _APILogFileEnabled:
         lg.out(0, 'api.%s return ERROR(%s)\n' % (api_method, sample, ), log_name='api', showtime=True)

@@ -207,6 +207,10 @@ def do_process_incoming_message(json_data):
             lg.warn('wrong api method called: %r' % method)
             return False
 
+        if _Debug:
+            lg.out(0, '*** %s  API WS IN  %s(%r)' % (
+                call_id, method, kwargs))
+            
         if _APILogFileEnabled:
             lg.out(0, '*** %s  WS IN  %s(%r)' % (
                 call_id, method, kwargs), log_name='api', showtime=True)
@@ -294,6 +298,8 @@ def push(json_data):
     _WebSocketTransport.write(raw_bytes)
     if _Debug:
         lg.dbg(_DebugLevel, 'sent %d bytes to web socket: %r' % (len(raw_bytes), json_data))
+    if _Debug:
+        lg.out(0, '***   API WS PUSH  %d bytes : %' % (len(json_data), json_data, ))
     if _APILogFileEnabled:
         lg.out(0, '*** WS PUSH  %d bytes : %r' % (len(json_data), json_data, ), log_name='api', showtime=True)
     return True

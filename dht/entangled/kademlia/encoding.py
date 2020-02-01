@@ -252,7 +252,7 @@ class Bencode(Encoding):
         elif data[startIndex:startIndex+1] == b'f':
             # This (float data type) is a non-standard extension to the original Bencode algorithm
             endPos = data[startIndex:].find(b'e') + startIndex
-            return (float(to_text(data[startIndex + 1:endPos])), endPos + 1)
+            return (float(to_text(data[startIndex + 1:endPos]) or '0'), endPos + 1)
         else:
             splitPos = data[startIndex:].find(b':') + startIndex
             length = int(to_text(data[startIndex:splitPos]) or '0')

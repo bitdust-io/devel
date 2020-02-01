@@ -2,6 +2,19 @@ Change Log
 ==========
 
 
+2020-01-31 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* decrease number of testing networks in regression tests
+* added .bitdust/logs/api.log file
+* fix in   stun/stun_client.py
+* py3 fixes in DHT
+* IDURL fix in service_supplier()
+* make sure python3 is building properly in regression
+* added few devops scripts
+* supplier to take in account ecc_map when leaving customer family
+
+
+
 2020-01-28 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * fix in family_member() state machine

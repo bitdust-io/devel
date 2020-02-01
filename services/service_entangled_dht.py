@@ -82,7 +82,7 @@ class EntangledDHTService(LocalService):
         }
 
     def start(self):
-        from twisted.internet.defer import Deferred
+        from twisted.internet.defer import Deferred, succeed
         from logs import lg
         from dht import dht_records
         from dht import dht_service
@@ -106,7 +106,7 @@ class EntangledDHTService(LocalService):
         )
         d.addCallback(self._on_connected)
         d.addErrback(self._on_connect_failed)
-        return self.starting_deferred
+        return self.starting_deferred or succeed(True)
 
     def stop(self):
         from dht import dht_records
@@ -151,23 +151,20 @@ class EntangledDHTService(LocalService):
             d.addCallback(self._on_layers_attached)
             d.addErrback(self._on_connect_failed)
         else:
-            if self.starting_deferred:
+            if self.starting_deferred and not self.starting_deferred.called:
                 self.starting_deferred.callback(True)
-                self.starting_deferred = None
         return ok
 
     def _on_layers_attached(self, ok):
-        if self.starting_deferred:
+        if self.starting_deferred and not self.starting_deferred.called:
             self.starting_deferred.callback(True)
-            self.starting_deferred = None
         return ok
 
     def _on_connect_failed(self, err):
         from logs import lg
         lg.err('DHT connect failed : %r' % err)
-        if self.starting_deferred:
+        if self.starting_deferred and not self.starting_deferred.called:
             self.starting_deferred.errback(err)
-            self.starting_deferred = None
         return err
 
     def _on_udp_port_modified(self, path, value, oldvalue, result):
