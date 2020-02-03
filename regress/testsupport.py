@@ -562,6 +562,7 @@ async def stop_daemon_async(node, loop, skip_checks=False):
 async def start_identity_server_async(node, loop):
     print(f'\nNEW IDENTITY SERVER at [{node}]\n')
     cmd = ''
+    cmd += 'bitdust set logs/debug-level 18;'
     cmd += 'bitdust set logs/packet-enabled true;'
     cmd += 'bitdust set logs/api-enabled true;'
     cmd += 'bitdust set personal/private-key-size 1024;'
@@ -586,6 +587,7 @@ async def start_identity_server_async(node, loop):
 def start_dht_seed(node, wait_seconds=0, dht_seeds='', attached_layers=''):
     print(f'\nNEW DHT SEED (with STUN SERVER) at [{node}]\n')
     cmd = ''
+    cmd += 'bitdust set logs/debug-level 18;'
     cmd += 'bitdust set logs/packet-enabled true;'
     cmd += 'bitdust set logs/api-enabled true;'
     # use shorter key to run tests faster
@@ -619,6 +621,7 @@ def start_dht_seed(node, wait_seconds=0, dht_seeds='', attached_layers=''):
 async def start_stun_server_async(node, loop, dht_seeds=''):
     print(f'\nNEW STUN SERVER at [{node}]\n')
     cmd = ''
+    cmd += 'bitdust set logs/debug-level 18;'
     cmd += 'bitdust set logs/packet-enabled true;'
     cmd += 'bitdust set logs/api-enabled true;'
     # use short key to run tests faster
@@ -648,6 +651,7 @@ async def start_stun_server_async(node, loop, dht_seeds=''):
 async def start_proxy_server_async(node, identity_name, loop, known_servers='', dht_seeds=''):
     print(f'\nNEW PROXY SERVER {identity_name} at [{node}]\n')
     cmd = ''
+    cmd += 'bitdust set logs/debug-level 18;'
     cmd += 'bitdust set logs/packet-enabled true;'
     cmd += 'bitdust set logs/api-enabled true;'
     # use short key to run tests faster
@@ -682,6 +686,7 @@ async def start_supplier_async(node, identity_name, loop, join_network=True,
                                preferred_servers='', preferred_routers=''):
     print(f'\nNEW SUPPLIER {identity_name} at [{node}]\n')
     cmd = ''
+    cmd += 'bitdust set logs/debug-level 18;'
     cmd += 'bitdust set logs/packet-enabled true;'
     cmd += 'bitdust set logs/api-enabled true;'
     # use short key to run tests faster
@@ -729,6 +734,7 @@ async def start_customer_async(node, identity_name, loop, join_network=True, num
         await asyncio.sleep(sleep_before_start)
     print('\nNEW CUSTOMER %r at [%s]\n' % (identity_name, node, ))
     cmd = ''
+    cmd += 'bitdust set logs/debug-level 18;'
     cmd += 'bitdust set logs/packet-enabled true;'
     cmd += 'bitdust set logs/api-enabled true;'
     # use short key to run tests faster
