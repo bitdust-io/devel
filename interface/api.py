@@ -2072,7 +2072,8 @@ def friend_add(idurl_or_global_id, alias=''):
                 global_id=global_id.idurl2glob(idurl),
                 alias=alias,
             ))
-        online_status.handshake(idurl, channel='friend_add', keep_alive=True)
+        d = online_status.handshake(idurl, channel='friend_add', keep_alive=True)
+        d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='api.friend_add')
         if added:
             return OK(message='new friend has been added', api_method='friend_add')
         return OK(message='this friend has been already added', api_method='friend_add')
