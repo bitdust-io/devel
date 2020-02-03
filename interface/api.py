@@ -84,12 +84,12 @@ def OK(result='', message=None, status='OK', extra_fields=None, **kwargs):
     except:
         lg.exc()
         sample = strng.to_text(o, errors='ignore')
+    api_method = kwargs.get('api_method', None)
+    if not api_method:
+        api_method = sys._getframe().f_back.f_code.co_name
+        if api_method.count('lambda') or api_method.startswith('_'):
+            api_method = sys._getframe(1).f_back.f_code.co_name
     if _Debug:
-        api_method = kwargs.get('api_method', None)
-        if not api_method:
-            api_method = sys._getframe().f_back.f_code.co_name
-            if api_method.count('lambda') or api_method.startswith('_'):
-                api_method = sys._getframe(1).f_back.f_code.co_name
         if api_method not in [
             'process_health',
             'network_connected',

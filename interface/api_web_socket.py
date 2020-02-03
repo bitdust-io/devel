@@ -210,7 +210,7 @@ def do_process_incoming_message(json_data):
         if _Debug:
             lg.out(0, '*** %s  API WS IN  %s(%r)' % (
                 call_id, method, kwargs))
-            
+
         if _APILogFileEnabled:
             lg.out(0, '*** %s  WS IN  %s(%r)' % (
                 call_id, method, kwargs), log_name='api', showtime=True)
