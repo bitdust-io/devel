@@ -1,6 +1,15 @@
 Change Log
 ==========
 
+
+2020-02-03 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* set option "services/proxy-server/enabled" by default to "false"
+* bug fix in packet_out()
+* added "logs/api-enabled" option
+
+
+
 2020-02-02 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * py3 fixes in DHT and API
