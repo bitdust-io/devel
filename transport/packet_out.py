@@ -587,6 +587,10 @@ class PacketOut(automat.Automat):
                 self.doReportTimeOut(*args, **kwargs)
                 self.doReportDoneNoAck(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
+            elif event == 'response-timeout' and self.isDataExpected(*args, **kwargs):
+                self.state = 'FAILED'
+                self.doReportFailed(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
         return None
 
     def isRemoteIdentityKnown(self, *args, **kwargs):

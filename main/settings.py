@@ -315,7 +315,7 @@ def defaultDebugLevel():
     """
     Default debug level, lower values produce less messages.
     """
-    return 10
+    return 0
 
 
 def MinimumSendingDelay():

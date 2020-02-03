@@ -39,7 +39,7 @@ from __future__ import absolute_import
 _Debug = True
 _DebugLevel = 6
 
-_APILogFileEnabled = True
+_APILogFileEnabled = False
 
 #------------------------------------------------------------------------------
 
@@ -77,6 +77,10 @@ _APISecret = None
 
 def init(port=None):
     global _APIListener
+    global _APILogFileEnabled
+
+    _APILogFileEnabled = settings.config.conf().getBool('logs/api-enabled')
+
     if _APIListener is not None:
         lg.warn('_APIListener already initialized')
         return

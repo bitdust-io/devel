@@ -64,6 +64,7 @@ def reset(conf_obj):
     conf_obj.setDefaultValue('logs/traffic-enabled', 'false')
     conf_obj.setDefaultValue('logs/traffic-port', settings.DefaultWebTrafficPort())
     conf_obj.setDefaultValue('logs/packet-enabled', 'false')
+    conf_obj.setDefaultValue('logs/api-enabled', 'false')
 
     conf_obj.setDefaultValue('paths/backups', '')
     conf_obj.setDefaultValue('paths/customers', '')
@@ -190,7 +191,7 @@ def reset(conf_obj):
 
     conf_obj.setDefaultValue('services/private-messages/enabled', 'true')
 
-    conf_obj.setDefaultValue('services/proxy-server/enabled', 'true')
+    conf_obj.setDefaultValue('services/proxy-server/enabled', 'false')
     conf_obj.setDefaultValue('services/proxy-server/routes-limit', 10)
     conf_obj.setDefaultValue('services/proxy-server/current-routes', '{}')
 

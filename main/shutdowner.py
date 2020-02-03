@@ -53,6 +53,13 @@ EVENTS:
 from __future__ import absolute_import
 import six
 
+#------------------------------------------------------------------------------
+
+_Debug = True
+_DebugLevel = 6
+
+#------------------------------------------------------------------------------
+
 import os
 import sys
 
@@ -87,7 +94,8 @@ def shutdown(x=None):
 
     Calls method ``shutdown()`` in other modules.
     """
-    lg.out(2, "shutdowner.shutdown " + str(x))
+    if _Debug:
+        lg.out(_DebugLevel, "shutdowner.shutdown " + str(x))
     dl = []
     try:
         from services import driver
@@ -230,10 +238,12 @@ class Shutdowner(automat.Automat):
 
     def doSaveParam(self, *args, **kwargs):
         self.shutdown_param = args[0]
-        lg.out(2, 'shutdowner.doSaveParam %s' % str(self.shutdown_param))
+        if _Debug:
+            lg.out(_DebugLevel, 'shutdowner.doSaveParam %s' % str(self.shutdown_param))
 
     def doShutdown(self, *args, **kwargs):
-        lg.out(2, 'shutdowner.doShutdown %d machines currently' % len(automat.objects()))
+        if _Debug:
+            lg.out(_DebugLevel, 'shutdowner.doShutdown %d machines currently' % len(automat.objects()))
 
         param = args[0]
         if self.shutdown_param is not None:
@@ -259,20 +269,23 @@ class Shutdowner(automat.Automat):
         del _Shutdowner
         _Shutdowner = None
         self.destroy()
-        lg.out(2, 'shutdowner.doDestroyMe %d machines left in memory:\n        %s' % (
-            len(automat.objects()), '\n        '.join(
-                ['%d: %r' % (k, automat.objects()[k]) for k in automat.objects().keys()])))
+        if _Debug:
+            lg.out(_DebugLevel, 'shutdowner.doDestroyMe %d machines left in memory:\n        %s' % (
+                len(automat.objects()), '\n        '.join(
+                    ['%d: %r' % (k, automat.objects()[k]) for k in automat.objects().keys()])))
 
         if self.enableMemoryProfile:
             try:
                 from guppy import hpy  # @UnresolvedImport
                 hp = hpy()
                 hp.setrelheap()
-                lg.out(2, 'hp.heap():\n'+str(hp.heap()))
-                lg.out(2, 'hp.heap().byrcs:\n'+str(hp.heap().byrcs))
-                lg.out(2, 'hp.heap().byvia:\n'+str(hp.heap().byvia))
+                if _Debug:
+                    lg.out(_DebugLevel, 'hp.heap():\n'+str(hp.heap()))
+                    lg.out(_DebugLevel, 'hp.heap().byrcs:\n'+str(hp.heap().byrcs))
+                    lg.out(_DebugLevel, 'hp.heap().byvia:\n'+str(hp.heap().byvia))
             except:
-                lg.out(2, "guppy package is not installed")
+                if _Debug:
+                    lg.out(_DebugLevel, "guppy package is not installed")
 
     #------------------------------------------------------------------------------
 
@@ -281,12 +294,12 @@ class Shutdowner(automat.Automat):
         Calls ``shutdown()`` method and stop the main reactor, then restart the
         program.
         """
-        lg.out(2, "shutdowner.shutdown_restart param=%s" % param)
+        if _Debug:
+            lg.out(_DebugLevel, "shutdowner.shutdown_restart param=%s" % param)
 
         def do_restart(param):
             from lib import misc
             from system import bpio
-            from main import settings
             settings.init()
             appdata = settings.BaseDir()
             detach = False
@@ -300,9 +313,11 @@ class Shutdowner(automat.Automat):
             )
 
         def shutdown_finished(x, param):
-            lg.out(2, "shutdowner.shutdown_finished want to stop the reactor")
+            if _Debug:
+                lg.out(_DebugLevel, "shutdowner.shutdown_finished want to stop the reactor")
             reactor.addSystemEventTrigger('after', 'shutdown', do_restart, param)  # @UndefinedVariable
             reactor.stop()  # @UndefinedVariable
+
         d = shutdown('restart')
         d.addBoth(shutdown_finished, param)
 
@@ -311,10 +326,13 @@ class Shutdowner(automat.Automat):
         Calls ``shutdown()`` method and stop the main reactor, this will finish
         the program.
         """
-        lg.out(2, "shutdowner.shutdown_exit")
+        if _Debug:
+            lg.out(_DebugLevel, "shutdowner.shutdown_exit")
 
         def shutdown_reactor_stop(x=None):
-            lg.out(2, "shutdowner.shutdown_reactor_stop want to stop the reactor")
+            if _Debug:
+                lg.out(_DebugLevel, "shutdowner.shutdown_reactor_stop want to stop the reactor")
             reactor.stop()  # @UndefinedVariable
+
         d = shutdown(x)
         d.addBoth(shutdown_reactor_stop)

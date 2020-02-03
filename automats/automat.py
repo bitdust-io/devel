@@ -77,7 +77,6 @@ from io import open
 from twisted.internet import reactor  # @UnresolvedImport
 from twisted.internet.task import LoopingCall  #@UnresolvedImport
 from twisted.internet.defer import Deferred, fail  #@UnresolvedImport
-from twisted.python.failure import Failure  #@UnresolvedImport
 
 #------------------------------------------------------------------------------
 

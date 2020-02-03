@@ -38,6 +38,11 @@ from io import open
 
 #------------------------------------------------------------------------------
 
+_Debug = False
+_DebugLevel = 10
+
+#------------------------------------------------------------------------------
+
 import os
 import sys
 import re
@@ -67,7 +72,8 @@ def init(configDir):
     global _Config
     if _Config is None:
         _Config = DetailedConfig(configDir)
-        lg.out(2, 'config.init     at %s' % configDir)
+        if _Debug:
+            lg.out(_DebugLevel, 'config.init     at %s' % configDir)
     else:
         lg.warn('already called, was set up in %s' % _Config.getConfigDir())
 
@@ -75,7 +81,8 @@ def init(configDir):
 def shutdown():
     """
     """
-    lg.out(2, 'config.shutdown')
+    if _Debug:
+        lg.out(_DebugLevel, 'config.shutdown')
     global _Config
     if _Config:
         del _Config

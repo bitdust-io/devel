@@ -83,6 +83,7 @@ def defaults():
         'logs/traffic-enabled': TYPE_BOOLEAN,
         'logs/traffic-port': TYPE_PORT_NUMBER,
         'logs/packet-enabled': TYPE_BOOLEAN,
+        'logs/api-enabled': TYPE_BOOLEAN,
         'other/upnp-at-startup': TYPE_BOOLEAN,
         'paths/backups': TYPE_FOLDER_PATH,
         'paths/customers': TYPE_FOLDER_PATH,

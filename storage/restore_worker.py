@@ -74,12 +74,11 @@ The other thing we need is the backupIDs which we can get from our suppliers wit
 #------------------------------------------------------------------------------
 
 from __future__ import absolute_import
-import six
 from six.moves import range
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 8
 
 #------------------------------------------------------------------------------
@@ -422,8 +421,11 @@ class RestoreWorker(automat.Automat):
             blockdata = blockbits[splitindex + 1:splitindex + 1 + datalength]     # remove padding from raidmake/ECC
             newblock = encrypted.Unserialize(blockdata, decrypt_key=self.key_id)  # convert to object
         except:
-            lg.exc()
             self.automat('block-failed')
+            if _Debug:
+                lg.exc('bad block: %r' % blockbits)
+            else:
+                lg.exc()
             return
         if not newblock:
             self.automat('block-failed')
