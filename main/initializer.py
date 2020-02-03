@@ -63,6 +63,14 @@ EVENTS:
 """
 
 from __future__ import absolute_import
+
+#------------------------------------------------------------------------------
+
+_Debug = True
+_DebugLevel = 6
+
+#------------------------------------------------------------------------------
+
 import os
 import sys
 
@@ -70,8 +78,6 @@ try:
     from twisted.internet import reactor  # @UnresolvedImport
 except:
     sys.exit('Error initializing twisted.internet.reactor in initializer.py')
-
-from twisted.internet import defer
 
 #------------------------------------------------------------------------------
 
@@ -243,7 +249,8 @@ class Initializer(automat.Automat):
         """
         """
         self.flagGUI = args[0].strip() == 'show'
-        lg.out(2, 'initializer.doInitLocal flagGUI=%s' % self.flagGUI)
+        if _Debug:
+            lg.out(_DebugLevel, 'initializer.doInitLocal flagGUI=%s' % self.flagGUI)
         self._init_local()
         reactor.callLater(0, self.automat, 'init-local-done')  # @UndefinedVariable
 
@@ -251,7 +258,8 @@ class Initializer(automat.Automat):
         """
         Action method.
         """
-        lg.out(2, 'initializer.doInitServices')
+        if _Debug:
+            lg.out(_DebugLevel, 'initializer.doInitServices')
         driver.init()
         d = driver.start()
         d.addBoth(lambda x: self.automat('init-services-done'))
@@ -260,7 +268,8 @@ class Initializer(automat.Automat):
         if bpio.Android():
             lg.close_intercepted_log_file()
             lg.open_intercepted_log_file(os.path.join(settings.LogsDir(), 'android.log'))
-        lg.out(2, 'initializer.doInitInterfaces')
+        if _Debug:
+            lg.out(_DebugLevel, 'initializer.doInitInterfaces')
         if settings.enableFTPServer():
             try:
                 from interface import ftp_server
@@ -288,12 +297,14 @@ class Initializer(automat.Automat):
         reactor.callLater(0, self.automat, 'init-interfaces-done')  # @UndefinedVariable
 
     def doInitModules(self, *args, **kwargs):
-        lg.out(2, 'initializer.doInitModules')
+        if _Debug:
+            lg.out(_DebugLevel, 'initializer.doInitModules')
         self._init_modules()
         reactor.callLater(0, self.automat, 'init-modules-done')  # @UndefinedVariable
 
     def doShowGUI(self, *args, **kwargs):
-        lg.out(2, 'initializer.doShowGUI')
+        if _Debug:
+            lg.out(_DebugLevel, 'initializer.doShowGUI')
         from main import control
         control.init()
         try:
@@ -326,7 +337,8 @@ class Initializer(automat.Automat):
         Return True if Private Key and local identity files exists and both is
         valid.
         """
-        lg.out(2, 'initializer._check_install')
+        if _Debug:
+            lg.out(_DebugLevel, 'initializer._check_install')
         from userid import identity
         from crypt import key
         keyfilename = settings.KeyFileName()
@@ -337,25 +349,30 @@ class Initializer(automat.Automat):
                 keyfilename = settings.KeyFileName()
         idfilename = settings.LocalIdentityFilename()
         if not os.path.exists(keyfilename) or not os.path.exists(idfilename):
-            lg.out(2, 'initializer._check_install local key or local id not exists')
+            if _Debug:
+                lg.out(_DebugLevel, 'initializer._check_install local key or local id not exists')
             return False
         current_key = bpio.ReadTextFile(keyfilename)
         current_id = bpio.ReadTextFile(idfilename)
         if not current_id:
-            lg.out(2, 'initializer._check_install local identity is empty ')
+            if _Debug:
+                lg.out(_DebugLevel, 'initializer._check_install local identity is empty ')
             return False
         if not current_key:
-            lg.out(2, 'initializer._check_install private key is empty ')
+            if _Debug:
+                lg.out(_DebugLevel, 'initializer._check_install private key is empty ')
             return False
         try:
             key.InitMyKey()
         except:
-            lg.out(2, 'initializer._check_install fail loading private key ')
+            if _Debug:
+                lg.out(_DebugLevel, 'initializer._check_install fail loading private key ')
             return False
         try:
             ident = identity.identity(xmlsrc=current_id)
         except:
-            lg.out(2, 'initializer._check_install fail init local identity ')
+            if _Debug:
+                lg.out(_DebugLevel, 'initializer._check_install fail init local identity ')
             return False
         if not ident.isCorrect():
             lg.err('local identity is not correct !!!')
@@ -363,12 +380,14 @@ class Initializer(automat.Automat):
         try:
             res = ident.Valid()
         except:
-            lg.out('failed to validate local identity')
+            if _Debug:
+                lg.out(_DebugLevel, 'failed to validate local identity')
             return False
         if not res:
             lg.err('local identity is not valid !!!')
             return False
-        lg.out(2, 'initializer._check_install SUCCESS!!!')
+        if _Debug:
+            lg.out(_DebugLevel, 'initializer._check_install SUCCESS!!!')
         return True
 
     def _init_local(self):
@@ -418,14 +437,17 @@ class Initializer(automat.Automat):
                 from guppy import hpy  # @UnresolvedImport
                 hp = hpy()
                 hp.setrelheap()
-                lg.out(2, 'hp.heap():\n'+str(hp.heap()))
-                lg.out(2, 'hp.heap().byrcs:\n'+str(hp.heap().byrcs))
-                lg.out(2, 'hp.heap().byvia:\n'+str(hp.heap().byvia))
+                if _Debug:
+                    lg.out(_DebugLevel, 'hp.heap():\n'+str(hp.heap()))
+                    lg.out(_DebugLevel, 'hp.heap().byrcs:\n'+str(hp.heap().byrcs))
+                    lg.out(_DebugLevel, 'hp.heap().byvia:\n'+str(hp.heap().byvia))
             except:
-                lg.out(2, "guppy package is not installed")
+                if _Debug:
+                    lg.out(_DebugLevel, "guppy package is not installed")
 
     def _on_software_code_updated(self, evt):
-        lg.out(2, 'initializer._on_software_code_updated will RESTART BitDust now! "source-code-fetched" event received')
+        if _Debug:
+            lg.out(_DebugLevel, 'initializer._on_software_code_updated will RESTART BitDust now! "source-code-fetched" event received')
         if False:
             # TODO: add checks to prevent restart if any important jobs running at the moment
             return
@@ -439,13 +461,15 @@ class Initializer(automat.Automat):
         """
         Finish initialization part, run delayed methods.
         """
-        lg.out(2, "initializer._init_modules")
+        if _Debug:
+            lg.out(_DebugLevel, "initializer._init_modules")
         from updates import git_proc
         git_proc.init()
         events.add_subscriber(self._on_software_code_updated, 'source-code-fetched')
 
     def _on_tray_icon_command(self, cmd):
-        lg.out(2, "initializer._on_tray_icon_command : [%s]" % cmd)
+        if _Debug:
+            lg.out(_DebugLevel, "initializer._on_tray_icon_command : [%s]" % cmd)
         try:
             from main import shutdowner
             if cmd == 'exit':
@@ -505,7 +529,8 @@ class MyTwistedOutputLog:
         pass
 
     def write(self, s):
-        lg.out(0, 'TWISTED: ' + s.strip())
+        if _Debug:
+            lg.out(_DebugLevel, 'TWISTED: ' + s.strip())
 
     def flush(self):
         pass

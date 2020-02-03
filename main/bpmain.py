@@ -659,14 +659,16 @@ def main(executable_path=None, start_reactor=True):
 
     # sys.excepthook = lg.exception_hook
 
-    if not bpio.isFrozen():
-        try:
-            from twisted.internet.defer import setDebugging
-            setDebugging(True)
-            # from twisted.python import log as twisted_log
-            # twisted_log.startLogging(sys.stdout)
-        except:
-            lg.warn('python-twisted is not installed')
+    if _Debug:
+        if not bpio.isFrozen():
+            try:
+                from twisted.internet.defer import setDebugging
+                setDebugging(True)
+                # from twisted.python import log as twisted_log
+                # twisted_log.startLogging(sys.stdout)
+            except:
+                print('python-twisted is not installed !!!')
+                # lg.warn('python-twisted is not installed')
 
     # ask to count time for each log line from that moment, not absolute time
     lg.life_begins()

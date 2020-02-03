@@ -214,7 +214,7 @@ def args(level, *args, **kwargs):
     return o
 
 
-def info(message):
+def info(message, level=2):
     global _UseColors
     if _UseColors is None:
         _UseColors = platform.uname()[0] != 'Windows' and os.environ.get('BITDUST_LOG_USE_COLORS', '1') != '0'
@@ -222,10 +222,10 @@ def info(message):
     modul = os.path.basename(cod.co_filename).replace('.py', '')
     caller = cod.co_name
     if _UseColors:
-        output_string = '\033[7;49;32m INFO %s \033[0m in %s.%s()' % (message, modul, caller, )
+        output_string = '\033[0;49;92mINFO %s \033[0m\033[0;49;37min %s.%s()\033[0m' % (message, modul, caller, )
     else:
-        output_string = ' INFO %s in %s.%s()' % (message, modul, caller, )
-    out(0, output_string, showtime=True)
+        output_string = 'INFO %s in %s.%s()' % (message, modul, caller, )
+    out(level, output_string, showtime=True)
     return message
 
 
@@ -237,11 +237,11 @@ def warn(message, level=2):
     modul = os.path.basename(cod.co_filename).replace('.py', '')
     caller = cod.co_name
     if _UseColors:
-        output_string = '\033[0;35mWARNING %s\033[0m in %s.%s()' % (message, modul, caller, )
+        output_string = '\033[0;35mWARNING %s \033[0m\033[0;49;37min %s.%s()\033[0m' % (message, modul, caller, )
     else:
         output_string = 'WARNING %s in %s.%s()' % (message, modul, caller, )
     out(level, output_string)
-    out(level, output_string, log_name='warn')
+    out(level, output_string, log_name='warn', showtime=True)
     return message
 
 
@@ -265,7 +265,7 @@ def err(message, level=0):
     if _UseColors:
         message = '\033[6;37;41m%s\033[0m' % message
     out(level, message)
-    out(level, message, log_name='err')
+    out(level, message, log_name='err', showtime=True)
     return message
 
 
@@ -277,7 +277,7 @@ def exc(msg='', level=0, maxTBlevel=100, exc_info=None, exc_value=None, **kwargs
         if _UseColors:
             msg = '\033[1;31m%s\033[0m' % msg
         out(level, msg)
-        out(level, msg, log_name='exc')
+        out(level, msg, log_name='exc', showtime=True)
     if exc_value:
         return exception(level, maxTBlevel, exc_info=('', exc_value, []))
     return exception(level, maxTBlevel, exc_info)
