@@ -39,7 +39,7 @@ from __future__ import absolute_import
 _Debug = True
 _DebugLevel = 10
 
-_APILogFileEnabled = True
+_APILogFileEnabled = False
 
 #------------------------------------------------------------------------------
 
@@ -74,6 +74,8 @@ _APISecret = None
 def init(port=None):
     global _WebSocketListener
     global _AllAPIMethods
+    global _APILogFileEnabled
+    _APILogFileEnabled = settings.config.conf().getBool('logs/api-enabled')
     if _Debug:
         lg.out(_DebugLevel, 'api_web_socket.init  _WebSocketListener=%r' % _WebSocketListener)
     if _WebSocketListener is not None:
@@ -299,7 +301,7 @@ def push(json_data):
     if _Debug:
         lg.dbg(_DebugLevel, 'sent %d bytes to web socket: %r' % (len(raw_bytes), json_data))
     if _Debug:
-        lg.out(0, '***   API WS PUSH  %d bytes : %' % (len(json_data), json_data, ))
+        lg.out(0, '***   API WS PUSH  %d bytes : %r' % (len(json_data), json_data, ))
     if _APILogFileEnabled:
         lg.out(0, '*** WS PUSH  %d bytes : %r' % (len(json_data), json_data, ), log_name='api', showtime=True)
     return True

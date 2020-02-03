@@ -39,7 +39,7 @@ from __future__ import absolute_import
 _Debug = True
 _DebugLevel = 8
 
-_APILogFileEnabled = True
+_APILogFileEnabled = None
 
 #------------------------------------------------------------------------------
 
@@ -48,7 +48,7 @@ import sys
 import time
 import gc
 
-from twisted.internet.defer import Deferred, succeed
+from twisted.internet.defer import Deferred
 from twisted.python.failure import Failure
 
 #------------------------------------------------------------------------------
@@ -59,6 +59,8 @@ from lib import jsn
 from logs import lg
 
 from services import driver
+
+from main import config
 
 #------------------------------------------------------------------------------
 
@@ -71,6 +73,7 @@ def on_api_result_prepared(result):
 
 
 def OK(result='', message=None, status='OK', extra_fields=None, **kwargs):
+    global _APILogFileEnabled
     o = {'status': status, }
     if result:
         o['result'] = result if isinstance(result, list) else [result, ]
@@ -95,12 +98,15 @@ def OK(result='', message=None, status='OK', extra_fields=None, **kwargs):
             'network_connected',
         ] or _DebugLevel > 10:
             lg.out(_DebugLevel, 'api.%s return OK(%s)' % (api_method, sample[:150]))
+    if _APILogFileEnabled is None:
+        _APILogFileEnabled = config.conf().getBool('logs/api-enabled')
     if _APILogFileEnabled:
         lg.out(0, 'api.%s return OK(%s)\n' % (api_method, sample, ), log_name='api', showtime=True)
     return o
 
 
 def RESULT(result=[], message=None, status='OK', errors=None, source=None, extra_fields=None, **kwargs):
+    global _APILogFileEnabled
     o = {}
     if source is not None:
         o.update(source)
@@ -124,12 +130,15 @@ def RESULT(result=[], message=None, status='OK', errors=None, source=None, extra
             api_method = sys._getframe(1).f_back.f_code.co_name
     if _Debug:
         lg.out(_DebugLevel, 'api.%s return RESULT(%s)' % (api_method, sample[:150], ))
+    if _APILogFileEnabled is None:
+        _APILogFileEnabled = config.conf().getBool('logs/api-enabled')
     if _APILogFileEnabled:
         lg.out(0, 'api.%s return RESULT(%s)\n' % (api_method, sample, ), log_name='api', showtime=True)
     return o
 
 
 def ERROR(errors=[], message=None, status='ERROR', extra_fields=None, **kwargs):
+    global _APILogFileEnabled
     if not isinstance(errors, list):
         errors = [errors, ]
     for i in range(len(errors)):
@@ -161,6 +170,8 @@ def ERROR(errors=[], message=None, status='ERROR', extra_fields=None, **kwargs):
             api_method = sys._getframe(1).f_back.f_code.co_name
     if _Debug:
         lg.out(_DebugLevel, 'api.%s return ERROR(%s)' % (api_method, sample[:150], ))
+    if _APILogFileEnabled is None:
+        _APILogFileEnabled = config.conf().getBool('logs/api-enabled')
     if _APILogFileEnabled:
         lg.out(0, 'api.%s return ERROR(%s)\n' % (api_method, sample, ), log_name='api', showtime=True)
     return o
@@ -261,7 +272,6 @@ def config_get(key):
         return ERROR('wrong key')
     if _Debug:
         lg.out(_DebugLevel, 'api.config_get [%s]' % key)
-    from main import config
     if key and not config.conf().exist(key):
         return ERROR('option "%s" not exist' % key)
 
@@ -287,7 +297,6 @@ def config_set(key, value):
 
         {'status': 'OK', 'result': [{'type': 'positive integer', 'old_value': '8', 'value': '10', 'key': 'logs/debug-level'}]}
     """
-    from main import config
     key = strng.to_text(key)
     v = {}
     if config.conf().exist(key):
@@ -323,7 +332,6 @@ def config_list(sort=False):
     """
     if _Debug:
         lg.out(_DebugLevel, 'api.config_list')
-    from main import config
     r = config.conf().cache()
     r = [config.conf().toJson(key) for key in list(r.keys())]
     if sort:
@@ -337,7 +345,6 @@ def config_tree():
     """
     if _Debug:
         lg.out(_DebugLevel, 'api.config_list')
-    from main import config
     r = {}
     for key in config.conf().cache():
         cursor = r
@@ -1204,7 +1211,7 @@ def file_create(remote_path, as_folder=False):
         if not backup_fs.IsDir(parent_path, iter=backup_fs.fs(parts['idurl'])):
             if backup_fs.IsFile(parent_path, iter=backup_fs.fs(parts['idurl'])):
                 return ERROR('remote path can not be assigned, file already exist: "%s"' % parent_path)
-            parentPathID, parent_iter, parent_iterID = backup_fs.AddDir(
+            parentPathID, _, _ = backup_fs.AddDir(
                 parent_path,
                 read_stats=False,
                 iter=backup_fs.fs(parts['idurl']),
@@ -2599,7 +2606,6 @@ def services_list(show_configs=False):
             'state': 'ON'
         }]}
     """
-    from main import config
     result = []
     for name, svc in sorted(list(driver.services().items()), key=lambda i: i[0]):
         svc_info = {
@@ -2671,7 +2677,6 @@ def service_start(service_name):
     """
     if _Debug:
         lg.out(_DebugLevel, 'api.service_start : %s' % service_name)
-    from main import config
     svc = driver.services().get(service_name, None)
     if svc is None:
         service_name = 'service_' + service_name.replace('-', '_')
@@ -2705,7 +2710,6 @@ def service_stop(service_name):
     """
     if _Debug:
         lg.out(_DebugLevel, 'api.service_stop : %s' % service_name)
-    from main import config
     svc = driver.services().get(service_name, None)
     if svc is None:
         service_name = 'service_' + service_name.replace('-', '_')

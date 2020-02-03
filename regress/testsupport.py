@@ -563,6 +563,7 @@ async def start_identity_server_async(node, loop):
     print(f'\nNEW IDENTITY SERVER at [{node}]\n')
     cmd = ''
     cmd += 'bitdust set logs/packet-enabled true;'
+    cmd += 'bitdust set logs/api-enabled true;'
     cmd += 'bitdust set personal/private-key-size 1024;'
     cmd += 'bitdust set services/customer/enabled false;'
     cmd += 'bitdust set services/supplier/enabled false;'
@@ -586,6 +587,7 @@ def start_dht_seed(node, wait_seconds=0, dht_seeds='', attached_layers=''):
     print(f'\nNEW DHT SEED (with STUN SERVER) at [{node}]\n')
     cmd = ''
     cmd += 'bitdust set logs/packet-enabled true;'
+    cmd += 'bitdust set logs/api-enabled true;'
     # use shorter key to run tests faster
     cmd += 'bitdust set personal/private-key-size 1024;'
     # disable unrelated services
@@ -618,6 +620,7 @@ async def start_stun_server_async(node, loop, dht_seeds=''):
     print(f'\nNEW STUN SERVER at [{node}]\n')
     cmd = ''
     cmd += 'bitdust set logs/packet-enabled true;'
+    cmd += 'bitdust set logs/api-enabled true;'
     # use short key to run tests faster
     cmd += 'bitdust set personal/private-key-size 1024;'
     # disable unrelated services
@@ -646,6 +649,7 @@ async def start_proxy_server_async(node, identity_name, loop, known_servers='', 
     print(f'\nNEW PROXY SERVER {identity_name} at [{node}]\n')
     cmd = ''
     cmd += 'bitdust set logs/packet-enabled true;'
+    cmd += 'bitdust set logs/api-enabled true;'
     # use short key to run tests faster
     cmd += 'bitdust set personal/private-key-size 1024;'
     # disable unrelated services
@@ -679,6 +683,7 @@ async def start_supplier_async(node, identity_name, loop, join_network=True,
     print(f'\nNEW SUPPLIER {identity_name} at [{node}]\n')
     cmd = ''
     cmd += 'bitdust set logs/packet-enabled true;'
+    cmd += 'bitdust set logs/api-enabled true;'
     # use short key to run tests faster
     cmd += 'bitdust set personal/private-key-size 1024;'
     # disable unrelated services
@@ -725,6 +730,7 @@ async def start_customer_async(node, identity_name, loop, join_network=True, num
     print('\nNEW CUSTOMER %r at [%s]\n' % (identity_name, node, ))
     cmd = ''
     cmd += 'bitdust set logs/packet-enabled true;'
+    cmd += 'bitdust set logs/api-enabled true;'
     # use short key to run tests faster
     cmd += 'bitdust set personal/private-key-size 1024;'
     # disable unrelated services

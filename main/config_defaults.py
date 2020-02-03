@@ -64,6 +64,7 @@ def reset(conf_obj):
     conf_obj.setDefaultValue('logs/traffic-enabled', 'false')
     conf_obj.setDefaultValue('logs/traffic-port', settings.DefaultWebTrafficPort())
     conf_obj.setDefaultValue('logs/packet-enabled', 'false')
+    conf_obj.setDefaultValue('logs/api-enabled', 'false')
 
     conf_obj.setDefaultValue('paths/backups', '')
     conf_obj.setDefaultValue('paths/customers', '')
