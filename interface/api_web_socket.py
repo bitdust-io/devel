@@ -76,8 +76,6 @@ def init(port=None):
     global _AllAPIMethods
     global _APILogFileEnabled
     _APILogFileEnabled = settings.config.conf().getBool('logs/api-enabled')
-    if _Debug:
-        lg.out(_DebugLevel, 'api_web_socket.init  _WebSocketListener=%r' % _WebSocketListener)
     if _WebSocketListener is not None:
         lg.warn('_WebSocketListener already initialized')
         return
@@ -98,6 +96,9 @@ def init(port=None):
         'absolute_import', 'driver', 'filemanager', 'jsn', 'lg',
         'event_listen', 'message_receive', 'process_debug', 
     ])
+    if _Debug:
+        lg.out(_DebugLevel, 'api_web_socket.init  _WebSocketListener=%r with %d methods' % (
+            _WebSocketListener, len(_AllAPIMethods)))
     read_api_secret()
     events.add_subscriber(on_event, event_id='*')
 

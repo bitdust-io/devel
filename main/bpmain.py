@@ -199,6 +199,8 @@ def init(UI='', options=None, args=None, overDict=None, executablePath=None):
     #---START!---
     from automats import automat
     automat.LifeBegins(lg.when_life_begins())
+    automat.SetGlobalLogEvents(config.conf().getBool('logs/automat-events-enabled'))
+    automat.SetGlobalLogTransitions(config.conf().getBool('logs/automat-transitions-enabled'))
     automat.OpenLogFile(settings.AutomatsLog())
 
     from main import events
