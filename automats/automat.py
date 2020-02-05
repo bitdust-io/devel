@@ -88,6 +88,8 @@ _LogFile = None  # : This is to have a separated Log file for state machines log
 _LogFilename = None
 _LogsCount = 0  # : If not zero - it will print time since that value, not system time
 _LifeBeginsTime = 0
+_GlobalLogEvents = False
+_GlobalLogTransitions = False
 
 #------------------------------------------------------------------------------
 
@@ -259,6 +261,16 @@ def LifeBegins(when=None):
     else:
         _LifeBeginsTime = time.time()
 
+
+def SetGlobalLogEvents(value=False):
+    global _GlobalLogEvents
+    _GlobalLogEvents = value
+
+
+def SetGlobalLogTransitions(value=False):
+    global _GlobalLogTransitions
+    _GlobalLogTransitions = value
+
 #------------------------------------------------------------------------------
 
 
@@ -337,7 +349,7 @@ class Automat(object):
         self.init(**kwargs)
         self.startTimers()
         self.register()
-        if _Debug and self.log_transitions:
+        if _GlobalLogTransitions or ( _Debug and self.log_transitions ):
             self.log(max(_DebugLevel, self.debug_level), 'CREATED AUTOMAT with index %d, total running %d' % (
                 self.index, len(objects())))
 
@@ -366,7 +378,7 @@ class Automat(object):
         debug_level = max(_DebugLevel or 0, self.debug_level or 0)
         if erase_index:
             erase_index(automatid)
-        if _Debug and self.log_transitions:
+        if _GlobalLogTransitions or ( _Debug and self.log_transitions ):
             if self.log:
                 self.log(debug_level, 'DESTROYED AUTOMAT with index %d, total running %d' % (
                     index, len(objects())))
@@ -486,7 +498,7 @@ class Automat(object):
         Use ``fast = True`` flag to skip call to reactor.callLater(0, self.event, ...).
         """
         global _StateChangedCallback
-        if _LogEvents and _Debug and getattr(self, 'log_events', False):
+        if _GlobalLogEvents or ( _LogEvents and _Debug and getattr(self, 'log_events', False)):
             if self.log_events or not event_string.startswith('timer-'):
 #                 self.log(max(self.debug_level, _DebugLevel), '%s fired with event "%s", refs=%d' % (
 #                     repr(self), event_string, sys.getrefcount(self)))
@@ -511,7 +523,7 @@ class Automat(object):
                 return self
             new_state = self.state
         if old_state != new_state:
-            if _Debug and self.log_transitions:
+            if _GlobalLogTransitions or ( _Debug and self.log_transitions ):
                 self.log(
                     max(_DebugLevel, self.debug_level),
                     '%s(%s): (%s)->(%s)' % (
