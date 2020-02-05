@@ -2,6 +2,14 @@ Change Log
 ==========
 
 
+2020-02-05 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* fix in proxy_sender() state machine
+* bug fix in packet_out() and set default debug level to 0 (#94)
+* set debug level 18 in regression tests
+
+
+
 2020-02-03 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * set option "services/proxy-server/enabled" by default to "false"
