@@ -69,6 +69,7 @@ from lib import nameurl
 from lib import serialization
 
 from main import config
+from main import settings
 
 from crypt import encrypted
 from crypt import key
@@ -150,18 +151,15 @@ class ProxySender(automat.Automat):
             if event == 'init':
                 self.state = 'STOPPED'
                 self.doInit(*args, **kwargs)
-        #---CLOSED---
-        elif self.state == 'CLOSED':
-            pass
         #---STOPPED---
         elif self.state == 'STOPPED':
             if event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'start' and proxy_receiver.A().state is not 'LISTEN':
+            elif event == 'start' and proxy_receiver.A().state is not 'LISTEN' and self.isSendingEnabled(*args, **kwargs):
                 self.state = 'ROUTER?'
                 self.doStartFilterOutgoingTraffic(*args, **kwargs)
-            elif event == 'start' and proxy_receiver.A().state is 'LISTEN':
+            elif ( ( event == 'proxy_receiver.state' and args[0] == 'LISTEN' ) or ( event == 'start' and proxy_receiver.A().state is 'LISTEN' ) ) and self.isSendingEnabled(*args, **kwargs):
                 self.state = 'REDIRECTING'
                 self.doStartFilterOutgoingTraffic(*args, **kwargs)
         #---ROUTER?---
@@ -170,11 +168,12 @@ class ProxySender(automat.Automat):
                 self.state = 'CLOSED'
                 self.doStopFilterOutgoingTraffic(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-            elif (event == 'proxy_receiver.state' and args[0] == 'OFFLINE'):
-                self.state = 'STOPPED'
-            elif (event == 'proxy_receiver.state' and args[0] == 'LISTEN'):
+            elif ( event == 'proxy_receiver.state' and args[0] == 'LISTEN' ):
                 self.state = 'REDIRECTING'
                 self.doSendAllPendingPackets(*args, **kwargs)
+            elif ( event == 'proxy_receiver.state' and args[0] == 'OFFLINE' ):
+                self.state = 'STOPPED'
+                self.doStopFilterOutgoingTraffic(*args, **kwargs)
         #---REDIRECTING---
         elif self.state == 'REDIRECTING':
             if event == 'outbox-packet-sent':
@@ -188,7 +187,16 @@ class ProxySender(automat.Automat):
                 self.doDestroyMe(*args, **kwargs)
             elif event == 'proxy_receiver.state' is not 'LISTEN':
                 self.state = 'ROUTER?'
+        #---CLOSED---
+        elif self.state == 'CLOSED':
+            pass
         return None
+
+    def isSendingEnabled(self, *args, **kwargs):
+        """
+        Condition method.
+        """
+        return settings.enablePROXYsending()
 
     def doInit(self, *args, **kwargs):
         """
@@ -200,7 +208,6 @@ class ProxySender(automat.Automat):
         self.pending_packets = []
         self.pending_ping_packets = []
         self.max_pending_packets = 100  # TODO: read from settings
-        # network_connector.A().addStateChangedCallback(self._on_network_connector_state_changed)
 
     def doStartFilterOutgoingTraffic(self, *args, **kwargs):
         """
@@ -245,7 +252,6 @@ class ProxySender(automat.Automat):
         """
         global _PacketLogFileEnabled
         _PacketLogFileEnabled = False
-        # network_connector.A().removeStateChangedCallback(self._on_network_connector_state_changed)
         self.traffic_out = 0
         self.pending_packets = []
         self.pending_ping_packets = []
@@ -266,27 +272,12 @@ class ProxySender(automat.Automat):
             lg.out(_DebugLevel, 'proxy_sender._add_pending_packet %s' % outpacket)
         return pending_result
 
-#     def _add_pending_ping_packet(self, outpacket, wide, callbacks, target, route, response_timeout, keep_alive):
-#         if len(self.pending_ping_packets) > self.max_pending_packets:
-#             if _Debug:
-#                 lg.warn('pending ping packets queue is full, skip')
-#             return None
-#         pending_result = Deferred()
-#         self.pending_ping_packets.append((outpacket, wide, callbacks, target, route, response_timeout, keep_alive, pending_result))
-#         if _Debug:
-#             lg.out(_DebugLevel, 'proxy_sender._add_pending_ping_packet %s' % outpacket)
-#         return pending_result
-
     def _on_first_outbox_packet(self, outpacket, wide, callbacks, target=None, route=None, response_timeout=None, keep_alive=True):
         """
         Will be called first for every outgoing packet.
         Must return `None` if that packet should be send normal way.
         Otherwise will create another "routed" packet instead and return it.
         """
-#         if not driver.is_enabled('service_proxy_transport'):
-#             if _Debug:
-#                 lg.out(_DebugLevel, 'proxy_sender._on_first_outbox_packet SKIP sending %r because service_proxy_transport is disabled' % outpacket)
-#             return None
         if not driver.is_on('service_proxy_transport'):
             if _Debug:
                 lg.out(_DebugLevel, 'proxy_sender._on_first_outbox_packet SKIP sending %r because service_proxy_transport is not started yet' % outpacket)
@@ -308,13 +299,6 @@ class ProxySender(automat.Automat):
                 if _Debug:
                     lg.out(_DebugLevel, 'proxy_sender._on_first_outbox_packet SKIP sending %r, network_connector() have transition state' % outpacket)
                 return None
-
-                # return self._add_pending_ping_packet(outpacket, wide, callbacks, target, route, response_timeout, keep_alive)
-#         if not driver.is_started('service_proxy_transport'):
-#             if _Debug:
-#                 lg.out(_DebugLevel, 'proxy_sender._on_first_outbox_packet DELLAYED %r because service_proxy_transport is not started yet' % outpacket)
-#             return self._add_pending_packet(outpacket, wide, callbacks)
-
         if proxy_receiver.A().state != 'LISTEN':
             if _Debug:
                 lg.out(_DebugLevel, 'proxy_sender._on_first_outbox_packet DELLAYED %r because proxy_receiver state is not LISTEN yet' % outpacket)
@@ -422,7 +406,6 @@ class ProxySender(automat.Automat):
 
 
 def main():
-    from twisted.internet import reactor  # @UnresolvedImport
     reactor.callWhenRunning(A, 'init')  # @UndefinedVariable
     reactor.run()  # @UndefinedVariable
 
