@@ -86,7 +86,6 @@ from lib import serialization
 from automats import automat
 
 from main import config
-from main import settings
 
 from crypt import key
 from crypt import signed
@@ -229,9 +228,8 @@ class ProxyReceiver(automat.Automat):
         """
         Method to catch the moment when proxy_receiver() state were changed.
         """
-        if settings.enablePROXYsending():
-            from transport.proxy import proxy_sender
-            proxy_sender.A('proxy_receiver.state', newstate)
+        from transport.proxy import proxy_sender
+        proxy_sender.A('proxy_receiver.state', newstate)
 
     def state_not_changed(self, curstate, event, *args, **kwargs):
         """
