@@ -40,7 +40,8 @@ def main():
 
     ret = main(executable_path)
 
-    # os._exit(ret)
+    os._exit(ret)
+
     return ret
 
 
