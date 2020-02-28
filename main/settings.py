@@ -904,6 +904,17 @@ def DHTDataDir():
     return os.path.join(BaseDir(), 'dht')
 
 
+def ServicesDataDir():
+    """
+    """
+    return os.path.join(BaseDir(), 'servicedata')
+
+
+def ServiceDir(service_name):
+    """
+    """
+    return os.path.join(ServicesDataDir(), service_name)
+
 #------------------------------------------------------------------------------
 #--- FILES --------------------------------------------------------------------
 #------------------------------------------------------------------------------

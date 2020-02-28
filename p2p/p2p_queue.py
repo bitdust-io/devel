@@ -233,6 +233,10 @@ def valid_queue_id(queue_id):
 
 #------------------------------------------------------------------------------
 
+def is_consumer_exists(consumer_id):
+    return consumer_id in consumer()
+
+
 def add_consumer(consumer_id):
     global _Consumers
     if consumer_id in consumer():
@@ -306,8 +310,11 @@ def connect_producer(producer_id, queue_id):
         raise Exception('producer not exist')
     if not is_queue_exist(queue_id):
         raise Exception('queue not exist')
-    producer(producer_id).queues.append(queue_id)
-    lg.info('producer %s connected to queue %s' % (producer_id, queue_id, ))
+    if queue_id not in producer(producer_id).queues:
+        producer(producer_id).queues.append(queue_id)
+        lg.info('producer %s connected to queue %s' % (producer_id, queue_id, ))
+    else:
+        lg.warn('producer %s already connected to queue %s' % (producer_id, queue_id, ))
     return True
 
 
@@ -386,8 +393,11 @@ def subscribe_consumer(consumer_id, queue_id):
         raise Exception('consumer not found')
     if queue_id in consumer(consumer_id).queues:
         raise Exception('already subscribed')
-    consumer(consumer_id).queues.append(queue_id)
-    lg.info('consumer %s subscribed to read queue %s' % (consumer_id, queue_id, ))
+    if queue_id not in consumer(consumer_id).queues:
+        consumer(consumer_id).queues.append(queue_id)
+        lg.info('consumer %s subscribed to read queue %s' % (consumer_id, queue_id, ))
+    else:
+        lg.warn('consumer %s already subscribed to read queue %s' % (consumer_id, queue_id, ))
     return True
 
 

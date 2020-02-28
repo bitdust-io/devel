@@ -50,10 +50,16 @@ class PrivateGroupsService(LocalService):
         ]
 
     def start(self):
+        from p2p import queue_connector
+        queue_connector.A('init')
+        queue_connector.A('connect')
         return True
 
     def stop(self):
+        from p2p import queue_connector
+        queue_connector.A('shutdown')
         return True
 
     def health_check(self):
-        return True
+        from p2p import queue_connector
+        return queue_connector.A() and queue_connector.A().state in ['IN_SYNC', 'CATCH_UP?', ]  

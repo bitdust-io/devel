@@ -42,6 +42,7 @@ class MessageBrokerService(LocalService):
 
     service_name = 'service_message_broker'
     config_path = 'services/message-broker/enabled'
+    data_dir_required = True
 
     last_time_keys_synchronized = None
 
@@ -52,9 +53,13 @@ class MessageBrokerService(LocalService):
         ]
 
     def start(self):
+        from chat import message_broker
+        message_broker.init()
         return True
 
     def stop(self):
+        from chat import message_broker
+        message_broker.shutdown()
         return True
 
     def health_check(self):
