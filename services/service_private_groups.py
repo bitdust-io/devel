@@ -50,16 +50,11 @@ class PrivateGroupsService(LocalService):
         ]
 
     def start(self):
-        from p2p import queue_connector
-        queue_connector.A('init')
-        queue_connector.A('connect')
         return True
 
     def stop(self):
-        from p2p import queue_connector
-        queue_connector.A('shutdown')
         return True
 
     def health_check(self):
-        from p2p import queue_connector
-        return queue_connector.A() and queue_connector.A().state in ['IN_SYNC', 'CATCH_UP?', ]  
+        # TODO: probably at least one queue must be connected if service is enabled
+        return True
