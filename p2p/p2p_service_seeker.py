@@ -29,15 +29,12 @@
 BitDust p2p_service_seeker() Automat
 
 EVENTS:
-    * :red:`ack-received`
+    * :red:`fail`
     * :red:`found-users`
-    * :red:`init`
     * :red:`service-accepted`
     * :red:`service-denied`
-    * :red:`shutdown`
+    * :red:`shook-hands`
     * :red:`start`
-    * :red:`timer-10sec`
-    * :red:`timer-3sec`
     * :red:`users-not-found`
 """
 
@@ -64,13 +61,11 @@ from lib import strng
 
 from p2p import commands
 from p2p import p2p_service
-from p2p import lookup
+from p2p import handshaker
 
 from contacts import identitycache
 
 from userid import my_id
-
-from transport import callback
 
 #------------------------------------------------------------------------------
 
@@ -82,22 +77,18 @@ class P2PServiceSeeker(automat.Automat):
 
     fast = True
 
-    timers = {
-        'timer-3sec': (3.0, ['ACK?']),
-        'timer-10sec': (10.0, ['ACK?', 'SERVICE?']),
-    }
-
     def init(self):
         """
         Method to initialize additional variables and flags at creation phase
         of p2p_service_seeker() machine.
         """
+        self.lookup_method = None
         self.target_idurl = None
         self.target_service = None
-        self.requested_packet_id = None
         self.request_service_params = None
-        self.lookup_task = None
         self.exclude_nodes = []
+        self.lookup_task = None
+        self.requested_packet_id = None
 
     def state_changed(self, oldstate, newstate, event, *args, **kwargs):
         """
@@ -118,63 +109,48 @@ class P2PServiceSeeker(automat.Automat):
         """
         #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
-            if event == 'init':
-                self.state = 'READY'
-                self.doInit(*args, **kwargs)
-        #---RANDOM_USER---
-        elif self.state == 'RANDOM_USER':
-            if event == 'shutdown':
-                self.state = 'CLOSED'
-                self.doStopLookup(*args, **kwargs)
-                self.doDestroyMe(*args, **kwargs)
-            elif event == 'users-not-found':
-                self.state = 'READY'
-                self.doNotifyLookupFailed(*args, **kwargs)
-            elif event == 'found-users':
-                self.state = 'ACK?'
-                self.doSelectOneUser(*args, **kwargs)
-                self.Attempts+=1
-                self.doSendMyIdentity(*args, **kwargs)
-        #---ACK?---
-        elif self.state == 'ACK?':
-            if event == 'shutdown':
-                self.state = 'CLOSED'
-                self.doDestroyMe(*args, **kwargs)
-            elif event == 'ack-received':
-                self.state = 'SERVICE?'
-                self.doSendRequestService(*args, **kwargs)
-            elif event == 'timer-3sec':
-                self.doSendMyIdentity(*args, **kwargs)
-            elif event == 'timer-10sec' and self.Attempts<5:
-                self.state = 'RANDOM_USER'
-                self.doLookupRandomNode(*args, **kwargs)
-        #---SERVICE?---
-        elif self.state == 'SERVICE?':
-            if event == 'shutdown':
-                self.state = 'CLOSED'
-                self.doDestroyMe(*args, **kwargs)
-            elif event == 'service-accepted':
-                self.state = 'READY'
-                self.doNotifyLookupSuccess(*args, **kwargs)
-            elif ( event == 'timer-10sec' or event == 'service-denied' ) and self.Attempts<5:
-                self.state = 'RANDOM_USER'
-                self.doLookupRandomNode(*args, **kwargs)
-            elif self.Attempts==5 and ( event == 'timer-10sec' or event == 'service-denied' ):
-                self.state = 'READY'
-                self.doNotifyLookupFailed(*args, **kwargs)
-        #---READY---
-        elif self.state == 'READY':
             if event == 'start':
-                self.state = 'RANDOM_USER'
-                self.doSetRequest(*args, **kwargs)
-                self.doSetCallback(*args, **kwargs)
+                self.state = 'RANDOM_USER?'
+                self.doInit(*args, **kwargs)
                 self.Attempts=0
                 self.doLookupRandomNode(*args, **kwargs)
-            elif event == 'shutdown':
-                self.state = 'CLOSED'
-                self.doDestroyMe(*args, **kwargs)
-        #---CLOSED---
-        elif self.state == 'CLOSED':
+        #---RANDOM_USER?---
+        elif self.state == 'RANDOM_USER?':
+            if event == 'found-users':
+                self.state = 'HANDSHAKE?'
+                self.doSelectOneUser(*args, **kwargs)
+                self.Attempts+=1
+                self.doHandshake(*args, **kwargs)
+            elif event == 'users-not-found':
+                self.state = 'FAILED'
+                self.doNotifyLookupFailed(*args, **kwargs)
+        #---HANDSHAKE?---
+        elif self.state == 'HANDSHAKE?':
+            if event == 'shook-hands':
+                self.state = 'SERVICE?'
+                self.doSendRequestService(*args, **kwargs)
+            elif event == 'fail' and self.Attempts<5:
+                self.state = 'RANDOM_USER?'
+                self.doLookupRandomNode(*args, **kwargs)
+            elif self.Attempts==5 and event == 'fail':
+                self.state = 'FAILED'
+                self.doNotifyHandshakeFailed(*args, **kwargs)
+        #---SERVICE?---
+        elif self.state == 'SERVICE?':
+            if event == 'service-accepted':
+                self.state = 'SUCCESS'
+                self.doNotifyServiceAccepted(*args, **kwargs)
+            elif ( event == 'fail' or event == 'service-denied' ) and self.Attempts<5:
+                self.state = 'RANDOM_USER?'
+                self.doLookupRandomNode(*args, **kwargs)
+            elif self.Attempts==5 and ( event == 'fail' or event == 'service-denied' ):
+                self.state = 'FAILED'
+                self.doNotifyServiceRequestFailed(*args, **kwargs)
+        #---SUCCESS---
+        elif self.state == 'SUCCESS':
+            pass
+        #---FAILED---
+        elif self.state == 'FAILED':
             pass
         return None
 
@@ -182,37 +158,23 @@ class P2PServiceSeeker(automat.Automat):
         """
         Action method.
         """
-        self.exclude_nodes = args[0][0]
-        callback.append_inbox_callback(self._inbox_packet_received)
-
-    def doSetRequest(self, *args, **kwargs):
-        """
-        Action method.
-        """
-        self.target_service, self.request_service_params = args[0][:2]
-
-    def doSetCallback(self, *args, **kwargs):
-        """
-        Action method.
-        """
-        self.result_callback = args[0][-1]
+        self.lookup_method = kwargs['lookup_method']
+        self.target_service = kwargs['target_service']
+        self.request_service_params = kwargs.get('request_service_params', None)
+        self.result_callback = kwargs.get('result_callback', None)
+        self.exclude_nodes = kwargs.get('exclude_nodes', [])
 
     def doLookupRandomNode(self, *args, **kwargs):
         """
         Action method.
         """
-        self.lookup_task = lookup.start()
+        self.lookup_task = self.lookup_method()
         if self.lookup_task.result_defer:
             self.lookup_task.result_defer.addCallback(self._nodes_lookup_finished)
+            self.lookup_task.result_defer.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='p2p_service_seeker.doLookupRandomNode')
             self.lookup_task.result_defer.addErrback(lambda err: self.automat('users-not-found'))
         else:
             self.automat('users-not-found')
-
-    def doStopLookup(self, *args, **kwargs):
-        """
-        Action method.
-        """
-        self.lookup_task.stop()
 
     def doSelectOneUser(self, *args, **kwargs):
         """
@@ -220,33 +182,43 @@ class P2PServiceSeeker(automat.Automat):
         """
         self.target_idurl = args[0][0]
 
-    def doSendMyIdentity(self, *args, **kwargs):
+    def doHandshake(self, *args, **kwargs):
         """
         Action method.
         """
-        p2p_service.SendIdentity(self.target_idurl, wide=True)
+        d = handshaker.ping(
+            idurl=self.target_idurl,
+            channel='p2p_service_seeker',
+            keep_alive=True,
+            force_cache=False,
+        )
+        d.addCallback(lambda ok: self.automat('shook-hands'))
+        d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='p2p_service_seeker.doLookupRandomNode')
+        d.addErrback(lambda err: self.automat('fail'))
 
     def doSendRequestService(self, *args, **kwargs):
         """
         Action method.
         """
-        # service_info = self.target_service
-        # if self.request_service_params is not None:
-        #     service_info += ' {}'.format(self.request_service_params)
         out_packet = p2p_service.SendRequestService(
-            self.target_idurl, self.target_service, json_payload=self.request_service_params, callbacks={
+            remote_idurl=self.target_idurl,
+            service_name=self.target_service,
+            json_payload=self.request_service_params,
+            callbacks={
                 commands.Ack(): self._node_acked,
                 commands.Fail(): self._node_failed,
+                None: lambda pkt_out: self.automat('fail'),
             }
         )
         self.requested_packet_id = out_packet.PacketID
 
-    def doNotifyLookupSuccess(self, *args, **kwargs):
+    def doNotifyServiceAccepted(self, *args, **kwargs):
         """
         Action method.
         """
         if _Debug:
-            lg.out(_DebugLevel, 'p2p_service_seeker.doNotifyLookupSuccess with %s' % args[0])
+            lg.out(_DebugLevel, 'p2p_service_seeker.doNotifyServiceAccepted %r from %r with %s' % (
+                self.target_service, self.target_idurl, args[0]))
         if self.result_callback:
             self.result_callback('node-connected', *args, **kwargs)
         self.result_callback = None
@@ -261,29 +233,40 @@ class P2PServiceSeeker(automat.Automat):
             self.result_callback('lookup-failed', *args, **kwargs)
         self.result_callback = None
 
+    def doNotifyServiceRequestFailed(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        if _Debug:
+            lg.out(_DebugLevel, 'p2p_service_seeker.doNotifyServiceRequestFailed, Attempts=%d' % self.Attempts)
+        if self.result_callback:
+            self.result_callback('request-failed', *args, **kwargs)
+        self.result_callback = None
+
+    def doNotifyHandshakeFailed(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        if _Debug:
+            lg.out(_DebugLevel, 'p2p_service_seeker.doNotifyHandshakeFailed, Attempts=%d' % self.Attempts)
+        if self.result_callback:
+            self.result_callback('handshake-failed', *args, **kwargs)
+        self.result_callback = None
+
     def doDestroyMe(self, *args, **kwargs):
         """
         Remove all references to the state machine object to destroy it.
         """
+        self.lookup_method = None
         self.target_idurl = None
         self.target_service = None
-        self.requested_packet_id = None
         self.request_service_params = None
-        self.lookup_task = None
         self.exclude_nodes = []
-        callback.remove_inbox_callback(self._inbox_packet_received)
+        self.requested_packet_id = None
+        self.lookup_task = None
         self.destroy()
 
     #------------------------------------------------------------------------------
-
-    def _inbox_packet_received(self, newpacket, info, status, error_message):
-        if newpacket.Command == commands.Ack() and \
-                newpacket.OwnerID == self.target_idurl and \
-                newpacket.PacketID.startswith('identity:') and \
-                self.state == 'ACK?':
-            self.automat('ack-received', self.target_idurl)
-            return True
-        return False
 
     def _node_acked(self, response, info):
         if _Debug:
@@ -294,7 +277,7 @@ class P2PServiceSeeker(automat.Automat):
             self.automat('service-denied')
             return
         if _Debug:
-            lg.out(_DebugLevel, 'p2p_service_seeker._node_acked !!!! node %s connected' % response.CreatorID)
+            lg.out(_DebugLevel, 'p2p_service_seeker._node_acked %s is connected' % response.CreatorID)
         self.automat('service-accepted', response.CreatorID)
 
     def _node_failed(self, response, info):
@@ -323,26 +306,28 @@ class P2PServiceSeeker(automat.Automat):
 
 #------------------------------------------------------------------------------
 
-def on_lookup_result(event, arg, result_defer, p2p_seeker_instance):
+
+def on_lookup_result(event, arg, result_defer):
     """
     """
     if _Debug:
-        lg.out(_DebugLevel, 'p2p_service_seeker.on_lookup_result %s with %s' % (event, arg))
-    p2p_seeker_instance.automat('shutdown')
+        lg.out(_DebugLevel, 'p2p_service_seeker.on_lookup_result %r with %r' % (event, arg, ))
     if event == 'node-connected':
         result_defer.callback(arg)
     else:
         result_defer.callback(None)
 
-def connect_random_node(service_name, service_params=None, exclude_nodes=[]):
+def connect_random_node(lookup_method, service_name, service_params=None, exclude_nodes=[]):
     """
     """
     result = Deferred()
     p2p_seeker = P2PServiceSeeker('p2p_service_seeker', 'AT_STARTUP', _DebugLevel, _Debug)
-    p2p_seeker.automat('init', (exclude_nodes, ))
     p2p_seeker.automat(
-        'start', (
-            service_name, service_params, lambda evt, arg: on_lookup_result(evt, arg, result, p2p_seeker)
-        )
+        'start',
+        lookup_method=lookup_method,
+        target_service=service_name,
+        request_service_params=service_params,
+        result_callback=lambda evt, arg: on_lookup_result(evt, arg, result),
+        exclude_nodes=exclude_nodes,
     )
     return result
