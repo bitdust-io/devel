@@ -174,6 +174,7 @@ def GetLatest(idurl):
     Returns latest copy from cache or fire `immediatelyCaching`,
     result is a `Deferred` object.
     """
+    idurl = id_url.to_original(idurl)
     known = FromCache(idurl)
     result = Deferred()
     if known:

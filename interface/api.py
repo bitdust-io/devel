@@ -1961,7 +1961,7 @@ def share_open(key_id):
     if not driver.is_on('service_shared_data'):
         return ERROR('service_shared_data() is not started')
     if not key_id.startswith('share_'):
-        return ERROR('invlid share name')
+        return ERROR('invalid share name')
     from access import shared_access_coordinator
     active_share = shared_access_coordinator.get_active_share(key_id)
     new_share = False
@@ -1994,11 +1994,11 @@ def share_close(key_id):
     if not driver.is_on('service_shared_data'):
         return ERROR('service_shared_data() is not started')
     if not key_id.startswith('share_'):
-        return ERROR('invlid share name')
+        return ERROR('invalid share name')
     from access import shared_access_coordinator
     this_share = shared_access_coordinator.get_active_share(key_id)
     if not this_share:
-        return ERROR('this share is not opened')
+        return ERROR('share "%s" is not opened' % key_id)
     this_share.automat('shutdown')
     return OK('share "%s" closed' % key_id, extra_fields=this_share.to_json())
 
@@ -2010,6 +2010,97 @@ def share_history():
         return ERROR('service_shared_data() is not started')
     # TODO: key share history to be implemented
     return RESULT([],)
+
+#------------------------------------------------------------------------------
+
+def group_list():
+    """
+    """
+    if not driver.is_on('service_private_groups'):
+        return ERROR('service_private_groups() is not started')
+    return RESULT([],)
+
+
+def group_create(owner_id=None, key_size=2048, label=''):
+    """
+    """
+    if not driver.is_on('service_private_groups'):
+        return ERROR('service_private_groups() is not started')
+    from crypt import key
+    from crypt import my_keys
+    from lib import utime
+    from userid import my_id
+    if not owner_id:
+        owner_id = my_id.getGlobalID()
+    group_key_id = None
+    while True:
+        random_sample = os.urandom(24)
+        group_key_alias = 'group_%s' % strng.to_text(key.HashMD5(random_sample, hexdigest=True))
+        group_key_id = my_keys.make_key_id(alias=group_key_alias, creator_glob_id=owner_id)
+        if my_keys.is_key_registered(group_key_id):
+            continue
+        break
+    if not label:
+        label = 'group%s' % utime.make_timestamp()
+    key_object = my_keys.generate_key(group_key_id, label=label, key_size=key_size)
+    if key_object is None:
+        return ERROR('failed to generate private key "%s"' % group_key_id)
+    key_info = my_keys.make_key_info(
+        key_object,
+        key_id=group_key_id,
+        include_private=False,
+    )
+    key_info.pop('include_private', None)
+    return OK(key_info, message='new group "%s" was created successfully' % group_key_id)
+
+
+def group_open(group_key_id):
+    """
+    """
+    group_key_id = strng.to_text(group_key_id)
+    if not driver.is_on('service_private_groups'):
+        return ERROR('service_private_groups() is not started')
+    if not group_key_id.startswith('group_'):
+        return ERROR('invalid group name')
+    from access import group_queue_memeber
+    active_group = group_queue_memeber.get_active_group_memeber(group_key_id)
+    new_group = False
+    if not active_group:
+        new_group = True
+        active_group = group_queue_memeber.GroupQueueMember(group_key_id, log_events=True, publish_events=False, )
+    ret = Deferred()
+
+    def _on_group_queue_memeber_state_changed(oldstate, newstate, event_string, *args, **kwargs):
+        active_group.removeStateChangedCallback(_on_group_queue_memeber_state_changed)
+        if newstate == 'CONNECTED':
+            if new_group:
+                ret.callback(OK('group "%s" connected' % group_key_id, extra_fields=active_group.to_json(), api_method='group_open'))
+            else:
+                ret.callback(OK('group "%s" refreshed' % group_key_id, extra_fields=active_group.to_json(), api_method='group_open'))
+        else:
+            ret.callback(ERROR('group "%s" was not connected' % group_key_id, extra_fields=active_group.to_json(), api_method='group_open'))
+        return None
+
+    active_group.addStateChangedCallback(_on_group_queue_memeber_state_changed, oldstate=None, newstate='IN_SYNC!')
+    active_group.addStateChangedCallback(_on_group_queue_memeber_state_changed, oldstate=None, newstate='DISCONNECTED')
+    active_group.automat('restart')
+    return ret
+
+
+def group_close(group_key_id):
+    """
+    """
+    group_key_id = strng.to_text(group_key_id)
+    if not driver.is_on('service_private_groups'):
+        return ERROR('service_private_groups() is not started')
+    if not group_key_id.startswith('group_'):
+        return ERROR('invalid group name')
+    from access import group_queue_memeber
+    this_group = group_queue_memeber.get_active_group_memeber(group_key_id)
+    if not this_group:
+        return ERROR('group "%s" is not opened' % group_key_id)
+    this_group.automat('shutdown')
+    return OK('group "%s" closed' % group_key_id)
 
 #------------------------------------------------------------------------------
 
@@ -2048,6 +2139,8 @@ def friend_add(idurl_or_global_id, alias=''):
     """
     Add user to the list of friends
     """
+    if not driver.is_on('service_identity_propagate'):
+        return ERROR('service_identity_propagate() is not started')
     from contacts import contactsdb
     from contacts import identitycache
     from main import events
@@ -2092,6 +2185,8 @@ def friend_remove(idurl_or_global_id):
     """
     Remove user from the list of friends
     """
+    if not driver.is_on('service_identity_propagate'):
+        return ERROR('service_identity_propagate() is not started')
     from contacts import contactsdb
     from contacts import identitycache
     from main import events
