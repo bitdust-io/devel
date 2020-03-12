@@ -53,13 +53,13 @@ class MessageBrokerService(LocalService):
         ]
 
     def start(self):
-        from chat import message_broker
-        message_broker.init()
+        from p2p import message_peddler
+        message_peddler.A('start')
         return True
 
     def stop(self):
-        from chat import message_broker
-        message_broker.shutdown()
+        from p2p import message_peddler
+        message_peddler.A('stop')
         return True
 
     def health_check(self):
