@@ -200,10 +200,13 @@ class P2PServiceSeeker(automat.Automat):
         """
         Action method.
         """
+        service_request_payload = self.request_service_params
+        if callable(service_request_payload):
+            service_request_payload = service_request_payload(self.target_idurl)
         out_packet = p2p_service.SendRequestService(
             remote_idurl=self.target_idurl,
             service_name=self.target_service,
-            json_payload=self.request_service_params,
+            json_payload=service_request_payload,
             callbacks={
                 commands.Ack(): self._node_acked,
                 commands.Fail(): self._node_failed,

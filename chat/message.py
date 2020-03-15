@@ -147,6 +147,17 @@ def AddIncomingMessageCallback(cb):
         lg.warn('callback method already exist')
 
 
+def InsertIncomingMessageCallback(cb):
+    """
+    Calling with: (packet_in_object, private_message_object, decrypted_message_body)
+    """
+    global _IncomingMessageCallbacks
+    if cb not in _IncomingMessageCallbacks:
+        _IncomingMessageCallbacks.insert(0, cb)
+    else:
+        lg.warn('callback method already exist')
+
+
 def RemoveIncomingMessageCallback(cb):
     """
     """
@@ -323,16 +334,20 @@ def on_incoming_message(request, info, status, error_message):
             if _Debug:
                 lg.out(_DebugLevel, "message.Message SKIP, message %s found in history" % known_id)
             return False
+    # TODO: add proper cleanup of old messages
     received_messages_ids().add(request.PacketID)
     from p2p import p2p_service
     p2p_service.SendAck(request)
+    handled = False
     try:
         for cb in _IncomingMessageCallbacks:
-            cb(request, private_message_object, json_message)
+            handled = cb(request, private_message_object, json_message)
+            if handled:
+                break
     except:
         lg.exc()
     if _Debug:
-        lg.out(_DebugLevel, '        %s' % json_message)
+        lg.args(_DebugLevel, msg=json_message, handled=handled)
     return True
 
 
@@ -468,18 +483,35 @@ def send_message(json_data, recipient_global_id, packet_id=None, message_ack_tim
 
 #------------------------------------------------------------------------------
 
-def consume_messages(consumer_id):
+def consume_messages(consumer_id, callback_or_defer=None):
     """
     """
     if consumer_id not in consumers_callbacks():
         consumers_callbacks()[consumer_id] = []
-    d = Deferred()
-    consumers_callbacks()[consumer_id].append(d)
+    cb = callback_or_defer or Deferred()
+    consumers_callbacks()[consumer_id].append(cb)
     if _Debug:
         lg.out(_DebugLevel, 'message.consume_messages added callback for consumer "%s", %d total callbacks' % (
             consumer_id, len(consumers_callbacks()[consumer_id])))
-    reactor.callLater(0, pop_messages)  # @UndefinedVariable
-    return d
+    # reactor.callLater(0, pop_messages)  # @UndefinedVariable
+    pop_messages()
+    return cb
+
+
+def clear_consumer_callbacks(consumer_id):
+    if consumer_id not in consumers_callbacks():
+        return True
+    for cb in consumers_callbacks()[consumer_id]:
+        if callable(cb):
+            if _Debug:
+                lg.args(_DebugLevel, consumer_id=consumer_id, cb=cb)
+        else:
+            if _Debug:
+                lg.args(_DebugLevel, consumer_id=consumer_id, cb=cb, called=cb.called)
+            if not cb.called:
+                cb.callback([])
+    consumers_callbacks().pop(consumer_id)
+    return True
 
 
 def push_incoming_message(request, private_message_object, json_message):
@@ -488,8 +520,11 @@ def push_incoming_message(request, private_message_object, json_message):
     for consumer_id in consumers_callbacks().keys():
         if consumer_id not in message_queue():
             message_queue()[consumer_id] = []
+        msg_type = 'private_message'
+        if request.PacketID.startswith('queue_'):
+            msg_type = 'queue_message'
         message_queue()[consumer_id].append({
-            'type': 'private_message',
+            'type': msg_type,
             'dir': 'incoming',
             'to': private_message_object.recipient_id(),
             'from': private_message_object.sender_id(),
@@ -500,7 +535,9 @@ def push_incoming_message(request, private_message_object, json_message):
         if _Debug:
             lg.out(_DebugLevel, 'message.push_incoming_message "%s" for consumer "%s", %d pending messages' % (
                 request.PacketID, consumer_id, len(message_queue()[consumer_id])))
-    reactor.callLater(0, pop_messages)  # @UndefinedVariable
+    # reactor.callLater(0, pop_messages)  # @UndefinedVariable
+    pop_messages()
+    return False
 
 
 def push_outgoing_message(json_message, private_message_object, remote_identity, request, result):
@@ -509,8 +546,11 @@ def push_outgoing_message(json_message, private_message_object, remote_identity,
     for consumer_id in consumers_callbacks().keys():
         if consumer_id not in message_queue():
             message_queue()[consumer_id] = []
+        msg_type = 'private_message'
+        if request.PacketID.startswith('queue_'):
+            msg_type = 'queue_message'
         message_queue()[consumer_id].append({
-            'type': 'private_message',
+            'type': msg_type,
             'dir': 'outgoing',
             'to': private_message_object.recipient_id(),
             'from': private_message_object.sender_id(),
@@ -521,7 +561,9 @@ def push_outgoing_message(json_message, private_message_object, remote_identity,
         if _Debug:
             lg.out(_DebugLevel, 'message.push_outgoing_message "%s" for consumer "%s", %d pending messages' % (
                 request.PacketID, consumer_id, len(message_queue()[consumer_id])))
-    reactor.callLater(0, pop_messages)  # @UndefinedVariable
+    # reactor.callLater(0, pop_messages)  # @UndefinedVariable
+    pop_messages()
+    return False
 
 
 def pop_messages():
@@ -543,6 +585,19 @@ def pop_messages():
                 if _Debug:
                     lg.out(_DebugLevel, 'message.pop_message %d messages waiting consuming by "%s", no callback yet' % (
                         len(message_queue()[consumer_id]), consumer_id))
+                continue
+            if callable(consumer_callback):
+                try:
+                    ok = consumer_callback(pending_messages)
+                except:
+                    lg.exc()
+                    continue
+                if ok:
+                    message_queue()[consumer_id] = []
+                    if _Debug:
+                        lg.out(_DebugLevel, 'message.pop_message %d messages consumed directly by "%s"' % (len(pending_messages), consumer_id))
+                else:
+                    lg.err('failed to consumer')
                 continue
             if consumer_callback.called:
                 if _Debug:

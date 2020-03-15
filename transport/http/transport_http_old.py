@@ -2,7 +2,7 @@
 #http_node.py
 #
 #
-#    Copyright DataHaven.NET LTD. of Anguilla, 2006
+#    Copyright BitDust, 2006
 #    Use of this software constitutes acceptance of the Terms of Use
 #      http://datahaven.net/terms_of_use.html
 #    All rights reserved.
@@ -218,15 +218,15 @@ def receive():
 
         if dhnnet.proxy_is_on():
             f = TransportHTTPProxyClientFactory(url, method='POST', headers={
-                'User-Agent': 'DataHaven.NET transport_http', 'idurl': misc.getLocalID(), } )
+                'User-Agent': 'BitDust transport_http', 'idurl': misc.getLocalID(), } )
             conn = reactor.connectTCP(dhnnet.get_proxy_host(), int(dhnnet.get_proxy_port()), f)
         else:
             f = TransportHTTPClientFactory(url, method='POST', headers={
-                'User-Agent': 'DataHaven.NET transport_http', 'idurl': misc.getLocalID(), } )
+                'User-Agent': 'BitDust transport_http', 'idurl': misc.getLocalID(), } )
             conn = reactor.connectTCP(host, int(port), f)
 
 #        f = HTTPClientFactory(url, method='POST', headers={
-#            'User-Agent': 'DataHaven.NET transport_http',
+#            'User-Agent': 'BitDust transport_http',
 #            'idurl': misc.getLocalID(), } )
 #        conn = reactor.connectTCP(host, int(port), f)
 

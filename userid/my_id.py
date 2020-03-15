@@ -201,6 +201,13 @@ def getGlobalID(key_alias=None):
         glob_id = '{}${}'.format(key_alias, glob_id)
     return glob_id
 
+
+def getIDURL():
+    """
+    Return my IDURL.
+    """
+    return getLocalID()
+
 #------------------------------------------------------------------------------
 
 

@@ -61,6 +61,7 @@ from logs import lg
 from automats import automat
 
 from lib import strng
+from lib import utime
 
 from main import events
 
@@ -73,6 +74,7 @@ from p2p import lookup
 
 from userid import global_id
 from userid import id_url
+from userid import my_id
 
 #------------------------------------------------------------------------------
 
@@ -142,15 +144,22 @@ class GroupQueueMember(automat.Automat):
     This class implements all the functionality of ``group_queue_member()`` state machine.
     """
 
-    def __init__(self, group_key_id, debug_level=0, log_events=False, log_transitions=False, publish_events=False, **kwargs):
+    def __init__(self, group_key_id, member_idurl=None, debug_level=0, log_events=False, log_transitions=False, publish_events=False, **kwargs):
         """
         Builds `group_queue_member()` state machine.
         """
+        self.broker_idurl = None
+        self.broker_id = None
+        self.queue_id = None
+        self.member_idurl = member_idurl or my_id.getIDURL()
+        self.member_id = self.member_idurl.to_id()
         self.group_key_id = group_key_id
         self.group_glob_id = global_id.ParseGlobalID(self.group_key_id)
+        self.group_queue_alias = self.group_glob_id['key_alias']
+        self.group_owner_id = self.group_glob_id['customer']
         self.customer_idurl = self.group_glob_id['idurl']
         super(GroupQueueMember, self).__init__(
-            name="member_%s$%s" % (self.group_glob_id['key_alias'][:10], self.group_glob_id['customer']),
+            name="member_%s$%s" % (self.group_queue_alias[:10], self.group_owner_id),
             state="AT_STARTUP",
             debug_level=debug_level,
             log_events=log_events,
@@ -161,6 +170,7 @@ class GroupQueueMember(automat.Automat):
 
     def to_json(self):
         return {
+            'member_id': self.member_id,
             'group_key_id': self.group_key_id,
             'alias': self.group_glob_id['key_alias'],
             'label': my_keys.get_label(self.group_key_id),
@@ -207,6 +217,14 @@ class GroupQueueMember(automat.Automat):
             if event == 'init':
                 self.state = 'DISCONNECTED'
                 self.doInit(*args, **kwargs)
+        #---DISCONNECTED---
+        elif self.state == 'DISCONNECTED':
+            if event == 'shutdown':
+                self.state = 'CLOSED'
+                self.doDestroyMe(*args, **kwargs)
+            elif event == 'connect':
+                self.state = 'DHT_READ?'
+                self.doDHTReadBrokers(*args, **kwargs)
         #---DHT_READ?---
         elif self.state == 'DHT_READ?':
             if event == 'shutdown':
@@ -255,14 +273,6 @@ class GroupQueueMember(automat.Automat):
             elif event == 'queue-pull' or ( event == 'message-in' and not self.isInSync(*args, **kwargs) ):
                 self.state = 'QUEUE?'
                 self.doReadQueue(*args, **kwargs)
-        #---DISCONNECTED---
-        elif self.state == 'DISCONNECTED':
-            if event == 'shutdown':
-                self.state = 'CLOSED'
-                self.doDestroyMe(*args, **kwargs)
-            elif event == 'connect':
-                self.state = 'DHT_READ?'
-                self.doDHTReadBrokers(*args, **kwargs)
         #---CLOSED---
         elif self.state == 'CLOSED':
             pass
@@ -286,7 +296,7 @@ class GroupQueueMember(automat.Automat):
         """
         d = dht_relations.read_customer_message_brokers(self.customer_idurl)
         # TODO: add more validations of dht_result
-        d.addCallback(self._on_read_customer_suppliers)
+        d.addCallback(self._on_read_customer_message_brokers)
         d.addErrback(lambda err: self.automat('fail', err))
 
     def doLookupBrokers(self, *args, **kwargs):
@@ -296,7 +306,7 @@ class GroupQueueMember(automat.Automat):
         p2p_service_seeker.connect_random_node(
             'service_message_broker',
             lookup_method=lookup.random_message_broker,
-            service_params={'action': 'connect', },
+            service_params=self._do_prepare_service_request_params,
             exclude_nodes=self.connected_message_brokers,
         ).addBoth(self._on_message_broker_lookup_finished)
 
@@ -309,6 +319,13 @@ class GroupQueueMember(automat.Automat):
         """
         Action method.
         """
+        self.broker_idurl = kwargs['broker_idurl']
+        self.broker_id = global_id.idurl2glob(self.broker_idurl)
+        self.queue_id = global_id.MakeGlobalQueueID(
+            queue_alias=self.group_queue_alias,
+            owner_id=self.group_owner_id,
+            supplier_id=self.broker_id,
+        )
 
     def doConnected(self, *args, **kwargs):
         """
@@ -330,3 +347,36 @@ class GroupQueueMember(automat.Automat):
         Remove all references to the state machine object to destroy it.
         """
         self.destroy()
+
+    def _do_prepare_service_request_params(self, possible_broker_idurl):
+        queue_id = global_id.MakeGlobalQueueID(
+            queue_alias=self.group_queue_alias,
+            owner_id=self.group_owner_id,
+            supplier_id=global_id.idurl2glob(possible_broker_idurl),
+        )
+        group_key_info = my_keys.get_key_info(self.group_key_id, include_private=False)
+        return {
+            'action': 'queue-connect',
+            'queue_id': queue_id,
+            'consumer_id': self.member_id,
+            'producer_id': self.member_id,
+            'group_key': group_key_info,
+        }
+
+    def _do_send_message_to_broker(self, json_payload):
+        from chat import message
+        result = message.send_message(
+            json_data={
+                'created': utime.get_sec1970(),
+                'payload': json_payload,
+                'queue_id': self.queue_id,
+                'producer_id': self.member_id,
+            },
+            recipient_global_id=self.broker_id,
+            # ping_timeout=ping_timeout,
+            # message_ack_timeout=message_ack_timeout,
+        )
+        # ret = Deferred()
+        # result.addCallback(lambda packet: ret.callback(OK(strng.to_text(packet), api_method='message_send')))
+        # result.addErrback(lambda err: ret.callback(ERROR(err, api_method='message_send')))
+        return result

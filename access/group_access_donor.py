@@ -1,6 +1,24 @@
 #!/usr/bin/env python
 # group_access_donor.py
 #
+# Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
+#
+# This file (group_access_donor.py) is part of BitDust Software.
+#
+# BitDust is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# BitDust Software is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Please contact us if you have any questions at bitdust.io@gmail.com
 
 
 """
@@ -18,39 +36,44 @@ EVENTS:
     * :red:`timer-15sec`
 """
 
+#------------------------------------------------------------------------------
+
+from __future__ import absolute_import
+
+#------------------------------------------------------------------------------
+
+_Debug = True
+_DebugLevel = 6
+
+#------------------------------------------------------------------------------
+
+from logs import lg
 
 from automats import automat
 
+from lib import strng
 
-_GroupAccessDonor = None
+from main import events
 
+from dht import dht_relations
 
-def A(event=None, *args, **kwargs):
-    """
-    Access method to interact with `group_access_donor()` machine.
-    """
-    global _GroupAccessDonor
-    if event is None:
-        return _GroupAccessDonor
-    if _GroupAccessDonor is None:
-        # TODO: set automat name and starting state here
-        _GroupAccessDonor = GroupAccessDonor(name='group_access_donor', state='AT_STARTUP')
-    if event is not None:
-        _GroupAccessDonor.automat(event, *args, **kwargs)
-    return _GroupAccessDonor
+from userid import global_id
+from userid import id_url
 
+from p2p import commands
+from p2p import p2p_service
 
-def Destroy():
-    """
-    Destroy `group_access_donor()` automat and remove its instance from memory.
-    """
-    global _GroupAccessDonor
-    if _GroupAccessDonor is None:
-        return
-    _GroupAccessDonor.destroy()
-    del _GroupAccessDonor
-    _GroupAccessDonor = None
+from contacts import identitycache
 
+from crypt import my_keys
+
+from access import key_ring
+
+from storage import backup_fs
+
+from customer import supplier_connector
+
+#------------------------------------------------------------------------------
 
 class GroupAccessDonor(automat.Automat):
     """
@@ -59,7 +82,7 @@ class GroupAccessDonor(automat.Automat):
 
     timers = {
         'timer-15sec': (15.0, ['PRIV_KEY', 'AUDIT']),
-        }
+    }
 
     def __init__(self, debug_level=0, log_events=False, log_transitions=False, publish_events=False, **kwargs):
         """
@@ -68,8 +91,8 @@ class GroupAccessDonor(automat.Automat):
         super(GroupAccessDonor, self).__init__(
             name="group_access_donor",
             state="AT_STARTUP",
-            debug_level=debug_level,
-            log_events=log_events,
+            debug_level=debug_level or _DebugLevel,
+            log_events=log_events or _Debug,
             log_transitions=log_transitions,
             publish_events=publish_events,
             **kwargs
@@ -80,6 +103,8 @@ class GroupAccessDonor(automat.Automat):
         Method to initialize additional variables and flags
         at creation phase of `group_access_donor()` machine.
         """
+        self.log_transitions = _Debug
+        self.group_key_id = None
 
     def state_changed(self, oldstate, newstate, event, *args, **kwargs):
         """
@@ -111,6 +136,15 @@ class GroupAccessDonor(automat.Automat):
                 self.state = 'FAILED'
                 self.doReportFailed(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
+        #---AUDIT---
+        elif self.state == 'AUDIT':
+            if event == 'fail' or event == 'timer-15sec':
+                self.state = 'FAILED'
+                self.doReportFailed(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
+            elif event == 'audit-ok':
+                self.state = 'PRIV_KEY'
+                self.doSendPrivKeyToUser(*args, **kwargs)
         #---PRIV_KEY---
         elif self.state == 'PRIV_KEY':
             if event == 'fail' or event == 'timer-15sec':
@@ -121,35 +155,25 @@ class GroupAccessDonor(automat.Automat):
                 self.state = 'SUCCESS'
                 self.doReportDone(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-        #---FAILED---
-        elif self.state == 'FAILED':
-            pass
-        #---AUDIT---
-        elif self.state == 'AUDIT':
-            if event == 'fail' or event == 'timer-15sec':
-                self.state = 'FAILED'
-                self.doReportFailed(*args, **kwargs)
-                self.doDestroyMe(*args, **kwargs)
-            elif event == 'audit-ok':
-                self.state = 'PRIV_KEY'
-                self.doSendPrivKeyToUser(*args, **kwargs)
         #---SUCCESS---
         elif self.state == 'SUCCESS':
             pass
+        #---FAILED---
+        elif self.state == 'FAILED':
+            pass
 
 
-    def doDestroyMe(self, *args, **kwargs):
-        """
-        Remove all references to the state machine object to destroy it.
-        """
-        self.destroy()
-
-    def doReportFailed(self, *args, **kwargs):
+    def doInit(self, *args, **kwargs):
         """
         Action method.
         """
 
-    def doInit(self, *args, **kwargs):
+    def doHandshake(self, *args, **kwargs):
+        """
+        Action method.
+        """
+
+    def doAuditUserMasterKey(self, *args, **kwargs):
         """
         Action method.
         """
@@ -164,13 +188,14 @@ class GroupAccessDonor(automat.Automat):
         Action method.
         """
 
-    def doHandshake(self, *args, **kwargs):
+    def doReportFailed(self, *args, **kwargs):
         """
         Action method.
         """
 
-    def doAuditUserMasterKey(self, *args, **kwargs):
+    def doDestroyMe(self, *args, **kwargs):
         """
-        Action method.
+        Remove all references to the state machine object to destroy it.
         """
+        self.destroy()
 

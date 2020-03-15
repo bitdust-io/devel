@@ -114,17 +114,21 @@ _LastMessageID = None
 _Producers = {}
 _Consumers = {}
 
+_EventPacketReceivedCallbacks = []
+
 #------------------------------------------------------------------------------
 
 def init():
     if _Debug:
         lg.out(_DebugLevel, 'p2p_queue.init')
+    add_event_handler(do_handle_event_packet)
     start()
 
 
 def shutdown():
     if _Debug:
         lg.out(_DebugLevel, 'p2p_queue.shutdown')
+    remove_event_handler(do_handle_event_packet)
     stop()
 
 #------------------------------------------------------------------------------
@@ -210,7 +214,7 @@ def touch_queues():
     global _ProcessQueuesLastTime
     if time.time() - _ProcessQueuesLastTime < MIN_PROCESS_QUEUES_DELAY:
         return False
-    process_queues()
+    reactor.callLater(0, process_queues)  # @UndefinedVariable
     return True
 
 #------------------------------------------------------------------------------
@@ -231,6 +235,36 @@ def valid_queue_id(queue_id):
         return False
     return True
 
+
+def is_queue_exist(queue_id):
+    return queue_id in queue()
+
+
+def open_queue(queue_id):
+    global _ActiveQueues
+    if not valid_queue_id(queue_id):
+        raise Exception('invalid queue id')
+    if queue_id in queue():
+        raise Exception('queue already exist')
+    queue_info = global_id.ParseGlobalQueueID(queue_id)
+    customer_key_id = global_id.MakeGlobalID(customer=queue_info['owner_id'], key_alias='customer')
+    if not my_keys.is_key_registered(customer_key_id):
+        raise Exception('customer key for given queue not found')
+    _ActiveQueues[queue_id] = OrderedDict()
+    lg.info('new queue opened %s based on key %s' % (queue_id, customer_key_id))
+    return True
+
+
+def close_queue(queue_id):
+    global _ActiveQueues
+    if queue_id not in queue():
+        raise Exception('queue not exist')
+    for consumer_id in consumer().keys():
+        if is_consumer_subscribed(consumer_id, queue_id):
+            unsubscribe_consumer(consumer_id, queue_id)
+    _ActiveQueues.pop(queue_id)
+    return True
+
 #------------------------------------------------------------------------------
 
 def is_consumer_exists(consumer_id):
@@ -242,7 +276,6 @@ def add_consumer(consumer_id):
     if consumer_id in consumer():
         raise Exception('consumer already exist')
     _Consumers[consumer_id] = ConsumerInfo(consumer_id)
-    new_consumer = consumer(consumer_id)
     lg.info('new consumer added: %s' % consumer_id)
     return True
 
@@ -251,11 +284,21 @@ def remove_consumer(consumer_id):
     global _Consumers
     if consumer_id not in consumer():
         raise Exception('consumer not exist')
-    _Consumers.pop(consumer_id)
+    old_consumer = _Consumers.pop(consumer_id)
+    old_consumer.commands = []
+    old_consumer.queues = []
     lg.info('existing consumer removed: %s' % str(consumer_id))
     return True
 
 #------------------------------------------------------------------------------
+
+def is_callback_method_registered(consumer_id, callback_method):
+    if consumer_id not in consumer():
+        return False
+    if callback_method not in consumer(consumer_id).commands:
+        return False
+    return True
+
 
 def add_callback_method(consumer_id, callback_method):
     if consumer_id not in consumer():
@@ -272,6 +315,45 @@ def remove_callback_method(consumer_id, callback_method):
     if callback_method not in consumer(consumer_id).commands:
         raise Exception('callback method not found')
     consumer(consumer_id).commands.remove(callback_method)
+    return True
+
+#------------------------------------------------------------------------------
+
+def is_consumer_subscribed(consumer_id, queue_id):
+    if not valid_queue_id(queue_id):
+        return False
+    if consumer_id not in consumer():
+        return False
+    if queue_id not in consumer(consumer_id).queues:
+        return False
+    return True
+
+
+def subscribe_consumer(consumer_id, queue_id):
+    if not valid_queue_id(queue_id):
+        raise Exception('invalid queue id')
+    if consumer_id not in consumer():
+        raise Exception('consumer not found')
+    if queue_id in consumer(consumer_id).queues:
+        raise Exception('consumer is already subscribed')
+    consumer(consumer_id).queues.append(queue_id)
+    lg.info('consumer %s subscribed to read queue %s' % (consumer_id, queue_id, ))
+    return True
+
+
+def unsubscribe_consumer(consumer_id, queue_id=None):
+    if not valid_queue_id(queue_id):
+        raise Exception('invalid queue id')
+    if consumer_id not in consumer():
+        raise Exception('consumer not found')
+    if queue_id is None:
+        consumer(consumer_id).queues = []
+        lg.info('consumer %s unsubscribed from all queues' % (consumer_id, ))
+        return True
+    if queue_id not in consumer(consumer_id).queues:
+        raise Exception('consumer is not subscribed')
+    consumer(consumer_id).queues.remove(queue_id)
+    lg.info('consumer %s unsubscribed from queue %s' % (consumer_id, queue_id, ))
     return True
 
 #------------------------------------------------------------------------------
@@ -293,7 +375,10 @@ def remove_producer(producer_id):
     global _Producers
     if not is_producer_exist(producer_id):
         raise Exception('producer not exist')
-    _Producers.pop(producer_id)
+    old_producer = _Producers.pop(producer_id)
+    old_producer.queues = []
+    for event_id in list(old_producer.publishers.keys()):
+        old_producer.stop_publisher(event_id)
     lg.info('existing producer removed: %s' % str(producer_id))
     return True
 
@@ -354,70 +439,6 @@ def stop_event_publisher(producer_id, event_id):
 
 #------------------------------------------------------------------------------
 
-def is_queue_exist(queue_id):
-    return queue_id in queue()
-
-
-def open_queue(queue_id):
-    global _ActiveQueues
-    if not valid_queue_id(queue_id):
-        raise Exception('invalid queue id')
-    if queue_id in queue():
-        raise Exception('queue already exist')
-    queue_info = global_id.ParseGlobalQueueID(queue_id)
-    customer_key_id = global_id.MakeGlobalID(customer=queue_info['owner_id'], key_alias='customer')
-    if not my_keys.is_key_registered(customer_key_id):
-        raise Exception('customer key for given queue not found')
-    _ActiveQueues[queue_id] = OrderedDict()
-    lg.info('new queue opened %s based on key %s' % (queue_id, customer_key_id))
-    return True
-
-
-def close_queue(queue_id):
-    global _ActiveQueues
-    if queue_id not in queue():
-        raise Exception('queue not exist')
-#     if not my_keys.is_key_registered(queue_id):
-#         lg.warn('closing queue, but public key for given queue not registered')
-    for consumer_id in consumer().keys():
-        unsubscribe_consumer(consumer_id, queue_id)
-    _ActiveQueues.pop(queue_id)
-    return True
-
-#------------------------------------------------------------------------------
-
-def subscribe_consumer(consumer_id, queue_id):
-    if not valid_queue_id(queue_id):
-        raise Exception('invalid queue id')
-    if consumer_id not in consumer():
-        raise Exception('consumer not found')
-    if queue_id in consumer(consumer_id).queues:
-        raise Exception('already subscribed')
-    if queue_id not in consumer(consumer_id).queues:
-        consumer(consumer_id).queues.append(queue_id)
-        lg.info('consumer %s subscribed to read queue %s' % (consumer_id, queue_id, ))
-    else:
-        lg.warn('consumer %s already subscribed to read queue %s' % (consumer_id, queue_id, ))
-    return True
-
-
-def unsubscribe_consumer(consumer_id, queue_id=None):
-    if not valid_queue_id(queue_id):
-        raise Exception('invalid queue id')
-    if consumer_id not in consumer():
-        raise Exception('consumer not found')
-    if queue_id is None:
-        consumer(consumer_id).queues = []
-        lg.info('consumer %s unsubscribed from all queues' % (consumer_id, ))
-        return True
-    if queue_id not in consumer(consumer_id).queues:
-        raise Exception('consumer is not subscribed for that queue')
-    consumer(consumer_id).queues.remove(queue_id)
-    lg.info('consumer %s unsubscribed from queue %s' % (consumer_id, queue_id, ))
-    return True
-
-#------------------------------------------------------------------------------
-
 def start_notification(consumer_id, queue_id, message_id, defer_result):
     if not valid_queue_id(queue_id):
         raise Exception('invalid queue id')
@@ -464,6 +485,31 @@ def finish_notification(consumer_id, queue_id, message_id, success):
 
 #------------------------------------------------------------------------------
 
+def on_notification_succeed(result, consumer_id, queue_id, message_id):
+    if _Debug:
+        lg.out(_DebugLevel, 'p2p_queue.on_notification_succeed : message %s delivered to consumer %s from queue %s' % (
+            message_id, consumer_id, queue_id))
+    try:
+        finish_notification(consumer_id, queue_id, message_id, success=True)
+    except:
+        lg.exc()
+    reactor.callLater(0, do_cleanup)  # @UndefinedVariable
+    return result
+
+
+def on_notification_failed(err, consumer_id, queue_id, message_id):
+    if _Debug:
+        lg.out(_DebugLevel, 'p2p_queue.on_notification_failed : FAILED message %s delivery to consumer %s from queue %s : %s' % (
+            message_id, consumer_id, queue_id, err))
+    try:
+        finish_notification(consumer_id, queue_id, message_id, success=False)
+    except:
+        lg.exc()
+    reactor.callLater(0, do_cleanup)  # @UndefinedVariable
+    return err
+
+#------------------------------------------------------------------------------
+
 def push_message(producer_id, queue_id, data, creation_time=None):
     if not is_producer_exist(producer_id):
         raise Exception('unknown producer')
@@ -476,8 +522,9 @@ def push_message(producer_id, queue_id, data, creation_time=None):
     queue(queue_id)[new_message.message_id].state = 'PUSHED'
     if _Debug:
         lg.out(_DebugLevel, 'p2p_queue.push_message  %s added to queue %s' % (new_message.message_id, queue_id, ))
-    reactor.callLater(0, touch_queues)  # @UndefinedVariable
-    return True
+    # reactor.callLater(0, touch_queues)  # @UndefinedVariable
+    touch_queues()
+    return new_message
 
 
 def pop_message(queue_id, message_id=None):
@@ -530,7 +577,7 @@ def push_signed_message(producer_id, queue_id, data, creation_time=None):
         signed_data = signed.Packet(
             Command=commands.Event(),
             OwnerID=producer_id,
-            CreatorID=producer_id,
+            CreatorID=my_id.getLocalID(),
             PacketID=packetid.UniqueID(),
             Payload=serialization.DictToBytes(data, keys_to_text=True),
             RemoteID=queue_id,
@@ -562,46 +609,49 @@ def pop_signed_message(queue_id, message_id):
 
 #------------------------------------------------------------------------------
 
-def on_notification_succeed(result, consumer_id, queue_id, message_id):
-    if _Debug:
-        lg.out(_DebugLevel, 'p2p_queue.on_notification_succeed : message %s delivered to consumer %s from queue %s' % (
-            message_id, consumer_id, queue_id))
-    try:
-        finish_notification(consumer_id, queue_id, message_id, success=True)
-    except:
-        lg.exc()
-    reactor.callLater(0, do_cleanup)  # @UndefinedVariable
-    return result
+def add_event_handler(cb):
+    global _EventPacketReceivedCallbacks
+    _EventPacketReceivedCallbacks.append(cb)
 
 
-def on_notification_failed(err, consumer_id, queue_id, message_id):
-    if _Debug:
-        lg.out(_DebugLevel, 'p2p_queue.on_notification_failed : FAILED message %s delivery to consumer %s from queue %s : %s' % (
-            message_id, consumer_id, queue_id, err))
-    try:
-        finish_notification(consumer_id, queue_id, message_id, success=False)
-    except:
-        lg.exc()
-    reactor.callLater(0, do_cleanup)  # @UndefinedVariable
-    return err
+def insert_event_handler(cb):
+    global _EventPacketReceivedCallbacks
+    _EventPacketReceivedCallbacks.insert(0, cb)
+
+
+def remove_event_handler(cb):
+    global _EventPacketReceivedCallbacks
+    _EventPacketReceivedCallbacks.remove(cb)
 
 #------------------------------------------------------------------------------
 
 def on_event_packet_received(newpacket, info, status, error_message):
+    global _EventPacketReceivedCallbacks
     try:
         e_json = serialization.BytesToDict(newpacket.Payload, keys_to_text=True)
-        event_id = strng.to_text(e_json['event_id'])
-        payload = e_json['payload']
-        queue_id = strng.to_text(e_json.get('queue_id'))
-        producer_id = e_json.get('producer_id')
-        message_id = strng.to_text(e_json.get('message_id'))
-        created = strng.to_text(e_json.get('created'))
+        strng.to_text(e_json['event_id'])
+        e_json['payload']
     except:
         lg.warn("invlid json payload")
         return False
+    handled = False
+    for cb in _EventPacketReceivedCallbacks:
+        handled = cb(newpacket, e_json)
+        if handled:
+            break
+    return handled
+
+
+def do_handle_event_packet(newpacket, e_json):
+    event_id = strng.to_text(e_json['event_id'])
+    payload = e_json['payload']
+    queue_id = strng.to_text(e_json.get('queue_id'))
+    producer_id = e_json.get('producer_id')
+    message_id = strng.to_text(e_json.get('message_id'))
+    created = strng.to_text(e_json.get('created'))
     if queue_id and producer_id and message_id:
         # this message have an ID and producer so it came from a queue and needs to be consumed
-        # also add more info comming from the queue
+        # also needs to be add more info coming from the queue to the event body
         if _Debug:
             lg.info('received new event %s from the queue at %s' % (event_id, queue_id, ))
         payload.update(dict(
@@ -665,7 +715,7 @@ def do_notify(callback_method, consumer_id, queue_id, message_id):
 
     ret = Deferred()
 
-    if strng.is_string(callback_method):
+    if id_url.is_idurl(callback_method):
         p2p_service.SendEvent(
             remote_idurl=id_url.field(callback_method),
             event_id=event_id,
@@ -698,10 +748,15 @@ def do_notify(callback_method, consumer_id, queue_id, message_id):
 def do_consume(interested_consumers=None):
     if not interested_consumers:
         interested_consumers = list(consumer().keys())
+    disconnected_consumers = []
     to_be_consumed = []
     for consumer_id in interested_consumers:
+        if len(consumer(consumer_id).queues) == 0:
+            # skip, consumer is not subscribed to any queues
+            continue
         if len(consumer(consumer_id).commands) == 0:
             # skip, no available notification methods found for given consumer
+            disconnected_consumers.append(consumer_id)
             continue
         interested_queues = set()
         for queue_id in consumer(consumer_id).queues:

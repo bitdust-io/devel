@@ -371,6 +371,22 @@ def fields_dict(idurl_dict):
     return {field(k): v for k, v in idurl_dict.items()}
 
 
+def is_idurl(value):
+    """
+    Return True if input is `ID_URL_FIELD` field or string in valid format.
+    """
+    if value in [None, 'None', '', b'None', b'', False, ]:
+        return False
+    if isinstance(value, ID_URL_FIELD):
+        return True
+    if not strng.is_string(value):
+        return False
+    v = strng.to_text(value)
+    if not v.startswith('http') or not v.endswith('.xml') or v.count('://') != 1:
+        return False
+    return True
+
+
 def to_bin(idurl):
     """
     Translates `ID_URL_FIELD` to binary string.

@@ -109,6 +109,7 @@ from logs import lg
 
 from lib import strng
 from lib import serialization
+from lib import utime
 
 from main import settings
 
@@ -116,6 +117,7 @@ from main import settings
 from userid import my_id
 from userid import global_id
 
+from crypt import key
 from crypt import my_keys
 
 #------------------------------------------------------------------------------
@@ -135,11 +137,19 @@ def shutdown():
 
 #------------------------------------------------------------------------------
 
-def prepare_customer_group(group_alias, customer_id=None, label=None, queue_position=0, key_size=4096):
-    if customer_id is None:
-        customer_id = my_id.getGlobalID()
-    group_key_id = global_id.MakeCustomerQueueID(queue_alias=group_alias, customer_id=customer_id, position=queue_position)
-    if not my_keys.is_key_private(group_key_id):
-        my_keys.generate_key(group_key_id, label=label or group_alias, key_size=key_size)
+def create_group_key(creator_id=None, label=None, key_size=4096):
+    group_key_id = None
+    group_alias = None
+    while True:
+        random_sample = os.urandom(24)
+        group_alias = 'group_%s' % strng.to_text(key.HashMD5(random_sample, hexdigest=True))
+        group_key_id = my_keys.make_key_id(alias=group_alias, creator_glob_id=creator_id)
+        if my_keys.is_key_registered(group_key_id):
+            continue
+        break
+    if not label:
+        label = 'group%s' % utime.make_timestamp()
+    my_keys.generate_key(key_id=group_key_id, label=label, key_size=key_size)
+    if _Debug:
+        lg.args(_DebugLevel, group_key_id=group_key_id, group_alias=group_alias, creator_id=creator_id, label=label)
     return group_key_id
-

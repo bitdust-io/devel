@@ -1925,7 +1925,7 @@ def share_grant(trusted_remote_user, key_id, timeout=30):
     key_id = strng.to_text(key_id)
     trusted_remote_user = strng.to_text(trusted_remote_user)
     if not key_id.startswith('share_'):
-        return ERROR('invalid share name')
+        return ERROR('invalid share id')
     from userid import global_id
     from userid import id_url
     remote_idurl = id_url.field(trusted_remote_user)
@@ -1961,7 +1961,7 @@ def share_open(key_id):
     if not driver.is_on('service_shared_data'):
         return ERROR('service_shared_data() is not started')
     if not key_id.startswith('share_'):
-        return ERROR('invalid share name')
+        return ERROR('invalid share id')
     from access import shared_access_coordinator
     active_share = shared_access_coordinator.get_active_share(key_id)
     new_share = False
@@ -1994,7 +1994,7 @@ def share_close(key_id):
     if not driver.is_on('service_shared_data'):
         return ERROR('service_shared_data() is not started')
     if not key_id.startswith('share_'):
-        return ERROR('invalid share name')
+        return ERROR('invalid share id')
     from access import shared_access_coordinator
     this_share = shared_access_coordinator.get_active_share(key_id)
     if not this_share:
@@ -2021,45 +2021,83 @@ def group_list():
     return RESULT([],)
 
 
-def group_create(owner_id=None, key_size=2048, label=''):
+def group_create(creator_id=None, key_size=2048, label=''):
     """
     """
     if not driver.is_on('service_private_groups'):
         return ERROR('service_private_groups() is not started')
-    from crypt import key
     from crypt import my_keys
-    from lib import utime
+    from access import groups
     from userid import my_id
-    if not owner_id:
-        owner_id = my_id.getGlobalID()
-    group_key_id = None
-    while True:
-        random_sample = os.urandom(24)
-        group_key_alias = 'group_%s' % strng.to_text(key.HashMD5(random_sample, hexdigest=True))
-        group_key_id = my_keys.make_key_id(alias=group_key_alias, creator_glob_id=owner_id)
-        if my_keys.is_key_registered(group_key_id):
-            continue
-        break
-    if not label:
-        label = 'group%s' % utime.make_timestamp()
-    key_object = my_keys.generate_key(group_key_id, label=label, key_size=key_size)
-    if key_object is None:
-        return ERROR('failed to generate private key "%s"' % group_key_id)
-    key_info = my_keys.make_key_info(
-        key_object,
-        key_id=group_key_id,
-        include_private=False,
-    )
+    if not creator_id:
+        creator_id = my_id.getGlobalID()
+    group_key_id = groups.create_group_key(creator_id=creator_id, label=label, key_size=key_size)
+    key_info = my_keys.get_key_info(group_key_id, include_private=False)
     key_info.pop('include_private', None)
     return OK(key_info, message='new group "%s" was created successfully' % group_key_id)
+
+
+def group_leave(group_key_id):
+    """
+    """
+    if not driver.is_on('service_private_groups'):
+        return ERROR('service_private_groups() is not started')
+    group_key_id = strng.to_text(group_key_id)
+    if not group_key_id.startswith('group_'):
+        return ERROR('invalid group id')
+    from access import group_queue_memeber
+    from crypt import my_keys
+    this_group = group_queue_memeber.get_active_group_memeber(group_key_id)
+    if this_group:
+        this_group.automat('shutdown')
+    my_keys.erase_key(group_key_id)
+    return OK(message='group key "%s" was deleted successfully' % group_key_id)
+
+
+def group_grant(trusted_remote_user, group_key_id, timeout=30):
+    """
+    """
+    if not driver.is_on('service_private_groups'):
+        return ERROR('service_private_groups() is not started')
+    group_key_id = strng.to_text(group_key_id)
+    if not group_key_id.startswith('group_'):
+        return ERROR('invalid group id')
+    from twisted.internet import reactor  # @UnresolvedImport
+    trusted_remote_user = strng.to_text(trusted_remote_user)
+    from userid import global_id
+    from userid import id_url
+    remote_idurl = id_url.field(trusted_remote_user)
+    if trusted_remote_user.count('@'):
+        glob_id = global_id.ParseGlobalID(trusted_remote_user)
+        remote_idurl = glob_id['idurl']
+    if not remote_idurl:
+        return ERROR('wrong user id')
+    from access import group_access_donor
+    ret = Deferred()
+
+    def _on_group_access_donor_success(result):
+        ret.callback(OK(api_method='share_grant') if result else ERROR('share grant failed', api_method='share_grant'))
+        return None
+
+    def _on_group_access_donor_failed(err):
+        ret.callback(ERROR(err))
+        return None
+
+    d = Deferred()
+    d.addCallback(_on_group_access_donor_success)
+    d.addErrback(_on_group_access_donor_failed)
+    d.addTimeout(timeout, clock=reactor)
+    group_access_donor_machine = group_access_donor.GroupAccessDonor(log_events=True, publish_events=False, )
+    group_access_donor_machine.automat('init', trusted_idurl=remote_idurl, group_key_id=group_key_id, result_defer=d)
+    return ret
 
 
 def group_open(group_key_id):
     """
     """
-    group_key_id = strng.to_text(group_key_id)
     if not driver.is_on('service_private_groups'):
         return ERROR('service_private_groups() is not started')
+    group_key_id = strng.to_text(group_key_id)
     if not group_key_id.startswith('group_'):
         return ERROR('invalid group name')
     from access import group_queue_memeber
@@ -2090,9 +2128,9 @@ def group_open(group_key_id):
 def group_close(group_key_id):
     """
     """
-    group_key_id = strng.to_text(group_key_id)
     if not driver.is_on('service_private_groups'):
         return ERROR('service_private_groups() is not started')
+    group_key_id = strng.to_text(group_key_id)
     if not group_key_id.startswith('group_'):
         return ERROR('invalid group name')
     from access import group_queue_memeber
@@ -2101,6 +2139,7 @@ def group_close(group_key_id):
         return ERROR('group "%s" is not opened' % group_key_id)
     this_group.automat('shutdown')
     return OK('group "%s" closed' % group_key_id)
+
 
 #------------------------------------------------------------------------------
 
