@@ -150,29 +150,6 @@ class SharedAccessDonor(automat.Automat):
                 self.doInit(*args, **kwargs)
                 self.doInsertInboxCallback(*args, **kwargs)
                 self.doCacheRemoteIdentity(*args, **kwargs)
-        #---PRIV_KEY---
-        elif self.state == 'PRIV_KEY':
-            if event == 'priv-key-ok':
-                self.state = 'LIST_FILES'
-                self.doSendMyListFiles(*args, **kwargs)
-            elif event == 'fail' or event == 'timer-15sec':
-                self.state = 'CLOSED'
-                self.doReportFailed(*args, **kwargs)
-                self.doDestroyMe(*args, **kwargs)
-        #---PUB_KEY---
-        elif self.state == 'PUB_KEY':
-            if event == 'ack':
-                self.doCheckAllAcked(*args, **kwargs)
-            elif event == 'fail' or ( event == 'timer-15sec' and not self.isSomeSuppliersAcked(*args, **kwargs) ):
-                self.state = 'CLOSED'
-                self.doReportFailed(*args, **kwargs)
-                self.doDestroyMe(*args, **kwargs)
-            elif event == 'all-suppliers-acked' or ( event == 'timer-2sec' and self.isSomeSuppliersAcked(*args, **kwargs) ):
-                self.state = 'PRIV_KEY'
-                self.doSendPrivKeyToUser(*args, **kwargs)
-        #---CLOSED---
-        elif self.state == 'CLOSED':
-            pass
         #---PING---
         elif self.state == 'PING':
             if event == 'ack':
@@ -219,6 +196,29 @@ class SharedAccessDonor(automat.Automat):
                 self.state = 'CLOSED'
                 self.doReportFailed(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
+        #---PUB_KEY---
+        elif self.state == 'PUB_KEY':
+            if event == 'ack':
+                self.doCheckAllAcked(*args, **kwargs)
+            elif event == 'fail' or ( event == 'timer-15sec' and not self.isSomeSuppliersAcked(*args, **kwargs) ):
+                self.state = 'CLOSED'
+                self.doReportFailed(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
+            elif event == 'all-suppliers-acked' or ( event == 'timer-2sec' and self.isSomeSuppliersAcked(*args, **kwargs) ):
+                self.state = 'PRIV_KEY'
+                self.doSendPrivKeyToUser(*args, **kwargs)
+        #---PRIV_KEY---
+        elif self.state == 'PRIV_KEY':
+            if event == 'priv-key-ok':
+                self.state = 'LIST_FILES'
+                self.doSendMyListFiles(*args, **kwargs)
+            elif event == 'fail' or event == 'timer-15sec':
+                self.state = 'CLOSED'
+                self.doReportFailed(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
+        #---CLOSED---
+        elif self.state == 'CLOSED':
+            pass
         return None
 
     def isSomeSuppliersAcked(self, *args, **kwargs):
@@ -287,6 +287,7 @@ class SharedAccessDonor(automat.Automat):
             self.automat('audit-ok') if audit_result else self.automat('fail', Exception(
                 'remote user master key audit process failed')),
         ))
+        d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='shared_access_donor.doAuditUserMasterKey')
         d.addErrback(lambda err: self.automat('fail', err))
 
     def doSendPubKeyToSuppliers(self, *args, **kwargs):
@@ -357,7 +358,7 @@ class SharedAccessDonor(automat.Automat):
         """
         Action method.
         """
-        lg.info('share key [%s] with %r finished with SUCCESS !!!!!' % (self.key_id, self.remote_idurl, ))
+        lg.info('share key [%s] with %r finished with success' % (self.key_id, self.remote_idurl, ))
         events.send('private-key-shared', dict(
             global_id=global_id.UrlToGlobalID(self.remote_idurl),
             remote_idurl=self.remote_idurl,
@@ -370,7 +371,7 @@ class SharedAccessDonor(automat.Automat):
         """
         Action method.
         """
-        lg.warn('share key [%s] with %s FAILED: %s' % (self.key_id, self.remote_idurl, args, ))
+        lg.warn('share key [%s] with %s failed: %s' % (self.key_id, self.remote_idurl, args, ))
         reason = 'share key failed with unknown reason'
         if args and args[0]:
             reason = args[0]

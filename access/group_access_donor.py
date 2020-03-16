@@ -30,9 +30,9 @@ BitDust group_access_donor() Automat
 EVENTS:
     * :red:`audit-ok`
     * :red:`fail`
-    * :red:`handshake-ok`
     * :red:`init`
     * :red:`private-key-shared`
+    * :red:`shook-hands`
     * :red:`timer-15sec`
 """
 
@@ -55,23 +55,14 @@ from lib import strng
 
 from main import events
 
-from dht import dht_relations
+from p2p import handshaker
+
+from crypt import my_keys
 
 from userid import global_id
 from userid import id_url
 
-from p2p import commands
-from p2p import p2p_service
-
-from contacts import identitycache
-
-from crypt import my_keys
-
 from access import key_ring
-
-from storage import backup_fs
-
-from customer import supplier_connector
 
 #------------------------------------------------------------------------------
 
@@ -105,6 +96,7 @@ class GroupAccessDonor(automat.Automat):
         """
         self.log_transitions = _Debug
         self.group_key_id = None
+        self.result_defer = None
 
     def state_changed(self, oldstate, newstate, event, *args, **kwargs):
         """
@@ -129,13 +121,13 @@ class GroupAccessDonor(automat.Automat):
                 self.doHandshake(*args, **kwargs)
         #---HANDSHAKE!---
         elif self.state == 'HANDSHAKE!':
-            if event == 'handshake-ok':
-                self.state = 'AUDIT'
-                self.doAuditUserMasterKey(*args, **kwargs)
-            elif event == 'fail':
+            if event == 'fail':
                 self.state = 'FAILED'
                 self.doReportFailed(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
+            elif event == 'shook-hands':
+                self.state = 'AUDIT'
+                self.doAuditUserMasterKey(*args, **kwargs)
         #---AUDIT---
         elif self.state == 'AUDIT':
             if event == 'fail' or event == 'timer-15sec':
@@ -161,41 +153,94 @@ class GroupAccessDonor(automat.Automat):
         #---FAILED---
         elif self.state == 'FAILED':
             pass
-
+        return None
 
     def doInit(self, *args, **kwargs):
         """
         Action method.
         """
+        self.remote_idurl = id_url.field(kwargs['trusted_idurl'])
+        self.group_key_id = strng.to_text(kwargs['group_key_id'])
+        self.result_defer = kwargs.get('result_defer', None)
 
     def doHandshake(self, *args, **kwargs):
         """
         Action method.
         """
+        d = handshaker.ping(
+            idurl=self.remote_idurl,
+            channel='group_access_donor',
+            keep_alive=True,
+            force_cache=True,
+        )
+        d.addCallback(lambda ok: self.automat('shook-hands'))
+        d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='group_access_donor.doHandshake')
+        d.addErrback(lambda err: self.automat('fail'))
 
     def doAuditUserMasterKey(self, *args, **kwargs):
         """
         Action method.
         """
+        master_key_id = my_keys.make_key_id(alias='master', creator_idurl=self.remote_idurl)
+        d = key_ring.audit_private_key(master_key_id, self.remote_idurl)
+        d.addCallback(lambda audit_result: (
+            self.automat('audit-ok') if audit_result else self.automat('fail', Exception(
+                'remote user master key audit process failed')),
+        ))
+        d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='group_access_donor.doAuditUserMasterKey')
+        d.addErrback(lambda err: self.automat('fail', err))
 
     def doSendPrivKeyToUser(self, *args, **kwargs):
         """
         Action method.
         """
+        d = key_ring.share_key(self.group_key_id, self.remote_idurl, include_private=True)
+        d.addCallback(self._on_user_priv_key_shared)
+        d.addErrback(self._on_user_priv_key_failed)
 
     def doReportDone(self, *args, **kwargs):
         """
         Action method.
         """
+        lg.info('share group key [%s] with %r finished with success' % (self.group_key_id, self.remote_idurl, ))
+        events.send('group-key-shared', dict(
+            global_id=global_id.UrlToGlobalID(self.remote_idurl),
+            remote_idurl=self.remote_idurl,
+            group_key_id=self.group_key_id,
+        ))
+        if self.result_defer:
+            self.result_defer.callback(True)
 
     def doReportFailed(self, *args, **kwargs):
         """
         Action method.
         """
+        lg.warn('share group key [%s] with %s failed: %s' % (self.group_key_id, self.remote_idurl, args, ))
+        reason = 'share group key failed with unknown reason'
+        if args and args[0]:
+            reason = args[0]
+        events.send('group-key-share-failed', dict(
+            global_id=global_id.UrlToGlobalID(self.remote_idurl),
+            remote_idurl=self.remote_idurl,
+            group_key_id=self.group_key_id,
+            reason=reason,
+        ))
+        if self.result_defer:
+            self.result_defer.errback(Exception(reason))
 
     def doDestroyMe(self, *args, **kwargs):
         """
         Remove all references to the state machine object to destroy it.
         """
         self.destroy()
+
+    def _on_user_priv_key_shared(self, response):
+        lg.info('private group key %s was sent to %s' % (self.group_key_id, self.remote_idurl, ))
+        self.automat('private-key-shared', response)
+        return None
+
+    def _on_user_priv_key_failed(self, err):
+        lg.warn(err)
+        self.automat('fail', Exception('private group key delivery failed to remote node'))
+        return None
 

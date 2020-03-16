@@ -193,7 +193,7 @@ class P2PServiceSeeker(automat.Automat):
             force_cache=False,
         )
         d.addCallback(lambda ok: self.automat('shook-hands'))
-        d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='p2p_service_seeker.doLookupRandomNode')
+        d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='p2p_service_seeker.doHandshake')
         d.addErrback(lambda err: self.automat('fail'))
 
     def doSendRequestService(self, *args, **kwargs):

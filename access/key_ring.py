@@ -350,15 +350,17 @@ def audit_private_key(key_id, untrusted_idurl, timeout=10):
         lg.warn('wrong key_id')
         result.errback(Exception('wrong key_id'))
         return result
+    remote_idurl = recipient_id_obj.getIDURL()
     private_test_sample = key.NewSessionKey(session_key_type=key.SessionKeyType())
     if untrusted_idurl == creator_idurl and key_alias == 'master':
-        lg.info('doing audit of master key (private part) of remote user')
+        lg.info('doing audit of master key %r for remote user %r' % (key_id, remote_idurl, ))
         private_test_encrypted_sample = recipient_id_obj.encrypt(private_test_sample)
     else:
         if not my_keys.is_key_registered(key_id):
             lg.warn('unknown key: "%s"' % key_id)
             result.errback(Exception('unknown key: "%s"' % key_id))
             return result
+        lg.info('doing audit of private key %r for remote user %r' % (key_id, remote_idurl, ))
         private_test_encrypted_sample = my_keys.encrypt(key_id, private_test_sample)
     json_payload = {
         'key_id': key_id,
@@ -378,7 +380,7 @@ def audit_private_key(key_id, untrusted_idurl, timeout=10):
     )
     encrypted_payload = block.Serialize()
     p2p_service.SendAuditKey(
-        remote_idurl=recipient_id_obj.getIDURL(),
+        remote_idurl=remote_idurl,
         encrypted_payload=encrypted_payload,
         packet_id=key_id,
         timeout=timeout,
