@@ -58,6 +58,8 @@ import time
 
 from collections import OrderedDict
 
+#------------------------------------------------------------------------------
+
 try:
     from twisted.internet import reactor  # @UnresolvedImport
 except:
@@ -115,6 +117,7 @@ _Producers = {}
 _Consumers = {}
 
 _EventPacketReceivedCallbacks = []
+_MessageProcessedCallbacks = []
 
 #------------------------------------------------------------------------------
 
@@ -192,11 +195,11 @@ def stop():
     return False
 
 
-def process_queues():
+def process_queues(interested_consumers=None):
     global _ProcessQueuesDelay
     global _ProcessQueuesTask
     global _ProcessQueuesLastTime
-    has_activity = do_consume()
+    has_activity = do_consume(interested_consumers=interested_consumers)
     _ProcessQueuesLastTime = time.time()
     if _ProcessQueuesTask is None or _ProcessQueuesTask.called:
         _ProcessQueuesDelay = misc.LoopAttenuation(
@@ -208,13 +211,13 @@ def process_queues():
         _ProcessQueuesTask = reactor.callLater(_ProcessQueuesDelay, process_queues)  # @UndefinedVariable
 
 
-def touch_queues():
+def touch_queues(interested_consumers=None):
     global _ProcessQueuesDelay
     global _ProcessQueuesTask
     global _ProcessQueuesLastTime
     if time.time() - _ProcessQueuesLastTime < MIN_PROCESS_QUEUES_DELAY:
         return False
-    reactor.callLater(0, process_queues)  # @UndefinedVariable
+    reactor.callLater(0, process_queues, interested_consumers=interested_consumers)  # @UndefinedVariable
     return True
 
 #------------------------------------------------------------------------------
@@ -476,9 +479,10 @@ def finish_notification(consumer_id, queue_id, message_id, success):
         consumer(consumer_id).success_notifications += 1
     else:
         queue(queue_id)[message_id].failed_notifications += 1
+        queue(queue_id)[message_id].failed_consumers.append(consumer_id)
         consumer(consumer_id).failed_notifications += 1
     if not defer_result.called:
-        lg.info('canceling not-finished notification in the queue %s' % queue_id)
+        lg.info('canceling non-finished notification in the queue %s' % queue_id)
         defer_result.cancel()
     del defer_result
     return True
@@ -493,7 +497,8 @@ def on_notification_succeed(result, consumer_id, queue_id, message_id):
         finish_notification(consumer_id, queue_id, message_id, success=True)
     except:
         lg.exc()
-    reactor.callLater(0, do_cleanup)  # @UndefinedVariable
+    # reactor.callLater(0, do_cleanup)  # @UndefinedVariable
+    do_cleanup(queues=[queue_id, ])
     return result
 
 
@@ -505,7 +510,8 @@ def on_notification_failed(err, consumer_id, queue_id, message_id):
         finish_notification(consumer_id, queue_id, message_id, success=False)
     except:
         lg.exc()
-    reactor.callLater(0, do_cleanup)  # @UndefinedVariable
+    # reactor.callLater(0, do_cleanup)  # @UndefinedVariable
+    do_cleanup(queues=[queue_id, ])
     return err
 
 #------------------------------------------------------------------------------
@@ -556,7 +562,7 @@ def lookup_pending_message(consumer_id, queue_id):
         raise Exception('consumer not found')
     queue_pos = 0
     while queue_pos < len(queue(queue_id)):
-        # loop all messages from the begining
+        # loop all messages from the beginning
         if consumer_id not in list(queue(queue_id).values())[queue_pos].consumers:
             # only interested consumers needs to be selected
             queue_pos += 1
@@ -573,6 +579,7 @@ def lookup_pending_message(consumer_id, queue_id):
 #------------------------------------------------------------------------------
 
 def push_signed_message(producer_id, queue_id, data, creation_time=None):
+    # TODO: to be continue
     try:
         signed_data = signed.Packet(
             Command=commands.Event(),
@@ -590,6 +597,7 @@ def push_signed_message(producer_id, queue_id, data, creation_time=None):
 
 
 def pop_signed_message(queue_id, message_id):
+    # TODO: to be continue
     existing_message = pop_message(queue_id, message_id)
     if not existing_message:
         return existing_message
@@ -622,6 +630,17 @@ def insert_event_handler(cb):
 def remove_event_handler(cb):
     global _EventPacketReceivedCallbacks
     _EventPacketReceivedCallbacks.remove(cb)
+
+#------------------------------------------------------------------------------
+
+def add_message_processed_callback(cb):
+    global _MessageProcessedCallbacks
+    _MessageProcessedCallbacks.append(cb)
+
+
+def remove_message_processed_callback(cb):
+    global _MessageProcessedCallbacks
+    _MessageProcessedCallbacks.remove(cb)
 
 #------------------------------------------------------------------------------
 
@@ -723,9 +742,11 @@ def do_notify(callback_method, consumer_id, queue_id, message_id):
             producer_id=existing_message.producer_id,
             message_id=existing_message.message_id,
             created=existing_message.created,
+            response_timeout=15,
             callbacks={
                 commands.Ack(): lambda response, info: ret.callback(True),
                 commands.Fail(): lambda response, info: ret.callback(False),
+                None: lambda pkt_out: ret.callback(False),
             },
         )
     else:
@@ -800,9 +821,12 @@ def do_consume(interested_consumers=None):
     return True
 
 
-def do_cleanup():
+def do_cleanup(interested_queues=None):
+    global _MessageProcessedCallbacks
     to_be_removed = set()
-    for queue_id in queue().keys():
+    if not interested_queues:
+        interested_queues = list(queue().keys())
+    for queue_id in interested_queues:
         for _message in queue(queue_id).values():
             if _message.state == 'SENT':
                 found_pending_notifications = False
@@ -814,7 +838,7 @@ def do_cleanup():
                     to_be_removed.add((queue_id, _message.message_id, ))
                     continue
                 if _message.failed_notifications + _message.success_notifications >= len(_message.consumers):
-                    # all notifications was sent and results were receved (or timeouts) - remote it
+                    # all notifications are sent and results are received (or timeouts) - remove message from the queue
                     to_be_removed.add((queue_id, _message.message_id, ))
                     continue
             if len(_message.consumers) == 0:
@@ -822,7 +846,10 @@ def do_cleanup():
                 to_be_removed.add((queue_id, _message.message_id, ))
                 continue
     for queue_id, message_id in to_be_removed:
-        pop_message(queue_id, message_id)
+        processed_message = pop_message(queue_id, message_id)
+        if processed_message:
+            for cb in _MessageProcessedCallbacks:
+                cb(processed_message)
     to_be_removed.clear()
     del to_be_removed
     return True
@@ -843,12 +870,17 @@ class QueueMessage(object):
         self.success_notifications = 0
         self.failed_notifications = 0
         self.consumers = []
+        self.failed_consumers = []
         for consumer_id in consumer():
             if queue_id in consumer(consumer_id).queues:
                 self.consumers.append(consumer_id)
         if len(self.consumers) == 0:
             if _Debug:
-                lg.warn('message will have no consumers')
+                lg.warn('message %r from %r in queue %r will have no consumers' % (
+                    self.message_id, self.producer_id, self.queue_id, ))
+
+    def get_sequence_id(self):
+        return self.payload.get('sequence_id')
 
 #------------------------------------------------------------------------------
 

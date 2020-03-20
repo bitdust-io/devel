@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # shared_access_donor.py
 #
-# Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
+# Copyright (C) 2008 Veselin Penev, http://bitdust.io
 #
 # This file (shared_access_donor.py) is part of BitDust Software.
 #

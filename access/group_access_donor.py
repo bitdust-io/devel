@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # group_access_donor.py
 #
-# Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
+# Copyright (C) 2008 Veselin Penev, http://bitdust.io
 #
 # This file (group_access_donor.py) is part of BitDust Software.
 #
@@ -194,7 +194,7 @@ class GroupAccessDonor(automat.Automat):
         """
         Action method.
         """
-        d = key_ring.share_key(self.group_key_id, self.remote_idurl, include_private=True)
+        d = key_ring.share_key(self.group_key_id, self.remote_idurl, include_private=True, include_signature=True)
         d.addCallback(self._on_user_priv_key_shared)
         d.addErrback(self._on_user_priv_key_failed)
 

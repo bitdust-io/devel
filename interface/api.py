@@ -2045,11 +2045,11 @@ def group_leave(group_key_id):
     group_key_id = strng.to_text(group_key_id)
     if not group_key_id.startswith('group_'):
         return ERROR('invalid group id')
-    from access import group_queue_memeber
+    from access import group_member
     from crypt import my_keys
-    this_group = group_queue_memeber.get_active_group_memeber(group_key_id)
-    if this_group:
-        this_group.automat('shutdown')
+    this_group_member = group_member.get_active_group_memeber(group_key_id)
+    if this_group_member:
+        this_group_member.automat('shutdown')
     my_keys.erase_key(group_key_id)
     return OK(message='group key "%s" was deleted successfully' % group_key_id)
 
@@ -2100,28 +2100,28 @@ def group_open(group_key_id):
     group_key_id = strng.to_text(group_key_id)
     if not group_key_id.startswith('group_'):
         return ERROR('invalid group name')
-    from access import group_queue_memeber
-    active_group = group_queue_memeber.get_active_group_memeber(group_key_id)
+    from access import group_member
+    active_group_member = group_member.get_active_group_memeber(group_key_id)
     new_group = False
-    if not active_group:
+    if not active_group_member:
         new_group = True
-        active_group = group_queue_memeber.GroupQueueMember(group_key_id, log_events=True, publish_events=False, )
+        active_group_member = group_member.GroupQueueMember(group_key_id, log_events=True, publish_events=False, )
     ret = Deferred()
 
     def _on_group_queue_memeber_state_changed(oldstate, newstate, event_string, *args, **kwargs):
-        active_group.removeStateChangedCallback(_on_group_queue_memeber_state_changed)
+        active_group_member.removeStateChangedCallback(_on_group_queue_memeber_state_changed)
         if newstate == 'CONNECTED':
             if new_group:
-                ret.callback(OK('group "%s" connected' % group_key_id, extra_fields=active_group.to_json(), api_method='group_open'))
+                ret.callback(OK('group "%s" connected' % group_key_id, extra_fields=active_group_member.to_json(), api_method='group_open'))
             else:
-                ret.callback(OK('group "%s" refreshed' % group_key_id, extra_fields=active_group.to_json(), api_method='group_open'))
+                ret.callback(OK('group "%s" refreshed' % group_key_id, extra_fields=active_group_member.to_json(), api_method='group_open'))
         else:
-            ret.callback(ERROR('group "%s" was not connected' % group_key_id, extra_fields=active_group.to_json(), api_method='group_open'))
+            ret.callback(ERROR('group "%s" was not connected' % group_key_id, extra_fields=active_group_member.to_json(), api_method='group_open'))
         return None
 
-    active_group.addStateChangedCallback(_on_group_queue_memeber_state_changed, oldstate=None, newstate='IN_SYNC!')
-    active_group.addStateChangedCallback(_on_group_queue_memeber_state_changed, oldstate=None, newstate='DISCONNECTED')
-    active_group.automat('restart')
+    active_group_member.addStateChangedCallback(_on_group_queue_memeber_state_changed, oldstate=None, newstate='IN_SYNC!')
+    active_group_member.addStateChangedCallback(_on_group_queue_memeber_state_changed, oldstate=None, newstate='DISCONNECTED')
+    active_group_member.automat('restart')
     return ret
 
 
@@ -2133,8 +2133,8 @@ def group_close(group_key_id):
     group_key_id = strng.to_text(group_key_id)
     if not group_key_id.startswith('group_'):
         return ERROR('invalid group name')
-    from access import group_queue_memeber
-    this_group = group_queue_memeber.get_active_group_memeber(group_key_id)
+    from access import group_member
+    this_group = group_member.get_active_group_memeber(group_key_id)
     if not this_group:
         return ERROR('group "%s" is not opened' % group_key_id)
     this_group.automat('shutdown')
@@ -3475,7 +3475,7 @@ def message_receive(consumer_id):
          'result': [{
             'type': 'private_message',
             'dir': 'incoming',
-            'message_id': '123456788',
+            'message_id': '123456789',
             'sender': 'messages$alice@first-host.com',
             'recipient': 'messages$bob@second-host.net',
             'data': {

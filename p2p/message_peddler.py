@@ -33,6 +33,7 @@ BitDust message_peddler() Automat
 EVENTS:
     * :red:`queue-connect`
     * :red:`queue-disconnect`
+    * :red:`queue-read`
     * :red:`queues-loaded`
     * :red:`start`
     * :red:`stop`
@@ -52,6 +53,8 @@ _DebugLevel = 8
 
 import os
 import sys
+
+from collections import OrderedDict
 
 #------------------------------------------------------------------------------
 
@@ -88,6 +91,7 @@ from p2p import p2p_service
 
 from userid import id_url
 from userid import global_id
+from userid import my_id
 
 #------------------------------------------------------------------------------ 
 
@@ -110,37 +114,68 @@ def on_incoming_messages(json_messages):
         try:
             msg_type = json_message['type']
             msg_direction = json_message['dir']
+            packet_id = json_message['id']
+            from_user = json_message['from']
+            to_user = json_message['to']
             msg_data = json_message['data']
         except:
             lg.exc()
             continue
-        if msg_type == 'queue_message' and msg_direction == 'incoming':
+        if msg_direction != 'incoming':
+            continue
+        if msg_type != 'queue_message':
+            continue
+        if to_user != my_id.getID():
             continue
         queue_id = msg_data.get('queue_id')
+        from_idurl = global_id.glob2idurl(from_user)
         if queue_id not in streams():
             lg.warn('skipped incoming message, queue %r is not registered' % queue_id)
+            p2p_service.SendFailNoRequest(from_idurl, packet_id, 'queue ID not registered')
             continue
         if not streams()[queue_id]['active']:
             lg.warn('skipped incoming message, queue %r is not active' % queue_id)
-            continue
-        producer_id = json_message['data'].get('producer_id')
-        if producer_id not in streams()[queue_id]['producers']:
-            lg.warn('skipped incoming message, producer %r is not registered for queue %r' % (producer_id, queue_id, ))
-            continue
-        if not streams()[queue_id]['producers'][producer_id]['active']:
-            lg.warn('skipped incoming message, producer %r is not active in queue %r' % (producer_id, queue_id, ))
+            p2p_service.SendFailNoRequest(from_idurl, packet_id, 'queue is not active')
             continue
         try:
-            payload = json_message['data']['payload']
-            created = json_message['data']['created']
+            payload = msg_data['payload']
         except:
             lg.exc()
             continue
-        queued_json_message = save_incoming_message(queue_id, producer_id, payload, created)
-        message_id = queued_json_message['id']
-        streams()[queue_id]['messages'][message_id] = {
-            'consumed': False,
-            'pushed_id': None,
+        if payload == 'queue-read':
+            # request from queue_member() to catch up unread messages from the queue
+            consumer_id = msg_data.get('consumer_id')
+            if consumer_id not in streams()[queue_id]['consumers']:
+                lg.warn('skipped incoming message, consumer %r is not registered for queue %r' % (consumer_id, queue_id, ))
+                p2p_service.SendFailNoRequest(from_idurl, packet_id, 'consumer is not registered')
+                continue
+            if not streams()[queue_id]['consumers'][consumer_id]['active']:
+                lg.warn('skipped incoming message, consumer %r is not active in queue %r' % (consumer_id, queue_id, ))
+                p2p_service.SendFailNoRequest(from_idurl, packet_id, 'consumer is not active')
+                continue
+            consumer_last_sequence_id = msg_data.get('last_sequence_id')
+            A('queue-read', queue_id=queue_id, consumer_id=consumer_id, consumer_last_sequence_id=consumer_last_sequence_id)
+            continue
+        # incoming message from queue_member() to push new message to the queue and deliver to all other group members
+        producer_id = msg_data.get('producer_id')
+        if producer_id not in streams()[queue_id]['producers']:
+            lg.warn('skipped incoming message, producer %r is not registered for queue %r' % (producer_id, queue_id, ))
+            p2p_service.SendFailNoRequest(from_idurl, packet_id, 'producer is not registered')
+            continue
+        if not streams()[queue_id]['producers'][producer_id]['active']:
+            lg.warn('skipped incoming message, producer %r is not active in queue %r' % (producer_id, queue_id, ))
+            p2p_service.SendFailNoRequest(from_idurl, packet_id, 'producer is not active')
+            continue
+        try:
+            payload = msg_data['payload']
+            created = msg_data['created']
+        except:
+            lg.exc()
+            continue
+        queued_json_message = store_message(queue_id, producer_id, payload, created)
+        sequence_id = queued_json_message['sequence_id']
+        streams()[queue_id]['messages'][sequence_id] = {
+            'message_id': None,
         }
         received += 1
         try:
@@ -153,8 +188,8 @@ def on_incoming_messages(json_messages):
         except:
             lg.exc()
             continue
-        streams()[queue_id]['messages'][message_id]['pushed_id'] = new_message.message_id
-        update_existing_message(queue_id, message_id)
+        streams()[queue_id]['messages'][sequence_id]['message_id'] = new_message.message_id
+        update_message(queue_id, sequence_id)
         pushed += 1
     if received > pushed:
         lg.warn('some of received messages were queued but not pushed to the queue yet')
@@ -162,33 +197,57 @@ def on_incoming_messages(json_messages):
     return pushed > 0
 
 
-def save_incoming_message(queue_id, producer_id, payload, created):
-    last_message_id = streams()[queue_id]['last_message_id']
-    new_message_id = strng.to_text(int(last_message_id) + 1)
+def on_message_processed(processed_message):
+    sequence_id = processed_message.get_sequence_id()
+    if not sequence_id:
+        return False
+    if not processed_message.failed_consumers:
+        erase_message(processed_message.queue_id, sequence_id)
+        streams()[processed_message.queue_id]['messages'].pop(sequence_id)
+    else:
+        streams()[processed_message.queue_id]['messages'][sequence_id]['failed_consumers'] = processed_message.failed_consumers
+        update_message(processed_message.queue_id, sequence_id)
+    return True
+
+#------------------------------------------------------------------------------
+
+def store_message(queue_id, producer_id, payload, created):
+    last_sequence_id = streams()[queue_id]['last_sequence_id']
+    new_sequence_id = strng.to_text(int(last_sequence_id) + 1)
     service_dir = settings.ServiceDir('service_message_broker')
     queues_dir = os.path.join(service_dir, 'queues')
     queue_dir = os.path.join(queues_dir, queue_id)
     messages_dir = os.path.join(queue_dir, 'messages')
-    message_path = os.path.join(messages_dir, new_message_id)
+    message_path = os.path.join(messages_dir, new_sequence_id)
     queued_json_message = {
-        'id': new_message_id,
+        'sequence_id': new_sequence_id,
         'created': created,
         'producer_id': producer_id,
         'payload': payload,
     }
     local_fs.WriteTextFile(message_path, jsn.dumps(queued_json_message))
-    streams()[queue_id]['last_message_id'] = new_message_id
+    streams()[queue_id]['last_sequence_id'] = new_sequence_id
     return queued_json_message
 
 
-def update_existing_message(queue_id, message_id):
+def update_message(queue_id, sequence_id):
     service_dir = settings.ServiceDir('service_message_broker')
     queues_dir = os.path.join(service_dir, 'queues')
     queue_dir = os.path.join(queues_dir, queue_id)
     messages_dir = os.path.join(queue_dir, 'messages')
-    message_path = os.path.join(messages_dir, strng.to_text(message_id))
-    queued_json_message = streams(queue_id)['messages'][message_id]
+    message_path = os.path.join(messages_dir, strng.to_text(sequence_id))
+    queued_json_message = streams(queue_id)['messages'][sequence_id]
     local_fs.WriteTextFile(message_path, jsn.dumps(queued_json_message))
+    return True
+
+
+def erase_message(queue_id, sequence_id):
+    service_dir = settings.ServiceDir('service_message_broker')
+    queues_dir = os.path.join(service_dir, 'queues')
+    queue_dir = os.path.join(queues_dir, queue_id)
+    messages_dir = os.path.join(queue_dir, 'messages')
+    message_path = os.path.join(messages_dir, strng.to_text(sequence_id))
+    os.remove(message_path)
     return True
 
 #------------------------------------------------------------------------------
@@ -208,30 +267,29 @@ def load_streams():
                 'active': False,
                 'consumers': {},
                 'producers': {},
-                'messages': [],
-                'last_message_id': -1,
+                'messages': OrderedDict(),
+                'last_sequence_id': -1,
             }
-        last_message_id = -1
-        for message_id in os.listdir(messages_dir):
-            streams()[queue_id]['messages']['message_id'] = {
-                'consumed': False,
-                'pushed_id': None,
+        last_sequence_id = -1
+        for sequence_id in os.listdir(messages_dir):
+            streams()[queue_id]['messages'][sequence_id] = {
+                'message_id': None,
             }
-            if int(message_id) >= last_message_id:
-                last_message_id = message_id
-        streams()[queue_id]['last_message_id'] = last_message_id
+            if int(sequence_id) >= last_sequence_id:
+                last_sequence_id = sequence_id
+        streams()[queue_id]['last_sequence_id'] = last_sequence_id
         for consumer_id in os.listdir(consumers_dir):
-            consumer_info = jsn.loads_text(local_fs.ReadTextFile(os.path.join(consumers_dir, consumer_id)))
             if consumer_id in streams()[queue_id]['consumers']:
-                lg.warn('consumer %r already exist in stream %r' % (consumer_id, queue_id))
+                lg.warn('consumer %r already exist in stream %r' % (consumer_id, queue_id, ))
                 continue
+            consumer_info = jsn.loads_text(local_fs.ReadTextFile(os.path.join(consumers_dir, consumer_id)))
             streams()[queue_id]['consumers'][consumer_id] = consumer_info
             streams()[queue_id]['consumers'][consumer_id]['active'] = False
         for producer_id in os.listdir(producers_dir):
-            producer_info = jsn.loads_text(local_fs.ReadTextFile(os.path.join(producers_dir, producer_id)))
             if producer_id in streams()[queue_id]['producers']:
-                lg.warn('producer %r already exist in stream %r' % (producer_id, queue_id))
+                lg.warn('producer %r already exist in stream %r' % (producer_id, queue_id, ))
                 continue
+            producer_info = jsn.loads_text(local_fs.ReadTextFile(os.path.join(producers_dir, producer_id)))
             streams()[queue_id]['producers'][producer_id] = producer_info
             streams()[queue_id]['producers'][producer_id]['active'] = False
 
@@ -295,7 +353,7 @@ def add_consumer(queue_id, consumer_id):
         return False
     streams()[queue_id]['consumers'][consumer_id] = {
         'active': False,
-        'last_message_id': -1,
+        'last_sequence_id': -1,
     }
     save_consumer(queue_id, consumer_id)
     return True
@@ -353,7 +411,7 @@ def add_producer(queue_id, producer_id):
         return False
     streams()[queue_id]['producers'][producer_id] = {
         'active': False,
-        'last_message_id': -1,
+        'last_sequence_id': -1,
     }
     save_producer(queue_id, producer_id)
     return True
@@ -537,6 +595,8 @@ class MessagePeddler(automat.Automat):
                 self.doStartJoinQueue(*args, **kwargs)
             elif event == 'queue-disconnect':
                 self.doLeaveStopQueue(*args, **kwargs)
+            elif event == 'queue-read':
+                self.doConsumeMessages(*args, **kwargs)
         #---CLOSED---
         elif self.state == 'CLOSED':
             pass
@@ -557,6 +617,7 @@ class MessagePeddler(automat.Automat):
         """
         Action method.
         """
+        p2p_queue.add_message_processed_callback(on_message_processed)
         start_all_streams()
 
     def doStopQueues(self, *args, **kwargs):
@@ -564,6 +625,7 @@ class MessagePeddler(automat.Automat):
         Action method.
         """
         stop_all_streams()
+        p2p_queue.remove_message_processed_callback(on_message_processed)
 
     def doStartJoinQueue(self, *args, **kwargs):
         """
@@ -616,9 +678,15 @@ class MessagePeddler(automat.Automat):
         p2p_service.SendAck(request_packet, 'accepted')
         result_defer.callback(True)
 
+    def doConsumeMessages(self, *args, **kwargs):
+        """
+        Action method.
+        """
+
     def doDestroyMe(self, *args, **kwargs):
         """
         Remove all references to the state machine object to destroy it.
         """
         self.destroy()
+
 

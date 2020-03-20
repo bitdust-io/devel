@@ -511,6 +511,22 @@ def rename_key(current_key_id, new_key_id, keys_folder=None):
     events.send('key-renamed', data=dict(old_key_id=current_key_id, new_key_id=new_key_id, is_private=is_private))
     return True
 
+
+def sign_key(key_id, keys_folder=None):
+    key_id = latest_key_id(strng.to_text(key_id))
+    if key_id not in known_keys():
+        lg.warn('key %s is not found' % key_id)
+        return False
+    if not keys_folder:
+        keys_folder = settings.KeyStoreDir()
+    key_object = known_keys()[key_id]
+    signed_key_info = make_key_info(key_object, key_id=key_id, include_private=True, sign_key=True)
+    key_object.signed = (signed_key_info['signature'], signed_key_info['pubkey'], )
+    known_keys()[key_id] = key_object
+    save_key(key_id, keys_folder=keys_folder)
+    events.send('key-signed', data=dict(key_id=key_id, label=key_object.label, key_size=key_object.size(), ))
+    return key_object
+
 #------------------------------------------------------------------------------
 
 def sign(key_id, inp):
@@ -670,20 +686,20 @@ def make_master_key_info(include_private=False):
         # 'fingerprint': str(key.MyPrivateKeyObject().fingerprint()),
         # 'type': str(key.MyPrivateKeyObject().type()),
         # 'ssh_type': str(key.MyPrivateKeyObject().sshType()),
-        'public': str(key.MyPrivateKeyObject().toPublicString()),
+        'public': strng.to_text(key.MyPrivateKeyObject().toPublicString()),
         'include_private': include_private,
     }
     r['private'] = None
     if include_private:
-        r['private'] = str(key.MyPrivateKeyObject().toPrivateString())
+        r['private'] = strng.to_text(key.MyPrivateKeyObject().toPrivateString())
     if hasattr(key.MyPrivateKeyObject(), 'size'):
-        r['size'] = str(key.MyPrivateKeyObject().size())
+        r['size'] = strng.to_text(key.MyPrivateKeyObject().size())
     else:
         r['size'] = '0'
     return r
 
 
-def make_key_info(key_object, key_id=None, key_alias=None, creator_idurl=None, include_private=False):
+def make_key_info(key_object, key_id=None, key_alias=None, creator_idurl=None, include_private=False, sign_key=False, include_signature=False):
     if key_id:
         key_id = latest_key_id(key_id)
         key_alias, creator_idurl = split_key_id(key_id)
@@ -702,21 +718,27 @@ def make_key_info(key_object, key_id=None, key_alias=None, creator_idurl=None, i
     }
     r['private'] = None
     if key_object.isPublic():
-        r['public'] = str(key_object.toPublicString())
+        r['public'] = strng.to_text(key_object.toPublicString())
         if include_private:
             raise Exception('this key contains only public component')
     else:
-        r['public'] = str(key_object.toPublicString())
+        r['public'] = strng.to_text(key_object.toPublicString())
         if include_private:
-            r['private'] = str(key_object.toPrivateString())
+            r['private'] = strng.to_text(key_object.toPrivateString())
     if hasattr(key_object, 'size'):
-        r['size'] = str(key_object.size())
+        r['size'] = strng.to_text(key_object.size())
     else:
         r['size'] = '0'
+    if sign_key:
+        r = sign_key_info(r)
+    else:
+        if include_signature and key_object.isSigned():
+            r['signature'] = key_object.signed[0]
+            r['pubkey'] = key_object.signed[1]
     return r
 
 
-def get_key_info(key_id, include_private=False):
+def get_key_info(key_id, include_private=False, include_signature=False):
     """
     Returns dictionary with full key info or raise an Exception.
     """
@@ -737,7 +759,7 @@ def get_key_info(key_id, include_private=False):
         if not load_key(key_id):
             raise Exception('key load failed: %s' % key_id)
     key_object = known_keys()[key_id]
-    key_info = make_key_info(key_object, key_id=key_id, include_private=include_private, )
+    key_info = make_key_info(key_object, key_id=key_id, include_private=include_private, include_signature=include_signature)
     return key_info
 
 
@@ -753,10 +775,40 @@ def read_key_info(key_json):
         if not key_object:
             raise Exception('unserialize failed')
         key_object.label = strng.to_text(key_json.get('label', ''))
+        if 'signature' in key_json and 'pubkey' in key_json:
+            key_object.signed = (key_json['signature'], key_json['pubkey'], )
     except:
         lg.exc()
         raise Exception('failed reading key info')
     return latest_key_id(key_id), key_object
+
+
+def sign_key_info(key_info):
+    key_info['pubkey'] = key.MyPublicKey()
+    sorted_fields = sorted(key_info.keys())
+    hash_items = []
+    for field in sorted_fields:
+        if field not in ['include_private', 'signature', ]:
+            hash_items.append(strng.to_text(key_info[field]))
+    hash_text = '-'.join(hash_items)
+    hash_bin = key.Hash(strng.to_bin(hash_text))
+    key_info['signature'] = strng.to_text(key.Sign(hash_bin))
+    return key_info
+
+
+def verify_key_info_signature(key_info):
+    if 'signature' not in key_info or 'pubkey' not in key_info:
+        return False
+    sorted_fields = sorted(key_info.keys())
+    hash_items = []
+    for field in sorted_fields:
+        if field not in ['include_private', 'signature', ]:
+            hash_items.append(strng.to_text(key_info[field]))
+    hash_text = '-'.join(hash_items)
+    hash_bin = key.Hash(strng.to_bin(hash_text))
+    signature_bin = strng.to_bin(key_info['signature'])
+    result = key.VerifySignature(key_info['pubkey'], hash_bin, signature_bin)
+    return result
 
 #------------------------------------------------------------------------------
 

@@ -50,9 +50,13 @@ class PrivateGroupsService(LocalService):
         ]
 
     def start(self):
+        from access import group_memeber
+        group_memeber.init()
         return True
 
     def stop(self):
+        from access import group_memeber
+        group_memeber.shutdown()
         return True
 
     def health_check(self):

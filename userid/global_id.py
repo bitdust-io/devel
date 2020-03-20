@@ -315,6 +315,7 @@ def GlobalUserToIDURL(inp, as_field=True):
         return None
     _, _, user = user.strip().rpartition('$')
     if idhost.count('_'):
+        # we can do that because domain names never use "_" symbol
         _pos = idhost.rfind('_')
         port = idhost[_pos + 1:]
         try:

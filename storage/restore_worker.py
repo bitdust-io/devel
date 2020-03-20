@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # restore_worker.py
 #
-# Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
+# Copyright (C) 2008 Veselin Penev, http://bitdust.io
 #
 # This file (restore_worker.py) is part of BitDust Software.
 #

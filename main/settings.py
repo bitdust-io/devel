@@ -913,7 +913,7 @@ def ServicesDataDir():
 def ServiceDir(service_name):
     """
     """
-    return os.path.join(ServicesDataDir(), service_name)
+    return os.path.join(ServicesDataDir(), service_name.replace('service_', ''))
 
 #------------------------------------------------------------------------------
 #--- FILES --------------------------------------------------------------------

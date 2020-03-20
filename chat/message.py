@@ -435,8 +435,7 @@ def do_send_message(json_data, recipient_global_id, packet_id, timeout, result_d
 
 def send_message(json_data, recipient_global_id, packet_id=None, message_ack_timeout=None, ping_timeout=20, ping_retries=0):
     """
-    Send command.Message() packet to remote peer.
-    Returns Deferred (if remote_idurl was not cached yet) or outbox packet object.
+    Send command.Message() packet to remote peer. Returns Deferred object.
     """
     global _LastUserPingTime
     global _PingTrustIntervalSeconds

@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # py2exe_build_starter.py
 #
-# Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
+# Copyright (C) 2008 Veselin Penev, http://bitdust.io
 #
 # This file (py2exe_build_starter.py) is part of BitDust Software.
 #
