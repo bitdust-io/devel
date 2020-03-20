@@ -150,6 +150,7 @@ def create_group_key(creator_id=None, label=None, key_size=4096):
     if not label:
         label = 'group%s' % utime.make_timestamp()
     my_keys.generate_key(key_id=group_key_id, label=label, key_size=key_size)
+    my_keys.sign_key(key_id=group_key_id)
     if _Debug:
         lg.args(_DebugLevel, group_key_id=group_key_id, group_alias=group_alias, creator_id=creator_id, label=label)
     return group_key_id

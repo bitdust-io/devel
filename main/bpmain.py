@@ -91,7 +91,7 @@ def init(UI='', options=None, args=None, overDict=None, executablePath=None):
         lg.set_debug_level(settings.getDebugLevel())
     from main import config
     config.conf().addConfigNotifier('logs/debug-level',
-                              lambda p, value, o, r: lg.set_debug_level(value))
+                                    lambda p, value, o, r: lg.set_debug_level(value))
 
     #---USE_TRAY_ICON---
     if os.path.isfile(settings.LocalIdentityFilename()) and os.path.isfile(settings.KeyFileName()):
@@ -226,6 +226,9 @@ def shutdown():
     if _Debug:
         lg.out(_DebugLevel, 'bpmain.shutdown')
 
+    if config.conf():
+        config.conf().removeConfigNotifier('logs/debug-level')
+
     from . import shutdowner
     shutdowner.A('reactor-stopped')
 
@@ -242,8 +245,6 @@ def shutdown():
     else:
         if _Debug:
             lg.out(_DebugLevel, 'bpmain.shutdown automat.objects().clear() SUCCESS, no state machines left in memory')
-
-    config.conf().removeConfigNotifier('logs/debug-level')
 
     if _Debug:
         lg.out(_DebugLevel, 'bpmain.shutdown currently %d threads running:' % len(threading.enumerate()))
@@ -295,6 +296,7 @@ def run(UI='', options=None, args=None, overDict=None, executablePath=None, star
         pr.enable()
 
     init(UI, options, args, overDict, executablePath)
+
     if start_reactor:
         run_twisted_reactor()
         result = shutdown()

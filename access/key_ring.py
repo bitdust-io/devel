@@ -101,7 +101,7 @@ def shutdown():
 def _do_request_service_keys_registry(key_id, idurl, include_private, include_signature, timeout, result):
     p2p_service.SendRequestService(idurl, 'service_keys_registry', callbacks={
         commands.Ack(): lambda response, info:
-            _on_service_keys_registry_response(response, info, key_id, idurl, include_private, result, timeout),
+            _on_service_keys_registry_response(response, info, key_id, idurl, include_private, include_signature, result, timeout),
         commands.Fail(): lambda response, info:
             result.errback(Exception('"service_keys_registry" not started on remote node')),
         None: lambda pkt_out: result.errback(Exception('timeout')),

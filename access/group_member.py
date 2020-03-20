@@ -64,12 +64,10 @@ from logs import lg
 
 from automats import automat
 
-from lib import strng
 from lib import utime
 from lib import jsn
 from lib import packetid
 
-from main import events
 from main import settings
 
 from system import local_fs
@@ -83,8 +81,6 @@ from chat import message
 
 from p2p import lookup
 from p2p import p2p_service_seeker
-from p2p import commands
-from p2p import p2p_service
 
 from userid import global_id
 from userid import id_url
@@ -208,20 +204,20 @@ def get_last_sequence_id(group_key_id):
 
 #------------------------------------------------------------------------------
 
-def register_group_memeber(A):
+def register_group_member(A):
     """
     """
     global _ActiveGroupMembers
     global _ActiveGroupMembersByIDURL
     if A.key_id in _ActiveGroupMembers:
-        raise Exception('group_memeber already exist')
+        raise Exception('group_member already exist')
     if id_url.is_not_in(A.group_creator_idurl, _ActiveGroupMembersByIDURL):
         _ActiveGroupMembersByIDURL[A.group_creator_idurl] = []
     _ActiveGroupMembersByIDURL[A.group_creator_idurl].append(A)
     _ActiveGroupMembers[A.key_id] = A
 
 
-def unregister_group_memeber(A):
+def unregister_group_member(A):
     """
     """
     global _ActiveGroupMembers
@@ -234,13 +230,13 @@ def unregister_group_memeber(A):
 
 #------------------------------------------------------------------------------
 
-def list_active_group_memebers():
+def list_active_group_members():
     """
     """
     global _ActiveGroupMembers
     return list(_ActiveGroupMembers.keys())
 
-def get_active_group_memeber(group_key_id):
+def get_active_group_member(group_key_id):
     """
     """
     global _ActiveGroupMembers
@@ -249,7 +245,7 @@ def get_active_group_memeber(group_key_id):
     return _ActiveGroupMembers[group_key_id]
 
 
-def find_active_group_memebers(group_creator_idurl):
+def find_active_group_members(group_creator_idurl):
     """
     """
     global _ActiveGroupMembersByIDURL
@@ -326,13 +322,13 @@ class GroupQueueMember(automat.Automat):
         """
         """
         automat_index = automat.Automat.register(self)
-        register_group_memeber(self)
+        register_group_member(self)
         return automat_index
 
     def unregister(self):
         """
         """
-        unregister_group_memeber(self)
+        unregister_group_member(self)
         return automat.Automat.unregister(self)
 
     def A(self, event, *args, **kwargs):

@@ -120,11 +120,10 @@ def shutdown():
     """
     """
     global _InitDone
-    global _BaseDirPath
     _InitDone = False
     if _Debug:
-        lg.out(_DebugLevel, 'settings.shutdown data location was %r' % BaseDir())
-    _BaseDirPath = None
+        lg.out(_DebugLevel, 'settings.shutdown data location was %r' % deploy.current_base_dir())
+    deploy.set_base_dir(None)
     config.shutdown()
 
 #------------------------------------------------------------------------------

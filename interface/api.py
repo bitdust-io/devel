@@ -2047,7 +2047,7 @@ def group_leave(group_key_id):
         return ERROR('invalid group id')
     from access import group_member
     from crypt import my_keys
-    this_group_member = group_member.get_active_group_memeber(group_key_id)
+    this_group_member = group_member.get_active_group_member(group_key_id)
     if this_group_member:
         this_group_member.automat('shutdown')
     my_keys.erase_key(group_key_id)
@@ -2101,7 +2101,7 @@ def group_open(group_key_id):
     if not group_key_id.startswith('group_'):
         return ERROR('invalid group name')
     from access import group_member
-    active_group_member = group_member.get_active_group_memeber(group_key_id)
+    active_group_member = group_member.get_active_group_member(group_key_id)
     new_group = False
     if not active_group_member:
         new_group = True
@@ -2134,7 +2134,7 @@ def group_close(group_key_id):
     if not group_key_id.startswith('group_'):
         return ERROR('invalid group name')
     from access import group_member
-    this_group = group_member.get_active_group_memeber(group_key_id)
+    this_group = group_member.get_active_group_member(group_key_id)
     if not this_group:
         return ERROR('group "%s" is not opened' % group_key_id)
     this_group.automat('shutdown')
