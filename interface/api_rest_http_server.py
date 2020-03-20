@@ -681,6 +681,15 @@ class BitDustRESTHTTPServer(JsonAPIResource):
             label=data.get('label', ''),
         )
 
+    @DELETE('^/sh/d$')
+    @DELETE('^/v1/share/delete$')
+    @DELETE('^/share/delete/v1$')
+    def share_delete_v1(self, request):
+        data = _request_data(request, mandatory_keys=['key_id', ])
+        return api.share_delete(
+            key_id=data['key_id'],
+        )
+
     @PUT('^/sh/g$')
     @PUT('^/v1/share/grant$')
     @PUT('^/share/grant/v1$')
@@ -701,7 +710,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
             key_id=data['key_id'],
         )
 
-    @DELETE('^/sh/c$')
+    @DELETE('^/sh/cl$')
     @DELETE('^/v1/share/close$')
     @DELETE('^/share/close/v1$')
     def share_close_v1(self, request):
@@ -715,6 +724,63 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @GET('^/share/history/v1$')
     def share_history_v1(self, request):
         return api.share_history()
+
+    #------------------------------------------------------------------------------
+
+    @GET('^/gr/l$')
+    @GET('^/v1/group/list$')
+    @GET('^/group/list/v1$')
+    def group_list_v1(self, request):
+        return api.group_list()
+
+    @POST('^/gr/c$')
+    @POST('^/v1/group/create$')
+    @POST('^/group/create/v1$')
+    def group_create_v1(self, request):
+        data = _request_data(request)
+        return api.group_create(
+            creator_id=data.get('creator_id', None),
+            key_size=int(data.get('key_size', '2048')),
+            label=data.get('label', ''),
+        )
+
+    @DELETE('^/gr/lv$')
+    @DELETE('^/v1/group/leave$')
+    @DELETE('^/group/leave/v1$')
+    def group_leave_v1(self, request):
+        data = _request_data(request, mandatory_keys=['group_key_id', ])
+        return api.group_leave(
+            group_key_id=data['group_key_id'],
+        )
+
+    @PUT('^/gr/sh$')
+    @PUT('^/v1/group/share$')
+    @PUT('^/group/share/v1$')
+    def group_share_v1(self, request):
+        data = _request_data(request, mandatory_keys=[('trusted_global_id', 'trusted_idurl', 'trusted_id', ), 'key_id', ])
+        return api.group_share(
+            trusted_remote_user=data.get('trusted_global_id') or data.get('trusted_idurl') or data.get('trusted_id'),
+            group_key_id=data['group_key_id'],
+            timeout=data.get('timeout', 30),
+        )
+
+    @POST('^/gr/o$')
+    @POST('^/v1/group/open$')
+    @POST('^/group/open/v1$')
+    def group_open_v1(self, request):
+        data = _request_data(request, mandatory_keys=['group_key_id', ])
+        return api.group_open(
+            group_key_id=data['group_key_id'],
+        )
+
+    @DELETE('^/gr/cl$')
+    @DELETE('^/v1/group/close$')
+    @DELETE('^/group/close/v1$')
+    def group_close_v1(self, request):
+        data = _request_data(request, mandatory_keys=['group_key_id', ])
+        return api.group_close(
+            group_key_id=data['group_key_id'],
+        )
 
     #------------------------------------------------------------------------------
 

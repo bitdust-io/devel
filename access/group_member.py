@@ -116,6 +116,8 @@ def groups():
 def load_groups():
     service_dir = settings.ServiceDir('service_private_groups')
     groups_dir = os.path.join(service_dir, 'groups')
+    if not os.path.isdir(groups_dir):
+        bpio._dirs_make(groups_dir)
     for group_key_id in os.listdir(groups_dir):
         if group_key_id not in groups():
             groups()[group_key_id] = {

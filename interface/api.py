@@ -1916,6 +1916,24 @@ def share_create(owner_id=None, key_size=2048, label=''):
     return OK(key_info, message='new share "%s" was generated successfully' % key_id, )
 
 
+def share_delete(key_id):
+    """
+    """
+    key_id = strng.to_text(key_id)
+    if not driver.is_on('service_shared_data'):
+        return ERROR('service_shared_data() is not started')
+    if not key_id.startswith('share_'):
+        return ERROR('invalid share id')
+    from access import shared_access_coordinator
+    from crypt import my_keys
+    this_share = shared_access_coordinator.get_active_share(key_id)
+    if not this_share:
+        return ERROR('share "%s" is not opened' % key_id)
+    this_share.automat('shutdown')
+    my_keys.erase_key(key_id)
+    return OK('share "%s" was deleted' % key_id, extra_fields=this_share.to_json())
+
+
 def share_grant(trusted_remote_user, key_id, timeout=30):
     """
     """
@@ -2054,7 +2072,7 @@ def group_leave(group_key_id):
     return OK(message='group key "%s" was deleted successfully' % group_key_id)
 
 
-def group_grant(trusted_remote_user, group_key_id, timeout=30):
+def group_share(trusted_remote_user, group_key_id, timeout=30):
     """
     """
     if not driver.is_on('service_private_groups'):
@@ -2076,7 +2094,7 @@ def group_grant(trusted_remote_user, group_key_id, timeout=30):
     ret = Deferred()
 
     def _on_group_access_donor_success(result):
-        ret.callback(OK(api_method='share_grant') if result else ERROR('share grant failed', api_method='share_grant'))
+        ret.callback(OK(api_method='share_grant') if result else ERROR('share grant failed', api_method='group_share'))
         return None
 
     def _on_group_access_donor_failed(err):
