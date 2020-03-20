@@ -386,183 +386,188 @@ def cmd_identity(opts, args, overDict, running, executablePath):
     settings.init()
     my_id.init()
 
-    if args[0] == 'idurl':
-        if my_id.isLocalIdentityReady():
-            print_text(my_id.getLocalID())
-        else:
-            print_text('local identity is not valid or not exist')
-        return 0
-
-    if args[0] in ['globid', 'globalid', 'gid', 'glid', ] or (args[0] == 'id' and len(args) <= 1):
-        if my_id.isLocalIdentityReady():
-            print_text(my_id.getGlobalID())
-        else:
-            print_text('local identity is not valid or not exist')
-        return 0
-
-    if len(args) == 1 or args[1].lower() in ['info', '?', 'show', 'print', ]:
-        if my_id.isLocalIdentityReady():
-            print_text(my_id.getLocalIdentity().serialize(as_text=True))
-        else:
-            print_text('local identity is not valid or not exist')
-        return 0
-
-    from twisted.internet import reactor  # @UnresolvedImport
-
-    if args[1] in ['server', 'srv', ]:
-        def _run_stand_alone_id_server():
+    def _do_cmd():
+        if args[0] == 'idurl':
+            if my_id.isLocalIdentityReady():
+                print_text(my_id.getLocalID())
+            else:
+                print_text('local identity is not valid or not exist')
+            return 0
+    
+        if args[0] in ['globid', 'globalid', 'gid', 'glid', ] or (args[0] == 'id' and len(args) <= 1):
+            if my_id.isLocalIdentityReady():
+                print_text(my_id.getGlobalID())
+            else:
+                print_text('local identity is not valid or not exist')
+            return 0
+    
+        if len(args) == 1 or args[1].lower() in ['info', '?', 'show', 'print', ]:
+            if my_id.isLocalIdentityReady():
+                print_text(my_id.getLocalIdentity().serialize(as_text=True))
+            else:
+                print_text('local identity is not valid or not exist')
+            return 0
+    
+        from twisted.internet import reactor  # @UnresolvedImport
+    
+        if args[1] in ['server', 'srv', ]:
+            def _run_stand_alone_id_server():
+                from logs import lg
+                from userid import id_server
+                lg.open_log_file(os.path.join(settings.LogsDir(), 'idserver.log'))
+                lg.set_debug_level(settings.getDebugLevel())
+                reactor.addSystemEventTrigger('before', 'shutdown', id_server.A().automat, 'shutdown')  # @UndefinedVariable
+                reactor.callWhenRunning(  # @UndefinedVariable
+                    id_server.A, 'init', (settings.getIdServerWebPort(), settings.getIdServerTCPPort()))
+                reactor.callLater(0, id_server.A, 'start')  # @UndefinedVariable
+                reactor.run()  # @UndefinedVariable
+    
+            if len(args) <= 2:
+                if not running:
+                    _run_stand_alone_id_server()
+                    return 0
+                tpl = jsontemplate.Template(templ.TPL_SERVICE_INFO)
+                return call_jsonrpc_method_template_and_stop('service_info', tpl, 'service_identity_server')
+            if args[2] == 'stop':
+                if not running:
+                    print_text('BitDust is not running at the moment\n')
+                    return 0
+                tpl = jsontemplate.Template(templ.TPL_RAW)
+                return call_jsonrpc_method_template_and_stop('service_stop', tpl, 'service_identity_server')
+            if args[2] == 'start':
+                if not running:
+                    _run_stand_alone_id_server()
+                    return 0
+                tpl = jsontemplate.Template(templ.TPL_RAW)
+                return call_jsonrpc_method_template_and_stop('service_start', tpl, 'service_identity_server')
+            return 2
+    
+        def _register():
+            if len(args) <= 2:
+                return 2
+            pksize = settings.getPrivateKeySize()
+            if len(args) > 3:
+                try:
+                    pksize = int(args[3])
+                except:
+                    print_text('incorrect private key size\n')
+                    return 0
+            from automats import automat
+            from main import initializer
+            from lib import misc
             from logs import lg
-            from userid import id_server
-            lg.open_log_file(os.path.join(settings.LogsDir(), 'idserver.log'))
-            lg.set_debug_level(settings.getDebugLevel())
-            reactor.addSystemEventTrigger('before', 'shutdown', id_server.A().automat, 'shutdown')  # @UndefinedVariable
-            reactor.callWhenRunning(  # @UndefinedVariable
-                id_server.A, 'init', (settings.getIdServerWebPort(), settings.getIdServerTCPPort()))
-            reactor.callLater(0, id_server.A, 'start')  # @UndefinedVariable
+            if not misc.ValidUserName(args[2]):
+                print_text('invalid user name')
+                return 0
+            # automat.LifeBegins(lg.when_life_begins())
+            # automat.OpenLogFile(settings.AutomatsLog())
+            initializer.A('run-cmd-line-register', {'username': args[2], 'pksize': pksize})
             reactor.run()  # @UndefinedVariable
-
-        if len(args) <= 2:
-            if not running:
-                _run_stand_alone_id_server()
+            automat.objects().clear()
+            my_id.loadLocalIdentity()
+            if my_id.isLocalIdentityReady():
+                print_text('\n' + my_id.getLocalIdentity().serialize(as_text=True))
+            else:
+                print_text('identity creation failed, please try again later')
+            return 0
+    
+        def _recover():
+            from system import bpio
+            from lib import nameurl
+            if len(args) < 3:
+                return 2
+            src = bpio.ReadTextFile(args[2])
+            if len(src) > 1024 * 10:
+                print_text('file is too big for private key')
                 return 0
-            tpl = jsontemplate.Template(templ.TPL_SERVICE_INFO)
-            return call_jsonrpc_method_template_and_stop('service_info', tpl, 'service_identity_server')
-        if args[2] == 'stop':
-            if not running:
-                print_text('BitDust is not running at the moment\n')
-                return 0
-            tpl = jsontemplate.Template(templ.TPL_RAW)
-            return call_jsonrpc_method_template_and_stop('service_stop', tpl, 'service_identity_server')
-        if args[2] == 'start':
-            if not running:
-                _run_stand_alone_id_server()
-                return 0
-            tpl = jsontemplate.Template(templ.TPL_RAW)
-            return call_jsonrpc_method_template_and_stop('service_start', tpl, 'service_identity_server')
-        return 2
-
-    def _register():
-        if len(args) <= 2:
-            return 2
-        pksize = settings.getPrivateKeySize()
-        if len(args) > 3:
             try:
-                pksize = int(args[3])
+                lines = src.split('\n')
+                idurl = lines[0]
+                txt = '\n'.join(lines[1:])
+                if idurl != nameurl.FilenameUrl(nameurl.UrlFilename(idurl)):
+                    idurl = ''
+                    txt = src
             except:
-                print_text('incorrect private key size\n')
-                return 0
-        from automats import automat
-        from main import initializer
-        from lib import misc
-        from logs import lg
-        if not misc.ValidUserName(args[2]):
-            print_text('invalid user name')
-            return 0
-        # automat.LifeBegins(lg.when_life_begins())
-        # automat.OpenLogFile(settings.AutomatsLog())
-        initializer.A('run-cmd-line-register', {'username': args[2], 'pksize': pksize})
-        reactor.run()  # @UndefinedVariable
-        automat.objects().clear()
-        my_id.loadLocalIdentity()
-        if my_id.isLocalIdentityReady():
-            print_text('\n' + my_id.getLocalIdentity().serialize(as_text=True))
-        else:
-            print_text('identity creation failed, please try again later')
-        return 0
-
-    def _recover():
-        from system import bpio
-        from lib import nameurl
-        if len(args) < 3:
-            return 2
-        src = bpio.ReadTextFile(args[2])
-        if len(src) > 1024 * 10:
-            print_text('file is too big for private key')
-            return 0
-        try:
-            lines = src.split('\n')
-            idurl = lines[0]
-            txt = '\n'.join(lines[1:])
-            if idurl != nameurl.FilenameUrl(nameurl.UrlFilename(idurl)):
                 idurl = ''
                 txt = src
-        except:
-            idurl = ''
-            txt = src
-        if not idurl and len(args) > 3:
-            idurl = args[3]
-        if not idurl:
-            print_text('BitDust need to know your IDURL to recover your account\n')
-            return 2
-        from automats import automat
-        from main import initializer
-        from logs import lg
-        automat.LifeBegins(lg.when_life_begins())
-        automat.OpenLogFile(settings.AutomatsLog())
-        initializer.A('run-cmd-line-recover', {'idurl': idurl, 'keysrc': txt})
-        reactor.run()  # @UndefinedVariable
-        automat.objects().clear()
-        my_id.loadLocalIdentity()
-        if my_id.isLocalIdentityReady():
-            print_text('\n' + my_id.getLocalIdentity().serialize(as_text=True))
-        else:
-            print_text('identity recovery FAILED')
-        return 0
-
-    if args[1].lower() in ['create', 'new', 'register', 'generate', ]:
-        if my_id.isLocalIdentityReady():
-            print_text('local identity [%s] already exist\n' % my_id.getIDName())
-            return 1
-        if running:
-            print_text('BitDust is running at the moment, need to stop the software first\n')
-            return 0
-        return _register()
-
-    if len(args) >= 2 and args[1].lower() in ['bk', 'backup', 'save', ]:
-        from interface import api
-        key_id = 'master'
-        key_json = api.key_get(key_id=key_id, include_private=True)
-        if key_json['status'] != 'OK':
-            print_text('\n'.join(key_json['errors']))
-            return 1
-        TextToSave = key_json['result'][0]['creator'] + u"\n" + key_json['result'][0]['private']
-        if args[1] in ['bk', 'backup', 'save', ]:
-            from system import bpio
-            curpath = os.getcwd()
-            os.chdir(executablePath)
-            if len(args) >= 3:
-                filenameto = bpio.portablePath(args[2])
+            if not idurl and len(args) > 3:
+                idurl = args[3]
+            if not idurl:
+                print_text('BitDust need to know your IDURL to recover your account\n')
+                return 2
+            from automats import automat
+            from main import initializer
+            from logs import lg
+            automat.LifeBegins(lg.when_life_begins())
+            automat.OpenLogFile(settings.AutomatsLog())
+            initializer.A('run-cmd-line-recover', {'idurl': idurl, 'keysrc': txt})
+            reactor.run()  # @UndefinedVariable
+            automat.objects().clear()
+            my_id.loadLocalIdentity()
+            if my_id.isLocalIdentityReady():
+                print_text('\n' + my_id.getLocalIdentity().serialize(as_text=True))
             else:
-                key_file_name = key_json['result'][0]['key_id'] + '.key'
-                filenameto = bpio.portablePath(os.path.join(os.path.expanduser('~'), key_file_name))
-                # filenameto = bpio.portablePath(os.path.join(executablePath, key_json['result'][0]['key_id'] + '.key'))
-            os.chdir(curpath)
-            if not bpio.WriteTextFile(filenameto, TextToSave):
-                del TextToSave
-                print_text('error writing to %s\n' % filenameto)
-                return 1
-            print_text('IDURL "%s" and "master" key was stored in "%s"' % (
-                key_json['result'][0]['creator'], filenameto))
+                print_text('identity recovery FAILED')
             return 0
+    
+        if args[1].lower() in ['create', 'new', 'register', 'generate', ]:
+            if my_id.isLocalIdentityReady():
+                print_text('local identity [%s] already exist\n' % my_id.getIDName())
+                return 1
+            if running:
+                print_text('BitDust is running at the moment, need to stop the software first\n')
+                return 0
+            return _register()
+    
+        if len(args) >= 2 and args[1].lower() in ['bk', 'backup', 'save', ]:
+            from interface import api
+            key_id = 'master'
+            key_json = api.key_get(key_id=key_id, include_private=True)
+            if key_json['status'] != 'OK':
+                print_text('\n'.join(key_json['errors']))
+                return 1
+            TextToSave = key_json['result'][0]['creator'] + u"\n" + key_json['result'][0]['private']
+            if args[1] in ['bk', 'backup', 'save', ]:
+                from system import bpio
+                curpath = os.getcwd()
+                os.chdir(executablePath)
+                if len(args) >= 3:
+                    filenameto = bpio.portablePath(args[2])
+                else:
+                    key_file_name = key_json['result'][0]['key_id'] + '.key'
+                    filenameto = bpio.portablePath(os.path.join(os.path.expanduser('~'), key_file_name))
+                    # filenameto = bpio.portablePath(os.path.join(executablePath, key_json['result'][0]['key_id'] + '.key'))
+                os.chdir(curpath)
+                if not bpio.WriteTextFile(filenameto, TextToSave):
+                    del TextToSave
+                    print_text('error writing to %s\n' % filenameto)
+                    return 1
+                print_text('IDURL "%s" and "master" key was stored in "%s"' % (
+                    key_json['result'][0]['creator'], filenameto))
+                return 0
+            return 2
+    
+        if args[1].lower() in ['restore', 'recover', 'read', 'load', ]:
+            if running:
+                print_text('BitDust is running at the moment, need to stop the software first\n')
+                return 0
+            return _recover()
+    
+        if args[1].lower() in ['delete', 'remove', 'erase', 'del', 'rm', 'kill']:
+            if running:
+                print_text('BitDust is running at the moment, need to stop the software first\n')
+                return 0
+            oldname = my_id.getIDName()
+            my_id.forgetLocalIdentity()
+            my_id.eraseLocalIdentity()
+            print_text('local identity [%s] is no longer exist\n' % oldname)
+            return 0
+
         return 2
 
-    if args[1].lower() in ['restore', 'recover', 'read', 'load', ]:
-        if running:
-            print_text('BitDust is running at the moment, need to stop the software first\n')
-            return 0
-        return _recover()
-
-    if args[1].lower() in ['delete', 'remove', 'erase', 'del', 'rm', 'kill']:
-        if running:
-            print_text('BitDust is running at the moment, need to stop the software first\n')
-            return 0
-        oldname = my_id.getIDName()
-        my_id.forgetLocalIdentity()
-        my_id.eraseLocalIdentity()
-        print_text('local identity [%s] is no longer exist\n' % oldname)
-        return 0
-
-    return 2
+    ret = _do_cmd()
+    settings.shutdown()
+    return ret
 
 #------------------------------------------------------------------------------
 
@@ -877,6 +882,7 @@ def cmd_set(opts, args, overDict):
                 result['result'][i]['value'] = val[:60].replace('\n', '') + '...'
         tpl = jsontemplate.Template(templ.TPL_OPTIONS_LIST_KEY_TYPE_VALUE)
         print_template(result, tpl)
+        settings.shutdown()
         return 0
     path = '' if len(args) < 2 else args[1]
     path = option_name_to_path(name, path)
@@ -888,7 +894,10 @@ def cmd_set(opts, args, overDict):
             result = api.config_get(path)
         tpl = jsontemplate.Template(templ.TPL_OPTION_MODIFIED)
         print_template(result, tpl)
+        settings.shutdown()
         return 0
+
+    settings.shutdown()
     return 2
 
 
@@ -1154,6 +1163,7 @@ def cmd_dhtseed(opts, args, overDict):
         appList = bpio.find_main_process()
         if len(appList) > 0:
             print_text('main BitDust process already started: %s' % str(appList))
+            settings.shutdown()
             return 0
         print_text('starting Distributed Hash Table seed node and detach main BitDust process')
         result = misc.DoRestart(
@@ -1166,6 +1176,7 @@ def cmd_dhtseed(opts, args, overDict):
             result = result.pid
         except:
             result = str(result)
+        settings.shutdown()
         return 0
 
     from dht import dht_service
@@ -1174,6 +1185,7 @@ def cmd_dhtseed(opts, args, overDict):
     # lg.open_log_file(os.path.join(settings.LogsDir(), 'dhtseed.log'))
     lg.set_debug_level(settings.getDebugLevel())
     dht_service.main(args=args[1:])
+    settings.shutdown()
     return 0
 
 #------------------------------------------------------------------------------
@@ -1220,6 +1232,7 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
         except:
             result = str(result)
         print_text(result)
+        settings.shutdown()
         return 0
 
     #---restart---
@@ -1239,7 +1252,7 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
                 reactor.stop()  # @UndefinedVariable
 
         def failed(x):
-            print_text('soft restart FAILED, now killing previous process and do restart')
+            print_text('soft restart failed, trying to kill previous process to force restart')
             try:
                 kill()
             except:
@@ -1259,6 +1272,8 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
                 std_err=os.path.join(appdata, 'logs', 'stderr.log'),
             )
             reactor.stop()  # @UndefinedVariable
+            settings.shutdown()
+
         try:
             from twisted.internet import reactor  # @UnresolvedImport
             call_jsonrpc_method('restart', ui).addCallbacks(done, failed)
@@ -1300,6 +1315,7 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
             except:
                 pass
             print_text(result)
+            settings.shutdown()
             return 0
         print_text('found main BitDust process: %s, sending command "show" to start the GUI\n' % str(appList))
         call_jsonrpc_method('show')

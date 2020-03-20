@@ -94,6 +94,7 @@ def shutdown():
     """
     if _Debug:
         lg.out(_DebugLevel, 'events.shutdown')
+    clear_subscribers()
     subscribers().clear()
 
 #------------------------------------------------------------------------------

@@ -137,5 +137,6 @@ class Test(TestCase):
 
         key.ForgetMyKey()
         my_id.forgetLocalIdentity()
+        settings.shutdown()
         os.remove('/tmp/_some_priv_key')
         bpio.rmdir_recursive('/tmp/.bitdust_test_signed_key')

@@ -563,6 +563,7 @@ def _test():
     immediatelyCaching(sys.argv[1]).addBoth(_resp)
     reactor.run()  # @UndefinedVariable
     shutdown()
+    settings.shutdown()
 
 #------------------------------------------------------------------------------
 

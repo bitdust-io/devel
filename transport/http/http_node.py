@@ -422,7 +422,8 @@ def main():
         usage()
         return
 
-    reactor.run()
+    reactor.run()  # @UndefinedVariable
+    settings.shutdown()
 
 #------------------------------------------------------------------------------
 

@@ -1150,3 +1150,4 @@ if __name__ == "__main__":
     key.InitMyKey()
     init()
     test()
+    settings.shutdown()

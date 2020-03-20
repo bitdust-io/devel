@@ -124,7 +124,7 @@ def init(ftp_port=None):
     if not os.path.isfile(settings.FTPServerCredentialsFile()):
         bpio.WriteTextFile(settings.FTPServerCredentialsFile(), 'bitdust:bitdust')
     # TODO: add protection: accept connections only from local host: 127.0.0.1
-    _FTPServer = reactor.listenTCP(
+    _FTPServer = reactor.listenTCP(  # @UndefinedVariable
         ftp_port,
         BitDustFTPFactory(
             Portal(
@@ -537,11 +537,8 @@ if __name__ == "__main__":
     backup_control.init()
     # print backup_fs.IsDir('/Users')
     init()
-    reactor.run()
-
-
-
-
+    reactor.run()  # @UndefinedVariable
+    settings.shutdown()
 
 
 

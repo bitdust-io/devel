@@ -1070,6 +1070,7 @@ def main():
         print('Valid is: ', my_id.getLocalIdentity().Valid())
         my_id._LocalIdentity = None
         my_id.loadLocalIdentity()
+    settings.shutdown()
 
 
 def update():
@@ -1087,6 +1088,8 @@ def update():
     my_id.saveLocalIdentity()
     print(my_id.getLocalIdentity().serialize())
     print(my_id.rebuildLocalIdentity(revision_up=True))
+    settings.shutdown()
+
 
 #------------------------------------------------------------------------------
 

@@ -94,6 +94,7 @@ class Test(TestCase):
     def tearDown(self):
         key.ForgetMyKey()
         my_id.forgetLocalIdentity()
+        settings.shutdown()
         os.remove('/tmp/_some_priv_key')
         bpio.rmdir_recursive('/tmp/.bitdust_tmp')
 

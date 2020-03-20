@@ -610,6 +610,7 @@ def main():
 
     reactor.callLater(0, _bk_start)  # @UndefinedVariable
     reactor.run()  # @UndefinedVariable
+    settings.shutdown()
 
 
 if __name__ == "__main__":

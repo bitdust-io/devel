@@ -1180,6 +1180,7 @@ def main():
         lg.out(2, 'INBOX %d : %r' % (globals()['num_in'], a))
         globals()['num_in'] += 1
         return False
+
     callback.insert_inbox_callback(0, _in)
     if len(args) > 0:
         globals()['num_out'] = 0
@@ -1203,6 +1204,7 @@ def main():
         # reactor.callLater(2, t.stop)
 
     reactor.run()  # @UndefinedVariable
+    settings.shutdown()
 
 #------------------------------------------------------------------------------
 

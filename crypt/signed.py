@@ -466,3 +466,4 @@ if __name__ == '__main__':
     p = Unserialize(bpio.ReadBinaryFile(sys.argv[1]))
     print(p.Valid())
     print(p)
+    settings.shutdown()

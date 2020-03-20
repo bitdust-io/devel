@@ -57,6 +57,7 @@ class TestIDURL(TestCase):
 
     def tearDown(self):
         id_url.shutdown()
+        settings.shutdown()
         bpio.rmdir_recursive('/tmp/.bitdust_tmp')
 
     def _cache_identity(self, idname='alice'):

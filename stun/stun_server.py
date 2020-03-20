@@ -214,8 +214,8 @@ def main():
         A('start', udp_port)
 
     d.addCallback(_go)
-
     reactor.run()  # @UndefinedVariable
+    settings.shutdown()
 
 #------------------------------------------------------------------------------
 

@@ -717,9 +717,11 @@ def test1():
     update_sheduler()
     #SetLocalDir('c:\\Program Files\\\xc4 \xd8 \xcd')
     # download_and_replace_starter()
-    reactor.run()
+    reactor.run()  # @UndefinedVariable
+    settings.shutdown()
 
 if __name__ == '__main__':
     bpio.init()
     settings.init()
     test1()
+    settings.shutdown()
