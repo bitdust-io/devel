@@ -282,11 +282,11 @@ class Receiver(object):
 
         if net_misc.proxy_is_on():
             f = TransportHTTPProxyClientFactory(url, method='POST', headers={
-                'User-Agent': 'DataHaven.NET transport_http', 'idurl': my_id.getLocalID(), } )
+                'User-Agent': 'BitDust transport_http', 'idurl': my_id.getLocalID(), } )
             conn = reactor.connectTCP(net_misc.get_proxy_host(), int(net_misc.get_proxy_port()), f)
         else:
             f = TransportHTTPClientFactory(url, method='POST', headers={
-                'User-Agent': 'DataHaven.NET transport_http', 'idurl': my_id.getLocalID(), } )
+                'User-Agent': 'BitDust transport_http', 'idurl': my_id.getLocalID(), } )
             conn = reactor.connectTCP(host, int(port), f)
 
         f.deferred.addCallback(self.on_ping_success, idurl, host, port, conn)
@@ -422,7 +422,8 @@ def main():
         usage()
         return
 
-    reactor.run()
+    reactor.run()  # @UndefinedVariable
+    settings.shutdown()
 
 #------------------------------------------------------------------------------
 

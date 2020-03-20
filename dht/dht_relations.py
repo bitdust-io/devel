@@ -171,3 +171,119 @@ def write_customer_suppliers(customer_idurl, suppliers_list, ecc_map=None, revis
         revision=revision,
         publisher_idurl=publisher_idurl,
     )
+
+#------------------------------------------------------------------------------
+
+def read_customer_message_brokers(customer_idurl, positions=[0, ], return_details=True, as_fields=True):
+    if as_fields:
+        customer_idurl = id_url.field(customer_idurl)
+    else:
+        customer_idurl = id_url.to_bin(customer_idurl)
+    result = Deferred()
+
+    def _do_broker_identity_cache(dht_record, position, broker_result):
+        one_broker_task = identitycache.GetLatest(dht_record['broker_idurl'])
+        one_broker_task.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='read_customer_message_brokers._do_broker_identity_cache')
+        one_broker_task.addCallback(lambda xmlsrc: broker_result.callback(dht_record))
+        return None
+
+    def _do_verify(dht_value, position, broker_result):
+        ret = {
+            'timestamp': None,
+            'revision': 0,
+            'customer_idurl': customer_idurl,
+            'broker_idurl': None,
+            'position': position,
+        }
+        if not dht_value or not isinstance(dht_value, dict):
+            broker_result.callback(ret)
+            return ret
+        try:
+            if as_fields:
+                _customer_idurl = id_url.field(dht_value['customer_idurl'])
+                _broker_idurl = id_url.field(dht_value['broker_idurl'])
+            else:
+                _customer_idurl = id_url.to_bin(dht_value['customer_idurl'])
+                _broker_idurl = id_url.to_bin(dht_value['broker_idurl'])
+            _position = int(dht_value['position'])
+            _revision = int(dht_value.get('revision'))
+            _timestamp = int(dht_value.get('timestamp'))
+        except:
+            lg.exc()
+            broker_result.callback(ret)
+            return ret
+        if as_fields:
+            if _customer_idurl != customer_idurl:
+                lg.err('wrong customer idurl %r in message broker DHT record for %r at position %d' % (
+                    _customer_idurl, customer_idurl, position))
+                broker_result.callback(ret)
+                return ret
+        if position != _position:
+            lg.err('wrong position value %d in message broker DHT record for %r at position %d' % (
+                _position, customer_idurl, position))
+            broker_result.callback(ret)
+            return ret
+        ret.update({
+            'customer_idurl': _customer_idurl,
+            'broker_idurl': _broker_idurl,
+            'position': _position,
+            'revision': _revision,
+            'timestamp': _timestamp,
+        })
+        _do_broker_identity_cache(ret, position, broker_result)
+        return None
+
+    def _on_error(err, position, broker_result):
+        try:
+            msg = err.getErrorMessage()
+        except:
+            msg = str(err).replace('Exception:', '')
+        if _Debug:
+            lg.out(_DebugLevel, 'dht_relations.read_customer_message_brokers ERROR %r at position %d failed with %r' % (
+                customer_idurl, position, msg, ))
+        broker_result.errback(err)
+        return None
+
+    def _do_collect_results(all_results):
+        final_result = []
+        for one_success, one_result in all_results:
+            if one_success:
+                final_result.append(one_result['broker_idurl'])
+        result.callback(final_result)
+        return None
+
+    def _do_read_brokers():
+        all_brokers_results = []
+        for position in positions:
+            one_broker_result = Deferred()
+            all_brokers_results.append(one_broker_result)
+            d = dht_records.get_message_broker(
+                customer_idurl=customer_idurl,
+                position=position,
+                return_details=return_details,
+            )
+            d.addCallback(_do_verify, position, one_broker_result)
+            d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='read_customer_message_brokers._do_read_brokers')
+            d.addErrback(_on_error, position, one_broker_result)
+        join_all_brokers = DeferredList(all_brokers_results, consumeErrors=True)
+        join_all_brokers.addCallback(_do_collect_results)
+        join_all_brokers.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='read_customer_message_brokers._do_read_brokers')
+        join_all_brokers.addErrback(result.errback)
+        return None
+
+    d = identitycache.GetLatest(customer_idurl)
+    d.addCallback(lambda xmlsrc: _do_read_brokers())
+    d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='read_customer_message_brokers')
+    d.addErrback(result.errback)
+    return result
+
+
+def write_customer_message_broker(customer_idurl, broker_idurl, position=0, revision=None):
+    customer_idurl = id_url.field(customer_idurl)
+    broker_idurl = id_url.field(broker_idurl)
+    return dht_records.set_message_broker(
+        customer_idurl=customer_idurl,
+        broker_idurl=broker_idurl,
+        position=position,
+        revision=revision,
+    )

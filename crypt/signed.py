@@ -49,7 +49,7 @@ from __future__ import print_function
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 10
 
 _LogSignVerify = False
@@ -466,3 +466,4 @@ if __name__ == '__main__':
     p = Unserialize(bpio.ReadBinaryFile(sys.argv[1]))
     print(p.Valid())
     print(p)
+    settings.shutdown()

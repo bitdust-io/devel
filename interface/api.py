@@ -1925,7 +1925,7 @@ def share_grant(trusted_remote_user, key_id, timeout=30):
     key_id = strng.to_text(key_id)
     trusted_remote_user = strng.to_text(trusted_remote_user)
     if not key_id.startswith('share_'):
-        return ERROR('invalid share name')
+        return ERROR('invalid share id')
     from userid import global_id
     from userid import id_url
     remote_idurl = id_url.field(trusted_remote_user)
@@ -1961,7 +1961,7 @@ def share_open(key_id):
     if not driver.is_on('service_shared_data'):
         return ERROR('service_shared_data() is not started')
     if not key_id.startswith('share_'):
-        return ERROR('invlid share name')
+        return ERROR('invalid share id')
     from access import shared_access_coordinator
     active_share = shared_access_coordinator.get_active_share(key_id)
     new_share = False
@@ -1994,11 +1994,11 @@ def share_close(key_id):
     if not driver.is_on('service_shared_data'):
         return ERROR('service_shared_data() is not started')
     if not key_id.startswith('share_'):
-        return ERROR('invlid share name')
+        return ERROR('invalid share id')
     from access import shared_access_coordinator
     this_share = shared_access_coordinator.get_active_share(key_id)
     if not this_share:
-        return ERROR('this share is not opened')
+        return ERROR('share "%s" is not opened' % key_id)
     this_share.automat('shutdown')
     return OK('share "%s" closed' % key_id, extra_fields=this_share.to_json())
 
@@ -2010,6 +2010,136 @@ def share_history():
         return ERROR('service_shared_data() is not started')
     # TODO: key share history to be implemented
     return RESULT([],)
+
+#------------------------------------------------------------------------------
+
+def group_list():
+    """
+    """
+    if not driver.is_on('service_private_groups'):
+        return ERROR('service_private_groups() is not started')
+    return RESULT([],)
+
+
+def group_create(creator_id=None, key_size=2048, label=''):
+    """
+    """
+    if not driver.is_on('service_private_groups'):
+        return ERROR('service_private_groups() is not started')
+    from crypt import my_keys
+    from access import groups
+    from userid import my_id
+    if not creator_id:
+        creator_id = my_id.getGlobalID()
+    group_key_id = groups.create_group_key(creator_id=creator_id, label=label, key_size=key_size)
+    key_info = my_keys.get_key_info(group_key_id, include_private=False)
+    key_info.pop('include_private', None)
+    return OK(key_info, message='new group "%s" was created successfully' % group_key_id)
+
+
+def group_leave(group_key_id):
+    """
+    """
+    if not driver.is_on('service_private_groups'):
+        return ERROR('service_private_groups() is not started')
+    group_key_id = strng.to_text(group_key_id)
+    if not group_key_id.startswith('group_'):
+        return ERROR('invalid group id')
+    from access import group_member
+    from crypt import my_keys
+    this_group_member = group_member.get_active_group_memeber(group_key_id)
+    if this_group_member:
+        this_group_member.automat('shutdown')
+    my_keys.erase_key(group_key_id)
+    return OK(message='group key "%s" was deleted successfully' % group_key_id)
+
+
+def group_grant(trusted_remote_user, group_key_id, timeout=30):
+    """
+    """
+    if not driver.is_on('service_private_groups'):
+        return ERROR('service_private_groups() is not started')
+    group_key_id = strng.to_text(group_key_id)
+    if not group_key_id.startswith('group_'):
+        return ERROR('invalid group id')
+    from twisted.internet import reactor  # @UnresolvedImport
+    trusted_remote_user = strng.to_text(trusted_remote_user)
+    from userid import global_id
+    from userid import id_url
+    remote_idurl = id_url.field(trusted_remote_user)
+    if trusted_remote_user.count('@'):
+        glob_id = global_id.ParseGlobalID(trusted_remote_user)
+        remote_idurl = glob_id['idurl']
+    if not remote_idurl:
+        return ERROR('wrong user id')
+    from access import group_access_donor
+    ret = Deferred()
+
+    def _on_group_access_donor_success(result):
+        ret.callback(OK(api_method='share_grant') if result else ERROR('share grant failed', api_method='share_grant'))
+        return None
+
+    def _on_group_access_donor_failed(err):
+        ret.callback(ERROR(err))
+        return None
+
+    d = Deferred()
+    d.addCallback(_on_group_access_donor_success)
+    d.addErrback(_on_group_access_donor_failed)
+    d.addTimeout(timeout, clock=reactor)
+    group_access_donor_machine = group_access_donor.GroupAccessDonor(log_events=True, publish_events=False, )
+    group_access_donor_machine.automat('init', trusted_idurl=remote_idurl, group_key_id=group_key_id, result_defer=d)
+    return ret
+
+
+def group_open(group_key_id):
+    """
+    """
+    if not driver.is_on('service_private_groups'):
+        return ERROR('service_private_groups() is not started')
+    group_key_id = strng.to_text(group_key_id)
+    if not group_key_id.startswith('group_'):
+        return ERROR('invalid group name')
+    from access import group_member
+    active_group_member = group_member.get_active_group_memeber(group_key_id)
+    new_group = False
+    if not active_group_member:
+        new_group = True
+        active_group_member = group_member.GroupQueueMember(group_key_id, log_events=True, publish_events=False, )
+    ret = Deferred()
+
+    def _on_group_queue_memeber_state_changed(oldstate, newstate, event_string, *args, **kwargs):
+        active_group_member.removeStateChangedCallback(_on_group_queue_memeber_state_changed)
+        if newstate == 'CONNECTED':
+            if new_group:
+                ret.callback(OK('group "%s" connected' % group_key_id, extra_fields=active_group_member.to_json(), api_method='group_open'))
+            else:
+                ret.callback(OK('group "%s" refreshed' % group_key_id, extra_fields=active_group_member.to_json(), api_method='group_open'))
+        else:
+            ret.callback(ERROR('group "%s" was not connected' % group_key_id, extra_fields=active_group_member.to_json(), api_method='group_open'))
+        return None
+
+    active_group_member.addStateChangedCallback(_on_group_queue_memeber_state_changed, oldstate=None, newstate='IN_SYNC!')
+    active_group_member.addStateChangedCallback(_on_group_queue_memeber_state_changed, oldstate=None, newstate='DISCONNECTED')
+    active_group_member.automat('restart')
+    return ret
+
+
+def group_close(group_key_id):
+    """
+    """
+    if not driver.is_on('service_private_groups'):
+        return ERROR('service_private_groups() is not started')
+    group_key_id = strng.to_text(group_key_id)
+    if not group_key_id.startswith('group_'):
+        return ERROR('invalid group name')
+    from access import group_member
+    this_group = group_member.get_active_group_memeber(group_key_id)
+    if not this_group:
+        return ERROR('group "%s" is not opened' % group_key_id)
+    this_group.automat('shutdown')
+    return OK('group "%s" closed' % group_key_id)
+
 
 #------------------------------------------------------------------------------
 
@@ -2048,6 +2178,8 @@ def friend_add(idurl_or_global_id, alias=''):
     """
     Add user to the list of friends
     """
+    if not driver.is_on('service_identity_propagate'):
+        return ERROR('service_identity_propagate() is not started')
     from contacts import contactsdb
     from contacts import identitycache
     from main import events
@@ -2092,6 +2224,8 @@ def friend_remove(idurl_or_global_id):
     """
     Remove user from the list of friends
     """
+    if not driver.is_on('service_identity_propagate'):
+        return ERROR('service_identity_propagate() is not started')
     from contacts import contactsdb
     from contacts import identitycache
     from main import events
@@ -3341,7 +3475,7 @@ def message_receive(consumer_id):
          'result': [{
             'type': 'private_message',
             'dir': 'incoming',
-            'message_id': '123456788',
+            'message_id': '123456789',
             'sender': 'messages$alice@first-host.com',
             'recipient': 'messages$bob@second-host.net',
             'data': {

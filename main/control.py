@@ -156,10 +156,3 @@ def request_update(items=None):
             else:
                 for item in items:
                     _UpdateItems.update(item)
-
-#------------------------------------------------------------------------------
-
-if __name__ == "__main__":
-    bpio.init()
-    settings.init()
-    lg.set_debug_level(20)

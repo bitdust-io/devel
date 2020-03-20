@@ -98,7 +98,7 @@ def shutdown():
 
 #------------------------------------------------------------------------------
 
-def _do_request_service_keys_registry(key_id, idurl, include_private, timeout, result):
+def _do_request_service_keys_registry(key_id, idurl, include_private, include_signature, timeout, result):
     p2p_service.SendRequestService(idurl, 'service_keys_registry', callbacks={
         commands.Ack(): lambda response, info:
             _on_service_keys_registry_response(response, info, key_id, idurl, include_private, result, timeout),
@@ -109,7 +109,7 @@ def _do_request_service_keys_registry(key_id, idurl, include_private, timeout, r
     return result
 
 
-def _on_service_keys_registry_response(response, info, key_id, idurl, include_private, result, timeout):
+def _on_service_keys_registry_response(response, info, key_id, idurl, include_private, include_signature, result, timeout):
     if not strng.to_text(response.Payload).startswith('accepted'):
         result.errback(Exception('request for "service_keys_registry" refused by remote node'))
         return None
@@ -117,6 +117,7 @@ def _on_service_keys_registry_response(response, info, key_id, idurl, include_pr
         key_id,
         trusted_idurl=idurl,
         include_private=include_private,
+        include_signature=include_signature,
         timeout=timeout,
         result=result,
     )
@@ -149,7 +150,7 @@ def _on_transfer_key_response(response, info, key_id, result):
     return None
 
 
-def transfer_key(key_id, trusted_idurl, include_private=False, timeout=10, result=None):
+def transfer_key(key_id, trusted_idurl, include_private=False, include_signature=False, timeout=10, result=None):
     """
     Actually sending given key to remote user.
     """
@@ -173,7 +174,12 @@ def transfer_key(key_id, trusted_idurl, include_private=False, timeout=10, resul
         return result
     key_object = my_keys.key_obj(key_id)
     try:
-        key_json = my_keys.make_key_info(key_object, key_id=key_id, include_private=include_private)
+        key_json = my_keys.make_key_info(
+            key_object,
+            key_id=key_id,
+            include_private=include_private,
+            include_signature=include_signature,
+        )
     except Exception as exc:
         lg.exc()
         result.errback(exc)
@@ -202,7 +208,7 @@ def transfer_key(key_id, trusted_idurl, include_private=False, timeout=10, resul
     return result
 
 
-def share_key(key_id, trusted_idurl, include_private=False, timeout=20):
+def share_key(key_id, trusted_idurl, include_private=False, include_signature=False, timeout=20):
     """
     Method to be used to send given key to one trusted user.
     Make sure remote user is identified and connected.
@@ -216,7 +222,7 @@ def share_key(key_id, trusted_idurl, include_private=False, timeout=20):
         keep_alive=False,
     )
     d.addCallback(lambda ok: _do_request_service_keys_registry(
-        key_id, trusted_idurl, include_private, timeout, result,
+        key_id, trusted_idurl, include_private, include_signature, timeout, result,
     ))
     d.addErrback(result.errback)
     return result
@@ -350,15 +356,17 @@ def audit_private_key(key_id, untrusted_idurl, timeout=10):
         lg.warn('wrong key_id')
         result.errback(Exception('wrong key_id'))
         return result
+    remote_idurl = recipient_id_obj.getIDURL()
     private_test_sample = key.NewSessionKey(session_key_type=key.SessionKeyType())
     if untrusted_idurl == creator_idurl and key_alias == 'master':
-        lg.info('doing audit of master key (private part) of remote user')
+        lg.info('doing audit of master key %r for remote user %r' % (key_id, remote_idurl, ))
         private_test_encrypted_sample = recipient_id_obj.encrypt(private_test_sample)
     else:
         if not my_keys.is_key_registered(key_id):
             lg.warn('unknown key: "%s"' % key_id)
             result.errback(Exception('unknown key: "%s"' % key_id))
             return result
+        lg.info('doing audit of private key %r for remote user %r' % (key_id, remote_idurl, ))
         private_test_encrypted_sample = my_keys.encrypt(key_id, private_test_sample)
     json_payload = {
         'key_id': key_id,
@@ -378,7 +386,7 @@ def audit_private_key(key_id, untrusted_idurl, timeout=10):
     )
     encrypted_payload = block.Serialize()
     p2p_service.SendAuditKey(
-        remote_idurl=recipient_id_obj.getIDURL(),
+        remote_idurl=remote_idurl,
         encrypted_payload=encrypted_payload,
         packet_id=key_id,
         timeout=timeout,

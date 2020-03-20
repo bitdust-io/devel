@@ -1444,3 +1444,4 @@ if __name__ == '__main__':
     lg.set_debug_level(20)
     dht_service._Debug = True
     dht_service.main()
+    settings.shutdown()

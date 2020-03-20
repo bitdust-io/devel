@@ -489,6 +489,7 @@ def main():
     reactor.callWhenRunning(A, 'init', (web_port, tcp_port))  # @UndefinedVariable
     reactor.callLater(0, A, 'start')  # @UndefinedVariable
     reactor.run()  # @UndefinedVariable
+    settings.shutdown()
     lg.out(2, 'reactor stopped, EXIT')
 
 #------------------------------------------------------------------------------

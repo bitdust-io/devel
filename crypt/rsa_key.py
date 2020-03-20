@@ -68,13 +68,16 @@ class RSAKey(object):
     def __init__(self):
         self.keyObject = None
         self.label = ''
+        self.signed = None
     
     def isReady(self):
         return self.keyObject is not None
 
     def forget(self):
         self.keyObject = None
-        gc.collect()
+        self.label = ''
+        self.signed = None
+        # gc.collect()
         return True
 
     def size(self):
@@ -111,9 +114,11 @@ class RSAKey(object):
         key_src = key_dict['body']
         result = self.fromString(key_src)
         if result:
-            self.label = key_dict['label']
+            self.label = key_dict.get('label', '')
+            if 'signature' in key_dict and 'pubkey' in key_dict:
+                self.signed = (key_dict['signature'], key_dict['pubkey'], )
         del key_src
-        gc.collect()
+        # gc.collect()
         return result
 
     def fromString(self, key_src):
@@ -126,7 +131,7 @@ class RSAKey(object):
             if _Debug:
                 lg.exc('key_src=%r' % key_src)
         del key_src
-        gc.collect()
+        # gc.collect()
         return True
 
     def fromFile(self, keyfilename):
@@ -140,7 +145,7 @@ class RSAKey(object):
             if _Debug:
                 lg.exc('key_src=%r' % key_src)
         del key_src
-        gc.collect()
+        # gc.collect()
         return True
 
     def toPrivateString(self, output_format='PEM'):
@@ -168,6 +173,11 @@ class RSAKey(object):
             'body': key_body,
             'label': self.label,
         }
+        if self.isSigned():
+            key_dict.update({
+                'signature': self.signed[0],
+                'pubkey': self.signed[1],
+            })
         return key_dict
 
     def sign(self, message, as_digits=True):
@@ -232,3 +242,7 @@ class RSAKey(object):
         cipher = PKCS1_OAEP.new(self.keyObject)
         private_message = cipher.decrypt(encrypted_payload)
         return private_message
+
+    def isSigned(self):
+        return self.signed is not None
+

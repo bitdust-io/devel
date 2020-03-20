@@ -263,6 +263,9 @@ def shutdown():
     if bpio.Windows() and bpio.isFrozen():
         lg.stdout_stop_redirecting()
 
+    from main import settings
+    settings.shutdown()
+
     return 0
 
 #------------------------------------------------------------------------------

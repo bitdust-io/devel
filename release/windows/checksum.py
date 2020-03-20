@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # checksum.py
-# Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
+# Copyright (C) 2008 Veselin Penev, http://bitdust.io
 #
 # This file (checksum.py) is part of BitDust Software.
 #

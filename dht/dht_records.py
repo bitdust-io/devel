@@ -95,6 +95,14 @@ _Rules = {
         'suppliers': [{'op': 'exist', }, ],
         'revision': [{'op': 'exist', }, ],
     },
+    'message_broker': {
+        'key': [{'op': 'exist', }, ],
+        'type': [{'op': 'equal', 'arg': 'message_broker', }, ],
+        'timestamp': [{'op': 'exist', }, ],
+        'customer_idurl': [{'op': 'exist', }, ],
+        'broker_idurl': [{'op': 'exist', }, ],
+        'position': [{'op': 'exist', }, ],
+    },
     'relation': {
         'key': [{'op': 'exist', }, ],
         'type': [{'op': 'equal', 'arg': 'relation', }, ],
@@ -170,7 +178,7 @@ def get_relation(key):
 
 def set_relation(key, idurl, data, prefix, index, expire=60*60):
     # TODO: set_relation() is OBSOLETE...
-    # because of performance reasonse it is better to maintain only one DHT record for each relation exclusively
+    # because of performance reasons it is better to maintain only one DHT record for each relation exclusively
     # need to use another solution here instead of storing multiple records...  
     # check out family_memeber()
     if _Debug:
@@ -193,7 +201,7 @@ def set_relation(key, idurl, data, prefix, index, expire=60*60):
 
 def get_suppliers(customer_idurl, return_details=True):
     if _Debug:
-        lg.args(_DebugLevel, customer_idurl)
+        lg.args(_DebugLevel, customer_idurl=customer_idurl)
     return dht_service.get_valid_data(
         key=dht_service.make_key(
             key=strng.to_text(customer_idurl),
@@ -204,6 +212,8 @@ def get_suppliers(customer_idurl, return_details=True):
     )
 
 def set_suppliers(customer_idurl, ecc_map, suppliers_list, revision=None, publisher_idurl=None, expire=60*60):
+    if _Debug:
+        lg.args(_DebugLevel, customer_idurl=customer_idurl, ecc_map=ecc_map, suppliers_list=suppliers_list, revision=revision)
     return dht_service.set_valid_data(
         key=dht_service.make_key(
             key=strng.to_text(customer_idurl),
@@ -222,3 +232,39 @@ def set_suppliers(customer_idurl, ecc_map, suppliers_list, revision=None, publis
         expire=expire,
         collect_results=True,
     )
+
+#------------------------------------------------------------------------------
+
+def get_message_broker(customer_idurl, position=0, return_details=True):
+    if _Debug:
+        lg.args(_DebugLevel, customer_idurl=customer_idurl, position=position)
+    return dht_service.get_valid_data(
+        key=dht_service.make_key(
+            key='%s%d' % (strng.to_text(customer_idurl), position),
+            prefix='message_broker',
+        ),
+        rules=get_rules('message_broker'),
+        return_details=return_details,
+    )
+
+
+def set_message_broker(customer_idurl, broker_idurl, position=0, revision=None, expire=60*60):
+    return dht_service.set_valid_data(
+        key=dht_service.make_key(
+            key='%s%d' % (strng.to_text(customer_idurl), position),
+            prefix='message_broker',
+        ),
+        json_data={
+            'type': 'message_broker',
+            'timestamp': utime.get_sec1970(),
+            'revision': 0 if revision is None else revision,
+            'customer_idurl': customer_idurl.to_text(),
+            'broker_idurl': broker_idurl.to_text(),
+            'position': position,
+        },
+        rules=get_rules('message_broker'),
+        expire=expire,
+        collect_results=True,
+    )
+
+

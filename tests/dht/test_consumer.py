@@ -73,14 +73,11 @@ def run():
 
 def main():
     settings.init()
-
     lg.set_debug_level(12)
-
     connect_layers = []
     if options.layer != 0:
         connect_layers.append(options.layer)
     dht_service.init(udp_port=14441, open_layers=connect_layers)
-
     seeds = []
 
     for seed_env in os.environ.get('DHT_SEEDS').split(','):
@@ -89,6 +86,7 @@ def main():
 
     dht_service.connect(seeds).addBoth(connected, seeds=seeds)
     reactor.run()  # @UndefinedVariable
+    settings.shutdown()
 
 
 if __name__ == '__main__':

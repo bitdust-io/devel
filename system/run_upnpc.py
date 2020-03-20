@@ -362,6 +362,7 @@ def main():
         settings.init()
         init()
         pprint.pprint(update(sys.argv[2]))
+        settings.shutdown()
     elif sys.argv.count('clear'):
         print(clear())
     else:

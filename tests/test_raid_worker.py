@@ -40,6 +40,7 @@ class _Helper(object):
             config.conf().setBool('services/rebuilding/child-processes-enabled', False)
 
     def tearDown(self):
+        settings.shutdown()
         bpio.rmdir_recursive('/tmp/.bitdust_tmp')
 
     def _test_make_rebuild_read(self, target_ecc_map, num_suppliers, dead_suppliers, read_success, rebuild_one_success, filesize, skip_rebuild=False):

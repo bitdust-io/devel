@@ -45,10 +45,12 @@ _FORMAT_GLOBAL_ID_USER = '{username}@{host}'
 _FORMAT_GLOBAL_ID_USER_KEY = '{user}!{key_alias}'
 _FORMAT_GLOBAL_ID_KEY_USER = '{key_alias}${user}'
 _FORMAT_GLOBAL_ID_QUEUE_ID = '{queue_alias}&{owner_id}&{supplier_id}'
+_FORMAT_GLOBAL_CUSTOMER_QUEUE_ID = '{queue_alias}&{customer_id}&{position}'
 
 _REGEX_GLOBAL_ID_USER_KEY = '^(?P<user>[a-z0-9-_]+)\!(?P<key_alias>[a-z0-9-_]+)$'
 _REGEX_GLOBAL_ID_KEY_USER = '^(?P<key_alias>[a-z0-9-_]+)\$(?P<user>[a-z0-9-_]+)$'
 _REGEX_GLOBAL_ID_QUEUE_ID = '^(?P<queue_alias>[a-z0-9-_]+)\&(?P<owner_id>[a-z0-9-_\@\.]+)\&(?P<supplier_id>[a-z0-9-_\@\.]+)$'
+_REGEX_GLOBAL_CUSTOMER_QUEUE_ID = '^(?P<queue_alias>[a-z0-9-_]+)\&(?P<customer_id>[a-z0-9-_\@\.]+)\&(?P<position>[0-9]+)$'
 
 #------------------------------------------------------------------------------
 
@@ -313,6 +315,7 @@ def GlobalUserToIDURL(inp, as_field=True):
         return None
     _, _, user = user.strip().rpartition('$')
     if idhost.count('_'):
+        # we can do that because domain names never use "_" symbol
         _pos = idhost.rfind('_')
         port = idhost[_pos + 1:]
         try:
@@ -360,7 +363,7 @@ def IsFullGlobalID(inp):
 
 #------------------------------------------------------------------------------
 
-def MakeGlobalQueueID(queue_alias, owner_id=None, supplier_id=None):
+def MakeGlobalQueueID(queue_alias, owner_id, supplier_id):
     """
     """
     global _FORMAT_GLOBAL_ID_QUEUE_ID
@@ -383,6 +386,33 @@ def ParseGlobalQueueID(inp):
     ret['queue_alias'] = strng.to_text(result.group('queue_alias'))
     ret['owner_id'] = strng.to_text(result.group('owner_id'))
     ret['supplier_id'] = strng.to_text(result.group('supplier_id'))
+    return ret
+
+#------------------------------------------------------------------------------
+
+def MakeCustomerQueueID(queue_alias, customer_id, position=0):
+    """
+    """
+    global _FORMAT_GLOBAL_CUSTOMER_QUEUE_ID
+    return _FORMAT_GLOBAL_CUSTOMER_QUEUE_ID.format(
+        queue_alias=strng.to_text(queue_alias),
+        customer_id=strng.to_text(customer_id),
+        position=strng.to_text(position),
+    )
+
+def ParseCustomerQueueID(inp):
+    global _REGEX_GLOBAL_CUSTOMER_QUEUE_ID
+    ret = {
+        'queue_alias': '',
+        'customer_id': '',
+        'position': 0,
+    }
+    result = re.match(_REGEX_GLOBAL_CUSTOMER_QUEUE_ID, inp)
+    if not result:
+        return ret
+    ret['queue_alias'] = strng.to_text(result.group('queue_alias'))
+    ret['customer_id'] = strng.to_text(result.group('customer_id'))
+    ret['position'] = int(result.group('position'))
     return ret
 
 #------------------------------------------------------------------------------

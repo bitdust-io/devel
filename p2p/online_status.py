@@ -125,9 +125,9 @@ _OfflineCheckTask = None
 
 #------------------------------------------------------------------------------
 
-
 def init():
     """
+    Called from top level code when the software is starting.
     Needs to be called before other methods here.
     """
     global _OfflineCheckTask
@@ -142,7 +142,7 @@ def init():
 
 def shutdown():
     """
-    Called from top level code when the software is finishing.
+    Called from top level code when the software is stopping.
     """
     global _OfflineCheckTask
     global _ShutdownFlag
@@ -193,7 +193,7 @@ def on_ping_failed(err, idurl=None, channel=None):
 def ping(idurl, channel=None, ack_timeout=15, ping_retries=0, keep_alive=False):
     """
     Doing handshake with remote node only if it is currently not connected.
-    Returns Deferred object. 
+    Returns Deferred object.
     """
     idurl = strng.to_bin(idurl)
     if _Debug:

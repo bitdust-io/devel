@@ -2156,6 +2156,8 @@ def _test():
     print()
 
     print(HasChilds('', iter=fs(customer_idurl)))
+    
+    settings.shutdown()
 
 #     for i in range(10000):
 #         r = AddFile('file' + str(i))

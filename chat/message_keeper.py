@@ -95,6 +95,7 @@ def on_incoming_message(packet_in_object, private_message_object, json_message):
         recipient=private_message_object.recipient,
     )
     # backup_incoming_message(private_message_object, packet_in_object.PacketID)
+    return False
 
 
 def on_outgoing_message(json_message, private_message_object, remote_identity, outpacket, packet_out_object):
@@ -107,6 +108,7 @@ def on_outgoing_message(json_message, private_message_object, remote_identity, o
         recipient=private_message_object.recipient,
     )
     # backup_outgoing_message(private_message_object, outpacket.PacketID)
+    return False
 
 #------------------------------------------------------------------------------
 

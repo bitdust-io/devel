@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # shared_access_coordinator.py
 #
-# Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
+# Copyright (C) 2008 Veselin Penev, http://bitdust.io
 #
 # This file (shared_access_coordinator.py) is part of BitDust Software.
 #
@@ -25,7 +25,7 @@
 .. module:: shared_access_coordinator
 .. role:: red
 
-BitPie.NET shared_access_coordinator() Automat
+BitDust shared_access_coordinator() Automat
 
 EVENTS:
     * :red:`ack`
@@ -355,7 +355,7 @@ class SharedAccessCoordinator(automat.Automat):
         """
         Action method.
         """
-        # TODO : put in a seprate state in the state machine
+        # TODO : put in a separate state in the state machine
         self.result_defer = kwargs.get('result_defer', None) 
         identitycache.immediatelyCaching(self.customer_idurl)
 

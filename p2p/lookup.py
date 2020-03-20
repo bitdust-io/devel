@@ -162,7 +162,12 @@ def random_supplier():
 
 def random_message_broker():
     from dht import dht_records
-    return start(layer_id=dht_records.LAYER_SUPPLIERS)
+    return start(layer_id=dht_records.LAYER_MESSAGE_BROKERS)
+
+
+def random_merchant():
+    from dht import dht_records
+    return start(layer_id=dht_records.LAYER_MERCHANTS)
 
 #------------------------------------------------------------------------------
 
