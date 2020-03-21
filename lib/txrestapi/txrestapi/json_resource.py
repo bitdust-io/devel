@@ -158,9 +158,9 @@ class JsonAPIResource(Resource):
         return instance
 
     def __init__(self, *args, **kwargs):
-        Resource.__init__(self, *args, **kwargs)
         if PY2:
             self._registry = []
+        Resource.__init__(self, *args, **kwargs)
 
     def _get_callback(self, request):
         path_to_check = getattr(request, '_remaining_path', request.path)

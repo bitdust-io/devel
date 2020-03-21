@@ -1916,6 +1916,24 @@ def share_create(owner_id=None, key_size=2048, label=''):
     return OK(key_info, message='new share "%s" was generated successfully' % key_id, )
 
 
+def share_delete(key_id):
+    """
+    """
+    key_id = strng.to_text(key_id)
+    if not driver.is_on('service_shared_data'):
+        return ERROR('service_shared_data() is not started')
+    if not key_id.startswith('share_'):
+        return ERROR('invalid share id')
+    from access import shared_access_coordinator
+    from crypt import my_keys
+    this_share = shared_access_coordinator.get_active_share(key_id)
+    if not this_share:
+        return ERROR('share "%s" is not opened' % key_id)
+    this_share.automat('shutdown')
+    my_keys.erase_key(key_id)
+    return OK('share "%s" was deleted' % key_id, extra_fields=this_share.to_json())
+
+
 def share_grant(trusted_remote_user, key_id, timeout=30):
     """
     """
@@ -1971,18 +1989,18 @@ def share_open(key_id):
     ret = Deferred()
 
     def _on_shared_access_coordinator_state_changed(oldstate, newstate, event_string, *args, **kwargs):
-        active_share.removeStateChangedCallback(_on_shared_access_coordinator_state_changed)
-        if newstate == 'CONNECTED':
+        if newstate == 'CONNECTED' and oldstate != newstate:
+            active_share.removeStateChangedCallback(_on_shared_access_coordinator_state_changed)
             if new_share:
                 ret.callback(OK('share "%s" opened' % key_id, extra_fields=active_share.to_json(), api_method='share_open'))
             else:
                 ret.callback(OK('share "%s" refreshed' % key_id, extra_fields=active_share.to_json(), api_method='share_open'))
-        else:
-            ret.callback(ERROR('share "%s" was not opened' % key_id, extra_fields=active_share.to_json(), api_method='share_open'))
+        if newstate == 'DISCONNECTED' and oldstate != newstate:
+            active_share.removeStateChangedCallback(_on_shared_access_coordinator_state_changed)
+            ret.callback(ERROR('share "%s" is disconnected' % key_id, extra_fields=active_share.to_json(), api_method='share_open'))
         return None
 
-    active_share.addStateChangedCallback(_on_shared_access_coordinator_state_changed, oldstate=None, newstate='CONNECTED')
-    active_share.addStateChangedCallback(_on_shared_access_coordinator_state_changed, oldstate=None, newstate='DISCONNECTED')
+    active_share.addStateChangedCallback(_on_shared_access_coordinator_state_changed)
     active_share.automat('restart')
     return ret
 
@@ -2034,6 +2052,7 @@ def group_create(creator_id=None, key_size=2048, label=''):
     group_key_id = groups.create_group_key(creator_id=creator_id, label=label, key_size=key_size)
     key_info = my_keys.get_key_info(group_key_id, include_private=False)
     key_info.pop('include_private', None)
+    key_info['group_key_id'] = key_info.pop('key_id')
     return OK(key_info, message='new group "%s" was created successfully' % group_key_id)
 
 
@@ -2047,14 +2066,14 @@ def group_leave(group_key_id):
         return ERROR('invalid group id')
     from access import group_member
     from crypt import my_keys
-    this_group_member = group_member.get_active_group_memeber(group_key_id)
+    this_group_member = group_member.get_active_group_member(group_key_id)
     if this_group_member:
         this_group_member.automat('shutdown')
     my_keys.erase_key(group_key_id)
     return OK(message='group key "%s" was deleted successfully' % group_key_id)
 
 
-def group_grant(trusted_remote_user, group_key_id, timeout=30):
+def group_share(trusted_remote_user, group_key_id, timeout=30):
     """
     """
     if not driver.is_on('service_private_groups'):
@@ -2076,7 +2095,7 @@ def group_grant(trusted_remote_user, group_key_id, timeout=30):
     ret = Deferred()
 
     def _on_group_access_donor_success(result):
-        ret.callback(OK(api_method='share_grant') if result else ERROR('share grant failed', api_method='share_grant'))
+        ret.callback(OK(api_method='share_grant') if result else ERROR('share grant failed', api_method='group_share'))
         return None
 
     def _on_group_access_donor_failed(err):
@@ -2101,27 +2120,28 @@ def group_open(group_key_id):
     if not group_key_id.startswith('group_'):
         return ERROR('invalid group name')
     from access import group_member
-    active_group_member = group_member.get_active_group_memeber(group_key_id)
+    active_group_member = group_member.get_active_group_member(group_key_id)
     new_group = False
     if not active_group_member:
         new_group = True
-        active_group_member = group_member.GroupQueueMember(group_key_id, log_events=True, publish_events=False, )
+        active_group_member = group_member.GroupQueueMember(group_key_id)
     ret = Deferred()
 
     def _on_group_queue_memeber_state_changed(oldstate, newstate, event_string, *args, **kwargs):
-        active_group_member.removeStateChangedCallback(_on_group_queue_memeber_state_changed)
-        if newstate == 'CONNECTED':
+        if newstate == 'IN_SYNC!' and oldstate != newstate:
+            active_group_member.removeStateChangedCallback(_on_group_queue_memeber_state_changed)
             if new_group:
                 ret.callback(OK('group "%s" connected' % group_key_id, extra_fields=active_group_member.to_json(), api_method='group_open'))
             else:
                 ret.callback(OK('group "%s" refreshed' % group_key_id, extra_fields=active_group_member.to_json(), api_method='group_open'))
-        else:
-            ret.callback(ERROR('group "%s" was not connected' % group_key_id, extra_fields=active_group_member.to_json(), api_method='group_open'))
+        if newstate == 'DISCONNECTED' and oldstate != newstate:
+            active_group_member.removeStateChangedCallback(_on_group_queue_memeber_state_changed)
+            ret.callback(ERROR('group "%s" is disconnected' % group_key_id, extra_fields=active_group_member.to_json(), api_method='group_open'))
         return None
 
-    active_group_member.addStateChangedCallback(_on_group_queue_memeber_state_changed, oldstate=None, newstate='IN_SYNC!')
-    active_group_member.addStateChangedCallback(_on_group_queue_memeber_state_changed, oldstate=None, newstate='DISCONNECTED')
-    active_group_member.automat('restart')
+    active_group_member.addStateChangedCallback(_on_group_queue_memeber_state_changed)
+    active_group_member.automat('init')
+    active_group_member.automat('connect')
     return ret
 
 
@@ -2134,7 +2154,7 @@ def group_close(group_key_id):
     if not group_key_id.startswith('group_'):
         return ERROR('invalid group name')
     from access import group_member
-    this_group = group_member.get_active_group_memeber(group_key_id)
+    this_group = group_member.get_active_group_member(group_key_id)
     if not this_group:
         return ERROR('group "%s" is not opened' % group_key_id)
     this_group.automat('shutdown')

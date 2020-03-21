@@ -28,7 +28,7 @@
 BitDust group_member() Automat
 
 EVENTS:
-    * :red:`brokers-fialed`
+    * :red:`brokers-failed`
     * :red:`brokers-found`
     * :red:`brokers-hired`
     * :red:`brokers-not-found`
@@ -64,12 +64,10 @@ from logs import lg
 
 from automats import automat
 
-from lib import strng
 from lib import utime
 from lib import jsn
 from lib import packetid
 
-from main import events
 from main import settings
 
 from system import local_fs
@@ -83,8 +81,6 @@ from chat import message
 
 from p2p import lookup
 from p2p import p2p_service_seeker
-from p2p import commands
-from p2p import p2p_service
 
 from userid import global_id
 from userid import id_url
@@ -120,6 +116,8 @@ def groups():
 def load_groups():
     service_dir = settings.ServiceDir('service_private_groups')
     groups_dir = os.path.join(service_dir, 'groups')
+    if not os.path.isdir(groups_dir):
+        bpio._dirs_make(groups_dir)
     for group_key_id in os.listdir(groups_dir):
         if group_key_id not in groups():
             groups()[group_key_id] = {
@@ -208,25 +206,25 @@ def get_last_sequence_id(group_key_id):
 
 #------------------------------------------------------------------------------
 
-def register_group_memeber(A):
+def register_group_member(A):
     """
     """
     global _ActiveGroupMembers
     global _ActiveGroupMembersByIDURL
-    if A.key_id in _ActiveGroupMembers:
-        raise Exception('group_memeber already exist')
+    if A.group_key_id in _ActiveGroupMembers:
+        raise Exception('group_member already exist')
     if id_url.is_not_in(A.group_creator_idurl, _ActiveGroupMembersByIDURL):
         _ActiveGroupMembersByIDURL[A.group_creator_idurl] = []
     _ActiveGroupMembersByIDURL[A.group_creator_idurl].append(A)
-    _ActiveGroupMembers[A.key_id] = A
+    _ActiveGroupMembers[A.group_key_id] = A
 
 
-def unregister_group_memeber(A):
+def unregister_group_member(A):
     """
     """
     global _ActiveGroupMembers
     global _ActiveGroupMembersByIDURL
-    _ActiveGroupMembers.pop(A.key_id, None)
+    _ActiveGroupMembers.pop(A.group_key_id, None)
     if id_url.is_not_in(A.group_creator_idurl, _ActiveGroupMembersByIDURL):
         lg.warn('for given customer idurl did not found in active group memebers lists')
     else:
@@ -234,13 +232,13 @@ def unregister_group_memeber(A):
 
 #------------------------------------------------------------------------------
 
-def list_active_group_memebers():
+def list_active_group_members():
     """
     """
     global _ActiveGroupMembers
     return list(_ActiveGroupMembers.keys())
 
-def get_active_group_memeber(group_key_id):
+def get_active_group_member(group_key_id):
     """
     """
     global _ActiveGroupMembers
@@ -249,7 +247,7 @@ def get_active_group_memeber(group_key_id):
     return _ActiveGroupMembers[group_key_id]
 
 
-def find_active_group_memebers(group_creator_idurl):
+def find_active_group_members(group_creator_idurl):
     """
     """
     global _ActiveGroupMembersByIDURL
@@ -269,7 +267,7 @@ class GroupQueueMember(automat.Automat):
     This class implements all the functionality of ``group_member()`` state machine.
     """
 
-    def __init__(self, group_key_id, member_idurl=None, debug_level=0, log_events=False, log_transitions=False, publish_events=False, **kwargs):
+    def __init__(self, group_key_id, member_idurl=None, debug_level=0, log_events=_Debug, log_transitions=_Debug, **kwargs):
         """
         Builds `group_member()` state machine.
         """
@@ -284,12 +282,12 @@ class GroupQueueMember(automat.Automat):
         self.active_queue_id = None
         self.dead_broker = None
         super(GroupQueueMember, self).__init__(
-            name="member_%s$%s" % (self.group_queue_alias[:10], self.group_owner_id),
+            name="member_%s$%s" % (self.group_queue_alias[:10], self.group_creator_id),
             state="AT_STARTUP",
             debug_level=debug_level,
             log_events=log_events,
             log_transitions=log_transitions,
-            publish_events=publish_events,
+            publish_events=False,
             **kwargs
         )
 
@@ -326,13 +324,13 @@ class GroupQueueMember(automat.Automat):
         """
         """
         automat_index = automat.Automat.register(self)
-        register_group_memeber(self)
+        register_group_member(self)
         return automat_index
 
     def unregister(self):
         """
         """
-        unregister_group_memeber(self)
+        unregister_group_member(self)
         return automat.Automat.unregister(self)
 
     def A(self, event, *args, **kwargs):
@@ -376,13 +374,13 @@ class GroupQueueMember(automat.Automat):
                 self.state = 'QUEUE?'
                 self.doRememberBrokers(*args, **kwargs)
                 self.doReadQueue(*args, **kwargs)
-            elif event == 'brokers-fialed':
-                self.state = 'DISCONNECTED'
-                self.doForgetBrokers(*args, **kwargs)
-                self.doDisconnected(event, *args, **kwargs)
             elif event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(*args, **kwargs)
+            elif event == 'brokers-failed':
+                self.state = 'DISCONNECTED'
+                self.doForgetBrokers(*args, **kwargs)
+                self.doDisconnected(event, *args, **kwargs)
         #---QUEUE?---
         elif self.state == 'QUEUE?':
             if event == 'queue-in-sync':
@@ -467,7 +465,7 @@ class GroupQueueMember(automat.Automat):
                 self.active_broker_id = broker_id
                 self.active_queue_id = global_id.MakeGlobalQueueID(
                     queue_alias=self.group_queue_alias,
-                    owner_id=self.group_owner_id,
+                    owner_id=self.group_creator_id,
                     supplier_id=self.active_broker_id,
                 )
 
@@ -524,7 +522,7 @@ class GroupQueueMember(automat.Automat):
     def _do_prepare_service_request_params(self, possible_broker_idurl):
         queue_id = global_id.MakeGlobalQueueID(
             queue_alias=self.group_queue_alias,
-            owner_id=self.group_owner_id,
+            owner_id=self.group_creator_id,
             supplier_id=global_id.idurl2glob(possible_broker_idurl),
         )
         group_key_info = my_keys.get_key_info(self.group_key_id, include_private=False)

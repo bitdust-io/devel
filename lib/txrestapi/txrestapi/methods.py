@@ -1,24 +1,34 @@
 from six import PY2, b
 
 def method_factory_factory(method):
+
     def factory_py2(regex):
         from zope.interface.advice import addClassAdvisor
         _f = {}
+
         def decorator(f):
             _f[f.__name__] = f
             return f
+
         def advisor(cls):
+
             def wrapped(f):
+
                 def __init__(self, *args, **kwargs):
                     f(self, *args, **kwargs)
+                    func = None
+                    orig = None
                     for func_name in _f:
                         orig = _f[func_name]
                         func = getattr(self, func_name)
-                    if func.im_func==orig:
+                    if orig and func and func.im_func == orig:
                         self.register(method, regex, func)
+
                 return __init__
+
             cls.__init__ = wrapped(cls.__init__)
             return cls
+
         addClassAdvisor(advisor)
         return decorator
 
