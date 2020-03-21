@@ -33,6 +33,7 @@ module:: api_rest_http_server
 #------------------------------------------------------------------------------
 
 from __future__ import absolute_import
+from six import PY2
 
 #------------------------------------------------------------------------------
 
@@ -44,6 +45,7 @@ _APILogFileEnabled = False
 #------------------------------------------------------------------------------
 
 import os
+import sys
 import time
 
 #------------------------------------------------------------------------------
@@ -89,8 +91,17 @@ def init(port=None):
         port = 8180
 
     read_api_secret()
+
+    current_recursionlimit = None
+    if PY2:
+        current_recursionlimit = sys.getrecursionlimit()
+        sys.setrecursionlimit(2000)
+
     serve_http(port)
     # serve_https(port)
+
+    if PY2:
+        sys.setrecursionlimit(current_recursionlimit)
 
     lg.out(4, 'api_rest_http_server.init')
 
@@ -165,6 +176,7 @@ def serve_https(port):
         _APIListener = reactor.listenSSL(port, site, cert.options(auth), interface='127.0.0.1')  # @UndefinedVariable
     except:
         lg.exc()
+        os._exit(1)
 
 
 def serve_http(port):
@@ -175,6 +187,7 @@ def serve_http(port):
         _APIListener = reactor.listenTCP(port, site)  # @UndefinedVariable
     except:
         lg.exc()
+        os._exit(1)
 
 #------------------------------------------------------------------------------
 
@@ -275,6 +288,8 @@ class BitDustRESTHTTPServer(JsonAPIResource):
         return JsonAPIResource.getChild(self, name, request)
 
     def log_request(self, request, callback, args):
+        if not callback:
+            return None
         uri = request.uri.decode()
         try:
             func_name = callback.im_func.func_name
@@ -757,7 +772,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @PUT('^/v1/group/share$')
     @PUT('^/group/share/v1$')
     def group_share_v1(self, request):
-        data = _request_data(request, mandatory_keys=[('trusted_global_id', 'trusted_idurl', 'trusted_id', ), 'key_id', ])
+        data = _request_data(request, mandatory_keys=[('trusted_global_id', 'trusted_idurl', 'trusted_id', ), 'group_key_id', ])
         return api.group_share(
             trusted_remote_user=data.get('trusted_global_id') or data.get('trusted_idurl') or data.get('trusted_id'),
             group_key_id=data['group_key_id'],

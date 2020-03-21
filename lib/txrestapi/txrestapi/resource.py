@@ -2,7 +2,7 @@ import re
 import six
 from six import PY2, b, u
 if PY2:
-    from itertools import ifilter as filter
+    from itertools import ifilter as filter  # @UnresolvedImport
 from functools import wraps
 from twisted.web.resource import Resource, NoResource
 

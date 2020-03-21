@@ -1989,18 +1989,18 @@ def share_open(key_id):
     ret = Deferred()
 
     def _on_shared_access_coordinator_state_changed(oldstate, newstate, event_string, *args, **kwargs):
-        active_share.removeStateChangedCallback(_on_shared_access_coordinator_state_changed)
-        if newstate == 'CONNECTED':
+        if newstate == 'CONNECTED' and oldstate != newstate:
+            active_share.removeStateChangedCallback(_on_shared_access_coordinator_state_changed)
             if new_share:
                 ret.callback(OK('share "%s" opened' % key_id, extra_fields=active_share.to_json(), api_method='share_open'))
             else:
                 ret.callback(OK('share "%s" refreshed' % key_id, extra_fields=active_share.to_json(), api_method='share_open'))
-        else:
-            ret.callback(ERROR('share "%s" was not opened' % key_id, extra_fields=active_share.to_json(), api_method='share_open'))
+        if newstate == 'DISCONNECTED' and oldstate != newstate:
+            active_share.removeStateChangedCallback(_on_shared_access_coordinator_state_changed)
+            ret.callback(ERROR('share "%s" is disconnected' % key_id, extra_fields=active_share.to_json(), api_method='share_open'))
         return None
 
-    active_share.addStateChangedCallback(_on_shared_access_coordinator_state_changed, oldstate=None, newstate='CONNECTED')
-    active_share.addStateChangedCallback(_on_shared_access_coordinator_state_changed, oldstate=None, newstate='DISCONNECTED')
+    active_share.addStateChangedCallback(_on_shared_access_coordinator_state_changed)
     active_share.automat('restart')
     return ret
 
@@ -2052,6 +2052,7 @@ def group_create(creator_id=None, key_size=2048, label=''):
     group_key_id = groups.create_group_key(creator_id=creator_id, label=label, key_size=key_size)
     key_info = my_keys.get_key_info(group_key_id, include_private=False)
     key_info.pop('include_private', None)
+    key_info['group_key_id'] = key_info.pop('key_id')
     return OK(key_info, message='new group "%s" was created successfully' % group_key_id)
 
 
@@ -2123,23 +2124,24 @@ def group_open(group_key_id):
     new_group = False
     if not active_group_member:
         new_group = True
-        active_group_member = group_member.GroupQueueMember(group_key_id, log_events=True, publish_events=False, )
+        active_group_member = group_member.GroupQueueMember(group_key_id)
     ret = Deferred()
 
     def _on_group_queue_memeber_state_changed(oldstate, newstate, event_string, *args, **kwargs):
-        active_group_member.removeStateChangedCallback(_on_group_queue_memeber_state_changed)
-        if newstate == 'CONNECTED':
+        if newstate == 'IN_SYNC!' and oldstate != newstate:
+            active_group_member.removeStateChangedCallback(_on_group_queue_memeber_state_changed)
             if new_group:
                 ret.callback(OK('group "%s" connected' % group_key_id, extra_fields=active_group_member.to_json(), api_method='group_open'))
             else:
                 ret.callback(OK('group "%s" refreshed' % group_key_id, extra_fields=active_group_member.to_json(), api_method='group_open'))
-        else:
-            ret.callback(ERROR('group "%s" was not connected' % group_key_id, extra_fields=active_group_member.to_json(), api_method='group_open'))
+        if newstate == 'DISCONNECTED' and oldstate != newstate:
+            active_group_member.removeStateChangedCallback(_on_group_queue_memeber_state_changed)
+            ret.callback(ERROR('group "%s" is disconnected' % group_key_id, extra_fields=active_group_member.to_json(), api_method='group_open'))
         return None
 
-    active_group_member.addStateChangedCallback(_on_group_queue_memeber_state_changed, oldstate=None, newstate='IN_SYNC!')
-    active_group_member.addStateChangedCallback(_on_group_queue_memeber_state_changed, oldstate=None, newstate='DISCONNECTED')
-    active_group_member.automat('restart')
+    active_group_member.addStateChangedCallback(_on_group_queue_memeber_state_changed)
+    active_group_member.automat('init')
+    active_group_member.automat('connect')
     return ret
 
 

@@ -28,7 +28,7 @@
 BitDust group_member() Automat
 
 EVENTS:
-    * :red:`brokers-fialed`
+    * :red:`brokers-failed`
     * :red:`brokers-found`
     * :red:`brokers-hired`
     * :red:`brokers-not-found`
@@ -211,12 +211,12 @@ def register_group_member(A):
     """
     global _ActiveGroupMembers
     global _ActiveGroupMembersByIDURL
-    if A.key_id in _ActiveGroupMembers:
+    if A.group_key_id in _ActiveGroupMembers:
         raise Exception('group_member already exist')
     if id_url.is_not_in(A.group_creator_idurl, _ActiveGroupMembersByIDURL):
         _ActiveGroupMembersByIDURL[A.group_creator_idurl] = []
     _ActiveGroupMembersByIDURL[A.group_creator_idurl].append(A)
-    _ActiveGroupMembers[A.key_id] = A
+    _ActiveGroupMembers[A.group_key_id] = A
 
 
 def unregister_group_member(A):
@@ -224,7 +224,7 @@ def unregister_group_member(A):
     """
     global _ActiveGroupMembers
     global _ActiveGroupMembersByIDURL
-    _ActiveGroupMembers.pop(A.key_id, None)
+    _ActiveGroupMembers.pop(A.group_key_id, None)
     if id_url.is_not_in(A.group_creator_idurl, _ActiveGroupMembersByIDURL):
         lg.warn('for given customer idurl did not found in active group memebers lists')
     else:
@@ -267,7 +267,7 @@ class GroupQueueMember(automat.Automat):
     This class implements all the functionality of ``group_member()`` state machine.
     """
 
-    def __init__(self, group_key_id, member_idurl=None, debug_level=0, log_events=False, log_transitions=False, publish_events=False, **kwargs):
+    def __init__(self, group_key_id, member_idurl=None, debug_level=0, log_events=_Debug, log_transitions=_Debug, **kwargs):
         """
         Builds `group_member()` state machine.
         """
@@ -282,12 +282,12 @@ class GroupQueueMember(automat.Automat):
         self.active_queue_id = None
         self.dead_broker = None
         super(GroupQueueMember, self).__init__(
-            name="member_%s$%s" % (self.group_queue_alias[:10], self.group_owner_id),
+            name="member_%s$%s" % (self.group_queue_alias[:10], self.group_creator_id),
             state="AT_STARTUP",
             debug_level=debug_level,
             log_events=log_events,
             log_transitions=log_transitions,
-            publish_events=publish_events,
+            publish_events=False,
             **kwargs
         )
 
@@ -374,13 +374,13 @@ class GroupQueueMember(automat.Automat):
                 self.state = 'QUEUE?'
                 self.doRememberBrokers(*args, **kwargs)
                 self.doReadQueue(*args, **kwargs)
-            elif event == 'brokers-fialed':
-                self.state = 'DISCONNECTED'
-                self.doForgetBrokers(*args, **kwargs)
-                self.doDisconnected(event, *args, **kwargs)
             elif event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(*args, **kwargs)
+            elif event == 'brokers-failed':
+                self.state = 'DISCONNECTED'
+                self.doForgetBrokers(*args, **kwargs)
+                self.doDisconnected(event, *args, **kwargs)
         #---QUEUE?---
         elif self.state == 'QUEUE?':
             if event == 'queue-in-sync':
@@ -465,7 +465,7 @@ class GroupQueueMember(automat.Automat):
                 self.active_broker_id = broker_id
                 self.active_queue_id = global_id.MakeGlobalQueueID(
                     queue_alias=self.group_queue_alias,
-                    owner_id=self.group_owner_id,
+                    owner_id=self.group_creator_id,
                     supplier_id=self.active_broker_id,
                 )
 
@@ -522,7 +522,7 @@ class GroupQueueMember(automat.Automat):
     def _do_prepare_service_request_params(self, possible_broker_idurl):
         queue_id = global_id.MakeGlobalQueueID(
             queue_alias=self.group_queue_alias,
-            owner_id=self.group_owner_id,
+            owner_id=self.group_creator_id,
             supplier_id=global_id.idurl2glob(possible_broker_idurl),
         )
         group_key_info = my_keys.get_key_info(self.group_key_id, include_private=False)
