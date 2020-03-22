@@ -407,7 +407,7 @@ def on_key_received(newpacket, info, status, error_message):
     """
     block = encrypted.Unserialize(newpacket.Payload)
     if block is None:
-        lg.out(2, 'key_ring.on_key_received ERROR reading data from %s' % newpacket.RemoteID)
+        lg.err('failed reading key info from %s' % newpacket.RemoteID)
         return False
     try:
         key_data = block.Data()
@@ -415,6 +415,9 @@ def on_key_received(newpacket, info, status, error_message):
         key_id = key_json['key_id']
         key_label = key_json.get('label', '')
         key_id, key_object = my_keys.read_key_info(key_json)
+        if key_object.isSigned():
+            if not my_keys.verify_key_info_signature(key_json):
+                raise Exception('key signature verification failed')
         if key_object.isPublic():
             # received key is a public key
             if my_keys.is_key_registered(key_id):
@@ -467,7 +470,7 @@ def on_key_received(newpacket, info, status, error_message):
         return True
     except Exception as exc:
         lg.exc()
-        p2p_service.SendFail(newpacket, str(exc))
+        p2p_service.SendFail(newpacket, strng.to_text(exc))
     return False
 
 

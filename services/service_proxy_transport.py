@@ -79,8 +79,6 @@ class ProxyTransportService(LocalService):
         conf().addConfigNotifier('services/proxy-transport/receiving-enabled', self._on_receiving_enabled_disabled)
         if driver.is_on('service_entangled_dht'):
             self._do_join_proxy_routers_dht_layer()
-        else:
-            lg.warn('service service_entangled_dht is OFF')
         events.add_subscriber(self._on_dht_layer_connected, event_id='dht-layer-connected')
         return self.starting_deferred
 

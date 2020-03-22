@@ -31,8 +31,9 @@ import json
 
 from testsupport import open_one_tunnel_async, clean_one_node_async, clean_one_customer_async, \
     start_one_dht_seed, start_one_identity_server_async, start_one_stun_server_async, start_one_proxy_server_async, \
-    start_one_supplier_async, start_one_customer_async, stop_daemon_async, run_ssh_command_and_wait, \
-    print_exceptions_one_node, report_one_node, collect_coverage_one_node_async, log_network_info_one_node_async
+    start_one_supplier_async, start_one_customer_async, stop_daemon_async, start_one_message_broker_async, \
+    run_ssh_command_and_wait, print_exceptions_one_node, report_one_node, collect_coverage_one_node_async, \
+    log_network_info_one_node_async
 
 #------------------------------------------------------------------------------
 
@@ -98,6 +99,11 @@ def start_all_nodes(event_loop):
 
     event_loop.run_until_complete(asyncio.gather(*[
         start_one_supplier_async(supplier, event_loop) for supplier in ALL_ROLES['supplier']
+    ]))
+    print(f'\nALL SUPPLIERS STARTED\n')
+
+    event_loop.run_until_complete(asyncio.gather(*[
+        start_one_message_broker_async(message_broker, event_loop) for message_broker in ALL_ROLES['message-broker']
     ]))
     print(f'\nALL SUPPLIERS STARTED\n')
 

@@ -63,8 +63,6 @@ class EmployerService(LocalService):
         self.all_suppliers_hired_event_sent = False 
         if driver.is_on('service_entangled_dht'):
             self._do_join_suppliers_dht_layer()
-        else:
-            lg.warn('service service_entangled_dht is OFF')
         eccmap.Update()
         fire_hire.A('init')
         fire_hire.A().addStateChangedCallback(self._on_fire_hire_ready, None, 'READY')

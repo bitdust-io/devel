@@ -612,6 +612,7 @@ class MessagePeddler(automat.Automat):
         Action method.
         """
         load_streams()
+        reactor.callLater(0, self.automat, 'queues-loaded')  # @UndefinedVariable
 
     def doRunQueues(self, *args, **kwargs):
         """
@@ -631,13 +632,37 @@ class MessagePeddler(automat.Automat):
         """
         Action method.
         """
-        group_key = kwargs['group_key']
+        group_key_info = kwargs['group_key']
+        result_defer = kwargs['result_defer']
+        request_packet = kwargs['request_packet']
+        if not my_keys.verify_key_info_signature(group_key_info):
+            p2p_service.SendFail(request_packet, 'group key verification failed')
+            result_defer.callback(False)
+            return
+        try:
+            group_key_id, key_object = my_keys.read_key_info(group_key_info)
+        except Exception as exc:
+            p2p_service.SendFail(request_packet, strng.to_text(exc))
+            result_defer.callback(False)
+            return
+        if my_keys.is_key_registered(group_key_id):
+            if my_keys.is_key_private(group_key_id):
+                p2p_service.SendFail(request_packet, 'private key already registered')
+                result_defer.callback(False)
+                return
+            if my_keys.get_public_key_raw(group_key_id) != key_object.toPublicString():
+                p2p_service.SendFail(request_packet, 'another public key already registered')
+                result_defer.callback(False)
+                return
+        else:
+            if not my_keys.register_key(group_key_id, key_object, group_key_info.get('label', '')):
+                p2p_service.SendFail(request_packet, 'key register failed')
+                result_defer.callback(False)
+                return
+        # TODO: start queue_keeper() instance and make sure current broker position for customer is reserved in DHT
         queue_id = kwargs['queue_id']
         consumer_id = kwargs['consumer_id']
         producer_id = kwargs['producer_id']
-        request_packet = kwargs['request_packet']
-        result_defer = kwargs['result_defer']
-        # TODO: check/register group_key
         open_stream(kwargs['queue_id'])
         if consumer_id:
             add_consumer(queue_id, consumer_id)
@@ -651,7 +676,7 @@ class MessagePeddler(automat.Automat):
         """
         Action method.
         """
-        group_key = kwargs['group_key']
+        # group_key = kwargs['group_key']
         queue_id = kwargs['queue_id']
         consumer_id = kwargs['consumer_id']
         producer_id = kwargs['producer_id']
@@ -661,7 +686,6 @@ class MessagePeddler(automat.Automat):
             p2p_service.SendFail(request_packet, 'queue %r not registered' % queue_id)
             result_defer.callback(True)
             return
-        # TODO: check/register group_key
         if consumer_id:
             if not remove_consumer(queue_id, consumer_id):
                 p2p_service.SendFail(request_packet, 'consumer %r is not registered for queue %r' % (consumer_id, queue_id))
@@ -673,8 +697,10 @@ class MessagePeddler(automat.Automat):
                 result_defer.callback(True)
                 return
         if not streams()[queue_id]['consumers'] and not streams()[queue_id]['producers']:
+            # TODO: stop queue_keeper() instance
             stop_stream(queue_id)
             close_stream(queue_id)
+        # TODO: check/un-register group_key if no consumers left
         p2p_service.SendAck(request_packet, 'accepted')
         result_defer.callback(True)
 

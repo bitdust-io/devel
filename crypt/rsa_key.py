@@ -115,8 +115,8 @@ class RSAKey(object):
         result = self.fromString(key_src)
         if result:
             self.label = key_dict.get('label', '')
-            if 'signature' in key_dict and 'pubkey' in key_dict:
-                self.signed = (key_dict['signature'], key_dict['pubkey'], )
+            if 'signature' in key_dict and 'signature_pubkey' in key_dict:
+                self.signed = (key_dict['signature'], key_dict['signature_pubkey'], )
         del key_src
         # gc.collect()
         return result
@@ -176,7 +176,7 @@ class RSAKey(object):
         if self.isSigned():
             key_dict.update({
                 'signature': self.signed[0],
-                'pubkey': self.signed[1],
+                'signature_pubkey': self.signed[1],
             })
         return key_dict
 

@@ -69,6 +69,10 @@ from userid import my_id
 
 #------------------------------------------------------------------------------
 
+_P2PServiceSeekerInstaceCounter = 0
+
+#------------------------------------------------------------------------------
+
 class P2PServiceSeeker(automat.Automat):
     """
     This class implements all the functionality of the ``p2p_service_seeker()``
@@ -210,7 +214,7 @@ class P2PServiceSeeker(automat.Automat):
             callbacks={
                 commands.Ack(): self._node_acked,
                 commands.Fail(): self._node_failed,
-                None: lambda pkt_out: self.automat('fail'),
+                None: self._node_timed_out,
             }
         )
         self.requested_packet_id = out_packet.PacketID
@@ -288,6 +292,11 @@ class P2PServiceSeeker(automat.Automat):
             lg.out(_DebugLevel, 'p2p_service_seeker._node_failed %r %r' % (response, info))
         self.automat('service-denied')
 
+    def _node_timed_out(self, pkt_out):
+        if _Debug:
+            lg.out(_DebugLevel, 'p2p_service_seeker._node_timed_out for outgoing packet %r' % pkt_out)
+        self.automat('fail')
+
     def _nodes_lookup_finished(self, idurls):
         if _Debug:
             lg.out(_DebugLevel, 'p2p_service_seeker._nodes_lookup_finished : %r' % idurls)
@@ -309,28 +318,36 @@ class P2PServiceSeeker(automat.Automat):
 
 #------------------------------------------------------------------------------
 
-
-def on_lookup_result(event, arg, result_defer):
+def on_lookup_result(event, result_defer, *args, **kwargs):
     """
     """
     if _Debug:
-        lg.out(_DebugLevel, 'p2p_service_seeker.on_lookup_result %r with %r' % (event, arg, ))
+        lg.args(_DebugLevel, event=event, args=args, kwargs=kwargs)
     if event == 'node-connected':
-        result_defer.callback(arg)
+        result_defer.callback(args[0])
     else:
         result_defer.callback(None)
+
 
 def connect_random_node(lookup_method, service_name, service_params=None, exclude_nodes=[]):
     """
     """
+    global _P2PServiceSeekerInstaceCounter
+    _P2PServiceSeekerInstaceCounter += 1
     result = Deferred()
-    p2p_seeker = P2PServiceSeeker('p2p_service_seeker', 'AT_STARTUP', _DebugLevel, _Debug)
+    p2p_seeker = P2PServiceSeeker(
+        name='p2p_service_seeker%d[%s]' % (_P2PServiceSeekerInstaceCounter, service_name, ),
+        state='AT_STARTUP',
+        log_events=_Debug,
+        log_transitions=_Debug,
+        publish_events=False,
+    )
     p2p_seeker.automat(
         'start',
         lookup_method=lookup_method,
         target_service=service_name,
         request_service_params=service_params,
-        result_callback=lambda evt, arg: on_lookup_result(evt, arg, result),
+        result_callback=lambda evt, *a, **kw: on_lookup_result(evt, result, *a, **kw),
         exclude_nodes=exclude_nodes,
     )
     return result

@@ -50,15 +50,40 @@ class PrivateGroupsService(LocalService):
         ]
 
     def start(self):
+        from main import events
+        from services import driver
         from access import group_member
         group_member.init()
+        events.add_subscriber(self._on_dht_layer_connected, event_id='dht-layer-connected')
+        if driver.is_on('service_entangled_dht'):
+            self._do_join_message_brokers_dht_layer()
         return True
 
     def stop(self):
+        from main import events
         from access import group_member
+        events.remove_subscriber(self._on_dht_layer_connected, event_id='dht-layer-connected')
         group_member.shutdown()
         return True
 
     def health_check(self):
         # TODO: probably at least one queue must be connected if service is enabled
         return True
+
+    def _do_join_message_brokers_dht_layer(self):
+        from logs import lg
+        from dht import dht_service
+        from dht import dht_records
+        from dht import known_nodes
+        lg.info('going to join message brokers DHT layer: %d' % dht_records.LAYER_MESSAGE_BROKERS)
+        known_seeds = known_nodes.nodes()
+        dht_service.open_layer(
+            seed_nodes=known_seeds,
+            layer_id=dht_records.LAYER_MESSAGE_BROKERS,
+            connect_now=True,
+            attach=False,
+        )
+
+    def _on_dht_layer_connected(self, evt):
+        if evt.data['layer_id'] == 0:
+            self._do_join_message_brokers_dht_layer()

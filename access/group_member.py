@@ -88,12 +88,16 @@ from userid import my_id
 
 #------------------------------------------------------------------------------
 
-_ActiveGroupMembers = {}
-_ActiveGroupMembersByIDURL = {}
-_ActiveGroups = {}
+REQUIRED_BROKERS_COUNT = 3
 
 #------------------------------------------------------------------------------
 
+_ActiveGroupMembers = {}
+_ActiveGroupMembersByIDURL = {}
+_ActiveGroups = {}
+_KnownBrokers = {}
+
+#------------------------------------------------------------------------------
 
 def init():
     if _Debug:
@@ -111,6 +115,17 @@ def groups():
     global _ActiveGroups
     return _ActiveGroups
 
+
+def known_brokers(customer_id=None, erase_brokers=False):
+    global _KnownBrokers
+    if not customer_id:
+        return _KnownBrokers
+    if erase_brokers:
+        return _KnownBrokers.pop(customer_id, None)
+    if customer_id not in _KnownBrokers:
+        _KnownBrokers[customer_id] = [None, ] * REQUIRED_BROKERS_COUNT
+    return _KnownBrokers[customer_id]
+
 #------------------------------------------------------------------------------
 
 def load_groups():
@@ -118,20 +133,28 @@ def load_groups():
     groups_dir = os.path.join(service_dir, 'groups')
     if not os.path.isdir(groups_dir):
         bpio._dirs_make(groups_dir)
+    brokers_dir = os.path.join(service_dir, 'brokers')
+    if not os.path.isdir(brokers_dir):
+        bpio._dirs_make(brokers_dir)
     for group_key_id in os.listdir(groups_dir):
         if group_key_id not in groups():
             groups()[group_key_id] = {
-                'brokers': {},
                 'last_sequence_id': -1,
             }
-        brokers_dir = os.path.join(groups_dir, group_key_id, 'brokers')
-        for broker_id in os.listdir(brokers_dir):
-            if broker_id in groups()[group_key_id]['brokers']:
-                lg.warn('broker %r already exist in groups %r' % (broker_id, group_key_id, ))
+        group_path = os.path.join(groups_dir, group_key_id)
+        group_info = jsn.loads_text(local_fs.ReadTextFile(group_path))
+        groups()[group_key_id]['last_sequence_id'] = group_info['last_sequence_id']
+    for customer_id in os.listdir(brokers_dir):
+        customer_path = os.path.join(brokers_dir, customer_id)
+        for broker_id in os.listdir(customer_path):
+            if customer_id not in known_brokers():
+                known_brokers()[customer_id] = [None, ] * REQUIRED_BROKERS_COUNT
+            if broker_id in known_brokers(customer_id).values():
+                lg.warn('broker %r already exist' % broker_id)
                 continue
-            broker_path = os.path.join(brokers_dir, broker_id)
+            broker_path = os.path.join(customer_path, broker_id)
             broker_info = jsn.loads_text(local_fs.ReadTextFile(broker_path))
-            groups()[group_key_id]['brokers'][broker_id] = broker_info
+            known_brokers()[customer_id][int(broker_info['position'])] = broker_id
 
 #------------------------------------------------------------------------------
 
@@ -143,66 +166,51 @@ def create_group(group_key_id):
     if is_group_exist(group_key_id):
         return False
     service_dir = settings.ServiceDir('service_private_groups')
-    group_dir = os.path.join(service_dir, 'groups', group_key_id)
-    brokers_dir = os.path.join(group_dir, 'brokers')
-    bpio._dirs_make(brokers_dir)
+    groups_dir = os.path.join(service_dir, 'groups')
+    if not os.path.isdir(groups_dir):
+        bpio._dirs_make(groups_dir)
     groups()[group_key_id] = {
-        'brokers': {},
         'last_sequence_id': -1,
     }
     return True
-
-
-def is_broker_exist(group_key_id, broker_id):
-    if group_key_id not in groups():
-        return False
-    return broker_id in groups()[group_key_id]['brokers']
-
-
-def set_broker(group_key_id, broker_id, position=0):
-    if not is_group_exist(group_key_id):
-        return False
-    if is_broker_exist(group_key_id, broker_id):
-        return False
-    service_dir = settings.ServiceDir('service_private_groups')
-    brokers_dir = os.path.join(service_dir, 'groups', group_key_id, 'brokers')
-    broker_path = os.path.join(brokers_dir, broker_id)
-    if os.path.isfile(broker_path):
-        return False
-    broker_info = {
-        'position': position,
-    }
-    if not local_fs.WriteTextFile(broker_path, jsn.dumps(broker_info)):
-        lg.err('failed to set broker %r at position %d to group %r' % (broker_id, position, group_key_id, ))
-        return False
-    groups()[group_key_id]['brokers'][broker_id] = broker_info
-    if _Debug:
-        lg.args(_DebugLevel, group_key_id=group_key_id, broker_id=broker_id, broker_info=broker_info)
-    return True
-
-
-def clear_brokers(group_key_id):
-    if not is_group_exist(group_key_id):
-        return False
-    service_dir = settings.ServiceDir('service_private_groups')
-    brokers_dir = os.path.join(service_dir, 'groups', group_key_id, 'brokers')
-    groups()[group_key_id]['brokers'].clear()
-    list_brokers = os.listdir(brokers_dir)
-    for broker_id in list_brokers:
-        broker_path = os.path.join(brokers_dir, broker_id)
-        os.remove(broker_path)
-
-
-def get_brokers(group_key_id):
-    if not is_group_exist(group_key_id):
-        return []
-    return groups()[group_key_id]['brokers']
 
 
 def get_last_sequence_id(group_key_id):
     if not is_group_exist(group_key_id):
         return -1
     return groups()[group_key_id]['last_sequence_id']
+
+#------------------------------------------------------------------------------
+
+def set_broker(customer_id, broker_id, position=0):
+    service_dir = settings.ServiceDir('service_private_groups')
+    brokers_dir = os.path.join(service_dir, 'brokers')
+    customer_dir = os.path.join(brokers_dir, customer_id)
+    broker_path = os.path.join(customer_dir, broker_id)
+    if os.path.isfile(broker_path):
+        lg.warn('broker %r already exist for customer %r' % (broker_id, customer_id, ))
+        return False
+    if not os.path.isdir(customer_dir):
+        bpio._dirs_make(customer_dir)
+    broker_info = {
+        'position': position,
+    }
+    if not local_fs.WriteTextFile(broker_path, jsn.dumps(broker_info)):
+        lg.err('failed to set broker %r at position %d for customer %r' % (broker_id, position, customer_id, ))
+        return False
+    known_brokers(customer_id)[position] = broker_id
+    if _Debug:
+        lg.args(_DebugLevel, customer_id=customer_id, broker_id=broker_id, broker_info=broker_info)
+    return True
+
+
+def clear_brokers(customer_id):
+    service_dir = settings.ServiceDir('service_private_groups')
+    brokers_dir = os.path.join(service_dir, 'brokers')
+    customer_dir = os.path.join(brokers_dir, customer_id)
+    known_brokers(customer_id, erase_brokers=True)
+    if os.path.isdir(customer_dir):
+        bpio.rmdir_recursive(customer_dir, ignore_errors=True)
 
 #------------------------------------------------------------------------------
 
@@ -281,6 +289,8 @@ class GroupQueueMember(automat.Automat):
         self.active_broker_id = None
         self.active_queue_id = None
         self.dead_broker = None
+        self.hired_brokers = {}
+        self.missing_brokers = set()
         super(GroupQueueMember, self).__init__(
             name="member_%s$%s" % (self.group_queue_alias[:10], self.group_creator_id),
             state="AT_STARTUP",
@@ -355,9 +365,6 @@ class GroupQueueMember(automat.Automat):
             if event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'brokers-not-found':
-                self.state = 'HIRE_BROKERS'
-                self.doLookupBrokers(*args, **kwargs)
             elif event == 'dht-read-failed':
                 self.state = 'DISCONNECTED'
                 self.doDisconnected(event, *args, **kwargs)
@@ -365,7 +372,7 @@ class GroupQueueMember(automat.Automat):
                 self.state = 'QUEUE?'
                 self.doRememberBrokers(*args, **kwargs)
                 self.doReadQueue(*args, **kwargs)
-            elif event == 'brokers-found' and self.isDeadBroker(*args, **kwargs):
+            elif ( event == 'brokers-found' and self.isDeadBroker(*args, **kwargs) ) or event == 'brokers-not-found':
                 self.state = 'HIRE_BROKERS'
                 self.doLookupRotateBrokers(*args, **kwargs)
         #---HIRE_BROKERS---
@@ -414,6 +421,7 @@ class GroupQueueMember(automat.Automat):
         """
         Condition method.
         """
+        return None in args[0]
 
     def isInSync(self, *args, **kwargs):
         """
@@ -437,30 +445,19 @@ class GroupQueueMember(automat.Automat):
         result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='group_member.doDHTReadBrokers')
         result.addErrback(lambda err: self.automat('dht-read-failed', err))
 
-    def doLookupBrokers(self, *args, **kwargs):
-        """
-        Action method.
-        """
-        p2p_service_seeker.connect_random_node(
-            'service_message_broker',
-            lookup_method=lookup.random_message_broker,
-            service_params=self._do_prepare_service_request_params,
-            exclude_nodes=self.connected_message_brokers,
-        ).addBoth(self._on_message_broker_lookup_finished)
-
     def doLookupRotateBrokers(self, *args, **kwargs):
         """
         Action method.
         """
+        self._do_lookup_replace_brokers(args[0])
 
     def doRememberBrokers(self, *args, **kwargs):
         """
         Action method.
         """
-        brokers_list = args[0]
-        for position, broker_idurl in enumerate(brokers_list):
+        for position, broker_idurl in self.hired_brokers.items():
             broker_id = global_id.idurl2glob(broker_idurl)
-            set_broker(self.group_key_id, broker_id, position)
+            set_broker(self.group_creator_id, broker_id, position)
             if position == 0:
                 self.active_broker_id = broker_id
                 self.active_queue_id = global_id.MakeGlobalQueueID(
@@ -468,12 +465,14 @@ class GroupQueueMember(automat.Automat):
                     owner_id=self.group_creator_id,
                     supplier_id=self.active_broker_id,
                 )
+        self.hired_brokers.clear()
+        self.missing_brokers.clear()
 
     def doForgetBrokers(self, *args, **kwargs):
         """
         Action method.
         """
-        clear_brokers(self.group_key_id)
+        clear_brokers(self.group_creator_id)
 
     def doReadQueue(self, *args, **kwargs):
         """
@@ -519,20 +518,24 @@ class GroupQueueMember(automat.Automat):
         """
         self.destroy()
 
-    def _do_prepare_service_request_params(self, possible_broker_idurl):
+    def _do_prepare_service_request_params(self, possible_broker_idurl, desired_broker_position):
         queue_id = global_id.MakeGlobalQueueID(
             queue_alias=self.group_queue_alias,
             owner_id=self.group_creator_id,
             supplier_id=global_id.idurl2glob(possible_broker_idurl),
         )
-        group_key_info = my_keys.get_key_info(self.group_key_id, include_private=False)
-        return {
+        group_key_info = my_keys.get_key_info(self.group_key_id, include_private=False, include_signature=True)
+        service_request_params = {
             'action': 'queue-connect',
+            'position': desired_broker_position,
             'queue_id': queue_id,
             'consumer_id': self.member_id,
             'producer_id': self.member_id,
             'group_key': group_key_info,
         }
+        if _Debug:
+            lg.args(_DebugLevel, service_request_params=service_request_params)
+        return service_request_params
 
     def _do_send_message_to_broker(self, json_payload):
         result = message.send_message(
@@ -547,19 +550,69 @@ class GroupQueueMember(automat.Automat):
         )
         return result
 
-    def _on_read_customer_message_brokers(self, idurls):
-        if not idurls:
-            self.automat('brokers-not-found')
+    def _do_lookup_replace_brokers(self, existing_brokers):
+        self.hired_brokers = {}
+        self.missing_brokers = set()
+        top_broker_pos = None
+        for broker_pos in range(REQUIRED_BROKERS_COUNT):
+            try:
+                broker_idurl = existing_brokers[broker_pos]
+            except IndexError:
+                broker_idurl = None
+            if not broker_idurl:
+                self.missing_brokers.add(broker_pos)
+                if top_broker_pos is None:
+                    top_broker_pos = broker_pos
+                if broker_pos < top_broker_pos:
+                    top_broker_pos= broker_pos
+        if top_broker_pos is not None:
+            self._do_lookup_one_broker(top_broker_pos)
         else:
-            self.automat('brokers-found', idurls)
+            lg.warn('did not found any missing brokers')
+            self.automat('brokers-hired')
+    
+    def _do_lookup_one_broker(self, broker_pos):
+        connected_brokers_idurls = list(map(global_id.glob2idurl, filter(None, known_brokers(self.group_creator_id))))
+        result = p2p_service_seeker.connect_random_node(
+            lookup_method=lookup.random_message_broker,
+            service_name='service_message_broker',
+            service_params=lambda idurl: self._do_prepare_service_request_params(idurl, broker_pos),
+            exclude_nodes=connected_brokers_idurls,
+        )
+        result.addCallback(self._on_message_broker_lookup_finished, broker_pos)
+        result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='group_member._do_lookup_one_broker')
+        result.addErrback(self._on_message_broker_lookup_failed, broker_pos)
 
-    def _on_message_broker_lookup_finished(self, idurl):
+    def _on_read_customer_message_brokers(self, idurls):
+        if _Debug:
+            lg.args(_DebugLevel, idurls=idurls)
+        if not list(filter(None, idurls)):
+            self.automat('brokers-not-found', [])
+            return
+        self.automat('brokers-found', idurls)
+
+    def _on_message_broker_lookup_finished(self, idurl, broker_pos):
         if _Debug:
             lg.args(_DebugLevel, idurl=idurl)
-        if not idurl:
-            self.automat('brokers-failed')
-            return None
+        self.hired_brokers[broker_pos] = idurl or None
+        self.missing_brokers.remove(broker_pos)
         if _Debug:
-            lg.out(_DebugLevel, 'contract_chain_consumer._on_miner_lookup_finished SUCCESS, miner %s connected' % self.connected_miner)
-        brokers_list = [idurl, ]
-        self.automat('brokers-hired', brokers_list)
+            lg.args(_DebugLevel, idurl=idurl, broker_pos=broker_pos, missing_brokers=self.missing_brokers, hired_brokers=self.hired_brokers)
+        if not self.missing_brokers or (0 not in self.missing_brokers):
+            if list(filter(None, self.hired_brokers.values())):
+                self.automat('brokers-hired')
+            else:
+                self.automat('brokers-failed')
+
+    def _on_message_broker_lookup_failed(self, err, broker_pos):
+        if _Debug:
+            lg.args(_DebugLevel, err=err)
+        self.hired_brokers[broker_pos] = None
+        self.missing_brokers.remove(broker_pos)
+        if _Debug:
+            lg.args(_DebugLevel, err=err, broker_pos=broker_pos, missing_brokers=self.missing_brokers, hired_brokers=self.hired_brokers)
+        if not self.missing_brokers or (0 not in self.missing_brokers):
+            if list(filter(None, self.hired_brokers.values())):
+                self.automat('brokers-hired')
+            else:
+                self.automat('brokers-failed')

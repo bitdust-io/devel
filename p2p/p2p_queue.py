@@ -48,7 +48,7 @@ import six
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 20
 
 #------------------------------------------------------------------------------
@@ -249,19 +249,21 @@ def open_queue(queue_id):
         raise Exception('invalid queue id')
     if queue_id in queue():
         raise Exception('queue already exist')
-    queue_info = global_id.ParseGlobalQueueID(queue_id)
-    customer_key_id = global_id.MakeGlobalID(customer=queue_info['owner_id'], key_alias='customer')
-    if not my_keys.is_key_registered(customer_key_id):
-        raise Exception('customer key for given queue not found')
+    if _Debug:
+        lg.args(_DebugLevel, queue_id=queue_id)
     _ActiveQueues[queue_id] = OrderedDict()
-    lg.info('new queue opened %s based on key %s' % (queue_id, customer_key_id))
+    lg.info('new queue opened %s' % queue_id)
     return True
 
 
 def close_queue(queue_id):
     global _ActiveQueues
+    if not valid_queue_id(queue_id):
+        raise Exception('invalid queue id')
     if queue_id not in queue():
         raise Exception('queue not exist')
+    if _Debug:
+        lg.args(_DebugLevel, queue_id=queue_id)
     for consumer_id in consumer().keys():
         if is_consumer_subscribed(consumer_id, queue_id):
             unsubscribe_consumer(consumer_id, queue_id)

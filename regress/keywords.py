@@ -178,6 +178,33 @@ def share_open_v1(customer: str, key_id):
     return response.json()
 
 
+def group_create_v1(customer: str, key_size=1024):
+    response = request_post(customer, 'group/create/v1', json={'key_size': key_size, }, timeout=20)
+    assert response.status_code == 200
+    print('\ngroup/create/v1 [%s] : %s\n' % (customer, pprint.pformat(response.json())))
+    assert response.json()['status'] == 'OK', response.json()
+    return response.json()['result'][0]['group_key_id']
+
+
+def group_open_v1(customer: str, group_key_id):
+    response = request_post(customer, 'group/open/v1', json={'group_key_id': group_key_id, }, timeout=20)
+    assert response.status_code == 200
+    print('\ngroup/open/v1 [%s] group_key_id=%r : %s\n' % (customer, group_key_id, pprint.pformat(response.json())))
+    assert response.json()['status'] == 'OK', response.json()
+    return response.json()
+
+
+def group_share_v1(customer: str, group_key_id, trusted_id):
+    response = request_put(customer, 'group/open/v1', json={
+        'group_key_id': group_key_id,
+        'trusted_id': trusted_id,
+    }, timeout=20)
+    assert response.status_code == 200
+    print('\ngroup/share/v1 [%s] group_key_id=%r trusted_id=%r : %s\n' % (customer, group_key_id, trusted_id, pprint.pformat(response.json())))
+    assert response.json()['status'] == 'OK', response.json()
+    return response.json()
+
+
 def file_sync_v1(node):
     response = request_get(node, 'file/sync/v1', timeout=20)
     assert response.status_code == 200

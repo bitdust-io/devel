@@ -2134,7 +2134,7 @@ def group_open(group_key_id):
                 ret.callback(OK('group "%s" connected' % group_key_id, extra_fields=active_group_member.to_json(), api_method='group_open'))
             else:
                 ret.callback(OK('group "%s" refreshed' % group_key_id, extra_fields=active_group_member.to_json(), api_method='group_open'))
-        if newstate == 'DISCONNECTED' and oldstate != newstate:
+        if newstate == 'DISCONNECTED' and oldstate != newstate and oldstate != 'AT_STARTUP':
             active_group_member.removeStateChangedCallback(_on_group_queue_memeber_state_changed)
             ret.callback(ERROR('group "%s" is disconnected' % group_key_id, extra_fields=active_group_member.to_json(), api_method='group_open'))
         return None
