@@ -180,6 +180,13 @@ def get_last_sequence_id(group_key_id):
         return -1
     return groups()[group_key_id]['last_sequence_id']
 
+
+def increment_last_sequence_id(group_key_id):
+    if not is_group_exist(group_key_id):
+        return False
+    groups()[group_key_id]['last_sequence_id'] += 1
+    return True
+
 #------------------------------------------------------------------------------
 
 def set_broker(customer_id, broker_id, position=0):
@@ -270,7 +277,7 @@ def find_active_group_members(group_creator_idurl):
 
 #------------------------------------------------------------------------------
 
-class GroupQueueMember(automat.Automat):
+class GroupMember(automat.Automat):
     """
     This class implements all the functionality of ``group_member()`` state machine.
     """
@@ -291,8 +298,8 @@ class GroupQueueMember(automat.Automat):
         self.dead_broker = None
         self.hired_brokers = {}
         self.missing_brokers = set()
-        super(GroupQueueMember, self).__init__(
-            name="member_%s$%s" % (self.group_queue_alias[:10], self.group_creator_id),
+        super(GroupMember, self).__init__(
+            name="group_member_%s$%s" % (self.group_queue_alias[:10], self.group_creator_id),
             state="AT_STARTUP",
             debug_level=debug_level,
             log_events=log_events,
@@ -434,6 +441,12 @@ class GroupQueueMember(automat.Automat):
         """
         Action method.
         """
+        message.consume_messages(
+            consumer_id=self.name,
+            callback=self._on_consume_messages,
+            direction='incoming',
+            message_type='queue_message',
+        )
 
     def doDHTReadBrokers(self, *args, **kwargs):
         """
@@ -487,10 +500,16 @@ class GroupQueueMember(automat.Automat):
                 'consumer_id': self.member_id,
             },
             recipient_global_id=self.active_broker_id,
-            packet_id='queue_%s_%s' % (self.active_queue_id, packetid.UniqueID(), ),
+            packet_id='queue_%s_%s' % (self.active_queue_id, packetid.UniqueID()),
+            skip_handshake=True,
         )
         result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='group_member.doReadQueue')
         result.addErrback(lambda err: self.automat('queue-read-failed', err))
+
+    def doProcess(self, *args, **kwargs):
+        """
+        Action method.
+        """
 
     def doMarkDeadBroker(self, *args, **kwargs):
         """
@@ -507,15 +526,11 @@ class GroupQueueMember(automat.Automat):
         Action method.
         """
 
-    def doProcess(self, *args, **kwargs):
-        """
-        Action method.
-        """
-
     def doDestroyMe(self, *args, **kwargs):
         """
         Remove all references to the state machine object to destroy it.
         """
+        message.clear_consumer_callbacks(self.name)
         self.destroy()
 
     def _do_prepare_service_request_params(self, possible_broker_idurl, desired_broker_position):
@@ -616,3 +631,60 @@ class GroupQueueMember(automat.Automat):
                 self.automat('brokers-hired')
             else:
                 self.automat('brokers-failed')
+
+    def _on_consume_messages(self, json_messages):
+        if _Debug:
+            lg.args(_DebugLevel, json_messages=json_messages)
+        latest_known_sequence_id = -1
+        received_group_messages = []
+        for json_message in json_messages:
+            try:
+                msg_type = json_message.get('type', '')
+                msg_direction = json_message['dir']
+                packet_id = json_message['id']
+                from_user = json_message['from']
+                to_user = json_message['to']
+                msg_data = json_message['data']
+            except:
+                lg.exc()
+                continue
+            if msg_direction != 'incoming':
+                continue
+            if msg_type != 'queue_message':
+                continue
+            try:
+                last_sequence_id = int(msg_data['last_sequence_id'])
+                list_messages = msg_data['items']
+            except:
+                lg.exc()
+                continue
+            if last_sequence_id > latest_known_sequence_id:
+                latest_known_sequence_id = last_sequence_id
+            if _Debug:
+                lg.args(_DebugLevel, last_sequence_id=last_sequence_id, list_messages=list_messages)
+            for one_message in list_messages:
+                if one_message['sequence_id'] > latest_known_sequence_id:
+                    lg.warn('invalid item sequence_id %d   vs.  last_sequence_id %d known' % (
+                        one_message['sequence_id'], latest_known_sequence_id))
+                    continue
+                received_group_messages.append(dict(
+                    json_message=one_message['payload'],
+                    direction='incoming',
+                    group_key_id=self.group_key_id,
+                    producer_id=one_message['producer_id'],
+                    sequence_id=one_message['sequence_id'],
+                ))
+        received_group_messages.sort(key=lambda m: m['sequence_id'])
+        my_last_sequence_id = get_last_sequence_id(self.group_key_id)
+        newly_processed = 0
+        for new_message in received_group_messages:
+            if my_last_sequence_id + 1 == new_message['sequence_id']:
+                message.push_group_message(**new_message)
+                increment_last_sequence_id(self.group_key_id)
+                my_last_sequence_id = new_message['sequence_id']
+                newly_processed += 1
+        if newly_processed != len(received_group_messages):
+            raise Exception('message sequence is broken by message broker %s, some messages were not consumed' % self.active_broker_id)
+        if latest_known_sequence_id == get_last_sequence_id(self.group_key_id):
+            self.automat('queue-in-sync')
+        return True

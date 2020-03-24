@@ -46,7 +46,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 8
 
 #------------------------------------------------------------------------------
@@ -80,6 +80,7 @@ from main import events
 
 from lib import jsn
 from lib import strng
+from lib import utime
 
 from system import bpio
 from system import local_fs
@@ -89,15 +90,17 @@ from main import settings
 from p2p import p2p_queue
 from p2p import p2p_service
 
+from chat import message
+
 from userid import id_url
 from userid import global_id
 from userid import my_id
 
 #------------------------------------------------------------------------------ 
 
-_ActiveStreams = {}
-
 _MessagePeddler = None
+
+_ActiveStreams = {}
 
 #------------------------------------------------------------------------------
 
@@ -107,12 +110,14 @@ def streams():
 
 #------------------------------------------------------------------------------
 
-def on_incoming_messages(json_messages):
+def on_consume_messages(json_messages):
+    if _Debug:
+        lg.args(_DebugLevel, json_messages=json_messages)
     received = 0
     pushed = 0
     for json_message in json_messages:
         try:
-            msg_type = json_message['type']
+            msg_type = json_message.get('type', '')
             msg_direction = json_message['dir']
             packet_id = json_message['id']
             from_user = json_message['from']
@@ -172,11 +177,9 @@ def on_incoming_messages(json_messages):
         except:
             lg.exc()
             continue
-        queued_json_message = store_message(queue_id, producer_id, payload, created)
-        sequence_id = queued_json_message['sequence_id']
-        streams()[queue_id]['messages'][sequence_id] = {
-            'message_id': None,
-        }
+        new_sequence_id = increment_sequence_id(queue_id)
+        streams()[queue_id]['messages'].append(new_sequence_id)
+        queued_json_message = store_message(queue_id, new_sequence_id, producer_id, payload, created)
         received += 1
         try:
             new_message = p2p_queue.push_message(
@@ -188,60 +191,118 @@ def on_incoming_messages(json_messages):
         except:
             lg.exc()
             continue
-        streams()[queue_id]['messages'][sequence_id]['message_id'] = new_message.message_id
-        update_message(queue_id, sequence_id)
+        register_delivery(queue_id, new_sequence_id, new_message.message_id)
         pushed += 1
     if received > pushed:
-        lg.warn('some of received messages were queued but not pushed to the queue yet')
-        return False
-    return pushed > 0
+        lg.warn('some of received messages was not pushed to the queue')
+    return True
 
 
 def on_message_processed(processed_message):
     sequence_id = processed_message.get_sequence_id()
+    if _Debug:
+        lg.args(_DebugLevel, queue_id=processed_message.queue_id, sequence_id=sequence_id,
+                message_id=processed_message.message_id, failed_consumers=processed_message.failed_consumers, )
     if not sequence_id:
         return False
-    if not processed_message.failed_consumers:
-        erase_message(processed_message.queue_id, sequence_id)
-        streams()[processed_message.queue_id]['messages'].pop(sequence_id)
+    if not unregister_delivery(
+        queue_id=processed_message.queue_id,
+        sequence_id=sequence_id,
+        message_id=processed_message.message_id,
+        failed_consumers=processed_message.failed_consumers,
+    ):
+        lg.warn('failed to unregister message delivery attempt, message_id %r not found at position %d in queue %r' % (
+            processed_message.message_id, sequence_id, processed_message.queue_id))
+        return False
+    if processed_message.failed_consumers:
+        lg.warn('some consumers failed to receive message %r with sequence_id=%d: %r' % (
+            processed_message.message_id, sequence_id, processed_message.failed_consumers))
     else:
-        streams()[processed_message.queue_id]['messages'][sequence_id]['failed_consumers'] = processed_message.failed_consumers
-        update_message(processed_message.queue_id, sequence_id)
+        erase_message(processed_message.queue_id, sequence_id)
+        streams()[processed_message.queue_id]['messages'].remove(sequence_id)
     return True
 
 #------------------------------------------------------------------------------
 
-def store_message(queue_id, producer_id, payload, created):
+def get_latest_sequence_id(queue_id):
+    if queue_id not in streams():
+        return -1
+    return streams()[queue_id].get('last_sequence_id', -1)
+
+
+def increment_sequence_id(queue_id):
     last_sequence_id = streams()[queue_id]['last_sequence_id']
-    new_sequence_id = strng.to_text(int(last_sequence_id) + 1)
-    service_dir = settings.ServiceDir('service_message_broker')
-    queues_dir = os.path.join(service_dir, 'queues')
-    queue_dir = os.path.join(queues_dir, queue_id)
-    messages_dir = os.path.join(queue_dir, 'messages')
-    message_path = os.path.join(messages_dir, new_sequence_id)
-    queued_json_message = {
-        'sequence_id': new_sequence_id,
-        'created': created,
-        'producer_id': producer_id,
-        'payload': payload,
-    }
-    local_fs.WriteTextFile(message_path, jsn.dumps(queued_json_message))
+    new_sequence_id = last_sequence_id + 1
     streams()[queue_id]['last_sequence_id'] = new_sequence_id
-    return queued_json_message
+    return new_sequence_id
 
+#------------------------------------------------------------------------------
 
-def update_message(queue_id, sequence_id):
+def store_message(queue_id, sequence_id, producer_id, payload, created):
     service_dir = settings.ServiceDir('service_message_broker')
     queues_dir = os.path.join(service_dir, 'queues')
     queue_dir = os.path.join(queues_dir, queue_id)
     messages_dir = os.path.join(queue_dir, 'messages')
     message_path = os.path.join(messages_dir, strng.to_text(sequence_id))
-    queued_json_message = streams(queue_id)['messages'][sequence_id]
-    local_fs.WriteTextFile(message_path, jsn.dumps(queued_json_message))
+    stored_json_message = {
+        'sequence_id': sequence_id,
+        'created': created,
+        'producer_id': producer_id,
+        'payload': payload,
+        'attempts': [],
+    }
+    local_fs.WriteTextFile(message_path, jsn.dumps(stored_json_message))
+    return stored_json_message
+
+
+def register_delivery(queue_id, sequence_id, message_id):
+    if _Debug:
+        lg.args(_DebugLevel, queue_id=queue_id, sequence_id=sequence_id, message_id=message_id)
+    service_dir = settings.ServiceDir('service_message_broker')
+    queues_dir = os.path.join(service_dir, 'queues')
+    queue_dir = os.path.join(queues_dir, queue_id)
+    messages_dir = os.path.join(queue_dir, 'messages')
+    message_path = os.path.join(messages_dir, strng.to_text(sequence_id))
+    stored_json_message = jsn.loads_text(local_fs.ReadTextFile(message_path))
+    stored_json_message['attempts'].append({
+        'message_id': message_id,
+        'started': utime.get_sec1970(),
+        'finished': None,
+        'failed_consumers': [],
+    })
+    if not local_fs.WriteTextFile(message_path, jsn.dumps(stored_json_message)):
+        return False
+    return True
+
+
+def unregister_delivery(queue_id, sequence_id, message_id, failed_consumers):
+    if _Debug:
+        lg.args(_DebugLevel, queue_id=queue_id, sequence_id=sequence_id, message_id=message_id, failed_consumers=failed_consumers)
+    service_dir = settings.ServiceDir('service_message_broker')
+    queues_dir = os.path.join(service_dir, 'queues')
+    queue_dir = os.path.join(queues_dir, queue_id)
+    messages_dir = os.path.join(queue_dir, 'messages')
+    message_path = os.path.join(messages_dir, strng.to_text(sequence_id))
+    stored_json_message = jsn.loads_text(local_fs.ReadTextFile(message_path))
+    found_attempt_number = None
+    for attempt_number in range(len(stored_json_message['attempts']), 0, -1):
+        if stored_json_message['attempts'][attempt_number]['message_id'] == message_id:
+            found_attempt_number = attempt_number
+            break
+    if not found_attempt_number:
+        return False
+    stored_json_message['attempts'][attempt_number].update({
+        'finished': utime.get_sec1970(),
+        'failed_consumers': failed_consumers,
+    })
+    if not local_fs.WriteTextFile(message_path, jsn.dumps(stored_json_message)):
+        return False
     return True
 
 
 def erase_message(queue_id, sequence_id):
+    if _Debug:
+        lg.args(_DebugLevel, queue_id=queue_id, sequence_id=sequence_id)
     service_dir = settings.ServiceDir('service_message_broker')
     queues_dir = os.path.join(service_dir, 'queues')
     queue_dir = os.path.join(queues_dir, queue_id)
@@ -249,6 +310,39 @@ def erase_message(queue_id, sequence_id):
     message_path = os.path.join(messages_dir, strng.to_text(sequence_id))
     os.remove(message_path)
     return True
+
+
+def get_messages_for_consumer(queue_id, consumer_id, consumer_last_sequence_id, max_messages_count=100):
+    if _Debug:
+        lg.args(_DebugLevel, queue_id=queue_id, consumer_id=consumer_id, consumer_last_sequence_id=consumer_last_sequence_id)
+    queue_current_sequence_id = streams()[queue_id]['last_sequence_id']
+    if consumer_last_sequence_id > queue_current_sequence_id:
+        lg.warn('consumer %r is ahead of queue %r position: %d > %d' % (
+            consumer_id, queue_id, consumer_last_sequence_id, queue_current_sequence_id, ))
+        return []
+    if consumer_last_sequence_id == queue_current_sequence_id:
+        return []
+    service_dir = settings.ServiceDir('service_message_broker')
+    queues_dir = os.path.join(service_dir, 'queues')
+    queue_dir = os.path.join(queues_dir, queue_id)
+    messages_dir = os.path.join(queue_dir, 'messages')
+    all_stored_queue_messages = os.listdir(messages_dir)
+    all_stored_queue_messages.sort(key=lambda i: int(i))
+    result = []
+    for sequence_id in all_stored_queue_messages:
+        if consumer_last_sequence_id >= sequence_id:
+            continue
+        message_path = os.path.join(messages_dir, strng.to_text(sequence_id))
+        try:
+            stored_json_message = jsn.loads_text(local_fs.ReadTextFile(message_path))
+        except:
+            lg.exc()
+            continue
+        stored_json_message.pop('attempts')
+        result.append(stored_json_message)
+        if len(result) >= max_messages_count:
+            break
+    return result
 
 #------------------------------------------------------------------------------
 
@@ -267,14 +361,14 @@ def load_streams():
                 'active': False,
                 'consumers': {},
                 'producers': {},
-                'messages': OrderedDict(),
+                'messages': [],
                 'last_sequence_id': -1,
             }
         last_sequence_id = -1
-        for sequence_id in os.listdir(messages_dir):
-            streams()[queue_id]['messages'][sequence_id] = {
-                'message_id': None,
-            }
+        all_stored_queue_messages = os.listdir(messages_dir)
+        all_stored_queue_messages.sort(key=lambda i: int(i))
+        for sequence_id in all_stored_queue_messages:
+            streams()[queue_id]['messages'].append(sequence_id)
             if int(sequence_id) >= last_sequence_id:
                 last_sequence_id = sequence_id
         streams()[queue_id]['last_sequence_id'] = last_sequence_id
@@ -303,6 +397,7 @@ def open_stream(queue_id):
         'consumers': {},
         'producers': {},
         'messages': [],
+        'last_sequence_id': -1,
     }
     save_stream(queue_id)
     return True
@@ -708,6 +803,7 @@ class MessagePeddler(automat.Automat):
         """
         Action method.
         """
+        self._do_read_queue(**kwargs)
 
     def doDestroyMe(self, *args, **kwargs):
         """
@@ -715,4 +811,13 @@ class MessagePeddler(automat.Automat):
         """
         self.destroy()
 
-
+    def _do_read_queue(self, queue_id, consumer_id, consumer_last_sequence_id):
+        list_messages = get_messages_for_consumer(queue_id, consumer_id, consumer_last_sequence_id)
+        message.send_message(
+            json_data={
+                'items': list_messages,
+                'last_sequence_id': get_latest_sequence_id(queue_id),
+            },
+            recipient_global_id=consumer_id,
+            skip_handshake=True,
+        )

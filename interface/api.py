@@ -2124,7 +2124,7 @@ def group_open(group_key_id):
     new_group = False
     if not active_group_member:
         new_group = True
-        active_group_member = group_member.GroupQueueMember(group_key_id)
+        active_group_member = group_member.GroupMember(group_key_id)
     ret = Deferred()
 
     def _on_group_queue_memeber_state_changed(oldstate, newstate, event_string, *args, **kwargs):
@@ -3530,7 +3530,11 @@ def message_receive(consumer_id):
         ret.callback(OK(result, api_method='message_receive'))
         return len(result) > 0
 
-    d = message.consume_messages(consumer_id)
+    d = message.consume_messages(
+        consumer_id=consumer_id,
+        direction='incoming',
+        message_type='private_message',
+    )
     d.addCallback(_on_pending_messages)
     d.addErrback(lambda err: ret.callback(ERROR(err)))
     if _Debug:

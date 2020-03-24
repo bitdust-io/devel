@@ -58,7 +58,12 @@ class MessageBrokerService(LocalService):
         message_peddler.A('start')
         self._do_connect_message_brokers_dht_layer()
         events.add_subscriber(self._on_dht_layer_connected, event_id='dht-layer-connected')
-        message.consume_messages('service_message_broker', self._on_incoming_messages)
+        message.consume_messages(
+            consumer_id='service_message_broker',
+            callback=self._on_consume_messages,
+            direction='incoming',
+            message_type='queue_message',
+        )
         return True
 
     def stop(self):
@@ -157,6 +162,6 @@ class MessageBrokerService(LocalService):
         if evt.data['layer_id'] == 0:
             self._do_connect_message_brokers_dht_layer()
 
-    def _on_incoming_messages(self, json_messages):
+    def _on_consume_messages(self, json_messages):
         from p2p import message_peddler
-        return message_peddler.on_incoming_messages(json_messages)
+        return message_peddler.on_consume_messages(json_messages)

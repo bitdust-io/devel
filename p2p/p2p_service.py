@@ -903,6 +903,23 @@ def Message(request, info):
         lg.out(_DebugLevel, '  from remoteID=%s  ownerID=%s  creatorID=%s' % (
             request.RemoteID, request.OwnerID, request.CreatorID))
 
+
+def SendMessage(remote_idurl, packet_id=None, payload=None, wide=True, callbacks={}, response_timeout=None):
+    """
+    """
+    if packet_id is None:
+        packet_id = packetid.UniqueID()
+    outpacket = signed.Packet(
+        Command=commands.Message(),
+        OwnerID=my_id.getLocalID(),
+        CreatorID=my_id.getLocalID(),
+        PacketID=packet_id,
+        Payload=payload,
+        RemoteID=remote_idurl,
+    )
+    result = gateway.outbox(outpacket, wide=wide, callbacks=callbacks, response_timeout=response_timeout)
+    return result, outpacket
+
 #------------------------------------------------------------------------------
 
 def Contacts(request, info):

@@ -851,7 +851,8 @@ def do_cleanup(interested_queues=None):
         processed_message = pop_message(queue_id, message_id)
         if processed_message:
             for cb in _MessageProcessedCallbacks:
-                cb(processed_message)
+                if not cb(processed_message):
+                    lg.warn('message %r was not correctly processed' % message_id)
     to_be_removed.clear()
     del to_be_removed
     return True
