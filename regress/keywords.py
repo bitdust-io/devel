@@ -195,7 +195,7 @@ def group_open_v1(customer: str, group_key_id):
 
 
 def group_share_v1(customer: str, group_key_id, trusted_id):
-    response = request_put(customer, 'group/open/v1', json={
+    response = request_put(customer, 'group/share/v1', json={
         'group_key_id': group_key_id,
         'trusted_id': trusted_id,
     }, timeout=20)

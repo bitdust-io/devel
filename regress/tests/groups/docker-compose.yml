@@ -79,7 +79,10 @@ services:
     links:
       - dht-2
       - dht-3
+      - stun-1
+      - stun-2
       - id-a
+      - id-b
 
   proxy-2:
     image: bitdust/app
@@ -88,6 +91,9 @@ services:
     links:
       - dht-2
       - dht-3
+      - stun-1
+      - stun-2
+      - id-a
       - id-b
 
   supplier-1:
@@ -97,7 +103,10 @@ services:
     links:
       - dht-2
       - dht-3
+      - stun-1
+      - stun-2
       - id-a
+      - id-b
 
   supplier-2:
     image: bitdust/app
@@ -106,6 +115,9 @@ services:
     links:
       - dht-2
       - dht-3
+      - stun-1
+      - stun-2
+      - id-a
       - id-b
 
   supplier-3:
@@ -115,7 +127,10 @@ services:
     links:
       - dht-2
       - dht-3
+      - stun-1
+      - stun-2
       - id-a
+      - id-b
 
   supplier-4:
     image: bitdust/app
@@ -124,6 +139,9 @@ services:
     links:
       - dht-2
       - dht-3
+      - stun-1
+      - stun-2
+      - id-a
       - id-b
 
   customer-1:
@@ -135,6 +153,9 @@ services:
     links:
       - dht-2
       - dht-3
+      - stun-1
+      - stun-2
+      - id-a
       - id-b
 
   customer-2:
@@ -146,6 +167,9 @@ services:
     links:
       - dht-2
       - dht-3
+      - stun-1
+      - stun-2
+      - id-a
       - id-b
 
   customer-3:
@@ -157,7 +181,10 @@ services:
     links:
       - dht-2
       - dht-3
+      - stun-1
+      - stun-2
       - id-a
+      - id-b
 
   broker-1:
     image: bitdust/app
@@ -166,7 +193,10 @@ services:
     links:
       - dht-2
       - dht-3
+      - stun-1
+      - stun-2
       - id-a
+      - id-b
 
   broker-2:
     image: bitdust/app
@@ -175,6 +205,9 @@ services:
     links:
       - dht-2
       - dht-3
+      - stun-1
+      - stun-2
+      - id-a
       - id-b
 
 

@@ -40,4 +40,6 @@ def test_customer_1_connect_to_message_broker():
     
     kw.group_open_v1('customer-1', group_key_id)
     
-    kw.group_share_v1('customer-1', group_key_id, 'customer-2@id-b')
+    kw.group_share_v1('customer-1', group_key_id, 'customer-2@id-b_8084')
+
+    kw.group_open_v1('customer-2', group_key_id)
