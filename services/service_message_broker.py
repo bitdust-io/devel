@@ -95,7 +95,7 @@ class MessageBrokerService(LocalService):
             consumer_id = json_payload['consumer_id']
             producer_id = json_payload['producer_id']
             group_key = json_payload['group_key']
-            position = json_payload.get('position')
+            position = json_payload.get('position', -1)
         except:
             lg.warn("wrong payload: %r" % json_payload)
             return p2p_service.SendFail(newpacket, 'wrong payload')

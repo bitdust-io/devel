@@ -89,6 +89,7 @@ from main import settings
 
 from p2p import p2p_queue
 from p2p import p2p_service
+from p2p import queue_keeper
 
 from chat import message
 
@@ -740,6 +741,12 @@ class MessagePeddler(automat.Automat):
             p2p_service.SendFail(request_packet, strng.to_text(exc))
             result_defer.callback(False)
             return
+        group_key_alias, group_creator_idurl = my_keys.split_key_id(group_key_id)
+        if not group_key_alias or not group_creator_idurl:
+            lg.warn('wrong group_key_id')
+            p2p_service.SendFail(request_packet, 'wrong group_key_id')
+            result_defer.callback(False)
+            return
         if my_keys.is_key_registered(group_key_id):
             if my_keys.is_key_private(group_key_id):
                 p2p_service.SendFail(request_packet, 'private key already registered')
@@ -754,24 +761,32 @@ class MessagePeddler(automat.Automat):
                 p2p_service.SendFail(request_packet, 'key register failed')
                 result_defer.callback(False)
                 return
-        # TODO: start queue_keeper() instance and make sure current broker position for customer is reserved in DHT
         queue_id = kwargs['queue_id']
         consumer_id = kwargs['consumer_id']
         producer_id = kwargs['producer_id']
-        open_stream(kwargs['queue_id'])
-        if consumer_id:
-            add_consumer(queue_id, consumer_id)
-        if producer_id:
-            add_producer(queue_id, producer_id)
-        start_stream(queue_id)
-        p2p_service.SendAck(request_packet, 'accepted')
-        result_defer.callback(True)
+        queue_keeper_result = Deferred()
+        queue_keeper_result.addCallback(
+            self._on_queue_keeper_connect_result,
+            queue_id=queue_id,
+            consumer_id=consumer_id,
+            producer_id=producer_id,
+            request_packet=request_packet,
+            result_defer=result_defer,
+        )
+        queue_keeper_result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='message_peddler.doStartJoinQueue')
+        qk = queue_keeper.check_create(customer_idurl=group_creator_idurl)
+        qk.automat(
+            'connect',
+            queue_id=queue_id,
+            desired_position=kwargs.get('position', -1),
+            result_callback=queue_keeper_result,
+        )
 
     def doLeaveStopQueue(self, *args, **kwargs):
         """
         Action method.
         """
-        # group_key = kwargs['group_key']
+        group_key_info = kwargs['group_key']
         queue_id = kwargs['queue_id']
         consumer_id = kwargs['consumer_id']
         producer_id = kwargs['producer_id']
@@ -780,6 +795,22 @@ class MessagePeddler(automat.Automat):
         if queue_id not in streams():
             p2p_service.SendFail(request_packet, 'queue %r not registered' % queue_id)
             result_defer.callback(True)
+            return
+        if not my_keys.verify_key_info_signature(group_key_info):
+            p2p_service.SendFail(request_packet, 'group key verification failed')
+            result_defer.callback(False)
+            return
+        try:
+            group_key_id, key_object = my_keys.read_key_info(group_key_info)
+        except Exception as exc:
+            p2p_service.SendFail(request_packet, strng.to_text(exc))
+            result_defer.callback(False)
+            return
+        group_key_alias, group_creator_idurl = my_keys.split_key_id(group_key_id)
+        if not group_key_alias or not group_creator_idurl:
+            lg.warn('wrong group_key_id')
+            p2p_service.SendFail(request_packet, 'wrong group_key_id')
+            result_defer.callback(False)
             return
         if consumer_id:
             if not remove_consumer(queue_id, consumer_id):
@@ -792,10 +823,14 @@ class MessagePeddler(automat.Automat):
                 result_defer.callback(True)
                 return
         if not streams()[queue_id]['consumers'] and not streams()[queue_id]['producers']:
-            # TODO: stop queue_keeper() instance
+            lg.warn('no consumers and no producers left, closing queue %r' % queue_id)
             stop_stream(queue_id)
             close_stream(queue_id)
         # TODO: check/un-register group_key if no consumers left
+        # TODO: check/stop queue_keeper() if no queues opened for given customer
+        # qk = queue_keeper.check_create(customer_idurl=group_creator_idurl, auto_create=False)
+        # if qk:
+        #     qk.automat('shutdown')
         p2p_service.SendAck(request_packet, 'accepted')
         result_defer.callback(True)
 
@@ -821,3 +856,19 @@ class MessagePeddler(automat.Automat):
             recipient_global_id=consumer_id,
             skip_handshake=True,
         )
+
+    def _on_queue_keeper_connect_result(self, result, queue_id, consumer_id, producer_id, request_packet, result_defer):
+        if _Debug:
+            lg.args(_DebugLevel, result=result, queue_id=queue_id, consumer_id=consumer_id, producer_id=producer_id, request_packet=request_packet)
+        if not result:
+            lg.err('queue keeper failed to connect')
+            return None
+        open_stream(queue_id)
+        if consumer_id:
+            add_consumer(queue_id, consumer_id)
+        if producer_id:
+            add_producer(queue_id, producer_id)
+        start_stream(queue_id)
+        p2p_service.SendAck(request_packet, 'accepted')
+        result_defer.callback(True)
+        return None

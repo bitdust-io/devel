@@ -253,6 +253,7 @@ def list_active_group_members():
     global _ActiveGroupMembers
     return list(_ActiveGroupMembers.keys())
 
+
 def get_active_group_member(group_key_id):
     """
     """
@@ -377,7 +378,7 @@ class GroupMember(automat.Automat):
                 self.doDisconnected(event, *args, **kwargs)
             elif event == 'brokers-found' and not self.isDeadBroker(*args, **kwargs):
                 self.state = 'QUEUE?'
-                self.doRememberBrokers(*args, **kwargs)
+                self.doRememberBrokers(event, *args, **kwargs)
                 self.doReadQueue(*args, **kwargs)
             elif ( event == 'brokers-found' and self.isDeadBroker(*args, **kwargs) ) or event == 'brokers-not-found':
                 self.state = 'HIRE_BROKERS'
@@ -386,7 +387,7 @@ class GroupMember(automat.Automat):
         elif self.state == 'HIRE_BROKERS':
             if event == 'brokers-hired':
                 self.state = 'QUEUE?'
-                self.doRememberBrokers(*args, **kwargs)
+                self.doRememberBrokers(event, *args, **kwargs)
                 self.doReadQueue(*args, **kwargs)
             elif event == 'shutdown':
                 self.state = 'CLOSED'
@@ -464,20 +465,44 @@ class GroupMember(automat.Automat):
         """
         self._do_lookup_replace_brokers(args[0])
 
-    def doRememberBrokers(self, *args, **kwargs):
+    def doRememberBrokers(self, event, *args, **kwargs):
         """
         Action method.
         """
-        for position, broker_idurl in self.hired_brokers.items():
-            broker_id = global_id.idurl2glob(broker_idurl)
-            set_broker(self.group_creator_id, broker_id, position)
-            if position == 0:
-                self.active_broker_id = broker_id
-                self.active_queue_id = global_id.MakeGlobalQueueID(
-                    queue_alias=self.group_queue_alias,
-                    owner_id=self.group_creator_id,
-                    supplier_id=self.active_broker_id,
-                )
+        if _Debug:
+            lg.args(_DebugLevel, event, *args, **kwargs)
+        self.active_broker_id = None
+        self.active_queue_id = None
+        if event == 'brokers-hired':
+            for position, broker_idurl in self.hired_brokers.items():
+                if not broker_idurl:
+                    continue
+                broker_id = global_id.idurl2glob(broker_idurl)
+                set_broker(self.group_creator_id, broker_id, position)
+                if position == 0:
+                    self.active_broker_id = broker_id
+                    self.active_queue_id = global_id.MakeGlobalQueueID(
+                        queue_alias=self.group_queue_alias,
+                        owner_id=self.group_creator_id,
+                        supplier_id=self.active_broker_id,
+                    )
+        elif event == 'brokers-found':
+            for broker_info in args[0]:
+                if not broker_info['broker_idurl']:
+                    continue
+                broker_id = global_id.idurl2glob(broker_info['broker_idurl'])
+                set_broker(self.group_creator_id, broker_id, broker_info['position'])
+                if broker_info['position'] == 0:
+                    self.active_broker_id = broker_id
+                    self.active_queue_id = global_id.MakeGlobalQueueID(
+                        queue_alias=self.group_queue_alias,
+                        owner_id=self.group_creator_id,
+                        supplier_id=self.active_broker_id,
+                    )
+        else:
+            raise Exception('unexpected event')
+        if self.active_broker_id is None:
+            raise Exception('no brokers found or hired') 
         self.hired_brokers.clear()
         self.missing_brokers.clear()
 
@@ -571,7 +596,7 @@ class GroupMember(automat.Automat):
         top_broker_pos = None
         for broker_pos in range(REQUIRED_BROKERS_COUNT):
             try:
-                broker_idurl = existing_brokers[broker_pos]
+                broker_idurl = existing_brokers[broker_pos]['broker_idurl']
             except IndexError:
                 broker_idurl = None
             if not broker_idurl:
@@ -598,13 +623,13 @@ class GroupMember(automat.Automat):
         result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='group_member._do_lookup_one_broker')
         result.addErrback(self._on_message_broker_lookup_failed, broker_pos)
 
-    def _on_read_customer_message_brokers(self, idurls):
+    def _on_read_customer_message_brokers(self, brokers_info_list):
         if _Debug:
-            lg.args(_DebugLevel, idurls=idurls)
-        if not list(filter(None, idurls)):
+            lg.args(_DebugLevel, brokers=brokers_info_list)
+        if not brokers_info_list:
             self.automat('brokers-not-found', [])
             return
-        self.automat('brokers-found', idurls)
+        self.automat('brokers-found', brokers_info_list)
 
     def _on_message_broker_lookup_finished(self, idurl, broker_pos):
         if _Debug:
