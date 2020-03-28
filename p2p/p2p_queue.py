@@ -44,12 +44,11 @@ Methods to establish a messages queue between two or more nodes.:
 
 from __future__ import absolute_import
 from __future__ import print_function
-import six
 
 #------------------------------------------------------------------------------
 
 _Debug = True
-_DebugLevel = 20
+_DebugLevel = 12
 
 #------------------------------------------------------------------------------
 
@@ -444,7 +443,9 @@ def stop_event_publisher(producer_id, event_id):
 
 #------------------------------------------------------------------------------
 
-def start_notification(consumer_id, queue_id, message_id, defer_result):
+def start_notification(consumer_id, queue_id, message_id, callback_object):
+    if _Debug:
+        lg.args(_DebugLevel, consumer_id=consumer_id, queue_id=queue_id, message_id=message_id)
     if not valid_queue_id(queue_id):
         raise Exception('invalid queue id')
     if consumer_id not in consumer():
@@ -455,15 +456,17 @@ def start_notification(consumer_id, queue_id, message_id, defer_result):
         raise Exception('message not exist')
     if consumer_id in queue(queue_id)[message_id].notifications:
         raise Exception('notification already sent to given consumer')
-    defer_result.addCallback(on_notification_succeed, consumer_id, queue_id, message_id)
-    defer_result.addErrback(on_notification_failed, consumer_id, queue_id, message_id)
     queue(queue_id)[message_id].state = 'SENT'
-    queue(queue_id)[message_id].notifications[consumer_id] = defer_result
+    queue(queue_id)[message_id].notifications[consumer_id] = callback_object
     consumer(consumer_id).consumed_messages += 1
+    callback_object.addCallback(on_notification_succeed, consumer_id, queue_id, message_id)
+    callback_object.addErrback(on_notification_failed, consumer_id, queue_id, message_id)
     return True
 
 
 def finish_notification(consumer_id, queue_id, message_id, success):
+    if _Debug:
+        lg.args(_DebugLevel, consumer_id=consumer_id, queue_id=queue_id, message_id=message_id, success=success)
     if not valid_queue_id(queue_id):
         raise Exception('invalid queue id')
     if queue_id not in queue():
@@ -496,7 +499,7 @@ def on_notification_succeed(result, consumer_id, queue_id, message_id):
         lg.out(_DebugLevel, 'p2p_queue.on_notification_succeed : message %s delivered to consumer %s from queue %s' % (
             message_id, consumer_id, queue_id))
     try:
-        finish_notification(consumer_id, queue_id, message_id, success=True)
+        reactor.callLater(0, finish_notification, consumer_id, queue_id, message_id, success=True)  # @UndefinedVariable
     except:
         lg.exc()
     # reactor.callLater(0, do_cleanup)  # @UndefinedVariable
@@ -509,7 +512,7 @@ def on_notification_failed(err, consumer_id, queue_id, message_id):
         lg.out(_DebugLevel, 'p2p_queue.on_notification_failed : FAILED message %s delivery to consumer %s from queue %s : %s' % (
             message_id, consumer_id, queue_id, err))
     try:
-        finish_notification(consumer_id, queue_id, message_id, success=False)
+        reactor.callLater(0, finish_notification, consumer_id, queue_id, message_id, success=False)  # @UndefinedVariable
     except:
         lg.exc()
     # reactor.callLater(0, do_cleanup)  # @UndefinedVariable

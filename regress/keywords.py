@@ -439,6 +439,21 @@ def message_send_v1(node, recipient, data, timeout=30):
     return response.json()
 
 
+def message_send_group_v1(node, group_key_id, data):
+    response = request_post(node, 'message/send/group/v1',
+        json={
+            'group_key_id': group_key_id,
+            'data': data,
+        },
+        timeout=20,
+    )
+    assert response.status_code == 200
+    print(f'\nmessage/send/group/v1 [%s] : %s\n' % (
+        node, pprint.pformat(response.json())))
+    assert response.json()['status'] == 'OK', response.json()
+    return response.json()
+
+
 def message_receive_v1(node, expected_data, consumer='test_consumer',):
     response = request_get(node, f'message/receive/{consumer}/v1', timeout=20)
     assert response.status_code == 200

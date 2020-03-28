@@ -77,38 +77,38 @@ def start_all_nodes(event_loop):
     _begin = time.time()
     print('\nStarting nodes\n')
 
-    for number, dhtseed in enumerate(ALL_ROLES['dht-seed']):
+    for number, dhtseed in enumerate(ALL_ROLES.get('dht-seed', [])):
         # first seed to be started immediately, all other seeds must wait a bit before start
         start_one_dht_seed(dhtseed, wait_seconds=(3 if number > 0 else 0))
     print('\nALL DHT SEEDS STARTED\n')
 
     event_loop.run_until_complete(asyncio.gather(*[
-        start_one_identity_server_async(idsrv, event_loop) for idsrv in ALL_ROLES['identity-server']
+        start_one_identity_server_async(idsrv, event_loop) for idsrv in ALL_ROLES.get('identity-server', [])
     ]))
     print(f'\nALL ID SERVERS STARTED\n')
 
     event_loop.run_until_complete(asyncio.gather(*[
-        start_one_stun_server_async(stunsrv, event_loop) for stunsrv in ALL_ROLES['stun-server']
+        start_one_stun_server_async(stunsrv, event_loop) for stunsrv in ALL_ROLES.get('stun-server', [])
     ]))
     print(f'\nALL STUN SERVERS STARTED\n')
 
     event_loop.run_until_complete(asyncio.gather(*[
-        start_one_proxy_server_async(proxy_server, event_loop) for proxy_server in ALL_ROLES['proxy-server']
+        start_one_proxy_server_async(proxy_server, event_loop) for proxy_server in ALL_ROLES.get('proxy-server', [])
     ]))
     print(f'\nALL PROXY SERVERS STARTED\n')
 
     event_loop.run_until_complete(asyncio.gather(*[
-        start_one_supplier_async(supplier, event_loop) for supplier in ALL_ROLES['supplier']
+        start_one_supplier_async(supplier, event_loop) for supplier in ALL_ROLES.get('supplier', [])
     ]))
     print(f'\nALL SUPPLIERS STARTED\n')
 
     event_loop.run_until_complete(asyncio.gather(*[
-        start_one_message_broker_async(message_broker, event_loop) for message_broker in ALL_ROLES['message-broker']
+        start_one_message_broker_async(message_broker, event_loop) for message_broker in ALL_ROLES.get('message-broker', [])
     ]))
     print(f'\nALL SUPPLIERS STARTED\n')
 
     event_loop.run_until_complete(asyncio.gather(*[
-        start_one_customer_async(customer, event_loop, sleep_before_start=i*3) for i, customer in enumerate(ALL_ROLES['customer'])
+        start_one_customer_async(customer, event_loop, sleep_before_start=i*3) for i, customer in enumerate(ALL_ROLES.get('customer', []))
     ]))
     print(f'\nALL CUSTOMERS STARTED\n')
 

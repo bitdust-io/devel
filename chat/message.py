@@ -477,20 +477,19 @@ def send_message(json_data, recipient_global_id, packet_id=None, message_ack_tim
 
 #------------------------------------------------------------------------------
 
-def consume_messages(consumer_id, callback=None, direction=None, message_type=None):
+def consume_messages(consumer_id, callback=None, direction=None, message_types=None):
     """
     """
-    if consumer_id not in consumers_callbacks():
-        consumers_callbacks()[consumer_id] = []
+    if consumer_id in consumers_callbacks():
+        raise Exception('consumer callback already exist')
     cb = callback or Deferred()
-    consumers_callbacks()[consumer_id].append({
+    consumers_callbacks()[consumer_id] = {
         'callback': cb,
         'direction': direction,
-        'message_type': message_type,
-    })
+        'message_types': message_types,
+    }
     if _Debug:
-        lg.out(_DebugLevel, 'message.consume_messages added callback for consumer "%s", %d total callbacks' % (
-            consumer_id, len(consumers_callbacks()[consumer_id])))
+        lg.out(_DebugLevel, 'message.consume_messages added callback for consumer %r' % consumer_id)
     # reactor.callLater(0, pop_messages)  # @UndefinedVariable
     pop_messages()
     return cb
@@ -499,16 +498,15 @@ def consume_messages(consumer_id, callback=None, direction=None, message_type=No
 def clear_consumer_callbacks(consumer_id):
     if consumer_id not in consumers_callbacks().keys():
         return True
-    for cb_info in consumers_callbacks()[consumer_id]:
-        if callable(cb_info['callback']):
-            if _Debug:
-                lg.args(_DebugLevel, consumer_id=consumer_id, cb=cb_info['callback'], called='skipping callable method')
-        else:
-            if _Debug:
-                lg.args(_DebugLevel, consumer_id=consumer_id, cb=cb_info['callback'], called=cb_info['callback'].called)
-            if not cb_info['callback'].called:
-                cb_info['callback'].callback([])
-    consumers_callbacks().pop(consumer_id)
+    cb_info = consumers_callbacks().pop(consumer_id)
+    if isinstance(cb_info['callback'], Deferred):
+        if _Debug:
+            lg.args(_DebugLevel, consumer_id=consumer_id, cb=cb_info['callback'], called=cb_info['callback'].called)
+        if not cb_info['callback'].called:
+            cb_info['callback'].callback([])
+    else:
+        if _Debug:
+            lg.args(_DebugLevel, consumer_id=consumer_id, cb=cb_info['callback'], called='skipping callable method')
     return True
 
 
@@ -588,57 +586,69 @@ def push_group_message(json_message, direction, group_key_id, producer_id, seque
 def pop_messages():
     """
     """
-    for consumer_id in consumers_callbacks().keys():
-        if consumer_id not in message_queue() or len(message_queue()[consumer_id]) == 0:
+    for consumer_id in message_queue().keys():
+        if len(message_queue()[consumer_id]) == 0:
             continue
-        registered_callbacks = consumers_callbacks()[consumer_id]
+        cb_info = consumers_callbacks().get(consumer_id)
         pending_messages = message_queue()[consumer_id]
-        if len(registered_callbacks) == 0 and len(pending_messages) > MAX_PENDING_MESSAGES_PER_CONSUMER:
-            consumers_callbacks().pop(consumer_id)
-            message_queue().pop(consumer_id)
+        # no consumers and queue is growing -> stop consumer and queue
+        if (not cb_info or not cb_info['callback']) and len(pending_messages) > MAX_PENDING_MESSAGES_PER_CONSUMER:
+            consumers_callbacks().pop(consumer_id, None)
+            message_queue().pop(consumer_id, None)
             if _Debug:
                 lg.out(_DebugLevel, 'message.pop_message STOPPED consumer "%s", too much pending messages but no callbacks' % consumer_id)
             continue
-        for cb_info in registered_callbacks:
-            if not cb_info['callback']:
-                if _Debug:
-                    lg.out(_DebugLevel, 'message.pop_message %d messages waiting consuming by "%s", no callback yet' % (
-                        len(message_queue()[consumer_id]), consumer_id))
-                continue
-            if cb_info['direction']:
-                consumer_messages = filter(lambda msg: msg['dir'] == cb_info['direction'], pending_messages)
-            else:
-                consumer_messages = filter(None, pending_messages)
-            if cb_info['message_type']:
-                consumer_messages = filter(lambda msg: msg['type'] == cb_info['message_type'], consumer_messages)
-            if callable(cb_info['callback']):
-                try:
-                    ok = cb_info['callback'](consumer_messages)
-                except:
-                    lg.exc()
-                    continue
-                if ok:
-                    message_queue()[consumer_id] = []
-                    if _Debug:
-                        lg.out(_DebugLevel, 'message.pop_message %d messages consumed directly by "%s"' % (len(pending_messages), consumer_id))
-                else:
-                    lg.err('failed consuming message by consumer %r' % consumer_id)
-                continue
+        # filter messages which consumer is not interested in
+        if cb_info['direction']:
+            consumer_messages = filter(lambda msg: msg['dir'] == cb_info['direction'], pending_messages)
+        else:
+            consumer_messages = filter(None, pending_messages)
+        if cb_info['message_types']:
+            consumer_messages = filter(lambda msg: msg['type'] in cb_info['message_types'], consumer_messages)
+        consumer_messages = list(consumer_messages)
+        if not consumer_messages:
+            message_queue()[consumer_id] = []
+            if _Debug:
+                lg.dbg(_DebugLevel, 'found no messages for consumer %r out of: %r' % (cb_info, pending_messages, ))
+            continue
+        # callback is a one-time Deferred object, must call it and release the callback
+        if isinstance(cb_info['callback'], Deferred):
             if cb_info['callback'].called:
                 if _Debug:
                     lg.out(_DebugLevel, 'message.pop_message %d messages waiting consuming by "%s", callback state is "called"' % (
                         len(message_queue()[consumer_id]), consumer_id))
+                consumers_callbacks().pop(consumer_id, None)
                 continue
+            if _Debug:
+                lg.args(_DebugLevel, consumer_messages=consumer_messages, cb_info=cb_info)
             try:
                 cb_info['callback'].callback(consumer_messages)
             except:
                 lg.exc()
+                consumers_callbacks().pop(consumer_id, None)
                 continue
+            consumers_callbacks().pop(consumer_id, None)
             message_queue()[consumer_id] = []
             if _Debug:
-                lg.out(_DebugLevel, 'message.pop_message %d messages consumed by "%s"' % (len(pending_messages), consumer_id))
-        for i in range(len(registered_callbacks)):
-            cb_info = registered_callbacks[i]
-            if isinstance(cb_info['callback'], Deferred):
-                consumers_callbacks()[consumer_id].remove(cb_info)
-        # consumers_callbacks()[consumer_id] = []
+                lg.out(_DebugLevel, 'message.pop_message %d messages consumed by "%s": %r' % (
+                    len(consumer_messages), consumer_id, consumer_messages))
+            continue
+        # callback is a "callable" method which we must not release
+        if _Debug:
+            lg.args(_DebugLevel, consumer_messages=consumer_messages, cb_info=cb_info)
+        message_queue()[consumer_id] = []
+        try:
+            ok = cb_info['callback'](consumer_messages)
+        except:
+            lg.exc()
+            consumers_callbacks().pop(consumer_id, None)
+            message_queue()[consumer_id] = pending_messages
+            continue
+        if not ok:
+            lg.err('failed consuming messages by consumer %r' % consumer_id)
+            consumers_callbacks().pop(consumer_id, None)
+            message_queue()[consumer_id] = pending_messages
+            continue
+        if _Debug:
+            lg.out(_DebugLevel, 'message.pop_message %d messages consumed directly by "%s": %r' % (
+                len(consumer_messages), consumer_id, consumer_messages))

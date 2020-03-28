@@ -54,16 +54,9 @@ class MessageBrokerService(LocalService):
     def start(self):
         from main import events
         from p2p import message_peddler
-        from chat import message
         message_peddler.A('start')
         self._do_connect_message_brokers_dht_layer()
         events.add_subscriber(self._on_dht_layer_connected, event_id='dht-layer-connected')
-        message.consume_messages(
-            consumer_id='service_message_broker',
-            callback=self._on_consume_messages,
-            direction='incoming',
-            message_type='queue_message',
-        )
         return True
 
     def stop(self):
@@ -71,8 +64,6 @@ class MessageBrokerService(LocalService):
         from dht import dht_records
         from main import events
         from p2p import message_peddler
-        from chat import message
-        message.clear_consumer_callbacks('service_message_broker')
         events.remove_subscriber(self._on_dht_layer_connected, event_id='dht-layer-connected')
         dht_service.suspend(layer_id=dht_records.LAYER_MESSAGE_BROKERS)
         message_peddler.A('stop')
@@ -127,12 +118,6 @@ class MessageBrokerService(LocalService):
             return p2p_service.SendFail(newpacket, 'wrong action request')
         return result
 
-    def _do_handle_event_packet(self, newpacket, e_json):
-        from lib import strng
-        event_id = strng.to_text(e_json['event_id'])
-        payload = e_json['payload']
-        queue_id = strng.to_text(e_json.get('queue_id'))
-
     def _do_connect_message_brokers_dht_layer(self):
         from logs import lg
         from dht import dht_service
@@ -161,7 +146,3 @@ class MessageBrokerService(LocalService):
     def _on_dht_layer_connected(self, evt):
         if evt.data['layer_id'] == 0:
             self._do_connect_message_brokers_dht_layer()
-
-    def _on_consume_messages(self, json_messages):
-        from p2p import message_peddler
-        return message_peddler.on_consume_messages(json_messages)

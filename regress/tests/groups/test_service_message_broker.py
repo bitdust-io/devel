@@ -22,6 +22,8 @@
 
 import os
 import pytest
+import base64
+import threading
 
 import keywords as kw
 
@@ -43,3 +45,13 @@ def test_customer_1_connect_to_message_broker():
     kw.group_share_v1('customer-1', group_key_id, 'customer-2@id-b_8084')
 
     kw.group_open_v1('customer-2', group_key_id)
+
+    random_message_customer_1_to_customer_2 = {'random_message': base64.b32encode(os.urandom(20)).decode(), }
+    kw.message_receive_v1('customer-2', expected_data=random_message_customer_1_to_customer_2)
+    t1 = threading.Timer(1.0, kw.message_send_group_v1, ['customer-1', group_key_id, random_message_customer_1_to_customer_2, ])
+    t1.start()
+
+    random_message_customer_2_to_customer_1 = {'random_message': base64.b32encode(os.urandom(20)).decode(), }
+    kw.message_receive_v1('customer-1', expected_data=random_message_customer_2_to_customer_1)
+    t2 = threading.Timer(1.0, kw.message_send_group_v1, ['customer-2', group_key_id, random_message_customer_2_to_customer_1, ])
+    t2.start()

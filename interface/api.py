@@ -2140,7 +2140,8 @@ def group_open(group_key_id):
         return None
 
     active_group_member.addStateChangedCallback(_on_group_queue_memeber_state_changed)
-    active_group_member.automat('init')
+    if new_group:
+        active_group_member.automat('init')
     active_group_member.automat('connect')
     return ret
 
@@ -2160,6 +2161,12 @@ def group_close(group_key_id):
     this_group.automat('shutdown')
     return OK('group "%s" closed' % group_key_id)
 
+
+def group_info(group_key_id):
+    """
+    """
+    if not driver.is_on('service_private_groups'):
+        return ERROR('service_private_groups() is not started')
 
 #------------------------------------------------------------------------------
 
@@ -3479,7 +3486,38 @@ def message_send(recipient, json_data, ping_timeout=30, message_ack_timeout=15):
     return ret
 
 
-def message_receive(consumer_id):
+def message_send_group(group_key_id, json_payload):
+    """
+    Sends a text message to a group of users.
+
+    Return:
+
+        {'status': 'OK'}
+    """
+    if not driver.is_on('service_private_groups'):
+        return ERROR('service_private_groups() is not started')
+    from userid import global_id
+    from crypt import my_keys
+    from access import group_member
+    if not group_key_id.startswith('group_'):
+        return ERROR('invalid group id')
+    glob_id = global_id.ParseGlobalID(group_key_id)
+    if not glob_id['idurl']:
+        return ERROR('wrong group id')
+    if not my_keys.is_key_registered(group_key_id):
+        return ERROR('unknown group key')
+    this_group_member = group_member.get_active_group_member(group_key_id)
+    if not this_group_member:
+        return ERROR('group is not active')
+    if this_group_member.state not in ['IN_SYNC!', 'QUEUE?', ]:
+        return ERROR('group is not synchronized yet')
+    if _Debug:
+        lg.out(_DebugLevel, 'api.message_send_group to %r' % group_key_id)
+    this_group_member.automat('push-message', json_payload=json_payload)
+    return OK()
+
+
+def message_receive(consumer_id, direction='incoming', message_types='private_message,group_message'):
     """
     This method can be used to listen and process incoming chat messages by specific consumer.
     If there are no messages received yet, this method will be waiting for any incomings.
@@ -3532,8 +3570,8 @@ def message_receive(consumer_id):
 
     d = message.consume_messages(
         consumer_id=consumer_id,
-        direction='incoming',
-        message_type='private_message',
+        direction=direction,
+        message_types=message_types.split(','),
     )
     d.addCallback(_on_pending_messages)
     d.addErrback(lambda err: ret.callback(ERROR(err)))

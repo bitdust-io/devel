@@ -29,12 +29,13 @@
 BitDust p2p_service_seeker() Automat
 
 EVENTS:
+    * :red:`connect-known-user`
     * :red:`fail`
     * :red:`found-users`
+    * :red:`lookup-random-user`
     * :red:`service-accepted`
     * :red:`service-denied`
     * :red:`shook-hands`
-    * :red:`start`
     * :red:`users-not-found`
 """
 
@@ -86,6 +87,7 @@ class P2PServiceSeeker(automat.Automat):
         Method to initialize additional variables and flags at creation phase
         of p2p_service_seeker() machine.
         """
+        self.Attempts = 0
         self.lookup_method = None
         self.target_idurl = None
         self.target_service = None
@@ -113,10 +115,18 @@ class P2PServiceSeeker(automat.Automat):
         """
         #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
-            if event == 'start':
+            if event == 'connect-known-user':
+                self.state = 'HANDSHAKE?'
+                self.doInit(*args, **kwargs)
+                self.Attempts=0
+                self.RandomLookup=False
+                self.doSelectOneUser(*args, **kwargs)
+                self.doHandshake(*args, **kwargs)
+            elif event == 'lookup-random-user':
                 self.state = 'RANDOM_USER?'
                 self.doInit(*args, **kwargs)
                 self.Attempts=0
+                self.RandomLookup=True
                 self.doLookupRandomNode(*args, **kwargs)
         #---RANDOM_USER?---
         elif self.state == 'RANDOM_USER?':
@@ -137,26 +147,26 @@ class P2PServiceSeeker(automat.Automat):
             if event == 'shook-hands':
                 self.state = 'SERVICE?'
                 self.doSendRequestService(*args, **kwargs)
-            elif event == 'fail' and self.Attempts<5:
-                self.state = 'RANDOM_USER?'
-                self.doLookupRandomNode(*args, **kwargs)
-            elif self.Attempts==5 and event == 'fail':
+            elif ( self.Attempts==5 or not self.RandomLookup ) and event == 'fail':
                 self.state = 'FAILED'
                 self.doNotifyHandshakeFailed(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
+            elif event == 'fail' and self.Attempts<5 and self.RandomLookup:
+                self.state = 'RANDOM_USER?'
+                self.doLookupRandomNode(*args, **kwargs)
         #---SERVICE?---
         elif self.state == 'SERVICE?':
             if event == 'service-accepted':
                 self.state = 'SUCCESS'
                 self.doNotifyServiceAccepted(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-            elif ( event == 'fail' or event == 'service-denied' ) and self.Attempts<5:
-                self.state = 'RANDOM_USER?'
-                self.doLookupRandomNode(*args, **kwargs)
-            elif self.Attempts==5 and ( event == 'fail' or event == 'service-denied' ):
+            elif ( self.Attempts==5 or not self.RandomLookup ) and ( event == 'fail' or event == 'service-denied' ):
                 self.state = 'FAILED'
                 self.doNotifyServiceRequestFailed(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
+            elif ( event == 'fail' or event == 'service-denied' ) and self.Attempts<5 and self.RandomLookup:
+                self.state = 'RANDOM_USER?'
+                self.doLookupRandomNode(*args, **kwargs)
         #---SUCCESS---
         elif self.state == 'SUCCESS':
             pass
@@ -169,7 +179,7 @@ class P2PServiceSeeker(automat.Automat):
         """
         Action method.
         """
-        self.lookup_method = kwargs['lookup_method']
+        self.lookup_method = kwargs.get('lookup_method', None)
         self.target_service = kwargs['target_service']
         self.request_service_params = kwargs.get('request_service_params', None)
         self.result_callback = kwargs.get('result_callback', None)
@@ -191,7 +201,10 @@ class P2PServiceSeeker(automat.Automat):
         """
         Action method.
         """
-        self.target_idurl = args[0][0]
+        if 'remote_idurl' in kwargs:
+            self.target_idurl = kwargs['remote_idurl']
+        else:
+            self.target_idurl = args[0][0]
 
     def doHandshake(self, *args, **kwargs):
         """
@@ -350,8 +363,32 @@ def connect_random_node(lookup_method, service_name, service_params=None, exclud
         publish_events=False,
     )
     p2p_seeker.automat(
-        'start',
+        'lookup-random-user',
         lookup_method=lookup_method,
+        target_service=service_name,
+        request_service_params=service_params,
+        result_callback=lambda evt, *a, **kw: on_lookup_result(evt, result, *a, **kw),
+        exclude_nodes=exclude_nodes,
+    )
+    return result
+
+
+def connect_known_node(remote_idurl, service_name, service_params=None, exclude_nodes=[]):
+    """
+    """
+    global _P2PServiceSeekerInstaceCounter
+    _P2PServiceSeekerInstaceCounter += 1
+    result = Deferred()
+    p2p_seeker = P2PServiceSeeker(
+        name='p2p_service_seeker%d[%s]' % (_P2PServiceSeekerInstaceCounter, service_name, ),
+        state='AT_STARTUP',
+        log_events=_Debug,
+        log_transitions=_Debug,
+        publish_events=False,
+    )
+    p2p_seeker.automat(
+        'connect-known-user',
+        remote_idurl=remote_idurl,
         target_service=service_name,
         request_service_params=service_params,
         result_callback=lambda evt, *a, **kw: on_lookup_result(evt, result, *a, **kw),

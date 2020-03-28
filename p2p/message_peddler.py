@@ -54,8 +54,6 @@ _DebugLevel = 8
 import os
 import sys
 
-from collections import OrderedDict
-
 #------------------------------------------------------------------------------
 
 try:
@@ -65,8 +63,7 @@ except:
 
 #------------------------------------------------------------------------------
 
-from twisted.internet.defer import Deferred, DeferredList
-from twisted.python import failure
+from twisted.internet.defer import Deferred
 
 #------------------------------------------------------------------------------
 
@@ -76,11 +73,10 @@ from automats import automat
 
 from crypt import my_keys
 
-from main import events
-
 from lib import jsn
 from lib import strng
 from lib import utime
+from lib import packetid
 
 from system import bpio
 from system import local_fs
@@ -93,7 +89,6 @@ from p2p import queue_keeper
 
 from chat import message
 
-from userid import id_url
 from userid import global_id
 from userid import my_id
 
@@ -111,7 +106,7 @@ def streams():
 
 #------------------------------------------------------------------------------
 
-def on_consume_messages(json_messages):
+def on_consume_queue_messages(json_messages):
     if _Debug:
         lg.args(_DebugLevel, json_messages=json_messages)
     received = 0
@@ -702,6 +697,12 @@ class MessagePeddler(automat.Automat):
         """
         Action method.
         """
+        message.consume_messages(
+            consumer_id=self.name,
+            callback=on_consume_queue_messages,
+            direction='incoming',
+            message_types=['queue_message', ],
+        )
 
     def doLoadKnownQueues(self, *args, **kwargs):
         """
@@ -844,6 +845,7 @@ class MessagePeddler(automat.Automat):
         """
         Remove all references to the state machine object to destroy it.
         """
+        message.clear_consumer_callbacks(self.name)
         self.destroy()
 
     def _do_read_queue(self, queue_id, consumer_id, consumer_last_sequence_id):
@@ -854,6 +856,7 @@ class MessagePeddler(automat.Automat):
                 'last_sequence_id': get_latest_sequence_id(queue_id),
             },
             recipient_global_id=consumer_id,
+            packet_id='queue_%s_%s' % (queue_id, packetid.UniqueID(), ),
             skip_handshake=True,
         )
 
