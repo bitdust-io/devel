@@ -865,18 +865,24 @@ def Event(request, info):
 
 
 def SendEvent(remote_idurl, event_id, payload=None,
-              producer_id=None, message_id=None, created=None,
-              packet_id=None, wide=False, callbacks={}, response_timeout=5):
+              producer_id=None, consumer_id=None, queue_id=None,
+              message_id=None, created=None, packet_id=None,
+              wide=False, callbacks={}, response_timeout=5):
     if packet_id is None:
         packet_id = packetid.UniqueID()
     e_json = {
         'event_id': event_id,
         'payload': payload,
     }
-    if producer_id and message_id:
+    if producer_id is not None:
         e_json['producer_id'] = producer_id
+    if consumer_id is not None:
+        e_json['consumer_id'] = consumer_id
+    if queue_id is not None:
+        e_json['queue_id'] = queue_id
+    if message_id is not None:
         e_json['message_id'] = message_id
-    if created:
+    if created is not None:
         e_json['created'] = created
     e_json_src = serialization.DictToBytes(e_json)
     if _Debug:

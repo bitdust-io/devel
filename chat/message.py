@@ -477,11 +477,13 @@ def send_message(json_data, recipient_global_id, packet_id=None, message_ack_tim
 
 #------------------------------------------------------------------------------
 
-def consume_messages(consumer_id, callback=None, direction=None, message_types=None):
+def consume_messages(consumer_id, callback=None, direction=None, message_types=None, reset_callback=False):
     """
     """
     if consumer_id in consumers_callbacks():
-        raise Exception('consumer callback already exist')
+        if not reset_callback:
+            raise Exception('consumer callback already exist')
+        clear_consumer_callbacks(consumer_id)
     cb = callback or Deferred()
     consumers_callbacks()[consumer_id] = {
         'callback': cb,
@@ -509,6 +511,7 @@ def clear_consumer_callbacks(consumer_id):
             lg.args(_DebugLevel, consumer_id=consumer_id, cb=cb_info['callback'], called='skipping callable method')
     return True
 
+#------------------------------------------------------------------------------
 
 def push_incoming_message(request, private_message_object, json_message):
     """
@@ -529,8 +532,8 @@ def push_incoming_message(request, private_message_object, json_message):
             'time': utime.get_sec1970(),
         })
         if _Debug:
-            lg.out(_DebugLevel, 'message.push_incoming_message "%s" for consumer "%s", %d pending messages' % (
-                request.PacketID, consumer_id, len(message_queue()[consumer_id])))
+            lg.out(_DebugLevel, 'message.push_incoming_message "%s" for consumer "%s", %d pending messages for consumer %r' % (
+                request.PacketID, consumer_id, len(message_queue()[consumer_id]), consumer_id, ))
     # reactor.callLater(0, pop_messages)  # @UndefinedVariable
     pop_messages()
     return False
@@ -555,8 +558,8 @@ def push_outgoing_message(json_message, private_message_object, remote_identity,
             'time': utime.get_sec1970(),
         })
         if _Debug:
-            lg.out(_DebugLevel, 'message.push_outgoing_message "%s" for consumer "%s", %d pending messages' % (
-                request.PacketID, consumer_id, len(message_queue()[consumer_id])))
+            lg.out(_DebugLevel, 'message.push_outgoing_message "%s" for consumer "%s", %d pending messages for consumer %r' % (
+                request.PacketID, consumer_id, len(message_queue()[consumer_id]), consumer_id, ))
     # reactor.callLater(0, pop_messages)  # @UndefinedVariable
     pop_messages()
     return False
@@ -577,22 +580,24 @@ def push_group_message(json_message, direction, group_key_id, producer_id, seque
         })
         if _Debug:
             lg.out(_DebugLevel, 'message.push_group_message "%d" at group "%s", %d pending messages for consumer %s' % (
-                sequence_id, group_key_id, len(message_queue()[consumer_id], consumer_id)))
+                sequence_id, group_key_id, len(message_queue()[consumer_id]), consumer_id, ))
     # reactor.callLater(0, pop_messages)  # @UndefinedVariable
     pop_messages()
     return True
 
+#------------------------------------------------------------------------------
 
 def pop_messages():
     """
     """
-    for consumer_id in message_queue().keys():
-        if len(message_queue()[consumer_id]) == 0:
+    known_consumers = list(message_queue().keys())
+    for consumer_id in known_consumers:
+        if consumer_id not in message_queue() or len(message_queue()[consumer_id]) == 0:
             continue
         cb_info = consumers_callbacks().get(consumer_id)
         pending_messages = message_queue()[consumer_id]
-        # no consumers and queue is growing -> stop consumer and queue
-        if (not cb_info or not cb_info['callback']) and len(pending_messages) > MAX_PENDING_MESSAGES_PER_CONSUMER:
+        # no consumer or queue is growing too much -> stop consumer and queue
+        if (not cb_info or not cb_info['callback']) or len(pending_messages) > MAX_PENDING_MESSAGES_PER_CONSUMER:
             consumers_callbacks().pop(consumer_id, None)
             message_queue().pop(consumer_id, None)
             if _Debug:

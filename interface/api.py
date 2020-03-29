@@ -3546,12 +3546,12 @@ def message_receive(consumer_id, direction='incoming', message_types='private_me
         return ERROR('service_private_messages() is not started')
     from chat import message
     ret = Deferred()
+    if strng.is_text(message_types):
+        message_types = message_types.split(',')
 
     def _on_pending_messages(pending_messages):
         result = []
         for msg in pending_messages:
-            if msg['type'] != 'private_message':
-                continue
             try:
                 result.append({
                     'data': msg['data'],
@@ -3571,7 +3571,8 @@ def message_receive(consumer_id, direction='incoming', message_types='private_me
     d = message.consume_messages(
         consumer_id=consumer_id,
         direction=direction,
-        message_types=message_types.split(','),
+        message_types=message_types,
+        reset_callback=True,
     )
     d.addCallback(_on_pending_messages)
     d.addErrback(lambda err: ret.callback(ERROR(err)))

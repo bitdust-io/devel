@@ -48,7 +48,7 @@ from __future__ import print_function
 #------------------------------------------------------------------------------
 
 _Debug = True
-_DebugLevel = 12
+_DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
@@ -323,11 +323,13 @@ def remove_callback_method(consumer_id, callback_method):
 
 #------------------------------------------------------------------------------
 
-def is_consumer_subscribed(consumer_id, queue_id):
-    if not valid_queue_id(queue_id):
+def is_consumer_subscribed(consumer_id, queue_id=None):
+    if queue_id and not valid_queue_id(queue_id):
         return False
     if consumer_id not in consumer():
         return False
+    if not queue_id:
+        return len(consumer(consumer_id).queues) > 0
     if queue_id not in consumer(consumer_id).queues:
         return False
     return True
@@ -388,9 +390,11 @@ def remove_producer(producer_id):
 
 #------------------------------------------------------------------------------
 
-def is_producer_connected(producer_id, queue_id):
+def is_producer_connected(producer_id, queue_id=None):
     if not is_producer_exist(producer_id):
         return False
+    if not queue_id:
+        return len(producer(producer_id).queues) > 0
     return queue_id in producer(producer_id).queues
 
 
@@ -503,7 +507,7 @@ def on_notification_succeed(result, consumer_id, queue_id, message_id):
     except:
         lg.exc()
     # reactor.callLater(0, do_cleanup)  # @UndefinedVariable
-    do_cleanup(queues=[queue_id, ])
+    do_cleanup(target_queues=[queue_id, ])
     return result
 
 
@@ -516,7 +520,7 @@ def on_notification_failed(err, consumer_id, queue_id, message_id):
     except:
         lg.exc()
     # reactor.callLater(0, do_cleanup)  # @UndefinedVariable
-    do_cleanup(queues=[queue_id, ])
+    do_cleanup(target_queues=[queue_id, ])
     return err
 
 #------------------------------------------------------------------------------
@@ -656,7 +660,7 @@ def on_event_packet_received(newpacket, info, status, error_message):
         strng.to_text(e_json['event_id'])
         e_json['payload']
     except:
-        lg.warn("invlid json payload")
+        lg.warn("invalid json payload")
         return False
     handled = False
     for cb in _EventPacketReceivedCallbacks:
@@ -673,9 +677,11 @@ def do_handle_event_packet(newpacket, e_json):
     producer_id = e_json.get('producer_id')
     message_id = strng.to_text(e_json.get('message_id'))
     created = strng.to_text(e_json.get('created'))
+    if _Debug:
+        lg.args(_DebugLevel, event_id=event_id, queue_id=queue_id, producer_id=producer_id, message_id=message_id)
     if queue_id and producer_id and message_id:
         # this message have an ID and producer so it came from a queue and needs to be consumed
-        # also needs to be add more info coming from the queue to the event body
+        # also needs to be attached more info coming from the queue to the event body
         if _Debug:
             lg.info('received new event %s from the queue at %s' % (event_id, queue_id, ))
         payload.update(dict(
@@ -686,6 +692,9 @@ def do_handle_event_packet(newpacket, e_json):
         ))
         events.send(event_id, data=payload)
         p2p_service.SendAck(newpacket)
+        return True
+    if producer_id == my_id.getID() and not queue_id:
+        # this message addressed to me but not to any queue exclusively
         return True
     # this message does not have nor ID nor producer so it came from another user directly
     # lets' try to find a queue for that event and see if we need to publish it or not
@@ -739,12 +748,14 @@ def do_notify(callback_method, consumer_id, queue_id, message_id):
 
     ret = Deferred()
 
-    if id_url.is_idurl(callback_method):
+    if   id_url.is_idurl(callback_method):
         p2p_service.SendEvent(
             remote_idurl=id_url.field(callback_method),
             event_id=event_id,
             payload=existing_message.payload,
             producer_id=existing_message.producer_id,
+            consumer_id=consumer_id,
+            queue_id=queue_id,
             message_id=existing_message.message_id,
             created=existing_message.created,
             response_timeout=15,
@@ -760,13 +771,20 @@ def do_notify(callback_method, consumer_id, queue_id, message_id):
                 event_id=event_id,
                 payload=existing_message.payload,
                 producer_id=existing_message.producer_id,
+                consumer_id=consumer_id,
+                queue_id=queue_id,
                 message_id=existing_message.message_id,
                 created=existing_message.created,
             ))
         except:
             lg.exc()
             result = False
-        reactor.callLater(0, ret.callback, result)  # @UndefinedVariable
+        if isinstance(result, Deferred):
+            result.addCallback(lambda ok: ret.callback(True) if ok else ret.callback(False))
+            result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='p2p_queue.do_notify')
+            result.addErrback(lambda err: ret.callback(False))
+        else:
+            reactor.callLater(0, ret.callback, result)  # @UndefinedVariable
 
     return start_notification(consumer_id, queue_id, message_id, ret)
 
@@ -826,12 +844,12 @@ def do_consume(interested_consumers=None):
     return True
 
 
-def do_cleanup(interested_queues=None):
+def do_cleanup(target_queues=None):
     global _MessageProcessedCallbacks
     to_be_removed = set()
-    if not interested_queues:
-        interested_queues = list(queue().keys())
-    for queue_id in interested_queues:
+    if not target_queues:
+        target_queues = list(queue().keys())
+    for queue_id in target_queues:
         for _message in queue(queue_id).values():
             if _message.state == 'SENT':
                 found_pending_notifications = False

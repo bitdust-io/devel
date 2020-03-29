@@ -74,8 +74,8 @@ class P2PNotificationsService(LocalService):
         try:
             service_requests_list = json_payload['items']
         except:
-            lg.warn("invlid json payload")
-            return p2p_service.SendFail(newpacket, 'invlid json payload')
+            lg.warn("invalid json payload")
+            return p2p_service.SendFail(newpacket, 'invalid json payload')
         service_responses_list = []
         for r_json in service_requests_list:
             resp = r_json.copy()

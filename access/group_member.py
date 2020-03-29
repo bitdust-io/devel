@@ -184,10 +184,10 @@ def get_last_sequence_id(group_key_id):
     return groups()[group_key_id]['last_sequence_id']
 
 
-def increment_last_sequence_id(group_key_id):
+def set_last_sequence_id(group_key_id, last_sequence_id):
     if not is_group_exist(group_key_id):
         return False
-    groups()[group_key_id]['last_sequence_id'] += 1
+    groups()[group_key_id]['last_sequence_id'] = last_sequence_id
     return True
 
 #------------------------------------------------------------------------------
@@ -304,6 +304,7 @@ class GroupMember(automat.Automat):
         self.connected_brokers = {}
         self.missing_brokers = set()
         self.latest_dht_brokers = None
+        self.last_sequence_id = get_last_sequence_id(self.group_key_id)
         super(GroupMember, self).__init__(
             name="group_member_%s$%s" % (self.group_queue_alias[:10], self.group_creator_id),
             state="AT_STARTUP",
@@ -325,7 +326,7 @@ class GroupMember(automat.Automat):
             'active_queue_id': self.active_queue_id,
             'latest_known_brokers': self.latest_dht_brokers,
             'connected_brokers': self.connected_brokers,
-            'last_sequence_id': get_last_sequence_id(self.group_key_id) if self.group_key_id else None,
+            'last_sequence_id': self.last_sequence_id,
             'state': self.state,
         }
 
@@ -551,7 +552,7 @@ class GroupMember(automat.Automat):
             json_data={
                 'created': utime.get_sec1970(),
                 'payload': 'queue-read',
-                'last_sequence_id': get_last_sequence_id(self.group_key_id),
+                'last_sequence_id': self.last_sequence_id,
                 'queue_id': self.active_queue_id,
                 'consumer_id': self.member_id,
             },
@@ -855,7 +856,8 @@ class GroupMember(automat.Automat):
             if last_sequence_id > latest_known_sequence_id:
                 latest_known_sequence_id = last_sequence_id
             if _Debug:
-                lg.args(_DebugLevel, last_sequence_id=last_sequence_id, list_messages=list_messages)
+                lg.args(_DebugLevel, latest_known_sequence_id=latest_known_sequence_id,
+                        last_sequence_id=last_sequence_id, list_messages=list_messages)
             for one_message in list_messages:
                 if one_message['sequence_id'] > latest_known_sequence_id:
                     lg.warn('invalid item sequence_id %d   vs.  last_sequence_id %d known' % (
@@ -874,18 +876,21 @@ class GroupMember(automat.Automat):
             self.automat('queue-in-sync')
             return True
         received_group_messages.sort(key=lambda m: m['sequence_id'])
-        my_last_sequence_id = get_last_sequence_id(self.group_key_id)
         newly_processed = 0
+        if _Debug:
+            lg.args(_DebugLevel, last_sequence_id=self.last_sequence_id, received_group_messages=received_group_messages)
         for new_message in received_group_messages:
-            if my_last_sequence_id + 1 == new_message['sequence_id']:
-                increment_last_sequence_id(self.group_key_id)
-                my_last_sequence_id = new_message['sequence_id']
+            if self.last_sequence_id + 1 == new_message['sequence_id']:
+                self.last_sequence_id = new_message['sequence_id']
                 newly_processed += 1
+                if _Debug:
+                    lg.dbg(_DebugLevel, 'new message consumed, last_sequence_id incremented to %d' % self.last_sequence_id)
                 self.automat('message-in', **new_message)
         if newly_processed != len(received_group_messages):
             raise Exception('message sequence is broken by message broker %s, some messages were not consumed' % self.active_broker_id)
-        if newly_processed and latest_known_sequence_id == get_last_sequence_id(self.group_key_id):
+        if newly_processed and latest_known_sequence_id == self.last_sequence_id:
+            set_last_sequence_id(self.group_key_id, self.last_sequence_id)
             if _Debug:
-                lg.dbg(_DebugLevel, 'received all messages, queue in sync')
+                lg.dbg(_DebugLevel, 'processed all messages, queue in sync')
             self.automat('queue-in-sync')
         return True

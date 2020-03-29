@@ -143,6 +143,12 @@ def on_consume_queue_messages(json_messages):
         except:
             lg.exc()
             continue
+        if not A():
+            lg.warn('message_peddler() not started yet')
+            continue
+        if not A().state == 'READY':
+            lg.warn('message_peddler() is not ready yet')
+            continue
         if payload == 'queue-read':
             # request from queue_member() to catch up unread messages from the queue
             consumer_id = msg_data.get('consumer_id')
@@ -189,6 +195,7 @@ def on_consume_queue_messages(json_messages):
             continue
         register_delivery(queue_id, new_sequence_id, new_message.message_id)
         pushed += 1
+        A('message-pushed', new_message)
     if received > pushed:
         lg.warn('some of received messages was not pushed to the queue')
     return True
@@ -217,6 +224,30 @@ def on_message_processed(processed_message):
         erase_message(processed_message.queue_id, sequence_id)
         streams()[processed_message.queue_id]['messages'].remove(sequence_id)
     return True
+
+
+def on_consumer_notify(message_info):
+    if _Debug:
+        lg.args(_DebugLevel, message_info=message_info)
+    payload = message_info['payload']
+    consumer_id = message_info['consumer_id']
+    queue_id = message_info['queue_id']
+    ret = message.send_message(
+        json_data={
+            'items': [{
+                'sequence_id': payload['sequence_id'],
+                'created': payload['created'],
+                'producer_id': payload['producer_id'],
+                'payload': payload['payload'],
+            }, ],
+            'last_sequence_id': get_latest_sequence_id(queue_id),
+        },
+        recipient_global_id=consumer_id,
+        packet_id='queue_%s_%s' % (queue_id, packetid.UniqueID(), ),
+        skip_handshake=True,
+    )
+    return ret
+
 
 #------------------------------------------------------------------------------
 
@@ -569,11 +600,11 @@ def start_stream(queue_id):
     if not p2p_queue.is_queue_exist(queue_id):
         p2p_queue.open_queue(queue_id)
     for consumer_id in list(streams()[queue_id]['consumers'].keys()):
-        consumer_idurl = global_id.glob2idurl(consumer_id)
+        # consumer_idurl = global_id.glob2idurl(consumer_id)
         if not p2p_queue.is_consumer_exists(consumer_id):
             p2p_queue.add_consumer(consumer_id)
-        if not p2p_queue.is_callback_method_registered(consumer_id, consumer_idurl):
-            p2p_queue.add_callback_method(consumer_id, consumer_idurl)
+        if not p2p_queue.is_callback_method_registered(consumer_id, on_consumer_notify):
+            p2p_queue.add_callback_method(consumer_id, on_consumer_notify)
         if not p2p_queue.is_consumer_subscribed(consumer_id, queue_id):
             p2p_queue.subscribe_consumer(consumer_id, queue_id)
         streams()[queue_id]['consumers'][consumer_id]['active'] = True
@@ -592,10 +623,16 @@ def stop_stream(queue_id):
     for producer_id in list(streams()[queue_id]['producers'].keys()):
         if p2p_queue.is_producer_connected(producer_id, queue_id):
             p2p_queue.disconnect_producer(producer_id, queue_id)
+        if not p2p_queue.is_producer_connected(producer_id):
+            p2p_queue.remove_producer(producer_id)
         streams()[queue_id]['producers'][producer_id]['active'] = False
     for consumer_id in list(streams()[queue_id]['consumers'].keys()):
         if p2p_queue.is_consumer_subscribed(consumer_id, queue_id):
             p2p_queue.unsubscribe_consumer(consumer_id, queue_id)
+        if not p2p_queue.is_consumer_subscribed(consumer_id):
+            if p2p_queue.is_callback_method_registered(consumer_id, on_consumer_notify):
+                p2p_queue.remove_callback_method(consumer_id, on_consumer_notify)
+            p2p_queue.remove_consumer(consumer_id)
         streams()[queue_id]['consumers'][consumer_id]['active'] = False
     p2p_queue.close_queue(queue_id)
     streams()[queue_id]['active'] = False
@@ -839,7 +876,7 @@ class MessagePeddler(automat.Automat):
         """
         Action method.
         """
-        self._do_read_queue(**kwargs)
+        self._do_send_past_messages(**kwargs)
 
     def doDestroyMe(self, *args, **kwargs):
         """
@@ -848,7 +885,7 @@ class MessagePeddler(automat.Automat):
         message.clear_consumer_callbacks(self.name)
         self.destroy()
 
-    def _do_read_queue(self, queue_id, consumer_id, consumer_last_sequence_id):
+    def _do_send_past_messages(self, queue_id, consumer_id, consumer_last_sequence_id):
         list_messages = get_messages_for_consumer(queue_id, consumer_id, consumer_last_sequence_id)
         message.send_message(
             json_data={
