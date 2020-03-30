@@ -350,10 +350,12 @@ class PacketOut(automat.Automat):
 
     def __init__(self, outpacket, wide, callbacks={}, target=None, route=None, response_timeout=None, keep_alive=True, skip_ack=False):
         self.outpacket = outpacket
-        parts = global_id.ParseGlobalID(self.outpacket.PacketID)
-        packet_label = parts['path']
-        if not packet_label:
-            packet_label = self.outpacket.PacketID.replace(':', '').replace('/', '').replace('_', '')
+        if self.outpacket.PacketID.count('&'):
+            packet_label = self.outpacket.PacketID.replace(':', '').replace('/', '').replace('_', '').replace('&', '')
+        else:
+            packet_label = global_id.ParseGlobalID(self.outpacket.PacketID)['path']
+            if not packet_label:
+                packet_label = self.outpacket.PacketID.replace(':', '').replace('/', '').replace('_', '')
         self.wide = wide
         self.callbacks = {}
         self.caching_deferred = None

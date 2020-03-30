@@ -454,11 +454,15 @@ def message_send_group_v1(node, group_key_id, data):
     return response.json()
 
 
-def message_receive_v1(node, expected_data, consumer='test_consumer',):
+def message_receive_v1(node, expected_data, consumer='test_consumer', get_result=None):
     response = request_get(node, f'message/receive/{consumer}/v1', timeout=20)
     assert response.status_code == 200
     print(f'\nmessage/receive/{consumer}/v1 [%s] : %s\n' % (
         node, pprint.pformat(response.json())))
+    if get_result is not None:
+        if response.json()['status'] == 'OK':
+            get_result[0] = response.json()
+        return get_result
     assert response.json()['status'] == 'OK', response.json()
     assert response.json()['result'][0]['data'] == expected_data, response.json()
 

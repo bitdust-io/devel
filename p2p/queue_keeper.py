@@ -384,7 +384,7 @@ class QueueKeeper(automat.Automat):
                 self.connected_queues.add(queue_id)
             if not cb.called:
                 cb.callback(success)
-        self.registered_callbacks.clear()
+        self.registered_callbacks = []
 
     def doDestroyMe(self, *args, **kwargs):
         """

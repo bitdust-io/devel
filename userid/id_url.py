@@ -351,9 +351,15 @@ def field(idurl):
         if _Debug:
             lg.out(_DebugLevel, 'id_url.field   will try to find %r in local identity cache' % idurl)
         from contacts import identitydb
-        cached_ident = identitydb.get(idurl)
+        cached_ident = identitydb.get_ident(idurl)
         if cached_ident:
             identity_cached(cached_ident)
+        else:
+            if _Debug:
+                cod = sys._getframe(1).f_back.f_code
+                modul = os.path.basename(cod.co_filename).replace('.py', '')
+                caller = cod.co_name
+                lg.warn('unknown yet idurl %s, call from %s.%s' % (idurl, modul, caller, ))
     return ID_URL_FIELD(idurl)
 
 

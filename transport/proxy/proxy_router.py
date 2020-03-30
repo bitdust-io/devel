@@ -870,7 +870,7 @@ class ProxyRouter(automat.Automat):
             identitycache.StopOverridingIdentity(old)
             self.routes.pop(old)
             self.routes[new] = current_route
-            new_ident = identitydb.get(new)
+            new_ident = identitydb.get_ident(new)
             if new_ident and not self._is_my_contacts_present_in_identity(new_ident):
                 if _Debug:
                     lg.out(_DebugLevel, '    DO OVERRIDE identity for %r' % new)

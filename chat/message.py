@@ -313,7 +313,7 @@ def on_incoming_message(request, info, status, error_message):
     """
     global _IncomingMessageCallbacks
     if _Debug:
-        lg.out(_DebugLevel, "message.Message from " + str(request.OwnerID))
+        lg.out(_DebugLevel, "message.on_incoming_message new PrivateMessage %r from %s" % (request.PacketID, request.OwnerID, ))
     private_message_object = PrivateMessage.deserialize(request.Payload)
     if private_message_object is None:
         lg.warn("PrivateMessage deserialize failed, can not extract message from request payload of %d bytes" % len(request.Payload))
@@ -359,7 +359,8 @@ def on_ping_success(ok, idurl):
 def on_message_delivered(idurl, json_data, recipient_global_id, packet_id, response, info, result_defer=None):
     global _LastUserPingTime
     idurl = id_url.to_bin(idurl)
-    lg.info('message %s delivered to %s : %s with %s' % (packet_id, recipient_global_id, response, info, ))
+    if _Debug:
+        lg.args(_DebugLevel, idurl=idurl, packet_id=packet_id, recipient_global_id=recipient_global_id)
     _LastUserPingTime[idurl] = time.time()
     if result_defer and not result_defer.called:
         result_defer.callback(response)
@@ -378,7 +379,7 @@ def on_message_failed(idurl, json_data, recipient_global_id, packet_id, response
 
 #------------------------------------------------------------------------------
 
-def do_send_message(json_data, recipient_global_id, packet_id, message_ack_timeout, result_defer=None):
+def do_send_message(json_data, recipient_global_id, packet_id, message_ack_timeout, result_defer=None, fire_callbacks=True):
     global _OutgoingMessageCallbacks
     remote_idurl = global_id.GlobalUserToIDURL(recipient_global_id, as_field=False)
     if not remote_idurl:
@@ -419,16 +420,19 @@ def do_send_message(json_data, recipient_global_id, packet_id, message_ack_timeo
         },
         response_timeout=message_ack_timeout,
     )
-    try:
-        for cp in _OutgoingMessageCallbacks:
-            cp(json_data, private_message_object, remote_identity, outpacket, result)
-    except:
-        lg.exc()
-        raise Exception('failed sending message')
+    if fire_callbacks:
+        try:
+            for cp in _OutgoingMessageCallbacks:
+                cp(json_data, private_message_object, remote_identity, outpacket, result)
+        except:
+            lg.exc()
+            raise Exception('failed sending message')
     return result
 
 
-def send_message(json_data, recipient_global_id, packet_id=None, message_ack_timeout=None, ping_timeout=20, ping_retries=0, skip_handshake=False):
+def send_message(json_data, recipient_global_id, packet_id=None,
+                 message_ack_timeout=None, ping_timeout=20, ping_retries=0,
+                 skip_handshake=False, fire_callbacks=True):
     """
     Send command.Message() packet to remote peer. Returns Deferred object.
     """
@@ -437,7 +441,7 @@ def send_message(json_data, recipient_global_id, packet_id=None, message_ack_tim
     if not packet_id:
         packet_id = packetid.UniqueID()
     if _Debug:
-        lg.out(_DebugLevel, "message.send_message to %s with PackteID=%s ping_timeout=%d message_ack_timeout=%r ping_retries=%d" % (
+        lg.out(_DebugLevel, "message.send_message to %s with PacketID=%s ping_timeout=%d message_ack_timeout=%r ping_retries=%d" % (
             recipient_global_id, packet_id, ping_timeout, message_ack_timeout, ping_retries, ))
     remote_idurl = global_id.GlobalUserToIDURL(recipient_global_id, as_field=False)
     if not remote_idurl:
@@ -451,9 +455,9 @@ def send_message(json_data, recipient_global_id, packet_id=None, message_ack_tim
     remote_identity = identitycache.FromCache(remote_idurl)
     is_online = online_status.isOnline(remote_idurl)
     if _Debug:
-        lg.out(_DebugLevel, "    is_ping_expired=%r  remote_identity=%r  is_online=%r" % (
-            is_ping_expired, bool(remote_identity), is_online, ))
-    if not skip_handshake and (is_ping_expired or remote_identity is None or not is_online):
+        lg.out(_DebugLevel, "    is_ping_expired=%r  remote_identity=%r  is_online=%r  skip_handshake=%r" % (
+            is_ping_expired, bool(remote_identity), is_online, skip_handshake, ))
+    if remote_identity is None or ((is_ping_expired or not is_online) and not skip_handshake):
         d = online_status.handshake(
             idurl=remote_idurl,
             ack_timeout=ping_timeout,
@@ -463,12 +467,25 @@ def send_message(json_data, recipient_global_id, packet_id=None, message_ack_tim
         )
         d.addCallback(lambda ok: on_ping_success(ok, remote_idurl))
         d.addCallback(lambda _: do_send_message(
-            json_data, recipient_global_id, packet_id, message_ack_timeout, result_defer=ret))
+            json_data=json_data,
+            recipient_global_id=recipient_global_id,
+            packet_id=packet_id,
+            message_ack_timeout=message_ack_timeout,
+            result_defer=ret,
+            fire_callbacks=fire_callbacks,
+        ))
         d.addErrback(lambda err: on_message_failed(
             remote_idurl, json_data, recipient_global_id, packet_id, None, None, result_defer=ret, error=err))
         return ret
     try:
-        do_send_message(json_data, recipient_global_id, packet_id, message_ack_timeout, ret)
+        do_send_message(
+            json_data=json_data,
+            recipient_global_id=recipient_global_id,
+            packet_id=packet_id,
+            message_ack_timeout=message_ack_timeout,
+            result_defer=ret,
+            fire_callbacks=fire_callbacks,
+        )
     except Exception as exc:
         lg.warn(str(exc))
         on_message_failed(remote_idurl, json_data, recipient_global_id, packet_id, None, None, error=exc)
@@ -492,8 +509,8 @@ def consume_messages(consumer_id, callback=None, direction=None, message_types=N
     }
     if _Debug:
         lg.out(_DebugLevel, 'message.consume_messages added callback for consumer %r' % consumer_id)
-    # reactor.callLater(0, pop_messages)  # @UndefinedVariable
-    pop_messages()
+    # reactor.callLater(0, do_read)  # @UndefinedVariable
+    do_read()
     return cb
 
 
@@ -534,8 +551,8 @@ def push_incoming_message(request, private_message_object, json_message):
         if _Debug:
             lg.out(_DebugLevel, 'message.push_incoming_message "%s" for consumer "%s", %d pending messages for consumer %r' % (
                 request.PacketID, consumer_id, len(message_queue()[consumer_id]), consumer_id, ))
-    # reactor.callLater(0, pop_messages)  # @UndefinedVariable
-    pop_messages()
+    # reactor.callLater(0, do_read)  # @UndefinedVariable
+    do_read()
     return False
 
 
@@ -560,8 +577,8 @@ def push_outgoing_message(json_message, private_message_object, remote_identity,
         if _Debug:
             lg.out(_DebugLevel, 'message.push_outgoing_message "%s" for consumer "%s", %d pending messages for consumer %r' % (
                 request.PacketID, consumer_id, len(message_queue()[consumer_id]), consumer_id, ))
-    # reactor.callLater(0, pop_messages)  # @UndefinedVariable
-    pop_messages()
+    # reactor.callLater(0, do_read)  # @UndefinedVariable
+    do_read()
     return False
 
 
@@ -581,16 +598,17 @@ def push_group_message(json_message, direction, group_key_id, producer_id, seque
         if _Debug:
             lg.out(_DebugLevel, 'message.push_group_message "%d" at group "%s", %d pending messages for consumer %s' % (
                 sequence_id, group_key_id, len(message_queue()[consumer_id]), consumer_id, ))
-    # reactor.callLater(0, pop_messages)  # @UndefinedVariable
-    pop_messages()
+    # reactor.callLater(0, do_read)  # @UndefinedVariable
+    do_read()
     return True
 
 #------------------------------------------------------------------------------
 
-def pop_messages():
+def do_read():
     """
     """
     known_consumers = list(message_queue().keys())
+    total_consumed = 0
     for consumer_id in known_consumers:
         if consumer_id not in message_queue() or len(message_queue()[consumer_id]) == 0:
             continue
@@ -601,7 +619,7 @@ def pop_messages():
             consumers_callbacks().pop(consumer_id, None)
             message_queue().pop(consumer_id, None)
             if _Debug:
-                lg.out(_DebugLevel, 'message.pop_message STOPPED consumer "%s", too much pending messages but no callbacks' % consumer_id)
+                lg.out(_DebugLevel, 'message.do_read STOPPED consumer "%s", too much pending messages but no callbacks' % consumer_id)
             continue
         # filter messages which consumer is not interested in
         if cb_info['direction']:
@@ -613,19 +631,15 @@ def pop_messages():
         consumer_messages = list(consumer_messages)
         if not consumer_messages:
             message_queue()[consumer_id] = []
-            if _Debug:
-                lg.dbg(_DebugLevel, 'found no messages for consumer %r out of: %r' % (cb_info, pending_messages, ))
             continue
-        # callback is a one-time Deferred object, must call it and release the callback
+        # callback is a one-time Deferred object, must call now it and release the callback
         if isinstance(cb_info['callback'], Deferred):
             if cb_info['callback'].called:
                 if _Debug:
-                    lg.out(_DebugLevel, 'message.pop_message %d messages waiting consuming by "%s", callback state is "called"' % (
+                    lg.out(_DebugLevel, 'message.do_read %d messages waiting consuming by "%s", callback state is "called"' % (
                         len(message_queue()[consumer_id]), consumer_id))
                 consumers_callbacks().pop(consumer_id, None)
                 continue
-            if _Debug:
-                lg.args(_DebugLevel, consumer_messages=consumer_messages, cb_info=cb_info)
             try:
                 cb_info['callback'].callback(consumer_messages)
             except:
@@ -634,26 +648,25 @@ def pop_messages():
                 continue
             consumers_callbacks().pop(consumer_id, None)
             message_queue()[consumer_id] = []
-            if _Debug:
-                lg.out(_DebugLevel, 'message.pop_message %d messages consumed by "%s": %r' % (
-                    len(consumer_messages), consumer_id, consumer_messages))
+            total_consumed += len(consumer_messages)
             continue
         # callback is a "callable" method which we must not release
-        if _Debug:
-            lg.args(_DebugLevel, consumer_messages=consumer_messages, cb_info=cb_info)
         message_queue()[consumer_id] = []
         try:
             ok = cb_info['callback'](consumer_messages)
         except:
             lg.exc()
             consumers_callbacks().pop(consumer_id, None)
+            # put back failed messages to the queue so consumer can re-try
             message_queue()[consumer_id] = pending_messages
             continue
         if not ok:
             lg.err('failed consuming messages by consumer %r' % consumer_id)
             consumers_callbacks().pop(consumer_id, None)
+            # put back failed messages to the queue so consumer can re-try
             message_queue()[consumer_id] = pending_messages
             continue
-        if _Debug:
-            lg.out(_DebugLevel, 'message.pop_message %d messages consumed directly by "%s": %r' % (
-                len(consumer_messages), consumer_id, consumer_messages))
+        total_consumed += len(consumer_messages)
+    if _Debug:
+        lg.args(_DebugLevel, total_consumed=total_consumed)
+    return total_consumed

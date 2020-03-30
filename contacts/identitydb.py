@@ -99,7 +99,7 @@ def init():
     # make sure to read and cache all known identities at startup
     for id_filename in os.listdir(id_cache_dir):
         idurl = nameurl.FilenameUrl(id_filename)
-        get(idurl)
+        get_ident(idurl)
 
 
 def shutdown():
@@ -271,7 +271,7 @@ def idcontacts(idurl):
     return list(_IDURL2Contacts.get(idurl, set()))
 
 
-def get(idurl):
+def get_ident(idurl):
     """
     A smart way to get identity from cache.
 
@@ -284,21 +284,21 @@ def get(idurl):
         partfilename = nameurl.UrlFilename(idurl)
     except:
         if _Debug:
-            lg.out(_DebugLevel, "identitydb.get ERROR %r is incorrect" % idurl)
+            lg.out(_DebugLevel, "identitydb.get_ident ERROR %r is incorrect" % idurl)
         return None
     if not partfilename:
         if _Debug:
-            lg.out(_DebugLevel, "identitydb.get ERROR %r is empty" % idurl)
+            lg.out(_DebugLevel, "identitydb.get_ident ERROR %r is empty" % idurl)
         return None
     filename = os.path.join(settings.IdentityCacheDir(), partfilename)
     if not os.path.exists(filename):
         if _Debug:
-            lg.out(_DebugLevel, "identitydb.get file %r not exist" % os.path.basename(filename))
+            lg.out(_DebugLevel, "identitydb.get_ident file %r not exist" % os.path.basename(filename))
         return None
     idxml = bpio.ReadTextFile(filename)
     if not idxml:
         if _Debug:
-            lg.out(_DebugLevel, "identitydb.get %s not found" % nameurl.GetName(idurl))
+            lg.out(_DebugLevel, "identitydb.get_ident %s not found" % nameurl.GetName(idurl))
         return None
     idobj = identity.identity(xmlsrc=idxml)
     idurl_orig = idobj.getIDURL()
@@ -457,7 +457,7 @@ def print_id(idurl):
     """
     idurl = id_url.to_original(idurl)
     if has_idurl(idurl):
-        idForKey = get(idurl)
+        idForKey = get_ident(idurl)
         if _Debug:
             lg.out(_DebugLevel, str(idForKey.getSources(as_originals=True)))
             lg.out(_DebugLevel, str(idForKey.contacts))

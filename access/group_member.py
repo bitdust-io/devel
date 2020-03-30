@@ -456,7 +456,7 @@ class GroupMember(automat.Automat):
         """
         message.consume_messages(
             consumer_id=self.name,
-            callback=self._on_consume_queue_messages,
+            callback=self._on_read_queue_messages,
             direction='incoming',
             message_types=['queue_message', ],
         )
@@ -559,6 +559,7 @@ class GroupMember(automat.Automat):
             recipient_global_id=self.active_broker_id,
             packet_id='queue_%s_%s' % (self.active_queue_id, packetid.UniqueID()),
             skip_handshake=True,
+            fire_callbacks=False,
         )
         result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='group_member.doReadQueue')
         result.addErrback(lambda err: self.automat('queue-read-failed', err))
@@ -659,6 +660,7 @@ class GroupMember(automat.Automat):
             recipient_global_id=self.active_broker_id,
             packet_id='queue_%s_%s' % (self.active_queue_id, packetid.UniqueID(), ),
             skip_handshake=True,
+            fire_callbacks=False,
         )
         return result
 
@@ -825,7 +827,7 @@ class GroupMember(automat.Automat):
             else:
                 self.automat('brokers-failed')
 
-    def _on_consume_queue_messages(self, json_messages):
+    def _on_read_queue_messages(self, json_messages):
         if not json_messages:
             return True
         if _Debug:
@@ -855,9 +857,9 @@ class GroupMember(automat.Automat):
                 continue
             if last_sequence_id > latest_known_sequence_id:
                 latest_known_sequence_id = last_sequence_id
-            if _Debug:
-                lg.args(_DebugLevel, latest_known_sequence_id=latest_known_sequence_id,
-                        last_sequence_id=last_sequence_id, list_messages=list_messages)
+            # if _Debug:
+            #     lg.args(_DebugLevel, latest_known_sequence_id=latest_known_sequence_id,
+            #             last_sequence_id=last_sequence_id, list_messages=list_messages)
             for one_message in list_messages:
                 if one_message['sequence_id'] > latest_known_sequence_id:
                     lg.warn('invalid item sequence_id %d   vs.  last_sequence_id %d known' % (
@@ -878,7 +880,7 @@ class GroupMember(automat.Automat):
         received_group_messages.sort(key=lambda m: m['sequence_id'])
         newly_processed = 0
         if _Debug:
-            lg.args(_DebugLevel, last_sequence_id=self.last_sequence_id, received_group_messages=received_group_messages)
+            lg.args(_DebugLevel, my_last_sequence_id=self.last_sequence_id, received_group_messages=received_group_messages)
         for new_message in received_group_messages:
             if self.last_sequence_id + 1 == new_message['sequence_id']:
                 self.last_sequence_id = new_message['sequence_id']

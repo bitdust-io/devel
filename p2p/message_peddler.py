@@ -107,8 +107,8 @@ def streams():
 #------------------------------------------------------------------------------
 
 def on_consume_queue_messages(json_messages):
-    if _Debug:
-        lg.args(_DebugLevel, json_messages=json_messages)
+    # if _Debug:
+    #     lg.args(_DebugLevel, json_messages=json_messages)
     received = 0
     pushed = 0
     for json_message in json_messages:
@@ -161,6 +161,8 @@ def on_consume_queue_messages(json_messages):
                 p2p_service.SendFailNoRequest(from_idurl, packet_id, 'consumer is not active')
                 continue
             consumer_last_sequence_id = msg_data.get('last_sequence_id')
+            if _Debug:
+                lg.args(_DebugLevel, event='queue-read', queue_id=queue_id, consumer_id=consumer_id, consumer_last_sequence_id=consumer_last_sequence_id)
             A('queue-read', queue_id=queue_id, consumer_id=consumer_id, consumer_last_sequence_id=consumer_last_sequence_id)
             continue
         # incoming message from queue_member() to push new message to the queue and deliver to all other group members
@@ -184,7 +186,7 @@ def on_consume_queue_messages(json_messages):
         queued_json_message = store_message(queue_id, new_sequence_id, producer_id, payload, created)
         received += 1
         try:
-            new_message = p2p_queue.push_message(
+            new_message = p2p_queue.write_message(
                 producer_id=producer_id,
                 queue_id=queue_id,
                 data=queued_json_message,
@@ -195,6 +197,8 @@ def on_consume_queue_messages(json_messages):
             continue
         register_delivery(queue_id, new_sequence_id, new_message.message_id)
         pushed += 1
+        if _Debug:
+            lg.args(_DebugLevel, event='message-pushed', new_message=new_message)
         A('message-pushed', new_message)
     if received > pushed:
         lg.warn('some of received messages was not pushed to the queue')
@@ -206,7 +210,7 @@ def on_message_processed(processed_message):
     if _Debug:
         lg.args(_DebugLevel, queue_id=processed_message.queue_id, sequence_id=sequence_id,
                 message_id=processed_message.message_id, failed_consumers=processed_message.failed_consumers, )
-    if not sequence_id:
+    if sequence_id is None:
         return False
     if not unregister_delivery(
         queue_id=processed_message.queue_id,
@@ -227,27 +231,32 @@ def on_message_processed(processed_message):
 
 
 def on_consumer_notify(message_info):
-    if _Debug:
-        lg.args(_DebugLevel, message_info=message_info)
     payload = message_info['payload']
     consumer_id = message_info['consumer_id']
     queue_id = message_info['queue_id']
+    packet_id = 'queue_%s_%s' % (queue_id, packetid.UniqueID(), )
+    sequence_id = payload['sequence_id']
+    last_sequence_id = get_latest_sequence_id(queue_id)
+    producer_id = payload['producer_id']
+    if _Debug:
+        lg.args(_DebugLevel, producer_id=producer_id, consumer_id=consumer_id, queue_id=queue_id,
+                sequence_id=sequence_id, last_sequence_id=last_sequence_id)
     ret = message.send_message(
         json_data={
             'items': [{
-                'sequence_id': payload['sequence_id'],
+                'sequence_id': sequence_id,
                 'created': payload['created'],
-                'producer_id': payload['producer_id'],
+                'producer_id': producer_id,
                 'payload': payload['payload'],
             }, ],
-            'last_sequence_id': get_latest_sequence_id(queue_id),
+            'last_sequence_id': last_sequence_id,
         },
         recipient_global_id=consumer_id,
-        packet_id='queue_%s_%s' % (queue_id, packetid.UniqueID(), ),
+        packet_id=packet_id,
         skip_handshake=True,
+        fire_callbacks=False,
     )
     return ret
-
 
 #------------------------------------------------------------------------------
 
@@ -312,7 +321,7 @@ def unregister_delivery(queue_id, sequence_id, message_id, failed_consumers):
     message_path = os.path.join(messages_dir, strng.to_text(sequence_id))
     stored_json_message = jsn.loads_text(local_fs.ReadTextFile(message_path))
     found_attempt_number = None
-    for attempt_number in range(len(stored_json_message['attempts']), 0, -1):
+    for attempt_number in range(len(stored_json_message['attempts'])-1, -1, -1):
         if stored_json_message['attempts'][attempt_number]['message_id'] == message_id:
             found_attempt_number = attempt_number
             break
@@ -357,7 +366,7 @@ def get_messages_for_consumer(queue_id, consumer_id, consumer_last_sequence_id, 
     all_stored_queue_messages.sort(key=lambda i: int(i))
     result = []
     for sequence_id in all_stored_queue_messages:
-        if consumer_last_sequence_id >= sequence_id:
+        if consumer_last_sequence_id >= int(sequence_id):
             continue
         message_path = os.path.join(messages_dir, strng.to_text(sequence_id))
         try:
@@ -895,6 +904,7 @@ class MessagePeddler(automat.Automat):
             recipient_global_id=consumer_id,
             packet_id='queue_%s_%s' % (queue_id, packetid.UniqueID(), ),
             skip_handshake=True,
+            fire_callbacks=False,
         )
 
     def _on_queue_keeper_connect_result(self, result, queue_id, consumer_id, producer_id, request_packet, result_defer):
