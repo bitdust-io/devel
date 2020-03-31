@@ -53,7 +53,7 @@ class MessageBrokerService(LocalService):
 
     def start(self):
         from main import events
-        from p2p import message_peddler
+        from stream import message_peddler
         message_peddler.A('start')
         self._do_connect_message_brokers_dht_layer()
         events.add_subscriber(self._on_dht_layer_connected, event_id='dht-layer-connected')
@@ -63,7 +63,7 @@ class MessageBrokerService(LocalService):
         from dht import dht_service
         from dht import dht_records
         from main import events
-        from p2p import message_peddler
+        from stream import message_peddler
         events.remove_subscriber(self._on_dht_layer_connected, event_id='dht-layer-connected')
         dht_service.suspend(layer_id=dht_records.LAYER_MESSAGE_BROKERS)
         message_peddler.A('stop')
@@ -77,7 +77,7 @@ class MessageBrokerService(LocalService):
         from logs import lg
         # from userid import global_id
         from p2p import p2p_service
-        from p2p import message_peddler
+        from stream import message_peddler
         # customer_idurl = newpacket.OwnerID
         # customer_id = global_id.UrlToGlobalID(customer_idurl)
         try:

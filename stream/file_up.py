@@ -95,7 +95,7 @@ from p2p import commands
 
 from transport import packet_out
 
-from customer import io_throttle
+from stream import io_throttle
 
 #------------------------------------------------------------------------------
 

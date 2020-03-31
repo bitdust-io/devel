@@ -52,7 +52,7 @@ class PrivateMessagesService(LocalService):
     def start(self):
         from main import events
         from transport import callback
-        from chat import message
+        from stream import message
         from chat import nickname_holder
         message.init()
         nickname_holder.A('set')
@@ -65,7 +65,7 @@ class PrivateMessagesService(LocalService):
     def stop(self):
         from main import events
         from transport import callback
-        from chat import message
+        from stream import message
         from chat import nickname_holder
         events.remove_subscriber(self._on_user_connected, 'node-connected')
         events.remove_subscriber(self._on_user_disconnected, 'node-disconnected')
@@ -77,7 +77,7 @@ class PrivateMessagesService(LocalService):
 
     def _on_inbox_packet_received(self, newpacket, info, status, error_message):
         from p2p import commands
-        from chat import message
+        from stream import message
         if newpacket.Command != commands.Message():
             return False
         return message.on_incoming_message(newpacket, info, status, error_message)

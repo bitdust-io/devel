@@ -119,7 +119,7 @@ from crypt import encrypted
 from p2p import online_status
 from p2p import propagate
 
-from customer import data_receiver
+from stream import data_receiver
 
 from raid import raid_worker
 from raid import eccmap
@@ -438,7 +438,7 @@ class RestoreWorker(automat.Automat):
         """
         if _Debug:
             lg.out(_DebugLevel, 'restore_worker.doRequestPackets for %s at block %d' % (self.backup_id, self.block_number, ))
-        from customer import io_throttle
+        from stream import io_throttle
         packetsToRequest = []
         for SupplierNumber in range(self.EccMap.datasegments):
             SupplierID = contactsdb.supplier(SupplierNumber, customer_idurl=self.customer_idurl)
@@ -613,7 +613,7 @@ class RestoreWorker(automat.Automat):
         """
         Action method.
         """
-        from customer import io_throttle
+        from stream import io_throttle
         io_throttle.DeleteBackupRequests(self.backup_id)
 
     def doReportDone(self, *args, **kwargs):

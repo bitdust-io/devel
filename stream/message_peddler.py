@@ -83,11 +83,11 @@ from system import local_fs
 
 from main import settings
 
-from p2p import p2p_queue
 from p2p import p2p_service
-from p2p import queue_keeper
 
-from chat import message
+from stream import p2p_queue
+from stream import queue_keeper
+from stream import message
 
 from userid import global_id
 from userid import my_id

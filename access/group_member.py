@@ -80,7 +80,7 @@ from crypt import my_keys
 
 from dht import dht_relations
 
-from chat import message
+from stream import message
 
 from p2p import lookup
 from p2p import p2p_service_seeker

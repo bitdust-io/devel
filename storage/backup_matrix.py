@@ -898,7 +898,7 @@ def ScanBlocksToRemove(backupID, check_all_suppliers=True):
     If remote supplier got that file it can be removed from the local
     HDD.
     """
-    from customer import io_throttle
+    from stream import io_throttle
     if _Debug:
         lg.out(_DebugLevel, 'backup_matrix.ScanBlocksToRemove for %r' % backupID)
     customer_idurl = packetid.CustomerIDURL(backupID)

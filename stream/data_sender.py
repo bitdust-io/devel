@@ -88,7 +88,8 @@ from main import settings
 
 from p2p import online_status
 
-from customer import io_throttle
+from stream import io_throttle
+
 from customer import list_files_orator
 
 #------------------------------------------------------------------------------

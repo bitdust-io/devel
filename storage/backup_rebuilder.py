@@ -169,11 +169,11 @@ class BackupRebuilder(automat.Automat):
         self.backupsWasRebuilt = []
         self.missingPackets = 0
         self.log_transitions = _Debug
-        from customer import data_sender
+        from stream import data_sender
         data_sender.A().addStateChangedCallback(self._on_data_sender_state_changed)
 
     def shutdown(self):
-        from customer import data_sender
+        from stream import data_sender
         data_sender.A().removeStateChangedCallback(self._on_data_sender_state_changed)
 
     def state_changed(self, oldstate, newstate, event, *args, **kwargs):
@@ -310,7 +310,7 @@ class BackupRebuilder(automat.Automat):
         """
         Condition method.
         """
-        from customer import io_throttle
+        from stream import io_throttle
         # supplierSet = backup_matrix.suppliers_set()
         for supplierNum in range(contactsdb.num_suppliers()):
             supplierID = contactsdb.supplier(supplierNum)
@@ -353,7 +353,7 @@ class BackupRebuilder(automat.Automat):
         if self.currentBackupID:
             RemoveBackupToWork(self.currentBackupID)
             # clear requesting queue from previous task
-            from customer import io_throttle
+            from stream import io_throttle
             io_throttle.DeleteBackupRequests(self.currentBackupID)
         self.currentBackupID = None
         self.currentCustomerIDURL = None
@@ -396,7 +396,7 @@ class BackupRebuilder(automat.Automat):
                 'P': [0] * contactsdb.num_suppliers()}
         # clear requesting queue, remove old packets for this backup, we will
         # send them again
-        from customer import io_throttle
+        from stream import io_throttle
         io_throttle.DeleteBackupRequests(self.currentBackupID)
         lg.out(8, 'backup_rebuilder.doScanBrokenBlocks for %s : %s' % (
             self.currentBackupID, str(self.workingBlocksQueue)))
@@ -450,8 +450,8 @@ class BackupRebuilder(automat.Automat):
 
     def _request_files(self):
         from storage import backup_matrix
-        from customer import io_throttle
-        from customer import data_sender
+        from stream import io_throttle
+        from stream import data_sender
         self.missingPackets = 0
         # here we want to request some packets before we start working to
         # rebuild the missed blocks
@@ -639,7 +639,7 @@ class BackupRebuilder(automat.Automat):
         err = False
         if newData:
             from storage import backup_matrix
-            from customer import data_sender
+            from stream import data_sender
             count = 0
             customer_idurl = packetid.CustomerIDURL(_backupID)
             for supplierNum in range(contactsdb.num_suppliers(customer_idurl=customer_idurl)):

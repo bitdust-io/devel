@@ -187,7 +187,7 @@ class backup(automat.Automat):
         self.log_transitions = _Debug
 
     def A(self, event, *args, **kwargs):
-        from customer import data_sender
+        from stream import data_sender
         #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'start':

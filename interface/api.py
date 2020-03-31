@@ -3003,7 +3003,7 @@ def transfers_list():
     """
     if not driver.is_on('service_data_motion'):
         return ERROR('service_data_motion() is not started')
-    from customer import io_throttle
+    from stream import io_throttle
     from userid import global_id
     result = []
     for supplier_idurl in io_throttle.throttle().ListSupplierQueues():
@@ -3177,7 +3177,7 @@ def streams_list(wanted_protos=None):
 def queue_list():
     """
     """
-    from p2p import p2p_queue
+    from stream import p2p_queue
     return RESULT([{
         'queue_id': queue_id,
         'messages': len(p2p_queue.queue(queue_id)),
@@ -3454,7 +3454,7 @@ def message_send(recipient, json_data, ping_timeout=30, message_ack_timeout=15):
     """
     if not driver.is_on('service_private_messages'):
         return ERROR('service_private_messages() is not started')
-    from chat import message
+    from stream import message
     from userid import global_id
     from crypt import my_keys
     if not recipient.count('@'):
@@ -3544,7 +3544,7 @@ def message_receive(consumer_id, direction='incoming', message_types='private_me
     """
     if not driver.is_on('service_private_messages'):
         return ERROR('service_private_messages() is not started')
-    from chat import message
+    from stream import message
     ret = Deferred()
     if strng.is_text(message_types):
         message_types = message_types.split(',')

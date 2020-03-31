@@ -60,7 +60,8 @@ from userid import global_id
 
 from crypt import my_keys
 
-from chat import message
+from stream import message
+
 from chat import message_database
 
 #------------------------------------------------------------------------------

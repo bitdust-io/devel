@@ -735,7 +735,7 @@ class SupplierService(LocalService):
 
     def _on_customer_accepted(self, e):
         from logs import lg
-        from p2p import p2p_queue
+        from stream import p2p_queue
         from crypt import my_keys
         from userid import global_id
         from userid import my_id
@@ -781,7 +781,7 @@ class SupplierService(LocalService):
         from logs import lg
         from userid import my_id
         from userid import global_id
-        from p2p import p2p_queue
+        from stream import p2p_queue
         customer_idurl = e.data.get('idurl')
         if not customer_idurl:
             lg.warn('unknown customer idurl in event data payload')

@@ -457,7 +457,7 @@ def DeleteBackup(backupID, removeLocalFilesToo=True, saveDB=True, calculate=True
     if AbortRunningBackup(backupID):
         lg.out(8, 'backup_control.DeleteBackup %s is in process, stopping' % backupID)
         return True
-    from customer import io_throttle
+    from stream import io_throttle
     from storage import backup_rebuilder
     lg.out(8, 'backup_control.DeleteBackup ' + backupID)
     # if we requested for files for this backup - we do not need it anymore
@@ -495,7 +495,7 @@ def DeletePathBackups(pathID, removeLocalFilesToo=True, saveDB=True, calculate=T
     Doing same operations as ``DeleteBackup()``.
     """
     from storage import backup_rebuilder
-    from customer import io_throttle
+    from stream import io_throttle
     pathID = global_id.CanonicalID(pathID)
     # get the working item
     customer, remotePath = packetid.SplitPacketID(pathID)

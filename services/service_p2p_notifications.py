@@ -54,14 +54,14 @@ class P2PNotificationsService(LocalService):
 
     def start(self):
         from transport import callback
-        from p2p import p2p_queue
+        from stream import p2p_queue
         p2p_queue.init()
         callback.append_inbox_callback(self._on_inbox_packet_received)
         return True
 
     def stop(self):
         from transport import callback
-        from p2p import p2p_queue
+        from stream import p2p_queue
         callback.remove_inbox_callback(self._on_inbox_packet_received)
         p2p_queue.shutdown()
         return True
@@ -70,7 +70,7 @@ class P2PNotificationsService(LocalService):
         from logs import lg
         from lib import serialization
         from p2p import p2p_service
-        from p2p import p2p_queue
+        from stream import p2p_queue
         try:
             service_requests_list = json_payload['items']
         except:
@@ -158,7 +158,7 @@ class P2PNotificationsService(LocalService):
 
     def _on_inbox_packet_received(self, newpacket, info, status, error_message):
         from p2p import commands
-        from p2p import p2p_queue
+        from stream import p2p_queue
         if newpacket.Command != commands.Event():
             return False
         return p2p_queue.on_event_packet_received(newpacket, info, status, error_message)
