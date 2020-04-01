@@ -166,7 +166,7 @@ def FromCache(idurl):
             if _Debug:
                 lg.out(_DebugLevel, '        returning overridden identity (%d bytes) for %s' % (len(overridden_xmlsrc), idurl))
             return identity.identity(xmlsrc=overridden_xmlsrc)
-    return identitydb.get(idurl)
+    return identitydb.get_ident(idurl)
 
 
 def GetLatest(idurl):
@@ -272,7 +272,9 @@ def OverrideIdentity(idurl, xml_src):
             lg.out(_DebugLevel, '\nOVERRIDDEN OLD:\n' + _OverriddenIdentities[idurl])
             lg.out(_DebugLevel, '\nOVERRIDDEN NEW:\n' + xml_src)
     else:
-        orig = identitydb.get(idurl).serialize(as_text=True) if identitydb.has_idurl(idurl) else ''
+        orig = ''
+        if identitydb.has_idurl(idurl):
+            orig = identitydb.get_ident(idurl).serialize(as_text=True)
         if orig and orig == xml_src:
             if _Debug:
                 lg.out(_DebugLevel, 'identitycache.OverrideIdentity SKIPPED %r , overridden copy is the same as original' % idurl)
@@ -479,7 +481,7 @@ def immediatelyCaching(idurl, timeout=10, try_other_sources=True):
         latest_ident = None
         sources = []
         if latest_idurl:
-            latest_ident = identitydb.get(latest_idurl)
+            latest_ident = identitydb.get_ident(latest_idurl)
         if latest_ident:
             sources = latest_ident.getSources(as_fields=False)
         if sources:

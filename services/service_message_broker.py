@@ -53,21 +53,17 @@ class MessageBrokerService(LocalService):
 
     def start(self):
         from main import events
-        from p2p import message_peddler
-        from chat import message
+        from stream import message_peddler
         message_peddler.A('start')
         self._do_connect_message_brokers_dht_layer()
         events.add_subscriber(self._on_dht_layer_connected, event_id='dht-layer-connected')
-        message.consume_messages('service_message_broker', self._on_incoming_messages)
         return True
 
     def stop(self):
         from dht import dht_service
         from dht import dht_records
         from main import events
-        from p2p import message_peddler
-        from chat import message
-        message.clear_consumer_callbacks('service_message_broker')
+        from stream import message_peddler
         events.remove_subscriber(self._on_dht_layer_connected, event_id='dht-layer-connected')
         dht_service.suspend(layer_id=dht_records.LAYER_MESSAGE_BROKERS)
         message_peddler.A('stop')
@@ -79,19 +75,20 @@ class MessageBrokerService(LocalService):
     def request(self, json_payload, newpacket, info):
         from twisted.internet.defer import Deferred
         from logs import lg
-        from userid import global_id
+        # from userid import global_id
         from p2p import p2p_service
-        from p2p import message_peddler
-        customer_idurl = newpacket.OwnerID
-        customer_id = global_id.UrlToGlobalID(customer_idurl)
+        from stream import message_peddler
+        # customer_idurl = newpacket.OwnerID
+        # customer_id = global_id.UrlToGlobalID(customer_idurl)
         try:
             action = json_payload['action']
             queue_id = json_payload['queue_id']
             consumer_id = json_payload['consumer_id']
             producer_id = json_payload['producer_id']
             group_key = json_payload['group_key']
+            position = json_payload.get('position', -1)
         except:
-            lg.warn("wrong payload" % newpacket.Payload)
+            lg.warn("wrong payload: %r" % json_payload)
             return p2p_service.SendFail(newpacket, 'wrong payload')
         # TODO: validate signature and the key
         result = Deferred()
@@ -102,6 +99,7 @@ class MessageBrokerService(LocalService):
                 queue_id=queue_id,
                 consumer_id=consumer_id,
                 producer_id=producer_id,
+                position=position,
                 request_packet=newpacket,
                 result_defer=result,
             )
@@ -119,12 +117,6 @@ class MessageBrokerService(LocalService):
             lg.warn("wrong action request" % newpacket.Payload)
             return p2p_service.SendFail(newpacket, 'wrong action request')
         return result
-
-    def _do_handle_event_packet(self, newpacket, e_json):
-        from lib import strng
-        event_id = strng.to_text(e_json['event_id'])
-        payload = e_json['payload']
-        queue_id = strng.to_text(e_json.get('queue_id'))
 
     def _do_connect_message_brokers_dht_layer(self):
         from logs import lg
@@ -154,7 +146,3 @@ class MessageBrokerService(LocalService):
     def _on_dht_layer_connected(self, evt):
         if evt.data['layer_id'] == 0:
             self._do_connect_message_brokers_dht_layer()
-
-    def _on_incoming_messages(self, json_messages):
-        from p2p import message_peddler
-        return message_peddler.on_incoming_messages(json_messages)

@@ -65,9 +65,9 @@ class DataMotionService(LocalService):
             lg.warn('service_data_motion() can not start right now, not all suppliers hired yet')
             return False
         from main import events
-        from customer import io_throttle
-        from customer import data_sender
-        from customer import data_receiver
+        from stream import io_throttle
+        from stream import data_sender
+        from stream import data_receiver
         io_throttle.init()
         data_sender.A('init')
         data_receiver.A('init')
@@ -76,9 +76,9 @@ class DataMotionService(LocalService):
 
     def stop(self):
         from main import events
-        from customer import io_throttle
-        from customer import data_sender
-        from customer import data_receiver
+        from stream import io_throttle
+        from stream import data_sender
+        from stream import data_receiver
         events.remove_subscriber(self._on_identity_url_changed, 'identity-url-changed')
         data_receiver.A('shutdown')
         data_sender.SetShutdownFlag()
@@ -108,7 +108,7 @@ class DataMotionService(LocalService):
     def _on_identity_url_changed(self, evt):
         from logs import lg
         from userid import id_url
-        from customer import io_throttle
+        from stream import io_throttle
         old_idurl = id_url.field(evt.data['old_idurl'])
         for supplier_idurl, supplier_queue in io_throttle.throttle().supplierQueues.items():
             if old_idurl == supplier_idurl:

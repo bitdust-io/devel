@@ -178,6 +178,33 @@ def share_open_v1(customer: str, key_id):
     return response.json()
 
 
+def group_create_v1(customer: str, key_size=1024):
+    response = request_post(customer, 'group/create/v1', json={'key_size': key_size, }, timeout=20)
+    assert response.status_code == 200
+    print('\ngroup/create/v1 [%s] : %s\n' % (customer, pprint.pformat(response.json())))
+    assert response.json()['status'] == 'OK', response.json()
+    return response.json()['result'][0]['group_key_id']
+
+
+def group_open_v1(customer: str, group_key_id):
+    response = request_post(customer, 'group/open/v1', json={'group_key_id': group_key_id, }, timeout=20)
+    assert response.status_code == 200
+    print('\ngroup/open/v1 [%s] group_key_id=%r : %s\n' % (customer, group_key_id, pprint.pformat(response.json())))
+    assert response.json()['status'] == 'OK', response.json()
+    return response.json()
+
+
+def group_share_v1(customer: str, group_key_id, trusted_id):
+    response = request_put(customer, 'group/share/v1', json={
+        'group_key_id': group_key_id,
+        'trusted_id': trusted_id,
+    }, timeout=20)
+    assert response.status_code == 200
+    print('\ngroup/share/v1 [%s] group_key_id=%r trusted_id=%r : %s\n' % (customer, group_key_id, trusted_id, pprint.pformat(response.json())))
+    assert response.json()['status'] == 'OK', response.json()
+    return response.json()
+
+
 def file_sync_v1(node):
     response = request_get(node, 'file/sync/v1', timeout=20)
     assert response.status_code == 200
@@ -412,11 +439,30 @@ def message_send_v1(node, recipient, data, timeout=30):
     return response.json()
 
 
-def message_receive_v1(node, expected_data, consumer='test_consumer',):
+def message_send_group_v1(node, group_key_id, data):
+    response = request_post(node, 'message/send/group/v1',
+        json={
+            'group_key_id': group_key_id,
+            'data': data,
+        },
+        timeout=20,
+    )
+    assert response.status_code == 200
+    print(f'\nmessage/send/group/v1 [%s] : %s\n' % (
+        node, pprint.pformat(response.json())))
+    assert response.json()['status'] == 'OK', response.json()
+    return response.json()
+
+
+def message_receive_v1(node, expected_data, consumer='test_consumer', get_result=None):
     response = request_get(node, f'message/receive/{consumer}/v1', timeout=20)
     assert response.status_code == 200
     print(f'\nmessage/receive/{consumer}/v1 [%s] : %s\n' % (
         node, pprint.pformat(response.json())))
+    if get_result is not None:
+        if response.json()['status'] == 'OK':
+            get_result[0] = response.json()
+        return get_result
     assert response.json()['status'] == 'OK', response.json()
     assert response.json()['result'][0]['data'] == expected_data, response.json()
 

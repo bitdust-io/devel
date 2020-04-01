@@ -474,7 +474,7 @@ def validate_key(key_object):
     if not is_valid:
         if _Debug:
             lg.err('validate_key FAILED')
-            lg.out(_DebugLevel, 'pubkey=%r' % key_object.toPublicString())
+            lg.out(_DebugLevel, 'public=%r' % key_object.toPublicString())
             lg.out(_DebugLevel, 'signature=%r' % sample_signature)
             lg.out(_DebugLevel, 'hash_base=%r' % sample_hash_base)
             lg.out(_DebugLevel, 'data=%r' % sample_data)
@@ -521,7 +521,7 @@ def sign_key(key_id, keys_folder=None):
         keys_folder = settings.KeyStoreDir()
     key_object = known_keys()[key_id]
     signed_key_info = make_key_info(key_object, key_id=key_id, include_private=True, sign_key=True)
-    key_object.signed = (signed_key_info['signature'], signed_key_info['pubkey'], )
+    key_object.signed = (signed_key_info['signature'], signed_key_info['signature_pubkey'], )
     known_keys()[key_id] = key_object
     save_key(key_id, keys_folder=keys_folder)
     events.send('key-signed', data=dict(key_id=key_id, label=key_object.label, key_size=key_object.size(), ))
@@ -734,7 +734,7 @@ def make_key_info(key_object, key_id=None, key_alias=None, creator_idurl=None, i
     else:
         if include_signature and key_object.isSigned():
             r['signature'] = key_object.signed[0]
-            r['pubkey'] = key_object.signed[1]
+            r['signature_pubkey'] = key_object.signed[1]
     return r
 
 
@@ -775,8 +775,8 @@ def read_key_info(key_json):
         if not key_object:
             raise Exception('unserialize failed')
         key_object.label = strng.to_text(key_json.get('label', ''))
-        if 'signature' in key_json and 'pubkey' in key_json:
-            key_object.signed = (key_json['signature'], key_json['pubkey'], )
+        if 'signature' in key_json and 'signature_pubkey' in key_json:
+            key_object.signed = (key_json['signature'], key_json['signature_pubkey'], )
     except:
         lg.exc()
         raise Exception('failed reading key info')
@@ -784,11 +784,11 @@ def read_key_info(key_json):
 
 
 def sign_key_info(key_info):
-    key_info['pubkey'] = key.MyPublicKey()
+    key_info['signature_pubkey'] = key.MyPublicKey()
     sorted_fields = sorted(key_info.keys())
     hash_items = []
     for field in sorted_fields:
-        if field not in ['include_private', 'signature', ]:
+        if field not in ['include_private', 'signature', 'private', ]:
             hash_items.append(strng.to_text(key_info[field]))
     hash_text = '-'.join(hash_items)
     hash_bin = key.Hash(strng.to_bin(hash_text))
@@ -797,17 +797,17 @@ def sign_key_info(key_info):
 
 
 def verify_key_info_signature(key_info):
-    if 'signature' not in key_info or 'pubkey' not in key_info:
+    if 'signature' not in key_info or 'signature_pubkey' not in key_info:
         return False
     sorted_fields = sorted(key_info.keys())
     hash_items = []
     for field in sorted_fields:
-        if field not in ['include_private', 'signature', ]:
+        if field not in ['include_private', 'signature', 'private', ]:
             hash_items.append(strng.to_text(key_info[field]))
     hash_text = '-'.join(hash_items)
     hash_bin = key.Hash(strng.to_bin(hash_text))
     signature_bin = strng.to_bin(key_info['signature'])
-    result = key.VerifySignature(key_info['pubkey'], hash_bin, signature_bin)
+    result = key.VerifySignature(key_info['signature_pubkey'], hash_bin, signature_bin)
     return result
 
 #------------------------------------------------------------------------------

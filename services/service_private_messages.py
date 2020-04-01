@@ -52,23 +52,23 @@ class PrivateMessagesService(LocalService):
     def start(self):
         from main import events
         from transport import callback
-        from chat import message
+        from stream import message
         from chat import nickname_holder
         message.init()
         nickname_holder.A('set')
         callback.append_inbox_callback(self._on_inbox_packet_received)
         events.add_subscriber(self._on_identity_url_changed, 'identity-url-changed')
-        events.add_subscriber(self._on_user_connected, 'user-connected')
-        events.add_subscriber(self._on_user_disconnected, 'user-disconnected')
+        events.add_subscriber(self._on_user_connected, 'node-connected')
+        events.add_subscriber(self._on_user_disconnected, 'node-disconnected')
         return True
 
     def stop(self):
         from main import events
         from transport import callback
-        from chat import message
+        from stream import message
         from chat import nickname_holder
-        events.remove_subscriber(self._on_user_connected, 'user-connected')
-        events.remove_subscriber(self._on_user_disconnected, 'user-disconnected')
+        events.remove_subscriber(self._on_user_connected, 'node-connected')
+        events.remove_subscriber(self._on_user_disconnected, 'node-disconnected')
         events.remove_subscriber(self._on_identity_url_changed, 'identity-url-changed')
         callback.remove_inbox_callback(self._on_inbox_packet_received)
         nickname_holder.Destroy()
@@ -77,7 +77,7 @@ class PrivateMessagesService(LocalService):
 
     def _on_inbox_packet_received(self, newpacket, info, status, error_message):
         from p2p import commands
-        from chat import message
+        from stream import message
         if newpacket.Command != commands.Message():
             return False
         return message.on_incoming_message(newpacket, info, status, error_message)

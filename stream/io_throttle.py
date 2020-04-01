@@ -332,7 +332,7 @@ class SupplierQueue:
             if callOnFail is not None:
                 reactor.callLater(0, callOnFail, self.remoteID, packetID, 'in queue')  # @UndefinedVariable
             return False
-        from customer import file_up
+        from stream import file_up
         f_up = file_up.FileUp(
             self,
             fileName,
@@ -518,7 +518,7 @@ class SupplierQueue:
             if callOnReceived:
                 reactor.callLater(0, callOnReceived, packetID, 'in queue')  # @UndefinedVariable
             return False
-        from customer import file_down
+        from stream import file_down
         f_down = file_down.FileDown(self, callOnReceived, creatorID, packetID, ownerID, self.remoteID)
         f_down.event('init')
         if _Debug:

@@ -12,17 +12,22 @@ echo "$test_name" | python -c "import json,sys; tst=sys.stdin.read().strip(); co
 
 nodes=`cat $allnodesfile`
 
+fetch_one(){
+    echo "reading logs [$1/$2]";
+    mkdir -p logs/$1/
+    rm -rf logs/$1/$2/
+    rm -rf logs/$1/$2.tar
+    mkdir -p logs/$1/$2/
+    docker-compose --file tests/$1/docker-compose.yml exec -T $2 sh -c "cd /root/.bitdust/logs/; tar -cf logs.tar *; cat /root/.bitdust/logs/logs.tar;" 1> logs/$1/$2.tar 2>/dev/null;
+    tar -xf logs/$1/$2.tar -C logs/$1/$2/
+    rm -rf logs/$1/$2.tar
+    echo "success [$1/$2]"
+}
+
 for node in $nodes; do
-    echo "[$node]";
-    docker-compose --file tests/$test_name/docker-compose.yml exec -T $node sh -c "cat /root/.bitdust/logs/automats.log" 1> logs/$test_name/automats.$node.log 2>/dev/null;
-    docker-compose --file tests/$test_name/docker-compose.yml exec -T $node sh -c "cat /root/.bitdust/logs/api.log" 1> logs/$test_name/api.$node.log 2>/dev/null;
-    docker-compose --file tests/$test_name/docker-compose.yml exec -T $node sh -c "cat /root/.bitdust/logs/event.log" 1> logs/$test_name/event.$node.log 2>/dev/null;
-    docker-compose --file tests/$test_name/docker-compose.yml exec -T $node sh -c "cat /root/.bitdust/logs/packet.log" 1> logs/$test_name/packet.$node.log 2>/dev/null;
-    docker-compose --file tests/$test_name/docker-compose.yml exec -T $node sh -c "cat /root/.bitdust/logs/stdout.log" 1> logs/$test_name/stdout.$node.log 2>/dev/null;
-    docker-compose --file tests/$test_name/docker-compose.yml exec -T $node sh -c "cat /root/.bitdust/logs/err.log" 1> logs/$test_name/err.$node.log 2>/dev/null;
-    docker-compose --file tests/$test_name/docker-compose.yml exec -T $node sh -c "cat /root/.bitdust/logs/main.log" 1> logs/$test_name/main.$node.log 2>/dev/null;
-    docker-compose --file tests/$test_name/docker-compose.yml exec -T $node sh -c "cat /root/.bitdust/logs/warn.log" 1> logs/$test_name/warn.$node.log 2>/dev/null;
-    docker-compose --file tests/$test_name/docker-compose.yml exec -T $node sh -c "cat /root/.bitdust/logs/exception_*.log" 1> logs/$test_name/exception.$node.log 2>/dev/null;
+	fetch_one $test_name $node &
 done
+
+wait
 
 rm -rf $allnodesfile

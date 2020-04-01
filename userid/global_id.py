@@ -172,6 +172,11 @@ def ParseGlobalID(inp, detect_version=False, as_field=True):
     if not inp:
         return result
     inp = strng.to_text(inp)
+    if inp.count('&') == 2:
+        # this is GLOBAL_ID_QUEUE_ID format : just need to get rid of the last supplier_id part and
+        # translate it into GLOBAL_ID_KEY_USER format
+        inp, _, _ = inp.strip().rpartition('&')
+        inp = inp.replace('&', '$')
     if inp.count(':'):
         user, _, path = inp.strip().rpartition(':')
     else:

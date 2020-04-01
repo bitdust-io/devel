@@ -175,10 +175,10 @@ class BackupMonitor(automat.Automat):
 
     def A(self, event, *args, **kwargs):
         from customer import fire_hire
-        from customer import data_sender
         from customer import list_files_orator
         from storage import backup_rebuilder
         from storage import index_synchronizer
+        from stream import data_sender
         #---READY---
         if self.state == 'READY':
             if event == 'timer-5sec':
@@ -279,14 +279,14 @@ class BackupMonitor(automat.Automat):
         backup_matrix.ClearLocalInfo()
         # finally save the list of current suppliers and clear all stats
         # backup_matrix.suppliers_set().UpdateSuppliers(contactsdb.suppliers())
-        from customer import io_throttle
+        from stream import io_throttle
         io_throttle.DeleteAllSuppliers()
 
     def doUpdateSuppliers(self, *args, **kwargs):
         """
         Action method.
         """
-        from customer import io_throttle
+        from stream import io_throttle
         # supplierList = contactsdb.suppliers()
         # take a list of suppliers positions that was changed
         changedSupplierNums = backup_matrix.SuppliersChangedNumbers(self.current_suppliers)

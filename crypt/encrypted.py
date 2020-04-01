@@ -155,7 +155,7 @@ class Block(object):
             self.Signature = Signature
         else:
             self.Signature = None
-            self.Sign()
+            self.Sign(signing_key=EncryptKey)
         self.DecryptKey = DecryptKey
         if _Debug:
             lg.out(_DebugLevel, 'new data in %s' % self)
@@ -204,18 +204,19 @@ class Block(object):
         """
         return key.Hash(self.GenerateHashBase())
 
-    def Sign(self):
+    def Sign(self, signing_key):
         """
         Generate digital signature for that ``encrypted_block``.
         """
         # usually just done at packet creation
-        self.Signature = self.GenerateSignature()
+        self.Signature = self.GenerateSignature(signing_key)
         return self
 
-    def GenerateSignature(self):
+    def GenerateSignature(self, signing_key):
         """
         Call ``crypt.key.Sign()`` to generate signature.
         """
+        # TODO: make possible to use `signing_key` to sign data
         return key.Sign(self.GenerateHash())
 
     def Ready(self):
@@ -227,12 +228,14 @@ class Block(object):
     def Valid(self):
         """
         Validate signature to verify the ``encrypted_block``.
+        Not used at the moment.
         """
         if not self.Ready():
             lg.warn("block is not ready yet " + str(self))
             return False
+        # TODO: make possible to verify signature using `signing_key`
         hashsrc = self.GenerateHash()
-        ConIdentity = contactsdb.get_contact_identity(my_id.getLocalID())
+        ConIdentity = my_id.getLocalIdentity()
         if ConIdentity is None:
             lg.warn("could not get Identity so returning False")
             return False

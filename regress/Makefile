@@ -90,7 +90,7 @@ _one_coverage:
 
 _one_log:
 	@echo "LOG ${TEST_NAME}";
-	@/bin/bash fetch_logs.sh ${TEST_NAME} > /dev/null;
+	@/bin/bash fetch_logs.sh ${TEST_NAME} ;
 
 _one_post_report:
 	@echo "LOG ${TEST_NAME}";

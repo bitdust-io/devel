@@ -245,10 +245,12 @@ def read_customer_message_brokers(customer_idurl, positions=[0, ], return_detail
         return None
 
     def _do_collect_results(all_results):
+        if _Debug:
+            lg.args(_DebugLevel, all_results=all_results)
         final_result = []
         for one_success, one_result in all_results:
-            if one_success:
-                final_result.append(one_result['broker_idurl'])
+            if one_success and one_result['broker_idurl']:
+                final_result.append(one_result)
         result.callback(final_result)
         return None
 

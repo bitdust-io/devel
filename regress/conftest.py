@@ -31,8 +31,9 @@ import json
 
 from testsupport import open_one_tunnel_async, clean_one_node_async, clean_one_customer_async, \
     start_one_dht_seed, start_one_identity_server_async, start_one_stun_server_async, start_one_proxy_server_async, \
-    start_one_supplier_async, start_one_customer_async, stop_daemon_async, run_ssh_command_and_wait, \
-    print_exceptions_one_node, report_one_node, collect_coverage_one_node_async, log_network_info_one_node_async
+    start_one_supplier_async, start_one_customer_async, stop_daemon_async, start_one_message_broker_async, \
+    run_ssh_command_and_wait, print_exceptions_one_node, report_one_node, collect_coverage_one_node_async, \
+    log_network_info_one_node_async
 
 #------------------------------------------------------------------------------
 
@@ -76,33 +77,38 @@ def start_all_nodes(event_loop):
     _begin = time.time()
     print('\nStarting nodes\n')
 
-    for number, dhtseed in enumerate(ALL_ROLES['dht-seed']):
+    for number, dhtseed in enumerate(ALL_ROLES.get('dht-seed', [])):
         # first seed to be started immediately, all other seeds must wait a bit before start
         start_one_dht_seed(dhtseed, wait_seconds=(3 if number > 0 else 0))
     print('\nALL DHT SEEDS STARTED\n')
 
     event_loop.run_until_complete(asyncio.gather(*[
-        start_one_identity_server_async(idsrv, event_loop) for idsrv in ALL_ROLES['identity-server']
+        start_one_identity_server_async(idsrv, event_loop) for idsrv in ALL_ROLES.get('identity-server', [])
     ]))
     print(f'\nALL ID SERVERS STARTED\n')
 
     event_loop.run_until_complete(asyncio.gather(*[
-        start_one_stun_server_async(stunsrv, event_loop) for stunsrv in ALL_ROLES['stun-server']
+        start_one_stun_server_async(stunsrv, event_loop) for stunsrv in ALL_ROLES.get('stun-server', [])
     ]))
     print(f'\nALL STUN SERVERS STARTED\n')
 
     event_loop.run_until_complete(asyncio.gather(*[
-        start_one_proxy_server_async(proxy_server, event_loop) for proxy_server in ALL_ROLES['proxy-server']
+        start_one_proxy_server_async(proxy_server, event_loop) for proxy_server in ALL_ROLES.get('proxy-server', [])
     ]))
     print(f'\nALL PROXY SERVERS STARTED\n')
 
     event_loop.run_until_complete(asyncio.gather(*[
-        start_one_supplier_async(supplier, event_loop) for supplier in ALL_ROLES['supplier']
+        start_one_supplier_async(supplier, event_loop) for supplier in ALL_ROLES.get('supplier', [])
     ]))
     print(f'\nALL SUPPLIERS STARTED\n')
 
     event_loop.run_until_complete(asyncio.gather(*[
-        start_one_customer_async(customer, event_loop, sleep_before_start=i*3) for i, customer in enumerate(ALL_ROLES['customer'])
+        start_one_message_broker_async(message_broker, event_loop) for message_broker in ALL_ROLES.get('message-broker', [])
+    ]))
+    print(f'\nALL SUPPLIERS STARTED\n')
+
+    event_loop.run_until_complete(asyncio.gather(*[
+        start_one_customer_async(customer, event_loop, sleep_before_start=i*3) for i, customer in enumerate(ALL_ROLES.get('customer', []))
     ]))
     print(f'\nALL CUSTOMERS STARTED\n')
 

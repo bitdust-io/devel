@@ -616,28 +616,16 @@ class OnlineStatus(automat.Automat):
             lg.out(_DebugLevel - 2, '%s : [%s]->[%s]' % (self.name, oldstate, newstate))
         if newstate == 'CONNECTED' and newstate != oldstate:
             lg.info('remote node connected : %s' % self.idurl)
-            events.send('user-connected', data=dict(
+            events.send('node-connected', data=dict(
                 global_id=self.glob_id,
                 idurl=self.idurl,
             ))
-#             api_web_socket.on_online_status_changed({
-#                 'global_id': self.glob_id,
-#                 'idurl': self.idurl,
-#                 'oldstate': oldstate,
-#                 'newstate': newstate,
-#             })
         if newstate == 'OFFLINE' and oldstate != 'AT_STARTUP' and newstate != oldstate:
             lg.info('remote node disconnected : %s' % self.idurl)
-            events.send('user-disconnected', data=dict(
+            events.send('node-disconnected', data=dict(
                 global_id=self.glob_id,
                 idurl=self.idurl,
             ))
-#             api_web_socket.on_online_status_changed({
-#                 'global_id': self.glob_id,
-#                 'idurl': self.idurl,
-#                 'oldstate': oldstate,
-#                 'newstate': newstate,
-#             })
 
     def state_not_changed(self, curstate, event, *args, **kwargs):
         """

@@ -735,9 +735,10 @@ class SupplierService(LocalService):
 
     def _on_customer_accepted(self, e):
         from logs import lg
-        from userid import my_id
+        from stream import p2p_queue
+        from crypt import my_keys
         from userid import global_id
-        from p2p import p2p_queue
+        from userid import my_id
         customer_idurl = e.data.get('idurl')
         if not customer_idurl:
             lg.warn('unknown customer idurl in event data payload')
@@ -749,10 +750,14 @@ class SupplierService(LocalService):
             supplier_id=my_id.getGlobalID(),
         )
         if not p2p_queue.is_queue_exist(queue_id):
-            try:
-                p2p_queue.open_queue(queue_id)
-            except Exception as exc:
-                lg.warn('failed to open queue %s : %s' % (queue_id, str(exc)))
+            customer_key_id = global_id.MakeGlobalID(customer=customer_glob_id, key_alias='customer')
+            if my_keys.is_key_registered(customer_key_id):
+                try:
+                    p2p_queue.open_queue(queue_id)
+                except Exception as exc:
+                    lg.warn('failed to open queue %s : %s' % (queue_id, str(exc)))
+            else:
+                lg.warn('customer key %r for supplier queue not registered' % customer_key_id)
         if p2p_queue.is_queue_exist(queue_id):
             if not p2p_queue.is_producer_exist(my_id.getGlobalID()):
                 try:
@@ -776,7 +781,7 @@ class SupplierService(LocalService):
         from logs import lg
         from userid import my_id
         from userid import global_id
-        from p2p import p2p_queue
+        from stream import p2p_queue
         customer_idurl = e.data.get('idurl')
         if not customer_idurl:
             lg.warn('unknown customer idurl in event data payload')

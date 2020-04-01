@@ -2124,7 +2124,7 @@ def group_open(group_key_id):
     new_group = False
     if not active_group_member:
         new_group = True
-        active_group_member = group_member.GroupQueueMember(group_key_id)
+        active_group_member = group_member.GroupMember(group_key_id)
     ret = Deferred()
 
     def _on_group_queue_memeber_state_changed(oldstate, newstate, event_string, *args, **kwargs):
@@ -2134,13 +2134,14 @@ def group_open(group_key_id):
                 ret.callback(OK('group "%s" connected' % group_key_id, extra_fields=active_group_member.to_json(), api_method='group_open'))
             else:
                 ret.callback(OK('group "%s" refreshed' % group_key_id, extra_fields=active_group_member.to_json(), api_method='group_open'))
-        if newstate == 'DISCONNECTED' and oldstate != newstate:
+        if newstate == 'DISCONNECTED' and oldstate != newstate and oldstate != 'AT_STARTUP':
             active_group_member.removeStateChangedCallback(_on_group_queue_memeber_state_changed)
             ret.callback(ERROR('group "%s" is disconnected' % group_key_id, extra_fields=active_group_member.to_json(), api_method='group_open'))
         return None
 
     active_group_member.addStateChangedCallback(_on_group_queue_memeber_state_changed)
-    active_group_member.automat('init')
+    if new_group:
+        active_group_member.automat('init')
     active_group_member.automat('connect')
     return ret
 
@@ -2160,6 +2161,12 @@ def group_close(group_key_id):
     this_group.automat('shutdown')
     return OK('group "%s" closed' % group_key_id)
 
+
+def group_info(group_key_id):
+    """
+    """
+    if not driver.is_on('service_private_groups'):
+        return ERROR('service_private_groups() is not started')
 
 #------------------------------------------------------------------------------
 
@@ -2996,7 +3003,7 @@ def transfers_list():
     """
     if not driver.is_on('service_data_motion'):
         return ERROR('service_data_motion() is not started')
-    from customer import io_throttle
+    from stream import io_throttle
     from userid import global_id
     result = []
     for supplier_idurl in io_throttle.throttle().ListSupplierQueues():
@@ -3170,7 +3177,7 @@ def streams_list(wanted_protos=None):
 def queue_list():
     """
     """
-    from p2p import p2p_queue
+    from stream import p2p_queue
     return RESULT([{
         'queue_id': queue_id,
         'messages': len(p2p_queue.queue(queue_id)),
@@ -3447,7 +3454,7 @@ def message_send(recipient, json_data, ping_timeout=30, message_ack_timeout=15):
     """
     if not driver.is_on('service_private_messages'):
         return ERROR('service_private_messages() is not started')
-    from chat import message
+    from stream import message
     from userid import global_id
     from crypt import my_keys
     if not recipient.count('@'):
@@ -3479,7 +3486,38 @@ def message_send(recipient, json_data, ping_timeout=30, message_ack_timeout=15):
     return ret
 
 
-def message_receive(consumer_id):
+def message_send_group(group_key_id, json_payload):
+    """
+    Sends a text message to a group of users.
+
+    Return:
+
+        {'status': 'OK'}
+    """
+    if not driver.is_on('service_private_groups'):
+        return ERROR('service_private_groups() is not started')
+    from userid import global_id
+    from crypt import my_keys
+    from access import group_member
+    if not group_key_id.startswith('group_'):
+        return ERROR('invalid group id')
+    glob_id = global_id.ParseGlobalID(group_key_id)
+    if not glob_id['idurl']:
+        return ERROR('wrong group id')
+    if not my_keys.is_key_registered(group_key_id):
+        return ERROR('unknown group key')
+    this_group_member = group_member.get_active_group_member(group_key_id)
+    if not this_group_member:
+        return ERROR('group is not active')
+    if this_group_member.state not in ['IN_SYNC!', 'QUEUE?', ]:
+        return ERROR('group is not synchronized yet')
+    if _Debug:
+        lg.out(_DebugLevel, 'api.message_send_group to %r' % group_key_id)
+    this_group_member.automat('push-message', json_payload=json_payload)
+    return OK()
+
+
+def message_receive(consumer_id, direction='incoming', message_types='private_message,group_message'):
     """
     This method can be used to listen and process incoming chat messages by specific consumer.
     If there are no messages received yet, this method will be waiting for any incomings.
@@ -3506,14 +3544,14 @@ def message_receive(consumer_id):
     """
     if not driver.is_on('service_private_messages'):
         return ERROR('service_private_messages() is not started')
-    from chat import message
+    from stream import message
     ret = Deferred()
+    if strng.is_text(message_types):
+        message_types = message_types.split(',')
 
     def _on_pending_messages(pending_messages):
         result = []
         for msg in pending_messages:
-            if msg['type'] != 'private_message':
-                continue
             try:
                 result.append({
                     'data': msg['data'],
@@ -3530,7 +3568,12 @@ def message_receive(consumer_id):
         ret.callback(OK(result, api_method='message_receive'))
         return len(result) > 0
 
-    d = message.consume_messages(consumer_id)
+    d = message.consume_messages(
+        consumer_id=consumer_id,
+        direction=direction,
+        message_types=message_types,
+        reset_callback=True,
+    )
     d.addCallback(_on_pending_messages)
     d.addErrback(lambda err: ret.callback(ERROR(err)))
     if _Debug:

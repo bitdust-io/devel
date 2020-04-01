@@ -993,7 +993,11 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @GET('^/v1/message/receive/(?P<consumer_id>[^/]+)$')
     @GET('^/message/receive/(?P<consumer_id>[^/]+)/v1$')
     def message_receive_v1(self, request, consumer_id):
-        return api.message_receive(consumer_id=consumer_id)
+        return api.message_receive(
+            consumer_id=consumer_id,
+            direction=_request_arg(request, 'direction', 'incoming'),
+            message_types=_request_arg(request, 'message_types', 'private_message,group_message'),
+        )
 
     @POST('^/msg/s$')
     @POST('^/v1/message/send$')
@@ -1005,6 +1009,16 @@ class BitDustRESTHTTPServer(JsonAPIResource):
             json_data=data['data'],
             ping_timeout=data.get('ping_timeout', 30),
             message_ack_timeout=data.get('message_ack_timeout', 15),
+        )
+
+    @POST('^/msg/sg$')
+    @POST('^/v1/message/send/group$')
+    @POST('^/message/send/group/v1$')
+    def message_send_group_v1(self, request):
+        data = _request_data(request, mandatory_keys=['group_key_id', 'data', ])
+        return api.message_send_group(
+            group_key_id=data.get('group_key_id'),
+            json_payload=data['data'],
         )
 
     #------------------------------------------------------------------------------
