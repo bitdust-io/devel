@@ -90,6 +90,7 @@ from stream import queue_keeper
 from stream import message
 
 from userid import global_id
+from userid import id_url
 from userid import my_id
 
 #------------------------------------------------------------------------------ 
@@ -97,12 +98,60 @@ from userid import my_id
 _MessagePeddler = None
 
 _ActiveStreams = {}
+_ActiveCustomers = {}
 
 #------------------------------------------------------------------------------
 
 def streams():
     global _ActiveStreams
     return _ActiveStreams
+
+
+def register_stream(queue_id):
+    global _ActiveCustomers
+    if queue_id in streams():
+        raise Exception('queue already exist')
+    queue_info = global_id.ParseGlobalQueueID(queue_id)
+    customer_idurl = global_id.glob2idurl(queue_info['owner_id'])
+    if not customer_idurl:
+        raise Exception('unknown customer')
+    if not id_url.is_cached(customer_idurl):
+        raise Exception('customer idurl is not cached yet')
+    if customer_idurl not in _ActiveCustomers:
+        _ActiveCustomers[customer_idurl] = []
+    else:
+        if queue_id in _ActiveCustomers[customer_idurl]:
+            raise Exception('queue is already registered for that customer')
+    _ActiveCustomers[customer_idurl].append(queue_id)
+    streams()[queue_id] = {
+        'active': False,
+        'consumers': {},
+        'producers': {},
+        'messages': [],
+        'last_sequence_id': -1,
+    }
+    return True
+
+
+def unregister_stream(queue_id):
+    global _ActiveCustomers
+    if queue_id not in streams():
+        raise Exception('queue is not exist')
+    queue_info = global_id.ParseGlobalQueueID(queue_id)
+    customer_idurl = global_id.glob2idurl(queue_info['owner_id'])
+    if not customer_idurl:
+        raise Exception('unknown customer')
+    if not id_url.is_cached(customer_idurl):
+        raise Exception('customer idurl is not cached yet')
+    if customer_idurl not in _ActiveCustomers:
+        raise Exception('customer is not registered')
+    if queue_id not in _ActiveCustomers[customer_idurl]:
+        raise Exception('queue is not registered for that customer')
+    _ActiveCustomers[customer_idurl].remove(queue_id)
+    if not _ActiveCustomers[customer_idurl]:
+        _ActiveCustomers.pop(customer_idurl)
+    streams().pop(queue_id)
+    return True
 
 #------------------------------------------------------------------------------
 
@@ -393,13 +442,7 @@ def load_streams():
         consumers_dir = os.path.join(queue_dir, 'consumers')
         producers_dir = os.path.join(queue_dir, 'producers')
         if queue_id not in streams():
-            streams()[queue_id] = {
-                'active': False,
-                'consumers': {},
-                'producers': {},
-                'messages': [],
-                'last_sequence_id': -1,
-            }
+            register_stream(queue_id)
         last_sequence_id = -1
         all_stored_queue_messages = os.listdir(messages_dir)
         all_stored_queue_messages.sort(key=lambda i: int(i))
@@ -428,13 +471,8 @@ def load_streams():
 def open_stream(queue_id):
     if queue_id in streams():
         return False
-    streams()[queue_id] = {
-        'active': False,
-        'consumers': {},
-        'producers': {},
-        'messages': [],
-        'last_sequence_id': -1,
-    }
+    if queue_id not in streams():
+        register_stream(queue_id)
     save_stream(queue_id)
     return True
 
@@ -444,7 +482,7 @@ def close_stream(queue_id):
         return False
     if streams()[queue_id]['active']:
         stop_stream(queue_id)
-    streams().pop(queue_id)
+    unregister_stream(queue_id)
     erase_stream(queue_id)
     return True
 
@@ -873,6 +911,7 @@ class MessagePeddler(automat.Automat):
             lg.warn('no consumers and no producers left, closing queue %r' % queue_id)
             stop_stream(queue_id)
             close_stream(queue_id)
+
         # TODO: check/un-register group_key if no consumers left
         # TODO: check/stop queue_keeper() if no queues opened for given customer
         # qk = queue_keeper.check_create(customer_idurl=group_creator_idurl, auto_create=False)
