@@ -71,6 +71,7 @@ from lib import strng
 from logs import lg
 
 from system import bpio
+from system import deploy
 
 from main import settings
 from main import events
@@ -95,7 +96,7 @@ def init():
     lg.out(4, 'git_proc.init')
     if os.environ.get('BITDUST_GIT_SYNC_SKIP', '0') == '1':
         return
-    reactor.callLater(0, loop, first_start=True)
+    reactor.callLater(0, loop, first_start=True)  # @UndefinedVariable
 
 
 def shutdown():
@@ -137,8 +138,8 @@ def sync_callback(result):
 
 def run_sync():
     lg.out(6, 'git_proc.run_sync')
-    reactor.callLater(0, sync, sync_callback, update_method='reset')
-    reactor.callLater(0, loop)
+    reactor.callLater(0, sync, sync_callback, update_method='reset')  # @UndefinedVariable
+    reactor.callLater(0, loop)  # @UndefinedVariable
 
 
 def loop(first_start=False):
@@ -155,19 +156,25 @@ def loop(first_start=False):
         lg.warn('delay=%s %s %s' % (str(delay), nexttime, time.time()))
         delay = 0
     lg.out(6, 'git_proc.loop run_sync will start after %s minutes' % str(delay / 60.0))
-    _ShedulerTask = reactor.callLater(delay, run_sync)
+    _ShedulerTask = reactor.callLater(delay, run_sync)  # @UndefinedVariable
 
 #------------------------------------------------------------------------------
-
 
 def sync(callback_func=None, update_method='rebase'):
     """
     Runs commands and process stdout and stderr to recogneze the result:
 
-        git fetch --all -v
-        git rebase origin/master -v
+        `git fetch --all -v`
+        `git rebase origin/master -v`  or  `git reset --hard origin/master`
 
     """
+    src_dir_path = bpio.getExecutableDir()
+    expected_src_dir = os.path.join(deploy.default_base_dir_portable(), 'src')
+    if bpio.portablePath(src_dir_path) != bpio.portablePath(expected_src_dir):
+        if _Debug:
+            lg.out(_DebugLevel, 'git_proc.sync SKIP, non standard sources location: %r' % src_dir_path)
+        return
+
     def _reset_done(response, error, retcode, result):
         if callback_func is None:
             return
@@ -306,12 +313,12 @@ def execute(cmdargs, base_dir=None, process_protocol=None, env=None, callback=No
     executable = cmdargs[0]
     if bpio.Windows():
         from twisted.internet import _dumbwin32proc
-        real_CreateProcess = _dumbwin32proc.win32process.CreateProcess
+        real_CreateProcess = _dumbwin32proc.win32process.CreateProcess  # @UndefinedVariable
 
         def fake_createprocess(_appName, _commandLine, _processAttributes,
                                _threadAttributes, _bInheritHandles, creationFlags,
                                _newEnvironment, _currentDirectory, startupinfo):
-            import win32con
+            import win32con  # @UnresolvedImport
             import subprocess
             flags = win32con.CREATE_NO_WINDOW
             startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
@@ -328,7 +335,7 @@ def execute(cmdargs, base_dir=None, process_protocol=None, env=None, callback=No
             callback,
         ])
     try:
-        _CurrentProcess = reactor.spawnProcess(
+        _CurrentProcess = reactor.spawnProcess(  # @UndefinedVariable
             process_protocol, executable, cmdargs, path=base_dir, env=env)
     except:
         lg.exc()
@@ -346,6 +353,6 @@ if __name__ == "__main__":
 
     def _result(res):
         print('RESULT:', res)
-        reactor.stop()
-    reactor.callWhenRunning(sync, _result)
-    reactor.run()
+        reactor.stop()  # @UndefinedVariable
+    reactor.callWhenRunning(sync, _result)  # @UndefinedVariable
+    reactor.run()  # @UndefinedVariable

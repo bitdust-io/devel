@@ -98,7 +98,7 @@ def set_base_dir(new_path):
     _BaseDirPath = new_path
 
 
-def base_dir_portable():
+def default_base_dir_portable():
     """
     A portable method to get the default data folder location.
     """
@@ -159,7 +159,7 @@ def init_base_dir(base_dir=None):
                 return _BaseDirPath
 
     # get the default place for that machine
-    default_path = base_dir_portable()
+    default_path = default_base_dir_portable()
 
     # we can use folder ".bitdust" placed on the same level with binary folder:
     # /..
