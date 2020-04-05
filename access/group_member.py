@@ -82,6 +82,8 @@ from dht import dht_relations
 
 from stream import message
 
+from p2p import commands
+from p2p import p2p_service
 from p2p import lookup
 from p2p import p2p_service_seeker
 
@@ -696,6 +698,15 @@ class GroupMember(automat.Automat):
         """
         Action method.
         """
+        if event == 'leave':
+            for position, broker_idurl in self.connected_brokers.items():
+                if not broker_idurl:
+                    continue
+                p2p_service.SendCancelService(
+                    remote_idurl=broker_idurl,
+                    service_name='service_message_broker',
+                    json_payload=self._do_prepare_service_request_params(broker_idurl, action='queue-disconnect'),
+                )
 
     def doDestroyMe(self, *args, **kwargs):
         """
@@ -718,7 +729,7 @@ class GroupMember(automat.Automat):
         self.missing_brokers = None
         self.latest_dht_brokers = None
 
-    def _do_prepare_service_request_params(self, possible_broker_idurl, desired_broker_position):
+    def _do_prepare_service_request_params(self, possible_broker_idurl, desired_broker_position=-1, action='queue-connect'):
         queue_id = global_id.MakeGlobalQueueID(
             queue_alias=self.group_queue_alias,
             owner_id=self.group_creator_id,
@@ -726,13 +737,14 @@ class GroupMember(automat.Automat):
         )
         group_key_info = my_keys.get_key_info(self.group_key_id, include_private=False, include_signature=True)
         service_request_params = {
-            'action': 'queue-connect',
-            'position': desired_broker_position,
+            'action': action,
             'queue_id': queue_id,
             'consumer_id': self.member_id,
             'producer_id': self.member_id,
             'group_key': group_key_info,
         }
+        if desired_broker_position >= 0:
+            service_request_params['position'] = desired_broker_position
         if _Debug:
             lg.args(_DebugLevel, service_request_params=service_request_params)
         return service_request_params
