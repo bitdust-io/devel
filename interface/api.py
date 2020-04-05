@@ -2056,7 +2056,7 @@ def group_create(creator_id=None, key_size=2048, label=''):
     return OK(key_info, message='new group "%s" was created successfully' % group_key_id)
 
 
-def group_leave(group_key_id):
+def group_leave(group_key_id, erase_key=False):
     """
     """
     if not driver.is_on('service_private_groups'):
@@ -2065,12 +2065,12 @@ def group_leave(group_key_id):
     if not group_key_id.startswith('group_'):
         return ERROR('invalid group id')
     from access import group_member
-    from crypt import my_keys
     this_group_member = group_member.get_active_group_member(group_key_id)
     if this_group_member:
-        this_group_member.automat('shutdown')
-    my_keys.erase_key(group_key_id)
-    return OK(message='group key "%s" was deleted successfully' % group_key_id)
+        this_group_member.automat('leave', erase_key=erase_key)
+    else:
+        lg.warn('group_member() was not found for %r' % group_key_id)
+    return OK(message='group "%s" deactivated successfully' % group_key_id)
 
 
 def group_share(trusted_remote_user, group_key_id, timeout=30):

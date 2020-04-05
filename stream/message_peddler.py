@@ -592,7 +592,8 @@ def save_consumer(queue_id, consumer_id):
     queues_dir = os.path.join(service_dir, 'queues')
     queue_dir = os.path.join(queues_dir, queue_id)
     consumers_dir = os.path.join(queue_dir, 'consumers')
-    bpio._dirs_make(consumers_dir)
+    if not os.path.isdir(consumers_dir):
+        bpio._dirs_make(consumers_dir)
     consumer_path = os.path.join(consumers_dir, consumer_id)
     ret = local_fs.WriteTextFile(consumer_path, jsn.dumps(consumer_info))
     if _Debug:
@@ -655,7 +656,8 @@ def save_producer(queue_id, producer_id):
     queues_dir = os.path.join(service_dir, 'queues')
     queue_dir = os.path.join(queues_dir, queue_id)
     producers_dir = os.path.join(queue_dir, 'producers')
-    bpio._dirs_make(producers_dir)
+    if not os.path.isdir(producers_dir):
+        bpio._dirs_make(producers_dir)
     producer_path = os.path.join(producers_dir, producer_id)
     ret = local_fs.WriteTextFile(producer_path, jsn.dumps(producer_info))
     if _Debug:

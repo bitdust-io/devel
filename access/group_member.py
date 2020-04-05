@@ -37,6 +37,7 @@ EVENTS:
     * :red:`dht-read-failed`
     * :red:`init`
     * :red:`instant`
+    * :red:`leave`
     * :red:`message-in`
     * :red:`push-message`
     * :red:`queue-in-sync`
@@ -143,10 +144,12 @@ def load_groups():
         if group_key_id not in groups():
             groups()[group_key_id] = {
                 'last_sequence_id': -1,
+                'active': False,
             }
         group_path = os.path.join(groups_dir, group_key_id)
         group_info = jsn.loads_text(local_fs.ReadTextFile(group_path))
-        groups()[group_key_id]['last_sequence_id'] = group_info['last_sequence_id']
+        if group_info:
+            groups()[group_key_id] = group_info
     for customer_id in os.listdir(brokers_dir):
         customer_path = os.path.join(brokers_dir, customer_id)
         for broker_id in os.listdir(customer_path):
@@ -158,6 +161,35 @@ def load_groups():
             broker_path = os.path.join(customer_path, broker_id)
             broker_info = jsn.loads_text(local_fs.ReadTextFile(broker_path))
             known_brokers()[customer_id][int(broker_info['position'])] = broker_id
+
+
+def save_group(group_key_id):
+    if group_key_id not in groups():
+        return False
+    group_info = groups()[group_key_id]
+    service_dir = settings.ServiceDir('service_private_groups')
+    groups_dir = os.path.join(service_dir, 'groups')
+    group_info_path = os.path.join(groups_dir, group_key_id)
+    if not os.path.isdir(groups_dir):
+        bpio._dirs_make(groups_dir)
+    ret = local_fs.WriteTextFile(group_info_path, jsn.dumps(group_info))
+    if _Debug:
+        lg.args(_DebugLevel, group_key_id=group_key_id, group_info_path=group_info_path, ret=ret)
+    return ret
+
+
+def erase_group(group_key_id):
+    if group_key_id not in groups():
+        return False
+    service_dir = settings.ServiceDir('service_private_groups')
+    groups_dir = os.path.join(service_dir, 'groups')
+    group_info_path = os.path.join(groups_dir, group_key_id)
+    if not os.path.isfile(group_info_path):
+        return False
+    os.remove(group_info_path)
+    if _Debug:
+        lg.args(_DebugLevel, group_key_id=group_key_id, group_info_path=group_info_path)
+    return True
 
 #------------------------------------------------------------------------------
 
@@ -174,6 +206,7 @@ def create_group(group_key_id):
         bpio._dirs_make(groups_dir)
     groups()[group_key_id] = {
         'last_sequence_id': -1,
+        'active': False,
     }
     return True
 
@@ -235,6 +268,8 @@ def register_group_member(A):
         _ActiveGroupMembersByIDURL[A.group_creator_idurl] = []
     _ActiveGroupMembersByIDURL[A.group_creator_idurl].append(A)
     _ActiveGroupMembers[A.group_key_id] = A
+    if not is_group_exist(A.group_key_id):
+        create_group(A.group_key_id)
 
 
 def unregister_group_member(A):
@@ -278,6 +313,17 @@ def find_active_group_members(group_creator_idurl):
         if A.group_creator_idurl == group_creator_idurl:
             result.append(A)
     return result
+
+#------------------------------------------------------------------------------
+
+def set_active(group_key_id, value):
+    if not is_group_exist(group_key_id):
+        return False
+    old_value = groups()[group_key_id]['active']
+    groups()[group_key_id]['active'] = value
+    if old_value != value:
+        lg.info('group "active" status changed: %r -> %r' % (old_value, value, ))
+    return True
 
 #------------------------------------------------------------------------------
 
@@ -371,18 +417,17 @@ class GroupMember(automat.Automat):
                 self.doInit(*args, **kwargs)
         #---DISCONNECTED---
         elif self.state == 'DISCONNECTED':
-            if event == 'shutdown':
-                self.state = 'CLOSED'
-                self.doDestroyMe(*args, **kwargs)
-            elif event == 'connect' or ( event == 'instant' and self.isDeadBroker(*args, **kwargs) ):
+            if event == 'connect' or ( event == 'instant' and self.isDeadBroker(*args, **kwargs) ):
                 self.state = 'DHT_READ?'
+                self.doActivate(*args, **kwargs)
                 self.doDHTReadBrokers(*args, **kwargs)
+            elif event == 'leave' or event == 'shutdown':
+                self.state = 'CLOSED'
+                self.doDeactivate(event, *args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
         #---DHT_READ?---
         elif self.state == 'DHT_READ?':
-            if event == 'shutdown':
-                self.state = 'CLOSED'
-                self.doDestroyMe(*args, **kwargs)
-            elif event == 'dht-read-failed':
+            if event == 'dht-read-failed':
                 self.state = 'DISCONNECTED'
                 self.doDisconnected(event, *args, **kwargs)
             elif event == 'brokers-found' and not self.isDeadBroker(*args, **kwargs):
@@ -391,14 +436,16 @@ class GroupMember(automat.Automat):
             elif ( event == 'brokers-found' and self.isDeadBroker(*args, **kwargs) ) or event == 'brokers-not-found':
                 self.state = 'BROKERS?'
                 self.doLookupRotateBrokers(*args, **kwargs)
+            elif event == 'shutdown' or event == 'leave':
+                self.state = 'CLOSED'
+                self.doDeactivate(event, *args, **kwargs)
+                self.doCancelService(event, *args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
         #---QUEUE?---
         elif self.state == 'QUEUE?':
             if event == 'queue-in-sync':
                 self.state = 'IN_SYNC!'
                 self.doConnected(*args, **kwargs)
-            elif event == 'shutdown':
-                self.state = 'CLOSED'
-                self.doDestroyMe(*args, **kwargs)
             elif event == 'queue-read-failed':
                 self.state = 'DISCONNECTED'
                 self.doMarkDeadBroker(*args, **kwargs)
@@ -407,18 +454,25 @@ class GroupMember(automat.Automat):
                 self.doProcess(*args, **kwargs)
             elif event == 'push-message':
                 self.doPublishLater(*args, **kwargs)
+            elif event == 'shutdown' or event == 'leave':
+                self.state = 'CLOSED'
+                self.doDeactivate(event, *args, **kwargs)
+                self.doCancelService(event, *args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
         #---IN_SYNC!---
         elif self.state == 'IN_SYNC!':
-            if event == 'shutdown':
-                self.state = 'CLOSED'
-                self.doDestroyMe(*args, **kwargs)
-            elif event == 'message-in' and self.isInSync(*args, **kwargs):
+            if event == 'message-in' and self.isInSync(*args, **kwargs):
                 self.doProcess(*args, **kwargs)
             elif event == 'queue-pull' or ( event == 'message-in' and not self.isInSync(*args, **kwargs) ):
                 self.state = 'QUEUE?'
                 self.doReadQueue(*args, **kwargs)
             elif event == 'push-message':
                 self.doPublish(*args, **kwargs)
+            elif event == 'shutdown' or event == 'leave':
+                self.state = 'CLOSED'
+                self.doDeactivate(event, *args, **kwargs)
+                self.doCancelService(event, *args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
         #---CLOSED---
         elif self.state == 'CLOSED':
             pass
@@ -432,8 +486,10 @@ class GroupMember(automat.Automat):
                 self.state = 'DISCONNECTED'
                 self.doForgetBrokers(*args, **kwargs)
                 self.doDisconnected(event, *args, **kwargs)
-            elif event == 'shutdown':
+            elif event == 'shutdown' or event == 'leave':
                 self.state = 'CLOSED'
+                self.doDeactivate(event, *args, **kwargs)
+                self.doCancelService(event, *args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
         return None
 
@@ -460,6 +516,13 @@ class GroupMember(automat.Automat):
             direction='incoming',
             message_types=['queue_message', ],
         )
+
+    def doActivate(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        set_active(self.group_key_id, True)
+        save_group(self.group_key_id)
 
     def doDHTReadBrokers(self, *args, **kwargs):
         """
@@ -608,6 +671,26 @@ class GroupMember(automat.Automat):
             queue_id=self.active_queue_id,
         ))
 
+    def doDeactivate(self, event, *args, **kwargs):
+        """
+        Action method.
+        """
+        if event == 'leave':
+            set_active(self.group_key_id, False)
+            save_group(self.group_key_id)
+            if kwargs.get('erase_key', False):
+                if my_keys.is_key_registered(self.group_key_id):
+                    my_keys.erase_key(self.group_key_id)
+                else:
+                    lg.warn('key %r not registered, can not be erased' % self.group_key_id)
+        else:
+            save_group(self.group_key_id)
+
+    def doCancelService(self, event, *args, **kwargs):
+        """
+        Action method.
+        """
+
     def doDestroyMe(self, *args, **kwargs):
         """
         Remove all references to the state machine object to destroy it.
@@ -628,7 +711,6 @@ class GroupMember(automat.Automat):
         self.missing_brokers = None
         self.latest_dht_brokers = None
         self.destroy()
-
 
     def _do_prepare_service_request_params(self, possible_broker_idurl, desired_broker_position):
         queue_id = global_id.MakeGlobalQueueID(

@@ -99,3 +99,30 @@ def test_customers_1_2_3_communicate_via_message_broker():
     assert b_customer_1_receive_result[0]['result'][0]['data'] == b_message_sent_from_customer_3
     assert b_customer_2_receive_result[0]['result'][0]['data'] == b_message_sent_from_customer_3
     assert b_customer_3_receive_result[0]['result'][0]['data'] == b_message_sent_from_customer_3
+
+    kw.group_leave_v1('customer-2', group_key_id)
+
+    # MESSAGE C: from customer 1 to the group, customers 1 and 3 must receive the message, customer 2 must not receive it
+    c_message_sent_from_customer_1 = {'random_message': base64.b32encode(os.urandom(20)).decode(), }
+    c_customer_1_receive_result = [None, ]
+    c_customer_2_receive_result = [None, ]
+    c_customer_3_receive_result = [None, ]
+    c_receive_customer_1 = threading.Timer(0, kw.message_receive_v1, [
+        'customer-1', c_message_sent_from_customer_1, 'test_consumer', c_customer_1_receive_result, ])
+    c_receive_customer_2 = threading.Timer(0, kw.message_receive_v1, [
+        'customer-2', c_message_sent_from_customer_1, 'test_consumer', c_customer_2_receive_result, ])
+    c_receive_customer_3 = threading.Timer(0, kw.message_receive_v1, [
+        'customer-3', c_message_sent_from_customer_1, 'test_consumer', c_customer_3_receive_result, ])
+    c_send_customer_1 = threading.Timer(0.2, kw.message_send_group_v1, [
+        'customer-1', group_key_id, c_message_sent_from_customer_1, ])
+    c_receive_customer_1.start()
+    c_receive_customer_2.start()
+    c_receive_customer_3.start()
+    c_send_customer_1.start()
+    c_receive_customer_1.join()
+    c_receive_customer_2.join()
+    c_receive_customer_3.join()
+    c_send_customer_1.join()
+    assert c_customer_1_receive_result[0]['result'][0]['data'] == c_message_sent_from_customer_1
+    assert c_customer_2_receive_result[0] is None
+    assert c_customer_3_receive_result[0]['result'][0]['data'] == c_message_sent_from_customer_1
