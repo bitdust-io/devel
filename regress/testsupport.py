@@ -84,12 +84,12 @@ def run_ssh_command_and_wait(host, cmd, verbose=False) -> object:
 
 #------------------------------------------------------------------------------
 
-def request_get(node, url, timeout=None):
+def request_get(node, url, timeout=None, attempts=3):
     resp = None
     err = None
     count = 0
     while True:
-        if count > 3:
+        if count > attempts:
             print('\nGET request failed after few attempts :  node=%r   url=%r   err=%r\n' % (node, url, err))
             assert False, 'GET request failed after few attempts :  node=%r   url=%r    err=%r' % (node, url, err)
             break
@@ -109,12 +109,12 @@ def request_get(node, url, timeout=None):
     return resp
 
 
-def request_post(node, url, json={}, timeout=None):
+def request_post(node, url, json={}, timeout=None, attempts=3):
     resp = None
     err = None
     count = 0
     while True:
-        if count > 3:
+        if count > attempts:
             print('\nPOST request failed after few attempts :  node=%r   url=%r   json=%r   err=%r\n' % (node, url, json, err))
             assert False, 'POST request failed after few attempts :  node=%r   url=%r   json=%r   err=%r' % (node, url, json, err)
             break
@@ -135,17 +135,43 @@ def request_post(node, url, json={}, timeout=None):
     return resp
 
 
-def request_put(node, url, json={}, timeout=None):
+def request_put(node, url, json={}, timeout=None, attempts=3):
     resp = None
     err = None
     count = 0
     while True:
-        if count > 3:
+        if count > attempts:
             print('\nPUT request failed after few attempts :  node=%r   url=%r   json=%r   err=%r\n' % (node, url, json, err))
             assert False, 'PUT request failed after few attempts :  node=%r   url=%r   json=%r   err=%r' % (node, url, json, err)
             break
         try:
             resp = requests.put(
+                url=tunnel_url(node, url),
+                json=json,
+                timeout=timeout,
+                # cert=(f'/app/certificates/{node}/apiclientcert', f'/app/certificates/{node}/apiclientcertkey'),
+                # verify=f'/app/certificates/{node}/apiservercert',
+            )
+        except Exception as exc:
+            resp = None
+            err = exc
+        if resp:
+            break
+        count += 1
+    return resp
+
+
+def request_delete(node, url, json={}, timeout=None, attempts=3):
+    resp = None
+    err = None
+    count = 0
+    while True:
+        if count > attempts:
+            print('\nDELETE request failed after few attempts :  node=%r   url=%r   json=%r   err=%r\n' % (node, url, json, err))
+            assert False, 'DELETE request failed after few attempts :  node=%r   url=%r   json=%r   err=%r' % (node, url, json, err)
+            break
+        try:
+            resp = requests.delete(
                 url=tunnel_url(node, url),
                 json=json,
                 timeout=timeout,

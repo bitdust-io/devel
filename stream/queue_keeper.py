@@ -127,6 +127,24 @@ def check_create(customer_idurl, auto_create=True):
             lg.out(_DebugLevel, 'queue_keeper.check_create instance for customer %r was not found, made a new instance' % customer_idurl)
     return A(customer_idurl)
 
+
+def close(customer_idurl):
+    """
+    Closes instance of queue_keeper() state machine related to given customer.
+    """
+    customer_idurl = strng.to_bin(customer_idurl)
+    if id_url.is_empty(customer_idurl):
+        return False
+    if not id_url.is_cached(customer_idurl):
+        lg.warn('customer idurl is not cached yet, can not stop QueueKeeper()')
+        return False
+    customer_idurl = id_url.field(customer_idurl)
+    if customer_idurl not in queue_keepers().keys():
+        lg.warn('instance of queue_keeper() not found for given customer')
+        return False
+    A(customer_idurl, 'shutdown')
+    return True
+
 #------------------------------------------------------------------------------
 
 def A(customer_idurl, event=None, *args, **kwargs):

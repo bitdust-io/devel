@@ -644,7 +644,7 @@ def main(executable_path=None, start_reactor=True):
         curdir = os.getcwd()  # os.path.dirname(os.path.abspath(sys.executable))
         appdatafile = os.path.join(curdir, 'appdata')
         # defaultappdata = os.path.join(os.path.expanduser('~'), '.bitdust')
-        defaultappdata = deploy.base_dir_portable()
+        defaultappdata = deploy.default_base_dir_portable()
         appdata = defaultappdata
         if os.path.isfile(appdatafile):
             try:

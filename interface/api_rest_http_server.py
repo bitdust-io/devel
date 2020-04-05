@@ -759,6 +759,13 @@ class BitDustRESTHTTPServer(JsonAPIResource):
             label=data.get('label', ''),
         )
 
+    @POST('^/gr/j$')
+    @POST('^/v1/group/join$')
+    @POST('^/group/join/v1$')
+    def group_join_v1(self, request):
+        data = _request_data(request, mandatory_keys=['group_key_id', ])
+        return api.group_join(group_key_id=data['group_key_id'])
+
     @DELETE('^/gr/lv$')
     @DELETE('^/v1/group/leave$')
     @DELETE('^/group/leave/v1$')
@@ -766,6 +773,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
         data = _request_data(request, mandatory_keys=['group_key_id', ])
         return api.group_leave(
             group_key_id=data['group_key_id'],
+            erase_key=data.get('erase_key', False),
         )
 
     @PUT('^/gr/sh$')
@@ -777,24 +785,6 @@ class BitDustRESTHTTPServer(JsonAPIResource):
             trusted_remote_user=data.get('trusted_global_id') or data.get('trusted_idurl') or data.get('trusted_id'),
             group_key_id=data['group_key_id'],
             timeout=data.get('timeout', 30),
-        )
-
-    @POST('^/gr/o$')
-    @POST('^/v1/group/open$')
-    @POST('^/group/open/v1$')
-    def group_open_v1(self, request):
-        data = _request_data(request, mandatory_keys=['group_key_id', ])
-        return api.group_open(
-            group_key_id=data['group_key_id'],
-        )
-
-    @DELETE('^/gr/cl$')
-    @DELETE('^/v1/group/close$')
-    @DELETE('^/group/close/v1$')
-    def group_close_v1(self, request):
-        data = _request_data(request, mandatory_keys=['group_key_id', ])
-        return api.group_close(
-            group_key_id=data['group_key_id'],
         )
 
     #------------------------------------------------------------------------------

@@ -2039,6 +2039,13 @@ def group_list():
     return RESULT([],)
 
 
+def group_info(group_key_id):
+    """
+    """
+    if not driver.is_on('service_private_groups'):
+        return ERROR('service_private_groups() is not started')
+
+
 def group_create(creator_id=None, key_size=2048, label=''):
     """
     """
@@ -2056,7 +2063,7 @@ def group_create(creator_id=None, key_size=2048, label=''):
     return OK(key_info, message='new group "%s" was created successfully' % group_key_id)
 
 
-def group_leave(group_key_id):
+def group_join(group_key_id):
     """
     """
     if not driver.is_on('service_private_groups'):
@@ -2065,12 +2072,54 @@ def group_leave(group_key_id):
     if not group_key_id.startswith('group_'):
         return ERROR('invalid group id')
     from access import group_member
+    active_group_member = group_member.get_active_group_member(group_key_id)
+    new_group = False
+    if not active_group_member:
+        new_group = True
+        active_group_member = group_member.GroupMember(group_key_id)
+    ret = Deferred()
+
+    def _on_group_queue_memeber_state_changed(oldstate, newstate, event_string, *args, **kwargs):
+        if newstate == 'IN_SYNC!' and oldstate != newstate:
+            active_group_member.removeStateChangedCallback(_on_group_queue_memeber_state_changed)
+            if new_group:
+                ret.callback(OK('group "%s" connected' % group_key_id, extra_fields=active_group_member.to_json(), api_method='group_open'))
+            else:
+                ret.callback(OK('group "%s" refreshed' % group_key_id, extra_fields=active_group_member.to_json(), api_method='group_open'))
+        if newstate == 'DISCONNECTED' and oldstate != newstate and oldstate != 'AT_STARTUP':
+            active_group_member.removeStateChangedCallback(_on_group_queue_memeber_state_changed)
+            ret.callback(ERROR('group "%s" is disconnected' % group_key_id, extra_fields=active_group_member.to_json(), api_method='group_open'))
+        return None
+
+    active_group_member.addStateChangedCallback(_on_group_queue_memeber_state_changed)
+    if new_group:
+        active_group_member.automat('init')
+    active_group_member.automat('join')
+    return ret
+
+
+def group_leave(group_key_id, erase_key=False):
+    """
+    """
+    if not driver.is_on('service_private_groups'):
+        return ERROR('service_private_groups() is not started')
+    from access import group_member
     from crypt import my_keys
+    group_key_id = strng.to_text(group_key_id)
+    if not group_key_id.startswith('group_'):
+        return ERROR('invalid group id')
     this_group_member = group_member.get_active_group_member(group_key_id)
-    if this_group_member:
-        this_group_member.automat('shutdown')
-    my_keys.erase_key(group_key_id)
-    return OK(message='group key "%s" was deleted successfully' % group_key_id)
+    if not this_group_member:
+        if not erase_key:
+            lg.warn('active group_member() instance was not found for %r' % group_key_id)
+            return ERROR('active group_member() instance was not found for %r' % group_key_id)
+        if not my_keys.is_key_registered(group_key_id):
+            return ERROR('group key %r not found' % group_key_id)
+        return OK(message='group key "%s" erased' % group_key_id)
+    this_group_member.automat('leave', erase_key=erase_key)
+    if erase_key:
+        OK(message='group "%s" deleted' % group_key_id)
+    return OK(message='group "%s" deactivated' % group_key_id)
 
 
 def group_share(trusted_remote_user, group_key_id, timeout=30):
@@ -2110,63 +2159,6 @@ def group_share(trusted_remote_user, group_key_id, timeout=30):
     group_access_donor_machine.automat('init', trusted_idurl=remote_idurl, group_key_id=group_key_id, result_defer=d)
     return ret
 
-
-def group_open(group_key_id):
-    """
-    """
-    if not driver.is_on('service_private_groups'):
-        return ERROR('service_private_groups() is not started')
-    group_key_id = strng.to_text(group_key_id)
-    if not group_key_id.startswith('group_'):
-        return ERROR('invalid group name')
-    from access import group_member
-    active_group_member = group_member.get_active_group_member(group_key_id)
-    new_group = False
-    if not active_group_member:
-        new_group = True
-        active_group_member = group_member.GroupMember(group_key_id)
-    ret = Deferred()
-
-    def _on_group_queue_memeber_state_changed(oldstate, newstate, event_string, *args, **kwargs):
-        if newstate == 'IN_SYNC!' and oldstate != newstate:
-            active_group_member.removeStateChangedCallback(_on_group_queue_memeber_state_changed)
-            if new_group:
-                ret.callback(OK('group "%s" connected' % group_key_id, extra_fields=active_group_member.to_json(), api_method='group_open'))
-            else:
-                ret.callback(OK('group "%s" refreshed' % group_key_id, extra_fields=active_group_member.to_json(), api_method='group_open'))
-        if newstate == 'DISCONNECTED' and oldstate != newstate and oldstate != 'AT_STARTUP':
-            active_group_member.removeStateChangedCallback(_on_group_queue_memeber_state_changed)
-            ret.callback(ERROR('group "%s" is disconnected' % group_key_id, extra_fields=active_group_member.to_json(), api_method='group_open'))
-        return None
-
-    active_group_member.addStateChangedCallback(_on_group_queue_memeber_state_changed)
-    if new_group:
-        active_group_member.automat('init')
-    active_group_member.automat('connect')
-    return ret
-
-
-def group_close(group_key_id):
-    """
-    """
-    if not driver.is_on('service_private_groups'):
-        return ERROR('service_private_groups() is not started')
-    group_key_id = strng.to_text(group_key_id)
-    if not group_key_id.startswith('group_'):
-        return ERROR('invalid group name')
-    from access import group_member
-    this_group = group_member.get_active_group_member(group_key_id)
-    if not this_group:
-        return ERROR('group "%s" is not opened' % group_key_id)
-    this_group.automat('shutdown')
-    return OK('group "%s" closed' % group_key_id)
-
-
-def group_info(group_key_id):
-    """
-    """
-    if not driver.is_on('service_private_groups'):
-        return ERROR('service_private_groups() is not started')
 
 #------------------------------------------------------------------------------
 

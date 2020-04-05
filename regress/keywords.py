@@ -25,7 +25,7 @@ import time
 import requests
 import pprint
 
-from testsupport import request_get, request_post, request_put
+from testsupport import request_get, request_post, request_put, request_delete
 
 
 def supplier_list_v1(customer: str, expected_min_suppliers=None, expected_max_suppliers=None, attempts=40, delay=3, extract_suppliers=True):
@@ -186,10 +186,18 @@ def group_create_v1(customer: str, key_size=1024):
     return response.json()['result'][0]['group_key_id']
 
 
-def group_open_v1(customer: str, group_key_id):
-    response = request_post(customer, 'group/open/v1', json={'group_key_id': group_key_id, }, timeout=20)
+def group_leave_v1(customer: str, group_key_id):
+    response = request_delete(customer, 'group/leave/v1', json={'group_key_id': group_key_id, }, timeout=20)
     assert response.status_code == 200
-    print('\ngroup/open/v1 [%s] group_key_id=%r : %s\n' % (customer, group_key_id, pprint.pformat(response.json())))
+    print('\ngroup/leave/v1 [%s] group_key_id=%r : %s\n' % (customer, group_key_id, pprint.pformat(response.json())))
+    assert response.json()['status'] == 'OK', response.json()
+    return response.json()
+
+
+def group_join_v1(customer: str, group_key_id):
+    response = request_post(customer, 'group/join/v1', json={'group_key_id': group_key_id, }, timeout=20)
+    assert response.status_code == 200
+    print('\ngroup/join/v1 [%s] group_key_id=%r : %s\n' % (customer, group_key_id, pprint.pformat(response.json())))
     assert response.json()['status'] == 'OK', response.json()
     return response.json()
 
@@ -454,8 +462,8 @@ def message_send_group_v1(node, group_key_id, data):
     return response.json()
 
 
-def message_receive_v1(node, expected_data, consumer='test_consumer', get_result=None):
-    response = request_get(node, f'message/receive/{consumer}/v1', timeout=20)
+def message_receive_v1(node, expected_data, consumer='test_consumer', get_result=None, timeout=20, attempts=1):
+    response = request_get(node, f'message/receive/{consumer}/v1', timeout=timeout, attempts=attempts)
     assert response.status_code == 200
     print(f'\nmessage/receive/{consumer}/v1 [%s] : %s\n' % (
         node, pprint.pformat(response.json())))

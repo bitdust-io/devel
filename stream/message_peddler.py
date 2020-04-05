@@ -82,6 +82,7 @@ from system import bpio
 from system import local_fs
 
 from main import settings
+from main import events
 
 from p2p import p2p_service
 
@@ -90,6 +91,7 @@ from stream import queue_keeper
 from stream import message
 
 from userid import global_id
+from userid import id_url
 from userid import my_id
 
 #------------------------------------------------------------------------------ 
@@ -97,12 +99,68 @@ from userid import my_id
 _MessagePeddler = None
 
 _ActiveStreams = {}
+_ActiveCustomers = {}
 
 #------------------------------------------------------------------------------
 
 def streams():
     global _ActiveStreams
     return _ActiveStreams
+
+
+def customers():
+    global _ActiveCustomers
+    return _ActiveCustomers
+
+#------------------------------------------------------------------------------
+
+def register_stream(queue_id):
+    if queue_id in streams():
+        raise Exception('queue already exist')
+    queue_info = global_id.ParseGlobalQueueID(queue_id)
+    customer_idurl = global_id.glob2idurl(queue_info['owner_id'])
+    if not customer_idurl:
+        raise Exception('unknown customer')
+    if not id_url.is_cached(customer_idurl):
+        raise Exception('customer idurl is not cached yet')
+    if customer_idurl not in customers():
+        customers()[customer_idurl] = []
+    else:
+        if queue_id in customers()[customer_idurl]:
+            raise Exception('queue is already registered for that customer')
+    customers()[customer_idurl].append(queue_id)
+    streams()[queue_id] = {
+        'active': False,
+        'consumers': {},
+        'producers': {},
+        'messages': [],
+        'last_sequence_id': -1,
+    }
+    if _Debug:
+        lg.args(_DebugLevel, queue_id=queue_id, customer_idurl=customer_idurl)
+    return True
+
+
+def unregister_stream(queue_id):
+    if queue_id not in streams():
+        raise Exception('queue is not exist')
+    queue_info = global_id.ParseGlobalQueueID(queue_id)
+    customer_idurl = global_id.glob2idurl(queue_info['owner_id'])
+    if not customer_idurl:
+        raise Exception('unknown customer')
+    if not id_url.is_cached(customer_idurl):
+        raise Exception('customer idurl is not cached yet')
+    if customer_idurl not in customers():
+        raise Exception('customer is not registered')
+    if queue_id not in customers()[customer_idurl]:
+        raise Exception('queue is not registered for that customer')
+    customers()[customer_idurl].remove(queue_id)
+    if not customers()[customer_idurl]:
+        customers().pop(customer_idurl)
+    streams().pop(queue_id)
+    if _Debug:
+        lg.args(_DebugLevel, queue_id=queue_id, customer_idurl=customer_idurl)
+    return True
 
 #------------------------------------------------------------------------------
 
@@ -185,6 +243,9 @@ def on_consume_queue_messages(json_messages):
         streams()[queue_id]['messages'].append(new_sequence_id)
         queued_json_message = store_message(queue_id, new_sequence_id, producer_id, payload, created)
         received += 1
+        if _Debug:
+            lg.out(_DebugLevel, '<<< PUSH <<<    into %r by %r at sequence %d' % (
+                queue_id, producer_id, new_sequence_id, ))
         try:
             new_message = p2p_queue.write_message(
                 producer_id=producer_id,
@@ -197,8 +258,6 @@ def on_consume_queue_messages(json_messages):
             continue
         register_delivery(queue_id, new_sequence_id, new_message.message_id)
         pushed += 1
-        if _Debug:
-            lg.args(_DebugLevel, event='message-pushed', new_message=new_message)
         A('message-pushed', new_message)
     if received > pushed:
         lg.warn('some of received messages was not pushed to the queue')
@@ -218,15 +277,21 @@ def on_message_processed(processed_message):
         message_id=processed_message.message_id,
         failed_consumers=processed_message.failed_consumers,
     ):
-        lg.warn('failed to unregister message delivery attempt, message_id %r not found at position %d in queue %r' % (
+        lg.err('failed to unregister message delivery attempt, message_id %r not found at position %d in queue %r' % (
             processed_message.message_id, sequence_id, processed_message.queue_id))
         return False
     if processed_message.failed_consumers:
-        lg.warn('some consumers failed to receive message %r with sequence_id=%d: %r' % (
-            processed_message.message_id, sequence_id, processed_message.failed_consumers))
+        # lg.warn('some consumers failed to receive message %r with sequence_id=%d: %r' % (
+        #     processed_message.message_id, sequence_id, processed_message.failed_consumers))
+        if _Debug:
+            lg.out(_DebugLevel, '>>> FAILED >>>    from %r at sequence %d, failed_consumers=%d' % (
+                processed_message.queue_id, sequence_id, len(processed_message.failed_consumers), ))
     else:
         erase_message(processed_message.queue_id, sequence_id)
         streams()[processed_message.queue_id]['messages'].remove(sequence_id)
+        if _Debug:
+            lg.out(_DebugLevel, '>>> PULL >>>    from %r at sequence %d with success count %d' % (
+                processed_message.queue_id, sequence_id, processed_message.success_notifications, ))
     return True
 
 
@@ -256,6 +321,9 @@ def on_consumer_notify(message_info):
         skip_handshake=True,
         fire_callbacks=False,
     )
+    if _Debug:
+        lg.out(_DebugLevel, '>>> OUT >>>    from %r by producer %r to consumer %r at sequence %d' % (
+            queue_id, producer_id, consumer_id, sequence_id, ))
     return ret
 
 #------------------------------------------------------------------------------
@@ -325,9 +393,9 @@ def unregister_delivery(queue_id, sequence_id, message_id, failed_consumers):
         if stored_json_message['attempts'][attempt_number]['message_id'] == message_id:
             found_attempt_number = attempt_number
             break
-    if not found_attempt_number:
+    if found_attempt_number is None:
         return False
-    stored_json_message['attempts'][attempt_number].update({
+    stored_json_message['attempts'][found_attempt_number].update({
         'finished': utime.get_sec1970(),
         'failed_consumers': failed_consumers,
     })
@@ -385,6 +453,10 @@ def get_messages_for_consumer(queue_id, consumer_id, consumer_last_sequence_id, 
 def load_streams():
     service_dir = settings.ServiceDir('service_message_broker')
     queues_dir = os.path.join(service_dir, 'queues')
+    loaded_queues = 0
+    loaded_consumers = 0
+    loaded_producers = 0
+    loaded_messages = 0
     if not os.path.isdir(queues_dir):
         bpio._dirs_make(queues_dir)
     for queue_id in os.listdir(queues_dir):
@@ -393,13 +465,12 @@ def load_streams():
         consumers_dir = os.path.join(queue_dir, 'consumers')
         producers_dir = os.path.join(queue_dir, 'producers')
         if queue_id not in streams():
-            streams()[queue_id] = {
-                'active': False,
-                'consumers': {},
-                'producers': {},
-                'messages': [],
-                'last_sequence_id': -1,
-            }
+            try:
+                register_stream(queue_id)
+            except:
+                lg.exc()
+                continue
+            loaded_queues += 1
         last_sequence_id = -1
         all_stored_queue_messages = os.listdir(messages_dir)
         all_stored_queue_messages.sort(key=lambda i: int(i))
@@ -407,6 +478,7 @@ def load_streams():
             streams()[queue_id]['messages'].append(sequence_id)
             if int(sequence_id) >= last_sequence_id:
                 last_sequence_id = sequence_id
+            loaded_messages += 1
         streams()[queue_id]['last_sequence_id'] = last_sequence_id
         for consumer_id in os.listdir(consumers_dir):
             if consumer_id in streams()[queue_id]['consumers']:
@@ -415,6 +487,7 @@ def load_streams():
             consumer_info = jsn.loads_text(local_fs.ReadTextFile(os.path.join(consumers_dir, consumer_id)))
             streams()[queue_id]['consumers'][consumer_id] = consumer_info
             streams()[queue_id]['consumers'][consumer_id]['active'] = False
+            loaded_consumers += 1
         for producer_id in os.listdir(producers_dir):
             if producer_id in streams()[queue_id]['producers']:
                 lg.warn('producer %r already exist in stream %r' % (producer_id, queue_id, ))
@@ -422,30 +495,40 @@ def load_streams():
             producer_info = jsn.loads_text(local_fs.ReadTextFile(os.path.join(producers_dir, producer_id)))
             streams()[queue_id]['producers'][producer_id] = producer_info
             streams()[queue_id]['producers'][producer_id]['active'] = False
+            loaded_producers += 1
+    ret = {
+        'queues': loaded_queues,
+        'consumers': loaded_consumers,
+        'producers': loaded_producers,
+        'messages': loaded_messages,
+    }
+    if _Debug:
+        lg.args(_DebugLevel, **ret)
+    return ret
 
 #------------------------------------------------------------------------------
 
 def open_stream(queue_id):
+    if _Debug:
+        lg.args(_DebugLevel, queue_id=queue_id)
     if queue_id in streams():
+        lg.warn('stream already exist: %r' % queue_id)
         return False
-    streams()[queue_id] = {
-        'active': False,
-        'consumers': {},
-        'producers': {},
-        'messages': [],
-        'last_sequence_id': -1,
-    }
+    register_stream(queue_id)
     save_stream(queue_id)
     return True
 
 
 def close_stream(queue_id):
+    if _Debug:
+        lg.args(_DebugLevel, queue_id=queue_id)
     if queue_id not in streams():
+        lg.warn('stream not found: %r' % queue_id)
         return False
     if streams()[queue_id]['active']:
         stop_stream(queue_id)
-    streams().pop(queue_id)
     erase_stream(queue_id)
+    unregister_stream(queue_id)
     return True
 
 
@@ -464,6 +547,8 @@ def save_stream(queue_id):
         local_fs.WriteTextFile(os.path.join(consumers_dir, consumer_id), jsn.dumps(consumer_info))
     for producer_id, producer_info in stream_info['producers'].items():
         local_fs.WriteTextFile(os.path.join(producers_dir, producer_id), jsn.dumps(producer_info))
+    if _Debug:
+        lg.args(_DebugLevel, queue_id=queue_id, queue_dir=queue_dir)
     return True
 
 
@@ -471,8 +556,11 @@ def erase_stream(queue_id):
     service_dir = settings.ServiceDir('service_message_broker')
     queues_dir = os.path.join(service_dir, 'queues')
     queue_dir = os.path.join(queues_dir, queue_id)
+    erased_files = 0
     if os.path.isdir(queue_dir):
-        bpio.rmdir_recursive(queue_dir, ignore_errors=True)
+        erased_files += bpio.rmdir_recursive(queue_dir, ignore_errors=True)
+    if _Debug:
+        lg.args(_DebugLevel, queue_id=queue_id, queue_dir=queue_dir, erased_files=erased_files)
     return True
 
 #------------------------------------------------------------------------------
@@ -513,9 +601,13 @@ def save_consumer(queue_id, consumer_id):
     queues_dir = os.path.join(service_dir, 'queues')
     queue_dir = os.path.join(queues_dir, queue_id)
     consumers_dir = os.path.join(queue_dir, 'consumers')
-    bpio._dirs_make(consumers_dir)
+    if not os.path.isdir(consumers_dir):
+        bpio._dirs_make(consumers_dir)
     consumer_path = os.path.join(consumers_dir, consumer_id)
-    return local_fs.WriteTextFile(consumer_path, jsn.dumps(consumer_info))
+    ret = local_fs.WriteTextFile(consumer_path, jsn.dumps(consumer_info))
+    if _Debug:
+        lg.args(_DebugLevel, queue_id=queue_id, consumer_id=consumer_id, consumer_path=consumer_path, ret=ret)
+    return ret
 
 
 def erase_consumer(queue_id, consumer_id):
@@ -531,6 +623,8 @@ def erase_consumer(queue_id, consumer_id):
     if not os.path.isfile(consumer_path):
         return False
     os.remove(consumer_path)
+    if _Debug:
+        lg.args(_DebugLevel, queue_id=queue_id, consumer_id=consumer_id, consumer_path=consumer_path)
     return True
 
 #------------------------------------------------------------------------------
@@ -571,9 +665,13 @@ def save_producer(queue_id, producer_id):
     queues_dir = os.path.join(service_dir, 'queues')
     queue_dir = os.path.join(queues_dir, queue_id)
     producers_dir = os.path.join(queue_dir, 'producers')
-    bpio._dirs_make(producers_dir)
+    if not os.path.isdir(producers_dir):
+        bpio._dirs_make(producers_dir)
     producer_path = os.path.join(producers_dir, producer_id)
-    return local_fs.WriteTextFile(producer_path, jsn.dumps(producer_info))
+    ret = local_fs.WriteTextFile(producer_path, jsn.dumps(producer_info))
+    if _Debug:
+        lg.args(_DebugLevel, queue_id=queue_id, producer_id=producer_id, producer_path=producer_path, ret=ret)
+    return ret
 
 
 def erase_producer(queue_id, producer_id):
@@ -589,6 +687,8 @@ def erase_producer(queue_id, producer_id):
     if not os.path.isfile(producer_path):
         return False
     os.remove(producer_path)
+    if _Debug:
+        lg.args(_DebugLevel, queue_id=queue_id, producer_id=producer_id, producer_path=producer_path)
     return True
 
 #------------------------------------------------------------------------------
@@ -743,6 +843,7 @@ class MessagePeddler(automat.Automat):
         """
         Action method.
         """
+        events.add_subscriber(self._on_identity_url_changed, 'identity-url-changed')
         message.consume_messages(
             consumer_id=self.name,
             callback=on_consume_queue_messages,
@@ -870,14 +971,17 @@ class MessagePeddler(automat.Automat):
                 result_defer.callback(True)
                 return
         if not streams()[queue_id]['consumers'] and not streams()[queue_id]['producers']:
-            lg.warn('no consumers and no producers left, closing queue %r' % queue_id)
+            lg.info('no consumers and no producers left, closing queue %r' % queue_id)
             stop_stream(queue_id)
             close_stream(queue_id)
-        # TODO: check/un-register group_key if no consumers left
-        # TODO: check/stop queue_keeper() if no queues opened for given customer
-        # qk = queue_keeper.check_create(customer_idurl=group_creator_idurl, auto_create=False)
-        # if qk:
-        #     qk.automat('shutdown')
+        customer_idurl = global_id.GetGlobalQueueOwnerIDURL(queue_id)
+        if customer_idurl in customers():
+            if len(customers()[customer_idurl]) == 0:
+                lg.info('no streams left for %r, clean up queue_keeper()' % customer_idurl)
+                queue_keeper.close(customer_idurl)
+                if my_keys.is_key_registered(group_key_id):
+                    lg.info('clean up group key %r' % group_key_id)
+                    my_keys.erase_key(group_key_id)
         p2p_service.SendAck(request_packet, 'accepted')
         result_defer.callback(True)
 
@@ -892,6 +996,7 @@ class MessagePeddler(automat.Automat):
         Remove all references to the state machine object to destroy it.
         """
         message.clear_consumer_callbacks(self.name)
+        events.remove_subscriber(self._on_identity_url_changed, 'identity-url-changed')
         self.destroy()
 
     def _do_send_past_messages(self, queue_id, consumer_id, consumer_last_sequence_id):
@@ -907,13 +1012,39 @@ class MessagePeddler(automat.Automat):
             fire_callbacks=False,
         )
 
+    def _do_close_streams(self, queues_list):
+        for queue_id in queues_list:
+            if queue_id not in streams():
+                continue
+            if streams()[queue_id]['active']:
+                for consumer_id in streams()[queue_id]['consumers']:
+                    if consumer_id:
+                        if not remove_consumer(queue_id, consumer_id):
+                            lg.warn('consumer %r is not registered for queue %r' % (consumer_id, queue_id, ))
+                for producer_id in streams()[queue_id]['producers']:
+                    if producer_id:
+                        if not remove_producer(queue_id, producer_id):
+                            lg.warn('producer %r is not registered for queue %r' % (producer_id, queue_id, ))
+            stop_stream(queue_id)
+            close_stream(queue_id)
+            customer_idurl = global_id.GetGlobalQueueOwnerIDURL(queue_id)
+            if customer_idurl in customers():
+                if len(customers()[customer_idurl]) == 0:
+                    lg.info('no streams left for %r, clean up queue_keeper()' % customer_idurl)
+                    queue_keeper.close(customer_idurl)
+                    group_key_id = global_id.GetGlobalQueueKeyID(queue_id)
+                    if my_keys.is_key_registered(group_key_id):
+                        lg.info('clean up group key %r' % group_key_id)
+                        my_keys.erase_key(group_key_id)
+
     def _on_queue_keeper_connect_result(self, result, queue_id, consumer_id, producer_id, request_packet, result_defer):
         if _Debug:
             lg.args(_DebugLevel, result=result, queue_id=queue_id, consumer_id=consumer_id, producer_id=producer_id, request_packet=request_packet)
         if not result:
             lg.err('queue keeper failed to connect')
             return None
-        open_stream(queue_id)
+        if queue_id not in streams():
+            open_stream(queue_id)
         if consumer_id:
             add_consumer(queue_id, consumer_id)
         if producer_id:
@@ -922,3 +1053,11 @@ class MessagePeddler(automat.Automat):
         p2p_service.SendAck(request_packet, 'accepted')
         result_defer.callback(True)
         return None
+
+    def _on_identity_url_changed(self, evt):
+        old_idurl = evt.data['old_idurl']
+        queues_to_be_closed = []
+        if old_idurl in customers().keys():
+            for queue_id in customers()[old_idurl]:
+                queues_to_be_closed.append(queue_id)
+        self._do_close_streams(queues_to_be_closed)
