@@ -243,6 +243,9 @@ def on_consume_queue_messages(json_messages):
         streams()[queue_id]['messages'].append(new_sequence_id)
         queued_json_message = store_message(queue_id, new_sequence_id, producer_id, payload, created)
         received += 1
+        if _Debug:
+            lg.out(_DebugLevel, '<<< PUSH <<<    into %r by %r at sequence %d' % (
+                queue_id, producer_id, new_sequence_id, ))
         try:
             new_message = p2p_queue.write_message(
                 producer_id=producer_id,
@@ -255,8 +258,6 @@ def on_consume_queue_messages(json_messages):
             continue
         register_delivery(queue_id, new_sequence_id, new_message.message_id)
         pushed += 1
-        if _Debug:
-            lg.args(_DebugLevel, event='message-pushed', new_message=new_message)
         A('message-pushed', new_message)
     if received > pushed:
         lg.warn('some of received messages was not pushed to the queue')
@@ -276,15 +277,21 @@ def on_message_processed(processed_message):
         message_id=processed_message.message_id,
         failed_consumers=processed_message.failed_consumers,
     ):
-        lg.warn('failed to unregister message delivery attempt, message_id %r not found at position %d in queue %r' % (
+        lg.err('failed to unregister message delivery attempt, message_id %r not found at position %d in queue %r' % (
             processed_message.message_id, sequence_id, processed_message.queue_id))
         return False
     if processed_message.failed_consumers:
-        lg.warn('some consumers failed to receive message %r with sequence_id=%d: %r' % (
-            processed_message.message_id, sequence_id, processed_message.failed_consumers))
+        # lg.warn('some consumers failed to receive message %r with sequence_id=%d: %r' % (
+        #     processed_message.message_id, sequence_id, processed_message.failed_consumers))
+        if _Debug:
+            lg.out(_DebugLevel, '>>> FAILED >>>    from %r at sequence %d, failed_consumers=%d' % (
+                processed_message.queue_id, sequence_id, len(processed_message.failed_consumers), ))
     else:
         erase_message(processed_message.queue_id, sequence_id)
         streams()[processed_message.queue_id]['messages'].remove(sequence_id)
+        if _Debug:
+            lg.out(_DebugLevel, '>>> PULL >>>    from %r at sequence %d with success count %d' % (
+                processed_message.queue_id, sequence_id, processed_message.success_notifications, ))
     return True
 
 
@@ -314,6 +321,9 @@ def on_consumer_notify(message_info):
         skip_handshake=True,
         fire_callbacks=False,
     )
+    if _Debug:
+        lg.out(_DebugLevel, '>>> OUT >>>    from %r by producer %r to consumer %r at sequence %d' % (
+            queue_id, producer_id, consumer_id, sequence_id, ))
     return ret
 
 #------------------------------------------------------------------------------
@@ -383,9 +393,9 @@ def unregister_delivery(queue_id, sequence_id, message_id, failed_consumers):
         if stored_json_message['attempts'][attempt_number]['message_id'] == message_id:
             found_attempt_number = attempt_number
             break
-    if not found_attempt_number:
+    if found_attempt_number is None:
         return False
-    stored_json_message['attempts'][attempt_number].update({
+    stored_json_message['attempts'][found_attempt_number].update({
         'finished': utime.get_sec1970(),
         'failed_consumers': failed_consumers,
     })
@@ -504,8 +514,7 @@ def open_stream(queue_id):
     if queue_id in streams():
         lg.warn('stream already exist: %r' % queue_id)
         return False
-    if queue_id not in streams():
-        register_stream(queue_id)
+    register_stream(queue_id)
     save_stream(queue_id)
     return True
 
@@ -1034,7 +1043,8 @@ class MessagePeddler(automat.Automat):
         if not result:
             lg.err('queue keeper failed to connect')
             return None
-        open_stream(queue_id)
+        if queue_id not in streams():
+            open_stream(queue_id)
         if consumer_id:
             add_consumer(queue_id, consumer_id)
         if producer_id:

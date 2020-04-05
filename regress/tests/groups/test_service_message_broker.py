@@ -46,11 +46,11 @@ def test_customers_1_2_3_communicate_via_message_broker():
 
     group_key_id = kw.group_create_v1('customer-1')
 
-    kw.group_open_v1('customer-1', group_key_id)
+    kw.group_join_v1('customer-1', group_key_id)
 
     kw.group_share_v1('customer-1', group_key_id, 'customer-2@id-b_8084')
 
-    kw.group_open_v1('customer-2', group_key_id)
+    kw.group_join_v1('customer-2', group_key_id)
 
     # MESSAGE A: from customer 1 to the group, customers 1 and 2 must receive the message
     a_message_sent_from_customer_1 = {'random_message': base64.b32encode(os.urandom(20)).decode(), }
@@ -73,7 +73,7 @@ def test_customers_1_2_3_communicate_via_message_broker():
 
     kw.group_share_v1('customer-1', group_key_id, 'customer-3@id-a_8084')
 
-    kw.group_open_v1('customer-3', group_key_id)
+    kw.group_join_v1('customer-3', group_key_id)
 
     # MESSAGE B: from customer 3 to the group, customers 1, 2 and 3 must receive the message
     b_message_sent_from_customer_3 = {'random_message': base64.b32encode(os.urandom(20)).decode(), }
@@ -110,7 +110,7 @@ def test_customers_1_2_3_communicate_via_message_broker():
     c_receive_customer_1 = threading.Timer(0, kw.message_receive_v1, [
         'customer-1', c_message_sent_from_customer_1, 'test_consumer', c_customer_1_receive_result, ])
     c_receive_customer_2 = threading.Timer(0, kw.message_receive_v1, [
-        'customer-2', c_message_sent_from_customer_1, 'test_consumer', c_customer_2_receive_result, ])
+        'customer-2', c_message_sent_from_customer_1, 'test_consumer', c_customer_2_receive_result, 10])
     c_receive_customer_3 = threading.Timer(0, kw.message_receive_v1, [
         'customer-3', c_message_sent_from_customer_1, 'test_consumer', c_customer_3_receive_result, ])
     c_send_customer_1 = threading.Timer(0.2, kw.message_send_group_v1, [

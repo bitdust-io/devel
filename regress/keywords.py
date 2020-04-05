@@ -194,10 +194,10 @@ def group_leave_v1(customer: str, group_key_id):
     return response.json()
 
 
-def group_open_v1(customer: str, group_key_id):
-    response = request_post(customer, 'group/open/v1', json={'group_key_id': group_key_id, }, timeout=20)
+def group_join_v1(customer: str, group_key_id):
+    response = request_post(customer, 'group/join/v1', json={'group_key_id': group_key_id, }, timeout=20)
     assert response.status_code == 200
-    print('\ngroup/open/v1 [%s] group_key_id=%r : %s\n' % (customer, group_key_id, pprint.pformat(response.json())))
+    print('\ngroup/join/v1 [%s] group_key_id=%r : %s\n' % (customer, group_key_id, pprint.pformat(response.json())))
     assert response.json()['status'] == 'OK', response.json()
     return response.json()
 
@@ -462,8 +462,8 @@ def message_send_group_v1(node, group_key_id, data):
     return response.json()
 
 
-def message_receive_v1(node, expected_data, consumer='test_consumer', get_result=None, timeout=20):
-    response = request_get(node, f'message/receive/{consumer}/v1', timeout=timeout)
+def message_receive_v1(node, expected_data, consumer='test_consumer', get_result=None, timeout=20, attempts=1):
+    response = request_get(node, f'message/receive/{consumer}/v1', timeout=timeout, attempts=attempts)
     assert response.status_code == 200
     print(f'\nmessage/receive/{consumer}/v1 [%s] : %s\n' % (
         node, pprint.pformat(response.json())))

@@ -33,15 +33,14 @@ EVENTS:
     * :red:`brokers-found`
     * :red:`brokers-hired`
     * :red:`brokers-not-found`
-    * :red:`connect`
     * :red:`dht-read-failed`
     * :red:`init`
     * :red:`instant`
+    * :red:`join`
     * :red:`leave`
     * :red:`message-in`
     * :red:`push-message`
     * :red:`queue-in-sync`
-    * :red:`queue-pull`
     * :red:`queue-read-failed`
     * :red:`shutdown`
 """
@@ -262,12 +261,14 @@ def register_group_member(A):
     """
     global _ActiveGroupMembers
     global _ActiveGroupMembersByIDURL
+    if _Debug:
+        lg.args(_DebugLevel, instance=repr(A))
     if A.group_key_id in _ActiveGroupMembers:
         raise Exception('group_member already exist')
+    _ActiveGroupMembers[A.group_key_id] = A
     if id_url.is_not_in(A.group_creator_idurl, _ActiveGroupMembersByIDURL):
         _ActiveGroupMembersByIDURL[A.group_creator_idurl] = []
     _ActiveGroupMembersByIDURL[A.group_creator_idurl].append(A)
-    _ActiveGroupMembers[A.group_key_id] = A
     if not is_group_exist(A.group_key_id):
         create_group(A.group_key_id)
 
@@ -277,11 +278,16 @@ def unregister_group_member(A):
     """
     global _ActiveGroupMembers
     global _ActiveGroupMembersByIDURL
-    _ActiveGroupMembers.pop(A.group_key_id, None)
+    if _Debug:
+        lg.args(_DebugLevel, instance=repr(A))
     if id_url.is_not_in(A.group_creator_idurl, _ActiveGroupMembersByIDURL):
-        lg.warn('for given customer idurl did not found in active group memebers lists')
+        lg.warn('for given customer idurl %r did not found active group members list' % A.group_creator_idurl)
     else:
-        _ActiveGroupMembersByIDURL[A.group_creator_idurl] = []
+        if A in _ActiveGroupMembersByIDURL[A.group_creator_idurl]:
+            _ActiveGroupMembersByIDURL[A.group_creator_idurl].remove(A)
+        else:
+            lg.warn('group_member() instance not found for customer %r' % A.group_creator_idurl)
+    _ActiveGroupMembers.pop(A.group_key_id, None)
 
 #------------------------------------------------------------------------------
 
@@ -322,7 +328,7 @@ def set_active(group_key_id, value):
     old_value = groups()[group_key_id]['active']
     groups()[group_key_id]['active'] = value
     if old_value != value:
-        lg.info('group "active" status changed: %r -> %r' % (old_value, value, ))
+        lg.info('group %r "active" status changed: %r -> %r' % (group_key_id, old_value, value, ))
     return True
 
 #------------------------------------------------------------------------------
@@ -417,14 +423,14 @@ class GroupMember(automat.Automat):
                 self.doInit(*args, **kwargs)
         #---DISCONNECTED---
         elif self.state == 'DISCONNECTED':
-            if event == 'connect' or ( event == 'instant' and self.isDeadBroker(*args, **kwargs) ):
-                self.state = 'DHT_READ?'
-                self.doActivate(*args, **kwargs)
-                self.doDHTReadBrokers(*args, **kwargs)
-            elif event == 'leave' or event == 'shutdown':
+            if event == 'leave' or event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDeactivate(event, *args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
+            elif event == 'join' or ( event == 'instant' and self.isDeadBroker(*args, **kwargs) ):
+                self.state = 'DHT_READ?'
+                self.doActivate(*args, **kwargs)
+                self.doDHTReadBrokers(*args, **kwargs)
         #---DHT_READ?---
         elif self.state == 'DHT_READ?':
             if event == 'dht-read-failed':
@@ -463,9 +469,6 @@ class GroupMember(automat.Automat):
         elif self.state == 'IN_SYNC!':
             if event == 'message-in' and self.isInSync(*args, **kwargs):
                 self.doProcess(*args, **kwargs)
-            elif event == 'queue-pull' or ( event == 'message-in' and not self.isInSync(*args, **kwargs) ):
-                self.state = 'QUEUE?'
-                self.doReadQueue(*args, **kwargs)
             elif event == 'push-message':
                 self.doPublish(*args, **kwargs)
             elif event == 'shutdown' or event == 'leave':
@@ -473,6 +476,9 @@ class GroupMember(automat.Automat):
                 self.doDeactivate(event, *args, **kwargs)
                 self.doCancelService(event, *args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
+            elif event == 'join' or ( event == 'message-in' and not self.isInSync(*args, **kwargs) ):
+                self.state = 'QUEUE?'
+                self.doReadQueue(*args, **kwargs)
         #---CLOSED---
         elif self.state == 'CLOSED':
             pass
@@ -696,6 +702,7 @@ class GroupMember(automat.Automat):
         Remove all references to the state machine object to destroy it.
         """
         message.clear_consumer_callbacks(self.name)
+        self.destroy()
         self.member_idurl = None
         self.member_id = None
         self.group_key_id = None
@@ -710,7 +717,6 @@ class GroupMember(automat.Automat):
         self.connected_brokers = None
         self.missing_brokers = None
         self.latest_dht_brokers = None
-        self.destroy()
 
     def _do_prepare_service_request_params(self, possible_broker_idurl, desired_broker_position):
         queue_id = global_id.MakeGlobalQueueID(
@@ -932,16 +938,13 @@ class GroupMember(automat.Automat):
             if msg_type != 'queue_message':
                 continue
             try:
-                last_sequence_id = int(msg_data['last_sequence_id'])
+                chunk_last_sequence_id = int(msg_data['last_sequence_id'])
                 list_messages = msg_data['items']
             except:
                 lg.exc()
                 continue
-            if last_sequence_id > latest_known_sequence_id:
-                latest_known_sequence_id = last_sequence_id
-            # if _Debug:
-            #     lg.args(_DebugLevel, latest_known_sequence_id=latest_known_sequence_id,
-            #             last_sequence_id=last_sequence_id, list_messages=list_messages)
+            if chunk_last_sequence_id > latest_known_sequence_id:
+                latest_known_sequence_id = chunk_last_sequence_id
             for one_message in list_messages:
                 if one_message['sequence_id'] > latest_known_sequence_id:
                     lg.warn('invalid item sequence_id %d   vs.  last_sequence_id %d known' % (
@@ -954,7 +957,14 @@ class GroupMember(automat.Automat):
                     producer_id=one_message['producer_id'],
                     sequence_id=one_message['sequence_id'],
                 ))
-        if not received_group_messages and latest_known_sequence_id < 0:
+        if not received_group_messages:
+            if latest_known_sequence_id > self.last_sequence_id:
+                # TODO: read messages from archive
+                lg.warn('found queue latest sequence %d is ahead of my current position %d, need to read messages from archive' % (
+                    latest_known_sequence_id, self.last_sequence_id, ))
+                self.last_sequence_id = latest_known_sequence_id
+                set_last_sequence_id(self.group_key_id, latest_known_sequence_id)
+                save_group(self.group_key_id)
             if _Debug:
                 lg.dbg(_DebugLevel, 'no new messages, queue in sync')
             self.automat('queue-in-sync')
@@ -974,7 +984,8 @@ class GroupMember(automat.Automat):
             raise Exception('message sequence is broken by message broker %s, some messages were not consumed' % self.active_broker_id)
         if newly_processed and latest_known_sequence_id == self.last_sequence_id:
             set_last_sequence_id(self.group_key_id, self.last_sequence_id)
+            save_group(self.group_key_id)
             if _Debug:
-                lg.dbg(_DebugLevel, 'processed all messages, queue in sync')
+                lg.dbg(_DebugLevel, 'processed all messages, queue in sync, last_sequence_id=%d' % self.last_sequence_id)
             self.automat('queue-in-sync')
         return True
