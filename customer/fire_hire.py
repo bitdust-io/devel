@@ -244,7 +244,15 @@ class FireHire(automat.Automat):
         Method to initialize additional variables and flags at creation of the
         state machine.
         """
-        # self.lastFireTime = 0 # time.time()
+        self.connect_list = []
+        self.dismiss_list = []
+        self.dismiss_results = []
+        self.hire_list = []
+        self.configs = (None, None)
+        self.restart_interval = 1.0
+        self.restart_task = None
+
+    def shutdown(self):
         self.connect_list = []
         self.dismiss_list = []
         self.dismiss_results = []
@@ -423,10 +431,10 @@ class FireHire(automat.Automat):
         """
         Condition method.
         """
-        curconfigs = (settings.getSuppliersNumberDesired(),
-                      diskspace.GetBytesFromString(settings.getNeededString()))
         if None in self.configs:
             return True
+        curconfigs = (settings.getSuppliersNumberDesired(),
+                      diskspace.GetBytesFromString(settings.getNeededString()))
         return self.configs[0] != curconfigs[0] or self.configs[1] != curconfigs[1]
 
     def isExistSomeSuppliers(self, *args, **kwargs):

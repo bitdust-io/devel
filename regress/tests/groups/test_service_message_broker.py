@@ -44,6 +44,13 @@ def test_customers_1_2_3_communicate_via_message_broker():
     kw.service_info_v1('customer-3', 'service_shared_data', 'ON')
     kw.service_info_v1('customer-3', 'service_private_groups', 'ON')
 
+    kw.packet_list_v1('customer-1', wait_all_finish=True)
+    kw.transfer_list_v1('customer-1', wait_all_finish=True)
+    kw.packet_list_v1('customer-2', wait_all_finish=True)
+    kw.transfer_list_v1('customer-2', wait_all_finish=True)
+    kw.packet_list_v1('customer-3', wait_all_finish=True)
+    kw.transfer_list_v1('customer-3', wait_all_finish=True)
+
     group_key_id = kw.group_create_v1('customer-1')
 
     kw.group_join_v1('customer-1', group_key_id)
@@ -51,6 +58,13 @@ def test_customers_1_2_3_communicate_via_message_broker():
     kw.group_share_v1('customer-1', group_key_id, 'customer-2@id-b_8084')
 
     kw.group_join_v1('customer-2', group_key_id)
+
+    kw.packet_list_v1('customer-1', wait_all_finish=True)
+    kw.transfer_list_v1('customer-1', wait_all_finish=True)
+    kw.packet_list_v1('customer-2', wait_all_finish=True)
+    kw.transfer_list_v1('customer-2', wait_all_finish=True)
+    kw.packet_list_v1('customer-3', wait_all_finish=True)
+    kw.transfer_list_v1('customer-3', wait_all_finish=True)
 
     # MESSAGE A: from customer 1 to the group, customers 1 and 2 must receive the message
     a_message_sent_from_customer_1 = {'random_message': base64.b32encode(os.urandom(20)).decode(), }
@@ -74,6 +88,13 @@ def test_customers_1_2_3_communicate_via_message_broker():
     kw.group_share_v1('customer-1', group_key_id, 'customer-3@id-a_8084')
 
     kw.group_join_v1('customer-3', group_key_id)
+
+    kw.packet_list_v1('customer-1', wait_all_finish=True)
+    kw.transfer_list_v1('customer-1', wait_all_finish=True)
+    kw.packet_list_v1('customer-2', wait_all_finish=True)
+    kw.transfer_list_v1('customer-2', wait_all_finish=True)
+    kw.packet_list_v1('customer-3', wait_all_finish=True)
+    kw.transfer_list_v1('customer-3', wait_all_finish=True)
 
     # MESSAGE B: from customer 3 to the group, customers 1, 2 and 3 must receive the message
     b_message_sent_from_customer_3 = {'random_message': base64.b32encode(os.urandom(20)).decode(), }
@@ -101,6 +122,13 @@ def test_customers_1_2_3_communicate_via_message_broker():
     assert b_customer_3_receive_result[0]['result'][0]['data'] == b_message_sent_from_customer_3
 
     kw.group_leave_v1('customer-2', group_key_id)
+
+    kw.packet_list_v1('customer-1', wait_all_finish=True)
+    kw.transfer_list_v1('customer-1', wait_all_finish=True)
+    kw.packet_list_v1('customer-2', wait_all_finish=True)
+    kw.transfer_list_v1('customer-2', wait_all_finish=True)
+    kw.packet_list_v1('customer-3', wait_all_finish=True)
+    kw.transfer_list_v1('customer-3', wait_all_finish=True)
 
     # MESSAGE C: from customer 1 to the group, customers 1 and 3 must receive the message, customer 2 must not receive it
     c_message_sent_from_customer_1 = {'random_message': base64.b32encode(os.urandom(20)).decode(), }
