@@ -565,15 +565,17 @@ def erase_stream(queue_id):
 
 #------------------------------------------------------------------------------
 
-def add_consumer(queue_id, consumer_id):
+def add_consumer(queue_id, consumer_id, consumer_info=None):
     if queue_id not in streams():
         return False
     if consumer_id in streams()[queue_id]['consumers']:
         return False
-    streams()[queue_id]['consumers'][consumer_id] = {
-        'active': False,
-        'last_sequence_id': -1,
-    }
+    if not consumer_info:
+        consumer_info = {
+            'active': False,
+            'last_sequence_id': -1,
+        }
+    streams()[queue_id]['consumers'][consumer_id] = consumer_info
     save_consumer(queue_id, consumer_id)
     return True
 
@@ -629,15 +631,17 @@ def erase_consumer(queue_id, consumer_id):
 
 #------------------------------------------------------------------------------
 
-def add_producer(queue_id, producer_id):
+def add_producer(queue_id, producer_id, producer_info=None):
     if queue_id not in streams():
         return False
     if producer_id in streams()[queue_id]['producers']:
         return False
-    streams()[queue_id]['producers'][producer_id] = {
-        'active': False,
-        'last_sequence_id': -1,
-    }
+    if not producer_info:
+        producer_info = {
+            'active': False,
+            'last_sequence_id': -1,
+        }
+    streams()[queue_id]['producers'][producer_id] = producer_info
     save_producer(queue_id, producer_id)
     return True
 
@@ -709,7 +713,6 @@ def start_stream(queue_id):
     if not p2p_queue.is_queue_exist(queue_id):
         p2p_queue.open_queue(queue_id)
     for consumer_id in list(streams()[queue_id]['consumers'].keys()):
-        # consumer_idurl = global_id.glob2idurl(consumer_id)
         if not p2p_queue.is_consumer_exists(consumer_id):
             p2p_queue.add_consumer(consumer_id)
         if not p2p_queue.is_callback_method_registered(consumer_id, on_consumer_notify):
@@ -732,16 +735,14 @@ def stop_stream(queue_id):
     for producer_id in list(streams()[queue_id]['producers'].keys()):
         if p2p_queue.is_producer_connected(producer_id, queue_id):
             p2p_queue.disconnect_producer(producer_id, queue_id)
-        if not p2p_queue.is_producer_connected(producer_id):
-            p2p_queue.remove_producer(producer_id)
+        p2p_queue.remove_producer(producer_id)
         streams()[queue_id]['producers'][producer_id]['active'] = False
     for consumer_id in list(streams()[queue_id]['consumers'].keys()):
         if p2p_queue.is_consumer_subscribed(consumer_id, queue_id):
             p2p_queue.unsubscribe_consumer(consumer_id, queue_id)
-        if not p2p_queue.is_consumer_subscribed(consumer_id):
-            if p2p_queue.is_callback_method_registered(consumer_id, on_consumer_notify):
-                p2p_queue.remove_callback_method(consumer_id, on_consumer_notify)
-            p2p_queue.remove_consumer(consumer_id)
+        if p2p_queue.is_callback_method_registered(consumer_id, on_consumer_notify):
+            p2p_queue.remove_callback_method(consumer_id, on_consumer_notify)
+        p2p_queue.remove_consumer(consumer_id)
         streams()[queue_id]['consumers'][consumer_id]['active'] = False
     p2p_queue.close_queue(queue_id)
     streams()[queue_id]['active'] = False
@@ -1056,8 +1057,47 @@ class MessagePeddler(automat.Automat):
 
     def _on_identity_url_changed(self, evt):
         old_idurl = evt.data['old_idurl']
+        new_id = global_id.idurl2glob(evt.data['new_idurl'])
         queues_to_be_closed = []
         if old_idurl in customers().keys():
             for queue_id in customers()[old_idurl]:
                 queues_to_be_closed.append(queue_id)
         self._do_close_streams(queues_to_be_closed)
+        for queue_id in streams().keys():
+            rotated_consumers = []
+            rotated_producers = []
+            for cur_consumer_id in streams()[queue_id]['consumers']:
+                consumer_idurl = global_id.glob2idurl(cur_consumer_id)
+                if consumer_idurl == old_idurl:
+                    rotated_consumers.append((cur_consumer_id, new_id, ))
+            for cur_producer_id in streams()[queue_id]['producers']:
+                producer_idurl = global_id.glob2idurl(cur_producer_id)
+                if producer_idurl == old_idurl:
+                    rotated_producers.append((cur_producer_id, new_id, ))
+            for old_consumer_id, new_consumer_id in rotated_consumers:
+                if p2p_queue.is_consumer_subscribed(old_consumer_id, queue_id):
+                    p2p_queue.unsubscribe_consumer(old_consumer_id, queue_id)
+                if p2p_queue.is_callback_method_registered(old_consumer_id, on_consumer_notify):
+                    p2p_queue.remove_callback_method(old_consumer_id, on_consumer_notify)
+                if p2p_queue.is_consumer_exists(old_consumer_id):
+                    p2p_queue.remove_consumer(old_consumer_id)
+                old_consumer_info = streams()[queue_id]['consumers'][old_consumer_id]
+                remove_consumer(queue_id, old_consumer_id)
+                add_consumer(queue_id, new_consumer_id, consumer_info=old_consumer_info)
+                if not p2p_queue.is_consumer_exists(new_consumer_id):
+                    p2p_queue.add_consumer(new_consumer_id)
+                if not p2p_queue.is_callback_method_registered(new_consumer_id, on_consumer_notify):
+                    p2p_queue.add_callback_method(new_consumer_id, on_consumer_notify)
+                if not p2p_queue.is_consumer_subscribed(new_consumer_id, queue_id):
+                    p2p_queue.subscribe_consumer(new_consumer_id, queue_id)
+            for old_producer_id, new_producer_id in rotated_producers:
+                if p2p_queue.is_producer_connected(old_producer_id, queue_id):
+                    p2p_queue.disconnect_producer(old_producer_id , queue_id)
+                p2p_queue.remove_producer(old_producer_id)
+                old_producer_info = streams()[queue_id]['producers'][old_producer_id]
+                remove_producer(queue_id, old_producer_id)
+                add_producer(queue_id, new_producer_id, producer_info=old_producer_info)
+                if not p2p_queue.is_producer_exist(new_producer_id):
+                    p2p_queue.add_producer(new_producer_id)
+                if not p2p_queue.is_producer_connected(new_producer_id, queue_id):
+                    p2p_queue.connect_producer(new_producer_id, queue_id)

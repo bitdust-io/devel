@@ -93,9 +93,6 @@ _DebugLevel = 4
 
 import os
 import sys
-import base64
-
-from twisted.internet.defer import Deferred, fail
 
 #------------------------------------------------------------------------------
 
@@ -108,17 +105,23 @@ if __name__ == '__main__':
 from logs import lg
 
 from lib import strng
-from lib import serialization
 from lib import utime
+from lib import jsn
+
+from system import local_fs
+from system import bpio
 
 from main import settings
 
-
-from userid import my_id
-from userid import global_id
-
 from crypt import key
 from crypt import my_keys
+
+#------------------------------------------------------------------------------
+
+REQUIRED_BROKERS_COUNT = 3
+
+_ActiveGroups = {}
+_KnownBrokers = {}
 
 #------------------------------------------------------------------------------
 
@@ -127,6 +130,7 @@ def init():
     """
     if _Debug:
         lg.out(_DebugLevel, 'groups.init')
+    load_groups()
 
 
 def shutdown():
@@ -137,7 +141,28 @@ def shutdown():
 
 #------------------------------------------------------------------------------
 
-def create_group_key(creator_id=None, label=None, key_size=4096):
+def known_groups():
+    global _ActiveGroups
+    return _ActiveGroups
+
+
+def known_brokers(customer_id=None, erase_brokers=False):
+    global _KnownBrokers
+    if not customer_id:
+        return _KnownBrokers
+    if erase_brokers:
+        return _KnownBrokers.pop(customer_id, None)
+    if customer_id not in _KnownBrokers:
+        _KnownBrokers[customer_id] = [None, ] * REQUIRED_BROKERS_COUNT
+    return _KnownBrokers[customer_id]
+
+#------------------------------------------------------------------------------
+
+def is_group_exist(group_key_id):
+    return group_key_id in known_groups()
+
+
+def generate_group_key(creator_id=None, label=None, key_size=4096):
     group_key_id = None
     group_alias = None
     while True:
@@ -154,3 +179,140 @@ def create_group_key(creator_id=None, label=None, key_size=4096):
     if _Debug:
         lg.args(_DebugLevel, group_key_id=group_key_id, group_alias=group_alias, creator_id=creator_id, label=label)
     return group_key_id
+
+
+def set_group_info(group_key_id, group_info=None):
+    if not group_info:
+        group_info = {
+            'last_sequence_id': -1,
+            'active': False,
+        }
+    known_groups()[group_key_id] = group_info
+    return True
+
+
+def create_new_group(label, creator_id=None, key_size=4096):
+    group_key_id = generate_group_key(creator_id, label, key_size)
+    set_group_info(group_key_id)
+    save_group_info(group_key_id)
+    return group_key_id
+
+#------------------------------------------------------------------------------
+
+def load_groups():
+    service_dir = settings.ServiceDir('service_private_groups')
+    groups_dir = os.path.join(service_dir, 'groups')
+    if not os.path.isdir(groups_dir):
+        bpio._dirs_make(groups_dir)
+    brokers_dir = os.path.join(service_dir, 'brokers')
+    if not os.path.isdir(brokers_dir):
+        bpio._dirs_make(brokers_dir)
+    for group_key_id in os.listdir(groups_dir):
+        if group_key_id not in known_groups():
+            known_groups()[group_key_id] = {
+                'last_sequence_id': -1,
+                'active': False,
+            }
+        group_path = os.path.join(groups_dir, group_key_id)
+        group_info = jsn.loads_text(local_fs.ReadTextFile(group_path))
+        if group_info:
+            known_groups()[group_key_id] = group_info
+    for customer_id in os.listdir(brokers_dir):
+        customer_path = os.path.join(brokers_dir, customer_id)
+        for broker_id in os.listdir(customer_path):
+            if customer_id not in known_brokers():
+                known_brokers()[customer_id] = [None, ] * REQUIRED_BROKERS_COUNT
+            if broker_id in known_brokers(customer_id).values():
+                lg.warn('broker %r already exist' % broker_id)
+                continue
+            broker_path = os.path.join(customer_path, broker_id)
+            broker_info = jsn.loads_text(local_fs.ReadTextFile(broker_path))
+            known_brokers()[customer_id][int(broker_info['position'])] = broker_id
+
+
+def save_group_info(group_key_id):
+    if group_key_id not in known_groups():
+        return False
+    group_info = known_groups()[group_key_id]
+    service_dir = settings.ServiceDir('service_private_groups')
+    groups_dir = os.path.join(service_dir, 'groups')
+    group_info_path = os.path.join(groups_dir, group_key_id)
+    if not os.path.isdir(groups_dir):
+        bpio._dirs_make(groups_dir)
+    ret = local_fs.WriteTextFile(group_info_path, jsn.dumps(group_info))
+    if _Debug:
+        lg.args(_DebugLevel, group_key_id=group_key_id, group_info_path=group_info_path, ret=ret)
+    return ret
+
+
+def erase_group_info(group_key_id):
+    if group_key_id not in known_groups():
+        return False
+    service_dir = settings.ServiceDir('service_private_groups')
+    groups_dir = os.path.join(service_dir, 'groups')
+    group_info_path = os.path.join(groups_dir, group_key_id)
+    if not os.path.isfile(group_info_path):
+        return False
+    os.remove(group_info_path)
+    if _Debug:
+        lg.args(_DebugLevel, group_key_id=group_key_id, group_info_path=group_info_path)
+    return True
+
+#------------------------------------------------------------------------------
+
+def get_last_sequence_id(group_key_id):
+    if not is_group_exist(group_key_id):
+        return -1
+    return known_groups()[group_key_id]['last_sequence_id']
+
+
+def set_last_sequence_id(group_key_id, last_sequence_id):
+    if not is_group_exist(group_key_id):
+        return False
+    known_groups()[group_key_id]['last_sequence_id'] = last_sequence_id
+    return True
+
+#------------------------------------------------------------------------------
+
+def set_broker(customer_id, broker_id, position=0):
+    service_dir = settings.ServiceDir('service_private_groups')
+    brokers_dir = os.path.join(service_dir, 'brokers')
+    customer_dir = os.path.join(brokers_dir, customer_id)
+    broker_path = os.path.join(customer_dir, broker_id)
+    if os.path.isfile(broker_path):
+        lg.warn('broker %r already exist for customer %r' % (broker_id, customer_id, ))
+        return False
+    if not os.path.isdir(customer_dir):
+        bpio._dirs_make(customer_dir)
+    broker_info = {
+        'position': position,
+    }
+    if not local_fs.WriteTextFile(broker_path, jsn.dumps(broker_info)):
+        lg.err('failed to set broker %r at position %d for customer %r' % (broker_id, position, customer_id, ))
+        return False
+    known_brokers(customer_id)[position] = broker_id
+    if _Debug:
+        lg.args(_DebugLevel, customer_id=customer_id, broker_id=broker_id, broker_info=broker_info)
+    return True
+
+
+def clear_brokers(customer_id):
+    service_dir = settings.ServiceDir('service_private_groups')
+    brokers_dir = os.path.join(service_dir, 'brokers')
+    customer_dir = os.path.join(brokers_dir, customer_id)
+    known_brokers(customer_id, erase_brokers=True)
+    if os.path.isdir(customer_dir):
+        bpio.rmdir_recursive(customer_dir, ignore_errors=True)
+
+#------------------------------------------------------------------------------
+
+def set_group_active(group_key_id, value):
+    if not is_group_exist(group_key_id):
+        return False
+    old_value = known_groups()[group_key_id]['active']
+    known_groups()[group_key_id]['active'] = value
+    if old_value != value:
+        lg.info('group %r "active" status changed: %r -> %r' % (group_key_id, old_value, value, ))
+    return True
+
+#------------------------------------------------------------------------------

@@ -54,11 +54,7 @@ from __future__ import absolute_import
 #------------------------------------------------------------------------------
 
 _Debug = True
-_DebugLevel = 6
-
-#------------------------------------------------------------------------------
-
-import os
+_DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
@@ -67,14 +63,9 @@ from logs import lg
 from automats import automat
 
 from lib import utime
-from lib import jsn
 from lib import packetid
 
-from main import settings
 from main import events
-
-from system import local_fs
-from system import bpio
 
 from crypt import my_keys
 
@@ -82,10 +73,11 @@ from dht import dht_relations
 
 from stream import message
 
-from p2p import commands
 from p2p import p2p_service
 from p2p import lookup
 from p2p import p2p_service_seeker
+
+from access import groups
 
 from userid import global_id
 from userid import id_url
@@ -93,168 +85,8 @@ from userid import my_id
 
 #------------------------------------------------------------------------------
 
-REQUIRED_BROKERS_COUNT = 3
-
-#------------------------------------------------------------------------------
-
 _ActiveGroupMembers = {}
 _ActiveGroupMembersByIDURL = {}
-_ActiveGroups = {}
-_KnownBrokers = {}
-
-#------------------------------------------------------------------------------
-
-def init():
-    if _Debug:
-        lg.out(_DebugLevel, 'group_member.init')
-    load_groups()
-
-
-def shutdown():
-    if _Debug:
-        lg.out(_DebugLevel, 'group_member.shutdown')
-
-#------------------------------------------------------------------------------
-
-def groups():
-    global _ActiveGroups
-    return _ActiveGroups
-
-
-def known_brokers(customer_id=None, erase_brokers=False):
-    global _KnownBrokers
-    if not customer_id:
-        return _KnownBrokers
-    if erase_brokers:
-        return _KnownBrokers.pop(customer_id, None)
-    if customer_id not in _KnownBrokers:
-        _KnownBrokers[customer_id] = [None, ] * REQUIRED_BROKERS_COUNT
-    return _KnownBrokers[customer_id]
-
-#------------------------------------------------------------------------------
-
-def load_groups():
-    service_dir = settings.ServiceDir('service_private_groups')
-    groups_dir = os.path.join(service_dir, 'groups')
-    if not os.path.isdir(groups_dir):
-        bpio._dirs_make(groups_dir)
-    brokers_dir = os.path.join(service_dir, 'brokers')
-    if not os.path.isdir(brokers_dir):
-        bpio._dirs_make(brokers_dir)
-    for group_key_id in os.listdir(groups_dir):
-        if group_key_id not in groups():
-            groups()[group_key_id] = {
-                'last_sequence_id': -1,
-                'active': False,
-            }
-        group_path = os.path.join(groups_dir, group_key_id)
-        group_info = jsn.loads_text(local_fs.ReadTextFile(group_path))
-        if group_info:
-            groups()[group_key_id] = group_info
-    for customer_id in os.listdir(brokers_dir):
-        customer_path = os.path.join(brokers_dir, customer_id)
-        for broker_id in os.listdir(customer_path):
-            if customer_id not in known_brokers():
-                known_brokers()[customer_id] = [None, ] * REQUIRED_BROKERS_COUNT
-            if broker_id in known_brokers(customer_id).values():
-                lg.warn('broker %r already exist' % broker_id)
-                continue
-            broker_path = os.path.join(customer_path, broker_id)
-            broker_info = jsn.loads_text(local_fs.ReadTextFile(broker_path))
-            known_brokers()[customer_id][int(broker_info['position'])] = broker_id
-
-
-def save_group(group_key_id):
-    if group_key_id not in groups():
-        return False
-    group_info = groups()[group_key_id]
-    service_dir = settings.ServiceDir('service_private_groups')
-    groups_dir = os.path.join(service_dir, 'groups')
-    group_info_path = os.path.join(groups_dir, group_key_id)
-    if not os.path.isdir(groups_dir):
-        bpio._dirs_make(groups_dir)
-    ret = local_fs.WriteTextFile(group_info_path, jsn.dumps(group_info))
-    if _Debug:
-        lg.args(_DebugLevel, group_key_id=group_key_id, group_info_path=group_info_path, ret=ret)
-    return ret
-
-
-def erase_group(group_key_id):
-    if group_key_id not in groups():
-        return False
-    service_dir = settings.ServiceDir('service_private_groups')
-    groups_dir = os.path.join(service_dir, 'groups')
-    group_info_path = os.path.join(groups_dir, group_key_id)
-    if not os.path.isfile(group_info_path):
-        return False
-    os.remove(group_info_path)
-    if _Debug:
-        lg.args(_DebugLevel, group_key_id=group_key_id, group_info_path=group_info_path)
-    return True
-
-#------------------------------------------------------------------------------
-
-def is_group_exist(group_key_id):
-    return group_key_id in groups()
-
-
-def create_group(group_key_id):
-    if is_group_exist(group_key_id):
-        return False
-    service_dir = settings.ServiceDir('service_private_groups')
-    groups_dir = os.path.join(service_dir, 'groups')
-    if not os.path.isdir(groups_dir):
-        bpio._dirs_make(groups_dir)
-    groups()[group_key_id] = {
-        'last_sequence_id': -1,
-        'active': False,
-    }
-    return True
-
-
-def get_last_sequence_id(group_key_id):
-    if not is_group_exist(group_key_id):
-        return -1
-    return groups()[group_key_id]['last_sequence_id']
-
-
-def set_last_sequence_id(group_key_id, last_sequence_id):
-    if not is_group_exist(group_key_id):
-        return False
-    groups()[group_key_id]['last_sequence_id'] = last_sequence_id
-    return True
-
-#------------------------------------------------------------------------------
-
-def set_broker(customer_id, broker_id, position=0):
-    service_dir = settings.ServiceDir('service_private_groups')
-    brokers_dir = os.path.join(service_dir, 'brokers')
-    customer_dir = os.path.join(brokers_dir, customer_id)
-    broker_path = os.path.join(customer_dir, broker_id)
-    if os.path.isfile(broker_path):
-        lg.warn('broker %r already exist for customer %r' % (broker_id, customer_id, ))
-        return False
-    if not os.path.isdir(customer_dir):
-        bpio._dirs_make(customer_dir)
-    broker_info = {
-        'position': position,
-    }
-    if not local_fs.WriteTextFile(broker_path, jsn.dumps(broker_info)):
-        lg.err('failed to set broker %r at position %d for customer %r' % (broker_id, position, customer_id, ))
-        return False
-    known_brokers(customer_id)[position] = broker_id
-    if _Debug:
-        lg.args(_DebugLevel, customer_id=customer_id, broker_id=broker_id, broker_info=broker_info)
-    return True
-
-
-def clear_brokers(customer_id):
-    service_dir = settings.ServiceDir('service_private_groups')
-    brokers_dir = os.path.join(service_dir, 'brokers')
-    customer_dir = os.path.join(brokers_dir, customer_id)
-    known_brokers(customer_id, erase_brokers=True)
-    if os.path.isdir(customer_dir):
-        bpio.rmdir_recursive(customer_dir, ignore_errors=True)
 
 #------------------------------------------------------------------------------
 
@@ -271,8 +103,6 @@ def register_group_member(A):
     if id_url.is_not_in(A.group_creator_idurl, _ActiveGroupMembersByIDURL):
         _ActiveGroupMembersByIDURL[A.group_creator_idurl] = []
     _ActiveGroupMembersByIDURL[A.group_creator_idurl].append(A)
-    if not is_group_exist(A.group_key_id):
-        create_group(A.group_key_id)
 
 
 def unregister_group_member(A):
@@ -324,17 +154,6 @@ def find_active_group_members(group_creator_idurl):
 
 #------------------------------------------------------------------------------
 
-def set_active(group_key_id, value):
-    if not is_group_exist(group_key_id):
-        return False
-    old_value = groups()[group_key_id]['active']
-    groups()[group_key_id]['active'] = value
-    if old_value != value:
-        lg.info('group %r "active" status changed: %r -> %r' % (group_key_id, old_value, value, ))
-    return True
-
-#------------------------------------------------------------------------------
-
 class GroupMember(automat.Automat):
     """
     This class implements all the functionality of ``group_member()`` state machine.
@@ -358,7 +177,7 @@ class GroupMember(automat.Automat):
         self.connected_brokers = {}
         self.missing_brokers = set()
         self.latest_dht_brokers = None
-        self.last_sequence_id = get_last_sequence_id(self.group_key_id)
+        self.last_sequence_id = groups.get_last_sequence_id(self.group_key_id)
         super(GroupMember, self).__init__(
             name="group_member_%s$%s" % (self.group_queue_alias[:10], self.group_creator_id),
             state="AT_STARTUP",
@@ -529,8 +348,8 @@ class GroupMember(automat.Automat):
         """
         Action method.
         """
-        set_active(self.group_key_id, True)
-        save_group(self.group_key_id)
+        groups.set_group_active(self.group_key_id, True)
+        groups.save_group_info(self.group_key_id)
 
     def doDHTReadBrokers(self, *args, **kwargs):
         """
@@ -568,7 +387,7 @@ class GroupMember(automat.Automat):
                 if not broker_idurl:
                     continue
                 broker_id = global_id.idurl2glob(broker_idurl)
-                set_broker(self.group_creator_id, broker_id, position)
+                groups.set_broker(self.group_creator_id, broker_id, position)
                 if position == 0:
                     self.active_broker_id = broker_id
                     self.active_queue_id = global_id.MakeGlobalQueueID(
@@ -581,7 +400,7 @@ class GroupMember(automat.Automat):
                 if not broker_info['broker_idurl']:
                     continue
                 broker_id = global_id.idurl2glob(broker_info['broker_idurl'])
-                set_broker(self.group_creator_id, broker_id, broker_info['position'])
+                groups.set_broker(self.group_creator_id, broker_id, broker_info['position'])
                 if broker_info['position'] == 0:
                     self.active_broker_id = broker_id
                     self.active_queue_id = global_id.MakeGlobalQueueID(
@@ -594,7 +413,7 @@ class GroupMember(automat.Automat):
                 if not broker_idurl:
                     continue
                 broker_id = global_id.idurl2glob(broker_idurl)
-                set_broker(self.group_creator_id, broker_id, position)
+                groups.set_broker(self.group_creator_id, broker_id, position)
                 if position == 0:
                     self.active_broker_id = broker_id
                     self.active_queue_id = global_id.MakeGlobalQueueID(
@@ -613,7 +432,7 @@ class GroupMember(automat.Automat):
         """
         Action method.
         """
-        clear_brokers(self.group_creator_id)
+        groups.clear_brokers(self.group_creator_id)
 
     def doReadQueue(self, *args, **kwargs):
         """
@@ -684,22 +503,22 @@ class GroupMember(automat.Automat):
         Action method.
         """
         if event == 'leave':
-            set_active(self.group_key_id, False)
-            save_group(self.group_key_id)
+            groups.set_group_active(self.group_key_id, False)
+            groups.save_group_info(self.group_key_id)
             if kwargs.get('erase_key', False):
                 if my_keys.is_key_registered(self.group_key_id):
                     my_keys.erase_key(self.group_key_id)
                 else:
                     lg.warn('key %r not registered, can not be erased' % self.group_key_id)
         else:
-            save_group(self.group_key_id)
+            groups.save_group_info(self.group_key_id)
 
     def doCancelService(self, event, *args, **kwargs):
         """
         Action method.
         """
         if event == 'leave':
-            for position, broker_idurl in self.connected_brokers.items():
+            for broker_idurl in self.connected_brokers.values():
                 if not broker_idurl:
                     continue
                 p2p_service.SendCancelService(
@@ -769,7 +588,7 @@ class GroupMember(automat.Automat):
         self.connected_brokers = {}
         self.missing_brokers = set()
         top_broker_pos = None
-        for broker_pos in range(REQUIRED_BROKERS_COUNT):
+        for broker_pos in range(groups.REQUIRED_BROKERS_COUNT):
             broker_at_position = None
             for existing_broker in existing_brokers:
                 if existing_broker['position'] == broker_pos:
@@ -805,7 +624,7 @@ class GroupMember(automat.Automat):
         self.automat('brokers-hired')
 
     def _do_lookup_one_broker(self, broker_pos):
-        connected_brokers_idurls = list(map(global_id.glob2idurl, filter(None, known_brokers(self.group_creator_id))))
+        connected_brokers_idurls = list(map(global_id.glob2idurl, filter(None, groups.known_brokers(self.group_creator_id))))
         result = p2p_service_seeker.connect_random_node(
             lookup_method=lookup.random_message_broker,
             service_name='service_message_broker',
@@ -823,7 +642,7 @@ class GroupMember(automat.Automat):
         self.missing_brokers = set()
         top_broker_pos = None
         top_broker_idurl = None
-        for broker_pos in range(REQUIRED_BROKERS_COUNT):
+        for broker_pos in range(groups.REQUIRED_BROKERS_COUNT):
             broker_at_position = None
             for existing_broker in existing_brokers:
                 if existing_broker['position'] == broker_pos:
@@ -975,8 +794,8 @@ class GroupMember(automat.Automat):
                 lg.warn('found queue latest sequence %d is ahead of my current position %d, need to read messages from archive' % (
                     latest_known_sequence_id, self.last_sequence_id, ))
                 self.last_sequence_id = latest_known_sequence_id
-                set_last_sequence_id(self.group_key_id, latest_known_sequence_id)
-                save_group(self.group_key_id)
+                groups.set_last_sequence_id(self.group_key_id, latest_known_sequence_id)
+                groups.save_group_info(self.group_key_id)
             if _Debug:
                 lg.dbg(_DebugLevel, 'no new messages, queue in sync')
             self.automat('queue-in-sync')
@@ -995,8 +814,8 @@ class GroupMember(automat.Automat):
         if newly_processed != len(received_group_messages):
             raise Exception('message sequence is broken by message broker %s, some messages were not consumed' % self.active_broker_id)
         if newly_processed and latest_known_sequence_id == self.last_sequence_id:
-            set_last_sequence_id(self.group_key_id, self.last_sequence_id)
-            save_group(self.group_key_id)
+            groups.set_last_sequence_id(self.group_key_id, self.last_sequence_id)
+            groups.save_group_info(self.group_key_id)
             if _Debug:
                 lg.dbg(_DebugLevel, 'processed all messages, queue in sync, last_sequence_id=%d' % self.last_sequence_id)
             self.automat('queue-in-sync')

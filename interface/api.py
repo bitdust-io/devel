@@ -2044,6 +2044,25 @@ def group_info(group_key_id):
     """
     if not driver.is_on('service_private_groups'):
         return ERROR('service_private_groups() is not started')
+    from access import groups
+    from access import group_member
+    from crypt import my_keys
+    group_key_id = strng.to_text(group_key_id)
+    if not group_key_id.startswith('group_'):
+        return ERROR('invalid group id')
+    this_group_member = group_member.get_active_group_member(group_key_id)
+    if not this_group_member:
+        offline_group_info = groups.known_groups().get(group_key_id)
+        if not offline_group_info:
+            return ERROR('group not found')
+        offline_group_info.update({
+            'group_key_id': group_key_id,
+            'state': 'INACTIVE',
+            'alias': my_keys.split_key_id(group_key_id)[0],
+            'label': my_keys.get_label(group_key_id),
+        }) 
+        return OK(extra_fields=offline_group_info)
+    return OK(extra_fields=this_group_member.to_json())
 
 
 def group_create(creator_id=None, key_size=2048, label=''):
@@ -2056,11 +2075,11 @@ def group_create(creator_id=None, key_size=2048, label=''):
     from userid import my_id
     if not creator_id:
         creator_id = my_id.getGlobalID()
-    group_key_id = groups.create_group_key(creator_id=creator_id, label=label, key_size=key_size)
+    group_key_id = groups.create_new_group(creator_id=creator_id, label=label, key_size=key_size)
     key_info = my_keys.get_key_info(group_key_id, include_private=False)
     key_info.pop('include_private', None)
     key_info['group_key_id'] = key_info.pop('key_id')
-    return OK(key_info, message='new group "%s" was created successfully' % group_key_id)
+    return OK(message='new group "%s" was created successfully' % group_key_id, extra_fields=key_info)
 
 
 def group_join(group_key_id):
@@ -3169,11 +3188,41 @@ def streams_list(wanted_protos=None):
 def queue_list():
     """
     """
+    if not driver.is_on('service_p2p_notifications'):
+        return ERROR('service_p2p_notifications() is not started')
     from stream import p2p_queue
     return RESULT([{
         'queue_id': queue_id,
         'messages': len(p2p_queue.queue(queue_id)),
     } for queue_id in p2p_queue.queue().keys()])
+
+
+def queue_consumer_list():
+    """
+    """
+    if not driver.is_on('service_p2p_notifications'):
+        return ERROR('service_p2p_notifications() is not started')
+    from stream import p2p_queue
+    return RESULT([{
+        'consumer_id': consumer_info.consumer_id,
+        'queues': consumer_info.queues,
+        'state': consumer_info.state,
+        'consumed': consumer_info.consumed_messages,
+    } for consumer_info in p2p_queue.consumer().values()]) 
+
+
+def queue_producer_list():
+    """
+    """
+    if not driver.is_on('service_p2p_notifications'):
+        return ERROR('service_p2p_notifications() is not started')
+    from stream import p2p_queue
+    return RESULT([{
+        'producer_id': producer_info.producer_id,
+        'queues': producer_info.queues,
+        'state': producer_info.state,
+        'produced': producer_info.produced_messages,
+    } for producer_info in p2p_queue.producer().values()]) 
 
 #------------------------------------------------------------------------------
 

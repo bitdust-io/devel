@@ -178,18 +178,18 @@ def share_open_v1(customer: str, key_id):
     return response.json()
 
 
-def group_create_v1(customer: str, key_size=1024):
-    response = request_post(customer, 'group/create/v1', json={'key_size': key_size, }, timeout=20)
+def group_create_v1(customer: str, key_size=1024, label=''):
+    response = request_post(customer, 'group/create/v1', json={'key_size': key_size, 'label': label, }, timeout=20)
     assert response.status_code == 200
     print('\ngroup/create/v1 [%s] : %s\n' % (customer, pprint.pformat(response.json())))
     assert response.json()['status'] == 'OK', response.json()
-    return response.json()['result'][0]['group_key_id']
+    return response.json()['group_key_id']
 
 
-def group_leave_v1(customer: str, group_key_id):
-    response = request_delete(customer, 'group/leave/v1', json={'group_key_id': group_key_id, }, timeout=20)
+def group_info_v1(customer: str, group_key_id):
+    response = request_get(customer, 'group/info/v1?group_key_id=%s' % group_key_id, timeout=20)
     assert response.status_code == 200
-    print('\ngroup/leave/v1 [%s] group_key_id=%r : %s\n' % (customer, group_key_id, pprint.pformat(response.json())))
+    print('\ngroup/info/v1 [%s] : %s\n' % (customer, pprint.pformat(response.json())))
     assert response.json()['status'] == 'OK', response.json()
     return response.json()
 
@@ -198,6 +198,14 @@ def group_join_v1(customer: str, group_key_id):
     response = request_post(customer, 'group/join/v1', json={'group_key_id': group_key_id, }, timeout=20)
     assert response.status_code == 200
     print('\ngroup/join/v1 [%s] group_key_id=%r : %s\n' % (customer, group_key_id, pprint.pformat(response.json())))
+    assert response.json()['status'] == 'OK', response.json()
+    return response.json()
+
+
+def group_leave_v1(customer: str, group_key_id):
+    response = request_delete(customer, 'group/leave/v1', json={'group_key_id': group_key_id, }, timeout=20)
+    assert response.status_code == 200
+    print('\ngroup/leave/v1 [%s] group_key_id=%r : %s\n' % (customer, group_key_id, pprint.pformat(response.json())))
     assert response.json()['status'] == 'OK', response.json()
     return response.json()
 
@@ -633,3 +641,33 @@ def friend_list_v1(node, extract_idurls=False):
     if not extract_idurls:
         return response.json()
     return [f['idurl'] for f in response.json()['result']]
+
+
+def queue_list_v1(node, extract_ids=False):
+    response = request_get(node, 'queue/list/v1', timeout=20)
+    assert response.status_code == 200
+    print('\nqueue/list/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
+    assert response.json()['status'] == 'OK', response.json()
+    if not extract_ids:
+        return response.json()
+    return [f['queue_id'] for f in response.json()['result']]
+
+
+def queue_consumer_list_v1(node, extract_ids=False):
+    response = request_get(node, 'queue/consumer/list/v1', timeout=20)
+    assert response.status_code == 200
+    print('\nqueue/consumer/list/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
+    assert response.json()['status'] == 'OK', response.json()
+    if not extract_ids:
+        return response.json()
+    return [f['consumer_id'] for f in response.json()['result']]
+
+
+def queue_producer_list_v1(node, extract_ids=False):
+    response = request_get(node, 'queue/producer/list/v1', timeout=20)
+    assert response.status_code == 200
+    print('\nqueue/producer/list/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
+    assert response.json()['status'] == 'OK', response.json()
+    if not extract_ids:
+        return response.json()
+    return [f['producer_id'] for f in response.json()['result']]

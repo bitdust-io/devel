@@ -51,9 +51,33 @@ def test_customers_1_2_3_communicate_via_message_broker():
     kw.packet_list_v1('customer-3', wait_all_finish=True)
     kw.transfer_list_v1('customer-3', wait_all_finish=True)
 
-    group_key_id = kw.group_create_v1('customer-1')
+    assert kw.queue_list_v1('broker-1', extract_ids=True) == []
+    assert kw.queue_list_v1('broker-2', extract_ids=True) == []
+    assert kw.queue_consumer_list_v1('broker-1', extract_ids=True) == []
+    assert kw.queue_consumer_list_v1('broker-2', extract_ids=True) == []
+    assert kw.queue_producer_list_v1('broker-1', extract_ids=True) == []
+    assert kw.queue_producer_list_v1('broker-2', extract_ids=True) == []
+
+    group_key_id = kw.group_create_v1('customer-1', label='TestGroup123')
+    
+    group_info_inactive = kw.group_info_v1('customer-1', group_key_id)
+    assert group_info_inactive['state'] == 'INACTIVE'
+    assert group_info_inactive['label'] == 'TestGroup123'
+    assert group_info_inactive['last_sequence_id'] == -1
 
     kw.group_join_v1('customer-1', group_key_id)
+
+    group_info_active = kw.group_info_v1('customer-1', group_key_id)
+    assert group_info_active['state'] == 'IN_SYNC!'
+    assert len(group_info_active['connected_brokers']) == 1
+
+    active_queue_id = group_info_active['active_queue_id']
+    active_broker_id = group_info_active['active_broker_id']
+    active_broker_name = active_broker_id.split('@')[0]
+
+    assert active_queue_id in kw.queue_list_v1(active_broker_name, extract_ids=True)
+    assert 'customer-1@id-a_8084' in kw.queue_consumer_list_v1(active_broker_name, extract_ids=True)
+    assert 'customer-1@id-a_8084' in kw.queue_producer_list_v1(active_broker_name, extract_ids=True)
 
     kw.group_share_v1('customer-1', group_key_id, 'customer-2@id-b_8084')
 
