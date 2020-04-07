@@ -576,6 +576,8 @@ def add_consumer(queue_id, consumer_id, consumer_info=None):
             'last_sequence_id': -1,
         }
     streams()[queue_id]['consumers'][consumer_id] = consumer_info
+    if _Debug:
+        lg.args(_DebugLevel, queue_id=queue_id, consumer_id=consumer_id)
     save_consumer(queue_id, consumer_id)
     return True
 
@@ -585,10 +587,9 @@ def remove_consumer(queue_id, consumer_id):
         return False
     if consumer_id not in streams()[queue_id]['consumers']:
         return False
-    if streams()[queue_id]['consumers'][consumer_id]['active']:
-        if p2p_queue.is_consumer_subscribed(consumer_id, queue_id):
-            p2p_queue.unsubscribe_consumer(consumer_id, queue_id)
     streams()[queue_id]['consumers'].pop(consumer_id)
+    if _Debug:
+        lg.args(_DebugLevel, queue_id=queue_id, consumer_id=consumer_id)
     erase_consumer(queue_id, consumer_id)
     return True
 
@@ -642,6 +643,8 @@ def add_producer(queue_id, producer_id, producer_info=None):
             'last_sequence_id': -1,
         }
     streams()[queue_id]['producers'][producer_id] = producer_info
+    if _Debug:
+        lg.args(_DebugLevel, queue_id=queue_id, producer_id=producer_id)
     save_producer(queue_id, producer_id)
     return True
 
@@ -651,10 +654,9 @@ def remove_producer(queue_id, producer_id):
         return False
     if producer_id not in streams()[queue_id]['producers']:
         return False
-    if streams()[queue_id]['producers'][producer_id]['active']:
-        if p2p_queue.is_producer_connected(producer_id, queue_id):
-            p2p_queue.disconnect_producer(producer_id, queue_id)
     streams()[queue_id]['producers'].pop(producer_id)
+    if _Debug:
+        lg.args(_DebugLevel, queue_id=queue_id, producer_id=producer_id)
     erase_producer(queue_id, producer_id)
     return True
 
@@ -697,6 +699,109 @@ def erase_producer(queue_id, producer_id):
 
 #------------------------------------------------------------------------------
 
+def is_consumer_active(queue_id, consumer_id):
+    if queue_id not in streams():
+        return False
+    if consumer_id not in streams()[queue_id]['consumers']:
+        return False
+    return streams()[queue_id]['consumers'][consumer_id]['active']
+
+
+def start_consumer(queue_id, consumer_id):
+    if queue_id not in streams():
+        return False
+    if consumer_id not in streams()[queue_id]['consumers']:
+        return False
+    if not p2p_queue.is_consumer_exists(consumer_id):
+        p2p_queue.add_consumer(consumer_id)
+    if not p2p_queue.is_callback_method_registered(consumer_id, on_consumer_notify):
+        p2p_queue.add_callback_method(consumer_id, on_consumer_notify)
+    if not p2p_queue.is_consumer_subscribed(consumer_id, queue_id):
+        p2p_queue.subscribe_consumer(consumer_id, queue_id)
+    streams()[queue_id]['consumers'][consumer_id]['active'] = True
+    return True
+
+
+def stop_consumer(queue_id, consumer_id):
+    if queue_id not in streams():
+        return False
+    if consumer_id not in streams()[queue_id]['consumers']:
+        return False
+    if p2p_queue.is_callback_method_registered(consumer_id, on_consumer_notify):
+        p2p_queue.remove_callback_method(consumer_id, on_consumer_notify)
+    if p2p_queue.is_consumer_subscribed(consumer_id, queue_id):
+        p2p_queue.unsubscribe_consumer(consumer_id, queue_id, remove_empty=True)
+    streams()[queue_id]['consumers'][consumer_id]['active'] = False
+    return True
+
+#------------------------------------------------------------------------------
+
+def is_producer_active(queue_id, producer_id):
+    if queue_id not in streams():
+        return False
+    if producer_id not in streams()[queue_id]['producers']:
+        return False
+    return streams()[queue_id]['producers'][producer_id]['active']
+
+
+def start_producer(queue_id, producer_id):
+    if queue_id not in streams():
+        return False
+    if producer_id not in streams()[queue_id]['producers']:
+        return False
+    if not p2p_queue.is_producer_exist(producer_id):
+        p2p_queue.add_producer(producer_id)
+    if not p2p_queue.is_producer_connected(producer_id, queue_id):
+        p2p_queue.connect_producer(producer_id, queue_id)
+    streams()[queue_id]['producers'][producer_id]['active'] = True
+    return True
+
+
+def stop_producer(queue_id, producer_id):
+    if queue_id not in streams():
+        return False
+    if producer_id not in streams()[queue_id]['producers']:
+        return False
+    if p2p_queue.is_producer_connected(producer_id, queue_id):
+        p2p_queue.disconnect_producer(producer_id, queue_id, remove_empty=True)
+    streams()[queue_id]['producers'][producer_id]['active'] = False
+    return True
+
+#------------------------------------------------------------------------------
+
+def is_stream_active(queue_id):
+    if queue_id not in streams():
+        return False
+    return streams()[queue_id]['active']
+
+
+def start_stream(queue_id):
+    if _Debug:
+        lg.args(_DebugLevel, queue_id=queue_id)
+    if not p2p_queue.is_queue_exist(queue_id):
+        p2p_queue.open_queue(queue_id)
+    for consumer_id in list(streams()[queue_id]['consumers'].keys()):
+        start_consumer(queue_id, consumer_id)
+    for producer_id in list(streams()[queue_id]['producers'].keys()):
+        start_producer(queue_id, producer_id)
+    streams()[queue_id]['active'] = True
+    p2p_queue.touch_queues()
+    return True
+
+
+def stop_stream(queue_id):
+    if _Debug:
+        lg.args(_DebugLevel, queue_id=queue_id)
+    for producer_id in list(streams()[queue_id]['producers'].keys()):
+        stop_producer(queue_id, producer_id)
+    for consumer_id in list(streams()[queue_id]['consumers'].keys()):
+        stop_consumer(queue_id, consumer_id)
+    p2p_queue.close_queue(queue_id)
+    streams()[queue_id]['active'] = False
+    p2p_queue.touch_queues()
+    return True
+
+
 def start_all_streams():
     for queue_id, one_stream in streams().items():
         if not one_stream['active']:
@@ -707,47 +812,6 @@ def stop_all_streams():
     for queue_id, one_stream in streams().items():
         if one_stream['active']:
             stop_stream(queue_id)
-
-
-def start_stream(queue_id):
-    if not p2p_queue.is_queue_exist(queue_id):
-        p2p_queue.open_queue(queue_id)
-    for consumer_id in list(streams()[queue_id]['consumers'].keys()):
-        if not p2p_queue.is_consumer_exists(consumer_id):
-            p2p_queue.add_consumer(consumer_id)
-        if not p2p_queue.is_callback_method_registered(consumer_id, on_consumer_notify):
-            p2p_queue.add_callback_method(consumer_id, on_consumer_notify)
-        if not p2p_queue.is_consumer_subscribed(consumer_id, queue_id):
-            p2p_queue.subscribe_consumer(consumer_id, queue_id)
-        streams()[queue_id]['consumers'][consumer_id]['active'] = True
-    for producer_id in list(streams()[queue_id]['producers'].keys()):
-        if not p2p_queue.is_producer_exist(producer_id):
-            p2p_queue.add_producer(producer_id)
-        if not p2p_queue.is_producer_connected(producer_id, queue_id):
-            p2p_queue.connect_producer(producer_id, queue_id)
-        streams()[queue_id]['producers'][producer_id]['active'] = True
-    streams()[queue_id]['active'] = True
-    p2p_queue.touch_queues()
-    return True
-
-
-def stop_stream(queue_id):
-    for producer_id in list(streams()[queue_id]['producers'].keys()):
-        if p2p_queue.is_producer_connected(producer_id, queue_id):
-            p2p_queue.disconnect_producer(producer_id, queue_id)
-        p2p_queue.remove_producer(producer_id)
-        streams()[queue_id]['producers'][producer_id]['active'] = False
-    for consumer_id in list(streams()[queue_id]['consumers'].keys()):
-        if p2p_queue.is_consumer_subscribed(consumer_id, queue_id):
-            p2p_queue.unsubscribe_consumer(consumer_id, queue_id)
-        if p2p_queue.is_callback_method_registered(consumer_id, on_consumer_notify):
-            p2p_queue.remove_callback_method(consumer_id, on_consumer_notify)
-        p2p_queue.remove_consumer(consumer_id)
-        streams()[queue_id]['consumers'][consumer_id]['active'] = False
-    p2p_queue.close_queue(queue_id)
-    streams()[queue_id]['active'] = False
-    p2p_queue.touch_queues()
-    return True
 
 #------------------------------------------------------------------------------
 
@@ -880,6 +944,8 @@ class MessagePeddler(automat.Automat):
         group_key_info = kwargs['group_key']
         result_defer = kwargs['result_defer']
         request_packet = kwargs['request_packet']
+        if _Debug:
+            lg.args(_DebugLevel, request_packet=request_packet)
         if not my_keys.verify_key_info_signature(group_key_info):
             p2p_service.SendFail(request_packet, 'group key verification failed')
             result_defer.callback(False)
@@ -913,6 +979,8 @@ class MessagePeddler(automat.Automat):
         queue_id = kwargs['queue_id']
         consumer_id = kwargs['consumer_id']
         producer_id = kwargs['producer_id']
+        if _Debug:
+            lg.args(_DebugLevel, queue_id=request_packet, consumer_id=consumer_id, producer_id=producer_id, position=kwargs.get('position', -1))
         queue_keeper_result = Deferred()
         queue_keeper_result.addCallback(
             self._on_queue_keeper_connect_result,
@@ -941,6 +1009,8 @@ class MessagePeddler(automat.Automat):
         producer_id = kwargs['producer_id']
         request_packet = kwargs['request_packet']
         result_defer = kwargs['result_defer']
+        if _Debug:
+            lg.args(_DebugLevel, queue_id=queue_id, consumer_id=consumer_id, producer_id=producer_id, request_packet=request_packet)
         if queue_id not in streams():
             p2p_service.SendFail(request_packet, 'queue %r not registered' % queue_id)
             result_defer.callback(True)
@@ -962,14 +1032,22 @@ class MessagePeddler(automat.Automat):
             result_defer.callback(False)
             return
         if consumer_id:
+            if not stop_consumer(queue_id, consumer_id):
+                p2p_service.SendFail(request_packet, 'failed to stop consumer %r for queue %r' % (consumer_id, queue_id))
+                result_defer.callback(False)
+                return
             if not remove_consumer(queue_id, consumer_id):
                 p2p_service.SendFail(request_packet, 'consumer %r is not registered for queue %r' % (consumer_id, queue_id))
-                result_defer.callback(True)
+                result_defer.callback(False)
                 return
         if producer_id:
+            if not stop_producer(queue_id, producer_id):
+                p2p_service.SendFail(request_packet, 'failed to stop producer %r for queue %r' % (producer_id, queue_id))
+                result_defer.callback(False)
+                return
             if not remove_producer(queue_id, producer_id):
                 p2p_service.SendFail(request_packet, 'producer %r is not registered for queue %r' % (producer_id, queue_id))
-                result_defer.callback(True)
+                result_defer.callback(False)
                 return
         if not streams()[queue_id]['consumers'] and not streams()[queue_id]['producers']:
             lg.info('no consumers and no producers left, closing queue %r' % queue_id)
@@ -1020,10 +1098,14 @@ class MessagePeddler(automat.Automat):
             if streams()[queue_id]['active']:
                 for consumer_id in streams()[queue_id]['consumers']:
                     if consumer_id:
+                        if not stop_consumer(queue_id, consumer_id):
+                            lg.warn('failed to stop consumer %r in for queue %r' % (consumer_id, queue_id, ))
                         if not remove_consumer(queue_id, consumer_id):
                             lg.warn('consumer %r is not registered for queue %r' % (consumer_id, queue_id, ))
                 for producer_id in streams()[queue_id]['producers']:
                     if producer_id:
+                        if not stop_producer(queue_id, producer_id):
+                            lg.warn('failed to stop producer %r in for queue %r' % (producer_id, queue_id, ))
                         if not remove_producer(queue_id, producer_id):
                             lg.warn('producer %r is not registered for queue %r' % (producer_id, queue_id, ))
             stop_stream(queue_id)
@@ -1046,11 +1128,14 @@ class MessagePeddler(automat.Automat):
             return None
         if queue_id not in streams():
             open_stream(queue_id)
+        if not is_stream_active(queue_id):
+            start_stream(queue_id)
         if consumer_id:
             add_consumer(queue_id, consumer_id)
+            start_consumer(queue_id, consumer_id)
         if producer_id:
             add_producer(queue_id, producer_id)
-        start_stream(queue_id)
+            start_producer(queue_id, producer_id)
         p2p_service.SendAck(request_packet, 'accepted')
         result_defer.callback(True)
         return None
@@ -1075,29 +1160,18 @@ class MessagePeddler(automat.Automat):
                 if producer_idurl == old_idurl:
                     rotated_producers.append((cur_producer_id, new_id, ))
             for old_consumer_id, new_consumer_id in rotated_consumers:
-                if p2p_queue.is_consumer_subscribed(old_consumer_id, queue_id):
-                    p2p_queue.unsubscribe_consumer(old_consumer_id, queue_id)
-                if p2p_queue.is_callback_method_registered(old_consumer_id, on_consumer_notify):
-                    p2p_queue.remove_callback_method(old_consumer_id, on_consumer_notify)
-                if p2p_queue.is_consumer_exists(old_consumer_id):
-                    p2p_queue.remove_consumer(old_consumer_id)
                 old_consumer_info = streams()[queue_id]['consumers'][old_consumer_id]
+                if old_consumer_info['active']:
+                    stop_consumer(queue_id, old_consumer_id)
                 remove_consumer(queue_id, old_consumer_id)
                 add_consumer(queue_id, new_consumer_id, consumer_info=old_consumer_info)
-                if not p2p_queue.is_consumer_exists(new_consumer_id):
-                    p2p_queue.add_consumer(new_consumer_id)
-                if not p2p_queue.is_callback_method_registered(new_consumer_id, on_consumer_notify):
-                    p2p_queue.add_callback_method(new_consumer_id, on_consumer_notify)
-                if not p2p_queue.is_consumer_subscribed(new_consumer_id, queue_id):
-                    p2p_queue.subscribe_consumer(new_consumer_id, queue_id)
+                if old_consumer_info['active']:
+                    start_consumer(queue_id, new_consumer_id)
             for old_producer_id, new_producer_id in rotated_producers:
-                if p2p_queue.is_producer_connected(old_producer_id, queue_id):
-                    p2p_queue.disconnect_producer(old_producer_id , queue_id)
-                p2p_queue.remove_producer(old_producer_id)
                 old_producer_info = streams()[queue_id]['producers'][old_producer_id]
+                if old_producer_info['active']:
+                    stop_producer(queue_id, old_producer_id)
                 remove_producer(queue_id, old_producer_id)
                 add_producer(queue_id, new_producer_id, producer_info=old_producer_info)
-                if not p2p_queue.is_producer_exist(new_producer_id):
-                    p2p_queue.add_producer(new_producer_id)
-                if not p2p_queue.is_producer_connected(new_producer_id, queue_id):
-                    p2p_queue.connect_producer(new_producer_id, queue_id)
+                if old_producer_info['active']:
+                    start_producer(queue_id, new_producer_id)

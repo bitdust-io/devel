@@ -75,11 +75,8 @@ class MessageBrokerService(LocalService):
     def request(self, json_payload, newpacket, info):
         from twisted.internet.defer import Deferred
         from logs import lg
-        # from userid import global_id
         from p2p import p2p_service
         from stream import message_peddler
-        # customer_idurl = newpacket.OwnerID
-        # customer_id = global_id.UrlToGlobalID(customer_idurl)
         try:
             action = json_payload['action']
             queue_id = json_payload['queue_id']
@@ -103,7 +100,28 @@ class MessageBrokerService(LocalService):
                 request_packet=newpacket,
                 result_defer=result,
             )
-        elif action == 'queue-disconnect':
+        else:
+            lg.warn("wrong action request" % newpacket.Payload)
+            return p2p_service.SendFail(newpacket, 'wrong action request')
+        return result
+
+    def cancel(self, json_payload, newpacket, info):
+        from twisted.internet.defer import Deferred
+        from logs import lg
+        from p2p import p2p_service
+        from stream import message_peddler
+        try:
+            action = json_payload['action']
+            queue_id = json_payload['queue_id']
+            consumer_id = json_payload['consumer_id']
+            producer_id = json_payload['producer_id']
+            group_key = json_payload['group_key']
+        except:
+            lg.warn("wrong payload: %r" % json_payload)
+            return p2p_service.SendFail(newpacket, 'wrong payload')
+        # TODO: validate signature and the key
+        result = Deferred()
+        if action == 'queue-disconnect':
             message_peddler.A(
                 'queue-disconnect',
                 group_key=group_key,

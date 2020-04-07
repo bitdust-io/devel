@@ -402,14 +402,14 @@ def ParseGlobalQueueID(inp):
 
 def GetGlobalQueueOwnerIDURL(inp, as_field=True):
     queue_alias_owner_id, _, _ = inp.rpartition('&')
-    _, owner_id = queue_alias_owner_id.partition('&')
+    _, _, owner_id = queue_alias_owner_id.partition('&')
     owner_idurl = glob2idurl(owner_id, as_field=as_field)
     return owner_idurl
 
 
 def GetGlobalQueueKeyID(inp):
     queue_alias_owner_id, _, _ = inp.rpartition('&')
-    queue_alias, owner_id = queue_alias_owner_id.partition('&')
+    queue_alias, _, owner_id = queue_alias_owner_id.partition('&')
     key_id = _FORMAT_GLOBAL_ID_KEY_USER.format(
         key_alias=queue_alias,
         user=owner_id,

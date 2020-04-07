@@ -347,7 +347,7 @@ def subscribe_consumer(consumer_id, queue_id):
     return True
 
 
-def unsubscribe_consumer(consumer_id, queue_id=None):
+def unsubscribe_consumer(consumer_id, queue_id=None, remove_empty=False):
     if not valid_queue_id(queue_id):
         raise Exception('invalid queue id')
     if consumer_id not in consumer():
@@ -355,11 +355,16 @@ def unsubscribe_consumer(consumer_id, queue_id=None):
     if queue_id is None:
         consumer(consumer_id).queues = []
         lg.info('consumer %s unsubscribed from all queues' % (consumer_id, ))
+        if remove_empty:
+            remove_consumer(consumer_id)
         return True
     if queue_id not in consumer(consumer_id).queues:
         raise Exception('consumer is not subscribed')
     consumer(consumer_id).queues.remove(queue_id)
     lg.info('consumer %s unsubscribed from queue %s' % (consumer_id, queue_id, ))
+    if remove_empty:
+        if len(consumer(consumer_id).queues) == 0:
+            remove_consumer(consumer_id)
     return True
 
 #------------------------------------------------------------------------------
@@ -411,7 +416,7 @@ def connect_producer(producer_id, queue_id):
     return True
 
 
-def disconnect_producer(producer_id, queue_id=None):
+def disconnect_producer(producer_id, queue_id=None, remove_empty=False):
     if not is_producer_exist(producer_id):
         raise Exception('producer not exist')
     if not is_queue_exist(queue_id):
@@ -419,11 +424,16 @@ def disconnect_producer(producer_id, queue_id=None):
     if queue_id is None:
         producer(producer_id).queues = []
         lg.info('producer %s disconnected from all queues' % (producer_id, ))
+        if remove_empty:
+            remove_producer(producer_id)
         return True
     if queue_id not in producer(producer_id).queues:
         raise Exception('producer is not connected to that queue')
     producer(producer_id).queues.remove(queue_id)
     lg.info('producer %s disconnected from queue %s' % (producer_id, queue_id, ))
+    if remove_empty:
+        if len(producer(producer_id).queues) == 0:
+            remove_producer(producer_id)
     return True
 
 #------------------------------------------------------------------------------
