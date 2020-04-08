@@ -105,7 +105,7 @@ def start_all_nodes(event_loop):
     event_loop.run_until_complete(asyncio.gather(*[
         start_one_message_broker_async(message_broker, event_loop) for message_broker in ALL_ROLES.get('message-broker', [])
     ]))
-    print(f'\nALL SUPPLIERS STARTED\n')
+    print(f'\nALL MESSAGE BROKERS STARTED\n')
 
     event_loop.run_until_complete(asyncio.gather(*[
         start_one_customer_async(customer, event_loop, sleep_before_start=i*3) for i, customer in enumerate(ALL_ROLES.get('customer', []))

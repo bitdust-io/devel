@@ -1020,7 +1020,7 @@ class MessagePeddler(automat.Automat):
             result_defer.callback(False)
             return
         try:
-            group_key_id, key_object = my_keys.read_key_info(group_key_info)
+            group_key_id, _ = my_keys.read_key_info(group_key_info)
         except Exception as exc:
             p2p_service.SendFail(request_packet, strng.to_text(exc))
             result_defer.callback(False)

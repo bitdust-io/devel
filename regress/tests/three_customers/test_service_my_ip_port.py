@@ -34,4 +34,4 @@ def test_customer_1_network_stun():
     assert response.status_code == 200
     print('\n\n%r' % response.json())
     assert response.json()['status'] == 'OK', response.json()
-    assert response.json()['result'][0]['result'] == 'stun-success'
+    assert response.json()['result']['result'] == 'stun-success'

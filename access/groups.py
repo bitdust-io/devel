@@ -87,7 +87,7 @@ from __future__ import absolute_import
 #------------------------------------------------------------------------------
 
 _Debug = True
-_DebugLevel = 4
+_DebugLevel = 8
 
 #------------------------------------------------------------------------------
 
@@ -162,6 +162,13 @@ def is_group_exist(group_key_id):
     return group_key_id in known_groups()
 
 
+def is_group_stored(group_key_id):
+    service_dir = settings.ServiceDir('service_private_groups')
+    groups_dir = os.path.join(service_dir, 'groups')
+    group_info_path = os.path.join(groups_dir, group_key_id)
+    return os.path.isfile(group_info_path)
+
+
 def generate_group_key(creator_id=None, label=None, key_size=4096):
     group_key_id = None
     group_alias = None
@@ -192,6 +199,8 @@ def set_group_info(group_key_id, group_info=None):
 
 
 def create_new_group(label, creator_id=None, key_size=4096):
+    if _Debug:
+        lg.args(_DebugLevel, label=label, creator_id=creator_id, key_size=key_size)
     group_key_id = generate_group_key(creator_id, label, key_size)
     set_group_info(group_key_id)
     save_group_info(group_key_id)
@@ -231,7 +240,8 @@ def load_groups():
 
 
 def save_group_info(group_key_id):
-    if group_key_id not in known_groups():
+    if not is_group_exist(group_key_id):
+        lg.warn('group %r is not known' % group_key_id)
         return False
     group_info = known_groups()[group_key_id]
     service_dir = settings.ServiceDir('service_private_groups')
@@ -246,7 +256,8 @@ def save_group_info(group_key_id):
 
 
 def erase_group_info(group_key_id):
-    if group_key_id not in known_groups():
+    if not is_group_exist(group_key_id):
+        lg.warn('group %r is not known' % group_key_id)
         return False
     service_dir = settings.ServiceDir('service_private_groups')
     groups_dir = os.path.join(service_dir, 'groups')
@@ -258,16 +269,28 @@ def erase_group_info(group_key_id):
         lg.args(_DebugLevel, group_key_id=group_key_id, group_info_path=group_info_path)
     return True
 
+
+def read_group_info(group_key_id):
+    service_dir = settings.ServiceDir('service_private_groups')
+    groups_dir = os.path.join(service_dir, 'groups')
+    group_info_path = os.path.join(groups_dir, group_key_id)
+    if not os.path.isfile(group_info_path):
+        return None
+    group_info = jsn.loads_text(local_fs.ReadTextFile(group_info_path))
+    return group_info
+
 #------------------------------------------------------------------------------
 
 def get_last_sequence_id(group_key_id):
     if not is_group_exist(group_key_id):
+        lg.warn('group %r is not known' % group_key_id)
         return -1
     return known_groups()[group_key_id]['last_sequence_id']
 
 
 def set_last_sequence_id(group_key_id, last_sequence_id):
     if not is_group_exist(group_key_id):
+        lg.warn('group %r is not known' % group_key_id)
         return False
     known_groups()[group_key_id]['last_sequence_id'] = last_sequence_id
     return True
@@ -308,6 +331,7 @@ def clear_brokers(customer_id):
 
 def set_group_active(group_key_id, value):
     if not is_group_exist(group_key_id):
+        lg.warn('group %r is not known' % group_key_id)
         return False
     old_value = known_groups()[group_key_id]['active']
     known_groups()[group_key_id]['active'] = value

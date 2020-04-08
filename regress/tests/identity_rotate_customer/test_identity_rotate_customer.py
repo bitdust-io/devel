@@ -49,9 +49,9 @@ def test_identity_rotate_customer_1():
 
     # remember current ID sources
     r = identity_get_v1('customer-1')
-    old_sources = r['result'][0]['sources']
-    old_global_id = r['result'][0]['global_id']
-    old_idurl = r['result'][0]['idurl']
+    old_sources = r['result']['sources']
+    old_global_id = r['result']['global_id']
+    old_idurl = r['result']['idurl']
 
     # test other nodes able to talk to customer-1 before identity get rotated
     user_ping_v1('customer-3', old_global_id)
@@ -120,9 +120,9 @@ def test_identity_rotate_customer_1():
 
     # and make sure ID sources were changed
     r = identity_get_v1('customer-1')
-    new_sources = r['result'][0]['sources'] 
-    new_global_id = r['result'][0]['global_id']
-    new_idurl = r['result'][0]['idurl']
+    new_sources = r['result']['sources'] 
+    new_global_id = r['result']['global_id']
+    new_idurl = r['result']['idurl']
     assert new_sources != old_sources
     assert new_global_id != old_global_id
     assert new_idurl != old_idurl
@@ -213,7 +213,7 @@ def test_identity_rotate_customer_2_when_id_server_is_dead():
     service_info_v1('customer-2', 'service_shared_data', 'ON')
 
     r = identity_get_v1('customer-2')
-    old_idurl = r['result'][0]['idurl']
+    old_idurl = r['result']['idurl']
 
     config_set_v1('customer-2', 'services/identity-propagate/automatic-rotate-enabled', 'true')
 
@@ -224,7 +224,7 @@ def test_identity_rotate_customer_2_when_id_server_is_dead():
 
     for i in range(20):
         r = identity_get_v1('customer-2')
-        new_idurl = r['result'][0]['idurl']
+        new_idurl = r['result']['idurl']
         if new_idurl != old_idurl:
             break
         time.sleep(5)

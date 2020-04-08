@@ -1250,6 +1250,10 @@ class BitDustRESTHTTPServer(JsonAPIResource):
 
     @ALL('^/*')
     def zzz_not_found(self, request):
+        """
+        This method is intended to return an error message when requested method was not found.
+        Started with "zzz" because stuff is sorted alphabetically - so just to be able to put the regex on last place.
+        """
         return api.ERROR('method %s:%s was not found' % (request.method, request.path))
 
     #------------------------------------------------------------------------------

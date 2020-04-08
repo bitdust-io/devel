@@ -171,6 +171,7 @@ def make_key_id(alias, creator_idurl=None, creator_glob_id=None):
         key_alias=alias,
     )
 
+
 def split_key_id(key_id):
     """
     Return "alias" and "creator" IDURL of that key as a tuple object.
@@ -186,6 +187,7 @@ def split_key_id(key_id):
     if not parts['key_alias'] or not parts['idurl']:
         return None, None
     return parts['key_alias'], id_url.field(parts['idurl'])
+
 
 def is_valid_key_id(global_key_id):
     """
@@ -220,6 +222,14 @@ def latest_key_id(key_id):
         idurl=glob_id['idurl'].to_bin(),
         key_alias=glob_id['key_alias'],
     )
+
+
+def get_creator_idurl(key_id, as_field=True):
+    """
+    Returns creator IDURL from the key_id.
+    """
+    _, _, creator_glob_id = key_id.partition('$')
+    return global_id.glob2idurl(creator_glob_id, as_field=as_field)
 
 #------------------------------------------------------------------------------
 

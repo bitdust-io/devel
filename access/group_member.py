@@ -337,6 +337,9 @@ class GroupMember(automat.Automat):
         """
         Action method.
         """
+        if not groups.is_group_exist(self.group_key_id):
+            groups.set_group_info(self.group_key_id)
+            groups.save_group_info(self.group_key_id)
         message.consume_messages(
             consumer_id=self.name,
             callback=self._on_read_queue_messages,

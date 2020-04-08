@@ -229,7 +229,7 @@ class BitDustFTP(FTP):
             if ret['status'] != 'OK':
                 return defer.fail(FileNotFoundError(remote_path))
         else:
-            if ret['result'][0]['type'] == 'dir':
+            if ret['result']['type'] == 'dir':
                 return defer.fail(IsADirectoryError(remote_path))
         ret = api.file_upload_start(local_path, remote_path, wait_result=False)
         if ret['status'] != 'OK':
@@ -294,7 +294,7 @@ class BitDustFTP(FTP):
         lg.out(8, 'ftp_server._cbRestoreDone %s %s' % (ret, pth))
         if ret['status'] != 'OK':
             return result_defer.errback(FileNotFoundError(pth))
-        if ret['result'][0] != 'restore done':
+        if not ret['result']['downloaded']:
             return result_defer.errback(FileNotFoundError(pth))
         fp = filepath.FilePath(os.path.join(ret['local_path'], os.path.basename(ret['remote_path'])))
         try:
@@ -367,7 +367,7 @@ class BitDustFTP(FTP):
         if ret['status'] != 'OK':
             d.errback(FileNotFoundError(path))
             return d
-        if ret['result'][0]['type'] == 'dir':
+        if ret['result']['type'] == 'dir':
             d.callback(None)
         else:
             d.errback(FileNotFoundError(path))

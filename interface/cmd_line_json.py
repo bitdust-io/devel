@@ -526,7 +526,7 @@ def cmd_identity(opts, args, overDict, running, executablePath):
             if key_json['status'] != 'OK':
                 print_text('\n'.join(key_json['errors']))
                 return 1
-            TextToSave = key_json['result'][0]['creator'] + u"\n" + key_json['result'][0]['private']
+            TextToSave = key_json['result']['creator'] + u"\n" + key_json['result']['private']
             if args[1] in ['bk', 'backup', 'save', ]:
                 from system import bpio
                 curpath = os.getcwd()
@@ -534,16 +534,16 @@ def cmd_identity(opts, args, overDict, running, executablePath):
                 if len(args) >= 3:
                     filenameto = bpio.portablePath(args[2])
                 else:
-                    key_file_name = key_json['result'][0]['key_id'] + '.key'
+                    key_file_name = key_json['result']['key_id'] + '.key'
                     filenameto = bpio.portablePath(os.path.join(os.path.expanduser('~'), key_file_name))
-                    # filenameto = bpio.portablePath(os.path.join(executablePath, key_json['result'][0]['key_id'] + '.key'))
+                    # filenameto = bpio.portablePath(os.path.join(executablePath, key_json['result']['key_id'] + '.key'))
                 os.chdir(curpath)
                 if not bpio.WriteTextFile(filenameto, TextToSave):
                     del TextToSave
                     print_text('error writing to %s\n' % filenameto)
                     return 1
                 print_text('IDURL "%s" and "master" key was stored in "%s"' % (
-                    key_json['result'][0]['creator'], filenameto))
+                    key_json['result']['creator'], filenameto))
                 return 0
             return 2
     
@@ -593,7 +593,7 @@ def cmd_key(opts, args, overDict, running, executablePath):
         from twisted.internet import reactor  # @UnresolvedImport
 
         def _on_key(key_json):
-            TextToSave = key_json['result'][0]['creator'] + u"\n" + key_json['result'][0]['private']
+            TextToSave = key_json['result']['creator'] + u"\n" + key_json['result']['private']
             if len(args) >= 4 and args[1] in ['bk', 'backup', 'save', ]:
                 from system import bpio
                 curpath = os.getcwd()
@@ -605,13 +605,13 @@ def cmd_key(opts, args, overDict, running, executablePath):
                     print_text('error writing to %s\n' % filenameto)
                     reactor.stop()  # @UndefinedVariable
                     return 1
-                print_text('private key "%s" was stored in "%s"' % (key_json['result'][0]['key_id'], filenameto))
+                print_text('private key "%s" was stored in "%s"' % (key_json['result']['key_id'], filenameto))
             else:
                 from lib import misc
                 misc.setClipboardText(TextToSave)
-                print_text('key "%s" was sent to clipboard, you can use Ctrl+V to paste your private key where you want' % key_json['result'][0]['key_id'])
+                print_text('key "%s" was sent to clipboard, you can use Ctrl+V to paste your private key where you want' % key_json['result']['key_id'])
             del TextToSave
-            if key_json['result'][0]['alias'] == 'master':
+            if key_json['result']['alias'] == 'master':
                 print_text('WARNING! keep your "master" key in safe place, do not publish it!\n')
             reactor.stop()  # @UndefinedVariable
             return
@@ -977,9 +977,9 @@ def cmd_storage(opts, args, overDict):
                 'status': 'OK',
                 'execution': float(result1['execution']) + float(result2['execution']) + float(result3['execution']),
                 'result': [{
-                    'donated': result1['result'][0],
-                    'consumed': result2['result'][0],
-                    'local': result3['result'][0],
+                    'donated': result1['result'],
+                    'consumed': result2['result'],
+                    'local': result3['result'],
                 }]
             }
             print_template(result, jsontemplate.Template(templ.TPL_STORAGE))

@@ -195,9 +195,9 @@ def ParseGlobalID(inp, detect_version=False, as_field=True):
         if not user_and_key or not idhost:
             return result
         try:
-            user_key = re.match(_REGEX_GLOBAL_ID_USER_KEY, user_and_key)
+            user_key = re.match(_REGEX_GLOBAL_ID_KEY_USER, user_and_key)
             if not user_key:
-                user_key = re.match(_REGEX_GLOBAL_ID_KEY_USER, user_and_key)
+                user_key = re.match(_REGEX_GLOBAL_ID_USER_KEY, user_and_key)
             if user_key:
                 result['user'] = user_key.group('user')
                 result['key_alias'] = user_key.group('key_alias')

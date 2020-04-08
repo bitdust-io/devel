@@ -49,8 +49,8 @@ def test_identity_rotate_supplier_1():
     connect_network('supplier-1')
 
     r = identity_get_v1('supplier-1')
-    supplier_1_global_id = r['result'][0]['global_id']
-    supplier_1_idurl = r['result'][0]['idurl']
+    supplier_1_global_id = r['result']['global_id']
+    supplier_1_idurl = r['result']['idurl']
 
     service_info_v1('supplier-1', 'service_supplier', 'ON')
 
@@ -100,8 +100,8 @@ def test_identity_rotate_supplier_1():
     time.sleep(1)
 
     r = identity_get_v1('supplier-1')
-    supplier_1_global_id_new = r['result'][0]['global_id']
-    supplier_1_idurl_new = r['result'][0]['idurl']
+    supplier_1_global_id_new = r['result']['global_id']
+    supplier_1_idurl_new = r['result']['idurl']
     assert supplier_1_global_id_new != supplier_1_global_id
     assert supplier_1_idurl_new != supplier_1_idurl
 

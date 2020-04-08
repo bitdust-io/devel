@@ -62,14 +62,14 @@ def test_customers_1_2_3_communicate_via_message_broker():
     # create group owned by customer-1 and join
     group_key_id = kw.group_create_v1('customer-1', label='TestGroup123')
 
-    group_info_inactive = kw.group_info_v1('customer-1', group_key_id)
-    assert group_info_inactive['state'] == 'INACTIVE'
+    group_info_inactive = kw.group_info_v1('customer-1', group_key_id)['result']
+    assert group_info_inactive['state'] == 'OFFLINE'
     assert group_info_inactive['label'] == 'TestGroup123'
     assert group_info_inactive['last_sequence_id'] == -1
 
     kw.group_join_v1('customer-1', group_key_id)
 
-    group_info_active = kw.group_info_v1('customer-1', group_key_id)
+    group_info_active = kw.group_info_v1('customer-1', group_key_id)['result']
     assert group_info_active['state'] == 'IN_SYNC!'
     assert len(group_info_active['connected_brokers']) == 1
     assert group_info_active['last_sequence_id'] == -1
@@ -92,7 +92,7 @@ def test_customers_1_2_3_communicate_via_message_broker():
 
     kw.group_join_v1('customer-2', group_key_id)
 
-    assert kw.group_info_v1('customer-2', group_key_id)['last_sequence_id'] == -1
+    assert kw.group_info_v1('customer-2', group_key_id)['result']['last_sequence_id'] == -1
 
     kw.packet_list_v1('customer-1', wait_all_finish=True)
     kw.transfer_list_v1('customer-1', wait_all_finish=True)
@@ -129,8 +129,8 @@ def test_customers_1_2_3_communicate_via_message_broker():
     assert a_customer_1_receive_result[0]['result'][0]['data'] == a_message_sent_from_customer_1
     assert a_customer_2_receive_result[0]['result'][0]['data'] == a_message_sent_from_customer_1
 
-    assert kw.group_info_v1('customer-1', group_key_id)['last_sequence_id'] == 0
-    assert kw.group_info_v1('customer-1', group_key_id)['last_sequence_id'] == 0
+    assert kw.group_info_v1('customer-1', group_key_id)['result']['last_sequence_id'] == 0
+    assert kw.group_info_v1('customer-2', group_key_id)['result']['last_sequence_id'] == 0
 
     # customer-2 share group ky to customer-3, third member join the group
     kw.group_share_v1('customer-2', group_key_id, 'customer-3@id-a_8084')
@@ -154,6 +154,8 @@ def test_customers_1_2_3_communicate_via_message_broker():
     kw.transfer_list_v1('customer-2', wait_all_finish=True)
     kw.packet_list_v1('customer-3', wait_all_finish=True)
     kw.transfer_list_v1('customer-3', wait_all_finish=True)
+
+    assert kw.group_info_v1('customer-3', group_key_id)['result']['last_sequence_id'] == 0
 
     # MESSAGE B: from customer 3 to the group, customers 1, 2 and 3 must receive the message
     b_message_sent_from_customer_3 = {'random_message': base64.b32encode(os.urandom(20)).decode(), }
@@ -180,6 +182,10 @@ def test_customers_1_2_3_communicate_via_message_broker():
     assert b_customer_2_receive_result[0]['result'][0]['data'] == b_message_sent_from_customer_3
     assert b_customer_3_receive_result[0]['result'][0]['data'] == b_message_sent_from_customer_3
 
+    assert kw.group_info_v1('customer-1', group_key_id)['result']['last_sequence_id'] == 1
+    assert kw.group_info_v1('customer-2', group_key_id)['result']['last_sequence_id'] == 1
+    assert kw.group_info_v1('customer-3', group_key_id)['result']['last_sequence_id'] == 1
+
     # customer-2 leave the group
     kw.group_leave_v1('customer-2', group_key_id)
 
@@ -190,10 +196,10 @@ def test_customers_1_2_3_communicate_via_message_broker():
     kw.packet_list_v1('customer-3', wait_all_finish=True)
     kw.transfer_list_v1('customer-3', wait_all_finish=True)
 
-    group_info_inactive = kw.group_info_v1('customer-2', group_key_id)
-    assert group_info_inactive['state'] == 'INACTIVE'
-    assert group_info_inactive['label'] == 'TestGroup123'
-    assert group_info_inactive['last_sequence_id'] == 1
+    group_info_offline = kw.group_info_v1('customer-2', group_key_id)['result']
+    assert group_info_offline['state'] == 'OFFLINE'
+    assert group_info_offline['label'] == 'TestGroup123'
+    assert group_info_offline['last_sequence_id'] == 1
 
     assert 'customer-1@id-a_8084' in kw.queue_consumer_list_v1(active_broker_name, extract_ids=True)
     assert 'customer-1@id-a_8084' in kw.queue_producer_list_v1(active_broker_name, extract_ids=True)
@@ -227,6 +233,10 @@ def test_customers_1_2_3_communicate_via_message_broker():
     assert c_customer_2_receive_result[0] is None
     assert c_customer_3_receive_result[0]['result'][0]['data'] == c_message_sent_from_customer_1
 
+    assert kw.group_info_v1('customer-1', group_key_id)['result']['last_sequence_id'] == 2
+    assert kw.group_info_v1('customer-2', group_key_id)['result']['last_sequence_id'] == 1
+    assert kw.group_info_v1('customer-3', group_key_id)['result']['last_sequence_id'] == 2
+
     # customer 1 and 3 also leave the group
     kw.group_leave_v1('customer-1', group_key_id)
 
@@ -239,15 +249,15 @@ def test_customers_1_2_3_communicate_via_message_broker():
     kw.packet_list_v1('customer-3', wait_all_finish=True)
     kw.transfer_list_v1('customer-3', wait_all_finish=True)
 
-    group_info_inactive = kw.group_info_v1('customer-1', group_key_id)
-    assert group_info_inactive['state'] == 'INACTIVE'
-    assert group_info_inactive['label'] == 'TestGroup123'
-    assert group_info_inactive['last_sequence_id'] == 2
+    group_info_offline = kw.group_info_v1('customer-1', group_key_id)['result']
+    assert group_info_offline['state'] == 'OFFLINE'
+    assert group_info_offline['label'] == 'TestGroup123'
+    assert group_info_offline['last_sequence_id'] == 2
 
-    group_info_inactive = kw.group_info_v1('customer-3', group_key_id)
-    assert group_info_inactive['state'] == 'INACTIVE'
-    assert group_info_inactive['label'] == 'TestGroup123'
-    assert group_info_inactive['last_sequence_id'] == 2
+    group_info_offline = kw.group_info_v1('customer-3', group_key_id)['result']
+    assert group_info_offline['state'] == 'OFFLINE'
+    assert group_info_offline['label'] == 'TestGroup123'
+    assert group_info_offline['last_sequence_id'] == 2
 
     broker_consumers = kw.queue_consumer_list_v1(active_broker_name, extract_ids=True)
     broker_producers = kw.queue_producer_list_v1(active_broker_name, extract_ids=True)
