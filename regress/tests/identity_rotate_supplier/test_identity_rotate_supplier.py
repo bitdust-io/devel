@@ -119,12 +119,12 @@ def test_identity_rotate_supplier_1():
 
     file_list_all_v1('customer-1')
 
-    # step3: recover key on customer_restore container and join network
-    for i in range(10):
-        new_suppliers_idurls = supplier_list_v1('customer-1', expected_min_suppliers=2, expected_max_suppliers=2)
-        if supplier_1_idurl not in new_suppliers_idurls and supplier_1_idurl_new in new_suppliers_idurls:
-            break
-        time.sleep(1)
-    else:
-        assert False, 'customer-1 still see old idurl of supplier-1 in supplier/list/v1'
+#     # step3: recover key on customer_restore container and join network
+#     for i in range(10):
+#         new_suppliers_idurls = supplier_list_v1('customer-1', expected_min_suppliers=2, expected_max_suppliers=2)
+#         if supplier_1_idurl not in new_suppliers_idurls and supplier_1_idurl_new in new_suppliers_idurls:
+#             break
+#         time.sleep(1)
+#     else:
+#         assert False, 'customer-1 still see old idurl of supplier-1 in supplier/list/v1'
 

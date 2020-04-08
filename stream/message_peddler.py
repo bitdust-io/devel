@@ -450,6 +450,15 @@ def get_messages_for_consumer(queue_id, consumer_id, consumer_last_sequence_id, 
 
 #------------------------------------------------------------------------------
 
+def close_all_streams():
+    service_dir = settings.ServiceDir('service_message_broker')
+    queues_dir = os.path.join(service_dir, 'queues')
+    list_queues = os.listdir(queues_dir)
+    for queue_id in list_queues:
+        close_stream(queue_id)
+    return True
+
+
 def load_streams():
     service_dir = settings.ServiceDir('service_message_broker')
     queues_dir = os.path.join(service_dir, 'queues')
@@ -1141,6 +1150,8 @@ class MessagePeddler(automat.Automat):
         return None
 
     def _on_identity_url_changed(self, evt):
+        if evt.data['new_idurl'] == my_id.getIDURL():
+            return
         old_idurl = evt.data['old_idurl']
         new_id = global_id.idurl2glob(evt.data['new_idurl'])
         queues_to_be_closed = []
