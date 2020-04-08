@@ -72,15 +72,16 @@ def on_api_result_prepared(result):
 #------------------------------------------------------------------------------
 
 
-def OK(result='', message=None, status='OK', extra_fields=None, **kwargs):
+def OK(result='', message=None, status='OK', **kwargs):
     global _APILogFileEnabled
     o = {'status': status, }
     if result:
-        o['result'] = result if isinstance(result, list) else [result, ]
+        if isinstance(result, dict):
+            o['result'] = result
+        else:
+            o['result'] = result if isinstance(result, list) else [result, ]
     if message is not None:
         o['message'] = message
-    if extra_fields is not None:
-        o.update(extra_fields)
     o = on_api_result_prepared(o)
     try:
         sample = jsn.dumps(o, ensure_ascii=True, sort_keys=True)
@@ -137,7 +138,7 @@ def RESULT(result=[], message=None, status='OK', errors=None, source=None, extra
     return o
 
 
-def ERROR(errors=[], message=None, status='ERROR', extra_fields=None, **kwargs):
+def ERROR(errors=[], message=None, status='ERROR', reason=None, details=None, **kwargs):
     global _APILogFileEnabled
     if not isinstance(errors, list):
         errors = [errors, ]
@@ -155,8 +156,10 @@ def ERROR(errors=[], message=None, status='ERROR', extra_fields=None, **kwargs):
     o = {'status': status, 'errors': errors, }
     if message is not None:
         o['message'] = message
-    if extra_fields is not None:
-        o.update(extra_fields)
+    if reason is not None:
+        o['reason'] = reason
+    if details is not None:
+        o.update(details)
     o = on_api_result_prepared(o)
     try:
         sample = jsn.dumps(o, ensure_ascii=True, sort_keys=True)
@@ -203,7 +206,7 @@ def process_restart(showgui=False):
 
     Return:
 
-        {'status': 'OK', 'result': 'restarted'}
+        {'status': 'OK', 'result': {'restarted': True}}
     """
     from twisted.internet import reactor  # @UnresolvedImport
     from main import shutdowner
@@ -212,12 +215,12 @@ def process_restart(showgui=False):
             lg.out(_DebugLevel, 'api.process_restart sending event "stop" to the shutdowner() machine')
         reactor.callLater(0.1, shutdowner.A, 'stop', 'restartnshow')  # @UndefinedVariable
         # shutdowner.A('stop', 'restartnshow')
-        return OK('restarted with GUI')
+        return OK({'restarted': True, 'show_gui': True, })
     if _Debug:
         lg.out(_DebugLevel, 'api.process_restart sending event "stop" to the shutdowner() machine')
     # shutdowner.A('stop', 'restart')
     reactor.callLater(0.1, shutdowner.A, 'stop', 'restart')  # @UndefinedVariable
-    return OK('restarted')
+    return OK({'restarted': True, })
 
 
 def process_show():
@@ -384,12 +387,14 @@ def identity_create(username, preferred_servers=[]):
     my_id_registrator = id_registrator.A()
 
     def _id_registrator_state_changed(oldstate, newstate, event_string, *args, **kwargs):
+        if _Debug:
+            lg.args(_DebugLevel, oldstate=oldstate, newstate=newstate, event_string=event_string)
         if ret.called:
             return
-        if newstate == 'FAILED':
+        if oldstate != newstate and newstate == 'FAILED':
             ret.callback(ERROR(my_id_registrator.last_message, api_method='identity_create'))
             return
-        if newstate == 'DONE':
+        if oldstate != newstate and newstate == 'DONE':
             my_id.loadLocalIdentity()
             if not my_id.isLocalIdentityReady():
                 return ERROR('identity creation failed, please try again later', api_method='identity_create')
@@ -455,6 +460,8 @@ def identity_recover(private_key_source, known_idurl=None):
     my_id_restorer = id_restorer.A()
 
     def _id_restorer_state_changed(oldstate, newstate, event_string, *args, **kwargs):
+        if _Debug:
+            lg.args(_DebugLevel, oldstate=oldstate, newstate=newstate, event_string=event_string)
         if ret.called:
             return
         if newstate == 'FAILED':
@@ -1042,23 +1049,14 @@ def file_exists(remote_path):
     remotePath = bpio.remotePath(norm_path['path'])
     customer_idurl = norm_path['idurl']
     if customer_idurl not in backup_fs.known_customers():
-        return OK(
-            message='customer "%s" not found' % customer_idurl,
-            extra_fields={'result': False, },
-        )
+        return OK({'exist': False, }, message='customer "%s" not found' % customer_idurl, )
     pathID = backup_fs.ToID(remotePath, iter=backup_fs.fs(customer_idurl))
     if not pathID:
-        return OK(
-            message='path "%s" was not found in catalog' % remotePath,
-            extra_fields={'result': False, },
-        )
+        return OK({'exist': False, }, message='path "%s" was not found in catalog' % remotePath, )
     item = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(customer_idurl))
     if not item:
-        return OK(
-            message='item "%s" is not found in catalog' % pathID,
-            extra_fields={'result': False, },
-        )
-    return OK(extra_fields={'result': True, },)
+        return OK({'exist': False, }, message='item "%s" is not found in catalog' % pathID, )
+    return OK({'exist': True, }, )
 
 
 def file_info(remote_path, include_uploads=True, include_downloads=True):
@@ -1244,17 +1242,15 @@ def file_create(remote_path, as_folder=False):
     full_remote_path = global_id.MakeGlobalID(customer=parts['customer'], path=parts['path'], key_alias=keyAlias)
     if _Debug:
         lg.out(_DebugLevel, 'api.file_create : "%s"' % full_glob_id)
-    return OK(
-        'new %s was created in "%s"' % (('folder' if as_folder else 'file'), full_glob_id),
-        extra_fields={
-            'path_id': newPathID,
-            'key_id': keyID,
-            'path': path,
-            'remote_path': full_remote_path,
-            'global_id': full_glob_id,
-            'customer': parts['idurl'],
-            'type': ('dir' if as_folder else 'file'),
-        })
+    return OK({
+        'path_id': newPathID,
+        'key_id': keyID,
+        'path': path,
+        'remote_path': full_remote_path,
+        'global_id': full_glob_id,
+        'customer': parts['idurl'],
+        'type': ('dir' if as_folder else 'file'),
+    }, message='new %s created in "%s"' % (('folder' if as_folder else 'file'), full_glob_id), )
 
 
 def file_delete(remote_path):
@@ -1297,13 +1293,13 @@ def file_delete(remote_path):
     control.request_update([('pathID', pathIDfull), ])
     if _Debug:
         lg.out(_DebugLevel, 'api.file_delete %s' % parts)
-    return OK('item "%s" was deleted from remote suppliers' % pathIDfull, extra_fields={
+    return OK({
         'path_id': pathIDfull,
         'path': path,
         'remote_path': full_remote_path,
         'global_id': full_glob_id,
         'customer': parts['idurl'],
-    })
+    }, message='item "%s" was deleted from remote suppliers' % pathIDfull, )
 
 
 def files_uploads(include_running=True, include_pending=True):
@@ -1428,14 +1424,14 @@ def file_upload_start(local_path, remote_path, wait_result=False, open_share=Fal
             keyID=keyID,
         )
         tsk.result_defer.addCallback(lambda result: d.callback(OK(
-            'item "%s" uploaded, local path is: "%s"' % (remote_path, local_path),
-            extra_fields={
+            {
                 'remote_path': remote_path,
                 'version': result[0],
                 'key_id': tsk.keyID,
                 'source_path': local_path,
                 'path_id': pathID,
             },
+            message='item "%s" uploaded, local path is: "%s"' % (remote_path, local_path),
             api_method='file_upload_start',
         )))
         tsk.result_defer.addErrback(lambda result: d.callback(ERROR(
@@ -1463,13 +1459,14 @@ def file_upload_start(local_path, remote_path, wait_result=False, open_share=Fal
     if _Debug:
         lg.out(_DebugLevel, 'api.file_upload_start %s with %s' % (remote_path, pathIDfull))
     return OK(
-        'uploading "%s" started, local path is: "%s"' % (remote_path, local_path),
-        extra_fields={
+        {
             'remote_path': remote_path,
             'key_id': tsk.keyID,
             'source_path': local_path,
             'path_id': pathID,
-        })
+        },
+        message='uploading "%s" started, local path is: "%s"' % (remote_path, local_path),
+    )
 
 
 def file_upload_stop(remote_path):
@@ -1648,20 +1645,23 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, o
     def _on_result(backupID, result):
         if result == 'restore done':
             ret.callback(OK(
-                result,
-                'version "%s" downloaded to "%s"' % (backupID, destination_path),
-                extra_fields={
+                {
+                    'downloaded': True,
+                    'key_id': key_id,
                     'backup_id': backupID,
                     'local_path': destination_path,
                     'path_id': pathID_target,
                     'remote_path': knownPath,
                 },
+                message='version "%s" downloaded to "%s"' % (backupID, destination_path),
                 api_method='file_download_start'
             ))
         else:
             ret.callback(ERROR(
                 'downloading version "%s" failed, result: %s' % (backupID, result),
-                extra_fields={
+                details={
+                    'downloaded': False,
+                    'key_id': key_id,
                     'backup_id': backupID,
                     'local_path': destination_path,
                     'path_id': pathID_target,
@@ -1682,15 +1682,15 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, o
         restore_monitor.Start(backupID, destination_path, keyID=key_id, )
         control.request_update([('pathID', knownPath), ])
         ret.callback(OK(
-            'started',
-            'downloading of version "%s" has been started to "%s"' % (backupID, destination_path),
-            extra_fields={
+            {
+                'downloaded': False,
                 'key_id': key_id,
                 'backup_id': backupID,
                 'local_path': destination_path,
                 'path_id': pathID_target,
                 'remote_path': knownPath,
             },
+            message='downloading of version "%s" has been started to "%s"' % (backupID, destination_path),
             api_method='file_download_start',
         ))
         return True
@@ -1704,7 +1704,7 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, o
             active_share.remove_connected_callback(callback_id)
             ret.callback(ERROR(
                 'downloading version "%s" failed, result: %s' % (backupID, 'share is disconnected'),
-                extra_fields={
+                details={
                     'key_id': active_share.key_id,
                     'backup_id': backupID,
                     'local_path': destination_path,
@@ -1931,7 +1931,7 @@ def share_delete(key_id):
         return ERROR('share "%s" is not opened' % key_id)
     this_share.automat('shutdown')
     my_keys.erase_key(key_id)
-    return OK('share "%s" was deleted' % key_id, extra_fields=this_share.to_json())
+    return OK(this_share.to_json(), message='share "%s" was deleted' % key_id, )
 
 
 def share_grant(trusted_remote_user, key_id, timeout=30):
@@ -1989,15 +1989,17 @@ def share_open(key_id):
     ret = Deferred()
 
     def _on_shared_access_coordinator_state_changed(oldstate, newstate, event_string, *args, **kwargs):
+        if _Debug:
+            lg.args(_DebugLevel, oldstate=oldstate, newstate=newstate, event_string=event_string)
         if newstate == 'CONNECTED' and oldstate != newstate:
             active_share.removeStateChangedCallback(_on_shared_access_coordinator_state_changed)
             if new_share:
-                ret.callback(OK('share "%s" opened' % key_id, extra_fields=active_share.to_json(), api_method='share_open'))
+                ret.callback(OK(active_share.to_json(), 'share "%s" opened' % key_id, api_method='share_open'))
             else:
-                ret.callback(OK('share "%s" refreshed' % key_id, extra_fields=active_share.to_json(), api_method='share_open'))
+                ret.callback(OK(active_share.to_json(), 'share "%s" refreshed' % key_id, api_method='share_open'))
         if newstate == 'DISCONNECTED' and oldstate != newstate:
             active_share.removeStateChangedCallback(_on_shared_access_coordinator_state_changed)
-            ret.callback(ERROR('share "%s" is disconnected' % key_id, extra_fields=active_share.to_json(), api_method='share_open'))
+            ret.callback(ERROR('share "%s" is disconnected' % key_id, details=active_share.to_json(), api_method='share_open'))
         return None
 
     active_share.addStateChangedCallback(_on_shared_access_coordinator_state_changed)
@@ -2018,7 +2020,7 @@ def share_close(key_id):
     if not this_share:
         return ERROR('share "%s" is not opened' % key_id)
     this_share.automat('shutdown')
-    return OK('share "%s" closed' % key_id, extra_fields=this_share.to_json())
+    return OK(this_share.to_json(), 'share "%s" closed' % key_id, )
 
 
 def share_history():
@@ -2044,6 +2046,40 @@ def group_info(group_key_id):
     """
     if not driver.is_on('service_private_groups'):
         return ERROR('service_private_groups() is not started')
+    from access import groups
+    from access import group_member
+    from crypt import my_keys
+    group_key_id = strng.to_text(group_key_id)
+    if not group_key_id.startswith('group_'):
+        return ERROR('invalid group id')
+    response = {
+        'group_key_id': group_key_id,
+        'state': None,
+        'alias': my_keys.split_key_id(group_key_id)[0],
+        'label': my_keys.get_label(group_key_id),
+        'last_sequence_id': -1,
+        'active': False,
+    }
+    if not my_keys.is_key_registered(group_key_id):
+        return ERROR('group key not found')
+    response.update({'group_key_info': my_keys.get_key_info(group_key_id), })
+    this_group_member = group_member.get_active_group_member(group_key_id)
+    if this_group_member:
+        response.update(this_group_member.to_json())
+        return OK(response)
+    offline_group_info = groups.known_groups().get(group_key_id)
+    if offline_group_info:
+        response.update(offline_group_info)
+        response['state'] = 'OFFLINE'
+        return OK(response)
+    stored_group_info = groups.read_group_info(group_key_id)
+    if stored_group_info:
+        response.update(stored_group_info)
+        response['state'] = 'CLOSED'
+        return OK(response)
+    response['state'] = 'CLEANED'
+    lg.warn('did not found stored group info for %r, but group key exist' % group_key_id)
+    return OK(response)
 
 
 def group_create(creator_id=None, key_size=2048, label=''):
@@ -2056,7 +2092,7 @@ def group_create(creator_id=None, key_size=2048, label=''):
     from userid import my_id
     if not creator_id:
         creator_id = my_id.getGlobalID()
-    group_key_id = groups.create_group_key(creator_id=creator_id, label=label, key_size=key_size)
+    group_key_id = groups.create_new_group(creator_id=creator_id, label=label, key_size=key_size)
     key_info = my_keys.get_key_info(group_key_id, include_private=False)
     key_info.pop('include_private', None)
     key_info['group_key_id'] = key_info.pop('key_id')
@@ -2071,30 +2107,59 @@ def group_join(group_key_id):
     group_key_id = strng.to_text(group_key_id)
     if not group_key_id.startswith('group_'):
         return ERROR('invalid group id')
-    from access import group_member
-    active_group_member = group_member.get_active_group_member(group_key_id)
-    new_group = False
-    if not active_group_member:
-        new_group = True
-        active_group_member = group_member.GroupMember(group_key_id)
+    from crypt import my_keys
+    from userid import id_url
+    if not my_keys.is_key_registered(group_key_id):
+        return ERROR('unknown group key')
     ret = Deferred()
+    started_group_members = []
+    existing_group_members = []
+    creator_idurl = my_keys.get_creator_idurl(group_key_id, as_field=False)
 
-    def _on_group_queue_memeber_state_changed(oldstate, newstate, event_string, *args, **kwargs):
+    def _on_group_member_state_changed(oldstate, newstate, event_string, *args, **kwargs):
+        if _Debug:
+            lg.args(_DebugLevel, oldstate=oldstate, newstate=newstate, event_string=event_string)
         if newstate == 'IN_SYNC!' and oldstate != newstate:
-            active_group_member.removeStateChangedCallback(_on_group_queue_memeber_state_changed)
-            if new_group:
-                ret.callback(OK('group "%s" connected' % group_key_id, extra_fields=active_group_member.to_json(), api_method='group_open'))
+            if existing_group_members:
+                existing_group_members[0].removeStateChangedCallback(_on_group_member_state_changed)
+                ret.callback(OK(existing_group_members[0].to_json(), 'group "%s" refreshed' % group_key_id, api_method='group_join'))
             else:
-                ret.callback(OK('group "%s" refreshed' % group_key_id, extra_fields=active_group_member.to_json(), api_method='group_open'))
+                started_group_members[0].removeStateChangedCallback(_on_group_member_state_changed)
+                ret.callback(OK(started_group_members[0].to_json(), 'group "%s" connected' % group_key_id, api_method='group_join'))
         if newstate == 'DISCONNECTED' and oldstate != newstate and oldstate != 'AT_STARTUP':
-            active_group_member.removeStateChangedCallback(_on_group_queue_memeber_state_changed)
-            ret.callback(ERROR('group "%s" is disconnected' % group_key_id, extra_fields=active_group_member.to_json(), api_method='group_open'))
+            if existing_group_members:
+                existing_group_members[0].removeStateChangedCallback(_on_group_member_state_changed)
+                ret.callback(ERROR('group "%s" is disconnected' % group_key_id, details=existing_group_members[0].to_json(), api_method='group_join'))
+            else:
+                started_group_members[0].removeStateChangedCallback(_on_group_member_state_changed)
+                ret.callback(ERROR('group "%s" is disconnected' % group_key_id, details=started_group_members[0].to_json(), api_method='group_join'))
         return None
 
-    active_group_member.addStateChangedCallback(_on_group_queue_memeber_state_changed)
-    if new_group:
-        active_group_member.automat('init')
-    active_group_member.automat('join')
+    def _do_start_group_member(): 
+        from access import group_member
+        existing_group_member = group_member.get_active_group_member(group_key_id)
+        if _Debug:
+            lg.args(_DebugLevel, existing_group_member=existing_group_member)
+        if existing_group_member:
+            existing_group_members.append(existing_group_member)
+        else:
+            existing_group_member = group_member.GroupMember(group_key_id)
+            started_group_members.append(existing_group_member)
+        existing_group_member.addStateChangedCallback(_on_group_member_state_changed)
+        if started_group_members:
+            started_group_members[0].automat('init')
+        existing_group_member.automat('join')
+
+    def _do_cache_creator_idurl():
+        from contacts import identitycache
+        d = identitycache.immediatelyCaching(creator_idurl)
+        d.addErrback(lambda *args: ret.callback(ERROR('failed caching group creator identity')))
+        d.addCallback(lambda *args: _do_start_group_member())
+
+    if id_url.is_cached(creator_idurl):
+        _do_start_group_member()
+    else:
+        _do_cache_creator_idurl()
     return ret
 
 
@@ -2108,13 +2173,14 @@ def group_leave(group_key_id, erase_key=False):
     group_key_id = strng.to_text(group_key_id)
     if not group_key_id.startswith('group_'):
         return ERROR('invalid group id')
+    if not my_keys.is_key_registered(group_key_id):
+        return ERROR('unknown group key')
     this_group_member = group_member.get_active_group_member(group_key_id)
     if not this_group_member:
         if not erase_key:
             lg.warn('active group_member() instance was not found for %r' % group_key_id)
             return ERROR('active group_member() instance was not found for %r' % group_key_id)
-        if not my_keys.is_key_registered(group_key_id):
-            return ERROR('group key %r not found' % group_key_id)
+        my_keys.erase_key(group_key_id)
         return OK(message='group key "%s" erased' % group_key_id)
     this_group_member.automat('leave', erase_key=erase_key)
     if erase_key:
@@ -2144,7 +2210,7 @@ def group_share(trusted_remote_user, group_key_id, timeout=30):
     ret = Deferred()
 
     def _on_group_access_donor_success(result):
-        ret.callback(OK(api_method='share_grant') if result else ERROR('share grant failed', api_method='group_share'))
+        ret.callback(OK( api_method='share_grant') if result else ERROR('share grant failed', api_method='group_share'))
         return None
 
     def _on_group_access_donor_failed(err):
@@ -3169,11 +3235,41 @@ def streams_list(wanted_protos=None):
 def queue_list():
     """
     """
+    if not driver.is_on('service_p2p_notifications'):
+        return ERROR('service_p2p_notifications() is not started')
     from stream import p2p_queue
     return RESULT([{
         'queue_id': queue_id,
         'messages': len(p2p_queue.queue(queue_id)),
     } for queue_id in p2p_queue.queue().keys()])
+
+
+def queue_consumer_list():
+    """
+    """
+    if not driver.is_on('service_p2p_notifications'):
+        return ERROR('service_p2p_notifications() is not started')
+    from stream import p2p_queue
+    return RESULT([{
+        'consumer_id': consumer_info.consumer_id,
+        'queues': consumer_info.queues,
+        'state': consumer_info.state,
+        'consumed': consumer_info.consumed_messages,
+    } for consumer_info in p2p_queue.consumer().values()]) 
+
+
+def queue_producer_list():
+    """
+    """
+    if not driver.is_on('service_p2p_notifications'):
+        return ERROR('service_p2p_notifications() is not started')
+    from stream import p2p_queue
+    return RESULT([{
+        'producer_id': producer_info.producer_id,
+        'queues': producer_info.queues,
+        'state': producer_info.state,
+        'produced': producer_info.produced_messages,
+    } for producer_info in p2p_queue.producer().values()]) 
 
 #------------------------------------------------------------------------------
 
@@ -3253,12 +3349,14 @@ def user_status_check(idurl_or_global_id, timeout=5):
     ret = Deferred()
 
     def _on_peer_status_state_changed(oldstate, newstate, event_string, *args, **kwargs):
+        if _Debug:
+            lg.args(_DebugLevel, oldstate=oldstate, newstate=newstate, event_string=event_string)
         if newstate not in ['CONNECTED', 'OFFLINE', ]:
             return None
         if newstate == 'OFFLINE' and oldstate == 'OFFLINE' and not event_string == 'ping-failed':
             return None
         ret.callback(OK(
-            extra_fields=dict(
+            dict(
                 idurl=idurl,
                 global_id=global_id.UrlToGlobalID(idurl),
                 contact_state=newstate,
@@ -3298,13 +3396,13 @@ def user_search(nickname, attempts=1):
     ret = Deferred()
 
     def _result(result, nik, pos, idurl):
-        return ret.callback(RESULT([{
+        return ret.callback(OK({
             'result': result,
             'nickname': nik,
             'position': pos,
             'global_id': global_id.UrlToGlobalID(idurl),
             'idurl': idurl,
-        }], api_method='user_search'))
+        }, api_method='user_search'))
 
     nickname_observer.find_one(
         nickname,
@@ -3362,7 +3460,7 @@ def nickname_get():
     from main import settings
     if not driver.is_on('service_private_messages'):
         return ERROR('service_private_messages() is not started')
-    return OK(extra_fields={'nickname': settings.getNickName(), })
+    return OK({'nickname': settings.getNickName(), })
 
 
 def nickname_set(nickname):
@@ -3386,8 +3484,8 @@ def nickname_set(nickname):
     def _nickname_holder_result(result, key):
         nickname_holder.A().remove_result_callback(_nickname_holder_result)
         return ret.callback(OK(
-            extra_fields={
-                'result': result,
+            {
+                'success': result,
                 'nickname': key,
                 'global_id': my_id.getGlobalID(),
                 'idurl': my_id.getLocalID(),
@@ -3716,16 +3814,16 @@ def network_connected(wait_timeout=5):
 
     if not my_id.isLocalIdentityReady():
         lg.warn('local identity is not valid or not exist')
-        return ERROR('local identity is not valid or not exist', extra_fields={'reason': 'identity_not_exist'})
+        return ERROR('local identity is not valid or not exist', reason='identity_not_exist')
     if not driver.is_enabled('service_network'):
         lg.warn('service_network() is disabled')
-        return ERROR('service_network() is disabled', extra_fields={'reason': 'service_network_disabled'})
+        return ERROR('service_network() is disabled', reason='service_network_disabled')
     if not driver.is_enabled('service_gateway'):
         lg.warn('service_gateway() is disabled')
-        return ERROR('service_gateway() is disabled', extra_fields={'reason': 'service_gateway_disabled'})
+        return ERROR('service_gateway() is disabled', reason='service_gateway_disabled')
     if not driver.is_enabled('service_p2p_hookups'):
         lg.warn('service_p2p_hookups() is disabled')
-        return ERROR('service_p2p_hookups() is disabled', extra_fields={'reason': 'service_p2p_hookups_disabled'})
+        return ERROR('service_p2p_hookups() is disabled', reason='service_p2p_hookups_disabled')
 
     def _do_p2p_connector_test():
         if _Debug:
@@ -3734,23 +3832,23 @@ def network_connected(wait_timeout=5):
             p2p_connector_lookup = automat.find('p2p_connector')
             if not p2p_connector_lookup:
                 lg.warn('disconnected, reason is "p2p_connector_not_found"')
-                ret.callback(ERROR('disconnected', extra_fields={'reason': 'p2p_connector_not_found'}, api_method='network_connected'))
+                ret.callback(ERROR('disconnected', reason='p2p_connector_not_found', api_method='network_connected'))
                 return None
             p2p_connector_machine = automat.objects().get(p2p_connector_lookup[0])
             if not p2p_connector_machine:
                 lg.warn('disconnected, reason is "p2p_connector_not_exist"')
-                ret.callback(ERROR('disconnected', extra_fields={'reason': 'p2p_connector_not_exist'}, api_method='network_connected'))
+                ret.callback(ERROR('disconnected', reason='p2p_connector_not_exist', api_method='network_connected'))
                 return None
             if p2p_connector_machine.state in ['DISCONNECTED', ]:
                 lg.warn('disconnected, reason is "p2p_connector_disconnected", sending "check-synchronize" event to p2p_connector()')
                 p2p_connector_machine.automat('check-synchronize')
-                ret.callback(ERROR('disconnected', extra_fields={'reason': 'p2p_connector_disconnected'}, api_method='network_connected'))
+                ret.callback(ERROR('disconnected', reason='p2p_connector_disconnected', api_method='network_connected'))
                 return None
             # ret.callback(OK('connected'))
             _do_service_proxy_transport_test()
         except:
             lg.exc()
-            ret.callback(ERROR('disconnected', extra_fields={'reason': 'p2p_connector_error'}, api_method='network_connected'))
+            ret.callback(ERROR('disconnected', reason='p2p_connector_error', api_method='network_connected'))
         return None
 
     def _do_service_proxy_transport_test():
@@ -3768,17 +3866,17 @@ def network_connected(wait_timeout=5):
             proxy_receiver_lookup = automat.find('proxy_receiver')
             if not proxy_receiver_lookup:
                 lg.warn('disconnected, reason is "proxy_receiver_not_found"')
-                ret.callback(ERROR('disconnected', extra_fields={'reason': 'proxy_receiver_not_found'}, api_method='network_connected'))
+                ret.callback(ERROR('disconnected', reason='proxy_receiver_not_found', api_method='network_connected'))
                 return None
             proxy_receiver_machine = automat.objects().get(proxy_receiver_lookup[0])
             if not proxy_receiver_machine:
                 lg.warn('disconnected, reason is "proxy_receiver_not_exist"')
-                ret.callback(ERROR('disconnected', extra_fields={'reason': 'proxy_receiver_not_exist'}, api_method='network_connected'))
+                ret.callback(ERROR('disconnected', reason='proxy_receiver_not_exist', api_method='network_connected'))
                 return None
             if proxy_receiver_machine.state != 'LISTEN':
                 lg.warn('disconnected, reason is "proxy_receiver_disconnected", sending "start" event to proxy_receiver()')
                 proxy_receiver_machine.automat('start')
-                ret.callback(ERROR('disconnected', extra_fields={'reason': 'proxy_receiver_disconnected'}, api_method='network_connected'))
+                ret.callback(ERROR('disconnected', reason='proxy_receiver_disconnected', api_method='network_connected'))
                 return None
             ret.callback(OK({
                 'service_network': 'started',
@@ -3789,7 +3887,7 @@ def network_connected(wait_timeout=5):
             }, api_method='network_connected'))
         except:
             lg.exc()
-            ret.callback(ERROR('disconnected', extra_fields={'reason': 'proxy_receiver_error'}, api_method='network_connected'))
+            ret.callback(ERROR('disconnected', reason='proxy_receiver_error', api_method='network_connected'))
         return None
 
     def _on_service_restarted(resp, service_name):
@@ -3817,14 +3915,12 @@ def network_connected(wait_timeout=5):
             lg.args(_DebugLevel, service_name=service_name)
         try:
             svc_info = service_info(service_name)
-            svc_state = svc_info['result'][0]['state']
+            svc_state = svc_info['result']['state']
         except:
             lg.exc('service "%s" test failed' % service_name)
             ret.callback(ERROR(
                 'disconnected',
-                extra_fields={
-                    'reason': '{}_info_error'.format(service_name),
-                },
+                reason='{}_info_error'.format(service_name),
                 api_method='network_connected',
             ))
             return None
@@ -4267,7 +4363,7 @@ def dht_value_set(key, value, expire=None, record_type='skip_validation', layer_
                 } for c in nodes]
             if _Debug:
                 lg.out(_DebugLevel, 'api.dht_value_set ERROR: %r' % errmsg)
-            return ret.callback(ERROR(errmsg, extra_fields={
+            return ret.callback(ERROR(errmsg, details={
                 'write': 'failed',
                 'my_dht_id': dht_service.node().layers[0],
                 'key': strng.to_text(key, errors='ignore'),

@@ -81,7 +81,7 @@ _one_down:
 _one_test:
 	@echo "TEST ${TEST_NAME} DEBUG=${_DEBUG}";
 	@mkdir -p logs;
-	@docker-compose --file tests/${TEST_NAME}/docker-compose.yml exec -T tester sh -c "TEST_NAME=${TEST_NAME} _DEBUG=${_DEBUG} python -u -m pytest /app/tests/${TEST_NAME}/ -v -s"  2> logs/${TEST_NAME}.stderr || (echo "test ${TEST_NAME} FAILED !!!" && echo "FAIL" > logs/${TEST_NAME}.fail && exit 1)
+	@docker-compose --file tests/${TEST_NAME}/docker-compose.yml exec -T tester sh -c "TEST_NAME=${TEST_NAME} _DEBUG=${_DEBUG} python -u -m pytest /app/tests/${TEST_NAME}/ -v -s" 2> logs/container.${TEST_NAME}.stderr || (echo "test ${TEST_NAME} FAILED !!!" && echo "FAIL" > logs/container.${TEST_NAME}.fail && exit 1)
 
 _one_coverage:
 	@echo "COVERAGE ${TEST_NAME}";

@@ -511,7 +511,7 @@ async def connect_network_async(node, loop, attempts=30, delay=1, timeout=10, ve
             assert False
 
 
-async def service_started_async(node, service_name, loop, expected_state='ON', attempts=60, delay=3, verbose=False):
+async def service_started_async(node, service_name, loop, expected_state='ON', attempts=60, delay=3, verbose=True):
     async with aiohttp.ClientSession(loop=loop, connector=ssl_connection(node)) as client:
         current_state = None
         count = 0
@@ -519,7 +519,7 @@ async def service_started_async(node, service_name, loop, expected_state='ON', a
             response = await client.get(tunnel_url(node, f'service/info/{service_name}/v1'))
             response_json = await response.json()
             assert response_json['status'] == 'OK', response_json
-            current_state = response_json['result'][0]['state']
+            current_state = response_json['result']['state']
             if verbose:
                 print(f'\nservice/info/{service_name}/v1 [{node}] : %s' % pprint.pformat(response_json))
             if current_state == expected_state:

@@ -748,6 +748,12 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     def group_list_v1(self, request):
         return api.group_list()
 
+    @GET('^/gr/i$')
+    @GET('^/v1/group/info$')
+    @GET('^/group/info/v1$')
+    def group_info_v1(self, request):
+        return api.group_info(group_key_id=_request_arg(request, 'group_key_id'))
+
     @POST('^/gr/c$')
     @POST('^/v1/group/create$')
     @POST('^/group/create/v1$')
@@ -1106,6 +1112,18 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     def queue_list_v1(self, request):
         return api.queue_list()
 
+    @GET('^/qu/c/l$')
+    @GET('^/v1/queue/consumer/list$')
+    @GET('^/queue/consumer/list/v1$')
+    def queue_consumer_list_v1(self, request):
+        return api.queue_consumer_list()
+
+    @GET('^/qu/p/l$')
+    @GET('^/v1/queue/producer/list$')
+    @GET('^/queue/producer/list/v1$')
+    def queue_producer_list_v1(self, request):
+        return api.queue_producer_list()
+
     #------------------------------------------------------------------------------
 
     @POST('^/ev/s/(?P<event_id>[^/]+)/$')
@@ -1232,6 +1250,10 @@ class BitDustRESTHTTPServer(JsonAPIResource):
 
     @ALL('^/*')
     def zzz_not_found(self, request):
+        """
+        This method is intended to return an error message when requested method was not found.
+        Started with "zzz" because stuff is sorted alphabetically - so just to be able to put the regex on last place.
+        """
         return api.ERROR('method %s:%s was not found' % (request.method, request.path))
 
     #------------------------------------------------------------------------------

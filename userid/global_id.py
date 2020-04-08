@@ -195,9 +195,9 @@ def ParseGlobalID(inp, detect_version=False, as_field=True):
         if not user_and_key or not idhost:
             return result
         try:
-            user_key = re.match(_REGEX_GLOBAL_ID_USER_KEY, user_and_key)
+            user_key = re.match(_REGEX_GLOBAL_ID_KEY_USER, user_and_key)
             if not user_key:
-                user_key = re.match(_REGEX_GLOBAL_ID_KEY_USER, user_and_key)
+                user_key = re.match(_REGEX_GLOBAL_ID_USER_KEY, user_and_key)
             if user_key:
                 result['user'] = user_key.group('user')
                 result['key_alias'] = user_key.group('key_alias')
@@ -402,14 +402,14 @@ def ParseGlobalQueueID(inp):
 
 def GetGlobalQueueOwnerIDURL(inp, as_field=True):
     queue_alias_owner_id, _, _ = inp.rpartition('&')
-    _, owner_id = queue_alias_owner_id.partition('&')
+    _, _, owner_id = queue_alias_owner_id.partition('&')
     owner_idurl = glob2idurl(owner_id, as_field=as_field)
     return owner_idurl
 
 
 def GetGlobalQueueKeyID(inp):
     queue_alias_owner_id, _, _ = inp.rpartition('&')
-    queue_alias, owner_id = queue_alias_owner_id.partition('&')
+    queue_alias, _, owner_id = queue_alias_owner_id.partition('&')
     key_id = _FORMAT_GLOBAL_ID_KEY_USER.format(
         key_alias=queue_alias,
         user=owner_id,

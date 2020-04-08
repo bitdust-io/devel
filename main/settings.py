@@ -103,12 +103,6 @@ def init(base_dir=None):
         lg.out(_DebugLevel, 'settings.init data location is %r' % BaseDir())
     _checkMetaDataDirectory()
     _checkConfigDirectory()
-    # TODO: keep that here as an example solution for possible manual migrations
-    # migration from uconfig() to config.conf()
-    # if not os.path.isdir(ConfigDir()):
-    #     uconfig()
-    #     bpio._dir_make(ConfigDir())
-    #     convert_configs()
     _setUpDefaultSettings()
     _checkRandomizePortNumbers()
     _createNotExisingSettings()

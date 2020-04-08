@@ -199,7 +199,7 @@
                 "block_size": "10 KB",
                 "join_network": true,
                 "num_suppliers": 2,
-                "known_id_servers": "id-b:8084:6661",
+                "known_id_servers": "id-a:8084:6661",
                 "known_dht_seeds": "dht-2:14441,dht-3:14441",
                 "preferred_routers": "http://id-a:8084/proxy-1.xml"
             }

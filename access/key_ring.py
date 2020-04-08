@@ -566,7 +566,7 @@ def do_backup_key(key_id, keys_folder=None, wait_result=False):
     global_key_path = global_id.MakeGlobalID(
         key_alias='master', customer=my_id.getGlobalID(), path=remote_path_for_key)
     res = api.file_exists(global_key_path)
-    if res['status'] == 'OK' and res['result']:
+    if res['status'] == 'OK' and res['result'] and res['result'].get('exist'):
         lg.warn('key %s already exists in catalog' % global_key_path)
     else:
         res = api.file_create(global_key_path)

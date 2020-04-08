@@ -167,7 +167,7 @@ def share_create_v1(customer: str, key_size=1024):
     assert response.status_code == 200
     print('\nshare/create/v1 [%s] : %s\n' % (customer, pprint.pformat(response.json())))
     assert response.json()['status'] == 'OK', response.json()
-    return response.json()['result'][0]['key_id']
+    return response.json()['result']['key_id']
 
 
 def share_open_v1(customer: str, key_id):
@@ -178,18 +178,18 @@ def share_open_v1(customer: str, key_id):
     return response.json()
 
 
-def group_create_v1(customer: str, key_size=1024):
-    response = request_post(customer, 'group/create/v1', json={'key_size': key_size, }, timeout=20)
+def group_create_v1(customer: str, key_size=1024, label=''):
+    response = request_post(customer, 'group/create/v1', json={'key_size': key_size, 'label': label, }, timeout=20)
     assert response.status_code == 200
     print('\ngroup/create/v1 [%s] : %s\n' % (customer, pprint.pformat(response.json())))
     assert response.json()['status'] == 'OK', response.json()
-    return response.json()['result'][0]['group_key_id']
+    return response.json()['result']['group_key_id']
 
 
-def group_leave_v1(customer: str, group_key_id):
-    response = request_delete(customer, 'group/leave/v1', json={'group_key_id': group_key_id, }, timeout=20)
+def group_info_v1(customer: str, group_key_id):
+    response = request_get(customer, 'group/info/v1?group_key_id=%s' % group_key_id, timeout=20)
     assert response.status_code == 200
-    print('\ngroup/leave/v1 [%s] group_key_id=%r : %s\n' % (customer, group_key_id, pprint.pformat(response.json())))
+    print('\ngroup/info/v1 [%s] : %s\n' % (customer, pprint.pformat(response.json())))
     assert response.json()['status'] == 'OK', response.json()
     return response.json()
 
@@ -198,6 +198,14 @@ def group_join_v1(customer: str, group_key_id):
     response = request_post(customer, 'group/join/v1', json={'group_key_id': group_key_id, }, timeout=20)
     assert response.status_code == 200
     print('\ngroup/join/v1 [%s] group_key_id=%r : %s\n' % (customer, group_key_id, pprint.pformat(response.json())))
+    assert response.json()['status'] == 'OK', response.json()
+    return response.json()
+
+
+def group_leave_v1(customer: str, group_key_id):
+    response = request_delete(customer, 'group/leave/v1', json={'group_key_id': group_key_id, }, timeout=20)
+    assert response.status_code == 200
+    print('\ngroup/leave/v1 [%s] group_key_id=%r : %s\n' % (customer, group_key_id, pprint.pformat(response.json())))
     assert response.json()['status'] == 'OK', response.json()
     return response.json()
 
@@ -373,22 +381,22 @@ def dht_value_get_v1(node, key, expected_data, record_type='skip_validation', re
             print('\ndht/value/get/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
             assert response.json()['status'] == 'OK', response.json()
             assert len(response.json()['result']) > 0, response.json()
-            assert response.json()['result'][0]['key'] == key, response.json()
+            assert response.json()['result']['key'] == key, response.json()
             if expected_data == 'not_exist':
-                assert response.json()['result'][0]['read'] == 'failed', response.json()
-                assert 'value' not in response.json()['result'][0], response.json()
-                assert len(response.json()['result'][0]['closest_nodes']) > 0, response.json()
+                assert response.json()['result']['read'] == 'failed', response.json()
+                assert 'value' not in response.json()['result'], response.json()
+                assert len(response.json()['result']['closest_nodes']) > 0, response.json()
             else:
-                if response.json()['result'][0]['read'] == 'failed':
+                if response.json()['result']['read'] == 'failed':
                     print('first request failed, retry one more time')
                     response = request_get(node, 'dht/value/get/v1?record_type=%s&key=%s' % (record_type, key, ), timeout=20)
                     assert response.status_code == 200
                     assert response.json()['status'] == 'OK', response.json()
-                assert response.json()['result'][0]['read'] == 'success', response.json()
-                assert 'value' in response.json()['result'][0], response.json()
-                assert response.json()['result'][0]['value']['data'] in expected_data, response.json()
-                assert response.json()['result'][0]['value']['key'] == key, response.json()
-                assert response.json()['result'][0]['value']['type'] == record_type, response.json()
+                assert response.json()['result']['read'] == 'success', response.json()
+                assert 'value' in response.json()['result'], response.json()
+                assert response.json()['result']['value']['data'] in expected_data, response.json()
+                assert response.json()['result']['value']['key'] == key, response.json()
+                assert response.json()['result']['value']['type'] == record_type, response.json()
         except:
             time.sleep(2)
             if i == retries - 1:
@@ -413,12 +421,12 @@ def dht_value_set_v1(node, key, new_data, record_type='skip_validation', ):
     print('\ndht/value/set/v1 [%s] key=%s : %s\n' % (node, key, pprint.pformat(response.json()), ))
     assert response.json()['status'] == 'OK', response.json()
     assert len(response.json()['result']) > 0, response.json()
-    assert response.json()['result'][0]['write'] == 'success', response.json()
-    assert response.json()['result'][0]['key'] == key, response.json()
-    assert response.json()['result'][0]['value']['data'] == new_data, response.json()
-    assert response.json()['result'][0]['value']['key'] == key, response.json()
-    assert response.json()['result'][0]['value']['type'] == record_type, response.json()
-    assert len(response.json()['result'][0]['closest_nodes']) > 0, response.json()
+    assert response.json()['result']['write'] == 'success', response.json()
+    assert response.json()['result']['key'] == key, response.json()
+    assert response.json()['result']['value']['data'] == new_data, response.json()
+    assert response.json()['result']['value']['key'] == key, response.json()
+    assert response.json()['result']['value']['type'] == record_type, response.json()
+    assert len(response.json()['result']['closest_nodes']) > 0, response.json()
     return response.json()
 
 
@@ -495,7 +503,7 @@ def service_info_v1(node, service_name, expected_state, attempts=30, delay=3):
         response = request_get(node, f'service/info/{service_name}/v1', timeout=20)
         assert response.status_code == 200
         assert response.json()['status'] == 'OK', response.json()
-        current_state = response.json()['result'][0]['state']
+        current_state = response.json()['result']['state']
         print(f'\nservice/info/{service_name}/v1 [{node}] : %s' % pprint.pformat(response.json()))
         if current_state == expected_state:
             break
@@ -633,3 +641,33 @@ def friend_list_v1(node, extract_idurls=False):
     if not extract_idurls:
         return response.json()
     return [f['idurl'] for f in response.json()['result']]
+
+
+def queue_list_v1(node, extract_ids=False):
+    response = request_get(node, 'queue/list/v1', timeout=20)
+    assert response.status_code == 200
+    print('\nqueue/list/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
+    assert response.json()['status'] == 'OK', response.json()
+    if not extract_ids:
+        return response.json()
+    return [f['queue_id'] for f in response.json()['result']]
+
+
+def queue_consumer_list_v1(node, extract_ids=False):
+    response = request_get(node, 'queue/consumer/list/v1', timeout=20)
+    assert response.status_code == 200
+    print('\nqueue/consumer/list/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
+    assert response.json()['status'] == 'OK', response.json()
+    if not extract_ids:
+        return response.json()
+    return [f['consumer_id'] for f in response.json()['result']]
+
+
+def queue_producer_list_v1(node, extract_ids=False):
+    response = request_get(node, 'queue/producer/list/v1', timeout=20)
+    assert response.status_code == 200
+    print('\nqueue/producer/list/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
+    assert response.json()['status'] == 'OK', response.json()
+    if not extract_ids:
+        return response.json()
+    return [f['producer_id'] for f in response.json()['result']]

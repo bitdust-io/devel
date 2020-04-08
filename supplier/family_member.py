@@ -458,7 +458,7 @@ class FamilyMember(automat.Automat):
         Action method.
         """
         if _Debug:
-            lg.out(_DebugLevel, 'family_memeber.doNotifyConnected\n            my_info=%r\n            dht_info=%r\n            requests=%r' % (
+            lg.out(_DebugLevel, 'family_member.doNotifyConnected\n            my_info=%r\n            dht_info=%r\n            requests=%r' % (
                 self.my_info, self.dht_info, self.requests, ))
         to_be_closed = False
         if self.current_request['command'] == 'family-leave':

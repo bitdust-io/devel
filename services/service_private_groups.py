@@ -52,8 +52,8 @@ class PrivateGroupsService(LocalService):
     def start(self):
         from main import events
         from services import driver
-        from access import group_member
-        group_member.init()
+        from access import groups
+        groups.init()
         events.add_subscriber(self._on_dht_layer_connected, event_id='dht-layer-connected')
         if driver.is_on('service_entangled_dht'):
             self._do_join_message_brokers_dht_layer()
@@ -61,9 +61,9 @@ class PrivateGroupsService(LocalService):
 
     def stop(self):
         from main import events
-        from access import group_member
+        from access import groups
         events.remove_subscriber(self._on_dht_layer_connected, event_id='dht-layer-connected')
-        group_member.shutdown()
+        groups.shutdown()
         return True
 
     def health_check(self):
