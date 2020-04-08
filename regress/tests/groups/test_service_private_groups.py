@@ -1,9 +1,9 @@
 #!/usr/bin/env python
-# test_service_my_ip_port.py
+# test_service_private_groups.py
 #
 # Copyright (C) 2008 Veselin Penev  https://bitdust.io
 #
-# This file (test_service_my_ip_port.py) is part of BitDust Software.
+# This file (test_service_private_groups.py) is part of BitDust Software.
 #
 # BitDust is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by

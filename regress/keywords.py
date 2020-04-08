@@ -515,6 +515,22 @@ def service_info_v1(node, service_name, expected_state, attempts=30, delay=3):
     print(f'service/info/{service_name}/v1 [{node}] : OK\n')
 
 
+def service_start_v1(node, service_name, timeout=10):
+    response = request_post(node, 'service/start/%s/v1' % service_name, json={}, timeout=timeout)
+    assert response.status_code == 200
+    print('\nservice/start/%s/v1 [%s]: %s\n' % (service_name, node, pprint.pformat(response.json()), ))
+    assert response.json()['status'] == 'OK', response.json()
+    return response.json()
+
+
+def service_stop_v1(node, service_name, timeout=10):
+    response = request_post(node, 'service/stop/%s/v1' % service_name, json={}, timeout=timeout)
+    assert response.status_code == 200
+    print('\nservice/stop/%s/v1 [%s]: %s\n' % (service_name, node, pprint.pformat(response.json()), ))
+    assert response.json()['status'] == 'OK', response.json()
+    return response.json()
+
+
 def event_listen_v1(node, expected_event_id, consumer_id='regression_tests_wait_event', attempts=3, timeout=10,):
     found = None
     count = 0

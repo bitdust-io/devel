@@ -446,6 +446,7 @@ def create_identity(node, identity_name):
         ):
             count += 1
             continue
+        print('\nidentity/create/v1 : %s\n' % pprint.pformat(response.json()))
         assert False, f'[{node}] bad response from /identity/create/v1'
     print(f'identity/create/v1 [{node}] with name {identity_name} : OK\n')
 
