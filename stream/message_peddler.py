@@ -1150,7 +1150,7 @@ class MessagePeddler(automat.Automat):
         return None
 
     def _on_identity_url_changed(self, evt):
-        if evt.data['new_idurl'] == my_id.getIDURL():
+        if my_id.getIDURL().to_bin() in [evt.data['new_idurl'], evt.data['old_idurl']]:
             return
         old_idurl = evt.data['old_idurl']
         new_id = global_id.idurl2glob(evt.data['new_idurl'])

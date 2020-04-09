@@ -111,7 +111,7 @@ def test_customers_1_2_3_communicate_via_message_broker():
     assert 'customer-2@id-b_8084' in broker_producers
 
     # MESSAGE A: from customer 1 to the group, customers 1 and 2 must receive the message
-    a_message_sent_from_customer_1 = {'random_message': base64.b32encode(os.urandom(20)).decode(), }
+    a_message_sent_from_customer_1 = {'random_message': 'MESSAGE_A_%s' % base64.b32encode(os.urandom(20)).decode(), }
     a_customer_1_receive_result = [None, ]
     a_customer_2_receive_result = [None, ]
     a_receive_customer_1 = threading.Timer(0, kw.message_receive_v1, [
@@ -132,7 +132,7 @@ def test_customers_1_2_3_communicate_via_message_broker():
     assert kw.group_info_v1('customer-1', group_key_id)['result']['last_sequence_id'] == 0
     assert kw.group_info_v1('customer-2', group_key_id)['result']['last_sequence_id'] == 0
 
-    # customer-2 share group ky to customer-3, third member join the group
+    # customer-2 share group key to customer-3, third member join the group
     kw.group_share_v1('customer-2', group_key_id, 'customer-3@id-a_8084')
 
     kw.group_join_v1('customer-3', group_key_id)
@@ -158,7 +158,7 @@ def test_customers_1_2_3_communicate_via_message_broker():
     assert kw.group_info_v1('customer-3', group_key_id)['result']['last_sequence_id'] == 0
 
     # MESSAGE B: from customer 3 to the group, customers 1, 2 and 3 must receive the message
-    b_message_sent_from_customer_3 = {'random_message': base64.b32encode(os.urandom(20)).decode(), }
+    b_message_sent_from_customer_3 = {'random_message': 'MESSAGE_B_%s' % base64.b32encode(os.urandom(20)).decode(), }
     b_customer_1_receive_result = [None, ]
     b_customer_2_receive_result = [None, ]
     b_customer_3_receive_result = [None, ]
@@ -209,7 +209,7 @@ def test_customers_1_2_3_communicate_via_message_broker():
     assert 'customer-3@id-a_8084' in kw.queue_producer_list_v1(active_broker_name, extract_ids=True)
 
     # MESSAGE C: from customer 1 to the group, customers 1 and 3 must receive the message, customer 2 must not receive it
-    c_message_sent_from_customer_1 = {'random_message': base64.b32encode(os.urandom(20)).decode(), }
+    c_message_sent_from_customer_1 = {'random_message': 'MESSAGE_C_%s' % base64.b32encode(os.urandom(20)).decode(), }
     c_customer_1_receive_result = [None, ]
     c_customer_2_receive_result = [None, ]
     c_customer_3_receive_result = [None, ]

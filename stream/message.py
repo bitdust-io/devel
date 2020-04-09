@@ -316,7 +316,8 @@ def on_incoming_message(request, info, status, error_message):
         lg.out(_DebugLevel, "message.on_incoming_message new PrivateMessage %r from %s" % (request.PacketID, request.OwnerID, ))
     private_message_object = PrivateMessage.deserialize(request.Payload)
     if private_message_object is None:
-        lg.warn("PrivateMessage deserialize failed, can not extract message from request payload of %d bytes" % len(request.Payload))
+        lg.err("PrivateMessage deserialize failed, can not extract message from request payload of %d bytes" % len(request.Payload))
+        return False
     try:
         decrypted_message = private_message_object.decrypt()
         json_message = serialization.BytesToDict(
@@ -334,15 +335,20 @@ def on_incoming_message(request, info, status, error_message):
             return False
     # TODO: add proper cleanup of old messages
     received_messages_ids().add(request.PacketID)
-    p2p_service.SendAck(request)
     handled = False
     try:
         for cb in _IncomingMessageCallbacks:
             handled = cb(request, private_message_object, json_message)
+            if _Debug:
+                lg.args(_DebugLevel, cb=cb, packet_id=request.PacketID, handled=handled)
             if handled:
                 break
     except:
         lg.exc()
+    if handled:
+        p2p_service.SendAck(request)
+    else:
+        p2p_service.SendFail(request, 'message was not handled')
     if _Debug:
         lg.args(_DebugLevel, msg=json_message, handled=handled)
     return True

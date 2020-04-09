@@ -263,9 +263,15 @@ def close_queue(queue_id):
         raise Exception('queue not exist')
     if _Debug:
         lg.args(_DebugLevel, queue_id=queue_id)
-    for consumer_id in consumer().keys():
-        if is_consumer_subscribed(consumer_id, queue_id):
-            unsubscribe_consumer(consumer_id, queue_id)
+    for message_id in list(queue(queue_id).keys()):
+        for consumer_id in list(queue(queue_id)[message_id].notifications.keys()):
+            callback_object = queue(queue_id)[message_id].notifications[consumer_id]
+            if callback_object and not callback_object.called:
+                lg.info('canceling non-finished notification in the queue %s' % queue_id)
+                callback_object.cancel()
+#     for consumer_id in consumer().keys():
+#         if is_consumer_subscribed(consumer_id, queue_id):
+#             unsubscribe_consumer(consumer_id, queue_id)
     _ActiveQueues.pop(queue_id)
     return True
 
@@ -517,10 +523,11 @@ def on_notification_succeed(result, consumer_id, queue_id, message_id):
     if _Debug:
         lg.out(_DebugLevel, 'p2p_queue.on_notification_succeed : message %s delivered to consumer %s from queue %s' % (
             message_id, consumer_id, queue_id))
-    try:
-        reactor.callLater(0, finish_notification, consumer_id, queue_id, message_id, success=True)  # @UndefinedVariable
-    except:
-        lg.exc()
+    if is_queue_exist(queue_id):
+        try:
+            reactor.callLater(0, finish_notification, consumer_id, queue_id, message_id, success=True)  # @UndefinedVariable
+        except:
+            lg.exc()
     # reactor.callLater(0, do_cleanup)  # @UndefinedVariable
     do_cleanup(target_queues=[queue_id, ])
     return result
@@ -530,10 +537,11 @@ def on_notification_failed(err, consumer_id, queue_id, message_id):
     if _Debug:
         lg.out(_DebugLevel, 'p2p_queue.on_notification_failed : FAILED message %s delivery to consumer %s from queue %s : %s' % (
             message_id, consumer_id, queue_id, err))
-    try:
-        reactor.callLater(0, finish_notification, consumer_id, queue_id, message_id, success=False)  # @UndefinedVariable
-    except:
-        lg.exc()
+    if is_queue_exist(queue_id):
+        try:
+            reactor.callLater(0, finish_notification, consumer_id, queue_id, message_id, success=False)  # @UndefinedVariable
+        except:
+            lg.exc()
     # reactor.callLater(0, do_cleanup)  # @UndefinedVariable
     do_cleanup(target_queues=[queue_id, ])
     return err
@@ -557,7 +565,7 @@ def write_message(producer_id, queue_id, data, creation_time=None):
     return new_message
 
 
-def read_message(queue_id, message_id=None):
+def pull_message(queue_id, message_id=None):
     if not valid_queue_id(queue_id):
         raise Exception('invalid queue id')
     if queue_id not in list(queue().keys()):
@@ -573,7 +581,7 @@ def read_message(queue_id, message_id=None):
     existing_message = queue(queue_id).pop(message_id)
     existing_message.state = 'PULLED'
     if _Debug:
-        lg.out(_DebugLevel, 'p2p_queue.read_message  %r removed from queue %s' % (message_id, queue_id, ))
+        lg.out(_DebugLevel, 'p2p_queue.pull_message  %r removed from queue %s' % (message_id, queue_id, ))
     return existing_message
 
 
@@ -620,7 +628,7 @@ def push_signed_message(producer_id, queue_id, data, creation_time=None):
 
 def pop_signed_message(queue_id, message_id):
     # TODO: to be continue
-    existing_message = read_message(queue_id, message_id)
+    existing_message = pull_message(queue_id, message_id)
     if not existing_message:
         return existing_message
     try:
@@ -867,6 +875,8 @@ def do_cleanup(target_queues=None):
     if not target_queues:
         target_queues = list(queue().keys())
     for queue_id in target_queues:
+        if not is_queue_exist(queue_id):
+            continue
         for _message in queue(queue_id).values():
             if _message.state == 'SENT':
                 found_pending_notifications = False
@@ -886,7 +896,7 @@ def do_cleanup(target_queues=None):
                 to_be_removed.add((queue_id, _message.message_id, ))
                 continue
     for queue_id, message_id in to_be_removed:
-        processed_message = read_message(queue_id, message_id)
+        processed_message = pull_message(queue_id, message_id)
         if processed_message:
             for cb in _MessageProcessedCallbacks:
                 if not cb(processed_message):

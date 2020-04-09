@@ -61,7 +61,7 @@ def test_identity_rotate_broker_1():
     kw.packet_list_v1('customer-2', wait_all_finish=True)
     kw.transfer_list_v1('customer-2', wait_all_finish=True)
 
-    # disable broker-2 so that customers will only have choice to pick "desired" broker-1
+    # disable broker-2 so that customer will only have choice to pick "desired" broker-1
     kw.service_stop_v1('broker-2', 'service_message_broker')
 
     # create group owned by customer-1 and join
@@ -93,7 +93,7 @@ def test_identity_rotate_broker_1():
     assert kw.group_info_v1('customer-2', group_key_id)['result']['last_sequence_id'] == -1
 
     # MESSAGE A: from customer 1 to the group, customers 1 and 2 must receive the message
-    a_message_sent_from_customer_1 = {'random_message': base64.b32encode(os.urandom(20)).decode(), }
+    a_message_sent_from_customer_1 = {'random_message': 'MESSAGE_A_%s' % base64.b32encode(os.urandom(20)).decode(), }
     a_customer_1_receive_result = [None, ]
     a_customer_2_receive_result = [None, ]
     a_receive_customer_1 = threading.Timer(0, kw.message_receive_v1, [
@@ -118,13 +118,13 @@ def test_identity_rotate_broker_1():
     kw.identity_rotate_v1('broker-1')
 
     # MESSAGE B: from customer 2 to the group, customers 1 and 2 must switch to broker-2 and receive the message
-    b_message_sent_from_customer_1 = {'random_message': base64.b32encode(os.urandom(20)).decode(), }
+    b_message_sent_from_customer_1 = {'random_message': 'MESSAGE_B_%s' % base64.b32encode(os.urandom(20)).decode(), }
     b_customer_1_receive_result = [None, ]
     b_customer_2_receive_result = [None, ]
     b_receive_customer_1 = threading.Timer(0, kw.message_receive_v1, [
-        'customer-1', b_message_sent_from_customer_1, 'test_consumer', b_customer_1_receive_result, ])
+        'customer-1', b_message_sent_from_customer_1, 'test_consumer', b_customer_1_receive_result, 60, ])
     b_receive_customer_2 = threading.Timer(0, kw.message_receive_v1, [
-        'customer-2', b_message_sent_from_customer_1, 'test_consumer', b_customer_2_receive_result, ])
+        'customer-2', b_message_sent_from_customer_1, 'test_consumer', b_customer_2_receive_result, 60, ])
     b_send_customer_1 = threading.Timer(0.2, kw.message_send_group_v1, [
         'customer-1', group_key_id, b_message_sent_from_customer_1, ])
     b_receive_customer_1.start()
