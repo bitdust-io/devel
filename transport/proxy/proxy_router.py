@@ -648,7 +648,8 @@ class ProxyRouter(automat.Automat):
             dl.append(identitycache.immediatelyCaching(receiver_idurl))
         d = DeferredList(dl, consumeErrors=True)
         d.addCallback(lambda _: self._do_send_routed_data(newpacket, info, sender_idurl, receiver_idurl, routed_data, wide))
-        d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='_do_forward_outbox_packet')
+        if _Debug:
+            d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='_do_forward_outbox_packet')
 
     def _do_send_routed_data(self, newpacket, info, sender_idurl, receiver_idurl, routed_data, wide):
         # those must be already cached

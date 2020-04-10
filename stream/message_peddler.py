@@ -173,8 +173,8 @@ def on_consume_queue_messages(json_messages):
         try:
             msg_type = json_message.get('type', '')
             msg_direction = json_message['dir']
-            packet_id = json_message['id']
-            from_user = json_message['from']
+            packet_id = json_message['packet_id']
+            from_idurl = json_message['owner_idurl']
             to_user = json_message['to']
             msg_data = json_message['data']
         except:
@@ -187,7 +187,6 @@ def on_consume_queue_messages(json_messages):
         if to_user != my_id.getID():
             continue
         queue_id = msg_data.get('queue_id')
-        from_idurl = global_id.glob2idurl(from_user)
         if queue_id not in streams():
             lg.warn('skipped incoming message, queue %r is not registered' % queue_id)
             p2p_service.SendFailNoRequest(from_idurl, packet_id, 'queue ID not registered')
@@ -222,6 +221,7 @@ def on_consume_queue_messages(json_messages):
             if _Debug:
                 lg.args(_DebugLevel, event='queue-read', queue_id=queue_id, consumer_id=consumer_id, consumer_last_sequence_id=consumer_last_sequence_id)
             A('queue-read', queue_id=queue_id, consumer_id=consumer_id, consumer_last_sequence_id=consumer_last_sequence_id)
+            p2p_service.SendAckNoRequest(from_idurl, packet_id)
             continue
         # incoming message from queue_member() to push new message to the queue and deliver to all other group members
         producer_id = msg_data.get('producer_id')
@@ -259,6 +259,7 @@ def on_consume_queue_messages(json_messages):
         register_delivery(queue_id, new_sequence_id, new_message.message_id)
         pushed += 1
         A('message-pushed', new_message)
+        p2p_service.SendAckNoRequest(from_idurl, packet_id)
     if received > pushed:
         lg.warn('some of received messages was not pushed to the queue')
     return True
@@ -268,30 +269,30 @@ def on_message_processed(processed_message):
     sequence_id = processed_message.get_sequence_id()
     if _Debug:
         lg.args(_DebugLevel, queue_id=processed_message.queue_id, sequence_id=sequence_id,
-                message_id=processed_message.message_id, failed_consumers=processed_message.failed_consumers, )
+                message_id=processed_message.message_id,
+                success_notifications=processed_message.success_notifications,
+                failed_notifications=processed_message.failed_notifications, )
     if sequence_id is None:
         return False
     if not unregister_delivery(
         queue_id=processed_message.queue_id,
         sequence_id=sequence_id,
         message_id=processed_message.message_id,
-        failed_consumers=processed_message.failed_consumers,
+        failed_consumers=processed_message.failed_notifications,
     ):
         lg.err('failed to unregister message delivery attempt, message_id %r not found at position %d in queue %r' % (
             processed_message.message_id, sequence_id, processed_message.queue_id))
         return False
-    if processed_message.failed_consumers:
-        # lg.warn('some consumers failed to receive message %r with sequence_id=%d: %r' % (
-        #     processed_message.message_id, sequence_id, processed_message.failed_consumers))
+    if processed_message.failed_notifications:
         if _Debug:
             lg.out(_DebugLevel, '>>> FAILED >>>    from %r at sequence %d, failed_consumers=%d' % (
-                processed_message.queue_id, sequence_id, len(processed_message.failed_consumers), ))
+                processed_message.queue_id, sequence_id, len(processed_message.failed_notifications), ))
     else:
         erase_message(processed_message.queue_id, sequence_id)
         streams()[processed_message.queue_id]['messages'].remove(sequence_id)
         if _Debug:
             lg.out(_DebugLevel, '>>> PULL >>>    from %r at sequence %d with success count %d' % (
-                processed_message.queue_id, sequence_id, processed_message.success_notifications, ))
+                processed_message.queue_id, sequence_id, len(processed_message.success_notifications), ))
     return True
 
 
@@ -322,7 +323,7 @@ def on_consumer_notify(message_info):
         fire_callbacks=False,
     )
     if _Debug:
-        lg.out(_DebugLevel, '>>> OUT >>>    from %r by producer %r to consumer %r at sequence %d' % (
+        lg.out(_DebugLevel, '>>> NOTIFY >>>    from %r by producer %r to consumer %r at sequence %d' % (
             queue_id, producer_id, consumer_id, sequence_id, ))
     return ret
 
@@ -999,7 +1000,8 @@ class MessagePeddler(automat.Automat):
             request_packet=request_packet,
             result_defer=result_defer,
         )
-        queue_keeper_result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='message_peddler.doStartJoinQueue')
+        if _Debug:
+            queue_keeper_result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='message_peddler.doStartJoinQueue')
         qk = queue_keeper.check_create(customer_idurl=group_creator_idurl)
         qk.automat(
             'connect',
@@ -1083,9 +1085,11 @@ class MessagePeddler(automat.Automat):
         """
         Remove all references to the state machine object to destroy it.
         """
+        global _MessagePeddler
         message.clear_consumer_callbacks(self.name)
         events.remove_subscriber(self._on_identity_url_changed, 'identity-url-changed')
         self.destroy()
+        _MessagePeddler = None
 
     def _do_send_past_messages(self, queue_id, consumer_id, consumer_last_sequence_id):
         list_messages = get_messages_for_consumer(queue_id, consumer_id, consumer_last_sequence_id)

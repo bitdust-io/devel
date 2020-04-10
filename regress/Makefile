@@ -73,7 +73,7 @@ _one_prepare:
 	@echo "PREPARE ${TEST_NAME}"; python3 prepare_test.py ${TEST_NAME};
 
 _one_up:
-	@echo "UP ${TEST_NAME}"; docker-compose --file tests/${TEST_NAME}/docker-compose.yml up -d --no-deps --build tester 1> /dev/null 2> /dev/null && docker-compose --file tests/${TEST_NAME}/docker-compose.yml up -d 1> /dev/null 2> /dev/null
+	@echo "UP ${TEST_NAME}"; docker-compose --file tests/${TEST_NAME}/docker-compose.yml up -d --no-deps --build tester 1> /dev/null 2> logs/container.${TEST_NAME}.err && docker-compose --file tests/${TEST_NAME}/docker-compose.yml up -d 1> /dev/null 2>> logs/container.${TEST_NAME}.err
 
 _one_down:
 	@echo "DOWN ${TEST_NAME}"; docker-compose --file tests/${TEST_NAME}/docker-compose.yml down -v -t 1 1> /dev/null 2> /dev/null

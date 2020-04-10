@@ -931,7 +931,7 @@ class Node(object):
         self._dataStore.setItem(nodeStateKey, json_value, now, now, self.id)
         return args
 
-    def _joinNetworkFailed(self, err):
+    def _joinNetworkFailed(self, err, **kwargs):
         if _Debug:
             print('[DHT NODE] SINGLE  failed joining DHT network', err)
 
@@ -1156,7 +1156,7 @@ class MultiLayerNode(Node):
             parallel_calls=parallel_calls,
         )
         self._joinDeferreds[layerID].addCallback(self._persistState, layerID=layerID)
-        self._joinDeferreds[layerID].addErrback(self._joinNetworkFailed, layerID)
+        self._joinDeferreds[layerID].addErrback(self._joinNetworkFailed, layerID=layerID)
         if self.refreshers.get(layerID, None) and not self.refreshers[layerID].called:
             self.refreshers[layerID].cancel()
         self.refreshers[layerID] = twisted.internet.reactor.callLater(constants.checkRefreshInterval, self._refreshNode, layerID=layerID)  # IGNORE:E1101  @UndefinedVariable
@@ -1748,6 +1748,7 @@ class MultiLayerNode(Node):
 
     def _persistState(self, *args, **kwargs):
         layerID = kwargs.get('layerID', 0)
+        self._joinDeferreds.pop(layerID)
         closestNodes = list(self.findNode(self.layers[layerID], **kwargs))
         state = {
             'id': self.layers[layerID],
@@ -1762,7 +1763,13 @@ class MultiLayerNode(Node):
         now = int(time.time())
         self._dataStores[layerID].setItem(self.nodeStateKey, json_value, now, now, self.layers[layerID])
         return args
-    
+
+    def _joinNetworkFailed(self, err, **kwargs):
+        layerID = kwargs.get('layerID', 0)
+        self._joinDeferreds.pop(layerID)
+        if _Debug:
+            print('[DHT NODE]    failed joining DHT network layerID=%d ' % layerID, err)
+
     def _refreshNode(self, layerID=0):
         """
         Periodically called to perform k-bucket refreshes and data

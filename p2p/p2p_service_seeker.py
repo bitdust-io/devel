@@ -192,7 +192,8 @@ class P2PServiceSeeker(automat.Automat):
         self.lookup_task = self.lookup_method()
         if self.lookup_task.result_defer:
             self.lookup_task.result_defer.addCallback(self._nodes_lookup_finished)
-            self.lookup_task.result_defer.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='p2p_service_seeker.doLookupRandomNode')
+            if _Debug:
+                self.lookup_task.result_defer.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='p2p_service_seeker.doLookupRandomNode')
             self.lookup_task.result_defer.addErrback(lambda err: self.automat('users-not-found'))
         else:
             self.automat('users-not-found')
@@ -217,7 +218,8 @@ class P2PServiceSeeker(automat.Automat):
             force_cache=False,
         )
         d.addCallback(lambda ok: self.automat('shook-hands'))
-        d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='p2p_service_seeker.doHandshake')
+        if _Debug:
+            d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='p2p_service_seeker.doHandshake')
         d.addErrback(lambda err: self.automat('fail'))
 
     def doSendRequestService(self, *args, **kwargs):

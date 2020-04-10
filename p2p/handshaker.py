@@ -198,7 +198,7 @@ class Handshaker(automat.Automat):
             _KnownChannels[self.channel] = 0
         _KnownChannels[self.channel] += 1
         super(Handshaker, self).__init__(
-            name="handshake_%s%d_%s" % (self.channel, _KnownChannels[self.channel],
+            name="handshake_%s%d_%s" % (self.channel.replace('_', ''), _KnownChannels[self.channel],
                                       global_id.idurl2glob(self.remote_idurl)),
             state="AT_STARTUP",
             debug_level=debug_level,

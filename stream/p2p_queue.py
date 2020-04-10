@@ -502,11 +502,10 @@ def finish_notification(consumer_id, queue_id, message_id, success):
     queue(queue_id)[message_id].notifications[consumer_id] = None
     # queue(queue_id)[message_id].notifications.pop(consumer_id)
     if success:
-        queue(queue_id)[message_id].success_notifications += 1
+        queue(queue_id)[message_id].success_notifications.append(consumer_id)
         consumer(consumer_id).success_notifications += 1
     else:
-        queue(queue_id)[message_id].failed_notifications += 1
-        queue(queue_id)[message_id].failed_consumers.append(consumer_id)
+        queue(queue_id)[message_id].failed_notifications.append(consumer_id)
         consumer(consumer_id).failed_notifications += 1
     if not defer_result.called:
         lg.info('canceling non-finished notification in the queue %s' % queue_id)
@@ -599,8 +598,11 @@ def lookup_pending_message(consumer_id, queue_id):
         if consumer_id not in message_obj.consumers:
             # only interested consumers needs to be selected
             continue
-        if message_obj.notifications.get(consumer_id) is not None:
+        if consumer_id in message_obj.success_notifications or consumer_id in message_obj.failed_notifications:
             # only select consumer which was not notified yet
+            continue
+        if consumer_id in message_obj.notifications:
+            # notification already started to given consumer
             continue
         pending_message_id = message_id
         break
@@ -762,16 +764,13 @@ def do_handle_event_packet(newpacket, e_json):
 def do_notify(callback_method, consumer_id, queue_id, message_id):
     existing_message = queue(queue_id)[message_id]
     event_id = global_id.ParseGlobalQueueID(queue_id)['queue_alias']
-
     if consumer_id in existing_message.notifications:
         if _Debug:
-            lg.dbg('notification %r already sent to consumer %r' % (message_id, consumer_id, ))
+            lg.dbg(_DebugLevel, 'notification %r already started for consumer %r' % (message_id, consumer_id, ))
         # notification already sent to given consumer
         return False
-
     ret = Deferred()
     start_notification(consumer_id, queue_id, message_id, ret)
-
     if id_url.is_idurl(callback_method):
         p2p_service.SendEvent(
             remote_idurl=id_url.field(callback_method),
@@ -805,11 +804,11 @@ def do_notify(callback_method, consumer_id, queue_id, message_id):
             result = False
         if isinstance(result, Deferred):
             result.addCallback(lambda ok: ret.callback(True) if ok else ret.callback(False))
-            result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='p2p_queue.do_notify')
+            if _Debug:
+                result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='p2p_queue.do_notify')
             result.addErrback(lambda err: ret.callback(False))
         else:
             reactor.callLater(0, ret.callback, result)  # @UndefinedVariable
-
     return ret
 
 
@@ -841,6 +840,8 @@ def do_consume(interested_consumers=None):
             continue
         for queue_id in interested_queues:
             to_be_consumed.append((consumer_id, queue_id, ))
+    # if _Debug:
+    #     lg.args(_DebugLevel, to_be_consumed=to_be_consumed, interested_consumers=interested_consumers)
     if not to_be_consumed:
         # nothing to consume
         return False
@@ -887,7 +888,7 @@ def do_cleanup(target_queues=None):
                     # no pending notifications found, but state is SENT : all is done
                     to_be_removed.add((queue_id, _message.message_id, ))
                     continue
-                if _message.failed_notifications + _message.success_notifications >= len(_message.consumers):
+                if len(_message.failed_notifications) + len(_message.success_notifications) >= len(_message.consumers):
                     # all notifications are sent and results are received (or timeouts) - remove message from the queue
                     to_be_removed.add((queue_id, _message.message_id, ))
                     continue
@@ -918,10 +919,9 @@ class QueueMessage(object):
         self.payload = json_data
         self.state = 'CREATED'
         self.notifications = {}
-        self.success_notifications = 0
-        self.failed_notifications = 0
+        self.success_notifications = []
+        self.failed_notifications = []
         self.consumers = []
-        self.failed_consumers = []
         for consumer_id in consumer():
             if queue_id in consumer(consumer_id).queues:
                 self.consumers.append(consumer_id)

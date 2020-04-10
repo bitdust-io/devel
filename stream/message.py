@@ -345,10 +345,10 @@ def on_incoming_message(request, info, status, error_message):
                 break
     except:
         lg.exc()
-    if handled:
-        p2p_service.SendAck(request)
-    else:
-        p2p_service.SendFail(request, 'message was not handled')
+    # if handled:
+    #     p2p_service.SendAck(request)
+    # else:
+    #     p2p_service.SendFail(request, 'message was not handled')
     if _Debug:
         lg.args(_DebugLevel, msg=json_message, handled=handled)
     return True
@@ -551,15 +551,16 @@ def push_incoming_message(request, private_message_object, json_message):
             'to': private_message_object.recipient_id(),
             'from': private_message_object.sender_id(),
             'data': json_message,
-            'id': request.PacketID,
+            'packet_id': request.PacketID,
+            'owner_idurl': request.OwnerID,
             'time': utime.get_sec1970(),
         })
         if _Debug:
             lg.out(_DebugLevel, 'message.push_incoming_message "%s" for consumer "%s", %d pending messages for consumer %r' % (
                 request.PacketID, consumer_id, len(message_queue()[consumer_id]), consumer_id, ))
     # reactor.callLater(0, do_read)  # @UndefinedVariable
-    do_read()
-    return False
+    total_consumed = do_read()
+    return total_consumed > 0
 
 
 def push_outgoing_message(json_message, private_message_object, remote_identity, request, result):
@@ -577,7 +578,8 @@ def push_outgoing_message(json_message, private_message_object, remote_identity,
             'to': private_message_object.recipient_id(),
             'from': private_message_object.sender_id(),
             'data': json_message,
-            'id': request.PacketID,
+            'packet_id': request.PacketID,
+            'owner_idurl': request.OwnerID,
             'time': utime.get_sec1970(),
         })
         if _Debug:
@@ -598,7 +600,8 @@ def push_group_message(json_message, direction, group_key_id, producer_id, seque
             'to': group_key_id,
             'from': producer_id,
             'data': json_message,
-            'id': sequence_id,
+            'packet_id': sequence_id,
+            'owner_idurl': None,
             'time': utime.get_sec1970(),
         })
         if _Debug:

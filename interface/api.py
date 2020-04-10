@@ -83,11 +83,13 @@ def OK(result='', message=None, status='OK', **kwargs):
     if message is not None:
         o['message'] = message
     o = on_api_result_prepared(o)
-    try:
-        sample = jsn.dumps(o, ensure_ascii=True, sort_keys=True)
-    except:
-        lg.exc()
-        sample = strng.to_text(o, errors='ignore')
+    sample = ''
+    if _Debug or _APILogFileEnabled:
+        try:
+            sample = jsn.dumps(o, ensure_ascii=True, sort_keys=True)
+        except:
+            lg.exc()
+            sample = strng.to_text(o, errors='ignore')
     api_method = kwargs.get('api_method', None)
     if not api_method:
         api_method = sys._getframe().f_back.f_code.co_name
@@ -119,11 +121,13 @@ def RESULT(result=[], message=None, status='OK', errors=None, source=None, extra
     if extra_fields is not None:
         o.update(extra_fields)
     o = on_api_result_prepared(o)
-    try:
-        sample = jsn.dumps(o, ensure_ascii=True, sort_keys=True)
-    except:
-        lg.exc()
-        sample = strng.to_text(o, errors='ignore')
+    sample = ''
+    if _Debug or _APILogFileEnabled:
+        try:
+            sample = jsn.dumps(o, ensure_ascii=True, sort_keys=True)
+        except:
+            lg.exc()
+            sample = strng.to_text(o, errors='ignore')
     api_method = kwargs.get('api_method', None)
     if not api_method:
         api_method = sys._getframe().f_back.f_code.co_name
@@ -161,11 +165,13 @@ def ERROR(errors=[], message=None, status='ERROR', reason=None, details=None, **
     if details is not None:
         o.update(details)
     o = on_api_result_prepared(o)
-    try:
-        sample = jsn.dumps(o, ensure_ascii=True, sort_keys=True)
-    except:
-        lg.exc()
-        sample = strng.to_text(o, errors='ignore')
+    sample = ''
+    if _Debug or _APILogFileEnabled:
+        try:
+            sample = jsn.dumps(o, ensure_ascii=True, sort_keys=True)
+        except:
+            lg.exc()
+            sample = strng.to_text(o, errors='ignore')
     api_method = kwargs.get('api_method', None)
     if not api_method:
         api_method = sys._getframe().f_back.f_code.co_name
@@ -2290,7 +2296,8 @@ def friend_add(idurl_or_global_id, alias=''):
                 alias=alias,
             ))
         d = online_status.handshake(idurl, channel='friend_add', keep_alive=True)
-        d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='api.friend_add')
+        if _Debug:
+            d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='api.friend_add')
         if added:
             return OK(message='new friend has been added', api_method='friend_add')
         return OK(message='this friend has been already added', api_method='friend_add')
@@ -3635,12 +3642,14 @@ def message_receive(consumer_id, direction='incoming', message_types='private_me
     if not driver.is_on('service_private_messages'):
         return ERROR('service_private_messages() is not started')
     from stream import message
+    from p2p import p2p_service
     ret = Deferred()
     if strng.is_text(message_types):
         message_types = message_types.split(',')
 
     def _on_pending_messages(pending_messages):
         result = []
+        packets_to_ack = {}
         for msg in pending_messages:
             try:
                 result.append({
@@ -3648,11 +3657,17 @@ def message_receive(consumer_id, direction='incoming', message_types='private_me
                     'recipient': msg['to'],
                     'sender': msg['from'],
                     'time': msg['time'],
-                    'message_id': msg['id'],
+                    'message_id': msg['packet_id'],
                     'dir': msg['dir'],
                 })
             except:
                 lg.exc()
+                continue
+            if msg['owner_idurl']:
+                packets_to_ack[msg['packet_id']] = msg['owner_idurl']
+        for packet_id, owner_idurl in packets_to_ack.items():
+            p2p_service.SendAckNoRequest(owner_idurl, packet_id)
+        packets_to_ack.clear()
         if _Debug:
             lg.out(_DebugLevel, 'api.message_receive._on_pending_messages returning : %r' % result)
         ret.callback(OK(result, api_method='message_receive'))

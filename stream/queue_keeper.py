@@ -358,7 +358,8 @@ class QueueKeeper(automat.Automat):
         )
         # TODO: add more validations of dht_result
         result.addCallback(self._on_read_customer_message_brokers, possible_broker_position)
-        result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='queue_keeper.doDHTRead')
+        if _Debug:
+            result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='queue_keeper.doDHTRead')
         result.addErrback(lambda err: self.automat('dht-read-failed', err))
 
     def doDHTWrite(self, *args, **kwargs):
@@ -372,7 +373,8 @@ class QueueKeeper(automat.Automat):
             position=desired_position,
         )
         result.addCallback(self._on_write_customer_message_broker, desired_position)
-        result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='queue_keeper.doDHTWrite')
+        if _Debug:
+            result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='queue_keeper.doDHTWrite')
         result.addErrback(lambda err: self.automat('dht-write-failed', err))
 
     def doDHTRefresh(self, *args, **kwargs):
