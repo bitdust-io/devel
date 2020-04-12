@@ -264,14 +264,16 @@ def close_queue(queue_id):
     if _Debug:
         lg.args(_DebugLevel, queue_id=queue_id)
     for message_id in list(queue(queue_id).keys()):
+        if message_id not in queue(queue_id):
+            continue
         for consumer_id in list(queue(queue_id)[message_id].notifications.keys()):
             callback_object = queue(queue_id)[message_id].notifications[consumer_id]
             if callback_object and not callback_object.called:
                 lg.info('canceling non-finished notification in the queue %s' % queue_id)
                 callback_object.cancel()
-#     for consumer_id in consumer().keys():
-#         if is_consumer_subscribed(consumer_id, queue_id):
-#             unsubscribe_consumer(consumer_id, queue_id)
+    for consumer_id in consumer().keys():
+        if is_consumer_subscribed(consumer_id, queue_id):
+            unsubscribe_consumer(consumer_id, queue_id)
     _ActiveQueues.pop(queue_id)
     return True
 

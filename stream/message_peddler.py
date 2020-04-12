@@ -31,6 +31,7 @@
 BitDust message_peddler() Automat
 
 EVENTS:
+    * :red:`message-pushed`
     * :red:`queue-connect`
     * :red:`queue-disconnect`
     * :red:`queue-read`
@@ -77,6 +78,8 @@ from lib import jsn
 from lib import strng
 from lib import utime
 from lib import packetid
+
+from contacts import identitycache
 
 from system import bpio
 from system import local_fs
@@ -909,6 +912,8 @@ class MessagePeddler(automat.Automat):
                 self.doLeaveStopQueue(*args, **kwargs)
             elif event == 'queue-read':
                 self.doConsumeMessages(*args, **kwargs)
+            elif event == 'message-pushed':
+                self.doProcessMessage(*args, **kwargs)
         #---CLOSED---
         elif self.state == 'CLOSED':
             pass
@@ -989,26 +994,16 @@ class MessagePeddler(automat.Automat):
         queue_id = kwargs['queue_id']
         consumer_id = kwargs['consumer_id']
         producer_id = kwargs['producer_id']
+        position = kwargs.get('position', -1)
+        if id_url.is_cached(group_creator_idurl):
+            self._do_check_create_queue_keeper(group_creator_idurl, request_packet, queue_id, consumer_id, producer_id, position, result_defer)
+            return
+        caching_story = identitycache.immediatelyCaching(group_creator_idurl)
+        caching_story.addCallback(lambda _: self._do_check_create_queue_keeper(
+            group_creator_idurl, request_packet, queue_id, consumer_id, producer_id, position, result_defer))
         if _Debug:
-            lg.args(_DebugLevel, queue_id=request_packet, consumer_id=consumer_id, producer_id=producer_id, position=kwargs.get('position', -1))
-        queue_keeper_result = Deferred()
-        queue_keeper_result.addCallback(
-            self._on_queue_keeper_connect_result,
-            queue_id=queue_id,
-            consumer_id=consumer_id,
-            producer_id=producer_id,
-            request_packet=request_packet,
-            result_defer=result_defer,
-        )
-        if _Debug:
-            queue_keeper_result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='message_peddler.doStartJoinQueue')
-        qk = queue_keeper.check_create(customer_idurl=group_creator_idurl)
-        qk.automat(
-            'connect',
-            queue_id=queue_id,
-            desired_position=kwargs.get('position', -1),
-            result_callback=queue_keeper_result,
-        )
+            caching_story.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='message_peddler.doStartJoinQueue')
+        caching_story.addErrback(self._on_group_creator_idurl_cache_failed, request_packet, result_defer)
 
     def doLeaveStopQueue(self, *args, **kwargs):
         """
@@ -1081,6 +1076,12 @@ class MessagePeddler(automat.Automat):
         """
         self._do_send_past_messages(**kwargs)
 
+    def doProcessMessage(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        
+
     def doDestroyMe(self, *args, **kwargs):
         """
         Remove all references to the state machine object to destroy it.
@@ -1132,6 +1133,29 @@ class MessagePeddler(automat.Automat):
                     if my_keys.is_key_registered(group_key_id):
                         lg.info('clean up group key %r' % group_key_id)
                         my_keys.erase_key(group_key_id)
+
+
+    def _do_check_create_queue_keeper(self, customer_idurl, request_packet, queue_id, consumer_id, producer_id, position, result_defer):
+        if _Debug:
+            lg.args(_DebugLevel, queue_id=queue_id, consumer_id=consumer_id, producer_id=producer_id, position=position)
+        queue_keeper_result = Deferred()
+        queue_keeper_result.addCallback(
+            self._on_queue_keeper_connect_result,
+            queue_id=queue_id,
+            consumer_id=consumer_id,
+            producer_id=producer_id,
+            request_packet=request_packet,
+            result_defer=result_defer,
+        )
+        if _Debug:
+            queue_keeper_result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='message_peddler.doStartJoinQueue')
+        qk = queue_keeper.check_create(customer_idurl=customer_idurl)
+        qk.automat(
+            'connect',
+            queue_id=queue_id,
+            desired_position=position,
+            result_callback=queue_keeper_result,
+        )
 
     def _on_queue_keeper_connect_result(self, result, queue_id, consumer_id, producer_id, request_packet, result_defer):
         if _Debug:
@@ -1190,3 +1214,8 @@ class MessagePeddler(automat.Automat):
                 add_producer(queue_id, new_producer_id, producer_info=old_producer_info)
                 if old_producer_info['active']:
                     start_producer(queue_id, new_producer_id)
+
+    def _on_group_creator_idurl_cache_failed(self, err, request_packet, result_defer):
+        p2p_service.SendFail(request_packet, 'group creator idurl cache failed')
+        result_defer.callback(False)
+        return None

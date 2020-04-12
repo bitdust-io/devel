@@ -210,6 +210,42 @@ services:
       - id-a
       - id-b
 
+  broker-3:
+    image: bitdust/app
+    ports:
+      - "10763:22"
+    links:
+      - dht-2
+      - dht-3
+      - stun-1
+      - stun-2
+      - id-a
+      - id-b
+
+  broker-4:
+    image: bitdust/app
+    ports:
+      - "10764:22"
+    links:
+      - dht-2
+      - dht-3
+      - stun-1
+      - stun-2
+      - id-a
+      - id-b
+
+  broker-5:
+    image: bitdust/app
+    ports:
+      - "10765:22"
+    links:
+      - dht-2
+      - dht-3
+      - stun-1
+      - stun-2
+      - id-a
+      - id-b
+
 
 
   tester:
@@ -238,6 +274,9 @@ services:
       - customer-3
       - broker-1
       - broker-2
+      - broker-3
+      - broker-4
+      - broker-5
 
     volumes:
       - customer_1:/customer_1

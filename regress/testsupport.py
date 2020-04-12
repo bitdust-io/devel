@@ -84,18 +84,19 @@ def run_ssh_command_and_wait(host, cmd, verbose=False) -> object:
 
 #------------------------------------------------------------------------------
 
-def request_get(node, url, timeout=None, attempts=3):
+def request_get(node, url, timeout=None, attempts=3, verbose=True):
     resp = None
     err = None
     count = 0
     while True:
         if count > attempts:
-            print('\nGET request failed after few attempts :  node=%r   url=%r   err=%r\n' % (node, url, err))
+            if verbose:
+                print('\nGET request failed after few attempts :  node=%r   url=%r   err=%r\n' % (node, url, err))
             assert False, 'GET request failed after few attempts :  node=%r   url=%r    err=%r' % (node, url, err)
             break
         try:
             resp = requests.get(
-                tunnel_url(node, url),
+                tunnel_url(node, url, verbose=verbose),
                 timeout=timeout,
                 # cert=(f'/app/certificates/{node}/apiclientcert', f'/app/certificates/{node}/apiclientcertkey'),
                 # verify=f'/app/certificates/{node}/apiservercert',
@@ -109,18 +110,19 @@ def request_get(node, url, timeout=None, attempts=3):
     return resp
 
 
-def request_post(node, url, json={}, timeout=None, attempts=3):
+def request_post(node, url, json={}, timeout=None, attempts=3, verbose=True):
     resp = None
     err = None
     count = 0
     while True:
         if count > attempts:
-            print('\nPOST request failed after few attempts :  node=%r   url=%r   json=%r   err=%r\n' % (node, url, json, err))
+            if verbose:
+                print('\nPOST request failed after few attempts :  node=%r   url=%r   json=%r   err=%r\n' % (node, url, json, err))
             assert False, 'POST request failed after few attempts :  node=%r   url=%r   json=%r   err=%r' % (node, url, json, err)
             break
         try:
             resp = requests.post(
-                url=tunnel_url(node, url),
+                url=tunnel_url(node, url, verbose=verbose),
                 json=json,
                 timeout=timeout,
                 # cert=(f'/app/certificates/{node}/apiclientcert', f'/app/certificates/{node}/apiclientcertkey'),
@@ -135,18 +137,19 @@ def request_post(node, url, json={}, timeout=None, attempts=3):
     return resp
 
 
-def request_put(node, url, json={}, timeout=None, attempts=3):
+def request_put(node, url, json={}, timeout=None, attempts=3, verbose=True):
     resp = None
     err = None
     count = 0
     while True:
         if count > attempts:
-            print('\nPUT request failed after few attempts :  node=%r   url=%r   json=%r   err=%r\n' % (node, url, json, err))
+            if verbose:
+                print('\nPUT request failed after few attempts :  node=%r   url=%r   json=%r   err=%r\n' % (node, url, json, err))
             assert False, 'PUT request failed after few attempts :  node=%r   url=%r   json=%r   err=%r' % (node, url, json, err)
             break
         try:
             resp = requests.put(
-                url=tunnel_url(node, url),
+                url=tunnel_url(node, url, verbose=verbose),
                 json=json,
                 timeout=timeout,
                 # cert=(f'/app/certificates/{node}/apiclientcert', f'/app/certificates/{node}/apiclientcertkey'),
@@ -161,18 +164,19 @@ def request_put(node, url, json={}, timeout=None, attempts=3):
     return resp
 
 
-def request_delete(node, url, json={}, timeout=None, attempts=3):
+def request_delete(node, url, json={}, timeout=None, attempts=3, verbose=True):
     resp = None
     err = None
     count = 0
     while True:
         if count > attempts:
-            print('\nDELETE request failed after few attempts :  node=%r   url=%r   json=%r   err=%r\n' % (node, url, json, err))
+            if verbose:
+                print('\nDELETE request failed after few attempts :  node=%r   url=%r   json=%r   err=%r\n' % (node, url, json, err))
             assert False, 'DELETE request failed after few attempts :  node=%r   url=%r   json=%r   err=%r' % (node, url, json, err)
             break
         try:
             resp = requests.delete(
-                url=tunnel_url(node, url),
+                url=tunnel_url(node, url, verbose=verbose),
                 json=json,
                 timeout=timeout,
                 # cert=(f'/app/certificates/{node}/apiclientcert', f'/app/certificates/{node}/apiclientcertkey'),
@@ -288,37 +292,42 @@ def tunnel_port(node):
     return _NodeTunnelPort[node]
 
 
-def tunnel_url(node, endpoint):
-    print('\n%s [%s]   /%s   %s' % (
-        datetime.datetime.now().strftime("%H:%M:%S.%f"), node, endpoint,
-        os.environ['PYTEST_CURRENT_TEST'].replace(' (setup)', '').replace(' (call)', ''), ))
+def tunnel_url(node, endpoint, verbose=True):
+    if verbose:
+        print('\n%s [%s]   /%s   %s' % (
+            datetime.datetime.now().strftime("%H:%M:%S.%f"), node, endpoint,
+            os.environ['PYTEST_CURRENT_TEST'].replace(' (setup)', '').replace(' (call)', ''), ))
     return f'http://127.0.0.1:{tunnel_port(node)}/{endpoint.lstrip("/")}'
 
 #------------------------------------------------------------------------------
 
-def start_daemon(node):
+def start_daemon(node, verbose=False):
     run_ssh_command_and_wait(node, 'mkdir -pv /root/.bitdust/metadata/')
     if os.environ.get('_DEBUG', '0') == '0':
         run_ssh_command_and_wait(node, "find /app/bitdust -type f -name '*.py' -exec sed -i -e 's/_Debug = True/_Debug = False/g' {} +")
     bitdust_daemon = run_ssh_command_and_wait(node, 'BITDUST_LOG_USE_COLORS=0 COVERAGE_PROCESS_START=/app/bitdust/.coverage_config bitdust daemon')
-    print('\n' + bitdust_daemon[0].strip())
+    if verbose:
+        print('\n' + bitdust_daemon[0].strip())
     assert (
         bitdust_daemon[0].strip().startswith('main BitDust process already started') or
         bitdust_daemon[0].strip().startswith('new BitDust process will be started in daemon mode')
     )
-    print(f'\nstart_daemon [{node}] OK\n')
+    if verbose:
+        print(f'\nstart_daemon [{node}] OK\n')
 
-async def start_daemon_async(node, loop):
+async def start_daemon_async(node, loop, verbose=False):
     await run_ssh_command_and_wait_async(node, 'mkdir -pv /root/.bitdust/metadata/', loop)
     if os.environ.get('_DEBUG', '0') == '0':
         await run_ssh_command_and_wait_async(node, "find /app/bitdust -type f -name '*.py' -exec sed -i -e 's/_Debug = True/_Debug = False/g' {} +", loop)
     bitdust_daemon = await run_ssh_command_and_wait_async(node, 'BITDUST_LOG_USE_COLORS=0 COVERAGE_PROCESS_START=/app/bitdust/.coverage_config bitdust daemon', loop)
-    print('\n' + bitdust_daemon[0].strip())
+    if verbose:
+        print('\n' + bitdust_daemon[0].strip())
     assert (
         bitdust_daemon[0].strip().startswith('main BitDust process already started') or
         bitdust_daemon[0].strip().startswith('new BitDust process will be started in daemon mode')
     )
-    print(f'\nstart_daemon_async [{node}] OK\n')
+    if verbose:
+        print(f'\nstart_daemon_async [{node}] OK\n')
 
 #------------------------------------------------------------------------------
 
@@ -391,7 +400,7 @@ def health_check(node, verbose=False):
         if count > 60:
             assert False, f'node {node} is not healthy after many attempts'
         try:
-            response = request_get(node, 'process/health/v1')
+            response = request_get(node, 'process/health/v1', verbose=verbose)
         except Exception as exc:
             response = None
             if verbose:
@@ -402,32 +411,37 @@ def health_check(node, verbose=False):
             print(f'\nnode {node} process not started yet, try again after 1 sec.\n')
         time.sleep(1)
         count += 1
-    print(f'\nprocess/health/v1 [{node}] : OK')
+    if verbose:
+        print(f'\nprocess/health/v1 [{node}] : OK')
 
 
-async def health_check_async(node, event_loop):
+async def health_check_async(node, event_loop, verbose=False):
     async with aiohttp.ClientSession(loop=event_loop, connector=ssl_connection(node)) as client:
         count = 0
         while True:
-            print(f'health_check_async {node}  with count={count}\n')
+            if verbose:
+                print(f'health_check_async {node}  with count={count}\n')
             if count > 60:
                 print(f'node {node} is not healthy after many attempts')
                 assert False, f'node {node} is not healthy after many attempts'
             try:
-                response = await client.get(tunnel_url(node, 'process/health/v1'))
+                response = await client.get(tunnel_url(node, 'process/health/v1', verbose=verbose))
                 response_json = await response.json()
             except (
                 aiohttp.ServerDisconnectedError,
                 aiohttp.client_exceptions.ClientOSError,
             ) as exc:
-                print(f'node {node} is not started yet, count={count} : {exc}\n')
+                if verbose:
+                    print(f'node {node} is not started yet, count={count} : {exc}\n')
             else:
                 if response.status == 200 and response_json['status'] == 'OK':
                     break
-                print(f'node {node} process not started yet, try again after 1 sec.\n')
+                if verbose:
+                    print(f'node {node} process not started yet, try again after 1 sec.\n')
             await asyncio.sleep(1)
             count += 1
-    print(f'process/health/v1 [{node}] : OK\n')
+    if verbose:
+        print(f'process/health/v1 [{node}] : OK\n')
 
 #------------------------------------------------------------------------------
 
@@ -451,43 +465,47 @@ def create_identity(node, identity_name):
     print(f'identity/create/v1 [{node}] with name {identity_name} : OK\n')
 
 
-async def create_identity_async(node, identity_name, event_loop):
+async def create_identity_async(node, identity_name, event_loop, verbose=False):
     async with aiohttp.ClientSession(loop=event_loop, connector=ssl_connection(node)) as client:
         for i in range(60):
-            response_identity = await client.post(tunnel_url(node, 'identity/create/v1'), json={'username': identity_name})
+            response_identity = await client.post(tunnel_url(node, 'identity/create/v1', verbose=verbose), json={'username': identity_name})
             assert response_identity.status == 200
             response_json = await response_identity.json()
             if response_json['status'] == 'OK':
                 break
             else:
                 assert response_json['errors'] == ['network connection error'], response_json
-            print('[%s] retry %d   POST:identity/create/v1  username=%s  after 1 sec.' % (
-                node, i + 1, identity_name,))
+            if verbose:
+                print('[%s] retry %d   POST:identity/create/v1  username=%s  after 1 sec.' % (
+                    node, i + 1, identity_name,))
             await asyncio.sleep(1)
         else:
-            print(f'identity/create/v1 [{node}] with name {identity_name} : FAILED\n')
+            if verbose:
+                print(f'identity/create/v1 [{node}] with name {identity_name} : FAILED\n')
             assert False
-    print(f'identity/create/v1 [{node}] with name {identity_name} : OK\n')
+    if verbose:
+        print(f'identity/create/v1 [{node}] with name {identity_name} : OK\n')
 
 
-def connect_network(node):
+def connect_network(node, verbose=False):
     count = 0
-    response = request_get(node, 'network/connected/v1?wait_timeout=1')
+    response = request_get(node, 'network/connected/v1?wait_timeout=1', verbose=verbose)
     assert response.json()['status'] == 'ERROR'
     while True:
         if count > 60:
             assert False, f'node {node} failed to connect to the network after many retries'
-        response = request_get(node, 'network/connected/v1?wait_timeout=5')
+        response = request_get(node, 'network/connected/v1?wait_timeout=5', verbose=verbose)
         if response.json()['status'] == 'OK':
             break
         count += 1
         time.sleep(1)
-    print(f'network/connected/v1 [{node}] : OK\n')
+    if verbose:
+        print(f'network/connected/v1 [{node}] : OK\n')
 
 
 async def connect_network_async(node, loop, attempts=30, delay=1, timeout=10, verbose=False):
     async with aiohttp.ClientSession(loop=loop, connector=ssl_connection(node)) as client:
-        response = await client.get(tunnel_url(node, 'network/connected/v1?wait_timeout=1'), timeout=timeout)
+        response = await client.get(tunnel_url(node, 'network/connected/v1?wait_timeout=1', verbose=verbose), timeout=timeout)
         response_json = await response.json()
         if verbose:
             print(f'\nnetwork/connected/v1 [{node}] : %s' % pprint.pformat(response_json))
@@ -497,27 +515,29 @@ async def connect_network_async(node, loop, attempts=30, delay=1, timeout=10, ve
         counter = 0
         for i in range(attempts):
             counter += 1
-            response = await client.get(tunnel_url(node, 'network/connected/v1?wait_timeout=1'), timeout=timeout)
+            response = await client.get(tunnel_url(node, 'network/connected/v1?wait_timeout=1', verbose=verbose), timeout=timeout)
             response_json = await response.json()
             if verbose:
                 print(f'\nnetwork/connected/v1 [{node}] : %s' % pprint.pformat(response_json))
             if response_json['status'] == 'OK':
-                print(f"network/connected/v1 {node}: got status OK\n")
+                if verbose:
+                    print(f"network/connected/v1 {node}: got status OK\n")
                 break
             if verbose:
                 print(f"connect network attempt {counter} at {node}: sleep 1 sec\n")
             await asyncio.sleep(delay)
         else:
-            print(f"connect network {node}: FAILED\n")
-            assert False
+            if verbose:
+                print(f"connect network {node}: FAILED\n")
+            assert False, f'connect network {node}: FAILED'
 
 
-async def service_started_async(node, service_name, loop, expected_state='ON', attempts=60, delay=3, verbose=True):
+async def service_started_async(node, service_name, loop, expected_state='ON', attempts=60, delay=3, verbose=False):
     async with aiohttp.ClientSession(loop=loop, connector=ssl_connection(node)) as client:
         current_state = None
         count = 0
         while current_state is None or current_state != expected_state:
-            response = await client.get(tunnel_url(node, f'service/info/{service_name}/v1'))
+            response = await client.get(tunnel_url(node, f'service/info/{service_name}/v1', verbose=verbose))
             response_json = await response.json()
             assert response_json['status'] == 'OK', response_json
             current_state = response_json['result']['state']
@@ -530,13 +550,14 @@ async def service_started_async(node, service_name, loop, expected_state='ON', a
                 assert False, f"service {service_name} is not {expected_state} after {attempts} attempts"
                 return
             await asyncio.sleep(delay)
-        print(f'service/info/{service_name}/v1 [{node}] : OK\n')
+        if verbose:
+            print(f'service/info/{service_name}/v1 [{node}] : OK\n')
 
 
 async def packet_list_async(node, loop, wait_all_finish=True, attempts=60, delay=3, verbose=False):
     async with aiohttp.ClientSession(loop=loop, connector=ssl_connection(node)) as client:
         for i in range(attempts):
-            response = await client.get(tunnel_url(node, 'packet/list/v1'), timeout=20)
+            response = await client.get(tunnel_url(node, 'packet/list/v1', verbose=verbose), timeout=20)
             response_json = await response.json()
             if verbose:
                 print('\npacket/list/v1 [%s] : %s\n' % (node, pprint.pformat(response_json), ))
@@ -643,7 +664,6 @@ def start_dht_seed(node, wait_seconds=0, dht_seeds='', attached_layers=''):
     cmd += 'bitdust set services/ip-port-responder/enabled true;'
     run_ssh_command_and_wait(node, cmd)
     # start BitDust daemon
-    print(f'sleep {wait_seconds} seconds')
     time.sleep(wait_seconds)
     start_daemon(node)
     # get_client_certificate(node)
@@ -821,7 +841,7 @@ async def start_customer_async(node, identity_name, loop, join_network=True, num
                                supplier_candidates='', preferred_routers='', health_check_interval_seconds=None,
                                sleep_before_start=None, ):
     if sleep_before_start:
-        print('\nsleep %d seconds before start customer %r\n' % (sleep_before_start, identity_name))
+        # print('\nsleep %d seconds before start customer %r\n' % (sleep_before_start, identity_name))
         await asyncio.sleep(sleep_before_start)
     print('\nNEW CUSTOMER %r at [%s]\n' % (identity_name, node, ))
     cmd = ''
@@ -858,7 +878,7 @@ async def start_customer_async(node, identity_name, loop, join_network=True, num
     cmd += 'bitdust set services/customer/enabled true;'
     cmd += f'bitdust set services/customer/suppliers-number "{num_suppliers}";'
     # decrease message timeout for group communications
-    cmd += 'bitdust set services/private-groups/message-ack-timeout 3;'
+    cmd += 'bitdust set services/private-groups/message-ack-timeout 5;'
     if block_size:
         cmd += f'bitdust set services/backups/block-size "{block_size}";'
     if supplier_candidates:

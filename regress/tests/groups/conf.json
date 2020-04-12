@@ -285,6 +285,60 @@
                 "known_dht_seeds": "dht-2:14441,dht-3:14441",
                 "preferred_routers": "http://id-b:8084/proxy-2.xml"
             }
+        },
+        "broker-3": {
+            "links": [
+                "dht-2",
+                "dht-3",
+                "stun-1",
+                "stun-2",
+                "id-a",
+                "id-b"
+            ],
+            "ports": "10063:22",
+            "node": {
+                "role": "message-broker",
+                "name": "broker-3",
+                "known_id_servers": "id-a:8084:6661",
+                "known_dht_seeds": "dht-2:14441,dht-3:14441",
+                "preferred_routers": "http://id-a:8084/proxy-1.xml"
+            }
+        },
+        "broker-4": {
+            "links": [
+                "dht-2",
+                "dht-3",
+                "stun-1",
+                "stun-2",
+                "id-a",
+                "id-b"
+            ],
+            "ports": "10064:22",
+            "node": {
+                "role": "message-broker",
+                "name": "broker-4",
+                "known_id_servers": "id-b:8084:6661",
+                "known_dht_seeds": "dht-2:14441,dht-3:14441",
+                "preferred_routers": "http://id-b:8084/proxy-2.xml"
+            }
+        },
+        "broker-5": {
+            "links": [
+                "dht-2",
+                "dht-3",
+                "stun-1",
+                "stun-2",
+                "id-a",
+                "id-b"
+            ],
+            "ports": "10065:22",
+            "node": {
+                "role": "message-broker",
+                "name": "broker-5",
+                "known_id_servers": "id-a:8084:6661",
+                "known_dht_seeds": "dht-2:14441,dht-3:14441",
+                "preferred_routers": "http://id-a:8084/proxy-1.xml"
+            }
         }
     },
     "containers_volumes": [
@@ -310,7 +364,10 @@
         "customer-2",
         "customer-3",
         "broker-1",
-        "broker-2"
+        "broker-2",
+        "broker-3",
+        "broker-4",
+        "broker-5"
     ],
     "tester_volumes": [
         "customer_1:/customer_1",

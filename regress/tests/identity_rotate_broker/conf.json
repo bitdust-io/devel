@@ -246,7 +246,7 @@
                 "join_network": true,
                 "min_servers": 2,
                 "max_servers": 2,
-                "known_id_servers": "id-b:8084:6661",
+                "known_id_servers": "id-a:8084:6661,id-b:8084:6661,id-c:8084:6661",
                 "known_dht_seeds": "dht-2:14441,dht-3:14441",
                 "preferred_routers": "http://id-b:8084/proxy-2.xml"
             }
@@ -265,8 +265,10 @@
             "node": {
                 "role": "message-broker",
                 "name": "broker-3",
-                "join_network": false,
-                "known_id_servers": "id-a:8084:6661",
+                "join_network": true,
+                "min_servers": 2,
+                "max_servers": 2,
+                "known_id_servers": "id-a:8084:6661,id-b:8084:6661,id-c:8084:6661",
                 "known_dht_seeds": "dht-2:14441,dht-3:14441",
                 "preferred_routers": "http://id-a:8084/proxy-1.xml"
             }
@@ -285,10 +287,34 @@
             "node": {
                 "role": "message-broker",
                 "name": "broker-4",
-                "join_network": false,
-                "known_id_servers": "id-b:8084:6661",
+                "join_network": true,
+                "min_servers": 2,
+                "max_servers": 2,
+                "known_id_servers": "id-a:8084:6661,id-b:8084:6661,id-c:8084:6661",
                 "known_dht_seeds": "dht-2:14441,dht-3:14441",
                 "preferred_routers": "http://id-b:8084/proxy-2.xml"
+            }
+        },
+        "broker-5": {
+            "links": [
+                "dht-2",
+                "dht-3",
+                "stun-1",
+                "stun-2",
+                "id-a",
+                "id-b",
+                "id-c"
+            ],
+            "ports": "10065:22",
+            "node": {
+                "role": "message-broker",
+                "name": "broker-5",
+                "join_network": true,
+                "min_servers": 2,
+                "max_servers": 2,
+                "known_id_servers": "id-a:8084:6661,id-b:8084:6661,id-c:8084:6661",
+                "known_dht_seeds": "dht-2:14441,dht-3:14441",
+                "preferred_routers": "http://id-a:8084/proxy-1.xml"
             }
         }
     },
@@ -312,7 +338,8 @@
         "broker-1",
         "broker-2",
         "broker-3",
-        "broker-4"
+        "broker-4",
+        "broker-5"
     ],
     "tester_volumes": [
         "customer_1:/customer_1",

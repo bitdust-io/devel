@@ -44,6 +44,8 @@ import sys
 import time
 import base64
 
+#------------------------------------------------------------------------------
+
 try:
     from twisted.internet import reactor  # @UnresolvedImport
 except:
@@ -81,7 +83,7 @@ MAX_PENDING_MESSAGES_PER_CONSUMER = 100
 #------------------------------------------------------------------------------
 
 _ConsumersCallbacks = {}
-_ReceivedMessagesIDs = set()
+_ReceivedMessagesIDs = []
 
 _IncomingMessageCallbacks = []
 _OutgoingMessageCallbacks = []
@@ -109,8 +111,10 @@ def shutdown():
 
 #------------------------------------------------------------------------------
 
-def received_messages_ids():
+def received_messages_ids(erase_old_records=False):
     global _ReceivedMessagesIDs
+    if erase_old_records:
+        _ReceivedMessagesIDs = _ReceivedMessagesIDs[50:]
     return _ReceivedMessagesIDs
 
 
@@ -328,13 +332,12 @@ def on_incoming_message(request, info, status, error_message):
     except:
         lg.exc()
         return False
-    for known_id in received_messages_ids():
-        if known_id == request.PacketID:
-            if _Debug:
-                lg.out(_DebugLevel, "message.Message SKIP, message %s found in history" % known_id)
-            return False
-    # TODO: add proper cleanup of old messages
-    received_messages_ids().add(request.PacketID)
+    if request.PacketID in received_messages_ids():
+        lg.warn("skip incoming message %s because found in recent history" % request.PacketID)
+        return False
+    received_messages_ids().append(request.PacketID)
+    if len(received_messages_ids()) > 100:
+        received_messages_ids(True)
     handled = False
     try:
         for cb in _IncomingMessageCallbacks:
@@ -345,10 +348,6 @@ def on_incoming_message(request, info, status, error_message):
                 break
     except:
         lg.exc()
-    # if handled:
-    #     p2p_service.SendAck(request)
-    # else:
-    #     p2p_service.SendFail(request, 'message was not handled')
     if _Debug:
         lg.args(_DebugLevel, msg=json_message, handled=handled)
     return True

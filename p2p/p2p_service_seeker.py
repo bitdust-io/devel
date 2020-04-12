@@ -66,6 +66,7 @@ from p2p import handshaker
 
 from contacts import identitycache
 
+from userid import global_id
 from userid import my_id
 
 #------------------------------------------------------------------------------
@@ -82,6 +83,9 @@ class P2PServiceSeeker(automat.Automat):
 
     fast = True
 
+    def __repr__(self):
+        return '%s[%s@%s](%s)' % (self.id, self.target_service or '', self.target_id or '', self.state)
+
     def init(self):
         """
         Method to initialize additional variables and flags at creation phase
@@ -90,6 +94,7 @@ class P2PServiceSeeker(automat.Automat):
         self.Attempts = 0
         self.lookup_method = None
         self.target_idurl = None
+        self.target_id = None
         self.target_service = None
         self.request_service_params = None
         self.exclude_nodes = []
@@ -206,6 +211,7 @@ class P2PServiceSeeker(automat.Automat):
             self.target_idurl = kwargs['remote_idurl']
         else:
             self.target_idurl = args[0][0]
+        self.target_id = global_id.idurl2glob(self.target_idurl)
 
     def doHandshake(self, *args, **kwargs):
         """
@@ -247,7 +253,7 @@ class P2PServiceSeeker(automat.Automat):
         """
         if _Debug:
             lg.out(_DebugLevel, 'p2p_service_seeker.doNotifyServiceAccepted %r from %r with %s' % (
-                self.target_service, self.target_idurl, args[0]))
+                self.target_service, self.target_id, args[0]))
         if self.result_callback:
             self.result_callback('node-connected', *args, **kwargs)
         self.result_callback = None
@@ -288,6 +294,7 @@ class P2PServiceSeeker(automat.Automat):
         """
         self.lookup_method = None
         self.target_idurl = None
+        self.target_id = None
         self.target_service = None
         self.request_service_params = None
         self.exclude_nodes = []
@@ -358,7 +365,7 @@ def connect_random_node(lookup_method, service_name, service_params=None, exclud
     _P2PServiceSeekerInstaceCounter += 1
     result = Deferred()
     p2p_seeker = P2PServiceSeeker(
-        name='p2p_service_seeker%d[%s]' % (_P2PServiceSeekerInstaceCounter, service_name, ),
+        name='p2p_service_seeker%d' % _P2PServiceSeekerInstaceCounter,
         state='AT_STARTUP',
         log_events=_Debug,
         log_transitions=_Debug,
@@ -382,7 +389,7 @@ def connect_known_node(remote_idurl, service_name, service_params=None, exclude_
     _P2PServiceSeekerInstaceCounter += 1
     result = Deferred()
     p2p_seeker = P2PServiceSeeker(
-        name='p2p_service_seeker%d[%s]' % (_P2PServiceSeekerInstaceCounter, service_name, ),
+        name='p2p_service_seeker%d' % _P2PServiceSeekerInstaceCounter,
         state='AT_STARTUP',
         log_events=_Debug,
         log_transitions=_Debug,

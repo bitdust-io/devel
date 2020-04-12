@@ -283,7 +283,6 @@ def read_group_info(group_key_id):
 
 def get_last_sequence_id(group_key_id):
     if not is_group_exist(group_key_id):
-        lg.warn('group %r is not known' % group_key_id)
         return -1
     return known_groups()[group_key_id]['last_sequence_id']
 

@@ -71,7 +71,7 @@ def test_customers_1_2_3_communicate_via_message_broker():
 
     group_info_active = kw.group_info_v1('customer-1', group_key_id)['result']
     assert group_info_active['state'] == 'IN_SYNC!'
-    assert len(group_info_active['connected_brokers']) == 1
+    assert len(group_info_active['connected_brokers']) == 3
     assert group_info_active['last_sequence_id'] == -1
 
     active_queue_id = group_info_active['active_queue_id']
@@ -100,6 +100,12 @@ def test_customers_1_2_3_communicate_via_message_broker():
     kw.transfer_list_v1('customer-2', wait_all_finish=True)
     kw.packet_list_v1('customer-3', wait_all_finish=True)
     kw.transfer_list_v1('customer-3', wait_all_finish=True)
+
+    kw.packet_list_v1('broker-1', wait_all_finish=True)
+    kw.packet_list_v1('broker-2', wait_all_finish=True)
+    kw.packet_list_v1('broker-3', wait_all_finish=True)
+    kw.packet_list_v1('broker-4', wait_all_finish=True)
+    kw.packet_list_v1('broker-5', wait_all_finish=True)
 
     broker_consumers = kw.queue_consumer_list_v1(active_broker_name, extract_ids=True)
     broker_producers = kw.queue_producer_list_v1(active_broker_name, extract_ids=True)
@@ -155,6 +161,12 @@ def test_customers_1_2_3_communicate_via_message_broker():
     kw.packet_list_v1('customer-3', wait_all_finish=True)
     kw.transfer_list_v1('customer-3', wait_all_finish=True)
 
+    kw.packet_list_v1('broker-1', wait_all_finish=True)
+    kw.packet_list_v1('broker-2', wait_all_finish=True)
+    kw.packet_list_v1('broker-3', wait_all_finish=True)
+    kw.packet_list_v1('broker-4', wait_all_finish=True)
+    kw.packet_list_v1('broker-5', wait_all_finish=True)
+
     assert kw.group_info_v1('customer-3', group_key_id)['result']['last_sequence_id'] == 0
 
     # MESSAGE B: from customer 3 to the group, customers 1, 2 and 3 must receive the message
@@ -195,6 +207,12 @@ def test_customers_1_2_3_communicate_via_message_broker():
     kw.transfer_list_v1('customer-2', wait_all_finish=True)
     kw.packet_list_v1('customer-3', wait_all_finish=True)
     kw.transfer_list_v1('customer-3', wait_all_finish=True)
+
+    kw.packet_list_v1('broker-1', wait_all_finish=True)
+    kw.packet_list_v1('broker-2', wait_all_finish=True)
+    kw.packet_list_v1('broker-3', wait_all_finish=True)
+    kw.packet_list_v1('broker-4', wait_all_finish=True)
+    kw.packet_list_v1('broker-5', wait_all_finish=True)
 
     group_info_offline = kw.group_info_v1('customer-2', group_key_id)['result']
     assert group_info_offline['state'] == 'OFFLINE'
