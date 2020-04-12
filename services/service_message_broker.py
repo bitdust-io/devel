@@ -85,6 +85,7 @@ class MessageBrokerService(LocalService):
             consumer_id = json_payload['consumer_id']
             producer_id = json_payload['producer_id']
             group_key = json_payload['group_key']
+            last_sequence_id = json_payload.get('last_sequence_id', -1)
             position = json_payload.get('position', -1)
         except:
             lg.warn("wrong payload: %r" % json_payload)
@@ -99,6 +100,7 @@ class MessageBrokerService(LocalService):
                 consumer_id=consumer_id,
                 producer_id=producer_id,
                 position=position,
+                last_sequence_id=last_sequence_id,
                 request_packet=newpacket,
                 result_defer=result,
             )

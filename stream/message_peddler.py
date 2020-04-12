@@ -338,6 +338,13 @@ def get_latest_sequence_id(queue_id):
     return streams()[queue_id].get('last_sequence_id', -1)
 
 
+def set_latest_sequence_id(queue_id, new_sequence_id):
+    streams()[queue_id]['last_sequence_id'] = new_sequence_id
+    if _Debug:
+        lg.args(_DebugLevel, queue_id=queue_id, new_sequence_id=new_sequence_id)
+    return new_sequence_id
+
+
 def increment_sequence_id(queue_id):
     last_sequence_id = streams()[queue_id]['last_sequence_id']
     new_sequence_id = last_sequence_id + 1
@@ -423,13 +430,6 @@ def erase_message(queue_id, sequence_id):
 def get_messages_for_consumer(queue_id, consumer_id, consumer_last_sequence_id, max_messages_count=100):
     if _Debug:
         lg.args(_DebugLevel, queue_id=queue_id, consumer_id=consumer_id, consumer_last_sequence_id=consumer_last_sequence_id)
-    queue_current_sequence_id = streams()[queue_id]['last_sequence_id']
-    if consumer_last_sequence_id > queue_current_sequence_id:
-        lg.warn('consumer %r is ahead of queue %r position: %d > %d' % (
-            consumer_id, queue_id, consumer_last_sequence_id, queue_current_sequence_id, ))
-        return []
-    if consumer_last_sequence_id == queue_current_sequence_id:
-        return []
     service_dir = settings.ServiceDir('service_message_broker')
     queues_dir = os.path.join(service_dir, 'queues')
     queue_dir = os.path.join(queues_dir, queue_id)
@@ -959,6 +959,7 @@ class MessagePeddler(automat.Automat):
         group_key_info = kwargs['group_key']
         result_defer = kwargs['result_defer']
         request_packet = kwargs['request_packet']
+        last_sequence_id = kwargs['last_sequence_id']
         if _Debug:
             lg.args(_DebugLevel, request_packet=request_packet)
         if not my_keys.verify_key_info_signature(group_key_info):
@@ -996,11 +997,12 @@ class MessagePeddler(automat.Automat):
         producer_id = kwargs['producer_id']
         position = kwargs.get('position', -1)
         if id_url.is_cached(group_creator_idurl):
-            self._do_check_create_queue_keeper(group_creator_idurl, request_packet, queue_id, consumer_id, producer_id, position, result_defer)
+            self._do_check_create_queue_keeper(
+                group_creator_idurl, request_packet, queue_id, consumer_id, producer_id, position, last_sequence_id, result_defer)
             return
         caching_story = identitycache.immediatelyCaching(group_creator_idurl)
         caching_story.addCallback(lambda _: self._do_check_create_queue_keeper(
-            group_creator_idurl, request_packet, queue_id, consumer_id, producer_id, position, result_defer))
+            group_creator_idurl, request_packet, queue_id, consumer_id, producer_id, position, last_sequence_id, result_defer))
         if _Debug:
             caching_story.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='message_peddler.doStartJoinQueue')
         caching_story.addErrback(self._on_group_creator_idurl_cache_failed, request_packet, result_defer)
@@ -1074,13 +1076,23 @@ class MessagePeddler(automat.Automat):
         """
         Action method.
         """
-        self._do_send_past_messages(**kwargs)
+        queue_id = kwargs['queue_id']
+        consumer_id = kwargs['consumer_id']
+        consumer_last_sequence_id = kwargs['consumer_last_sequence_id']
+        queue_current_sequence_id = get_latest_sequence_id(queue_id)
+        if consumer_last_sequence_id > queue_current_sequence_id:
+            lg.warn('consumer %r is ahead of queue %r position: %d > %d' % (
+                consumer_id, queue_id, consumer_last_sequence_id, queue_current_sequence_id, ))
+        list_messages = []
+        if consumer_last_sequence_id < queue_current_sequence_id:
+            list_messages = get_messages_for_consumer(queue_id, consumer_id, consumer_last_sequence_id)
+        self._do_send_past_messages(queue_id, consumer_id, list_messages)
 
     def doProcessMessage(self, *args, **kwargs):
         """
         Action method.
         """
-        
+        # TODO: notify queue_keeper() with "msg-in" event
 
     def doDestroyMe(self, *args, **kwargs):
         """
@@ -1092,8 +1104,7 @@ class MessagePeddler(automat.Automat):
         self.destroy()
         _MessagePeddler = None
 
-    def _do_send_past_messages(self, queue_id, consumer_id, consumer_last_sequence_id):
-        list_messages = get_messages_for_consumer(queue_id, consumer_id, consumer_last_sequence_id)
+    def _do_send_past_messages(self, queue_id, consumer_id, list_messages):
         message.send_message(
             json_data={
                 'items': list_messages,
@@ -1135,7 +1146,7 @@ class MessagePeddler(automat.Automat):
                         my_keys.erase_key(group_key_id)
 
 
-    def _do_check_create_queue_keeper(self, customer_idurl, request_packet, queue_id, consumer_id, producer_id, position, result_defer):
+    def _do_check_create_queue_keeper(self, customer_idurl, request_packet, queue_id, consumer_id, producer_id, position, last_sequence_id, result_defer):
         if _Debug:
             lg.args(_DebugLevel, queue_id=queue_id, consumer_id=consumer_id, producer_id=producer_id, position=position)
         queue_keeper_result = Deferred()
@@ -1144,11 +1155,12 @@ class MessagePeddler(automat.Automat):
             queue_id=queue_id,
             consumer_id=consumer_id,
             producer_id=producer_id,
+            last_sequence_id=last_sequence_id,
             request_packet=request_packet,
             result_defer=result_defer,
         )
         if _Debug:
-            queue_keeper_result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='message_peddler.doStartJoinQueue')
+            queue_keeper_result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='message_peddler._do_check_create_queue_keeper')
         qk = queue_keeper.check_create(customer_idurl=customer_idurl)
         qk.automat(
             'connect',
@@ -1157,9 +1169,10 @@ class MessagePeddler(automat.Automat):
             result_callback=queue_keeper_result,
         )
 
-    def _on_queue_keeper_connect_result(self, result, queue_id, consumer_id, producer_id, request_packet, result_defer):
+    def _on_queue_keeper_connect_result(self, result, queue_id, consumer_id, producer_id, last_sequence_id, request_packet, result_defer):
         if _Debug:
-            lg.args(_DebugLevel, result=result, queue_id=queue_id, consumer_id=consumer_id, producer_id=producer_id, request_packet=request_packet)
+            lg.args(_DebugLevel, result=result, queue_id=queue_id, consumer_id=consumer_id, producer_id=producer_id,
+                    last_sequence_id=last_sequence_id, request_packet=request_packet)
         if not result:
             lg.err('queue keeper failed to connect')
             return None
@@ -1173,6 +1186,11 @@ class MessagePeddler(automat.Automat):
         if producer_id:
             add_producer(queue_id, producer_id)
             start_producer(queue_id, producer_id)
+        cur_sequence_id = get_latest_sequence_id(queue_id)
+        if last_sequence_id > cur_sequence_id:
+            lg.warn('based on request from connected group member going to update last_sequence_id: %d -> %d' % (
+                cur_sequence_id, last_sequence_id, ))
+            set_latest_sequence_id(queue_id, last_sequence_id)
         p2p_service.SendAck(request_packet, 'accepted')
         result_defer.callback(True)
         return None

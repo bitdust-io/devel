@@ -127,6 +127,7 @@ def test_identity_rotate_customer_1():
     assert new_global_id != old_global_id
     assert new_idurl != old_idurl
 
+    service_info_v1('customer-1', 'service_gateway', 'ON')
     service_info_v1('customer-1', 'service_customer', 'ON')
 
     # remember current suppliers of customer-1

@@ -36,10 +36,6 @@ def test_identity_rotate_broker():
     if os.environ.get('RUN_TESTS', '1') == '0':
         return pytest.skip()  # @UndefinedVariable
 
-    # r = kw.identity_get_v1('broker-1')
-    # broker_1_id = r['result']['global_id']
-    # broker_1_idurl = r['result']['idurl']
-
     kw.service_info_v1('broker-1', 'service_message_broker', 'ON')
     kw.service_info_v1('broker-2', 'service_message_broker', 'ON')
     kw.service_info_v1('broker-3', 'service_message_broker', 'ON')
@@ -59,24 +55,6 @@ def test_identity_rotate_broker():
     kw.service_info_v1('customer-2', 'service_private_groups', 'ON')
     kw.packet_list_v1('customer-2', wait_all_finish=True)
     kw.transfer_list_v1('customer-2', wait_all_finish=True)
-
-#     # disable other broker so that customer will only have choice to pick "desired" broker-1
-#     kw.service_stop_v1('broker-2', 'service_message_broker')
-#     kw.service_stop_v1('broker-3', 'service_message_broker')
-#     kw.service_stop_v1('broker-4', 'service_message_broker')
-#     kw.service_stop_v1('broker-5', 'service_message_broker')
-# 
-#     kw.packet_list_v1('broker-1', wait_all_finish=True)
-#     kw.packet_list_v1('broker-2', wait_all_finish=True)
-#     kw.packet_list_v1('broker-3', wait_all_finish=True)
-#     kw.packet_list_v1('broker-4', wait_all_finish=True)
-#     kw.packet_list_v1('broker-5', wait_all_finish=True)
-# 
-#     kw.service_info_v1('broker-1', 'service_message_broker', 'ON')
-#     kw.service_info_v1('broker-2', 'service_message_broker', 'OFF')
-#     kw.service_info_v1('broker-3', 'service_message_broker', 'OFF')
-#     kw.service_info_v1('broker-4', 'service_message_broker', 'OFF')
-#     kw.service_info_v1('broker-5', 'service_message_broker', 'OFF')
 
     # create group owned by customer-1 and join
     group_key_id = kw.group_create_v1('customer-1', label='TestGroup123')
@@ -99,27 +77,6 @@ def test_identity_rotate_broker():
     active_queue_id = group_info_active['active_queue_id']
     active_broker_id = group_info_active['active_broker_id']
     active_broker_name = active_broker_id.split('@')[0]
-
-#     assert active_broker_name == 'broker-1'
-#     assert active_broker_id == broker_1_id
-
-#     # enabled again other brokers so that customers will be able to switch from broker-1
-#     kw.service_start_v1('broker-2', 'service_message_broker')
-#     kw.service_start_v1('broker-3', 'service_message_broker')
-#     kw.service_start_v1('broker-4', 'service_message_broker')
-#     kw.service_start_v1('broker-5', 'service_message_broker')
-# 
-#     kw.packet_list_v1('broker-1', wait_all_finish=True)
-#     kw.packet_list_v1('broker-2', wait_all_finish=True)
-#     kw.packet_list_v1('broker-3', wait_all_finish=True)
-#     kw.packet_list_v1('broker-4', wait_all_finish=True)
-#     kw.packet_list_v1('broker-5', wait_all_finish=True)
-# 
-#     kw.service_info_v1('broker-1', 'service_message_broker', 'ON')
-#     kw.service_info_v1('broker-2', 'service_message_broker', 'ON')
-#     kw.service_info_v1('broker-3', 'service_message_broker', 'ON')
-#     kw.service_info_v1('broker-4', 'service_message_broker', 'ON')
-#     kw.service_info_v1('broker-5', 'service_message_broker', 'ON')
 
     assert active_queue_id in kw.queue_list_v1(active_broker_name, extract_ids=True)
 
@@ -162,6 +119,9 @@ def test_identity_rotate_broker():
 
     # rotate identity sources on broker-1
     kw.identity_rotate_v1(active_broker_name)
+
+    kw.service_info_v1(active_broker_name, 'service_message_broker', 'ON')
+    kw.service_info_v1(active_broker_name, 'service_gateway', 'ON')
 
     kw.packet_list_v1(active_broker_name, wait_all_finish=True)
 

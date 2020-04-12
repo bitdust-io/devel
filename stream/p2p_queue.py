@@ -267,10 +267,12 @@ def close_queue(queue_id):
         if message_id not in queue(queue_id):
             continue
         for consumer_id in list(queue(queue_id)[message_id].notifications.keys()):
-            callback_object = queue(queue_id)[message_id].notifications[consumer_id]
-            if callback_object and not callback_object.called:
-                lg.info('canceling non-finished notification in the queue %s' % queue_id)
-                callback_object.cancel()
+            msg_obj = queue(queue_id).get(message_id)
+            if msg_obj:
+                callback_object = queue(queue_id)[message_id].notifications.get(consumer_id)
+                if callback_object and not callback_object.called:
+                    lg.info('canceling non-finished notification in the queue %s' % queue_id)
+                    callback_object.cancel()
     for consumer_id in consumer().keys():
         if is_consumer_subscribed(consumer_id, queue_id):
             unsubscribe_consumer(consumer_id, queue_id)
@@ -537,7 +539,7 @@ def on_notification_succeed(result, consumer_id, queue_id, message_id):
 def on_notification_failed(err, consumer_id, queue_id, message_id):
     if _Debug:
         lg.out(_DebugLevel, 'p2p_queue.on_notification_failed : FAILED message %s delivery to consumer %s from queue %s : %s' % (
-            message_id, consumer_id, queue_id, err))
+            message_id, consumer_id, queue_id, err.getErrorMessage()))
     if is_queue_exist(queue_id):
         try:
             reactor.callLater(0, finish_notification, consumer_id, queue_id, message_id, success=False)  # @UndefinedVariable

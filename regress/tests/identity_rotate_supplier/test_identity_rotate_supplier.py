@@ -105,6 +105,7 @@ def test_identity_rotate_supplier_1():
     assert supplier_1_global_id_new != supplier_1_global_id
     assert supplier_1_idurl_new != supplier_1_idurl
 
+    service_info_v1('supplier-1', 'service_gateway', 'ON')
     service_info_v1('supplier-1', 'service_supplier', 'ON')
 
     file_sync_v1('customer-1')
