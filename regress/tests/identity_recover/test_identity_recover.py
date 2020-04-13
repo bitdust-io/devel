@@ -102,13 +102,34 @@ def test_identity_recover_from_customer_backup_to_customer_restore():
     assert response.json()['status'] == 'OK', response.json()
 
     # copy private key from one container to another
-    # same when you backup your key and restore it from USB stick on another PC
+    # just like when you backup your private key and restore it from USB stick on another device
     shutil.move(backup_file_directory_c2, backup_file_directory_c3)
 
     # to make sure all uploads to finish
     transfer_list_v1('customer-backup', wait_all_finish=True)
     packet_list_v1('customer-backup', wait_all_finish=True)
     file_list_all_v1('customer-backup')
+
+    supplier_list_dht_v1(
+        customer_id='customer-backup@id-a_8084',
+        observers_ids=['customer-backup@id-a_8084', 'supplier-1@id-a_8084', 'supplier-2@id-a_8084', ],
+        expected_ecc_map='ecc/2x2',
+        expected_suppliers_number=2,
+    )
+
+    supplier_list_dht_v1(
+        customer_id='customer-backup@id-a_8084',
+        observers_ids=['supplier-1@id-a_8084', 'supplier-2@id-a_8084', 'customer-backup@id-a_8084', ],
+        expected_ecc_map='ecc/2x2',
+        expected_suppliers_number=2,
+    )
+
+    supplier_list_dht_v1(
+        customer_id='customer-backup@id-a_8084',
+        observers_ids=['supplier-2@id-a_8084', 'customer-backup@id-a_8084', 'supplier-1@id-a_8084', ],
+        expected_ecc_map='ecc/2x2',
+        expected_suppliers_number=2,
+    )
 
     try:
         response = request_get('customer-backup', 'process/stop/v1')

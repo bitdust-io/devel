@@ -72,6 +72,8 @@ from lib import strng
 
 from dht import dht_relations
 
+from access import groups
+
 from userid import id_url
 from userid import my_id
 
@@ -181,6 +183,7 @@ class QueueKeeper(automat.Automat):
         self.connected_queues = set()
         self.new_possible_position = None
         self.has_rotated = False
+        self.known_brokers = {}
         super(QueueKeeper, self).__init__(
             name="queue_keeper_%s" % self.customer_id,
             state="AT_STARTUP",
@@ -374,7 +377,7 @@ class QueueKeeper(automat.Automat):
             possible_broker_position = 0
         result = dht_relations.read_customer_message_brokers(
             customer_idurl=self.customer_idurl,
-            positions=[possible_broker_position, ],
+            positions=list(range(groups.REQUIRED_BROKERS_COUNT)),
         )
         # TODO: add more validations of dht_result
         result.addCallback(self._on_read_customer_message_brokers, possible_broker_position)
@@ -439,18 +442,27 @@ class QueueKeeper(automat.Automat):
         self.new_possible_position = None
         self.registered_callbacks = None
         self.connected_queues = None
+        self.known_brokers.clear()
         self.destroy()
 
     def _on_read_customer_message_brokers(self, brokers_info_list, possible_broker_position):
         if _Debug:
             lg.args(_DebugLevel, brokers=brokers_info_list)
         self.new_possible_position = None
+        self.known_brokers.clear()
         if not brokers_info_list:
             self.automat('dht-record-not-exist', desired_position=possible_broker_position)
             return
-        if len(brokers_info_list) > 1:
-            lg.warn('more than one broker returned from dht request')
-        self.automat('dht-record-exist', broker_idurl=brokers_info_list[0]['broker_idurl'], position=brokers_info_list[0]['position'])
+        my_broker_info = None
+        for broker_info in brokers_info_list:
+            if broker_info:
+                if broker_info['position'] == possible_broker_position:
+                    my_broker_info = broker_info
+                self.known_brokers[broker_info['position']] = broker_info['broker_idurl']
+        if not my_broker_info:
+            self.automat('dht-record-not-exist', desired_position=possible_broker_position)
+        else:
+            self.automat('dht-record-exist', broker_idurl=my_broker_info['broker_idurl'], position=my_broker_info['position'])
 
     def _on_write_customer_message_broker(self, nodes, desired_broker_position):
         if _Debug:

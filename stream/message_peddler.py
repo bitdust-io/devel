@@ -1093,6 +1093,7 @@ class MessagePeddler(automat.Automat):
         Action method.
         """
         # TODO: notify queue_keeper() with "msg-in" event
+        self._do_replicate_message(args[0])
 
     def doDestroyMe(self, *args, **kwargs):
         """
@@ -1168,6 +1169,10 @@ class MessagePeddler(automat.Automat):
             desired_position=position,
             result_callback=queue_keeper_result,
         )
+
+    def _do_replicate_message(self, message_in):
+        for other_broker_idurl in []:
+            pass 
 
     def _on_queue_keeper_connect_result(self, result, queue_id, consumer_id, producer_id, last_sequence_id, request_packet, result_defer):
         if _Debug:

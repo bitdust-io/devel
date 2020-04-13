@@ -539,15 +539,28 @@ def read_json_response(response, key, result_defer=None, as_bytes=False):
     if isinstance(response, dict):
         if response.get('values'):
             try:
+                latest_revision = 0
                 latest = 0
                 if as_bytes:
                     value = jsn.loads(response['values'][0][0])
                 else:
                     value = jsn.loads_text(response['values'][0][0])
                 for v in response['values']:
-                    if v[1] > latest:
-                        latest = v[1]
-                        value = jsn.loads(v[0])
+                    if as_bytes:
+                        j = jsn.loads(v[0])
+                    else:
+                        j = jsn.loads_text(v[0])
+                    rev = j.get('revision', -1)
+                    if rev >= 0:
+                        if rev > latest_revision:
+                            latest = v[1]
+                            latest_revision = rev
+                            value = j
+                    else:
+                        if v[1] > latest:
+                            latest = v[1]
+                            latest_revision = rev
+                            value = j
             except:
                 lg.exc()
                 if _Debug:
