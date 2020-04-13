@@ -173,7 +173,6 @@ class BackupsService(LocalService):
             if latestID != currentID:
                 backup_matrix.remote_files()[latestID] = backup_matrix.remote_files().pop(currentID)
                 lg.info('detected backup ID change in remote_files() after identity rotate : %r -> %r' % (currentID, latestID, ))
-
         remote_max_block_numbers_ids = list(backup_matrix.remote_max_block_numbers().keys())
         for currentID in remote_max_block_numbers_ids:
             latestID = packetid.LatestBackupID(currentID)

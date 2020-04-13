@@ -73,18 +73,21 @@ def read_customer_suppliers(customer_idurl, as_fields=True):
                 _supplier_idurl = id_url.to_bin(_supplier_idurl)
                 if not id_url.is_cached(_supplier_idurl) or not identitycache.HasFile(_supplier_idurl):
                     one_supplier_story = identitycache.immediatelyCaching(_supplier_idurl)
-                    one_supplier_story.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='read_customer_suppliers._do_identity_cache')
+                    if _Debug:
+                        one_supplier_story.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='read_customer_suppliers._do_identity_cache')
                     all_stories.append(one_supplier_story)
         _customer_idurl = id_url.to_bin(ret['customer_idurl'])
         if _customer_idurl and ( not id_url.is_cached(_customer_idurl) or not identitycache.HasFile(_customer_idurl) ):
             one_customer_story = identitycache.immediatelyCaching(_customer_idurl)
-            one_customer_story.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='read_customer_suppliers._do_identity_cache')
+            if _Debug:
+                one_customer_story.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='read_customer_suppliers._do_identity_cache')
             all_stories.append(one_customer_story)
         if _Debug:
             lg.args(_DebugLevel, all_stories=len(all_stories), ret=ret)
         id_cache_story = DeferredList(all_stories, consumeErrors=True)
         id_cache_story.addCallback(_do_save_customer_suppliers, ret)
-        id_cache_story.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='read_customer_suppliers._do_identity_cache')
+        if _Debug:
+            id_cache_story.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='read_customer_suppliers._do_identity_cache')
         id_cache_story.addErrback(result.errback)
         return id_cache_story
 
@@ -183,7 +186,8 @@ def read_customer_message_brokers(customer_idurl, positions=[0, ], return_detail
 
     def _do_broker_identity_cache(dht_record, position, broker_result):
         one_broker_task = identitycache.GetLatest(dht_record['broker_idurl'])
-        one_broker_task.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='read_customer_message_brokers._do_broker_identity_cache')
+        if _Debug:
+            one_broker_task.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='read_customer_message_brokers._do_broker_identity_cache')
         one_broker_task.addCallback(lambda xmlsrc: broker_result.callback(dht_record))
         return None
 
@@ -265,17 +269,20 @@ def read_customer_message_brokers(customer_idurl, positions=[0, ], return_detail
                 return_details=return_details,
             )
             d.addCallback(_do_verify, position, one_broker_result)
-            d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='read_customer_message_brokers._do_read_brokers')
+            if _Debug:
+                d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='read_customer_message_brokers._do_read_brokers')
             d.addErrback(_on_error, position, one_broker_result)
         join_all_brokers = DeferredList(all_brokers_results, consumeErrors=True)
         join_all_brokers.addCallback(_do_collect_results)
-        join_all_brokers.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='read_customer_message_brokers._do_read_brokers')
+        if _Debug:
+            join_all_brokers.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='read_customer_message_brokers._do_read_brokers')
         join_all_brokers.addErrback(result.errback)
         return None
 
     d = identitycache.GetLatest(customer_idurl)
     d.addCallback(lambda xmlsrc: _do_read_brokers())
-    d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='read_customer_message_brokers')
+    if _Debug:
+        d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='read_customer_message_brokers')
     d.addErrback(result.errback)
     return result
 

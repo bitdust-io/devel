@@ -29,29 +29,34 @@ services:
   id-a:
     image: bitdust/app
     ports:
-      - "10701:22"
+      - "10301:22"
 
   id-b:
     image: bitdust/app
     ports:
-      - "10702:22"
+      - "10302:22"
+
+  id-c:
+    image: bitdust/app
+    ports:
+      - "10303:22"
 
   dht-1:
     image: bitdust/app
     ports:
-      - "10711:22"
+      - "10311:22"
 
   dht-2:
     image: bitdust/app
     ports:
-      - "10712:22"
+      - "10312:22"
     links:
       - dht-1
 
   dht-3:
     image: bitdust/app
     ports:
-      - "10713:22"
+      - "10313:22"
     links:
       - dht-1
       - dht-2
@@ -59,7 +64,7 @@ services:
   stun-1:
     image: bitdust/app
     ports:
-      - "10721:22"
+      - "10321:22"
     links:
       - dht-2
       - dht-3
@@ -67,7 +72,7 @@ services:
   stun-2:
     image: bitdust/app
     ports:
-      - "10722:22"
+      - "10322:22"
     links:
       - dht-2
       - dht-3
@@ -75,7 +80,7 @@ services:
   proxy-1:
     image: bitdust/app
     ports:
-      - "10731:22"
+      - "10331:22"
     links:
       - dht-2
       - dht-3
@@ -83,11 +88,12 @@ services:
       - stun-2
       - id-a
       - id-b
+      - id-c
 
   proxy-2:
     image: bitdust/app
     ports:
-      - "10732:22"
+      - "10332:22"
     links:
       - dht-2
       - dht-3
@@ -95,11 +101,12 @@ services:
       - stun-2
       - id-a
       - id-b
+      - id-c
 
   supplier-1:
     image: bitdust/app
     ports:
-      - "10741:22"
+      - "10341:22"
     links:
       - dht-2
       - dht-3
@@ -107,11 +114,12 @@ services:
       - stun-2
       - id-a
       - id-b
+      - id-c
 
   supplier-2:
     image: bitdust/app
     ports:
-      - "10742:22"
+      - "10342:22"
     links:
       - dht-2
       - dht-3
@@ -119,35 +127,12 @@ services:
       - stun-2
       - id-a
       - id-b
-
-  supplier-3:
-    image: bitdust/app
-    ports:
-      - "10743:22"
-    links:
-      - dht-2
-      - dht-3
-      - stun-1
-      - stun-2
-      - id-a
-      - id-b
-
-  supplier-4:
-    image: bitdust/app
-    ports:
-      - "10744:22"
-    links:
-      - dht-2
-      - dht-3
-      - stun-1
-      - stun-2
-      - id-a
-      - id-b
+      - id-c
 
   customer-1:
     image: bitdust/app
     ports:
-      - "10751:22"
+      - "10351:22"
     volumes:
       - customer_1:/customer_1
     links:
@@ -157,11 +142,12 @@ services:
       - stun-2
       - id-a
       - id-b
+      - id-c
 
   customer-2:
     image: bitdust/app
     ports:
-      - "10752:22"
+      - "10352:22"
     volumes:
       - customer_2:/customer_2
     links:
@@ -171,25 +157,12 @@ services:
       - stun-2
       - id-a
       - id-b
-
-  customer-3:
-    image: bitdust/app
-    ports:
-      - "10753:22"
-    volumes:
-      - customer_3:/customer_3
-    links:
-      - dht-2
-      - dht-3
-      - stun-1
-      - stun-2
-      - id-a
-      - id-b
+      - id-c
 
   broker-1:
     image: bitdust/app
     ports:
-      - "10761:22"
+      - "10361:22"
     links:
       - dht-2
       - dht-3
@@ -197,11 +170,12 @@ services:
       - stun-2
       - id-a
       - id-b
+      - id-c
 
   broker-2:
     image: bitdust/app
     ports:
-      - "10762:22"
+      - "10362:22"
     links:
       - dht-2
       - dht-3
@@ -209,11 +183,12 @@ services:
       - stun-2
       - id-a
       - id-b
+      - id-c
 
   broker-3:
     image: bitdust/app
     ports:
-      - "10763:22"
+      - "10363:22"
     links:
       - dht-2
       - dht-3
@@ -221,11 +196,12 @@ services:
       - stun-2
       - id-a
       - id-b
+      - id-c
 
   broker-4:
     image: bitdust/app
     ports:
-      - "10764:22"
+      - "10364:22"
     links:
       - dht-2
       - dht-3
@@ -233,11 +209,12 @@ services:
       - stun-2
       - id-a
       - id-b
+      - id-c
 
   broker-5:
     image: bitdust/app
     ports:
-      - "10765:22"
+      - "10365:22"
     links:
       - dht-2
       - dht-3
@@ -245,6 +222,7 @@ services:
       - stun-2
       - id-a
       - id-b
+      - id-c
 
 
 
@@ -256,22 +234,18 @@ services:
     stdin_open: true
     tty: true
     links:
-      - id-a
-      - id-b
       - dht-1
       - dht-2
       - dht-3
       - stun-1
       - stun-2
-      - proxy-1
-      - proxy-2
+      - id-a
+      - id-b
+      - id-c
       - supplier-1
       - supplier-2
-      - supplier-3
-      - supplier-4
       - customer-1
       - customer-2
-      - customer-3
       - broker-1
       - broker-2
       - broker-3
@@ -281,12 +255,10 @@ services:
     volumes:
       - customer_1:/customer_1
       - customer_2:/customer_2
-      - customer_3:/customer_3
 
 
 
 volumes:
   customer_1:
   customer_2:
-  customer_3:
 

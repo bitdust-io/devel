@@ -192,7 +192,7 @@ def dbg(level, message, *args, **kwargs):
     caller = cod.co_name
     funcname = '%s.%s' % (modul, caller)
     o = '%s %s' % (funcname, message)
-    out(level, o)
+    out(level, o, showtime=True)
     return o
 
 
@@ -210,7 +210,7 @@ def args(level, *args, **kwargs):
     o = '%s(%s)' % (funcname, ', '.join(funcargs), )
     if message:
         o += ' ' + message
-    out(level, o)
+    out(level, o, showtime=True)
     return o
 
 
@@ -240,7 +240,7 @@ def warn(message, level=2):
         output_string = '\033[0;35mWARNING %s \033[0m\033[0;49;37min %s.%s()\033[0m' % (message, modul, caller, )
     else:
         output_string = 'WARNING %s in %s.%s()' % (message, modul, caller, )
-    out(level, output_string)
+    out(level, output_string, showtime=True)
     out(level, output_string, log_name='warn', showtime=True)
     return message
 
@@ -264,7 +264,7 @@ def err(message, level=0):
     message = '%s%s   ' % ((' ' * (level + 11)), message)
     if _UseColors:
         message = '\033[6;37;41m%s\033[0m' % message
-    out(level, message)
+    out(level, message, showtime=True)
     out(level, message, log_name='err', showtime=True)
     return message
 
@@ -276,20 +276,30 @@ def exc(msg='', level=0, maxTBlevel=100, exc_info=None, exc_value=None, **kwargs
     if msg:
         if _UseColors:
             msg = '\033[1;31m%s\033[0m' % msg
-        out(level, msg)
+        out(level, msg, showtime=True)
         out(level, msg, log_name='exc', showtime=True)
     if exc_value:
         return exception(level, maxTBlevel, exc_info=('', exc_value, []))
     return exception(level, maxTBlevel, exc_info)
 
 
-def errback(*args, **kwargs):
+def cb(result, *args, **kwargs):
     _debug = kwargs.pop('debug', 0)
     _debug_level = kwargs.pop('debug_level', 0)
     _method = kwargs.pop('method', 'unknown')
     if _debug and is_debug(_debug_level):
-        dbg(_debug_level, 'from "%s" method : args=%r  kwargs=%r' % (_method, args, kwargs, ))
-    return None
+        dbg(_debug_level, 'Deferred.callback() from "%s" method : args=%r  kwargs=%r' % (_method, args, kwargs, ))
+    return result
+
+
+def errback(err, *args, **kwargs):
+    _debug = kwargs.pop('debug', 0)
+    _debug_level = kwargs.pop('debug_level', 0)
+    _method = kwargs.pop('method', 'unknown')
+    if _debug and is_debug(_debug_level):
+        dbg(_debug_level, 'Deferred.errback() from "%s" method with %r : args=%r  kwargs=%r' % (
+            repr(err).replace('\n', ''), _method, args, kwargs, ))
+    return err
 
 
 def exception(level, maxTBlevel, exc_info):
@@ -319,9 +329,9 @@ def exception(level, maxTBlevel, exc_info):
     exc_name = exception_name(value)
     s = 'Exception: <' + exc_name + '>'
     if _UseColors:
-        out(level, '\033[1;31m%s\033[0m' % (s.strip()))
+        out(level, '\033[1;31m%s\033[0m' % (s.strip()), showtime=True)
     else:
-        out(level, s.strip())
+        out(level, s.strip(), showtime=True)
     if excArgs:
         s += '  args:' + excArgs + '\n'
         if _UseColors:

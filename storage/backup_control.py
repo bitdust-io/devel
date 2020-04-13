@@ -41,7 +41,7 @@ from io import StringIO
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 12
 
 #------------------------------------------------------------------------------
@@ -197,7 +197,7 @@ def WriteIndex(filepath=None, encoding='utf-8'):
         encoding=encoding,
     )
     if _Debug:
-        lg.out(_DebugLevel, pprint.pformat(json_data))
+        lg.args(_DebugLevel, json_data=json_data)
     return bpio.WriteTextFile(filepath, src)
 
 
@@ -224,7 +224,7 @@ def ReadIndex(text_data, encoding='utf-8'):
         lg.exc()
         json_data = text_data
     if _Debug:
-        lg.out(_DebugLevel, pprint.pformat(json_data))
+        lg.args(_DebugLevel, json_data=json_data)
     for customer_id in json_data.keys():
         if customer_id == 'items':
             try:

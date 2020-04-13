@@ -287,7 +287,8 @@ class SharedAccessDonor(automat.Automat):
             self.automat('audit-ok') if audit_result else self.automat('fail', Exception(
                 'remote user master key audit process failed')),
         ))
-        d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='shared_access_donor.doAuditUserMasterKey')
+        if _Debug:
+            d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='shared_access_donor.doAuditUserMasterKey')
         d.addErrback(lambda err: self.automat('fail', err))
 
     def doSendPubKeyToSuppliers(self, *args, **kwargs):

@@ -4,6 +4,8 @@
 
 [![Build Status](https://travis-ci.com/bitdust-io/devel.svg?branch=master)](https://travis-ci.com/bitdust-io/devel)
 
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
+
 
 ## About
 

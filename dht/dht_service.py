@@ -45,6 +45,7 @@ import hashlib
 import random
 import optparse
 import pprint
+import json
 
 #------------------------------------------------------------------------------
 
@@ -77,11 +78,13 @@ from dht import known_nodes
 
 #------------------------------------------------------------------------------
 
-from dht.entangled.kademlia.datastore import SQLiteVersionedJsonDataStore  # @UnresolvedImport
-from dht.entangled.kademlia.node import rpcmethod  # @UnresolvedImport
-from dht.entangled.kademlia.protocol import KademliaMultiLayerProtocol, encoding, msgformat  # @UnresolvedImport
-from dht.entangled.kademlia.node import MultiLayerNode  # @UnresolvedImport
 from dht.entangled.kademlia import constants  # @UnresolvedImport
+from dht.entangled.kademlia.datastore import SQLiteVersionedJsonDataStore  # @UnresolvedImport
+from dht.entangled.kademlia.node import rpcmethod, MultiLayerNode  # @UnresolvedImport
+from dht.entangled.kademlia.protocol import KademliaMultiLayerProtocol, encoding, msgformat  # @UnresolvedImport
+from dht.entangled.kademlia.routingtable import TreeRoutingTable  # @UnresolvedImport
+from dht.entangled.kademlia.contact import Contact  # @UnresolvedImport
+
 
 #------------------------------------------------------------------------------
 
@@ -876,7 +879,8 @@ def write_verify_republish_data(key, json_data, age=0, expire=KEY_EXPIRE_MAX_SEC
     _write_response = None
     _join = Deferred()
     _join.addCallback(_do_verify)
-    _join.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='write_verify_republish_data')
+    if _Debug:
+        _join.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='write_verify_republish_data')
 
     def _some_nodes_found(nodes):
         global _write_response
@@ -1095,6 +1099,26 @@ class DHTNode(MultiLayerNode):
 
     def remove_rpc_callback(self, rpc_method_name):
         self.rpc_callbacks.pop(rpc_method_name, None)
+
+    def reset_my_dht_id(self, new_id=None):
+        self._routingTable = TreeRoutingTable(self.id)
+        h = hashlib.sha1()
+        h.update(b'nodeState')
+        nodeStateKey = h.hexdigest()
+        if nodeStateKey in self._dataStore:
+            json_state = self._dataStore[nodeStateKey]
+            state = json.loads(json_state)
+            self.id = state['id']
+            self._routingTable = TreeRoutingTable(self.id)
+            for contactTriple in state['closestNodes']:
+                contact = Contact(encoding.to_text(contactTriple[0]), contactTriple[1], contactTriple[2], self._protocol)
+                self._routingTable.addContact(contact)
+            if _Debug:
+                print('[DHT NODE]    found "nodeState" key in local db and added %d contacts to routing table' % len(state['closestNodes']))
+        else:
+            self.id = self._generateID()
+            self._routingTable = TreeRoutingTable(self.id)
+        self._counter = None
 
     def expire(self):
         now = utime.get_sec1970()

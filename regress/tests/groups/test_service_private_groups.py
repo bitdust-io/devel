@@ -1,9 +1,9 @@
 #!/usr/bin/env python
-# test_service_my_ip_port.py
+# test_service_private_groups.py
 #
 # Copyright (C) 2008 Veselin Penev  https://bitdust.io
 #
-# This file (test_service_my_ip_port.py) is part of BitDust Software.
+# This file (test_service_private_groups.py) is part of BitDust Software.
 #
 # BitDust is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -71,7 +71,7 @@ def test_customers_1_2_3_communicate_via_message_broker():
 
     group_info_active = kw.group_info_v1('customer-1', group_key_id)['result']
     assert group_info_active['state'] == 'IN_SYNC!'
-    assert len(group_info_active['connected_brokers']) == 1
+    assert len(group_info_active['connected_brokers']) >= 2
     assert group_info_active['last_sequence_id'] == -1
 
     active_queue_id = group_info_active['active_queue_id']
@@ -101,6 +101,12 @@ def test_customers_1_2_3_communicate_via_message_broker():
     kw.packet_list_v1('customer-3', wait_all_finish=True)
     kw.transfer_list_v1('customer-3', wait_all_finish=True)
 
+    kw.packet_list_v1('broker-1', wait_all_finish=True)
+    kw.packet_list_v1('broker-2', wait_all_finish=True)
+    kw.packet_list_v1('broker-3', wait_all_finish=True)
+    kw.packet_list_v1('broker-4', wait_all_finish=True)
+    kw.packet_list_v1('broker-5', wait_all_finish=True)
+
     broker_consumers = kw.queue_consumer_list_v1(active_broker_name, extract_ids=True)
     broker_producers = kw.queue_producer_list_v1(active_broker_name, extract_ids=True)
     assert len(broker_consumers) == 2
@@ -111,7 +117,7 @@ def test_customers_1_2_3_communicate_via_message_broker():
     assert 'customer-2@id-b_8084' in broker_producers
 
     # MESSAGE A: from customer 1 to the group, customers 1 and 2 must receive the message
-    a_message_sent_from_customer_1 = {'random_message': base64.b32encode(os.urandom(20)).decode(), }
+    a_message_sent_from_customer_1 = {'random_message': 'MESSAGE_A_%s' % base64.b32encode(os.urandom(20)).decode(), }
     a_customer_1_receive_result = [None, ]
     a_customer_2_receive_result = [None, ]
     a_receive_customer_1 = threading.Timer(0, kw.message_receive_v1, [
@@ -132,7 +138,7 @@ def test_customers_1_2_3_communicate_via_message_broker():
     assert kw.group_info_v1('customer-1', group_key_id)['result']['last_sequence_id'] == 0
     assert kw.group_info_v1('customer-2', group_key_id)['result']['last_sequence_id'] == 0
 
-    # customer-2 share group ky to customer-3, third member join the group
+    # customer-2 share group key to customer-3, third member join the group
     kw.group_share_v1('customer-2', group_key_id, 'customer-3@id-a_8084')
 
     kw.group_join_v1('customer-3', group_key_id)
@@ -155,10 +161,16 @@ def test_customers_1_2_3_communicate_via_message_broker():
     kw.packet_list_v1('customer-3', wait_all_finish=True)
     kw.transfer_list_v1('customer-3', wait_all_finish=True)
 
+    kw.packet_list_v1('broker-1', wait_all_finish=True)
+    kw.packet_list_v1('broker-2', wait_all_finish=True)
+    kw.packet_list_v1('broker-3', wait_all_finish=True)
+    kw.packet_list_v1('broker-4', wait_all_finish=True)
+    kw.packet_list_v1('broker-5', wait_all_finish=True)
+
     assert kw.group_info_v1('customer-3', group_key_id)['result']['last_sequence_id'] == 0
 
     # MESSAGE B: from customer 3 to the group, customers 1, 2 and 3 must receive the message
-    b_message_sent_from_customer_3 = {'random_message': base64.b32encode(os.urandom(20)).decode(), }
+    b_message_sent_from_customer_3 = {'random_message': 'MESSAGE_B_%s' % base64.b32encode(os.urandom(20)).decode(), }
     b_customer_1_receive_result = [None, ]
     b_customer_2_receive_result = [None, ]
     b_customer_3_receive_result = [None, ]
@@ -196,6 +208,12 @@ def test_customers_1_2_3_communicate_via_message_broker():
     kw.packet_list_v1('customer-3', wait_all_finish=True)
     kw.transfer_list_v1('customer-3', wait_all_finish=True)
 
+    kw.packet_list_v1('broker-1', wait_all_finish=True)
+    kw.packet_list_v1('broker-2', wait_all_finish=True)
+    kw.packet_list_v1('broker-3', wait_all_finish=True)
+    kw.packet_list_v1('broker-4', wait_all_finish=True)
+    kw.packet_list_v1('broker-5', wait_all_finish=True)
+
     group_info_offline = kw.group_info_v1('customer-2', group_key_id)['result']
     assert group_info_offline['state'] == 'OFFLINE'
     assert group_info_offline['label'] == 'TestGroup123'
@@ -209,7 +227,7 @@ def test_customers_1_2_3_communicate_via_message_broker():
     assert 'customer-3@id-a_8084' in kw.queue_producer_list_v1(active_broker_name, extract_ids=True)
 
     # MESSAGE C: from customer 1 to the group, customers 1 and 3 must receive the message, customer 2 must not receive it
-    c_message_sent_from_customer_1 = {'random_message': base64.b32encode(os.urandom(20)).decode(), }
+    c_message_sent_from_customer_1 = {'random_message': 'MESSAGE_C_%s' % base64.b32encode(os.urandom(20)).decode(), }
     c_customer_1_receive_result = [None, ]
     c_customer_2_receive_result = [None, ]
     c_customer_3_receive_result = [None, ]

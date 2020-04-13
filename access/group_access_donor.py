@@ -174,7 +174,8 @@ class GroupAccessDonor(automat.Automat):
             force_cache=True,
         )
         d.addCallback(lambda ok: self.automat('shook-hands'))
-        d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='group_access_donor.doHandshake')
+        if _Debug:
+            d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='group_access_donor.doHandshake')
         d.addErrback(lambda err: self.automat('fail'))
 
     def doAuditUserMasterKey(self, *args, **kwargs):
@@ -187,7 +188,8 @@ class GroupAccessDonor(automat.Automat):
             self.automat('audit-ok') if audit_result else self.automat('fail', Exception(
                 'remote user master key audit process failed')),
         ))
-        d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='group_access_donor.doAuditUserMasterKey')
+        if _Debug:
+            d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='group_access_donor.doAuditUserMasterKey')
         d.addErrback(lambda err: self.automat('fail', err))
 
     def doSendPrivKeyToUser(self, *args, **kwargs):

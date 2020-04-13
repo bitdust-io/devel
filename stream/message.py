@@ -44,6 +44,8 @@ import sys
 import time
 import base64
 
+#------------------------------------------------------------------------------
+
 try:
     from twisted.internet import reactor  # @UnresolvedImport
 except:
@@ -81,7 +83,7 @@ MAX_PENDING_MESSAGES_PER_CONSUMER = 100
 #------------------------------------------------------------------------------
 
 _ConsumersCallbacks = {}
-_ReceivedMessagesIDs = set()
+_ReceivedMessagesIDs = []
 
 _IncomingMessageCallbacks = []
 _OutgoingMessageCallbacks = []
@@ -109,8 +111,10 @@ def shutdown():
 
 #------------------------------------------------------------------------------
 
-def received_messages_ids():
+def received_messages_ids(erase_old_records=False):
     global _ReceivedMessagesIDs
+    if erase_old_records:
+        _ReceivedMessagesIDs = _ReceivedMessagesIDs[50:]
     return _ReceivedMessagesIDs
 
 
@@ -316,7 +320,8 @@ def on_incoming_message(request, info, status, error_message):
         lg.out(_DebugLevel, "message.on_incoming_message new PrivateMessage %r from %s" % (request.PacketID, request.OwnerID, ))
     private_message_object = PrivateMessage.deserialize(request.Payload)
     if private_message_object is None:
-        lg.warn("PrivateMessage deserialize failed, can not extract message from request payload of %d bytes" % len(request.Payload))
+        lg.err("PrivateMessage deserialize failed, can not extract message from request payload of %d bytes" % len(request.Payload))
+        return False
     try:
         decrypted_message = private_message_object.decrypt()
         json_message = serialization.BytesToDict(
@@ -327,18 +332,18 @@ def on_incoming_message(request, info, status, error_message):
     except:
         lg.exc()
         return False
-    for known_id in received_messages_ids():
-        if known_id == request.PacketID:
-            if _Debug:
-                lg.out(_DebugLevel, "message.Message SKIP, message %s found in history" % known_id)
-            return False
-    # TODO: add proper cleanup of old messages
-    received_messages_ids().add(request.PacketID)
-    p2p_service.SendAck(request)
+    if request.PacketID in received_messages_ids():
+        lg.warn("skip incoming message %s because found in recent history" % request.PacketID)
+        return False
+    received_messages_ids().append(request.PacketID)
+    if len(received_messages_ids()) > 100:
+        received_messages_ids(True)
     handled = False
     try:
         for cb in _IncomingMessageCallbacks:
             handled = cb(request, private_message_object, json_message)
+            if _Debug:
+                lg.args(_DebugLevel, cb=cb, packet_id=request.PacketID, handled=handled)
             if handled:
                 break
     except:
@@ -545,15 +550,16 @@ def push_incoming_message(request, private_message_object, json_message):
             'to': private_message_object.recipient_id(),
             'from': private_message_object.sender_id(),
             'data': json_message,
-            'id': request.PacketID,
+            'packet_id': request.PacketID,
+            'owner_idurl': request.OwnerID,
             'time': utime.get_sec1970(),
         })
         if _Debug:
             lg.out(_DebugLevel, 'message.push_incoming_message "%s" for consumer "%s", %d pending messages for consumer %r' % (
                 request.PacketID, consumer_id, len(message_queue()[consumer_id]), consumer_id, ))
     # reactor.callLater(0, do_read)  # @UndefinedVariable
-    do_read()
-    return False
+    total_consumed = do_read()
+    return total_consumed > 0
 
 
 def push_outgoing_message(json_message, private_message_object, remote_identity, request, result):
@@ -571,7 +577,8 @@ def push_outgoing_message(json_message, private_message_object, remote_identity,
             'to': private_message_object.recipient_id(),
             'from': private_message_object.sender_id(),
             'data': json_message,
-            'id': request.PacketID,
+            'packet_id': request.PacketID,
+            'owner_idurl': request.OwnerID,
             'time': utime.get_sec1970(),
         })
         if _Debug:
@@ -592,7 +599,8 @@ def push_group_message(json_message, direction, group_key_id, producer_id, seque
             'to': group_key_id,
             'from': producer_id,
             'data': json_message,
-            'id': sequence_id,
+            'packet_id': sequence_id,
+            'owner_idurl': None,
             'time': utime.get_sec1970(),
         })
         if _Debug:

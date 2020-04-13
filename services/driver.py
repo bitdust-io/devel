@@ -38,8 +38,8 @@ from six.moves import range
 
 #------------------------------------------------------------------------------
 
-_Debug = True
-_DebugLevel = 6
+_Debug = False
+_DebugLevel = 12
 
 #------------------------------------------------------------------------------
 
@@ -48,7 +48,7 @@ import sys
 import importlib
 
 from twisted.internet import reactor  # @UnresolvedImport
-from twisted.internet.defer import Deferred, DeferredList, succeed, failure  # @UnresolvedImport
+from twisted.internet.defer import Deferred, DeferredList, succeed  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 

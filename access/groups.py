@@ -283,7 +283,6 @@ def read_group_info(group_key_id):
 
 def get_last_sequence_id(group_key_id):
     if not is_group_exist(group_key_id):
-        lg.warn('group %r is not known' % group_key_id)
         return -1
     return known_groups()[group_key_id]['last_sequence_id']
 
@@ -303,8 +302,7 @@ def set_broker(customer_id, broker_id, position=0):
     customer_dir = os.path.join(brokers_dir, customer_id)
     broker_path = os.path.join(customer_dir, broker_id)
     if os.path.isfile(broker_path):
-        lg.warn('broker %r already exist for customer %r' % (broker_id, customer_id, ))
-        return False
+        lg.warn('broker %r already exist for customer %r, overwriting' % (broker_id, customer_id, ))
     if not os.path.isdir(customer_dir):
         bpio._dirs_make(customer_dir)
     broker_info = {
@@ -316,6 +314,39 @@ def set_broker(customer_id, broker_id, position=0):
     known_brokers(customer_id)[position] = broker_id
     if _Debug:
         lg.args(_DebugLevel, customer_id=customer_id, broker_id=broker_id, broker_info=broker_info)
+    return True
+
+
+def clear_broker(customer_id, position):
+    service_dir = settings.ServiceDir('service_private_groups')
+    brokers_dir = os.path.join(service_dir, 'brokers')
+    customer_dir = os.path.join(brokers_dir, customer_id)
+    if not os.path.isdir(customer_dir):
+        if _Debug:
+            lg.args(_DebugLevel, customer_id=customer_id, position=position)
+        return False
+    to_be_erased = []
+    for broker_id in os.listdir(customer_dir):
+        broker_path = os.path.join(customer_dir, broker_id)
+        broker_info = jsn.loads_text(local_fs.ReadTextFile(broker_path))
+        if not broker_info:
+            to_be_erased.append(broker_id)
+            lg.warn('found empty broker info for customer %r : %r' % (customer_id, broker_id, ))
+            continue
+        if broker_info.get('position') != position:
+            continue
+        to_be_erased.append(broker_id)
+    if not to_be_erased:
+        if _Debug:
+            lg.args(_DebugLevel, customer_id=customer_id, position=position, to_be_erased=to_be_erased)
+        return False
+    removed = []
+    for broker_id in to_be_erased:
+        broker_path = os.path.join(customer_dir, broker_id)
+        os.remove(broker_path)
+        removed.append(broker_path)
+    if _Debug:
+        lg.args(_DebugLevel, customer_id=customer_id, position=position, removed=removed)
     return True
 
 

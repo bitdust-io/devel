@@ -62,9 +62,6 @@ try:
 except:
     sys.exit('Error initializing twisted.internet.reactor in online_status.py')
 
-from twisted.internet.task import LoopingCall
-from twisted.internet.defer import Deferred
-
 #------------------------------------------------------------------------------
 
 from logs import lg
@@ -76,7 +73,6 @@ from lib import strng
 from dht import dht_relations
 
 from userid import id_url
-from userid import global_id
 from userid import my_id
 
 #------------------------------------------------------------------------------
@@ -184,8 +180,9 @@ class QueueKeeper(automat.Automat):
         self.registered_callbacks = []
         self.connected_queues = set()
         self.new_possible_position = None
+        self.has_rotated = False
         super(QueueKeeper, self).__init__(
-            name="queue_keeper_%s#%d" % (self.customer_id, self.known_position),
+            name="queue_keeper_%s" % self.customer_id,
             state="AT_STARTUP",
             debug_level=debug_level,
             log_events=log_events,
@@ -193,6 +190,9 @@ class QueueKeeper(automat.Automat):
             publish_events=publish_events,
             **kwargs
         )
+
+    def __repr__(self):
+        return '%s[%d](%s)' % (self.id, self.known_position, self.state)
 
     def init(self):
         """
@@ -236,14 +236,15 @@ class QueueKeeper(automat.Automat):
             elif event == 'dht-read-failed':
                 self.state = 'DISCONNECTED'
                 self.doRunCallbacks(event, *args, **kwargs)
-            elif event == 'dht-record-exist' and not self.isOwnRecord(*args, **kwargs):
+            elif event == 'connect':
+                self.doCheckRotated(*args, **kwargs)
+                self.doAddCallback(*args, **kwargs)
+            elif event == 'dht-record-exist' and not self.isOwnRecord(*args, **kwargs) and not self.isRotated(*args, **kwargs):
                 self.doFindNextPosition(*args, **kwargs)
                 self.doDHTRead(*args, **kwargs)
-            elif event == 'dht-record-not-exist':
+            elif ( event == 'dht-record-exist' and not self.isOwnRecord(*args, **kwargs) and self.isRotated(*args, **kwargs) ) or event == 'dht-record-not-exist':
                 self.state = 'DHT_WRITE'
                 self.doDHTWrite(*args, **kwargs)
-            elif event == 'connect':
-                self.doAddCallback(*args, **kwargs)
         #---DHT_WRITE---
         elif self.state == 'DHT_WRITE':
             if event == 'shutdown':
@@ -259,6 +260,7 @@ class QueueKeeper(automat.Automat):
                 self.state = 'DISCONNECTED'
                 self.doRunCallbacks(event, *args, **kwargs)
             elif event == 'connect':
+                self.doCheckRotated(*args, **kwargs)
                 self.doAddCallback(*args, **kwargs)
         #---CONNECTED---
         elif self.state == 'CONNECTED':
@@ -270,10 +272,12 @@ class QueueKeeper(automat.Automat):
                 self.doProc(*args, **kwargs)
             elif event == 'connect' and not self.isPositionDesired(*args, **kwargs):
                 self.state = 'DHT_READ'
+                self.doCheckRotated(*args, **kwargs)
                 self.doSetDesiredPosition(*args, **kwargs)
                 self.doAddCallback(*args, **kwargs)
                 self.doDHTRead(*args, **kwargs)
             elif event == 'connect' and self.isPositionDesired(*args, **kwargs):
+                self.doCheckRotated(*args, **kwargs)
                 self.doAddCallback(*args, **kwargs)
                 self.doRunCallbacks(event, *args, **kwargs)
         #---DISCONNECTED---
@@ -284,6 +288,7 @@ class QueueKeeper(automat.Automat):
                 self.doDestroyMe(*args, **kwargs)
             elif event == 'connect':
                 self.state = 'DHT_READ'
+                self.doCheckRotated(*args, **kwargs)
                 self.doSetDesiredPosition(*args, **kwargs)
                 self.doAddCallback(*args, **kwargs)
                 self.doDHTRead(*args, **kwargs)
@@ -312,6 +317,12 @@ class QueueKeeper(automat.Automat):
         """
         return kwargs.get('broker_idurl') == self.broker_idurl
 
+    def isRotated(self, *args, **kwargs):
+        """
+        Condition method.
+        """
+        return self.has_rotated
+
     def doInit(self, *args, **kwargs):
         """
         Action method.
@@ -324,6 +335,15 @@ class QueueKeeper(automat.Automat):
         cb = kwargs.get('result_callback')
         if cb:
             self.registered_callbacks.append((cb, kwargs.get('queue_id'), ))
+
+    def doCheckRotated(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        desired_position = kwargs.get('desired_position', -1)
+        if desired_position >= 0 and self.known_position >= 0:
+            self.has_rotated = desired_position < self.known_position
+            lg.info('found group brokers were rotated, my position: %d -> %d' % (self.known_position, desired_position, ))
 
     def doSetDesiredPosition(self, *args, **kwargs):
         """
@@ -358,7 +378,8 @@ class QueueKeeper(automat.Automat):
         )
         # TODO: add more validations of dht_result
         result.addCallback(self._on_read_customer_message_brokers, possible_broker_position)
-        result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='queue_keeper.doDHTRead')
+        if _Debug:
+            result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='queue_keeper.doDHTRead')
         result.addErrback(lambda err: self.automat('dht-read-failed', err))
 
     def doDHTWrite(self, *args, **kwargs):
@@ -372,7 +393,8 @@ class QueueKeeper(automat.Automat):
             position=desired_position,
         )
         result.addCallback(self._on_write_customer_message_broker, desired_position)
-        result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='queue_keeper.doDHTWrite')
+        if _Debug:
+            result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='queue_keeper.doDHTWrite')
         result.addErrback(lambda err: self.automat('dht-write-failed', err))
 
     def doDHTRefresh(self, *args, **kwargs):
@@ -390,6 +412,7 @@ class QueueKeeper(automat.Automat):
         """
         Action method.
         """
+        self.has_rotated = False
         self.known_position = kwargs.get('position')
 
     def doRunCallbacks(self, event, *args, **kwargs):

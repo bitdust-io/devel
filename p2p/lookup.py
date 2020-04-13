@@ -260,7 +260,8 @@ def lookup_in_dht(layer_id=0):
     if _Debug:
         lg.out(_DebugLevel, 'lookup.lookup_in_dht layer_id=%d' % (layer_id, ))
     d = dht_service.find_node(dht_service.random_key(), layer_id=layer_id)
-    d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='lookup_in_dht')
+    if _Debug:
+        d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='lookup_in_dht')
     return d
 
 
@@ -350,7 +351,8 @@ class DiscoveryTask(object):
         self.stopped = False
         self.lookup_task = None
         self.result_defer = Deferred(canceller=lambda d: self._close())
-        self.result_defer.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='DiscoveryTask')
+        if _Debug:
+            self.result_defer.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='DiscoveryTask')
         if _Debug:
             lg.out(_DebugLevel, 'lookup.DiscoveryTask[%r].__init__   layer_id=%d' % (self.id, self.layer_id))
 
@@ -417,7 +419,8 @@ class DiscoveryTask(object):
         self.observed_count = len(nodes)
         dl = DeferredList(observe_list, consumeErrors=False)
         dl.addCallback(self._on_all_nodes_observed)
-        dl.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='DiscoveryTask._observe_nodes')
+        if _Debug:
+            dl.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='DiscoveryTask._observe_nodes')
 
     def _report_result(self, results=None):
         if _Debug:

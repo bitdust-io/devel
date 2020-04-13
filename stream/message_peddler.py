@@ -31,6 +31,7 @@
 BitDust message_peddler() Automat
 
 EVENTS:
+    * :red:`message-pushed`
     * :red:`queue-connect`
     * :red:`queue-disconnect`
     * :red:`queue-read`
@@ -77,6 +78,8 @@ from lib import jsn
 from lib import strng
 from lib import utime
 from lib import packetid
+
+from contacts import identitycache
 
 from system import bpio
 from system import local_fs
@@ -173,8 +176,8 @@ def on_consume_queue_messages(json_messages):
         try:
             msg_type = json_message.get('type', '')
             msg_direction = json_message['dir']
-            packet_id = json_message['id']
-            from_user = json_message['from']
+            packet_id = json_message['packet_id']
+            from_idurl = json_message['owner_idurl']
             to_user = json_message['to']
             msg_data = json_message['data']
         except:
@@ -187,7 +190,6 @@ def on_consume_queue_messages(json_messages):
         if to_user != my_id.getID():
             continue
         queue_id = msg_data.get('queue_id')
-        from_idurl = global_id.glob2idurl(from_user)
         if queue_id not in streams():
             lg.warn('skipped incoming message, queue %r is not registered' % queue_id)
             p2p_service.SendFailNoRequest(from_idurl, packet_id, 'queue ID not registered')
@@ -222,6 +224,7 @@ def on_consume_queue_messages(json_messages):
             if _Debug:
                 lg.args(_DebugLevel, event='queue-read', queue_id=queue_id, consumer_id=consumer_id, consumer_last_sequence_id=consumer_last_sequence_id)
             A('queue-read', queue_id=queue_id, consumer_id=consumer_id, consumer_last_sequence_id=consumer_last_sequence_id)
+            p2p_service.SendAckNoRequest(from_idurl, packet_id)
             continue
         # incoming message from queue_member() to push new message to the queue and deliver to all other group members
         producer_id = msg_data.get('producer_id')
@@ -259,6 +262,7 @@ def on_consume_queue_messages(json_messages):
         register_delivery(queue_id, new_sequence_id, new_message.message_id)
         pushed += 1
         A('message-pushed', new_message)
+        p2p_service.SendAckNoRequest(from_idurl, packet_id)
     if received > pushed:
         lg.warn('some of received messages was not pushed to the queue')
     return True
@@ -268,30 +272,30 @@ def on_message_processed(processed_message):
     sequence_id = processed_message.get_sequence_id()
     if _Debug:
         lg.args(_DebugLevel, queue_id=processed_message.queue_id, sequence_id=sequence_id,
-                message_id=processed_message.message_id, failed_consumers=processed_message.failed_consumers, )
+                message_id=processed_message.message_id,
+                success_notifications=processed_message.success_notifications,
+                failed_notifications=processed_message.failed_notifications, )
     if sequence_id is None:
         return False
     if not unregister_delivery(
         queue_id=processed_message.queue_id,
         sequence_id=sequence_id,
         message_id=processed_message.message_id,
-        failed_consumers=processed_message.failed_consumers,
+        failed_consumers=processed_message.failed_notifications,
     ):
         lg.err('failed to unregister message delivery attempt, message_id %r not found at position %d in queue %r' % (
             processed_message.message_id, sequence_id, processed_message.queue_id))
         return False
-    if processed_message.failed_consumers:
-        # lg.warn('some consumers failed to receive message %r with sequence_id=%d: %r' % (
-        #     processed_message.message_id, sequence_id, processed_message.failed_consumers))
+    if processed_message.failed_notifications:
         if _Debug:
             lg.out(_DebugLevel, '>>> FAILED >>>    from %r at sequence %d, failed_consumers=%d' % (
-                processed_message.queue_id, sequence_id, len(processed_message.failed_consumers), ))
+                processed_message.queue_id, sequence_id, len(processed_message.failed_notifications), ))
     else:
         erase_message(processed_message.queue_id, sequence_id)
         streams()[processed_message.queue_id]['messages'].remove(sequence_id)
         if _Debug:
             lg.out(_DebugLevel, '>>> PULL >>>    from %r at sequence %d with success count %d' % (
-                processed_message.queue_id, sequence_id, processed_message.success_notifications, ))
+                processed_message.queue_id, sequence_id, len(processed_message.success_notifications), ))
     return True
 
 
@@ -322,7 +326,7 @@ def on_consumer_notify(message_info):
         fire_callbacks=False,
     )
     if _Debug:
-        lg.out(_DebugLevel, '>>> OUT >>>    from %r by producer %r to consumer %r at sequence %d' % (
+        lg.out(_DebugLevel, '>>> NOTIFY >>>    from %r by producer %r to consumer %r at sequence %d' % (
             queue_id, producer_id, consumer_id, sequence_id, ))
     return ret
 
@@ -332,6 +336,13 @@ def get_latest_sequence_id(queue_id):
     if queue_id not in streams():
         return -1
     return streams()[queue_id].get('last_sequence_id', -1)
+
+
+def set_latest_sequence_id(queue_id, new_sequence_id):
+    streams()[queue_id]['last_sequence_id'] = new_sequence_id
+    if _Debug:
+        lg.args(_DebugLevel, queue_id=queue_id, new_sequence_id=new_sequence_id)
+    return new_sequence_id
 
 
 def increment_sequence_id(queue_id):
@@ -419,13 +430,6 @@ def erase_message(queue_id, sequence_id):
 def get_messages_for_consumer(queue_id, consumer_id, consumer_last_sequence_id, max_messages_count=100):
     if _Debug:
         lg.args(_DebugLevel, queue_id=queue_id, consumer_id=consumer_id, consumer_last_sequence_id=consumer_last_sequence_id)
-    queue_current_sequence_id = streams()[queue_id]['last_sequence_id']
-    if consumer_last_sequence_id > queue_current_sequence_id:
-        lg.warn('consumer %r is ahead of queue %r position: %d > %d' % (
-            consumer_id, queue_id, consumer_last_sequence_id, queue_current_sequence_id, ))
-        return []
-    if consumer_last_sequence_id == queue_current_sequence_id:
-        return []
     service_dir = settings.ServiceDir('service_message_broker')
     queues_dir = os.path.join(service_dir, 'queues')
     queue_dir = os.path.join(queues_dir, queue_id)
@@ -449,6 +453,15 @@ def get_messages_for_consumer(queue_id, consumer_id, consumer_last_sequence_id, 
     return result
 
 #------------------------------------------------------------------------------
+
+def close_all_streams():
+    service_dir = settings.ServiceDir('service_message_broker')
+    queues_dir = os.path.join(service_dir, 'queues')
+    list_queues = os.listdir(queues_dir)
+    for queue_id in list_queues:
+        close_stream(queue_id)
+    return True
+
 
 def load_streams():
     service_dir = settings.ServiceDir('service_message_broker')
@@ -899,6 +912,8 @@ class MessagePeddler(automat.Automat):
                 self.doLeaveStopQueue(*args, **kwargs)
             elif event == 'queue-read':
                 self.doConsumeMessages(*args, **kwargs)
+            elif event == 'message-pushed':
+                self.doProcessMessage(*args, **kwargs)
         #---CLOSED---
         elif self.state == 'CLOSED':
             pass
@@ -944,6 +959,7 @@ class MessagePeddler(automat.Automat):
         group_key_info = kwargs['group_key']
         result_defer = kwargs['result_defer']
         request_packet = kwargs['request_packet']
+        last_sequence_id = kwargs['last_sequence_id']
         if _Debug:
             lg.args(_DebugLevel, request_packet=request_packet)
         if not my_keys.verify_key_info_signature(group_key_info):
@@ -979,25 +995,17 @@ class MessagePeddler(automat.Automat):
         queue_id = kwargs['queue_id']
         consumer_id = kwargs['consumer_id']
         producer_id = kwargs['producer_id']
+        position = kwargs.get('position', -1)
+        if id_url.is_cached(group_creator_idurl):
+            self._do_check_create_queue_keeper(
+                group_creator_idurl, request_packet, queue_id, consumer_id, producer_id, position, last_sequence_id, result_defer)
+            return
+        caching_story = identitycache.immediatelyCaching(group_creator_idurl)
+        caching_story.addCallback(lambda _: self._do_check_create_queue_keeper(
+            group_creator_idurl, request_packet, queue_id, consumer_id, producer_id, position, last_sequence_id, result_defer))
         if _Debug:
-            lg.args(_DebugLevel, queue_id=request_packet, consumer_id=consumer_id, producer_id=producer_id, position=kwargs.get('position', -1))
-        queue_keeper_result = Deferred()
-        queue_keeper_result.addCallback(
-            self._on_queue_keeper_connect_result,
-            queue_id=queue_id,
-            consumer_id=consumer_id,
-            producer_id=producer_id,
-            request_packet=request_packet,
-            result_defer=result_defer,
-        )
-        queue_keeper_result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='message_peddler.doStartJoinQueue')
-        qk = queue_keeper.check_create(customer_idurl=group_creator_idurl)
-        qk.automat(
-            'connect',
-            queue_id=queue_id,
-            desired_position=kwargs.get('position', -1),
-            result_callback=queue_keeper_result,
-        )
+            caching_story.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='message_peddler.doStartJoinQueue')
+        caching_story.addErrback(self._on_group_creator_idurl_cache_failed, request_packet, result_defer)
 
     def doLeaveStopQueue(self, *args, **kwargs):
         """
@@ -1068,18 +1076,35 @@ class MessagePeddler(automat.Automat):
         """
         Action method.
         """
-        self._do_send_past_messages(**kwargs)
+        queue_id = kwargs['queue_id']
+        consumer_id = kwargs['consumer_id']
+        consumer_last_sequence_id = kwargs['consumer_last_sequence_id']
+        queue_current_sequence_id = get_latest_sequence_id(queue_id)
+        if consumer_last_sequence_id > queue_current_sequence_id:
+            lg.warn('consumer %r is ahead of queue %r position: %d > %d' % (
+                consumer_id, queue_id, consumer_last_sequence_id, queue_current_sequence_id, ))
+        list_messages = []
+        if consumer_last_sequence_id < queue_current_sequence_id:
+            list_messages = get_messages_for_consumer(queue_id, consumer_id, consumer_last_sequence_id)
+        self._do_send_past_messages(queue_id, consumer_id, list_messages)
+
+    def doProcessMessage(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        # TODO: notify queue_keeper() with "msg-in" event
 
     def doDestroyMe(self, *args, **kwargs):
         """
         Remove all references to the state machine object to destroy it.
         """
+        global _MessagePeddler
         message.clear_consumer_callbacks(self.name)
         events.remove_subscriber(self._on_identity_url_changed, 'identity-url-changed')
         self.destroy()
+        _MessagePeddler = None
 
-    def _do_send_past_messages(self, queue_id, consumer_id, consumer_last_sequence_id):
-        list_messages = get_messages_for_consumer(queue_id, consumer_id, consumer_last_sequence_id)
+    def _do_send_past_messages(self, queue_id, consumer_id, list_messages):
         message.send_message(
             json_data={
                 'items': list_messages,
@@ -1120,9 +1145,34 @@ class MessagePeddler(automat.Automat):
                         lg.info('clean up group key %r' % group_key_id)
                         my_keys.erase_key(group_key_id)
 
-    def _on_queue_keeper_connect_result(self, result, queue_id, consumer_id, producer_id, request_packet, result_defer):
+
+    def _do_check_create_queue_keeper(self, customer_idurl, request_packet, queue_id, consumer_id, producer_id, position, last_sequence_id, result_defer):
         if _Debug:
-            lg.args(_DebugLevel, result=result, queue_id=queue_id, consumer_id=consumer_id, producer_id=producer_id, request_packet=request_packet)
+            lg.args(_DebugLevel, queue_id=queue_id, consumer_id=consumer_id, producer_id=producer_id, position=position)
+        queue_keeper_result = Deferred()
+        queue_keeper_result.addCallback(
+            self._on_queue_keeper_connect_result,
+            queue_id=queue_id,
+            consumer_id=consumer_id,
+            producer_id=producer_id,
+            last_sequence_id=last_sequence_id,
+            request_packet=request_packet,
+            result_defer=result_defer,
+        )
+        if _Debug:
+            queue_keeper_result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='message_peddler._do_check_create_queue_keeper')
+        qk = queue_keeper.check_create(customer_idurl=customer_idurl)
+        qk.automat(
+            'connect',
+            queue_id=queue_id,
+            desired_position=position,
+            result_callback=queue_keeper_result,
+        )
+
+    def _on_queue_keeper_connect_result(self, result, queue_id, consumer_id, producer_id, last_sequence_id, request_packet, result_defer):
+        if _Debug:
+            lg.args(_DebugLevel, result=result, queue_id=queue_id, consumer_id=consumer_id, producer_id=producer_id,
+                    last_sequence_id=last_sequence_id, request_packet=request_packet)
         if not result:
             lg.err('queue keeper failed to connect')
             return None
@@ -1136,11 +1186,18 @@ class MessagePeddler(automat.Automat):
         if producer_id:
             add_producer(queue_id, producer_id)
             start_producer(queue_id, producer_id)
+        cur_sequence_id = get_latest_sequence_id(queue_id)
+        if last_sequence_id > cur_sequence_id:
+            lg.warn('based on request from connected group member going to update last_sequence_id: %d -> %d' % (
+                cur_sequence_id, last_sequence_id, ))
+            set_latest_sequence_id(queue_id, last_sequence_id)
         p2p_service.SendAck(request_packet, 'accepted')
         result_defer.callback(True)
         return None
 
     def _on_identity_url_changed(self, evt):
+        if my_id.getIDURL().to_bin() in [evt.data['new_idurl'], evt.data['old_idurl']]:
+            return
         old_idurl = evt.data['old_idurl']
         new_id = global_id.idurl2glob(evt.data['new_idurl'])
         queues_to_be_closed = []
@@ -1175,3 +1232,8 @@ class MessagePeddler(automat.Automat):
                 add_producer(queue_id, new_producer_id, producer_info=old_producer_info)
                 if old_producer_info['active']:
                     start_producer(queue_id, new_producer_id)
+
+    def _on_group_creator_idurl_cache_failed(self, err, request_packet, result_defer):
+        p2p_service.SendFail(request_packet, 'group creator idurl cache failed')
+        result_defer.callback(False)
+        return None
