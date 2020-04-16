@@ -35,7 +35,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -544,6 +544,8 @@ def push_incoming_message(request, private_message_object, json_message):
         msg_type = 'private_message'
         if request.PacketID.startswith('queue_'):
             msg_type = 'queue_message'
+        elif request.PacketID.startswith('qreplica_'):
+            msg_type = 'queue_message_replica'
         message_queue()[consumer_id].append({
             'type': msg_type,
             'dir': 'incoming',
@@ -571,6 +573,8 @@ def push_outgoing_message(json_message, private_message_object, remote_identity,
         msg_type = 'private_message'
         if request.PacketID.startswith('queue_'):
             msg_type = 'queue_message'
+        elif request.PacketID.startswith('qreplica_'):
+            msg_type = 'queue_message_replica'
         message_queue()[consumer_id].append({
             'type': msg_type,
             'dir': 'outgoing',
