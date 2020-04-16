@@ -54,6 +54,7 @@ class PrivateGroupsService(LocalService):
         from services import driver
         from access import groups
         groups.init()
+        events.add_subscriber(self._on_supplier_modified, 'supplier-modified')
         events.add_subscriber(self._on_dht_layer_connected, event_id='dht-layer-connected')
         if driver.is_on('service_entangled_dht'):
             self._do_join_message_brokers_dht_layer()
@@ -63,6 +64,7 @@ class PrivateGroupsService(LocalService):
         from main import events
         from access import groups
         events.remove_subscriber(self._on_dht_layer_connected, event_id='dht-layer-connected')
+        events.remove_subscriber(self._on_supplier_modified, 'supplier-modified')
         groups.shutdown()
         return True
 
@@ -87,3 +89,22 @@ class PrivateGroupsService(LocalService):
     def _on_dht_layer_connected(self, evt):
         if evt.data['layer_id'] == 0:
             self._do_join_message_brokers_dht_layer()
+
+    def _on_supplier_modified(self, evt):
+        from access import key_ring
+        from crypt import my_keys
+        from userid import global_id
+        from userid import my_id
+        from logs import lg
+        if evt.data['new_idurl']:
+            my_keys_to_be_republished = []
+            for key_id in my_keys.known_keys():
+                if not key_id.startswith('group_'):
+                    continue
+                _glob_id = global_id.ParseGlobalID(key_id)
+                if _glob_id['idurl'] == my_id.getLocalID():
+                    # only send public keys of my own groups
+                    my_keys_to_be_republished.append(key_id)
+            for group_key_id in my_keys_to_be_republished:
+                d = key_ring.transfer_key(group_key_id, trusted_idurl=evt.data['new_idurl'], include_private=False)
+                d.addErrback(lambda *a: lg.err('transfer key failed: %s' % str(*a)))

@@ -2102,7 +2102,11 @@ def group_create(creator_id=None, key_size=2048, label=''):
     key_info = my_keys.get_key_info(group_key_id, include_private=False)
     key_info.pop('include_private', None)
     key_info['group_key_id'] = key_info.pop('key_id')
-    return OK(key_info, message='new group "%s" was created successfully' % group_key_id)
+    ret = Deferred()
+    d = groups.send_group_pub_key_to_suppliers(group_key_id)
+    d.addCallback(lambda results: ret.callback(OK(key_info, message='new group "%s" was created successfully' % group_key_id)))
+    d.addErrback(lambda err: ret.callback(ERROR('failed to deliver group public key to my suppliers')))
+    return ret
 
 
 def group_join(group_key_id):
@@ -2554,7 +2558,7 @@ def suppliers_dht_lookup(customer_idurl_or_global_id):
             customer_idurl = global_id.GlobalUserToIDURL(customer_idurl, as_field=False)
     customer_idurl = id_url.field(customer_idurl)
     ret = Deferred()
-    d = dht_relations.read_customer_suppliers(customer_idurl, as_fields=False)
+    d = dht_relations.read_customer_suppliers(customer_idurl, as_fields=False, use_cache=False)
     d.addCallback(lambda result: ret.callback(RESULT(result, api_method='suppliers_dht_lookup')))
     d.addErrback(lambda err: ret.callback(ERROR(err)))
     return ret
@@ -4258,7 +4262,7 @@ def dht_user_random(layer_id=0, count=1):
     return ret
 
 
-def dht_value_get(key, record_type='skip_validation', layer_id=0):
+def dht_value_get(key, record_type='skip_validation', layer_id=0, use_cache_ttl=None):
     if not driver.is_on('service_entangled_dht'):
         return ERROR('service_entangled_dht() is not started')
     from dht import dht_service
@@ -4305,6 +4309,7 @@ def dht_value_get(key, record_type='skip_validation', layer_id=0):
         raise_for_result=False,
         return_details=True,
         layer_id=layer_id,
+        use_cache_ttl=use_cache_ttl,
     )
     d.addCallback(_cb)
     d.addErrback(_eb)
