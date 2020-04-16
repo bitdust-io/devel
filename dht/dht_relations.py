@@ -59,7 +59,7 @@ from contacts import identitycache
 
 #------------------------------------------------------------------------------
 
-def read_customer_suppliers(customer_idurl, as_fields=True):
+def read_customer_suppliers(customer_idurl, as_fields=True, use_cache=True):
     if as_fields:
         customer_idurl = id_url.field(customer_idurl)
     else:
@@ -153,7 +153,7 @@ def read_customer_suppliers(customer_idurl, as_fields=True):
         result.errback(err)
         return None
 
-    d = dht_records.get_suppliers(id_url.to_bin(customer_idurl), return_details=True)
+    d = dht_records.get_suppliers(id_url.to_bin(customer_idurl), return_details=True, use_cache=use_cache)
     d.addCallback(_do_verify)
     d.addErrback(_on_error)
     return result
@@ -177,7 +177,7 @@ def write_customer_suppliers(customer_idurl, suppliers_list, ecc_map=None, revis
 
 #------------------------------------------------------------------------------
 
-def read_customer_message_brokers(customer_idurl, positions=[0, ], return_details=True, as_fields=True):
+def read_customer_message_brokers(customer_idurl, positions=[0, ], return_details=True, as_fields=True, use_cache=True):
     if as_fields:
         customer_idurl = id_url.field(customer_idurl)
     else:
@@ -267,6 +267,7 @@ def read_customer_message_brokers(customer_idurl, positions=[0, ], return_detail
                 customer_idurl=customer_idurl,
                 position=position,
                 return_details=return_details,
+                use_cache=use_cache,
             )
             d.addCallback(_do_verify, position, one_broker_result)
             if _Debug:
@@ -280,7 +281,7 @@ def read_customer_message_brokers(customer_idurl, positions=[0, ], return_detail
         return None
 
     d = identitycache.GetLatest(customer_idurl)
-    d.addCallback(lambda xmlsrc: _do_read_brokers())
+    d.addCallback(lambda _: _do_read_brokers())
     if _Debug:
         d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='read_customer_message_brokers')
     d.addErrback(result.errback)

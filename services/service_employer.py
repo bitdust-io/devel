@@ -98,13 +98,13 @@ class EmployerService(LocalService):
         # to have that service running minimum amount of suppliers must be already in the family 
         return missed_suppliers <= eccmap.Current().CorrectableErrors
 
-    def _do_cleanup_dht_suppliers(self):
+    def _do_cleanup_dht_suppliers(self, use_cache=True):
         from logs import lg
         from services import driver
         if driver.is_on('service_entangled_dht'):
             from dht import dht_relations
             from userid import my_id
-            d = dht_relations.read_customer_suppliers(my_id.getLocalID())
+            d = dht_relations.read_customer_suppliers(my_id.getLocalID(), use_cache=use_cache)
             d.addCallback(self._on_my_dht_relations_discovered)
             d.addErrback(self._on_my_dht_relations_failed)
         else:
@@ -184,7 +184,7 @@ class EmployerService(LocalService):
         fire_hire.A('restart')
 
     def _on_supplier_modified(self, evt):
-        self._do_cleanup_dht_suppliers()
+        self._do_cleanup_dht_suppliers(use_cache=False)
 
     def _on_my_dht_relations_discovered(self, dht_result):
         from p2p import p2p_service

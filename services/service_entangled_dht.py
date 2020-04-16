@@ -94,7 +94,7 @@ class EntangledDHTService(LocalService):
         dht_layers = list(dht_records.LAYERS_REGISTRY.keys())
         dht_service.init(
             udp_port=settings.getDHTPort(),
-            dht_dir_path=settings.DHTDataDir(),
+            dht_dir_path=settings.ServiceDir('service_entangled_dht'),
             open_layers=dht_layers,
         )
         lg.info('DHT known seed nodes are : %r   DHT layers are : %r' % (known_seeds, dht_layers, ))

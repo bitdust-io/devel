@@ -172,7 +172,6 @@ class SupplierService(LocalService):
             lg.warn("wrong payload : %s" % newpacket.Payload)
             return p2p_service.SendFail(newpacket, 'wrong storage value')
         current_customers = contactsdb.customers()
-        lg.args(8, current_customers=current_customers)
         if accounting.check_create_customers_quotas():
             lg.info('created new customers quotas file')
         space_dict, free_space = accounting.read_customers_quotas()
@@ -214,10 +213,10 @@ class SupplierService(LocalService):
                 my_keys.erase_key(customer_public_key_id)
             reactor.callLater(0, local_tester.TestUpdateCustomers)  # @UndefinedVariable
             if new_customer:
-                lg.out(8, "    NEW CUSTOMER: DENIED !!!!!!!!!!!    not enough space available")
+                lg.info("NEW CUSTOMER: DENIED     not enough space available")
                 events.send('new-customer-denied', dict(idurl=customer_idurl))
             else:
-                lg.out(8, "    OLD CUSTOMER: DENIED !!!!!!!!!!!    not enough space available")
+                lg.info("OLD CUSTOMER: DENIED     not enough space available")
                 events.send('existing-customer-denied', dict(idurl=customer_idurl))
             return p2p_service.SendAck(newpacket, 'deny')
         free_bytes = free_bytes - bytes_for_customer
@@ -234,9 +233,8 @@ class SupplierService(LocalService):
         self._do_register_customer_key(customer_public_key_id, customer_public_key)
         reactor.callLater(0, local_tester.TestUpdateCustomers)  # @UndefinedVariable
         if new_customer:
-            lg.out(8, "    NEW CUSTOMER: ACCEPTED   %s family_position=%s ecc_map=%s allocated_bytes=%s" % (
+            lg.info("NEW CUSTOMER: ACCEPTED   %s family_position=%s ecc_map=%s allocated_bytes=%s" % (
                 customer_idurl, family_position, ecc_map, bytes_for_customer))
-            lg.out(8, "        family_snapshot=%r !!!!!!!!!!!!!!" % family_snapshot, )
             events.send('new-customer-accepted', dict(
                 idurl=customer_idurl,
                 allocated_bytes=bytes_for_customer,
@@ -246,9 +244,8 @@ class SupplierService(LocalService):
                 key_id=customer_public_key_id,
             ))
         else:
-            lg.out(8, "    OLD CUSTOMER: ACCEPTED  %s family_position=%s ecc_map=%s allocated_bytes=%s" % (
+            lg.info("OLD CUSTOMER: ACCEPTED  %s family_position=%s ecc_map=%s allocated_bytes=%s" % (
                 customer_idurl, family_position, ecc_map, bytes_for_customer))
-            lg.out(8, "        family_snapshot=%r !!!!!!!!!!!!!!" % family_snapshot)
             events.send('existing-customer-accepted', dict(
                 idurl=customer_idurl,
                 allocated_bytes=bytes_for_customer,
@@ -279,7 +276,7 @@ class SupplierService(LocalService):
             lg.warn("got packet from %s, but he is not a customer" % customer_idurl)
             return p2p_service.SendFail(newpacket, 'not a customer')
         if accounting.check_create_customers_quotas():
-            lg.out(6, 'service_supplier.cancel created a new space file')
+            lg.info('created a new space file')
         space_dict, free_space = accounting.read_customers_quotas()
         if customer_idurl.to_bin() not in list(space_dict.keys()):
             lg.warn("got packet from %s, but not found him in space dictionary" % customer_idurl)
@@ -299,9 +296,10 @@ class SupplierService(LocalService):
         contactsdb.save_customers()
         if customer_public_key_id:
             my_keys.erase_key(customer_public_key_id)
+        # TODO: erase customer's groups keys also
         from supplier import local_tester
         reactor.callLater(0, local_tester.TestUpdateCustomers)  # @UndefinedVariable
-        lg.out(8, "    OLD CUSTOMER: TERMINATED !!!!!!!!!!!!!!")
+        lg.info("OLD CUSTOMER TERMINATED %r" % customer_idurl)
         events.send('existing-customer-terminated', dict(idurl=customer_idurl, ecc_map=customer_ecc_map))
         return p2p_service.SendAck(newpacket, 'accepted')
 
@@ -463,7 +461,7 @@ class SupplierService(LocalService):
                     glob_path=glob_path['path'],
                     owner_id=newpacket.OwnerID,
                 ))
-        lg.out(self.debug_level, "service_supplier._on_delete_file from [%s] with %d IDs, %d files and %d folders were removed" % (
+        lg.info("from [%s] with %d IDs, %d files and %d folders were removed" % (
             newpacket.OwnerID, len(ids), filescount, dirscount))
         p2p_service.SendAck(newpacket)
         return True
@@ -521,7 +519,7 @@ class SupplierService(LocalService):
                     glob_path=glob_path['path'],
                     owner_id=newpacket.OwnerID,
                 ))
-        lg.out(self.debug_level, "supplier_service._on_delete_backup from [%s] with %d IDs, %d were removed" % (
+        lg.info("from [%s] with %d IDs, %d were removed" % (
             newpacket.OwnerID, len(ids), count))
         p2p_service.SendAck(newpacket)
         return True
@@ -611,11 +609,11 @@ class SupplierService(LocalService):
             RemoteID=recipient_idurl,
         )
         if recipient_idurl == stored_packet.OwnerID:
-            lg.out(self.debug_level, 'service_supplier._on_retrieve   from request %r : sending %r back to owner: %s' % (
+            lg.info('from request %r : sending %r back to owner: %s' % (
                 newpacket, stored_packet, recipient_idurl))
             gateway.outbox(routed_packet)  # , target=recipient_idurl)
             return True
-        lg.out(self.debug_level, 'service_supplier._on_retrieve   from request %r : returning data owned by %s to %s' % (
+        lg.info('from request %r : returning data owned by %s to %s' % (
             newpacket, stored_packet.OwnerID, recipient_idurl))
         gateway.outbox(routed_packet)
         return True
@@ -664,7 +662,7 @@ class SupplierService(LocalService):
         data = newpacket.Serialize()
         donated_bytes = settings.getDonatedBytes()
         accounting.check_create_customers_quotas(donated_bytes)
-        space_dict, free_space = accounting.read_customers_quotas()
+        space_dict, _ = accounting.read_customers_quotas()
         if newpacket.OwnerID.to_bin() not in list(space_dict.keys()):
             lg.err("no info about donated space for %s" % newpacket.OwnerID)
             p2p_service.SendFail(newpacket, 'no info about donated space')
@@ -685,11 +683,7 @@ class SupplierService(LocalService):
             p2p_service.SendFail(newpacket, 'write error')
             return False
         # Here Data() packet was stored as it is on supplier node (current machine)
-        sz = len(data)
         del data
-        lg.out(self.debug_level, "service_supplier._on_data %r" % newpacket)
-        lg.out(self.debug_level, "    from [ %s | %s ]" % (newpacket.OwnerID, newpacket.CreatorID, ))
-        lg.out(self.debug_level, "        saved with %d %s" % (sz, filename, ))
         p2p_service.SendAck(newpacket, str(len(newpacket.Payload)))
         from supplier import local_tester
         reactor.callLater(0, local_tester.TestSpaceTime)  # @UndefinedVariable
