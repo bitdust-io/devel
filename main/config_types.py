@@ -158,6 +158,7 @@ def defaults():
         'services/keys-storage/enabled': TYPE_BOOLEAN,
         'services/list-files/enabled': TYPE_BOOLEAN,
         'services/message-broker/enabled': TYPE_BOOLEAN,
+        'services/message-broker/archive-chunk-size': TYPE_NON_ZERO_POSITIVE_INTEGER,
         'services/message-history/enabled': TYPE_BOOLEAN,
         'services/miner/enabled': TYPE_BOOLEAN,
         'services/my-data/enabled': TYPE_BOOLEAN,

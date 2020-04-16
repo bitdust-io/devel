@@ -934,6 +934,9 @@ class QueueMessage(object):
                 lg.warn('message %r from %r in queue %r will have no consumers' % (
                     self.message_id, self.producer_id, self.queue_id, ))
 
+    def __repr__(self):
+        return 'QueueMessage[%s](%s by %s in %s)' % (self.state, self.message_id, self.producer_id, self.queue_id, )
+
     def get_sequence_id(self):
         return self.payload.get('sequence_id', None)
 

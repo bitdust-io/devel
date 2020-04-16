@@ -325,6 +325,7 @@ class FamilyMember(automat.Automat):
         self.my_info = None
         self.transaction = None
         self.dht_value_exists = False
+        self.dht_read_use_cache = True
         self.refresh_period = DHT_RECORD_REFRESH_INTERVAL * settings.DefaultDesiredSuppliers()
         self.refresh_task = LoopingCall(self._on_family_refresh_task)
 
@@ -443,7 +444,7 @@ class FamilyMember(automat.Automat):
         """
         Action method.
         """
-        d = dht_relations.read_customer_suppliers(self.customer_idurl, as_fields=False)
+        d = dht_relations.read_customer_suppliers(self.customer_idurl, as_fields=False, use_cache=False)
         d.addCallback(self._on_dht_read_success)
         d.addErrback(self._on_dht_read_failed)
 
@@ -506,6 +507,7 @@ class FamilyMember(automat.Automat):
         if _Debug:
             lg.args(_DebugLevel, inp=inp)
         if not inp or not isinstance(inp, dict):
+            self.dht_read_use_cache = False
             return None
         out = inp.copy()
         try:
@@ -525,6 +527,7 @@ class FamilyMember(automat.Automat):
         except:
             lg.exc()
             lg.warn('skip invalid DHT info and assume DHT record is not exist')
+            self.dht_read_use_cache = False
             return None
         return out
 
@@ -949,11 +952,13 @@ class FamilyMember(automat.Automat):
         self.my_info = self.transaction.copy()
         self.dht_info = None
         self.transaction = None
+        self.dht_read_use_cache = False
         self.automat('dht-write-ok', dht_result)
 
     def _on_dht_write_failed(self, err, retries):
         if _Debug:
             lg.out(_DebugLevel, 'family_member._on_dht_write_failed  err: %r' % err)
+        self.dht_read_use_cache = False
         try:
             errmsg = err.value.subFailure.getErrorMessage()
         except:

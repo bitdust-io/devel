@@ -164,6 +164,7 @@ def reset(conf_obj):
     conf_obj.setDefaultValue('services/list-files/enabled', 'true')
 
     conf_obj.setDefaultValue('services/message-broker/enabled', 'true')
+    conf_obj.setDefaultValue('services/message-broker/archive-chunk-size', 100)
 
     conf_obj.setDefaultValue('services/message-history/enabled', 'true')
 

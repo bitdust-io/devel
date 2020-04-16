@@ -382,7 +382,7 @@ def MakeGlobalQueueID(queue_alias, owner_id, supplier_id):
         supplier_id=strng.to_text(supplier_id),
     )
 
-def ParseGlobalQueueID(inp):
+def ParseGlobalQueueID(queue_id):
     global _REGEX_GLOBAL_ID_QUEUE_ID
     global _REGEX_OBJ_GLOBAL_ID_QUEUE_ID
     if _REGEX_OBJ_GLOBAL_ID_QUEUE_ID is None:
@@ -392,7 +392,7 @@ def ParseGlobalQueueID(inp):
         'owner_id': '',
         'supplier_id': '',
     }
-    result = _REGEX_OBJ_GLOBAL_ID_QUEUE_ID.match(inp)
+    result = _REGEX_OBJ_GLOBAL_ID_QUEUE_ID.match(queue_id)
     if not result:
         return ret
     ret['queue_alias'] = strng.to_text(result.group('queue_alias'))
@@ -400,51 +400,27 @@ def ParseGlobalQueueID(inp):
     ret['supplier_id'] = strng.to_text(result.group('supplier_id'))
     return ret
 
-def GetGlobalQueueOwnerIDURL(inp, as_field=True):
-    queue_alias_owner_id, _, _ = inp.rpartition('&')
+
+def SplitGlobalQueueID(queue_id, split_queue_alias=True):
+    queue_alias_owner_id, _, supplier_id = queue_id.rpartition('&')
+    if not split_queue_alias:
+        return queue_alias_owner_id, supplier_id
+    queue_alias, _, owner_id = queue_alias_owner_id.partition('&')
+    return queue_alias, owner_id, supplier_id
+
+
+def GetGlobalQueueOwnerIDURL(queue_id, as_field=True):
+    queue_alias_owner_id, _, _ = queue_id.rpartition('&')
     _, _, owner_id = queue_alias_owner_id.partition('&')
     owner_idurl = glob2idurl(owner_id, as_field=as_field)
     return owner_idurl
 
 
-def GetGlobalQueueKeyID(inp):
-    queue_alias_owner_id, _, _ = inp.rpartition('&')
+def GetGlobalQueueKeyID(queue_id):
+    queue_alias_owner_id, _, _ = queue_id.rpartition('&')
     queue_alias, _, owner_id = queue_alias_owner_id.partition('&')
     key_id = _FORMAT_GLOBAL_ID_KEY_USER.format(
         key_alias=queue_alias,
         user=owner_id,
     )
     return key_id
-
-#------------------------------------------------------------------------------
-
-def MakeCustomerQueueID(queue_alias, customer_id, position=0):
-    """
-    Not used.
-    """
-    global _FORMAT_GLOBAL_CUSTOMER_QUEUE_ID
-    return _FORMAT_GLOBAL_CUSTOMER_QUEUE_ID.format(
-        queue_alias=strng.to_text(queue_alias),
-        customer_id=strng.to_text(customer_id),
-        position=strng.to_text(position),
-    )
-
-def ParseCustomerQueueID(inp):
-    """
-    Not used.
-    """
-    global _REGEX_GLOBAL_CUSTOMER_QUEUE_ID
-    ret = {
-        'queue_alias': '',
-        'customer_id': '',
-        'position': 0,
-    }
-    result = re.match(_REGEX_GLOBAL_CUSTOMER_QUEUE_ID, inp)
-    if not result:
-        return ret
-    ret['queue_alias'] = strng.to_text(result.group('queue_alias'))
-    ret['customer_id'] = strng.to_text(result.group('customer_id'))
-    ret['position'] = int(result.group('position'))
-    return ret
-
-#------------------------------------------------------------------------------

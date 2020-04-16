@@ -71,7 +71,7 @@ def get_sec1970():
     """
     Return how much seconds passed since 1970 using time.time() method, seems
     work in local time.
-    TODO: extra methods for time synchronization accross the nodes to be added here
+    TODO: extra methods for time synchronization across the network nodes to be added later
     """
     return int(time.time())
 

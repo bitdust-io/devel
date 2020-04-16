@@ -40,6 +40,7 @@ EVENTS:
     * :red:`join`
     * :red:`leave`
     * :red:`message-in`
+    * :red:`message-pushed`
     * :red:`push-message`
     * :red:`push-message-failed`
     * :red:`queue-in-sync`
@@ -188,6 +189,7 @@ class GroupMember(automat.Automat):
         self.last_sequence_id = groups.get_last_sequence_id(self.group_key_id)
         self.outgoing_messages = {}
         self.outgoing_counter = 0
+        self.dht_read_use_cache = True
         super(GroupMember, self).__init__(
             name="group_member_%s$%s" % (self.group_queue_alias[:10], self.group_creator_id),
             state="AT_STARTUP",
@@ -309,13 +311,15 @@ class GroupMember(automat.Automat):
                 self.doDeactivate(event, *args, **kwargs)
                 self.doCancelService(event, *args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'join' or ( event == 'message-in' and not self.isInSync(*args, **kwargs) ):
-                self.state = 'QUEUE?'
-                self.doReadQueue(*args, **kwargs)
             elif event == 'push-message-failed':
                 self.state = 'DHT_READ?'
                 self.doMarkDeadBroker(*args, **kwargs)
                 self.doDHTReadBrokers(*args, **kwargs)
+            elif event == 'message-pushed':
+                self.doNotifyMessageAccepted(*args, **kwargs)
+            elif event == 'message-in' and not self.isInSync(*args, **kwargs):
+                self.state = 'QUEUE?'
+                self.doReadQueue(*args, **kwargs)
         #---CLOSED---
         elif self.state == 'CLOSED':
             pass
@@ -377,7 +381,11 @@ class GroupMember(automat.Automat):
         Action method.
         """
         self.latest_dht_brokers = None
-        result = dht_relations.read_customer_message_brokers(self.group_creator_idurl, positions=list(range(groups.REQUIRED_BROKERS_COUNT)))
+        result = dht_relations.read_customer_message_brokers(
+            self.group_creator_idurl,
+            positions=list(range(groups.REQUIRED_BROKERS_COUNT)),
+            use_cache=self.dht_read_use_cache,
+        )
         # TODO: add more validations of dht_result
         result.addCallback(self._on_read_customer_message_brokers)
         if _Debug:
@@ -400,6 +408,7 @@ class GroupMember(automat.Automat):
         """
         Action method.
         """
+        self.dht_read_use_cache = False
         groups.clear_brokers(self.group_creator_id)
 
     def doReadQueue(self, *args, **kwargs):
@@ -421,7 +430,6 @@ class GroupMember(automat.Automat):
             fire_callbacks=False,
         )
         if _Debug:
-            result.addCallback(lg.cb, debug=_Debug, debug_level=_DebugLevel, method='group_member.doReadQueue')
             result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='group_member.doReadQueue')
         result.addErrback(lambda err: self.automat('queue-read-failed', err))
 
@@ -447,6 +455,7 @@ class GroupMember(automat.Automat):
         """
         Action method.
         """
+        # TODO: ...
 
     def doPushPendingMessages(self, *args, **kwargs):
         """
@@ -460,11 +469,17 @@ class GroupMember(automat.Automat):
                     packet_id=None,
                 )
 
+    def doNotifyMessageAccepted(self, *args, **kwargs):
+        """
+        Action method.
+        """
+
     def doMarkDeadBroker(self, *args, **kwargs):
         """
         Action method.
         """
         self.dead_broker_id = self.active_broker_id
+        self.dht_read_use_cache = False
         if _Debug:
             lg.args(_DebugLevel, dead_broker_id=self.dead_broker_id)
 
@@ -472,6 +487,7 @@ class GroupMember(automat.Automat):
         """
         Action method.
         """
+        self.dht_read_use_cache = True
         events.send('group-connected', data=dict(
             group_key_id=self.group_key_id,
             member_id=self.member_id,
@@ -482,6 +498,7 @@ class GroupMember(automat.Automat):
         """
         Action method.
         """
+        self.dht_read_use_cache = False
         events.send('group-disconnected', data=dict(
             group_key_id=self.group_key_id,
             member_id=self.member_id,
@@ -571,6 +588,7 @@ class GroupMember(automat.Automat):
                 'payload': json_payload,
                 'queue_id': self.active_queue_id,
                 'producer_id': self.member_id,
+                'brokers': self.connected_brokers,
             },
             recipient_global_id=self.active_broker_id,
             packet_id='queue_%s_%s' % (self.active_queue_id, packet_id, ),
@@ -785,9 +803,11 @@ class GroupMember(automat.Automat):
         if _Debug:
             lg.args(_DebugLevel, brokers=brokers_info_list)
         if not brokers_info_list:
+            self.dht_read_use_cache = False
             self.automat('brokers-not-found', [])
             return
         self.latest_dht_brokers = brokers_info_list
+        self.dht_read_use_cache = True
         self.automat('brokers-found', brokers_info_list)
 
     def _on_broker_hired(self, idurl, broker_pos):
@@ -935,10 +955,11 @@ class GroupMember(automat.Automat):
                 self.automat('message-in', **new_message)
         if newly_processed != len(received_group_messages):
             raise Exception('message sequence is broken by message broker %s, some messages were not consumed' % self.active_broker_id)
-        if newly_processed and latest_known_sequence_id == self.last_sequence_id:
-            groups.set_last_sequence_id(self.group_key_id, self.last_sequence_id)
-            groups.save_group_info(self.group_key_id)
-            if _Debug:
-                lg.dbg(_DebugLevel, 'processed all messages, queue in sync, last_sequence_id=%d' % self.last_sequence_id)
-            self.automat('queue-in-sync')
+        if newly_processed:
+            if latest_known_sequence_id == self.last_sequence_id:
+                groups.set_last_sequence_id(self.group_key_id, self.last_sequence_id)
+                groups.save_group_info(self.group_key_id)
+                if _Debug:
+                    lg.dbg(_DebugLevel, 'processed all messages, queue in sync, last_sequence_id=%d' % self.last_sequence_id)
+                self.automat('queue-in-sync')
         return True

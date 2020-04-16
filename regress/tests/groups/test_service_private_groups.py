@@ -59,8 +59,25 @@ def test_customers_1_2_3_communicate_via_message_broker():
     assert kw.queue_producer_list_v1('broker-1', extract_ids=True) == []
     assert kw.queue_producer_list_v1('broker-2', extract_ids=True) == []
 
+    # remember suppliers of customer-1
+    customer_1_suppliers = kw.supplier_list_v1('customer-1', expected_min_suppliers=2, expected_max_suppliers=2, extract_suppliers=True)
+    first_supplier_customer_1 = customer_1_suppliers[0].replace('http://id-a:8084/', '').replace('http://id-b:8084/', '').replace('.xml', '')
+    second_supplier_customer_1 = customer_1_suppliers[1].replace('http://id-a:8084/', '').replace('http://id-b:8084/', '').replace('.xml', '')
+
+    # remember list of existing keys on suppliers
+    old_keys_first_supplier_customer_1 = [k['key_id'] for k in kw.key_list_v1(first_supplier_customer_1)['result']]
+    old_keys_second_supplier_customer_1 = [k['key_id'] for k in kw.key_list_v1(second_supplier_customer_1)['result']]
+
     # create group owned by customer-1 and join
     group_key_id = kw.group_create_v1('customer-1', label='TestGroup123')
+
+    # make sure group key was delivered to suppliers
+    new_keys_first_supplier_customer_1 = [k['key_id'] for k in kw.key_list_v1(first_supplier_customer_1)['result']]
+    new_keys_second_supplier_customer_1 = [k['key_id'] for k in kw.key_list_v1(second_supplier_customer_1)['result']]
+    assert group_key_id not in old_keys_first_supplier_customer_1
+    assert group_key_id not in old_keys_second_supplier_customer_1
+    assert group_key_id in new_keys_first_supplier_customer_1
+    assert group_key_id in new_keys_second_supplier_customer_1
 
     group_info_inactive = kw.group_info_v1('customer-1', group_key_id)['result']
     assert group_info_inactive['state'] == 'OFFLINE'
@@ -87,9 +104,10 @@ def test_customers_1_2_3_communicate_via_message_broker():
     assert 'customer-1@id-a_8084' in broker_consumers
     assert 'customer-1@id-a_8084' in broker_producers
 
-    # share group key from customer-1 to customer-2, second member join the group
+    # share group key from customer-1 to customer-2
     kw.group_share_v1('customer-1', group_key_id, 'customer-2@id-b_8084')
 
+    # second member join the group
     kw.group_join_v1('customer-2', group_key_id)
 
     assert kw.group_info_v1('customer-2', group_key_id)['result']['last_sequence_id'] == -1
@@ -138,9 +156,10 @@ def test_customers_1_2_3_communicate_via_message_broker():
     assert kw.group_info_v1('customer-1', group_key_id)['result']['last_sequence_id'] == 0
     assert kw.group_info_v1('customer-2', group_key_id)['result']['last_sequence_id'] == 0
 
-    # customer-2 share group key to customer-3, third member join the group
+    # customer-2 share group key to customer-3
     kw.group_share_v1('customer-2', group_key_id, 'customer-3@id-a_8084')
 
+    # third member join the group
     kw.group_join_v1('customer-3', group_key_id)
 
     broker_consumers = kw.queue_consumer_list_v1(active_broker_name, extract_ids=True)
@@ -255,9 +274,51 @@ def test_customers_1_2_3_communicate_via_message_broker():
     assert kw.group_info_v1('customer-2', group_key_id)['result']['last_sequence_id'] == 1
     assert kw.group_info_v1('customer-3', group_key_id)['result']['last_sequence_id'] == 2
 
-    # customer 1 and 3 also leave the group
-    kw.group_leave_v1('customer-1', group_key_id)
+    # sending 10 messages to the group from customer 1
+    for i in range(10):
+        sample_message_sent_from_customer_1 = {
+            'random_message': 'MESSAGE_%d_%s' % (i, base64.b32encode(os.urandom(20)).decode(), ),
+        }
+        customer_1_receive_result = [None, ]
+        customer_2_receive_result = [None, ]
+        customer_3_receive_result = [None, ]
+        thread_receive_customer_1 = threading.Timer(0, kw.message_receive_v1, [
+            'customer-1', c_message_sent_from_customer_1, 'test_consumer', c_customer_1_receive_result, ])
+        thread_receive_customer_2 = threading.Timer(0, kw.message_receive_v1, [
+            'customer-2', c_message_sent_from_customer_1, 'test_consumer', c_customer_2_receive_result, 10])
+        thread_receive_customer_3 = threading.Timer(0, kw.message_receive_v1, [
+            'customer-3', c_message_sent_from_customer_1, 'test_consumer', c_customer_3_receive_result, ])
+        thread_send_customer_1 = threading.Timer(0.2, kw.message_send_group_v1, [
+            'customer-1', group_key_id, c_message_sent_from_customer_1, ])
+        thread_receive_customer_1.start()
+        thread_receive_customer_2.start()
+        thread_receive_customer_3.start()
+        thread_send_customer_1.start()
+        thread_receive_customer_1.join()
+        thread_receive_customer_2.join()
+        thread_receive_customer_3.join()
+        thread_send_customer_1.join()
+        assert customer_1_receive_result[0]['result'][0]['data'] == sample_message_sent_from_customer_1
+        assert customer_2_receive_result[0] is None
+        assert customer_3_receive_result[0]['result'][0]['data'] == sample_message_sent_from_customer_1
 
+        assert kw.group_info_v1('customer-1', group_key_id)['result']['last_sequence_id'] == 2
+        assert kw.group_info_v1('customer-2', group_key_id)['result']['last_sequence_id'] == 1
+        assert kw.group_info_v1('customer-3', group_key_id)['result']['last_sequence_id'] == 2
+
+    assert kw.group_info_v1('customer-1', group_key_id)['result']['last_sequence_id'] == 12
+    assert kw.group_info_v1('customer-2', group_key_id)['result']['last_sequence_id'] == 1
+    assert kw.group_info_v1('customer-3', group_key_id)['result']['last_sequence_id'] == 12
+
+    # second member now join the group again... he missed something : expect 11 messages to be missed
+    kw.group_join_v1('customer-3', group_key_id)
+
+    # all messages suppose to be restored from archive history
+    assert kw.group_info_v1('customer-2', group_key_id)['result']['last_sequence_id'] == 12
+
+    # all customers leave the group
+    kw.group_leave_v1('customer-1', group_key_id)
+    kw.group_leave_v1('customer-2', group_key_id)
     kw.group_leave_v1('customer-3', group_key_id)
 
     kw.packet_list_v1('customer-1', wait_all_finish=True)
@@ -268,6 +329,11 @@ def test_customers_1_2_3_communicate_via_message_broker():
     kw.transfer_list_v1('customer-3', wait_all_finish=True)
 
     group_info_offline = kw.group_info_v1('customer-1', group_key_id)['result']
+    assert group_info_offline['state'] == 'OFFLINE'
+    assert group_info_offline['label'] == 'TestGroup123'
+    assert group_info_offline['last_sequence_id'] == 2
+
+    group_info_offline = kw.group_info_v1('customer-2', group_key_id)['result']
     assert group_info_offline['state'] == 'OFFLINE'
     assert group_info_offline['label'] == 'TestGroup123'
     assert group_info_offline['last_sequence_id'] == 2

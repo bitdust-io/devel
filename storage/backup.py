@@ -149,7 +149,8 @@ class backup(automat.Automat):
                  blockResultCallback=None,
                  blockSize=None,
                  sourcePath=None,
-                 keyID=None, ):
+                 keyID=None,
+                 ecc_map=None, ):
         self.backupID = backupID
         _parts = packetid.SplitBackupID(self.backupID)
         self.customerGlobalID = _parts[0]
@@ -158,7 +159,7 @@ class backup(automat.Automat):
         self.customerIDURL = global_id.GlobalUserToIDURL(self.customerGlobalID)
         self.sourcePath = sourcePath
         self.keyID = keyID
-        self.eccmap = eccmap.Current()
+        self.eccmap = ecc_map or eccmap.Current()
         self.pipe = pipe
         self.blockSize = blockSize
         if self.blockSize is None:

@@ -823,6 +823,7 @@ async def start_message_broker_async(node, identity_name, loop, join_network=Tru
         cmd += f'bitdust set services/proxy-transport/preferred-routers "{preferred_routers}";'
     # enable message broker service
     cmd += 'bitdust set services/message-broker/enabled true;'
+    cmd += 'bitdust set services/message-broker/archive-chunk-size 3;'
     await run_ssh_command_and_wait_async(node, cmd, loop)
     # start BitDust daemon and create new identity for supplier
     await start_daemon_async(node, loop)

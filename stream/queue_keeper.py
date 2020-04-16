@@ -110,7 +110,7 @@ def check_create(customer_idurl, auto_create=True):
     """
     Creates new instance of queue_keeper() state machine and send "init" event to it.
     """
-    customer_idurl = strng.to_bin(customer_idurl)
+    customer_idurl = id_url.to_bin(customer_idurl)
     if id_url.is_empty(customer_idurl):
         return None
     if not id_url.is_cached(customer_idurl):
@@ -184,6 +184,7 @@ class QueueKeeper(automat.Automat):
         self.new_possible_position = None
         self.has_rotated = False
         self.known_brokers = {}
+        self.dht_read_use_cache = True
         super(QueueKeeper, self).__init__(
             name="queue_keeper_%s" % self.customer_id,
             state="AT_STARTUP",
@@ -346,7 +347,8 @@ class QueueKeeper(automat.Automat):
         desired_position = kwargs.get('desired_position', -1)
         if desired_position >= 0 and self.known_position >= 0:
             self.has_rotated = desired_position < self.known_position
-            lg.info('found group brokers were rotated, my position: %d -> %d' % (self.known_position, desired_position, ))
+            if self.has_rotated:
+                lg.info('found group brokers were rotated, my position: %d -> %d' % (self.known_position, desired_position, ))
 
     def doSetDesiredPosition(self, *args, **kwargs):
         """
@@ -378,6 +380,7 @@ class QueueKeeper(automat.Automat):
         result = dht_relations.read_customer_message_brokers(
             customer_idurl=self.customer_idurl,
             positions=list(range(groups.REQUIRED_BROKERS_COUNT)),
+            use_cache=self.dht_read_use_cache,
         )
         # TODO: add more validations of dht_result
         result.addCallback(self._on_read_customer_message_brokers, possible_broker_position)
@@ -398,7 +401,7 @@ class QueueKeeper(automat.Automat):
         result.addCallback(self._on_write_customer_message_broker, desired_position)
         if _Debug:
             result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='queue_keeper.doDHTWrite')
-        result.addErrback(lambda err: self.automat('dht-write-failed', err))
+        result.addErrback(self._on_write_customer_message_broker_failed, desired_position)
 
     def doDHTRefresh(self, *args, **kwargs):
         """
@@ -409,6 +412,7 @@ class QueueKeeper(automat.Automat):
         """
         Action method.
         """
+        self.dht_read_use_cache = False
         reactor.callLater(0, self.automat, 'connect')  # @UndefinedVariable
 
     def doSetOwnPosition(self, *args, **kwargs):
@@ -417,6 +421,7 @@ class QueueKeeper(automat.Automat):
         """
         self.has_rotated = False
         self.known_position = kwargs.get('position')
+        self.dht_read_use_cache = True
 
     def doRunCallbacks(self, event, *args, **kwargs):
         """
@@ -451,6 +456,7 @@ class QueueKeeper(automat.Automat):
         self.new_possible_position = None
         self.known_brokers.clear()
         if not brokers_info_list:
+            self.dht_read_use_cache = False
             self.automat('dht-record-not-exist', desired_position=possible_broker_position)
             return
         my_broker_info = None
@@ -460,8 +466,10 @@ class QueueKeeper(automat.Automat):
                     my_broker_info = broker_info
                 self.known_brokers[broker_info['position']] = broker_info['broker_idurl']
         if not my_broker_info:
+            self.dht_read_use_cache = False
             self.automat('dht-record-not-exist', desired_position=possible_broker_position)
         else:
+            self.dht_read_use_cache = True
             self.automat('dht-record-exist', broker_idurl=my_broker_info['broker_idurl'], position=my_broker_info['position'])
 
     def _on_write_customer_message_broker(self, nodes, desired_broker_position):
@@ -470,4 +478,11 @@ class QueueKeeper(automat.Automat):
         if nodes:
             self.automat('dht-write-success', desired_position=desired_broker_position)
         else:
+            self.dht_read_use_cache = False
             self.automat('dht-write-failed', desired_position=desired_broker_position)
+
+    def _on_write_customer_message_broker_failed(self, err, desired_broker_position):
+        if _Debug:
+            lg.args(_DebugLevel, err=err, desired_broker_position=desired_broker_position)
+        self.dht_read_use_cache = False
+        self.automat('dht-write-failed', desired_position=desired_broker_position)
