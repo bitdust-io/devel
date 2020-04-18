@@ -91,6 +91,8 @@ from services import driver
 from contacts import contactsdb
 from contacts import identitycache
 
+from stream import data_sender
+
 from storage import backup_fs
 from storage import backup_matrix
 from storage import backup
@@ -712,6 +714,7 @@ class Task():
             backupPipe,
             finishCallback=OnJobDone,
             blockResultCallback=OnBackupBlockReport,
+            notifyNewDataCallback=OnNewDataPrepared,
             blockSize=settings.getBackupBlockSize(),
             sourcePath=self.localPath,
             keyID=self.keyID or itemInfo.key_id,
@@ -930,11 +933,19 @@ def OnBackupBlockReport(backupID, blockNum, result):
     backup_matrix.LocalBlockReport(backupID, blockNum, result)
 
 
+def OnNewDataPrepared():
+    """
+    """
+    data_sender.A('new-data')
+
+
 def OnTaskExecutedCallback(result):
     """
     """
-    lg.out(_DebugLevel, 'backup_control.OnTaskExecuted %s : %s' % (result[0], result[1]))
+    if _Debug:
+        lg.out(_DebugLevel, 'backup_control.OnTaskExecuted %s : %s' % (result[0], result[1]))
     return result
+
 
 def OnTaskFailedCallback(result):
     """

@@ -120,6 +120,8 @@ def reset(conf_obj):
 
     conf_obj.setDefaultValue('services/customer-support/enabled', 'true')
 
+    conf_obj.setDefaultValue('services/data-disintegration/enabled', 'true')
+
     conf_obj.setDefaultValue('services/data-motion/enabled', 'true')
     conf_obj.setDefaultValue('services/data-motion/supplier-request-queue-size', 4)            
     conf_obj.setDefaultValue('services/data-motion/supplier-sending-queue-size', 4)            

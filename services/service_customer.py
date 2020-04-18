@@ -45,7 +45,7 @@ class CustomerService(LocalService):
 
     def dependent_on(self):
         return [
-            'service_keys_registry',
+            'service_data_disintegration',
         ]
 
     def installed(self):

@@ -147,6 +147,7 @@ class backup(automat.Automat):
                  pipe,
                  finishCallback=None,
                  blockResultCallback=None,
+                 notifyNewDataCallback=None,
                  blockSize=None,
                  sourcePath=None,
                  keyID=None,
@@ -179,6 +180,7 @@ class backup(automat.Automat):
         self.resultDefer = Deferred()
         self.finishCallback = finishCallback
         self.blockResultCallback = blockResultCallback
+        self.notifyNewDataCallback = notifyNewDataCallback
         automat.Automat.__init__(self, name='backup_%s' % self.version, state='AT_STARTUP',
                                  debug_level=_DebugLevel, log_events=_Debug, log_transitions=_Debug, )
 
@@ -188,7 +190,6 @@ class backup(automat.Automat):
         self.log_transitions = _Debug
 
     def A(self, event, *args, **kwargs):
-        from stream import data_sender
         #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'start':
@@ -210,14 +211,14 @@ class backup(automat.Automat):
             elif event == 'block-raid-done' and not self.isAborted(*args, **kwargs):
                 self.doPopBlock(*args, **kwargs)
                 self.doBlockReport(*args, **kwargs)
-                data_sender.A('new-data')
+                self.doNotifyNewData(*args, **kwargs)
         #---RAID---
         elif self.state == 'RAID':
             if event == 'block-raid-done' and not self.isMoreBlocks(*args, **kwargs) and not self.isAborted(*args, **kwargs):
                 self.state = 'DONE'
                 self.doPopBlock(*args, **kwargs)
                 self.doBlockReport(*args, **kwargs)
-                data_sender.A('new-data')
+                self.doNotifyNewData(*args, **kwargs)
                 self.doClose(*args, **kwargs)
                 self.doReport(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
@@ -228,7 +229,7 @@ class backup(automat.Automat):
             elif event == 'block-raid-done' and self.isMoreBlocks(*args, **kwargs) and not self.isAborted(*args, **kwargs):
                 self.doPopBlock(*args, **kwargs)
                 self.doBlockReport(*args, **kwargs)
-                data_sender.A('new-data')
+                self.doNotifyNewData(*args, **kwargs)
             elif event == 'fail' or ( ( event == 'timer-01sec' or event == 'block-raid-done' or event == 'block-raid-started' ) and self.isAborted(*args, **kwargs) ):
                 self.state = 'ABORTED'
                 self.doClose(*args, **kwargs)
@@ -247,7 +248,7 @@ class backup(automat.Automat):
             elif event == 'block-raid-done' and not self.isAborted(*args, **kwargs):
                 self.doPopBlock(*args, **kwargs)
                 self.doBlockReport(*args, **kwargs)
-                data_sender.A('new-data')
+                self.doNotifyNewData(*args, **kwargs)
         #---DONE---
         elif self.state == 'DONE':
             pass
@@ -456,6 +457,13 @@ class backup(automat.Automat):
         BlockNumber, result = args[0]
         if self.blockResultCallback:
             self.blockResultCallback(self.backupID, BlockNumber, result)
+
+    def doNotifyNewData(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        if self.notifyNewDataCallback:
+            self.notifyNewDataCallback()
 
     def doClose(self, *args, **kwargs):
         """

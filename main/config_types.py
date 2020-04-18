@@ -125,6 +125,7 @@ def defaults():
         'services/customer-family/enabled': TYPE_BOOLEAN,
         'services/customer-patrol/enabled': TYPE_BOOLEAN,
         'services/customer-support/enabled': TYPE_BOOLEAN,
+        'services/data-disintegration/enabled': TYPE_BOOLEAN,
         'services/data-motion/enabled': TYPE_BOOLEAN,
         'services/data-motion/supplier-request-queue-size': TYPE_NON_ZERO_POSITIVE_INTEGER,
         'services/data-motion/supplier-sending-queue-size': TYPE_NON_ZERO_POSITIVE_INTEGER,
