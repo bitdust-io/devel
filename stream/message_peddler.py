@@ -76,7 +76,6 @@ from crypt import my_keys
 
 from lib import jsn
 from lib import strng
-from lib import misc
 from lib import utime
 from lib import packetid
 from lib import serialization
@@ -91,17 +90,11 @@ from main import settings
 from main import config
 from main import events
 
-from dht import dht_relations
-
 from p2p import p2p_service
 
 from access import groups
 
-from raid import eccmap
-
-from storage import backup_fs
-from storage import backup_tar
-from storage import backup
+from storage import archive_writer
 
 from stream import p2p_queue
 from stream import queue_keeper
@@ -1340,6 +1333,14 @@ class MessagePeddler(automat.Automat):
         if replicate_attempts == 0:
             lg.err('message was not replicated: %r' % message_in)
 
+    def _do_build_archive_data(self, queue_id, latest_sequence_id):
+        list_messages = read_messages(queue_id, sequence_id_list=streams()[queue_id]['archive'])
+        raw_data = serialization.DictToBytes({'items': list_messages, })
+        fileno, local_path = tmpfile.make('outbox', extension='.msg')
+        os.write(fileno, raw_data)
+        os.close(fileno)
+        return local_path
+
     def _do_archive_other_messages(self, message_in, use_cache=True):
         prepared_for_archive = len(streams()[message_in.queue_id]['archive'])
         if _Debug:
@@ -1350,94 +1351,21 @@ class MessagePeddler(automat.Automat):
         if self.archive_in_progress:
             return
         self.archive_in_progress = True
-        queue_owner_idurl = global_id.GetGlobalQueueOwnerIDURL(message_in.queue_id)
-        d = dht_relations.read_customer_suppliers(customer_idurl=queue_owner_idurl, use_cache=use_cache)
-        d.addCallback(self._on_read_queue_owner_suppliers_success,
-                      queue_id=message_in.queue_id, sequence_id=message_in.get_sequence_id(), customer_idurl=queue_owner_idurl)
-        if _Debug:
-            d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='message_peddler._do_archive_other_messages')
-        d.addErrback(self._on_read_queue_owner_suppliers_failed, message_in=message_in, use_cache=use_cache)
-
-    def _do_start_archive_backup(self, queue_id, sequence_id, suppliers_list, ecc_map, customer_idurl):
-        list_messages = read_messages(queue_id, sequence_id_list=streams()[queue_id]['archive'])
-        raw_data = serialization.DictToBytes({'items': list_messages, })
-        fileno, local_path = tmpfile.make('outbox', extension='.msg')
-        os.write(fileno, raw_data)
-        os.close(fileno)
-        dataID = misc.NewBackupID()
-        queue_alias, owner_id, _ = global_id.SplitGlobalQueueID(queue_id)
-        group_key_id = my_keys.make_key_id(alias=queue_alias, creator_glob_id=owner_id)
-        backupID = packetid.MakeBackupID(
-            customer=owner_id,
-            path_id=strng.to_text(sequence_id),
-            key_alias=queue_alias,
-            version=dataID,
+        archive_result = Deferred()
+        archive_result.addCallback(self._on_archive_backup_done, queue_id=message_in.queue_id)
+        archive_result.addErrback(self._on_archive_backup_failed, queue_id=message_in.queue_id)
+        aw = archive_writer.ArchiveWriter(local_data_callback=self._do_build_archive_data)
+        aw.automat(
+            'start',
+            queue_id=message_in.queue_id,
+            latest_sequence_id=message_in.get_sequence_id(),
+            chunk_size=self.archive_chunk_size,
+            result_defer=archive_result,
         )
-        backup_fs.MakeLocalDir(settings.getLocalBackupsDir(), backupID)
-        if bpio.Android():
-            compress_mode = 'none'
-        else:
-            compress_mode = 'bz2'  # 'none' # 'gz'
-        arcname = os.path.basename(local_path)
-        backupPipe = backup_tar.backuptarfile_thread(local_path, arcname=arcname, compress=compress_mode)
-        job = backup.backup(
-            backupID=backupID,
-            pipe=backupPipe,
-            blockResultCallback=lambda bid, bnum, bres: self._on_archive_backup_block_result(bres, bid, bnum, suppliers_list, ecc_map, customer_idurl),
-            finishCallback=lambda bid, bres: self._on_archive_backup_done(bres, bid, queue_id, sequence_id),
-            blockSize=1024*1024*10,
-            sourcePath=local_path,
-            keyID=group_key_id,
-            ecc_map=eccmap.eccmap(ecc_map),
-            creatorIDURL=customer_idurl,
-        )
-        job.automat('start')
-        self.automat('archive-backup-started')
-        if _Debug:
-            lg.args(_DebugLevel, job=job, backupID=backupID, local_path=local_path, group_key_id=group_key_id,
-                    sequence_id=sequence_id, ecc_map=ecc_map, suppliers_list=suppliers_list)
 
-    def _on_archive_backup_block_result(self, result, backup_id, block_num, suppliers_list, ecc_map, customer_idurl):
-        customer_id, path_id, version_name = packetid.SplitBackupID(backup_id)
-        archive_snapshot_dir = os.path.join(settings.getLocalBackupsDir(), customer_id, path_id, version_name)
+    def _on_archive_backup_done(self, result, queue_id):
         if _Debug:
-            lg.args(_DebugLevel, result=result, backup_id=backup_id, block_num=block_num,
-                    archive_snapshot_dir=archive_snapshot_dir)
-        if not os.path.isdir(archive_snapshot_dir):
-            lg.err('archive snapshot folder was not found in %r' % archive_snapshot_dir)
-            return None
-        for supplier_num in range(len(suppliers_list)):
-            supplier_idurl = suppliers_list[supplier_num]
-            if not supplier_idurl:
-                lg.warn('unknown supplier supplier_num=%d' % supplier_num)
-                continue
-            for dataORparity in ('Data', 'Parity', ):
-                packet_id = packetid.MakePacketID(backup_id, block_num, supplier_num, dataORparity)
-                packet_filename = os.path.join(archive_snapshot_dir, '%d-%d-%s' % (
-                    block_num, block_num, dataORparity,
-                ))
-                if not os.path.isfile(packet_filename):
-                    lg.err('%s is not a file' % packet_filename)
-                    continue
-                packet_payload = bpio.ReadBinaryFile(packet_filename)
-                if not packet_payload:
-                    lg.err('file %r reading error' % packet_filename)
-                    continue
-                p2p_service.SendData(
-                    raw_data=packet_payload,
-                    ownerID=customer_idurl,
-                    creatorID=my_id.getIDURL(),
-                    remoteID=supplier_idurl,
-                    packetID=packet_id,
-                    callbacks={
-                        # commands.Ack(): self.parent.OnFileSendAckReceived,
-                        # commands.Fail(): self.parent.OnFileSendAckReceived,
-                    },
-                )
-
-    def _on_archive_backup_done(self, result, backupID, queue_id, sequence_id):
-        if _Debug:
-            lg.args(_DebugLevel, backupID=backupID, result=result, queue_id=queue_id, sequence_id=sequence_id)
+            lg.args(_DebugLevel, result=result, queue_id=queue_id)
         # TODO: notify other message brokers about that
         for sequence_id in streams()[queue_id]['archive']:
             erase_message(queue_id, sequence_id)
@@ -1446,30 +1374,13 @@ class MessagePeddler(automat.Automat):
         else:
             streams()[queue_id]['archive'] = []
         self.archive_in_progress = False
-        if result == 'done':
-            self.automat('archive-backup-prepared')
-        else:
-            self.automat('archive-backup-failed')
+        self.automat('archive-backup-prepared')
+        return None
 
-    def _on_read_queue_owner_suppliers_success(self, dht_value, queue_id, sequence_id, customer_idurl):
-        # TODO: add more validations of dht_value
-        suppliers_list = []
-        if dht_value and isinstance(dht_value, dict) and len(dht_value.get('suppliers', [])) > 0:
-            suppliers_list = dht_value['suppliers']
-        ecc_map = dht_value['ecc_map']
-        if _Debug:
-            lg.args(_DebugLevel, suppliers_list=suppliers_list, ecc_map=ecc_map, queue_id=queue_id,
-                    sequence_id=sequence_id, customer_idurl=customer_idurl)
-        if not suppliers_list:
-            return
-        self._do_start_archive_backup(queue_id, sequence_id, suppliers_list, ecc_map, customer_idurl)
-
-    def _on_read_queue_owner_suppliers_failed(self, err, message_in, use_cache):
-        if not use_cache:
-            lg.err('failed to read customer suppliers')
-            return None
-        lg.warn('re-try reading customer suppliers without cache')
-        self._do_archive_other_messages(message_in, use_cache=False)
+    def _on_archive_backup_failed(self, err, queue_id):
+        lg.err('archive in %r failed with : %r' % (queue_id, err, ))
+        self.archive_in_progress = False
+        self.automat('archive-backup-failed')
         return None
 
     def _on_queue_keeper_connect_result(self, result, queue_id, consumer_id, producer_id, last_sequence_id, request_packet, result_defer):
