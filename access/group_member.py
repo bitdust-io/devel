@@ -44,11 +44,10 @@ EVENTS:
     * :red:`push-message`
     * :red:`push-message-failed`
     * :red:`queue-in-sync`
+    * :red:`queue-is-ahead`
     * :red:`queue-read-failed`
     * :red:`shutdown`
 """
-
-
 
 #------------------------------------------------------------------------------
 
@@ -74,6 +73,8 @@ from main import config
 from crypt import my_keys
 
 from dht import dht_relations
+
+from contacts import contactsdb
 
 from stream import message
 
@@ -300,6 +301,8 @@ class GroupMember(automat.Automat):
                 self.state = 'DHT_READ?'
                 self.doMarkDeadBroker(*args, **kwargs)
                 self.doDHTReadBrokers(*args, **kwargs)
+            elif event == 'queue-is-ahead':
+                self.doReadArchive(*args, **kwargs)
         #---IN_SYNC!---
         elif self.state == 'IN_SYNC!':
             if event == 'message-in' and self.isInSync(*args, **kwargs):
@@ -432,6 +435,19 @@ class GroupMember(automat.Automat):
         if _Debug:
             result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='group_member.doReadQueue')
         result.addErrback(lambda err: self.automat('queue-read-failed', err))
+
+    def doReadArchive(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        # TODO: in case i am not the owner of the group - read suppliers from DHT
+        for supplier_idurl in contactsdb.suppliers():
+            if supplier_idurl:
+                p2p_service.SendListFiles(
+                    target_supplier=supplier_idurl,
+                    key_id=self.group_key_id,
+                    query_items=[self.group_queue_alias, ],
+                )
 
     def doProcess(self, *args, **kwargs):
         """
@@ -931,15 +947,18 @@ class GroupMember(automat.Automat):
             p2p_service.SendAckNoRequest(owner_idurl, packet_id)
         packets_to_ack.clear()
         if not received_group_messages:
+            if latest_known_sequence_id < self.last_sequence_id:
+                raise Exception('found queue latest sequence %d is behind of my current position %d' % (latest_known_sequence_id, self.last_sequence_id, ))
             if latest_known_sequence_id > self.last_sequence_id:
-                # TODO: read messages from archive
-                lg.warn('found queue latest sequence %d is ahead of my current position %d, need to read messages from archive' % (
+                lg.warn('nothing received, but found queue latest sequence %d is ahead of my current position %d, need to read messages from archive' % (
                     latest_known_sequence_id, self.last_sequence_id, ))
-                self.last_sequence_id = latest_known_sequence_id
-                groups.set_last_sequence_id(self.group_key_id, latest_known_sequence_id)
-                groups.save_group_info(self.group_key_id)
+                self.automat('queue-is-ahead', received_group_messages)
+                return True
+            self.last_sequence_id = latest_known_sequence_id
+            groups.set_last_sequence_id(self.group_key_id, latest_known_sequence_id)
+            groups.save_group_info(self.group_key_id)
             if _Debug:
-                lg.dbg(_DebugLevel, 'no new messages, queue in sync')
+                lg.dbg(_DebugLevel, 'no new messages, queue in sync, latest_known_sequence_id=%d' % latest_known_sequence_id)
             self.automat('queue-in-sync')
             return True
         received_group_messages.sort(key=lambda m: m['sequence_id'])
@@ -953,13 +972,16 @@ class GroupMember(automat.Automat):
                 if _Debug:
                     lg.dbg(_DebugLevel, 'new message consumed, last_sequence_id incremented to %d' % self.last_sequence_id)
                 self.automat('message-in', **new_message)
-        if newly_processed != len(received_group_messages):
+        if not newly_processed or newly_processed != len(received_group_messages):
+            if latest_known_sequence_id > self.last_sequence_id:
+                lg.warn('found queue latest sequence %d is ahead of my current position %d, need to read messages from archive' % (
+                    latest_known_sequence_id, self.last_sequence_id, ))
+                self.automat('queue-is-ahead', received_group_messages)
+                return True
             raise Exception('message sequence is broken by message broker %s, some messages were not consumed' % self.active_broker_id)
-        if newly_processed:
-            if latest_known_sequence_id == self.last_sequence_id:
-                groups.set_last_sequence_id(self.group_key_id, self.last_sequence_id)
-                groups.save_group_info(self.group_key_id)
-                if _Debug:
-                    lg.dbg(_DebugLevel, 'processed all messages, queue in sync, last_sequence_id=%d' % self.last_sequence_id)
-                self.automat('queue-in-sync')
+        groups.set_last_sequence_id(self.group_key_id, self.last_sequence_id)
+        groups.save_group_info(self.group_key_id)
+        if _Debug:
+            lg.dbg(_DebugLevel, 'processed all messages, queue in sync, last_sequence_id=%d' % self.last_sequence_id)
+        self.automat('queue-in-sync')
         return True

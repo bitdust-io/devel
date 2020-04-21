@@ -171,7 +171,7 @@ def share_create_v1(customer: str, key_size=1024):
 
 
 def share_open_v1(customer: str, key_id):
-    response = request_post(customer, 'share/open/v1', json={'key_id': key_id, }, timeout=20)
+    response = request_post(customer, 'share/open/v1', json={'key_id': key_id, }, timeout=60)
     assert response.status_code == 200
     print('\nshare/open/v1 [%s] key_id=%r : %s\n' % (customer, key_id, pprint.pformat(response.json())))
     assert response.json()['status'] == 'OK', response.json()
@@ -195,7 +195,7 @@ def group_info_v1(customer: str, group_key_id):
 
 
 def group_join_v1(customer: str, group_key_id):
-    response = request_post(customer, 'group/join/v1', json={'group_key_id': group_key_id, }, timeout=20)
+    response = request_post(customer, 'group/join/v1', json={'group_key_id': group_key_id, }, timeout=60)
     assert response.status_code == 200
     print('\ngroup/join/v1 [%s] group_key_id=%r : %s\n' % (customer, group_key_id, pprint.pformat(response.json())))
     assert response.json()['status'] == 'OK', response.json()
@@ -214,7 +214,7 @@ def group_share_v1(customer: str, group_key_id, trusted_id):
     response = request_put(customer, 'group/share/v1', json={
         'group_key_id': group_key_id,
         'trusted_id': trusted_id,
-    }, timeout=20)
+    }, timeout=60)
     assert response.status_code == 200
     print('\ngroup/share/v1 [%s] group_key_id=%r trusted_id=%r : %s\n' % (customer, group_key_id, trusted_id, pprint.pformat(response.json())))
     assert response.json()['status'] == 'OK', response.json()
@@ -553,7 +553,8 @@ def event_listen_v1(node, expected_event_id, consumer_id='regression_tests_wait_
 
 
 def packet_list_v1(node, wait_all_finish=False, attempts=60, delay=3, verbose=False):
-    print('\npacket/list/v1 [%s]\n' % node)
+    if verbose:
+        print('\npacket/list/v1 [%s]\n' % node)
     for _ in range(attempts):
         response = request_get(node, 'packet/list/v1', timeout=20)
         assert response.status_code == 200
@@ -569,7 +570,8 @@ def packet_list_v1(node, wait_all_finish=False, attempts=60, delay=3, verbose=Fa
 
 
 def transfer_list_v1(node, wait_all_finish=False, attempts=60, delay=3, verbose=False):
-    print('\ntransfer/list/v1 [%s]\n' % node)
+    if verbose:
+        print('\ntransfer/list/v1 [%s]\n' % node)
     for _ in range(attempts):
         response = request_get(node, 'transfer/list/v1', timeout=20)
         assert response.status_code == 200

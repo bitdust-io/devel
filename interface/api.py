@@ -2155,10 +2155,15 @@ def group_join(group_key_id):
         else:
             existing_group_member = group_member.GroupMember(group_key_id)
             started_group_members.append(existing_group_member)
+        if existing_group_member.state in ['DHT_READ?', 'BROKERS?', 'QUEUE?', 'IN_SYNC!', ]:
+            connecting_word = 'active' if existing_group_member.state == 'IN_SYNC!' else 'connecting'
+            ret.callback(OK(existing_group_member.to_json(), 'group "%s" already %s' % (group_key_id, connecting_word, ), api_method='group_join'))
+            return None
         existing_group_member.addStateChangedCallback(_on_group_member_state_changed)
         if started_group_members:
             started_group_members[0].automat('init')
         existing_group_member.automat('join')
+        return None
 
     def _do_cache_creator_idurl():
         from contacts import identitycache
@@ -3801,35 +3806,41 @@ def network_connected(wait_timeout=5):
     from automats import automat
     ret = Deferred()
 
-    p2p_connector_lookup = automat.find('p2p_connector')
-    if p2p_connector_lookup:
-        p2p_connector_machine = automat.objects().get(p2p_connector_lookup[0])
-        if p2p_connector_machine and p2p_connector_machine.state == 'CONNECTED':
-            proxy_receiver_lookup = automat.find('proxy_receiver')
-            if proxy_receiver_lookup:
-                proxy_receiver_machine = automat.objects().get(proxy_receiver_lookup[0])
-                if proxy_receiver_machine and proxy_receiver_machine.state == 'LISTEN':
-                    wait_timeout_defer = Deferred()
-                    wait_timeout_defer.addBoth(lambda _: ret.callback(OK({
-                        'service_network': 'started',
-                        'service_gateway': 'started',
-                        'service_p2p_hookups': 'started',
-                        'service_proxy_transport': 'started',
-                        'proxy_receiver_state': proxy_receiver_machine.state,
-                    }, api_method='network_connected')))
-                    wait_timeout_defer.addTimeout(wait_timeout, clock=reactor)
+    if driver.is_enabled('service_proxy_transport'):
+        p2p_connector_lookup = automat.find('p2p_connector')
+        if p2p_connector_lookup:
+            p2p_connector_machine = automat.objects().get(p2p_connector_lookup[0])
+            if p2p_connector_machine and p2p_connector_machine.state == 'CONNECTED':
+                proxy_receiver_lookup = automat.find('proxy_receiver')
+                if proxy_receiver_lookup:
+                    proxy_receiver_machine = automat.objects().get(proxy_receiver_lookup[0])
+                    if proxy_receiver_machine and proxy_receiver_machine.state == 'LISTEN':
+                        # service_proxy_transport() is enabled, proxy_receiver() is listening: all good
+                        wait_timeout_defer = Deferred()
+                        wait_timeout_defer.addBoth(lambda _: ret.callback(OK({
+                            'service_network': 'started',
+                            'service_gateway': 'started',
+                            'service_p2p_hookups': 'started',
+                            'service_proxy_transport': 'started',
+                            'proxy_receiver_state': proxy_receiver_machine.state,
+                        }, api_method='network_connected')))
+                        wait_timeout_defer.addTimeout(wait_timeout, clock=reactor)
+                        return ret
+                else:
+                    # service_proxy_transport() is enabled, but proxy_receiver() is not ready yet: must wait a bit
+#                     wait_timeout_defer = Deferred()
+#                     wait_timeout_defer.addBoth(lambda _: ret.callback(OK({
+#                         'service_network': 'started',
+#                         'service_gateway': 'started',
+#                         'service_p2p_hookups': 'started',
+#                         'service_proxy_transport': 'not started',
+#                         'p2p_connector_state': p2p_connector_machine.state,
+#                     }, api_method='network_connected')))
+#                     wait_timeout_defer.addTimeout(wait_timeout, clock=reactor)
+#                     return ret
+                    lg.warn('disconnected, reason is proxy_receiver() not started yet')
+                    ret.callback(ERROR('disconnected', reason='proxy_receiver_not_started', api_method='network_connected'))
                     return ret
-            else:
-                wait_timeout_defer = Deferred()
-                wait_timeout_defer.addBoth(lambda _: ret.callback(OK({
-                    'service_network': 'started',
-                    'service_gateway': 'started',
-                    'service_p2p_hookups': 'started',
-                    'service_proxy_transport': 'disabled',
-                    'p2p_connector_state': p2p_connector_machine.state,
-                }, api_method='network_connected')))
-                wait_timeout_defer.addTimeout(wait_timeout, clock=reactor)
-                return ret
 
     if not my_id.isLocalIdentityReady():
         lg.warn('local identity is not valid or not exist')

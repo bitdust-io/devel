@@ -97,6 +97,8 @@ from p2p import p2p_service
 
 from access import groups
 
+from raid import eccmap
+
 from storage import backup_fs
 from storage import backup_tar
 from storage import backup
@@ -149,6 +151,7 @@ def register_stream(queue_id):
         'consumers': {},
         'producers': {},
         'messages': [],
+        'archive': [],
         'last_sequence_id': -1,
     }
     if _Debug:
@@ -359,7 +362,9 @@ def on_message_processed(processed_message):
             lg.out(_DebugLevel, '>>> FAILED >>>    from %r at sequence %d, failed_consumers=%d' % (
                 processed_message.queue_id, sequence_id, len(processed_message.failed_notifications), ))
     else:
-        erase_message(processed_message.queue_id, sequence_id)
+        # erase_message(processed_message.queue_id, sequence_id)
+        update_processed_message(processed_message.queue_id, sequence_id)
+        streams()[processed_message.queue_id]['archive'].append(sequence_id)
         streams()[processed_message.queue_id]['messages'].remove(sequence_id)
         if _Debug:
             lg.out(_DebugLevel, '>>> PULL >>>    from %r at sequence %d with success count %d' % (
@@ -426,7 +431,7 @@ def increment_sequence_id(queue_id):
 
 #------------------------------------------------------------------------------
 
-def store_message(queue_id, sequence_id, producer_id, payload, created, delivered=False):
+def store_message(queue_id, sequence_id, producer_id, payload, created, processed=None):
     service_dir = settings.ServiceDir('service_message_broker')
     queues_dir = os.path.join(service_dir, 'queues')
     queue_dir = os.path.join(queues_dir, queue_id)
@@ -438,17 +443,50 @@ def store_message(queue_id, sequence_id, producer_id, payload, created, delivere
         'producer_id': producer_id,
         'payload': payload,
         'attempts': [],
+        'processed': None,
     }
-    if delivered:
+    if processed:
         stored_json_message['attempts'].append({
             'message_id': payload['message_id'],
             'started': None,
             'finished': utime.get_sec1970(),
             'failed_consumers': [],
         })
+        stored_json_message['processed'] = processed
     if not local_fs.WriteTextFile(message_path, jsn.dumps(stored_json_message)):
         return None
     return stored_json_message
+
+
+def update_processed_message(queue_id, sequence_id):
+    if _Debug:
+        lg.args(_DebugLevel, queue_id=queue_id, sequence_id=sequence_id)
+    service_dir = settings.ServiceDir('service_message_broker')
+    queues_dir = os.path.join(service_dir, 'queues')
+    queue_dir = os.path.join(queues_dir, queue_id)
+    messages_dir = os.path.join(queue_dir, 'messages')
+    message_path = os.path.join(messages_dir, strng.to_text(sequence_id))
+    stored_json_message = jsn.loads_text(local_fs.ReadTextFile(message_path))
+    stored_json_message['processed'] = utime.get_sec1970()
+    if not local_fs.WriteTextFile(message_path, jsn.dumps(stored_json_message)):
+        return False
+    return True
+
+
+def erase_message(queue_id, sequence_id):
+    if _Debug:
+        lg.args(_DebugLevel, queue_id=queue_id, sequence_id=sequence_id)
+    service_dir = settings.ServiceDir('service_message_broker')
+    queues_dir = os.path.join(service_dir, 'queues')
+    queue_dir = os.path.join(queues_dir, queue_id)
+    messages_dir = os.path.join(queue_dir, 'messages')
+    message_path = os.path.join(messages_dir, strng.to_text(sequence_id))
+    try:
+        os.remove(message_path)
+    except:
+        lg.exc()
+        return False
+    return True
 
 
 def read_messages(queue_id, sequence_id_list=[]):
@@ -466,6 +504,33 @@ def read_messages(queue_id, sequence_id_list=[]):
         result.append(stored_json_message)
     return result
 
+
+def get_messages_for_consumer(queue_id, consumer_id, consumer_last_sequence_id, max_messages_count=100):
+    service_dir = settings.ServiceDir('service_message_broker')
+    queues_dir = os.path.join(service_dir, 'queues')
+    queue_dir = os.path.join(queues_dir, queue_id)
+    messages_dir = os.path.join(queue_dir, 'messages')
+    all_stored_queue_messages = os.listdir(messages_dir)
+    all_stored_queue_messages.sort(key=lambda i: int(i))
+    result = []
+    for sequence_id in all_stored_queue_messages:
+        if consumer_last_sequence_id >= int(sequence_id):
+            continue
+        message_path = os.path.join(messages_dir, strng.to_text(sequence_id))
+        try:
+            stored_json_message = jsn.loads_text(local_fs.ReadTextFile(message_path))
+        except:
+            lg.exc()
+            continue
+        stored_json_message.pop('attempts')
+        result.append(stored_json_message)
+        if len(result) >= max_messages_count:
+            break
+    if _Debug:
+        lg.args(_DebugLevel, queue_id=queue_id, consumer_id=consumer_id, consumer_last_sequence_id=consumer_last_sequence_id, result=len(result))
+    return result
+
+#------------------------------------------------------------------------------
 
 def register_delivery(queue_id, sequence_id, message_id):
     if _Debug:
@@ -511,44 +576,6 @@ def unregister_delivery(queue_id, sequence_id, message_id, failed_consumers):
         return False
     return True
 
-
-def erase_message(queue_id, sequence_id):
-    if _Debug:
-        lg.args(_DebugLevel, queue_id=queue_id, sequence_id=sequence_id)
-    service_dir = settings.ServiceDir('service_message_broker')
-    queues_dir = os.path.join(service_dir, 'queues')
-    queue_dir = os.path.join(queues_dir, queue_id)
-    messages_dir = os.path.join(queue_dir, 'messages')
-    message_path = os.path.join(messages_dir, strng.to_text(sequence_id))
-    os.remove(message_path)
-    return True
-
-
-def get_messages_for_consumer(queue_id, consumer_id, consumer_last_sequence_id, max_messages_count=100):
-    if _Debug:
-        lg.args(_DebugLevel, queue_id=queue_id, consumer_id=consumer_id, consumer_last_sequence_id=consumer_last_sequence_id)
-    service_dir = settings.ServiceDir('service_message_broker')
-    queues_dir = os.path.join(service_dir, 'queues')
-    queue_dir = os.path.join(queues_dir, queue_id)
-    messages_dir = os.path.join(queue_dir, 'messages')
-    all_stored_queue_messages = os.listdir(messages_dir)
-    all_stored_queue_messages.sort(key=lambda i: int(i))
-    result = []
-    for sequence_id in all_stored_queue_messages:
-        if consumer_last_sequence_id >= int(sequence_id):
-            continue
-        message_path = os.path.join(messages_dir, strng.to_text(sequence_id))
-        try:
-            stored_json_message = jsn.loads_text(local_fs.ReadTextFile(message_path))
-        except:
-            lg.exc()
-            continue
-        stored_json_message.pop('attempts')
-        result.append(stored_json_message)
-        if len(result) >= max_messages_count:
-            break
-    return result
-
 #------------------------------------------------------------------------------
 
 def close_all_streams():
@@ -567,6 +594,7 @@ def load_streams():
     loaded_consumers = 0
     loaded_producers = 0
     loaded_messages = 0
+    loaded_archive_messages = 0
     if not os.path.isdir(queues_dir):
         bpio._dirs_make(queues_dir)
     for queue_id in os.listdir(queues_dir):
@@ -585,10 +613,18 @@ def load_streams():
         all_stored_queue_messages = os.listdir(messages_dir)
         all_stored_queue_messages.sort(key=lambda i: int(i))
         for sequence_id in all_stored_queue_messages:
-            streams()[queue_id]['messages'].append(sequence_id)
-            if int(sequence_id) >= last_sequence_id:
-                last_sequence_id = sequence_id
-            loaded_messages += 1
+            stored_json_message = jsn.loads_text(local_fs.ReadTextFile(os.path.join(messages_dir, sequence_id)))
+            if stored_json_message:
+                if stored_json_message.get('processed'):
+                    streams()[queue_id]['archive'].append(sequence_id)
+                    loaded_archive_messages += 1
+                else:
+                    streams()[queue_id]['messages'].append(sequence_id)
+                if int(sequence_id) >= last_sequence_id:
+                    last_sequence_id = sequence_id
+                loaded_messages += 1
+            else:
+                lg.err('failed reading message %d from %r' % (sequence_id, queue_id, ))
         streams()[queue_id]['last_sequence_id'] = last_sequence_id
         for consumer_id in os.listdir(consumers_dir):
             if consumer_id in streams()[queue_id]['consumers']:
@@ -611,6 +647,7 @@ def load_streams():
         'consumers': loaded_consumers,
         'producers': loaded_producers,
         'messages': loaded_messages,
+        'archive': loaded_archive_messages,
     }
     if _Debug:
         lg.args(_DebugLevel, **ret)
@@ -650,15 +687,18 @@ def save_stream(queue_id):
     consumers_dir = os.path.join(queue_dir, 'consumers')
     producers_dir = os.path.join(queue_dir, 'producers')
     stream_info = streams()[queue_id]
-    bpio._dirs_make(messages_dir)
-    bpio._dirs_make(consumers_dir)
-    bpio._dirs_make(producers_dir)
+    if _Debug:
+        lg.args(_DebugLevel, queue_id=queue_id, typ=type(queue_id), queue_dir=queue_dir)
+    if not os.path.isdir(messages_dir):
+        bpio._dirs_make(messages_dir)
+    if not os.path.isdir(consumers_dir):
+        bpio._dirs_make(consumers_dir)
+    if not os.path.isdir(producers_dir):
+        bpio._dirs_make(producers_dir)
     for consumer_id, consumer_info in stream_info['consumers'].items():
         local_fs.WriteTextFile(os.path.join(consumers_dir, consumer_id), jsn.dumps(consumer_info))
     for producer_id, producer_info in stream_info['producers'].items():
         local_fs.WriteTextFile(os.path.join(producers_dir, producer_id), jsn.dumps(producer_info))
-    if _Debug:
-        lg.args(_DebugLevel, queue_id=queue_id, queue_dir=queue_dir)
     return True
 
 
@@ -688,7 +728,8 @@ def add_consumer(queue_id, consumer_id, consumer_info=None):
     streams()[queue_id]['consumers'][consumer_id] = consumer_info
     if _Debug:
         lg.args(_DebugLevel, queue_id=queue_id, consumer_id=consumer_id)
-    save_consumer(queue_id, consumer_id)
+    if not save_consumer(queue_id, consumer_id):
+        raise Exception('failed to save consumer info')
     return True
 
 
@@ -700,15 +741,12 @@ def remove_consumer(queue_id, consumer_id):
     streams()[queue_id]['consumers'].pop(consumer_id)
     if _Debug:
         lg.args(_DebugLevel, queue_id=queue_id, consumer_id=consumer_id)
-    erase_consumer(queue_id, consumer_id)
+    if not erase_consumer(queue_id, consumer_id):
+        raise Exception('failed to erase consumer info')
     return True
 
 
 def save_consumer(queue_id, consumer_id):
-    if queue_id not in streams():
-        return False
-    if consumer_id in streams()[queue_id]['consumers']:
-        return False
     consumer_info = streams()[queue_id]['consumers'][consumer_id]
     service_dir = settings.ServiceDir('service_message_broker')
     queues_dir = os.path.join(service_dir, 'queues')
@@ -724,10 +762,6 @@ def save_consumer(queue_id, consumer_id):
 
 
 def erase_consumer(queue_id, consumer_id):
-    if queue_id not in streams():
-        return False
-    if consumer_id not in streams()[queue_id]['consumers']:
-        return False
     service_dir = settings.ServiceDir('service_message_broker')
     queues_dir = os.path.join(service_dir, 'queues')
     queue_dir = os.path.join(queues_dir, queue_id)
@@ -735,7 +769,11 @@ def erase_consumer(queue_id, consumer_id):
     consumer_path = os.path.join(consumers_dir, consumer_id)
     if not os.path.isfile(consumer_path):
         return False
-    os.remove(consumer_path)
+    try:
+        os.remove(consumer_path)
+    except:
+        lg.exc()
+        return False
     if _Debug:
         lg.args(_DebugLevel, queue_id=queue_id, consumer_id=consumer_id, consumer_path=consumer_path)
     return True
@@ -755,7 +793,8 @@ def add_producer(queue_id, producer_id, producer_info=None):
     streams()[queue_id]['producers'][producer_id] = producer_info
     if _Debug:
         lg.args(_DebugLevel, queue_id=queue_id, producer_id=producer_id)
-    save_producer(queue_id, producer_id)
+    if not save_producer(queue_id, producer_id):
+        raise Exception('failed to store producer info')
     return True
 
 
@@ -767,15 +806,12 @@ def remove_producer(queue_id, producer_id):
     streams()[queue_id]['producers'].pop(producer_id)
     if _Debug:
         lg.args(_DebugLevel, queue_id=queue_id, producer_id=producer_id)
-    erase_producer(queue_id, producer_id)
+    if not erase_producer(queue_id, producer_id):
+        raise Exception('failed to erase producer info')
     return True
 
 
 def save_producer(queue_id, producer_id):
-    if queue_id not in streams():
-        return False
-    if producer_id in streams()[queue_id]['producers']:
-        return False
     producer_info = streams()[queue_id]['producers'][producer_id]
     service_dir = settings.ServiceDir('service_message_broker')
     queues_dir = os.path.join(service_dir, 'queues')
@@ -791,10 +827,6 @@ def save_producer(queue_id, producer_id):
 
 
 def erase_producer(queue_id, producer_id):
-    if queue_id not in streams():
-        return False
-    if producer_id not in streams()[queue_id]['producers']:
-        return False
     service_dir = settings.ServiceDir('service_message_broker')
     queues_dir = os.path.join(service_dir, 'queues')
     queue_dir = os.path.join(queues_dir, queue_id)
@@ -802,7 +834,11 @@ def erase_producer(queue_id, producer_id):
     producer_path = os.path.join(producers_dir, producer_id)
     if not os.path.isfile(producer_path):
         return False
-    os.remove(producer_path)
+    try:
+        os.remove(producer_path)
+    except:
+        lg.exc()
+        return False
     if _Debug:
         lg.args(_DebugLevel, queue_id=queue_id, producer_id=producer_id, producer_path=producer_path)
     return True
@@ -1305,33 +1341,36 @@ class MessagePeddler(automat.Automat):
             lg.err('message was not replicated: %r' % message_in)
 
     def _do_archive_other_messages(self, message_in, use_cache=True):
-        stored_messages_count = len(streams()[message_in.queue_id]['messages'])
-        if stored_messages_count < self.archive_chunk_size:
+        prepared_for_archive = len(streams()[message_in.queue_id]['archive'])
+        if _Debug:
+            lg.args(_DebugLevel, prepared_for_archive=prepared_for_archive, archive_chunk_size=self.archive_chunk_size,
+                    archive_in_progress=self.archive_in_progress)
+        if prepared_for_archive < self.archive_chunk_size:
             return
         if self.archive_in_progress:
             return
         self.archive_in_progress = True
         queue_owner_idurl = global_id.GetGlobalQueueOwnerIDURL(message_in.queue_id)
-        if _Debug:
-            lg.args(_DebugLevel, queue_owner_idurl=queue_owner_idurl, message_in=message_in)
         d = dht_relations.read_customer_suppliers(customer_idurl=queue_owner_idurl, use_cache=use_cache)
         d.addCallback(self._on_read_queue_owner_suppliers_success,
-                      queue_id=message_in.queue_id, sequence_id=message_in.get_sequence_id())
+                      queue_id=message_in.queue_id, sequence_id=message_in.get_sequence_id(), customer_idurl=queue_owner_idurl)
         if _Debug:
             d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='message_peddler._do_archive_other_messages')
-        d.addCallback(self._on_read_queue_owner_suppliers_failed, message_in=message_in, use_cache=use_cache)
+        d.addErrback(self._on_read_queue_owner_suppliers_failed, message_in=message_in, use_cache=use_cache)
 
-    def _do_start_archive_backup(self, queue_id, sequence_id, suppliers_list, ecc_map):
-        list_messages = read_messages(queue_id)
+    def _do_start_archive_backup(self, queue_id, sequence_id, suppliers_list, ecc_map, customer_idurl):
+        list_messages = read_messages(queue_id, sequence_id_list=streams()[queue_id]['archive'])
         raw_data = serialization.DictToBytes({'items': list_messages, })
         fileno, local_path = tmpfile.make('outbox', extension='.msg')
         os.write(fileno, raw_data)
         os.close(fileno)
         dataID = misc.NewBackupID()
-        group_key_id, _ = global_id.SplitGlobalQueueID(queue_id, split_queue_alias=False)
+        queue_alias, owner_id, _ = global_id.SplitGlobalQueueID(queue_id)
+        group_key_id = my_keys.make_key_id(alias=queue_alias, creator_glob_id=owner_id)
         backupID = packetid.MakeBackupID(
-            customer=group_key_id,
+            customer=owner_id,
             path_id=strng.to_text(sequence_id),
+            key_alias=queue_alias,
             version=dataID,
         )
         backup_fs.MakeLocalDir(settings.getLocalBackupsDir(), backupID)
@@ -1344,28 +1383,86 @@ class MessagePeddler(automat.Automat):
         job = backup.backup(
             backupID=backupID,
             pipe=backupPipe,
-            # finishCallback=OnJobDone,
-            # blockResultCallback=OnBackupBlockReport,
-            blockSize=5000000,
+            blockResultCallback=lambda bid, bnum, bres: self._on_archive_backup_block_result(bres, bid, bnum, suppliers_list, ecc_map, customer_idurl),
+            finishCallback=lambda bid, bres: self._on_archive_backup_done(bres, bid, queue_id, sequence_id),
+            blockSize=1024*1024*10,
             sourcePath=local_path,
             keyID=group_key_id,
-            ecc_map=ecc_map,
+            ecc_map=eccmap.eccmap(ecc_map),
+            creatorIDURL=customer_idurl,
         )
+        job.automat('start')
+        self.automat('archive-backup-started')
         if _Debug:
             lg.args(_DebugLevel, job=job, backupID=backupID, local_path=local_path, group_key_id=group_key_id,
                     sequence_id=sequence_id, ecc_map=ecc_map, suppliers_list=suppliers_list)
 
-    def _on_read_queue_owner_suppliers_success(self, dht_value, queue_id, sequence_id):
+    def _on_archive_backup_block_result(self, result, backup_id, block_num, suppliers_list, ecc_map, customer_idurl):
+        customer_id, path_id, version_name = packetid.SplitBackupID(backup_id)
+        archive_snapshot_dir = os.path.join(settings.getLocalBackupsDir(), customer_id, path_id, version_name)
+        if _Debug:
+            lg.args(_DebugLevel, result=result, backup_id=backup_id, block_num=block_num,
+                    archive_snapshot_dir=archive_snapshot_dir)
+        if not os.path.isdir(archive_snapshot_dir):
+            lg.err('archive snapshot folder was not found in %r' % archive_snapshot_dir)
+            return None
+        for supplier_num in range(len(suppliers_list)):
+            supplier_idurl = suppliers_list[supplier_num]
+            if not supplier_idurl:
+                lg.warn('unknown supplier supplier_num=%d' % supplier_num)
+                continue
+            for dataORparity in ('Data', 'Parity', ):
+                packet_id = packetid.MakePacketID(backup_id, block_num, supplier_num, dataORparity)
+                packet_filename = os.path.join(archive_snapshot_dir, '%d-%d-%s' % (
+                    block_num, block_num, dataORparity,
+                ))
+                if not os.path.isfile(packet_filename):
+                    lg.err('%s is not a file' % packet_filename)
+                    continue
+                packet_payload = bpio.ReadBinaryFile(packet_filename)
+                if not packet_payload:
+                    lg.err('file %r reading error' % packet_filename)
+                    continue
+                p2p_service.SendData(
+                    raw_data=packet_payload,
+                    ownerID=customer_idurl,
+                    creatorID=my_id.getIDURL(),
+                    remoteID=supplier_idurl,
+                    packetID=packet_id,
+                    callbacks={
+                        # commands.Ack(): self.parent.OnFileSendAckReceived,
+                        # commands.Fail(): self.parent.OnFileSendAckReceived,
+                    },
+                )
+
+    def _on_archive_backup_done(self, result, backupID, queue_id, sequence_id):
+        if _Debug:
+            lg.args(_DebugLevel, backupID=backupID, result=result, queue_id=queue_id, sequence_id=sequence_id)
+        # TODO: notify other message brokers about that
+        for sequence_id in streams()[queue_id]['archive']:
+            erase_message(queue_id, sequence_id)
+        if queue_id not in streams():
+            lg.err('did not found stream %s' % queue_id)
+        else:
+            streams()[queue_id]['archive'] = []
+        self.archive_in_progress = False
+        if result == 'done':
+            self.automat('archive-backup-prepared')
+        else:
+            self.automat('archive-backup-failed')
+
+    def _on_read_queue_owner_suppliers_success(self, dht_value, queue_id, sequence_id, customer_idurl):
         # TODO: add more validations of dht_value
         suppliers_list = []
         if dht_value and isinstance(dht_value, dict) and len(dht_value.get('suppliers', [])) > 0:
             suppliers_list = dht_value['suppliers']
         ecc_map = dht_value['ecc_map']
         if _Debug:
-            lg.args(_DebugLevel, suppliers_list=suppliers_list, ecc_map=ecc_map, queue_id=queue_id, sequence_id=sequence_id)
+            lg.args(_DebugLevel, suppliers_list=suppliers_list, ecc_map=ecc_map, queue_id=queue_id,
+                    sequence_id=sequence_id, customer_idurl=customer_idurl)
         if not suppliers_list:
             return
-        self._do_start_archive_backup(queue_id, sequence_id, suppliers_list, ecc_map=ecc_map)
+        self._do_start_archive_backup(queue_id, sequence_id, suppliers_list, ecc_map, customer_idurl)
 
     def _on_read_queue_owner_suppliers_failed(self, err, message_in, use_cache):
         if not use_cache:

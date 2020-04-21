@@ -40,16 +40,10 @@ _DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
-import sys
 import time
 import base64
 
 #------------------------------------------------------------------------------
-
-try:
-    from twisted.internet import reactor  # @UnresolvedImport
-except:
-    sys.exit('Error initializing twisted.internet.reactor in message.py')
 
 from twisted.internet.defer import fail
 from twisted.internet.defer import Deferred
@@ -403,7 +397,7 @@ def do_send_message(json_data, recipient_global_id, packet_id, message_ack_timeo
     try:
         private_message_object = PrivateMessage(recipient_global_id=recipient_global_id)
         private_message_object.encrypt(message_body)
-    except Exception as exc:
+    except:
         lg.exc()
         raise Exception('message encryption failed')
     payload = private_message_object.serialize()

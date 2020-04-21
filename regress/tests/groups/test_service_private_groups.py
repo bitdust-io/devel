@@ -46,11 +46,13 @@ def test_customers_1_2_3_communicate_via_message_broker():
     kw.service_info_v1('customer-3', 'service_private_groups', 'ON')
 
     kw.packet_list_v1('customer-1', wait_all_finish=True)
-    kw.transfer_list_v1('customer-1', wait_all_finish=True)
     kw.packet_list_v1('customer-2', wait_all_finish=True)
-    kw.transfer_list_v1('customer-2', wait_all_finish=True)
     kw.packet_list_v1('customer-3', wait_all_finish=True)
-    kw.transfer_list_v1('customer-3', wait_all_finish=True)
+    kw.packet_list_v1('broker-1', wait_all_finish=True)
+    kw.packet_list_v1('broker-2', wait_all_finish=True)
+    kw.packet_list_v1('broker-3', wait_all_finish=True)
+    kw.packet_list_v1('broker-4', wait_all_finish=True)
+    kw.packet_list_v1('broker-5', wait_all_finish=True)
 
     assert kw.queue_list_v1('broker-1', extract_ids=True) == []
     assert kw.queue_list_v1('broker-2', extract_ids=True) == []
@@ -86,6 +88,15 @@ def test_customers_1_2_3_communicate_via_message_broker():
 
     kw.group_join_v1('customer-1', group_key_id)
 
+    kw.packet_list_v1('customer-1', wait_all_finish=True)
+    kw.packet_list_v1('customer-2', wait_all_finish=True)
+    kw.packet_list_v1('customer-3', wait_all_finish=True)
+    kw.packet_list_v1('broker-1', wait_all_finish=True)
+    kw.packet_list_v1('broker-2', wait_all_finish=True)
+    kw.packet_list_v1('broker-3', wait_all_finish=True)
+    kw.packet_list_v1('broker-4', wait_all_finish=True)
+    kw.packet_list_v1('broker-5', wait_all_finish=True)
+
     group_info_active = kw.group_info_v1('customer-1', group_key_id)['result']
     assert group_info_active['state'] == 'IN_SYNC!'
     assert len(group_info_active['connected_brokers']) >= 2
@@ -110,20 +121,16 @@ def test_customers_1_2_3_communicate_via_message_broker():
     # second member join the group
     kw.group_join_v1('customer-2', group_key_id)
 
-    assert kw.group_info_v1('customer-2', group_key_id)['result']['last_sequence_id'] == -1
-
     kw.packet_list_v1('customer-1', wait_all_finish=True)
-    kw.transfer_list_v1('customer-1', wait_all_finish=True)
     kw.packet_list_v1('customer-2', wait_all_finish=True)
-    kw.transfer_list_v1('customer-2', wait_all_finish=True)
     kw.packet_list_v1('customer-3', wait_all_finish=True)
-    kw.transfer_list_v1('customer-3', wait_all_finish=True)
-
     kw.packet_list_v1('broker-1', wait_all_finish=True)
     kw.packet_list_v1('broker-2', wait_all_finish=True)
     kw.packet_list_v1('broker-3', wait_all_finish=True)
     kw.packet_list_v1('broker-4', wait_all_finish=True)
     kw.packet_list_v1('broker-5', wait_all_finish=True)
+
+    assert kw.group_info_v1('customer-2', group_key_id)['result']['last_sequence_id'] == -1
 
     broker_consumers = kw.queue_consumer_list_v1(active_broker_name, extract_ids=True)
     broker_producers = kw.queue_producer_list_v1(active_broker_name, extract_ids=True)
@@ -162,6 +169,15 @@ def test_customers_1_2_3_communicate_via_message_broker():
     # third member join the group
     kw.group_join_v1('customer-3', group_key_id)
 
+    kw.packet_list_v1('customer-1', wait_all_finish=True)
+    kw.packet_list_v1('customer-2', wait_all_finish=True)
+    kw.packet_list_v1('customer-3', wait_all_finish=True)
+    kw.packet_list_v1('broker-1', wait_all_finish=True)
+    kw.packet_list_v1('broker-2', wait_all_finish=True)
+    kw.packet_list_v1('broker-3', wait_all_finish=True)
+    kw.packet_list_v1('broker-4', wait_all_finish=True)
+    kw.packet_list_v1('broker-5', wait_all_finish=True)
+
     broker_consumers = kw.queue_consumer_list_v1(active_broker_name, extract_ids=True)
     broker_producers = kw.queue_producer_list_v1(active_broker_name, extract_ids=True)
     assert len(broker_consumers) == 3
@@ -172,19 +188,6 @@ def test_customers_1_2_3_communicate_via_message_broker():
     assert 'customer-2@id-b_8084' in broker_producers
     assert 'customer-3@id-a_8084' in broker_consumers
     assert 'customer-3@id-a_8084' in broker_producers
-
-    kw.packet_list_v1('customer-1', wait_all_finish=True)
-    kw.transfer_list_v1('customer-1', wait_all_finish=True)
-    kw.packet_list_v1('customer-2', wait_all_finish=True)
-    kw.transfer_list_v1('customer-2', wait_all_finish=True)
-    kw.packet_list_v1('customer-3', wait_all_finish=True)
-    kw.transfer_list_v1('customer-3', wait_all_finish=True)
-
-    kw.packet_list_v1('broker-1', wait_all_finish=True)
-    kw.packet_list_v1('broker-2', wait_all_finish=True)
-    kw.packet_list_v1('broker-3', wait_all_finish=True)
-    kw.packet_list_v1('broker-4', wait_all_finish=True)
-    kw.packet_list_v1('broker-5', wait_all_finish=True)
 
     assert kw.group_info_v1('customer-3', group_key_id)['result']['last_sequence_id'] == 0
 
@@ -221,12 +224,8 @@ def test_customers_1_2_3_communicate_via_message_broker():
     kw.group_leave_v1('customer-2', group_key_id)
 
     kw.packet_list_v1('customer-1', wait_all_finish=True)
-    kw.transfer_list_v1('customer-1', wait_all_finish=True)
     kw.packet_list_v1('customer-2', wait_all_finish=True)
-    kw.transfer_list_v1('customer-2', wait_all_finish=True)
     kw.packet_list_v1('customer-3', wait_all_finish=True)
-    kw.transfer_list_v1('customer-3', wait_all_finish=True)
-
     kw.packet_list_v1('broker-1', wait_all_finish=True)
     kw.packet_list_v1('broker-2', wait_all_finish=True)
     kw.packet_list_v1('broker-3', wait_all_finish=True)
@@ -274,8 +273,8 @@ def test_customers_1_2_3_communicate_via_message_broker():
     assert kw.group_info_v1('customer-2', group_key_id)['result']['last_sequence_id'] == 1
     assert kw.group_info_v1('customer-3', group_key_id)['result']['last_sequence_id'] == 2
 
-    # sending 10 messages to the group from customer 1
-    for i in range(10):
+    # sending 3 other messages to the group from customer 1
+    for i in range(3):
         sample_message_sent_from_customer_1 = {
             'random_message': 'MESSAGE_%d_%s' % (i, base64.b32encode(os.urandom(20)).decode(), ),
         }
@@ -283,13 +282,13 @@ def test_customers_1_2_3_communicate_via_message_broker():
         customer_2_receive_result = [None, ]
         customer_3_receive_result = [None, ]
         thread_receive_customer_1 = threading.Timer(0, kw.message_receive_v1, [
-            'customer-1', c_message_sent_from_customer_1, 'test_consumer', c_customer_1_receive_result, ])
+            'customer-1', sample_message_sent_from_customer_1, 'test_consumer', customer_1_receive_result, ])
         thread_receive_customer_2 = threading.Timer(0, kw.message_receive_v1, [
-            'customer-2', c_message_sent_from_customer_1, 'test_consumer', c_customer_2_receive_result, 10])
+            'customer-2', sample_message_sent_from_customer_1, 'test_consumer', customer_2_receive_result, 10])
         thread_receive_customer_3 = threading.Timer(0, kw.message_receive_v1, [
-            'customer-3', c_message_sent_from_customer_1, 'test_consumer', c_customer_3_receive_result, ])
+            'customer-3', sample_message_sent_from_customer_1, 'test_consumer', customer_3_receive_result, ])
         thread_send_customer_1 = threading.Timer(0.2, kw.message_send_group_v1, [
-            'customer-1', group_key_id, c_message_sent_from_customer_1, ])
+            'customer-1', group_key_id, sample_message_sent_from_customer_1, ])
         thread_receive_customer_1.start()
         thread_receive_customer_2.start()
         thread_receive_customer_3.start()
@@ -302,48 +301,57 @@ def test_customers_1_2_3_communicate_via_message_broker():
         assert customer_2_receive_result[0] is None
         assert customer_3_receive_result[0]['result'][0]['data'] == sample_message_sent_from_customer_1
 
-        assert kw.group_info_v1('customer-1', group_key_id)['result']['last_sequence_id'] == 2
-        assert kw.group_info_v1('customer-2', group_key_id)['result']['last_sequence_id'] == 1
-        assert kw.group_info_v1('customer-3', group_key_id)['result']['last_sequence_id'] == 2
-
-    assert kw.group_info_v1('customer-1', group_key_id)['result']['last_sequence_id'] == 12
+    assert kw.group_info_v1('customer-1', group_key_id)['result']['last_sequence_id'] == 5
     assert kw.group_info_v1('customer-2', group_key_id)['result']['last_sequence_id'] == 1
-    assert kw.group_info_v1('customer-3', group_key_id)['result']['last_sequence_id'] == 12
+    assert kw.group_info_v1('customer-3', group_key_id)['result']['last_sequence_id'] == 5
 
-    # second member now join the group again... he missed something : expect 11 messages to be missed
-    kw.group_join_v1('customer-3', group_key_id)
-
-    # all messages suppose to be restored from archive history
-    assert kw.group_info_v1('customer-2', group_key_id)['result']['last_sequence_id'] == 12
-
-    # all customers leave the group
-    kw.group_leave_v1('customer-1', group_key_id)
-    kw.group_leave_v1('customer-2', group_key_id)
-    kw.group_leave_v1('customer-3', group_key_id)
+    # second member now join the group again... he missed some conversations : expect 4 messages to be missed
+    kw.group_join_v1('customer-2', group_key_id)
 
     kw.packet_list_v1('customer-1', wait_all_finish=True)
-    kw.transfer_list_v1('customer-1', wait_all_finish=True)
     kw.packet_list_v1('customer-2', wait_all_finish=True)
-    kw.transfer_list_v1('customer-2', wait_all_finish=True)
     kw.packet_list_v1('customer-3', wait_all_finish=True)
-    kw.transfer_list_v1('customer-3', wait_all_finish=True)
+    kw.packet_list_v1('broker-1', wait_all_finish=True)
+    kw.packet_list_v1('broker-2', wait_all_finish=True)
+    kw.packet_list_v1('broker-3', wait_all_finish=True)
+    kw.packet_list_v1('broker-4', wait_all_finish=True)
+    kw.packet_list_v1('broker-5', wait_all_finish=True)
+
+    assert len(kw.queue_consumer_list_v1(active_broker_name, extract_ids=True)) == 3
+    assert len(kw.queue_producer_list_v1(active_broker_name, extract_ids=True)) == 3
+
+    # all messages suppose to be restored from archive history
+    # assert kw.group_info_v1('customer-2', group_key_id)['result']['last_sequence_id'] == 5
+
+    # all customers leave the group, except customer-3
+    kw.group_leave_v1('customer-1', group_key_id)
+    kw.group_leave_v1('customer-2', group_key_id)
+
+    kw.packet_list_v1('customer-1', wait_all_finish=True)
+    kw.packet_list_v1('customer-2', wait_all_finish=True)
+    kw.packet_list_v1('customer-3', wait_all_finish=True)
+    kw.packet_list_v1('broker-1', wait_all_finish=True)
+    kw.packet_list_v1('broker-2', wait_all_finish=True)
+    kw.packet_list_v1('broker-3', wait_all_finish=True)
+    kw.packet_list_v1('broker-4', wait_all_finish=True)
+    kw.packet_list_v1('broker-5', wait_all_finish=True)
+
+    assert len(kw.queue_consumer_list_v1(active_broker_name, extract_ids=True)) == 1
+    assert len(kw.queue_producer_list_v1(active_broker_name, extract_ids=True)) == 1
 
     group_info_offline = kw.group_info_v1('customer-1', group_key_id)['result']
     assert group_info_offline['state'] == 'OFFLINE'
     assert group_info_offline['label'] == 'TestGroup123'
-    assert group_info_offline['last_sequence_id'] == 2
+    assert group_info_offline['last_sequence_id'] == 5
 
     group_info_offline = kw.group_info_v1('customer-2', group_key_id)['result']
     assert group_info_offline['state'] == 'OFFLINE'
     assert group_info_offline['label'] == 'TestGroup123'
-    assert group_info_offline['last_sequence_id'] == 2
+    # assert group_info_offline['last_sequence_id'] == 5
 
     group_info_offline = kw.group_info_v1('customer-3', group_key_id)['result']
-    assert group_info_offline['state'] == 'OFFLINE'
+    assert group_info_offline['state'] == 'IN_SYNC!'
     assert group_info_offline['label'] == 'TestGroup123'
-    assert group_info_offline['last_sequence_id'] == 2
+    assert group_info_offline['last_sequence_id'] == 5
 
-    broker_consumers = kw.queue_consumer_list_v1(active_broker_name, extract_ids=True)
-    broker_producers = kw.queue_producer_list_v1(active_broker_name, extract_ids=True)
-    assert len(broker_consumers) == 0
-    assert len(broker_producers) == 0
+    kw.supplier_list_v1('customer-1', expected_min_suppliers=2, expected_max_suppliers=2)

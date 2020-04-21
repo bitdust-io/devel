@@ -28,7 +28,6 @@
 
 """
 
-
 #------------------------------------------------------------------------------
 
 from __future__ import absolute_import
@@ -138,6 +137,7 @@ def is_key_private(key_id, include_master=True):
         return True
     return not key_obj(key_id).isPublic()
 
+#------------------------------------------------------------------------------
 
 def make_key_id(alias, creator_idurl=None, creator_glob_id=None):
     """
@@ -684,6 +684,16 @@ def get_private_key_raw(key_id):
         raise ValueError('not a private key')
     return kobj.toPrivateString()
 
+
+def get_label(key_id):
+    """
+    Returns known label for given key.
+    """
+    key_id = latest_key_id(strng.to_text(key_id))
+    if key_id not in known_keys():
+        return None
+    return key_obj(key_id).label
+
 #------------------------------------------------------------------------------
 
 def make_master_key_info(include_private=False):
@@ -792,6 +802,7 @@ def read_key_info(key_json):
         raise Exception('failed reading key info')
     return latest_key_id(key_id), key_object
 
+#------------------------------------------------------------------------------
 
 def sign_key_info(key_info):
     key_info['signature_pubkey'] = key.MyPublicKey()
@@ -819,16 +830,5 @@ def verify_key_info_signature(key_info):
     signature_bin = strng.to_bin(key_info['signature'])
     result = key.VerifySignature(key_info['signature_pubkey'], hash_bin, signature_bin)
     return result
-
-#------------------------------------------------------------------------------
-
-def get_label(key_id):
-    """
-    Returns known label for given key.
-    """
-    key_id = latest_key_id(strng.to_text(key_id))
-    if key_id not in known_keys():
-        return None
-    return key_obj(key_id).label
 
 #------------------------------------------------------------------------------
