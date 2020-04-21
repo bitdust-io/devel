@@ -51,6 +51,7 @@ from logs import lg
 
 from lib import strng
 from lib import packetid
+from lib import serialization
 
 from system import bpio
 
@@ -107,7 +108,7 @@ def verify_packet_ownership(newpacket, raise_exception=False):
     # but creator might be non-authorized to store data on that node
     # so based on owner ID I must decide what to do with the packet
     owner_idurl = newpacket.OwnerID
-    creator_idurl = newpacket.creatorID
+    creator_idurl = newpacket.CreatorID
     owner_id = owner_idurl.to_id()
     creator_id = creator_idurl.to_id()
     packet_key_alias, packet_owner_id, _ = packetid.SplitKeyOwnerData(newpacket.PacketID)
@@ -374,8 +375,16 @@ def on_retrieve(newpacket):
 #------------------------------------------------------------------------------
 
 def on_list_files(newpacket):
-    if strng.to_text(newpacket.Payload) != settings.ListFilesFormat():
-        lg.exc('unknown ListFilesFormat() received: %r' % newpacket.Payload)
+    json_query = {}
+    try:
+        j = serialization.BytesToDict(newpacket.Payload, keys_to_text=True, values_to_text=True)
+        j['items'][0]
+        json_query = j
+    except:
+        if strng.to_text(newpacket.Payload) == settings.ListFilesFormat():
+            json_query = {'items': ['*', ], }
+    if json_query is None:
+        lg.exc('unrecognized ListFiles() query received')
         return False
     # TODO: perform validations before sending back list of files
     list_files_global_id = global_id.ParseGlobalID(newpacket.PacketID)
@@ -394,7 +403,8 @@ def on_list_files(newpacket):
         packet_id=newpacket.PacketID,
         format_type=settings.ListFilesFormat(),
         key_id=key_id,
-        remote_idurl=newpacket.OwnerID,  # send back to the requestor
+        remote_idurl=newpacket.OwnerID,  # send back to the requesting node
+        query_items=json_query['items'],
     )
     return True
 

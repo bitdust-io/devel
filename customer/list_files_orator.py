@@ -251,7 +251,9 @@ class ListFilesOrator(automat.Automat):
         supplier_idurl = args[0]
         if _Debug:
             lg.out(_DebugLevel, 'list_files_orator.doRequestFilesOneSupplier from %s' % supplier_idurl)
-        outpacket = p2p_service.SendListFiles(target_supplier=supplier_idurl)
+        outpacket = p2p_service.SendListFiles(
+            target_supplier=supplier_idurl,
+        )
         if outpacket:
             _RequestedListFilesPacketIDs.add(outpacket.PacketID)
         else:
@@ -267,7 +269,9 @@ class ListFilesOrator(automat.Automat):
                 if online_status.isOnline(idurl):
                     if _Debug:
                         lg.out(_DebugLevel, 'list_files_orator._do_request  ListFiles() from my supplier %s' % idurl)
-                    outpacket = p2p_service.SendListFiles(target_supplier=idurl)
+                    outpacket = p2p_service.SendListFiles(
+                        target_supplier=idurl,
+                    )
                     if outpacket:
                         _RequestedListFilesPacketIDs.add(outpacket.PacketID)
                     else:

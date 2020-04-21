@@ -151,8 +151,10 @@ class backup(automat.Automat):
                  blockSize=None,
                  sourcePath=None,
                  keyID=None,
-                 ecc_map=None, ):
+                 ecc_map=None,
+                 creatorIDURL=None,):
         self.backupID = backupID
+        self.creatorIDURL = creatorIDURL or my_id.getIDURL()
         _parts = packetid.SplitBackupID(self.backupID)
         self.customerGlobalID = _parts[0]
         self.pathID = _parts[1]
@@ -368,7 +370,7 @@ class backup(automat.Automat):
             dt = time.time()
             raw_bytes = self.currentBlockData.getvalue()
             block = encrypted.Block(
-                CreatorID=my_id.getLocalID(),
+                CreatorID=self.creatorIDURL,
                 BackupID=self.backupID,
                 BlockNumber=self.blockNumber,
                 SessionKey=key.NewSessionKey(session_key_type=key.SessionKeyType()),

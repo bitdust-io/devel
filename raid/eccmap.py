@@ -301,7 +301,6 @@ def GetCorrectablePercent(suppliers_number):
 
 #------------------------------------------------------------------------------
 
-
 def ReadTextFile(filename):
     """
     Read text file and return its content.
@@ -331,7 +330,7 @@ class eccmap:
     A class to do many operations with ecc map.
     """
 
-    def __init__(self, filename='', suppliers_number=2):
+    def __init__(self, filename='', suppliers_number=None):
         if filename != '':
             self.name = filename      # sometimes we will just want the name
             self.suppliers_number = GetEccMapSuppliersNumber(self.name)
