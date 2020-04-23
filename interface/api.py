@@ -1055,14 +1055,14 @@ def file_exists(remote_path):
     remotePath = bpio.remotePath(norm_path['path'])
     customer_idurl = norm_path['idurl']
     if customer_idurl not in backup_fs.known_customers():
-        return OK({'exist': False, }, message='customer "%s" not found' % customer_idurl, )
+        return OK({'exist': False, 'path_id': None, }, message='customer "%s" not found' % customer_idurl, )
     pathID = backup_fs.ToID(remotePath, iter=backup_fs.fs(customer_idurl))
     if not pathID:
-        return OK({'exist': False, }, message='path "%s" was not found in catalog' % remotePath, )
+        return OK({'exist': False, 'path_id': None, }, message='path "%s" was not found in catalog' % remotePath, )
     item = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(customer_idurl))
     if not item:
-        return OK({'exist': False, }, message='item "%s" is not found in catalog' % pathID, )
-    return OK({'exist': True, }, )
+        return OK({'exist': False, 'path_id': None, }, message='item "%s" is not found in catalog' % pathID, )
+    return OK({'exist': True, 'path_id': pathID, }, )
 
 
 def file_info(remote_path, include_uploads=True, include_downloads=True):

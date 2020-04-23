@@ -70,10 +70,12 @@ from crypt import key
 from crypt import my_keys
 from crypt import encrypted
 
-from userid import global_id
-from userid import my_id
+from storage import backup_control
 
 from interface import api
+
+from userid import global_id
+from userid import my_id
 
 #------------------------------------------------------------------------------
 
@@ -568,6 +570,30 @@ def do_backup_key(key_id, keys_folder=None, wait_result=False):
     res = api.file_exists(global_key_path)
     if res['status'] == 'OK' and res['result'] and res['result'].get('exist'):
         lg.warn('key %s already exists in catalog' % global_key_path)
+        global_key_path_id = res['result'].get('path_id')
+        if global_key_path_id and backup_control.IsPathInProcess(global_key_path_id):
+            lg.warn('skip, another backup for key already started: %s' % global_key_path_id)
+            if not wait_result:
+                return True
+            backup_id_list = backup_control.FindRunningBackup(global_key_path_id)
+            if backup_id_list:
+                backup_id = backup_id_list[0]
+                backup_job = backup_control.GetRunningBackupObject(backup_id)
+                if backup_job:
+                    backup_result = Deferred()
+                    backup_job.resultDefer.addCallback(
+                        lambda resp: backup_result.callback(True) if resp == 'done' else backup_result.errback(
+                            Exception('failed to upload key "%s", task was not started: %r' % (global_key_path, resp))))
+                    if _Debug:
+                        backup_job.resultDefer.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='key_ring.do_backup_key')
+                    backup_job.resultDefer.addErrback(backup_result.errback)
+                    if _Debug:
+                        lg.args(_DebugLevel, backup_id=backup_id, global_key_path_id=global_key_path_id)
+                    return backup_result
+                else:
+                    lg.warn('did not found running backup job: %r' % backup_id)
+            else:
+                lg.warn('did not found running backup id for path: %r' % global_key_path_id)
     else:
         res = api.file_create(global_key_path)
         if res['status'] != 'OK':
@@ -608,7 +634,6 @@ def do_backup_key(key_id, keys_folder=None, wait_result=False):
         if resp['status'] != 'OK':
             backup_result.errback(Exception('failed to upload key "%s", task was not started: %r' % (global_key_path, resp)))
             return None
-        from storage import backup_control
         backupObj = backup_control.jobs().get(resp['version'])
         if not backupObj:
             backup_result.errback(Exception('failed to upload key "%s", task %r failed to start' % (global_key_path, resp['version'])))

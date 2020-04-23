@@ -832,8 +832,8 @@ def do_consume(interested_consumers=None):
         interested_queues = set()
         for queue_id in consumer(consumer_id).queues:
             if queue_id not in queue():
-                if _Debug:
-                    lg.out(_DebugLevel, 'p2p_queue.do_consume consumer queue %s was not found' % queue_id)
+                # if _Debug:
+                #     lg.out(_DebugLevel, 'p2p_queue.do_consume consumer queue %s was not found' % queue_id)
                 continue
             if len(queue(queue_id)) == 0:
                 # no messages in the queue

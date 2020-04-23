@@ -104,9 +104,13 @@ def register_customer_key(customer_public_key_id, customer_public_key):
 #------------------------------------------------------------------------------
 
 def verify_packet_ownership(newpacket, raise_exception=False):
-    # at that point creator is already verified via signature
-    # but creator might be non-authorized to store data on that node
-    # so based on owner ID I must decide what to do with the packet
+    """
+    At that point packet creator is already verified via signature,
+    but creator could be not authorized to store data on that node.
+    So based on owner ID decision must be made what to do with the packet.
+    Returns IDURL of the user who should receive and Ack() or None if not authorized.
+    """
+    # SECURITY
     owner_idurl = newpacket.OwnerID
     creator_idurl = newpacket.CreatorID
     owner_id = owner_idurl.to_id()
@@ -121,43 +125,43 @@ def verify_packet_ownership(newpacket, raise_exception=False):
             if contactsdb.is_customer(creator_idurl):
                 if _Debug:
                     lg.dbg(_DebugLevel, 'OK, scenario 1:  customer is sending own data to own supplier')
-                return True
+                return owner_idurl
             lg.err('FAIL, scenario 6: non-authorized user is trying to store data on the supplier')
             if raise_exception:
                 raise Exception('non-authorized user is trying to store data on the supplier')
-            return False
+            return None
         if contactsdb.is_customer(creator_idurl):
             if _Debug:
                 lg.dbg(_DebugLevel, 'OK, scenario 2: customer wants to store data for someone else on own supplier')
             # TODO: check that, why do we need that?
-            return True
+            return creator_idurl
         if packet_owner_id == owner_id:
             if contactsdb.is_customer(owner_idurl):
                 if my_keys.is_key_registered(packet_key_id):
                     if _Debug:
                         lg.dbg(_DebugLevel, 'OK, scenario 3: another authorized user is sending data to customer to be stored on the supplier')
-                    return True
+                    return creator_idurl
     if newpacket.Command in [commands.DeleteFile(), commands.DeleteBackup(), ]:
         if owner_idurl == creator_idurl:
             if contactsdb.is_customer(creator_idurl):
                 if _Debug:
                     lg.dbg(_DebugLevel, 'OK, scenario 4: customer wants to remove already stored data on own supplier')
-                return True
+                return owner_idurl
             lg.err('FAIL, scenario 7: non-authorized user is trying to erase data owned by customer from the supplier')
             if raise_exception:
                 raise Exception('non-authorized user is trying to erase data owned by customer from the supplier')
-            return False
+            return None
         if contactsdb.is_customer(creator_idurl):
             # TODO: check that, why do we need that?
             if _Debug:
                 lg.dbg(_DebugLevel, 'OK, scenario 8: customer wants to erase existing data that belongs to someone else but stored on the supplier')
-            return True
+            return creator_idurl
         if packet_owner_id == owner_id:
             if contactsdb.is_customer(owner_idurl):
                 if my_keys.is_key_registered(packet_key_id):
                     if _Debug:
                         lg.dbg(_DebugLevel, 'OK, scenario 5: another authorized user wants to remove already stored data from the supplier')
-                    return True
+                    return creator_idurl
     # TODO: make possible to set "active": True/False for any key
     # scenario 9: customer wants to keep data/location read-only 
     raise Exception('scenario not implemented yet')
@@ -231,16 +235,17 @@ def on_data(newpacket):
         glob_path = global_id.ParseGlobalID(my_id.getGlobalID('master') + ':' + newpacket.PacketID)
     if not glob_path['path']:
         lg.err("got incorrect PacketID")
-        p2p_service.SendFail(newpacket, 'incorrect path')
+        # p2p_service.SendFail(newpacket, 'incorrect path')
         return False
-    if not verify_packet_ownership(newpacket):
+    authorized_idurl = verify_packet_ownership(newpacket)
+    if authorized_idurl is None:
         lg.err("ownership verification failed for %r" % newpacket)
-        p2p_service.SendFail(newpacket, 'ownership verification failed')
+        # p2p_service.SendFail(newpacket, 'ownership verification failed')
         return False
     filename = make_valid_filename(newpacket.OwnerID, glob_path)
     if not filename:
         lg.warn("got empty filename, bad customer or wrong packetID?")
-        p2p_service.SendFail(newpacket, 'empty filename')
+        # p2p_service.SendFail(newpacket, 'empty filename')
         return False
     dirname = os.path.dirname(filename)
     if not os.path.exists(dirname):
@@ -248,15 +253,15 @@ def on_data(newpacket):
             bpio._dirs_make(dirname)
         except:
             lg.err("can not create sub dir %s" % dirname)
-            p2p_service.SendFail(newpacket, 'write error')
+            p2p_service.SendFail(newpacket, 'write error', remote_idurl=authorized_idurl)
             return False
     data = newpacket.Serialize()
     donated_bytes = settings.getDonatedBytes()
     accounting.check_create_customers_quotas(donated_bytes)
     space_dict, _ = accounting.read_customers_quotas()
     if newpacket.OwnerID.to_bin() not in list(space_dict.keys()):
-        lg.err("no info about donated space for %s" % newpacket.OwnerID)
-        p2p_service.SendFail(newpacket, 'no info about donated space')
+        lg.err("customer space is broken, no info about donated space for %s" % newpacket.OwnerID)
+        p2p_service.SendFail(newpacket, 'customer space is broken, no info about donated space', remote_idurl=authorized_idurl)
         return False
     used_space_dict = accounting.read_customers_usage()
     if newpacket.OwnerID.to_bin() in list(used_space_dict.keys()):
@@ -264,18 +269,18 @@ def on_data(newpacket):
             bytes_used_by_customer = int(used_space_dict[newpacket.OwnerID.to_bin()])
             bytes_donated_to_customer = int(space_dict[newpacket.OwnerID.to_bin()])
             if bytes_donated_to_customer - bytes_used_by_customer < len(data):
-                lg.warn("no free space for %s" % newpacket.OwnerID)
-                p2p_service.SendFail(newpacket, 'no free space')
+                lg.warn("no free space left for customer data: %s" % newpacket.OwnerID)
+                p2p_service.SendFail(newpacket, 'no free space left for customer data', remote_idurl=authorized_idurl)
                 return False
         except:
             lg.exc()
     if not bpio.WriteBinaryFile(filename, data):
         lg.err("can not write to %s" % str(filename))
-        p2p_service.SendFail(newpacket, 'write error')
+        p2p_service.SendFail(newpacket, 'write error', remote_idurl=authorized_idurl)
         return False
     # Here Data() packet was stored as it is on supplier node (current machine)
     del data
-    p2p_service.SendAck(newpacket, str(len(newpacket.Payload)))
+    p2p_service.SendAck(newpacket, response=strng.to_text(len(newpacket.Payload)), remote_idurl=authorized_idurl)
     reactor.callLater(0, local_tester.TestSpaceTime)  # @UndefinedVariable
 #     if self.publish_event_supplier_file_modified:  #  TODO: must remove that actually
 #         from main import events

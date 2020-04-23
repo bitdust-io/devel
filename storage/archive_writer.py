@@ -221,8 +221,6 @@ class ArchiveWriter(automat.Automat):
         """
         Action method.
         """
-        self.suppliers_list = kwargs['suppliers_list']
-        self.ecc_map = kwargs['ecc_map']
         self._do_start_archive_backup()
 
     def doPushPackets(self, *args, **kwargs):
@@ -238,21 +236,26 @@ class ArchiveWriter(automat.Automat):
         """
         Action method.
         """
-        packet_id = kwargs['packet_id']
-        block_num = kwargs['block_num']
+        newpacket = kwargs['newpacket']
+        _, _, _, block_num, _, _ = packetid.SplitFull(newpacket.PacketID)
         if block_num not in self.packets_out:
-            raise Exception('unregistered block number')
-        if packet_id not in self.packets_out[block_num]:
-            raise Exception('unregistered packet id')
+            raise Exception('unregistered block number received')
+        if newpacket.PacketID not in self.packets_out[block_num]:
+            raise Exception('unregistered packet ID received')
         if event == 'ack':
-            self.packets_out[block_num][packet_id] = True
+            self.packets_out[block_num][newpacket.PacketID] = True
         else:
-            self.packets_out[packet_id] = False
+            self.packets_out[block_num][newpacket.PacketID] = False
+        if _Debug:
+            lg.args(_DebugLevel, event=event, block_num=block_num, packet_id=newpacket.PacketID, packets_out=self.packets_out)
 
     def doCheckFinished(self, *args, **kwargs):
         """
         Action method.
         """
+        if _Debug:
+            lg.args(_DebugLevel, backup_job=self.backup_job, backup_max_block_num=self.backup_max_block_num,
+                    packets_out=self.packets_out)
         if self.backup_job:
             # backup is not finished yet
             return
@@ -261,12 +264,12 @@ class ArchiveWriter(automat.Automat):
             return
         packets_in_progress = 0
         for block_num in self.packets_out.keys():
-            packets_in_progress += self.packets_out[block_num].count(None)
+            packets_in_progress += list(self.packets_out[block_num].values()).count(None)
         if packets_in_progress:
             # some packets are still in progress
             return
         for block_num in self.packets_out.keys():
-            block_packets_failed = self.packets_out[block_num].count(False)
+            block_packets_failed = list(self.packets_out[block_num].values()).count(False)
             if block_packets_failed > self.correctable_errors:
                 lg.err('all packets for block %d are sent, but too many errors: %d' % (block_num, block_packets_failed, ))
                 self.automat('sending-failed')
@@ -379,8 +382,8 @@ class ArchiveWriter(automat.Automat):
                     remoteID=supplier_idurl,
                     packetID=packet_id,
                     callbacks={
-                        commands.Ack(): lambda newpacket, info: self.automat('ack', newpacket, info, block_num, packet_id),
-                        commands.Fail(): lambda newpacket, info: self.automat('fail', newpacket, info, block_num, packet_id),
+                        commands.Ack(): lambda newpacket, _: self.automat('ack', newpacket=newpacket),
+                        commands.Fail(): lambda newpacket, _: self.automat('fail', newpacket=newpacket),
                     },
                 )
         if failed_supliers > self.correctable_errors:
@@ -389,18 +392,16 @@ class ArchiveWriter(automat.Automat):
 
     def _on_read_queue_owner_suppliers_success(self, dht_value):
         # TODO: add more validations of dht_value
-        suppliers_list = []
-        ecc_map = None
         if dht_value and isinstance(dht_value, dict) and len(dht_value.get('suppliers', [])) > 0:
-            suppliers_list = dht_value['suppliers']
-            ecc_map = dht_value['ecc_map']
+            self.suppliers_list = dht_value['suppliers']
+            self.ecc_map = dht_value['ecc_map']
             self.correctable_errors = eccmap.GetCorrectableErrors(len(self.suppliers_list))
         if _Debug:
-            lg.args(_DebugLevel, suppliers_list=suppliers_list, ecc_map=ecc_map)
-        if not suppliers_list or not ecc_map:
+            lg.args(_DebugLevel, suppliers_list=self.suppliers_list, ecc_map=self.ecc_map)
+        if not self.suppliers_list or not self.ecc_map:
             self.automat('dht-read-failed', None)
             return None
-        self.automat('dht-read-success', suppliers_list=suppliers_list, ecc_map=ecc_map)
+        self.automat('dht-read-success')
         return None
 
     def _on_read_queue_owner_suppliers_failed(self, err):
