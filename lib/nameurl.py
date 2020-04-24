@@ -110,6 +110,19 @@ def UrlParse(url):
     )
 
 
+def UrlParseFast(url):
+    """
+    Return a 5-items tuple from url address :
+        ( proto, host, port, path, filename )
+    """
+    url = strng.to_text(url)
+    proto, _, tail = url.partition('://')
+    head, _, filename = tail.rpartition('/')
+    host_port, _, path = head.partition('/')
+    host, _, port = host_port.partition(':')
+    return proto, host, port, path, filename
+
+
 def UrlMake(protocol='', machine='', port='', filename='', parts=None):
     """
     Reverse method, create a URL from 4 pieces.

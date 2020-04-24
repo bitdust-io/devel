@@ -69,8 +69,6 @@ from lib import nameurl
 
 from main import settings
 
-from userid import global_id
-
 #------------------------------------------------------------------------------
 
 _IdentityHistoryDir = None
@@ -557,7 +555,24 @@ def get_latest_revision(idurl):
             latest_idurl = another_idurl
             latest_rev = rev
     return latest_idurl, latest_rev
-    
+
+
+def idurl_to_id(idurl_text):
+    """
+    Translates IDURL into gobal id short form:
+        http://somehost.com/alice.xml -> alice@somehost.com
+    """
+    if not idurl_text:
+        return idurl_text
+    _, host, port, _, filename = nameurl.UrlParseFast(idurl_text)
+    if filename.count('.'):
+        username = filename.split('.')[0]
+    else:
+        username = filename
+    if port:
+        host = '%s_%s' % (host, port)
+    return '%s@%s' % (username, host)
+
 #------------------------------------------------------------------------------
 
 class ID_URL_FIELD(object):
@@ -578,13 +593,13 @@ class ID_URL_FIELD(object):
             else:
                 self.current = strng.to_bin(idurl.strip())
         self.current_as_string = strng.to_text(self.current)
-        self.current_id = global_id.idurl2glob(self.current)
+        self.current_id = idurl_to_id(self.current)
         self.latest, self.latest_revision = get_latest_revision(self.current)
         if not self.latest:
             self.latest = self.current
             self.latest_revision = -1
         self.latest_as_string = strng.to_text(self.latest)
-        self.latest_id = global_id.idurl2glob(self.latest)
+        self.latest_id = idurl_to_id(self.latest)
         if _Debug:
             lg.out(_DebugLevel * 2, 'NEW ID_URL_FIELD(%r) with id=%r latest=%r' % (self.current, id(self), self.latest))
 
@@ -731,7 +746,7 @@ class ID_URL_FIELD(object):
             self.latest = self.current
             self.latest_revision = -1
         self.latest_as_string = strng.to_text(self.latest)
-        self.latest_id = global_id.idurl2glob(self.latest)
+        self.latest_id = idurl_to_id(self.latest)
         if replace_original:
             self.current = self.latest
             self.current_as_string = self.latest_as_string

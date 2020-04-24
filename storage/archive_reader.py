@@ -70,6 +70,8 @@ from contacts import contactsdb
 
 from stream import message
 
+from raid import eccmap
+
 from p2p import commands
 from p2p import p2p_service
 from p2p import lookup
@@ -189,16 +191,30 @@ class ArchiveReader(automat.Automat):
         """
         Action method.
         """
+        self.suppliers_list = []
+        self.ecc_map = None
+        self.correctable_errors = 0
 
     def doDHTReadSuppliers(self, *args, **kwargs):
         """
         Action method.
         """
+        d = dht_relations.read_customer_suppliers(customer_idurl=self.queue_owner_idurl, use_cache=True)
+        d.addCallback(self._on_read_queue_owner_suppliers_success)
+        d.addErrback(self._on_read_queue_owner_suppliers_failed)
 
     def doRequestListFiles(self, *args, **kwargs):
         """
         Action method.
         """
+        # TODO: in case i am not the owner of the group - read suppliers from DHT
+        for supplier_idurl in contactsdb.suppliers():
+            if supplier_idurl:
+                p2p_service.SendListFiles(
+                    target_supplier=supplier_idurl,
+                    key_id=self.group_key_id,
+                    query_items=[self.group_queue_alias, ],
+                )
 
     def doCollectFiles(self, event, *args, **kwargs):
         """
@@ -230,3 +246,22 @@ class ArchiveReader(automat.Automat):
         Remove all references to the state machine object to destroy it.
         """
         self.destroy()
+
+    def _on_read_queue_owner_suppliers_success(self, dht_value):
+        # TODO: add more validations of dht_value
+        if dht_value and isinstance(dht_value, dict) and len(dht_value.get('suppliers', [])) > 0:
+            self.suppliers_list = dht_value['suppliers']
+            self.ecc_map = dht_value['ecc_map']
+            self.correctable_errors = eccmap.GetCorrectableErrors(len(self.suppliers_list))
+        if _Debug:
+            lg.args(_DebugLevel, suppliers_list=self.suppliers_list, ecc_map=self.ecc_map)
+        if not self.suppliers_list or not self.ecc_map:
+            self.automat('dht-read-failed', None)
+            return None
+        self.automat('dht-read-success')
+        return None
+
+    def _on_read_queue_owner_suppliers_failed(self, err):
+        lg.err('failed to read customer suppliers: %r' % err)
+        self.automat('dht-read-failed', err)
+        return None

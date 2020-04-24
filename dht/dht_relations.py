@@ -178,6 +178,8 @@ def write_customer_suppliers(customer_idurl, suppliers_list, ecc_map=None, revis
 #------------------------------------------------------------------------------
 
 def read_customer_message_brokers(customer_idurl, positions=[0, ], return_details=True, as_fields=True, use_cache=True):
+    if _Debug:
+        lg.args(_DebugLevel, customer_idurl=customer_idurl, use_cache=use_cache, positions=positions)
     if as_fields:
         customer_idurl = id_url.field(customer_idurl)
     else:
@@ -192,6 +194,8 @@ def read_customer_message_brokers(customer_idurl, positions=[0, ], return_detail
         return None
 
     def _do_verify(dht_value, position, broker_result):
+        if _Debug:
+            lg.args(_DebugLevel, dht_value=dht_value, position=position, broker_result=broker_result)
         ret = {
             'timestamp': None,
             'revision': 0,

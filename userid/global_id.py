@@ -301,7 +301,7 @@ def UrlToGlobalID(url, include_key=False):
     if not url:
         return url
     from lib import nameurl
-    _, host, port, filename = nameurl.UrlParse(url)
+    _, host, port, _, filename = nameurl.UrlParseFast(url)
     if filename.count('.'):
         username = filename.split('.')[0]
     else:

@@ -440,14 +440,9 @@ class GroupMember(automat.Automat):
         """
         Action method.
         """
-        # TODO: in case i am not the owner of the group - read suppliers from DHT
-        for supplier_idurl in contactsdb.suppliers():
-            if supplier_idurl:
-                p2p_service.SendListFiles(
-                    target_supplier=supplier_idurl,
-                    key_id=self.group_key_id,
-                    query_items=[self.group_queue_alias, ],
-                )
+        # from storage import archive_reader
+        # ar = archive_reader.ArchiveReader()
+        # ar.automat('start', group_key_id=self.group_key_id)
 
     def doProcess(self, *args, **kwargs):
         """
@@ -464,7 +459,7 @@ class GroupMember(automat.Automat):
         self._do_send_message_to_broker(
             json_payload=kwargs['json_payload'],
             outgoing_counter=None,
-            packet_id=packetid.UniqueID(),
+            packet_id=None,
         )
 
     def doPublishLater(self, *args, **kwargs):
@@ -576,10 +571,10 @@ class GroupMember(automat.Automat):
         self.outgoing_counter = None
 
     def _do_send_message_to_broker(self, json_payload=None, outgoing_counter=None, packet_id=None):
-        if _Debug:
-            lg.args(_DebugLevel, json_payload=json_payload, outgoing_counter=outgoing_counter, packet_id=packet_id)
         if packet_id is None:
             packet_id = packetid.UniqueID()
+        if _Debug:
+            lg.args(_DebugLevel, json_payload=json_payload, outgoing_counter=outgoing_counter, packet_id=packet_id)
         if outgoing_counter is None:
             self.outgoing_counter += 1
             outgoing_counter = self.outgoing_counter
@@ -813,7 +808,7 @@ class GroupMember(automat.Automat):
     def _on_message_to_broker_failed(self, err, outgoing_counter, packet_id):
         if _Debug:
             lg.args(_DebugLevel, err=err, outgoing_counter=outgoing_counter, packet_id=packet_id)
-        self._do_send_message_to_broker(json_payload=None, outgoing_counter=outgoing_counter, packet_id=packet_id)
+        self._do_send_message_to_broker(json_payload=None, outgoing_counter=outgoing_counter, packet_id=None)
 
     def _on_read_customer_message_brokers(self, brokers_info_list):
         if _Debug:

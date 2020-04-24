@@ -62,7 +62,9 @@ from userid import global_id
 
 #------------------------------------------------------------------------------
 
-def send(customer_idurl, packet_id, format_type, key_id, remote_idurl, query_items):
+def send(customer_idurl, packet_id, format_type, key_id, remote_idurl, query_items=[]):
+    if not query_items:
+        query_items = ['*', ]
     parts = global_id.ParseGlobalID(key_id)
     if parts['key_alias'] == 'master' and parts['idurl'] != my_id.getLocalID():
         # lg.warn('incoming ListFiles() request with customer "master" key: %r' % key_id)
