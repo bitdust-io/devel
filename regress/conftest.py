@@ -69,86 +69,102 @@ def clean_all_nodes(event_loop, skip_checks=False):
     print('\n\nAll nodes cleaned in %5.3f seconds\n' % (time.time() - _begin))
 
 
-def start_all_nodes(event_loop):
+def start_all_nodes(event_loop, verbose=False):
     _begin = time.time()
-    print('\nStarting nodes\n')
+    if verbose:
+        print('\nStarting nodes\n')
 
     for number, dhtseed in enumerate(ALL_ROLES.get('dht-seed', [])):
         # first seed to be started immediately, all other seeds must wait a bit before start
         tsup.start_one_dht_seed(dhtseed, wait_seconds=(3 if number > 0 else 0))
-    print('\nALL DHT SEEDS STARTED\n')
+    if verbose:
+        print('\nALL DHT SEEDS STARTED\n')
 
     event_loop.run_until_complete(asyncio.gather(*[
         tsup.start_one_identity_server_async(idsrv, event_loop) for idsrv in ALL_ROLES.get('identity-server', [])
     ]))
-    print(f'\nALL ID SERVERS STARTED\n')
+    if verbose:
+        print(f'\nALL ID SERVERS STARTED\n')
 
     event_loop.run_until_complete(asyncio.gather(*[
         tsup.start_one_stun_server_async(stunsrv, event_loop) for stunsrv in ALL_ROLES.get('stun-server', [])
     ]))
-    print(f'\nALL STUN SERVERS STARTED\n')
+    if verbose:
+        print(f'\nALL STUN SERVERS STARTED\n')
 
     event_loop.run_until_complete(asyncio.gather(*[
         tsup.start_one_proxy_server_async(proxy_server, event_loop) for proxy_server in ALL_ROLES.get('proxy-server', [])
     ]))
-    print(f'\nALL PROXY SERVERS STARTED\n')
+    if verbose:
+        print(f'\nALL PROXY SERVERS STARTED\n')
 
     event_loop.run_until_complete(asyncio.gather(*[
         tsup.start_one_supplier_async(supplier, event_loop) for supplier in ALL_ROLES.get('supplier', [])
     ]))
-    print(f'\nALL SUPPLIERS STARTED\n')
+    if verbose:
+        print(f'\nALL SUPPLIERS STARTED\n')
 
     event_loop.run_until_complete(asyncio.gather(*[
         tsup.start_one_message_broker_async(message_broker, event_loop) for message_broker in ALL_ROLES.get('message-broker', [])
     ]))
-    print(f'\nALL MESSAGE BROKERS STARTED\n')
+    if verbose:
+        print(f'\nALL MESSAGE BROKERS STARTED\n')
 
     event_loop.run_until_complete(asyncio.gather(*[
         tsup.start_one_customer_async(customer, event_loop, sleep_before_start=i*3) for i, customer in enumerate(ALL_ROLES.get('customer', []))
     ]))
-    print(f'\nALL CUSTOMERS STARTED\n')
+    if verbose:
+        print(f'\nALL CUSTOMERS STARTED\n')
 
-    print('\nDONE! ALL NODES STARTED in %5.3f seconds\n' % (time.time() - _begin))
+    print('\nALL NODES STARTED in %5.3f seconds\n' % (time.time() - _begin))
 
 
-def stop_all_nodes(event_loop):
+def stop_all_nodes(event_loop, verbose=False):
     _begin = time.time()
-    print('\nstop all nodes\n')
+    if verbose:
+        print('\nstop all nodes\n')
 
     event_loop.run_until_complete(asyncio.gather(*[
-        tsup.stop_daemon_async(customer['name'], event_loop) for customer in ALL_ROLES.get('customer', [])
+        tsup.stop_daemon_async(customer['name'], event_loop, verbose=verbose) for customer in ALL_ROLES.get('customer', [])
     ]))
-    print(f'\nALL CUSTOMERS STOPPED\n')
+    if verbose:
+        print(f'\nALL CUSTOMERS STOPPED\n')
 
     event_loop.run_until_complete(asyncio.gather(*[
-        tsup.stop_daemon_async(message_broker['name'], event_loop) for message_broker in ALL_ROLES.get('message-broker', [])
+        tsup.stop_daemon_async(message_broker['name'], event_loop, verbose=verbose) for message_broker in ALL_ROLES.get('message-broker', [])
     ]))
-    print(f'\nALL MESSAGE BROKERS STOPPED\n')
+    if verbose:
+        print(f'\nALL MESSAGE BROKERS STOPPED\n')
 
     event_loop.run_until_complete(asyncio.gather(*[
-        tsup.stop_daemon_async(supplier['name'], event_loop) for supplier in ALL_ROLES.get('supplier', [])
+        tsup.stop_daemon_async(supplier['name'], event_loop, verbose=verbose) for supplier in ALL_ROLES.get('supplier', [])
     ]))
-    print(f'\nALL SUPPLIERS STOPPED\n')
+    if verbose:
+        print(f'\nALL SUPPLIERS STOPPED\n')
 
     event_loop.run_until_complete(asyncio.gather(*[
-        tsup.stop_daemon_async(proxy_server['name'], event_loop) for proxy_server in ALL_ROLES.get('proxy-server', [])
+        tsup.stop_daemon_async(proxy_server['name'], event_loop, verbose=verbose) for proxy_server in ALL_ROLES.get('proxy-server', [])
     ]))
-    print(f'\nALL PROXY SERVERS STOPPED\n')
+    if verbose:
+        print(f'\nALL PROXY SERVERS STOPPED\n')
 
     event_loop.run_until_complete(asyncio.gather(*[
-        tsup.stop_daemon_async(stunsrv['name'], event_loop) for stunsrv in ALL_ROLES.get('stun-server', [])
+        tsup.stop_daemon_async(stunsrv['name'], event_loop, verbose=verbose) for stunsrv in ALL_ROLES.get('stun-server', [])
     ]))
-    print(f'\nALL STUN SERVERS STOPPED\n')
+    if verbose:
+        print(f'\nALL STUN SERVERS STOPPED\n')
 
     event_loop.run_until_complete(asyncio.gather(*[
-        tsup.stop_daemon_async(idsrv['name'], event_loop) for idsrv in ALL_ROLES.get('identity-server', [])
+        tsup.stop_daemon_async(idsrv['name'], event_loop, verbose=verbose) for idsrv in ALL_ROLES.get('identity-server', [])
     ]))
-    print(f'\nALL ID SERVERS STOPPED\n')
+    if verbose:
+        print(f'\nALL ID SERVERS STOPPED\n')
 
     event_loop.run_until_complete(asyncio.gather(*[
-        tsup.stop_daemon_async(dhtseed['name'], event_loop) for dhtseed in ALL_ROLES.get('dht-seed', [])
+        tsup.stop_daemon_async(dhtseed['name'], event_loop, verbose=verbose) for dhtseed in ALL_ROLES.get('dht-seed', [])
     ]))
-    print('\nALL DHT SEEDS STOPPED\n')
+    if verbose:
+        print('\nALL DHT SEEDS STOPPED\n')
 
     print('\nALL NODES STOPPED in %5.3f seconds\n' % (time.time() - _begin))
 
@@ -170,7 +186,7 @@ def kill_all_nodes():
 
 
 def report_all_nodes(event_loop):
-    print('\n\nSTDOUT:')
+    # print('\n\nSTDOUT:')
     # for node in ['customer_restore', ]:
     #     print('\n\nSTDOUT on [%s]:' % node)
     #     ts.print_stdout_one_node(node)
@@ -180,11 +196,12 @@ def report_all_nodes(event_loop):
     #     print('\n\nDHT records on [%s]:' % node)
     #     keywords.dht_db_dump_v1(node)
 
-    print('\n\nALL EXCEPTIONS:')
+    print('\n\nEXCEPTIONS:')
     failed = False 
     for node in ALL_NODES:
         failed = failed or tsup.print_exceptions_one_node(node)
 
+    print('\n\nREPORT:')
     for node in ALL_NODES:
         tsup.report_one_node(node)
 

@@ -74,8 +74,6 @@ from crypt import my_keys
 
 from dht import dht_relations
 
-from contacts import contactsdb
-
 from stream import message
 
 from p2p import commands
@@ -585,7 +583,7 @@ class GroupMember(automat.Automat):
         else:
             if self.outgoing_messages[outgoing_counter]['attempts'] >= CRITICAL_PUSH_MESSAGE_FAILS:
                 lg.err('failed sending message to broker %r after %d attempts' % (
-                    self.active_broker_id, self.outgoing_messages[outgoing_counter]['attempts'], ))
+                    self.active_broker_id, self.outgoing_messages[outgoing_counter]['attempts'] + 1, ))
                 self.outgoing_messages[outgoing_counter]['attempts'] = 0
                 self.automat('push-message-failed')
                 return
@@ -691,7 +689,7 @@ class GroupMember(automat.Automat):
             self._do_lookup_connect_brokers(
                 hiring_positions=list(self.missing_brokers),
                 available_brokers=brokers_to_be_connected,
-                exclude_idurls=known_brokers,
+                exclude_idurls=list(filter(None, known_brokers)),
             )
             return
         self.rotated_brokers = [None, ] * groups.REQUIRED_BROKERS_COUNT
@@ -708,7 +706,9 @@ class GroupMember(automat.Automat):
             else:
                 self.missing_brokers.add(pos)
         lg.info('brokers were rotated, starting new lookups and connect to existing brokers')
-        exclude_from_lookup.update(set(known_brokers))
+        exclude_from_lookup.update(set(filter(None, known_brokers)))
+        if self.dead_broker_id:
+            exclude_from_lookup.add(global_id.glob2idurl(self.dead_broker_id, as_field=False))
         self._do_lookup_connect_brokers(
             hiring_positions=list(self.missing_brokers),
             available_brokers=brokers_to_be_connected,
@@ -735,6 +735,8 @@ class GroupMember(automat.Automat):
         if _Debug:
             lg.args(_DebugLevel, broker_pos=broker_pos, index=index, hiring_positions=hiring_positions,
                     skip_brokers=skip_brokers, prev_result=prev_result, connecting_brokers=self.connecting_brokers)
+        if prev_result and id_url.is_not_in(prev_result, skip_brokers, as_field=False, as_bin=True):
+            skip_brokers.append(prev_result)
         d = self._do_lookup_one_broker(broker_pos, skip_brokers)
         d.addCallback(self._do_hire_next_broker, index + 1, hiring_positions, skip_brokers)
         if _Debug:
@@ -751,7 +753,8 @@ class GroupMember(automat.Automat):
         for connected_broker_idurl in self.connected_brokers.values():
             exclude_brokers.add(id_url.to_bin(connected_broker_idurl))
         for skip_idurl in skip_brokers:
-            exclude_brokers.add(skip_idurl)
+            if skip_idurl:
+                exclude_brokers.add(id_url.to_bin(skip_idurl))
         if self.dead_broker_id:
             exclude_brokers.add(global_id.glob2idurl(self.dead_broker_id, as_field=False))
         result = p2p_service_seeker.connect_random_node(
@@ -850,15 +853,16 @@ class GroupMember(automat.Automat):
             lg.args(_DebugLevel, idurl=idurl, broker_pos=broker_pos, connecting_brokers=self.connecting_brokers,
                     hired_brokers=self.hired_brokers, connected_brokers=self.connected_brokers)
         if self.connecting_brokers:
-            return
+            return idurl
         if not self.connected_brokers:
             lg.err('failed to hire any brokers')
             self.automat('brokers-failed')
-            return
+            return idurl
         if self.rotated_brokers:
             self.automat('brokers-rotated')
         else:
             self.automat('brokers-hired')
+        return idurl
 
     def _on_broker_connected(self, idurl, broker_pos):
         if _Debug:

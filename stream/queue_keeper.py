@@ -362,12 +362,11 @@ class QueueKeeper(automat.Automat):
             expected_broker_position = self.new_possible_position
         if expected_broker_position < 0:
             expected_broker_position = 0
-        if _Debug:
-            lg.args(_DebugLevel, expected_broker_position=expected_broker_position, dht_read_use_cache=self.dht_read_use_cache,
-                    has_rotated=self.has_rotated)
         use_cache = self.dht_read_use_cache
         if self.has_rotated:
             use_cache = False
+        if _Debug:
+            lg.args(_DebugLevel, expected_position=expected_broker_position, use_cache=use_cache, has_rotated=self.has_rotated)
         result = dht_relations.read_customer_message_brokers(
             customer_idurl=self.customer_idurl,
             positions=list(range(groups.REQUIRED_BROKERS_COUNT)),

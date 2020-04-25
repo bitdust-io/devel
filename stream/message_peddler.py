@@ -1415,7 +1415,7 @@ class MessagePeddler(automat.Automat):
         old_idurl = evt.data['old_idurl']
         new_id = global_id.idurl2glob(evt.data['new_idurl'])
         queues_to_be_closed = []
-        if old_idurl in customers().keys():
+        if id_url.is_in(old_idurl, customers().keys(), as_field=False):
             for queue_id in customers()[old_idurl]:
                 queues_to_be_closed.append(queue_id)
         self._do_close_streams(queues_to_be_closed)
@@ -1424,11 +1424,11 @@ class MessagePeddler(automat.Automat):
             rotated_producers = []
             for cur_consumer_id in streams()[queue_id]['consumers']:
                 consumer_idurl = global_id.glob2idurl(cur_consumer_id)
-                if consumer_idurl == old_idurl:
+                if id_url.to_bin(consumer_idurl) == id_url.to_bin(old_idurl):
                     rotated_consumers.append((cur_consumer_id, new_id, ))
             for cur_producer_id in streams()[queue_id]['producers']:
                 producer_idurl = global_id.glob2idurl(cur_producer_id)
-                if producer_idurl == old_idurl:
+                if id_url.to_bin(producer_idurl) == old_idurl:
                     rotated_producers.append((cur_producer_id, new_id, ))
             for old_consumer_id, new_consumer_id in rotated_consumers:
                 old_consumer_info = streams()[queue_id]['consumers'][old_consumer_id]

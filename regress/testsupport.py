@@ -986,13 +986,26 @@ async def start_one_message_broker_async(supplier, loop):
 
 def report_one_node(node):
     main_log = run_ssh_command_and_wait(node, 'cat /root/.bitdust/logs/main.log', verbose=False)[0].strip()
-    num_warnings = main_log.count('WARNING')
+    num_infos = main_log.count('  INFO ')
+    num_warnings = main_log.count('  WARNING ')
     num_errors = main_log.count('ERROR!!!')
     num_exceptions = main_log.count('Exception:')
     num_tracebacks = main_log.count('Traceback')
     num_failures = main_log.count('Failure')
-    print(f'[{node}]  Warnings: {num_warnings}     Errors: {num_errors}    Tracebacks: {num_tracebacks}     '
-          f'Failures: {num_failures}    Exceptions: {num_exceptions}')
+    api_log = run_ssh_command_and_wait(node, 'cat /root/.bitdust/logs/api.log', verbose=False)[0].strip()
+    num_apis = api_log.coun(' *** ')
+    packet_log = run_ssh_command_and_wait(node, 'cat /root/.bitdust/logs/packet.log', verbose=False)[0].strip()
+    num_packet_out = packet_log.count(' OUTBOX ')
+    num_packet_in = packet_log.count(' RECEIVE ')
+    num_packet_relay_out = packet_log.count('RELAY OUT')
+    num_packet_relay_in = packet_log.count('RELAY IN')
+    event_log = run_ssh_command_and_wait(node, 'cat /root/.bitdust/logs/event.log', verbose=False)[0].strip()
+    num_events = event_log.count('\n')
+    print(f'[{node}]  api calls: {num_apis}   events: {num_events}'
+          f'   packets out: {num_packet_out}   packets in: {num_packet_in}'
+          f'   re-routed out: {num_packet_relay_out}   re-routed in: {num_packet_relay_in}'
+          f'   infos: {num_infos}   warnings: {num_warnings}   errors: {num_errors}'
+          f'   tracebacks: {num_tracebacks}   failures: {num_failures}   exceptions: {num_exceptions}')
     return num_exceptions
 
 
