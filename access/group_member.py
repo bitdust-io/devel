@@ -679,7 +679,9 @@ class GroupMember(automat.Automat):
             lg.args(_DebugLevel, known_brokers=known_brokers, missing_brokers=self.missing_brokers)
         if top_broker_pos is None:
             lg.info('did not found any existing brokers, starting new lookups')
-            self._do_lookup_connect_brokers(hiring_positions=list(range(groups.REQUIRED_BROKERS_COUNT)))
+            self._do_lookup_connect_brokers(
+                hiring_positions=list(range(groups.REQUIRED_BROKERS_COUNT)),
+            )
             return
         if top_broker_pos == 0:
             if self.missing_brokers:
@@ -689,10 +691,12 @@ class GroupMember(automat.Automat):
             self._do_lookup_connect_brokers(
                 hiring_positions=list(self.missing_brokers),
                 available_brokers=brokers_to_be_connected,
+                exclude_idurls=known_brokers,
             )
             return
         self.rotated_brokers = [None, ] * groups.REQUIRED_BROKERS_COUNT
         brokers_to_be_connected = []
+        exclude_from_lookup = set()
         self.missing_brokers = set()
         for pos in list(range(groups.REQUIRED_BROKERS_COUNT)):
             known_pos = pos + top_broker_pos
@@ -700,33 +704,37 @@ class GroupMember(automat.Automat):
                 self.rotated_brokers[pos] = known_brokers[known_pos]
             if self.rotated_brokers[pos]:
                 brokers_to_be_connected.append((pos, self.rotated_brokers[pos], ))
+                exclude_from_lookup.add(self.rotated_brokers[pos])
             else:
                 self.missing_brokers.add(pos)
         lg.info('brokers were rotated, starting new lookups and connect to existing brokers')
+        exclude_from_lookup.update(set(known_brokers))
         self._do_lookup_connect_brokers(
             hiring_positions=list(self.missing_brokers),
             available_brokers=brokers_to_be_connected,
+            exclude_idurls=list(exclude_from_lookup),
         )
 
-    def _do_lookup_connect_brokers(self, hiring_positions, available_brokers=[]):
+    def _do_lookup_connect_brokers(self, hiring_positions, available_brokers=[], exclude_idurls=[]):
         if _Debug:
-            lg.args(_DebugLevel, hiring_positions=hiring_positions, available_brokers=available_brokers)
+            lg.args(_DebugLevel, hiring_positions=hiring_positions, available_brokers=available_brokers, exclude_idurls=exclude_idurls)
         self.connecting_brokers.update(set(hiring_positions))
         for broker_pos, broker_idurl in available_brokers:
             self.connecting_brokers.add(broker_pos)
             self._do_request_service_one_broker(broker_idurl, broker_pos)
         if hiring_positions:
-            self._do_hire_next_broker(None, 0, hiring_positions, skip_brokers=available_brokers)
+            self._do_hire_next_broker(None, 0, hiring_positions, skip_brokers=exclude_idurls)
 
     def _do_hire_next_broker(self, prev_result, index, hiring_positions, skip_brokers):
         if index >= len(hiring_positions):
             if _Debug:
-                lg.args(_DebugLevel, index=index, hiring_positions=hiring_positions, skip_brokers=skip_brokers, prev_result=prev_result)
+                lg.args(_DebugLevel, index=index, hiring_positions=hiring_positions, skip_brokers=skip_brokers,
+                        prev_result=prev_result, connecting_brokers=self.connecting_brokers)
             return
         broker_pos = hiring_positions[index]
         if _Debug:
             lg.args(_DebugLevel, broker_pos=broker_pos, index=index, hiring_positions=hiring_positions,
-                    skip_brokers=skip_brokers, prev_result=prev_result)
+                    skip_brokers=skip_brokers, prev_result=prev_result, connecting_brokers=self.connecting_brokers)
         d = self._do_lookup_one_broker(broker_pos, skip_brokers)
         d.addCallback(self._do_hire_next_broker, index + 1, hiring_positions, skip_brokers)
         if _Debug:
@@ -734,6 +742,8 @@ class GroupMember(automat.Automat):
         d.addErrback(self._do_hire_next_broker, index + 1, hiring_positions, skip_brokers)
 
     def _do_lookup_one_broker(self, broker_pos, skip_brokers):
+        if _Debug:
+            lg.args(_DebugLevel, broker_pos=broker_pos, skip_brokers=skip_brokers, connecting_brokers=self.connecting_brokers)
         exclude_brokers = set()
         for known_broker_id in groups.known_brokers(self.group_creator_id):
             if known_broker_id:
@@ -757,6 +767,8 @@ class GroupMember(automat.Automat):
         return result
 
     def _do_request_service_one_broker(self, broker_idurl, broker_pos):
+        if _Debug:
+            lg.args(_DebugLevel, broker_pos=broker_pos, broker_idurl=broker_idurl, connecting_brokers=self.connecting_brokers)
         result = p2p_service_seeker.connect_known_node(
             remote_idurl=broker_idurl,
             service_name='service_message_broker',
@@ -788,7 +800,15 @@ class GroupMember(automat.Automat):
                     supplier_id=self.active_broker_id,
                 )
         if self.active_broker_id is None:
-            raise Exception('no brokers found or hired')
+            if 0 in self.hired_brokers:
+                self.active_broker_id = self.hired_brokers[0]
+                self.active_queue_id = global_id.MakeGlobalQueueID(
+                    queue_alias=self.group_queue_alias,
+                    owner_id=self.group_creator_id,
+                    supplier_id=self.active_broker_id,
+                )
+        if self.active_broker_id is None:
+            raise Exception('no active broker is connected after event %r' % event)
         self.rotated_brokers = []
         self.hired_brokers.clear()
         self.missing_brokers.clear()
@@ -822,8 +842,6 @@ class GroupMember(automat.Automat):
         self.automat('brokers-found', brokers_info_list)
 
     def _on_broker_hired(self, idurl, broker_pos):
-        if _Debug:
-            lg.args(_DebugLevel, idurl=idurl, broker_pos=broker_pos)
         self.hired_brokers[broker_pos] = idurl or None
         if idurl:
             self.connected_brokers[broker_pos] = idurl 
@@ -844,7 +862,7 @@ class GroupMember(automat.Automat):
 
     def _on_broker_connected(self, idurl, broker_pos):
         if _Debug:
-            lg.args(_DebugLevel, idurl=idurl, broker_pos=broker_pos)
+            lg.args(_DebugLevel, idurl=idurl, broker_pos=broker_pos, connecting_brokers=self.connecting_brokers)
         if idurl:
             self.connected_brokers[broker_pos] = idurl
         self.connecting_brokers.discard(broker_pos)

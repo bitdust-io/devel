@@ -29,11 +29,7 @@ import json
 
 #------------------------------------------------------------------------------
 
-from testsupport import open_one_tunnel_async, clean_one_node_async, clean_one_customer_async, \
-    start_one_dht_seed, start_one_identity_server_async, start_one_stun_server_async, start_one_proxy_server_async, \
-    start_one_supplier_async, start_one_customer_async, stop_daemon_async, start_one_message_broker_async, \
-    run_ssh_command_and_wait, print_exceptions_one_node, report_one_node, collect_coverage_one_node_async, \
-    log_network_info_one_node_async
+import testsupport as tsup
 
 #------------------------------------------------------------------------------
 
@@ -56,7 +52,7 @@ def open_all_tunnels(event_loop):
     _begin = time.time()
     print('\nStarting all SSH tunnels\n')
     event_loop.run_until_complete(asyncio.gather(*[
-        open_one_tunnel_async(node, 9000+pos, event_loop) for pos, node in enumerate(ALL_NODES)
+        tsup.open_one_tunnel_async(node, 9000+pos, event_loop) for pos, node in enumerate(ALL_NODES)
     ]))
     print('\nAll SSH tunnels opened in %5.3f seconds\n' % (time.time() - _begin))
 
@@ -65,10 +61,10 @@ def clean_all_nodes(event_loop, skip_checks=False):
     _begin = time.time()
     print('\nCleaning all nodes')
     event_loop.run_until_complete(asyncio.gather(*[
-        clean_one_node_async(node, event_loop=event_loop) for node in ALL_NODES
+        tsup.clean_one_node_async(node, event_loop=event_loop) for node in ALL_NODES
     ]))
     event_loop.run_until_complete(asyncio.gather(*[
-        clean_one_customer_async(node['name'], event_loop=event_loop) for node in ALL_ROLES['customer']
+        tsup.clean_one_customer_async(node['name'], event_loop=event_loop) for node in ALL_ROLES['customer']
     ]))
     print('\n\nAll nodes cleaned in %5.3f seconds\n' % (time.time() - _begin))
 
@@ -79,36 +75,36 @@ def start_all_nodes(event_loop):
 
     for number, dhtseed in enumerate(ALL_ROLES.get('dht-seed', [])):
         # first seed to be started immediately, all other seeds must wait a bit before start
-        start_one_dht_seed(dhtseed, wait_seconds=(3 if number > 0 else 0))
+        tsup.start_one_dht_seed(dhtseed, wait_seconds=(3 if number > 0 else 0))
     print('\nALL DHT SEEDS STARTED\n')
 
     event_loop.run_until_complete(asyncio.gather(*[
-        start_one_identity_server_async(idsrv, event_loop) for idsrv in ALL_ROLES.get('identity-server', [])
+        tsup.start_one_identity_server_async(idsrv, event_loop) for idsrv in ALL_ROLES.get('identity-server', [])
     ]))
     print(f'\nALL ID SERVERS STARTED\n')
 
     event_loop.run_until_complete(asyncio.gather(*[
-        start_one_stun_server_async(stunsrv, event_loop) for stunsrv in ALL_ROLES.get('stun-server', [])
+        tsup.start_one_stun_server_async(stunsrv, event_loop) for stunsrv in ALL_ROLES.get('stun-server', [])
     ]))
     print(f'\nALL STUN SERVERS STARTED\n')
 
     event_loop.run_until_complete(asyncio.gather(*[
-        start_one_proxy_server_async(proxy_server, event_loop) for proxy_server in ALL_ROLES.get('proxy-server', [])
+        tsup.start_one_proxy_server_async(proxy_server, event_loop) for proxy_server in ALL_ROLES.get('proxy-server', [])
     ]))
     print(f'\nALL PROXY SERVERS STARTED\n')
 
     event_loop.run_until_complete(asyncio.gather(*[
-        start_one_supplier_async(supplier, event_loop) for supplier in ALL_ROLES.get('supplier', [])
+        tsup.start_one_supplier_async(supplier, event_loop) for supplier in ALL_ROLES.get('supplier', [])
     ]))
     print(f'\nALL SUPPLIERS STARTED\n')
 
     event_loop.run_until_complete(asyncio.gather(*[
-        start_one_message_broker_async(message_broker, event_loop) for message_broker in ALL_ROLES.get('message-broker', [])
+        tsup.start_one_message_broker_async(message_broker, event_loop) for message_broker in ALL_ROLES.get('message-broker', [])
     ]))
     print(f'\nALL MESSAGE BROKERS STARTED\n')
 
     event_loop.run_until_complete(asyncio.gather(*[
-        start_one_customer_async(customer, event_loop, sleep_before_start=i*3) for i, customer in enumerate(ALL_ROLES.get('customer', []))
+        tsup.start_one_customer_async(customer, event_loop, sleep_before_start=i*3) for i, customer in enumerate(ALL_ROLES.get('customer', []))
     ]))
     print(f'\nALL CUSTOMERS STARTED\n')
 
@@ -118,9 +114,42 @@ def start_all_nodes(event_loop):
 def stop_all_nodes(event_loop):
     _begin = time.time()
     print('\nstop all nodes\n')
+
     event_loop.run_until_complete(asyncio.gather(*[
-        stop_daemon_async(node, event_loop) for node in ALL_NODES
+        tsup.stop_daemon_async(customer['name'], event_loop) for customer in ALL_ROLES.get('customer', [])
     ]))
+    print(f'\nALL CUSTOMERS STOPPED\n')
+
+    event_loop.run_until_complete(asyncio.gather(*[
+        tsup.stop_daemon_async(message_broker['name'], event_loop) for message_broker in ALL_ROLES.get('message-broker', [])
+    ]))
+    print(f'\nALL MESSAGE BROKERS STOPPED\n')
+
+    event_loop.run_until_complete(asyncio.gather(*[
+        tsup.stop_daemon_async(supplier['name'], event_loop) for supplier in ALL_ROLES.get('supplier', [])
+    ]))
+    print(f'\nALL SUPPLIERS STOPPED\n')
+
+    event_loop.run_until_complete(asyncio.gather(*[
+        tsup.stop_daemon_async(proxy_server['name'], event_loop) for proxy_server in ALL_ROLES.get('proxy-server', [])
+    ]))
+    print(f'\nALL PROXY SERVERS STOPPED\n')
+
+    event_loop.run_until_complete(asyncio.gather(*[
+        tsup.stop_daemon_async(stunsrv['name'], event_loop) for stunsrv in ALL_ROLES.get('stun-server', [])
+    ]))
+    print(f'\nALL STUN SERVERS STOPPED\n')
+
+    event_loop.run_until_complete(asyncio.gather(*[
+        tsup.stop_daemon_async(idsrv['name'], event_loop) for idsrv in ALL_ROLES.get('identity-server', [])
+    ]))
+    print(f'\nALL ID SERVERS STOPPED\n')
+
+    event_loop.run_until_complete(asyncio.gather(*[
+        tsup.stop_daemon_async(dhtseed['name'], event_loop) for dhtseed in ALL_ROLES.get('dht-seed', [])
+    ]))
+    print('\nALL DHT SEEDS STOPPED\n')
+
     print('\nALL NODES STOPPED in %5.3f seconds\n' % (time.time() - _begin))
 
 
@@ -128,7 +157,7 @@ def log_network_info_all_nodes(event_loop):
     _begin = time.time()
     print('\nget network info from all nodes\n')
     event_loop.run_until_complete(asyncio.gather(*[
-        log_network_info_one_node_async(node, event_loop) for node in ALL_NODES
+        tsup.log_network_info_one_node_async(node, event_loop) for node in ALL_NODES
     ]))
     print('\nALL NODES STOPPED in %5.3f seconds\n' % (time.time() - _begin))
 
@@ -136,7 +165,7 @@ def log_network_info_all_nodes(event_loop):
 def kill_all_nodes():
     for node in ALL_NODES:
         print('Shutdown %s' % node)
-        run_ssh_command_and_wait(node, 'pkill -e sshd')
+        tsup.run_ssh_command_and_wait(node, 'pkill -e sshd')
     print('All nodes stopped')
 
 
@@ -154,10 +183,10 @@ def report_all_nodes(event_loop):
     print('\n\nALL EXCEPTIONS:')
     failed = False 
     for node in ALL_NODES:
-        failed = failed or print_exceptions_one_node(node)
+        failed = failed or tsup.print_exceptions_one_node(node)
 
     for node in ALL_NODES:
-        report_one_node(node)
+        tsup.report_one_node(node)
 
     assert not failed, 'found some critical errors'
 
@@ -166,7 +195,7 @@ def collect_coverage_all_nodes(event_loop):
     _begin = time.time()
     print('\nCollecting coverage from all nodes')
     event_loop.run_until_complete(asyncio.gather(*[
-        collect_coverage_one_node_async(node, event_loop=event_loop) for node in ALL_NODES
+        tsup.collect_coverage_one_node_async(node, event_loop=event_loop) for node in ALL_NODES
     ]))
     print('\n\nAll coverage files received in  %5.3f seconds\n' % (time.time() - _begin))
 

@@ -588,52 +588,27 @@ def stop_daemon(node, skip_checks=False):
     # print(f'stop_daemon [{node}] OK\n')
 
 
-async def stop_daemon_async(node, loop, skip_checks=False):
-    bitdust_stop = await run_ssh_command_and_wait_async(node, 'bitdust stop', loop, verbose=False)
+async def stop_daemon_async(node, loop, skip_checks=False, verbose=False):
+    bitdust_stop = await run_ssh_command_and_wait_async(node, 'bitdust stop', loop, verbose=verbose)
     # print('\n' + bitdust_stop[0].strip())
     if not skip_checks:
-        assert (
+        resp = bitdust_stop[0].strip()
+        if not (
             (
-                bitdust_stop[0].strip().startswith('BitDust child processes found') and
-                bitdust_stop[0].strip().endswith('BitDust stopped')
+                resp.startswith('BitDust child processes found') and
+                resp.endswith('BitDust stopped')
             ) or (
-                bitdust_stop[0].strip().startswith('found main BitDust process:') and
-                bitdust_stop[0].strip().endswith('BitDust process finished correctly')
+                resp.startswith('found main BitDust process:') and
+                resp.endswith('BitDust process finished correctly')
             ) or (
-                bitdust_stop[0].strip() == 'BitDust is not running at the moment'
+                resp == 'BitDust is not running at the moment'
             )
-        )
+        ):
+            print('process finished with unexpected response: %r' % resp)
+            assert False, resp
     # print(f'stop_daemon [{node}] OK\n')
 
 #------------------------------------------------------------------------------
-
-async def start_identity_server_async(node, loop):
-    print(f'\nNEW IDENTITY SERVER at [{node}]\n')
-    cmd = ''
-    cmd += 'bitdust set logs/debug-level 18;'
-    cmd += 'bitdust set logs/api-enabled true;'
-    cmd += 'bitdust set logs/automat-events-enabled true;'
-    cmd += 'bitdust set logs/automat-transitions-enabled true;'
-    cmd += 'bitdust set logs/packet-enabled true;'
-    cmd += 'bitdust set personal/private-key-size 1024;'
-    cmd += 'bitdust set services/customer/enabled false;'
-    cmd += 'bitdust set services/supplier/enabled false;'
-    cmd += 'bitdust set services/message-broker/enabled false;'
-    cmd += 'bitdust set services/proxy-transport/enabled false;'
-    cmd += 'bitdust set services/proxy-server/enabled false;'
-    cmd += 'bitdust set services/private-messages/enabled false;'
-    cmd += 'bitdust set services/nodes-lookup/enabled false;'
-    cmd += 'bitdust set services/identity-propagate/enabled false;'
-    cmd += 'bitdust set services/entangled-dht/enabled false;'
-    cmd += 'bitdust set services/entangled-dht/udp-port "14441";'
-    cmd += f'bitdust set services/identity-server/host "{node}";'
-    cmd += 'bitdust set services/identity-server/enabled true;'
-    await run_ssh_command_and_wait_async(node, cmd, loop)
-    await start_daemon_async(node, loop)
-    # await get_client_certificate_async(node, loop)
-    await health_check_async(node, loop)
-    print(f'\nSTARTED IDENTITY SERVER [{node}]\n')
-
 
 def start_dht_seed(node, wait_seconds=0, dht_seeds='', attached_layers=''):
     print(f'\nNEW DHT SEED (with STUN SERVER) at [{node}]\n')
@@ -669,6 +644,34 @@ def start_dht_seed(node, wait_seconds=0, dht_seeds='', attached_layers=''):
     # get_client_certificate(node)
     health_check(node)
     print(f'\nSTARTED DHT SEED (with STUN SERVER) [{node}]\n')
+
+
+async def start_identity_server_async(node, loop):
+    print(f'\nNEW IDENTITY SERVER at [{node}]\n')
+    cmd = ''
+    cmd += 'bitdust set logs/debug-level 18;'
+    cmd += 'bitdust set logs/api-enabled true;'
+    cmd += 'bitdust set logs/automat-events-enabled true;'
+    cmd += 'bitdust set logs/automat-transitions-enabled true;'
+    cmd += 'bitdust set logs/packet-enabled true;'
+    cmd += 'bitdust set personal/private-key-size 1024;'
+    cmd += 'bitdust set services/customer/enabled false;'
+    cmd += 'bitdust set services/supplier/enabled false;'
+    cmd += 'bitdust set services/message-broker/enabled false;'
+    cmd += 'bitdust set services/proxy-transport/enabled false;'
+    cmd += 'bitdust set services/proxy-server/enabled false;'
+    cmd += 'bitdust set services/private-messages/enabled false;'
+    cmd += 'bitdust set services/nodes-lookup/enabled false;'
+    cmd += 'bitdust set services/identity-propagate/enabled false;'
+    cmd += 'bitdust set services/entangled-dht/enabled false;'
+    cmd += 'bitdust set services/entangled-dht/udp-port "14441";'
+    cmd += f'bitdust set services/identity-server/host "{node}";'
+    cmd += 'bitdust set services/identity-server/enabled true;'
+    await run_ssh_command_and_wait_async(node, cmd, loop)
+    await start_daemon_async(node, loop)
+    # await get_client_certificate_async(node, loop)
+    await health_check_async(node, loop)
+    print(f'\nSTARTED IDENTITY SERVER [{node}]\n')
 
 
 async def start_stun_server_async(node, loop, dht_seeds=''):
@@ -898,20 +901,19 @@ async def start_customer_async(node, identity_name, loop, join_network=True, num
 
 #------------------------------------------------------------------------------
 
-
-async def start_one_identity_server_async(identity_server, loop):
-    await start_identity_server_async(
-        node=identity_server['name'],
-        loop=loop,
-    )
-
-
 def start_one_dht_seed(dht_seed, wait_seconds):
     start_dht_seed(
         node=dht_seed['name'],
         dht_seeds=dht_seed.get('known_dht_seeds', ''),
         attached_layers=dht_seed.get('attached_layers', '2,3'),
         wait_seconds=wait_seconds,
+    )
+
+
+async def start_one_identity_server_async(identity_server, loop):
+    await start_identity_server_async(
+        node=identity_server['name'],
+        loop=loop,
     )
 
 
