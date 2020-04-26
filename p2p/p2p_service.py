@@ -430,7 +430,7 @@ def ListFiles(request, info):
             request.RemoteID, request.OwnerID, request.CreatorID))
 
 
-def SendListFiles(target_supplier, customer_idurl=None, key_id=None, wide=False, callbacks={}):
+def SendListFiles(target_supplier, customer_idurl=None, key_id=None, query_items=[], wide=False, callbacks={}):
     """
     This is used as a request method from your supplier : if you send him a ListFiles() packet
     he will reply you with a list of stored files in a Files() packet.
@@ -457,10 +457,12 @@ def SendListFiles(target_supplier, customer_idurl=None, key_id=None, wide=False,
         lg.warn('key %r not exist or public, my "master" key to be used with ListFiles() packet' % key_id)
         key_id = my_id.getGlobalID(key_alias='master')
     PacketID = "%s:%s" % (key_id, packetid.UniqueID(), )
-    Payload = settings.ListFilesFormat()
+    if not query_items:
+        query_items = ['*', ]
+    Payload = serialization.DictToBytes({'items': query_items, })
     if _Debug:
-        lg.out(_DebugLevel, "p2p_service.SendListFiles %r to %s with %d bytes" % (
-            PacketID, nameurl.GetName(RemoteID), len(Payload), ))
+        lg.out(_DebugLevel, "p2p_service.SendListFiles %r to %s with query : %r" % (
+            PacketID, nameurl.GetName(RemoteID), query_items, ))
     result = signed.Packet(
         Command=commands.ListFiles(),
         OwnerID=MyID,

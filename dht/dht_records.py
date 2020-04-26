@@ -70,6 +70,13 @@ LAYERS_REGISTRY = {
 
 #------------------------------------------------------------------------------
 
+RELATION_RECORD_CACHE_TTL = {
+    'nickname': 60 * 60 * 24,
+    'identity': 60 * 60,
+    'suppliers': 60 * 60 * 12,
+    'message_broker': 60 * 60 * 12,
+}
+
 _Rules = {
     'nickname': {
         'key': [{'op': 'exist', }, ],
@@ -103,11 +110,6 @@ _Rules = {
         'broker_idurl': [{'op': 'exist', }, ],
         'position': [{'op': 'exist', }, ],
     },
-    'relation': {
-        'key': [{'op': 'exist', }, ],
-        'type': [{'op': 'equal', 'arg': 'relation', }, ],
-        'revision': [{'op': 'exist', }, ],
-    },
     'skip_validation': {
         'type': [{'op': 'equal', 'arg': 'skip_validation', }, ],
     },
@@ -121,10 +123,14 @@ def get_rules(record_type):
 
 #------------------------------------------------------------------------------
 
-def get_nickname(key):
+def get_nickname(key, use_cache=True):
     if _Debug:
         lg.args(_DebugLevel, key)
-    return dht_service.get_valid_data(key, rules=get_rules('nickname'))
+    return dht_service.get_valid_data(
+        key=key,
+        rules=get_rules('nickname'),
+        use_cache_ttl=RELATION_RECORD_CACHE_TTL['nickname'] if use_cache else None,
+    )
 
 def set_nickname(key, idurl):
     if _Debug:
@@ -141,10 +147,15 @@ def set_nickname(key, idurl):
 
 #------------------------------------------------------------------------------
 
-def get_identity(idurl):
+def get_identity(idurl, use_cache=True):
     if _Debug:
         lg.args(_DebugLevel, idurl)
-    return dht_service.get_valid_data(idurl, rules=get_rules('identity'), return_details=True)
+    return dht_service.get_valid_data(
+        idurl=idurl,
+        rules=get_rules('identity'),
+        return_details=True,
+        use_cache_ttl=RELATION_RECORD_CACHE_TTL['identity'] if use_cache else None,
+    )
 
 def set_identity(idurl, raw_xml_data):
     if _Debug:
@@ -170,36 +181,7 @@ def set_udp_incoming():
 
 #------------------------------------------------------------------------------
 
-
-def get_relation(key):
-    if _Debug:
-        lg.args(_DebugLevel, key)
-    return dht_service.get_valid_data(key, rules=get_rules('relation'), return_details=True)
-
-def set_relation(key, idurl, data, prefix, index, expire=60*60):
-    # TODO: set_relation() is OBSOLETE...
-    # because of performance reasons it is better to maintain only one DHT record for each relation exclusively
-    # need to use another solution here instead of storing multiple records...  
-    # check out family_member()
-    if _Debug:
-        lg.args(_DebugLevel, key, idurl, prefix, index)
-    return dht_service.set_valid_data(
-        key=key,
-        json_data={
-            'type': 'relation',
-            'timestamp': utime.get_sec1970(),
-            'idurl': idurl,
-            'index': index,
-            'prefix': prefix,
-            'data': data,
-        },
-        rules=get_rules('relation'),
-        expire=expire,
-    )
-
-#------------------------------------------------------------------------------
-
-def get_suppliers(customer_idurl, return_details=True):
+def get_suppliers(customer_idurl, return_details=True, use_cache=True):
     if _Debug:
         lg.args(_DebugLevel, customer_idurl=customer_idurl)
     return dht_service.get_valid_data(
@@ -209,6 +191,7 @@ def get_suppliers(customer_idurl, return_details=True):
         ),
         rules=get_rules('suppliers'),
         return_details=return_details,
+        use_cache_ttl=RELATION_RECORD_CACHE_TTL['suppliers'] if use_cache else None,
     )
 
 def set_suppliers(customer_idurl, ecc_map, suppliers_list, revision=None, publisher_idurl=None, expire=60*60):
@@ -235,7 +218,7 @@ def set_suppliers(customer_idurl, ecc_map, suppliers_list, revision=None, publis
 
 #------------------------------------------------------------------------------
 
-def get_message_broker(customer_idurl, position=0, return_details=True):
+def get_message_broker(customer_idurl, position=0, return_details=True, use_cache=True):
     if _Debug:
         lg.args(_DebugLevel, customer_idurl=customer_idurl, position=position)
     return dht_service.get_valid_data(
@@ -245,6 +228,7 @@ def get_message_broker(customer_idurl, position=0, return_details=True):
         ),
         rules=get_rules('message_broker'),
         return_details=return_details,
+        use_cache_ttl=RELATION_RECORD_CACHE_TTL['message_broker'] if use_cache else None,
     )
 
 
@@ -266,5 +250,3 @@ def set_message_broker(customer_idurl, broker_idurl, position=0, revision=None, 
         expire=expire,
         collect_results=True,
     )
-
-

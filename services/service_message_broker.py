@@ -49,6 +49,7 @@ class MessageBrokerService(LocalService):
     def dependent_on(self):
         return [
             'service_private_messages',
+            'service_data_disintegration',
         ]
 
     def start(self):

@@ -588,52 +588,27 @@ def stop_daemon(node, skip_checks=False):
     # print(f'stop_daemon [{node}] OK\n')
 
 
-async def stop_daemon_async(node, loop, skip_checks=False):
-    bitdust_stop = await run_ssh_command_and_wait_async(node, 'bitdust stop', loop, verbose=False)
+async def stop_daemon_async(node, loop, skip_checks=False, verbose=False):
+    bitdust_stop = await run_ssh_command_and_wait_async(node, 'bitdust stop', loop, verbose=verbose)
     # print('\n' + bitdust_stop[0].strip())
     if not skip_checks:
-        assert (
+        resp = bitdust_stop[0].strip()
+        if not (
             (
-                bitdust_stop[0].strip().startswith('BitDust child processes found') and
-                bitdust_stop[0].strip().endswith('BitDust stopped')
+                resp.startswith('BitDust child processes found') and
+                resp.endswith('BitDust stopped')
             ) or (
-                bitdust_stop[0].strip().startswith('found main BitDust process:') and
-                bitdust_stop[0].strip().endswith('BitDust process finished correctly')
+                resp.startswith('found main BitDust process:') and
+                resp.endswith('BitDust process finished correctly')
             ) or (
-                bitdust_stop[0].strip() == 'BitDust is not running at the moment'
+                resp == 'BitDust is not running at the moment'
             )
-        )
+        ):
+            print('process finished with unexpected response: %r' % resp)
+            assert False, resp
     # print(f'stop_daemon [{node}] OK\n')
 
 #------------------------------------------------------------------------------
-
-async def start_identity_server_async(node, loop):
-    print(f'\nNEW IDENTITY SERVER at [{node}]\n')
-    cmd = ''
-    cmd += 'bitdust set logs/debug-level 18;'
-    cmd += 'bitdust set logs/api-enabled true;'
-    cmd += 'bitdust set logs/automat-events-enabled true;'
-    cmd += 'bitdust set logs/automat-transitions-enabled true;'
-    cmd += 'bitdust set logs/packet-enabled true;'
-    cmd += 'bitdust set personal/private-key-size 1024;'
-    cmd += 'bitdust set services/customer/enabled false;'
-    cmd += 'bitdust set services/supplier/enabled false;'
-    cmd += 'bitdust set services/message-broker/enabled false;'
-    cmd += 'bitdust set services/proxy-transport/enabled false;'
-    cmd += 'bitdust set services/proxy-server/enabled false;'
-    cmd += 'bitdust set services/private-messages/enabled false;'
-    cmd += 'bitdust set services/nodes-lookup/enabled false;'
-    cmd += 'bitdust set services/identity-propagate/enabled false;'
-    cmd += 'bitdust set services/entangled-dht/enabled false;'
-    cmd += 'bitdust set services/entangled-dht/udp-port "14441";'
-    cmd += f'bitdust set services/identity-server/host "{node}";'
-    cmd += 'bitdust set services/identity-server/enabled true;'
-    await run_ssh_command_and_wait_async(node, cmd, loop)
-    await start_daemon_async(node, loop)
-    # await get_client_certificate_async(node, loop)
-    await health_check_async(node, loop)
-    print(f'\nSTARTED IDENTITY SERVER [{node}]\n')
-
 
 def start_dht_seed(node, wait_seconds=0, dht_seeds='', attached_layers=''):
     print(f'\nNEW DHT SEED (with STUN SERVER) at [{node}]\n')
@@ -669,6 +644,34 @@ def start_dht_seed(node, wait_seconds=0, dht_seeds='', attached_layers=''):
     # get_client_certificate(node)
     health_check(node)
     print(f'\nSTARTED DHT SEED (with STUN SERVER) [{node}]\n')
+
+
+async def start_identity_server_async(node, loop):
+    print(f'\nNEW IDENTITY SERVER at [{node}]\n')
+    cmd = ''
+    cmd += 'bitdust set logs/debug-level 18;'
+    cmd += 'bitdust set logs/api-enabled true;'
+    cmd += 'bitdust set logs/automat-events-enabled true;'
+    cmd += 'bitdust set logs/automat-transitions-enabled true;'
+    cmd += 'bitdust set logs/packet-enabled true;'
+    cmd += 'bitdust set personal/private-key-size 1024;'
+    cmd += 'bitdust set services/customer/enabled false;'
+    cmd += 'bitdust set services/supplier/enabled false;'
+    cmd += 'bitdust set services/message-broker/enabled false;'
+    cmd += 'bitdust set services/proxy-transport/enabled false;'
+    cmd += 'bitdust set services/proxy-server/enabled false;'
+    cmd += 'bitdust set services/private-messages/enabled false;'
+    cmd += 'bitdust set services/nodes-lookup/enabled false;'
+    cmd += 'bitdust set services/identity-propagate/enabled false;'
+    cmd += 'bitdust set services/entangled-dht/enabled false;'
+    cmd += 'bitdust set services/entangled-dht/udp-port "14441";'
+    cmd += f'bitdust set services/identity-server/host "{node}";'
+    cmd += 'bitdust set services/identity-server/enabled true;'
+    await run_ssh_command_and_wait_async(node, cmd, loop)
+    await start_daemon_async(node, loop)
+    # await get_client_certificate_async(node, loop)
+    await health_check_async(node, loop)
+    print(f'\nSTARTED IDENTITY SERVER [{node}]\n')
 
 
 async def start_stun_server_async(node, loop, dht_seeds=''):
@@ -823,6 +826,7 @@ async def start_message_broker_async(node, identity_name, loop, join_network=Tru
         cmd += f'bitdust set services/proxy-transport/preferred-routers "{preferred_routers}";'
     # enable message broker service
     cmd += 'bitdust set services/message-broker/enabled true;'
+    cmd += 'bitdust set services/message-broker/archive-chunk-size 5;'
     await run_ssh_command_and_wait_async(node, cmd, loop)
     # start BitDust daemon and create new identity for supplier
     await start_daemon_async(node, loop)
@@ -897,20 +901,19 @@ async def start_customer_async(node, identity_name, loop, join_network=True, num
 
 #------------------------------------------------------------------------------
 
-
-async def start_one_identity_server_async(identity_server, loop):
-    await start_identity_server_async(
-        node=identity_server['name'],
-        loop=loop,
-    )
-
-
 def start_one_dht_seed(dht_seed, wait_seconds):
     start_dht_seed(
         node=dht_seed['name'],
         dht_seeds=dht_seed.get('known_dht_seeds', ''),
         attached_layers=dht_seed.get('attached_layers', '2,3'),
         wait_seconds=wait_seconds,
+    )
+
+
+async def start_one_identity_server_async(identity_server, loop):
+    await start_identity_server_async(
+        node=identity_server['name'],
+        loop=loop,
     )
 
 
@@ -983,13 +986,29 @@ async def start_one_message_broker_async(supplier, loop):
 
 def report_one_node(node):
     main_log = run_ssh_command_and_wait(node, 'cat /root/.bitdust/logs/main.log', verbose=False)[0].strip()
-    num_warnings = main_log.count('WARNING')
+    num_infos = main_log.count('  INFO ')
+    num_warnings = main_log.count('  WARNING ')
     num_errors = main_log.count('ERROR!!!')
     num_exceptions = main_log.count('Exception:')
     num_tracebacks = main_log.count('Traceback')
     num_failures = main_log.count('Failure')
-    print(f'[{node}]  Warnings: {num_warnings}     Errors: {num_errors}    Tracebacks: {num_tracebacks}     '
-          f'Failures: {num_failures}    Exceptions: {num_exceptions}')
+    api_log = run_ssh_command_and_wait(node, 'cat /root/.bitdust/logs/api.log', verbose=False)[0].strip()
+    num_apis = api_log.count(' *** ')
+    packet_log = run_ssh_command_and_wait(node, 'cat /root/.bitdust/logs/packet.log', verbose=False)[0].strip()
+    num_packet_out = packet_log.count('OUTBOX ')
+    num_packet_in = packet_log.count('INBOX ')
+    num_packet_relay_out = packet_log.count('RELAY OUT')
+    num_packet_relay_in = packet_log.count('RELAY IN')
+    num_packet_route_out = packet_log.count('ROUTE OUT')
+    num_packet_route_in = packet_log.count('ROUTE IN')
+    event_log = run_ssh_command_and_wait(node, 'cat /root/.bitdust/logs/event.log', verbose=False)[0].strip()
+    num_events = event_log.count('\n')
+    print(f'[{node:>18}]  api: {num_apis:<4} evt: {num_events:<4}'
+          f' out: {num_packet_out:<4} in: {num_packet_in:<4}'
+          f' prox-out: {num_packet_relay_out:<4} prox-in: {num_packet_relay_in:<4}'
+          f' re-out: {num_packet_route_out:<4} re-in: {num_packet_route_in:<4}'
+          f' inf: {num_infos:<4} warn: {num_warnings:<4} err: {num_errors:<4}'
+          f' trcbk: {num_tracebacks:<4} fails: {num_failures:<4} excepts: {num_exceptions:<4}')
     return num_exceptions
 
 

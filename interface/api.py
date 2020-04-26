@@ -1055,14 +1055,14 @@ def file_exists(remote_path):
     remotePath = bpio.remotePath(norm_path['path'])
     customer_idurl = norm_path['idurl']
     if customer_idurl not in backup_fs.known_customers():
-        return OK({'exist': False, }, message='customer "%s" not found' % customer_idurl, )
+        return OK({'exist': False, 'path_id': None, }, message='customer "%s" not found' % customer_idurl, )
     pathID = backup_fs.ToID(remotePath, iter=backup_fs.fs(customer_idurl))
     if not pathID:
-        return OK({'exist': False, }, message='path "%s" was not found in catalog' % remotePath, )
+        return OK({'exist': False, 'path_id': None, }, message='path "%s" was not found in catalog' % remotePath, )
     item = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(customer_idurl))
     if not item:
-        return OK({'exist': False, }, message='item "%s" is not found in catalog' % pathID, )
-    return OK({'exist': True, }, )
+        return OK({'exist': False, 'path_id': None, }, message='item "%s" is not found in catalog' % pathID, )
+    return OK({'exist': True, 'path_id': pathID, }, )
 
 
 def file_info(remote_path, include_uploads=True, include_downloads=True):
@@ -2102,7 +2102,11 @@ def group_create(creator_id=None, key_size=2048, label=''):
     key_info = my_keys.get_key_info(group_key_id, include_private=False)
     key_info.pop('include_private', None)
     key_info['group_key_id'] = key_info.pop('key_id')
-    return OK(key_info, message='new group "%s" was created successfully' % group_key_id)
+    ret = Deferred()
+    d = groups.send_group_pub_key_to_suppliers(group_key_id)
+    d.addCallback(lambda results: ret.callback(OK(key_info, message='new group "%s" was created successfully' % group_key_id)))
+    d.addErrback(lambda err: ret.callback(ERROR('failed to deliver group public key to my suppliers')))
+    return ret
 
 
 def group_join(group_key_id):
@@ -2151,10 +2155,15 @@ def group_join(group_key_id):
         else:
             existing_group_member = group_member.GroupMember(group_key_id)
             started_group_members.append(existing_group_member)
+        if existing_group_member.state in ['DHT_READ?', 'BROKERS?', 'QUEUE?', 'IN_SYNC!', ]:
+            connecting_word = 'active' if existing_group_member.state == 'IN_SYNC!' else 'connecting'
+            ret.callback(OK(existing_group_member.to_json(), 'group "%s" already %s' % (group_key_id, connecting_word, ), api_method='group_join'))
+            return None
         existing_group_member.addStateChangedCallback(_on_group_member_state_changed)
         if started_group_members:
             started_group_members[0].automat('init')
         existing_group_member.automat('join')
+        return None
 
     def _do_cache_creator_idurl():
         from contacts import identitycache
@@ -2554,7 +2563,7 @@ def suppliers_dht_lookup(customer_idurl_or_global_id):
             customer_idurl = global_id.GlobalUserToIDURL(customer_idurl, as_field=False)
     customer_idurl = id_url.field(customer_idurl)
     ret = Deferred()
-    d = dht_relations.read_customer_suppliers(customer_idurl, as_fields=False)
+    d = dht_relations.read_customer_suppliers(customer_idurl, as_fields=False, use_cache=False)
     d.addCallback(lambda result: ret.callback(RESULT(result, api_method='suppliers_dht_lookup')))
     d.addErrback(lambda err: ret.callback(ERROR(err)))
     return ret
@@ -3797,35 +3806,41 @@ def network_connected(wait_timeout=5):
     from automats import automat
     ret = Deferred()
 
-    p2p_connector_lookup = automat.find('p2p_connector')
-    if p2p_connector_lookup:
-        p2p_connector_machine = automat.objects().get(p2p_connector_lookup[0])
-        if p2p_connector_machine and p2p_connector_machine.state == 'CONNECTED':
-            proxy_receiver_lookup = automat.find('proxy_receiver')
-            if proxy_receiver_lookup:
-                proxy_receiver_machine = automat.objects().get(proxy_receiver_lookup[0])
-                if proxy_receiver_machine and proxy_receiver_machine.state == 'LISTEN':
-                    wait_timeout_defer = Deferred()
-                    wait_timeout_defer.addBoth(lambda _: ret.callback(OK({
-                        'service_network': 'started',
-                        'service_gateway': 'started',
-                        'service_p2p_hookups': 'started',
-                        'service_proxy_transport': 'started',
-                        'proxy_receiver_state': proxy_receiver_machine.state,
-                    }, api_method='network_connected')))
-                    wait_timeout_defer.addTimeout(wait_timeout, clock=reactor)
+    if driver.is_enabled('service_proxy_transport'):
+        p2p_connector_lookup = automat.find('p2p_connector')
+        if p2p_connector_lookup:
+            p2p_connector_machine = automat.objects().get(p2p_connector_lookup[0])
+            if p2p_connector_machine and p2p_connector_machine.state == 'CONNECTED':
+                proxy_receiver_lookup = automat.find('proxy_receiver')
+                if proxy_receiver_lookup:
+                    proxy_receiver_machine = automat.objects().get(proxy_receiver_lookup[0])
+                    if proxy_receiver_machine and proxy_receiver_machine.state == 'LISTEN':
+                        # service_proxy_transport() is enabled, proxy_receiver() is listening: all good
+                        wait_timeout_defer = Deferred()
+                        wait_timeout_defer.addBoth(lambda _: ret.callback(OK({
+                            'service_network': 'started',
+                            'service_gateway': 'started',
+                            'service_p2p_hookups': 'started',
+                            'service_proxy_transport': 'started',
+                            'proxy_receiver_state': proxy_receiver_machine.state,
+                        }, api_method='network_connected')))
+                        wait_timeout_defer.addTimeout(wait_timeout, clock=reactor)
+                        return ret
+                else:
+                    # service_proxy_transport() is enabled, but proxy_receiver() is not ready yet: must wait a bit
+#                     wait_timeout_defer = Deferred()
+#                     wait_timeout_defer.addBoth(lambda _: ret.callback(OK({
+#                         'service_network': 'started',
+#                         'service_gateway': 'started',
+#                         'service_p2p_hookups': 'started',
+#                         'service_proxy_transport': 'not started',
+#                         'p2p_connector_state': p2p_connector_machine.state,
+#                     }, api_method='network_connected')))
+#                     wait_timeout_defer.addTimeout(wait_timeout, clock=reactor)
+#                     return ret
+                    lg.warn('disconnected, reason is proxy_receiver() not started yet')
+                    ret.callback(ERROR('disconnected', reason='proxy_receiver_not_started', api_method='network_connected'))
                     return ret
-            else:
-                wait_timeout_defer = Deferred()
-                wait_timeout_defer.addBoth(lambda _: ret.callback(OK({
-                    'service_network': 'started',
-                    'service_gateway': 'started',
-                    'service_p2p_hookups': 'started',
-                    'service_proxy_transport': 'disabled',
-                    'p2p_connector_state': p2p_connector_machine.state,
-                }, api_method='network_connected')))
-                wait_timeout_defer.addTimeout(wait_timeout, clock=reactor)
-                return ret
 
     if not my_id.isLocalIdentityReady():
         lg.warn('local identity is not valid or not exist')
@@ -4258,7 +4273,7 @@ def dht_user_random(layer_id=0, count=1):
     return ret
 
 
-def dht_value_get(key, record_type='skip_validation', layer_id=0):
+def dht_value_get(key, record_type='skip_validation', layer_id=0, use_cache_ttl=None):
     if not driver.is_on('service_entangled_dht'):
         return ERROR('service_entangled_dht() is not started')
     from dht import dht_service
@@ -4305,6 +4320,7 @@ def dht_value_get(key, record_type='skip_validation', layer_id=0):
         raise_for_result=False,
         return_details=True,
         layer_id=layer_id,
+        use_cache_ttl=use_cache_ttl,
     )
     d.addCallback(_cb)
     d.addErrback(_eb)

@@ -902,12 +902,6 @@ def APICertificatesDir():
     return os.path.join(BaseDir(), 'blockchain')
 
 
-def DHTDataDir():
-    """
-    """
-    return os.path.join(BaseDir(), 'dht')
-
-
 def ServicesDataDir():
     """
     """
@@ -1285,12 +1279,6 @@ def ChatMessagesHistoryDatabaseFile():
     """
     """
     return os.path.join(ChatMessagesDir(), 'local.db')
-
-
-def DHTDataLayerFile(layer_index):
-    """
-    """
-    return os.path.join(DHTDataDir(), 'db_%d' % layer_index)
 
 #------------------------------------------------------------------------------
 #--- BINARY FILES -------------------------------------------------------------
@@ -2546,10 +2534,6 @@ def _checkStaticDirectories():
         if _Debug:
             lg.out(_DebugLevel, 'settings.init want to create folder: ' + BlockchainDir())
         os.makedirs(BlockchainDir())
-    if not os.path.exists(DHTDataDir()):
-        if _Debug:
-            lg.out(_DebugLevel, 'settings.init want to create folder: ' + DHTDataDir())
-        os.makedirs(DHTDataDir())
 
 
 def _checkCustomDirectories():

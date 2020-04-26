@@ -294,7 +294,7 @@ class DataSender(automat.Automat):
                             filename,
                             packetID,
                             supplier_idurl,
-                            my_id.getLocalID(),
+                            my_id.getIDURL(),
                             self._packetAcked,
                             self._packetFailed,
                         ):

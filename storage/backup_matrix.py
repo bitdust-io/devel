@@ -776,7 +776,7 @@ def LocalBlockReport(backupID, blockNumber, result):
                 supplierNum, backupID, customer_idurl))
             continue
         for dataORparity in ('Data', 'Parity'):
-            packetID = packetid.MakePacketID(remotePath, blockNum, supplierNum, dataORparity)
+            packetID = packetid.MakePacketID(backupID, blockNum, supplierNum, dataORparity)
             local_file = os.path.join(settings.getLocalBackupsDir(), customer, packetID)
             if backupID not in local_files():
                 local_files()[backupID] = {}

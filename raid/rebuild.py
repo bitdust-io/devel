@@ -28,17 +28,26 @@ from six.moves import range
 
 #------------------------------------------------------------------------------
 
-import os
-import traceback
+_Debug = False
 
 #------------------------------------------------------------------------------
+
+import os
+import sys
+
+#------------------------------------------------------------------------------
+
+if __name__ == '__main__':
+    dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
+    sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..')))
+    sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..', '..')))
+
+#------------------------------------------------------------------------------
+
+import logs.lg
 
 import raid.read
 import raid.eccmap
-
-#------------------------------------------------------------------------------
-
-_Debug = False
 
 #------------------------------------------------------------------------------
 
@@ -156,6 +165,5 @@ def rebuild(backupID, blockNum, eccMap, availableSuppliers, remoteMatrix, localM
         return (newData, localData, localParity, reconstructedData, reconstructedParity, )
 
     except:
-        # lg.exc()
-        traceback.print_exc()
+        logs.lg.exc()
         return None

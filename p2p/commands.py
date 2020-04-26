@@ -127,18 +127,26 @@ def IsReplyExpected(com):
 #------------------------------------------------------------------------------
 
 
-def Data():
-    """
-    Data packet, may be Data, Parity, Backup database, may be more.
-    """
-    return "Data"
-
-
 def Ack():
     """
     Response packet for some request.
     """
     return "Ack"
+
+
+def Fail():
+    """
+    Used to report an error in response, for example when requested file is not
+    found on remote machine.
+    """
+    return "Fail"
+
+
+def Identity():
+    """
+    Packet containing peer identity file.
+    """
+    return "Identity"
 
 
 def RequestService():
@@ -153,20 +161,37 @@ def CancelService():
     return "CancelService"
 
 
+def Key():
+    """
+    """
+    return "Key"
+
+
+def AuditKey():
+    """
+    """
+    return "AuditKey"
+
+
+def Event():
+    """
+    """
+    return "Event"
+
+
+def Data():
+    """
+    Data packet, may be Data, Parity, Backup database, may be more.
+    """
+    return "Data"
+
+
 def Retrieve():
     """
-    Used to request some data from supplier for example.
+    Used to request some data from supplier.
     """
     # TODO: rename to RetrieveData
     return "Retrieve"
-
-
-def Fail():
-    """
-    Used to report an error in response, for example when requested file is not
-    found on remote machine.
-    """
-    return "Fail"
 
 
 def Relay():
@@ -200,13 +225,6 @@ def Contacts():
     return "Contacts"
 
 
-def Identity():
-    """
-    Packet containing peer identity file.
-    """
-    return "Identity"
-
-
 def DeleteFile():
     """
     Request to delete a single file or list of my files from remote machine.
@@ -225,6 +243,7 @@ def Transfer():
     """
     Transfer funds to remote peer.
     """
+    # TODO: something for the future :)
     return "Transfer"
 
 
@@ -232,12 +251,14 @@ def Receipt():
     """
     Some billing report.
     """
+    # TODO: something for the future :)
     return "Receipt"
 
 
 def Message():
     """
-    A message from one peer to another.
+    An encrypted message from one peer to another.
+    Can be on of the types: "private_message", "queue_message", "queue_message_replica", "group_message"
     """
     return "Message"
 
@@ -255,34 +276,19 @@ def Broadcast():
     This message type is for delivering some piece of data to all peers in th network.
     It is used to broadcast "crypto-coins" between peers.
     """
+    # TODO: something for the future :)
     return "Broadcast"
 
 
 def Coin():
     """
     """
+    # TODO: something for the future :)
     return "Coin"
 
 
 def RetrieveCoin():
     """
     """
+    # TODO: something for the future :)
     return "RetrieveCoin"
-
-
-def Key():
-    """
-    """
-    return "Key"
-
-
-def AuditKey():
-    """
-    """
-    return "AuditKey"
-
-
-def Event():
-    """
-    """
-    return "Event"

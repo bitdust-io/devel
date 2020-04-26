@@ -142,7 +142,7 @@ class CustomersRejector(automat.Automat):
         """
         Here are some values.
 
-        + donated_bytes : you set this in the configs
+        + donated_bytes : you set this in the settings
         + consumed_bytes : how many space was taken from you by other users
         + free_bytes = donated_bytes - consumed_bytes : not yet allocated space
         + used_bytes : size of all files, which you store on your disk for your customers

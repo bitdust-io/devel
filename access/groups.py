@@ -87,18 +87,15 @@ from __future__ import absolute_import
 #------------------------------------------------------------------------------
 
 _Debug = True
-_DebugLevel = 8
+_DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
 import os
-import sys
 
 #------------------------------------------------------------------------------
 
-if __name__ == '__main__':
-    import os.path as _p
-    sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
+from twisted.internet.defer import DeferredList
 
 #------------------------------------------------------------------------------
 
@@ -111,10 +108,14 @@ from lib import jsn
 from system import local_fs
 from system import bpio
 
+from contacts import contactsdb
+
 from main import settings
 
 from crypt import key
 from crypt import my_keys
+
+from access import key_ring
 
 #------------------------------------------------------------------------------
 
@@ -205,6 +206,20 @@ def create_new_group(label, creator_id=None, key_size=4096):
     set_group_info(group_key_id)
     save_group_info(group_key_id)
     return group_key_id
+
+#------------------------------------------------------------------------------
+
+def send_group_pub_key_to_suppliers(group_key_id):
+    l = []
+    for supplier_idurl in contactsdb.suppliers():
+        if supplier_idurl:
+            d = key_ring.transfer_key(group_key_id, supplier_idurl, include_private=False)
+            if _Debug:
+                d.addCallback(lg.cb, debug=_Debug, debug_level=_DebugLevel, method='groups.write_group_key_to_suppliers')
+                d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='groups.write_group_key_to_suppliers')
+            # TODO: build some kind of retry mechanism - if some supplier did not received the key
+            l.append(d)
+    return DeferredList(l, consumeErrors=True)
 
 #------------------------------------------------------------------------------
 

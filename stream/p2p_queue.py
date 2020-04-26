@@ -832,8 +832,8 @@ def do_consume(interested_consumers=None):
         interested_queues = set()
         for queue_id in consumer(consumer_id).queues:
             if queue_id not in queue():
-                if _Debug:
-                    lg.out(_DebugLevel, 'p2p_queue.do_consume consumer queue %s was not found' % queue_id)
+                # if _Debug:
+                #     lg.out(_DebugLevel, 'p2p_queue.do_consume consumer queue %s was not found' % queue_id)
                 continue
             if len(queue(queue_id)) == 0:
                 # no messages in the queue
@@ -933,6 +933,9 @@ class QueueMessage(object):
             if _Debug:
                 lg.warn('message %r from %r in queue %r will have no consumers' % (
                     self.message_id, self.producer_id, self.queue_id, ))
+
+    def __repr__(self):
+        return 'QueueMessage[%s](%s by %s in %s)' % (self.state, self.message_id, self.producer_id, self.queue_id, )
 
     def get_sequence_id(self):
         return self.payload.get('sequence_id', None)

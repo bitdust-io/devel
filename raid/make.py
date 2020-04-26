@@ -53,6 +53,10 @@ from io import open
 
 #------------------------------------------------------------------------------
 
+_Debug = False
+
+#------------------------------------------------------------------------------
+
 import os
 import sys
 import copy
@@ -67,12 +71,10 @@ if __name__ == '__main__':
 
 #------------------------------------------------------------------------------
 
+import logs.lg
+
 import raid.eccmap
 import raid.raidutils
-
-#------------------------------------------------------------------------------
-
-_Debug = False
 
 #------------------------------------------------------------------------------
 
@@ -134,7 +136,7 @@ def ReadBinaryFileAsArray(filename):
     if not os.access(filename, os.R_OK):
         return b''
 
-    with open(filename, "rb") as f:
+    with open(filename, mode='rb') as f:
         values = array.array('i', f.read())
 
     values.byteswap()
@@ -154,11 +156,11 @@ def do_in_memory(filename, eccmapname, version, blockNumber, targetDir, threshol
         length = length * 4
         seglength = (length + myeccmap.datasegments - 1) / myeccmap.datasegments
 
-        #: dict of data segments
+        # dict of data segments
         sds = {}
         for seg_num, chunk in enumerate(raid.raidutils.chunks(wholefile, int(seglength / 4))):
             FileName = targetDir + '/' + str(blockNumber) + '-' + str(seg_num) + '-Data'
-            with open(FileName, "wb") as f:
+            with open(FileName, mode='wb') as f:
                 chunk_to_write = copy.copy(chunk)
                 chunk_to_write.byteswap()
                 sds[seg_num] = iter(chunk)
@@ -178,14 +180,13 @@ def do_in_memory(filename, eccmapname, version, blockNumber, targetDir, threshol
 
         for PSegNum, _ in psds_list.items():
             FileName = targetDir + '/' + str(blockNumber) + '-' + str(PSegNum) + '-Parity'
-            with open(FileName, 'wb') as f:
+            with open(FileName, mode='wb') as f:
                 f.write(psds_list[PSegNum])
 
         return dataNum, parityNum
 
     except:
-        import traceback
-        traceback.print_exc()
+        logs.lg.exc()
         return -1, -1
 
 

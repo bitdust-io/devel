@@ -35,21 +35,15 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
-import sys
 import time
 import base64
 
 #------------------------------------------------------------------------------
-
-try:
-    from twisted.internet import reactor  # @UnresolvedImport
-except:
-    sys.exit('Error initializing twisted.internet.reactor in message.py')
 
 from twisted.internet.defer import fail
 from twisted.internet.defer import Deferred
@@ -403,7 +397,7 @@ def do_send_message(json_data, recipient_global_id, packet_id, message_ack_timeo
     try:
         private_message_object = PrivateMessage(recipient_global_id=recipient_global_id)
         private_message_object.encrypt(message_body)
-    except Exception as exc:
+    except:
         lg.exc()
         raise Exception('message encryption failed')
     payload = private_message_object.serialize()
@@ -544,6 +538,8 @@ def push_incoming_message(request, private_message_object, json_message):
         msg_type = 'private_message'
         if request.PacketID.startswith('queue_'):
             msg_type = 'queue_message'
+        elif request.PacketID.startswith('qreplica_'):
+            msg_type = 'queue_message_replica'
         message_queue()[consumer_id].append({
             'type': msg_type,
             'dir': 'incoming',
@@ -571,6 +567,8 @@ def push_outgoing_message(json_message, private_message_object, remote_identity,
         msg_type = 'private_message'
         if request.PacketID.startswith('queue_'):
             msg_type = 'queue_message'
+        elif request.PacketID.startswith('qreplica_'):
+            msg_type = 'queue_message_replica'
         message_queue()[consumer_id].append({
             'type': msg_type,
             'dir': 'outgoing',

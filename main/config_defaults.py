@@ -120,6 +120,8 @@ def reset(conf_obj):
 
     conf_obj.setDefaultValue('services/customer-support/enabled', 'true')
 
+    conf_obj.setDefaultValue('services/data-disintegration/enabled', 'true')
+
     conf_obj.setDefaultValue('services/data-motion/enabled', 'true')
     conf_obj.setDefaultValue('services/data-motion/supplier-request-queue-size', 4)            
     conf_obj.setDefaultValue('services/data-motion/supplier-sending-queue-size', 4)            
@@ -164,6 +166,7 @@ def reset(conf_obj):
     conf_obj.setDefaultValue('services/list-files/enabled', 'true')
 
     conf_obj.setDefaultValue('services/message-broker/enabled', 'true')
+    conf_obj.setDefaultValue('services/message-broker/archive-chunk-size', 100)
 
     conf_obj.setDefaultValue('services/message-history/enabled', 'true')
 

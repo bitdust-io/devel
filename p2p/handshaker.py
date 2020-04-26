@@ -165,7 +165,7 @@ def on_identity_packet_outbox_status(pkt_out, status, error):
         if status == 'finished':
             inst.automat('identity-sent', pkt_out)
         else:
-            inst.automat('outbox-failed', status, error)
+            inst.automat('outbox-failed', status=status, error=error)
 
 #------------------------------------------------------------------------------
 
@@ -344,8 +344,8 @@ class Handshaker(automat.Automat):
                 wide=True,
                 response_timeout=self.ack_timeout,
                 callbacks={
-                    commands.Ack(): lambda response, info: self.automat('ack-received', response, info),
-                    commands.Fail(): lambda response, info: self.automat('fail-received', response, info),
+                    commands.Ack(): lambda response, info: self.automat('ack-received', response=response, info=info),
+                    commands.Fail(): lambda response, info: self.automat('fail-received', response=response, info=info),
                     None: lambda pkt_out: self.automat('ack-timeout', pkt_out),
                 },
                 keep_alive=self.keep_alive,
@@ -356,8 +356,8 @@ class Handshaker(automat.Automat):
                 wide=True,
                 response_timeout=self.ack_timeout,
                 callbacks={
-                    commands.Ack(): lambda response, info: self.automat('ack-received', response, info),
-                    commands.Fail(): lambda response, info: self.automat('fail-received', response, info),
+                    commands.Ack(): lambda response, info: self.automat('ack-received', response=response, info=info),
+                    commands.Fail(): lambda response, info: self.automat('fail-received', response=response, info=info),
                     None: lambda pkt_out: self.automat('ack-timeout', pkt_out),
                 },
                 keep_alive=self.keep_alive,
@@ -381,9 +381,21 @@ class Handshaker(automat.Automat):
         Action method.
         """
         global _RunningHandshakers
-        lg.warn('ping failed because received Fail() from remote user %r' % self.remote_idurl)
+        response = kwargs.get('response')
+        info = kwargs.get('info')
+        if response and info:
+            lg.warn('handshake failed because received Fail() from remote user %r : %r' % (response, info, ))
+            lg.exc(exc_value=Exception('handshake failed because received Fail() from remote user'))
+            for result_defer in _RunningHandshakers[self.remote_idurl]['results']:
+                result_defer.errback(Exception('handshake failed because received Fail() from remote user'))
+            return
+        status = kwargs.get('status')
+        error = kwargs.get('error')
+        lg.warn('handshake failed because my Identity() packet was not sent to remote user %r : %r' % (status, error, ))
+        if status != 'cancelled':
+            lg.exc(exc_value=Exception('handshake failed because my Identity() packet was not sent to remote user'))
         for result_defer in _RunningHandshakers[self.remote_idurl]['results']:
-            result_defer.errback(Exception('ping failed because not possible to send packets to user %r' % self.remote_idurl))
+            result_defer.errback(Exception('handshake failed because my Identity() packet was not sent to remote user'))
 
     def doReportTimeOut(self, *args, **kwargs):
         """
@@ -400,10 +412,13 @@ class Handshaker(automat.Automat):
         Action method.
         """
         global _RunningHandshakers
+        response = kwargs.get('response')
+        info = kwargs.get('info')
         if _Debug:
-            lg.args(_DebugLevel, channel=self.channel, idurl=self.remote_idurl, ack_packet=args[0], info=args[1])
+            lg.args(_DebugLevel, channel=self.channel, idurl=self.remote_idurl,
+                    response=response, info=info)
         for result_defer in _RunningHandshakers[self.remote_idurl]['results']:
-            result_defer.callback((args[0], args[1], ))
+            result_defer.callback((response, info, ))
 
     def doDestroyMe(self, *args, **kwargs):
         """

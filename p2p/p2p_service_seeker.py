@@ -66,6 +66,7 @@ from p2p import handshaker
 
 from contacts import identitycache
 
+from userid import id_url
 from userid import global_id
 from userid import my_id
 
@@ -188,7 +189,7 @@ class P2PServiceSeeker(automat.Automat):
         self.target_service = kwargs['target_service']
         self.request_service_params = kwargs.get('request_service_params', None)
         self.result_callback = kwargs.get('result_callback', None)
-        self.exclude_nodes = kwargs.get('exclude_nodes', [])
+        self.exclude_nodes = id_url.to_bin_list(kwargs.get('exclude_nodes', []))
 
     def doLookupRandomNode(self, *args, **kwargs):
         """
