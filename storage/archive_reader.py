@@ -134,12 +134,12 @@ class ArchiveReader(automat.Automat):
             elif event == 'start' and self.isMyOwnArchive(*args, **kwargs):
                 self.state = 'LIST_FILES?'
                 self.doInit(*args, **kwargs)
-                self.doRequestListFiles(event, *args, **kwargs)
+                self.doRequestMyListFiles(*args, **kwargs)
         #---DHT_READ?---
         elif self.state == 'DHT_READ?':
             if event == 'dht-read-success':
                 self.state = 'LIST_FILES?'
-                self.doRequestListFiles(event, *args, **kwargs)
+                self.doRequestTheirListFiles(*args, **kwargs)
             elif event == 'dht-read-failed':
                 self.state = 'FAILED'
                 self.doReportFailed(event, *args, **kwargs)
@@ -186,14 +186,25 @@ class ArchiveReader(automat.Automat):
         """
         Condition method.
         """
+        _, queue_owner_id, _ = global_id.SplitGlobalQueueID(kwargs['queue_id'])
+        return my_id.getID() == queue_owner_id
 
     def doInit(self, *args, **kwargs):
         """
         Action method.
         """
+        self.queue_id = kwargs['queue_id']
+        self.start_sequence_id = kwargs['start_sequence_id']
+        self.end_sequence_id = kwargs['end_sequence_id']
+        qa, oid, _ = global_id.SplitGlobalQueueID(self.queue_id)
+        self.queue_alias = qa
+        self.queue_owner_id = oid
+        self.queue_owner_idurl = global_id.glob2idurl(self.queue_owner_id)
+        self.group_key_id = my_keys.make_key_id(alias=self.queue_alias, creator_glob_id=self.queue_owner_id)
         self.suppliers_list = []
         self.ecc_map = None
         self.correctable_errors = 0
+        self.requested_list_files = {}
 
     def doDHTReadSuppliers(self, *args, **kwargs):
         """
@@ -203,25 +214,52 @@ class ArchiveReader(automat.Automat):
         d.addCallback(self._on_read_queue_owner_suppliers_success)
         d.addErrback(self._on_read_queue_owner_suppliers_failed)
 
-    def doRequestListFiles(self, *args, **kwargs):
+    def doRequestTheirListFiles(self, *args, **kwargs):
         """
         Action method.
         """
-        # TODO: in case i am not the owner of the group - read suppliers from DHT
-        for supplier_idurl in contactsdb.suppliers():
+        self.correctable_errors = eccmap.GetCorrectableErrors(len(self.suppliers_list))
+        for supplier_idurl in self.suppliers_list:
             if supplier_idurl:
-                p2p_service.SendListFiles(
+                outpacket = p2p_service.SendListFiles(
                     target_supplier=supplier_idurl,
                     key_id=self.group_key_id,
                     query_items=[self.group_queue_alias, ],
+                    callbacks={
+                        commands.Files(): self._on_list_files_response,
+                        commands.Fail(): self._on_list_files_failed,
+                        None: lambda pkt_out: self._on_list_files_failed(None, None, outpacket=pkt_out),
+                    }
                 )
+                if outpacket:
+                    self.requested_list_files[outpacket.PacketID] = None
 
-    def doCollectFiles(self, event, *args, **kwargs):
+    def doRequestMyListFiles(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        self.correctable_errors = eccmap.GetCorrectableErrors(contactsdb.num_suppliers())
+        for supplier_idurl in contactsdb.suppliers():
+            if supplier_idurl:
+                outpacket = p2p_service.SendListFiles(
+                    target_supplier=supplier_idurl,
+                    key_id=self.group_key_id,
+                    query_items=[self.group_queue_alias, ],
+                    callbacks={
+                        commands.Files(): self._on_list_files_response,
+                        commands.Fail(): self._on_list_files_failed,
+                        None: lambda pkt_out: self._on_list_files_failed(None, None, outpacket=pkt_out),
+                    }
+                )
+                if outpacket:
+                    self.requested_list_files[outpacket.PacketID] = None
+
+    def doStartRestoreWorker(self, *args, **kwargs):
         """
         Action method.
         """
 
-    def doStartRestoreWorker(self, *args, **kwargs):
+    def doCollectFiles(self, event, *args, **kwargs):
         """
         Action method.
         """
@@ -264,4 +302,26 @@ class ArchiveReader(automat.Automat):
     def _on_read_queue_owner_suppliers_failed(self, err):
         lg.err('failed to read customer suppliers: %r' % err)
         self.automat('dht-read-failed', err)
+        return None
+
+    def _on_list_files_response(self, response, info):
+        self.requested_list_files[response.PacketID] = True
+        lst = list(self.requested_list_files.values())
+        if _Debug:
+            lg.args(_DebugLevel, requested_list_files=lst, response=response)
+        packets_pending_or_failed = lst.count(None) + lst.count(False)
+        if packets_pending_or_failed < self.correctable_errors * 2:  # because each packet also have Parity()
+            self.automat('list-files-collected')
+        return None
+
+    def _on_list_files_failed(self, response, info, outpacket=None):
+        if outpacket:
+            self.requested_list_files[outpacket.outpacket.PacketID]
+        else:
+            self.requested_list_files[response.PacketID] = False
+        lst = list(self.requested_list_files.values())
+        if _Debug:
+            lg.args(_DebugLevel, requested_list_files=lst, response=response, outpacket=outpacket)
+        if not lst.count(None):
+            self.automat('list-files-failed')
         return None

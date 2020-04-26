@@ -430,7 +430,7 @@ def ListFiles(request, info):
             request.RemoteID, request.OwnerID, request.CreatorID))
 
 
-def SendListFiles(target_supplier, customer_idurl=None, key_id=None, query_items=[], wide=False, callbacks={}):
+def SendListFiles(target_supplier, customer_idurl=None, key_id=None, query_items=[], wide=False, callbacks={}, timeout=None):
     """
     This is used as a request method from your supplier : if you send him a ListFiles() packet
     he will reply you with a list of stored files in a Files() packet.
@@ -471,7 +471,7 @@ def SendListFiles(target_supplier, customer_idurl=None, key_id=None, query_items
         Payload=Payload,
         RemoteID=RemoteID,
     )
-    gateway.outbox(result, wide=wide, callbacks=callbacks)
+    gateway.outbox(result, wide=wide, callbacks=callbacks, response_timeout=timeout)
     return result
 
 #------------------------------------------------------------------------------

@@ -556,7 +556,7 @@ def packet_list_v1(node, wait_all_finish=False, attempts=60, delay=3, verbose=Fa
     if verbose:
         print('\npacket/list/v1 [%s]\n' % node)
     for _ in range(attempts):
-        response = request_get(node, 'packet/list/v1', timeout=20)
+        response = request_get(node, 'packet/list/v1', timeout=20, verbose=verbose)
         assert response.status_code == 200
         if verbose:
             print('\npacket/list/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
@@ -573,7 +573,7 @@ def transfer_list_v1(node, wait_all_finish=False, attempts=60, delay=3, verbose=
     if verbose:
         print('\ntransfer/list/v1 [%s]\n' % node)
     for _ in range(attempts):
-        response = request_get(node, 'transfer/list/v1', timeout=20)
+        response = request_get(node, 'transfer/list/v1', timeout=20, verbose=verbose)
         assert response.status_code == 200
         if verbose:
             print('\ntransfer/list/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
@@ -690,3 +690,8 @@ def queue_producer_list_v1(node, extract_ids=False):
     if not extract_ids:
         return response.json()
     return [f['producer_id'] for f in response.json()['result']]
+
+
+def wait_packets_finished(nodes):
+    for node in nodes:
+        packet_list_v1(node, wait_all_finish=True)

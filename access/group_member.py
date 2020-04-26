@@ -438,9 +438,18 @@ class GroupMember(automat.Automat):
         """
         Action method.
         """
-        # from storage import archive_reader
-        # ar = archive_reader.ArchiveReader()
-        # ar.automat('start', group_key_id=self.group_key_id)
+        latest_known_sequence_id = kwargs.get('latest_known_sequence_id')
+        received_messages = kwargs.get('received_messages')
+        # TODO: must store received_messages temporary to be able to merge all together with restored from archive messages
+        if True:
+            from storage import archive_reader
+            ar = archive_reader.ArchiveReader()
+            ar.automat(
+                'start',
+                queue_id=self.active_queue_id,
+                start_sequence_id=self.last_sequence_id,
+                end_sequence_id=latest_known_sequence_id,
+            )
 
     def doProcess(self, *args, **kwargs):
         """
@@ -969,7 +978,7 @@ class GroupMember(automat.Automat):
             if latest_known_sequence_id > self.last_sequence_id:
                 lg.warn('nothing received, but found queue latest sequence %d is ahead of my current position %d, need to read messages from archive' % (
                     latest_known_sequence_id, self.last_sequence_id, ))
-                self.automat('queue-is-ahead', received_group_messages)
+                self.automat('queue-is-ahead', latest_known_sequence_id=latest_known_sequence_id, received_messages=received_group_messages, )
                 return True
             self.last_sequence_id = latest_known_sequence_id
             groups.set_last_sequence_id(self.group_key_id, latest_known_sequence_id)
@@ -993,7 +1002,7 @@ class GroupMember(automat.Automat):
             if latest_known_sequence_id > self.last_sequence_id:
                 lg.warn('found queue latest sequence %d is ahead of my current position %d, need to read messages from archive' % (
                     latest_known_sequence_id, self.last_sequence_id, ))
-                self.automat('queue-is-ahead', received_group_messages)
+                self.automat('queue-is-ahead', latest_known_sequence_id=latest_known_sequence_id, received_messages=received_group_messages, )
                 return True
             raise Exception('message sequence is broken by message broker %s, some messages were not consumed' % self.active_broker_id)
         groups.set_last_sequence_id(self.group_key_id, self.last_sequence_id)

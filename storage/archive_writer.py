@@ -198,7 +198,7 @@ class ArchiveWriter(automat.Automat):
         self.chunk_size = kwargs['chunk_size']
         self.result_defer = kwargs.get('result_defer')
         qa, oid, _ = global_id.SplitGlobalQueueID(self.queue_id)
-        self.queue_alias = qa 
+        self.queue_alias = qa
         self.queue_owner_id = oid
         self.queue_owner_idurl = global_id.glob2idurl(self.queue_owner_id)
         self.group_key_id = my_keys.make_key_id(alias=self.queue_alias, creator_glob_id=self.queue_owner_id)
@@ -270,7 +270,7 @@ class ArchiveWriter(automat.Automat):
             return
         for block_num in self.packets_out.keys():
             block_packets_failed = list(self.packets_out[block_num].values()).count(False)
-            if block_packets_failed > self.correctable_errors:
+            if block_packets_failed > self.correctable_errors * 2:  # because each packet also have Parity()
                 lg.err('all packets for block %d are sent, but too many errors: %d' % (block_num, block_packets_failed, ))
                 self.automat('sending-failed')
                 return
