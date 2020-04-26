@@ -102,6 +102,7 @@ _MODULES = (
     'raid.rebuild',
     'raid.eccmap',
     'raid.raidutils',
+    'logs.lg',
     'os',
     'sys',
     'copy',

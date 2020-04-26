@@ -453,11 +453,26 @@ class QueueKeeper(automat.Automat):
         my_position_info = None
         for broker_info in brokers_info_list:
             if broker_info:
-                if broker_info['position'] == my_position:
+                broker_idurl = broker_info.get('broker_idurl')
+                broker_position = broker_info.get('position')
+                self.known_brokers[broker_position] = broker_idurl
+                if broker_position == my_position:
                     my_position_info = broker_info
-                if broker_info['broker_idurl'] == self.broker_idurl:
-                    my_broker_info = broker_info
-                self.known_brokers[broker_info['position']] = broker_info['broker_idurl']
+                if broker_idurl == self.broker_idurl:
+                    if not my_broker_info:
+                        my_broker_info = broker_info
+                    else:
+                        if my_broker_info['position'] == my_position:
+                            lg.warn('my broker info already found on correct position, ignoring record: %r' % broker_info)
+                        else:
+                            lg.warn('my broker info already found, but on different position: %d' % my_broker_info['position'])
+                            if my_broker_info['position'] == broker_position:
+                                pass
+                            else:
+                                lg.warn('overwriting already populated broker record found on another position: %d' % broker_position)
+                                my_broker_info = broker_info
+                if my_broker_info:
+                    lg.dbg(_DebugLevel, 'found my broker record: %r' % my_broker_info)
         if _Debug:
             lg.args(_DebugLevel, my_position=my_position, my_broker_info=my_broker_info, my_position_info=my_position_info,
                     known_brokers=self.known_brokers)
@@ -480,7 +495,7 @@ class QueueKeeper(automat.Automat):
         if _Debug:
             lg.args(_DebugLevel, nodes=nodes, desired_broker_position=desired_broker_position)
         if nodes:
-            self.has_rotated = False
+            # self.has_rotated = False
             self.automat('dht-write-success', desired_position=desired_broker_position)
         else:
             self.dht_read_use_cache = False

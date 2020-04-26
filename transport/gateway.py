@@ -418,7 +418,7 @@ def inbox(info):
         lg.err("bad filename=" + info.filename)
         return None
     try:
-        data = bpio.ReadBinaryFile(info.filename, decode_encoding=None)
+        data = bpio.ReadBinaryFile(info.filename)
     except:
         lg.err("gateway.inbox ERROR reading file " + info.filename)
         return None
@@ -1186,9 +1186,7 @@ def main():
         globals()['num_out'] = 0
 
         def _s():
-            p = signed.Packet(commands.Data(), my_id.getLocalID(),
-                              my_id.getLocalID(), my_id.getLocalID(),
-                              bpio.ReadBinaryFile(args[1]), args[0])
+            p = signed.Packet(commands.Data(), my_id.getLocalID(), my_id.getLocalID(), my_id.getLocalID(), bpio.ReadBinaryFile(args[1]), args[0])
             outbox(p, wide=True)
             lg.out(2, 'OUTBOX %d : %r' % (globals()['num_out'], p))
             globals()['num_out'] += 1

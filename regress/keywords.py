@@ -455,14 +455,14 @@ def message_send_v1(node, recipient, data, timeout=30):
     return response.json()
 
 
-def message_send_group_v1(node, group_key_id, data):
+def message_send_group_v1(node, group_key_id, data, timeout=20):
     print('\nmessage/send/group/v1 [%s] data=%r' % (node, data, ))
     response = request_post(node, 'message/send/group/v1',
         json={
             'group_key_id': group_key_id,
             'data': data,
         },
-        timeout=20,
+        timeout=timeout,
     )
     assert response.status_code == 200
     print(f'\nmessage/send/group/v1 [%s] : %s\n' % (

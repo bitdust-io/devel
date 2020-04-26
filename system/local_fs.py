@@ -126,9 +126,9 @@ def ReadBinaryFile(filename, decode_encoding=None):
     if not os.access(filename, os.R_OK):
         return b''
     try:
-        infile = open(filename, 'rb')
+        infile = open(filename, mode='rb')
         data = infile.read()
-        if decode_encoding:
+        if decode_encoding is not None:
             data = data.decode(decode_encoding)
         infile.close()
         return data

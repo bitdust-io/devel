@@ -826,7 +826,7 @@ async def start_message_broker_async(node, identity_name, loop, join_network=Tru
         cmd += f'bitdust set services/proxy-transport/preferred-routers "{preferred_routers}";'
     # enable message broker service
     cmd += 'bitdust set services/message-broker/enabled true;'
-    cmd += 'bitdust set services/message-broker/archive-chunk-size 3;'
+    cmd += 'bitdust set services/message-broker/archive-chunk-size 5;'
     await run_ssh_command_and_wait_async(node, cmd, loop)
     # start BitDust daemon and create new identity for supplier
     await start_daemon_async(node, loop)
@@ -993,19 +993,22 @@ def report_one_node(node):
     num_tracebacks = main_log.count('Traceback')
     num_failures = main_log.count('Failure')
     api_log = run_ssh_command_and_wait(node, 'cat /root/.bitdust/logs/api.log', verbose=False)[0].strip()
-    num_apis = api_log.coun(' *** ')
+    num_apis = api_log.count(' *** ')
     packet_log = run_ssh_command_and_wait(node, 'cat /root/.bitdust/logs/packet.log', verbose=False)[0].strip()
-    num_packet_out = packet_log.count(' OUTBOX ')
-    num_packet_in = packet_log.count(' RECEIVE ')
+    num_packet_out = packet_log.count('OUTBOX ')
+    num_packet_in = packet_log.count('INBOX ')
     num_packet_relay_out = packet_log.count('RELAY OUT')
     num_packet_relay_in = packet_log.count('RELAY IN')
+    num_packet_route_out = packet_log.count('ROUTE OUT')
+    num_packet_route_in = packet_log.count('ROUTE IN')
     event_log = run_ssh_command_and_wait(node, 'cat /root/.bitdust/logs/event.log', verbose=False)[0].strip()
     num_events = event_log.count('\n')
-    print(f'[{node}]  api calls: {num_apis}   events: {num_events}'
-          f'   packets out: {num_packet_out}   packets in: {num_packet_in}'
-          f'   re-routed out: {num_packet_relay_out}   re-routed in: {num_packet_relay_in}'
-          f'   infos: {num_infos}   warnings: {num_warnings}   errors: {num_errors}'
-          f'   tracebacks: {num_tracebacks}   failures: {num_failures}   exceptions: {num_exceptions}')
+    print(f'[{node:>18}]  api: {num_apis:<4} evt: {num_events:<4}'
+          f' out: {num_packet_out:<4} in: {num_packet_in:<4}'
+          f' prox-out: {num_packet_relay_out:<4} prox-in: {num_packet_relay_in:<4}'
+          f' re-out: {num_packet_route_out:<4} re-in: {num_packet_route_in:<4}'
+          f' inf: {num_infos:<4} warn: {num_warnings:<4} err: {num_errors:<4}'
+          f' trcbk: {num_tracebacks:<4} fails: {num_failures:<4} excepts: {num_exceptions:<4}')
     return num_exceptions
 
 
