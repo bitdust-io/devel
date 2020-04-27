@@ -840,7 +840,7 @@ class GroupMember(automat.Automat):
     def _on_message_to_broker_failed(self, err, outgoing_counter, packet_id):
         if _Debug:
             lg.args(_DebugLevel, err=err, outgoing_counter=outgoing_counter, packet_id=packet_id)
-        self._do_send_message_to_broker(json_payload=None, outgoing_counter=outgoing_counter, packet_id=None)
+        self._do_send_message_to_broker(json_payload=None, outgoing_counter=outgoing_counter, packet_id=packet_id)
 
     def _on_read_customer_message_brokers(self, brokers_info_list):
         if _Debug:

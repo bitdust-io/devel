@@ -41,7 +41,7 @@ from io import StringIO
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 12
 
 #------------------------------------------------------------------------------
@@ -51,6 +51,7 @@ import sys
 import time
 import pprint
 
+#------------------------------------------------------------------------------
 
 try:
     from twisted.internet import reactor  # @UnresolvedImport
@@ -91,11 +92,15 @@ from services import driver
 from contacts import contactsdb
 from contacts import identitycache
 
+from p2p import p2p_service
+
 from stream import data_sender
 
 from storage import backup_fs
 from storage import backup_matrix
 from storage import backup
+
+from userid import my_id
 
 #------------------------------------------------------------------------------
 
@@ -310,13 +315,38 @@ def Save(filepath=None):
 
 #------------------------------------------------------------------------------
 
+def on_files_received(newpacket, info):
+    list_files_global_id = global_id.ParseGlobalID(newpacket.PacketID)
+    if not list_files_global_id['idurl']:
+        lg.warn('invalid PacketID: %s' % newpacket.PacketID)
+        return False
+    if list_files_global_id['idurl'] != my_id.getLocalID():
+        # ignore Files() if this is another customer
+        if _Debug:
+            lg.dbg(_DebugLevel, 'ignore incoming %r which is owned by another customer' % newpacket)
+        return False
+    if not contactsdb.is_supplier(newpacket.OwnerID):
+        # ignore Files() if this is not my supplier
+        if _Debug:
+            lg.dbg(_DebugLevel, 'incoming %r received, but %r is not my supplier' % (newpacket, newpacket.OwnerID, ))
+        return False
+    if _Debug:
+        lg.args(_DebugLevel, "service_backups._on_inbox_packet_received: %r for us from %s at %s" % (
+            newpacket, newpacket.CreatorID, info))
+    if IncomingSupplierListFiles(newpacket, list_files_global_id):
+        p2p_service.SendAck(newpacket)
+    else:
+        p2p_service.SendFail(newpacket)
+    return True
+
+#------------------------------------------------------------------------------
+
 def IncomingSupplierListFiles(newpacket, list_files_global_id):
     """
     Called when command "Files" were received from one of my suppliers.
     This is an answer from given supplier (after my request) to get a
     list of our files stored on his machine.
     """
-    from p2p import p2p_service
     supplier_idurl = newpacket.OwnerID
     # incoming_key_id = newpacket.PacketID.strip().split(':')[0]
     customer_idurl = list_files_global_id['idurl']
@@ -337,13 +367,19 @@ def IncomingSupplierListFiles(newpacket, list_files_global_id):
         lg.exc()
         lg.err('failed decrypting data from %s' % newpacket)
         return False
-    src = list_files.UnpackListFiles(input_data, settings.ListFilesFormat())
-    backups2remove, paths2remove, missed_backups = backup_matrix.ReadRawListFiles(num, src)
+    list_files_raw = list_files.UnpackListFiles(input_data, settings.ListFilesFormat())
+    backups2remove, paths2remove, missed_backups = backup_matrix.process_raw_list_files(
+        supplier_num=num,
+        list_files_text_body=list_files_raw,
+        customer_idurl=None,
+        is_in_sync=None,
+        auto_create=False,
+    )
     list_files_orator.IncomingListFiles(newpacket)
-    backup_matrix.SaveLatestRawListFiles(supplier_idurl, src)
+    backup_matrix.SaveLatestRawListFiles(supplier_idurl, list_files_raw)
     if _Debug:
-        lg.out(_DebugLevel, 'backup_control.IncomingSupplierListFiles from [%s]: paths2remove=%d, backups2remove=%d missed_backups=%d' % (
-            nameurl.GetName(supplier_idurl), len(paths2remove), len(backups2remove), len(missed_backups)))
+        lg.args(_DebugLevel, supplier=nameurl.GetName(supplier_idurl), customer=nameurl.GetName(customer_idurl),
+                backups2remove=len(backups2remove), paths2remove=len(paths2remove), missed_backups=len(missed_backups),)
     if len(backups2remove) > 0:
         p2p_service.RequestDeleteListBackups(backups2remove)
         if _Debug:

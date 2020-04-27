@@ -61,11 +61,19 @@ def execute_message_send_receive(group_key_id, producer_id, consumers_ids, messa
     if expected_results:
         for consumer_id, expected_result in expected_results.items():
             if expected_result:
-                assert consumer_results[consumer_id][0]['result'][0]['data'] == sample_message
+                if not consumer_results[consumer_id][0] or not consumer_results[consumer_id][0]['result']:
+                    assert False, 'consumer %r did not received expected message %r' % (consumer_id, sample_message)
+                if consumer_results[consumer_id][0]['result'][0]['data'] != sample_message:
+                    assert False, 'consumer %r received message %r, but expected is %r' % (
+                        consumer_id, consumer_results[consumer_id][0]['result'][0]['data'], sample_message)
             else:
-                assert consumer_results[consumer_id][0] is None
+                assert consumer_results[consumer_id][0] is None, 'consumer %r received message while should not: %r' % (
+                    consumer_id, consumer_results[consumer_id][0]['result'][0]['data'])
             if consumer_id in expected_last_sequence_id:
-                assert kw.group_info_v1(consumer_id, group_key_id)['result']['last_sequence_id'] == expected_last_sequence_id[consumer_id]
+                consumer_last_sequence_id = kw.group_info_v1(consumer_id, group_key_id)['result']['last_sequence_id']
+                assert consumer_last_sequence_id == expected_last_sequence_id[consumer_id], \
+                    'consumer %r last_sequence_id is %r but expected is %r' % (
+                        consumer_id, consumer_last_sequence_id, expected_last_sequence_id[consumer_id])
 
 
 def test_customers_1_2_3_communicate_via_message_brokers():

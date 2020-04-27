@@ -85,7 +85,7 @@ def send(customer_idurl, packet_id, format_type, key_id, remote_idurl, query_ite
     if os.path.isdir(ownerdir):
         try:
             for query_path in query_items:
-                plaintext += process_query_item(query_path, ownerdir)
+                plaintext += process_query_item(query_path, parts['key_alias'], ownerdir)
         except:
             lg.exc()
             return p2p_service.SendFailNoRequest(customer_idurl, packet_id, response='list files query processing error')
@@ -116,8 +116,9 @@ def send(customer_idurl, packet_id, format_type, key_id, remote_idurl, query_ite
     return newpacket
 
 
-def process_query_item(query_path, ownerdir):
+def process_query_item(query_path, key_alias, ownerdir):
     ret = ''
+    ret += 'Q%s\n' % query_path
     if query_path == '*':
         for one_key_alias in os.listdir(ownerdir):
             if not misc.ValidKeyAlias(strng.to_text(one_key_alias)):
@@ -136,7 +137,7 @@ def process_query_item(query_path, ownerdir):
         lg.warn('local file or folder not exist: %r' % local_path)
         return ''
     if os.path.isdir(local_path):
-        ret += TreeSummary(local_path)
+        ret += TreeSummary(local_path, key_alias=key_alias)
     if _Debug:
         lg.args(_DebugLevel, query_path=query_path, local_path=local_path, result_bytes=len(ret))
     return ret

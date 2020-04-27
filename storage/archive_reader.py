@@ -79,6 +79,10 @@ from p2p import p2p_service_seeker
 
 from access import groups
 
+from storage import restore_worker
+from storage import backup_fs
+from storage import backup_matrix
+
 from userid import global_id
 from userid import id_url
 from userid import my_id
@@ -218,46 +222,29 @@ class ArchiveReader(automat.Automat):
         """
         Action method.
         """
-        self.correctable_errors = eccmap.GetCorrectableErrors(len(self.suppliers_list))
-        for supplier_idurl in self.suppliers_list:
-            if supplier_idurl:
-                outpacket = p2p_service.SendListFiles(
-                    target_supplier=supplier_idurl,
-                    key_id=self.group_key_id,
-                    query_items=[self.group_queue_alias, ],
-                    callbacks={
-                        commands.Files(): self._on_list_files_response,
-                        commands.Fail(): self._on_list_files_failed,
-                        None: lambda pkt_out: self._on_list_files_failed(None, None, outpacket=pkt_out),
-                    }
-                )
-                if outpacket:
-                    self.requested_list_files[outpacket.PacketID] = None
+        self._do_request_list_files(self.suppliers_list)
 
     def doRequestMyListFiles(self, *args, **kwargs):
         """
         Action method.
         """
-        self.correctable_errors = eccmap.GetCorrectableErrors(contactsdb.num_suppliers())
-        for supplier_idurl in contactsdb.suppliers():
-            if supplier_idurl:
-                outpacket = p2p_service.SendListFiles(
-                    target_supplier=supplier_idurl,
-                    key_id=self.group_key_id,
-                    query_items=[self.group_queue_alias, ],
-                    callbacks={
-                        commands.Files(): self._on_list_files_response,
-                        commands.Fail(): self._on_list_files_failed,
-                        None: lambda pkt_out: self._on_list_files_failed(None, None, outpacket=pkt_out),
-                    }
-                )
-                if outpacket:
-                    self.requested_list_files[outpacket.PacketID] = None
+        self._do_request_list_files(contactsdb.num_suppliers())
 
     def doStartRestoreWorker(self, *args, **kwargs):
         """
         Action method.
         """
+        known_snapshots_list = backup_fs.ListByPath(self.queue_alias, iter=backup_fs.fs(customer_idurl=self.queue_owner_idurl))
+        if _Debug:
+            lg.args(_DebugLevel, known_snapshots_list=known_snapshots_list)
+#         r = restore_worker.RestoreWorker(backupID, outfd, KeyID=keyID)
+#         r.MyDeferred.addCallback(restore_done, backupID, outfd, outfilename, outputLocation, callback)
+#         r.set_block_restored_callback(block_restored_callback)
+#         r.set_packet_in_callback(packet_in_callback)
+#         _WorkingBackupIDs[backupID] = r
+#         _WorkingRestoreProgress[backupID] = {}
+#         r.automat('init')
+#         return r
 
     def doCollectFiles(self, event, *args, **kwargs):
         """
@@ -285,6 +272,29 @@ class ArchiveReader(automat.Automat):
         """
         self.destroy()
 
+    def _do_request_list_files(self, suppliers_list):
+        backup_matrix.add_list_files_query_callback(
+            customer_idurl=self.queue_owner_idurl,
+            query_path=self.queue_alias,
+            callback_method=self._on_list_files_response,
+        )
+        self.correctable_errors = eccmap.GetCorrectableErrors(len(suppliers_list))
+        for supplier_pos, supplier_idurl in enumerate(suppliers_list):
+            if not supplier_idurl:
+                self.requested_list_files[supplier_pos] = False
+                continue
+            outpacket = p2p_service.SendListFiles(
+                target_supplier=supplier_idurl,
+                key_id=self.group_key_id,
+                query_items=[self.queue_alias, ],
+                callbacks={
+                #     commands.Files(): self._on_list_files_response,
+                    commands.Fail(): lambda resp, info: self._on_list_files_failed(supplier_pos),
+                    None: lambda pkt_out: self._on_list_files_failed(supplier_pos),
+                }
+            )
+            self.requested_list_files[supplier_pos] = None if outpacket else False
+
     def _on_read_queue_owner_suppliers_success(self, dht_value):
         # TODO: add more validations of dht_value
         if dht_value and isinstance(dht_value, dict) and len(dht_value.get('suppliers', [])) > 0:
@@ -304,24 +314,29 @@ class ArchiveReader(automat.Automat):
         self.automat('dht-read-failed', err)
         return None
 
-    def _on_list_files_response(self, response, info):
-        self.requested_list_files[response.PacketID] = True
+    def _on_list_files_response(self, supplier_num, new_files_count):
+        self.requested_list_files[supplier_num] = True
         lst = list(self.requested_list_files.values())
         if _Debug:
-            lg.args(_DebugLevel, requested_list_files=lst, response=response)
+            lg.args(_DebugLevel, requested_list_files=lst, supplier_num=supplier_num, new_files_count=new_files_count)
         packets_pending_or_failed = lst.count(None) + lst.count(False)
         if packets_pending_or_failed < self.correctable_errors * 2:  # because each packet also have Parity()
+            backup_matrix.remove_list_files_query_callback(
+                customer_idurl=self.queue_owner_idurl,
+                query_path=self.queue_alias,
+            )
             self.automat('list-files-collected')
         return None
 
-    def _on_list_files_failed(self, response, info, outpacket=None):
-        if outpacket:
-            self.requested_list_files[outpacket.outpacket.PacketID]
-        else:
-            self.requested_list_files[response.PacketID] = False
+    def _on_list_files_failed(self, supplier_num):
+        self.requested_list_files[supplier_num] = False
         lst = list(self.requested_list_files.values())
         if _Debug:
-            lg.args(_DebugLevel, requested_list_files=lst, response=response, outpacket=outpacket)
+            lg.args(_DebugLevel, requested_list_files=lst, supplier_num=supplier_num)
         if not lst.count(None):
+            backup_matrix.remove_list_files_query_callback(
+                customer_idurl=self.queue_owner_idurl,
+                query_path=self.queue_alias,
+            )
             self.automat('list-files-failed')
         return None
