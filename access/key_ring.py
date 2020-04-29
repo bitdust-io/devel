@@ -808,11 +808,6 @@ def on_files_received(newpacket, info):
     external_supplier_idurl = block.CreatorID
     try:
         supplier_raw_list_files = list_files.UnpackListFiles(raw_files, settings.ListFilesFormat())
-        backup_matrix.SaveLatestRawListFiles(
-            supplier_idurl=external_supplier_idurl,
-            raw_data=supplier_raw_list_files,
-            customer_idurl=trusted_customer_idurl,
-        )
     except:
         lg.exc()
         return False
@@ -820,6 +815,9 @@ def on_files_received(newpacket, info):
     # and place that supplier on the correct position in contactsdb
     supplier_pos = backup_matrix.DetectSupplierPosition(supplier_raw_list_files)
     known_supplier_pos = contactsdb.supplier_position(external_supplier_idurl, trusted_customer_idurl)
+    if _Debug:
+        lg.args(_DebugLevel, supplier_pos=supplier_pos, known_supplier_pos=known_supplier_pos, external_supplier=external_supplier_idurl,
+                trusted_customer=trusted_customer_idurl, key_id=incoming_key_id)
     if supplier_pos >= 0:
         if known_supplier_pos >= 0 and known_supplier_pos != supplier_pos:
             lg.err('known external supplier %r position %d is not matching to received list files position %d for customer %s' % (
@@ -841,14 +839,21 @@ def on_files_received(newpacket, info):
         lg.warn('not possible to detect external supplier position for customer %s from received list files, known position is %s' % (
             trusted_customer_idurl, known_supplier_pos))
         supplier_pos = known_supplier_pos
-    backup_matrix.process_raw_list_files(
+    remote_files_changed, _, _, _ = backup_matrix.process_raw_list_files(
         supplier_num=supplier_pos,
         list_files_text_body=supplier_raw_list_files,
         customer_idurl=trusted_customer_idurl,
         is_in_sync=True,
-        auto_create=True,
+        auto_create=False,
     )
+    if remote_files_changed:
+        backup_matrix.SaveLatestRawListFiles(
+            supplier_idurl=external_supplier_idurl,
+            raw_data=supplier_raw_list_files,
+            customer_idurl=trusted_customer_idurl,
+        )
     # finally sending Ack() packet back
     p2p_service.SendAck(newpacket)
-    lg.info('received list of packets from external supplier %s for customer %s' % (external_supplier_idurl, trusted_customer_idurl))
+    if remote_files_changed:
+        lg.info('received updated list of files from external supplier %s for customer %s' % (external_supplier_idurl, trusted_customer_idurl))
     return True

@@ -368,7 +368,7 @@ def IncomingSupplierListFiles(newpacket, list_files_global_id):
         lg.err('failed decrypting data from %s' % newpacket)
         return False
     list_files_raw = list_files.UnpackListFiles(input_data, settings.ListFilesFormat())
-    backups2remove, paths2remove, missed_backups = backup_matrix.process_raw_list_files(
+    remote_files_changed, backups2remove, paths2remove, missed_backups = backup_matrix.process_raw_list_files(
         supplier_num=num,
         list_files_text_body=list_files_raw,
         customer_idurl=None,
@@ -376,10 +376,12 @@ def IncomingSupplierListFiles(newpacket, list_files_global_id):
         auto_create=False,
     )
     list_files_orator.IncomingListFiles(newpacket)
-    backup_matrix.SaveLatestRawListFiles(supplier_idurl, list_files_raw)
+    if remote_files_changed:
+        backup_matrix.SaveLatestRawListFiles(supplier_idurl, list_files_raw)
     if _Debug:
         lg.args(_DebugLevel, supplier=nameurl.GetName(supplier_idurl), customer=nameurl.GetName(customer_idurl),
-                backups2remove=len(backups2remove), paths2remove=len(paths2remove), missed_backups=len(missed_backups),)
+                backups2remove=len(backups2remove), paths2remove=len(paths2remove),
+                files_changed=remote_files_changed, missed_backups=len(missed_backups), )
     if len(backups2remove) > 0:
         p2p_service.RequestDeleteListBackups(backups2remove)
         if _Debug:

@@ -155,7 +155,7 @@ def fs(customer_idurl=None):
     Access method for forward index: [path] -> [ID].
     """
     global _FileSystemIndexByName
-    if not customer_idurl:
+    if customer_idurl is None:
         customer_idurl = my_id.getLocalID()
     customer_idurl = id_url.field(customer_idurl)
     if customer_idurl not in _FileSystemIndexByName:
@@ -168,7 +168,7 @@ def fsID(customer_idurl=None):
     Access method for backward index: [ID] -> [path].
     """
     global _FileSystemIndexByID
-    if not customer_idurl:
+    if customer_idurl is None:
         customer_idurl = my_id.getLocalID()
     customer_idurl = id_url.field(customer_idurl)
     if customer_idurl not in _FileSystemIndexByID:
@@ -454,9 +454,9 @@ class FSItemInfo():
 
 def MakeID(itr, randomized=True):
     """
-    Create a new unique number for the folder to create a index ID.
+    Create a new unique number for the file or folder to create a index ID.
 
-    Parameter ``itrID`` is a reference for a single item in the ``fs()``.
+    Parameter ``itr`` is a reference for a single item in the ``fs()``.
     """
     current_ids = []
     for k in itr.keys():
@@ -506,9 +506,9 @@ def AddFile(path, read_stats=False, iter=None, iterID=None, key_id=None):
     # if not os.path.isfile(path):
     #     raise Exception('File not exist')
     parts = bpio.remotePath(path).split('/')
-    if not iter:
+    if iter is None:
         iter = fs()
-    if not iterID:
+    if iterID is None:
         iterID = fsID()
     resultID = ''
     parentKeyID = None
@@ -561,7 +561,7 @@ def AddFile(path, read_stats=False, iter=None, iterID=None, key_id=None):
     return resultID, iter, iterID
 
 
-def AddDir(path, read_stats=False, iter=None, iterID=None, key_id=None):
+def AddDir(path, read_stats=False, iter=None, iterID=None, key_id=None, force_path_id=None):
     """
     Add directory to the index, but do not read folder content.
 
@@ -578,9 +578,12 @@ def AddDir(path, read_stats=False, iter=None, iterID=None, key_id=None):
     Parameter ``path`` must be in "portable" form.
     """
     parts = bpio.remotePath(path).split('/')
-    if not iter:
+    force_path_id_parts = []
+    if force_path_id is not None:
+        force_path_id_parts = bpio.remotePath(force_path_id).split('/')
+    if iter is None:
         iter = fs()
-    if not iterID:
+    if iterID is None:
         iterID = fsID()
     resultID = ''
     parentKeyID = None
@@ -594,7 +597,12 @@ def AddDir(path, read_stats=False, iter=None, iterID=None, key_id=None):
         # if not bpio.pathIsDir(p):
         #     raise Exception('Directory not exist: %s' % str(p))
         if name not in iter:
-            id = MakeID(iter)
+            id = 0
+            if force_path_id_parts:
+                id = int(force_path_id_parts[0])
+                force_path_id_parts = force_path_id_parts[1:]
+            else:
+                id = MakeID(iter)
             resultID += '/' + str(id)
             ii = FSItemInfo(name, path_id=resultID.lstrip('/'), typ=DIR, key_id=(key_id or parentKeyID))
             if read_stats:
@@ -694,9 +702,9 @@ def PutItem(name, parent_path_id, as_folder=False, iter=None, iterID=None, key_i
     The name of new item will be equal to the local path.
     """
     remote_path = bpio.remotePath(name)
-    if not iter:
+    if iter is None:
         iter = fs()
-    if not iterID:
+    if iterID is None:
         iterID = fsID()
     # make an ID for the filename
     newItemID = MakeID(iter)
@@ -971,9 +979,9 @@ def DeleteBackupID(backupID, iterID=None):
     Return backup from the index by its full ID.
     """
     customerGlobalID, remotePath, versionName = packetid.SplitBackupID(backupID)
-    if not remotePath:
+    if remotePath is None:
         return False
-    if not iterID:
+    if iterID is None:
         iterID = fsID(global_id.GlobalUserToIDURL(customerGlobalID))
     info = GetByID(remotePath, iterID=iterID)
     if info is None:
@@ -1145,7 +1153,7 @@ def ExistsBackupID(backupID, iterID=None):
     customerGlobalID, remotePath, version = packetid.SplitBackupID(backupID)
     if not remotePath:
         return False
-    if not iterID:
+    if iterID is None:
         iterID = fsID(global_id.GlobalUserToIDURL(customerGlobalID))
     iter_and_path = WalkByID(remotePath, iterID=iterID)
     if iter_and_path is None:
@@ -1569,7 +1577,7 @@ def ListByPath(path, iter=None):
 #     customer_idurl = customerIDURLFromRootItem(iter)
 #     customer_id = global_id.UrlToGlobalID(customer_idurl)
     if path in ['', '/']:
-        return ListRootItems()
+        return ListRootItems(iter=iter)
     path = bpio.remotePath(path)
     iter_and_id = WalkByPath(path, iter=iter)
     if iter_and_id is None:
@@ -1727,7 +1735,7 @@ def ListChildsByPath(path, recursive=False, iter=None, iterID=None):
 
     if recursive:
         for sub_dir in sub_dirs:
-            sub_lookup = ListChildsByPath(sub_dir['path'])
+            sub_lookup = ListChildsByPath(sub_dir['path'], recursive=False)  # , iter=iter, iterID=iterID)
             if not isinstance(sub_lookup, list):
                 return sub_lookup
             result.extend(sub_lookup)
@@ -1783,7 +1791,7 @@ def ListAllBackupIDsAdvanced(sorted=False, reverse=False, iterID=None):
     """
     List all existing backups and return items info.
     """
-    if not iterID:
+    if iterID is None:
         iterID = fsID()
     # customer_idurl = customerIDURLFromRootItemID(iterID)
     # customer_id = global_id.UrlToGlobalID(customer_idurl)
@@ -1791,7 +1799,7 @@ def ListAllBackupIDsAdvanced(sorted=False, reverse=False, iterID=None):
     result = []
 
     def visitor(path_id, path, info, num_childs):
-        if (len(info.versions) == 0):
+        if len(info.versions) == 0:
             return
         dirpath = os.path.dirname(path)
         (item_size, item_time, versions) = ExtractVersions(path_id, info, dirpath)  # , customer_id)
@@ -1888,7 +1896,7 @@ def Scan(basedir=None, customer_idurl=None):
     ``lib.settings.getLocalBackupsDir()``. Also calculate size of the
     files.
     """
-    if not customer_idurl:
+    if customer_idurl is None:
         customer_idurl = my_id.getLocalID()
     if basedir is None:
         basedir = settings.getLocalBackupsDir()
@@ -1915,7 +1923,7 @@ def ScanID(pathID, basedir=None, customer_idurl=None):
     """
     Same as `Scan`, but check only single item in the index.
     """
-    if not customer_idurl:
+    if customer_idurl is None:
         customer_idurl = my_id.getLocalID()
     if basedir is None:
         basedir = settings.getLocalBackupsDir()

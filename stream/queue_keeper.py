@@ -186,6 +186,8 @@ class QueueKeeper(automat.Automat):
         self.has_rotated = False
         self.known_brokers = {}
         self.dht_read_use_cache = True
+        self.known_archive_folder_path = None
+        self.requested_archive_folder_path = None
         super(QueueKeeper, self).__init__(
             name="queue_keeper_%s" % self.customer_id,
             state="AT_STARTUP",
@@ -347,6 +349,7 @@ class QueueKeeper(automat.Automat):
         Action method.
         """
         self.new_possible_position = kwargs.get('desired_position', -1)
+        self.requested_archive_folder_path = kwargs.get('archive_folder_path', None)
 
     def doProc(self, *args, **kwargs):
         """
@@ -383,12 +386,16 @@ class QueueKeeper(automat.Automat):
         Action method.
         """
         desired_position = kwargs.get('desired_position', 0)
+        archive_folder_path = self.requested_archive_folder_path
+        if archive_folder_path is None:
+            archive_folder_path = self.known_archive_folder_path
         if _Debug:
-            lg.args(_DebugLevel, desired_position=desired_position, broker_idurl=self.broker_idurl)
+            lg.args(_DebugLevel, desired_position=desired_position, broker_idurl=self.broker_idurl, archive_folder_path=archive_folder_path)
         result = dht_relations.write_customer_message_broker(
             customer_idurl=self.customer_idurl,
             broker_idurl=self.broker_idurl,
             position=desired_position,
+            archive_folder_path=archive_folder_path,
         )
         result.addCallback(self._on_write_customer_message_broker, desired_position)
         if _Debug:
@@ -439,6 +446,8 @@ class QueueKeeper(automat.Automat):
         self.new_possible_position = None
         self.registered_callbacks = None
         self.connected_queues = None
+        self.known_archive_folder_path = None
+        self.requested_archive_folder_path = None
         self.known_brokers.clear()
         self.destroy()
 
@@ -489,6 +498,7 @@ class QueueKeeper(automat.Automat):
             self.automat('my-record-not-correct', desired_position=my_position)
             return
         self.dht_read_use_cache = True
+        self.known_archive_folder_path = my_broker_info['archive_folder_path']
         self.automat('my-record-correct', broker_idurl=my_broker_info['broker_idurl'], position=my_broker_info['position'])
 
     def _on_write_customer_message_broker(self, nodes, desired_broker_position):
@@ -496,6 +506,7 @@ class QueueKeeper(automat.Automat):
             lg.args(_DebugLevel, nodes=nodes, desired_broker_position=desired_broker_position)
         if nodes:
             # self.has_rotated = False
+            self.requested_archive_folder_path = None
             self.automat('dht-write-success', desired_position=desired_broker_position)
         else:
             self.dht_read_use_cache = False

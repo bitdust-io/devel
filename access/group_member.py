@@ -211,6 +211,7 @@ class GroupMember(automat.Automat):
             'latest_known_brokers': self.latest_dht_brokers,
             'connected_brokers': self.connected_brokers,
             'last_sequence_id': self.last_sequence_id,
+            'archive_folder_path': groups.get_archive_folder_path(self.group_key_id),
             'state': self.state,
         }
 
@@ -441,15 +442,15 @@ class GroupMember(automat.Automat):
         latest_known_sequence_id = kwargs.get('latest_known_sequence_id')
         received_messages = kwargs.get('received_messages')
         # TODO: must store received_messages temporary to be able to merge all together with restored from archive messages
-        if True:
-            from storage import archive_reader
-            ar = archive_reader.ArchiveReader()
-            ar.automat(
-                'start',
-                queue_id=self.active_queue_id,
-                start_sequence_id=self.last_sequence_id,
-                end_sequence_id=latest_known_sequence_id,
-            )
+        from storage import archive_reader
+        ar = archive_reader.ArchiveReader()
+        ar.automat(
+            'start',
+            queue_id=self.active_queue_id,
+            start_sequence_id=self.last_sequence_id,
+            end_sequence_id=latest_known_sequence_id,
+            archive_folder_path=groups.get_archive_folder_path(self.group_key_id),
+        )
 
     def doProcess(self, *args, **kwargs):
         """
@@ -633,6 +634,7 @@ class GroupMember(automat.Automat):
             'producer_id': self.member_id,
             'group_key': group_key_info,
             'last_sequence_id': self.last_sequence_id,
+            'archive_folder_path': groups.get_archive_folder_path(self.group_key_id),
         }
         if desired_broker_position >= 0:
             service_request_params['position'] = desired_broker_position
@@ -851,6 +853,14 @@ class GroupMember(automat.Automat):
             return
         self.latest_dht_brokers = brokers_info_list
         self.dht_read_use_cache = True
+        if groups.get_archive_folder_path(self.group_key_id) is None:
+            dht_archive_folder_path = None
+            for broker_info in brokers_info_list:
+                if broker_info.get('archive_folder_path'):
+                    dht_archive_folder_path = broker_info['archive_folder_path']
+            if dht_archive_folder_path is not None:
+                groups.set_archive_folder_path(self.group_key_id, dht_archive_folder_path)
+                lg.info('recognized archive folder path for %r from dht: %r' % (self.group_key_id, dht_archive_folder_path))
         self.automat('brokers-found', brokers_info_list)
 
     def _on_broker_hired(self, idurl, broker_pos):

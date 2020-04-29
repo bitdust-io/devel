@@ -195,6 +195,7 @@ class ArchiveWriter(automat.Automat):
         """
         self.queue_id = kwargs['queue_id']
         self.latest_sequence_id = kwargs['latest_sequence_id']
+        self.archive_folder_path = kwargs['archive_folder_path']
         self.chunk_size = kwargs['chunk_size']
         self.result_defer = kwargs.get('result_defer')
         qa, oid, _ = global_id.SplitGlobalQueueID(self.queue_id)
@@ -315,10 +316,11 @@ class ArchiveWriter(automat.Automat):
 
     def _do_start_archive_backup(self):
         local_path = self.local_data_callback(self.queue_id, self.latest_sequence_id)
+        supplier_path_id = os.path.join(self.archive_folder_path, strng.to_text(self.latest_sequence_id))
         dataID = misc.NewBackupID()
         backup_id = packetid.MakeBackupID(
             customer=self.queue_owner_id,
-            path_id=strng.to_text(self.latest_sequence_id),
+            path_id=supplier_path_id,
             key_alias=self.queue_alias,
             version=dataID,
         )

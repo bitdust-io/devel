@@ -191,7 +191,15 @@ def TreeSummary(ownerdir, key_alias=None):
             result.write('F%s %d\n' % (subpath, filesz))
             return False
         if not packetid.IsCanonicalVersion(name):
-            result.write('D%s\n' % subpath)
+            found_some_versions = False
+            for sub_path in os.listdir(realpath):
+                if packetid.IsCanonicalVersion(sub_path):
+                    found_some_versions = True
+                    break
+            if found_some_versions:
+                result.write('F%s -1\n' % subpath)
+            else:
+                result.write('D%s\n' % subpath)
             return True
         maxBlock = -1
         versionSize = {}
@@ -202,17 +210,17 @@ def TreeSummary(ownerdir, key_alias=None):
         for filename in os.listdir(realpath):
             packetID = subpath + '/' + filename
             pth = os.path.join(realpath, filename)
+            if os.path.isdir(pth):
+                result.write('D%s\n' % packetID)
+                continue
             try:
                 filesz = os.path.getsize(pth)
             except:
                 filesz = -1
-            if os.path.isdir(pth):
-                result.write('D%s\n' % packetID)
-                continue
             if not packetid.Valid(packetID):
                 result.write('F%s %d\n' % (packetID, filesz))
                 continue
-            customer, pathID, versionName, blockNum, supplierNum, dataORparity = packetid.SplitFull(packetID)
+            _, pathID, versionName, blockNum, supplierNum, dataORparity = packetid.SplitFull(packetID)
             if None in [pathID, versionName, blockNum, supplierNum, dataORparity]:
                 result.write('F%s %d\n' % (packetID, filesz))
                 continue

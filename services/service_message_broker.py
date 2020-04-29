@@ -88,6 +88,7 @@ class MessageBrokerService(LocalService):
             group_key = json_payload['group_key']
             last_sequence_id = json_payload.get('last_sequence_id', -1)
             position = json_payload.get('position', -1)
+            archive_folder_path = json_payload.get('archive_folder_path', None)
         except:
             lg.warn("wrong payload: %r" % json_payload)
             return p2p_service.SendFail(newpacket, 'wrong payload')
@@ -102,6 +103,7 @@ class MessageBrokerService(LocalService):
                 producer_id=producer_id,
                 position=position,
                 last_sequence_id=last_sequence_id,
+                archive_folder_path=archive_folder_path,
                 request_packet=newpacket,
                 result_defer=result,
             )

@@ -28,8 +28,9 @@ import threading
 import keywords as kw
 
 
-CUSTOMERS_IDS = ['customer-1', 'customer-2', 'customer-3', ]
+SUPPLIERS_IDS = ['supplier-1', 'supplier-2', 'supplier-3', 'supplier-4', ]
 BROKERS_IDS = ['broker-1', 'broker-2', 'broker-3', 'broker-4', 'broker-5', ]
+CUSTOMERS_IDS = ['customer-1', 'customer-2', 'customer-3', ]
 
 
 def execute_message_send_receive(group_key_id, producer_id, consumers_ids, message_label='A',
@@ -247,6 +248,9 @@ def test_customers_1_2_3_communicate_via_message_brokers():
         expected_last_sequence_id={'customer-1': 2, 'customer-2': 1, 'customer-3': 2, },
     )
 
+    # at that point 3 messages already passed thru the group and archive snapshot suppose to be triggered
+    # kw.wait_packets_finished(CUSTOMERS_IDS + BROKERS_IDS + SUPPLIERS_IDS)
+
     # sending 3 other messages to the group from customer 1
     for i in range(3):
         execute_message_send_receive(
@@ -298,3 +302,5 @@ def test_customers_1_2_3_communicate_via_message_brokers():
     assert group_info_offline['last_sequence_id'] == 5
 
     kw.supplier_list_v1('customer-1', expected_min_suppliers=2, expected_max_suppliers=2)
+
+    kw.file_list_all_v1('customer-2')

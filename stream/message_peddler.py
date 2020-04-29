@@ -1088,6 +1088,7 @@ class MessagePeddler(automat.Automat):
         result_defer = kwargs['result_defer']
         request_packet = kwargs['request_packet']
         last_sequence_id = kwargs['last_sequence_id']
+        archive_folder_path = kwargs['archive_folder_path']
         if _Debug:
             lg.args(_DebugLevel, request_packet=request_packet)
         if not my_keys.verify_key_info_signature(group_key_info):
@@ -1126,11 +1127,13 @@ class MessagePeddler(automat.Automat):
         position = kwargs.get('position', -1)
         if id_url.is_cached(group_creator_idurl):
             self._do_check_create_queue_keeper(
-                group_creator_idurl, request_packet, queue_id, consumer_id, producer_id, position, last_sequence_id, result_defer)
+                group_creator_idurl, request_packet, queue_id, consumer_id, producer_id,
+                position, last_sequence_id, archive_folder_path, result_defer)
             return
         caching_story = identitycache.immediatelyCaching(group_creator_idurl)
         caching_story.addCallback(lambda _: self._do_check_create_queue_keeper(
-            group_creator_idurl, request_packet, queue_id, consumer_id, producer_id, position, last_sequence_id, result_defer))
+            group_creator_idurl, request_packet, queue_id, consumer_id, producer_id,
+            position, last_sequence_id, archive_folder_path, result_defer))
         if _Debug:
             caching_story.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='message_peddler.doStartJoinQueue')
         caching_story.addErrback(self._on_group_creator_idurl_cache_failed, request_packet, result_defer)
@@ -1277,9 +1280,11 @@ class MessagePeddler(automat.Automat):
                         my_keys.erase_key(group_key_id)
 
 
-    def _do_check_create_queue_keeper(self, customer_idurl, request_packet, queue_id, consumer_id, producer_id, position, last_sequence_id, result_defer):
+    def _do_check_create_queue_keeper(self, customer_idurl, request_packet, queue_id, consumer_id, producer_id,
+                                      position, last_sequence_id, archive_folder_path, result_defer):
         if _Debug:
-            lg.args(_DebugLevel, queue_id=queue_id, consumer_id=consumer_id, producer_id=producer_id, position=position)
+            lg.args(_DebugLevel, queue_id=queue_id, consumer_id=consumer_id, producer_id=producer_id,
+                    position=position, archive_folder_path=archive_folder_path)
         queue_keeper_result = Deferred()
         queue_keeper_result.addCallback(
             self._on_queue_keeper_connect_result,
@@ -1297,6 +1302,7 @@ class MessagePeddler(automat.Automat):
             'connect',
             queue_id=queue_id,
             desired_position=position,
+            archive_folder_path=archive_folder_path,
             result_callback=queue_keeper_result,
         )
 
@@ -1350,6 +1356,14 @@ class MessagePeddler(automat.Automat):
             return
         if self.archive_in_progress:
             return
+        customer_idurl = global_id.GetGlobalQueueOwnerIDURL(message_in.queue_id)
+        qk = queue_keeper.queue_keepers().get(customer_idurl)
+        if not qk:
+            lg.err('queue_keeper() for %r was not found' % message_in.queue_id)
+            return
+        if qk.known_archive_folder_path is None:
+            lg.err('archive folder path is unknown for %r' % message_in.queue_id)
+            return
         self.archive_in_progress = True
         archive_result = Deferred()
         archive_result.addCallback(self._on_archive_backup_done, queue_id=message_in.queue_id)
@@ -1359,6 +1373,7 @@ class MessagePeddler(automat.Automat):
             'start',
             queue_id=message_in.queue_id,
             latest_sequence_id=message_in.get_sequence_id(),
+            archive_folder_path=qk.known_archive_folder_path,
             chunk_size=self.archive_chunk_size,
             result_defer=archive_result,
         )

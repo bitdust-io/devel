@@ -1179,14 +1179,11 @@ def file_info(remote_path, include_uploads=True, include_downloads=True):
     })
 
 
-def file_create(remote_path, as_folder=False):
+def file_create(remote_path, as_folder=False, exist_ok=False, force_path_id=None):
     """
     """
     if not driver.is_on('service_backup_db'):
         return ERROR('service_backup_db() is not started')
-    if _Debug:
-        lg.out(_DebugLevel, 'api.file_create remote_path=%s as_folder=%s' % (
-            remote_path, as_folder, ))
     from storage import backup_fs
     from storage import backup_control
     from system import bpio
@@ -1197,37 +1194,54 @@ def file_create(remote_path, as_folder=False):
     if not parts['path']:
         return ERROR('invalid "remote_path" format')
     path = bpio.remotePath(parts['path'])
-    pathID = backup_fs.ToID(path, iter=backup_fs.fs(parts['idurl']))
+    customer_idurl = parts['idurl']
+    pathID = backup_fs.ToID(path, iter=backup_fs.fs(customer_idurl))
     keyID = my_keys.make_key_id(alias=parts['key_alias'], creator_glob_id=parts['customer'])
     keyAlias = parts['key_alias']
-    if pathID:
+    if _Debug:
+        lg.args(_DebugLevel, remote_path=remote_path, as_folder=as_folder, path_id=pathID, customer_idurl=customer_idurl, force_path_id=force_path_id)
+    if pathID is not None:
+        if exist_ok:
+            fullRemotePath = global_id.MakeGlobalID(customer=parts['customer'], path=parts['path'], key_alias=keyAlias)
+            fullGlobID = global_id.MakeGlobalID(customer=parts['customer'], path=pathID, key_alias=keyAlias)
+            return OK({
+                'path_id': pathID,
+                'key_id': keyID,
+                'path': path,
+                'remote_path': fullRemotePath,
+                'global_id': fullGlobID,
+                'customer': customer_idurl,
+                'created': False,
+                'type': ('dir' if as_folder else 'file'),
+            }, message='remote path "%s" already exist in catalog: "%s"' % (('folder' if as_folder else 'file'), fullGlobID), )
         return ERROR('remote path "%s" already exist in catalog: "%s"' % (path, pathID))
     if as_folder:
         newPathID, _, _ = backup_fs.AddDir(
             path,
             read_stats=False,
-            iter=backup_fs.fs(parts['idurl']),
-            iterID=backup_fs.fsID(parts['idurl']),
+            iter=backup_fs.fs(customer_idurl),
+            iterID=backup_fs.fsID(customer_idurl),
             key_id=keyID,
+            force_path_id=force_path_id,
         )
     else:
         parent_path = os.path.dirname(path)
-        if not backup_fs.IsDir(parent_path, iter=backup_fs.fs(parts['idurl'])):
-            if backup_fs.IsFile(parent_path, iter=backup_fs.fs(parts['idurl'])):
+        if not backup_fs.IsDir(parent_path, iter=backup_fs.fs(customer_idurl)):
+            if backup_fs.IsFile(parent_path, iter=backup_fs.fs(customer_idurl)):
                 return ERROR('remote path can not be assigned, file already exist: "%s"' % parent_path)
             parentPathID, _, _ = backup_fs.AddDir(
                 parent_path,
                 read_stats=False,
-                iter=backup_fs.fs(parts['idurl']),
-                iterID=backup_fs.fsID(parts['idurl']),
+                iter=backup_fs.fs(customer_idurl),
+                iterID=backup_fs.fsID(customer_idurl),
                 key_id=keyID,
             )
             if _Debug:
                 lg.out(_DebugLevel, 'api.file_create parent folder "%s" was created at "%s"' % (parent_path, parentPathID))
         id_iter_iterID = backup_fs.GetIteratorsByPath(
             parent_path,
-            iter=backup_fs.fs(parts['idurl']),
-            iterID=backup_fs.fsID(parts['idurl']),
+            iter=backup_fs.fs(customer_idurl),
+            iterID=backup_fs.fsID(customer_idurl),
         )
         if not id_iter_iterID:
             return ERROR('remote path can not be assigned, parent folder not found: "%s"' % parent_path)
@@ -1255,6 +1269,7 @@ def file_create(remote_path, as_folder=False):
         'remote_path': full_remote_path,
         'global_id': full_glob_id,
         'customer': parts['idurl'],
+        'created': True,
         'type': ('dir' if as_folder else 'file'),
     }, message='new %s created in "%s"' % (('folder' if as_folder else 'file'), full_glob_id), )
 
@@ -2099,6 +2114,8 @@ def group_create(creator_id=None, key_size=2048, label=''):
     if not creator_id:
         creator_id = my_id.getGlobalID()
     group_key_id = groups.create_new_group(creator_id=creator_id, label=label, key_size=key_size)
+    if not group_key_id:
+        return ERROR('failed to create new group')
     key_info = my_keys.get_key_info(group_key_id, include_private=False)
     key_info.pop('include_private', None)
     key_info['group_key_id'] = key_info.pop('key_id')

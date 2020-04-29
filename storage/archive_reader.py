@@ -52,6 +52,10 @@ _DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
+import os
+
+#------------------------------------------------------------------------------
+
 from logs import lg
 
 from automats import automat
@@ -200,6 +204,7 @@ class ArchiveReader(automat.Automat):
         self.queue_id = kwargs['queue_id']
         self.start_sequence_id = kwargs['start_sequence_id']
         self.end_sequence_id = kwargs['end_sequence_id']
+        self.archive_folder_path = kwargs['archive_folder_path']
         qa, oid, _ = global_id.SplitGlobalQueueID(self.queue_id)
         self.queue_alias = qa
         self.queue_owner_id = oid
@@ -222,6 +227,7 @@ class ArchiveReader(automat.Automat):
         """
         Action method.
         """
+        groups.create_archive_folder(self.group_key_id, force_path_id=self.archive_folder_path)
         self._do_request_list_files(self.suppliers_list)
 
     def doRequestMyListFiles(self, *args, **kwargs):
@@ -234,9 +240,29 @@ class ArchiveReader(automat.Automat):
         """
         Action method.
         """
-        known_snapshots_list = backup_fs.ListByPath(self.queue_alias, iter=backup_fs.fs(customer_idurl=self.queue_owner_idurl))
+        expected_archive_folder = os.path.join('.archive', self.queue_alias)
+        iter_and_path = backup_fs.WalkByPath(expected_archive_folder, iter=backup_fs.fs(self.queue_owner_idurl))
+        if iter_and_path is None:
+            lg.err('did not found archive folder in the catalog: %r' % expected_archive_folder)
+            self.automat('restore-failed')
+            return
+        known_archive_snapshots_list = backup_fs.ListAllBackupIDsFull(
+            iterID=iter_and_path[0],
+        )
+        if not known_archive_snapshots_list:
+            lg.err('failed to restore data from archive, no snapshots found in %r' % expected_archive_folder)
+            self.automat('restore-failed')
+            return
+        snapshots_list = []
+        for archive_item in known_archive_snapshots_list:
+            snapshots_list.append(archive_item[1])
         if _Debug:
-            lg.args(_DebugLevel, known_snapshots_list=known_snapshots_list)
+            lg.args(_DebugLevel, snapshots_list=snapshots_list)
+        if not snapshots_list:
+            lg.err('no available snapshots found in archive list: %r' % known_archive_snapshots_list)
+            self.automat('restore-failed')
+            return
+
 #         r = restore_worker.RestoreWorker(backupID, outfd, KeyID=keyID)
 #         r.MyDeferred.addCallback(restore_done, backupID, outfd, outfilename, outputLocation, callback)
 #         r.set_block_restored_callback(block_restored_callback)

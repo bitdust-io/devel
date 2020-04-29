@@ -310,6 +310,7 @@ def process_line_file(line, current_key_alias=None, customer_idurl=None, is_in_s
     the second idea: check revision number of the local index - 0 means we have no index yet
     """
     paths2remove = set()
+    modified = False
     try:
         pth, filesz = line.split(' ')
         filesz = int(filesz)
@@ -333,6 +334,7 @@ def process_line_file(line, current_key_alias=None, customer_idurl=None, is_in_s
                     iter=backup_fs.fs(customer_idurl),
                     iterID=backup_fs.fsID(customer_idurl),
                 )
+                modified = True
     if not backup_fs.IsFileID(pth, iterID=backup_fs.fsID(customer_idurl)):
         # remote supplier have some file - but we don't have it in the index
         if pth.strip('/') in [settings.BackupIndexFileName(), ]:
@@ -350,6 +352,7 @@ def process_line_file(line, current_key_alias=None, customer_idurl=None, is_in_s
                 iter=backup_fs.fs(customer_idurl),
                 iterID=backup_fs.fsID(customer_idurl),
             )
+            modified = True
         else:
             if is_in_sync:
                 # so we have some modifications in the index - it is not empty!
@@ -370,11 +373,12 @@ def process_line_file(line, current_key_alias=None, customer_idurl=None, is_in_s
                 if _Debug:
                     lg.out(_DebugLevel, '        FILE "%s" skip removing, index not in sync yet' % pth)
                 # what to do now? let's hope we still can restore our index and this file is our remote data
-    return paths2remove
+    return modified, paths2remove
 
 
 def process_line_dir(line, current_key_alias=None, customer_idurl=None, is_in_sync=None, auto_create=False):
     paths2remove = set()
+    modified = False
     try:
         pth = line.split(' ')[0]
     except:
@@ -395,6 +399,7 @@ def process_line_dir(line, current_key_alias=None, customer_idurl=None, is_in_sy
                     iter=backup_fs.fs(customer_idurl),
                     iterID=backup_fs.fsID(customer_idurl),
                 )
+                modified = True
     if not backup_fs.ExistsID(pth, iterID=backup_fs.fsID(customer_idurl)):
         if is_in_sync:
             if customer_idurl == my_id.getIDURL():
@@ -411,7 +416,7 @@ def process_line_dir(line, current_key_alias=None, customer_idurl=None, is_in_sy
         else:
             if _Debug:
                 lg.out(_DebugLevel, '        DIR "%s" skip removing, index not in sync' % pth)
-    return paths2remove
+    return modified, paths2remove
 
 
 def process_line_version(line, supplier_num, current_key_alias=None, customer_idurl=None, is_in_sync=None, auto_create=False):
@@ -419,12 +424,12 @@ def process_line_version(line, supplier_num, current_key_alias=None, customer_id
     paths2remove = set()
     found_backups = set()
     newfiles = 0
-    remote_files_changed = False
+    modified = False
     # minimum is 4 words: "0/0/F20090709034221PM", "3", "0-1000" "123456"
     words = line.split(' ')
     if len(words) < 4:
-        lg.warn('incorrect line (words count): [%s]' % line)
-        return None
+        lg.err('incorrect line (words count): [%s]' % line)
+        return modified, backups2remove, paths2remove, found_backups, newfiles
     try:
         _, remotePath, versionName = packetid.SplitBackupID(words[0])
         backupID = packetid.MakeBackupID(
@@ -434,22 +439,22 @@ def process_line_version(line, supplier_num, current_key_alias=None, customer_id
             version=versionName,
         )
     except:
-        lg.warn('incorrect line (global id format): [%s]' % line)
-        return None
+        lg.err('incorrect line (global id format): [%s]' % line)
+        return modified, backups2remove, paths2remove, found_backups, newfiles
     try:
         lineSupplierNum = int(words[1])
         _, maxBlockNum = words[2].split('-')
         maxBlockNum = int(maxBlockNum)
         versionSize = int(words[3])
     except:
-        lg.warn('incorrect line (digits format): [%s]' % line)
-        return None
+        lg.err('incorrect line (digits format): [%s]' % line)
+        return modified, backups2remove, paths2remove, found_backups, newfiles
     if lineSupplierNum != supplier_num:
         # this mean supplier have old files and we do not need those files
         backups2remove.add(backupID)
         if _Debug:
             lg.out(_DebugLevel, '        VERSION "%s" to be removed, different supplier number' % backupID)
-        return None
+        return modified, backups2remove, paths2remove, found_backups, newfiles
     iter_path = backup_fs.WalkByID(remotePath, iterID=backup_fs.fsID(customer_idurl))
     item = None
     if iter_path:
@@ -480,13 +485,14 @@ def process_line_version(line, supplier_num, current_key_alias=None, customer_id
         else:
             if _Debug:
                 lg.out(_DebugLevel, '        VERSION "%s" skip removing, index not in sync' % backupID)
-        return None
+        return modified, backups2remove, paths2remove, found_backups, newfiles
     if auto_create:
         if not item.has_version(versionName):
             if not current_key_alias or not customer_idurl:
                 if _Debug:
                     lg.out(_DebugLevel, '        AUTO CREATE VERSION (skip key verification) "%s" at "%s" in the index' % (versionName, remotePath, ))
                 item.add_version(versionName)
+                modified = True
             else:
                 authorized_key_id = my_keys.make_key_id(
                     alias=current_key_alias,
@@ -496,6 +502,7 @@ def process_line_version(line, supplier_num, current_key_alias=None, customer_id
                     if _Debug:
                         lg.out(_DebugLevel, '        AUTO CREATE VERSION "%s" at "%s" in the index' % (versionName, remotePath, ))
                     item.add_version(versionName)
+                    modified = True
                 else:
                     lg.warn('skip auto create version %r for path %r because key %r not registered' % (versionName, remotePath, authorized_key_id, ))
     if not item.has_version(versionName):
@@ -509,21 +516,21 @@ def process_line_version(line, supplier_num, current_key_alias=None, customer_id
         else:
             if _Debug:
                 lg.out(_DebugLevel, '        VERSION "%s" skip removing, index not in sync' % backupID)
-        return None
+        return modified, backups2remove, paths2remove, found_backups, newfiles
     item_version_info = item.get_version_info(versionName)
     missingBlocksSet = {'Data': set(), 'Parity': set()}
     if len(words) > 4:
         # "0/0/123/4567/F20090709034221PM/0-Data" "3" "0-5" "434353" "missing" "Data:1,3" "Parity:0,1,2"
         if words[4].strip() != 'missing':
-            lg.warn('incorrect line:[%s]' % line)
-            return None
+            lg.err('incorrect line:[%s]' % line)
+            return modified, backups2remove, paths2remove, found_backups, newfiles
         for missingBlocksString in words[5:]:
             try:
                 dp, blocks = missingBlocksString.split(':')
                 missingBlocksSet[dp] = set(blocks.split(','))
             except:
                 lg.exc()
-                return None
+                return modified, backups2remove, paths2remove, found_backups, newfiles
     if backupID not in remote_files():
         remote_files()[backupID] = {}
         if _Debug:
@@ -550,10 +557,10 @@ def process_line_version(line, supplier_num, current_key_alias=None, customer_id
         # lg.warn('updating version %s info with %s / %s from recent ListFiles()' % (
         #     backupID, maxBlockNum, versionSize, ))
         item.set_version_info(versionName, maxBlockNum, versionSize)
-        remote_files_changed = True
+        modified = True
     # mark this backup to be repainted
     RepaintBackup(backupID)
-    return backups2remove, paths2remove, found_backups, newfiles, remote_files_changed
+    return modified, backups2remove, paths2remove, found_backups, newfiles
 
 
 def process_raw_list_files(supplier_num, list_files_text_body, customer_idurl=None, is_in_sync=None, auto_create=False):
@@ -628,28 +635,32 @@ def process_raw_list_files(supplier_num, list_files_text_body, customer_idurl=No
             current_key_alias = process_line_key(line)
             continue
 
-        if typ == 'F':
-            paths2remove.update(process_line_file(
+        if typ == 'D':
+            modified, _paths2remove = process_line_dir(
                 line,
                 current_key_alias=current_key_alias,
                 customer_idurl=customer_idurl,
                 is_in_sync=is_in_sync,
-                auto_create=auto_create,
-            ))
+                auto_create=False,
+            )
+            paths2remove.update(_paths2remove)
+            remote_files_changed = remote_files_changed or modified
             continue
 
-        if typ == 'D':
-            paths2remove.update(process_line_dir(
+        if typ == 'F':
+            modified, _paths2remove = process_line_file(
                 line,
                 current_key_alias=current_key_alias,
                 customer_idurl=customer_idurl,
                 is_in_sync=is_in_sync,
                 auto_create=auto_create,
-            ))
+            )
+            paths2remove.update(_paths2remove)
+            remote_files_changed = remote_files_changed or modified
             continue
 
         if typ == 'V':
-            ret = process_line_version(
+            modified, _backups2remove, _paths2remove, found_backups, _newfiles = process_line_version(
                 line,
                 supplier_num=supplier_num,
                 current_key_alias=current_key_alias,
@@ -657,15 +668,13 @@ def process_raw_list_files(supplier_num, list_files_text_body, customer_idurl=No
                 is_in_sync=is_in_sync,
                 auto_create=auto_create,
             )
-            if ret:
-                _backups2remove, _paths2remove, found_backups, _newfiles, _remote_files_changed = ret
-                backups2remove.update(_backups2remove)
-                paths2remove.update(_paths2remove)
-                missed_backups.difference_update(found_backups)
-                newfiles += _newfiles
-                remote_files_changed = remote_files_changed or _remote_files_changed
-                if current_query is not None:
-                    query_results.add((customer_idurl, current_query))
+            backups2remove.update(_backups2remove)
+            paths2remove.update(_paths2remove)
+            missed_backups.difference_update(found_backups)
+            newfiles += _newfiles
+            remote_files_changed = remote_files_changed or modified
+            if current_query is not None:
+                query_results.add((customer_idurl, current_query))
             continue
 
         raise Exception('unexpected line received: %r' % line)
@@ -682,7 +691,7 @@ def process_raw_list_files(supplier_num, list_files_text_body, customer_idurl=No
             cb(supplier_num, newfiles)
     query_results.clear()
     # finally return list of items which are too old but stored on suppliers machines
-    return backups2remove, paths2remove, missed_backups
+    return remote_files_changed, backups2remove, paths2remove, missed_backups
 
 #------------------------------------------------------------------------------
 

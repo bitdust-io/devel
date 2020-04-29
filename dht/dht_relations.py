@@ -202,6 +202,7 @@ def read_customer_message_brokers(customer_idurl, positions=[0, ], return_detail
             'customer_idurl': customer_idurl,
             'broker_idurl': None,
             'position': position,
+            'archive_folder_path': None,
         }
         if not dht_value or not isinstance(dht_value, dict):
             broker_result.callback(ret)
@@ -214,6 +215,7 @@ def read_customer_message_brokers(customer_idurl, positions=[0, ], return_detail
                 _customer_idurl = id_url.to_bin(dht_value['customer_idurl'])
                 _broker_idurl = id_url.to_bin(dht_value['broker_idurl'])
             _position = int(dht_value['position'])
+            _archive_folder_path = strng.to_text(dht_value['archive_folder_path'])
             _revision = int(dht_value.get('revision'))
             _timestamp = int(dht_value.get('timestamp'))
         except:
@@ -235,6 +237,7 @@ def read_customer_message_brokers(customer_idurl, positions=[0, ], return_detail
             'customer_idurl': _customer_idurl,
             'broker_idurl': _broker_idurl,
             'position': _position,
+            'archive_folder_path': _archive_folder_path,
             'revision': _revision,
             'timestamp': _timestamp,
         })
@@ -292,12 +295,13 @@ def read_customer_message_brokers(customer_idurl, positions=[0, ], return_detail
     return result
 
 
-def write_customer_message_broker(customer_idurl, broker_idurl, position=0, revision=None):
+def write_customer_message_broker(customer_idurl, broker_idurl, position=0, archive_folder_path=None, revision=None):
     customer_idurl = id_url.field(customer_idurl)
     broker_idurl = id_url.field(broker_idurl)
     return dht_records.set_message_broker(
         customer_idurl=customer_idurl,
         broker_idurl=broker_idurl,
         position=position,
+        archive_folder_path=archive_folder_path,
         revision=revision,
     )
