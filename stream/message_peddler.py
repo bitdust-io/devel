@@ -460,6 +460,9 @@ def update_processed_message(queue_id, sequence_id):
     messages_dir = os.path.join(queue_dir, 'messages')
     message_path = os.path.join(messages_dir, strng.to_text(sequence_id))
     stored_json_message = jsn.loads_text(local_fs.ReadTextFile(message_path))
+    if not stored_json_message:
+        lg.err('failed reading message %d from %r' % (sequence_id, queue_id, ))
+        return False
     stored_json_message['processed'] = utime.get_sec1970()
     if not local_fs.WriteTextFile(message_path, jsn.dumps(stored_json_message)):
         return False
@@ -493,6 +496,9 @@ def read_messages(queue_id, sequence_id_list=[]):
     for sequence_id in sequence_id_list:
         message_path = os.path.join(messages_dir, strng.to_text(sequence_id))
         stored_json_message = jsn.loads_text(local_fs.ReadTextFile(message_path))
+        if not stored_json_message:
+            lg.err('failed reading message %d from %r' % (sequence_id, queue_id, ))
+            continue
         stored_json_message.pop('attempts')
         result.append(stored_json_message)
     return result
@@ -515,6 +521,9 @@ def get_messages_for_consumer(queue_id, consumer_id, consumer_last_sequence_id, 
         except:
             lg.exc()
             continue
+        if not stored_json_message:
+            lg.err('failed reading message %d from %r' % (sequence_id, queue_id, ))
+            continue
         stored_json_message.pop('attempts')
         result.append(stored_json_message)
         if len(result) >= max_messages_count:
@@ -534,6 +543,9 @@ def register_delivery(queue_id, sequence_id, message_id):
     messages_dir = os.path.join(queue_dir, 'messages')
     message_path = os.path.join(messages_dir, strng.to_text(sequence_id))
     stored_json_message = jsn.loads_text(local_fs.ReadTextFile(message_path))
+    if not stored_json_message:
+        lg.err('failed reading message %d from %r' % (sequence_id, queue_id, ))
+        return False
     stored_json_message['attempts'].append({
         'message_id': message_id,
         'started': utime.get_sec1970(),
@@ -554,6 +566,9 @@ def unregister_delivery(queue_id, sequence_id, message_id, failed_consumers):
     messages_dir = os.path.join(queue_dir, 'messages')
     message_path = os.path.join(messages_dir, strng.to_text(sequence_id))
     stored_json_message = jsn.loads_text(local_fs.ReadTextFile(message_path))
+    if not stored_json_message:
+        lg.err('failed reading message %d from %r' % (sequence_id, queue_id, ))
+        return False
     found_attempt_number = None
     for attempt_number in range(len(stored_json_message['attempts'])-1, -1, -1):
         if stored_json_message['attempts'][attempt_number]['message_id'] == message_id:
@@ -624,6 +639,9 @@ def load_streams():
                 lg.warn('consumer %r already exist in stream %r' % (consumer_id, queue_id, ))
                 continue
             consumer_info = jsn.loads_text(local_fs.ReadTextFile(os.path.join(consumers_dir, consumer_id)))
+            if not consumer_info:
+                lg.err('failed reading consumer info %r from %r' % (consumer_id, queue_id, ))
+                continue
             streams()[queue_id]['consumers'][consumer_id] = consumer_info
             streams()[queue_id]['consumers'][consumer_id]['active'] = False
             loaded_consumers += 1
@@ -632,6 +650,9 @@ def load_streams():
                 lg.warn('producer %r already exist in stream %r' % (producer_id, queue_id, ))
                 continue
             producer_info = jsn.loads_text(local_fs.ReadTextFile(os.path.join(producers_dir, producer_id)))
+            if not producer_info:
+                lg.err('failed reading producer info %r from %r' % (producer_id, queue_id, ))
+                continue
             streams()[queue_id]['producers'][producer_id] = producer_info
             streams()[queue_id]['producers'][producer_id]['active'] = False
             loaded_producers += 1
@@ -993,23 +1014,6 @@ class MessagePeddler(automat.Automat):
             publish_events=publish_events,
             **kwargs
         )
-
-    def init(self):
-        """
-        Method to initialize additional variables and flags
-        at creation phase of `message_peddler()` machine.
-        """
-
-    def state_changed(self, oldstate, newstate, event, *args, **kwargs):
-        """
-        Method to catch the moment when `message_peddler()` state were changed.
-        """
-
-    def state_not_changed(self, curstate, event, *args, **kwargs):
-        """
-        This method intended to catch the moment when some event was fired in the `message_peddler()`
-        but automat state was not changed.
-        """
 
     def A(self, event, *args, **kwargs):
         """

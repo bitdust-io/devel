@@ -134,12 +134,6 @@ class SupplierFinder(automat.Automat):
         """
         self.target_idurl = None
 
-    def state_changed(self, oldstate, newstate, event, *args, **kwargs):
-        """
-        This method intended to catch the moment when automat's state were
-        changed.
-        """
-
     def A(self, event, *args, **kwargs):
         #---AT_STARTUP---
         if self.state == 'AT_STARTUP':

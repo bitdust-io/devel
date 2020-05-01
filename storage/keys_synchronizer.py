@@ -135,14 +135,8 @@ class KeysSynchronizer(automat.Automat):
         """
         Method to catch the moment when `keys_synchronizer()` state were changed.
         """
-        if newstate == 'NO_INFO':
+        if newstate == 'NO_INFO' and event != 'instant':
             self.automat('instant')
-
-    def state_not_changed(self, curstate, event, *args, **kwargs):
-        """
-        This method intended to catch the moment when some event was fired in the `keys_synchronizer()`
-        but automat state was not changed.
-        """
 
     def A(self, event, *args, **kwargs):
         """

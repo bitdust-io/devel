@@ -169,8 +169,7 @@ class BackupMonitor(automat.Automat):
         """
         This method is called every time when my state is changed.
         """
-        global_state.set_global_state('MONITOR ' + newstate)
-        if newstate == 'READY':
+        if newstate == 'READY' and event != 'instant':
             self.automat('instant')
 
     def A(self, event, *args, **kwargs):

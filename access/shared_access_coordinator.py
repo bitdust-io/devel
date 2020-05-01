@@ -207,17 +207,6 @@ class SharedAccessCoordinator(automat.Automat):
         self.result_defer = None
         self.connected_callbacks = {}
 
-    def state_changed(self, oldstate, newstate, event, *args, **kwargs):
-        """
-        Method to catch the moment when shared_access_coordinator() state were changed.
-        """
-
-    def state_not_changed(self, curstate, event, *args, **kwargs):
-        """
-        This method intended to catch the moment when some event was fired in the shared_access_coordinator()
-        but its state was not changed.
-        """
-
     def register(self):
         """
         """

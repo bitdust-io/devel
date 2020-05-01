@@ -150,17 +150,6 @@ class LocalService(automat.Automat):
 
     #------------------------------------------------------------------------------
 
-    def state_changed(self, oldstate, newstate, event, *args, **kwargs):
-        """
-        Method to catch the moment when automat's state were changed.
-        """
-
-    def state_not_changed(self, curstate, event, *args, **kwargs):
-        """
-        This method intended to catch the moment when some event was fired but
-        automat's state was not changed.
-        """
-
     def A(self, event, *args, **kwargs):
         #---ON---
         if self.state == 'ON':

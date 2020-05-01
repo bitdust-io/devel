@@ -844,7 +844,7 @@ def on_files_received(newpacket, info):
         list_files_text_body=supplier_raw_list_files,
         customer_idurl=trusted_customer_idurl,
         is_in_sync=True,
-        auto_create=False,
+        auto_create=True,
     )
     if remote_files_changed:
         backup_matrix.SaveLatestRawListFiles(

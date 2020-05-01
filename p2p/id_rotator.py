@@ -146,17 +146,6 @@ class IdRotator(automat.Automat):
         at creation phase of `id_rotator()` machine.
         """
 
-    def state_changed(self, oldstate, newstate, event, *args, **kwargs):
-        """
-        Method to catch the moment when `id_rotator()` state were changed.
-        """
-
-    def state_not_changed(self, curstate, event, *args, **kwargs):
-        """
-        This method intended to catch the moment when some event was fired in the `id_rotator()`
-        but automat state was not changed.
-        """
-
     def A(self, event, *args, **kwargs):
         """
         The state machine code, generated using `visio2python <http://bitdust.io/visio2python/>`_ tool.

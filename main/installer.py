@@ -154,7 +154,6 @@ class Installer(automat.Automat):
         self.flagCmdLine = False
 
     def state_changed(self, oldstate, newstate, event, *args, **kwargs):
-        global_state.set_global_state('INSTALL ' + newstate)
         initializer.A('installer.state', newstate)
 
     def A(self, event, *args, **kwargs):

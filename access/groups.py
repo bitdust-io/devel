@@ -195,10 +195,10 @@ def generate_group_key(creator_id=None, label=None, key_size=4096):
 
 def create_archive_folder(group_key_id, force_path_id=None):
     group_key_alias, group_creator_idurl = my_keys.split_key_id(group_key_id)
-    rel_path = os.path.join('.archive', group_key_alias)
-    archive_folder_path = global_id.MakeGlobalID(
-        key_alias=group_key_alias, customer=group_creator_idurl.to_id(), path=rel_path)
-    res = api.file_create(archive_folder_path, as_folder=True, exist_ok=True, force_path_id=force_path_id)
+    catalog_path = os.path.join('.archive', group_key_alias)
+    archive_folder_catalog_path = global_id.MakeGlobalID(
+        key_alias=group_key_alias, customer=group_creator_idurl.to_id(), path=catalog_path)
+    res = api.file_create(archive_folder_catalog_path, as_folder=True, exist_ok=True, force_path_id=force_path_id)
     if res['status'] != 'OK':
         lg.err('failed to create archive folder in the catalog: %r' % res)
         return None
@@ -206,7 +206,12 @@ def create_archive_folder(group_key_id, force_path_id=None):
         lg.info('created new archive folder in the catalog: %r' % res)
     else:
         lg.info('archive folder already exist in the catalog: %r' % res)
-    return res['result']['path_id']
+    ret = res['result']['path_id']
+    if force_path_id is not None:
+        if force_path_id != ret:
+            lg.err('archive folder exists, but have different path ID in the catalog: %r' % ret)
+            return None
+    return ret
 
 
 def set_group_info(group_key_id, group_info=None):

@@ -65,6 +65,10 @@ from lib import packetid
 
 from main import events
 from main import config
+from main import settings
+
+from system import tmpfile
+from system import bpio
 
 from crypt import my_keys
 
@@ -86,6 +90,7 @@ from access import groups
 from storage import restore_worker
 from storage import backup_fs
 from storage import backup_matrix
+from storage import backup_tar
 
 from userid import global_id
 from userid import id_url
@@ -111,23 +116,6 @@ class ArchiveReader(automat.Automat):
             publish_events=publish_events,
             **kwargs
         )
-
-    def init(self):
-        """
-        Method to initialize additional variables and flags
-        at creation phase of `archive_reader()` machine.
-        """
-
-    def state_changed(self, oldstate, newstate, event, *args, **kwargs):
-        """
-        Method to catch the moment when `archive_reader()` state were changed.
-        """
-
-    def state_not_changed(self, curstate, event, *args, **kwargs):
-        """
-        This method intended to catch the moment when some event was fired in the `archive_reader()`
-        but automat state was not changed.
-        """
 
     def A(self, event, *args, **kwargs):
         """
@@ -240,17 +228,15 @@ class ArchiveReader(automat.Automat):
         """
         Action method.
         """
-        expected_archive_folder = os.path.join('.archive', self.queue_alias)
-        iter_and_path = backup_fs.WalkByPath(expected_archive_folder, iter=backup_fs.fs(self.queue_owner_idurl))
-        if iter_and_path is None:
-            lg.err('did not found archive folder in the catalog: %r' % expected_archive_folder)
+        iterID_and_path = backup_fs.WalkByID(self.archive_folder_path, iterID=backup_fs.fsID(self.queue_owner_idurl))
+        if iterID_and_path is None:
+            lg.err('did not found archive folder in the catalog: %r' % self.archive_folder_path)
             self.automat('restore-failed')
             return
-        known_archive_snapshots_list = backup_fs.ListAllBackupIDsFull(
-            iterID=iter_and_path[0],
-        )
+        iterID, path = iterID_and_path
+        known_archive_snapshots_list = backup_fs.ListAllBackupIDsFull(iterID=iterID)
         if not known_archive_snapshots_list:
-            lg.err('failed to restore data from archive, no snapshots found in %r' % expected_archive_folder)
+            lg.err('failed to restore data from archive, no snapshots found in folder: %r' % self.archive_folder_path)
             self.automat('restore-failed')
             return
         snapshots_list = []
@@ -262,15 +248,18 @@ class ArchiveReader(automat.Automat):
             lg.err('no available snapshots found in archive list: %r' % known_archive_snapshots_list)
             self.automat('restore-failed')
             return
-
-#         r = restore_worker.RestoreWorker(backupID, outfd, KeyID=keyID)
-#         r.MyDeferred.addCallback(restore_done, backupID, outfd, outfilename, outputLocation, callback)
-#         r.set_block_restored_callback(block_restored_callback)
-#         r.set_packet_in_callback(packet_in_callback)
-#         _WorkingBackupIDs[backupID] = r
-#         _WorkingRestoreProgress[backupID] = {}
-#         r.automat('init')
-#         return r
+        backupID = snapshots_list[0]
+        outfd, outfilename = tmpfile.make(
+            'restore',
+            extension='.tar.gz',
+            prefix=backupID.replace('@', '_').replace('.', '_').replace('/', '_').replace(':', '_') + '_',
+        )
+        rw = restore_worker.RestoreWorker(backupID, outfd, KeyID=self.group_key_id)
+        rw.MyDeferred.addCallback(self._on_restore_done, backupID, outfd, outfilename)
+        rw.MyDeferred.addErrback(self._on_restore_failed, backupID, outfd, outfilename)
+        if _Debug:
+            rw.MyDeferred.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='archive_reader.doStartRestoreWorker')
+        rw.automat('init')
 
     def doCollectFiles(self, event, *args, **kwargs):
         """
@@ -366,3 +355,41 @@ class ArchiveReader(automat.Automat):
             )
             self.automat('list-files-failed')
         return None
+
+    def _on_restore_done(self, result, backupID, outfd, tarfilename):
+        try:
+            os.close(outfd)
+        except:
+            lg.exc()
+        if result == 'done':
+            lg.info('archive %r restore success from %r' % (backupID, tarfilename, ))
+        else:
+            lg.err('archive %r restore failed from %r with : %r' % (backupID, tarfilename, result, ))
+        if result == 'done':
+            _, pathID, versionName = packetid.SplitBackupID(backupID)
+            service_dir = settings.ServiceDir('service_private_groups')
+            queues_dir = os.path.join(service_dir, 'queues')
+            queue_dir = os.path.join(queues_dir, self.group_key_id)
+            snapshot_dir = os.path.join(queue_dir, pathID, versionName)
+            if not os.path.isdir(snapshot_dir):
+                bpio._dirs_make(snapshot_dir)
+            d = backup_tar.extracttar_thread(tarfilename, snapshot_dir)
+            d.addCallback(self._on_extract_done, backupID, tarfilename, snapshot_dir)
+            d.addErrback(self._on_extract_failed, backupID, tarfilename, snapshot_dir)
+            return d
+        tmpfile.throw_out(tarfilename, 'restore ' + result)
+        return None
+
+    def _on_restore_failed(self, err, backupID, outfd, tarfilename):
+        lg.err('archive %r restore failed with : %r' % (backupID, err, ))
+        self.automat('restore-failed')
+
+    def _on_extract_done(self, retcode, backupID, source_filename, output_location):
+        lg.info('archive %r snapshot from %r extracted successfully to %r : %r' % (backupID, source_filename, output_location, retcode, ))
+        tmpfile.throw_out(source_filename, 'file extracted')
+        return retcode
+
+    def _on_extract_failed(self, err, backupID, source_filename, output_location):
+        lg.err('archive %r extract failed from %r to %r with: %r' % (backupID, source_filename, output_location, err))
+        tmpfile.throw_out(source_filename, 'file extract failed')
+        return err

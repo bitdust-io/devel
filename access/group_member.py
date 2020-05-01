@@ -221,17 +221,6 @@ class GroupMember(automat.Automat):
         at creation phase of `group_member()` machine.
         """
 
-    def state_changed(self, oldstate, newstate, event, *args, **kwargs):
-        """
-        Method to catch the moment when `group_member()` state were changed.
-        """
-
-    def state_not_changed(self, curstate, event, *args, **kwargs):
-        """
-        This method intended to catch the moment when some event was fired in the `group_member()`
-        but automat state was not changed.
-        """
-
     def register(self):
         """
         """

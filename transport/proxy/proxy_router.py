@@ -163,12 +163,6 @@ class ProxyRouter(automat.Automat):
             elif network_connector.A().state == 'DISCONNECTED':
                 reactor.callLater(0, self.automat, 'network-disconnected')  # @UndefinedVariable
 
-    def state_not_changed(self, curstate, event, *args, **kwargs):
-        """
-        This method intended to catch the moment when some event was fired in
-        the proxy_router() but its state was not changed.
-        """
-
     def A(self, event, *args, **kwargs):
         """
         The state machine code, generated using `visio2python

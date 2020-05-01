@@ -201,23 +201,6 @@ class QueueKeeper(automat.Automat):
     def __repr__(self):
         return '%s[%d](%s)' % (self.id, self.known_position, self.state)
 
-    def init(self):
-        """
-        Method to initialize additional variables and flags
-        at creation phase of `queue_keeper()` machine.
-        """
-
-    def state_changed(self, oldstate, newstate, event, *args, **kwargs):
-        """
-        Method to catch the moment when `queue_keeper()` state were changed.
-        """
-
-    def state_not_changed(self, curstate, event, *args, **kwargs):
-        """
-        This method intended to catch the moment when some event was fired in the `queue_keeper()`
-        but automat state was not changed.
-        """
-
     def A(self, event, *args, **kwargs):
         """
         The state machine code, generated using `visio2python <http://bitdust.io/visio2python/>`_ tool.

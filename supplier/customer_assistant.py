@@ -128,23 +128,6 @@ class CustomerAssistant(automat.Automat):
             log_transitions=_Debug,
         )
 
-    def init(self):
-        """
-        Method to initialize additional variables and flags
-        at creation phase of customer_assistant() machine.
-        """
-
-    def state_changed(self, oldstate, newstate, event, *args, **kwargs):
-        """
-        Method to catch the moment when customer_assistant() state were changed.
-        """
-
-    def state_not_changed(self, curstate, event, *args, **kwargs):
-        """
-        This method intended to catch the moment when some event was fired in the customer_assistant()
-        but its state was not changed.
-        """
-
     def A(self, event, *args, **kwargs):
         """
         The state machine code, generated using `visio2python <https://bitdust.io/visio2python/>`_ tool.

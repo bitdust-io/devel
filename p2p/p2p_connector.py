@@ -198,17 +198,15 @@ class P2PConnector(automat.Automat):
         self.log_transitions = _Debug
 
     def state_changed(self, oldstate, newstate, event, *args, **kwargs):
-        global_state.set_global_state('P2P ' + newstate)
-        if newstate == 'INCOMMING?':
+        if newstate == 'INCOMMING?' and event != 'instant':
             self.automat('instant')
-        if oldstate != newstate:
-            if newstate == 'CONNECTED':
-                self.health_check_task = LoopingCall(self._do_id_server_health_check)
-                self.health_check_task.start(config.conf().getInt('services/identity-propagate/health-check-interval-seconds'), now=False)
-            else:
-                if self.health_check_task:
-                    self.health_check_task.stop()
-                    self.health_check_task = None
+        if newstate == 'CONNECTED':
+            self.health_check_task = LoopingCall(self._do_id_server_health_check)
+            self.health_check_task.start(config.conf().getInt('services/identity-propagate/health-check-interval-seconds'), now=False)
+        else:
+            if self.health_check_task:
+                self.health_check_task.stop()
+                self.health_check_task = None
 
     def A(self, event, *args, **kwargs):
         #---AT_STARTUP---

@@ -202,7 +202,7 @@ class IndexSynchronizer(automat.Automat):
         Method to catch the moment when index_synchronizer() state were
         changed.
         """
-        if newstate == 'IN_SYNC!' and oldstate != newstate:
+        if newstate == 'IN_SYNC!':
             if A().last_time_in_sync > 0 and time.time() - A().last_time_in_sync < 30:
                 if _Debug:
                     lg.dbg(_DebugLevel, 'backup index already synchronized %r seconds ago' % (time.time() - A().last_time_in_sync))
@@ -217,12 +217,6 @@ class IndexSynchronizer(automat.Automat):
             events.send('my-backup-index-out-of-sync', data={})
         if newstate == 'NO_INFO':
             self.last_time_in_sync = -1
-
-    def state_not_changed(self, curstate, event, *args, **kwargs):
-        """
-        This method intended to catch the moment when some event was fired in
-        the index_synchronizer() but its state was not changed.
-        """
 
     def A(self, event, *args, **kwargs):
         """

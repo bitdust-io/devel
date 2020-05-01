@@ -267,7 +267,7 @@ class FireHire(automat.Automat):
         changed.
         """
         global_state.set_global_state('FIREHIRE ' + newstate)
-        if newstate == 'READY':
+        if newstate == 'READY' and event != 'instant':
             self.automat('instant')
 
     def A(self, event, *args, **kwargs):

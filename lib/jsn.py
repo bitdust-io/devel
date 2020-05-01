@@ -184,6 +184,8 @@ def dumps(obj, indent=None, separators=None, sort_keys=None, ensure_ascii=False,
     Calls `json.dumps()` with parameters.
     Always translates every byte string json value into text using encoding.
     """
+    if not obj:
+        return None
 
     enc_errors = kw.pop('errors', 'strict')
 
@@ -245,6 +247,8 @@ def loads(s, encoding='utf-8', keys_to_bin=False, **kw):
     Calls `json.loads()` with parameters.
     Always translates all json values into binary strings using encoding.
     """
+    if not s:
+        return None
 
     def _to_bin(dct):
         for k in dct.keys():
@@ -279,6 +283,8 @@ def loads_text(s, encoding='utf-8', **kw):
     Calls `json.loads()` with parameters.
     Always translates all json keys and values into unicode strings.
     """
+    if not s:
+        return None
 
     enc_errors = kw.pop('errors', 'strict')
 
