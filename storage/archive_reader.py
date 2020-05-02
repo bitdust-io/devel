@@ -306,7 +306,8 @@ class ArchiveReader(automat.Automat):
                 #     commands.Files(): self._on_list_files_response,
                     commands.Fail(): lambda resp, info: self._on_list_files_failed(supplier_pos),
                     None: lambda pkt_out: self._on_list_files_failed(supplier_pos),
-                }
+                },
+                timeout=15,
             )
             self.requested_list_files[supplier_pos] = None if outpacket else False
 
@@ -334,8 +335,9 @@ class ArchiveReader(automat.Automat):
         lst = list(self.requested_list_files.values())
         if _Debug:
             lg.args(_DebugLevel, requested_list_files=lst, supplier_num=supplier_num, new_files_count=new_files_count)
-        packets_pending_or_failed = lst.count(None) + lst.count(False)
-        if packets_pending_or_failed < self.correctable_errors * 2:  # because each packet also have Parity()
+        # packets_pending_or_failed = lst.count(None) + lst.count(False)
+        # if packets_pending_or_failed < self.correctable_errors * 2:  # because each packet also have Parity()
+        if lst.count(None) == 0:
             backup_matrix.remove_list_files_query_callback(
                 customer_idurl=self.queue_owner_idurl,
                 query_path=self.queue_alias,
@@ -348,7 +350,7 @@ class ArchiveReader(automat.Automat):
         lst = list(self.requested_list_files.values())
         if _Debug:
             lg.args(_DebugLevel, requested_list_files=lst, supplier_num=supplier_num)
-        if not lst.count(None):
+        if lst.count(None) == 0:
             backup_matrix.remove_list_files_query_callback(
                 customer_idurl=self.queue_owner_idurl,
                 query_path=self.queue_alias,

@@ -67,6 +67,8 @@ def BytesToDict(inp, encoding='latin1', errors='strict', keys_to_text=False, val
     Smart feature `unpack_types` can be used to "extract" real types of keys and values from input bytes.
     Can be used to extract dictionaries of mixed types - binary and text values.   
     """
+    if not inp:
+        return {}
     _t = strng.to_text(inp, encoding=encoding)
     if values_to_text:
         return jsn.loads_text(_t, encoding=encoding)

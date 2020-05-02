@@ -126,13 +126,15 @@ _RaidWorker = None
 
 
 def add_task(cmd, params, callback):
-    lg.out(10, 'raid_worker.add_task [%s] %s' % (cmd, str(params)[:80]))
+    if _Debug:
+        lg.args(_DebugLevel, cmd=cmd, params=params)
     A('new-task', (cmd, params, callback))
 
 
 def cancel_task(cmd, first_parameter):
     if not A():
-        lg.out(10, 'raid_worker.cancel_task SKIP _RaidWorker is not started')
+        if _Debug:
+            lg.out(_DebugLevel, 'raid_worker.cancel_task SKIP _RaidWorker is not started')
         return False
     task_id = None
     found = False
@@ -140,7 +142,8 @@ def cancel_task(cmd, first_parameter):
         if cmd == t_cmd and first_parameter == t_params[0]:
             try:
                 A().tasks.remove(t_id, t_cmd, t_params)
-                lg.out(10, 'raid_worker.cancel_task found pending task %r, canceling %r' % (t_id, first_parameter))
+                if _Debug:
+                    lg.out(_DebugLevel, 'raid_worker.cancel_task found pending task %r, canceling %r' % (t_id, first_parameter))
             except:
                 lg.warn('failed removing pending task %d, %s' % (t_id, first_parameter))
             found = True
@@ -155,7 +158,8 @@ def cancel_task(cmd, first_parameter):
     for task_id, task_data in A().activetasks.items():
         t_proc, t_cmd, t_params = task_data
         if cmd == t_cmd and first_parameter == t_params[0]:
-            lg.out(10, 'raid_worker.cancel_task found started task %r, aborting process %r' % (task_id, t_proc.tid))
+            if _Debug:
+                lg.out(_DebugLevel, 'raid_worker.cancel_task found started task %r, aborting process %r' % (task_id, t_proc.tid))
             A().processor.cancel(t_proc.tid)
             found = True
             break

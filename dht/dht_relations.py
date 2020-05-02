@@ -133,6 +133,14 @@ def read_customer_suppliers(customer_idurl, as_fields=True, use_cache=True):
         if my_id.getLocalID() != id_url.field(ret['customer_idurl']):
             contactsdb.set_suppliers(ret['suppliers'], customer_idurl=ret['customer_idurl'])
             contactsdb.save_suppliers(customer_idurl=ret['customer_idurl'])
+            if ret.get('ecc_map'):
+                for supplier_idurl in ret['suppliers']:
+                    if supplier_idurl:
+                        contactsdb.add_supplier_meta_info(
+                            supplier_idurl=supplier_idurl,
+                            info={'ecc_map': ret['ecc_map'], },
+                            customer_idurl=ret['customer_idurl'],
+                        )
         else:
             if _Debug:
                 lg.out(_DebugLevel, 'dht_relations._do_save_customer_suppliers SKIP processing my own suppliers')

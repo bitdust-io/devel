@@ -348,7 +348,7 @@ class ArchiveWriter(automat.Automat):
             for dataORparity in ('Data', 'Parity', ):
                 packet_id = packetid.MakePacketID(backup_id, block_num, supplier_num, dataORparity)
                 packet_filename = os.path.join(archive_snapshot_dir, '%d-%d-%s' % (
-                    block_num, block_num, dataORparity,
+                    block_num, supplier_num, dataORparity,
                 ))
                 if not os.path.isfile(packet_filename):
                     lg.err('%s is not a file' % packet_filename)

@@ -52,9 +52,9 @@ class _Helper(object):
 
         def _read_done(cmd, taskdata, result):
             if read_success:
-                self.assertEqual(open('/tmp/source.txt', 'r').read(), open('/tmp/destination.txt', 'r').read())
+                self.assertEqual(open('/tmp/source.txt', 'rb').read(), open('/tmp/destination.txt', 'rb').read())
             else:
-                self.assertNotEqual(open('/tmp/source.txt', 'r').read(), open('/tmp/destination.txt', 'r').read())
+                self.assertNotEqual(open('/tmp/source.txt', 'rb').read(), open('/tmp/destination.txt', 'rb').read())
             os.system('rm -rf /tmp/source.txt')
             os.system('rm -rf /tmp/destination.txt')
             os.system('rm -rf /tmp/raidtest')
@@ -100,7 +100,7 @@ class _Helper(object):
         os.system('rm -rf /tmp/destination.txt')
         os.system('rm -rf /tmp/raidtest')
         os.system("mkdir -p '/tmp/raidtest/master$alice@somehost.com/0/F12345678'")
-        open('/tmp/source.txt', 'w').write(base64.b64encode(os.urandom(filesize)).decode())
+        open('/tmp/source.txt', 'wb').write(base64.b64encode(os.urandom(filesize)))
         reactor.callWhenRunning(raid_worker.A, 'init')  # @UndefinedVariable
         reactor.callLater(0.5, raid_worker.add_task, 'make', (  # @UndefinedVariable
             '/tmp/source.txt', target_ecc_map, 'F12345678', '5', '/tmp/raidtest/master$alice@somehost.com/0/F12345678'), _make_done)
@@ -113,7 +113,8 @@ class _Helper(object):
             dead_suppliers=5,  # for 18 suppliers max 5 "correctable" errors are possible, see raid/eccmap.py
             rebuild_one_success=True,
             read_success=True,
-            filesize=10000,
+            filesize=50,
+            skip_rebuild=False,
         )
 
     def test_ecc18x18_with_10_dead_suppliers_failed(self):
@@ -123,7 +124,8 @@ class _Helper(object):
             dead_suppliers=10,
             rebuild_one_success=True,
             read_success=False,
-            filesize=10000,
+            filesize=50,
+            skip_rebuild=False,
         )
 
     def test_ecc18x18_with_14_dead_suppliers_failed(self):
@@ -133,7 +135,8 @@ class _Helper(object):
             dead_suppliers=14,
             rebuild_one_success=False,
             read_success=False,
-            filesize=10000,
+            filesize=50,
+            skip_rebuild=False,
         )
 
     def test_ecc64x64_with_10_dead_suppliers_success(self):
@@ -143,7 +146,19 @@ class _Helper(object):
             dead_suppliers=10,  # for 64 suppliers max 10 "correctable" errors are possible, see raid/eccmap.py
             rebuild_one_success=True,
             read_success=True,
-            filesize=10000,
+            filesize=50,
+            skip_rebuild=False,
+        )
+
+    def test_ecc4x4_with_2_dead_suppliers_success(self):
+        return self._test_make_rebuild_read(
+            target_ecc_map='ecc/4x4',
+            num_suppliers=4,
+            dead_suppliers=2,  # for 4 suppliers max 2 "correctable" errors are possible, see raid/eccmap.py
+            rebuild_one_success=True,
+            read_success=True,
+            filesize=50,
+            skip_rebuild=False,
         )
 
     def test_ecc64x64_with_10_dead_suppliers_success_no_rebuild(self):
@@ -153,7 +168,29 @@ class _Helper(object):
             dead_suppliers=10,  # for 64 suppliers max 10 "correctable" errors are possible, see raid/eccmap.py
             rebuild_one_success=True,
             read_success=True,
-            filesize=10000,
+            filesize=50,
+            skip_rebuild=True,
+        )
+
+    def test_ecc4x4_with_2_dead_suppliers_success_no_rebuild(self):
+        return self._test_make_rebuild_read(
+            target_ecc_map='ecc/4x4',
+            num_suppliers=4,
+            dead_suppliers=2,  # for 4 suppliers max 2 "correctable" errors are possible, see raid/eccmap.py
+            rebuild_one_success=True,
+            read_success=True,
+            filesize=50,
+            skip_rebuild=True,
+        )
+
+    def test_ecc2x2_with_1_dead_supplier_success_no_rebuild(self):
+        return self._test_make_rebuild_read(
+            target_ecc_map='ecc/2x2',
+            num_suppliers=2,
+            dead_suppliers=1,  # for 2 suppliers max 1 "correctable" error is possible, see raid/eccmap.py
+            rebuild_one_success=True,
+            read_success=True,
+            filesize=50,
             skip_rebuild=True,
         )
 
@@ -181,9 +218,9 @@ class _Helper(object):
 
 
 
-class TestRaidWorkerWithParallelP(_Helper, TestCase):
-
-    child_processes_enabled = True
+# class TestRaidWorkerWithParallelP(_Helper, TestCase):
+# 
+#     child_processes_enabled = True
 
 
 

@@ -82,7 +82,7 @@ from io import BytesIO
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -263,8 +263,8 @@ class backup(automat.Automat):
         """
         Return current value of ``ask4abort`` flag.
         """
-        if _Debug:
-            lg.args(_DebugLevel, ask4abort=self.ask4abort)
+        # if _Debug:
+        #     lg.args(_DebugLevel, ask4abort=self.ask4abort)
         return self.ask4abort
 
     def isPipeReady(self, *args, **kwargs):
