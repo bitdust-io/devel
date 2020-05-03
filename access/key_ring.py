@@ -59,8 +59,10 @@ from lib import strng
 from lib import serialization
 
 from main import settings
+from main import events
 
 from contacts import identitycache
+from contacts import contactsdb
 
 from p2p import online_status
 from p2p import p2p_service
@@ -71,6 +73,10 @@ from crypt import my_keys
 from crypt import encrypted
 
 from storage import backup_control
+from storage import backup_fs
+from storage import backup_matrix
+
+from supplier import list_files
 
 from interface import api
 
@@ -729,4 +735,125 @@ def do_delete_key(key_id, is_private):
         return False
     if _Debug:
         lg.out(_DebugLevel, 'key_ring.do_delete_key key_id=%s  is_private=%r : %r' % (key_id, is_private, res))
+    return True
+
+#------------------------------------------------------------------------------
+
+def on_files_received(newpacket, info):
+    list_files_global_id = global_id.ParseGlobalID(newpacket.PacketID)
+    if not list_files_global_id['idurl']:
+        lg.warn('invalid PacketID: %s' % newpacket.PacketID)
+        return False
+    trusted_customer_idurl = list_files_global_id['idurl']
+    incoming_key_id = list_files_global_id['key_id']
+    if trusted_customer_idurl == my_id.getLocalID():
+        if _Debug:
+            lg.dbg(_DebugLevel, 'ignore %s packet which seems to came from my own supplier' % newpacket)
+        # only process list Files() from other customers who granted me access to their files
+        return False
+    if not my_keys.is_valid_key_id(incoming_key_id):
+        lg.warn('ignore, invalid key id in packet %s' % newpacket)
+        return False
+    if not my_keys.is_key_private(incoming_key_id):
+        lg.warn('private key is not registered : %s' % incoming_key_id)
+        p2p_service.SendFail(newpacket, 'private key is not registered')
+        return False
+    try:
+        block = encrypted.Unserialize(
+            newpacket.Payload,
+            decrypt_key=incoming_key_id,
+        )
+    except:
+        lg.exc(newpacket.Payload)
+        return False
+    if block is None:
+        lg.warn('failed reading data from %s' % newpacket.RemoteID)
+        return False
+#         if block.CreatorID != trusted_customer_idurl:
+#             lg.warn('invalid packet, creator ID must be present in packet ID : %s ~ %s' % (
+#                 block.CreatorID, list_files_global_id['idurl'], ))
+#             return False
+    try:
+        raw_files = block.Data()
+    except:
+        lg.exc()
+        return False
+    if block.CreatorID == trusted_customer_idurl:
+        # this is a trusted guy sending some shared files to me
+        try:
+            json_data = serialization.BytesToDict(raw_files, keys_to_text=True, encoding='utf-8')
+            json_data['items']
+        except:
+            lg.exc()
+            return False
+        count = backup_fs.Unserialize(
+            raw_data=json_data,
+            iter=backup_fs.fs(trusted_customer_idurl),
+            iterID=backup_fs.fsID(trusted_customer_idurl),
+            from_json=True,
+        )
+        p2p_service.SendAck(newpacket)
+        if count == 0:
+            lg.warn('no files were imported during file sharing')
+        else:
+            backup_control.Save()
+            lg.info('imported %d shared files from %s, key_id=%s' % (
+                count, trusted_customer_idurl, incoming_key_id, ))
+        events.send('shared-list-files-received', dict(
+            customer_idurl=trusted_customer_idurl,
+            new_items=count,
+        ))
+        return True
+    # otherwise this must be an external supplier sending us a files he stores for trusted customer
+    external_supplier_idurl = block.CreatorID
+    try:
+        supplier_raw_list_files = list_files.UnpackListFiles(raw_files, settings.ListFilesFormat())
+    except:
+        lg.exc()
+        return False
+    # need to detect supplier position from the list of packets
+    # and place that supplier on the correct position in contactsdb
+    supplier_pos = backup_matrix.DetectSupplierPosition(supplier_raw_list_files)
+    known_supplier_pos = contactsdb.supplier_position(external_supplier_idurl, trusted_customer_idurl)
+    if _Debug:
+        lg.args(_DebugLevel, supplier_pos=supplier_pos, known_supplier_pos=known_supplier_pos, external_supplier=external_supplier_idurl,
+                trusted_customer=trusted_customer_idurl, key_id=incoming_key_id)
+    if supplier_pos >= 0:
+        if known_supplier_pos >= 0 and known_supplier_pos != supplier_pos:
+            lg.err('known external supplier %r position %d is not matching to received list files position %d for customer %s' % (
+                external_supplier_idurl, known_supplier_pos,  supplier_pos, trusted_customer_idurl))
+        # TODO: we should remove that bellow because we do not need it
+        #     service_customer_family() should take care of suppliers list for trusted customer
+        #     so we need to just read that list from DHT
+        #     contactsdb.erase_supplier(
+        #         idurl=external_supplier_idurl,
+        #         customer_idurl=trusted_customer_idurl,
+        #     )
+        # contactsdb.add_supplier(
+        #     idurl=external_supplier_idurl,
+        #     position=supplier_pos,
+        #     customer_idurl=trusted_customer_idurl,
+        # )
+        # contactsdb.save_suppliers(customer_idurl=trusted_customer_idurl)
+    else:
+        lg.warn('not possible to detect external supplier position for customer %s from received list files, known position is %s' % (
+            trusted_customer_idurl, known_supplier_pos))
+        supplier_pos = known_supplier_pos
+    remote_files_changed, _, _, _ = backup_matrix.process_raw_list_files(
+        supplier_num=supplier_pos,
+        list_files_text_body=supplier_raw_list_files,
+        customer_idurl=trusted_customer_idurl,
+        is_in_sync=True,
+        auto_create=True,
+    )
+    if remote_files_changed:
+        backup_matrix.SaveLatestRawListFiles(
+            supplier_idurl=external_supplier_idurl,
+            raw_data=supplier_raw_list_files,
+            customer_idurl=trusted_customer_idurl,
+        )
+    # finally sending Ack() packet back
+    p2p_service.SendAck(newpacket)
+    if remote_files_changed:
+        lg.info('received updated list of files from external supplier %s for customer %s' % (external_supplier_idurl, trusted_customer_idurl))
     return True

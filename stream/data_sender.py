@@ -126,10 +126,6 @@ class DataSender(automat.Automat):
         'timer-1sec': (1.0, ['SENDING']),
     }
 
-
-    def state_changed(self, oldstate, newstate, event, *args, **kwargs):
-        global_state.set_global_state('DATASEND ' + newstate)
-
     def A(self, event, *args, **kwargs):
         #---READY---
         if self.state == 'READY':

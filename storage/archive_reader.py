@@ -52,6 +52,10 @@ _DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
+import os
+
+#------------------------------------------------------------------------------
+
 from logs import lg
 
 from automats import automat
@@ -61,6 +65,10 @@ from lib import packetid
 
 from main import events
 from main import config
+from main import settings
+
+from system import tmpfile
+from system import bpio
 
 from crypt import my_keys
 
@@ -78,6 +86,11 @@ from p2p import lookup
 from p2p import p2p_service_seeker
 
 from access import groups
+
+from storage import restore_worker
+from storage import backup_fs
+from storage import backup_matrix
+from storage import backup_tar
 
 from userid import global_id
 from userid import id_url
@@ -104,23 +117,6 @@ class ArchiveReader(automat.Automat):
             **kwargs
         )
 
-    def init(self):
-        """
-        Method to initialize additional variables and flags
-        at creation phase of `archive_reader()` machine.
-        """
-
-    def state_changed(self, oldstate, newstate, event, *args, **kwargs):
-        """
-        Method to catch the moment when `archive_reader()` state were changed.
-        """
-
-    def state_not_changed(self, curstate, event, *args, **kwargs):
-        """
-        This method intended to catch the moment when some event was fired in the `archive_reader()`
-        but automat state was not changed.
-        """
-
     def A(self, event, *args, **kwargs):
         """
         The state machine code, generated using `visio2python <http://bitdust.io/visio2python/>`_ tool.
@@ -134,12 +130,12 @@ class ArchiveReader(automat.Automat):
             elif event == 'start' and self.isMyOwnArchive(*args, **kwargs):
                 self.state = 'LIST_FILES?'
                 self.doInit(*args, **kwargs)
-                self.doRequestListFiles(event, *args, **kwargs)
+                self.doRequestMyListFiles(*args, **kwargs)
         #---DHT_READ?---
         elif self.state == 'DHT_READ?':
             if event == 'dht-read-success':
                 self.state = 'LIST_FILES?'
-                self.doRequestListFiles(event, *args, **kwargs)
+                self.doRequestTheirListFiles(*args, **kwargs)
             elif event == 'dht-read-failed':
                 self.state = 'FAILED'
                 self.doReportFailed(event, *args, **kwargs)
@@ -186,14 +182,26 @@ class ArchiveReader(automat.Automat):
         """
         Condition method.
         """
+        _, queue_owner_id, _ = global_id.SplitGlobalQueueID(kwargs['queue_id'])
+        return my_id.getID() == queue_owner_id
 
     def doInit(self, *args, **kwargs):
         """
         Action method.
         """
+        self.queue_id = kwargs['queue_id']
+        self.start_sequence_id = kwargs['start_sequence_id']
+        self.end_sequence_id = kwargs['end_sequence_id']
+        self.archive_folder_path = kwargs['archive_folder_path']
+        qa, oid, _ = global_id.SplitGlobalQueueID(self.queue_id)
+        self.queue_alias = qa
+        self.queue_owner_id = oid
+        self.queue_owner_idurl = global_id.glob2idurl(self.queue_owner_id)
+        self.group_key_id = my_keys.make_key_id(alias=self.queue_alias, creator_glob_id=self.queue_owner_id)
         self.suppliers_list = []
         self.ecc_map = None
         self.correctable_errors = 0
+        self.requested_list_files = {}
 
     def doDHTReadSuppliers(self, *args, **kwargs):
         """
@@ -203,25 +211,57 @@ class ArchiveReader(automat.Automat):
         d.addCallback(self._on_read_queue_owner_suppliers_success)
         d.addErrback(self._on_read_queue_owner_suppliers_failed)
 
-    def doRequestListFiles(self, *args, **kwargs):
+    def doRequestTheirListFiles(self, *args, **kwargs):
         """
         Action method.
         """
-        # TODO: in case i am not the owner of the group - read suppliers from DHT
-        for supplier_idurl in contactsdb.suppliers():
-            if supplier_idurl:
-                p2p_service.SendListFiles(
-                    target_supplier=supplier_idurl,
-                    key_id=self.group_key_id,
-                    query_items=[self.group_queue_alias, ],
-                )
+        groups.create_archive_folder(self.group_key_id, force_path_id=self.archive_folder_path)
+        self._do_request_list_files(self.suppliers_list)
 
-    def doCollectFiles(self, event, *args, **kwargs):
+    def doRequestMyListFiles(self, *args, **kwargs):
         """
         Action method.
         """
+        self._do_request_list_files(contactsdb.num_suppliers())
 
     def doStartRestoreWorker(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        iterID_and_path = backup_fs.WalkByID(self.archive_folder_path, iterID=backup_fs.fsID(self.queue_owner_idurl))
+        if iterID_and_path is None:
+            lg.err('did not found archive folder in the catalog: %r' % self.archive_folder_path)
+            self.automat('restore-failed')
+            return
+        iterID, path = iterID_and_path
+        known_archive_snapshots_list = backup_fs.ListAllBackupIDsFull(iterID=iterID)
+        if not known_archive_snapshots_list:
+            lg.err('failed to restore data from archive, no snapshots found in folder: %r' % self.archive_folder_path)
+            self.automat('restore-failed')
+            return
+        snapshots_list = []
+        for archive_item in known_archive_snapshots_list:
+            snapshots_list.append(archive_item[1])
+        if _Debug:
+            lg.args(_DebugLevel, snapshots_list=snapshots_list)
+        if not snapshots_list:
+            lg.err('no available snapshots found in archive list: %r' % known_archive_snapshots_list)
+            self.automat('restore-failed')
+            return
+        backupID = snapshots_list[0]
+        outfd, outfilename = tmpfile.make(
+            'restore',
+            extension='.tar.gz',
+            prefix=backupID.replace('@', '_').replace('.', '_').replace('/', '_').replace(':', '_') + '_',
+        )
+        rw = restore_worker.RestoreWorker(backupID, outfd, KeyID=self.group_key_id)
+        rw.MyDeferred.addCallback(self._on_restore_done, backupID, outfd, outfilename)
+        rw.MyDeferred.addErrback(self._on_restore_failed, backupID, outfd, outfilename)
+        if _Debug:
+            rw.MyDeferred.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='archive_reader.doStartRestoreWorker')
+        rw.automat('init')
+
+    def doCollectFiles(self, event, *args, **kwargs):
         """
         Action method.
         """
@@ -247,6 +287,30 @@ class ArchiveReader(automat.Automat):
         """
         self.destroy()
 
+    def _do_request_list_files(self, suppliers_list):
+        backup_matrix.add_list_files_query_callback(
+            customer_idurl=self.queue_owner_idurl,
+            query_path=self.queue_alias,
+            callback_method=self._on_list_files_response,
+        )
+        self.correctable_errors = eccmap.GetCorrectableErrors(len(suppliers_list))
+        for supplier_pos, supplier_idurl in enumerate(suppliers_list):
+            if not supplier_idurl:
+                self.requested_list_files[supplier_pos] = False
+                continue
+            outpacket = p2p_service.SendListFiles(
+                target_supplier=supplier_idurl,
+                key_id=self.group_key_id,
+                query_items=[self.queue_alias, ],
+                callbacks={
+                #     commands.Files(): self._on_list_files_response,
+                    commands.Fail(): lambda resp, info: self._on_list_files_failed(supplier_pos),
+                    None: lambda pkt_out: self._on_list_files_failed(supplier_pos),
+                },
+                timeout=15,
+            )
+            self.requested_list_files[supplier_pos] = None if outpacket else False
+
     def _on_read_queue_owner_suppliers_success(self, dht_value):
         # TODO: add more validations of dht_value
         if dht_value and isinstance(dht_value, dict) and len(dht_value.get('suppliers', [])) > 0:
@@ -265,3 +329,69 @@ class ArchiveReader(automat.Automat):
         lg.err('failed to read customer suppliers: %r' % err)
         self.automat('dht-read-failed', err)
         return None
+
+    def _on_list_files_response(self, supplier_num, new_files_count):
+        self.requested_list_files[supplier_num] = True
+        lst = list(self.requested_list_files.values())
+        if _Debug:
+            lg.args(_DebugLevel, requested_list_files=lst, supplier_num=supplier_num, new_files_count=new_files_count)
+        # packets_pending_or_failed = lst.count(None) + lst.count(False)
+        # if packets_pending_or_failed < self.correctable_errors * 2:  # because each packet also have Parity()
+        if lst.count(None) == 0:
+            backup_matrix.remove_list_files_query_callback(
+                customer_idurl=self.queue_owner_idurl,
+                query_path=self.queue_alias,
+            )
+            self.automat('list-files-collected')
+        return None
+
+    def _on_list_files_failed(self, supplier_num):
+        self.requested_list_files[supplier_num] = False
+        lst = list(self.requested_list_files.values())
+        if _Debug:
+            lg.args(_DebugLevel, requested_list_files=lst, supplier_num=supplier_num)
+        if lst.count(None) == 0:
+            backup_matrix.remove_list_files_query_callback(
+                customer_idurl=self.queue_owner_idurl,
+                query_path=self.queue_alias,
+            )
+            self.automat('list-files-failed')
+        return None
+
+    def _on_restore_done(self, result, backupID, outfd, tarfilename):
+        try:
+            os.close(outfd)
+        except:
+            lg.exc()
+        if result == 'done':
+            lg.info('archive %r restore success from %r' % (backupID, tarfilename, ))
+        else:
+            lg.err('archive %r restore failed from %r with : %r' % (backupID, tarfilename, result, ))
+        if result == 'done':
+            _, pathID, versionName = packetid.SplitBackupID(backupID)
+            service_dir = settings.ServiceDir('service_private_groups')
+            queues_dir = os.path.join(service_dir, 'queues')
+            queue_dir = os.path.join(queues_dir, self.group_key_id)
+            snapshot_dir = os.path.join(queue_dir, pathID, versionName)
+            if not os.path.isdir(snapshot_dir):
+                bpio._dirs_make(snapshot_dir)
+            d = backup_tar.extracttar_thread(tarfilename, snapshot_dir)
+            d.addCallback(self._on_extract_done, backupID, tarfilename, snapshot_dir)
+            d.addErrback(self._on_extract_failed, backupID, tarfilename, snapshot_dir)
+            return d
+        tmpfile.throw_out(tarfilename, 'restore ' + result)
+        return None
+
+    def _on_restore_failed(self, err, backupID, outfd, tarfilename):
+        lg.err('archive %r restore failed with : %r' % (backupID, err, ))
+        self.automat('restore-failed')
+
+    def _on_extract_done(self, retcode, backupID, source_filename, output_location):
+        lg.info('archive %r snapshot from %r extracted successfully to %r : %r' % (backupID, source_filename, output_location, retcode, ))
+        tmpfile.throw_out(source_filename, 'file extracted')
+        return retcode
+
+    def _on_extract_failed(self, err, backupID, source_filename, output_location):
+        lg.err('archive %r extract failed from %r to %r with: %r' % (backupID, source_filename, output_location, err))
+        tmpfile.throw_out(source_filename, 'file extract failed')
+        return err

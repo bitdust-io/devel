@@ -210,7 +210,7 @@ def getGlobalID(key_alias=None):
 
 def getIDURL():
     """
-    Return my global IDURL.
+    Return my IDURL.
     """
     return getLocalID()
 

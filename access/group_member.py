@@ -211,6 +211,7 @@ class GroupMember(automat.Automat):
             'latest_known_brokers': self.latest_dht_brokers,
             'connected_brokers': self.connected_brokers,
             'last_sequence_id': self.last_sequence_id,
+            'archive_folder_path': groups.get_archive_folder_path(self.group_key_id),
             'state': self.state,
         }
 
@@ -218,17 +219,6 @@ class GroupMember(automat.Automat):
         """
         Method to initialize additional variables and flags
         at creation phase of `group_member()` machine.
-        """
-
-    def state_changed(self, oldstate, newstate, event, *args, **kwargs):
-        """
-        Method to catch the moment when `group_member()` state were changed.
-        """
-
-    def state_not_changed(self, curstate, event, *args, **kwargs):
-        """
-        This method intended to catch the moment when some event was fired in the `group_member()`
-        but automat state was not changed.
         """
 
     def register(self):
@@ -438,9 +428,18 @@ class GroupMember(automat.Automat):
         """
         Action method.
         """
-        # from storage import archive_reader
-        # ar = archive_reader.ArchiveReader()
-        # ar.automat('start', group_key_id=self.group_key_id)
+        latest_known_sequence_id = kwargs.get('latest_known_sequence_id')
+        received_messages = kwargs.get('received_messages')
+        # TODO: must store received_messages temporary to be able to merge all together with restored from archive messages
+        from storage import archive_reader
+        ar = archive_reader.ArchiveReader()
+        ar.automat(
+            'start',
+            queue_id=self.active_queue_id,
+            start_sequence_id=self.last_sequence_id,
+            end_sequence_id=latest_known_sequence_id,
+            archive_folder_path=groups.get_archive_folder_path(self.group_key_id),
+        )
 
     def doProcess(self, *args, **kwargs):
         """
@@ -624,6 +623,7 @@ class GroupMember(automat.Automat):
             'producer_id': self.member_id,
             'group_key': group_key_info,
             'last_sequence_id': self.last_sequence_id,
+            'archive_folder_path': groups.get_archive_folder_path(self.group_key_id),
         }
         if desired_broker_position >= 0:
             service_request_params['position'] = desired_broker_position
@@ -831,7 +831,7 @@ class GroupMember(automat.Automat):
     def _on_message_to_broker_failed(self, err, outgoing_counter, packet_id):
         if _Debug:
             lg.args(_DebugLevel, err=err, outgoing_counter=outgoing_counter, packet_id=packet_id)
-        self._do_send_message_to_broker(json_payload=None, outgoing_counter=outgoing_counter, packet_id=None)
+        self._do_send_message_to_broker(json_payload=None, outgoing_counter=outgoing_counter, packet_id=packet_id)
 
     def _on_read_customer_message_brokers(self, brokers_info_list):
         if _Debug:
@@ -842,6 +842,14 @@ class GroupMember(automat.Automat):
             return
         self.latest_dht_brokers = brokers_info_list
         self.dht_read_use_cache = True
+        if groups.get_archive_folder_path(self.group_key_id) is None:
+            dht_archive_folder_path = None
+            for broker_info in brokers_info_list:
+                if broker_info.get('archive_folder_path'):
+                    dht_archive_folder_path = broker_info['archive_folder_path']
+            if dht_archive_folder_path is not None:
+                groups.set_archive_folder_path(self.group_key_id, dht_archive_folder_path)
+                lg.info('recognized archive folder path for %r from dht: %r' % (self.group_key_id, dht_archive_folder_path))
         self.automat('brokers-found', brokers_info_list)
 
     def _on_broker_hired(self, idurl, broker_pos):
@@ -969,7 +977,7 @@ class GroupMember(automat.Automat):
             if latest_known_sequence_id > self.last_sequence_id:
                 lg.warn('nothing received, but found queue latest sequence %d is ahead of my current position %d, need to read messages from archive' % (
                     latest_known_sequence_id, self.last_sequence_id, ))
-                self.automat('queue-is-ahead', received_group_messages)
+                self.automat('queue-is-ahead', latest_known_sequence_id=latest_known_sequence_id, received_messages=received_group_messages, )
                 return True
             self.last_sequence_id = latest_known_sequence_id
             groups.set_last_sequence_id(self.group_key_id, latest_known_sequence_id)
@@ -993,7 +1001,7 @@ class GroupMember(automat.Automat):
             if latest_known_sequence_id > self.last_sequence_id:
                 lg.warn('found queue latest sequence %d is ahead of my current position %d, need to read messages from archive' % (
                     latest_known_sequence_id, self.last_sequence_id, ))
-                self.automat('queue-is-ahead', received_group_messages)
+                self.automat('queue-is-ahead', latest_known_sequence_id=latest_known_sequence_id, received_messages=received_group_messages, )
                 return True
             raise Exception('message sequence is broken by message broker %s, some messages were not consumed' % self.active_broker_id)
         groups.set_last_sequence_id(self.group_key_id, self.last_sequence_id)

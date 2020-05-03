@@ -51,8 +51,8 @@ from six.moves import range
 
 #------------------------------------------------------------------------------
 
-_Debug = False
-_DebugLevel = 10
+_Debug = True
+_DebugLevel = 12
 
 #------------------------------------------------------------------------------
 
@@ -567,9 +567,9 @@ class SupplierQueue:
             lg.warn('supplier queue is shutting down')
             self.StopAllRequests()
             return
-        packetID = global_id.CanonicalID(newpacket.PacketID)
         if _Debug:
-            lg.out(_DebugLevel, "io_throttle.OnDataReceived  %s with result=[%s]" % (newpacket, result, ))
+            lg.args(_DebugLevel, newpacket=newpacket, result=result, queue=len(self.fileRequestQueue), remoteName=self.remoteName)
+        packetID = global_id.CanonicalID(newpacket.PacketID)
         if (packetID not in self.fileRequestQueue) or (packetID not in self.fileRequestDict):
             lg.err('unexpected %r received which is not in the downloading queue' % newpacket)
         else:
@@ -585,9 +585,6 @@ class SupplierQueue:
                 f_down.event('fail-received', newpacket)
             else:
                 lg.err('incorrect response command: %r' % newpacket)
-        if _Debug:
-            lg.out(_DebugLevel, "io_throttle.OnDataReceived %s from %s, queue=%d" % (
-                newpacket, self.remoteName, len(self.fileRequestQueue)))
 
     def RunRequest(self):
         packetsToRemove = {}

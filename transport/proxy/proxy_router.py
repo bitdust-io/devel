@@ -163,12 +163,6 @@ class ProxyRouter(automat.Automat):
             elif network_connector.A().state == 'DISCONNECTED':
                 reactor.callLater(0, self.automat, 'network-disconnected')  # @UndefinedVariable
 
-    def state_not_changed(self, curstate, event, *args, **kwargs):
-        """
-        This method intended to catch the moment when some event was fired in
-        the proxy_router() but its state was not changed.
-        """
-
     def A(self, event, *args, **kwargs):
         """
         The state machine code, generated using `visio2python
@@ -560,9 +554,9 @@ class ProxyRouter(automat.Automat):
         )
         if _Debug:
             lg.out(_DebugLevel, '<<<Route-IN %s %s:%s' % (
-                str(newpacket), info.proto, info.host,))
+                str(newpacket), strng.to_text(info.proto), strng.to_text(info.host),))
             lg.out(_DebugLevel, '           sent to %s://%s with %d bytes in %s' % (
-                receiver_proto, receiver_host, len(raw_data), pout))
+                strng.to_text(receiver_proto), strng.to_text(receiver_host), len(raw_data), pout))
         if _PacketLogFileEnabled:
             lg.out(0, '        \033[0;49;32mROUTE IN %s(%s) %s %s for %s forwarded to %s at %s://%s\033[0m' % (
                 newpacket.Command, newpacket.PacketID,
@@ -570,7 +564,7 @@ class ProxyRouter(automat.Automat):
                 global_id.UrlToGlobalID(newpacket.CreatorID),
                 global_id.UrlToGlobalID(newpacket.RemoteID),
                 global_id.UrlToGlobalID(receiver_idurl),
-                receiver_proto, receiver_host,
+                strng.to_text(receiver_proto), strng.to_text(receiver_host),
             ), log_name='packet', showtime=True)
         del raw_data
         del block
@@ -703,7 +697,7 @@ class ProxyRouter(automat.Automat):
         )
         if _Debug:
             lg.out(_DebugLevel, '>>>Route-OUT %d bytes from %s at %s://%s :' % (
-                len(routed_data), nameurl.GetName(sender_idurl), info.proto, info.host,))
+                len(routed_data), nameurl.GetName(sender_idurl), strng.to_text(info.proto), strng.to_text(info.host),))
             lg.out(_DebugLevel, '    routed to %s : %s' % (nameurl.GetName(receiver_idurl), pout))
         if _PacketLogFileEnabled:
             lg.out(0, '        \033[0;49;36mROUTE OUT %s(%s) %s %s for %s forwarded to %s\033[0m' % (

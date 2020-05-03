@@ -157,7 +157,6 @@ class IdRestorer(automat.Automat):
         return text, color
 
     def state_changed(self, oldstate, newstate, event, *args, **kwargs):
-        global_state.set_global_state('ID_RESTORE ' + newstate)
         from main import installer
         installer.A('id_restorer.state', newstate)
 

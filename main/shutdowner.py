@@ -178,7 +178,6 @@ class Shutdowner(automat.Automat):
 
 
     def state_changed(self, oldstate, newstate, event, *args, **kwargs):
-        global_state.set_global_state('SHUTDOWN ' + newstate)
         initializer.A('shutdowner.state', newstate)
 
     def A(self, event, *args, **kwargs):

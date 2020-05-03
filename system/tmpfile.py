@@ -116,7 +116,8 @@ def init(temp_dir_path=''):
     - call ``startup_clean()``
     - starts collector task to call method ``collect()`` every 5 minutes
     """
-    lg.out(4, 'tmpfile.init')
+    if _Debug:
+        lg.out(_DebugLevel, 'tmpfile.init')
     global _TempDirPath
     global _SubDirs
     global _FilesDict
@@ -133,7 +134,6 @@ def init(temp_dir_path=''):
                 try:
                     os.mkdir(temp_dir)
                 except:
-                    lg.out(2, 'tmpfile.init ERROR can not create ' + temp_dir)
                     lg.exc()
                     temp_dir = os_temp_dir
 
@@ -167,7 +167,8 @@ def shutdown():
     """
     Do not need to remove any files here, just stop the collector task.
     """
-    lg.out(4, 'tmpfile.shutdown')
+    if _Debug:
+        lg.out(_DebugLevel, 'tmpfile.shutdown')
     global _CollectorTask
     if _CollectorTask is not None:
         _CollectorTask.stop()

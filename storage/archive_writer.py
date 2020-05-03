@@ -119,23 +119,6 @@ class ArchiveWriter(automat.Automat):
             **kwargs
         )
 
-    def init(self):
-        """
-        Method to initialize additional variables and flags
-        at creation phase of `archive_writer()` machine.
-        """
-
-    def state_changed(self, oldstate, newstate, event, *args, **kwargs):
-        """
-        Method to catch the moment when `archive_writer()` state were changed.
-        """
-
-    def state_not_changed(self, curstate, event, *args, **kwargs):
-        """
-        This method intended to catch the moment when some event was fired in the `archive_writer()`
-        but automat state was not changed.
-        """
-
     def A(self, event, *args, **kwargs):
         """
         The state machine code, generated using `visio2python <http://bitdust.io/visio2python/>`_ tool.
@@ -195,10 +178,11 @@ class ArchiveWriter(automat.Automat):
         """
         self.queue_id = kwargs['queue_id']
         self.latest_sequence_id = kwargs['latest_sequence_id']
+        self.archive_folder_path = kwargs['archive_folder_path']
         self.chunk_size = kwargs['chunk_size']
         self.result_defer = kwargs.get('result_defer')
         qa, oid, _ = global_id.SplitGlobalQueueID(self.queue_id)
-        self.queue_alias = qa 
+        self.queue_alias = qa
         self.queue_owner_id = oid
         self.queue_owner_idurl = global_id.glob2idurl(self.queue_owner_id)
         self.group_key_id = my_keys.make_key_id(alias=self.queue_alias, creator_glob_id=self.queue_owner_id)
@@ -270,7 +254,7 @@ class ArchiveWriter(automat.Automat):
             return
         for block_num in self.packets_out.keys():
             block_packets_failed = list(self.packets_out[block_num].values()).count(False)
-            if block_packets_failed > self.correctable_errors:
+            if block_packets_failed > self.correctable_errors * 2:  # because each packet also have Parity()
                 lg.err('all packets for block %d are sent, but too many errors: %d' % (block_num, block_packets_failed, ))
                 self.automat('sending-failed')
                 return
@@ -315,10 +299,11 @@ class ArchiveWriter(automat.Automat):
 
     def _do_start_archive_backup(self):
         local_path = self.local_data_callback(self.queue_id, self.latest_sequence_id)
+        supplier_path_id = os.path.join(self.archive_folder_path, strng.to_text(self.latest_sequence_id))
         dataID = misc.NewBackupID()
         backup_id = packetid.MakeBackupID(
             customer=self.queue_owner_id,
-            path_id=strng.to_text(self.latest_sequence_id),
+            path_id=supplier_path_id,
             key_alias=self.queue_alias,
             version=dataID,
         )
@@ -363,7 +348,7 @@ class ArchiveWriter(automat.Automat):
             for dataORparity in ('Data', 'Parity', ):
                 packet_id = packetid.MakePacketID(backup_id, block_num, supplier_num, dataORparity)
                 packet_filename = os.path.join(archive_snapshot_dir, '%d-%d-%s' % (
-                    block_num, block_num, dataORparity,
+                    block_num, supplier_num, dataORparity,
                 ))
                 if not os.path.isfile(packet_filename):
                     lg.err('%s is not a file' % packet_filename)

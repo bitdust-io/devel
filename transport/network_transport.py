@@ -55,7 +55,15 @@ _DebugLevel = 6
 
 #------------------------------------------------------------------------------
 
+import sys
 import platform
+
+#------------------------------------------------------------------------------
+
+try:
+    from twisted.internet import reactor  # @UnresolvedImport
+except:
+    sys.exit('Error initializing twisted.internet.reactor in restore.py')
 
 from twisted.internet.defer import fail
 
@@ -121,7 +129,9 @@ class NetworkTransport(automat.Automat):
         """
         if self.state_changed_callback:
             self.state_changed_callback(self, oldstate, newstate)
+            # reactor.callLater(0, self.state_changed_callback, self, oldstate, newstate)  # @UndefinedVariable
         gateway.on_transport_state_changed(self, oldstate, newstate)
+        # reactor.callLater(0, gateway.on_transport_state_changed, self, oldstate, newstate)  # @UndefinedVariable
 
     def state_not_changed(self, curstate, event_string, *args, **kwargs):
         """
@@ -129,7 +139,9 @@ class NetworkTransport(automat.Automat):
         """
         if self.state_changed_callback:
             self.state_changed_callback(self, curstate, curstate)
+            # reactor.callLater(0, self.state_changed_callback, self, curstate, curstate)  # @UndefinedVariable
         gateway.on_transport_state_changed(self, curstate, curstate)
+        # reactor.callLater(0, gateway.on_transport_state_changed, self, curstate, curstate)  # @UndefinedVariable
 
     def A(self, event, *args, **kwargs):
         #---AT_STARTUP---

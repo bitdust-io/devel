@@ -9,6 +9,8 @@ DelayedCall.debug = True
 
 from logs import lg
 
+from automats import automat
+
 from main import settings
 
 from system import bpio
@@ -17,6 +19,7 @@ from system import tmpfile
 
 from crypt import key
 
+from raid import eccmap
 from raid import raid_worker
 
 from storage import backup_tar
@@ -86,6 +89,7 @@ class Test(TestCase):
             os.makedirs('/tmp/.bitdust_tmp/metadata')
         except:
             pass
+        automat.OpenLogFile('/tmp/.bitdust_tmp/logs/automats.log')
         self.my_current_key = None
         fout = open('/tmp/_some_priv_key', 'w')
         fout.write(_some_priv_key)
@@ -101,31 +105,41 @@ class Test(TestCase):
         except:
             pass
         local_fs.WriteTextFile('/tmp/.bitdust_tmp/logs/parallelp.log', '')
-        tmpfile.init(temp_dir_path='/tmp/.bitdust_tmp/tmp/')
+        tmpfile.init(temp_dir_path='/tmp/.bitdust_tmp/temp/')
         os.makedirs('/tmp/.bitdust_tmp/backups/master$alice@127.0.0.1_8084/1/F1234')
+        try:
+            bpio.rmdir_recursive('/tmp/_some_folder', ignore_errors=True)
+        except:
+            pass
+        os.makedirs('/tmp/_some_folder')
 
     def tearDown(self):
+        automat.CloseLogFile()
         tmpfile.shutdown()
         key.ForgetMyKey()
         my_id.forgetLocalIdentity()
         settings.shutdown()
         os.remove('/tmp/_some_priv_key')
         bpio.rmdir_recursive('/tmp/.bitdust_tmp')
+        bpio.rmdir_recursive('/tmp/_some_folder')
         os.remove('/tmp/random_file')
 
     def test_backup_restore(self):
+        test_ecc_map = 'ecc/2x2'
         test_done = Deferred()
         backupID = 'alice@127.0.0.1_8084:1/F1234'
         outputLocation = '/tmp/'
-        with open('/tmp/.bitdust_tmp/random_file', 'wb') as fout:
-            fout.write(os.urandom(100*1024))
-        backupPipe = backup_tar.backuptarfile_thread('/tmp/.bitdust_tmp/random_file')
+        with open('/tmp/_some_folder/random_file', 'wb') as fout:
+            fout.write(os.urandom(10))
+            # fout.write(os.urandom(100*1024))
+        backupPipe = backup_tar.backuptardir_thread('/tmp/_some_folder/')
 
         def _extract_done(retcode, backupID, source_filename, output_location):
             assert retcode is True
-            assert bpio.ReadBinaryFile('/tmp/random_file') == bpio.ReadBinaryFile('/tmp/.bitdust_tmp/random_file')
+            print('file size is: %d bytes' % len(bpio.ReadBinaryFile('/tmp/random_file')))
+            assert bpio.ReadBinaryFile('/tmp/random_file') == bpio.ReadBinaryFile('/tmp/_some_folder/random_file')
             reactor.callLater(0, raid_worker.A, 'shutdown')  # @UndefinedVariable
-            test_done.callback(True)
+            reactor.callLater(0.5, test_done.callback, True)  # @UndefinedVariable
 
         def _restore_done(result, backupID, outfd, tarfilename, outputlocation):
             assert result == 'done'
@@ -139,7 +153,7 @@ class Test(TestCase):
                 extension='.tar.gz',
                 prefix=backupID.replace('@', '_').replace('.', '_').replace('/', '_').replace(':', '_') + '_',
             )
-            r = restore_worker.RestoreWorker(backupID, outfd, KeyID=None)
+            r = restore_worker.RestoreWorker(backupID, outfd, KeyID=None, ecc_map=eccmap.eccmap(test_ecc_map))
             r.MyDeferred.addCallback(_restore_done, backupID, outfd, outfilename, outputLocation)
             r.automat('init')
 
@@ -147,11 +161,14 @@ class Test(TestCase):
             assert result == 'done'
     
         def _bk_closed(job):
+            if False:
+                os.remove('/tmp/.bitdust_tmp/backups/master$alice@127.0.0.1_8084/1/F1234/0-1-Data')
+                os.remove('/tmp/.bitdust_tmp/backups/master$alice@127.0.0.1_8084/1/F1234/0-1-Parity')
             reactor.callLater(0.5, _restore)  # @UndefinedVariable
 
         reactor.callWhenRunning(raid_worker.A, 'init')  # @UndefinedVariable
 
-        job = backup.backup(backupID, backupPipe, blockSize=24*1024)
+        job = backup.backup(backupID, backupPipe, blockSize=1024*1024, ecc_map=eccmap.eccmap(test_ecc_map))
         job.finishCallback = _bk_done
         job.addStateChangedCallback(lambda *a, **k: _bk_closed(job), oldstate=None, newstate='DONE')
         reactor.callLater(0.5, job.automat, 'start')  # @UndefinedVariable

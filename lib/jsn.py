@@ -115,6 +115,8 @@ def pack_dict(dct, encoding='utf-8', errors='strict'):
     Values can only be bin/text strings, integers, floats, None, lists or tuples.
     Result dict will always contain only text (unicode) keys and values or simple types like integer, float or None.
     """
+    if not dct:
+        return {}
     _d = {}
     for k, v in dct.items():
         _k = k
@@ -156,6 +158,8 @@ def unpack_dict(dct, encoding='utf-8', errors='strict'):
     """
     Reverse operation of `pack_dict()` method - returns original dict with all keys and values of correct types.
     """
+    if not dct:
+        return {}
     _d = {}
     for k, v in dct.items():
         _k = k
@@ -179,11 +183,13 @@ def unpack_dict(dct, encoding='utf-8', errors='strict'):
 #------------------------------------------------------------------------------
 
 def dumps(obj, indent=None, separators=None, sort_keys=None, ensure_ascii=False, encoding='utf-8', 
-          keys_to_text=False, values_to_text=False, **kw):
+          keys_to_text=False, values_to_text=False, empty_result='{}', **kw):
     """
     Calls `json.dumps()` with parameters.
     Always translates every byte string json value into text using encoding.
     """
+    if obj is None or obj == '' or obj == b'':
+        return empty_result
 
     enc_errors = kw.pop('errors', 'strict')
 
@@ -245,6 +251,8 @@ def loads(s, encoding='utf-8', keys_to_bin=False, **kw):
     Calls `json.loads()` with parameters.
     Always translates all json values into binary strings using encoding.
     """
+    if not s:
+        return None
 
     def _to_bin(dct):
         for k in dct.keys():
@@ -279,6 +287,8 @@ def loads_text(s, encoding='utf-8', **kw):
     Calls `json.loads()` with parameters.
     Always translates all json keys and values into unicode strings.
     """
+    if not s:
+        return None
 
     enc_errors = kw.pop('errors', 'strict')
 

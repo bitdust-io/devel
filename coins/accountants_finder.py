@@ -112,18 +112,6 @@ class AccountantsFinder(automat.Automat):
         self.requested_packet_id = None
         self.request_service_params = None
 
-    def state_changed(self, oldstate, newstate, event, *args, **kwargs):
-        """
-        Method to catch the moment when accountants_finder() state were
-        changed.
-        """
-
-    def state_not_changed(self, curstate, event, *args, **kwargs):
-        """
-        This method intended to catch the moment when some event was fired in
-        the accountants_finder() but its state was not changed.
-        """
-
     def A(self, event, *args, **kwargs):
         """
         The state machine code, generated using `visio2python

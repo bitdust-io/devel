@@ -117,6 +117,10 @@ from crypt import my_keys
 
 from access import key_ring
 
+from userid import global_id
+from storage import backup_fs
+from interface import api
+
 #------------------------------------------------------------------------------
 
 REQUIRED_BROKERS_COUNT = 3
@@ -189,11 +193,33 @@ def generate_group_key(creator_id=None, label=None, key_size=4096):
     return group_key_id
 
 
+def create_archive_folder(group_key_id, force_path_id=None):
+    group_key_alias, group_creator_idurl = my_keys.split_key_id(group_key_id)
+    catalog_path = os.path.join('.archive', group_key_alias)
+    archive_folder_catalog_path = global_id.MakeGlobalID(
+        key_alias=group_key_alias, customer=group_creator_idurl.to_id(), path=catalog_path)
+    res = api.file_create(archive_folder_catalog_path, as_folder=True, exist_ok=True, force_path_id=force_path_id)
+    if res['status'] != 'OK':
+        lg.err('failed to create archive folder in the catalog: %r' % res)
+        return None
+    if res['result']['created']:
+        lg.info('created new archive folder in the catalog: %r' % res)
+    else:
+        lg.info('archive folder already exist in the catalog: %r' % res)
+    ret = res['result']['path_id']
+    if force_path_id is not None:
+        if force_path_id != ret:
+            lg.err('archive folder exists, but have different path ID in the catalog: %r' % ret)
+            return None
+    return ret
+
+
 def set_group_info(group_key_id, group_info=None):
     if not group_info:
         group_info = {
             'last_sequence_id': -1,
             'active': False,
+            'archive_folder_path': None,
         }
     known_groups()[group_key_id] = group_info
     return True
@@ -203,7 +229,14 @@ def create_new_group(label, creator_id=None, key_size=4096):
     if _Debug:
         lg.args(_DebugLevel, label=label, creator_id=creator_id, key_size=key_size)
     group_key_id = generate_group_key(creator_id, label, key_size)
-    set_group_info(group_key_id)
+    remote_path = create_archive_folder(group_key_id)
+    if remote_path is None:
+        return None
+    set_group_info(group_key_id, {
+        'last_sequence_id': -1,
+        'active': False,
+        'archive_folder_path': remote_path,
+    })
     save_group_info(group_key_id)
     return group_key_id
 
@@ -236,6 +269,7 @@ def load_groups():
             known_groups()[group_key_id] = {
                 'last_sequence_id': -1,
                 'active': False,
+                'archive_folder_path': None,
             }
         group_path = os.path.join(groups_dir, group_key_id)
         group_info = jsn.loads_text(local_fs.ReadTextFile(group_path))
@@ -307,6 +341,20 @@ def set_last_sequence_id(group_key_id, last_sequence_id):
         lg.warn('group %r is not known' % group_key_id)
         return False
     known_groups()[group_key_id]['last_sequence_id'] = last_sequence_id
+    return True
+
+
+def get_archive_folder_path(group_key_id):
+    if not is_group_exist(group_key_id):
+        return None
+    return known_groups()[group_key_id].get('archive_folder_path', None)
+
+
+def set_archive_folder_path(group_key_id, archive_folder_path):
+    if not is_group_exist(group_key_id):
+        lg.warn('group %r is not known' % group_key_id)
+        return False
+    known_groups()[group_key_id]['archive_folder_path'] = archive_folder_path
     return True
 
 #------------------------------------------------------------------------------

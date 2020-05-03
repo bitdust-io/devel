@@ -109,6 +109,7 @@ _Rules = {
         'customer_idurl': [{'op': 'exist', }, ],
         'broker_idurl': [{'op': 'exist', }, ],
         'position': [{'op': 'exist', }, ],
+        'archive_folder_path': [{'op': 'exist', }, ],
     },
     'skip_validation': {
         'type': [{'op': 'equal', 'arg': 'skip_validation', }, ],
@@ -232,7 +233,7 @@ def get_message_broker(customer_idurl, position=0, return_details=True, use_cach
     )
 
 
-def set_message_broker(customer_idurl, broker_idurl, position=0, revision=None, expire=60*60):
+def set_message_broker(customer_idurl, broker_idurl, position=0, archive_folder_path=None, revision=None, expire=60*60):
     return dht_service.set_valid_data(
         key=dht_service.make_key(
             key='%s%d' % (strng.to_text(customer_idurl), position),
@@ -244,6 +245,7 @@ def set_message_broker(customer_idurl, broker_idurl, position=0, revision=None, 
             'revision': 0 if revision is None else revision,
             'customer_idurl': customer_idurl.to_text(),
             'broker_idurl': broker_idurl.to_text(),
+            'archive_folder_path': archive_folder_path,
             'position': position,
         },
         rules=get_rules('message_broker'),

@@ -132,11 +132,6 @@ def init():
     """
     if _Debug:
         lg.out(_DebugLevel, 'backup_fs.init')
-    # fn_index = settings.BackupIndexFileName()
-    # fs()[fn_index] = settings.BackupIndexFileName()
-    # fsID()[fn_index] = FSItemInfo(fn_index, fn_index, FILE)
-    # fsID()[fn_index].read_stats(os.path.join(settings.getLocalBackupsDir(), fn_index))
-    # SetFile(settings.BackupIndexFileName(), settings.BackupIndexFileName())
 
 
 def shutdown():
@@ -155,7 +150,7 @@ def fs(customer_idurl=None):
     Access method for forward index: [path] -> [ID].
     """
     global _FileSystemIndexByName
-    if not customer_idurl:
+    if customer_idurl is None:
         customer_idurl = my_id.getLocalID()
     customer_idurl = id_url.field(customer_idurl)
     if customer_idurl not in _FileSystemIndexByName:
@@ -168,7 +163,7 @@ def fsID(customer_idurl=None):
     Access method for backward index: [ID] -> [path].
     """
     global _FileSystemIndexByID
-    if not customer_idurl:
+    if customer_idurl is None:
         customer_idurl = my_id.getLocalID()
     customer_idurl = id_url.field(customer_idurl)
     if customer_idurl not in _FileSystemIndexByID:
@@ -454,9 +449,9 @@ class FSItemInfo():
 
 def MakeID(itr, randomized=True):
     """
-    Create a new unique number for the folder to create a index ID.
+    Create a new unique number for the file or folder to create a index ID.
 
-    Parameter ``itrID`` is a reference for a single item in the ``fs()``.
+    Parameter ``itr`` is a reference for a single item in the ``fs()``.
     """
     current_ids = []
     for k in itr.keys():
@@ -503,12 +498,10 @@ def AddFile(path, read_stats=False, iter=None, iterID=None, key_id=None):
 
     Here path must be in "portable" form - only '/' allowed, assume path is a file, not a folder.
     """
-    # if not os.path.isfile(path):
-    #     raise Exception('File not exist')
     parts = bpio.remotePath(path).split('/')
-    if not iter:
+    if iter is None:
         iter = fs()
-    if not iterID:
+    if iterID is None:
         iterID = fsID()
     resultID = ''
     parentKeyID = None
@@ -561,7 +554,7 @@ def AddFile(path, read_stats=False, iter=None, iterID=None, key_id=None):
     return resultID, iter, iterID
 
 
-def AddDir(path, read_stats=False, iter=None, iterID=None, key_id=None):
+def AddDir(path, read_stats=False, iter=None, iterID=None, key_id=None, force_path_id=None):
     """
     Add directory to the index, but do not read folder content.
 
@@ -578,9 +571,12 @@ def AddDir(path, read_stats=False, iter=None, iterID=None, key_id=None):
     Parameter ``path`` must be in "portable" form.
     """
     parts = bpio.remotePath(path).split('/')
-    if not iter:
+    force_path_id_parts = []
+    if force_path_id is not None:
+        force_path_id_parts = bpio.remotePath(force_path_id).split('/')
+    if iter is None:
         iter = fs()
-    if not iterID:
+    if iterID is None:
         iterID = fsID()
     resultID = ''
     parentKeyID = None
@@ -594,7 +590,12 @@ def AddDir(path, read_stats=False, iter=None, iterID=None, key_id=None):
         # if not bpio.pathIsDir(p):
         #     raise Exception('Directory not exist: %s' % str(p))
         if name not in iter:
-            id = MakeID(iter)
+            id = 0
+            if force_path_id_parts:
+                id = int(force_path_id_parts[0])
+                force_path_id_parts = force_path_id_parts[1:]
+            else:
+                id = MakeID(iter)
             resultID += '/' + str(id)
             ii = FSItemInfo(name, path_id=resultID.lstrip('/'), typ=DIR, key_id=(key_id or parentKeyID))
             if read_stats:
@@ -694,9 +695,9 @@ def PutItem(name, parent_path_id, as_folder=False, iter=None, iterID=None, key_i
     The name of new item will be equal to the local path.
     """
     remote_path = bpio.remotePath(name)
-    if not iter:
+    if iter is None:
         iter = fs()
-    if not iterID:
+    if iterID is None:
         iterID = fsID()
     # make an ID for the filename
     newItemID = MakeID(iter)
@@ -871,7 +872,6 @@ def WalkByID(pathID, iterID=None):
             if j != len(parts) - 1:
                 return None
             path += '/' + iterID[id].name()
-            # (('/' + iterID[id].name()) if ('/' in pathID) else iterID[id].name())
         else:
             raise Exception('Wrong data type in the index')
         if j == len(parts) - 1:
@@ -940,7 +940,7 @@ def DeleteByPath(path, iter=None, iterID=None):
         iterID.pop(path_id)
         return str(path_id)
     for j in range(len(parts)):
-        name = parts[j]  # .encode('utf-8') # parts[j]
+        name = parts[j]
         if name not in iter:
             return None
         if isinstance(iter[name], dict):
@@ -971,9 +971,9 @@ def DeleteBackupID(backupID, iterID=None):
     Return backup from the index by its full ID.
     """
     customerGlobalID, remotePath, versionName = packetid.SplitBackupID(backupID)
-    if not remotePath:
+    if remotePath is None:
         return False
-    if not iterID:
+    if iterID is None:
         iterID = fsID(global_id.GlobalUserToIDURL(customerGlobalID))
     info = GetByID(remotePath, iterID=iterID)
     if info is None:
@@ -1145,7 +1145,7 @@ def ExistsBackupID(backupID, iterID=None):
     customerGlobalID, remotePath, version = packetid.SplitBackupID(backupID)
     if not remotePath:
         return False
-    if not iterID:
+    if iterID is None:
         iterID = fsID(global_id.GlobalUserToIDURL(customerGlobalID))
     iter_and_path = WalkByID(remotePath, iterID=iterID)
     if iter_and_path is None:
@@ -1205,14 +1205,12 @@ def ResolvePath(head, tail=''):
     return head.strip().lstrip('/') + '/' + tail.strip().lstrip('/')
 
 
-def TraverseByID(callback, iterID=None):
+def TraverseByID(callback, iterID=None, base_path_id=''):
     """
     Calls method ``callback(path_id, path, info)`` for every item in the index.
     """
     if iterID is None:
         iterID = fsID()
-#     customer_idurl = customerIDURLFromRootItemID(iterID)
-#     customer_id = global_id.UrlToGlobalID(customer_idurl)
 
     def recursive_traverse(i, path_id, path, cb):
         name = None
@@ -1237,10 +1235,10 @@ def TraverseByID(callback, iterID=None):
                     i[id],                                                          # item
                 )
             else:
-                raise Exception('Error, wrong item type in the index')
+                raise Exception('Error, wrong item of type %r in the index: %r' % (type(i[id]), i[id], ))
 
     startpth = '' if bpio.Windows() else '/'
-    recursive_traverse(iterID, '', startpth, callback)
+    recursive_traverse(iterID, base_path_id, startpth, callback)
 
 
 def TraverseByIDSorted(callback, iterID=None):
@@ -1249,10 +1247,8 @@ def TraverseByIDSorted(callback, iterID=None):
     """
     if iterID is None:
         iterID = fsID()
-#     customer_idurl = customerIDURLFromRootItemID(iterID)
-#     customer_id = global_id.UrlToGlobalID(customer_idurl)
 
-    def recursive_traverse(i, path_id, path, cb):
+    def recursive_traverse_sorted(i, path_id, path, cb):
         name = None
         if path not in ['', '/']:
             path += '/'
@@ -1277,14 +1273,14 @@ def TraverseByIDSorted(callback, iterID=None):
         dirs.sort(key=lambda e: e[1])
         files.sort(key=lambda e: e[1])
         for id, pth in dirs:
-            recursive_traverse(i[id], (path_id + '/' + str(id)).lstrip('/') if path_id else str(id), path, cb)
+            recursive_traverse_sorted(i[id], (path_id + '/' + str(id)).lstrip('/') if path_id else str(id), path, cb)
         for id, pth in files:
             cb((path_id + '/' + str(id)).lstrip('/') if path_id else str(id), ResolvePath(pth), i[id], False)
         del dirs
         del files
 
     startpth = '' if bpio.Windows() else '/'
-    recursive_traverse(iterID, '', startpth, callback)
+    recursive_traverse_sorted(iterID, '', startpth, callback)
 
 
 def TraverseChildsByID(callback, iterID=None):
@@ -1292,21 +1288,17 @@ def TraverseChildsByID(callback, iterID=None):
     """
     if iterID is None:
         iterID = fsID()
-#     customer_idurl = customerIDURLFromRootItemID(iterID)
-#     customer_id = global_id.UrlToGlobalID(customer_idurl)
 
     def list_traverse(i, path_id, path, cb):
         name = None
         if path not in ['', '/']:
             path += '/'
         if isinstance(i, FSItemInfo):
-            # cb(i.type, name, path_id, i)
             return
         if INFO_KEY in i:
             info = i[INFO_KEY]
             name = info.name()
             path += name
-            # cb(info.type, name, path_id, info)
         dirs = []
         files = []
         for id in i.keys():
@@ -1440,7 +1432,6 @@ def ExtractVersions(pathID, item_info, path_exist=None, customer_id=None):
         customer_id = item_info.key_id or my_id.getGlobalID(key_alias='master')
     item_size = 0
     item_time = 0
-    # item_status = ''
     versions = []
     for version, version_info in item_info.versions.items():
         backupID = packetid.MakeBackupID(customer_id, pathID, version)
@@ -1465,7 +1456,6 @@ def ExtractVersions(pathID, item_info, path_exist=None, customer_id=None):
             'label': version_label,
             'time': version_time,
             'size': version_size,
-            # 'blocks': version_maxblocknum + 1,
         })
         versions.append(backup_info_dict)
     item_time = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(item_time)) if item_time else ''
@@ -1480,8 +1470,6 @@ def ListRootItems(iter=None, iterID=None):
         iter = fs()
     if iterID is None:
         iterID = fsID()
-#     customer_idurl = customerIDURLFromRootItemID(iterID)
-#     customer_id = global_id.UrlToGlobalID(customer_idurl)
     result = []
     root_items = WalkByPath('', iter=iter)
     for item_id in root_items[0].values():
@@ -1528,8 +1516,6 @@ def ListByID(pathID, iterID=None):
         lg.out(_DebugLevel, 'backup_fs.ListByID %s' % (pathID))
     if iterID is None:
         iterID = fsID()
-#     customer_idurl = customerIDURLFromRootItemID(iterID)
-#     customer_id = global_id.UrlToGlobalID(customer_idurl)
     iter_and_path = WalkByID(pathID, iterID=iterID)
     if iter_and_path is None:
         return None
@@ -1566,10 +1552,8 @@ def ListByPath(path, iter=None):
         lg.out(_DebugLevel, 'backup_fs.ListByPath %s' % (path))
     if iter is None:
         iter = fs()
-#     customer_idurl = customerIDURLFromRootItem(iter)
-#     customer_id = global_id.UrlToGlobalID(customer_idurl)
     if path in ['', '/']:
-        return ListRootItems()
+        return ListRootItems(iter=iter)
     path = bpio.remotePath(path)
     iter_and_id = WalkByPath(path, iter=iter)
     if iter_and_id is None:
@@ -1603,8 +1587,6 @@ def ListAllBackupIDs(sorted=False, reverse=False, iterID=None):
     """
     if iterID is None:
         iterID = fsID()
-    # customer_idurl = customerIDURLFromRootItemID(iterID)
-    # customer_id = global_id.UrlToGlobalID(customer_idurl)
     lst = []
 
     def visitor(path_id, _, info):
@@ -1615,14 +1597,15 @@ def ListAllBackupIDs(sorted=False, reverse=False, iterID=None):
     return lst
 
 
-def ListAllBackupIDsFull(sorted=False, reverse=False, iterID=None):
+def ListAllBackupIDsFull(sorted=False, reverse=False, iterID=None, base_path_id=None):
     """
     Same, but also return items info.
     """
     if iterID is None:
         iterID = fsID()
-    # customer_idurl = customerIDURLFromRootItemID(iterID)
-    # customer_id = global_id.UrlToGlobalID(customer_idurl)
+    if base_path_id is None:
+        if INFO_KEY in iterID:
+            base_path_id = iterID[INFO_KEY].path_id
     lst = []
 
     def visitor(path_id, path, info):
@@ -1630,7 +1613,7 @@ def ListAllBackupIDsFull(sorted=False, reverse=False, iterID=None):
             backupID = packetid.MakeBackupID(info.key_id, path_id.lstrip('/'), version)
             lst.append((info.name(), backupID, info.get_version_info(version), ResolvePath(path), info))
 
-    TraverseByID(visitor, iterID=iterID)
+    TraverseByID(visitor, iterID=iterID, base_path_id=base_path_id)
     return lst
 
 
@@ -1641,8 +1624,6 @@ def ListSelectedFolders(selected_dirs_ids, sorted=False, reverse=False, iterID=N
     """
     if iterID is None:
         iterID = fsID()
-    # customer_idurl = customerIDURLFromRootItemID(iterID)
-    # customer_id = global_id.UrlToGlobalID(customer_idurl)
     lst = []
 
     def visitor(path_id, path, info, num_childs):
@@ -1684,12 +1665,9 @@ def ListChildsByPath(path, recursive=False, iter=None, iterID=None):
         iter = fs()
     if iterID is None:
         iterID = fsID()
-    # customer_idurl = customerIDURLFromRootItem(iter)
-    # customer_id = global_id.UrlToGlobalID(customer_idurl)
     if path == '/':
         path = ''
     path = bpio.remotePath(path)
-    # lg.out(4, 'backup_fs.ListByPathAdvanced %s' % (path))
     iter_and_id = WalkByPath(path, iter=iter)
     if iter_and_id is None:
         return 'path "%s" not found' % path
@@ -1727,7 +1705,7 @@ def ListChildsByPath(path, recursive=False, iter=None, iterID=None):
 
     if recursive:
         for sub_dir in sub_dirs:
-            sub_lookup = ListChildsByPath(sub_dir['path'])
+            sub_lookup = ListChildsByPath(sub_dir['path'], recursive=False)  # , iter=iter, iterID=iterID)
             if not isinstance(sub_lookup, list):
                 return sub_lookup
             result.extend(sub_lookup)
@@ -1745,12 +1723,9 @@ def ListByPathAdvanced(path, iter=None, iterID=None):
         iter = fs()
     if iterID is None:
         iterID = fsID()
-    # customer_idurl = customerIDURLFromRootItem(iter)
-    # customer_id = global_id.UrlToGlobalID(customer_idurl)
     if path == '/':
         path = ''
     path = bpio.remotePath(path)
-    # lg.out(4, 'backup_fs.ListByPathAdvanced %s' % (path))
     iter_and_id = WalkByPath(path, iter=iter)
     if iter_and_id is None:
         return '%s not found' % path
@@ -1783,15 +1758,12 @@ def ListAllBackupIDsAdvanced(sorted=False, reverse=False, iterID=None):
     """
     List all existing backups and return items info.
     """
-    if not iterID:
+    if iterID is None:
         iterID = fsID()
-    # customer_idurl = customerIDURLFromRootItemID(iterID)
-    # customer_id = global_id.UrlToGlobalID(customer_idurl)
-
     result = []
 
     def visitor(path_id, path, info, num_childs):
-        if (len(info.versions) == 0):
+        if len(info.versions) == 0:
             return
         dirpath = os.path.dirname(path)
         (item_size, item_time, versions) = ExtractVersions(path_id, info, dirpath)  # , customer_id)
@@ -1888,11 +1860,10 @@ def Scan(basedir=None, customer_idurl=None):
     ``lib.settings.getLocalBackupsDir()``. Also calculate size of the
     files.
     """
-    if not customer_idurl:
+    if customer_idurl is None:
         customer_idurl = my_id.getLocalID()
     if basedir is None:
         basedir = settings.getLocalBackupsDir()
-        # os.path.join(settings.getLocalBackupsDir(), global_id.UrlToGlobalID(customer_idurl))
     iterID = fsID(customer_idurl)
     summ = [0, 0, ]
 
@@ -1915,11 +1886,10 @@ def ScanID(pathID, basedir=None, customer_idurl=None):
     """
     Same as `Scan`, but check only single item in the index.
     """
-    if not customer_idurl:
+    if customer_idurl is None:
         customer_idurl = my_id.getLocalID()
     if basedir is None:
         basedir = settings.getLocalBackupsDir()
-        # basedir = os.path.join(settings.getLocalBackupsDir(), global_id.UrlToGlobalID(customer_idurl))
     iter_and_path = WalkByID(pathID, iterID=fs(customer_idurl))
     if not iter_and_path:
         return
@@ -1970,17 +1940,14 @@ def Calculate(iterID=None):
                     _FilesCount += 1
                     if i[id].exist():
                         _SizeFiles += i[id].size
-                        # lg.out(16, '        [file] %s : %d bytes' % (i[id].path, i[id].size))
                 if i[id].type == DIR:
                     _DirsCount += 1
                     if i[id].exist():
                         _SizeFolders += i[id].size
-                        # lg.out(16, '        [file] %s : %d bytes' % (i[id].path, i[id].size))
                 for version in i[id].list_versions():
                     versionSize = i[id].get_version_info(version)[1]
                     if versionSize > 0:
                         _SizeBackups += versionSize
-                        # lg.out(16, '        [version] %s : %d bytes' % (i[id].path+'/'+version, versionSize))
                 _ItemsCount += 1
             elif isinstance(i[id], dict):
                 sub_folder_size = recursive_calculate(i[id])
@@ -1994,17 +1961,14 @@ def Calculate(iterID=None):
                 _FilesCount += 1
                 if i[INFO_KEY].exist():
                     _SizeFiles += i[INFO_KEY].size
-                    # lg.out(16, '        [file] %s : %d bytes' % (i[INFO_KEY].path, i[INFO_KEY].size))
             if i[INFO_KEY].type == DIR:
                 _DirsCount += 1
                 if i[INFO_KEY].exist():
                     _SizeFolders += i[INFO_KEY].size
-                    # lg.out(16, '        [file] %s : %d bytes' % (i[INFO_KEY].path, i[INFO_KEY].size))
             for version in i[INFO_KEY].list_versions():
                 versionSize = i[INFO_KEY].get_version_info(version)[1]
                 if versionSize > 0:
                     _SizeBackups += versionSize
-                    # lg.out(16, '        [version] %s : %d bytes' % (i[INFO_KEY].path+'/'+version, versionSize))
             _ItemsCount += 1
         return folder_size
 
@@ -2049,7 +2013,6 @@ def Serialize(iterID=None, to_json=False, encoding='utf-8', filter_cb=None):
 
     TraverseByID(cb, iterID=iterID)
     if to_json:
-        # src = json.dumps(result, indent=2, encoding=encoding)
         src = result
     else:
         src = result.getvalue()
@@ -2065,7 +2028,6 @@ def Unserialize(raw_data, iter=None, iterID=None, from_json=False, decoding='utf
     """
     count = 0
     if from_json:
-        # json_data = json.loads(raw_data, encoding=decoding)
         json_data = raw_data
         for json_item in json_data['items']:
             item = FSItemInfo()
@@ -2127,7 +2089,7 @@ def _test():
     inpt.readline()
     # count = Unserialize(inpt)
     json_data = json.loads(inpt.read())
-    customer_id = 'veselin@veselin-p2p.ru'
+    customer_id = 'test01@bitrex.ai'
     customer_idurl = global_id.GlobalUserToIDURL(customer_id)
     count = Unserialize(json_data[customer_id], from_json=True, iter=fs(customer_idurl))
     inpt.close()
@@ -2153,10 +2115,12 @@ def _test():
     pprint.pprint(fs())
     print()
     pprint.pprint(fsID())
-    print()
+    print('------------')
 
-    print(HasChilds('', iter=fs(customer_idurl)))
-    
+    # print(HasChilds('', iter=fs(customer_idurl)))
+    pprint.pprint([i[1] for i in ListAllBackupIDsFull()])
+    pprint.pprint([i[1] for i in ListAllBackupIDsFull(iterID=WalkByID('0')[0])])
+
     settings.shutdown()
 
 #     for i in range(10000):

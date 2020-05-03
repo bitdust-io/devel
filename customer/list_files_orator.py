@@ -162,7 +162,7 @@ class ListFilesOrator(automat.Automat):
             # TODO: rebuild using "list-files-orator-state-changed" event
             from storage import backup_monitor
             backup_monitor.A('list_files_orator.state', newstate)
-        if newstate == 'SAW_FILES' and oldstate != newstate:
+        if newstate == 'SAW_FILES':
             if A().last_time_saw_files > 0 and time.time() - A().last_time_saw_files < 20:
                 if _Debug:
                     lg.dbg(_DebugLevel, 'already saw files %r seconds ago' % (time.time() - A().last_time_saw_files))

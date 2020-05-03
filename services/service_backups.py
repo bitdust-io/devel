@@ -133,33 +133,10 @@ class BackupsService(LocalService):
         backup_monitor.A('restart')
 
     def _on_inbox_packet_received(self, newpacket, info, status, error_message):
-        from logs import lg
-        from contacts import contactsdb
-        from userid import my_id
-        from userid import global_id
         from storage import backup_control
         from p2p import commands
-        from p2p import p2p_service
         if newpacket.Command == commands.Files():
-            list_files_global_id = global_id.ParseGlobalID(newpacket.PacketID)
-            if not list_files_global_id['idurl']:
-                lg.warn('invalid PacketID: %s' % newpacket.PacketID)
-                return False
-            if list_files_global_id['idurl'] != my_id.getLocalID():
-                lg.warn('skip %s which is from another customer' % newpacket)
-                return False
-            if not contactsdb.is_supplier(newpacket.OwnerID):
-                lg.warn('%s came, but %s is not my supplier' % (newpacket, newpacket.OwnerID, ))
-                # skip Files() if this is not my supplier
-                return False
-            # lg.out(self.debug_level, "service_backups._on_inbox_packet_received: %r for us from %s at %s" % (
-            #     newpacket, newpacket.CreatorID, info))
-            if backup_control.IncomingSupplierListFiles(newpacket, list_files_global_id):
-                # send ack packet back
-                p2p_service.SendAck(newpacket)
-            else:
-                p2p_service.SendFail(newpacket)
-            return True
+            return backup_control.on_files_received(newpacket, info)
         return False
 
     def _on_my_identity_rotated(self, evt):

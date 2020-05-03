@@ -243,7 +243,7 @@ class SupplierConnector(automat.Automat):
                 settings.SupplierServiceFilename(self.supplier_idurl, customer_idurl=self.customer_idurl),
                 newstate,
             )
-        if newstate == 'CONNECTED' and oldstate != newstate:
+        if newstate == 'CONNECTED':
             if not self._supplier_connected_event_sent:
                 self._supplier_connected_event_sent = True
                 events.send('supplier-connected', data=dict(

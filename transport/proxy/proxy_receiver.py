@@ -231,12 +231,6 @@ class ProxyReceiver(automat.Automat):
         from transport.proxy import proxy_sender
         proxy_sender.A('proxy_receiver.state', newstate)
 
-    def state_not_changed(self, curstate, event, *args, **kwargs):
-        """
-        This method intended to catch the moment when some event was fired in
-        the proxy_receiver() but its state was not changed.
-        """
-
     def A(self, event, *args, **kwargs):
         """
         The core proxy_receiver() code, generated using `visio2python

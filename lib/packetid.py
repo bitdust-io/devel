@@ -99,7 +99,7 @@ def MakePacketID(backupID, blockNumber, supplierNumber, dataORparity, normalize_
     return '%s/%d-%d-%s' % (backupID, blockNumber, supplierNumber, dataORparity, )
 
 
-def MakeBackupID(customer=None, path_id=None, version=None, normalize_key_alias=True, key_alias=None):
+def MakeBackupID(customer=None, path_id='0', version=None, normalize_key_alias=True, key_alias=None):
     """
     Run:
 

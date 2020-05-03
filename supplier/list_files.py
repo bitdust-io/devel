@@ -85,7 +85,7 @@ def send(customer_idurl, packet_id, format_type, key_id, remote_idurl, query_ite
     if os.path.isdir(ownerdir):
         try:
             for query_path in query_items:
-                plaintext += process_query_item(query_path, ownerdir)
+                plaintext += process_query_item(query_path, parts['key_alias'], ownerdir)
         except:
             lg.exc()
             return p2p_service.SendFailNoRequest(customer_idurl, packet_id, response='list files query processing error')
@@ -116,8 +116,9 @@ def send(customer_idurl, packet_id, format_type, key_id, remote_idurl, query_ite
     return newpacket
 
 
-def process_query_item(query_path, ownerdir):
+def process_query_item(query_path, key_alias, ownerdir):
     ret = ''
+    ret += 'Q%s\n' % query_path
     if query_path == '*':
         for one_key_alias in os.listdir(ownerdir):
             if not misc.ValidKeyAlias(strng.to_text(one_key_alias)):
@@ -136,7 +137,7 @@ def process_query_item(query_path, ownerdir):
         lg.warn('local file or folder not exist: %r' % local_path)
         return ''
     if os.path.isdir(local_path):
-        ret += TreeSummary(local_path)
+        ret += TreeSummary(local_path, key_alias=key_alias)
     if _Debug:
         lg.args(_DebugLevel, query_path=query_path, local_path=local_path, result_bytes=len(ret))
     return ret
@@ -190,7 +191,15 @@ def TreeSummary(ownerdir, key_alias=None):
             result.write('F%s %d\n' % (subpath, filesz))
             return False
         if not packetid.IsCanonicalVersion(name):
-            result.write('D%s\n' % subpath)
+            found_some_versions = False
+            for sub_path in os.listdir(realpath):
+                if packetid.IsCanonicalVersion(sub_path):
+                    found_some_versions = True
+                    break
+            if found_some_versions:
+                result.write('F%s -1\n' % subpath)
+            else:
+                result.write('D%s\n' % subpath)
             return True
         maxBlock = -1
         versionSize = {}
@@ -201,17 +210,17 @@ def TreeSummary(ownerdir, key_alias=None):
         for filename in os.listdir(realpath):
             packetID = subpath + '/' + filename
             pth = os.path.join(realpath, filename)
+            if os.path.isdir(pth):
+                result.write('D%s\n' % packetID)
+                continue
             try:
                 filesz = os.path.getsize(pth)
             except:
                 filesz = -1
-            if os.path.isdir(pth):
-                result.write('D%s\n' % packetID)
-                continue
             if not packetid.Valid(packetID):
                 result.write('F%s %d\n' % (packetID, filesz))
                 continue
-            customer, pathID, versionName, blockNum, supplierNum, dataORparity = packetid.SplitFull(packetID)
+            _, pathID, versionName, blockNum, supplierNum, dataORparity = packetid.SplitFull(packetID)
             if None in [pathID, versionName, blockNum, supplierNum, dataORparity]:
                 result.write('F%s %d\n' % (packetID, filesz))
                 continue

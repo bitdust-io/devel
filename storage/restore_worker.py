@@ -38,6 +38,7 @@ EVENTS:
     * :red:`raid-done`
     * :red:`raid-failed`
     * :red:`request-failed`
+    * :red:`request-finished`
     * :red:`timer-5sec`
 
 
@@ -86,6 +87,8 @@ _DebugLevel = 8
 import os
 import sys
 import time
+
+#------------------------------------------------------------------------------
 
 try:
     from twisted.internet import reactor  # @UnresolvedImport
@@ -141,6 +144,7 @@ class RestoreWorker(automat.Automat):
                  BackupID,
                  OutputFile,
                  KeyID=None,
+                 ecc_map=None,
                  debug_level=_DebugLevel,
                  log_events=False,
                  log_transitions=_Debug,
@@ -149,7 +153,7 @@ class RestoreWorker(automat.Automat):
         """
         Builds `restore_worker()` state machine.
         """
-        self.creator_id = my_id.getLocalID()
+        self.creator_id = my_id.getIDURL()
         self.backup_id = BackupID
         _parts = packetid.SplitBackupID(self.backup_id)
         self.customer_id = _parts[0]
@@ -166,10 +170,12 @@ class RestoreWorker(automat.Automat):
         self.OnHandParity = []
         self.abort_flag = False
         self.done_flag = False
-        self.EccMap = None
+        self.EccMap = ecc_map or None
+        self.max_errors = 0
         self.Started = time.time()
         self.LastAction = time.time()
         self.RequestFails = []
+        self.block_requests = {}
         self.AlreadyRequestedCounts = {}
         # For anyone who wants to know when we finish
         self.MyDeferred = Deferred()
@@ -198,8 +204,13 @@ class RestoreWorker(automat.Automat):
         """
         Method to catch the moment when `restore_worker()` state were changed.
         """
-        if newstate == 'REQUESTED':
-            self.automat('instant')
+        if event != 'instant':
+            if newstate in ['REQUESTED', 'RECEIVING', ] and oldstate not in ['REQUESTED', 'RECEIVING', ]:
+                reactor.callLater(0, self.automat, 'instant')  # @UndefinedVariable
+
+    def state_not_changed(self, curstate, event, *args, **kwargs):
+        if event == 'data-received' and curstate in ['REQUESTED', 'RECEIVING', ]:
+            reactor.callLater(0, self.automat, 'instant')  # @UndefinedVariable
 
     def A(self, event, *args, **kwargs):
         """
@@ -218,42 +229,40 @@ class RestoreWorker(automat.Automat):
         elif self.state == 'REQUESTED':
             if event == 'data-receiving-started':
                 self.state = 'RECEIVING'
-            elif event == 'data-received' and not self.isBlockFixable(*args, **kwargs):
+            elif event == 'timer-5sec' and self.Attempts==2:
+                self.doPingOfflineSuppliers(*args, **kwargs)
+            elif event == 'data-received':
                 self.doSavePacket(*args, **kwargs)
-            elif event == 'timer-5sec' and self.Attempts==1:
-                self.doPingSuppliers(*args, **kwargs)
-            elif ( event == 'instant' or event == 'data-received' ) and self.isBlockFixable(*args, **kwargs):
-                self.state = 'RAID'
-                self.doSavePacket(*args, **kwargs)
-                self.doReadRaid(*args, **kwargs)
-            elif event == 'abort' or ( ( event == 'request-failed' ) and ( not self.isStillCorrectable(*args, **kwargs) or self.Attempts>=3 ) ):
-                self.state = 'FAILED'
-                self.doDeleteAllRequests(*args, **kwargs)
-                self.doRemoveTempFile(*args, **kwargs)
-                self.doReportFailed(*args, **kwargs)
-                self.doDestroyMe(*args, **kwargs)
-            elif ( event == 'request-failed' ) and self.isStillCorrectable(*args, **kwargs) and self.Attempts<3:
+            elif event == 'request-failed' and self.isStillCorrectable(*args, **kwargs) and self.Attempts<3:
                 self.doScanExistingPackets(*args, **kwargs)
                 self.doRequestPackets(*args, **kwargs)
                 self.Attempts+=1
-        #---RECEIVING---
-        elif self.state == 'RECEIVING':
-            if event == 'data-received' and self.isBlockFixable(*args, **kwargs):
+            elif ( event == 'instant' or event == 'request-finished' ) and not self.isBlockReceiving(*args, **kwargs) and self.isBlockFixable(*args, **kwargs):
                 self.state = 'RAID'
-                self.doSavePacket(*args, **kwargs)
                 self.doReadRaid(*args, **kwargs)
-            elif event == 'data-received' and not self.isBlockFixable(*args, **kwargs):
-                self.doSavePacket(*args, **kwargs)
-            elif event == 'abort' or ( ( event == 'request-failed' or event == 'data-receiving-stopped' ) and not self.isStillCorrectable(*args, **kwargs) ):
+            elif ( event == 'abort' or ( event == 'request-failed' and ( not self.isStillCorrectable(*args, **kwargs) or self.Attempts>=3 ) ) ) or ( ( event == 'instant' or event == 'request-finished' ) and not self.isBlockReceiving(*args, **kwargs) and not self.isBlockFixable(*args, **kwargs) ):
                 self.state = 'FAILED'
                 self.doDeleteAllRequests(*args, **kwargs)
                 self.doRemoveTempFile(*args, **kwargs)
                 self.doReportFailed(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'data-receiving-stopped' and self.isStillCorrectable(*args, **kwargs):
+        #---RECEIVING---
+        elif self.state == 'RECEIVING':
+            if event == 'data-receiving-stopped' and self.isStillCorrectable(*args, **kwargs):
                 self.state = 'REQUESTED'
                 self.doScanExistingPackets(*args, **kwargs)
                 self.doRequestPackets(*args, **kwargs)
+            elif event == 'data-received':
+                self.doSavePacket(*args, **kwargs)
+            elif ( event == 'instant' or event == 'request-finished' ) and not self.isBlockReceiving(*args, **kwargs) and self.isBlockFixable(*args, **kwargs):
+                self.state = 'RAID'
+                self.doReadRaid(*args, **kwargs)
+            elif ( event == 'abort' or ( ( event == 'request-failed' or event == 'data-receiving-stopped' ) and not self.isStillCorrectable(*args, **kwargs) ) ) or ( ( event == 'instant' or event == 'request-finished' ) and not self.isBlockReceiving(*args, **kwargs) and not self.isBlockFixable(*args, **kwargs) ):
+                self.state = 'FAILED'
+                self.doDeleteAllRequests(*args, **kwargs)
+                self.doRemoveTempFile(*args, **kwargs)
+                self.doReportFailed(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
         #---RAID---
         elif self.state == 'RAID':
             if event == 'raid-done':
@@ -313,23 +322,30 @@ class RestoreWorker(automat.Automat):
         """
         if not self.EccMap:
             return False
-        max_errors = eccmap.GetCorrectableErrors(self.EccMap.NumSuppliers())
-        result = bool(len(self.RequestFails) <= max_errors)
+        result = bool(len(self.RequestFails) <= self.max_errors)
         if _Debug:
-            lg.out(_DebugLevel, 'restore_worker.isStillCorrectable max_errors=%d, fails=%d' % (
-                max_errors, len(self.RequestFails), ))
+            lg.out(_DebugLevel, 'restore_worker.isStillCorrectable max_errors=%d, fails=%d' % (self.max_errors, len(self.RequestFails), ))
         return result
 
     def isBlockFixable(self, *args, **kwargs):
         """
         Condition method.
         """
+        if not self.EccMap:
+            return False
         result = self.EccMap.Fixable(self.OnHandData, self.OnHandParity)
         if _Debug:
-            lg.out(_DebugLevel, 'restore_worker.isBlockFixable returns %s for block %d' % (result, self.block_number, ))
-            lg.out(_DebugLevel, '    OnHandData: %r' % self.OnHandData)
-            lg.out(_DebugLevel, '    OnHandParity: %r' % self.OnHandParity)
+            lg.args(_DebugLevel, block_number=self.block_number, result=result, OnHandData=self.OnHandData, OnHandParity=self.OnHandParity)
         return result
+
+    def isBlockReceiving(self, *args, **kwargs):
+        """
+        Condition method.
+        """
+        block_results = list(self.block_requests.values())
+        if _Debug:
+            lg.args(_DebugLevel, block_results=block_results)
+        return block_results.count(None) > 0
 
     def doInit(self, *args, **kwargs):
         """
@@ -337,37 +353,39 @@ class RestoreWorker(automat.Automat):
         """
         self._do_block_rebuilding()
         self.known_suppliers = [_f for _f in contactsdb.suppliers(customer_idurl=self.customer_idurl) if _f]
-        known_eccmap_dict = {}
-        for supplier_idurl in self.known_suppliers:
-            known_ecc_map = contactsdb.get_supplier_meta_info(
-                supplier_idurl=supplier_idurl, customer_idurl=self.customer_idurl,
-            ).get('ecc_map', None)
-            if known_ecc_map:
-                if known_ecc_map not in known_eccmap_dict:
-                    known_eccmap_dict[known_ecc_map] = 0
-                known_eccmap_dict[known_ecc_map] += 1
-        if known_eccmap_dict:
-            all_known_eccmaps = list(known_eccmap_dict.items())
-            all_known_eccmaps.sort(key=lambda i: i[1], reverse=True)
-            self.EccMap = eccmap.eccmap(all_known_eccmaps[0][0])
-            lg.info('eccmap %r recognized from suppliers meta info' % self.EccMap)
-        else:
-            known_ecc_map = None
-            if driver.is_on('service_shared_data'):
-                from access import shared_access_coordinator
-                active_share = shared_access_coordinator.get_active_share(self.key_id)
-                if active_share:
-                    known_ecc_map = active_share.known_ecc_map
-            if known_ecc_map:
-                self.EccMap = eccmap.eccmap(known_ecc_map)
-                lg.info('eccmap %r recognized from active share %r' % (self.EccMap, active_share, ))
+        if not self.EccMap:
+            known_eccmap_dict = {}
+            for supplier_idurl in self.known_suppliers:
+                known_ecc_map = contactsdb.get_supplier_meta_info(
+                    supplier_idurl=supplier_idurl, customer_idurl=self.customer_idurl,
+                ).get('ecc_map', None)
+                if known_ecc_map:
+                    if known_ecc_map not in known_eccmap_dict:
+                        known_eccmap_dict[known_ecc_map] = 0
+                    known_eccmap_dict[known_ecc_map] += 1
+            if known_eccmap_dict:
+                all_known_eccmaps = list(known_eccmap_dict.items())
+                all_known_eccmaps.sort(key=lambda i: i[1], reverse=True)
+                self.EccMap = eccmap.eccmap(all_known_eccmaps[0][0])
+                lg.info('ECC map %r recognized from suppliers meta info' % self.EccMap)
             else:
-                num_suppliers = len(self.known_suppliers)
-                if num_suppliers not in eccmap.GetPossibleSuppliersCount():
-                    num_suppliers = settings.DefaultDesiredSuppliers()
-                self.EccMap = eccmap.eccmap(eccmap.GetEccMapName(num_suppliers))
-                lg.warn('no meta info found, guessed eccmap %r from %d known suppliers' % (
-                    self.EccMap, len(self.known_suppliers)))
+                known_ecc_map = None
+                if driver.is_on('service_shared_data'):
+                    from access import shared_access_coordinator
+                    active_share = shared_access_coordinator.get_active_share(self.key_id)
+                    if active_share:
+                        known_ecc_map = active_share.known_ecc_map
+                if known_ecc_map:
+                    self.EccMap = eccmap.eccmap(known_ecc_map)
+                    lg.info('ECC map %r recognized from active share %r' % (self.EccMap, active_share, ))
+                else:
+                    num_suppliers = len(self.known_suppliers)
+                    if num_suppliers not in eccmap.GetPossibleSuppliersCount():
+                        num_suppliers = settings.DefaultDesiredSuppliers()
+                    self.EccMap = eccmap.eccmap(eccmap.GetEccMapName(num_suppliers))
+                    lg.warn('no meta info found, guessed ECC map %r from %d known suppliers' % (
+                        self.EccMap, len(self.known_suppliers)))
+        self.max_errors = eccmap.GetCorrectableErrors(self.EccMap.NumSuppliers())
         if data_receiver.A():
             data_receiver.A().addStateChangedCallback(self._on_data_receiver_state_changed)
 
@@ -382,13 +400,19 @@ class RestoreWorker(automat.Automat):
         self.OnHandData = [False, ] * self.EccMap.datasegments
         self.OnHandParity = [False, ] * self.EccMap.paritysegments
         self.RequestFails = []
+        self.block_requests = {}
         self.AlreadyRequestedCounts = {}
 
-    def doPingSuppliers(self, *args, **kwargs):
+    def doPingOfflineSuppliers(self, *args, **kwargs):
         """
         Action method.
         """
-        propagate.SendSuppliers()
+        l = []
+        for supplier_idurl in contactsdb.suppliers(customer_idurl=self.customer_idurl):
+            if online_status.isOnline(supplier_idurl):
+                continue
+            l.append(supplier_idurl)
+        propagate.SendToIDs(l, wide=True)
 
     def doScanExistingPackets(self, *args, **kwargs):
         """
@@ -436,81 +460,14 @@ class RestoreWorker(automat.Automat):
         """
         Action method.
         """
-        if _Debug:
-            lg.out(_DebugLevel, 'restore_worker.doRequestPackets for %s at block %d' % (self.backup_id, self.block_number, ))
-        from stream import io_throttle
-        packetsToRequest = []
-        for SupplierNumber in range(self.EccMap.datasegments):
-            SupplierID = contactsdb.supplier(SupplierNumber, customer_idurl=self.customer_idurl)
-            if not SupplierID:
-                lg.warn('unknown supplier at position %s' % SupplierNumber)
-                continue
-            if online_status.isOffline(SupplierID):
-                lg.warn('offline supplier: %s' % SupplierID)
-                continue
-            if self.OnHandData[SupplierNumber]:
-                if _Debug:
-                    lg.out(_DebugLevel, '        OnHandData is True for supplier %d' % SupplierNumber)
-                continue
-            packetsToRequest.append((SupplierID, packetid.MakePacketID(self.backup_id, self.block_number, SupplierNumber, 'Data')))
-        for SupplierNumber in range(self.EccMap.paritysegments):
-            SupplierID = contactsdb.supplier(SupplierNumber, customer_idurl=self.customer_idurl)
-            if not SupplierID:
-                lg.warn('unknown supplier at position %s' % SupplierNumber)
-                continue
-            if online_status.isOffline(SupplierID):
-                lg.warn('offline supplier: %s' % SupplierID)
-                continue
-            if self.OnHandParity[SupplierNumber]:
-                if _Debug:
-                    lg.out(_DebugLevel, '        OnHandParity is True for supplier %d' % SupplierNumber)
-                continue
-            packetsToRequest.append((SupplierID, packetid.MakePacketID(self.backup_id, self.block_number, SupplierNumber, 'Parity')))
-        if _Debug:
-            lg.out(_DebugLevel, '        packets to request: %s' % packetsToRequest)
-        requests_made = 0
-        already_requested = 0
-        for SupplierID, packetID in packetsToRequest:
-            if io_throttle.HasPacketInRequestQueue(SupplierID, packetID):
-                already_requested += 1
-                if packetID not in self.AlreadyRequestedCounts:
-                    self.AlreadyRequestedCounts[packetID] = 0
-                self.AlreadyRequestedCounts[packetID] += 1
-                if _Debug:
-                    lg.out(_DebugLevel, '        packet already in request queue: %s %s' % (SupplierID, packetID, ))
-                continue
-            io_throttle.QueueRequestFile(
-                self._on_packet_request_result,
-                self.creator_id,
-                packetID,
-                self.creator_id,
-                SupplierID)
-            requests_made += 1
-        del packetsToRequest
-        if requests_made:
-            if _Debug:
-                lg.out(_DebugLevel, "        requested %d packets for block %d" % (
-                    requests_made, self.block_number))
-        else:
-            if not already_requested:
-                lg.warn('no requests made for block %d' % self.block_number)
-                reactor.callLater(0, self.automat, 'request-failed', None)  # @UndefinedVariable
-            else:
-                if _Debug:
-                    lg.out(_DebugLevel, "        found %d already requested packets for block %d" % (
-                        already_requested, self.block_number))
-                if self.AlreadyRequestedCounts:
-                    all_counts = sorted(self.AlreadyRequestedCounts.values())
-                    if all_counts[0] > 100:
-                        lg.warn('too much requests made for block %d' % self.block_number)
-                        reactor.callLater(0, self.automat, 'request-failed', None)  # @UndefinedVariable
+        self._do_check_run_requests()
 
     def doSavePacket(self, *args, **kwargs):
         """
         Action method.
         """
         if not args or not args[0]:
-            return
+            raise Exception('no input found')
         NewPacket, PacketID = args[0]
         glob_path = global_id.ParseGlobalID(PacketID, detect_version=True)
         packetID = global_id.CanonicalID(PacketID)
@@ -519,24 +476,24 @@ class RestoreWorker(automat.Automat):
             self.OnHandData[SupplierNumber] = True
         elif dataORparity == 'Parity':
             self.OnHandParity[SupplierNumber] = True
-        if NewPacket:
-            filename = os.path.join(settings.getLocalBackupsDir(), customer_id, glob_path['path'])
-            dirpath = os.path.dirname(filename)
-            if not os.path.exists(dirpath):
-                try:
-                    bpio._dirs_make(dirpath)
-                except:
-                    lg.exc()
-            # either way the payload of packet is saved
-            if not bpio.WriteBinaryFile(filename, NewPacket.Payload):
-                lg.warn("unable to write to %s" % filename)
-                return
-            if self.packetInCallback is not None:
-                self.packetInCallback(self.backup_id, NewPacket)
-            if _Debug:
-                lg.out(_DebugLevel, "restore_worker.doSavePacket %s saved to %s" % (packetID, filename))
-        else:
-            lg.warn('new packet is None, probably already exists locally')
+        if not NewPacket:
+            lg.warn('packet %r already exists locally' % packetID)
+            return
+        filename = os.path.join(settings.getLocalBackupsDir(), customer_id, glob_path['path'])
+        dirpath = os.path.dirname(filename)
+        if not os.path.exists(dirpath):
+            try:
+                bpio._dirs_make(dirpath)
+            except:
+                lg.exc()
+        # either way the payload of packet is saved
+        if not bpio.WriteBinaryFile(filename, NewPacket.Payload):
+            lg.err("unable to write to %s" % filename)
+            return
+        if self.packetInCallback is not None:
+            self.packetInCallback(self.backup_id, NewPacket)
+        if _Debug:
+            lg.out(_DebugLevel, "restore_worker.doSavePacket %s saved to %s" % (packetID, filename))
 
     def doReadRaid(self, *args, **kwargs):
         """
@@ -657,7 +614,8 @@ class RestoreWorker(automat.Automat):
         self.EccMap = None
         self.LastAction = None
         self.RequestFails = []
-        self.AlreadyRequestedCounts = {}
+        self.AlreadyRequestedCounts = None
+        self.block_requests = None
         self.MyDeferred = None
         self.output_stream = None
         self.destroy()
@@ -670,6 +628,99 @@ class RestoreWorker(automat.Automat):
         from storage import backup_rebuilder
         backup_rebuilder.UnBlockBackup(self.backup_id)
 
+    def _do_check_run_requests(self):
+        if _Debug:
+            lg.out(_DebugLevel, 'restore_worker._do_check_run_requests for %s at block %d' % (self.backup_id, self.block_number, ))
+        from stream import io_throttle
+        packetsToRequest = []
+        for SupplierNumber in range(self.EccMap.datasegments):
+            request_packet_id = packetid.MakePacketID(self.backup_id, self.block_number, SupplierNumber, 'Data')
+            if self.OnHandData[SupplierNumber]:
+                if _Debug:
+                    lg.out(_DebugLevel, '        SKIP, OnHandData is True for supplier %d' % SupplierNumber)
+                if request_packet_id not in self.block_requests:
+                    self.block_requests[request_packet_id] = True
+                continue
+            if request_packet_id in self.block_requests:
+                if _Debug:
+                    lg.out(_DebugLevel, '        SKIP, request for packet %r already sent to IO queue for supplier %d' % (request_packet_id, SupplierNumber, ))
+                continue
+            SupplierID = contactsdb.supplier(SupplierNumber, customer_idurl=self.customer_idurl)
+            if not SupplierID:
+                lg.warn('unknown supplier at position %s' % SupplierNumber)
+                continue
+            if online_status.isOffline(SupplierID):
+                if _Debug:
+                    lg.out(_DebugLevel, '        SKIP, offline supplier: %s' % SupplierID)
+                continue
+            packetsToRequest.append((SupplierID, request_packet_id, ))
+        for SupplierNumber in range(self.EccMap.paritysegments):
+            request_packet_id = packetid.MakePacketID(self.backup_id, self.block_number, SupplierNumber, 'Parity')
+            if self.OnHandParity[SupplierNumber]:
+                if _Debug:
+                    lg.out(_DebugLevel, '        SKIP, OnHandParity is True for supplier %d' % SupplierNumber)
+                if request_packet_id not in self.block_requests:
+                    self.block_requests[request_packet_id] = True
+                continue
+            if request_packet_id in self.block_requests:
+                if _Debug:
+                    lg.out(_DebugLevel, '        SKIP, request for packet %r already sent to IO queue for supplier %d' % (request_packet_id, SupplierNumber, ))
+                continue
+            SupplierID = contactsdb.supplier(SupplierNumber, customer_idurl=self.customer_idurl)
+            if not SupplierID:
+                lg.warn('unknown supplier at position %s' % SupplierNumber)
+                continue
+            if online_status.isOffline(SupplierID):
+                if _Debug:
+                    lg.out(_DebugLevel, '        SKIP, offline supplier: %s' % SupplierID)
+                continue
+            packetsToRequest.append((SupplierID, request_packet_id, ))
+        requests_made = 0
+        # already_requested = 0
+        for SupplierID, packetID in packetsToRequest:
+            if io_throttle.HasPacketInRequestQueue(SupplierID, packetID):
+                # already_requested += 1
+                # if packetID not in self.AlreadyRequestedCounts:
+                #     self.AlreadyRequestedCounts[packetID] = 0
+                # self.AlreadyRequestedCounts[packetID] += 1
+                lg.warn('packet already in IO queue for supplier %s : %s' % (SupplierID, packetID, ))
+                continue
+            self.block_requests[packetID] = None
+            if io_throttle.QueueRequestFile(
+                callOnReceived=self._on_packet_request_result,
+                creatorID=self.creator_id,
+                packetID=packetID,
+                ownerID=self.creator_id,  # self.customer_idurl,
+                remoteID=SupplierID,
+            ):
+                requests_made += 1
+            else:
+                self.block_requests[packetID] = False
+            if _Debug:
+                lg.dbg(_DebugLevel, 'sent request %r to %r, other requests: %r' % (
+                    packetID, SupplierID, list(self.block_requests.values())))
+        del packetsToRequest
+        if requests_made:
+            if _Debug:
+                lg.out(_DebugLevel, "        requested %d packets for block %d" % (requests_made, self.block_number, ))
+            return
+        current_block_requests_results = list(self.block_requests.values())
+        if _Debug:
+            lg.args(_DebugLevel, current_results=current_block_requests_results)
+        pending_count = current_block_requests_results.count(None)
+        if pending_count > 0:
+            if _Debug:
+                lg.out(_DebugLevel, "        nothing for request, currently %d pending packets for block %d" % (pending_count, self.block_number, ))
+            return
+        failed_count = current_block_requests_results.count(False)
+        if failed_count > self.max_errors:
+            lg.err('all requests finished and %d packets failed, not possible to read data for block %d' % (failed_count, self.block_number, ))
+            reactor.callLater(0, self.automat, 'request-failed', None)  # @UndefinedVariable
+            return
+        if _Debug:
+            lg.out(_DebugLevel, "        all requests finished for block %d : %r" % (self.block_number, current_block_requests_results, ))
+        reactor.callLater(0, self.automat, 'request-finished', None)  # @UndefinedVariable
+
     def _on_block_restored(self, restored_blocks, filename):
         if _Debug:
             lg.out(_DebugLevel, 'restore_worker._on_block_restored at %s with result: %s' % (filename, restored_blocks))
@@ -680,28 +731,33 @@ class RestoreWorker(automat.Automat):
 
     def _on_packet_request_result(self, NewPacketOrPacketID, result):
         if _Debug:
-            lg.out(_DebugLevel, 'restore_worker._on_packet_request_result %s : %s' % (result, NewPacketOrPacketID))
-        if result == 'received':
-            self.automat('data-received', (NewPacketOrPacketID, NewPacketOrPacketID.PacketID, ))
-        elif result == 'exist':
-            self.automat('data-received', (None, NewPacketOrPacketID, ))
-        elif result == 'in queue':
-            lg.warn('packet already in the request queue')
-        elif result == 'failed':
-            if strng.is_string(NewPacketOrPacketID):
-                self.RequestFails.append(NewPacketOrPacketID)
-                reactor.callLater(0, self.automat, 'request-failed', NewPacketOrPacketID)  # @UndefinedVariable
-            else:
-                self.RequestFails.append(getattr(NewPacketOrPacketID, 'PacketID', None))
-                reactor.callLater(0, self.automat, 'request-failed', getattr(NewPacketOrPacketID, 'PacketID', None))  # @UndefinedVariable
+            lg.args(_DebugLevel, packet=NewPacketOrPacketID, result=result)
+        packet_id = None
+        if strng.is_string(NewPacketOrPacketID):
+            packet_id = NewPacketOrPacketID
         else:
-            lg.warn('packet %s got not recognized result: %s' % (NewPacketOrPacketID, result, ))
-            if strng.is_string(NewPacketOrPacketID):
-                self.RequestFails.append(NewPacketOrPacketID)
-                reactor.callLater(0, self.automat, 'request-failed', NewPacketOrPacketID)  # @UndefinedVariable
+            packet_id = getattr(NewPacketOrPacketID, 'PacketID', None)
+        if not packet_id:
+            raise Exception('packet ID is unknown from %r' % NewPacketOrPacketID)
+        if packet_id not in self.block_requests:
+            if _Debug:
+                lg.args(_DebugLevel, block_requests=self.block_requests)
+            raise Exception('packet ID not registered')
+        if result == 'in queue':
+            if self.block_requests[packet_id] is not None:
+                raise Exception('packet is still in IO queue, but already unregistered')
+            lg.warn('packet already in the request queue: %r' % packet_id)
+            return
+        if result in ['received', 'exist', ]:
+            self.block_requests[packet_id] = True
+            if result == 'exist':
+                reactor.callLater(0, self.automat, 'data-received', (None, packet_id, ))  # @UndefinedVariable
             else:
-                self.RequestFails.append(getattr(NewPacketOrPacketID, 'PacketID', None))
-                reactor.callLater(0, self.automat, 'request-failed', getattr(NewPacketOrPacketID, 'PacketID', None))  # @UndefinedVariable
+                reactor.callLater(0, self.automat, 'data-received', (NewPacketOrPacketID, packet_id, ))  # @UndefinedVariable
+        else:
+            self.block_requests[packet_id] = False
+            self.RequestFails.append(packet_id)
+            reactor.callLater(0, self.automat, 'request-failed', packet_id)  # @UndefinedVariable
 
     def _on_data_receiver_state_changed(self, oldstate, newstate, event_string, *args, **kwargs):
         if newstate == 'RECEIVING' and oldstate != 'RECEIVING':

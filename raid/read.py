@@ -105,12 +105,14 @@ def RebuildOne(inlist, listlen, outfilename, threshold_control=None):
         try:
             raidfiles[filenum] = open(inlist[filenum], "rb")
         except:
+            logs.lg.exc()
             for f in raidfiles:
                 try:
                     f.close()
                 except:
                     pass
             return False
+
     rebuildfile = open(outfilename, "wb")
     progress = 0
     while True:
@@ -139,8 +141,11 @@ def RebuildOne(inlist, listlen, outfilename, threshold_control=None):
     for filenum in range(listlen):
         raidfiles[filenum].close()
     rebuildfile.close()
+
     if _Debug:
-        open('/tmp/raid.log', 'a').write(u'RebuildOne inlist=%r progress=%d\n' % (repr(inlist), progress))
+        with open('/tmp/raid.log', 'a') as logfile:
+            logfile.write(u'raidread.RebuildOne inlist=%d listlen=%d outfilename=%r progress=%d\n' % (
+                len(inlist), listlen, outfilename, progress))
     return True
 
 
@@ -164,8 +169,9 @@ def raidread(
     try:
         if _Debug:
             open('/tmp/raid.log', 'a').write(u'raidread OutputFileName=%s blockNumber=%s eccmapname=%s\n' % (repr(OutputFileName), blockNumber, eccmapname))
+
         myeccmap = raid.eccmap.eccmap(eccmapname)
-        GoodFiles = list(range(0, 200))
+        GoodFiles = ['', ] * (myeccmap.datasegments + myeccmap.paritysegments)
         MakingProgress = 1
         while MakingProgress == 1:
             MakingProgress = 0
@@ -173,23 +179,20 @@ def raidread(
                 PFileName = os.path.join(
                     data_parity_dir,
                     version,
-                    str(blockNumber) +
-                    '-' +
-                    str(PSegNum) +
-                    '-Parity')
+                    str(blockNumber) + '-' + str(PSegNum) + '-Parity',
+                )
                 if os.path.exists(PFileName):
                     Map = myeccmap.ParityToData[PSegNum]
                     TotalDSegs = 0
                     GoodDSegs = 0
+                    BadName = ''
                     for DSegNum in Map:
                         TotalDSegs += 1
                         FileName = os.path.join(
                             data_parity_dir,
                             version,
-                            str(blockNumber) +
-                            '-' +
-                            str(DSegNum) +
-                            '-Data')
+                            str(blockNumber) + '-' + str(DSegNum) + '-Data',
+                        )
                         if os.path.exists(FileName):
                             GoodFiles[GoodDSegs] = FileName
                             GoodDSegs += 1
@@ -200,6 +203,8 @@ def raidread(
                         GoodFiles[GoodDSegs] = PFileName
                         GoodDSegs += 1
                         RebuildOne(GoodFiles, GoodDSegs, BadName, threshold_control=threshold_control)
+
+        GoodFiles = []
         #  Count up the good segments and combine
         GoodDSegs = 0
         output = open(OutputFileName, "wb")
@@ -207,15 +212,14 @@ def raidread(
             FileName = os.path.join(
                 data_parity_dir,
                 version,
-                str(blockNumber) +
-                '-' +
-                str(DSegNum) +
-                '-Data')
+                str(blockNumber) + '-' + str(DSegNum) + '-Data',
+            )
             if os.path.exists(FileName):
                 GoodDSegs += 1
                 moredata = open(FileName, "rb").read()
                 output.write(moredata)
         output.close()
+
         if _Debug:
             open('/tmp/raid.log', 'a').write(u'GoodDSegs=%d\n' % GoodDSegs)
         return GoodDSegs

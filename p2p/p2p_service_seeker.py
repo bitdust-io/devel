@@ -102,18 +102,6 @@ class P2PServiceSeeker(automat.Automat):
         self.lookup_task = None
         self.requested_packet_id = None
 
-    def state_changed(self, oldstate, newstate, event, *args, **kwargs):
-        """
-        Method to catch the moment when p2p_service_seeker() state were
-        changed.
-        """
-
-    def state_not_changed(self, curstate, event, *args, **kwargs):
-        """
-        This method intended to catch the moment when some event was fired in
-        the p2p_service_seeker() but its state was not changed.
-        """
-
     def A(self, event, *args, **kwargs):
         """
         The state machine code, generated using `visio2python

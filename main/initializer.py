@@ -139,9 +139,6 @@ class Initializer(automat.Automat):
         self.flagGUI = False
         self.is_installed = None
 
-    def state_changed(self, oldstate, newstate, event, *args, **kwargs):
-        global_state.set_global_state('INIT ' + newstate)
-
     def A(self, event, *args, **kwargs):
         from main import installer
         from main import shutdowner

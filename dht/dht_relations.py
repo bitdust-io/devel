@@ -133,6 +133,14 @@ def read_customer_suppliers(customer_idurl, as_fields=True, use_cache=True):
         if my_id.getLocalID() != id_url.field(ret['customer_idurl']):
             contactsdb.set_suppliers(ret['suppliers'], customer_idurl=ret['customer_idurl'])
             contactsdb.save_suppliers(customer_idurl=ret['customer_idurl'])
+            if ret.get('ecc_map'):
+                for supplier_idurl in ret['suppliers']:
+                    if supplier_idurl:
+                        contactsdb.add_supplier_meta_info(
+                            supplier_idurl=supplier_idurl,
+                            info={'ecc_map': ret['ecc_map'], },
+                            customer_idurl=ret['customer_idurl'],
+                        )
         else:
             if _Debug:
                 lg.out(_DebugLevel, 'dht_relations._do_save_customer_suppliers SKIP processing my own suppliers')
@@ -202,6 +210,7 @@ def read_customer_message_brokers(customer_idurl, positions=[0, ], return_detail
             'customer_idurl': customer_idurl,
             'broker_idurl': None,
             'position': position,
+            'archive_folder_path': None,
         }
         if not dht_value or not isinstance(dht_value, dict):
             broker_result.callback(ret)
@@ -214,6 +223,7 @@ def read_customer_message_brokers(customer_idurl, positions=[0, ], return_detail
                 _customer_idurl = id_url.to_bin(dht_value['customer_idurl'])
                 _broker_idurl = id_url.to_bin(dht_value['broker_idurl'])
             _position = int(dht_value['position'])
+            _archive_folder_path = strng.to_text(dht_value['archive_folder_path'])
             _revision = int(dht_value.get('revision'))
             _timestamp = int(dht_value.get('timestamp'))
         except:
@@ -235,6 +245,7 @@ def read_customer_message_brokers(customer_idurl, positions=[0, ], return_detail
             'customer_idurl': _customer_idurl,
             'broker_idurl': _broker_idurl,
             'position': _position,
+            'archive_folder_path': _archive_folder_path,
             'revision': _revision,
             'timestamp': _timestamp,
         })
@@ -292,12 +303,13 @@ def read_customer_message_brokers(customer_idurl, positions=[0, ], return_detail
     return result
 
 
-def write_customer_message_broker(customer_idurl, broker_idurl, position=0, revision=None):
+def write_customer_message_broker(customer_idurl, broker_idurl, position=0, archive_folder_path=None, revision=None):
     customer_idurl = id_url.field(customer_idurl)
     broker_idurl = id_url.field(broker_idurl)
     return dht_records.set_message_broker(
         customer_idurl=customer_idurl,
         broker_idurl=broker_idurl,
         position=position,
+        archive_folder_path=archive_folder_path,
         revision=revision,
     )

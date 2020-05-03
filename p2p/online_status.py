@@ -614,24 +614,18 @@ class OnlineStatus(automat.Automat):
         """
         if _Debug:
             lg.out(_DebugLevel - 2, '%s : [%s]->[%s]' % (self.name, oldstate, newstate))
-        if newstate == 'CONNECTED' and newstate != oldstate:
+        if newstate == 'CONNECTED':
             lg.info('remote node connected : %s' % self.idurl)
             events.send('node-connected', data=dict(
                 global_id=self.glob_id,
                 idurl=self.idurl,
             ))
-        if newstate == 'OFFLINE' and oldstate != 'AT_STARTUP' and newstate != oldstate:
+        if newstate == 'OFFLINE' and oldstate != 'AT_STARTUP':
             lg.info('remote node disconnected : %s' % self.idurl)
             events.send('node-disconnected', data=dict(
                 global_id=self.glob_id,
                 idurl=self.idurl,
             ))
-
-    def state_not_changed(self, curstate, event, *args, **kwargs):
-        """
-        This method intended to catch the moment when some event was fired in the `online_status()`
-        but automat state was not changed.
-        """
 
     def A(self, event, *args, **kwargs):
         """

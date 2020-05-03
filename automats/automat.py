@@ -444,13 +444,13 @@ class Automat(object):
         self.stopTimers()
         return self.unregister()
 
-    def state_changed(self, oldstate, newstate, event_string, *args, **kwargs):
+    def state_changed(self, oldstate, newstate, event, *args, **kwargs):
         """
         Redefine this method in subclass to be able to catch the moment
         immediately after automat's state were changed.
         """
 
-    def state_not_changed(self, curstate, event_string, *args, **kwargs):
+    def state_not_changed(self, curstate, event, *args, **kwargs):
         """
         Redefine this method in subclass if you want to do some actions
         immediately after processing the event, which did not change the
