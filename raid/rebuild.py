@@ -28,7 +28,7 @@ from six.moves import range
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 
 #------------------------------------------------------------------------------
 
@@ -53,6 +53,10 @@ import raid.eccmap
 
 def rebuild(backupID, blockNum, eccMap, availableSuppliers, remoteMatrix, localMatrix, localBackupsDir, threshold_control=None):
     try:
+        if _Debug:
+            with open('/tmp/raid.log', 'a') as logfile:
+                logfile.write(u'rebuild backupID=%r blockNum=%r eccMap=%r\n' % (backupID, blockNum, eccMap, ))
+
         customer, _, localPath = backupID.rpartition(':')
         if '$' not in customer:
             customer = 'master$' + customer
@@ -94,8 +98,11 @@ def rebuild(backupID, blockNum, eccMap, availableSuppliers, remoteMatrix, localM
                 missingParity[supplierNum] = 1
 
         if _Debug:
-            open('/tmp/raid.log', 'a').write(u'missingData=%r missingParity=%r\n' % (missingData, missingParity))
-            open('/tmp/raid.log', 'a').write(u'localData=%r localParity=%r\n' % (localData, localParity))
+            with open('/tmp/raid.log', 'a') as logfile:
+                logfile.write(u'missingData=%r\n' % missingData)
+                logfile.write(u'missingParity=%r\n' % missingParity)
+                logfile.write(u'localData=%r\n' % localData)
+                logfile.write(u'localParity=%r\n' % localParity)
 
         # This made an attempt to rebuild the missing pieces
         # from pieces we have on hands.
@@ -162,6 +169,11 @@ def rebuild(backupID, blockNum, eccMap, availableSuppliers, remoteMatrix, localM
                 # self.outstandingFilesList.append((parityFileName, self.BuildFileName(supplierNum, 'Parity'), supplierNum))
                 # self.paritySent[supplierNum] = 1
         # lg.out(14, 'block_rebuilder.AttemptRebuild END')
+
+        if _Debug:
+            with open('/tmp/raid.log', 'a') as logfile:
+                logfile.write(u'newData=%r\n' % newData)
+
         return (newData, localData, localParity, reconstructedData, reconstructedParity, )
 
     except:

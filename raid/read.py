@@ -62,7 +62,7 @@ from six.moves import range
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 
 #------------------------------------------------------------------------------
 
@@ -105,6 +105,7 @@ def RebuildOne(inlist, listlen, outfilename, threshold_control=None):
         try:
             raidfiles[filenum] = open(inlist[filenum], "rb")
         except:
+            logs.lg.exc()
             for f in raidfiles:
                 try:
                     f.close()
@@ -142,8 +143,9 @@ def RebuildOne(inlist, listlen, outfilename, threshold_control=None):
     rebuildfile.close()
 
     if _Debug:
-        open('/tmp/raid.log', 'a').write(u'RebuildOne inlist=%r listlen=%d outfilename=%r progress=%d\n' % (
-            inlist, listlen, outfilename, progress))
+        with open('/tmp/raid.log', 'a') as logfile:
+            logfile.write(u'raidread.RebuildOne inlist=%d listlen=%d outfilename=%r progress=%d\n' % (
+                len(inlist), listlen, outfilename, progress))
     return True
 
 
@@ -169,8 +171,7 @@ def raidread(
             open('/tmp/raid.log', 'a').write(u'raidread OutputFileName=%s blockNumber=%s eccmapname=%s\n' % (repr(OutputFileName), blockNumber, eccmapname))
 
         myeccmap = raid.eccmap.eccmap(eccmapname)
-        # GoodFiles = ['', ] * (myeccmap.datasegments + myeccmap.paritysegments)
-        GoodFiles = list(range(0, 200))
+        GoodFiles = ['', ] * (myeccmap.datasegments + myeccmap.paritysegments)
         MakingProgress = 1
         while MakingProgress == 1:
             MakingProgress = 0
@@ -199,9 +200,10 @@ def raidread(
                             BadName = FileName
                     if GoodDSegs == TotalDSegs - 1:
                         MakingProgress = 1
-                        GoodFiles[GoodDSegs] = FileName
+                        GoodFiles[GoodDSegs] = PFileName
                         GoodDSegs += 1
                         RebuildOne(GoodFiles, GoodDSegs, BadName, threshold_control=threshold_control)
+
         GoodFiles = []
         #  Count up the good segments and combine
         GoodDSegs = 0
