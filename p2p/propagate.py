@@ -268,8 +268,7 @@ def SendServers():
     transport_tcp.
     """
     from transport.tcp import tcp_node
-    sendfile, sendfilename = tmpfile.make("propagate")
-    os.close(sendfile)
+    _, sendfilename = tmpfile.make("propagate", close_fd=True)
     LocalIdentity = my_id.getLocalIdentity()
     bpio.WriteTextFile(sendfilename, LocalIdentity.serialize(as_text=True))
     dlist = []

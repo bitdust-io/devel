@@ -375,8 +375,8 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_message_send(self, recipient, message_body):
         return api.message_send(recipient, message_body)
 
-    def jsonrpc_message_receive(self, consumer_id):
-        return api.message_receive(consumer_id)
+    def jsonrpc_message_receive(self, consumer_callback_id):
+        return api.message_receive(consumer_callback_id)
 
 #     def jsonrpc_list_messages(self):
 #         return api.list_messages()

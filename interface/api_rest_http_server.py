@@ -982,17 +982,17 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @GET('^/v1/message/history$')
     @GET('^/message/history/v1$')
     def message_history_v1(self, request):
-        user_identity = _request_arg(request, 'id', None, True)
-        return api.message_history(user=user_identity)
+        return api.message_history(user=_request_arg(request, 'id', None, True))
 
     @GET('^/msg/r/(?P<consumer_id>[^/]+)/$')
-    @GET('^/v1/message/receive/(?P<consumer_id>[^/]+)$')
-    @GET('^/message/receive/(?P<consumer_id>[^/]+)/v1$')
-    def message_receive_v1(self, request, consumer_id):
+    @GET('^/v1/message/receive/(?P<consumer_callback_id>[^/]+)$')
+    @GET('^/message/receive/(?P<consumer_callback_id>[^/]+)/v1$')
+    def message_receive_v1(self, request, consumer_callback_id):
         return api.message_receive(
-            consumer_id=consumer_id,
+            consumer_callback_id=consumer_callback_id,
             direction=_request_arg(request, 'direction', 'incoming'),
             message_types=_request_arg(request, 'message_types', 'private_message,group_message'),
+            polling_timeout=int(_request_arg(request, 'polling_timeout', 60, False))
         )
 
     @POST('^/msg/s$')

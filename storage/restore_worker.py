@@ -79,8 +79,8 @@ from six.moves import range
 
 #------------------------------------------------------------------------------
 
-_Debug = True
-_DebugLevel = 8
+_Debug = False
+_DebugLevel = 12
 
 #------------------------------------------------------------------------------
 
@@ -499,12 +499,12 @@ class RestoreWorker(automat.Automat):
         """
         Action method.
         """
-        fd, outfilename = tmpfile.make(
+        _, outfilename = tmpfile.make(
             'restore',
             extension='.raid',
             prefix=self.backup_id.replace(':', '_').replace('@', '_').replace('/', '_') + '_' + str(self.block_number) + '_',
+            close_fd=True,
         )
-        os.close(fd)
         inputpath = os.path.join(settings.getLocalBackupsDir(), self.customer_id, self.path_id)
         task_params = (outfilename, self.EccMap.name, self.version, self.block_number, inputpath)
         raid_worker.add_task('read', task_params, lambda cmd, params, result: self._on_block_restored(result, outfilename))

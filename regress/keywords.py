@@ -194,8 +194,8 @@ def group_info_v1(customer: str, group_key_id):
     return response.json()
 
 
-def group_join_v1(customer: str, group_key_id):
-    response = request_post(customer, 'group/join/v1', json={'group_key_id': group_key_id, }, timeout=60)
+def group_join_v1(customer: str, group_key_id, attempts=1):
+    response = request_post(customer, 'group/join/v1', json={'group_key_id': group_key_id, }, timeout=60, attempts=attempts)
     assert response.status_code == 200
     print('\ngroup/join/v1 [%s] group_key_id=%r : %s\n' % (customer, group_key_id, pprint.pformat(response.json())))
     assert response.json()['status'] == 'OK', response.json()
@@ -471,8 +471,8 @@ def message_send_group_v1(node, group_key_id, data, timeout=20):
     return response.json()
 
 
-def message_receive_v1(node, expected_data, consumer='test_consumer', get_result=None, timeout=20, attempts=1):
-    response = request_get(node, f'message/receive/{consumer}/v1', timeout=timeout, attempts=attempts)
+def message_receive_v1(node, expected_data=None, consumer='test_consumer', get_result=None, timeout=15, polling_timeout=10, attempts=1):
+    response = request_get(node, f'message/receive/{consumer}/v1?polling_timeout=%d' % polling_timeout, timeout=timeout, attempts=attempts)
     assert response.status_code == 200
     print(f'\nmessage/receive/{consumer}/v1 [%s] : %s\n' % (
         node, pprint.pformat(response.json())))
@@ -481,7 +481,9 @@ def message_receive_v1(node, expected_data, consumer='test_consumer', get_result
             get_result[0] = response.json()
         return get_result
     assert response.json()['status'] == 'OK', response.json()
-    assert response.json()['result'][0]['data'] == expected_data, response.json()
+    if expected_data is not None:
+        assert response.json()['result'][0]['data'] == expected_data, response.json()
+    return response.json()
 
 
 def user_ping_v1(node, remote_node_id, timeout=95, ack_timeout=30, retries=2):
