@@ -794,7 +794,7 @@ class GroupMember(automat.Automat):
             self._do_lookup_connect_brokers(
                 hiring_positions=list(self.missing_brokers),
                 available_brokers=brokers_to_be_connected,
-                exclude_idurls=list(filter(None, known_brokers)),
+                exclude_idurls=id_url.to_bin_list(filter(None, known_brokers)),
             )
             return
         self.rotated_brokers = [None, ] * groups.REQUIRED_BROKERS_COUNT
@@ -807,17 +807,17 @@ class GroupMember(automat.Automat):
                 self.rotated_brokers[pos] = known_brokers[known_pos]
             if self.rotated_brokers[pos]:
                 brokers_to_be_connected.append((pos, self.rotated_brokers[pos], ))
-                exclude_from_lookup.add(self.rotated_brokers[pos])
+                exclude_from_lookup.add(id_url.to_bin(self.rotated_brokers[pos]))
             else:
                 self.missing_brokers.add(pos)
         lg.info('brokers were rotated, starting new lookups and connect to existing brokers')
-        exclude_from_lookup.update(set(filter(None, known_brokers)))
+        exclude_from_lookup.update(set(id_url.to_bin_list(filter(None, known_brokers))))
         if self.dead_broker_id:
-            exclude_from_lookup.add(global_id.glob2idurl(self.dead_broker_id, as_field=False))
+            exclude_from_lookup.add(id_url.to_bin(global_id.glob2idurl(self.dead_broker_id, as_field=False)))
         self._do_lookup_connect_brokers(
             hiring_positions=list(self.missing_brokers),
             available_brokers=brokers_to_be_connected,
-            exclude_idurls=list(exclude_from_lookup),
+            exclude_idurls=id_url.to_bin_list(exclude_from_lookup),
         )
 
     def _do_lookup_connect_brokers(self, hiring_positions, available_brokers=[], exclude_idurls=[]):
@@ -828,7 +828,7 @@ class GroupMember(automat.Automat):
             self.connecting_brokers.add(broker_pos)
             self._do_request_service_one_broker(broker_idurl, broker_pos)
         if hiring_positions:
-            self._do_hire_next_broker(None, 0, hiring_positions, skip_brokers=exclude_idurls)
+            self._do_hire_next_broker(None, 0, hiring_positions, skip_brokers=id_url.to_bin_list(exclude_idurls))
 
     def _do_hire_next_broker(self, prev_result, index, hiring_positions, skip_brokers):
         if index >= len(hiring_positions):
@@ -841,7 +841,7 @@ class GroupMember(automat.Automat):
             lg.args(_DebugLevel, broker_pos=broker_pos, index=index, hiring_positions=hiring_positions,
                     skip_brokers=skip_brokers, prev_result=prev_result, connecting_brokers=self.connecting_brokers)
         if prev_result and id_url.is_not_in(prev_result, skip_brokers, as_field=False, as_bin=True):
-            skip_brokers.append(prev_result)
+            skip_brokers.append(id_url.to_bin(prev_result))
         d = self._do_lookup_one_broker(broker_pos, skip_brokers)
         d.addCallback(self._do_hire_next_broker, index + 1, hiring_positions, skip_brokers)
         if _Debug:
@@ -854,14 +854,14 @@ class GroupMember(automat.Automat):
         exclude_brokers = set()
         for known_broker_id in groups.known_brokers(self.group_creator_id):
             if known_broker_id:
-                exclude_brokers.add(global_id.glob2idurl(known_broker_id, as_field=False))
+                exclude_brokers.add(id_url.to_bin(global_id.glob2idurl(known_broker_id, as_field=False)))
         for connected_broker_idurl in self.connected_brokers.values():
             exclude_brokers.add(id_url.to_bin(connected_broker_idurl))
         for skip_idurl in skip_brokers:
             if skip_idurl:
                 exclude_brokers.add(id_url.to_bin(skip_idurl))
         if self.dead_broker_id:
-            exclude_brokers.add(global_id.glob2idurl(self.dead_broker_id, as_field=False))
+            exclude_brokers.add(id_url.to_bin(global_id.glob2idurl(self.dead_broker_id, as_field=False)))
         result = p2p_service_seeker.connect_random_node(
             lookup_method=lookup.random_message_broker,
             service_name='service_message_broker',

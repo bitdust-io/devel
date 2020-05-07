@@ -3698,8 +3698,27 @@ def message_receive(consumer_callback_id, direction='incoming', message_types='p
         packets_to_ack.clear()
         if _Debug:
             lg.out(_DebugLevel, 'api.message_receive._on_pending_messages returning : %r' % result)
-        ret.callback(OK(result, api_method='message_receive'))
+        ret.callback(RESULT(result, api_method='message_receive'))
         return len(result) > 0
+
+    def _on_consume_error(err):
+        if _Debug:
+            lg.args(_DebugLevel, err=err)
+        if isinstance(err, list) and len(err) > 0:
+            err = err[0]
+        if isinstance(err, Failure):
+            try:
+                err = err.getErrorMessage()
+            except:
+                err = strng.to_text(err)
+        if err.lower().count('cancelled'):
+            ret.callback(RESULT([], api_method='message_receive'))
+            return None
+        if not str(err):
+            ret.callback(RESULT([], api_method='message_receive'))
+            return None
+        ret.callback(ERROR(err))
+        return None
 
     d = message.consume_messages(
         consumer_callback_id=consumer_callback_id,
@@ -3708,9 +3727,7 @@ def message_receive(consumer_callback_id, direction='incoming', message_types='p
         reset_callback=True,
     )
     d.addCallback(_on_pending_messages)
-    if _Debug:
-        d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='api.message_receive')
-    d.addErrback(lambda err: ret.callback(ERROR(err)))
+    d.addErrback(_on_consume_error)
     if polling_timeout is not None:
         d.addTimeout(polling_timeout, clock=reactor)
     if _Debug:

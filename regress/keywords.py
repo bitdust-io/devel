@@ -20,13 +20,16 @@
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
 
-
+import os
 import time
 import requests
 import pprint
+import base64
+import threading
 
 from testsupport import request_get, request_post, request_put, request_delete
 
+#------------------------------------------------------------------------------
 
 def supplier_list_v1(customer: str, expected_min_suppliers=None, expected_max_suppliers=None, attempts=40, delay=3, extract_suppliers=True):
     count = 0
@@ -701,7 +704,55 @@ def queue_producer_list_v1(node, extract_ids=False):
         return response.json()
     return [f['producer_id'] for f in response.json()['result']]
 
+#------------------------------------------------------------------------------
 
 def wait_packets_finished(nodes):
     for node in nodes:
         packet_list_v1(node, wait_all_finish=True)
+
+
+def verify_message_sent_received(group_key_id, producer_id, consumers_ids, message_label='A',
+                                 expected_results={}, expected_last_sequence_id={},
+                                 receive_timeout=15, polling_timeout=10):
+    sample_message = {
+        'random_message': 'MESSAGE_%s_%s' % (message_label, base64.b32encode(os.urandom(20)).decode(), ),
+    }
+    consumer_results = {}
+    consumer_threads = {}
+
+    for consumer_id in consumers_ids:
+        consumer_results[consumer_id] = [None, ]
+        consumer_threads[consumer_id] = threading.Timer(0, message_receive_v1, [
+            consumer_id, sample_message, 'test_consumer', consumer_results[consumer_id], receive_timeout, polling_timeout, ])
+
+    producer_thread = threading.Timer(0.2, message_send_group_v1, [
+        producer_id, group_key_id, sample_message, ])
+
+    for consumer_id in consumers_ids:
+        consumer_threads[consumer_id].start()
+
+    producer_thread.start()
+
+    for consumer_id in consumers_ids:
+        consumer_threads[consumer_id].join()
+
+    producer_thread.join()
+
+    if expected_results:
+        for consumer_id, expected_result in expected_results.items():
+            if expected_result:
+                if not consumer_results[consumer_id][0] or not consumer_results[consumer_id][0]['result']:
+                    assert False, 'consumer %r did not received expected message %r' % (consumer_id, sample_message)
+                if consumer_results[consumer_id][0]['result'][0]['data'] != sample_message:
+                    assert False, 'consumer %r received message %r, but expected is %r' % (
+                        consumer_id, consumer_results[consumer_id][0]['result'][0]['data'], sample_message)
+            else:
+                assert consumer_results[consumer_id][0]['result'] == [], 'consumer %r received message while should not: %r' % (
+                    consumer_id, consumer_results[consumer_id])
+            if consumer_id in expected_last_sequence_id:
+                consumer_last_sequence_id = group_info_v1(consumer_id, group_key_id)['result']['last_sequence_id']
+                assert consumer_last_sequence_id == expected_last_sequence_id[consumer_id], \
+                    'consumer %r last_sequence_id is %r but expected is %r' % (
+                        consumer_id, consumer_last_sequence_id, expected_last_sequence_id[consumer_id])
+
+    return sample_message

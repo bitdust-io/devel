@@ -22,7 +22,6 @@
 
 import os
 import pytest
-import base64
 import threading
 
 import keywords as kw
@@ -31,52 +30,6 @@ import keywords as kw
 SUPPLIERS_IDS = ['supplier-1', 'supplier-2', 'supplier-3', 'supplier-4', ]
 BROKERS_IDS = ['broker-1', 'broker-2', 'broker-3', 'broker-4', 'broker-5', ]
 CUSTOMERS_IDS = ['customer-1', 'customer-2', 'customer-3', ]
-
-
-def verify_message_sent_received(group_key_id, producer_id, consumers_ids, message_label='A',
-                                 expected_results={}, expected_last_sequence_id={}, ):
-    sample_message = {
-        'random_message': 'MESSAGE_%s_%s' % (message_label, base64.b32encode(os.urandom(20)).decode(), ),
-    }
-    consumer_results = {}
-    consumer_threads = {}
-    
-    for consumer_id in consumers_ids:
-        consumer_results[consumer_id] = [None, ]
-        consumer_threads[consumer_id] = threading.Timer(0, kw.message_receive_v1, [
-            consumer_id, sample_message, 'test_consumer', consumer_results[consumer_id], 15, 10, ])
-
-    producer_thread = threading.Timer(0.2, kw.message_send_group_v1, [
-        producer_id, group_key_id, sample_message, ])
-
-    for consumer_id in consumers_ids:
-        consumer_threads[consumer_id].start()
-
-    producer_thread.start()
-
-    for consumer_id in consumers_ids:
-        consumer_threads[consumer_id].join()
-
-    producer_thread.join()
-
-    if expected_results:
-        for consumer_id, expected_result in expected_results.items():
-            if expected_result:
-                if not consumer_results[consumer_id][0] or not consumer_results[consumer_id][0]['result']:
-                    assert False, 'consumer %r did not received expected message %r' % (consumer_id, sample_message)
-                if consumer_results[consumer_id][0]['result'][0]['data'] != sample_message:
-                    assert False, 'consumer %r received message %r, but expected is %r' % (
-                        consumer_id, consumer_results[consumer_id][0]['result'][0]['data'], sample_message)
-            else:
-                assert consumer_results[consumer_id][0] is None, 'consumer %r received message while should not: %r' % (
-                    consumer_id, consumer_results[consumer_id])
-            if consumer_id in expected_last_sequence_id:
-                consumer_last_sequence_id = kw.group_info_v1(consumer_id, group_key_id)['result']['last_sequence_id']
-                assert consumer_last_sequence_id == expected_last_sequence_id[consumer_id], \
-                    'consumer %r last_sequence_id is %r but expected is %r' % (
-                        consumer_id, consumer_last_sequence_id, expected_last_sequence_id[consumer_id])
-
-    return sample_message
 
 
 def test_customers_1_2_3_communicate_via_message_brokers():
@@ -189,7 +142,7 @@ def test_customers_1_2_3_communicate_via_message_brokers():
     assert len(kw.message_history_v1('customer-3', group_key_id, message_type='group_message')['result']) == 0
 
     #--- MESSAGE A: from customer 1 to the group, customers 1 and 2 must receive the message
-    all_messages.append(verify_message_sent_received(
+    all_messages.append(kw.verify_message_sent_received(
         group_key_id,
         producer_id='customer-1',
         consumers_ids=['customer-1', 'customer-2', ],
@@ -226,7 +179,7 @@ def test_customers_1_2_3_communicate_via_message_brokers():
     assert len(kw.message_history_v1('customer-3', group_key_id, message_type='group_message')['result']) == 1
 
     #--- MESSAGE B: from customer 3 to the group, customers 1, 2 and 3 must receive the message
-    all_messages.append(verify_message_sent_received(
+    all_messages.append(kw.verify_message_sent_received(
         group_key_id,
         producer_id='customer-3',
         consumers_ids=['customer-1', 'customer-2', 'customer-3', ],
@@ -261,7 +214,7 @@ def test_customers_1_2_3_communicate_via_message_brokers():
     assert 'customer-3@id-a_8084' in kw.queue_producer_list_v1(active_broker_name, extract_ids=True)
 
     #--- MESSAGE C: from customer 1 to the group, customers 1 and 3 must receive the message, customer 2 must not receive it
-    all_messages.append(verify_message_sent_received(
+    all_messages.append(kw.verify_message_sent_received(
         group_key_id,
         producer_id='customer-1',
         consumers_ids=['customer-1', 'customer-2', 'customer-3', ],
@@ -279,7 +232,7 @@ def test_customers_1_2_3_communicate_via_message_brokers():
 
     #--- sending 3 other messages to the group from customer 1
     for i in range(3):
-        all_messages.append(verify_message_sent_received(
+        all_messages.append(kw.verify_message_sent_received(
             group_key_id,
             producer_id='customer-1',
             consumers_ids=['customer-1', 'customer-2', 'customer-3', ],
