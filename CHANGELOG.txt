@@ -2,6 +2,52 @@ Change Log
 ==========
 
 
+2020-05-07 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* built a simple WebSocket API client for BitDust in scripts/websocket_client.html
+* restore messages from archive when member joins the grouo
+* store streamed messages in local sqlite3 DB as well
+* improvements in restore_worker()
+* pre-create archive folder for group communications history archive backups
+* added list files query callbacks to simplify fetching list files from suppliers
+* fix: make sure to not run duplicated backups in keys_synchronizer()
+* new archive_reader() state machines
+* new archive_writer() state machines
+* make possible to request list files for selected files/folders only with a query
+* added supplier/customer_space.py file to simplify service_supplier()
+* added new service service_data_disintegration()
+* share public part of group key to my supplier when creating a new group
+* added message types: queue_message, queue_message_replica, private_message, group_message
+* new feature: local DHT cache in .bitdust/servicedata/entangled_dht/cache/
+* fix: make sure to select DHT record with latest revision always
+* for every group there are 3 brokers: first is active, second and third are stand-by
+* able to automatically detect "dead" broker and switch to next stand-by broker
+* new file:   CONTRIBUTING.md
+* refactor API responses - all must have consistent response structure from now
+* able to read messages from archive which is stored on group owner's suppliers
+* possible to set group_member() status to active/inactive to be able to "mute" the group
+* skip auto-update python sources if BitDust was clonned manually
+* fetch logs from containers after regression test finishes more faster
+* all group messages are delivered in sequential order, controlled by a broker
+* use Message() packet instead of Event() to deliver group communications to consumers
+* api.message_receive() can filter messages by type
+* use streams.message queue to run group communications
+* use sys.setrecursionlimit(2000) workaround fix for Py2 in txrestapi
+* proper close settings in the end of the app execution
+* make possible to sign my keys with my master key
+* new streaming methods in service_message_broker()
+* new queue_keeper() state machine to keep DHT records for the group
+* new message_peddler() machine to run message broker duties and deliver messages
+* new group_access_donor() state machine to be able to add new members to existing group
+* new group_memeber() automat to make possible to join an existing private group
+* added API methods to manage groups: create/join/leave/share
+* added methods to read/write customer-message_broker relation from/to DHT
+* rebuilt p2p_service_seeker() machine
+* new role "message_broker" and
+* new customer service private_groups()
+
+
+
 2020-02-05 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * added logs/automat-events-enabled and logs/automat-transitions-enabled options
