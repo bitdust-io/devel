@@ -192,16 +192,16 @@ def register(filepath):
     to hadle this file later.
     """
     global _FilesDict
-    subdir, filename = os.path.split(filepath)
+    subdir, _ = os.path.split(filepath)
     name = os.path.basename(subdir)
     if name not in list(_FilesDict.keys()):
         name = 'all'
     _FilesDict[name][filepath] = time.time()
 
 
-def make(name, extension='', prefix=''):
+def make(name, extension='', prefix='', close_fd=False):
     """
-    Make a new file under sub folder ``name`` and return a tuple of it's file
+    Make a new binary file under sub folder ``name`` and return a tuple of it's file
     descriptor and path.
 
     .. warning::    Remember you need to close the file descriptor by your own.
@@ -223,6 +223,8 @@ def make(name, extension='', prefix=''):
         lg.out(1, 'tmpfile.make ERROR creating file in sub folder ' + name)
         lg.exc()
         return None, ''
+    if close_fd:
+        os.close(fd)
     if _Debug:
         lg.out(_DebugLevel, 'tmpfile.make ' + filename)
     return fd, filename
@@ -259,9 +261,9 @@ def erase(name, filename, why='no reason'):
     global _FilesDict
     if name in list(_FilesDict.keys()):
         try:
-            _FilesDict[name].pop(filename, '')
+            _FilesDict[name].pop(filename)
         except:
-            lg.warn('we do not know about file [%s] in sub folder %s, we tried because %s' % (filename, name, why))
+            lg.warn('we do not know about item [%s] in sub folder %s, we tried because %s' % (filename, name, why))
     else:
         lg.warn('we do not know sub folder: %s, we tried because %s' % (name, why))
 
@@ -279,7 +281,6 @@ def erase(name, filename, why='no reason'):
                 lg.out(_DebugLevel, 'tmpfile.erase [%s] : "%s"' % (filename, why))
         except:
             lg.out(2, 'tmpfile.erase ERROR can not remove [%s], we tried because %s' % (filename, why))
-            # exc()
 
     elif os.path.isdir(filename):
         bpio.rmdir_recursive(filename, ignore_errors=True)
@@ -395,4 +396,4 @@ if __name__ == '__main__':
     os.write(fd, 'TEST FILE')
     os.close(fd)
     from twisted.internet import reactor  # @UnresolvedImport
-    reactor.run()
+    reactor.run()  # @UndefinedVariable

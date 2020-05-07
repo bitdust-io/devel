@@ -199,8 +199,8 @@ class PrivateMessage(object):
         self.recipient = strng.to_text(recipient_global_id)
         self.encrypted_session = encrypted_session
         self.encrypted_body = encrypted_body
-        if _Debug:
-            lg.out(_DebugLevel, 'message.%s created' % self)
+        # if _Debug:
+        #     lg.out(_DebugLevel, 'message.%s created' % self)
 
     def __str__(self):
         return 'PrivateMessage (%r->%r) : %r %r' % (
@@ -226,29 +226,29 @@ class PrivateMessage(object):
         new_sessionkey = key.NewSessionKey(session_key_type=key.SessionKeyType())
         if not encrypt_session_func:
             if my_keys.is_key_registered(self.recipient):
-                if _Debug:
-                    lg.out(_DebugLevel, 'message.PrivateMessage.encrypt with "%s" key' % self.recipient)
+                # if _Debug:
+                #     lg.out(_DebugLevel, 'message.PrivateMessage.encrypt with "%s" key' % self.recipient)
                 encrypt_session_func = lambda inp: my_keys.encrypt(self.recipient, inp)
         if not encrypt_session_func:
             glob_id = global_id.ParseGlobalID(self.recipient)
             if glob_id['key_alias'] == 'master':
                 if glob_id['idurl'] == my_id.getLocalID():
                     lg.warn('making private message addressed to me ???')
-                    if _Debug:
-                        lg.out(_DebugLevel, 'message.PrivateMessage.encrypt with "master" key')
+                    # if _Debug:
+                    #     lg.out(_DebugLevel, 'message.PrivateMessage.encrypt with "master" key')
                     encrypt_session_func = lambda inp: my_keys.encrypt('master', inp)
                 else:
                     remote_identity = identitycache.FromCache(glob_id['idurl'])
                     if not remote_identity:
                         raise Exception('remote identity is not cached yet, not able to encrypt the message')
-                    if _Debug:
-                        lg.out(_DebugLevel, 'message.PrivateMessage.encrypt with remote identity public key')
+                    # if _Debug:
+                    #     lg.out(_DebugLevel, 'message.PrivateMessage.encrypt with remote identity public key')
                     encrypt_session_func = remote_identity.encrypt
             else:
                 own_key = global_id.MakeGlobalID(idurl=my_id.getLocalID(), key_alias=glob_id['key_alias'])
                 if my_keys.is_key_registered(own_key):
-                    if _Debug:
-                        lg.out(_DebugLevel, 'message.PrivateMessage.encrypt with "%s" key' % own_key)
+                    # if _Debug:
+                    #     lg.out(_DebugLevel, 'message.PrivateMessage.encrypt with "%s" key' % own_key)
                     encrypt_session_func = lambda inp: my_keys.encrypt(own_key, inp)
         if not encrypt_session_func:
             raise Exception('can not find key for given recipient')
@@ -259,15 +259,15 @@ class PrivateMessage(object):
     def decrypt(self, decrypt_session_func=None):
         if not decrypt_session_func:
             if my_keys.is_key_registered(self.recipient):
-                if _Debug:
-                    lg.out(_DebugLevel, 'message.PrivateMessage.decrypt with "%s" key' % self.recipient)
+                # if _Debug:
+                #     lg.out(_DebugLevel, 'message.PrivateMessage.decrypt with "%s" key' % self.recipient)
                 decrypt_session_func = lambda inp: my_keys.decrypt(self.recipient, inp)
         if not decrypt_session_func:
             glob_id = global_id.ParseGlobalID(self.recipient)
             if glob_id['idurl'] == my_id.getLocalID():
                 if glob_id['key_alias'] == 'master':
-                    if _Debug:
-                        lg.out(_DebugLevel, 'message.PrivateMessage.decrypt with "master" key')
+                    # if _Debug:
+                    #     lg.out(_DebugLevel, 'message.PrivateMessage.decrypt with "master" key')
                     decrypt_session_func = lambda inp: my_keys.decrypt('master', inp)
         if not decrypt_session_func:
             raise Exception('can not find key for given recipient: %s' % self.recipient)
@@ -301,7 +301,6 @@ class PrivateMessage(object):
             lg.exc()
             return None
         return message_obj
-
 
 #------------------------------------------------------------------------------
 
@@ -493,120 +492,138 @@ def send_message(json_data, recipient_global_id, packet_id=None,
 
 #------------------------------------------------------------------------------
 
-def consume_messages(consumer_id, callback=None, direction=None, message_types=None, reset_callback=False):
+def consume_messages(consumer_callback_id, callback=None, direction=None, message_types=None, reset_callback=False):
     """
+    Register a new callback method or Deferred object to wait and receive messages from the stream.
+    If message was passed thru the stream but there were no callbacks registered to listen - the message is just ignored.
+    When callback is registered any new message (if they match to specified criteria) will trigger callback to be executed.
+    If callback is a Deferred object - the message will fire a callback() method of it so consumer can receive it.
+    Right after receiving the message via callback() method consumer must call `consume_messages()` again to be able
+    to receive the next message - something like long polling pattern.
+    Stream also takes care of next messages that are not consumed yet by Deferred() callback in between of that calls to that method.
+    If there are some messages that was not consumed by Deferred() - next call to that method will immediately fire
+    callback() method of the Deferred() object with the list of messages.
+    If input parameter `callback` is None Deferred() object will be automatically created and returned back as result.
+    If input parameter `callback` is a callable method it will not be released like Deferred object - it will be fired
+    for every message passed thru the stream.
+    Parameter `direction` can be "incoming", "outgoing" or None (for both directions).
+    Parameter `message_types` can be None (no filtering) or a list of desired types:
+        "private_message", "group_message", "queue_message", "queue_message_replica"
+    If `reset_callback` is True - previously registered Deferred object will be cleaned
+    with `clear_consumer_callbacks()` method.
     """
-    if consumer_id in consumers_callbacks():
+    if consumer_callback_id in consumers_callbacks():
         if not reset_callback:
             raise Exception('consumer callback already exist')
-        clear_consumer_callbacks(consumer_id)
+        clear_consumer_callbacks(consumer_callback_id)
     cb = callback or Deferred()
-    consumers_callbacks()[consumer_id] = {
+    consumers_callbacks()[consumer_callback_id] = {
         'callback': cb,
         'direction': direction,
         'message_types': message_types,
     }
     if _Debug:
-        lg.out(_DebugLevel, 'message.consume_messages added callback for consumer %r' % consumer_id)
+        lg.out(_DebugLevel, 'message.consume_messages added callback for consumer %r' % consumer_callback_id)
     # reactor.callLater(0, do_read)  # @UndefinedVariable
     do_read()
     return cb
 
 
-def clear_consumer_callbacks(consumer_id):
-    if consumer_id not in consumers_callbacks().keys():
+def clear_consumer_callbacks(consumer_callback_id):
+    """
+    """
+    if consumer_callback_id not in consumers_callbacks().keys():
         return True
-    cb_info = consumers_callbacks().pop(consumer_id)
+    cb_info = consumers_callbacks().pop(consumer_callback_id)
     if isinstance(cb_info['callback'], Deferred):
         if _Debug:
-            lg.args(_DebugLevel, consumer_id=consumer_id, cb=cb_info['callback'], called=cb_info['callback'].called)
+            lg.args(_DebugLevel, consumer_callback_id=consumer_callback_id, cb=cb_info['callback'], called=cb_info['callback'].called)
         if not cb_info['callback'].called:
             cb_info['callback'].callback([])
+            cb_info['callback'] = None
     else:
         if _Debug:
-            lg.args(_DebugLevel, consumer_id=consumer_id, cb=cb_info['callback'], called='skipping callable method')
+            lg.args(_DebugLevel, consumer_callback_id=consumer_callback_id, cb=cb_info['callback'])
     return True
+
+#------------------------------------------------------------------------------
+
+def push_message(direction, msg_type, recipient_id, sender_id, packet_id, owner_idurl, json_message, run_consumers=True):
+    """
+    """
+    for consumers_callback_id in consumers_callbacks().keys():
+        if consumers_callback_id not in message_queue():
+            message_queue()[consumers_callback_id] = []
+        message_queue()[consumers_callback_id].append({
+            'type': msg_type,
+            'dir': direction,
+            'to': recipient_id,
+            'from': sender_id,
+            'data': json_message,
+            'packet_id': packet_id,
+            'owner_idurl': owner_idurl,
+            'time': utime.get_sec1970(),
+        })
+        if _Debug:
+            lg.args(_DebugLevel, dir=direction, msg_type=msg_type, packet_id=packet_id, to_id=recipient_id,
+                    from_id=sender_id, cb=consumers_callback_id, pending=len(message_queue()[consumers_callback_id]))
+    if not run_consumers:
+        return 0
+    total_consumed = do_read()
+    return total_consumed > 0
 
 #------------------------------------------------------------------------------
 
 def push_incoming_message(request, private_message_object, json_message):
     """
     """
-    for consumer_id in consumers_callbacks().keys():
-        if consumer_id not in message_queue():
-            message_queue()[consumer_id] = []
-        msg_type = 'private_message'
-        if request.PacketID.startswith('queue_'):
-            msg_type = 'queue_message'
-        elif request.PacketID.startswith('qreplica_'):
-            msg_type = 'queue_message_replica'
-        message_queue()[consumer_id].append({
-            'type': msg_type,
-            'dir': 'incoming',
-            'to': private_message_object.recipient_id(),
-            'from': private_message_object.sender_id(),
-            'data': json_message,
-            'packet_id': request.PacketID,
-            'owner_idurl': request.OwnerID,
-            'time': utime.get_sec1970(),
-        })
-        if _Debug:
-            lg.out(_DebugLevel, 'message.push_incoming_message "%s" for consumer "%s", %d pending messages for consumer %r' % (
-                request.PacketID, consumer_id, len(message_queue()[consumer_id]), consumer_id, ))
-    # reactor.callLater(0, do_read)  # @UndefinedVariable
-    total_consumed = do_read()
-    return total_consumed > 0
+    msg_type = 'private_message'
+    if request.PacketID.startswith('queue_'):
+        msg_type = 'queue_message'
+    elif request.PacketID.startswith('qreplica_'):
+        msg_type = 'queue_message_replica'
+    return push_message(
+        direction='incoming',
+        msg_type=msg_type,
+        recipient_id=private_message_object.recipient_id(),
+        sender_id=private_message_object.sender_id(),
+        packet_id=request.PacketID,
+        owner_idurl=request.OwnerID,
+        json_message=json_message,
+    )
 
 
 def push_outgoing_message(json_message, private_message_object, remote_identity, request, result):
     """
     """
-    for consumer_id in consumers_callbacks().keys():
-        if consumer_id not in message_queue():
-            message_queue()[consumer_id] = []
-        msg_type = 'private_message'
-        if request.PacketID.startswith('queue_'):
-            msg_type = 'queue_message'
-        elif request.PacketID.startswith('qreplica_'):
-            msg_type = 'queue_message_replica'
-        message_queue()[consumer_id].append({
-            'type': msg_type,
-            'dir': 'outgoing',
-            'to': private_message_object.recipient_id(),
-            'from': private_message_object.sender_id(),
-            'data': json_message,
-            'packet_id': request.PacketID,
-            'owner_idurl': request.OwnerID,
-            'time': utime.get_sec1970(),
-        })
-        if _Debug:
-            lg.out(_DebugLevel, 'message.push_outgoing_message "%s" for consumer "%s", %d pending messages for consumer %r' % (
-                request.PacketID, consumer_id, len(message_queue()[consumer_id]), consumer_id, ))
-    # reactor.callLater(0, do_read)  # @UndefinedVariable
-    do_read()
-    return False
+    msg_type = 'private_message'
+    if request.PacketID.startswith('queue_'):
+        msg_type = 'queue_message'
+    elif request.PacketID.startswith('qreplica_'):
+        msg_type = 'queue_message_replica'
+    return push_message(
+        direction='outgoing',
+        msg_type=msg_type,
+        recipient_id=private_message_object.recipient_id(),
+        sender_id=private_message_object.sender_id(),
+        packet_id=request.PacketID,
+        owner_idurl=request.OwnerID,
+        json_message=json_message,
+    )
 
 
 def push_group_message(json_message, direction, group_key_id, producer_id, sequence_id):
-    for consumer_id in consumers_callbacks().keys():
-        if consumer_id not in message_queue():
-            message_queue()[consumer_id] = []
-        message_queue()[consumer_id].append({
-            'type': 'group_message',
-            'dir': direction,
-            'to': group_key_id,
-            'from': producer_id,
-            'data': json_message,
-            'packet_id': sequence_id,
-            'owner_idurl': None,
-            'time': utime.get_sec1970(),
-        })
-        if _Debug:
-            lg.out(_DebugLevel, 'message.push_group_message "%d" at group "%s", %d pending messages for consumer %s' % (
-                sequence_id, group_key_id, len(message_queue()[consumer_id]), consumer_id, ))
-    # reactor.callLater(0, do_read)  # @UndefinedVariable
-    do_read()
-    return True
+    """
+    """
+    return push_message(
+        direction=direction,
+        msg_type='group_message',
+        recipient_id=group_key_id,
+        sender_id=producer_id,
+        packet_id=sequence_id,
+        owner_idurl=None,
+        json_message=json_message,
+    )
 
 #------------------------------------------------------------------------------
 
@@ -625,7 +642,7 @@ def do_read():
             consumers_callbacks().pop(consumer_id, None)
             message_queue().pop(consumer_id, None)
             if _Debug:
-                lg.out(_DebugLevel, 'message.do_read STOPPED consumer "%s", too much pending messages but no callbacks' % consumer_id)
+                lg.out(_DebugLevel, 'message.do_read STOPPED consumer "%s", pending_messages=%d' % (consumer_id, len(pending_messages), ))
             continue
         # filter messages which consumer is not interested in
         if cb_info['direction']:

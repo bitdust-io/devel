@@ -60,12 +60,17 @@ _DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
+from twisted.internet.defer import Deferred
+
+#------------------------------------------------------------------------------
+
 from logs import lg
 
 from automats import automat
 
 from lib import utime
 from lib import packetid
+from lib import strng
 
 from main import events
 from main import config
@@ -74,12 +79,14 @@ from crypt import my_keys
 
 from dht import dht_relations
 
-from stream import message
-
 from p2p import commands
 from p2p import p2p_service
 from p2p import lookup
 from p2p import p2p_service_seeker
+
+from stream import message
+
+from storage import archive_reader
 
 from access import groups
 
@@ -354,8 +361,8 @@ class GroupMember(automat.Automat):
             groups.set_group_info(self.group_key_id)
             groups.save_group_info(self.group_key_id)
         message.consume_messages(
-            consumer_id=self.name,
-            callback=self._on_read_queue_messages,
+            consumer_callback_id=self.name,
+            callback=self._do_read_queue_messages,
             direction='incoming',
             message_types=['queue_message', ],
         )
@@ -406,6 +413,9 @@ class GroupMember(automat.Automat):
         """
         Action method.
         """
+        message_ack_timeout = config.conf().getInt('services/private-groups/message-ack-timeout')
+        if message_ack_timeout:
+            message_ack_timeout *= 2
         result = message.send_message(
             json_data={
                 'created': utime.get_sec1970(),
@@ -416,7 +426,7 @@ class GroupMember(automat.Automat):
             },
             recipient_global_id=self.active_broker_id,
             packet_id='queue_%s_%s' % (self.active_queue_id, packetid.UniqueID()),
-            message_ack_timeout=config.conf().getInt('services/private-groups/message-ack-timeout'),
+            message_ack_timeout=message_ack_timeout,
             skip_handshake=True,
             fire_callbacks=False,
         )
@@ -428,17 +438,19 @@ class GroupMember(automat.Automat):
         """
         Action method.
         """
-        latest_known_sequence_id = kwargs.get('latest_known_sequence_id')
+        # latest_known_sequence_id = kwargs.get('latest_known_sequence_id')
         received_messages = kwargs.get('received_messages')
-        # TODO: must store received_messages temporary to be able to merge all together with restored from archive messages
-        from storage import archive_reader
+        result_defer = Deferred()
+        result_defer.addCallback(self._on_read_archive_success, received_messages)
+        result_defer.addErrback(self._on_read_archive_failed, received_messages)
         ar = archive_reader.ArchiveReader()
         ar.automat(
             'start',
             queue_id=self.active_queue_id,
-            start_sequence_id=self.last_sequence_id,
-            end_sequence_id=latest_known_sequence_id,
+            start_sequence_id=self.last_sequence_id + 1,
+            end_sequence_id=None,
             archive_folder_path=groups.get_archive_folder_path(self.group_key_id),
+            result_defer=result_defer,
         )
 
     def doProcess(self, *args, **kwargs):
@@ -567,6 +579,99 @@ class GroupMember(automat.Automat):
         self.outgoing_messages = None
         self.outgoing_counter = None
 
+    def _do_read_queue_messages(self, json_messages):
+        if not json_messages:
+            return True
+        if _Debug:
+            lg.args(_DebugLevel, json_messages=json_messages)
+        latest_known_sequence_id = -1
+        received_group_messages = []
+        packets_to_ack = {}
+        for json_message in json_messages:
+            try:
+                msg_type = json_message.get('type', '')
+                msg_direction = json_message['dir']
+                packet_id = json_message['packet_id']
+                owner_idurl = json_message['owner_idurl']
+                # to_user = json_message['to']
+                msg_data = json_message['data']
+            except:
+                lg.exc()
+                continue
+            if msg_direction != 'incoming':
+                continue
+            if msg_type != 'queue_message':
+                continue
+            try:
+                chunk_last_sequence_id = int(msg_data['last_sequence_id'])
+                list_messages = msg_data['items']
+            except:
+                lg.exc()
+                continue
+            if chunk_last_sequence_id > latest_known_sequence_id:
+                latest_known_sequence_id = chunk_last_sequence_id
+            for one_message in list_messages:
+                if one_message['sequence_id'] > latest_known_sequence_id:
+                    lg.warn('invalid item sequence_id %d   vs.  last_sequence_id %d known' % (
+                        one_message['sequence_id'], latest_known_sequence_id))
+                    continue
+                received_group_messages.append(dict(
+                    json_message=one_message['payload'],
+                    direction='incoming',
+                    group_key_id=self.group_key_id,
+                    producer_id=one_message['producer_id'],
+                    sequence_id=one_message['sequence_id'],
+                ))
+                if owner_idurl:
+                    packets_to_ack[packet_id] = owner_idurl
+        for packet_id, owner_idurl in packets_to_ack.items():
+            p2p_service.SendAckNoRequest(owner_idurl, packet_id)
+        packets_to_ack.clear()
+        if not received_group_messages:
+            if latest_known_sequence_id < self.last_sequence_id:
+                raise Exception('found queue latest sequence %d is behind of my current position %d' % (latest_known_sequence_id, self.last_sequence_id, ))
+            if latest_known_sequence_id > self.last_sequence_id:
+                lg.warn('nothing received, but found queue latest sequence %d is ahead of my current position %d, need to read messages from archive' % (
+                    latest_known_sequence_id, self.last_sequence_id, ))
+                self.automat('queue-is-ahead', latest_known_sequence_id=latest_known_sequence_id, received_messages=received_group_messages, )
+                return True
+            self.last_sequence_id = latest_known_sequence_id
+            groups.set_last_sequence_id(self.group_key_id, latest_known_sequence_id)
+            groups.save_group_info(self.group_key_id)
+            if _Debug:
+                lg.dbg(_DebugLevel, 'no new messages, queue in sync, latest_known_sequence_id=%d' % latest_known_sequence_id)
+            self.automat('queue-in-sync')
+            return True
+        received_group_messages.sort(key=lambda m: m['sequence_id'])
+        return self._do_process_group_messages(received_group_messages, latest_known_sequence_id)
+
+    def _do_process_group_messages(self, received_group_messages, latest_known_sequence_id):
+        if _Debug:
+            lg.args(_DebugLevel, received_group_messages=len(received_group_messages), latest_known_sequence_id=latest_known_sequence_id)
+        newly_processed = 0
+        if _Debug:
+            lg.args(_DebugLevel, my_last_sequence_id=self.last_sequence_id, received_group_messages=len(received_group_messages))
+        for new_message in received_group_messages:
+            if self.last_sequence_id + 1 == new_message['sequence_id']:
+                self.last_sequence_id = new_message['sequence_id']
+                newly_processed += 1
+                if _Debug:
+                    lg.dbg(_DebugLevel, 'new message consumed, last_sequence_id incremented to %d' % self.last_sequence_id)
+                self.automat('message-in', **new_message)
+        if not newly_processed or newly_processed != len(received_group_messages):
+            if latest_known_sequence_id > self.last_sequence_id:
+                lg.warn('found queue latest sequence %d is ahead of my current position %d, need to read messages from archive' % (
+                    latest_known_sequence_id, self.last_sequence_id, ))
+                self.automat('queue-is-ahead', latest_known_sequence_id=latest_known_sequence_id, received_messages=received_group_messages, )
+                return True
+            raise Exception('message sequence is broken by message broker %s, some messages were not consumed' % self.active_broker_id)
+        groups.set_last_sequence_id(self.group_key_id, self.last_sequence_id)
+        groups.save_group_info(self.group_key_id)
+        if _Debug:
+            lg.dbg(_DebugLevel, 'processed all messages, queue in sync, last_sequence_id=%d' % self.last_sequence_id)
+        self.automat('queue-in-sync')
+        return True
+
     def _do_send_message_to_broker(self, json_payload=None, outgoing_counter=None, packet_id=None):
         if packet_id is None:
             packet_id = packetid.UniqueID()
@@ -689,7 +794,7 @@ class GroupMember(automat.Automat):
             self._do_lookup_connect_brokers(
                 hiring_positions=list(self.missing_brokers),
                 available_brokers=brokers_to_be_connected,
-                exclude_idurls=list(filter(None, known_brokers)),
+                exclude_idurls=id_url.to_bin_list(filter(None, known_brokers)),
             )
             return
         self.rotated_brokers = [None, ] * groups.REQUIRED_BROKERS_COUNT
@@ -702,17 +807,17 @@ class GroupMember(automat.Automat):
                 self.rotated_brokers[pos] = known_brokers[known_pos]
             if self.rotated_brokers[pos]:
                 brokers_to_be_connected.append((pos, self.rotated_brokers[pos], ))
-                exclude_from_lookup.add(self.rotated_brokers[pos])
+                exclude_from_lookup.add(id_url.to_bin(self.rotated_brokers[pos]))
             else:
                 self.missing_brokers.add(pos)
         lg.info('brokers were rotated, starting new lookups and connect to existing brokers')
-        exclude_from_lookup.update(set(filter(None, known_brokers)))
+        exclude_from_lookup.update(set(id_url.to_bin_list(filter(None, known_brokers))))
         if self.dead_broker_id:
-            exclude_from_lookup.add(global_id.glob2idurl(self.dead_broker_id, as_field=False))
+            exclude_from_lookup.add(id_url.to_bin(global_id.glob2idurl(self.dead_broker_id, as_field=False)))
         self._do_lookup_connect_brokers(
             hiring_positions=list(self.missing_brokers),
             available_brokers=brokers_to_be_connected,
-            exclude_idurls=list(exclude_from_lookup),
+            exclude_idurls=id_url.to_bin_list(exclude_from_lookup),
         )
 
     def _do_lookup_connect_brokers(self, hiring_positions, available_brokers=[], exclude_idurls=[]):
@@ -723,7 +828,7 @@ class GroupMember(automat.Automat):
             self.connecting_brokers.add(broker_pos)
             self._do_request_service_one_broker(broker_idurl, broker_pos)
         if hiring_positions:
-            self._do_hire_next_broker(None, 0, hiring_positions, skip_brokers=exclude_idurls)
+            self._do_hire_next_broker(None, 0, hiring_positions, skip_brokers=id_url.to_bin_list(exclude_idurls))
 
     def _do_hire_next_broker(self, prev_result, index, hiring_positions, skip_brokers):
         if index >= len(hiring_positions):
@@ -736,7 +841,7 @@ class GroupMember(automat.Automat):
             lg.args(_DebugLevel, broker_pos=broker_pos, index=index, hiring_positions=hiring_positions,
                     skip_brokers=skip_brokers, prev_result=prev_result, connecting_brokers=self.connecting_brokers)
         if prev_result and id_url.is_not_in(prev_result, skip_brokers, as_field=False, as_bin=True):
-            skip_brokers.append(prev_result)
+            skip_brokers.append(id_url.to_bin(prev_result))
         d = self._do_lookup_one_broker(broker_pos, skip_brokers)
         d.addCallback(self._do_hire_next_broker, index + 1, hiring_positions, skip_brokers)
         if _Debug:
@@ -749,14 +854,14 @@ class GroupMember(automat.Automat):
         exclude_brokers = set()
         for known_broker_id in groups.known_brokers(self.group_creator_id):
             if known_broker_id:
-                exclude_brokers.add(global_id.glob2idurl(known_broker_id, as_field=False))
+                exclude_brokers.add(id_url.to_bin(global_id.glob2idurl(known_broker_id, as_field=False)))
         for connected_broker_idurl in self.connected_brokers.values():
             exclude_brokers.add(id_url.to_bin(connected_broker_idurl))
         for skip_idurl in skip_brokers:
             if skip_idurl:
                 exclude_brokers.add(id_url.to_bin(skip_idurl))
         if self.dead_broker_id:
-            exclude_brokers.add(global_id.glob2idurl(self.dead_broker_id, as_field=False))
+            exclude_brokers.add(id_url.to_bin(global_id.glob2idurl(self.dead_broker_id, as_field=False)))
         result = p2p_service_seeker.connect_random_node(
             lookup_method=lookup.random_message_broker,
             service_name='service_message_broker',
@@ -849,7 +954,7 @@ class GroupMember(automat.Automat):
                     dht_archive_folder_path = broker_info['archive_folder_path']
             if dht_archive_folder_path is not None:
                 groups.set_archive_folder_path(self.group_key_id, dht_archive_folder_path)
-                lg.info('recognized archive folder path for %r from dht: %r' % (self.group_key_id, dht_archive_folder_path))
+                lg.info('recognized archive folder path for %r from dht: %r' % (self.group_key_id, dht_archive_folder_path, ))
         self.automat('brokers-found', brokers_info_list)
 
     def _on_broker_hired(self, idurl, broker_pos):
@@ -923,90 +1028,35 @@ class GroupMember(automat.Automat):
         else:
             self.automat('brokers-failed')
 
-    def _on_read_queue_messages(self, json_messages):
-        if not json_messages:
-            return True
+    def _on_read_archive_success(self, archive_messages, received_messages):
         if _Debug:
-            lg.args(_DebugLevel, json_messages=json_messages)
-        latest_known_sequence_id = -1
+            lg.args(_DebugLevel, archive_messages=len(archive_messages), received_messages=len(received_messages))
         received_group_messages = []
-        packets_to_ack = {}
-        for json_message in json_messages:
-            try:
-                msg_type = json_message.get('type', '')
-                msg_direction = json_message['dir']
-                packet_id = json_message['packet_id']
-                owner_idurl = json_message['owner_idurl']
-                # to_user = json_message['to']
-                msg_data = json_message['data']
-            except:
-                lg.exc()
-                continue
-            if msg_direction != 'incoming':
-                continue
-            if msg_type != 'queue_message':
-                continue
-            try:
-                chunk_last_sequence_id = int(msg_data['last_sequence_id'])
-                list_messages = msg_data['items']
-            except:
-                lg.exc()
-                continue
-            if chunk_last_sequence_id > latest_known_sequence_id:
-                latest_known_sequence_id = chunk_last_sequence_id
-            for one_message in list_messages:
-                if one_message['sequence_id'] > latest_known_sequence_id:
-                    lg.warn('invalid item sequence_id %d   vs.  last_sequence_id %d known' % (
-                        one_message['sequence_id'], latest_known_sequence_id))
-                    continue
-                received_group_messages.append(dict(
-                    json_message=one_message['payload'],
-                    direction='incoming',
-                    group_key_id=self.group_key_id,
-                    producer_id=one_message['producer_id'],
-                    sequence_id=one_message['sequence_id'],
-                ))
-                if owner_idurl:
-                    packets_to_ack[packet_id] = owner_idurl
-        for packet_id, owner_idurl in packets_to_ack.items():
-            p2p_service.SendAckNoRequest(owner_idurl, packet_id)
-        packets_to_ack.clear()
-        if not received_group_messages:
-            if latest_known_sequence_id < self.last_sequence_id:
-                raise Exception('found queue latest sequence %d is behind of my current position %d' % (latest_known_sequence_id, self.last_sequence_id, ))
-            if latest_known_sequence_id > self.last_sequence_id:
-                lg.warn('nothing received, but found queue latest sequence %d is ahead of my current position %d, need to read messages from archive' % (
-                    latest_known_sequence_id, self.last_sequence_id, ))
-                self.automat('queue-is-ahead', latest_known_sequence_id=latest_known_sequence_id, received_messages=received_group_messages, )
-                return True
-            self.last_sequence_id = latest_known_sequence_id
-            groups.set_last_sequence_id(self.group_key_id, latest_known_sequence_id)
-            groups.save_group_info(self.group_key_id)
-            if _Debug:
-                lg.dbg(_DebugLevel, 'no new messages, queue in sync, latest_known_sequence_id=%d' % latest_known_sequence_id)
-            self.automat('queue-in-sync')
-            return True
-        received_group_messages.sort(key=lambda m: m['sequence_id'])
-        newly_processed = 0
+        latest_known_sequence_id = -1
+        for archive_message in archive_messages:
+            received_group_messages.append(dict(
+                json_message=archive_message['payload'],
+                direction='incoming',
+                group_key_id=self.group_key_id,
+                producer_id=archive_message['producer_id'],
+                sequence_id=archive_message['sequence_id'],
+            ))
+            if archive_message['sequence_id'] > latest_known_sequence_id:
+                latest_known_sequence_id = archive_message['sequence_id']
+        for received_message in received_messages:
+            received_group_messages.append(dict(
+                json_message=received_message['json_message'],
+                direction='incoming',
+                group_key_id=self.group_key_id,
+                producer_id=received_message['producer_id'],
+                sequence_id=received_message['sequence_id'],
+            ))
+            if received_message['sequence_id'] > latest_known_sequence_id:
+                latest_known_sequence_id = received_message['sequence_id']
+        self._do_process_group_messages(received_group_messages, latest_known_sequence_id)
+
+    def _on_read_archive_failed(self, err, received_messages):
         if _Debug:
-            lg.args(_DebugLevel, my_last_sequence_id=self.last_sequence_id, received_group_messages=received_group_messages)
-        for new_message in received_group_messages:
-            if self.last_sequence_id + 1 == new_message['sequence_id']:
-                self.last_sequence_id = new_message['sequence_id']
-                newly_processed += 1
-                if _Debug:
-                    lg.dbg(_DebugLevel, 'new message consumed, last_sequence_id incremented to %d' % self.last_sequence_id)
-                self.automat('message-in', **new_message)
-        if not newly_processed or newly_processed != len(received_group_messages):
-            if latest_known_sequence_id > self.last_sequence_id:
-                lg.warn('found queue latest sequence %d is ahead of my current position %d, need to read messages from archive' % (
-                    latest_known_sequence_id, self.last_sequence_id, ))
-                self.automat('queue-is-ahead', latest_known_sequence_id=latest_known_sequence_id, received_messages=received_group_messages, )
-                return True
-            raise Exception('message sequence is broken by message broker %s, some messages were not consumed' % self.active_broker_id)
-        groups.set_last_sequence_id(self.group_key_id, self.last_sequence_id)
-        groups.save_group_info(self.group_key_id)
-        if _Debug:
-            lg.dbg(_DebugLevel, 'processed all messages, queue in sync, last_sequence_id=%d' % self.last_sequence_id)
-        self.automat('queue-in-sync')
-        return True
+            lg.args(_DebugLevel, err=err, received_messages=received_messages)
+        self.automat('queue-read-failed')
+        return None

@@ -48,8 +48,9 @@ import sys
 import time
 import gc
 
-from twisted.internet.defer import Deferred
-from twisted.python.failure import Failure
+from twisted.internet import reactor  # @UnresolvedImport
+from twisted.internet.defer import Deferred  # @UnresolvedImport
+from twisted.python.failure import Failure  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 
@@ -198,7 +199,6 @@ def process_stop():
     """
     if _Debug:
         lg.out(_DebugLevel, 'api.process_stop sending event "stop" to the shutdowner() machine')
-    from twisted.internet import reactor  # @UnresolvedImport
     from main import shutdowner
     reactor.callLater(0.1, shutdowner.A, 'stop', 'exit')  # @UndefinedVariable
     # shutdowner.A('stop', 'exit')
@@ -214,7 +214,6 @@ def process_restart(showgui=False):
 
         {'status': 'OK', 'result': {'restarted': True}}
     """
-    from twisted.internet import reactor  # @UnresolvedImport
     from main import shutdowner
     if showgui:
         if _Debug:
@@ -1737,7 +1736,6 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, o
         if _Debug:
             lg.out(_DebugLevel, '        share %s is now CONNECTED, removing callback %s and starting restore process' % (
                 active_share.key_id, callback_id,))
-        from twisted.internet import reactor  # @UnresolvedImport
         reactor.callLater(0, active_share.remove_connected_callback, callback_id)  # @UndefinedVariable
         _start_restore()
         return True
@@ -1960,7 +1958,6 @@ def share_grant(trusted_remote_user, key_id, timeout=30):
     """
     if not driver.is_on('service_shared_data'):
         return ERROR('service_shared_data() is not started')
-    from twisted.internet import reactor  # @UnresolvedImport
     key_id = strng.to_text(key_id)
     trusted_remote_user = strng.to_text(trusted_remote_user)
     if not key_id.startswith('share_'):
@@ -2228,7 +2225,6 @@ def group_share(trusted_remote_user, group_key_id, timeout=30):
     group_key_id = strng.to_text(group_key_id)
     if not group_key_id.startswith('group_'):
         return ERROR('invalid group id')
-    from twisted.internet import reactor  # @UnresolvedImport
     trusted_remote_user = strng.to_text(trusted_remote_user)
     from userid import global_id
     from userid import id_url
@@ -3477,7 +3473,6 @@ def user_observe(nickname, attempts=3):
         ret.callback(RESULT(results, api_method='user_observe'))
         return None
 
-    from twisted.internet import reactor  # @UnresolvedImport
     reactor.callLater(0.05, nickname_observer.observe_many,  # @UndefinedVariable
         nickname,
         attempts=attempts,
@@ -3532,7 +3527,7 @@ def nickname_set(nickname):
 
 #------------------------------------------------------------------------------
 
-def message_history(user, offset=0, limit=100):
+def message_history(recipient_id=None, sender_id=None, message_type=None, offset=0, limit=100):
     """
     Returns chat history with that user.
     """
@@ -3541,26 +3536,33 @@ def message_history(user, offset=0, limit=100):
     from chat import message_database
     from userid import my_id, global_id
     from crypt import my_keys
-    if user is None:
-        return ERROR('User id is required')
-    if not user.count('@'):
+    if recipient_id is None and sender_id is None:
+        return ERROR('recipient_id or sender_id is required')
+    if not recipient_id.count('@'):
         from contacts import contactsdb
-        user_idurl = contactsdb.find_correspondent_by_nickname(user)
-        if not user_idurl:
-            return ERROR('user not found')
-        user = global_id.UrlToGlobalID(user_idurl)
-    glob_id = global_id.ParseGlobalID(user)
-    if not glob_id['idurl']:
-        return ERROR('wrong user')
-    target_glob_id = global_id.MakeGlobalID(**glob_id)
-    if not my_keys.is_valid_key_id(target_glob_id):
-        return ERROR('invalid key_id: %s' % target_glob_id)
+        recipient_idurl = contactsdb.find_correspondent_by_nickname(recipient_id)
+        if not recipient_idurl:
+            return ERROR('recipient not found')
+        recipient_id = global_id.UrlToGlobalID(recipient_idurl)
+    recipient_glob_id = global_id.ParseGlobalID(recipient_id)
+    if not recipient_glob_id['idurl']:
+        return ERROR('wrong recipient_id')
+    recipient_id = global_id.MakeGlobalID(**recipient_glob_id)
+    if not my_keys.is_valid_key_id(recipient_id):
+        return ERROR('invalid recipient_id: %s' % recipient_id)
+    bidirectional = False
+    if message_type in [None, 'private_message', ]:
+        bidirectional = True
+        if sender_id is None: 
+            sender_id = my_id.getGlobalID(key_alias='master')
     if _Debug:
-        lg.out(_DebugLevel, 'api.message_history with "%s"' % target_glob_id)
+        lg.out(_DebugLevel, 'api.message_history with recipient_id=%s sender_id=%s message_type=%s' % (
+            recipient_id, sender_id, message_type, ))
     messages = [{'doc': m, } for m in message_database.query(
-        sender_id=my_id.getGlobalID(key_alias='master'),
-        recipient_id=target_glob_id,
-        bidirectional=True,
+        sender_id=sender_id,
+        recipient_id=recipient_id,
+        bidirectional=bidirectional,
+        message_types=[message_type, ] if message_type else [],
         offset=offset,
         limit=limit,
     )]
@@ -3640,13 +3642,13 @@ def message_send_group(group_key_id, json_payload):
     return OK()
 
 
-def message_receive(consumer_id, direction='incoming', message_types='private_message,group_message'):
+def message_receive(consumer_callback_id, direction='incoming', message_types='private_message,group_message', polling_timeout=60):
     """
     This method can be used to listen and process incoming chat messages by specific consumer.
-    If there are no messages received yet, this method will be waiting for any incomings.
-    If some messages was already received, but not "consumed" yet method will return them imediately.
+    If there are no messages received yet, this method will be waiting for any incoming messages.
+    If some messages was already received, but not "consumed" yet method will return them immediately.
     After you got response and processed the messages you should call this method again to listen
-    for more incomings again. This is simillar to message queue polling interface.
+    for more incoming again. This is similar to message queue polling interface.
     If you do not "consume" messages, after 100 un-collected messages "consumer" will be dropped.
     Both, incoming and outgoing, messages will be populated here.
 
@@ -3696,23 +3698,43 @@ def message_receive(consumer_id, direction='incoming', message_types='private_me
         packets_to_ack.clear()
         if _Debug:
             lg.out(_DebugLevel, 'api.message_receive._on_pending_messages returning : %r' % result)
-        ret.callback(OK(result, api_method='message_receive'))
+        ret.callback(RESULT(result, api_method='message_receive'))
         return len(result) > 0
 
+    def _on_consume_error(err):
+        if _Debug:
+            lg.args(_DebugLevel, err=err)
+        if isinstance(err, list) and len(err) > 0:
+            err = err[0]
+        if isinstance(err, Failure):
+            try:
+                err = err.getErrorMessage()
+            except:
+                err = strng.to_text(err)
+        if err.lower().count('cancelled'):
+            ret.callback(RESULT([], api_method='message_receive'))
+            return None
+        if not str(err):
+            ret.callback(RESULT([], api_method='message_receive'))
+            return None
+        ret.callback(ERROR(err))
+        return None
+
     d = message.consume_messages(
-        consumer_id=consumer_id,
+        consumer_callback_id=consumer_callback_id,
         direction=direction,
         message_types=message_types,
         reset_callback=True,
     )
     d.addCallback(_on_pending_messages)
-    d.addErrback(lambda err: ret.callback(ERROR(err)))
+    d.addErrback(_on_consume_error)
+    if polling_timeout is not None:
+        d.addTimeout(polling_timeout, clock=reactor)
     if _Debug:
-        lg.out(_DebugLevel, 'api.message_receive "%s"' % consumer_id)
+        lg.out(_DebugLevel, 'api.message_receive "%s" started' % consumer_callback_id)
     return ret
 
 #------------------------------------------------------------------------------
-
 
 def broadcast_send_message(payload):
     """
@@ -3818,7 +3840,6 @@ def network_connected(wait_timeout=5):
         lg.out(_DebugLevel + 10, 'api.network_connected  wait_timeout=%r' % wait_timeout)
     if not driver.is_on('service_network'):
         return ERROR('service_network() is not started')
-    from twisted.internet import reactor  # @UnresolvedImport
     from userid import my_id
     from automats import automat
     ret = Deferred()

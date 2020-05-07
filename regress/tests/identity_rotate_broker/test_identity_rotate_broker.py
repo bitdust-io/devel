@@ -27,9 +27,12 @@ import pytest
 import base64
 import threading
 
-from testsupport import create_identity, connect_network
-
 import keywords as kw
+
+
+SUPPLIERS_IDS = ['supplier-1', 'supplier-2', ]
+BROKERS_IDS = ['broker-1', 'broker-2', 'broker-3', 'broker-4', 'broker-5', ]
+CUSTOMERS_IDS = ['customer-1', 'customer-2', ]
 
 
 def test_identity_rotate_broker():
@@ -96,26 +99,36 @@ def test_identity_rotate_broker():
 
     # MESSAGE A (3 times): from customer 1 to the group, customers 1 and 2 must receive the message
     for i in range(3):
-        a_message_sent_from_customer_1 = {'random_message': 'MESSAGE_A%d_%s' % (i, base64.b32encode(os.urandom(20)).decode(), ) }
-        a_customer_1_receive_result = [None, ]
-        a_customer_2_receive_result = [None, ]
-        a_receive_customer_1 = threading.Timer(0, kw.message_receive_v1, [
-            'customer-1', a_message_sent_from_customer_1, 'test_consumer', a_customer_1_receive_result, ])
-        a_receive_customer_2 = threading.Timer(0, kw.message_receive_v1, [
-            'customer-2', a_message_sent_from_customer_1, 'test_consumer', a_customer_2_receive_result, ])
-        a_send_customer_1 = threading.Timer(0.2, kw.message_send_group_v1, [
-            'customer-1', group_key_id, a_message_sent_from_customer_1, ])
-        a_receive_customer_1.start()
-        a_receive_customer_2.start()
-        a_send_customer_1.start()
-        a_receive_customer_1.join()
-        a_receive_customer_2.join()
-        a_send_customer_1.join()
-        assert a_customer_1_receive_result[0]['result'][0]['data'] == a_message_sent_from_customer_1
-        assert a_customer_2_receive_result[0]['result'][0]['data'] == a_message_sent_from_customer_1
-    
-        assert kw.group_info_v1('customer-1', group_key_id)['result']['last_sequence_id'] == i
-        assert kw.group_info_v1('customer-2', group_key_id)['result']['last_sequence_id'] == i
+        kw.verify_message_sent_received(
+            group_key_id,
+            producer_id='customer-1',
+            consumers_ids=['customer-1', 'customer-2', ],
+            message_label='A_%d' % (i + 1),
+            expected_results={'customer-1': True, 'customer-2': True, },
+            expected_last_sequence_id={'customer-1': i, 'customer-2': i, },
+        )
+#     for i in range(3):
+#         a_message_sent_from_customer_1 = {'random_message': 'MESSAGE_A%d_%s' % (i, base64.b32encode(os.urandom(20)).decode(), ) }
+#         a_customer_1_receive_result = [None, ]
+#         a_customer_2_receive_result = [None, ]
+#         a_receive_customer_1 = threading.Timer(0, kw.message_receive_v1, [
+#             'customer-1', a_message_sent_from_customer_1, 'test_consumer', a_customer_1_receive_result, ])
+#         a_receive_customer_2 = threading.Timer(0, kw.message_receive_v1, [
+#             'customer-2', a_message_sent_from_customer_1, 'test_consumer', a_customer_2_receive_result, ])
+#         a_send_customer_1 = threading.Timer(0.2, kw.message_send_group_v1, [
+#             'customer-1', group_key_id, a_message_sent_from_customer_1, ])
+#         a_receive_customer_1.start()
+#         a_receive_customer_2.start()
+#         a_send_customer_1.start()
+#         a_receive_customer_1.join()
+#         a_receive_customer_2.join()
+#         a_send_customer_1.join()
+#         assert a_customer_1_receive_result[0]['result'][0]['data'] == a_message_sent_from_customer_1
+#         assert a_customer_2_receive_result[0]['result'][0]['data'] == a_message_sent_from_customer_1
+#         assert kw.group_info_v1('customer-1', group_key_id)['result']['last_sequence_id'] == i
+#         assert kw.group_info_v1('customer-2', group_key_id)['result']['last_sequence_id'] == i
+
+    kw.wait_packets_finished(CUSTOMERS_IDS + BROKERS_IDS + SUPPLIERS_IDS)
 
     # rotate identity sources on broker-1
     kw.identity_rotate_v1(active_broker_name)
@@ -123,26 +136,36 @@ def test_identity_rotate_broker():
     kw.service_info_v1(active_broker_name, 'service_message_broker', 'ON')
     kw.service_info_v1(active_broker_name, 'service_gateway', 'ON')
 
-    kw.packet_list_v1(active_broker_name, wait_all_finish=True)
+    kw.wait_packets_finished(CUSTOMERS_IDS + BROKERS_IDS + SUPPLIERS_IDS)
 
     # MESSAGE B: from customer 2 to the group, customers 1 and 2 must switch to another active broker and receive the message
-    b_message_sent_from_customer_1 = {'random_message': 'MESSAGE_B_%s' % base64.b32encode(os.urandom(20)).decode(), }
-    b_customer_1_receive_result = [None, ]
-    b_customer_2_receive_result = [None, ]
-    b_receive_customer_1 = threading.Timer(0, kw.message_receive_v1, [
-        'customer-1', b_message_sent_from_customer_1, 'test_consumer', b_customer_1_receive_result, 60, ])
-    b_receive_customer_2 = threading.Timer(0, kw.message_receive_v1, [
-        'customer-2', b_message_sent_from_customer_1, 'test_consumer', b_customer_2_receive_result, 60, ])
-    b_send_customer_1 = threading.Timer(0.2, kw.message_send_group_v1, [
-        'customer-1', group_key_id, b_message_sent_from_customer_1, ])
-    b_receive_customer_1.start()
-    b_receive_customer_2.start()
-    b_send_customer_1.start()
-    b_receive_customer_1.join()
-    b_receive_customer_2.join()
-    b_send_customer_1.join()
-    assert b_customer_1_receive_result[0]['result'][0]['data'] == b_message_sent_from_customer_1
-    assert b_customer_2_receive_result[0]['result'][0]['data'] == b_message_sent_from_customer_1
+    kw.verify_message_sent_received(
+        group_key_id,
+        producer_id='customer-2',
+        consumers_ids=['customer-1', 'customer-2', ],
+        message_label='B',
+        expected_results={'customer-1': True, 'customer-2': True, },
+        expected_last_sequence_id={'customer-1': 3, 'customer-2': 3, },
+        polling_timeout=60,
+        receive_timeout=61,
+    )
 
-    assert kw.group_info_v1('customer-1', group_key_id)['result']['last_sequence_id'] == 3
-    assert kw.group_info_v1('customer-2', group_key_id)['result']['last_sequence_id'] == 3
+#     b_message_sent_from_customer_1 = {'random_message': 'MESSAGE_B_%s' % base64.b32encode(os.urandom(20)).decode(), }
+#     b_customer_1_receive_result = [None, ]
+#     b_customer_2_receive_result = [None, ]
+#     b_receive_customer_1 = threading.Timer(0, kw.message_receive_v1, [
+#         'customer-1', b_message_sent_from_customer_1, 'test_consumer', b_customer_1_receive_result, 60, ])
+#     b_receive_customer_2 = threading.Timer(0, kw.message_receive_v1, [
+#         'customer-2', b_message_sent_from_customer_1, 'test_consumer', b_customer_2_receive_result, 60, ])
+#     b_send_customer_1 = threading.Timer(0.2, kw.message_send_group_v1, [
+#         'customer-1', group_key_id, b_message_sent_from_customer_1, ])
+#     b_receive_customer_1.start()
+#     b_receive_customer_2.start()
+#     b_send_customer_1.start()
+#     b_receive_customer_1.join()
+#     b_receive_customer_2.join()
+#     b_send_customer_1.join()
+#     assert b_customer_1_receive_result[0]['result'][0]['data'] == b_message_sent_from_customer_1
+#     assert b_customer_2_receive_result[0]['result'][0]['data'] == b_message_sent_from_customer_1
+#     assert kw.group_info_v1('customer-1', group_key_id)['result']['last_sequence_id'] == 3
+#     assert kw.group_info_v1('customer-2', group_key_id)['result']['last_sequence_id'] == 3

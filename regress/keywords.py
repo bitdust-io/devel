@@ -20,13 +20,16 @@
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
 
-
+import os
 import time
 import requests
 import pprint
+import base64
+import threading
 
 from testsupport import request_get, request_post, request_put, request_delete
 
+#------------------------------------------------------------------------------
 
 def supplier_list_v1(customer: str, expected_min_suppliers=None, expected_max_suppliers=None, attempts=40, delay=3, extract_suppliers=True):
     count = 0
@@ -194,8 +197,8 @@ def group_info_v1(customer: str, group_key_id):
     return response.json()
 
 
-def group_join_v1(customer: str, group_key_id):
-    response = request_post(customer, 'group/join/v1', json={'group_key_id': group_key_id, }, timeout=60)
+def group_join_v1(customer: str, group_key_id, attempts=1):
+    response = request_post(customer, 'group/join/v1', json={'group_key_id': group_key_id, }, timeout=60, attempts=attempts)
     assert response.status_code == 200
     print('\ngroup/join/v1 [%s] group_key_id=%r : %s\n' % (customer, group_key_id, pprint.pformat(response.json())))
     assert response.json()['status'] == 'OK', response.json()
@@ -471,8 +474,8 @@ def message_send_group_v1(node, group_key_id, data, timeout=20):
     return response.json()
 
 
-def message_receive_v1(node, expected_data, consumer='test_consumer', get_result=None, timeout=20, attempts=1):
-    response = request_get(node, f'message/receive/{consumer}/v1', timeout=timeout, attempts=attempts)
+def message_receive_v1(node, expected_data=None, consumer='test_consumer', get_result=None, timeout=15, polling_timeout=10, attempts=1):
+    response = request_get(node, f'message/receive/{consumer}/v1?polling_timeout=%d' % polling_timeout, timeout=timeout, attempts=attempts)
     assert response.status_code == 200
     print(f'\nmessage/receive/{consumer}/v1 [%s] : %s\n' % (
         node, pprint.pformat(response.json())))
@@ -481,7 +484,17 @@ def message_receive_v1(node, expected_data, consumer='test_consumer', get_result
             get_result[0] = response.json()
         return get_result
     assert response.json()['status'] == 'OK', response.json()
-    assert response.json()['result'][0]['data'] == expected_data, response.json()
+    if expected_data is not None:
+        assert response.json()['result'][0]['data'] == expected_data, response.json()
+    return response.json()
+
+
+def message_history_v1(node, recipient_id, message_type='private_message', timeout=15):
+    response = request_get(node, f'message/history/v1?id={recipient_id}&type={message_type}', timeout=timeout)
+    assert response.status_code == 200
+    print('\nmessage/history/v1 [%s] recipient_id=%s : %s\n' % (node, recipient_id, pprint.pformat(response.json()), ))
+    assert response.json()['status'] == 'OK', response.json()
+    return response.json()
 
 
 def user_ping_v1(node, remote_node_id, timeout=95, ack_timeout=30, retries=2):
@@ -691,7 +704,55 @@ def queue_producer_list_v1(node, extract_ids=False):
         return response.json()
     return [f['producer_id'] for f in response.json()['result']]
 
+#------------------------------------------------------------------------------
 
 def wait_packets_finished(nodes):
     for node in nodes:
         packet_list_v1(node, wait_all_finish=True)
+
+
+def verify_message_sent_received(group_key_id, producer_id, consumers_ids, message_label='A',
+                                 expected_results={}, expected_last_sequence_id={},
+                                 receive_timeout=15, polling_timeout=10):
+    sample_message = {
+        'random_message': 'MESSAGE_%s_%s' % (message_label, base64.b32encode(os.urandom(20)).decode(), ),
+    }
+    consumer_results = {}
+    consumer_threads = {}
+
+    for consumer_id in consumers_ids:
+        consumer_results[consumer_id] = [None, ]
+        consumer_threads[consumer_id] = threading.Timer(0, message_receive_v1, [
+            consumer_id, sample_message, 'test_consumer', consumer_results[consumer_id], receive_timeout, polling_timeout, ])
+
+    producer_thread = threading.Timer(0.2, message_send_group_v1, [
+        producer_id, group_key_id, sample_message, ])
+
+    for consumer_id in consumers_ids:
+        consumer_threads[consumer_id].start()
+
+    producer_thread.start()
+
+    for consumer_id in consumers_ids:
+        consumer_threads[consumer_id].join()
+
+    producer_thread.join()
+
+    if expected_results:
+        for consumer_id, expected_result in expected_results.items():
+            if expected_result:
+                if not consumer_results[consumer_id][0] or not consumer_results[consumer_id][0]['result']:
+                    assert False, 'consumer %r did not received expected message %r' % (consumer_id, sample_message)
+                if consumer_results[consumer_id][0]['result'][0]['data'] != sample_message:
+                    assert False, 'consumer %r received message %r, but expected is %r' % (
+                        consumer_id, consumer_results[consumer_id][0]['result'][0]['data'], sample_message)
+            else:
+                assert consumer_results[consumer_id][0]['result'] == [], 'consumer %r received message while should not: %r' % (
+                    consumer_id, consumer_results[consumer_id])
+            if consumer_id in expected_last_sequence_id:
+                consumer_last_sequence_id = group_info_v1(consumer_id, group_key_id)['result']['last_sequence_id']
+                assert consumer_last_sequence_id == expected_last_sequence_id[consumer_id], \
+                    'consumer %r last_sequence_id is %r but expected is %r' % (
+                        consumer_id, consumer_last_sequence_id, expected_last_sequence_id[consumer_id])
+
+    return sample_message

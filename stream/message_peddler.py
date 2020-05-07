@@ -291,7 +291,6 @@ def do_push_message(from_idurl, packet_id, queue_id, producer_id, payload, creat
     streams()[queue_id]['messages'].append(new_sequence_id)
     queued_json_message = store_message(queue_id, new_sequence_id, producer_id, payload, created)
     if not queued_json_message:
-        lg.err('failed to store message %r in %r from %r' % (packet_id, queue_id, producer_id, ))
         return False
     if _Debug:
         lg.out(_DebugLevel, '<<< PUSH <<<    into %r by %r at sequence %d' % (
@@ -355,7 +354,6 @@ def on_message_processed(processed_message):
             lg.out(_DebugLevel, '>>> FAILED >>>    from %r at sequence %d, failed_consumers=%d' % (
                 processed_message.queue_id, sequence_id, len(processed_message.failed_notifications), ))
     else:
-        # erase_message(processed_message.queue_id, sequence_id)
         update_processed_message(processed_message.queue_id, sequence_id)
         streams()[processed_message.queue_id]['archive'].append(sequence_id)
         streams()[processed_message.queue_id]['messages'].remove(sequence_id)
@@ -447,7 +445,10 @@ def store_message(queue_id, sequence_id, producer_id, payload, created, processe
         })
         stored_json_message['processed'] = processed
     if not local_fs.WriteTextFile(message_path, jsn.dumps(stored_json_message)):
+        lg.err('failed to store message %d in %r from %r' % (sequence_id, queue_id, producer_id, ))
         return None
+    if _Debug:
+        lg.args(_DebugLevel, sequence_id=sequence_id, producer_id=producer_id, queue_id=queue_id)
     return stored_json_message
 
 
@@ -491,7 +492,7 @@ def read_messages(queue_id, sequence_id_list=[]):
     queue_dir = os.path.join(queues_dir, queue_id)
     messages_dir = os.path.join(queue_dir, 'messages')
     if not sequence_id_list:
-        sequence_id_list = [int(sequence_id) for sequence_id in os.listdir(messages_dir)]
+        sequence_id_list = sorted([int(sequence_id) for sequence_id in os.listdir(messages_dir)])
     result = []
     for sequence_id in sequence_id_list:
         message_path = os.path.join(messages_dir, strng.to_text(sequence_id))
@@ -529,7 +530,8 @@ def get_messages_for_consumer(queue_id, consumer_id, consumer_last_sequence_id, 
         if len(result) >= max_messages_count:
             break
     if _Debug:
-        lg.args(_DebugLevel, queue_id=queue_id, consumer_id=consumer_id, consumer_last_sequence_id=consumer_last_sequence_id, result=len(result))
+        lg.args(_DebugLevel, queue_id=queue_id, consumer_id=consumer_id,
+                consumer_last_sequence_id=consumer_last_sequence_id, result=len(result))
     return result
 
 #------------------------------------------------------------------------------
@@ -1057,7 +1059,7 @@ class MessagePeddler(automat.Automat):
         self.archive_in_progress = False
         events.add_subscriber(self._on_identity_url_changed, 'identity-url-changed')
         message.consume_messages(
-            consumer_id=self.name,
+            consumer_callback_id=self.name,
             callback=on_consume_queue_messages,
             direction='incoming',
             message_types=['queue_message', 'queue_message_replica', ],
@@ -1227,10 +1229,9 @@ class MessagePeddler(automat.Automat):
         """
         Action method.
         """
-        # TODO: notify queue_keeper() with "msg-in" event
         message_in = args[0]
         self._do_replicate_message(message_in, known_brokers=kwargs.get('known_brokers', {}))
-        self._do_archive_other_messages(message_in, use_cache=True)
+        self._do_archive_other_messages(message_in.queue_id)
 
     def doDestroyMe(self, *args, **kwargs):
         """
@@ -1343,16 +1344,20 @@ class MessagePeddler(automat.Automat):
         if replicate_attempts == 0:
             lg.err('message was not replicated: %r' % message_in)
 
-    def _do_build_archive_data(self, queue_id, latest_sequence_id):
-        list_messages = read_messages(queue_id, sequence_id_list=streams()[queue_id]['archive'])
+    def _do_build_archive_data(self, queue_id, archive_info):
+        list_messages = read_messages(queue_id, sequence_id_list=archive_info['sequence_id_list'])
         raw_data = serialization.DictToBytes({'items': list_messages, })
         fileno, local_path = tmpfile.make('outbox', extension='.msg')
         os.write(fileno, raw_data)
         os.close(fileno)
-        return local_path
+        if _Debug:
+            lg.args(_DebugLevel, archive_id=archive_info['archive_id'], messages_count=len(list_messages),
+                    local_path=local_path, raw_data_bytes=len(raw_data))
+        return archive_info['archive_id'], local_path
 
-    def _do_archive_other_messages(self, message_in, use_cache=True):
-        prepared_for_archive = len(streams()[message_in.queue_id]['archive'])
+    def _do_archive_other_messages(self, queue_id):
+        archive_snapshot_sequence_id_list = list(streams()[queue_id]['archive'])
+        prepared_for_archive = len(archive_snapshot_sequence_id_list)
         if _Debug:
             lg.args(_DebugLevel, prepared_for_archive=prepared_for_archive, archive_chunk_size=self.archive_chunk_size,
                     archive_in_progress=self.archive_in_progress)
@@ -1360,38 +1365,43 @@ class MessagePeddler(automat.Automat):
             return
         if self.archive_in_progress:
             return
-        customer_idurl = global_id.GetGlobalQueueOwnerIDURL(message_in.queue_id)
+        customer_idurl = global_id.GetGlobalQueueOwnerIDURL(queue_id)
         qk = queue_keeper.queue_keepers().get(customer_idurl)
         if not qk:
-            lg.err('queue_keeper() for %r was not found' % message_in.queue_id)
+            lg.err('queue_keeper() for %r was not found' % queue_id)
             return
         if qk.known_archive_folder_path is None:
-            lg.err('archive folder path is unknown for %r' % message_in.queue_id)
+            lg.err('archive folder path is unknown for %r' % queue_id)
             return
         self.archive_in_progress = True
+        archive_snapshot_sequence_id_list.sort()
+        archive_id = strng.to_text(archive_snapshot_sequence_id_list[-1])
         archive_result = Deferred()
-        archive_result.addCallback(self._on_archive_backup_done, queue_id=message_in.queue_id)
-        archive_result.addErrback(self._on_archive_backup_failed, queue_id=message_in.queue_id)
+        archive_result.addCallback(self._on_archive_backup_done, queue_id=queue_id)
+        archive_result.addErrback(self._on_archive_backup_failed, queue_id=queue_id)
         aw = archive_writer.ArchiveWriter(local_data_callback=self._do_build_archive_data)
         aw.automat(
             'start',
-            queue_id=message_in.queue_id,
-            latest_sequence_id=message_in.get_sequence_id(),
+            queue_id=queue_id,
+            archive_info={
+                'archive_id': archive_id,
+                'sequence_id_list': archive_snapshot_sequence_id_list,
+            },
             archive_folder_path=qk.known_archive_folder_path,
-            chunk_size=self.archive_chunk_size,
             result_defer=archive_result,
         )
+        lg.info('started archive backup with %d messages, archive_id=%s' % (len(archive_snapshot_sequence_id_list), archive_id, ))
 
-    def _on_archive_backup_done(self, result, queue_id):
+    def _on_archive_backup_done(self, archive_info, queue_id):
         if _Debug:
-            lg.args(_DebugLevel, result=result, queue_id=queue_id)
+            lg.args(_DebugLevel, queue_id=queue_id, archive_info=archive_info)
         # TODO: notify other message brokers about that
-        for sequence_id in streams()[queue_id]['archive']:
-            erase_message(queue_id, sequence_id)
-        if queue_id not in streams():
-            lg.err('did not found stream %s' % queue_id)
+        if queue_id in streams():
+            for sequence_id in archive_info['sequence_id_list']:
+                streams()[queue_id]['archive'].remove(sequence_id)
+                erase_message(queue_id, sequence_id)
         else:
-            streams()[queue_id]['archive'] = []
+            lg.err('did not found stream %s' % queue_id)
         self.archive_in_progress = False
         self.automat('archive-backup-prepared')
         return None

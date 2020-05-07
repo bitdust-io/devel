@@ -60,6 +60,7 @@ if __name__ == '__main__':
 from logs import lg
 
 from lib import utime
+from lib import strng
 
 from main import settings
 
@@ -73,7 +74,17 @@ _LocalStorage = None
 
 #------------------------------------------------------------------------------
 
-TYPE_MESSAGE = 1
+MESSAGE_TYPES = {
+    'message': 1,
+    'private_message': 2,
+    'group_message': 3,
+}
+
+MESSAGE_TYPE_CODES = {
+    1: 'message',
+    2: 'private_message',
+    3: 'group_message',
+}
 
 #------------------------------------------------------------------------------
 
@@ -85,6 +96,9 @@ def init(filepath=None):
 
     if not filepath:
         filepath = settings.ChatMessagesHistoryDatabaseFile()
+
+    if _Debug:
+        lg.args(_DebugLevel, filepath=filepath)
 
     sqlite3.register_adapter(dict, adapt_json)
     sqlite3.register_adapter(list, adapt_json)
@@ -120,6 +134,8 @@ def shutdown():
     global _HistoryCursor
     _HistoryDB.commit()
     _HistoryDB.close()
+    if _Debug:
+        lg.dbg(_DebugLevel, '')
 
 #------------------------------------------------------------------------------
 
@@ -142,7 +158,7 @@ def convert_json(blob):
 
 #------------------------------------------------------------------------------
 
-def build_json_message(data, message_id, message_time=None, sender=None, recipient=None):
+def build_json_message(data, message_id, message_time=None, sender=None, recipient=None, message_type=None):
     """
     """
     if not sender:
@@ -151,8 +167,8 @@ def build_json_message(data, message_id, message_time=None, sender=None, recipie
         recipient = my_id.getGlobalID(key_alias='master')
     new_json = {
         "payload": {
-            "type": "message",
-            "message_id": message_id,
+            "type": message_type or "message",
+            "message_id": strng.to_text(message_id),
             "time": message_time or utime.utcnow_to_sec1970(),
             "data": data,
         },
@@ -170,6 +186,8 @@ def build_json_message(data, message_id, message_time=None, sender=None, recipie
 def insert(message_json):
     """
     """
+    if _Debug:
+        lg.args(_DebugLevel, message_json=message_json)
     cur().execute('''INSERT INTO history (
             sender_glob_id,
             recipient_glob_id,
@@ -180,7 +198,7 @@ def insert(message_json):
         ) VALUES  (?, ?, ?, ?, ?, ?)''', (
         message_json['sender']['glob_id'],
         message_json['recipient']['glob_id'],
-        TYPE_MESSAGE,
+        MESSAGE_TYPES.get(message_json['payload']['type'], 1),
         message_json['payload']['time'],
         message_json['payload']['message_id'],
         message_json['payload']['data'],
@@ -188,21 +206,27 @@ def insert(message_json):
     db().commit()
 
 
-def query(sender_id=None, recipient_id=None, bidirectional=True, order_by_time=True, offset=None, limit=None):
+def query(sender_id=None, recipient_id=None, bidirectional=True, order_by_time=True, message_types=[], offset=None, limit=None):
     """
     """
-    sql = 'SELECT * FROM history WHERE payload_type=?'
-    params = [TYPE_MESSAGE, ]
+    sql = 'SELECT * FROM history WHERE'
+    params = []
     if bidirectional and sender_id and recipient_id:
-        sql += ' AND sender_glob_id IN (?, ?) AND recipient_glob_id IN (?, ? )'
+        sql += ' sender_glob_id IN (?, ?) AND recipient_glob_id IN (?, ?)'
         params += [sender_id, recipient_id, sender_id, recipient_id, ]
     else:
         if sender_id:
-            sql += ' AND sender_glob_id=?'
+            sql += ' sender_glob_id=?'
             params += [sender_id, ]
         if recipient_id:
-            sql += ' AND recipient_glob_id=?'
+            sql += ' recipient_glob_id=?'
             params += [recipient_id, ]
+    if message_types:
+        if params:
+            sql += ' AND payload_type IN (%s)' % (','.join(['?', ] * len(message_types)))
+        else:
+            sql += ' payload_type IN (%s)' % (','.join(['?', ] * len(message_types)))
+        params.extend([MESSAGE_TYPES.get(mt, 1) for mt in message_types])
     if order_by_time:
         sql += ' ORDER BY payload_time DESC'
     if limit is not None:

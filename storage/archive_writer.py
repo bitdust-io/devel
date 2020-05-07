@@ -61,24 +61,18 @@ from automats import automat
 
 from system import bpio
 
-from lib import utime
 from lib import packetid
 from lib import misc
 from lib import strng
 
-from main import events
-from main import config
 from main import settings
 
 from crypt import my_keys
 
 from dht import dht_relations
 
-from contacts import contactsdb
-
-from dht import dht_relations
-
-from stream import message
+from p2p import commands
+from p2p import p2p_service
 
 from raid import eccmap
 
@@ -86,15 +80,7 @@ from storage import backup_fs
 from storage import backup_tar
 from storage import backup
 
-from p2p import commands
-from p2p import p2p_service
-from p2p import lookup
-from p2p import p2p_service_seeker
-
-from access import groups
-
 from userid import global_id
-from userid import id_url
 from userid import my_id
 
 #------------------------------------------------------------------------------
@@ -177,9 +163,8 @@ class ArchiveWriter(automat.Automat):
         Action method.
         """
         self.queue_id = kwargs['queue_id']
-        self.latest_sequence_id = kwargs['latest_sequence_id']
+        self.archive_info = kwargs['archive_info']
         self.archive_folder_path = kwargs['archive_folder_path']
-        self.chunk_size = kwargs['chunk_size']
         self.result_defer = kwargs.get('result_defer')
         qa, oid, _ = global_id.SplitGlobalQueueID(self.queue_id)
         self.queue_alias = qa
@@ -239,7 +224,7 @@ class ArchiveWriter(automat.Automat):
         """
         if _Debug:
             lg.args(_DebugLevel, backup_job=self.backup_job, backup_max_block_num=self.backup_max_block_num,
-                    packets_out=self.packets_out)
+                    packets_out=list(self.packets_out.values()))
         if self.backup_job:
             # backup is not finished yet
             return
@@ -265,7 +250,7 @@ class ArchiveWriter(automat.Automat):
         Action method.
         """
         if self.result_defer:
-            self.result_defer.callback(True)
+            self.result_defer.callback(self.archive_info)
 
     def doReportFailed(self, event, *args, **kwargs):
         """
@@ -286,8 +271,7 @@ class ArchiveWriter(automat.Automat):
         Remove all references to the state machine object to destroy it.
         """
         self.queue_id = None
-        self.latest_sequence_id = None
-        self.chunk_size = None
+        self.archive_info = None
         self.result_defer = None
         self.suppliers_list = None
         self.ecc_map = None
@@ -298,8 +282,8 @@ class ArchiveWriter(automat.Automat):
         self.destroy()
 
     def _do_start_archive_backup(self):
-        local_path = self.local_data_callback(self.queue_id, self.latest_sequence_id)
-        supplier_path_id = os.path.join(self.archive_folder_path, strng.to_text(self.latest_sequence_id))
+        archive_id, local_path = self.local_data_callback(self.queue_id, self.archive_info)
+        supplier_path_id = os.path.join(self.archive_folder_path, archive_id)
         dataID = misc.NewBackupID()
         backup_id = packetid.MakeBackupID(
             customer=self.queue_owner_id,
