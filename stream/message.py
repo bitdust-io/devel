@@ -492,39 +492,58 @@ def send_message(json_data, recipient_global_id, packet_id=None,
 
 #------------------------------------------------------------------------------
 
-def consume_messages(consumer_id, callback=None, direction=None, message_types=None, reset_callback=False):
+def consume_messages(consumer_callback_id, callback=None, direction=None, message_types=None, reset_callback=False):
     """
+    Register a new callback method or Deferred object to wait and receive messages from the stream.
+    If message was passed thru the stream but there were no callbacks registered to listen - the message is just ignored.
+    When callback is registered any new message (if they match to specified criteria) will trigger callback to be executed.
+    If callback is a Deferred object - the message will fire a callback() method of it so consumer can receive it.
+    Right after receiving the message via callback() method consumer must call `consume_messages()` again to be able
+    to receive the next message - something like long polling pattern.
+    Stream also takes care of next messages that are not consumed yet by Deferred() callback in between of that calls to that method.
+    If there are some messages that was not consumed by Deferred() - next call to that method will immediately fire
+    callback() method of the Deferred() object with the list of messages.
+    If input parameter `callback` is None Deferred() object will be automatically created and returned back as result.
+    If input parameter `callback` is a callable method it will not be released like Deferred object - it will be fired
+    for every message passed thru the stream.
+    Parameter `direction` can be "incoming", "outgoing" or None (for both directions).
+    Parameter `message_types` can be None (no filtering) or a list of desired types:
+        "private_message", "group_message", "queue_message", "queue_message_replica"
+    If `reset_callback` is True - previously registered Deferred object will be cleaned
+    with `clear_consumer_callbacks()` method.
     """
-    if consumer_id in consumers_callbacks():
+    if consumer_callback_id in consumers_callbacks():
         if not reset_callback:
             raise Exception('consumer callback already exist')
-        clear_consumer_callbacks(consumer_id)
+        clear_consumer_callbacks(consumer_callback_id)
     cb = callback or Deferred()
-    consumers_callbacks()[consumer_id] = {
+    consumers_callbacks()[consumer_callback_id] = {
         'callback': cb,
         'direction': direction,
         'message_types': message_types,
     }
     if _Debug:
-        lg.out(_DebugLevel, 'message.consume_messages added callback for consumer %r' % consumer_id)
+        lg.out(_DebugLevel, 'message.consume_messages added callback for consumer %r' % consumer_callback_id)
     # reactor.callLater(0, do_read)  # @UndefinedVariable
     do_read()
     return cb
 
 
-def clear_consumer_callbacks(consumer_id):
-    if consumer_id not in consumers_callbacks().keys():
+def clear_consumer_callbacks(consumer_callback_id):
+    """
+    """
+    if consumer_callback_id not in consumers_callbacks().keys():
         return True
-    cb_info = consumers_callbacks().pop(consumer_id)
+    cb_info = consumers_callbacks().pop(consumer_callback_id)
     if isinstance(cb_info['callback'], Deferred):
         if _Debug:
-            lg.args(_DebugLevel, consumer_id=consumer_id, cb=cb_info['callback'], called=cb_info['callback'].called)
+            lg.args(_DebugLevel, consumer_callback_id=consumer_callback_id, cb=cb_info['callback'], called=cb_info['callback'].called)
         if not cb_info['callback'].called:
             cb_info['callback'].callback([])
             cb_info['callback'] = None
     else:
         if _Debug:
-            lg.args(_DebugLevel, consumer_id=consumer_id, cb=cb_info['callback'], called='skip callable method')
+            lg.args(_DebugLevel, consumer_callback_id=consumer_callback_id, cb=cb_info['callback'])
     return True
 
 #------------------------------------------------------------------------------
@@ -553,6 +572,7 @@ def push_message(direction, msg_type, recipient_id, sender_id, packet_id, owner_
     total_consumed = do_read()
     return total_consumed > 0
 
+#------------------------------------------------------------------------------
 
 def push_incoming_message(request, private_message_object, json_message):
     """
@@ -571,30 +591,6 @@ def push_incoming_message(request, private_message_object, json_message):
         owner_idurl=request.OwnerID,
         json_message=json_message,
     )
-#     for consumer_id in consumers_callbacks().keys():
-#         if consumer_id not in message_queue():
-#             message_queue()[consumer_id] = []
-#         msg_type = 'private_message'
-#         if request.PacketID.startswith('queue_'):
-#             msg_type = 'queue_message'
-#         elif request.PacketID.startswith('qreplica_'):
-#             msg_type = 'queue_message_replica'
-#         message_queue()[consumer_id].append({
-#             'type': msg_type,
-#             'dir': 'incoming',
-#             'to': private_message_object.recipient_id(),
-#             'from': private_message_object.sender_id(),
-#             'data': json_message,
-#             'packet_id': request.PacketID,
-#             'owner_idurl': request.OwnerID,
-#             'time': utime.get_sec1970(),
-#         })
-#         if _Debug:
-#             lg.out(_DebugLevel, 'message.push_incoming_message "%s" for consumer "%s", %d pending messages for consumer %r' % (
-#                 request.PacketID, consumer_id, len(message_queue()[consumer_id]), consumer_id, ))
-#     # reactor.callLater(0, do_read)  # @UndefinedVariable
-#     total_consumed = do_read()
-#     return total_consumed > 0
 
 
 def push_outgoing_message(json_message, private_message_object, remote_identity, request, result):
@@ -614,30 +610,6 @@ def push_outgoing_message(json_message, private_message_object, remote_identity,
         owner_idurl=request.OwnerID,
         json_message=json_message,
     )
-#     for consumer_id in consumers_callbacks().keys():
-#         if consumer_id not in message_queue():
-#             message_queue()[consumer_id] = []
-#         msg_type = 'private_message'
-#         if request.PacketID.startswith('queue_'):
-#             msg_type = 'queue_message'
-#         elif request.PacketID.startswith('qreplica_'):
-#             msg_type = 'queue_message_replica'
-#         message_queue()[consumer_id].append({
-#             'type': msg_type,
-#             'dir': 'outgoing',
-#             'to': private_message_object.recipient_id(),
-#             'from': private_message_object.sender_id(),
-#             'data': json_message,
-#             'packet_id': request.PacketID,
-#             'owner_idurl': request.OwnerID,
-#             'time': utime.get_sec1970(),
-#         })
-#         if _Debug:
-#             lg.out(_DebugLevel, 'message.push_outgoing_message "%s" for consumer "%s", %d pending messages for consumer %r' % (
-#                 request.PacketID, consumer_id, len(message_queue()[consumer_id]), consumer_id, ))
-#     # reactor.callLater(0, do_read)  # @UndefinedVariable
-#     do_read()
-#     return False
 
 
 def push_group_message(json_message, direction, group_key_id, producer_id, sequence_id):
@@ -652,25 +624,6 @@ def push_group_message(json_message, direction, group_key_id, producer_id, seque
         owner_idurl=None,
         json_message=json_message,
     )
-#     for consumer_id in consumers_callbacks().keys():
-#         if consumer_id not in message_queue():
-#             message_queue()[consumer_id] = []
-#         message_queue()[consumer_id].append({
-#             'type': 'group_message',
-#             'dir': direction,
-#             'to': group_key_id,
-#             'from': producer_id,
-#             'data': json_message,
-#             'packet_id': sequence_id,
-#             'owner_idurl': None,
-#             'time': utime.get_sec1970(),
-#         })
-#         if _Debug:
-#             lg.out(_DebugLevel, 'message.push_group_message "%d" at group "%s", %d pending messages for consumer %s' % (
-#                 sequence_id, group_key_id, len(message_queue()[consumer_id]), consumer_id, ))
-#     # reactor.callLater(0, do_read)  # @UndefinedVariable
-#     do_read()
-#     return True
 
 #------------------------------------------------------------------------------
 

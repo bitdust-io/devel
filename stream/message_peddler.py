@@ -1059,7 +1059,7 @@ class MessagePeddler(automat.Automat):
         self.archive_in_progress = False
         events.add_subscriber(self._on_identity_url_changed, 'identity-url-changed')
         message.consume_messages(
-            consumer_id=self.name,
+            consumer_callback_id=self.name,
             callback=on_consume_queue_messages,
             direction='incoming',
             message_types=['queue_message', 'queue_message_replica', ],

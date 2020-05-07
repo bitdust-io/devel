@@ -410,7 +410,7 @@ class ArchiveReader(automat.Automat):
         extracted_messages = []
         for snapshot_filename in os.listdir(output_location):
             snapshot_path = os.path.join(output_location, snapshot_filename)
-            snapshot_data = serialization.BytesToDict(local_fs.ReadBinaryFile(snapshot_path))
+            snapshot_data = serialization.BytesToDict(local_fs.ReadBinaryFile(snapshot_path), values_to_text=True)
             for archive_message in snapshot_data.get('items', []):
                 if self.start_sequence_id is not None:
                     if self.start_sequence_id > archive_message['sequence_id']:

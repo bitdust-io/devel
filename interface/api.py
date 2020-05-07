@@ -3527,7 +3527,7 @@ def nickname_set(nickname):
 
 #------------------------------------------------------------------------------
 
-def message_history(user, offset=0, limit=100):
+def message_history(recipient_id=None, sender_id=None, message_type=None, offset=0, limit=100):
     """
     Returns chat history with that user.
     """
@@ -3536,26 +3536,33 @@ def message_history(user, offset=0, limit=100):
     from chat import message_database
     from userid import my_id, global_id
     from crypt import my_keys
-    if user is None:
-        return ERROR('User id is required')
-    if not user.count('@'):
+    if recipient_id is None and sender_id is None:
+        return ERROR('recipient_id or sender_id is required')
+    if not recipient_id.count('@'):
         from contacts import contactsdb
-        user_idurl = contactsdb.find_correspondent_by_nickname(user)
-        if not user_idurl:
-            return ERROR('user not found')
-        user = global_id.UrlToGlobalID(user_idurl)
-    glob_id = global_id.ParseGlobalID(user)
-    if not glob_id['idurl']:
-        return ERROR('wrong user')
-    target_glob_id = global_id.MakeGlobalID(**glob_id)
-    if not my_keys.is_valid_key_id(target_glob_id):
-        return ERROR('invalid key_id: %s' % target_glob_id)
+        recipient_idurl = contactsdb.find_correspondent_by_nickname(recipient_id)
+        if not recipient_idurl:
+            return ERROR('recipient not found')
+        recipient_id = global_id.UrlToGlobalID(recipient_idurl)
+    recipient_glob_id = global_id.ParseGlobalID(recipient_id)
+    if not recipient_glob_id['idurl']:
+        return ERROR('wrong recipient_id')
+    recipient_id = global_id.MakeGlobalID(**recipient_glob_id)
+    if not my_keys.is_valid_key_id(recipient_id):
+        return ERROR('invalid recipient_id: %s' % recipient_id)
+    bidirectional = False
+    if message_type in [None, 'private_message', ]:
+        bidirectional = True
+        if sender_id is None: 
+            sender_id = my_id.getGlobalID(key_alias='master')
     if _Debug:
-        lg.out(_DebugLevel, 'api.message_history with "%s"' % target_glob_id)
+        lg.out(_DebugLevel, 'api.message_history with recipient_id=%s sender_id=%s message_type=%s' % (
+            recipient_id, sender_id, message_type, ))
     messages = [{'doc': m, } for m in message_database.query(
-        sender_id=my_id.getGlobalID(key_alias='master'),
-        recipient_id=target_glob_id,
-        bidirectional=True,
+        sender_id=sender_id,
+        recipient_id=recipient_id,
+        bidirectional=bidirectional,
+        message_types=[message_type, ] if message_type else [],
         offset=offset,
         limit=limit,
     )]
@@ -3695,12 +3702,14 @@ def message_receive(consumer_callback_id, direction='incoming', message_types='p
         return len(result) > 0
 
     d = message.consume_messages(
-        consumer_id=consumer_callback_id,
+        consumer_callback_id=consumer_callback_id,
         direction=direction,
         message_types=message_types,
         reset_callback=True,
     )
     d.addCallback(_on_pending_messages)
+    if _Debug:
+        d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='api.message_receive')
     d.addErrback(lambda err: ret.callback(ERROR(err)))
     if polling_timeout is not None:
         d.addTimeout(polling_timeout, clock=reactor)

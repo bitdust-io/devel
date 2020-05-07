@@ -361,7 +361,7 @@ class GroupMember(automat.Automat):
             groups.set_group_info(self.group_key_id)
             groups.save_group_info(self.group_key_id)
         message.consume_messages(
-            consumer_id=self.name,
+            consumer_callback_id=self.name,
             callback=self._do_read_queue_messages,
             direction='incoming',
             message_types=['queue_message', ],

@@ -278,9 +278,9 @@ def on_event(evt):
     })
 
 
-def on_private_message(message_json):
+def on_stream_message(message_json):
     return push({
-        'type': 'private_message',
+        'type': 'stream_message',
         'payload': message_json,
     })
 

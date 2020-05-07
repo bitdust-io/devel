@@ -982,7 +982,11 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @GET('^/v1/message/history$')
     @GET('^/message/history/v1$')
     def message_history_v1(self, request):
-        return api.message_history(user=_request_arg(request, 'id', None, True))
+        return api.message_history(
+            recipient_id=_request_arg(request, 'id', None, True),
+            sender_id=_request_arg(request, 'sender_id', None, False),
+            message_type=_request_arg(request, 'type', 'private_message'),
+        )
 
     @GET('^/msg/r/(?P<consumer_id>[^/]+)/$')
     @GET('^/v1/message/receive/(?P<consumer_callback_id>[^/]+)$')

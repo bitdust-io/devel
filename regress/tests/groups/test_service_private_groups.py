@@ -184,6 +184,10 @@ def test_customers_1_2_3_communicate_via_message_brokers():
     assert 'customer-2@id-b_8084' in broker_consumers
     assert 'customer-2@id-b_8084' in broker_producers
 
+    assert len(kw.message_history_v1('customer-1', group_key_id, message_type='group_message')['result']) == 0
+    assert len(kw.message_history_v1('customer-2', group_key_id, message_type='group_message')['result']) == 0
+    assert len(kw.message_history_v1('customer-3', group_key_id, message_type='group_message')['result']) == 0
+
     #--- MESSAGE A: from customer 1 to the group, customers 1 and 2 must receive the message
     all_messages.append(verify_message_sent_received(
         group_key_id,
@@ -193,6 +197,10 @@ def test_customers_1_2_3_communicate_via_message_brokers():
         expected_results={'customer-1': True, 'customer-2': True, },
         expected_last_sequence_id={'customer-1': 0, 'customer-2': 0, },
     ))
+
+    assert len(kw.message_history_v1('customer-1', group_key_id, message_type='group_message')['result']) == 1
+    assert len(kw.message_history_v1('customer-2', group_key_id, message_type='group_message')['result']) == 1
+    assert len(kw.message_history_v1('customer-3', group_key_id, message_type='group_message')['result']) == 0
 
     #--- customer-2 share group key to customer-3
     kw.group_share_v1('customer-2', group_key_id, 'customer-3@id-a_8084')
@@ -213,7 +221,9 @@ def test_customers_1_2_3_communicate_via_message_brokers():
     assert 'customer-3@id-a_8084' in broker_consumers
     assert 'customer-3@id-a_8084' in broker_producers
 
+    #--- customer-3 must also see the first message that was sent to the group when he was not present yet
     assert kw.group_info_v1('customer-3', group_key_id)['result']['last_sequence_id'] == 0
+    assert len(kw.message_history_v1('customer-3', group_key_id, message_type='group_message')['result']) == 1
 
     #--- MESSAGE B: from customer 3 to the group, customers 1, 2 and 3 must receive the message
     all_messages.append(verify_message_sent_received(
@@ -224,6 +234,14 @@ def test_customers_1_2_3_communicate_via_message_brokers():
         expected_results={'customer-1': True, 'customer-2': True, 'customer-3': True, },
         expected_last_sequence_id={'customer-1': 1, 'customer-2': 1, 'customer-3': 1, },
     ))
+
+    #--- now all three members are online and must receive it
+    assert kw.group_info_v1('customer-1', group_key_id)['result']['last_sequence_id'] == 1
+    assert kw.group_info_v1('customer-2', group_key_id)['result']['last_sequence_id'] == 1
+    assert kw.group_info_v1('customer-3', group_key_id)['result']['last_sequence_id'] == 1
+    assert len(kw.message_history_v1('customer-1', group_key_id, message_type='group_message')['result']) == 2
+    assert len(kw.message_history_v1('customer-2', group_key_id, message_type='group_message')['result']) == 2
+    assert len(kw.message_history_v1('customer-3', group_key_id, message_type='group_message')['result']) == 2
 
     #--- customer-2 leave the group
     kw.group_leave_v1('customer-2', group_key_id)
@@ -251,6 +269,10 @@ def test_customers_1_2_3_communicate_via_message_brokers():
         expected_results={'customer-1': True, 'customer-2': False, 'customer-3': True, },
         expected_last_sequence_id={'customer-1': 2, 'customer-2': 1, 'customer-3': 2, },
     ))
+
+    assert len(kw.message_history_v1('customer-1', group_key_id, message_type='group_message')['result']) == 3
+    assert len(kw.message_history_v1('customer-2', group_key_id, message_type='group_message')['result']) == 2
+    assert len(kw.message_history_v1('customer-3', group_key_id, message_type='group_message')['result']) == 3
 
     #--- at that point 3 messages already passed thru the group and archive snapshot suppose to be triggered
     kw.wait_packets_finished(CUSTOMERS_IDS + BROKERS_IDS + SUPPLIERS_IDS)
@@ -289,9 +311,11 @@ def test_customers_1_2_3_communicate_via_message_brokers():
     assert customer_2_receive_result[0]['result'][0]['data'] == all_messages[2]
 
     #--- messages D1, D2 and D3 also must be received by customer-2
-    kw.message_receive_v1('customer-2', expected_data=all_messages[3])
-    kw.message_receive_v1('customer-2', expected_data=all_messages[4])
-    kw.message_receive_v1('customer-2', expected_data=all_messages[5])
+    assert len(kw.message_history_v1('customer-2', group_key_id, message_type='group_message')['result']) == 6
+
+    #--- other group members must have all messages received as well
+    assert len(kw.message_history_v1('customer-1', group_key_id, message_type='group_message')['result']) == 6
+    assert len(kw.message_history_v1('customer-3', group_key_id, message_type='group_message')['result']) == 6
 
     kw.wait_packets_finished(CUSTOMERS_IDS + BROKERS_IDS)
 
