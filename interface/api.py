@@ -193,10 +193,10 @@ def process_stop():
     """
     Stop the main process immediately.
 
-    HTTP:
+    ###### HTTP
         curl -X GET 'localhost:8180/process/stop/v1'
 
-    WebSocket:
+    ###### WebSocket
         websocket.send('{"command": "api_call", "method": "process_stop", "kwargs": {} }');
     """
     if _Debug:
@@ -211,10 +211,10 @@ def process_restart():
     """
     Restart the main process.
 
-    HTTP:
+    ###### HTTP
         curl -X GET 'localhost:8180/process/restart/v1'
 
-    WebSocket:
+    ###### WebSocket
         websocket.send('{"command": "api_call", "method": "process_restart", "kwargs": {} }');
     """
     from main import shutdowner
@@ -233,12 +233,12 @@ def process_restart():
 
 def process_health():
     """
-    Returns true if engine process is running. This method suppose to be used for health checks.
+    Returns positive response if engine process is running. This method suppose to be used for health checks.
 
-    HTTP:
+    ###### HTTP
         curl -X GET 'localhost:8180/process/health/v1'
 
-    WebSocket:
+    ###### WebSocket
         websocket.send('{"command": "api_call", "method": "process_health", "kwargs": {} }');
     """
     # if _Debug:
@@ -248,15 +248,17 @@ def process_health():
 
 def process_debug():
     """
-    Execute a breakpoint inside main thread and start Python shell using standard `pdb.set_trace()` debugger.
-    This is only useful if you already executed the BitDust engine manually via shell console and would like
-    to interrupt it and investigate something. This call will block the main process and it will stop responding
-    to any API calls.
+    Execute a breakpoint inside the main thread and start Python shell using standard `pdb.set_trace()` debugger method.
 
-    HTTP:
+    This is only useful if you already have executed the BitDust engine manually via shell console and would like
+    to interrupt it and investigate things.
+
+    This call will block the main process and it will stop responding to any API calls.
+
+    ###### HTTP
         curl -X GET 'localhost:8180/process/debug/v1'
 
-    WebSocket:
+    ###### WebSocket
         websocket.send('{"command": "api_call", "method": "process_debug", "kwargs": {} }');
     """
     import pdb
@@ -269,10 +271,10 @@ def config_get(key):
     """
     Returns current key/value from the program settings.
 
-    HTTP:
+    ###### HTTP
         curl -X GET 'localhost:8180/config/get/v1?key=logs/debug-level'
 
-    WebSocket:
+    ###### WebSocket
         websocket.send('{"command": "api_call", "method": "config_get", "kwargs": {"key": "logs/debug-level"} }');
     """
     try:
@@ -302,10 +304,10 @@ def config_set(key, value):
     """
     Set a value for given key option.
 
-    HTTP:
+    ###### HTTP
         curl -X POST 'localhost:8180/config/set/v1' -d '{"key": "logs/debug-level", "value": 12}'
 
-    WebSocket:
+    ###### WebSocket
         websocket.send('{"command": "api_call", "method": "config_set", "kwargs": {"key": "logs/debug-level", "value": 12} }');
     """
     key = strng.to_text(key)
@@ -324,10 +326,10 @@ def config_list(sort=False):
     """
     Provide detailed info about all program settings.
 
-    HTTP:
+    ###### HTTP
         curl -X GET 'localhost:8180/config/list/v1'
 
-    WebSocket:
+    ###### WebSocket
         websocket.send('{"command": "api_call", "method": "config_list", "kwargs": {} }');
     """
     if _Debug:
@@ -343,10 +345,10 @@ def config_tree():
     """
     Returns all options as a tree structure, can be more suitable for UI operations.
 
-    HTTP:
+    ###### HTTP
         curl -X GET 'localhost:8180/config/tree/v1'
 
-    WebSocket:
+    ###### WebSocket
         websocket.send('{"command": "api_call", "method": "config_tree", "kwargs": {} }');
     """
     if _Debug:
@@ -367,10 +369,10 @@ def identity_get(include_xml_source=False):
     """
     Returns your identity info.
 
-    HTTP:
+    ###### HTTP
         curl -X GET 'localhost:8180/identity/get/v1'
 
-    WebSocket:
+    ###### WebSocket
         websocket.send('{"command": "api_call", "method": "identity_get", "kwargs": {} }');
     """
     from userid import my_id
@@ -385,25 +387,26 @@ def identity_get(include_xml_source=False):
 def identity_create(username, preferred_servers=[]):
     """
     Generates new private key and creates new identity for you to be able to communicate with other nodes in the network.
-    Parameter `username` defines filename of the identity.
 
-    HTTP:
+    Parameter `username` defines filename of the new identity.
+
+    ###### HTTP
         curl -X POST 'localhost:8180/identity/create/v1' -d '{"username": "alice"}'
 
-    WebSocket:
+    ###### WebSocket
         websocket.send('{"command": "api_call", "method": "identity_create", "kwargs": {"username": "alice"} }');
     """
     from lib import misc
     from userid import my_id
     from userid import id_registrator
+    if my_id.isLocalIdentityReady() or my_id.isLocalIdentityExists():
+        return ERROR('local identity already exist')
     try:
         username = strng.to_text(username)
     except:
         return ERROR('invalid user name')
     if not misc.ValidUserName(username):
         return ERROR('invalid user name')
-    if my_id.isLocalIdentityReady() or my_id.isLocalIdentityExists():
-        return ERROR('local identity already exist')
 
     ret = Deferred()
     my_id_registrator = id_registrator.A()
@@ -432,13 +435,17 @@ def identity_create(username, preferred_servers=[]):
 
 def identity_backup(destination_filepath):
     """
-    Creates local file at `destination_filepath` with a backup copy of your private key.
+    Creates local file at `destination_filepath` on your disk drive with a backup copy of your private key and recent IDURL.
+
     You can use that file to restore identity in case of lost data using `identity_recover()` API method.
 
-    HTTP:
-        curl -X POST 'localhost:8180/identity/backup/v1' -d '{"destination_filepath": "/tmp/"}'
+    WARNING! Make sure to always have a backup copy of your identity secret key in a safe place - there is no other way
+    to restore your data in case of lost.
 
-    WebSocket:
+    ###### HTTP
+        curl -X POST 'localhost:8180/identity/backup/v1' -d '{"destination_filepath": "/tmp/alice_backup.key"}'
+
+    ###### WebSocket
         websocket.send('{"command": "api_call", "method": "identity_backup", "kwargs": {"destination_filepath": "/tmp/alice_backup.key"} }');
     """
     from userid import my_id
@@ -460,15 +467,26 @@ def identity_backup(destination_filepath):
 
 
 def identity_recover(private_key_source, known_idurl=None):
+    """
+    Restores your identity from backup copy.
+
+    Input parameter `private_key_source` must contain your latest IDURL and the private key as openssh formated string.
+
+    ###### HTTP
+        curl -X POST 'localhost:8180/identity/recover/v1' -d '{"private_key_source": "http://some-host.com/alice.xml\n-----BEGIN RSA PRIVATE KEY-----\nMIIEogIBAAKC..."}'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "identity_recover", "kwargs": {"private_key_source": "http://some-host.com/alice.xml\n-----BEGIN RSA PRIVATE KEY-----\nMIIEogIBAAKC..."} }');
+    """
     from userid import my_id
     from userid import id_url
     from userid import id_restorer
-
+    if my_id.isLocalIdentityReady() or my_id.isLocalIdentityExists():
+        return ERROR('local identity already exist')
     if not private_key_source:
         return ERROR('must provide private key in order to recover your identity')
     if len(private_key_source) > 1024 * 10:
         return ERROR('private key is too large')
-
     idurl_list = []
     pk_source = ''
     try:
@@ -518,8 +536,33 @@ def identity_recover(private_key_source, known_idurl=None):
     return ret
 
 
+def identity_erase(erase_private_key=False):
+    """
+    Method will erase current identity file and the private key (optionally).
+    All network services will be stopped first.
+
+    ###### HTTP
+        curl -X DELETE 'localhost:8180/identity/erase/v1' -d '{"erase_private_key": true}'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "identity_erase", "kwargs": {"erase_private_key": true} }');
+    """
+    return ERROR('not implemented yet. please manually stop the application process and erase files inside ".bitdust/metadata/" folder')
+
+
 def identity_rotate():
     """
+    Rotate your identity sources and republish identity file on another ID server even if current ID servers are healthy.
+
+    Normally that procedure is executed automatically when current process detects unhealthy ID server among your identity sources.
+
+    This method is provided for testing and development purposes.
+
+    ###### HTTP
+        curl -X PUT 'localhost:8180/identity/rotate/v1'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "identity_rotate", "kwargs": {} }');
     """
     from userid import my_id
     if not my_id.isLocalIdentityReady():
@@ -549,6 +592,13 @@ def identity_rotate():
 
 def identity_list():
     """
+    Returns list of all cached locally identity files received from other users.
+
+    ###### HTTP
+        curl -X GET 'localhost:8180/identity/list/v1'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "identity_list", "kwargs": {} }');
     """
     from contacts import identitycache
     results = []
@@ -562,23 +612,15 @@ def identity_list():
 
 def key_get(key_id, include_private=False):
     """
-    Returns details of known private key.
-    Use `include_private=True` to get Private Key as openssh formated string.
+    Returns details of the registered public or private key.
 
-    Return:
+    Use `include_private=True` if you also need a private key (as openssh formated string) to be present in the response.
 
-        {'status': 'OK'.
-         'result': [{
-            'alias': 'cool',
-            'creator': 'http://p2p-id.ru/testveselin.xml',
-            'key_id': 'cool$testveselin@p2p-id.ru',
-            'fingerprint': '50:f9:f1:6d:e3:e4:25:61:0c:81:6f:79:24:4e:78:17',
-            'size': '4096',
-            'ssh_type': 'ssh-rsa',
-            'type': 'RSA',
-            'public': 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCPy7AXI0HuQSdmMF...',
-            'private': '-----BEGIN RSA PRIVATE KEY-----\nMIIJKAIBAAKCAgEAj8uw...'
-        }]}
+    ###### HTTP
+        curl -X GET 'localhost:8180/key/get/v1?key_id=abcd1234$alice@server-a.com'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "key_get", "kwargs": {"key_id": "abcd1234$alice@server-a.com"} }');
     """
     if not driver.is_on('service_keys_registry'):
         return ERROR('service_keys_registry() is not started')
@@ -595,33 +637,15 @@ def key_get(key_id, include_private=False):
 
 def keys_list(sort=False, include_private=False):
     """
-    List details for known Private Keys.
-    Use `include_private=True` to get Private Keys as openssh formated strings.
+    List details for all registered public and private keys.
 
-    Return:
-        {'status': 'OK',
-         'result': [{
-             'alias': 'master',
-             'key_id': 'master$veselin@p2p-id.ru',
-             'creator': 'http://p2p-id.ru/veselin.xml',
-             'fingerprint': '60:ce:ea:98:bf:3d:aa:ba:29:1e:b9:0c:3e:5c:3e:32',
-             'size': '2048',
-             'ssh_type': 'ssh-rsa',
-             'type': 'RSA',
-             'public': 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDbpo3VYR5zvLe5...'
-             'private': '-----BEGIN RSA PRIVATE KEY-----\nMIIJKAIBAAKCAgEAj8uw...'
-         }, {
-             'alias': 'another_key01',
-             'label': 'ABC',
-             'key_id': 'another_key01$veselin@p2p-id.ru',
-             'creator': 'http://p2p-id.ru/veselin.xml',
-             'fingerprint': '43:c8:3b:b6:da:3e:8a:3c:48:6f:92:bb:74:b4:05:6b',
-             'size': '4096',
-             'ssh_type': 'ssh-rsa',
-             'type': 'RSA',
-             'public': 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCmgX6j2MwEyY...'
-             'private': '-----BEGIN RSA PRIVATE KEY-----\nMIIJKsdAIBSjfAdfguw...'
-        }]}
+    Use `include_private=True` if you also need a private key (as openssh formated string) to be present in the response.
+
+    ###### HTTP
+        curl -X GET 'localhost:8180/key/list/v1?include_private=1'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "keys_list", "kwargs": {"include_private": 1} }');
     """
     if not driver.is_on('service_keys_registry'):
         return ERROR('service_keys_registry() is not started')
@@ -650,23 +674,20 @@ def keys_list(sort=False, include_private=False):
 
 def key_create(key_alias, key_size=None, label='', include_private=False):
     """
-    Generate new Private Key and add it to the list of known keys with given `key_id`.
+    Generate new RSA private key and add it to the list of registered keys with a new `key_id`.
 
-    Return:
+    Optional input parameter `key_size` can be 1024, 2048, 4096. If `key_size` was not passed, default value will be
+    populated from the `personal/private-key-size` program setting.
 
-        {'status': 'OK',
-         'message': 'new private key "abcd" was generated successfully',
-         'result': [{
-            'alias': 'abcd',
-            'id': 'abcd$veselin@p2p-id.ru',
-            'creator': 'http://p2p-id.ru/veselin.xml',
-            'fingerprint': 'bb:16:97:65:59:23:c2:5d:62:9d:ce:7d:36:73:c6:1f',
-            'size': '4096',
-            'ssh_type': 'ssh-rsa',
-            'type': 'RSA',
-            'public': 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQC8w2MhOPR/IoQ...'
-            'private': '-----BEGIN RSA PRIVATE KEY-----\nMIIJKsdAIBSjfAdfguw...'
-        }]}
+    Parameter `label` can be used to attach some meaningful information for the user to display in the UI.
+
+    Use `include_private=True` if you also need a private key (as openssh formated string) to be present in the response.
+
+    ###### HTTP
+        curl -X POST 'localhost:8180/key/create/v1' -d '{"key_alias": "abcd1234", "key_size": 1024, "label": "Cats and Dogs"}'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "key_create", "kwargs": {"key_alias": "abcd1234", "key_size": 1024, "label": "Cats and Dogs"} }');
     """
     if not driver.is_on('service_keys_registry'):
         return ERROR('service_keys_registry() is not started')
@@ -701,7 +722,13 @@ def key_create(key_alias, key_size=None, label='', include_private=False):
 
 def key_label(key_id, label):
     """
-    Set new label for given key.
+    Set new label for the given key.
+
+    ###### HTTP
+        curl -X POST 'localhost:8180/key/label/v1' -d '{"key_id": "abcd1234$alice@server-a.com", "label": "Man and Woman"}'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "key_label", "kwargs": {"key_id": "abcd1234$alice@server-a.com", "label": "Man and Woman"} }');
     """
     if not driver.is_on('service_keys_registry'):
         return ERROR('service_keys_registry() is not started')
@@ -724,13 +751,13 @@ def key_label(key_id, label):
 
 def key_erase(key_id):
     """
-    Removes Private Key from the list of known keys and erase local file.
+    Unregister and remove given key from the list of known keys and erase local file.
 
-    Return:
+    ###### HTTP
+        curl -X DELETE 'localhost:8180/key/erase/v1' -d '{"key_id": "abcd1234$alice@server-a.com"}'
 
-        {'status': 'OK',
-         'message': 'private key "abcd$veselin@p2p-id.ru" was erased successfully',
-        }
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "key_erase", "kwargs": {"key_id": "abcd1234$alice@server-a.com"} }');
     """
     if not driver.is_on('service_keys_registry'):
         return ERROR('service_keys_registry() is not started')
@@ -742,25 +769,28 @@ def key_erase(key_id):
         return ERROR('"master" key can not be erased')
     key_alias, creator_idurl = my_keys.split_key_id(key_id)
     if not key_alias or not creator_idurl:
-        return ERROR('icorrect key_id format')
+        return ERROR('incorrect key_id format')
     if not my_keys.erase_key(key_id):
         return ERROR('failed to erase private key "%s"' % key_id)
     return OK(message='private key "%s" was erased successfully' % key_id)
 
 
-def key_share(key_id, trusted_global_id_or_idurl, include_private=False, timeout=10):
+def key_share(key_id, trusted_user_id, include_private=False, timeout=10):
     """
-    Connects to remote node and transfer private key to that machine.
-    This way remote user will be able to access those of your files which were encrypted with that private key.
-    You can also share a public key, this way your supplier will know which data packets can be accessed by
-    another customer.
+    Connects to remote user and transfer given public or private key to that node.
+    This way you can share access to files/groups/resources with other users in the network.
 
-    Returns:
+    If you pass `include_private=True` also private part of the key will be shared, otherwise only public part.
 
+    ###### HTTP
+        curl -X PUT 'localhost:8180/key/share/v1' -d '{"key_id": "abcd1234$alice@server-a.com", "trusted_user_id": "bob@machine-b.org"}'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "key_share", "kwargs": {"key_id": "abcd1234$alice@server-a.com", "trusted_user_id": "bob@machine-b.org"} }');
     """
     from userid import global_id
     try:
-        trusted_global_id_or_idurl = strng.to_text(trusted_global_id_or_idurl)
+        trusted_user_id = strng.to_text(trusted_user_id)
         full_key_id = strng.to_text(key_id)
     except:
         return ERROR('error reading input parameters')
@@ -770,8 +800,8 @@ def key_share(key_id, trusted_global_id_or_idurl, include_private=False, timeout
     if glob_id['key_alias'] == 'master':
         return ERROR('"master" key can not be shared')
     if not glob_id['key_alias'] or not glob_id['idurl']:
-        return ERROR('icorrect key_id format')
-    idurl = strng.to_bin(trusted_global_id_or_idurl)
+        return ERROR('incorrect key_id format')
+    idurl = strng.to_bin(trusted_user_id)
     if global_id.IsValidGlobalUser(idurl):
         idurl = global_id.GlobalUserToIDURL(idurl, as_field=False)
     from access import key_ring
@@ -782,18 +812,21 @@ def key_share(key_id, trusted_global_id_or_idurl, include_private=False, timeout
     return ret
 
 
-def key_audit(key_id, untrusted_global_id_or_idurl, is_private=False, timeout=10):
+def key_audit(key_id, untrusted_user_id, is_private=False, timeout=10):
     """
-    Connects to remote node identified by `idurl` parameter and request audit
-    of a public or private key `key_id` on that machine.
-    Returns True in the callback if audit process succeed - that means remote user
-    posses that public or private key.
+    Connects to remote node identified by `untrusted_user_id` parameter and request audit of given public or private key `key_id` on that node.
 
-    Returns:
+    Returns positive result if audit process succeed - that means remote user really possess the key.
+
+    ###### HTTP
+        curl -X POST 'localhost:8180/key/audit/v1' -d '{"key_id": "abcd1234$alice@server-a.com", "untrusted_user_id": "carol@computer-c.net", "is_private": 1}'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "key_audit", "kwargs": {"key_id": "abcd1234$alice@server-a.com", "untrusted_user_id": "carol@computer-c.net", "is_private": 1} }');
     """
     from userid import global_id
     try:
-        untrusted_global_id_or_idurl = strng.to_text(untrusted_global_id_or_idurl)
+        untrusted_user_id = strng.to_text(untrusted_user_id)
         full_key_id = strng.to_text(key_id)
     except:
         return ERROR('error reading input parameters')
@@ -801,11 +834,11 @@ def key_audit(key_id, untrusted_global_id_or_idurl, is_private=False, timeout=10
         return ERROR('service_keys_registry() is not started')
     glob_id = global_id.ParseGlobalID(full_key_id)
     if not glob_id['key_alias'] or not glob_id['idurl']:
-        return ERROR('icorrect key_id format')
-    if global_id.IsValidGlobalUser(untrusted_global_id_or_idurl):
-        idurl = global_id.GlobalUserToIDURL(untrusted_global_id_or_idurl, as_field=False)
+        return ERROR('incorrect key_id format')
+    if global_id.IsValidGlobalUser(untrusted_user_id):
+        idurl = global_id.GlobalUserToIDURL(untrusted_user_id, as_field=False)
     else:
-        idurl = strng.to_bin(untrusted_global_id_or_idurl)
+        idurl = strng.to_bin(untrusted_user_id)
     from access import key_ring
     ret = Deferred()
     if is_private:
@@ -818,56 +851,59 @@ def key_audit(key_id, untrusted_global_id_or_idurl, is_private=False, timeout=10
 
 #------------------------------------------------------------------------------
 
-
-def filemanager(json_request):
-    """
-    A service method to execute calls from GUI front-end and interact with web
-    browser. This is a special "gates" created only for Ajax calls from GUI. It
-    provides same methods as other functions here, but just in a different way.
-
-        Request:
-            {"params":{"mode":"stats"}}
-
-        Response:
-            {'bytes_donated': 8589934592,
-             'bytes_indexed': 43349475,
-             'bytes_needed': 104857600,
-             'bytes_used_supplier': 21738768,
-             'bytes_used_total': 86955072,
-             'customers': 0,
-             'files_count': 5,
-             'folders_count': 0,
-             'items_count': 15,
-             'max_suppliers': 4,
-             'online_suppliers': 0,
-             'suppliers': 4,
-             'timestamp': 1458669668.288339,
-             'value_donated': '8 GB',
-             'value_needed': '100 MB',
-             'value_used_total': '82.93 MB'}
-
-    You can also access those methods with another API "alias": `filemanager_{ mode }({ extra params })`
-
-    WARNING: Those methods here will be deprecated and removed, use regular API methods instead.
-    """
-    if not driver.is_on('service_my_data'):
-        return ERROR('service_my_data() is not started')
-    from storage import filemanager_api
-    return filemanager_api.process(json_request)
+# def filemanager(json_request):
+#     """
+#     Deprecated.
+#     A service method to execute calls from GUI front-end and interact with web
+#     browser. This is a special "gates" created only for Ajax calls from GUI. It
+#     provides same methods as other functions here, but just in a different way.
+# 
+#         Request:
+#             {"params":{"mode":"stats"}}
+# 
+#         Response:
+#             {'bytes_donated': 8589934592,
+#              'bytes_indexed': 43349475,
+#              'bytes_needed': 104857600,
+#              'bytes_used_supplier': 21738768,
+#              'bytes_used_total': 86955072,
+#              'customers': 0,
+#              'files_count': 5,
+#              'folders_count': 0,
+#              'items_count': 15,
+#              'max_suppliers': 4,
+#              'online_suppliers': 0,
+#              'suppliers': 4,
+#              'timestamp': 1458669668.288339,
+#              'value_donated': '8 GB',
+#              'value_needed': '100 MB',
+#              'value_used_total': '82.93 MB'}
+# 
+#     You can also access those methods with another API "alias": `filemanager_{ mode }({ extra params })`
+# 
+#     WARNING: Those methods here will be deprecated and removed, use regular API methods instead.
+#     """
+#     if not driver.is_on('service_my_data'):
+#         return ERROR('service_my_data() is not started')
+#     from storage import filemanager_api
+#     return filemanager_api.process(json_request)
 
 #------------------------------------------------------------------------------
 
-
 def files_sync():
     """
-    Sends "restart" event to backup_monitor() Automat, this should start "data
-    synchronization" process with remote nodes. Normally all situations
-    should be handled automatically so you wont run this method manually,
-    but just in case.
+    This should re-start "data synchronization" process with your remote suppliers.
 
-    Return:
+    Normally all communications and synchronizations are handled automatically, so you do not need to
+    call that method.
 
-        {'status': 'OK', 'result': 'the main files sync loop has been restarted'}
+    This method is provided for testing and development purposes.
+
+    ###### HTTP
+        curl -X GET 'localhost:8180/file/sync/v1'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "files_sync", "kwargs": {} }');
     """
     if not driver.is_on('service_backups'):
         return ERROR('service_backups() is not started')
@@ -885,41 +921,19 @@ def files_list(remote_path=None, key_id=None, recursive=True, all_customers=Fals
     """
     Returns list of known files registered in the catalog under given `remote_path` folder.
     By default returns items from root of the catalog.
+
     If `key_id` is passed will only return items encrypted using that key.
 
-    Return:
-        { u'execution': u'0.001040',
-          u'result': [
-                       { u'childs': False,
-                         u'customer': u'veselin@veselin-p2p.ru',
-                         u'remote_path': u'master$veselin@veselin-p2p.ru:cats.png',
-                         u'global_id': u'master$veselin@veselin-p2p.ru:1',
-                         u'idurl': u'http://veselin-p2p.ru/veselin.xml',
-                         u'key_id': u'master$veselin@veselin-p2p.ru',
-                         u'latest': u'',
-                         u'local_size': -1,
-                         u'name': u'cats.png',
-                         u'path': u'cats.png',
-                         u'path_id': u'1',
-                         u'size': 0,
-                         u'type': u'file',
-                         u'versions': []},
-                       { u'childs': False,
-                         u'customer': u'veselin@veselin-p2p.ru',
-                         u'remote_path': u'master$veselin@veselin-p2p.ru:dogs.jpg',
-                         u'global_id': u'master$veselin@veselin-p2p.ru:2',
-                         u'idurl': u'http://veselin-p2p.ru/veselin.xml',
-                         u'key_id': u'master$veselin@veselin-p2p.ru',
-                         u'latest': u'',
-                         u'local_size': 345418,
-                         u'name': u'dogs.jpg',
-                         u'path': u'dogs.jpg',
-                         u'path_id': u'2',
-                         u'size': 0,
-                         u'type': u'file',
-                         u'versions': []},
-                      ],
-          u'status': u'OK'}
+    Use `all_customers=True` to get list of all registered files - including received/shared to you by another user.
+
+    You can also use `include_uploads` and `include_downloads` parameters to get more info about currently running
+    uploads and downloads.
+
+    ###### HTTP
+        curl -X GET 'localhost:8180/file/list/v1?remote_path=abcd1234$alice@server-a.com:pictures/cats/'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "files_list", "kwargs": {"remote_path": "abcd1234$alice@server-a.com:pictures/cats/"} }');
     """
     if not driver.is_on('service_backup_db'):
         return ERROR('service_backup_db() is not started')
@@ -1068,6 +1082,13 @@ def files_list(remote_path=None, key_id=None, recursive=True, all_customers=Fals
 
 def file_exists(remote_path):
     """
+    Returns positive result if file or folder with such `remote_path` already exists in the catalog.
+
+    ###### HTTP
+        curl -X GET 'localhost:8180/file/exists/v1?remote_path=abcd1234$alice@server-a.com:pictures/cats/pussy.png'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "file_exists", "kwargs": {"remote_path": "abcd1234$alice@server-a.com:pictures/cats/pussy.png"} }');
     """
     if not driver.is_on('service_backup_db'):
         return ERROR('service_backup_db() is not started')
@@ -1093,6 +1114,16 @@ def file_exists(remote_path):
 
 def file_info(remote_path, include_uploads=True, include_downloads=True):
     """
+    Returns detailed info about given file or folder in the catalog.
+
+    You can also use `include_uploads` and `include_downloads` parameters to get more info about currently running
+    uploads and downloads.
+
+    ###### HTTP
+        curl -X GET 'localhost:8180/file/info/v1?remote_path=abcd1234$alice@server-a.com:pictures/dogs/bobby.jpeg'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "file_info", "kwargs": {"remote_path": "abcd1234$alice@server-a.com:pictures/dogs/bobby.jpeg"} }');
     """
     if not driver.is_on('service_backup_db'):
         return ERROR('service_backup_db() is not started')
@@ -1207,6 +1238,17 @@ def file_info(remote_path, include_uploads=True, include_downloads=True):
 
 def file_create(remote_path, as_folder=False, exist_ok=False, force_path_id=None):
     """
+    Creates new file in the catalog, but do not upload any data to the network yet.
+
+    This method only creates a "virtual ID" for the new data.
+
+    Pass `as_folder=True` to create a virtual folder instead of a file.
+
+    ###### HTTP
+        curl -X POST 'localhost:8180/file/create/v1?remote_path=abcd1234$alice@server-a.com:movies/travels/safari.mpg'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "file_create", "kwargs": {"remote_path": "abcd1234$alice@server-a.com:movies/travels/safari.mpg"} }');
     """
     if not driver.is_on('service_backup_db'):
         return ERROR('service_backup_db() is not started')
@@ -1302,6 +1344,13 @@ def file_create(remote_path, as_folder=False, exist_ok=False, force_path_id=None
 
 def file_delete(remote_path):
     """
+    Removes virtual file or folder from the catalog and also notifies your remote suppliers to clean up corresponding uploaded data.
+
+    ###### HTTP
+        curl -X POST 'localhost:8180/file/delete/v1?remote_path=abcd1234$alice@server-a.com:cars/ferrari.gif'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "file_delete", "kwargs": {"remote_path": "abcd1234$alice@server-a.com:cars/ferrari.gif"} }');
     """
     if not driver.is_on('service_backup_db'):
         return ERROR('service_backup_db() is not started')
@@ -1351,37 +1400,13 @@ def file_delete(remote_path):
 
 def files_uploads(include_running=True, include_pending=True):
     """
-    Returns a list of currently running uploads and
-    list of pending items to be uploaded.
+    Returns a list of currently running uploads and list of pending items to be uploaded.
 
-    Return:
+    ###### HTTP
+        curl -X GET 'localhost:8180/file/upload/v1'
 
-        { 'status': 'OK',
-          'result': {
-            'running': [{
-                'aborting': False,
-                'version': '0/0/3/1/F20160424013912PM',
-                'block_number': 4,
-                'block_size': 16777216,
-                'bytes_processed': 67108864,
-                'closed': False,
-                'eccmap': 'ecc/4x4',
-                'eof_state': False,
-                'pipe': 0,
-                'progress': 75.0142815704418,
-                'reading': False,
-                'source_path': '/Users/veselin/Downloads/some-ZIP-file.zip',
-                'terminating': False,
-                'total_size': 89461450,
-                'work_blocks': 4
-            }],
-            'pending': [{
-                'created': 'Wed Apr 27 15:11:13 2016',
-                'id': 3,
-                'source_path': '/Users/veselin/Downloads/another-ZIP-file.zip',
-                'path_id': '0/0/3/2'
-            }]
-        }
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "files_uploads", "kwargs": {} }');
     """
     if not driver.is_on('service_backups'):
         return ERROR('service_backups() is not started')
@@ -1423,6 +1448,19 @@ def files_uploads(include_running=True, include_pending=True):
 
 def file_upload_start(local_path, remote_path, wait_result=False, open_share=False):
     """
+    Starts a new file or folder (including all sub-folders and files) upload from `local_path` on your disk drive
+    to the virtual location `remote_path` in the catalog. New "version" of the data will be created for given catalog item
+    and uploading task started.
+
+    You can use `wait_result=True` to block the response from that method until uploading finishes or fails (makes no sense for large uploads).
+
+    Parameter `open_share` can be useful if you uploading data into a "shared" virtual path using another key that shared to you.
+
+    ###### HTTP
+        curl -X POST 'localhost:8180/file/upload/start/v1' -d '{"remote_path": "abcd1234$alice@server-a.com:cars/fiat.jpeg", "local_path": "/tmp/fiat.jpeg"}'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "file_upload_start", "kwargs": {"remote_path": "abcd1234$alice@server-a.com:cars/fiat.jpeg", "local_path": "/tmp/fiat.jpeg"} }');
     """
     if not driver.is_on('service_backups'):
         return ERROR('service_backups() is not started')
@@ -1518,6 +1556,9 @@ def file_upload_start(local_path, remote_path, wait_result=False, open_share=Fal
 
 def file_upload_stop(remote_path):
     """
+    Useful method if you need to cancel already running uploading task.
+
+    
     """
     if not driver.is_on('service_backups'):
         return ERROR('service_backups() is not started')

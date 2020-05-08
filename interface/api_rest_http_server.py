@@ -411,12 +411,6 @@ class BitDustRESTHTTPServer(JsonAPIResource):
 
     #------------------------------------------------------------------------------
 
-    @GET('^/i/l$')
-    @GET('^/v1/identity/list$')
-    @GET('^/identity/list/v1$')
-    def identity_list_v1(self, request):
-        return api.identity_list()
-
     @GET('^/i/g$')
     @GET('^/v1/identity/get$')
     @GET('^/identity/get/v1$')
@@ -456,13 +450,13 @@ class BitDustRESTHTTPServer(JsonAPIResource):
         )
 
     @DELETE('^/i/d$')
-    @DELETE('^/v1/identity/delete$')
     @DELETE('^/v1/identity/erase$')
-    @DELETE('^/identity/delete/v1$')
     @DELETE('^/identity/erase/v1$')
-    def identity_delete_v1(self, request):
-        # TODO: to be implemented
-        return api.ERROR('not implemented yet')
+    def identity_erase_v1(self, request):
+        data = _request_data(request)
+        return api.identity_erase(
+            erase_private_key=data.get('erase_private_key', False),
+        )
 
     @PUT('^/i/rot$')
     @PUT('^/v1/identity/rotate$')
@@ -475,6 +469,12 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @PUT('^/identity/heal/v1$')
     def identity_heal_v1(self, request):
         return api.ERROR('not implemented yet')
+
+    @GET('^/i/l$')
+    @GET('^/v1/identity/list$')
+    @GET('^/identity/list/v1$')
+    def identity_list_v1(self, request):
+        return api.identity_list()
 
     #------------------------------------------------------------------------------
 
@@ -519,9 +519,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
         )
 
     @DELETE('^/k/d$')
-    @DELETE('^/v1/key/delete$')
     @DELETE('^/v1/key/erase$')
-    @DELETE('^/key/delete/v1$')
     @DELETE('^/key/erase/v1$')
     def key_erase_v1(self, request):
         data = _request_data(request, mandatory_keys=['key_id', ])
@@ -531,24 +529,30 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @PUT('^/v1/key/share$')
     @PUT('^/key/share/v1$')
     def key_share_v1(self, request):
-        data = _request_data(request, mandatory_keys=['key_id', 'trusted_user', ])
+        data = _request_data(request, mandatory_keys=['key_id', 'trusted_user_id', ])
         return api.key_share(
             key_id=data['key_id'],
-            trusted_global_id_or_idurl=data['trusted_user'],
+            trusted_user_id=data['trusted_user_id'],
             include_private=bool(data.get('include_private', '0') in ['1', 'true', ]), )
 
     @POST('^/k/a$')
     @POST('^/v1/key/audit$')
     @POST('^/key/audit/v1$')
     def key_audit_v1(self, request):
-        data = _request_data(request, mandatory_keys=['key_id', 'untrusted_user', ])
+        data = _request_data(request, mandatory_keys=['key_id', 'untrusted_user_id', ])
         return api.key_audit(
             key_id=data['key_id'],
-            untrusted_global_id_or_idurl=data['untrusted_user'],
+            untrusted_user_id_id=data['untrusted_user_id'],
             is_private=bool(data.get('is_private', '0') in ['1', 'true', ]),
         )
 
     #------------------------------------------------------------------------------
+
+    @GET('^/f/s$')
+    @GET('^/v1/file/sync$')
+    @GET('^/file/sync/v1$')
+    def file_sync_v1(self, request):
+        return api.files_sync()
 
     @GET('^/f/l$')
     @GET('^/v1/file/list$')
@@ -584,12 +588,6 @@ class BitDustRESTHTTPServer(JsonAPIResource):
             include_uploads=bool(_request_arg(request, 'uploads', '1') in ['1', 'true', ]),
             include_downloads=bool(_request_arg(request, 'downloads', '1') in ['1', 'true', ]),
         )
-
-    @GET('^/f/s$')
-    @GET('^/v1/file/sync$')
-    @GET('^/file/sync/v1$')
-    def file_sync_v1(self, request):
-        return api.files_sync()
 
     @POST('^/f/c$')
     @POST('^/v1/file/create$')

@@ -128,29 +128,30 @@ class BitDustJsonRPCServer(JSONRPCServer):
         return result
 
     def _catch_filemanager_methods(self, request_dict):
-        if not request_dict['method'].startswith('filemanager_'):
-            return None
-        try:
-            fm_method = request_dict['method'].replace('filemanager_', '')
-            fm_request = {}
-            params = [] if 'params' not in request_dict else request_dict['params']
-            fm_request['params'] = {
-                i[0]: i[1] for i in [p.split("=", 1) for p in params]}
-            fm_request['params']['mode'] = fm_method
-            request_dict = {'_executed': time.time(), }
-        except Exception as exc:
-            lg.exc()
-            return api.ERROR(exc.message)
-        try:
-            fm_result = api.filemanager(fm_request)
-            if isinstance(fm_result, Deferred):
-                fm_result.addCallback(self._convert_filemanager_response)
-            else:
-                fm_result = self._convert_filemanager_response(fm_result)
-        except Exception as exc:
-            lg.exc()
-            fm_result = api.ERROR(exc.message)
-        return fm_result
+        return None
+#         if not request_dict['method'].startswith('filemanager_'):
+#             return None
+#         try:
+#             fm_method = request_dict['method'].replace('filemanager_', '')
+#             fm_request = {}
+#             params = [] if 'params' not in request_dict else request_dict['params']
+#             fm_request['params'] = {
+#                 i[0]: i[1] for i in [p.split("=", 1) for p in params]}
+#             fm_request['params']['mode'] = fm_method
+#             request_dict = {'_executed': time.time(), }
+#         except Exception as exc:
+#             lg.exc()
+#             return api.ERROR(exc.message)
+#         try:
+#             fm_result = api.filemanager(fm_request)
+#             if isinstance(fm_result, Deferred):
+#                 fm_result.addCallback(self._convert_filemanager_response)
+#             else:
+#                 fm_result = self._convert_filemanager_response(fm_result)
+#         except Exception as exc:
+#             lg.exc()
+#             fm_result = api.ERROR(exc.message)
+#         return fm_result
 
     def _callMethod(self, request_dict):
         if _Debug:
@@ -181,11 +182,11 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_restart(self, show=False):
         return api.process_restart(show)
 
-    def jsonrpc_show(self):
-        return api.process_show()
+    # def jsonrpc_show(self):
+    #     return api.process_show()
 
-    def jsonrpc_filemanager(self, json_request):
-        return api.filemanager(json_request)
+    # def jsonrpc_filemanager(self, json_request):
+    #     return api.filemanager(json_request)
 
     def jsonrpc_config_list(self, sort=False):
         return api.config_list(sort)
@@ -217,12 +218,12 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_key_erase(self, key_id):
         return api.key_erase(key_id)
 
-    def jsonrpc_key_share(self, key_id, trusted_global_id_or_idurl, include_private=False, timeout=10):
-        return api.key_share(key_id=key_id, trusted_global_id_or_idurl=trusted_global_id_or_idurl,
+    def jsonrpc_key_share(self, key_id, trusted_user_id, include_private=False, timeout=10):
+        return api.key_share(key_id=key_id, trusted_user_id=trusted_user_id,
                              include_private=include_private, timeout=timeout)
 
-    def jsonrpc_key_audit(self, key_id, untrusted_global_id_or_idurl, is_private=False, timeout=10):
-        return api.key_audit(key_id=key_id, untrusted_global_id_or_idurl=untrusted_global_id_or_idurl,
+    def jsonrpc_key_audit(self, key_id, untrusted_user_id, is_private=False, timeout=10):
+        return api.key_audit(key_id=key_id, untrusted_user_id=untrusted_user_id,
                              is_private=is_private, timeout=timeout)
 
     def jsonrpc_files_sync(self):
@@ -423,4 +424,4 @@ class BitDustJsonRPCServer(JSONRPCServer):
 if __name__ == "__main__":
     lg.set_debug_level(20)
     init()
-    reactor.run()
+    reactor.run()  # @UndefinedVariable
