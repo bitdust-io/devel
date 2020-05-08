@@ -1245,7 +1245,7 @@ def file_create(remote_path, as_folder=False, exist_ok=False, force_path_id=None
     Pass `as_folder=True` to create a virtual folder instead of a file.
 
     ###### HTTP
-        curl -X POST 'localhost:8180/file/create/v1?remote_path=abcd1234$alice@server-a.com:movies/travels/safari.mpg'
+        curl -X POST 'localhost:8180/file/create/v1' -d '{"remote_path": "abcd1234$alice@server-a.com:movies/travels/safari.mpg"}'
 
     ###### WebSocket
         websocket.send('{"command": "api_call", "method": "file_create", "kwargs": {"remote_path": "abcd1234$alice@server-a.com:movies/travels/safari.mpg"} }');
@@ -1347,7 +1347,7 @@ def file_delete(remote_path):
     Removes virtual file or folder from the catalog and also notifies your remote suppliers to clean up corresponding uploaded data.
 
     ###### HTTP
-        curl -X POST 'localhost:8180/file/delete/v1?remote_path=abcd1234$alice@server-a.com:cars/ferrari.gif'
+        curl -X POST 'localhost:8180/file/delete/v1' -d '{"remote_path": "abcd1234$alice@server-a.com:cars/ferrari.gif"}'
 
     ###### WebSocket
         websocket.send('{"command": "api_call", "method": "file_delete", "kwargs": {"remote_path": "abcd1234$alice@server-a.com:cars/ferrari.gif"} }');
@@ -1556,9 +1556,13 @@ def file_upload_start(local_path, remote_path, wait_result=False, open_share=Fal
 
 def file_upload_stop(remote_path):
     """
-    Useful method if you need to cancel already running uploading task.
+    Useful method if you need to interrupt and cancel already running uploading task.
 
-    
+    ###### HTTP
+        curl -X POST 'localhost:8180/file/upload/stop/v1' -d '{"remote_path": "abcd1234$alice@server-a.com:cars/fiat.jpeg"}'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "file_upload_stop", "kwargs": {"remote_path": "abcd1234$alice@server-a.com:cars/fiat.jpeg"} }');
     """
     if not driver.is_on('service_backups'):
         return ERROR('service_backups() is not started')
@@ -1597,24 +1601,13 @@ def file_upload_stop(remote_path):
 
 def files_downloads():
     """
-    Returns a list of currently running downloads.
+    Returns a list of currently running downloading tasks.
 
-    Return:
+    ###### HTTP
+        curl -X GET 'localhost:8180/file/download/v1'
 
-        {'status': 'OK',
-         'result': [{
-            'aborted': False,
-            'backup_id': '0/0/3/1/F20160427011209PM',
-            'block_number': 0,
-            'bytes_processed': 0,
-            'creator_id': 'http://veselin-p2p.ru/veselin.xml',
-            'done': False,
-            'key_id': 'abc$veselin@veselin-p2p.ru',
-            'created': 'Wed Apr 27 15:11:13 2016',
-            'eccmap': 'ecc/4x4',
-            'path_id': '0/0/3/1',
-            'version': 'F20160427011209PM'
-        }]}
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "files_downloads", "kwargs": {} }');
     """
     if not driver.is_on('service_backups'):
         return ERROR('service_backups() is not started')
@@ -1639,21 +1632,26 @@ def files_downloads():
 
 def file_download_start(remote_path, destination_path=None, wait_result=False, open_share=True):
     """
-    Download data from remote suppliers to your local machine. You can use
-    different methods to select the target data with `remote_path` input:
+    Download data from remote suppliers to your local machine.
 
-      + "remote path" of the file
-      + item ID in the catalog
-      + full version identifier with item ID
+    You can use different methods to select the target data with `remote_path` input:
+
+      + "virtual" path of the file
+      + internal path ID in the catalog
+      + full data version identifier with path ID and version name
 
     It is possible to select the destination folder to extract requested files to.
-    By default this method uses specified value from local settings or user home folder
+    By default this method uses specified value from `paths/restore` program setting or user home folder.
 
-    WARNING: Your existing local data will be overwritten!
+    You can use `wait_result=True` to block the response from that method until downloading finishes or fails (makes no sense for large files).
 
-    Return:
+    WARNING! Your existing local data in `destination_path` will be overwritten!
 
-        {'status': 'OK', 'result': 'downloading of version 0/0/1/1/0/F20160313043419PM has been started to /Users/veselin/'}
+    ###### HTTP
+        curl -X POST 'localhost:8180/file/download/start/v1' -d '{"remote_path": "abcd1234$alice@server-a.com:movies/back_to_the_future.mpg", "local_path": "/tmp/films/"}'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "file_download_start", "kwargs": {"remote_path": "abcd1234$alice@server-a.com:movies/back_to_the_future.mpg", "local_path": "/tmp/films/"} }');
     """
     if not driver.is_on('service_restores'):
         return ERROR('service_restores() is not started')
@@ -1851,9 +1849,11 @@ def file_download_stop(remote_path):
     """
     Abort currently running restore process.
 
-    Return:
+    ###### HTTP
+        curl -X POST 'localhost:8180/file/download/stop/v1' -d '{"remote_path": "abcd1234$alice@server-a.com:cars/fiat.jpeg"}'
 
-        {'status': 'OK', 'result': 'restoring of "alice@p2p-host.com:0/1/2" aborted'}
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "file_download_stop", "kwargs": {"remote_path": "abcd1234$alice@server-a.com:cars/fiat.jpeg"} }');
     """
     if not driver.is_on('service_restores'):
         return ERROR('service_restores() is not started')
@@ -1910,6 +1910,16 @@ def file_download_stop(remote_path):
 
 def file_explore(local_path):
     """
+    Useful method to be executed from the UI right after downloading is finished.
+
+    It will open default OS file manager and display
+    given `local_path` to the user so he can do something with the file.
+
+    ###### HTTP
+        curl -X GET 'localhost:8180/file/explore/v1?local_path=/tmp/movies/back_to_the_future.mpg'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "file_explore", "kwargs": {"local_path": "/tmp/movies/back_to_the_future.mpg"} }');
     """
     from lib import misc
     from system import bpio
