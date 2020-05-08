@@ -65,7 +65,7 @@ from interface import api
 #------------------------------------------------------------------------------
 
 _WebSocketListener = None
-_WebSocketTransport = None
+_WebSocketTransports = {}
 _AllAPIMethods = []
 _APISecret = None
 
@@ -94,7 +94,7 @@ def init(port=None):
         'strng', 'sys', 'time', 'gc', 'map', 'os',
         '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__spec__',
         'absolute_import', 'driver', 'filemanager', 'jsn', 'lg',
-        'event_listen', 'message_receive', 'process_debug', 
+        'event_listen', 'message_receive',
     ])
     if _Debug:
         lg.out(_DebugLevel, 'api_web_socket.init  _WebSocketListener=%r with %d methods' % (
@@ -148,6 +148,8 @@ class BitDistWrappedWebSocketFactory(txws.WebSocketFactory):
 
 class BitDustWebSocketProtocol(Protocol):
 
+    _key = None
+
     def dataReceived(self, data):
         try:
             json_data = serialization.BytesToDict(data, keys_to_text=True, values_to_text=True)
@@ -160,17 +162,25 @@ class BitDustWebSocketProtocol(Protocol):
             lg.warn('failed processing incoming message from web socket: %r' % json_data)
 
     def connectionMade(self):
+        global _WebSocketTransports
         Protocol.connectionMade(self)
-        global _WebSocketTransport
-        _WebSocketTransport = self.transport
-        peer = _WebSocketTransport.getPeer()
-        events.send('web-socket-connected', data=dict(peer='%s://%s:%s' % (peer.type, peer.host, peer.port)))
+        peer = self.transport.getPeer()
+        self._key = (peer.type, peer.host, peer.port, )
+        peer = '%s://%s:%s' % (self._key[0], self._key[1], self._key[2])
+        _WebSocketTransports[self._key] = self.transport
+        if _Debug:
+            lg.args(_DebugLevel, key=self._key, ws_connections=len(_WebSocketTransports))
+        events.send('web-socket-connected', data=dict(peer=peer))
 
     def connectionLost(self, *args, **kwargs):
+        global _WebSocketTransports
+        if _Debug:
+            lg.args(_DebugLevel, key=self._key, ws_connections=len(_WebSocketTransports))
         Protocol.connectionLost(self, *args, **kwargs)
-        global _WebSocketTransport
-        _WebSocketTransport = None
-        events.send('web-socket-disconnected', data=dict())
+        _WebSocketTransports.pop(self._key)
+        peer = '%s://%s:%s' % (self._key[0], self._key[1], self._key[2])
+        self._key = None
+        events.send('web-socket-disconnected', data=dict(peer=peer))
 
 #------------------------------------------------------------------------------
 
@@ -182,10 +192,10 @@ class BitDustWebSocketFactory(Factory):
         """
         Only accepting connections from local machine!
         """
-        global _WebSocketTransport
-        if _WebSocketTransport:
-            lg.warn('refused connection to web socket - another connection already made')
-            return None
+        global _WebSocketTransports
+        # if _WebSocketTransports:
+        #     lg.warn('refused connection to web socket - another connection already made')
+        #     return None
         if addr.host != '127.0.0.1':
             lg.err('refused connection from remote host: %r' % addr.host)
             return None
@@ -294,13 +304,15 @@ def on_online_status_changed(status_info):
 #------------------------------------------------------------------------------
 
 def push(json_data):
-    global _WebSocketTransport
-    if not _WebSocketTransport:
+    global _WebSocketTransports
+    if not _WebSocketTransports:
         return False
     raw_bytes = serialization.DictToBytes(json_data)
-    _WebSocketTransport.write(raw_bytes)
-    if _Debug:
-        lg.dbg(_DebugLevel, 'sent %d bytes to web socket: %r' % (len(raw_bytes), json_data))
+    for _key, transp in _WebSocketTransports.items():
+        transp.write(raw_bytes)
+        if _Debug:
+            lg.dbg(_DebugLevel, 'sent %d bytes to web socket %s: %r' % (
+                len(raw_bytes), '%s://%s:%s' % (_key[0], _key[1], _key[2]), json_data))
     if _Debug:
         lg.out(0, '***   API WS PUSH  %d bytes : %r' % (len(json_data), json_data, ))
     if _APILogFileEnabled:

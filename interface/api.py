@@ -193,9 +193,11 @@ def process_stop():
     """
     Stop the main process immediately.
 
-    Return:
+    HTTP:
+        curl -X GET 'localhost:8180/process/stop/v1'
 
-        {'status': 'OK', 'result': 'stopped'}
+    WebSocket:
+        websocket.send('{"command": "api_call", "method": "process_stop", "kwargs": {} }');
     """
     if _Debug:
         lg.out(_DebugLevel, 'api.process_stop sending event "stop" to the shutdowner() machine')
@@ -205,22 +207,23 @@ def process_stop():
     return OK('stopped')
 
 
-def process_restart(showgui=False):
+def process_restart():
     """
-    Restart the main process, if flag show=True the GUI will be opened after
-    restart.
+    Restart the main process.
 
-    Return:
+    HTTP:
+        curl -X GET 'localhost:8180/process/restart/v1'
 
-        {'status': 'OK', 'result': {'restarted': True}}
+    WebSocket:
+        websocket.send('{"command": "api_call", "method": "process_restart", "kwargs": {} }');
     """
     from main import shutdowner
-    if showgui:
-        if _Debug:
-            lg.out(_DebugLevel, 'api.process_restart sending event "stop" to the shutdowner() machine')
-        reactor.callLater(0.1, shutdowner.A, 'stop', 'restartnshow')  # @UndefinedVariable
-        # shutdowner.A('stop', 'restartnshow')
-        return OK({'restarted': True, 'show_gui': True, })
+    # if showgui:
+    #     if _Debug:
+    #         lg.out(_DebugLevel, 'api.process_restart sending event "stop" to the shutdowner() machine')
+    #     reactor.callLater(0.1, shutdowner.A, 'stop', 'restartnshow')  # @UndefinedVariable
+    #     # shutdowner.A('stop', 'restartnshow')
+    #     return OK({'restarted': True, 'show_gui': True, })
     if _Debug:
         lg.out(_DebugLevel, 'api.process_restart sending event "stop" to the shutdowner() machine')
     # shutdowner.A('stop', 'restart')
@@ -228,37 +231,33 @@ def process_restart(showgui=False):
     return OK({'restarted': True, })
 
 
-def process_show():
-    """
-    Deprecated.
-    Opens a default web browser to show the BitDust GUI.
-
-    Return:
-
-        {'status': 'OK',   'result': '"show" event has been sent to the main process'}
-    """
-    if _Debug:
-        lg.out(_DebugLevel, 'api.process_show')
-    # TODO: raise up electron window ?
-    return OK('"show" event has been sent to the main process')
-
-
 def process_health():
     """
-    Returns true if system is running 
+    Returns true if engine process is running. This method suppose to be used for health checks.
 
-    Return:
+    HTTP:
+        curl -X GET 'localhost:8180/process/health/v1'
 
-        {'status': 'OK' }
+    WebSocket:
+        websocket.send('{"command": "api_call", "method": "process_health", "kwargs": {} }');
     """
-    if _Debug:
-        lg.out(_DebugLevel + 10, 'api.process_health')
+    # if _Debug:
+    #     lg.out(_DebugLevel + 10, 'api.process_health')
     return OK()
 
 
 def process_debug():
     """
     Execute a breakpoint inside main thread and start Python shell using standard `pdb.set_trace()` debugger.
+    This is only useful if you already executed the BitDust engine manually via shell console and would like
+    to interrupt it and investigate something. This call will block the main process and it will stop responding
+    to any API calls.
+
+    HTTP:
+        curl -X GET 'localhost:8180/process/debug/v1'
+
+    WebSocket:
+        websocket.send('{"command": "api_call", "method": "process_debug", "kwargs": {} }');
     """
     import pdb
     pdb.set_trace()
@@ -268,11 +267,13 @@ def process_debug():
 
 def config_get(key):
     """
-    Returns current value for specific option from program settings.
+    Returns current key/value from the program settings.
 
-    Return:
+    HTTP:
+        curl -X GET 'localhost:8180/config/get/v1?key=logs/debug-level'
 
-        {'status': 'OK',   'result': [{'type': 'positive integer', 'value': '8', 'key': 'logs/debug-level'}]}
+    WebSocket:
+        websocket.send('{"command": "api_call", "method": "config_get", "kwargs": {"key": "logs/debug-level"} }');
     """
     try:
         key = strng.to_text(key).strip('/')
@@ -299,11 +300,13 @@ def config_get(key):
 
 def config_set(key, value):
     """
-    Set a value for given option.
+    Set a value for given key option.
 
-    Return:
+    HTTP:
+        curl -X POST 'localhost:8180/config/set/v1' -d '{"key": "logs/debug-level", "value": 12}'
 
-        {'status': 'OK', 'result': [{'type': 'positive integer', 'old_value': '8', 'value': '10', 'key': 'logs/debug-level'}]}
+    WebSocket:
+        websocket.send('{"command": "api_call", "method": "config_set", "kwargs": {"key": "logs/debug-level", "value": 12} }');
     """
     key = strng.to_text(key)
     v = {}
@@ -319,24 +322,13 @@ def config_set(key, value):
 
 def config_list(sort=False):
     """
-    Provide detailed info about all options and values from settings.
+    Provide detailed info about all program settings.
 
-    Return:
+    HTTP:
+        curl -X GET 'localhost:8180/config/list/v1'
 
-        {'status': 'OK',
-         'result': [{
-            'type': 'boolean',
-            'value': 'true',
-            'key': 'services/backups/enabled'
-         }, {
-            'type': 'boolean',
-            'value': 'false',
-            'key': 'services/backups/keep-local-copies-enabled'
-         }, {
-            'type': 'diskspace',
-            'value': '128 MB',
-            'key': 'services/backups/max-block-size'
-        }]}
+    WebSocket:
+        websocket.send('{"command": "api_call", "method": "config_list", "kwargs": {} }');
     """
     if _Debug:
         lg.out(_DebugLevel, 'api.config_list')
@@ -349,7 +341,13 @@ def config_list(sort=False):
 
 def config_tree():
     """
-    Returns all options as a tree.
+    Returns all options as a tree structure, can be more suitable for UI operations.
+
+    HTTP:
+        curl -X GET 'localhost:8180/config/tree/v1'
+
+    WebSocket:
+        websocket.send('{"command": "api_call", "method": "config_tree", "kwargs": {} }');
     """
     if _Debug:
         lg.out(_DebugLevel, 'api.config_list')
@@ -367,6 +365,13 @@ def config_tree():
 
 def identity_get(include_xml_source=False):
     """
+    Returns your identity info.
+
+    HTTP:
+        curl -X GET 'localhost:8180/identity/get/v1'
+
+    WebSocket:
+        websocket.send('{"command": "api_call", "method": "identity_get", "kwargs": {} }');
     """
     from userid import my_id
     if not my_id.isLocalIdentityReady():
@@ -378,6 +383,16 @@ def identity_get(include_xml_source=False):
 
 
 def identity_create(username, preferred_servers=[]):
+    """
+    Generates new private key and creates new identity for you to be able to communicate with other nodes in the network.
+    Parameter `username` defines filename of the identity.
+
+    HTTP:
+        curl -X POST 'localhost:8180/identity/create/v1' -d '{"username": "alice"}'
+
+    WebSocket:
+        websocket.send('{"command": "api_call", "method": "identity_create", "kwargs": {"username": "alice"} }');
+    """
     from lib import misc
     from userid import my_id
     from userid import id_registrator
@@ -387,6 +402,8 @@ def identity_create(username, preferred_servers=[]):
         return ERROR('invalid user name')
     if not misc.ValidUserName(username):
         return ERROR('invalid user name')
+    if my_id.isLocalIdentityReady() or my_id.isLocalIdentityExists():
+        return ERROR('local identity already exist')
 
     ret = Deferred()
     my_id_registrator = id_registrator.A()
@@ -414,6 +431,16 @@ def identity_create(username, preferred_servers=[]):
 
 
 def identity_backup(destination_filepath):
+    """
+    Creates local file at `destination_filepath` with a backup copy of your private key.
+    You can use that file to restore identity in case of lost data using `identity_recover()` API method.
+
+    HTTP:
+        curl -X POST 'localhost:8180/identity/backup/v1' -d '{"destination_filepath": "/tmp/"}'
+
+    WebSocket:
+        websocket.send('{"command": "api_call", "method": "identity_backup", "kwargs": {"destination_filepath": "/tmp/alice_backup.key"} }');
+    """
     from userid import my_id
     from crypt import key
     from system import bpio

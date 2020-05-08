@@ -328,14 +328,8 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @GET('^/v1/process/restart$')
     @GET('^/process/restart/v1$')
     def process_restart_v1(self, request):
-        return api.process_restart(showgui=bool(request.args.get('showgui')))
+        return api.process_restart()  # showgui=bool(request.args.get('showgui')))
 
-    @GET('^/p/s$')
-    @GET('^/v1/process/show$')
-    @GET('^/process/show/v1$')
-    def process_show_v1(self, request):
-        return api.process_show()
-    
     @GET('^/p/h$')
     @GET('^/v1/process/health$')
     @GET('^/process/health/v1$')
@@ -345,7 +339,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @GET('^/p/d$')
     @GET('^/v1/process/debug$')
     @GET('^/process/debug/v1$')
-    def process_shell_v1(self, request):
+    def process_debug_v1(self, request):
         return api.process_debug()
 
     #------------------------------------------------------------------------------
