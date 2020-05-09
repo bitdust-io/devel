@@ -2660,6 +2660,395 @@ def friend_remove(user_id):
 
 #------------------------------------------------------------------------------
 
+def user_ping(idurl_or_global_id, timeout=15, retries=2):
+    """
+    Sends Identity packet to remote peer and wait for Ack packet to check connection status.
+    The "ping" command performs following actions:
+      1. Request remote identity source by idurl,
+      2. Sends my Identity to remote contact addresses, taken from identity,
+      3. Wait first Ack packet from remote peer,
+      4. Failed by timeout or identity fetching error.
+    You can use this method to check and be sure that remote node is alive at the moment.
+    Return:
+        {'status': 'OK', 'result': '(signed.Packet[Ack(Identity) bob|bob for alice], in_70_19828906(DONE))'}
+    """
+    if not driver.is_on('service_identity_propagate'):
+        return ERROR('service_identity_propagate() is not started')
+    from p2p import online_status
+    from userid import global_id
+    idurl = idurl_or_global_id
+    if global_id.IsValidGlobalUser(idurl):
+        idurl = global_id.GlobalUserToIDURL(idurl, as_field=False)
+    idurl = strng.to_bin(idurl)
+    ret = Deferred()
+    d = online_status.handshake(
+        idurl,
+        ack_timeout=int(timeout),
+        ping_retries=int(retries),
+        channel='api_user_ping',
+        keep_alive=False,
+    )
+    d.addCallback(lambda ok: ret.callback(OK(ok or 'connected', api_method='user_ping')))
+    d.addErrback(lambda err: ret.callback(ERROR(err, api_method='user_ping')))
+    return ret
+
+
+def user_status(idurl_or_global_id):
+    """
+    """
+    if not driver.is_on('service_identity_propagate'):
+        return ERROR('service_identity_propagate() is not started')
+    from p2p import online_status
+    from userid import global_id
+    from userid import id_url
+    idurl = idurl_or_global_id
+    if global_id.IsValidGlobalUser(idurl):
+        idurl = global_id.GlobalUserToIDURL(idurl)
+    idurl = id_url.field(idurl)
+    if not online_status.isKnown(idurl):
+        return ERROR('unknown user')
+    # state_machine_inst = contact_status.getInstance(idurl)
+    # if not state_machine_inst:
+    #     return ERROR('error fetching user status')
+    return OK({
+        'contact_status': online_status.getStatusLabel(idurl),
+        'contact_state': online_status.getCurrentState(idurl),
+        'idurl': idurl,
+        'global_id': global_id.UrlToGlobalID(idurl),
+    })
+
+
+def user_status_check(idurl_or_global_id, timeout=5):
+    """
+    """
+    if not driver.is_on('service_identity_propagate'):
+        return ERROR('service_identity_propagate() is not started')
+    from p2p import online_status
+    from userid import global_id
+    from userid import id_url
+    idurl = idurl_or_global_id
+    if global_id.IsValidGlobalUser(idurl):
+        idurl = global_id.GlobalUserToIDURL(idurl)
+    idurl = id_url.field(idurl)
+    peer_status = online_status.getInstance(idurl)
+    if not peer_status:
+        return ERROR('failed to check peer status')
+    ret = Deferred()
+
+    def _on_peer_status_state_changed(oldstate, newstate, event_string, *args, **kwargs):
+        if _Debug:
+            lg.args(_DebugLevel, oldstate=oldstate, newstate=newstate, event_string=event_string)
+        if newstate not in ['CONNECTED', 'OFFLINE', ]:
+            return None
+        if newstate == 'OFFLINE' and oldstate == 'OFFLINE' and not event_string == 'ping-failed':
+            return None
+        ret.callback(OK(
+            dict(
+                idurl=idurl,
+                global_id=global_id.UrlToGlobalID(idurl),
+                contact_state=newstate,
+                contact_status=online_status.stateToLabel(newstate),
+            ),
+            api_method='user_status_check',
+        ))
+        return None
+
+    def _do_clean(x):
+        peer_status.removeStateChangedCallback(_on_peer_status_state_changed)
+        return None
+
+    ret.addBoth(_do_clean)
+
+    peer_status.addStateChangedCallback(_on_peer_status_state_changed)
+    peer_status.automat('ping-now', timeout)
+    return ret
+
+
+def user_search(nickname, attempts=1):
+    """
+    Starts nickname_observer() Automat to lookup existing nickname registered
+    in DHT network.
+    """
+    from lib import misc
+    from userid import global_id
+    if not nickname:
+        return ERROR('requires nickname of the user')
+    if not misc.ValidNickName(nickname):
+        return ERROR('invalid nickname')
+    if not driver.is_on('service_private_messages'):
+        return ERROR('service_private_messages() is not started')
+
+    from chat import nickname_observer
+    # nickname_observer.stop_all()
+    ret = Deferred()
+
+    def _result(result, nik, pos, idurl):
+        return ret.callback(OK({
+            'result': result,
+            'nickname': nik,
+            'position': pos,
+            'global_id': global_id.UrlToGlobalID(idurl),
+            'idurl': idurl,
+        }, api_method='user_search'))
+
+    nickname_observer.find_one(
+        nickname,
+        attempts=attempts,
+        results_callback=_result,
+    )
+    return ret
+
+
+def user_observe(nickname, attempts=3):
+    """
+    Starts nickname_observer() Automat to lookup existing nickname registered
+    in DHT network.
+    """
+    from lib import misc
+    from userid import global_id
+    if not nickname:
+        return ERROR('requires nickname of the user')
+    if not misc.ValidNickName(nickname):
+        return ERROR('invalid nickname')
+    if not driver.is_on('service_private_messages'):
+        return ERROR('service_private_messages() is not started')
+
+    from chat import nickname_observer
+    nickname_observer.stop_all()
+    ret = Deferred()
+    results = []
+
+    def _result(result, nik, pos, idurl):
+        if result != 'finished':
+            results.append({
+                'result': result,
+                'nickname': nik,
+                'position': pos,
+                'global_id': global_id.UrlToGlobalID(idurl),
+                'idurl': idurl,
+            })
+            return None
+        ret.callback(RESULT(results, api_method='user_observe'))
+        return None
+
+    reactor.callLater(0.05, nickname_observer.observe_many,  # @UndefinedVariable
+        nickname,
+        attempts=attempts,
+        results_callback=_result,
+    )
+    return ret
+
+#------------------------------------------------------------------------------
+
+def message_history(recipient_id=None, sender_id=None, message_type=None, offset=0, limit=100):
+    """
+    Returns chat history with that user.
+    """
+    if not driver.is_on('service_message_history'):
+        return ERROR('service_message_history() is not started')
+    from chat import message_database
+    from userid import my_id, global_id
+    from crypt import my_keys
+    if recipient_id is None and sender_id is None:
+        return ERROR('recipient_id or sender_id is required')
+    if not recipient_id.count('@'):
+        from contacts import contactsdb
+        recipient_idurl = contactsdb.find_correspondent_by_nickname(recipient_id)
+        if not recipient_idurl:
+            return ERROR('recipient not found')
+        recipient_id = global_id.UrlToGlobalID(recipient_idurl)
+    recipient_glob_id = global_id.ParseGlobalID(recipient_id)
+    if not recipient_glob_id['idurl']:
+        return ERROR('wrong recipient_id')
+    recipient_id = global_id.MakeGlobalID(**recipient_glob_id)
+    if not my_keys.is_valid_key_id(recipient_id):
+        return ERROR('invalid recipient_id: %s' % recipient_id)
+    bidirectional = False
+    if message_type in [None, 'private_message', ]:
+        bidirectional = True
+        if sender_id is None:
+            sender_id = my_id.getGlobalID(key_alias='master')
+    if _Debug:
+        lg.out(_DebugLevel, 'api.message_history with recipient_id=%s sender_id=%s message_type=%s' % (
+            recipient_id, sender_id, message_type, ))
+    messages = [{'doc': m, } for m in message_database.query(
+        sender_id=sender_id,
+        recipient_id=recipient_id,
+        bidirectional=bidirectional,
+        message_types=[message_type, ] if message_type else [],
+        offset=offset,
+        limit=limit,
+    )]
+    return RESULT(messages)
+
+
+def message_send(recipient, json_data, ping_timeout=30, message_ack_timeout=15):
+    """
+    Sends a text message to remote peer, `recipient` is a string with nickname or global_id.
+
+    Return:
+
+        {'status': 'OK', 'result': ['signed.Packet[Message(146681300413)]']}
+    """
+    if not driver.is_on('service_private_messages'):
+        return ERROR('service_private_messages() is not started')
+    from stream import message
+    from userid import global_id
+    from crypt import my_keys
+    if not recipient.count('@'):
+        from contacts import contactsdb
+        recipient_idurl = contactsdb.find_correspondent_by_nickname(recipient)
+        if not recipient_idurl:
+            return ERROR('recipient not found')
+        recipient = global_id.UrlToGlobalID(recipient_idurl)
+    glob_id = global_id.ParseGlobalID(recipient)
+    if not glob_id['idurl']:
+        return ERROR('wrong recipient')
+    target_glob_id = global_id.MakeGlobalID(**glob_id)
+    if not my_keys.is_valid_key_id(target_glob_id):
+        return ERROR('invalid key_id: %s' % target_glob_id)
+#     if not my_keys.is_key_registered(target_glob_id):
+#         return ERROR('unknown key_id: %s' % target_glob_id)
+    if _Debug:
+        lg.out(_DebugLevel, 'api.message_send to "%s" ping_timeout=%d message_ack_timeout=%d' % (
+            target_glob_id, ping_timeout, message_ack_timeout, ))
+    result = message.send_message(
+        json_data=json_data,
+        recipient_global_id=target_glob_id,
+        ping_timeout=ping_timeout,
+        message_ack_timeout=message_ack_timeout,
+    )
+    ret = Deferred()
+    result.addCallback(lambda packet: ret.callback(OK(strng.to_text(packet), api_method='message_send')))
+    result.addErrback(lambda err: ret.callback(ERROR(err, api_method='message_send')))
+    return ret
+
+
+def message_send_group(group_key_id, json_payload):
+    """
+    Sends a text message to a group of users.
+
+    Return:
+
+        {'status': 'OK'}
+    """
+    if not driver.is_on('service_private_groups'):
+        return ERROR('service_private_groups() is not started')
+    from userid import global_id
+    from crypt import my_keys
+    from access import group_member
+    if not group_key_id.startswith('group_'):
+        return ERROR('invalid group id')
+    glob_id = global_id.ParseGlobalID(group_key_id)
+    if not glob_id['idurl']:
+        return ERROR('wrong group id')
+    if not my_keys.is_key_registered(group_key_id):
+        return ERROR('unknown group key')
+    this_group_member = group_member.get_active_group_member(group_key_id)
+    if not this_group_member:
+        return ERROR('group is not active')
+    if this_group_member.state not in ['IN_SYNC!', 'QUEUE?', ]:
+        return ERROR('group is not synchronized yet')
+    if _Debug:
+        lg.out(_DebugLevel, 'api.message_send_group to %r' % group_key_id)
+    this_group_member.automat('push-message', json_payload=json_payload)
+    return OK()
+
+
+def message_receive(consumer_callback_id, direction='incoming', message_types='private_message,group_message', polling_timeout=60):
+    """
+    This method can be used to listen and process incoming chat messages by specific consumer.
+    If there are no messages received yet, this method will be waiting for any incoming messages.
+    If some messages was already received, but not "consumed" yet method will return them immediately.
+    After you got response and processed the messages you should call this method again to listen
+    for more incoming again. This is similar to message queue polling interface.
+    If you do not "consume" messages, after 100 un-collected messages "consumer" will be dropped.
+    Both, incoming and outgoing, messages will be populated here.
+
+    Return:
+
+        {'status': 'OK',
+         'result': [{
+            'type': 'private_message',
+            'dir': 'incoming',
+            'message_id': '123456789',
+            'sender': 'messages$alice@first-host.com',
+            'recipient': 'messages$bob@second-host.net',
+            'data': {
+                'message': 'Hello BitDust!'
+            },
+            'time': 123456789
+        }]}
+    """
+    if not driver.is_on('service_private_messages'):
+        return ERROR('service_private_messages() is not started')
+    from stream import message
+    from p2p import p2p_service
+    ret = Deferred()
+    if strng.is_text(message_types):
+        message_types = message_types.split(',')
+
+    def _on_pending_messages(pending_messages):
+        result = []
+        packets_to_ack = {}
+        for msg in pending_messages:
+            try:
+                result.append({
+                    'data': msg['data'],
+                    'recipient': msg['to'],
+                    'sender': msg['from'],
+                    'time': msg['time'],
+                    'message_id': msg['packet_id'],
+                    'dir': msg['dir'],
+                })
+            except:
+                lg.exc()
+                continue
+            if msg['owner_idurl']:
+                packets_to_ack[msg['packet_id']] = msg['owner_idurl']
+        for packet_id, owner_idurl in packets_to_ack.items():
+            p2p_service.SendAckNoRequest(owner_idurl, packet_id)
+        packets_to_ack.clear()
+        if _Debug:
+            lg.out(_DebugLevel, 'api.message_receive._on_pending_messages returning : %r' % result)
+        ret.callback(RESULT(result, api_method='message_receive'))
+        return len(result) > 0
+
+    def _on_consume_error(err):
+        if _Debug:
+            lg.args(_DebugLevel, err=err)
+        if isinstance(err, list) and len(err) > 0:
+            err = err[0]
+        if isinstance(err, Failure):
+            try:
+                err = err.getErrorMessage()
+            except:
+                err = strng.to_text(err)
+        if err.lower().count('cancelled'):
+            ret.callback(RESULT([], api_method='message_receive'))
+            return None
+        if not str(err):
+            ret.callback(RESULT([], api_method='message_receive'))
+            return None
+        ret.callback(ERROR(err))
+        return None
+
+    d = message.consume_messages(
+        consumer_callback_id=consumer_callback_id,
+        direction=direction,
+        message_types=message_types,
+        reset_callback=True,
+    )
+    d.addCallback(_on_pending_messages)
+    d.addErrback(_on_consume_error)
+    if polling_timeout is not None:
+        d.addTimeout(polling_timeout, clock=reactor)
+    if _Debug:
+        lg.out(_DebugLevel, 'api.message_receive "%s" started' % consumer_callback_id)
+    return ret
+
+#------------------------------------------------------------------------------
+
 def suppliers_list(customer_id=None, verbose=False):
     """
     This method returns a list of your suppliers.
@@ -2735,46 +3124,22 @@ def suppliers_list(customer_id=None, verbose=False):
     return RESULT(results)
 
 
-def supplier_replace(index_or_idurl_or_global_id):
+def supplier_change(position=None, supplier_id=None, new_supplier_id=None):
     """
-    Execute a fire/hire process for given supplier, another random node will
-    replace this supplier. As soon as new supplier is found and connected,
-    rebuilding of all uploaded data will be started and the new node will start
-    getting a reconstructed fragments.
+    The method will execute a fire/hire process for given supplier. You can specify which supplier to be replaced by position or ID.
 
-    Return:
+    If optional parameter `new_supplier_id` was not specified another random node will be found via DHT network and it will
+    replace the current supplier. Otherwise `new_supplier_id` must be an existing node in the network and
+    the process will try to connect and use that node as a new supplier.
 
-        {'status': 'OK', 'result': 'supplier http://p2p-id.ru/alice.xml will be replaced by new peer'}
-    """
-    if not driver.is_on('service_employer'):
-        return ERROR('service_employer() is not started')
-    from contacts import contactsdb
-    from userid import my_id
-    from userid import id_url
-    from userid import global_id
-    customer_idurl = my_id.getLocalID()
-    supplier_idurl = strng.to_text(index_or_idurl_or_global_id)
-    if supplier_idurl.isdigit():
-        supplier_idurl = contactsdb.supplier(int(supplier_idurl), customer_idurl=customer_idurl)
-    else:
-        if global_id.IsValidGlobalUser(supplier_idurl):
-            supplier_idurl = global_id.GlobalUserToIDURL(supplier_idurl)
-    supplier_idurl = id_url.field(supplier_idurl)
-    if supplier_idurl and supplier_idurl and contactsdb.is_supplier(supplier_idurl, customer_idurl=customer_idurl):
-        from customer import fire_hire
-        fire_hire.AddSupplierToFire(supplier_idurl)
-        fire_hire.A('restart')
-        return OK('supplier "%s" will be replaced by new random peer' % supplier_idurl)
-    return ERROR('supplier not found')
+    As soon as new node is found and connected, rebuilding of all uploaded data will be automatically started and new supplier
+    will start getting reconstructed fragments of your data piece by piece.
 
+    ###### HTTP
+        curl -X POST 'localhost:8180/supplier/change/v1' -d '{"position": 1, "new_supplier_id": "carol@computer-c.net"}'
 
-def supplier_change(index_or_idurl_or_global_id, new_supplier_idurl_or_global_id):
-    """
-    Doing same as supplier_replace() but new node must be provided by you - you can manually assign a supplier.
-
-    Return:
-
-        {'status': 'OK', 'result': 'supplier http://p2p-id.ru/alice.xml will be replaced by http://p2p-id.ru/bob.xml'}
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "supplier_change", "kwargs": {"position": 1, "new_supplier_id": "carol@computer-c.net"} }');
     """
     if not driver.is_on('service_employer'):
         return ERROR('service_employer() is not started')
@@ -2782,32 +3147,41 @@ def supplier_change(index_or_idurl_or_global_id, new_supplier_idurl_or_global_id
     from userid import my_id
     from userid import global_id
     customer_idurl = my_id.getLocalID()
-    supplier_idurl = strng.to_text(index_or_idurl_or_global_id)
-    if supplier_idurl.isdigit():
-        supplier_idurl = contactsdb.supplier(int(supplier_idurl), customer_idurl=customer_idurl)
+    supplier_idurl = None
+    if position is not None:
+        supplier_idurl = contactsdb.supplier(int(position), customer_idurl=customer_idurl)
     else:
-        if global_id.IsValidGlobalUser(supplier_idurl):
-            supplier_idurl = global_id.GlobalUserToIDURL(supplier_idurl)
+        if global_id.IsValidGlobalUser(supplier_id):
+            supplier_idurl = global_id.GlobalUserToIDURL(supplier_id)
     supplier_idurl = strng.to_bin(supplier_idurl)
-    new_supplier_idurl = new_supplier_idurl_or_global_id
-    if global_id.IsValidGlobalUser(new_supplier_idurl):
-        new_supplier_idurl = global_id.GlobalUserToIDURL(new_supplier_idurl, as_field=False)
-    new_supplier_idurl = strng.to_bin(new_supplier_idurl)
     if not supplier_idurl or not contactsdb.is_supplier(supplier_idurl, customer_idurl=customer_idurl):
         return ERROR('supplier not found')
-    if contactsdb.is_supplier(new_supplier_idurl, customer_idurl=customer_idurl):
-        return ERROR('peer "%s" is your supplier already' % new_supplier_idurl)
+    new_supplier_idurl = new_supplier_id
+    if new_supplier_id is not None:
+        if global_id.IsValidGlobalUser(new_supplier_id):
+            new_supplier_idurl = global_id.GlobalUserToIDURL(new_supplier_id, as_field=False)
+        new_supplier_idurl = strng.to_bin(new_supplier_idurl)
+
+        if contactsdb.is_supplier(new_supplier_idurl, customer_idurl=customer_idurl):
+            return ERROR('peer %r is your supplier already' % new_supplier_idurl)
     ret = Deferred()
 
     def _do_change(x):
         from customer import fire_hire
         from customer import supplier_finder
-        supplier_finder.InsertSupplierToHire(new_supplier_idurl)
+        if new_supplier_idurl is not None:
+            supplier_finder.InsertSupplierToHire(new_supplier_idurl)
         fire_hire.AddSupplierToFire(supplier_idurl)
         fire_hire.A('restart')
-        ret.callback(OK('supplier "%s" will be replaced by "%s"' % (supplier_idurl, new_supplier_idurl), api_method='supplier_change'))
+        if new_supplier_idurl is not None:
+            ret.callback(OK('supplier "%s" will be replaced by "%s"' % (supplier_idurl, new_supplier_idurl), api_method='supplier_change'))
+        else:
+            ret.callback(OK('supplier "%s" will be replaced by a new random peer' % supplier_idurl, api_method='supplier_change'))
         return None
 
+    if new_supplier_id is None:
+        _do_change(None)
+        return ret
     from p2p import online_status
     d = online_status.handshake(
         idurl=new_supplier_idurl,
@@ -2821,11 +3195,13 @@ def supplier_change(index_or_idurl_or_global_id, new_supplier_idurl_or_global_id
 
 def suppliers_ping():
     """
-    Sends short requests to all suppliers to get their current statuses.
+    Sends short requests to all suppliers to verify current connection status.
 
-    Return:
+    ###### HTTP
+        curl -X POST 'localhost:8180/supplier/ping/v1'
 
-        {'status': 'OK',  'result': 'requests to all suppliers was sent'}
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "suppliers_ping", "kwargs": {} }');
     """
     if not driver.is_on('service_customer'):
         return ERROR('service_customer() is not started')
@@ -2834,10 +3210,15 @@ def suppliers_ping():
     return OK('sent requests to all suppliers')
 
 
-def suppliers_dht_lookup(customer_id):
+def suppliers_dht_lookup(customer_id=None):
     """
-    Scans DHT network for key-value pairs related to given customer and
-    returns a list of his "possible" suppliers.
+    Scans DHT network for key-value pairs related to given customer and returns a list its suppliers.
+
+    ###### HTTP
+        curl -X GET 'localhost:8180/supplier/list/dht/v1?customer_id=alice@server-a.com'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "suppliers_dht_lookup", "kwargs": {"customer_id": "alice@server-a.com"} }');
     """
     if not driver.is_on('service_entangled_dht'):
         return ERROR('service_entangled_dht() is not started')
@@ -2845,10 +3226,11 @@ def suppliers_dht_lookup(customer_id):
     from userid import my_id
     from userid import id_url
     from userid import global_id
-    customer_idurl = strng.to_bin(customer_id)
-    if not customer_idurl:
+    customer_idurl = None
+    if not customer_id:
         customer_idurl = my_id.getLocalID().to_bin()
     else:
+        customer_idurl = strng.to_bin(customer_id)
         if global_id.IsValidGlobalUser(customer_id):
             customer_idurl = global_id.GlobalUserToIDURL(customer_id, as_field=False)
     customer_idurl = id_url.field(customer_idurl)
@@ -2863,15 +3245,13 @@ def suppliers_dht_lookup(customer_id):
 
 def customers_list(verbose=False):
     """
-    List of customers - nodes who stores own data on your machine.
+    Method returns list of your customers - nodes for whom you are storing data on that host.
 
-    Return:
+    ###### HTTP
+        curl -X GET 'localhost:8180/customer/list/v1'
 
-        {'status': 'OK',
-         'result': [ {  'idurl': 'http://p2p-id.ru/bob.xml',
-                        'position': 0,
-                        'status': 'offline'
-        }]}
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "customers_list", "kwargs": {} }');
     """
     if not driver.is_on('service_supplier'):
         return ERROR('service_supplier() is not started')
@@ -2907,14 +3287,16 @@ def customers_list(verbose=False):
         results.append(r)
     return RESULT(results)
 
-def customer_reject(idurl_or_global_id):
+
+def customer_reject(customer_id):
     """
-    Stop supporting given customer, remove all his files from local disc, close
-    connections with that node.
+    Stop supporting given customer, remove all related files from local disc, close connections with that node.
 
-    Return:
+    ###### HTTP
+        curl -X DELETE 'localhost:8180/customer/reject/v1' -d '{"customer_id": "dave@device-d.gov"}'
 
-        {'status': 'OK', 'result': 'customer http://p2p-id.ru/bob.xml rejected, 536870912 bytes were freed'}
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "customer_reject", "kwargs": {"customer_id": "dave@device-d.gov"} }');
     """
     if not driver.is_on('service_supplier'):
         return ERROR('service_supplier() is not started')
@@ -2928,9 +3310,9 @@ def customer_reject(idurl_or_global_id):
     from lib import packetid
     from userid import global_id
     from userid import id_url
-    customer_idurl = idurl_or_global_id
-    if global_id.IsValidGlobalUser(customer_idurl):
-        customer_idurl = global_id.GlobalUserToIDURL(customer_idurl)
+    customer_idurl = customer_id
+    if global_id.IsValidGlobalUser(customer_id):
+        customer_idurl = global_id.GlobalUserToIDURL(customer_id)
     customer_idurl = id_url.field(customer_idurl)
     if not contactsdb.is_customer(customer_idurl):
         return ERROR('customer not found')
@@ -2960,12 +3342,13 @@ def customer_reject(idurl_or_global_id):
 
 def customers_ping():
     """
-    Sends Identity packet to all customers to check their current statuses.
-    Every node will reply with Ack packet on any valid incoming Identiy packet.
+    Check current on-line status of all customers.
 
-    Return:
+    ###### HTTP
+        curl -X POST 'localhost:8180/customer/ping/v1'
 
-        {'status': 'OK',  'result': 'requests to all customers was sent'}
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "customers_ping", "kwargs": {} }');
     """
     if not driver.is_on('service_supplier'):
         return ERROR('service_supplier() is not started')
@@ -2975,29 +3358,15 @@ def customers_ping():
 
 #------------------------------------------------------------------------------
 
-
 def space_donated():
     """
-    Returns detailed statistics about your donated space usage.
+    Returns detailed info about quotas and usage of the storage space you donated to your customers.
 
-    Return:
+    ###### HTTP
+        curl -X GET 'localhost:8180/space/donated/v1'
 
-        {'status': 'OK',
-         'result': [{
-            'consumed': 0,
-            'consumed_percent': '0%',
-            'consumed_str': '0 bytes',
-            'customers': [],
-            'customers_num': 0,
-            'donated': 1073741824,
-            'donated_str': '1024 MB',
-            'free': 1073741824,
-            'old_customers': [],
-            'real': 0,
-            'used': 0,
-            'used_percent': '0%',
-            'used_str': '0 bytes'
-        }]}
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "space_donated", "kwargs": {} }');
     """
     from storage import accounting
     result = accounting.report_donated_storage()
@@ -3013,27 +3382,13 @@ def space_donated():
 
 def space_consumed():
     """
-    Returns some info about your current usage of BitDust resources.
+    Returns info about current usage of the storage space provided by your suppliers.
 
-    Return:
+    ###### HTTP
+        curl -X GET 'localhost:8180/space/consumed/v1'
 
-        {'status': 'OK',
-         'result': [{
-            'available': 907163720,
-            'available_per_supplier': 907163720,
-            'available_per_supplier_str': '865.14 MB',
-            'available_str': '865.14 MB',
-            'needed': 1073741824,
-            'needed_per_supplier': 1073741824,
-            'needed_per_supplier_str': '1024 MB',
-            'needed_str': '1024 MB',
-            'suppliers_num': 2,
-            'used': 166578104,
-            'used_per_supplier': 166578104,
-            'used_per_supplier_str': '158.86 MB',
-            'used_percent': '0.155%',
-            'used_str': '158.86 MB'
-        }]}
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "space_consumed", "kwargs": {} }');
     """
     from storage import accounting
     result = accounting.report_consumed_storage()
@@ -3044,27 +3399,13 @@ def space_consumed():
 
 def space_local():
     """
-    Returns detailed statistics about current usage of your local disk.
+    Returns info about current usage of your local disk drive.
 
-    Return:
+    ###### HTTP
+        curl -X GET 'localhost:8180/space/local/v1'
 
-        {'status': 'OK',
-         'result': [{
-            'backups': 0,
-            'backups_str': '0 bytes',
-            'customers': 0,
-            'customers_str': '0 bytes',
-            'diskfree': 103865696256,
-            'diskfree_percent': '0.00162%',
-            'diskfree_str': '96.73 GB',
-            'disktotal': 63943473102848,
-            'disktotal_str': '59552 GB',
-            'temp': 48981,
-            'temp_str': '47.83 KB',
-            'total': 45238743,
-            'total_percent': '0%',
-            'total_str': '43.14 MB'
-        }]}
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "space_local", "kwargs": {} }');
     """
     from storage import accounting
     result = accounting.report_local_storage()
@@ -3078,20 +3419,13 @@ def automats_list():
     """
     Returns a list of all currently running state machines.
 
-    Return:
+    This is a very useful method when you need to investigate a problem in the software.
 
-        {'status': 'OK',
-         'result': [{
-            'index': 1,
-            'name': 'initializer',
-            'state': 'READY',
-            'timers': ''
-          }, {
-            'index': 2,
-            'name': 'shutdowner',
-            'state': 'READY',
-            'timers': ''
-        }]}
+    ###### HTTP
+        curl -X GET 'localhost:8180/automat/list/v1'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "automats_list", "kwargs": {} }');
     """
     from automats import automat
     result = [{
@@ -3106,31 +3440,19 @@ def automats_list():
 
 #------------------------------------------------------------------------------
 
-
-def services_list(show_configs=False):
+def services_list(with_configs=False):
     """
     Returns detailed info about all currently running network services.
 
-    Return:
+    Pass `with_configs=True` to also see current program settings values related to each service.
 
-        {'status': 'OK',
-         'result': [{
-            'config_path': 'services/backup-db/enabled',
-            'depends': ['service_list_files', 'service_data_motion'],
-            'enabled': True,
-            'index': 3,
-            'installed': True,
-            'name': 'service_backup_db',
-            'state': 'ON'
-          }, {
-            'config_path': 'services/backups/enabled',
-            'depends': ['service_list_files', 'service_employer', 'service_rebuilding'],
-            'enabled': True,
-            'index': 4,
-            'installed': True,
-            'name': 'service_backups',
-            'state': 'ON'
-        }]}
+    This is a very useful method when you need to investigate a problem in the software.
+
+    ###### HTTP
+        curl -X GET 'localhost:8180/service/list/v1?with_configs=1'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "services_list", "kwargs": {"with_configs": 1} }');
     """
     result = []
     for name, svc in sorted(list(driver.services().items()), key=lambda i: i[0]):
@@ -3142,7 +3464,7 @@ def services_list(show_configs=False):
             'installed': svc.installed(),
             'depends': svc.dependent_on()
         }
-        if show_configs:
+        if with_configs:
             svc_configs = []
             for child in config.conf().listEntries(svc.config_path.replace('/enabled', '')):
                 svc_configs.append(config.conf().toJson(child))
@@ -3155,20 +3477,13 @@ def services_list(show_configs=False):
 
 def service_info(service_name):
     """
-    Returns detailed info for single service.
+    Returns detailed info about single service.
 
-    Return:
+    ###### HTTP
+        curl -X GET 'localhost:8180/service/info/service_private_groups/v1'
 
-        {'status': 'OK',
-         'result': [{
-            'config_path': 'services/tcp-connections/enabled',
-            'depends': ['service_network'],
-            'enabled': True,
-            'index': 24,
-            'installed': True,
-            'name': 'service_tcp_connections',
-            'state': 'ON'
-        }]}
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "service_info", "kwargs": {"service_name": "service_private_groups"} }');
     """
     svc = driver.services().get(service_name, None)
     if svc is None:
@@ -3189,17 +3504,19 @@ def service_info(service_name):
 
 def service_start(service_name):
     """
-    Start given service immediately. This method also set `True` for
-    correspondent option in the program settings:
+    Starts given service immediately.
+
+    This method also set `True` for correspondent option in the program settings to mark the service as enabled:
 
         .bitdust/config/services/[service name]/enabled
 
-    If some other services, which is dependent on that service,
-    were already enabled, they will be started also.
+    Other dependent services, if they were enabled before but stopped, also will be started.
 
-    Return:
+    ###### HTTP
+        curl -X POST 'localhost:8180/service/start/service_supplier/v1'
 
-        {'status': 'OK', 'result': 'service_tcp_connections was switched on'}
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "service_start", "kwargs": {"service_name": "service_supplier"} }');
     """
     if _Debug:
         lg.out(_DebugLevel, 'api.service_start : %s' % service_name)
@@ -3223,16 +3540,19 @@ def service_start(service_name):
 
 def service_stop(service_name):
     """
-    Stop given service immediately. It will also set `False` for correspondent
-    option in the settings.
+    Stop given service immediately.
+
+    This method also set `False` for correspondent option in the program settings to mark the service as disabled:
 
         .bitdust/config/services/[service name]/enabled
 
-    Dependent services will be stopped as well.
+    Dependent services will be stopped as well but will not be disabled.
 
-    Return:
+    ###### HTTP
+        curl -X POST 'localhost:8180/service/stop/service_supplier/v1'
 
-        {'status': 'OK', 'result': 'service_tcp_connections was switched off'}
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "service_stop", "kwargs": {"service_name": "service_supplier"} }');
     """
     if _Debug:
         lg.out(_DebugLevel, 'api.service_stop : %s' % service_name)
@@ -3256,12 +3576,18 @@ def service_stop(service_name):
 
 def service_restart(service_name, wait_timeout=10):
     """
-    Stop given service and start it again, but only if it is already enabled.
-    Do not change corresponding `.bitdust/config/services/[service name]/enabled` option.
-    Dependent services will be "restarted" as well.
-    Return:
+    This method will stop given service and start it again, but only if it is already enabled.
+    It will not modify corresponding option for that service in the program settings.
 
-        {'status': 'OK', 'result': 'service_tcp_connections was restarted'}
+    All dependent services will be restarted as well.
+
+    Very useful method when you need to reload some parts of the application without full process restart.
+
+    ###### HTTP
+        curl -X POST 'localhost:8180/service/restart/service_customer/v1'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "service_restart", "kwargs": {"service_name": "service_customer"} }');
     """
     svc = driver.services().get(service_name, None)
     if _Debug:
@@ -3279,41 +3605,6 @@ def service_restart(service_name, wait_timeout=10):
     return ret
 
 #------------------------------------------------------------------------------
-
-
-def packets_stats():
-    """
-    Returns detailed info about current network usage.
-
-    Return:
-
-        {'status': 'OK',
-         'result': [{
-            'in': {
-                'failed_packets': 0,
-                'total_bytes': 0,
-                'total_packets': 0,
-                'unknown_bytes': 0,
-                'unknown_packets': 0
-            },
-            'out': {
-                'http://p2p-id.ru/bitdust_j_vps1014.xml': 0,
-                'http://veselin-p2p.ru/bitdust_j_vps1001.xml': 0,
-                'failed_packets': 8,
-                'total_bytes': 0,
-                'total_packets': 0,
-                'unknown_bytes': 0,
-                'unknown_packets': 0
-        }}]}
-    """
-    if not driver.is_on('service_gateway'):
-        return ERROR('service_gateway() is not started')
-    from p2p import p2p_stats
-    return OK({
-        'in': p2p_stats.counters_in(),
-        'out': p2p_stats.counters_out(),
-    })
-
 
 def packets_list():
     """
@@ -3359,6 +3650,40 @@ def packets_list():
             'bytes_received': pkt_in.bytes_received,
         })
     return RESULT(result)
+
+
+def packets_stats():
+    """
+    Returns detailed info about current network usage.
+
+    Return:
+
+        {'status': 'OK',
+         'result': [{
+            'in': {
+                'failed_packets': 0,
+                'total_bytes': 0,
+                'total_packets': 0,
+                'unknown_bytes': 0,
+                'unknown_packets': 0
+            },
+            'out': {
+                'http://p2p-id.ru/bitdust_j_vps1014.xml': 0,
+                'http://veselin-p2p.ru/bitdust_j_vps1001.xml': 0,
+                'failed_packets': 8,
+                'total_bytes': 0,
+                'total_packets': 0,
+                'unknown_bytes': 0,
+                'unknown_packets': 0
+        }}]}
+    """
+    if not driver.is_on('service_gateway'):
+        return ERROR('service_gateway() is not started')
+    from p2p import p2p_stats
+    return OK({
+        'in': p2p_stats.counters_in(),
+        'out': p2p_stats.counters_out(),
+    })
 
 #------------------------------------------------------------------------------
 
@@ -3561,7 +3886,7 @@ def queue_consumers_list():
         'queues': consumer_info.queues,
         'state': consumer_info.state,
         'consumed': consumer_info.consumed_messages,
-    } for consumer_info in p2p_queue.consumer().values()]) 
+    } for consumer_info in p2p_queue.consumer().values()])
 
 
 def queue_producers_list():
@@ -3575,187 +3900,7 @@ def queue_producers_list():
         'queues': producer_info.queues,
         'state': producer_info.state,
         'produced': producer_info.produced_messages,
-    } for producer_info in p2p_queue.producer().values()]) 
-
-#------------------------------------------------------------------------------
-
-def user_ping(idurl_or_global_id, timeout=15, retries=2):
-    """
-    Sends Identity packet to remote peer and wait for Ack packet to check connection status.
-    The "ping" command performs following actions:
-      1. Request remote identity source by idurl,
-      2. Sends my Identity to remote contact addresses, taken from identity,
-      3. Wait first Ack packet from remote peer,
-      4. Failed by timeout or identity fetching error.
-    You can use this method to check and be sure that remote node is alive at the moment.
-    Return:
-        {'status': 'OK', 'result': '(signed.Packet[Ack(Identity) bob|bob for alice], in_70_19828906(DONE))'}
-    """
-    if not driver.is_on('service_identity_propagate'):
-        return ERROR('service_identity_propagate() is not started')
-    from p2p import online_status
-    from userid import global_id
-    idurl = idurl_or_global_id
-    if global_id.IsValidGlobalUser(idurl):
-        idurl = global_id.GlobalUserToIDURL(idurl, as_field=False)
-    idurl = strng.to_bin(idurl)
-    ret = Deferred()
-    d = online_status.handshake(
-        idurl,
-        ack_timeout=int(timeout),
-        ping_retries=int(retries),
-        channel='api_user_ping',
-        keep_alive=False,
-    )
-    d.addCallback(lambda ok: ret.callback(OK(ok or 'connected', api_method='user_ping')))
-    d.addErrback(lambda err: ret.callback(ERROR(err, api_method='user_ping')))
-    return ret
-
-
-def user_status(idurl_or_global_id):
-    """
-    """
-    if not driver.is_on('service_identity_propagate'):
-        return ERROR('service_identity_propagate() is not started')
-    from p2p import online_status
-    from userid import global_id
-    from userid import id_url
-    idurl = idurl_or_global_id
-    if global_id.IsValidGlobalUser(idurl):
-        idurl = global_id.GlobalUserToIDURL(idurl)
-    idurl = id_url.field(idurl)
-    if not online_status.isKnown(idurl):
-        return ERROR('unknown user')
-    # state_machine_inst = contact_status.getInstance(idurl)
-    # if not state_machine_inst:
-    #     return ERROR('error fetching user status')
-    return OK({
-        'contact_status': online_status.getStatusLabel(idurl),
-        'contact_state': online_status.getCurrentState(idurl),
-        'idurl': idurl,
-        'global_id': global_id.UrlToGlobalID(idurl),
-    })
-
-
-def user_status_check(idurl_or_global_id, timeout=5):
-    """
-    """
-    if not driver.is_on('service_identity_propagate'):
-        return ERROR('service_identity_propagate() is not started')
-    from p2p import online_status
-    from userid import global_id
-    from userid import id_url
-    idurl = idurl_or_global_id
-    if global_id.IsValidGlobalUser(idurl):
-        idurl = global_id.GlobalUserToIDURL(idurl)
-    idurl = id_url.field(idurl)
-    peer_status = online_status.getInstance(idurl)
-    if not peer_status:
-        return ERROR('failed to check peer status')
-    ret = Deferred()
-
-    def _on_peer_status_state_changed(oldstate, newstate, event_string, *args, **kwargs):
-        if _Debug:
-            lg.args(_DebugLevel, oldstate=oldstate, newstate=newstate, event_string=event_string)
-        if newstate not in ['CONNECTED', 'OFFLINE', ]:
-            return None
-        if newstate == 'OFFLINE' and oldstate == 'OFFLINE' and not event_string == 'ping-failed':
-            return None
-        ret.callback(OK(
-            dict(
-                idurl=idurl,
-                global_id=global_id.UrlToGlobalID(idurl),
-                contact_state=newstate,
-                contact_status=online_status.stateToLabel(newstate),
-            ),
-            api_method='user_status_check',
-        ))
-        return None
-
-    def _do_clean(x):
-        peer_status.removeStateChangedCallback(_on_peer_status_state_changed)
-        return None
-
-    ret.addBoth(_do_clean)
-
-    peer_status.addStateChangedCallback(_on_peer_status_state_changed)
-    peer_status.automat('ping-now', timeout)
-    return ret
-
-
-def user_search(nickname, attempts=1):
-    """
-    Starts nickname_observer() Automat to lookup existing nickname registered
-    in DHT network.
-    """
-    from lib import misc
-    from userid import global_id
-    if not nickname:
-        return ERROR('requires nickname of the user')
-    if not misc.ValidNickName(nickname):
-        return ERROR('invalid nickname')
-    if not driver.is_on('service_private_messages'):
-        return ERROR('service_private_messages() is not started')
-
-    from chat import nickname_observer
-    # nickname_observer.stop_all()
-    ret = Deferred()
-
-    def _result(result, nik, pos, idurl):
-        return ret.callback(OK({
-            'result': result,
-            'nickname': nik,
-            'position': pos,
-            'global_id': global_id.UrlToGlobalID(idurl),
-            'idurl': idurl,
-        }, api_method='user_search'))
-
-    nickname_observer.find_one(
-        nickname,
-        attempts=attempts,
-        results_callback=_result,
-    )
-    return ret
-
-
-def user_observe(nickname, attempts=3):
-    """
-    Starts nickname_observer() Automat to lookup existing nickname registered
-    in DHT network.
-    """
-    from lib import misc
-    from userid import global_id
-    if not nickname:
-        return ERROR('requires nickname of the user')
-    if not misc.ValidNickName(nickname):
-        return ERROR('invalid nickname')
-    if not driver.is_on('service_private_messages'):
-        return ERROR('service_private_messages() is not started')
-
-    from chat import nickname_observer
-    nickname_observer.stop_all()
-    ret = Deferred()
-    results = []
-
-    def _result(result, nik, pos, idurl):
-        if result != 'finished':
-            results.append({
-                'result': result,
-                'nickname': nik,
-                'position': pos,
-                'global_id': global_id.UrlToGlobalID(idurl),
-                'idurl': idurl,
-            })
-            return None
-        ret.callback(RESULT(results, api_method='user_observe'))
-        return None
-
-    reactor.callLater(0.05, nickname_observer.observe_many,  # @UndefinedVariable
-        nickname,
-        attempts=attempts,
-        results_callback=_result,
-    )
-    return ret
+    } for producer_info in p2p_queue.producer().values()])
 
 #------------------------------------------------------------------------------
 
@@ -3800,215 +3945,6 @@ def nickname_set(nickname):
 
     nickname_holder.A().add_result_callback(_nickname_holder_result)
     nickname_holder.A('set', nickname)
-    return ret
-
-#------------------------------------------------------------------------------
-
-def message_history(recipient_id=None, sender_id=None, message_type=None, offset=0, limit=100):
-    """
-    Returns chat history with that user.
-    """
-    if not driver.is_on('service_message_history'):
-        return ERROR('service_message_history() is not started')
-    from chat import message_database
-    from userid import my_id, global_id
-    from crypt import my_keys
-    if recipient_id is None and sender_id is None:
-        return ERROR('recipient_id or sender_id is required')
-    if not recipient_id.count('@'):
-        from contacts import contactsdb
-        recipient_idurl = contactsdb.find_correspondent_by_nickname(recipient_id)
-        if not recipient_idurl:
-            return ERROR('recipient not found')
-        recipient_id = global_id.UrlToGlobalID(recipient_idurl)
-    recipient_glob_id = global_id.ParseGlobalID(recipient_id)
-    if not recipient_glob_id['idurl']:
-        return ERROR('wrong recipient_id')
-    recipient_id = global_id.MakeGlobalID(**recipient_glob_id)
-    if not my_keys.is_valid_key_id(recipient_id):
-        return ERROR('invalid recipient_id: %s' % recipient_id)
-    bidirectional = False
-    if message_type in [None, 'private_message', ]:
-        bidirectional = True
-        if sender_id is None: 
-            sender_id = my_id.getGlobalID(key_alias='master')
-    if _Debug:
-        lg.out(_DebugLevel, 'api.message_history with recipient_id=%s sender_id=%s message_type=%s' % (
-            recipient_id, sender_id, message_type, ))
-    messages = [{'doc': m, } for m in message_database.query(
-        sender_id=sender_id,
-        recipient_id=recipient_id,
-        bidirectional=bidirectional,
-        message_types=[message_type, ] if message_type else [],
-        offset=offset,
-        limit=limit,
-    )]
-    return RESULT(messages)
-
-
-def message_send(recipient, json_data, ping_timeout=30, message_ack_timeout=15):
-    """
-    Sends a text message to remote peer, `recipient` is a string with nickname or global_id.
-
-    Return:
-
-        {'status': 'OK', 'result': ['signed.Packet[Message(146681300413)]']}
-    """
-    if not driver.is_on('service_private_messages'):
-        return ERROR('service_private_messages() is not started')
-    from stream import message
-    from userid import global_id
-    from crypt import my_keys
-    if not recipient.count('@'):
-        from contacts import contactsdb
-        recipient_idurl = contactsdb.find_correspondent_by_nickname(recipient)
-        if not recipient_idurl:
-            return ERROR('recipient not found')
-        recipient = global_id.UrlToGlobalID(recipient_idurl)
-    glob_id = global_id.ParseGlobalID(recipient)
-    if not glob_id['idurl']:
-        return ERROR('wrong recipient')
-    target_glob_id = global_id.MakeGlobalID(**glob_id)
-    if not my_keys.is_valid_key_id(target_glob_id):
-        return ERROR('invalid key_id: %s' % target_glob_id)
-#     if not my_keys.is_key_registered(target_glob_id):
-#         return ERROR('unknown key_id: %s' % target_glob_id)
-    if _Debug:
-        lg.out(_DebugLevel, 'api.message_send to "%s" ping_timeout=%d message_ack_timeout=%d' % (
-            target_glob_id, ping_timeout, message_ack_timeout, ))
-    result = message.send_message(
-        json_data=json_data,
-        recipient_global_id=target_glob_id,
-        ping_timeout=ping_timeout,
-        message_ack_timeout=message_ack_timeout,
-    )
-    ret = Deferred()
-    result.addCallback(lambda packet: ret.callback(OK(strng.to_text(packet), api_method='message_send')))
-    result.addErrback(lambda err: ret.callback(ERROR(err, api_method='message_send')))
-    return ret
-
-
-def message_send_group(group_key_id, json_payload):
-    """
-    Sends a text message to a group of users.
-
-    Return:
-
-        {'status': 'OK'}
-    """
-    if not driver.is_on('service_private_groups'):
-        return ERROR('service_private_groups() is not started')
-    from userid import global_id
-    from crypt import my_keys
-    from access import group_member
-    if not group_key_id.startswith('group_'):
-        return ERROR('invalid group id')
-    glob_id = global_id.ParseGlobalID(group_key_id)
-    if not glob_id['idurl']:
-        return ERROR('wrong group id')
-    if not my_keys.is_key_registered(group_key_id):
-        return ERROR('unknown group key')
-    this_group_member = group_member.get_active_group_member(group_key_id)
-    if not this_group_member:
-        return ERROR('group is not active')
-    if this_group_member.state not in ['IN_SYNC!', 'QUEUE?', ]:
-        return ERROR('group is not synchronized yet')
-    if _Debug:
-        lg.out(_DebugLevel, 'api.message_send_group to %r' % group_key_id)
-    this_group_member.automat('push-message', json_payload=json_payload)
-    return OK()
-
-
-def message_receive(consumer_callback_id, direction='incoming', message_types='private_message,group_message', polling_timeout=60):
-    """
-    This method can be used to listen and process incoming chat messages by specific consumer.
-    If there are no messages received yet, this method will be waiting for any incoming messages.
-    If some messages was already received, but not "consumed" yet method will return them immediately.
-    After you got response and processed the messages you should call this method again to listen
-    for more incoming again. This is similar to message queue polling interface.
-    If you do not "consume" messages, after 100 un-collected messages "consumer" will be dropped.
-    Both, incoming and outgoing, messages will be populated here.
-
-    Return:
-
-        {'status': 'OK',
-         'result': [{
-            'type': 'private_message',
-            'dir': 'incoming',
-            'message_id': '123456789',
-            'sender': 'messages$alice@first-host.com',
-            'recipient': 'messages$bob@second-host.net',
-            'data': {
-                'message': 'Hello BitDust!'
-            },
-            'time': 123456789
-        }]}
-    """
-    if not driver.is_on('service_private_messages'):
-        return ERROR('service_private_messages() is not started')
-    from stream import message
-    from p2p import p2p_service
-    ret = Deferred()
-    if strng.is_text(message_types):
-        message_types = message_types.split(',')
-
-    def _on_pending_messages(pending_messages):
-        result = []
-        packets_to_ack = {}
-        for msg in pending_messages:
-            try:
-                result.append({
-                    'data': msg['data'],
-                    'recipient': msg['to'],
-                    'sender': msg['from'],
-                    'time': msg['time'],
-                    'message_id': msg['packet_id'],
-                    'dir': msg['dir'],
-                })
-            except:
-                lg.exc()
-                continue
-            if msg['owner_idurl']:
-                packets_to_ack[msg['packet_id']] = msg['owner_idurl']
-        for packet_id, owner_idurl in packets_to_ack.items():
-            p2p_service.SendAckNoRequest(owner_idurl, packet_id)
-        packets_to_ack.clear()
-        if _Debug:
-            lg.out(_DebugLevel, 'api.message_receive._on_pending_messages returning : %r' % result)
-        ret.callback(RESULT(result, api_method='message_receive'))
-        return len(result) > 0
-
-    def _on_consume_error(err):
-        if _Debug:
-            lg.args(_DebugLevel, err=err)
-        if isinstance(err, list) and len(err) > 0:
-            err = err[0]
-        if isinstance(err, Failure):
-            try:
-                err = err.getErrorMessage()
-            except:
-                err = strng.to_text(err)
-        if err.lower().count('cancelled'):
-            ret.callback(RESULT([], api_method='message_receive'))
-            return None
-        if not str(err):
-            ret.callback(RESULT([], api_method='message_receive'))
-            return None
-        ret.callback(ERROR(err))
-        return None
-
-    d = message.consume_messages(
-        consumer_callback_id=consumer_callback_id,
-        direction=direction,
-        message_types=message_types,
-        reset_callback=True,
-    )
-    d.addCallback(_on_pending_messages)
-    d.addErrback(_on_consume_error)
-    if polling_timeout is not None:
-        d.addTimeout(polling_timeout, clock=reactor)
-    if _Debug:
-        lg.out(_DebugLevel, 'api.message_receive "%s" started' % consumer_callback_id)
     return ret
 
 #------------------------------------------------------------------------------
