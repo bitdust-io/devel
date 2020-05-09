@@ -265,8 +265,8 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_share_create(self, key_alias, remote_path=None):
         return api.share_create(key_alias=key_alias, remote_path=remote_path)
 
-    def jsonrpc_share_grant(self, trusted_remote_user, key_id):
-        return api.share_grant(trusted_remote_user, key_id)
+    def jsonrpc_share_grant(self, key_id, trusted_user_id):
+        return api.share_grant(key_id, trusted_user_id)
 
     def jsonrpc_share_open(self, key_id):
         return api.share_open(key_id)

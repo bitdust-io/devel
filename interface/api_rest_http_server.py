@@ -503,7 +503,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
         data = _request_data(request, mandatory_keys=['alias', ])
         return api.key_create(
             key_alias=data['alias'],
-            key_size=int(data.get('size', 2048)),
+            key_size=int(data.get('size', None)),
             label=data.get('label', ''),
             include_private=bool(data.get('include_private', '0') in ['1', 'true', ]),
         )
@@ -684,7 +684,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
         data = _request_data(request)
         return api.share_create(
             owner_id=data.get('owner_id', None),
-            key_size=int(data.get('key_size', '2048')),
+            key_size=int(data.get('key_size', None)),
             label=data.get('label', ''),
         )
 
@@ -701,10 +701,10 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @PUT('^/v1/share/grant$')
     @PUT('^/share/grant/v1$')
     def share_grant_v1(self, request):
-        data = _request_data(request, mandatory_keys=[('trusted_global_id', 'trusted_idurl', 'trusted_id', ), 'key_id', ])
+        data = _request_data(request, mandatory_keys=[('trusted_user_id', 'trusted_global_id', 'trusted_idurl', 'trusted_id', ), 'key_id', ])
         return api.share_grant(
-            trusted_remote_user=data.get('trusted_global_id') or data.get('trusted_idurl') or data.get('trusted_id'),
             key_id=data['key_id'],
+            trusted_user_id=data.get('trusted_user_id') or data.get('trusted_global_id') or data.get('trusted_idurl') or data.get('trusted_id'),
             timeout=data.get('timeout', 30),
         )
 
@@ -740,12 +740,6 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     def group_list_v1(self, request):
         return api.group_list()
 
-    @GET('^/gr/i$')
-    @GET('^/v1/group/info$')
-    @GET('^/group/info/v1$')
-    def group_info_v1(self, request):
-        return api.group_info(group_key_id=_request_arg(request, 'group_key_id'))
-
     @POST('^/gr/c$')
     @POST('^/v1/group/create$')
     @POST('^/group/create/v1$')
@@ -753,9 +747,15 @@ class BitDustRESTHTTPServer(JsonAPIResource):
         data = _request_data(request)
         return api.group_create(
             creator_id=data.get('creator_id', None),
-            key_size=int(data.get('key_size', '2048')),
+            key_size=int(data.get('key_size', None)),
             label=data.get('label', ''),
         )
+
+    @GET('^/gr/i$')
+    @GET('^/v1/group/info$')
+    @GET('^/group/info/v1$')
+    def group_info_v1(self, request):
+        return api.group_info(group_key_id=_request_arg(request, 'group_key_id'))
 
     @POST('^/gr/j$')
     @POST('^/v1/group/join$')
@@ -778,9 +778,9 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @PUT('^/v1/group/share$')
     @PUT('^/group/share/v1$')
     def group_share_v1(self, request):
-        data = _request_data(request, mandatory_keys=[('trusted_global_id', 'trusted_idurl', 'trusted_id', ), 'group_key_id', ])
+        data = _request_data(request, mandatory_keys=[('trusted_user_id', 'trusted_global_id', 'trusted_idurl', 'trusted_id', ), 'group_key_id', ])
         return api.group_share(
-            trusted_remote_user=data.get('trusted_global_id') or data.get('trusted_idurl') or data.get('trusted_id'),
+            trusted_user_id=data.get('trusted_user_id') or data.get('trusted_global_id') or data.get('trusted_idurl') or data.get('trusted_id'),
             group_key_id=data['group_key_id'],
             timeout=data.get('timeout', 30),
         )

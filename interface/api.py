@@ -241,8 +241,6 @@ def process_health():
     ###### WebSocket
         websocket.send('{"command": "api_call", "method": "process_health", "kwargs": {} }');
     """
-    # if _Debug:
-    #     lg.out(_DebugLevel + 10, 'api.process_health')
     return OK()
 
 
@@ -1933,6 +1931,18 @@ def file_explore(local_path):
 
 def share_list(only_active=False, include_mine=True, include_granted=True):
     """
+    Returns a list of registered "shares" - encrypted locations where you can upload/download files.
+
+    Use `only_active=True` to select only connected shares.
+
+    Parameters `include_mine` and `include_granted` can be used to filter shares created by you,
+    or by other users that shared a key with you before.
+
+    ###### HTTP
+        curl -X GET 'localhost:8180/share/list/v1?only_active=1'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "share_list", "kwargs": {"only_active": 1} }');
     """
     if not driver.is_on('service_shared_data'):
         return ERROR('service_shared_data() is not started')
@@ -1980,12 +1990,31 @@ def share_list(only_active=False, include_mine=True, include_granted=True):
     return RESULT(results)
 
 
-def share_create(owner_id=None, key_size=2048, label=''):
+def share_create(owner_id=None, key_size=None, label=''):
     """
+    Creates a new "share" - virtual location where you or other users can upload/download files.
+
+    This method generates a new RSA private key that will be used to encrypt and decrypt files belongs to that share.
+
+    By default you are the owner of the new share and uploaded files will be stored by your suppliers.
+    You can also use `owner_id` parameter if you wish to set another owner for that new share location.
+    In that case files will be stored not on your suppliers but on his/her suppliers, if another user authorized the share.
+
+    Optional input parameter `key_size` can be 1024, 2048, 4096. If `key_size` was not passed, default value will be
+    populated from the `personal/private-key-size` program setting.
+
+    Parameter `label` can be used to attach some meaningful information about that share location.
+
+    ###### HTTP
+        curl -X POST 'localhost:8180/share/create/v1' -d '{"label": "my summer holidays"}'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "share_create", "kwargs": {"label": "my summer holidays"} }');
     """
     if not driver.is_on('service_shared_data'):
         return ERROR('service_shared_data() is not started')
     from lib import utime
+    from main import settings
     from crypt import key
     from crypt import my_keys
     from userid import my_id
@@ -2001,6 +2030,8 @@ def share_create(owner_id=None, key_size=2048, label=''):
         break
     if not label:
         label = 'share%s' % utime.make_timestamp()
+    if not key_size:
+        key_size = settings.getPrivateKeySize()
     key_object = my_keys.generate_key(key_id, label=label, key_size=key_size)
     if key_object is None:
         return ERROR('failed to generate private key "%s"' % key_id)
@@ -2015,6 +2046,13 @@ def share_create(owner_id=None, key_size=2048, label=''):
 
 def share_delete(key_id):
     """
+    Stop the active share identified by the `key_id` and erase the private key.
+
+    ###### HTTP
+        curl -X DELETE 'localhost:8180/share/delete/v1' -d '{"key_id": "share_7e9726e2dccf9ebe6077070e98e78082$alice@server-a.com"}'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "share_delete", "kwargs": {"key_id": "share_7e9726e2dccf9ebe6077070e98e78082$alice@server-a.com"} }');
     """
     key_id = strng.to_text(key_id)
     if not driver.is_on('service_shared_data'):
@@ -2031,21 +2069,34 @@ def share_delete(key_id):
     return OK(this_share.to_json(), message='share "%s" was deleted' % key_id, )
 
 
-def share_grant(trusted_remote_user, key_id, timeout=30):
+def share_grant(key_id, trusted_user_id, timeout=30):
     """
+    Provide access to given share identified by `key_id` to another user.
+
+    This method will transfer private key to remote user `trusted_user_id` and you both will be
+    able to upload/download file to the shared location.
+
+    ###### HTTP
+        curl -X PUT 'localhost:8180/share/grant/v1' -d '{"key_id": "share_7e9726e2dccf9ebe6077070e98e78082$alice@server-a.com", "trusted_user_id": "bob@machine-b.org"}'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "share_grant", "kwargs": {"key_id": "share_7e9726e2dccf9ebe6077070e98e78082$alice@server-a.com", "trusted_user_id": "bob@machine-b.org"} }');
     """
     if not driver.is_on('service_shared_data'):
         return ERROR('service_shared_data() is not started')
     key_id = strng.to_text(key_id)
-    trusted_remote_user = strng.to_text(trusted_remote_user)
+    trusted_user_id = strng.to_text(trusted_user_id)
     if not key_id.startswith('share_'):
         return ERROR('invalid share id')
     from userid import global_id
     from userid import id_url
-    remote_idurl = id_url.field(trusted_remote_user)
-    if trusted_remote_user.count('@'):
-        glob_id = global_id.ParseGlobalID(trusted_remote_user)
+    trusted_user_id = strng.to_text(trusted_user_id)
+    remote_idurl = None
+    if trusted_user_id.count('@'):
+        glob_id = global_id.ParseGlobalID(trusted_user_id)
         remote_idurl = glob_id['idurl']
+    else:
+        remote_idurl = id_url.field(trusted_user_id)
     if not remote_idurl:
         return ERROR('wrong user id')
     from access import shared_access_donor
@@ -2070,6 +2121,13 @@ def share_grant(trusted_remote_user, key_id, timeout=30):
 
 def share_open(key_id):
     """
+    Activates given share and initiate required connections to remote suppliers to make possible to upload and download shared files.
+
+    ###### HTTP
+        curl -X PUT 'localhost:8180/share/open/v1' -d '{"key_id": "share_7e9726e2dccf9ebe6077070e98e78082$alice@server-a.com"}'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "share_open", "kwargs": {"key_id": "share_7e9726e2dccf9ebe6077070e98e78082$alice@server-a.com"} }');
     """
     key_id = strng.to_text(key_id)
     if not driver.is_on('service_shared_data'):
@@ -2105,6 +2163,13 @@ def share_open(key_id):
 
 def share_close(key_id):
     """
+    Disconnects and deactivate given share location.
+
+    ###### HTTP
+        curl -X PUT 'localhost:8180/share/close/v1' -d '{"key_id": "share_7e9726e2dccf9ebe6077070e98e78082$alice@server-a.com"}'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "share_close", "kwargs": {"key_id": "share_7e9726e2dccf9ebe6077070e98e78082$alice@server-a.com"} }');
     """
     key_id = strng.to_text(key_id)
     if not driver.is_on('service_shared_data'):
@@ -2121,24 +2186,145 @@ def share_close(key_id):
 
 def share_history():
     """
+    Method is not implemented yet.
     """
     if not driver.is_on('service_shared_data'):
         return ERROR('service_shared_data() is not started')
     # TODO: key share history to be implemented
-    return RESULT([],)
+    # return RESULT([],)
+    return ERROR('method is not implemented yet')
 
 #------------------------------------------------------------------------------
 
-def group_list():
+def group_list(only_active=False, include_mine=True, include_granted=True):
     """
+    Returns a list of registered message groups.
+
+    Use `only_active=True` to select only connected and active groups.
+
+    Parameters `include_mine` and `include_granted` can be used to filter groups created by you,
+    or by other users that shared a key with you before.
+
+    ###### HTTP
+        curl -X GET 'localhost:8180/group/list/v1'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "group_list", "kwargs": {} }');
     """
     if not driver.is_on('service_private_groups'):
         return ERROR('service_private_groups() is not started')
-    return RESULT([],)
+    from access import group_member
+    from access import groups
+    from crypt import my_keys
+    from userid import global_id
+    from userid import my_id
+    results = []
+    if only_active:
+        for group_key_id in group_member.list_active_group_members():
+            _glob_id = global_id.ParseGlobalID(group_key_id)
+            to_be_listed = False
+            if include_mine and _glob_id['idurl'] == my_id.getLocalID():
+                to_be_listed = True
+            if include_granted and _glob_id['idurl'] != my_id.getLocalID():
+                to_be_listed = True
+            if not to_be_listed:
+                continue
+            the_group = group_member.get_active_group_member(group_key_id)
+            if not the_group:
+                lg.warn('group %s was not found' % group_key_id)
+                continue
+            results.append(the_group.to_json())
+        return RESULT(results)
+    for group_key_id in my_keys.known_keys():
+        if not group_key_id.startswith('group_'):
+            continue
+        group_key_alias, group_creator_idurl = my_keys.split_key_id(group_key_id)
+        to_be_listed = False
+        if include_mine and group_creator_idurl == my_id.getLocalID():
+            to_be_listed = True
+        if include_granted and group_creator_idurl != my_id.getLocalID():
+            to_be_listed = True
+        if not to_be_listed:
+            continue
+        result = {
+            'group_key_id': group_key_id,
+            'state': None,
+            'alias': group_key_alias,
+            'label': my_keys.get_label(group_key_id),
+            'active': False,
+        }
+        result.update({'group_key_info': my_keys.get_key_info(group_key_id), })
+        this_group_member = group_member.get_active_group_member(group_key_id)
+        if this_group_member:
+            result.update(this_group_member.to_json())
+            results.append(result)
+            continue
+        offline_group_info = groups.known_groups().get(group_key_id)
+        if offline_group_info:
+            result.update(offline_group_info)
+            result['state'] = 'OFFLINE'
+            results.append(result)
+            continue
+        stored_group_info = groups.read_group_info(group_key_id)
+        if stored_group_info:
+            result.update(stored_group_info)
+            result['state'] = 'CLOSED'
+            results.append(result)
+            continue
+        result['state'] = 'CLEANED'
+        results.append(result)
+    return RESULT(results)
+
+
+def group_create(creator_id=None, key_size=None, label=''):
+    """
+    Creates a new messaging group.
+
+    This method generates a new RSA private key that will be used to encrypt and decrypt messages streamed thru that group.
+
+    Optional input parameter `key_size` can be 1024, 2048, 4096. If `key_size` was not passed, default value will be
+    populated from the `personal/private-key-size` program setting.
+
+    Parameter `label` can be used to attach some meaningful information about that group.
+
+    ###### HTTP
+        curl -X POST 'localhost:8180/group/create/v1' -d '{"label": "chat with my friends"}'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "group_create", "kwargs": {"label": "chat with my friends"} }');
+    """
+    if not driver.is_on('service_private_groups'):
+        return ERROR('service_private_groups() is not started')
+    from main import settings
+    from crypt import my_keys
+    from access import groups
+    from userid import my_id
+    if not creator_id:
+        creator_id = my_id.getGlobalID()
+    if not key_size:
+        key_size = settings.getPrivateKeySize()
+    group_key_id = groups.create_new_group(creator_id=creator_id, label=label, key_size=key_size)
+    if not group_key_id:
+        return ERROR('failed to create new group')
+    key_info = my_keys.get_key_info(group_key_id, include_private=False)
+    key_info.pop('include_private', None)
+    key_info['group_key_id'] = key_info.pop('key_id')
+    ret = Deferred()
+    d = groups.send_group_pub_key_to_suppliers(group_key_id)
+    d.addCallback(lambda results: ret.callback(OK(key_info, message='new group "%s" was created successfully' % group_key_id)))
+    d.addErrback(lambda err: ret.callback(ERROR('failed to deliver group public key to my suppliers')))
+    return ret
 
 
 def group_info(group_key_id):
     """
+    Returns detailed info about the message group identified by `group_key_id`.
+
+    ###### HTTP
+        curl -X GET 'localhost:8180/group/info/v1?group_key_id=group_95d0fedc46308e2254477fcb96364af9$alice@server-a.com'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "group_info", "kwargs": {"group_key_id": "group_95d0fedc46308e2254477fcb96364af9$alice@server-a.com"} }');
     """
     if not driver.is_on('service_private_groups'):
         return ERROR('service_private_groups() is not started')
@@ -2153,7 +2339,6 @@ def group_info(group_key_id):
         'state': None,
         'alias': my_keys.split_key_id(group_key_id)[0],
         'label': my_keys.get_label(group_key_id),
-        'last_sequence_id': -1,
         'active': False,
     }
     if not my_keys.is_key_registered(group_key_id):
@@ -2178,31 +2363,15 @@ def group_info(group_key_id):
     return OK(response)
 
 
-def group_create(creator_id=None, key_size=2048, label=''):
-    """
-    """
-    if not driver.is_on('service_private_groups'):
-        return ERROR('service_private_groups() is not started')
-    from crypt import my_keys
-    from access import groups
-    from userid import my_id
-    if not creator_id:
-        creator_id = my_id.getGlobalID()
-    group_key_id = groups.create_new_group(creator_id=creator_id, label=label, key_size=key_size)
-    if not group_key_id:
-        return ERROR('failed to create new group')
-    key_info = my_keys.get_key_info(group_key_id, include_private=False)
-    key_info.pop('include_private', None)
-    key_info['group_key_id'] = key_info.pop('key_id')
-    ret = Deferred()
-    d = groups.send_group_pub_key_to_suppliers(group_key_id)
-    d.addCallback(lambda results: ret.callback(OK(key_info, message='new group "%s" was created successfully' % group_key_id)))
-    d.addErrback(lambda err: ret.callback(ERROR('failed to deliver group public key to my suppliers')))
-    return ret
-
-
 def group_join(group_key_id):
     """
+    Activates given messaging group to be able to receive streamed messages or send a new message to the group.
+
+    ###### HTTP
+        curl -X POST 'localhost:8180/group/join/v1' -d '{"group_key_id": "group_95d0fedc46308e2254477fcb96364af9$alice@server-a.com"}'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "group_join", "kwargs": {"group_key_id": "group_95d0fedc46308e2254477fcb96364af9$alice@server-a.com"} }');
     """
     if not driver.is_on('service_private_groups'):
         return ERROR('service_private_groups() is not started')
@@ -2272,6 +2441,13 @@ def group_join(group_key_id):
 
 def group_leave(group_key_id, erase_key=False):
     """
+    Deactivates given messaging group. If `erase_key=True` will also erase the private key related to that group.
+
+    ###### HTTP
+        curl -X DELETE 'localhost:8180/group/leave/v1' -d '{"group_key_id": "group_95d0fedc46308e2254477fcb96364af9$alice@server-a.com"}'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "group_leave", "kwargs": {"group_key_id": "group_95d0fedc46308e2254477fcb96364af9$alice@server-a.com"} }');
     """
     if not driver.is_on('service_private_groups'):
         return ERROR('service_private_groups() is not started')
@@ -2295,7 +2471,7 @@ def group_leave(group_key_id, erase_key=False):
     return OK(message='group "%s" deactivated' % group_key_id)
 
 
-def group_share(trusted_remote_user, group_key_id, timeout=30):
+def group_share(trusted_user_id, group_key_id, timeout=30):
     """
     """
     if not driver.is_on('service_private_groups'):
@@ -2303,13 +2479,15 @@ def group_share(trusted_remote_user, group_key_id, timeout=30):
     group_key_id = strng.to_text(group_key_id)
     if not group_key_id.startswith('group_'):
         return ERROR('invalid group id')
-    trusted_remote_user = strng.to_text(trusted_remote_user)
     from userid import global_id
     from userid import id_url
-    remote_idurl = id_url.field(trusted_remote_user)
-    if trusted_remote_user.count('@'):
-        glob_id = global_id.ParseGlobalID(trusted_remote_user)
+    trusted_user_id = strng.to_text(trusted_user_id)
+    remote_idurl = None
+    if trusted_user_id.count('@'):
+        glob_id = global_id.ParseGlobalID(trusted_user_id)
         remote_idurl = glob_id['idurl']
+    else:
+        remote_idurl = id_url.field(trusted_user_id)
     if not remote_idurl:
         return ERROR('wrong user id')
     from access import group_access_donor
