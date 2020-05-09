@@ -188,8 +188,8 @@ class BitDustJsonRPCServer(JSONRPCServer):
     # def jsonrpc_filemanager(self, json_request):
     #     return api.filemanager(json_request)
 
-    def jsonrpc_config_list(self, sort=False):
-        return api.config_list(sort)
+    def jsonrpc_configs_list(self, sort=False):
+        return api.configs_list(sort)
 
     def jsonrpc_config_get(self, key):
         return api.config_get(key)
@@ -274,8 +274,8 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_share_close(self, key_id):
         return api.share_close(key_id)
 
-    def jsonrpc_share_list(self):
-        return api.share_list()
+    def jsonrpc_shares_list(self):
+        return api.shares_list()
 
     def jsonrpc_share_history(self):
         return api.share_history()
@@ -292,8 +292,8 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_suppliers_ping(self):
         return api.suppliers_ping()
 
-    def jsonrpc_suppliers_dht_lookup(self, customer_idurl_or_global_id):
-        return api.suppliers_dht_lookup(customer_idurl_or_global_id)
+    def jsonrpc_suppliers_dht_lookup(self, customer_id):
+        return api.suppliers_dht_lookup(customer_id)
 
     def jsonrpc_customers_list(self):
         return api.customers_list()
@@ -364,14 +364,14 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_nickname_set(self, nickname):
         return api.nickname_set(nickname)
 
-    def jsonrpc_friend_list(self):
-        return api.friend_list()
+    def jsonrpc_friends_list(self):
+        return api.friends_list()
 
-    def jsonrpc_friend_add(self, idurl, alias=None):
-        return api.friend_add(idurl, alias=alias)
+    def jsonrpc_friend_add(self, trusted_user_id, alias=None):
+        return api.friend_add(trusted_user_id, alias=alias)
 
-    def jsonrpc_friend_remove(self, idurl):
-        return api.friend_remove(idurl)
+    def jsonrpc_friend_remove(self, user_id):
+        return api.friend_remove(user_id)
 
     def jsonrpc_message_send(self, recipient, message_body):
         return api.message_send(recipient, message_body)

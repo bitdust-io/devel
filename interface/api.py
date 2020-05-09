@@ -320,7 +320,7 @@ def config_set(key, value):
     return RESULT([v, ])
 
 
-def config_list(sort=False):
+def configs_list(sort=False):
     """
     Provide detailed info about all program settings.
 
@@ -328,10 +328,10 @@ def config_list(sort=False):
         curl -X GET 'localhost:8180/config/list/v1'
 
     ###### WebSocket
-        websocket.send('{"command": "api_call", "method": "config_list", "kwargs": {} }');
+        websocket.send('{"command": "api_call", "method": "configs_list", "kwargs": {} }');
     """
     if _Debug:
-        lg.out(_DebugLevel, 'api.config_list')
+        lg.out(_DebugLevel, 'api.configs_list')
     r = config.conf().cache()
     r = [config.conf().toJson(key) for key in list(r.keys())]
     if sort:
@@ -339,7 +339,7 @@ def config_list(sort=False):
     return RESULT(r)
 
 
-def config_tree():
+def configs_tree():
     """
     Returns all options as a tree structure, can be more suitable for UI operations.
 
@@ -347,10 +347,10 @@ def config_tree():
         curl -X GET 'localhost:8180/config/tree/v1'
 
     ###### WebSocket
-        websocket.send('{"command": "api_call", "method": "config_tree", "kwargs": {} }');
+        websocket.send('{"command": "api_call", "method": "configs_tree", "kwargs": {} }');
     """
     if _Debug:
-        lg.out(_DebugLevel, 'api.config_list')
+        lg.out(_DebugLevel, 'api.configs_tree')
     r = {}
     for key in config.conf().cache():
         cursor = r
@@ -588,15 +588,15 @@ def identity_rotate():
     return ret
 
 
-def identity_list():
+def identity_cache_list():
     """
     Returns list of all cached locally identity files received from other users.
 
     ###### HTTP
-        curl -X GET 'localhost:8180/identity/list/v1'
+        curl -X GET 'localhost:8180/identity/cache/list/v1'
 
     ###### WebSocket
-        websocket.send('{"command": "api_call", "method": "identity_list", "kwargs": {} }');
+        websocket.send('{"command": "api_call", "method": "identity_cache_list", "kwargs": {} }');
     """
     from contacts import identitycache
     results = []
@@ -1929,7 +1929,7 @@ def file_explore(local_path):
 
 #------------------------------------------------------------------------------
 
-def share_list(only_active=False, include_mine=True, include_granted=True):
+def shares_list(only_active=False, include_mine=True, include_granted=True):
     """
     Returns a list of registered "shares" - encrypted locations where you can upload/download files.
 
@@ -1942,7 +1942,7 @@ def share_list(only_active=False, include_mine=True, include_granted=True):
         curl -X GET 'localhost:8180/share/list/v1?only_active=1'
 
     ###### WebSocket
-        websocket.send('{"command": "api_call", "method": "share_list", "kwargs": {"only_active": 1} }');
+        websocket.send('{"command": "api_call", "method": "shares_list", "kwargs": {"only_active": 1} }');
     """
     if not driver.is_on('service_shared_data'):
         return ERROR('service_shared_data() is not started')
@@ -2071,7 +2071,7 @@ def share_delete(key_id):
 
 def share_grant(key_id, trusted_user_id, timeout=30):
     """
-    Provide access to given share identified by `key_id` to another user.
+    Provide access to given share identified by `key_id` to another trusted user.
 
     This method will transfer private key to remote user `trusted_user_id` and you both will be
     able to upload/download file to the shared location.
@@ -2196,7 +2196,7 @@ def share_history():
 
 #------------------------------------------------------------------------------
 
-def group_list(only_active=False, include_mine=True, include_granted=True):
+def groups_list(only_active=False, include_mine=True, include_granted=True):
     """
     Returns a list of registered message groups.
 
@@ -2209,7 +2209,7 @@ def group_list(only_active=False, include_mine=True, include_granted=True):
         curl -X GET 'localhost:8180/group/list/v1'
 
     ###### WebSocket
-        websocket.send('{"command": "api_call", "method": "group_list", "kwargs": {} }');
+        websocket.send('{"command": "api_call", "method": "groups_list", "kwargs": {} }');
     """
     if not driver.is_on('service_private_groups'):
         return ERROR('service_private_groups() is not started')
@@ -2471,8 +2471,17 @@ def group_leave(group_key_id, erase_key=False):
     return OK(message='group "%s" deactivated' % group_key_id)
 
 
-def group_share(trusted_user_id, group_key_id, timeout=30):
+def group_share(group_key_id, trusted_user_id, timeout=30):
     """
+    Provide access to given group identified by `group_key_id` to another trusted user.
+
+    This method will transfer private key to remote user `trusted_user_id` inviting him to the messaging group.
+
+    ###### HTTP
+        curl -X PUT 'localhost:8180/group/share/v1' -d '{"group_key_id": "group_95d0fedc46308e2254477fcb96364af9$alice@server-a.com", "trusted_user_id": "bob@machine-b.org"}'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "group_share", "kwargs": {"key_id": "group_95d0fedc46308e2254477fcb96364af9$alice@server-a.com", "trusted_user_id": "bob@machine-b.org"} }');
     """
     if not driver.is_on('service_private_groups'):
         return ERROR('service_private_groups() is not started')
@@ -2512,9 +2521,15 @@ def group_share(trusted_user_id, group_key_id, timeout=30):
 
 #------------------------------------------------------------------------------
 
-def friend_list():
+def friends_list():
     """
-    Returns list of correspondents ids
+    Returns list of registered correspondents.
+
+    ###### HTTP
+        curl -X GET 'localhost:8180/friend/list/v1'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "friends_list", "kwargs": {} }');
     """
     from contacts import contactsdb
     from userid import global_id
@@ -2543,9 +2558,18 @@ def friend_list():
         })
     return RESULT(result)
 
-def friend_add(idurl_or_global_id, alias=''):
+
+def friend_add(trusted_user_id, alias=''):
     """
-    Add user to the list of friends
+    Add user to the list of correspondents.
+
+    You can attach an alias to that user as a label to be displayed in the UI.
+
+    ###### HTTP
+        curl -X POST 'localhost:8180/friend/add/v1' -d '{"trusted_user_id": "dave@device-d.gov", "alias": "SuperMario"}'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "friend_add", "kwargs": {"trusted_user_id": "dave@device-d.gov", "alias": "SuperMario"} }');
     """
     if not driver.is_on('service_identity_propagate'):
         return ERROR('service_identity_propagate() is not started')
@@ -2555,9 +2579,9 @@ def friend_add(idurl_or_global_id, alias=''):
     from p2p import online_status
     from userid import global_id
     from userid import id_url
-    idurl = idurl_or_global_id
-    if global_id.IsValidGlobalUser(idurl_or_global_id):
-        idurl = global_id.GlobalUserToIDURL(idurl_or_global_id, as_field=False)
+    idurl = strng.to_text(trusted_user_id)
+    if global_id.IsValidGlobalUser(trusted_user_id):
+        idurl = global_id.GlobalUserToIDURL(trusted_user_id, as_field=False)
     idurl = id_url.field(idurl)
     if not idurl:
         return ERROR('you must specify the global IDURL address of remote user')
@@ -2590,9 +2614,15 @@ def friend_add(idurl_or_global_id, alias=''):
     return ret
 
 
-def friend_remove(idurl_or_global_id):
+def friend_remove(user_id):
     """
-    Remove user from the list of friends
+    Removes given user from the list of correspondents.
+
+    ###### HTTP
+        curl -X DELETE 'localhost:8180/friend/add/v1' -d '{"user_id": "dave@device-d.gov"}'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "friend_add", "kwargs": {"user_id": "dave@device-d.gov"} }');
     """
     if not driver.is_on('service_identity_propagate'):
         return ERROR('service_identity_propagate() is not started')
@@ -2601,9 +2631,9 @@ def friend_remove(idurl_or_global_id):
     from main import events
     from userid import global_id
     from userid import id_url
-    idurl = idurl_or_global_id
-    if global_id.IsValidGlobalUser(idurl_or_global_id):
-        idurl = global_id.GlobalUserToIDURL(idurl_or_global_id, as_field=False)
+    idurl = strng.to_text(user_id)
+    if global_id.IsValidGlobalUser(user_id):
+        idurl = global_id.GlobalUserToIDURL(user_id, as_field=False)
     idurl = id_url.field(idurl)
     if not idurl:
         return ERROR('you must specify the global IDURL address where your identity file was last located')
@@ -2630,28 +2660,19 @@ def friend_remove(idurl_or_global_id):
 
 #------------------------------------------------------------------------------
 
-def suppliers_list(customer_idurl_or_global_id=None, verbose=False):
+def suppliers_list(customer_id=None, verbose=False):
     """
-    This method returns a list of suppliers - nodes which stores your encrypted data on own machines.
+    This method returns a list of your suppliers.
+    Those nodes stores your encrypted file or file uploaded by other users that still belongs to you.
 
-    Return:
+    Your BitDust node also sometimes need to connect to suppliers of other users to upload or download shared data.
+    Those external suppliers lists are cached and can be selected here with `customer_id` optional parameter.
 
-        {'status': 'OK',
-         'result':[{
-            'connected': '05-06-2016 13:06:05',
-            'idurl': 'http://p2p-id.ru/bitdust_j_vps1014.xml',
-            'files_count': 14,
-            'position': 0,
-            'contact_status': 'offline',
-            'contact_state': 'OFFLINE'
-         }, {
-            'connected': '05-06-2016 13:04:57',
-            'idurl': 'http://veselin-p2p.ru/bitdust_j_vps1001.xml',
-            'files_count': 14,
-            'position': 1,
-            'contact_status': 'online'
-            'contact_state': 'CONNECTED'
-        }]}
+    ###### HTTP
+        curl -X GET 'localhost:8180/supplier/list/v1'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "suppliers_list", "kwargs": {} }');
     """
     if not driver.is_on('service_customer'):
         return ERROR('service_customer() is not started')
@@ -2663,12 +2684,12 @@ def suppliers_list(customer_idurl_or_global_id=None, verbose=False):
     from userid import id_url
     from userid import global_id
     from storage import backup_matrix
-    customer_idurl = strng.to_bin(customer_idurl_or_global_id)
+    customer_idurl = strng.to_bin(customer_id)
     if not customer_idurl:
         customer_idurl = my_id.getLocalID().to_bin()
     else:
-        if global_id.IsValidGlobalUser(customer_idurl):
-            customer_idurl = global_id.GlobalUserToIDURL(customer_idurl, as_field=False)
+        if global_id.IsValidGlobalUser(customer_id):
+            customer_idurl = global_id.GlobalUserToIDURL(customer_id, as_field=False)
     customer_idurl = id_url.field(customer_idurl)
     results = []
     for (pos, supplier_idurl, ) in enumerate(contactsdb.suppliers(customer_idurl)):
@@ -2813,7 +2834,7 @@ def suppliers_ping():
     return OK('sent requests to all suppliers')
 
 
-def suppliers_dht_lookup(customer_idurl_or_global_id):
+def suppliers_dht_lookup(customer_id):
     """
     Scans DHT network for key-value pairs related to given customer and
     returns a list of his "possible" suppliers.
@@ -2824,12 +2845,12 @@ def suppliers_dht_lookup(customer_idurl_or_global_id):
     from userid import my_id
     from userid import id_url
     from userid import global_id
-    customer_idurl = strng.to_bin(customer_idurl_or_global_id)
+    customer_idurl = strng.to_bin(customer_id)
     if not customer_idurl:
         customer_idurl = my_id.getLocalID().to_bin()
     else:
-        if global_id.IsValidGlobalUser(customer_idurl):
-            customer_idurl = global_id.GlobalUserToIDURL(customer_idurl, as_field=False)
+        if global_id.IsValidGlobalUser(customer_id):
+            customer_idurl = global_id.GlobalUserToIDURL(customer_id, as_field=False)
     customer_idurl = id_url.field(customer_idurl)
     ret = Deferred()
     d = dht_relations.read_customer_suppliers(customer_idurl, as_fields=False, use_cache=False)
@@ -3529,7 +3550,7 @@ def queue_list():
     } for queue_id in p2p_queue.queue().keys()])
 
 
-def queue_consumer_list():
+def queue_consumers_list():
     """
     """
     if not driver.is_on('service_p2p_notifications'):
@@ -3543,7 +3564,7 @@ def queue_consumer_list():
     } for consumer_info in p2p_queue.consumer().values()]) 
 
 
-def queue_producer_list():
+def queue_producers_list():
     """
     """
     if not driver.is_on('service_p2p_notifications'):

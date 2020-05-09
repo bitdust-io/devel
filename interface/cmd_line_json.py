@@ -875,7 +875,7 @@ def cmd_set(opts, args, overDict):
     if name in ['list', 'ls', 'all', 'show', 'print', ]:
         # sort = True if (len(args) > 2 and args[2] in ['sort', 'sorted', ]) else False
         sort = True
-        result = api.config_list(sort=sort)
+        result = api.configs_list(sort=sort)
         for i in range(len(result['result'])):
             val = result['result'][i]['value']
             if strng.is_string(val) and len(val) > 60:
@@ -916,7 +916,7 @@ def cmd_set_request(opts, args, overDict):
                     result['result'][i]['value'] = val[:60].replace('\n', '') + '...'
             return result
 
-        return call_jsonrpc_method_transform_template_and_stop('config_list', tpl, _limit_length, sort)
+        return call_jsonrpc_method_transform_template_and_stop('configs_list', tpl, _limit_length, sort)
     path = '' if len(args) < 2 else args[1]
     path = option_name_to_path(name, path)
     if len(args) == 2:
