@@ -349,6 +349,7 @@ class DiscoveryTask(object):
         self.failed = 0
         self.lookup_now = False
         self.stopped = False
+        self.observe_finished = False
         self.lookup_task = None
         self.result_defer = Deferred(canceller=lambda d: self._close())
         if _Debug:
@@ -515,6 +516,10 @@ class DiscoveryTask(object):
             self._report_result()
             self._close()
             return node
+        if self.observe_finished:
+            lg.warn('observe process already finished')
+            self._report_result()
+            self._close()
         return node
 
     def _on_all_nodes_observed(self, observe_results):
@@ -524,6 +529,7 @@ class DiscoveryTask(object):
         if _Debug:
             lg.out(_DebugLevel, 'lookup.DiscoveryTask[%r]._on_all_nodes_observed results: %r, discovered nodes: %d' % (
                 self.id, observe_results, len(discovered_idurls(layer_id=self.layer_id))))
+        self.observe_finished = True
         found_any_nodes = False
         for one_result in observe_results:
             if one_result[0] and one_result[1]:

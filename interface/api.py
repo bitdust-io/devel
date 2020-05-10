@@ -4583,10 +4583,10 @@ def dht_user_random(layer_id=0, count=1):
     Parameter `layer_id` specifies which layer of the routing table to be used.
 
     ###### HTTP
-        curl -X GET 'localhost:8180/dht/user/random/v1?count=1'
+        curl -X GET 'localhost:8180/dht/user/random/v1?count=2&layer_id=2'
 
     ###### WebSocket
-        websocket.send('{"command": "api_call", "method": "dht_node_find", "kwargs": {"node_id_64": "4271c8f079695d77f80186ac9365e3df949ff74d"} }');
+        websocket.send('{"command": "api_call", "method": "dht_node_find", "kwargs": {"count": 2, "layer_id": 2} }');
     """
     if not driver.is_on('service_nodes_lookup'):
         return ERROR('service_nodes_lookup() is not started')
@@ -4623,6 +4623,15 @@ def dht_user_random(layer_id=0, count=1):
 
 
 def dht_value_get(key, record_type='skip_validation', layer_id=0, use_cache_ttl=None):
+    """
+    Fetch single key/value record from DHT network.
+
+    ###### HTTP
+        curl -X GET 'localhost:8180/dht/value/get/v1?key=abcd'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "dht_value_get", "kwargs": {"key": "abcd"} }');
+    """
     if not driver.is_on('service_entangled_dht'):
         return ERROR('service_entangled_dht() is not started')
     from dht import dht_service
@@ -4677,6 +4686,15 @@ def dht_value_get(key, record_type='skip_validation', layer_id=0, use_cache_ttl=
 
 
 def dht_value_set(key, value, expire=None, record_type='skip_validation', layer_id=0):
+    """
+    Writes given key/value record into DHT network. Input parameter `value` must be a JSON value.
+
+    ###### HTTP
+        curl -X POST 'localhost:8180/dht/value/set/v1' -d '{"key": "abcd", "value": {"text": "A-B-C-D"}}'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "dht_value_set", "kwargs": {"key": "abcd", "value": {"text": "A-B-C-D"}} }');
+    """
     if not driver.is_on('service_entangled_dht'):
         return ERROR('service_entangled_dht() is not started')
 
@@ -4767,6 +4785,15 @@ def dht_value_set(key, value, expire=None, record_type='skip_validation', layer_
 
 
 def dht_local_db_dump():
+    """
+    Method used for testing purposes, returns full list of all key/values stored locally on that DHT node.
+
+    ###### HTTP
+        curl -X GET 'localhost:8180/dht/db/dump/v1'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "dht_local_db_dump", "kwargs": {} }');
+    """
     if not driver.is_on('service_entangled_dht'):
         return ERROR('service_entangled_dht() is not started')
     from dht import dht_service

@@ -1086,23 +1086,26 @@ def dump_local_db(value_as_json=False):
             lg.out(_DebugLevel, 'dht_service.dump_local_db local node is not ready')
         return None
     result = {}
-    for layerID in node()._dataStores.keys():
-        l = []
-        for itm in node()._dataStores[layerID].getAllItems():
-            if value_as_json:
-                if isinstance(itm['value'], dict):
-                    _j = jsn.dumps(itm['value'], keys_to_text=True, errors='ignore')
-                    itm['value'] = jsn.loads_text(_j, errors='ignore')
-                else:
-                    try:
-                        itm['value'] = jsn.loads_text(itm['value'], errors='ignore')
-                    except:
-                        itm['value'] = strng.to_text(itm['value'])
-            itm['scope'] = 'global'
-            l.append(itm)
-        for k, v in node().data[layerID].items():
-            l.append({'key': k, 'value': v, 'scope': 'node', })
-        result[layerID] = l
+    try:
+        for layerID in node()._dataStores.keys():
+            l = []
+            for itm in node()._dataStores[layerID].getAllItems():
+                if value_as_json:
+                    if isinstance(itm['value'], dict):
+                        _j = jsn.dumps(itm['value'], keys_to_text=True, errors='ignore')
+                        itm['value'] = jsn.loads_text(_j, errors='ignore')
+                    else:
+                        try:
+                            itm['value'] = jsn.loads_text(itm['value'], errors='ignore')
+                        except:
+                            itm['value'] = strng.to_text(itm['value'])
+                itm['scope'] = 'global'
+                l.append(itm)
+            for k, v in node().data[layerID].items():
+                l.append({'key': k, 'value': v, 'scope': 'node', })
+            result[layerID] = l
+    except:
+        lg.exc()
     return result
 
 #------------------------------------------------------------------------------
