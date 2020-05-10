@@ -781,10 +781,10 @@ def key_share(key_id, trusted_user_id, include_private=False, timeout=10):
     If you pass `include_private=True` also private part of the key will be shared, otherwise only public part.
 
     ###### HTTP
-        curl -X PUT 'localhost:8180/key/share/v1' -d '{"key_id": "abcd1234$alice@server-a.com", "trusted_user_id": "bob@machine-b.org"}'
+        curl -X PUT 'localhost:8180/key/share/v1' -d '{"key_id": "abcd1234$alice@server-a.com", "trusted_user_id": "bob@machine-b.net"}'
 
     ###### WebSocket
-        websocket.send('{"command": "api_call", "method": "key_share", "kwargs": {"key_id": "abcd1234$alice@server-a.com", "trusted_user_id": "bob@machine-b.org"} }');
+        websocket.send('{"command": "api_call", "method": "key_share", "kwargs": {"key_id": "abcd1234$alice@server-a.com", "trusted_user_id": "bob@machine-b.net"} }');
     """
     from userid import global_id
     try:
@@ -846,45 +846,6 @@ def key_audit(key_id, untrusted_user_id, is_private=False, timeout=10):
     d.addCallback(lambda resp: ret.callback(OK(strng.to_text(resp), api_method='key_audit')))
     d.addErrback(lambda err: ret.callback(ERROR(err, api_method='key_audit')))
     return ret
-
-#------------------------------------------------------------------------------
-
-# def filemanager(json_request):
-#     """
-#     Deprecated.
-#     A service method to execute calls from GUI front-end and interact with web
-#     browser. This is a special "gates" created only for Ajax calls from GUI. It
-#     provides same methods as other functions here, but just in a different way.
-# 
-#         Request:
-#             {"params":{"mode":"stats"}}
-# 
-#         Response:
-#             {'bytes_donated': 8589934592,
-#              'bytes_indexed': 43349475,
-#              'bytes_needed': 104857600,
-#              'bytes_used_supplier': 21738768,
-#              'bytes_used_total': 86955072,
-#              'customers': 0,
-#              'files_count': 5,
-#              'folders_count': 0,
-#              'items_count': 15,
-#              'max_suppliers': 4,
-#              'online_suppliers': 0,
-#              'suppliers': 4,
-#              'timestamp': 1458669668.288339,
-#              'value_donated': '8 GB',
-#              'value_needed': '100 MB',
-#              'value_used_total': '82.93 MB'}
-# 
-#     You can also access those methods with another API "alias": `filemanager_{ mode }({ extra params })`
-# 
-#     WARNING: Those methods here will be deprecated and removed, use regular API methods instead.
-#     """
-#     if not driver.is_on('service_my_data'):
-#         return ERROR('service_my_data() is not started')
-#     from storage import filemanager_api
-#     return filemanager_api.process(json_request)
 
 #------------------------------------------------------------------------------
 
@@ -1243,10 +1204,10 @@ def file_create(remote_path, as_folder=False, exist_ok=False, force_path_id=None
     Pass `as_folder=True` to create a virtual folder instead of a file.
 
     ###### HTTP
-        curl -X POST 'localhost:8180/file/create/v1' -d '{"remote_path": "abcd1234$alice@server-a.com:movies/travels/safari.mpg"}'
+        curl -X POST 'localhost:8180/file/create/v1' -d '{"remote_path": "abcd1234$alice@server-a.com:movies/travels/safari.mp4"}'
 
     ###### WebSocket
-        websocket.send('{"command": "api_call", "method": "file_create", "kwargs": {"remote_path": "abcd1234$alice@server-a.com:movies/travels/safari.mpg"} }');
+        websocket.send('{"command": "api_call", "method": "file_create", "kwargs": {"remote_path": "abcd1234$alice@server-a.com:movies/travels/safari.mp4"} }');
     """
     if not driver.is_on('service_backup_db'):
         return ERROR('service_backup_db() is not started')
@@ -1646,10 +1607,10 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, o
     WARNING! Your existing local data in `destination_path` will be overwritten!
 
     ###### HTTP
-        curl -X POST 'localhost:8180/file/download/start/v1' -d '{"remote_path": "abcd1234$alice@server-a.com:movies/back_to_the_future.mpg", "local_path": "/tmp/films/"}'
+        curl -X POST 'localhost:8180/file/download/start/v1' -d '{"remote_path": "abcd1234$alice@server-a.com:movies/back_to_the_future.mp4", "local_path": "/tmp/films/"}'
 
     ###### WebSocket
-        websocket.send('{"command": "api_call", "method": "file_download_start", "kwargs": {"remote_path": "abcd1234$alice@server-a.com:movies/back_to_the_future.mpg", "local_path": "/tmp/films/"} }');
+        websocket.send('{"command": "api_call", "method": "file_download_start", "kwargs": {"remote_path": "abcd1234$alice@server-a.com:movies/back_to_the_future.mp4", "local_path": "/tmp/films/"} }');
     """
     if not driver.is_on('service_restores'):
         return ERROR('service_restores() is not started')
@@ -1914,10 +1875,10 @@ def file_explore(local_path):
     given `local_path` to the user so he can do something with the file.
 
     ###### HTTP
-        curl -X GET 'localhost:8180/file/explore/v1?local_path=/tmp/movies/back_to_the_future.mpg'
+        curl -X GET 'localhost:8180/file/explore/v1?local_path=/tmp/movies/back_to_the_future.mp4'
 
     ###### WebSocket
-        websocket.send('{"command": "api_call", "method": "file_explore", "kwargs": {"local_path": "/tmp/movies/back_to_the_future.mpg"} }');
+        websocket.send('{"command": "api_call", "method": "file_explore", "kwargs": {"local_path": "/tmp/movies/back_to_the_future.mp4"} }');
     """
     from lib import misc
     from system import bpio
@@ -2077,10 +2038,10 @@ def share_grant(key_id, trusted_user_id, timeout=30):
     able to upload/download file to the shared location.
 
     ###### HTTP
-        curl -X PUT 'localhost:8180/share/grant/v1' -d '{"key_id": "share_7e9726e2dccf9ebe6077070e98e78082$alice@server-a.com", "trusted_user_id": "bob@machine-b.org"}'
+        curl -X PUT 'localhost:8180/share/grant/v1' -d '{"key_id": "share_7e9726e2dccf9ebe6077070e98e78082$alice@server-a.com", "trusted_user_id": "bob@machine-b.net"}'
 
     ###### WebSocket
-        websocket.send('{"command": "api_call", "method": "share_grant", "kwargs": {"key_id": "share_7e9726e2dccf9ebe6077070e98e78082$alice@server-a.com", "trusted_user_id": "bob@machine-b.org"} }');
+        websocket.send('{"command": "api_call", "method": "share_grant", "kwargs": {"key_id": "share_7e9726e2dccf9ebe6077070e98e78082$alice@server-a.com", "trusted_user_id": "bob@machine-b.net"} }');
     """
     if not driver.is_on('service_shared_data'):
         return ERROR('service_shared_data() is not started')
@@ -2478,10 +2439,10 @@ def group_share(group_key_id, trusted_user_id, timeout=30):
     This method will transfer private key to remote user `trusted_user_id` inviting him to the messaging group.
 
     ###### HTTP
-        curl -X PUT 'localhost:8180/group/share/v1' -d '{"group_key_id": "group_95d0fedc46308e2254477fcb96364af9$alice@server-a.com", "trusted_user_id": "bob@machine-b.org"}'
+        curl -X PUT 'localhost:8180/group/share/v1' -d '{"group_key_id": "group_95d0fedc46308e2254477fcb96364af9$alice@server-a.com", "trusted_user_id": "bob@machine-b.net"}'
 
     ###### WebSocket
-        websocket.send('{"command": "api_call", "method": "group_share", "kwargs": {"key_id": "group_95d0fedc46308e2254477fcb96364af9$alice@server-a.com", "trusted_user_id": "bob@machine-b.org"} }');
+        websocket.send('{"command": "api_call", "method": "group_share", "kwargs": {"key_id": "group_95d0fedc46308e2254477fcb96364af9$alice@server-a.com", "trusted_user_id": "bob@machine-b.net"} }');
     """
     if not driver.is_on('service_private_groups'):
         return ERROR('service_private_groups() is not started')
@@ -2660,23 +2621,23 @@ def friend_remove(user_id):
 
 #------------------------------------------------------------------------------
 
-def user_ping(idurl_or_global_id, timeout=15, retries=2):
+def user_ping(user_id, timeout=15, retries=2):
     """
-    Sends Identity packet to remote peer and wait for Ack packet to check connection status.
-    The "ping" command performs following actions:
-      1. Request remote identity source by idurl,
-      2. Sends my Identity to remote contact addresses, taken from identity,
-      3. Wait first Ack packet from remote peer,
-      4. Failed by timeout or identity fetching error.
-    You can use this method to check and be sure that remote node is alive at the moment.
-    Return:
-        {'status': 'OK', 'result': '(signed.Packet[Ack(Identity) bob|bob for alice], in_70_19828906(DONE))'}
+    Sends `Identity` packet to remote peer and wait for an `Ack` packet to check connection status.
+
+    Method can be used to check and verify that remote node is on-line at the moment (if you are also on-line).
+
+    ###### HTTP
+        curl -X GET 'localhost:8180/user/ping/v1?user_id=carol@computer-c.net'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "suppliers_ping", "kwargs": {} }');
     """
     if not driver.is_on('service_identity_propagate'):
         return ERROR('service_identity_propagate() is not started')
     from p2p import online_status
     from userid import global_id
-    idurl = idurl_or_global_id
+    idurl = user_id
     if global_id.IsValidGlobalUser(idurl):
         idurl = global_id.GlobalUserToIDURL(idurl, as_field=False)
     idurl = strng.to_bin(idurl)
@@ -2693,15 +2654,22 @@ def user_ping(idurl_or_global_id, timeout=15, retries=2):
     return ret
 
 
-def user_status(idurl_or_global_id):
+def user_status(user_id):
     """
+    Returns short info about current on-line status of the given user.
+
+    ###### HTTP
+        curl -X GET 'localhost:8180/user/status/v1?user_id=carol@computer-c.net'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "user_status", "kwargs": {"user_id": "carol@computer-c.net"} }');
     """
     if not driver.is_on('service_identity_propagate'):
         return ERROR('service_identity_propagate() is not started')
     from p2p import online_status
     from userid import global_id
     from userid import id_url
-    idurl = idurl_or_global_id
+    idurl = user_id
     if global_id.IsValidGlobalUser(idurl):
         idurl = global_id.GlobalUserToIDURL(idurl)
     idurl = id_url.field(idurl)
@@ -2718,56 +2686,55 @@ def user_status(idurl_or_global_id):
     })
 
 
-def user_status_check(idurl_or_global_id, timeout=5):
+def user_status_check(user_id, timeout=5):
     """
+    Returns current online status of a user and only if node is known but disconnected performs "ping" operation.
+
+    ###### HTTP
+        curl -X GET 'localhost:8180/user/status/check/v1?user_id=carol@computer-c.net'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "user_status_check", "kwargs": {"user_id": "carol@computer-c.net"} }');
     """
     if not driver.is_on('service_identity_propagate'):
         return ERROR('service_identity_propagate() is not started')
     from p2p import online_status
     from userid import global_id
     from userid import id_url
-    idurl = idurl_or_global_id
+    idurl = user_id
     if global_id.IsValidGlobalUser(idurl):
         idurl = global_id.GlobalUserToIDURL(idurl)
     idurl = id_url.field(idurl)
     peer_status = online_status.getInstance(idurl)
     if not peer_status:
-        return ERROR('failed to check peer status')
+        return ERROR('peer is not connected')
     ret = Deferred()
-
-    def _on_peer_status_state_changed(oldstate, newstate, event_string, *args, **kwargs):
-        if _Debug:
-            lg.args(_DebugLevel, oldstate=oldstate, newstate=newstate, event_string=event_string)
-        if newstate not in ['CONNECTED', 'OFFLINE', ]:
-            return None
-        if newstate == 'OFFLINE' and oldstate == 'OFFLINE' and not event_string == 'ping-failed':
-            return None
-        ret.callback(OK(
-            dict(
-                idurl=idurl,
-                global_id=global_id.UrlToGlobalID(idurl),
-                contact_state=newstate,
-                contact_status=online_status.stateToLabel(newstate),
-            ),
-            api_method='user_status_check',
-        ))
-        return None
-
-    def _do_clean(x):
-        peer_status.removeStateChangedCallback(_on_peer_status_state_changed)
-        return None
-
-    ret.addBoth(_do_clean)
-
-    peer_status.addStateChangedCallback(_on_peer_status_state_changed)
-    peer_status.automat('ping-now', timeout)
+    ping_result = Deferred()
+    ping_result.addCallback(lambda resp: ret.callback(OK(
+        dict(
+            idurl=idurl,
+            global_id=global_id.UrlToGlobalID(idurl),
+            contact_state=peer_status.state,
+            contact_status=online_status.stateToLabel(peer_status.state),
+        ),
+        api_method='user_status_check',
+    )))
+    if _Debug:
+        ping_result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='api.user_status_check')
+    ping_result.addErrback(lambda err: ret.errback(err))
+    peer_status.automat('ping-now', ping_result, channel=None, ack_timeout=timeout, ping_retries=0)
     return ret
 
 
 def user_search(nickname, attempts=1):
     """
-    Starts nickname_observer() Automat to lookup existing nickname registered
-    in DHT network.
+    Doing lookup of a single `nickname` registered in the DHT network.
+
+    ###### HTTP
+        curl -X GET 'localhost:8180/user/search/v1?nickname=carol'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "user_search", "kwargs": {"nickname": "carol"} }');
     """
     from lib import misc
     from userid import global_id
@@ -2801,8 +2768,15 @@ def user_search(nickname, attempts=1):
 
 def user_observe(nickname, attempts=3):
     """
-    Starts nickname_observer() Automat to lookup existing nickname registered
-    in DHT network.
+    Reads all records registered for given `nickname` in the DHT network.
+
+    It could be that multiple users chosen same nickname when creating an identity.
+
+    ###### HTTP
+        curl -X GET 'localhost:8180/user/observe/v1?nickname=carol'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "user_observe", "kwargs": {"nickname": "carol"} }');
     """
     from lib import misc
     from userid import global_id
@@ -2842,7 +2816,13 @@ def user_observe(nickname, attempts=3):
 
 def message_history(recipient_id=None, sender_id=None, message_type=None, offset=0, limit=100):
     """
-    Returns chat history with that user.
+    Returns chat history stored during communications with given user or messaging group.
+
+    ###### HTTP
+        curl -X GET 'localhost:8180/message/history/v1?message_type=group_message&recipient_id=group_95d0fedc46308e2254477fcb96364af9$alice@server-a.com'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "message_history", "kwargs": {"recipient_id" : "group_95d0fedc46308e2254477fcb96364af9$alice@server-a.com", "message_type": "group_message"} }');
     """
     if not driver.is_on('service_message_history'):
         return ERROR('service_message_history() is not started')
@@ -2855,7 +2835,7 @@ def message_history(recipient_id=None, sender_id=None, message_type=None, offset
         from contacts import contactsdb
         recipient_idurl = contactsdb.find_correspondent_by_nickname(recipient_id)
         if not recipient_idurl:
-            return ERROR('recipient not found')
+            return ERROR('recipient was not found')
         recipient_id = global_id.UrlToGlobalID(recipient_idurl)
     recipient_glob_id = global_id.ParseGlobalID(recipient_id)
     if not recipient_glob_id['idurl']:
@@ -2882,26 +2862,30 @@ def message_history(recipient_id=None, sender_id=None, message_type=None, offset
     return RESULT(messages)
 
 
-def message_send(recipient, json_data, ping_timeout=30, message_ack_timeout=15):
+def message_send(recipient_id, data, ping_timeout=30, message_ack_timeout=15):
     """
-    Sends a text message to remote peer, `recipient` is a string with nickname or global_id.
+    Sends a text message to remote peer, `recipient_id` is a string with a nickname, global_id or IDURL of the remote user.
 
-    Return:
+    ###### HTTP
+        curl -X POST 'localhost:8180/message/send/v1' -d '{"recipient_id": "carlos@computer-c.net", "data": {"message": "Hola Amigo!"}}'
 
-        {'status': 'OK', 'result': ['signed.Packet[Message(146681300413)]']}
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "message_send", "kwargs": {"recipient_id": "carlos@computer-c.net", "data": {"message": "Hola Amigos!"}} }');
     """
     if not driver.is_on('service_private_messages'):
         return ERROR('service_private_messages() is not started')
     from stream import message
     from userid import global_id
     from crypt import my_keys
-    if not recipient.count('@'):
+    if not recipient_id.count('@'):
         from contacts import contactsdb
-        recipient_idurl = contactsdb.find_correspondent_by_nickname(recipient)
+        recipient_idurl = contactsdb.find_correspondent_by_nickname(recipient_id)
+        if not recipient_idurl:
+            recipient_idurl = strng.to_bin(recipient_id)
         if not recipient_idurl:
             return ERROR('recipient not found')
-        recipient = global_id.UrlToGlobalID(recipient_idurl)
-    glob_id = global_id.ParseGlobalID(recipient)
+        recipient_id = global_id.glob2idurl(recipient_idurl, as_field=False)
+    glob_id = global_id.ParseGlobalID(recipient_id)
     if not glob_id['idurl']:
         return ERROR('wrong recipient')
     target_glob_id = global_id.MakeGlobalID(**glob_id)
@@ -2913,7 +2897,7 @@ def message_send(recipient, json_data, ping_timeout=30, message_ack_timeout=15):
         lg.out(_DebugLevel, 'api.message_send to "%s" ping_timeout=%d message_ack_timeout=%d' % (
             target_glob_id, ping_timeout, message_ack_timeout, ))
     result = message.send_message(
-        json_data=json_data,
+        json_data=data,
         recipient_global_id=target_glob_id,
         ping_timeout=ping_timeout,
         message_ack_timeout=message_ack_timeout,
@@ -2924,13 +2908,15 @@ def message_send(recipient, json_data, ping_timeout=30, message_ack_timeout=15):
     return ret
 
 
-def message_send_group(group_key_id, json_payload):
+def message_send_group(group_key_id, data):
     """
     Sends a text message to a group of users.
 
-    Return:
+    ###### HTTP
+        curl -X POST 'localhost:8180/message/send/group/v1' -d '{"group_key_id": "group_95d0fedc46308e2254477fcb96364af9$alice@server-a.com", "data": {"message": "Hola Amigos!"}}' 
 
-        {'status': 'OK'}
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "message_send_group", "kwargs": {"group_key_id": "group_95d0fedc46308e2254477fcb96364af9$alice@server-a.com", "data": {"message": "Hola Amigos!"}} }');
     """
     if not driver.is_on('service_private_groups'):
         return ERROR('service_private_groups() is not started')
@@ -2951,34 +2937,33 @@ def message_send_group(group_key_id, json_payload):
         return ERROR('group is not synchronized yet')
     if _Debug:
         lg.out(_DebugLevel, 'api.message_send_group to %r' % group_key_id)
-    this_group_member.automat('push-message', json_payload=json_payload)
+    this_group_member.automat('push-message', json_payload=data)
     return OK()
 
 
 def message_receive(consumer_callback_id, direction='incoming', message_types='private_message,group_message', polling_timeout=60):
     """
-    This method can be used to listen and process incoming chat messages by specific consumer.
-    If there are no messages received yet, this method will be waiting for any incoming messages.
-    If some messages was already received, but not "consumed" yet method will return them immediately.
-    After you got response and processed the messages you should call this method again to listen
-    for more incoming again. This is similar to message queue polling interface.
-    If you do not "consume" messages, after 100 un-collected messages "consumer" will be dropped.
-    Both, incoming and outgoing, messages will be populated here.
+    This method can be used by clients to listen and process streaming messages.
 
-    Return:
+    If there are no pending messages received yet in the stream, this method will block and will be waiting for any message to come.
 
-        {'status': 'OK',
-         'result': [{
-            'type': 'private_message',
-            'dir': 'incoming',
-            'message_id': '123456789',
-            'sender': 'messages$alice@first-host.com',
-            'recipient': 'messages$bob@second-host.net',
-            'data': {
-                'message': 'Hello BitDust!'
-            },
-            'time': 123456789
-        }]}
+    If some messages are already waiting in the stream to be consumed method will return them immediately.
+    As soon as client received and processed the response messages are marked as "consumed" and released from the stream.
+
+    Client should call that method again to listen for next messages in the stream. You can use `polling_timeout` parameter
+    to control blocking for receiving duration. This is very similar to a long polling technique.
+
+    Once client stopped calling that method and do not "consume" messages anymor given `consumer_callback_id` will be dropped
+    after 100 non-collected messages.
+
+    You can set parameter `direction=outgoing` to only populate messages you are sending to others - can be useful for UI clients.
+
+    Also you can use parameter `message_types` to select only specific types of messages: "private_message" or "group_message".
+
+    This method is only make sense for HTTP interface, because using a WebSocket client will receive streamed message directly.
+
+    ###### HTTP
+        curl -X GET 'localhost:8180/message/receive/my-client-group-messages/v1?message_types=group_message'
     """
     if not driver.is_on('service_private_messages'):
         return ERROR('service_private_messages() is not started')
@@ -3583,7 +3568,7 @@ def service_restart(service_name, wait_timeout=10):
 
 def packets_list():
     """
-    Returns list of incoming and outgoing packets running at the moment.
+    Returns list of incoming and outgoing signed packets running at the moment.
 
     ###### HTTP
         curl -X GET 'localhost:8180/packet/list/v1'
@@ -3651,6 +3636,7 @@ def packets_stats():
         'out': p2p_stats.counters_out(),
     })
 
+#------------------------------------------------------------------------------
 
 def transfers_list():
     """
@@ -3712,10 +3698,10 @@ def connections_list(protocols=None):
     Argument `protocols` can be used to select which protocols to be present in the response:
 
     ###### HTTP
-        curl -X GET 'localhost:8180/connection/list/v1?protocols=tcp,udp'
+        curl -X GET 'localhost:8180/connection/list/v1?protocols=tcp,udp,proxy'
 
     ###### WebSocket
-        websocket.send('{"command": "api_call", "method": "connections_list", "kwargs": {"protocols": ["tcp", "udp"]} }');
+        websocket.send('{"command": "api_call", "method": "connections_list", "kwargs": {"protocols": ["tcp", "udp", "proxy"]} }');
     """
     if not driver.is_on('service_gateway'):
         return ERROR('service_gateway() is not started')
@@ -3725,6 +3711,8 @@ def connections_list(protocols=None):
     if not protocols:
         protocols = gateway.list_active_transports()
     for proto in protocols:
+        if not gateway.is_ready():
+            continue
         if not gateway.is_installed(proto):
             continue
         for connection in gateway.list_active_sessions(proto):
@@ -3784,8 +3772,8 @@ def connections_list(protocols=None):
                     'host': info['host'] or '',
                     'global_id': global_id.UrlToGlobalID(info['idurl'] or ''),
                     'idurl': info['idurl'] or '',
-                    'bytes_sent': info['bytes_in'] or 0,
-                    'bytes_received': info['bytes_out'] or 0,
+                    'bytes_sent': info['bytes_sent'] or 0,
+                    'bytes_received': info['bytes_received'] or 0,
                 })
             else:
                 lg.warn('unknown proto %r: %r' % (proto, connection, ))
@@ -3793,12 +3781,12 @@ def connections_list(protocols=None):
     return RESULT(result)
 
 
-def streams_list(wanted_protos=None):
+def streams_list(protocols=None):
     """
-    Return list of active sending/receiveing files.
+    Returns list of running streams of data fragments with recent upload/download progress percentage.
 
     ###### HTTP
-        curl -X GET 'localhost:8180/stream/list/v1?wanted_protos'
+        curl -X GET 'localhost:8180/stream/list/v1'
 
     ###### WebSocket
         websocket.send('{"command": "api_call", "method": "streams_list", "kwargs": {} }');
@@ -3808,9 +3796,13 @@ def streams_list(wanted_protos=None):
     from transport import gateway
     from lib import misc
     result = []
-    if not wanted_protos:
-        wanted_protos = gateway.list_active_transports()
-    for proto in wanted_protos:
+    if not protocols:
+        protocols = gateway.list_active_transports()
+    for proto in protocols:
+        if not gateway.is_ready():
+            continue
+        if not gateway.is_installed(proto):
+            continue
         for stream in gateway.list_active_streams(proto):
             item = {
                 'proto': proto,
@@ -3854,13 +3846,22 @@ def streams_list(wanted_protos=None):
                         'bytes_total': stream.consumer.size,
                         'progress': misc.value2percent(stream.consumer.bytes_sent, stream.consumer.size, 0)
                     })
+            elif proto == 'proxy':
+                pass
             result.append(item)
     return RESULT(result)
 
 #------------------------------------------------------------------------------
 
-def queue_list():
+def queues_list():
     """
+    Returns list of registered streaming queues.
+
+    ###### HTTP
+        curl -X GET 'localhost:8180/queue/list/v1'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "queues_list", "kwargs": {} }');
     """
     if not driver.is_on('service_p2p_notifications'):
         return ERROR('service_p2p_notifications() is not started')
@@ -3873,6 +3874,13 @@ def queue_list():
 
 def queue_consumers_list():
     """
+    Returns list of registered queue consumers.
+
+    ###### HTTP
+        curl -X GET 'localhost:8180/queue/consumer/list/v1'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "queue_consumers_list", "kwargs": {} }');
     """
     if not driver.is_on('service_p2p_notifications'):
         return ERROR('service_p2p_notifications() is not started')
@@ -3887,6 +3895,13 @@ def queue_consumers_list():
 
 def queue_producers_list():
     """
+    Returns list of registered queue producers.
+
+    ###### HTTP
+        curl -X GET 'localhost:8180/queue/producer/list/v1'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "queue_producers_list", "kwargs": {} }');
     """
     if not driver.is_on('service_p2p_notifications'):
         return ERROR('service_p2p_notifications() is not started')

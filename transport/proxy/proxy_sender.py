@@ -130,8 +130,8 @@ class ProxySender(automat.Automat):
             'state': self.state,
             'host': ('%s://%s' % proxy_receiver.GetRouterProtoHost()) if proxy_receiver.GetRouterProtoHost() else '',
             'idurl': proxy_receiver.GetRouterIDURL(),
-            'bytes_in': 0,
-            'bytes_out': self.traffic_out,
+            'bytes_received': 0,
+            'bytes_sent': self.traffic_out,
         }
 
     def A(self, event, *args, **kwargs):

@@ -814,52 +814,13 @@ class BitDustRESTHTTPServer(JsonAPIResource):
 
     #------------------------------------------------------------------------------
 
-
-    @GET('^/us/s/(?P<nickname>[^/]+)/$')
-    @GET('^/v1/user/search/(?P<nickname>[^/]+)$')
-    @GET('^/user/search/(?P<nickname>[^/]+)/v1$')
-    def user_search_v1(self, request, nickname):
-        return api.user_search(nickname, attempts=int(_request_arg(request, 'attempts', 1)))
-
-    @GET('^/us/o/(?P<nickname>[^/]+)/$')
-    @GET('^/v1/user/observe/(?P<nickname>[^/]+)$')
-    @GET('^/user/observe/(?P<nickname>[^/]+)/v1$')
-    def user_observe_v1(self, request, nickname):
-        return api.user_observe(nickname, attempts=int(_request_arg(request, 'attempts', 3)))
-
-    @GET('^/us/o$')
-    @GET('^/v1/user/observe$')
-    @GET('^/user/observe/v1$')
-    def user_observe_arg_v1(self, request):
-        return api.user_observe(
-            nickname=_request_arg(request, 'name', mandatory=True),
-            attempts=int(_request_arg(request, 'attempts', 3)),
-        )
-
-    @GET('^/us/st$')
-    @GET('^/v1/user/status$')
-    @GET('^/user/status/v1$')
-    def user_status_v1(self, request):
-        return api.user_status(
-            idurl_or_global_id=_request_arg(request, 'global_id') or _request_arg(request, 'idurl') or _request_arg(request, 'id')
-        )
-
-    @GET('^/us/st/c$')
-    @GET('^/v1/user/status/check$')
-    @GET('^/user/status/check/v1$')
-    def user_status_check_v1(self, request):
-        return api.user_status_check(
-            idurl_or_global_id=_request_arg(request, 'global_id') or _request_arg(request, 'idurl') or _request_arg(request, 'id'),
-            timeout=_request_arg(request, 'timeout', 10),
-        )
-
     @POST('^/us/png$')
     @POST('^/v1/user/ping$')
     @POST('^/user/ping/v1$')
     def user_ping_v1(self, request):
-        data = _request_data(request, mandatory_keys=[('idurl', 'global_id', 'id', ), ])
+        data = _request_data(request, mandatory_keys=[('user_id', 'idurl', 'global_id', 'id', ), ])
         return api.user_ping(
-            idurl_or_global_id=data.get('global_id') or data.get('idurl') or data.get('id'),
+            user_id=data.get('user_id') or data.get('global_id') or data.get('idurl') or data.get('id'),
             timeout=data.get('timeout', 15),
             retries=data.get('retries', 2),
         )
@@ -869,9 +830,59 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @GET('^/user/ping/v1$')
     def user_ping_get_v1(self, request):
         return api.user_ping(
-            idurl_or_global_id=_request_arg(request, 'global_id') or _request_arg(request, 'idurl') or _request_arg(request, 'id'),
+            user_id=_request_arg(request, 'user_id') or _request_arg(request, 'global_id') or _request_arg(request, 'idurl') or _request_arg(request, 'id'),
             timeout=_request_arg(request, 'timeout', 15),
             retries=_request_arg(request, 'retries', 2),
+        )
+
+    @GET('^/us/st$')
+    @GET('^/v1/user/status$')
+    @GET('^/user/status/v1$')
+    def user_status_v1(self, request):
+        return api.user_status(
+            user_id=_request_arg(request, 'global_id') or _request_arg(request, 'idurl') or _request_arg(request, 'id')
+        )
+
+    @GET('^/us/st/c$')
+    @GET('^/v1/user/status/check$')
+    @GET('^/user/status/check/v1$')
+    def user_status_check_v1(self, request):
+        return api.user_status_check(
+            user_id=_request_arg(request, 'user_id') or _request_arg(request, 'global_id') or _request_arg(request, 'idurl') or _request_arg(request, 'id'),
+            timeout=_request_arg(request, 'timeout', 10),
+        )
+
+    @GET('^/us/s/(?P<nickname>[^/]+)/$')
+    @GET('^/v1/user/search/(?P<nickname>[^/]+)$')
+    @GET('^/user/search/(?P<nickname>[^/]+)/v1$')
+    def user_search_v1(self, request, nickname):
+        return api.user_search(nickname, attempts=int(_request_arg(request, 'attempts', 1)))
+
+    @GET('^/us/s$')
+    @GET('^/v1/user/search$')
+    @GET('^/user/search/v1$')
+    def user_search_arg_v1(self, request):
+        return api.user_search(
+            nickname=_request_arg(request, 'nickname', mandatory=True),
+            attempts=int(_request_arg(request, 'attempts', 1)),
+        )
+
+    @GET('^/us/o/(?P<nickname>[^/]+)/$')
+    @GET('^/v1/user/observe/(?P<nickname>[^/]+)$')
+    @GET('^/user/observe/(?P<nickname>[^/]+)/v1$')
+    def user_observe_v1(self, request, nickname):
+        return api.user_observe(
+            nickname=nickname,
+            attempts=int(_request_arg(request, 'attempts', 3)),
+        )
+
+    @GET('^/us/o$')
+    @GET('^/v1/user/observe$')
+    @GET('^/user/observe/v1$')
+    def user_observe_arg_v1(self, request):
+        return api.user_observe(
+            nickname=_request_arg(request, 'nickname', mandatory=True),
+            attempts=int(_request_arg(request, 'attempts', 3)),
         )
 
     #------------------------------------------------------------------------------
@@ -883,10 +894,10 @@ class BitDustRESTHTTPServer(JsonAPIResource):
         return api.message_history(
             recipient_id=_request_arg(request, 'id', None, True),
             sender_id=_request_arg(request, 'sender_id', None, False),
-            message_type=_request_arg(request, 'type', 'private_message'),
+            message_type=_request_arg(request, 'message_type', 'private_message'),
         )
 
-    @GET('^/msg/r/(?P<consumer_id>[^/]+)/$')
+    @GET('^/msg/r/(?P<consumer_callback_id>[^/]+)/$')
     @GET('^/v1/message/receive/(?P<consumer_callback_id>[^/]+)$')
     @GET('^/message/receive/(?P<consumer_callback_id>[^/]+)/v1$')
     def message_receive_v1(self, request, consumer_callback_id):
@@ -901,10 +912,10 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @POST('^/v1/message/send$')
     @POST('^/message/send/v1$')
     def message_send_v1(self, request):
-        data = _request_data(request, mandatory_keys=[('idurl', 'global_id', 'id', ), 'data', ])
+        data = _request_data(request, mandatory_keys=[('recipient_id', 'idurl', 'global_id', 'id', ), 'data', ])
         return api.message_send(
-            recipient=data.get('global_id') or data.get('idurl') or data.get('id'),
-            json_data=data['data'],
+            recipient_id=data.get('recipient_id') or data.get('global_id') or data.get('idurl') or data.get('id'),
+            data=data['data'],
             ping_timeout=data.get('ping_timeout', 30),
             message_ack_timeout=data.get('message_ack_timeout', 15),
         )
@@ -916,7 +927,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
         data = _request_data(request, mandatory_keys=['group_key_id', 'data', ])
         return api.message_send_group(
             group_key_id=data.get('group_key_id'),
-            json_payload=data['data'],
+            data=data['data'],
         )
 
     #------------------------------------------------------------------------------
@@ -1075,6 +1086,8 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     def packet_stats_v1(self, request):
         return api.packets_stats()
 
+#------------------------------------------------------------------------------
+
     @GET('^/tr/l$')
     @GET('^/v1/transfer/list$')
     @GET('^/transfer/list/v1$')
@@ -1093,7 +1106,9 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @GET('^/v1/stream/list$')
     @GET('^/stream/list/v1$')
     def stream_list_v1(self, request):
-        return api.streams_list()
+        return api.streams_list(
+            protocols=map(strng.to_text, filter(None, _request_arg(request, 'protocols', '').strip().lower().split(','))) or None,
+        )
 
     #------------------------------------------------------------------------------
 
@@ -1111,7 +1126,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @GET('^/v1/queue/list$')
     @GET('^/queue/list/v1$')
     def queue_list_v1(self, request):
-        return api.queue_list()
+        return api.queues_list()
 
     @GET('^/qu/c/l$')
     @GET('^/v1/queue/consumer/list$')

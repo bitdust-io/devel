@@ -216,8 +216,8 @@ class ProxyReceiver(automat.Automat):
             'state': self.state,
             'host': ('%s://%s' % self.router_proto_host) if self.router_proto_host else '',
             'idurl': self.router_idurl,
-            'bytes_in': self.traffic_in,
-            'bytes_out': 0,
+            'bytes_received': self.traffic_in,
+            'bytes_sent': 0,
         }
 
     def init(self):
