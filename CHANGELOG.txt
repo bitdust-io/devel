@@ -2,6 +2,17 @@ Change Log
 ==========
 
 
+2020-05-10 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* fix in group_member()
+* renamed and updated some API methods
+* added a new example script in scripts/websocket_example.html
+* fixed a bug in access.groups
+* updated API docs
+* websocket interface to be able to accept multiple connections at same time
+
+
+
 2020-05-07 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * built a simple WebSocket API client for BitDust in scripts/websocket_client.html
