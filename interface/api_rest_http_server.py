@@ -1075,6 +1075,26 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     def packet_stats_v1(self, request):
         return api.packets_stats()
 
+    @GET('^/tr/l$')
+    @GET('^/v1/transfer/list$')
+    @GET('^/transfer/list/v1$')
+    def transfer_list_v1(self, request):
+        return api.transfers_list()
+
+    @GET('^/con/l$')
+    @GET('^/v1/connection/list$')
+    @GET('^/connection/list/v1$')
+    def connection_list_v1(self, request):
+        return api.connections_list(
+            protocols=map(strng.to_text, filter(None, _request_arg(request, 'protocols', '').strip().lower().split(','))) or None,
+        )
+
+    @GET('^/str/l$')
+    @GET('^/v1/stream/list$')
+    @GET('^/stream/list/v1$')
+    def stream_list_v1(self, request):
+        return api.streams_list()
+
     #------------------------------------------------------------------------------
 
     @GET('^/st/l$')
@@ -1084,30 +1104,6 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @GET('^/automat/list/v1$')
     def automat_list_v1(self, request):
         return api.automats_list()
-
-    #------------------------------------------------------------------------------
-
-    @GET('^/tr/l$')
-    @GET('^/v1/transfer/list$')
-    @GET('^/transfer/list/v1$')
-    def transfer_list_v1(self, request):
-        return api.transfers_list()
-
-    #------------------------------------------------------------------------------
-
-    @GET('^/con/l$')
-    @GET('^/v1/connection/list$')
-    @GET('^/connection/list/v1$')
-    def connection_list_v1(self, request):
-        return api.connections_list()
-
-    #------------------------------------------------------------------------------
-
-    @GET('^/str/l$')
-    @GET('^/v1/stream/list$')
-    @GET('^/stream/list/v1$')
-    def stream_list_v1(self, request):
-        return api.streams_list()
 
     #------------------------------------------------------------------------------
 

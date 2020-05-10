@@ -3415,31 +3415,6 @@ def space_local():
 
 #------------------------------------------------------------------------------
 
-def automats_list():
-    """
-    Returns a list of all currently running state machines.
-
-    This is a very useful method when you need to investigate a problem in the software.
-
-    ###### HTTP
-        curl -X GET 'localhost:8180/automat/list/v1'
-
-    ###### WebSocket
-        websocket.send('{"command": "api_call", "method": "automats_list", "kwargs": {} }');
-    """
-    from automats import automat
-    result = [{
-        'index': a.index,
-        'name': a.name,
-        'state': a.state,
-        'timers': (','.join(list(a.getTimers().keys()))),
-    } for a in automat.objects().values()]
-    if _Debug:
-        lg.out(_DebugLevel, 'api.automats_list responded with %d items' % len(result))
-    return RESULT(result)
-
-#------------------------------------------------------------------------------
-
 def services_list(with_configs=False):
     """
     Returns detailed info about all currently running network services.
@@ -3608,7 +3583,13 @@ def service_restart(service_name, wait_timeout=10):
 
 def packets_list():
     """
-    Return list of incoming and outgoing packets.
+    Returns list of incoming and outgoing packets running at the moment.
+
+    ###### HTTP
+        curl -X GET 'localhost:8180/packet/list/v1'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "packets_list", "kwargs": {} }');
     """
     if not driver.is_on('service_gateway'):
         return ERROR('service_gateway() is not started')
@@ -3654,28 +3635,13 @@ def packets_list():
 
 def packets_stats():
     """
-    Returns detailed info about current network usage.
+    Returns detailed info about overall network usage.
 
-    Return:
+    ###### HTTP
+        curl -X GET 'localhost:8180/packet/stats/v1'
 
-        {'status': 'OK',
-         'result': [{
-            'in': {
-                'failed_packets': 0,
-                'total_bytes': 0,
-                'total_packets': 0,
-                'unknown_bytes': 0,
-                'unknown_packets': 0
-            },
-            'out': {
-                'http://p2p-id.ru/bitdust_j_vps1014.xml': 0,
-                'http://veselin-p2p.ru/bitdust_j_vps1001.xml': 0,
-                'failed_packets': 8,
-                'total_bytes': 0,
-                'total_packets': 0,
-                'unknown_bytes': 0,
-                'unknown_packets': 0
-        }}]}
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "packets_stats", "kwargs": {} }');
     """
     if not driver.is_on('service_gateway'):
         return ERROR('service_gateway() is not started')
@@ -3685,10 +3651,16 @@ def packets_stats():
         'out': p2p_stats.counters_out(),
     })
 
-#------------------------------------------------------------------------------
 
 def transfers_list():
     """
+    Returns list of current data fragments transfers to/from suppliers.
+
+    ###### HTTP
+        curl -X GET 'localhost:8180/transfer/list/v1'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "transfers_list", "kwargs": {} }');
     """
     if not driver.is_on('service_data_motion'):
         return ERROR('service_data_motion() is not started')
@@ -3732,23 +3704,29 @@ def transfers_list():
         result.append(r)
     return RESULT(result)
 
-#------------------------------------------------------------------------------
 
-def connections_list(wanted_protos=None):
+def connections_list(protocols=None):
     """
-    Returns list of opened/active network connections. Argument `wanted_protos`
-    can be used to select which protocols to list:
+    Returns list of opened/active network connections.
 
-        connections_list(wanted_protos=['tcp', 'udp'])
+    Argument `protocols` can be used to select which protocols to be present in the response:
+
+    ###### HTTP
+        curl -X GET 'localhost:8180/connection/list/v1?protocols=tcp,udp'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "connections_list", "kwargs": {"protocols": ["tcp", "udp"]} }');
     """
     if not driver.is_on('service_gateway'):
         return ERROR('service_gateway() is not started')
     from transport import gateway
     from userid import global_id
     result = []
-    if not wanted_protos:
-        wanted_protos = gateway.list_active_transports()
-    for proto in wanted_protos:
+    if not protocols:
+        protocols = gateway.list_active_transports()
+    for proto in protocols:
+        if not gateway.is_installed(proto):
+            continue
         for connection in gateway.list_active_sessions(proto):
             item = {
                 'status': 'unknown',
@@ -3772,8 +3750,8 @@ def connections_list(wanted_protos=None):
                         'host': host,
                         'global_id': global_id.UrlToGlobalID(connection.peer_idurl or ''),
                         'idurl': connection.peer_idurl or '',
-                        'bytes_sent': connection.total_bytes_sent,
-                        'bytes_received': connection.total_bytes_received,
+                        'bytes_sent': connection.total_bytes_sent or 0,
+                        'bytes_received': connection.total_bytes_received or 0,
                     })
                 else:
                     try:
@@ -3795,17 +3773,35 @@ def connections_list(wanted_protos=None):
                     'host': host,
                     'global_id': global_id.UrlToGlobalID(connection.peer_idurl or ''),
                     'idurl': connection.peer_idurl or '',
-                    'bytes_sent': connection.bytes_sent,
-                    'bytes_received': connection.bytes_received,
+                    'bytes_sent': connection.bytes_sent or 0,
+                    'bytes_received': connection.bytes_received or 0,
                 })
+            elif proto == 'proxy':
+                info = connection.to_json()
+                item.update({
+                    'status': 'active',
+                    'state': info['state'],
+                    'host': info['host'] or '',
+                    'global_id': global_id.UrlToGlobalID(info['idurl'] or ''),
+                    'idurl': info['idurl'] or '',
+                    'bytes_sent': info['bytes_in'] or 0,
+                    'bytes_received': info['bytes_out'] or 0,
+                })
+            else:
+                lg.warn('unknown proto %r: %r' % (proto, connection, ))
             result.append(item)
     return RESULT(result)
 
-#------------------------------------------------------------------------------
 
 def streams_list(wanted_protos=None):
     """
     Return list of active sending/receiveing files.
+
+    ###### HTTP
+        curl -X GET 'localhost:8180/stream/list/v1?wanted_protos'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "streams_list", "kwargs": {} }');
     """
     if not driver.is_on('service_gateway'):
         return ERROR('service_gateway() is not started')
@@ -4673,5 +4669,30 @@ def dht_local_db_dump():
         return ERROR('service_entangled_dht() is not started')
     from dht import dht_service
     return RESULT(dht_service.dump_local_db(value_as_json=True))
+
+#------------------------------------------------------------------------------
+
+def automats_list():
+    """
+    Returns a list of all currently running state machines.
+
+    This is a very useful method when you need to investigate a problem in the software.
+
+    ###### HTTP
+        curl -X GET 'localhost:8180/automat/list/v1'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "automats_list", "kwargs": {} }');
+    """
+    from automats import automat
+    result = [{
+        'index': a.index,
+        'name': a.name,
+        'state': a.state,
+        'timers': (','.join(list(a.getTimers().keys()))),
+    } for a in automat.objects().values()]
+    if _Debug:
+        lg.out(_DebugLevel, 'api.automats_list responded with %d items' % len(result))
+    return RESULT(result)
 
 #------------------------------------------------------------------------------
