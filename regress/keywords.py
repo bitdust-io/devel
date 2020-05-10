@@ -713,7 +713,7 @@ def wait_packets_finished(nodes):
 
 def verify_message_sent_received(group_key_id, producer_id, consumers_ids, message_label='A',
                                  expected_results={}, expected_last_sequence_id={},
-                                 receive_timeout=15, polling_timeout=10):
+                                 receive_timeout=31, polling_timeout=30):
     sample_message = {
         'random_message': 'MESSAGE_%s_%s' % (message_label, base64.b32encode(os.urandom(20)).decode(), ),
     }
