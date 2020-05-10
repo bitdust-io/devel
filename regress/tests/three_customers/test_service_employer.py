@@ -97,8 +97,9 @@ def test_customer_1_replace_supplier_at_position_0():
     suppliers_before = list([x['global_id'] for x in supplier_list_before])
     assert len(suppliers_before) == 2
 
-    response = request_post('customer-1', 'supplier/replace/v1', json={'position': '0'})
+    response = request_post('customer-1', 'supplier/change/v1', json={'position': '0'})
     assert response.status_code == 200
+    assert response.json()['status'] == 'OK', response.json()
 
     packet_list_v1('supplier-1', wait_all_finish=True)
     packet_list_v1('supplier-2', wait_all_finish=True)

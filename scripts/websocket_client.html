@@ -60,6 +60,7 @@
                var api_method = document.getElementById("api_method").value;
                var api_kwargs = document.getElementById("api_kwargs").value;
                if ( !api_kwargs ) api_kwargs = "{}";
+               document.getElementById('result_field').innerHTML = "...";
                socket.send('{"command": "api_call", "method": "' + api_method + '", "kwargs": ' + api_kwargs + ', "call_id": "' + call_id + '"}');
             } else {
                console.log("Connection was not opened.");

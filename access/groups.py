@@ -280,7 +280,7 @@ def load_groups():
         for broker_id in os.listdir(customer_path):
             if customer_id not in known_brokers():
                 known_brokers()[customer_id] = [None, ] * REQUIRED_BROKERS_COUNT
-            if broker_id in known_brokers(customer_id).values():
+            if broker_id in known_brokers(customer_id):
                 lg.warn('broker %r already exist' % broker_id)
                 continue
             broker_path = os.path.join(customer_path, broker_id)

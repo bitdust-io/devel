@@ -328,14 +328,8 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @GET('^/v1/process/restart$')
     @GET('^/process/restart/v1$')
     def process_restart_v1(self, request):
-        return api.process_restart(showgui=bool(request.args.get('showgui')))
+        return api.process_restart()  # showgui=bool(request.args.get('showgui')))
 
-    @GET('^/p/s$')
-    @GET('^/v1/process/show$')
-    @GET('^/process/show/v1$')
-    def process_show_v1(self, request):
-        return api.process_show()
-    
     @GET('^/p/h$')
     @GET('^/v1/process/health$')
     @GET('^/process/health/v1$')
@@ -345,7 +339,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @GET('^/p/d$')
     @GET('^/v1/process/debug$')
     @GET('^/process/debug/v1$')
-    def process_shell_v1(self, request):
+    def process_debug_v1(self, request):
         return api.process_debug()
 
     #------------------------------------------------------------------------------
@@ -354,13 +348,13 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @GET('^/v1/config/list$')
     @GET('^/config/list/v1$')
     def config_list_v1(self, request):
-        return api.config_list(sort=True)
+        return api.configs_list(sort=True)
 
     @GET('^/c/t$')
     @GET('^/v1/config/tree$')
     @GET('^/config/tree/v1$')
-    def config_tree_v1(self, request):
-        return api.config_tree()
+    def configs_tree_v1(self, request):
+        return api.configs_tree()
 
     @GET('^/c/g/(?P<key1>[^/]+)/(?P<key2>[^/]+)/(?P<key3>[^/]+)/$')
     @GET('^/v1/config/get/(?P<key1>[^/]+)/(?P<key2>[^/]+)/(?P<key3>[^/]+)$')
@@ -417,12 +411,6 @@ class BitDustRESTHTTPServer(JsonAPIResource):
 
     #------------------------------------------------------------------------------
 
-    @GET('^/i/l$')
-    @GET('^/v1/identity/list$')
-    @GET('^/identity/list/v1$')
-    def identity_list_v1(self, request):
-        return api.identity_list()
-
     @GET('^/i/g$')
     @GET('^/v1/identity/get$')
     @GET('^/identity/get/v1$')
@@ -462,13 +450,13 @@ class BitDustRESTHTTPServer(JsonAPIResource):
         )
 
     @DELETE('^/i/d$')
-    @DELETE('^/v1/identity/delete$')
     @DELETE('^/v1/identity/erase$')
-    @DELETE('^/identity/delete/v1$')
     @DELETE('^/identity/erase/v1$')
-    def identity_delete_v1(self, request):
-        # TODO: to be implemented
-        return api.ERROR('not implemented yet')
+    def identity_erase_v1(self, request):
+        data = _request_data(request)
+        return api.identity_erase(
+            erase_private_key=data.get('erase_private_key', False),
+        )
 
     @PUT('^/i/rot$')
     @PUT('^/v1/identity/rotate$')
@@ -481,6 +469,12 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @PUT('^/identity/heal/v1$')
     def identity_heal_v1(self, request):
         return api.ERROR('not implemented yet')
+
+    @GET('^/i/ch/l$')
+    @GET('^/v1/identity/cache/list$')
+    @GET('^/identity/cache/list/v1$')
+    def identity_list_v1(self, request):
+        return api.identity_cache_list()
 
     #------------------------------------------------------------------------------
 
@@ -509,7 +503,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
         data = _request_data(request, mandatory_keys=['alias', ])
         return api.key_create(
             key_alias=data['alias'],
-            key_size=int(data.get('size', 2048)),
+            key_size=int(data.get('size', None)),
             label=data.get('label', ''),
             include_private=bool(data.get('include_private', '0') in ['1', 'true', ]),
         )
@@ -525,9 +519,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
         )
 
     @DELETE('^/k/d$')
-    @DELETE('^/v1/key/delete$')
     @DELETE('^/v1/key/erase$')
-    @DELETE('^/key/delete/v1$')
     @DELETE('^/key/erase/v1$')
     def key_erase_v1(self, request):
         data = _request_data(request, mandatory_keys=['key_id', ])
@@ -537,24 +529,30 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @PUT('^/v1/key/share$')
     @PUT('^/key/share/v1$')
     def key_share_v1(self, request):
-        data = _request_data(request, mandatory_keys=['key_id', 'trusted_user', ])
+        data = _request_data(request, mandatory_keys=['key_id', 'trusted_user_id', ])
         return api.key_share(
             key_id=data['key_id'],
-            trusted_global_id_or_idurl=data['trusted_user'],
+            trusted_user_id=data['trusted_user_id'],
             include_private=bool(data.get('include_private', '0') in ['1', 'true', ]), )
 
     @POST('^/k/a$')
     @POST('^/v1/key/audit$')
     @POST('^/key/audit/v1$')
     def key_audit_v1(self, request):
-        data = _request_data(request, mandatory_keys=['key_id', 'untrusted_user', ])
+        data = _request_data(request, mandatory_keys=['key_id', 'untrusted_user_id', ])
         return api.key_audit(
             key_id=data['key_id'],
-            untrusted_global_id_or_idurl=data['untrusted_user'],
+            untrusted_user_id_id=data['untrusted_user_id'],
             is_private=bool(data.get('is_private', '0') in ['1', 'true', ]),
         )
 
     #------------------------------------------------------------------------------
+
+    @GET('^/f/s$')
+    @GET('^/v1/file/sync$')
+    @GET('^/file/sync/v1$')
+    def file_sync_v1(self, request):
+        return api.files_sync()
 
     @GET('^/f/l$')
     @GET('^/v1/file/list$')
@@ -590,12 +588,6 @@ class BitDustRESTHTTPServer(JsonAPIResource):
             include_uploads=bool(_request_arg(request, 'uploads', '1') in ['1', 'true', ]),
             include_downloads=bool(_request_arg(request, 'downloads', '1') in ['1', 'true', ]),
         )
-
-    @GET('^/f/s$')
-    @GET('^/v1/file/sync$')
-    @GET('^/file/sync/v1$')
-    def file_sync_v1(self, request):
-        return api.files_sync()
 
     @POST('^/f/c$')
     @POST('^/v1/file/create$')
@@ -679,7 +671,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @GET('^/v1/share/list$')
     @GET('^/share/list/v1$')
     def share_list_v1(self, request):
-        return api.share_list(
+        return api.shares_list(
             only_active=bool(_request_arg(request, 'active', '0') in ['1', 'true', ]),
             include_mine=bool(_request_arg(request, 'mine', '1') in ['1', 'true', ]),
             include_granted=bool(_request_arg(request, 'granted', '1') in ['1', 'true', ]),
@@ -692,7 +684,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
         data = _request_data(request)
         return api.share_create(
             owner_id=data.get('owner_id', None),
-            key_size=int(data.get('key_size', '2048')),
+            key_size=int(data.get('key_size', None)),
             label=data.get('label', ''),
         )
 
@@ -709,10 +701,10 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @PUT('^/v1/share/grant$')
     @PUT('^/share/grant/v1$')
     def share_grant_v1(self, request):
-        data = _request_data(request, mandatory_keys=[('trusted_global_id', 'trusted_idurl', 'trusted_id', ), 'key_id', ])
+        data = _request_data(request, mandatory_keys=[('trusted_user_id', 'trusted_global_id', 'trusted_idurl', 'trusted_id', ), 'key_id', ])
         return api.share_grant(
-            trusted_remote_user=data.get('trusted_global_id') or data.get('trusted_idurl') or data.get('trusted_id'),
             key_id=data['key_id'],
+            trusted_user_id=data.get('trusted_user_id') or data.get('trusted_global_id') or data.get('trusted_idurl') or data.get('trusted_id'),
             timeout=data.get('timeout', 30),
         )
 
@@ -746,13 +738,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @GET('^/v1/group/list$')
     @GET('^/group/list/v1$')
     def group_list_v1(self, request):
-        return api.group_list()
-
-    @GET('^/gr/i$')
-    @GET('^/v1/group/info$')
-    @GET('^/group/info/v1$')
-    def group_info_v1(self, request):
-        return api.group_info(group_key_id=_request_arg(request, 'group_key_id'))
+        return api.groups_list()
 
     @POST('^/gr/c$')
     @POST('^/v1/group/create$')
@@ -761,9 +747,15 @@ class BitDustRESTHTTPServer(JsonAPIResource):
         data = _request_data(request)
         return api.group_create(
             creator_id=data.get('creator_id', None),
-            key_size=int(data.get('key_size', '2048')),
+            key_size=int(data.get('key_size', None)),
             label=data.get('label', ''),
         )
+
+    @GET('^/gr/i$')
+    @GET('^/v1/group/info$')
+    @GET('^/group/info/v1$')
+    def group_info_v1(self, request):
+        return api.group_info(group_key_id=_request_arg(request, 'group_key_id'))
 
     @POST('^/gr/j$')
     @POST('^/v1/group/join$')
@@ -786,10 +778,10 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @PUT('^/v1/group/share$')
     @PUT('^/group/share/v1$')
     def group_share_v1(self, request):
-        data = _request_data(request, mandatory_keys=[('trusted_global_id', 'trusted_idurl', 'trusted_id', ), 'group_key_id', ])
+        data = _request_data(request, mandatory_keys=[('trusted_user_id', 'trusted_global_id', 'trusted_idurl', 'trusted_id', ), 'group_key_id', ])
         return api.group_share(
-            trusted_remote_user=data.get('trusted_global_id') or data.get('trusted_idurl') or data.get('trusted_id'),
             group_key_id=data['group_key_id'],
+            trusted_user_id=data.get('trusted_user_id') or data.get('trusted_global_id') or data.get('trusted_idurl') or data.get('trusted_id'),
             timeout=data.get('timeout', 30),
         )
 
@@ -799,124 +791,29 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @GET('^/v1/friend/list$')
     @GET('^/friend/list/v1$')
     def friend_list_v1(self, request):
-        return api.friend_list()
+        return api.friends_list()
 
     @POST('^/fr/a$')
     @POST('^/v1/friend/add$')
     @POST('^/friend/add/v1$')
     def friend_add_v1(self, request):
-        data = _request_data(request, mandatory_keys=[('idurl', 'global_id', 'id', ), ])
+        data = _request_data(request, mandatory_keys=[('trusted_user_id', 'idurl', 'global_id', 'id', ), ])
         return api.friend_add(
-            idurl_or_global_id=data.get('global_id') or data.get('idurl') or data.get('id'),
+            trusted_user_id=data.get('trusted_user_id') or data.get('global_id') or data.get('idurl') or data.get('id'),
             alias=data.get('alias', ''),
         )
 
     @DELETE('^/fr/d$')
-    @DELETE('^/v1/friend/delete$')
     @DELETE('^/v1/friend/remove$')
-    @DELETE('^/friend/delete/v1$')
     @DELETE('^/friend/remove/v1$')
     def friend_remove_v1(self, request):
-        data = _request_data(request, mandatory_keys=[('idurl', 'global_id', 'id', ), ])
+        data = _request_data(request, mandatory_keys=[('user_id', 'idurl', 'global_id', 'id', ), ])
         return api.friend_remove(
-            idurl_or_global_id=data.get('global_id') or data.get('idurl') or data.get('id'),
+            user_id=data.get('user_id') or data.get('global_id') or data.get('idurl') or data.get('id'),
         )
 
     #------------------------------------------------------------------------------
 
-    @GET('^/sp/d$')
-    @GET('^/v1/space/donated$')
-    @GET('^/space/donated/v1$')
-    def space_donated_v1(self, request):
-        return api.space_donated()
-
-    @GET('^/sp/c$')
-    @GET('^/v1/space/consumed$')
-    @GET('^/space/consumed/v1$')
-    def space_consumed_v1(self, request):
-        return api.space_consumed()
-
-    @GET('^/sp/l$')
-    @GET('^/v1/space/local$')
-    @GET('^/space/local/v1$')
-    def space_local_v1(self, request):
-        return api.space_local()
-
-    #------------------------------------------------------------------------------
-
-    @GET('^/su/l$')
-    @GET('^/v1/supplier/list$')
-    @GET('^/supplier/list/v1$')
-    def supplier_list_v1(self, request):
-        return api.suppliers_list(
-            customer_idurl_or_global_id=_request_arg(request, 'customer_id') or _request_arg(request, 'customer_idurl') or _request_arg(request, 'id'),
-            verbose=bool(_request_arg(request, 'verbose', '0') in ['1', 'true', ]),
-        )
-
-    @DELETE('^/su/r$')
-    @DELETE('^/v1/supplier/replace$')
-    @POST('^/v1/supplier/replace$')
-    @DELETE('^/supplier/replace/v1$')
-    @POST('^/supplier/replace/v1$')
-    def supplier_replace_v1(self, request):
-        data = _request_data(request, mandatory_keys=[('index', 'pos', 'position', 'idurl', 'global_id', 'id', ), ])
-        return api.supplier_replace(
-            index_or_idurl_or_global_id=_index_or_idurl_or_global_id(data)
-        )
-
-    @PUT('^/su/sw$')
-    @PUT('^/v1/supplier/switch$')
-    @PUT('^/supplier/switch/v1$')
-    def supplier_switch_v1(self, request):
-        data = _request_data(request, mandatory_keys=[
-            ('index', 'position', 'pos', 'idurl', 'global_id', 'id', ),
-            ('new_idurl', 'new_global_id', ),
-        ])
-        return api.supplier_change(
-            index_or_idurl_or_global_id=_index_or_idurl_or_global_id(data),
-            new_supplier_idurl_or_global_id=data.get('new_global_id') or data.get('new_idurl') or data.get('new_id'),
-        )
-
-    @POST('^/su/png$')
-    @POST('^/v1/supplier/ping$')
-    @POST('^/supplier/ping/v1$')
-    def supplier_ping_v1(self, request):
-        return api.suppliers_ping()
-
-    @GET('^/su/dht$')
-    @GET('^/v1/supplier/list/dht$')
-    @GET('^/supplier/list/dht/v1$')
-    def supplier_dht_list_v1(self, request):
-        return api.suppliers_dht_lookup(
-            customer_idurl_or_global_id=_request_arg(request, 'customer_id') or _request_arg(request, 'customer_idurl') or _request_arg(request, 'id'),
-        )
-
-    #------------------------------------------------------------------------------
-
-    @GET('^/cu/l$')
-    @GET('^/v1/customer/list$')
-    @GET('^/customer/list/v1$')
-    def customer_list_v1(self, request):
-        return api.customers_list()
-
-    @DELETE('^/cu/d$')
-    @DELETE('^/v1/customer/delete$')
-    @DELETE('^/v1/customer/reject$')
-    @DELETE('^/customer/delete/v1$')
-    @DELETE('^/customer/reject/v1$')
-    def customer_reject_v1(self, request):
-        data = _request_data(request, mandatory_keys=[('idurl', 'global_id', 'id', ), ])
-        return api.customer_reject(
-            idurl_or_global_id=data.get('global_id') or data.get('idurl') or data.get('id'),
-        )
-
-    @POST('^/cu/png$')
-    @POST('^/v1/customer/ping$')
-    @POST('^/customer/ping/v1$')
-    def customer_ping_v1(self, request):
-        return api.customers_ping()
-
-    #------------------------------------------------------------------------------
 
     @GET('^/us/s/(?P<nickname>[^/]+)/$')
     @GET('^/v1/user/search/(?P<nickname>[^/]+)$')
@@ -978,6 +875,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
         )
 
     #------------------------------------------------------------------------------
+
     @GET('^/msg/h?')
     @GET('^/v1/message/history$')
     @GET('^/message/history/v1$')
@@ -1023,13 +921,106 @@ class BitDustRESTHTTPServer(JsonAPIResource):
 
     #------------------------------------------------------------------------------
 
-    @GET('^/st/l$')
-    @GET('^/v1/state/list$')
-    @GET('^/v1/automat/list$')
-    @GET('^/state/list/v1$')
-    @GET('^/automat/list/v1$')
-    def automat_list_v1(self, request):
-        return api.automats_list()
+    @GET('^/su/l$')
+    @GET('^/v1/supplier/list$')
+    @GET('^/supplier/list/v1$')
+    def supplier_list_v1(self, request):
+        return api.suppliers_list(
+            customer_id=_request_arg(request, 'customer_id') or _request_arg(request, 'customer_idurl') or _request_arg(request, 'id'),
+            verbose=bool(_request_arg(request, 'verbose', '0') in ['1', 'true', ]),
+        )
+
+    @POST('^/su/c$')
+    @POST('^/v1/supplier/change')
+    @POST('^/supplier/change/v1$')
+    def supplier_change_v1(self, request):
+        data = _request_data(request)
+        return api.supplier_change(
+            position=_input_value(data, ['position', 'pos', 'index', ], None),
+            supplier_id=data.get('supplier_id') or data.get('supplier_idurl') or data.get('supplier_glob_id'),
+            new_supplier_id=data.get('new_global_id') or data.get('new_idurl') or data.get('new_supplier_id'),
+        )
+
+    @DELETE('^/su/r$')
+    @DELETE('^/v1/supplier/replace$')
+    @DELETE('^/supplier/replace/v1$')
+    def supplier_replace_v1(self, request):
+        data = _request_data(request)
+        return api.supplier_change(
+            position=_input_value(data, ['position', 'pos', 'index', ], None),
+            supplier_id=data.get('supplier_id') or data.get('supplier_idurl') or data.get('supplier_glob_id'),
+            new_supplier_id=None,
+        )
+
+    @PUT('^/su/sw$')
+    @PUT('^/v1/supplier/switch$')
+    @PUT('^/supplier/switch/v1$')
+    def supplier_switch_v1(self, request):
+        data = _request_data(request, mandatory_keys=[
+            ('new_idurl', 'new_global_id', 'new_supplier_id', ),
+        ])
+        return api.supplier_change(
+            position=_input_value(data, ['position', 'pos', 'index', ], None),
+            supplier_id=data.get('supplier_id') or data.get('supplier_idurl') or data.get('supplier_glob_id'),
+            new_supplier_id=data.get('new_global_id') or data.get('new_idurl') or data.get('new_supplier_id'),
+        )
+
+    @POST('^/su/png$')
+    @POST('^/v1/supplier/ping$')
+    @POST('^/supplier/ping/v1$')
+    def supplier_ping_v1(self, request):
+        return api.suppliers_ping()
+
+    @GET('^/su/dht$')
+    @GET('^/v1/supplier/list/dht$')
+    @GET('^/supplier/list/dht/v1$')
+    def supplier_dht_list_v1(self, request):
+        return api.suppliers_dht_lookup(
+            customer_id=_request_arg(request, 'customer_id') or _request_arg(request, 'customer_idurl') or _request_arg(request, 'id'),
+        )
+
+    #------------------------------------------------------------------------------
+
+    @GET('^/cu/l$')
+    @GET('^/v1/customer/list$')
+    @GET('^/customer/list/v1$')
+    def customer_list_v1(self, request):
+        return api.customers_list()
+
+    @DELETE('^/cu/d$')
+    @DELETE('^/v1/customer/reject$')
+    @DELETE('^/customer/reject/v1$')
+    def customer_reject_v1(self, request):
+        data = _request_data(request, mandatory_keys=[('idurl', 'global_id', 'id', ), ])
+        return api.customer_reject(
+            idurl_or_global_id=data.get('global_id') or data.get('idurl') or data.get('id'),
+        )
+
+    @POST('^/cu/png$')
+    @POST('^/v1/customer/ping$')
+    @POST('^/customer/ping/v1$')
+    def customer_ping_v1(self, request):
+        return api.customers_ping()
+
+    #------------------------------------------------------------------------------
+
+    @GET('^/sp/d$')
+    @GET('^/v1/space/donated$')
+    @GET('^/space/donated/v1$')
+    def space_donated_v1(self, request):
+        return api.space_donated()
+
+    @GET('^/sp/c$')
+    @GET('^/v1/space/consumed$')
+    @GET('^/space/consumed/v1$')
+    def space_consumed_v1(self, request):
+        return api.space_consumed()
+
+    @GET('^/sp/l$')
+    @GET('^/v1/space/local$')
+    @GET('^/space/local/v1$')
+    def space_local_v1(self, request):
+        return api.space_local()
 
     #------------------------------------------------------------------------------
 
@@ -1038,7 +1029,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @GET('^/service/list/v1$')
     def service_list_v1(self, request):
         return api.services_list(
-            show_configs=bool(_request_arg(request, 'config', '0') in ['1', 'true', ]),
+            with_configs=bool(_request_arg(request, 'with_configs', '0') in ['1', 'true', ]),
         )
 
     @GET('^/svc/i/(?P<service_name>[^/]+)/$')
@@ -1086,10 +1077,20 @@ class BitDustRESTHTTPServer(JsonAPIResource):
 
     #------------------------------------------------------------------------------
 
+    @GET('^/st/l$')
+    @GET('^/v1/state/list$')
+    @GET('^/v1/automat/list$')
+    @GET('^/state/list/v1$')
+    @GET('^/automat/list/v1$')
+    def automat_list_v1(self, request):
+        return api.automats_list()
+
+    #------------------------------------------------------------------------------
+
     @GET('^/tr/l$')
     @GET('^/v1/transfer/list$')
     @GET('^/transfer/list/v1$')
-    def transfers_list_v1(self, request):
+    def transfer_list_v1(self, request):
         return api.transfers_list()
 
     #------------------------------------------------------------------------------
@@ -1120,13 +1121,13 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @GET('^/v1/queue/consumer/list$')
     @GET('^/queue/consumer/list/v1$')
     def queue_consumer_list_v1(self, request):
-        return api.queue_consumer_list()
+        return api.queue_consumers_list()
 
     @GET('^/qu/p/l$')
     @GET('^/v1/queue/producer/list$')
     @GET('^/queue/producer/list/v1$')
     def queue_producer_list_v1(self, request):
-        return api.queue_producer_list()
+        return api.queue_producers_list()
 
     #------------------------------------------------------------------------------
 

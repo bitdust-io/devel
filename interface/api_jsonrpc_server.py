@@ -128,29 +128,30 @@ class BitDustJsonRPCServer(JSONRPCServer):
         return result
 
     def _catch_filemanager_methods(self, request_dict):
-        if not request_dict['method'].startswith('filemanager_'):
-            return None
-        try:
-            fm_method = request_dict['method'].replace('filemanager_', '')
-            fm_request = {}
-            params = [] if 'params' not in request_dict else request_dict['params']
-            fm_request['params'] = {
-                i[0]: i[1] for i in [p.split("=", 1) for p in params]}
-            fm_request['params']['mode'] = fm_method
-            request_dict = {'_executed': time.time(), }
-        except Exception as exc:
-            lg.exc()
-            return api.ERROR(exc.message)
-        try:
-            fm_result = api.filemanager(fm_request)
-            if isinstance(fm_result, Deferred):
-                fm_result.addCallback(self._convert_filemanager_response)
-            else:
-                fm_result = self._convert_filemanager_response(fm_result)
-        except Exception as exc:
-            lg.exc()
-            fm_result = api.ERROR(exc.message)
-        return fm_result
+        return None
+#         if not request_dict['method'].startswith('filemanager_'):
+#             return None
+#         try:
+#             fm_method = request_dict['method'].replace('filemanager_', '')
+#             fm_request = {}
+#             params = [] if 'params' not in request_dict else request_dict['params']
+#             fm_request['params'] = {
+#                 i[0]: i[1] for i in [p.split("=", 1) for p in params]}
+#             fm_request['params']['mode'] = fm_method
+#             request_dict = {'_executed': time.time(), }
+#         except Exception as exc:
+#             lg.exc()
+#             return api.ERROR(exc.message)
+#         try:
+#             fm_result = api.filemanager(fm_request)
+#             if isinstance(fm_result, Deferred):
+#                 fm_result.addCallback(self._convert_filemanager_response)
+#             else:
+#                 fm_result = self._convert_filemanager_response(fm_result)
+#         except Exception as exc:
+#             lg.exc()
+#             fm_result = api.ERROR(exc.message)
+#         return fm_result
 
     def _callMethod(self, request_dict):
         if _Debug:
@@ -181,14 +182,14 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_restart(self, show=False):
         return api.process_restart(show)
 
-    def jsonrpc_show(self):
-        return api.process_show()
+    # def jsonrpc_show(self):
+    #     return api.process_show()
 
-    def jsonrpc_filemanager(self, json_request):
-        return api.filemanager(json_request)
+    # def jsonrpc_filemanager(self, json_request):
+    #     return api.filemanager(json_request)
 
-    def jsonrpc_config_list(self, sort=False):
-        return api.config_list(sort)
+    def jsonrpc_configs_list(self, sort=False):
+        return api.configs_list(sort)
 
     def jsonrpc_config_get(self, key):
         return api.config_get(key)
@@ -217,12 +218,12 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_key_erase(self, key_id):
         return api.key_erase(key_id)
 
-    def jsonrpc_key_share(self, key_id, trusted_global_id_or_idurl, include_private=False, timeout=10):
-        return api.key_share(key_id=key_id, trusted_global_id_or_idurl=trusted_global_id_or_idurl,
+    def jsonrpc_key_share(self, key_id, trusted_user_id, include_private=False, timeout=10):
+        return api.key_share(key_id=key_id, trusted_user_id=trusted_user_id,
                              include_private=include_private, timeout=timeout)
 
-    def jsonrpc_key_audit(self, key_id, untrusted_global_id_or_idurl, is_private=False, timeout=10):
-        return api.key_audit(key_id=key_id, untrusted_global_id_or_idurl=untrusted_global_id_or_idurl,
+    def jsonrpc_key_audit(self, key_id, untrusted_user_id, is_private=False, timeout=10):
+        return api.key_audit(key_id=key_id, untrusted_user_id=untrusted_user_id,
                              is_private=is_private, timeout=timeout)
 
     def jsonrpc_files_sync(self):
@@ -264,8 +265,8 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_share_create(self, key_alias, remote_path=None):
         return api.share_create(key_alias=key_alias, remote_path=remote_path)
 
-    def jsonrpc_share_grant(self, trusted_remote_user, key_id):
-        return api.share_grant(trusted_remote_user, key_id)
+    def jsonrpc_share_grant(self, key_id, trusted_user_id):
+        return api.share_grant(key_id, trusted_user_id)
 
     def jsonrpc_share_open(self, key_id):
         return api.share_open(key_id)
@@ -273,8 +274,8 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_share_close(self, key_id):
         return api.share_close(key_id)
 
-    def jsonrpc_share_list(self):
-        return api.share_list()
+    def jsonrpc_shares_list(self):
+        return api.shares_list()
 
     def jsonrpc_share_history(self):
         return api.share_history()
@@ -282,8 +283,8 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_suppliers_list(self):
         return api.suppliers_list()
 
-    def jsonrpc_supplier_replace(self, index_or_idurl):
-        return api.supplier_replace(index_or_idurl)
+    def jsonrpc_supplier_replace(self, position=None, supplier_id=None):
+        return api.supplier_replace(position=position, supplier_id=supplier_id)
 
     def jsonrpc_supplier_change(self, index_or_idurl, new_idurl):
         return api.supplier_change(index_or_idurl, new_idurl)
@@ -291,8 +292,8 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_suppliers_ping(self):
         return api.suppliers_ping()
 
-    def jsonrpc_suppliers_dht_lookup(self, customer_idurl_or_global_id):
-        return api.suppliers_dht_lookup(customer_idurl_or_global_id)
+    def jsonrpc_suppliers_dht_lookup(self, customer_id):
+        return api.suppliers_dht_lookup(customer_id)
 
     def jsonrpc_customers_list(self):
         return api.customers_list()
@@ -363,14 +364,14 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_nickname_set(self, nickname):
         return api.nickname_set(nickname)
 
-    def jsonrpc_friend_list(self):
-        return api.friend_list()
+    def jsonrpc_friends_list(self):
+        return api.friends_list()
 
-    def jsonrpc_friend_add(self, idurl, alias=None):
-        return api.friend_add(idurl, alias=alias)
+    def jsonrpc_friend_add(self, trusted_user_id, alias=None):
+        return api.friend_add(trusted_user_id, alias=alias)
 
-    def jsonrpc_friend_remove(self, idurl):
-        return api.friend_remove(idurl)
+    def jsonrpc_friend_remove(self, user_id):
+        return api.friend_remove(user_id)
 
     def jsonrpc_message_send(self, recipient, message_body):
         return api.message_send(recipient, message_body)
@@ -423,4 +424,4 @@ class BitDustJsonRPCServer(JSONRPCServer):
 if __name__ == "__main__":
     lg.set_debug_level(20)
     init()
-    reactor.run()
+    reactor.run()  # @UndefinedVariable

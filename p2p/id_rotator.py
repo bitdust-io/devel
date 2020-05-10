@@ -108,8 +108,8 @@ def check():
 
 def run(preferred_servers={}, force=False):
     """
-    Executes id_rotator() automat to check my identity sources and if republish my identity
-    on another ID server if current situation "is not healthy".
+    Executes id_rotator() state machine to test my identity sources and if needed republish my identity
+    on another ID server in case current situation with ID sources "is not healthy".
     Input parameter "preferred_servers" can be used to control which servers to be used
     when replacing a dead one.
     Returns True/False via deferred object to report result.

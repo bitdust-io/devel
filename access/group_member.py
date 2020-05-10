@@ -931,12 +931,12 @@ class GroupMember(automat.Automat):
             self.outgoing_messages.pop(outgoing_counter)
             self.automat('message-pushed', outgoing_counter=outgoing_counter)
             return
-        self._do_send_message_to_broker(json_payload=None, outgoing_counter=outgoing_counter, packet_id=packet_id)
+        self._do_send_message_to_broker(json_payload=None, outgoing_counter=outgoing_counter, packet_id=None)
 
     def _on_message_to_broker_failed(self, err, outgoing_counter, packet_id):
         if _Debug:
             lg.args(_DebugLevel, err=err, outgoing_counter=outgoing_counter, packet_id=packet_id)
-        self._do_send_message_to_broker(json_payload=None, outgoing_counter=outgoing_counter, packet_id=packet_id)
+        self._do_send_message_to_broker(json_payload=None, outgoing_counter=outgoing_counter, packet_id=None)
 
     def _on_read_customer_message_brokers(self, brokers_info_list):
         if _Debug:
