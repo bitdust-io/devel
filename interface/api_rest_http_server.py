@@ -1086,7 +1086,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     def packet_stats_v1(self, request):
         return api.packets_stats()
 
-#------------------------------------------------------------------------------
+    #------------------------------------------------------------------------------
 
     @GET('^/tr/l$')
     @GET('^/v1/transfer/list$')
@@ -1109,16 +1109,6 @@ class BitDustRESTHTTPServer(JsonAPIResource):
         return api.streams_list(
             protocols=map(strng.to_text, filter(None, _request_arg(request, 'protocols', '').strip().lower().split(','))) or None,
         )
-
-    #------------------------------------------------------------------------------
-
-    @GET('^/st/l$')
-    @GET('^/v1/state/list$')
-    @GET('^/v1/automat/list$')
-    @GET('^/state/list/v1$')
-    @GET('^/automat/list/v1$')
-    def automat_list_v1(self, request):
-        return api.automats_list()
 
     #------------------------------------------------------------------------------
 
@@ -1146,21 +1136,20 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @POST('^/v1/event/send/(?P<event_id>[^/]+)$')
     @POST('^/event/send/(?P<event_id>[^/]+)/v1$')
     def event_send_v1(self, request, event_id):
-        return api.event_send(event_id, json_data=_request_data(request,))
+        return api.event_send(
+            event_id,
+            data=_request_data(request),
+        )
 
-    @GET('^/ev/l/(?P<consumer_id>[^/]+)/$')
-    @GET('^/v1/event/listen/(?P<consumer_id>[^/]+)$')
-    @GET('^/event/listen/(?P<consumer_id>[^/]+)/v1$')
-    def event_listen_v1(self, request, consumer_id):
-        return api.event_listen(consumer_id)
+    @GET('^/ev/l/(?P<consumer_callback_id>[^/]+)/$')
+    @GET('^/v1/event/listen/(?P<consumer_callback_id>[^/]+)$')
+    @GET('^/event/listen/(?P<consumer_callback_id>[^/]+)/v1$')
+    def event_listen_v1(self, request, consumer_callback_id):
+        return api.event_listen(
+            consumer_callback_id=consumer_callback_id,
+        )
 
     #------------------------------------------------------------------------------
-
-    @GET('^/nw/rcon$')
-    @GET('^/v1/network/reconnect$')
-    @GET('^/network/reconnect/v1$')
-    def network_reconnect_v1(self, request):
-        return api.network_reconnect()
 
     @GET('^/nw/stn$')
     @GET('^/v1/network/stun$')
@@ -1170,6 +1159,12 @@ class BitDustRESTHTTPServer(JsonAPIResource):
             udp_port=int(_request_arg(request, 'udp_port', 0)) or None,
             dht_port=int(_request_arg(request, 'dht_port', 0)) or None,
         )
+
+    @GET('^/nw/rcon$')
+    @GET('^/v1/network/reconnect$')
+    @GET('^/network/reconnect/v1$')
+    def network_reconnect_v1(self, request):
+        return api.network_reconnect()
 
     @GET('^/nw/con$')
     @GET('^/v1/network/connected$')
@@ -1182,13 +1177,13 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @GET('^/network/status/v1$')
     def network_status_v1(self, request):
         return api.network_status(
-            show_suppliers=bool(_request_arg(request, 'suppliers', '0') in ['1', 'true', ]),
-            show_customers=bool(_request_arg(request, 'customers', '0') in ['1', 'true', ]),
-            show_cache=bool(_request_arg(request, 'cache', '0') in ['1', 'true', ]),
-            show_tcp=bool(_request_arg(request, 'tcp', '0') in ['1', 'true', ]),
-            show_udp=bool(_request_arg(request, 'udp', '0') in ['1', 'true', ]),
-            show_proxy=bool(_request_arg(request, 'proxy', '0') in ['1', 'true', ]),
-            show_dht=bool(_request_arg(request, 'dht', '0') in ['1', 'true', ]),
+            suppliers=bool(_request_arg(request, 'suppliers', '0') in ['1', 'true', ]),
+            customers=bool(_request_arg(request, 'customers', '0') in ['1', 'true', ]),
+            cache=bool(_request_arg(request, 'cache', '0') in ['1', 'true', ]),
+            tcp=bool(_request_arg(request, 'tcp', '0') in ['1', 'true', ]),
+            udp=bool(_request_arg(request, 'udp', '0') in ['1', 'true', ]),
+            proxy=bool(_request_arg(request, 'proxy', '0') in ['1', 'true', ]),
+            dht=bool(_request_arg(request, 'dht', '0') in ['1', 'true', ]),
         )
 
     @GET('^/nw/i$')
@@ -1198,13 +1193,13 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @GET('^/network/details/v1$')
     def network_info_v1(self, request):
         return api.network_status(
-            show_suppliers=bool(_request_arg(request, 'suppliers', '1') in ['1', 'true', ]),
-            show_customers=bool(_request_arg(request, 'customers', '1') in ['1', 'true', ]),
-            show_cache=bool(_request_arg(request, 'cache', '1') in ['1', 'true', ]),
-            show_tcp=bool(_request_arg(request, 'tcp', '1') in ['1', 'true', ]),
-            show_udp=bool(_request_arg(request, 'udp', '1') in ['1', 'true', ]),
-            show_proxy=bool(_request_arg(request, 'proxy', '1') in ['1', 'true', ]),
-            show_dht=bool(_request_arg(request, 'dht', '1') in ['1', 'true', ]),
+            suppliers=bool(_request_arg(request, 'suppliers', '1') in ['1', 'true', ]),
+            customers=bool(_request_arg(request, 'customers', '1') in ['1', 'true', ]),
+            cache=bool(_request_arg(request, 'cache', '1') in ['1', 'true', ]),
+            tcp=bool(_request_arg(request, 'tcp', '1') in ['1', 'true', ]),
+            udp=bool(_request_arg(request, 'udp', '1') in ['1', 'true', ]),
+            proxy=bool(_request_arg(request, 'proxy', '1') in ['1', 'true', ]),
+            dht=bool(_request_arg(request, 'dht', '1') in ['1', 'true', ]),
         )
 
     @GET('^/nw/cf$')
@@ -1220,7 +1215,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @GET('^/dht/node/find/v1$')
     def dht_node_find_v1(self, request):
         return api.dht_node_find(
-            node_id_64=_request_arg(request, 'dht_id', mandatory=False, default=None),
+            node_id_64=_request_arg(request, 'node_id_64', mandatory=False, default=None) or _request_arg(request, 'dht_id', mandatory=False, default=None),
             layer_id=int(_request_arg(request, 'layer_id', mandatory=False, default=0)),
         )
 
@@ -1261,6 +1256,16 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @GET('^/dht/db/dump/v1$')
     def dht_db_dump_v1(self, request):
         return api.dht_local_db_dump()
+
+    #------------------------------------------------------------------------------
+
+    @GET('^/st/l$')
+    @GET('^/v1/state/list$')
+    @GET('^/v1/automat/list$')
+    @GET('^/state/list/v1$')
+    @GET('^/automat/list/v1$')
+    def automat_list_v1(self, request):
+        return api.automats_list()
 
     #------------------------------------------------------------------------------
 

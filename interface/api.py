@@ -2812,6 +2812,57 @@ def user_observe(nickname, attempts=3):
     )
     return ret
 
+
+# def nickname_get():
+#     """
+#     Returns my current nickname.
+# 
+#     ###### HTTP
+#         curl -X GET 'localhost:8180/nickname/get/v1'
+# 
+#     ###### WebSocket
+#         websocket.send('{"command": "api_call", "method": "queue_producers_list", "kwargs": {} }');
+#     """
+#     from main import settings
+#     if not driver.is_on('service_private_messages'):
+#         return ERROR('service_private_messages() is not started')
+#     return OK({'nickname': settings.getNickName(), })
+
+
+# def nickname_set(nickname):
+#     """
+#     Set my nickname register and keep your nickname in DHT
+#     network.
+#     """
+#     from lib import misc
+#     if not nickname:
+#         return ERROR('requires nickname of the user')
+#     if not misc.ValidNickName(nickname):
+#         return ERROR('invalid nickname')
+#     if not driver.is_on('service_private_messages'):
+#         return ERROR('service_private_messages() is not started')
+#     from chat import nickname_holder
+#     from main import settings
+#     from userid import my_id
+#     settings.setNickName(nickname)
+#     ret = Deferred()
+# 
+#     def _nickname_holder_result(result, key):
+#         nickname_holder.A().remove_result_callback(_nickname_holder_result)
+#         return ret.callback(OK(
+#             {
+#                 'success': result,
+#                 'nickname': key,
+#                 'global_id': my_id.getGlobalID(),
+#                 'idurl': my_id.getLocalID(),
+#             },
+#             api_method='nickname_set',
+#         ))
+# 
+#     nickname_holder.A().add_result_callback(_nickname_holder_result)
+#     nickname_holder.A('set', nickname)
+#     return ret
+
 #------------------------------------------------------------------------------
 
 def message_history(recipient_id=None, sender_id=None, message_type=None, offset=0, limit=100):
@@ -2939,6 +2990,31 @@ def message_send_group(group_key_id, data):
         lg.out(_DebugLevel, 'api.message_send_group to %r' % group_key_id)
     this_group_member.automat('push-message', json_payload=data)
     return OK()
+
+
+# def message_send_broadcast(payload):
+#     """
+#     Sends broadcast message to all peers in the network.
+# 
+#     Message must be provided in `payload` argument is a Json object.
+# 
+#     WARNING! Please, do not send too often and do not send more then
+#     several kilobytes per message.
+#     """
+#     if not driver.is_on('service_broadcasting'):
+#         return ERROR('service_broadcasting() is not started')
+#     from broadcast import broadcast_service
+#     from broadcast import broadcast_listener
+#     from broadcast import broadcaster_node
+#     msg = broadcast_service.send_broadcast_message(payload)
+#     current_states = dict()
+#     if broadcaster_node.A():
+#         current_states[broadcaster_node.A().name] = broadcaster_node.A().state
+#     if broadcast_listener.A():
+#         current_states[broadcast_listener.A().name] = broadcast_listener.A().state
+#     if _Debug:
+#         lg.out(_DebugLevel, 'api.broadcast_send_message : %s, %s' % (msg, current_states))
+#     return RESULT([msg, current_states, ])
 
 
 def message_receive(consumer_callback_id, direction='incoming', message_types='private_message,group_message', polling_timeout=60):
@@ -3915,94 +3991,48 @@ def queue_producers_list():
 
 #------------------------------------------------------------------------------
 
-def nickname_get():
+def event_send(event_id, data=None):
     """
+    Method will generate and inject a new event inside the main process.
+
+    This method is provided for testing and development purposes.
+    
+    ###### HTTP
+        curl -X POST 'localhost:8180/event/send/client-event-abc/v1' -d '{"data": {"some_key": "some_value"}}'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "event_send", "kwargs": {"event_id": "client-event-produced", "data": {"some_key": "some_value"}} }');
     """
-    from main import settings
-    if not driver.is_on('service_private_messages'):
-        return ERROR('service_private_messages() is not started')
-    return OK({'nickname': settings.getNickName(), })
-
-
-def nickname_set(nickname):
-    """
-    Starts nickname_holder() machine to register and keep your nickname in DHT
-    network.
-    """
-    from lib import misc
-    if not nickname:
-        return ERROR('requires nickname of the user')
-    if not misc.ValidNickName(nickname):
-        return ERROR('invalid nickname')
-    if not driver.is_on('service_private_messages'):
-        return ERROR('service_private_messages() is not started')
-    from chat import nickname_holder
-    from main import settings
-    from userid import my_id
-    settings.setNickName(nickname)
-    ret = Deferred()
-
-    def _nickname_holder_result(result, key):
-        nickname_holder.A().remove_result_callback(_nickname_holder_result)
-        return ret.callback(OK(
-            {
-                'success': result,
-                'nickname': key,
-                'global_id': my_id.getGlobalID(),
-                'idurl': my_id.getLocalID(),
-            },
-            api_method='nickname_set',
-        ))
-
-    nickname_holder.A().add_result_callback(_nickname_holder_result)
-    nickname_holder.A('set', nickname)
-    return ret
-
-#------------------------------------------------------------------------------
-
-def broadcast_send_message(payload):
-    """
-    Sends broadcast message to all peers in the network.
-
-    Message must be provided in `payload` argument is a Json object.
-
-    WARNING! Please, do not send too often and do not send more then
-    several kilobytes per message.
-    """
-    if not driver.is_on('service_broadcasting'):
-        return ERROR('service_broadcasting() is not started')
-    from broadcast import broadcast_service
-    from broadcast import broadcast_listener
-    from broadcast import broadcaster_node
-    msg = broadcast_service.send_broadcast_message(payload)
-    current_states = dict()
-    if broadcaster_node.A():
-        current_states[broadcaster_node.A().name] = broadcaster_node.A().state
-    if broadcast_listener.A():
-        current_states[broadcast_listener.A().name] = broadcast_listener.A().state
-    if _Debug:
-        lg.out(_DebugLevel, 'api.broadcast_send_message : %s, %s' % (msg, current_states))
-    return RESULT([msg, current_states, ])
-
-#------------------------------------------------------------------------------
-
-def event_send(event_id, json_data=None):
     from main import events
-    json_payload = None
-    json_length = 0
-    if json_data and strng.is_string(json_data):
-        json_length = len(json_data)
+    json_payload = data
+    if data and strng.is_string(data):
         try:
-            json_payload = jsn.loads(strng.to_text(json_data or '{}'))
+            json_payload = jsn.loads(strng.to_text(data or '{}'))
         except:
             return ERROR('json data payload is not correct')
     evt = events.send(event_id, data=json_payload)
     if _Debug:
-        lg.out(_DebugLevel, 'api.event_send "%s" was fired to local node with %d bytes payload' % (event_id, json_length, ))
+        lg.out(_DebugLevel, 'api.event_send "%s" was fired to local node' % event_id)
     return OK({'event_id': event_id, 'created': evt.created, })
 
 
-def event_listen(consumer_id):
+def event_listen(consumer_callback_id):
+    """
+    This method can be used by clients to listen and process all events fired inside the main process.
+
+    If there are no pending events fired yet, this method will block and will be waiting for any new event.
+
+    If some messages are already waiting in the stream to be consumed method will return them immediately.
+    As soon as client received and processed the response events are marked as "consumed" and released from the buffer.
+
+    Client should call that method again to listen for next events. This is very similar to a long polling technique.
+
+    This method is only make sense for HTTP interface, because using a WebSocket client will receive application events directly.
+
+    ###### HTTP
+        curl -X GET 'localhost:8180/event/listen/my-client-event-hook/v1'
+
+    """
     from main import events
     ret = Deferred()
 
@@ -4019,7 +4049,7 @@ def event_listen(consumer_id):
         ret.callback(OK(result, api_method='event_listen'))
         return len(result) > 0
 
-    d = events.consume_events(consumer_id)
+    d = events.consume_events(consumer_callback_id)
     d.addCallback(_on_pending_events)
     d.addErrback(lambda err: ret.callback(ERROR(err, api_method='event_listen')))
     return ret
@@ -4028,6 +4058,13 @@ def event_listen(consumer_id):
 
 def network_stun(udp_port=None, dht_port=None):
     """
+    Begins network STUN process to detect your network configuration and current external IP address of that host. 
+
+    ###### HTTP
+        curl -X GET 'localhost:8180/network/stun/v1'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "network_stun", "kwargs": {} }');
     """
     from stun import stun_client
     ret = Deferred()
@@ -4038,12 +4075,13 @@ def network_stun(udp_port=None, dht_port=None):
 
 def network_reconnect():
     """
-    Sends "reconnect" event to network_connector() Automat in order to refresh
-    network connection.
+    Method can be used to refresh network status and restart all internal connections.
 
-    Return:
+    ###### HTTP
+        curl -X GET 'localhost:8180/network/reconnect/v1'
 
-        {'status': 'OK', 'result': 'reconnected'}
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "network_reconnect", "kwargs": {} }');
     """
     if not driver.is_on('service_network'):
         return ERROR('service_network() is not started')
@@ -4056,9 +4094,15 @@ def network_reconnect():
 
 def network_connected(wait_timeout=5):
     """
-    Be sure BitDust software is connected to other nodes in the network.
-    If all is good this method will block for `wait_timeout` seconds.
-    In case of some network issues method will return result asap.
+    Method can be used by clients to ensure BitDust application is connected to other nodes in the network.
+
+    If all is good this method will block for `wait_timeout` seconds. In case of some network issues method will return result immediately.
+
+    ###### HTTP
+        curl -X GET 'localhost:8180/network/connected/v1'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "network_connected", "kwargs": {} }');
     """
     if _Debug:
         lg.out(_DebugLevel + 10, 'api.network_connected  wait_timeout=%r' % wait_timeout)
@@ -4235,9 +4279,16 @@ def network_connected(wait_timeout=5):
     return ret
 
 
-def network_status(show_suppliers=True, show_customers=True, show_cache=True,
-                   show_tcp=True, show_udp=True, show_proxy=True, show_dht=True):
+def network_status(suppliers=False, customers=False, cache=False,
+                   tcp=False, udp=False, proxy=False, dht=False):
     """
+    Returns detailed info about current network status, protocols and active connections.
+
+    ###### HTTP
+        curl -X GET 'localhost:8180/network/status/v1?cache=1&suppliers=1&dht=1'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "network_status", "kwargs": {"cache": 1, "suppliers": 1, "dht": 1} }');
     """
     if not driver.is_on('service_network'):
         return ERROR('service_network() is not started')
@@ -4268,10 +4319,10 @@ def network_status(show_suppliers=True, show_customers=True, show_cache=True,
         r['global_id'] = my_id.getGlobalID()
         r['identity_sources'] = my_id.getLocalIdentity().getSources(as_originals=True)
         r['identity_contacts'] = my_id.getLocalIdentity().getContacts()
-    if True in [show_suppliers, show_customers, show_cache, ] and driver.is_on('service_p2p_hookups'):
+    if True in [suppliers, customers, cache, ] and driver.is_on('service_p2p_hookups'):
         from contacts import contactsdb
         from p2p import online_status
-        if show_suppliers:
+        if suppliers:
             connected = 0
             items = []
             for idurl in contactsdb.all_suppliers():
@@ -4293,7 +4344,7 @@ def network_status(show_suppliers=True, show_customers=True, show_cache=True,
                 'total': contactsdb.total_suppliers(),
                 'peers': items,
             }
-        if show_customers:
+        if customers:
             connected = 0
             items = []
             for idurl in contactsdb.customers():
@@ -4313,7 +4364,7 @@ def network_status(show_suppliers=True, show_customers=True, show_cache=True,
                 'total': contactsdb.num_customers(),
                 'peers': items,
             }
-        if show_cache:
+        if cache:
             from contacts import identitycache
             connected = 0
             items = []
@@ -4334,9 +4385,9 @@ def network_status(show_suppliers=True, show_customers=True, show_cache=True,
                 'connected': connected,
                 'peers': items,
             }
-    if True in [show_tcp, show_udp, show_proxy, ]:
+    if True in [tcp, udp, proxy, ]:
         from transport import gateway
-        if show_tcp:
+        if tcp:
             r['tcp'] = {
                 'sessions': [],
                 'streams': [],
@@ -4368,7 +4419,7 @@ def network_status(show_suppliers=True, show_customers=True, show_cache=True,
                     streams.append(i)
                 r['tcp']['sessions'] = sessions
                 r['tcp']['streams'] = streams
-        if show_udp:
+        if udp:
             from lib import udp
             r['udp'] = {
                 'sessions': [],
@@ -4404,7 +4455,7 @@ def network_status(show_suppliers=True, show_customers=True, show_cache=True,
                     })
                 r['udp']['sessions'] = sessions
                 r['udp']['streams'] = streams
-        if show_proxy:
+        if proxy:
             r['proxy'] = {
                 'sessions': [],
             }
@@ -4429,7 +4480,7 @@ def network_status(show_suppliers=True, show_customers=True, show_cache=True,
                         i['queue'] = len(s.pending_packets)
                     sessions.append(i)
                 r['proxy']['sessions' ] = sessions
-    if show_dht:
+    if dht:
         from dht import dht_service
         r['dht'] = {}
         if driver.is_on('service_entangled_dht'):
@@ -4459,11 +4510,33 @@ def network_status(show_suppliers=True, show_customers=True, show_cache=True,
 
 
 def network_configuration():
+    """
+    Returns details about network services.
+
+    ###### HTTP
+        curl -X GET 'localhost:8180/network/configuration/v1'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "network_configuration", "kwargs": {} }');
+    """
     return OK(driver.get_network_configuration())
 
 #------------------------------------------------------------------------------
 
 def dht_node_find(node_id_64=None, layer_id=0):
+    """
+    Lookup "closest" (in terms of hashes and cryptography) DHT nodes to a given `node_id_64` value.
+
+    Method can be also used to pick a random DHT node from the network if you do not pass any value to `node_id_64`.
+
+    Parameter `layer_id` specifies which layer of the routing table to be used.
+
+    ###### HTTP
+        curl -X GET 'localhost:8180/dht/node/find/v1?node_id_64=4271c8f079695d77f80186ac9365e3df949ff74d'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "dht_node_find", "kwargs": {"node_id_64": "4271c8f079695d77f80186ac9365e3df949ff74d"} }');
+    """
     if not driver.is_on('service_entangled_dht'):
         return ERROR('service_entangled_dht() is not started')
     from dht import dht_service
@@ -4502,6 +4575,19 @@ def dht_node_find(node_id_64=None, layer_id=0):
 
 
 def dht_user_random(layer_id=0, count=1):
+    """
+    Pick random live nodes from BitDust network.
+
+    Method is used during services discovery, for example when you need to hire a new supplier to store your data.
+
+    Parameter `layer_id` specifies which layer of the routing table to be used.
+
+    ###### HTTP
+        curl -X GET 'localhost:8180/dht/user/random/v1?count=1'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "dht_node_find", "kwargs": {"node_id_64": "4271c8f079695d77f80186ac9365e3df949ff74d"} }');
+    """
     if not driver.is_on('service_nodes_lookup'):
         return ERROR('service_nodes_lookup() is not started')
     from p2p import lookup
@@ -4530,6 +4616,7 @@ def dht_user_random(layer_id=0, count=1):
         force_discovery=True,
         process_method=_process,
     )
+    tsk.result_defer.addTimeout(timeout=25, clock=reactor)
     tsk.result_defer.addCallback(_cb)
     tsk.result_defer.addErrback(_eb)
     return ret

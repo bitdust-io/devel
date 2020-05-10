@@ -490,7 +490,7 @@ def message_receive_v1(node, expected_data=None, consumer='test_consumer', get_r
 
 
 def message_history_v1(node, recipient_id, message_type='private_message', timeout=15):
-    response = request_get(node, f'message/history/v1?id={recipient_id}&type={message_type}', timeout=timeout)
+    response = request_get(node, f'message/history/v1?id={recipient_id}&message_type={message_type}', timeout=timeout)
     assert response.status_code == 200
     print('\nmessage/history/v1 [%s] recipient_id=%s : %s\n' % (node, recipient_id, pprint.pformat(response.json()), ))
     assert response.json()['status'] == 'OK', response.json()
