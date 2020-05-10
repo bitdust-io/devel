@@ -346,11 +346,11 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_transfers_list(self):
         return api.transfers_list()
 
-    def jsonrpc_queue_list(self):
-        return api.queue_list()
+    def jsonrpc_queues_list(self):
+        return api.queues_list()
 
-    def jsonrpc_user_ping(self, idurl, timeout=10):
-        return api.user_ping(str(idurl), timeout)
+    def jsonrpc_user_ping(self, user_id, timeout=10):
+        return api.user_ping(user_id, timeout)
 
     def jsonrpc_user_search(self, nickname, attempts=1):
         return api.user_search(nickname, attempts=attempts)

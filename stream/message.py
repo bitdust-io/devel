@@ -495,20 +495,26 @@ def send_message(json_data, recipient_global_id, packet_id=None,
 def consume_messages(consumer_callback_id, callback=None, direction=None, message_types=None, reset_callback=False):
     """
     Register a new callback method or Deferred object to wait and receive messages from the stream.
+
     If message was passed thru the stream but there were no callbacks registered to listen - the message is just ignored.
     When callback is registered any new message (if they match to specified criteria) will trigger callback to be executed.
     If callback is a Deferred object - the message will fire a callback() method of it so consumer can receive it.
     Right after receiving the message via callback() method consumer must call `consume_messages()` again to be able
-    to receive the next message - something like long polling pattern.
+    to receive the next message. This is very similar to a long polling technique.
+
     Stream also takes care of next messages that are not consumed yet by Deferred() callback in between of that calls to that method.
     If there are some messages that was not consumed by Deferred() - next call to that method will immediately fire
     callback() method of the Deferred() object with the list of messages.
+
     If input parameter `callback` is None Deferred() object will be automatically created and returned back as result.
     If input parameter `callback` is a callable method it will not be released like Deferred object - it will be fired
     for every message passed thru the stream.
+
     Parameter `direction` can be "incoming", "outgoing" or None (for both directions).
+
     Parameter `message_types` can be None (no filtering) or a list of desired types:
         "private_message", "group_message", "queue_message", "queue_message_replica"
+
     If `reset_callback` is True - previously registered Deferred object will be cleaned
     with `clear_consumer_callbacks()` method.
     """

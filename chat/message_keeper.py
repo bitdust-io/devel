@@ -44,8 +44,8 @@ from logs import lg
 
 from interface import api_web_socket
 
-from userid import my_id
-from userid import global_id
+# from userid import my_id
+# from userid import global_id
 
 from stream import message
 
@@ -71,10 +71,10 @@ def shutdown():
 
 #------------------------------------------------------------------------------
 
-def messages_key_id():
-    """
-    """
-    return global_id.MakeGlobalID(key_alias='messages', customer=my_id.getGlobalID())
+# def messages_key_id():
+#     """
+#     """
+#     return global_id.MakeGlobalID(key_alias='messages', customer=my_id.getGlobalID())
 
 #------------------------------------------------------------------------------
 

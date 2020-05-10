@@ -43,4 +43,4 @@ def test_customer_1_send_message_to_customer_2():
     # send message in different thread to get one in blocked `receive` call
     t = threading.Timer(1.0, message_send_v1, ['customer-1', 'master$customer-2@id-a_8084', random_message, ])
     t.start()
-    message_receive_v1('customer-2', expected_data=random_message)
+    message_receive_v1('customer-2', expected_data=random_message, timeout=31, polling_timeout=30)

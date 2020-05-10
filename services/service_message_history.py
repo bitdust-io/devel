@@ -50,19 +50,19 @@ class KeysStorageService(LocalService):
         ]
 
     def start(self):
-        from main import events
+        # from main import events
         from chat import message_database
         from chat import message_keeper
         message_database.init()
         message_keeper.init()
-        events.add_subscriber(self._on_my_keys_synchronized, 'my-keys-synchronized')
+        # events.add_subscriber(self._on_my_keys_synchronized, 'my-keys-synchronized')
         return True
 
     def stop(self):
-        from main import events
+        # from main import events
         from chat import message_database
         from chat import message_keeper
-        events.remove_subscriber(self._on_my_keys_synchronized, 'my-keys-synchronized')
+        # events.remove_subscriber(self._on_my_keys_synchronized, 'my-keys-synchronized')
         message_keeper.shutdown()
         message_database.shutdown()
         return True
@@ -70,12 +70,12 @@ class KeysStorageService(LocalService):
     def health_check(self):
         return True
 
-    def _on_my_keys_synchronized(self, evt):
-        from logs import lg
-        from main import settings
-        from storage import keys_synchronizer
-        from crypt import my_keys
-        from chat import message_keeper
-        if not my_keys.is_key_registered(message_keeper.messages_key_id()) and keys_synchronizer.is_synchronized():
-            lg.info('key to store messages was not found but we know that all my keys are in sync, generate a new key: %s' % message_keeper.messages_key_id())
-            my_keys.generate_key(message_keeper.messages_key_id(), key_size=settings.getPrivateKeySize())
+#     def _on_my_keys_synchronized(self, evt):
+#         from logs import lg
+#         from main import settings
+#         from storage import keys_synchronizer
+#         from crypt import my_keys
+#         from chat import message_keeper
+#         if not my_keys.is_key_registered(message_keeper.messages_key_id()) and keys_synchronizer.is_synchronized():
+#             lg.info('key to store messages was not found but we know that all my keys are in sync, generate a new key: %s' % message_keeper.messages_key_id())
+#             my_keys.generate_key(message_keeper.messages_key_id(), key_size=settings.getPrivateKeySize())

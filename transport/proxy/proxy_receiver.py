@@ -210,6 +210,16 @@ class ProxyReceiver(automat.Automat):
         'timer-10sec': (10.0, ['LISTEN']),
     }
 
+    def to_json(self):
+        return {
+            'name': self.name,
+            'state': self.state,
+            'host': ('%s://%s' % self.router_proto_host) if self.router_proto_host else '',
+            'idurl': self.router_idurl,
+            'bytes_received': self.traffic_in,
+            'bytes_sent': 0,
+        }
+
     def init(self):
         """
         Method to initialize additional variables and flags at creation phase

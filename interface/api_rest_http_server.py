@@ -814,52 +814,13 @@ class BitDustRESTHTTPServer(JsonAPIResource):
 
     #------------------------------------------------------------------------------
 
-
-    @GET('^/us/s/(?P<nickname>[^/]+)/$')
-    @GET('^/v1/user/search/(?P<nickname>[^/]+)$')
-    @GET('^/user/search/(?P<nickname>[^/]+)/v1$')
-    def user_search_v1(self, request, nickname):
-        return api.user_search(nickname, attempts=int(_request_arg(request, 'attempts', 1)))
-
-    @GET('^/us/o/(?P<nickname>[^/]+)/$')
-    @GET('^/v1/user/observe/(?P<nickname>[^/]+)$')
-    @GET('^/user/observe/(?P<nickname>[^/]+)/v1$')
-    def user_observe_v1(self, request, nickname):
-        return api.user_observe(nickname, attempts=int(_request_arg(request, 'attempts', 3)))
-
-    @GET('^/us/o$')
-    @GET('^/v1/user/observe$')
-    @GET('^/user/observe/v1$')
-    def user_observe_arg_v1(self, request):
-        return api.user_observe(
-            nickname=_request_arg(request, 'name', mandatory=True),
-            attempts=int(_request_arg(request, 'attempts', 3)),
-        )
-
-    @GET('^/us/st$')
-    @GET('^/v1/user/status$')
-    @GET('^/user/status/v1$')
-    def user_status_v1(self, request):
-        return api.user_status(
-            idurl_or_global_id=_request_arg(request, 'global_id') or _request_arg(request, 'idurl') or _request_arg(request, 'id')
-        )
-
-    @GET('^/us/st/c$')
-    @GET('^/v1/user/status/check$')
-    @GET('^/user/status/check/v1$')
-    def user_status_check_v1(self, request):
-        return api.user_status_check(
-            idurl_or_global_id=_request_arg(request, 'global_id') or _request_arg(request, 'idurl') or _request_arg(request, 'id'),
-            timeout=_request_arg(request, 'timeout', 10),
-        )
-
     @POST('^/us/png$')
     @POST('^/v1/user/ping$')
     @POST('^/user/ping/v1$')
     def user_ping_v1(self, request):
-        data = _request_data(request, mandatory_keys=[('idurl', 'global_id', 'id', ), ])
+        data = _request_data(request, mandatory_keys=[('user_id', 'idurl', 'global_id', 'id', ), ])
         return api.user_ping(
-            idurl_or_global_id=data.get('global_id') or data.get('idurl') or data.get('id'),
+            user_id=data.get('user_id') or data.get('global_id') or data.get('idurl') or data.get('id'),
             timeout=data.get('timeout', 15),
             retries=data.get('retries', 2),
         )
@@ -869,9 +830,59 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @GET('^/user/ping/v1$')
     def user_ping_get_v1(self, request):
         return api.user_ping(
-            idurl_or_global_id=_request_arg(request, 'global_id') or _request_arg(request, 'idurl') or _request_arg(request, 'id'),
+            user_id=_request_arg(request, 'user_id') or _request_arg(request, 'global_id') or _request_arg(request, 'idurl') or _request_arg(request, 'id'),
             timeout=_request_arg(request, 'timeout', 15),
             retries=_request_arg(request, 'retries', 2),
+        )
+
+    @GET('^/us/st$')
+    @GET('^/v1/user/status$')
+    @GET('^/user/status/v1$')
+    def user_status_v1(self, request):
+        return api.user_status(
+            user_id=_request_arg(request, 'global_id') or _request_arg(request, 'idurl') or _request_arg(request, 'id')
+        )
+
+    @GET('^/us/st/c$')
+    @GET('^/v1/user/status/check$')
+    @GET('^/user/status/check/v1$')
+    def user_status_check_v1(self, request):
+        return api.user_status_check(
+            user_id=_request_arg(request, 'user_id') or _request_arg(request, 'global_id') or _request_arg(request, 'idurl') or _request_arg(request, 'id'),
+            timeout=_request_arg(request, 'timeout', 10),
+        )
+
+    @GET('^/us/s/(?P<nickname>[^/]+)/$')
+    @GET('^/v1/user/search/(?P<nickname>[^/]+)$')
+    @GET('^/user/search/(?P<nickname>[^/]+)/v1$')
+    def user_search_v1(self, request, nickname):
+        return api.user_search(nickname, attempts=int(_request_arg(request, 'attempts', 1)))
+
+    @GET('^/us/s$')
+    @GET('^/v1/user/search$')
+    @GET('^/user/search/v1$')
+    def user_search_arg_v1(self, request):
+        return api.user_search(
+            nickname=_request_arg(request, 'nickname', mandatory=True),
+            attempts=int(_request_arg(request, 'attempts', 1)),
+        )
+
+    @GET('^/us/o/(?P<nickname>[^/]+)/$')
+    @GET('^/v1/user/observe/(?P<nickname>[^/]+)$')
+    @GET('^/user/observe/(?P<nickname>[^/]+)/v1$')
+    def user_observe_v1(self, request, nickname):
+        return api.user_observe(
+            nickname=nickname,
+            attempts=int(_request_arg(request, 'attempts', 3)),
+        )
+
+    @GET('^/us/o$')
+    @GET('^/v1/user/observe$')
+    @GET('^/user/observe/v1$')
+    def user_observe_arg_v1(self, request):
+        return api.user_observe(
+            nickname=_request_arg(request, 'nickname', mandatory=True),
+            attempts=int(_request_arg(request, 'attempts', 3)),
         )
 
     #------------------------------------------------------------------------------
@@ -883,10 +894,10 @@ class BitDustRESTHTTPServer(JsonAPIResource):
         return api.message_history(
             recipient_id=_request_arg(request, 'id', None, True),
             sender_id=_request_arg(request, 'sender_id', None, False),
-            message_type=_request_arg(request, 'type', 'private_message'),
+            message_type=_request_arg(request, 'message_type', 'private_message'),
         )
 
-    @GET('^/msg/r/(?P<consumer_id>[^/]+)/$')
+    @GET('^/msg/r/(?P<consumer_callback_id>[^/]+)/$')
     @GET('^/v1/message/receive/(?P<consumer_callback_id>[^/]+)$')
     @GET('^/message/receive/(?P<consumer_callback_id>[^/]+)/v1$')
     def message_receive_v1(self, request, consumer_callback_id):
@@ -901,10 +912,10 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @POST('^/v1/message/send$')
     @POST('^/message/send/v1$')
     def message_send_v1(self, request):
-        data = _request_data(request, mandatory_keys=[('idurl', 'global_id', 'id', ), 'data', ])
+        data = _request_data(request, mandatory_keys=[('recipient_id', 'idurl', 'global_id', 'id', ), 'data', ])
         return api.message_send(
-            recipient=data.get('global_id') or data.get('idurl') or data.get('id'),
-            json_data=data['data'],
+            recipient_id=data.get('recipient_id') or data.get('global_id') or data.get('idurl') or data.get('id'),
+            data=data['data'],
             ping_timeout=data.get('ping_timeout', 30),
             message_ack_timeout=data.get('message_ack_timeout', 15),
         )
@@ -916,7 +927,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
         data = _request_data(request, mandatory_keys=['group_key_id', 'data', ])
         return api.message_send_group(
             group_key_id=data.get('group_key_id'),
-            json_payload=data['data'],
+            data=data['data'],
         )
 
     #------------------------------------------------------------------------------
@@ -1077,37 +1088,27 @@ class BitDustRESTHTTPServer(JsonAPIResource):
 
     #------------------------------------------------------------------------------
 
-    @GET('^/st/l$')
-    @GET('^/v1/state/list$')
-    @GET('^/v1/automat/list$')
-    @GET('^/state/list/v1$')
-    @GET('^/automat/list/v1$')
-    def automat_list_v1(self, request):
-        return api.automats_list()
-
-    #------------------------------------------------------------------------------
-
     @GET('^/tr/l$')
     @GET('^/v1/transfer/list$')
     @GET('^/transfer/list/v1$')
     def transfer_list_v1(self, request):
         return api.transfers_list()
 
-    #------------------------------------------------------------------------------
-
     @GET('^/con/l$')
     @GET('^/v1/connection/list$')
     @GET('^/connection/list/v1$')
     def connection_list_v1(self, request):
-        return api.connections_list()
-
-    #------------------------------------------------------------------------------
+        return api.connections_list(
+            protocols=map(strng.to_text, filter(None, _request_arg(request, 'protocols', '').strip().lower().split(','))) or None,
+        )
 
     @GET('^/str/l$')
     @GET('^/v1/stream/list$')
     @GET('^/stream/list/v1$')
     def stream_list_v1(self, request):
-        return api.streams_list()
+        return api.streams_list(
+            protocols=map(strng.to_text, filter(None, _request_arg(request, 'protocols', '').strip().lower().split(','))) or None,
+        )
 
     #------------------------------------------------------------------------------
 
@@ -1115,7 +1116,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @GET('^/v1/queue/list$')
     @GET('^/queue/list/v1$')
     def queue_list_v1(self, request):
-        return api.queue_list()
+        return api.queues_list()
 
     @GET('^/qu/c/l$')
     @GET('^/v1/queue/consumer/list$')
@@ -1135,21 +1136,20 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @POST('^/v1/event/send/(?P<event_id>[^/]+)$')
     @POST('^/event/send/(?P<event_id>[^/]+)/v1$')
     def event_send_v1(self, request, event_id):
-        return api.event_send(event_id, json_data=_request_data(request,))
+        return api.event_send(
+            event_id,
+            data=_request_data(request),
+        )
 
-    @GET('^/ev/l/(?P<consumer_id>[^/]+)/$')
-    @GET('^/v1/event/listen/(?P<consumer_id>[^/]+)$')
-    @GET('^/event/listen/(?P<consumer_id>[^/]+)/v1$')
-    def event_listen_v1(self, request, consumer_id):
-        return api.event_listen(consumer_id)
+    @GET('^/ev/l/(?P<consumer_callback_id>[^/]+)/$')
+    @GET('^/v1/event/listen/(?P<consumer_callback_id>[^/]+)$')
+    @GET('^/event/listen/(?P<consumer_callback_id>[^/]+)/v1$')
+    def event_listen_v1(self, request, consumer_callback_id):
+        return api.event_listen(
+            consumer_callback_id=consumer_callback_id,
+        )
 
     #------------------------------------------------------------------------------
-
-    @GET('^/nw/rcon$')
-    @GET('^/v1/network/reconnect$')
-    @GET('^/network/reconnect/v1$')
-    def network_reconnect_v1(self, request):
-        return api.network_reconnect()
 
     @GET('^/nw/stn$')
     @GET('^/v1/network/stun$')
@@ -1159,6 +1159,12 @@ class BitDustRESTHTTPServer(JsonAPIResource):
             udp_port=int(_request_arg(request, 'udp_port', 0)) or None,
             dht_port=int(_request_arg(request, 'dht_port', 0)) or None,
         )
+
+    @GET('^/nw/rcon$')
+    @GET('^/v1/network/reconnect$')
+    @GET('^/network/reconnect/v1$')
+    def network_reconnect_v1(self, request):
+        return api.network_reconnect()
 
     @GET('^/nw/con$')
     @GET('^/v1/network/connected$')
@@ -1171,13 +1177,13 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @GET('^/network/status/v1$')
     def network_status_v1(self, request):
         return api.network_status(
-            show_suppliers=bool(_request_arg(request, 'suppliers', '0') in ['1', 'true', ]),
-            show_customers=bool(_request_arg(request, 'customers', '0') in ['1', 'true', ]),
-            show_cache=bool(_request_arg(request, 'cache', '0') in ['1', 'true', ]),
-            show_tcp=bool(_request_arg(request, 'tcp', '0') in ['1', 'true', ]),
-            show_udp=bool(_request_arg(request, 'udp', '0') in ['1', 'true', ]),
-            show_proxy=bool(_request_arg(request, 'proxy', '0') in ['1', 'true', ]),
-            show_dht=bool(_request_arg(request, 'dht', '0') in ['1', 'true', ]),
+            suppliers=bool(_request_arg(request, 'suppliers', '0') in ['1', 'true', ]),
+            customers=bool(_request_arg(request, 'customers', '0') in ['1', 'true', ]),
+            cache=bool(_request_arg(request, 'cache', '0') in ['1', 'true', ]),
+            tcp=bool(_request_arg(request, 'tcp', '0') in ['1', 'true', ]),
+            udp=bool(_request_arg(request, 'udp', '0') in ['1', 'true', ]),
+            proxy=bool(_request_arg(request, 'proxy', '0') in ['1', 'true', ]),
+            dht=bool(_request_arg(request, 'dht', '0') in ['1', 'true', ]),
         )
 
     @GET('^/nw/i$')
@@ -1187,13 +1193,13 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @GET('^/network/details/v1$')
     def network_info_v1(self, request):
         return api.network_status(
-            show_suppliers=bool(_request_arg(request, 'suppliers', '1') in ['1', 'true', ]),
-            show_customers=bool(_request_arg(request, 'customers', '1') in ['1', 'true', ]),
-            show_cache=bool(_request_arg(request, 'cache', '1') in ['1', 'true', ]),
-            show_tcp=bool(_request_arg(request, 'tcp', '1') in ['1', 'true', ]),
-            show_udp=bool(_request_arg(request, 'udp', '1') in ['1', 'true', ]),
-            show_proxy=bool(_request_arg(request, 'proxy', '1') in ['1', 'true', ]),
-            show_dht=bool(_request_arg(request, 'dht', '1') in ['1', 'true', ]),
+            suppliers=bool(_request_arg(request, 'suppliers', '1') in ['1', 'true', ]),
+            customers=bool(_request_arg(request, 'customers', '1') in ['1', 'true', ]),
+            cache=bool(_request_arg(request, 'cache', '1') in ['1', 'true', ]),
+            tcp=bool(_request_arg(request, 'tcp', '1') in ['1', 'true', ]),
+            udp=bool(_request_arg(request, 'udp', '1') in ['1', 'true', ]),
+            proxy=bool(_request_arg(request, 'proxy', '1') in ['1', 'true', ]),
+            dht=bool(_request_arg(request, 'dht', '1') in ['1', 'true', ]),
         )
 
     @GET('^/nw/cf$')
@@ -1209,7 +1215,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @GET('^/dht/node/find/v1$')
     def dht_node_find_v1(self, request):
         return api.dht_node_find(
-            node_id_64=_request_arg(request, 'dht_id', mandatory=False, default=None),
+            node_id_64=_request_arg(request, 'node_id_64', mandatory=False, default=None) or _request_arg(request, 'dht_id', mandatory=False, default=None),
             layer_id=int(_request_arg(request, 'layer_id', mandatory=False, default=0)),
         )
 
@@ -1250,6 +1256,16 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @GET('^/dht/db/dump/v1$')
     def dht_db_dump_v1(self, request):
         return api.dht_local_db_dump()
+
+    #------------------------------------------------------------------------------
+
+    @GET('^/st/l$')
+    @GET('^/v1/state/list$')
+    @GET('^/v1/automat/list$')
+    @GET('^/state/list/v1$')
+    @GET('^/automat/list/v1$')
+    def automat_list_v1(self, request):
+        return api.automats_list()
 
     #------------------------------------------------------------------------------
 

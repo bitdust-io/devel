@@ -558,6 +558,7 @@ def write_message(producer_id, queue_id, data, creation_time=None):
         raise Exception('invalid queue id')
     if len(queue(queue_id)) >= MAX_QUEUE_LENGTH:
         raise P2PQueueIsOverloaded('queue is overloaded')
+    producer(producer_id).produced_messages += 1
     new_message = QueueMessage(producer_id, queue_id, data, created=creation_time)
     queue(queue_id)[new_message.message_id] = new_message
     queue(queue_id)[new_message.message_id].state = 'PUSHED'

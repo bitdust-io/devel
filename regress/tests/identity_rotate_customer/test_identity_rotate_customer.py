@@ -67,7 +67,7 @@ def test_identity_rotate_customer_1():
     }
     t = threading.Timer(2.0, message_send_v1, ['customer-3', 'master$%s' % old_global_id, random_message, ])
     t.start()
-    message_receive_v1('customer-1', expected_data=random_message)
+    message_receive_v1('customer-1', expected_data=random_message, timeout=31, polling_timeout=30)
 
     # create one share and upload one file for customer-1
     share_id_customer_1 = share_create_v1('customer-1')
@@ -104,7 +104,6 @@ def test_identity_rotate_customer_1():
     # remember list of existing keys
     old_keys = [k['key_id'] for k in key_list_v1('customer-1')['result']]
     assert f'master${old_global_id}' in old_keys
-    assert f'messages${old_global_id}' in old_keys
     assert f'customer${old_global_id}' in old_keys
 
     # make customer-1 and customer-3 friends to each other
@@ -146,10 +145,8 @@ def test_identity_rotate_customer_1():
     new_keys = [k['key_id'] for k in key_list_v1('customer-1')['result']]
     assert len(old_keys) == len(new_keys)
     assert f'master${new_global_id}' in new_keys
-    assert f'messages${new_global_id}' in new_keys
     assert f'customer${new_global_id}' in new_keys
     assert f'master${old_global_id}' not in new_keys
-    assert f'messages${old_global_id}' not in new_keys
     assert f'customer${old_global_id}' not in new_keys
 
     # make sure file is still available after identity rotate
@@ -199,7 +196,7 @@ def test_identity_rotate_customer_1():
     }
     t = threading.Timer(1.0, message_send_v1, ['customer-3', 'master$%s' % new_global_id, random_message, ])
     t.start()
-    message_receive_v1('customer-1', expected_data=random_message)
+    message_receive_v1('customer-1', expected_data=random_message, timeout=31, polling_timeout=30)
 
 
 

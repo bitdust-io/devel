@@ -124,6 +124,16 @@ class ProxySender(automat.Automat):
     machine.
     """
 
+    def to_json(self):
+        return {
+            'name': self.name,
+            'state': self.state,
+            'host': ('%s://%s' % proxy_receiver.GetRouterProtoHost()) if proxy_receiver.GetRouterProtoHost() else '',
+            'idurl': proxy_receiver.GetRouterIDURL(),
+            'bytes_received': 0,
+            'bytes_sent': self.traffic_out,
+        }
+
     def A(self, event, *args, **kwargs):
         """
         The state machine code, generated using `visio2python
