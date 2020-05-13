@@ -167,6 +167,34 @@ def find_active_group_members(group_creator_idurl):
 
 #------------------------------------------------------------------------------
 
+def start_group_members():
+    started = 0
+    for group_key_id, group_info in groups.known_groups().items():
+        if not group_info['active']:
+            continue
+        existing_group_member = get_active_group_member(group_key_id)
+        if not existing_group_member:
+            existing_group_member = GroupMember(group_key_id)
+            existing_group_member.automat('init')
+        if existing_group_member.state in ['DHT_READ?', 'BROKERS?', 'QUEUE?', 'IN_SYNC!', ]:
+            continue
+        existing_group_member.automat('join')
+        started += 1
+    return started
+
+
+def shutdown_group_members():
+    stopped = 0
+    for group_key_id in groups.known_groups().keys():
+        existing_group_member = get_active_group_member(group_key_id)
+        if not existing_group_member:
+            continue
+        existing_group_member.automat('shutdown')
+        stopped += 1
+    return stopped
+
+#------------------------------------------------------------------------------
+
 class GroupMember(automat.Automat):
     """
     This class implements all the functionality of ``group_member()`` state machine.
