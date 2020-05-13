@@ -438,7 +438,7 @@ class GroupMember(automat.Automat):
         """
         Action method.
         """
-        # latest_known_sequence_id = kwargs.get('latest_known_sequence_id')
+        latest_known_sequence_id = kwargs.get('latest_known_sequence_id')
         received_messages = kwargs.get('received_messages')
         result_defer = Deferred()
         result_defer.addCallback(self._on_read_archive_success, received_messages)
@@ -448,7 +448,7 @@ class GroupMember(automat.Automat):
             'start',
             queue_id=self.active_queue_id,
             start_sequence_id=self.last_sequence_id + 1,
-            end_sequence_id=None,
+            end_sequence_id=latest_known_sequence_id,
             archive_folder_path=groups.get_archive_folder_path(self.group_key_id),
             result_defer=result_defer,
         )
@@ -457,8 +457,6 @@ class GroupMember(automat.Automat):
         """
         Action method.
         """
-        if _Debug:
-            lg.args(_DebugLevel, **kwargs)
         message.push_group_message(**kwargs)
 
     def doPublish(self, *args, **kwargs):
@@ -583,7 +581,7 @@ class GroupMember(automat.Automat):
         if not json_messages:
             return True
         if _Debug:
-            lg.args(_DebugLevel, json_messages=json_messages)
+            lg.args(_DebugLevel, json_messages=len(json_messages))
         latest_known_sequence_id = -1
         received_group_messages = []
         packets_to_ack = {}
@@ -649,15 +647,20 @@ class GroupMember(automat.Automat):
         if _Debug:
             lg.args(_DebugLevel, received_group_messages=len(received_group_messages), latest_known_sequence_id=latest_known_sequence_id)
         newly_processed = 0
-        if _Debug:
-            lg.args(_DebugLevel, my_last_sequence_id=self.last_sequence_id, received_group_messages=len(received_group_messages))
         for new_message in received_group_messages:
-            if self.last_sequence_id + 1 == new_message['sequence_id']:
-                self.last_sequence_id = new_message['sequence_id']
+            new_sequence_id = new_message['sequence_id']
+            if self.last_sequence_id + 1 == new_sequence_id:
+                self.last_sequence_id = new_sequence_id
                 newly_processed += 1
-                if _Debug:
-                    lg.dbg(_DebugLevel, 'new message consumed, last_sequence_id incremented to %d' % self.last_sequence_id)
+                groups.set_last_sequence_id(self.group_key_id, self.last_sequence_id)
+                groups.save_group_info(self.group_key_id)
+                lg.info('new message consumed in %r, last_sequence_id incremented to %d' % (self.group_key_id, self.last_sequence_id, ))
                 self.automat('message-in', **new_message)
+            else:
+                lg.warn('new message sequence_id is %d, but my last active sequence_id is %d' % (new_sequence_id, self.last_sequence_id, ))
+        if _Debug:
+            lg.args(_DebugLevel, my_last_sequence_id=self.last_sequence_id, newly_processed=newly_processed,
+                    received_group_messages=len(received_group_messages))
         if not newly_processed or newly_processed != len(received_group_messages):
             if latest_known_sequence_id > self.last_sequence_id:
                 lg.warn('found queue latest sequence %d is ahead of my current position %d, need to read messages from archive' % (
@@ -665,8 +668,6 @@ class GroupMember(automat.Automat):
                 self.automat('queue-is-ahead', latest_known_sequence_id=latest_known_sequence_id, received_messages=received_group_messages, )
                 return True
             raise Exception('message sequence is broken by message broker %s, some messages were not consumed' % self.active_broker_id)
-        groups.set_last_sequence_id(self.group_key_id, self.last_sequence_id)
-        groups.save_group_info(self.group_key_id)
         if _Debug:
             lg.dbg(_DebugLevel, 'processed all messages, queue in sync, last_sequence_id=%d' % self.last_sequence_id)
         self.automat('queue-in-sync')
@@ -733,7 +734,8 @@ class GroupMember(automat.Automat):
         if desired_broker_position >= 0:
             service_request_params['position'] = desired_broker_position
         if _Debug:
-            lg.args(_DebugLevel, service_request_params=service_request_params)
+            lg.args(_DebugLevel, action=action, queue_id=queue_id, last_sequence_id=service_request_params['last_sequence_id'],
+                    archive_folder_path=service_request_params['archive_folder_path'])
         return service_request_params
 
     def _do_connect_lookup_rotate_brokers(self, existing_brokers):
@@ -1034,6 +1036,9 @@ class GroupMember(automat.Automat):
         received_group_messages = []
         latest_known_sequence_id = -1
         for archive_message in archive_messages:
+            if archive_message['sequence_id'] > latest_known_sequence_id:
+                latest_known_sequence_id = archive_message['sequence_id']
+        for archive_message in archive_messages:
             received_group_messages.append(dict(
                 json_message=archive_message['payload'],
                 direction='incoming',
@@ -1041,8 +1046,6 @@ class GroupMember(automat.Automat):
                 producer_id=archive_message['producer_id'],
                 sequence_id=archive_message['sequence_id'],
             ))
-            if archive_message['sequence_id'] > latest_known_sequence_id:
-                latest_known_sequence_id = archive_message['sequence_id']
         for received_message in received_messages:
             received_group_messages.append(dict(
                 json_message=received_message['json_message'],

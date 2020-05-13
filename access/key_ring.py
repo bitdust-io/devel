@@ -636,7 +636,7 @@ def do_backup_key(key_id, keys_folder=None, wait_result=False):
 
     def _task_started(resp):
         if _Debug:
-            lg.args(_DebugLevel, key_id=key_id, response=resp)
+            lg.args(_DebugLevel, key_id=key_id, upload_response_status=resp['status'])
         if resp['status'] != 'OK':
             backup_result.errback(Exception('failed to upload key "%s", task was not started: %r' % (global_key_path, resp)))
             return None

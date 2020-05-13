@@ -28,12 +28,10 @@
 BitDust archive_reader() Automat
 
 EVENTS:
-    * :red:`ack`
     * :red:`dht-read-failed`
     * :red:`dht-read-success`
+    * :red:`extract-all-done`
     * :red:`extract-failed`
-    * :red:`extract-success`
-    * :red:`fail`
     * :red:`list-files-collected`
     * :red:`list-files-failed`
     * :red:`restore-done`
@@ -143,27 +141,18 @@ class ArchiveReader(automat.Automat):
                 self.state = 'FAILED'
                 self.doReportFailed(event, *args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'ack' or event == 'fail':
-                self.doCollectFiles(event, *args, **kwargs)
         #---RESTORE---
         elif self.state == 'RESTORE':
-            if event == 'restore-done':
-                self.state = 'EXTRACT'
-                self.doExtractArchive(*args, **kwargs)
-            elif event == 'restore-failed':
-                self.state = 'FAILED'
-                self.doReportFailed(event, *args, **kwargs)
-                self.doDestroyMe(*args, **kwargs)
-        #---EXTRACT---
-        elif self.state == 'EXTRACT':
-            if event == 'extract-success':
+            if event == 'extract-all-done':
                 self.state = 'DONE'
                 self.doReportDone(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'extract-failed':
+            elif event == 'restore-failed' or event == 'extract-failed':
                 self.state = 'FAILED'
                 self.doReportFailed(event, *args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
+            elif event == 'restore-done':
+                self.doExtractArchive(*args, **kwargs)
         #---DONE---
         elif self.state == 'DONE':
             pass
@@ -194,9 +183,11 @@ class ArchiveReader(automat.Automat):
         self.queue_owner_idurl = global_id.glob2idurl(self.queue_owner_id)
         self.group_key_id = my_keys.make_key_id(alias=self.queue_alias, creator_glob_id=self.queue_owner_id)
         self.suppliers_list = []
+        self.selected_backups = []
         self.ecc_map = None
         self.correctable_errors = 0
         self.requested_list_files = {}
+        self.extracted_messages = []
 
     def doDHTReadSuppliers(self, *args, **kwargs):
         """
@@ -223,44 +214,14 @@ class ArchiveReader(automat.Automat):
         """
         Action method.
         """
-        iterID_and_path = backup_fs.WalkByID(self.archive_folder_path, iterID=backup_fs.fsID(self.queue_owner_idurl))
-        if iterID_and_path is None:
-            lg.err('did not found archive folder in the catalog: %r' % self.archive_folder_path)
-            self.automat('restore-failed')
-            return
-        iterID, _ = iterID_and_path
-        known_archive_snapshots_list = backup_fs.ListAllBackupIDsFull(iterID=iterID)
-        if not known_archive_snapshots_list:
-            lg.err('failed to restore data from archive, no snapshots found in folder: %r' % self.archive_folder_path)
-            self.automat('restore-failed')
-            return
-        snapshots_list = []
-        for archive_item in known_archive_snapshots_list:
-            snapshots_list.append(archive_item[1])
-        if _Debug:
-            lg.args(_DebugLevel, snapshots_list=snapshots_list)
-        if not snapshots_list:
-            lg.err('no available snapshots found in archive list: %r' % known_archive_snapshots_list)
-            self.automat('restore-failed')
-            return
-        backupID = snapshots_list[0]
-        outfd, outfilename = tmpfile.make(
-            'restore',
-            extension='.tar.gz',
-            prefix=backupID.replace('@', '_').replace('.', '_').replace('/', '_').replace(':', '_') + '_',
-        )
-        rw = restore_worker.RestoreWorker(backupID, outfd, KeyID=self.group_key_id)
-        rw.MyDeferred.addCallback(self._on_restore_done, backupID, outfd, outfilename)
-        if _Debug:
-            rw.MyDeferred.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='archive_reader.doStartRestoreWorker')
-        rw.MyDeferred.addErrback(self._on_restore_failed, backupID, outfd, outfilename)
-        rw.automat('init')
+        if self._do_select_archive_snapshots():
+            self._do_restore_next_backup(0)
 
     def doExtractArchive(self, *args, **kwargs):
         """
         Action method.
         """
-        self._do_extract_archive(backup_id=kwargs['backup_id'], tarfilename=kwargs['tarfilename'])
+        self._do_extract_archive(backup_id=kwargs['backup_id'], tarfilename=kwargs['tarfilename'], backup_index=kwargs['backup_index'])
 
     def doReportDone(self, *args, **kwargs):
         """
@@ -289,6 +250,21 @@ class ArchiveReader(automat.Automat):
         """
         Remove all references to the state machine object to destroy it.
         """
+        self.queue_id = None
+        self.start_sequence_id = None
+        self.end_sequence_id = None
+        self.archive_folder_path = None
+        self.result_defer = None
+        self.queue_alias = None
+        self.queue_owner_id = None
+        self.queue_owner_idurl = None
+        self.group_key_id = None
+        self.suppliers_list = None
+        self.selected_backups = None
+        self.ecc_map = None
+        self.correctable_errors = 0
+        self.requested_list_files = None
+        self.extracted_messages = None
         self.destroy()
 
     def _do_request_list_files(self, suppliers_list):
@@ -314,10 +290,78 @@ class ArchiveReader(automat.Automat):
             )
             self.requested_list_files[supplier_pos] = None if outpacket else False
 
-    def _do_extract_archive(self, backup_id, tarfilename):
+    def _do_select_archive_snapshots(self):
+        iterID_and_path = backup_fs.WalkByID(self.archive_folder_path, iterID=backup_fs.fsID(self.queue_owner_idurl))
+        if iterID_and_path is None:
+            lg.err('did not found archive folder in the catalog: %r' % self.archive_folder_path)
+            self.automat('restore-failed')
+            return False
+        iterID, _ = iterID_and_path
+        known_archive_snapshots_list = backup_fs.ListAllBackupIDsFull(iterID=iterID)
+        if not known_archive_snapshots_list:
+            lg.err('failed to restore data from archive, no snapshots found in folder: %r' % self.archive_folder_path)
+            self.automat('restore-failed')
+            return False
+        snapshots_list = []
+        for archive_item in known_archive_snapshots_list:
+            snapshots_list.append(archive_item[1])
+        if _Debug:
+            lg.args(_DebugLevel, snapshots_list=snapshots_list)
+        if not snapshots_list:
+            lg.err('no available snapshots found in archive list: %r' % known_archive_snapshots_list)
+            self.automat('restore-failed')
+            return False
+        snapshot_sequence_ids = []
+        for backup_id in snapshots_list:
+            _, path_id, _ = packetid.SplitBackupID(backup_id)
+            if not path_id:
+                continue
+            try:
+                snapshot_sequence_id = int(path_id.split('/')[-1])
+            except:
+                lg.exc()
+                continue
+            if self.start_sequence_id is not None and self.start_sequence_id > snapshot_sequence_id:
+                continue
+            if self.end_sequence_id is not None and self.end_sequence_id < snapshot_sequence_id:
+                continue
+            snapshot_sequence_ids.append((snapshot_sequence_id, backup_id, ))
+        snapshot_sequence_ids.sort(key=lambda item: int(item[0]))
+        if _Debug:
+            lg.args(_DebugLevel, snapshot_sequence_ids=snapshot_sequence_ids)
+        self.selected_backups = [item[1] for item in snapshot_sequence_ids]
+        if not self.selected_backups:
+            lg.err('no backups selected from snapshot list')
+            self.automat('restore-failed')
+            return False
+        if _Debug:
+            lg.args(_DebugLevel, selected_backups=self.selected_backups)
+        return True
+
+    def _do_restore_next_backup(self, backup_index):
+        if _Debug:
+            lg.args(_DebugLevel, backup_index=backup_index, selected_backups=len(self.selected_backups))
+        if backup_index >= len(self.selected_backups):
+            lg.info('all selected backups are processed')
+            self.automat('extract-all-done', self.extracted_messages)
+            return
+        backup_id = self.selected_backups[backup_index]
+        outfd, outfilename = tmpfile.make(
+            'restore',
+            extension='.tar.gz',
+            prefix=backup_id.replace('@', '_').replace('.', '_').replace('/', '_').replace(':', '_') + '_',
+        )
+        rw = restore_worker.RestoreWorker(backup_id, outfd, KeyID=self.group_key_id)
+        rw.MyDeferred.addCallback(self._on_restore_done, backup_id, outfd, outfilename, backup_index)
+        if _Debug:
+            rw.MyDeferred.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='archive_reader.doStartRestoreWorker')
+        rw.MyDeferred.addErrback(self._on_restore_failed, backup_id, outfd, outfilename, backup_index)
+        rw.automat('init')
+
+    def _do_extract_archive(self, backup_id, tarfilename, backup_index):
         snapshot_dir = tmpfile.make_dir('restore', extension='.msg')
         d = backup_tar.extracttar_thread(tarfilename, snapshot_dir)
-        d.addCallback(self._on_extract_done, backup_id, tarfilename, snapshot_dir)
+        d.addCallback(self._on_extract_done, backup_id, tarfilename, snapshot_dir, backup_index)
         d.addErrback(self._on_extract_failed, backup_id, tarfilename, snapshot_dir)
         return d
 
@@ -374,7 +418,7 @@ class ArchiveReader(automat.Automat):
                 self.automat('list-files-failed')
         return None
 
-    def _on_restore_done(self, result, backup_id, outfd, tarfilename):
+    def _on_restore_done(self, result, backup_id, outfd, tarfilename, backup_index):
         try:
             os.close(outfd)
         except:
@@ -387,10 +431,10 @@ class ArchiveReader(automat.Automat):
             tmpfile.throw_out(tarfilename, 'restore ' + result)
             self.automat('restore-failed', backup_id=backup_id, tarfilename=tarfilename)
             return None
-        self.automat('restore-done', backup_id=backup_id, tarfilename=tarfilename)
+        self.automat('restore-done', backup_id=backup_id, tarfilename=tarfilename, backup_index=backup_index)
         return
 
-    def _on_restore_failed(self, err, backupID, outfd, tarfilename):
+    def _on_restore_failed(self, err, backupID, outfd, tarfilename, backup_index):
         lg.err('archive %r restore failed with : %r' % (backupID, err, ))
         try:
             os.close(outfd)
@@ -405,9 +449,8 @@ class ArchiveReader(automat.Automat):
         self.automat('extract-failed', err)
         return None
 
-    def _on_extract_done(self, retcode, backupID, source_filename, output_location):
+    def _on_extract_done(self, retcode, backupID, source_filename, output_location, backup_index):
         tmpfile.throw_out(source_filename, 'file extracted')
-        extracted_messages = []
         for snapshot_filename in os.listdir(output_location):
             snapshot_path = os.path.join(output_location, snapshot_filename)
             snapshot_data = serialization.BytesToDict(local_fs.ReadBinaryFile(snapshot_path), values_to_text=True)
@@ -418,8 +461,9 @@ class ArchiveReader(automat.Automat):
                 if self.end_sequence_id is not None:
                     if self.end_sequence_id < archive_message['sequence_id']:
                         continue
-                extracted_messages.append(archive_message)
-        lg.info('archive %r snapshot from %r extracted successfully to %r, found %d archive messages' % (
-            backupID, source_filename, output_location, len(extracted_messages), ))
-        self.automat('extract-success', extracted_messages)
+                self.extracted_messages.append(archive_message)
+        if _Debug:
+            lg.dbg(_DebugLevel, 'archive snapshot %r extracted successfully to %r, extracted %d archive messages so far' % (
+                source_filename, output_location, len(self.extracted_messages), ))
+        self._do_restore_next_backup(backup_index+1)
         return retcode
