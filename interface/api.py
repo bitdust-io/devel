@@ -382,17 +382,21 @@ def identity_get(include_xml_source=False):
     return OK(r)
 
 
-def identity_create(username, preferred_servers=[]):
+def identity_create(username, preferred_servers=[], join_network=False):
     """
     Generates new private key and creates new identity for you to be able to communicate with other nodes in the network.
 
-    Parameter `username` defines filename of the new identity.
+    Parameter `username` defines filename of the new identity, can not be changed anymore.
+
+    By default that method only connects to ID servers to be able to register a new identity file for you.
+    If you also pass `join_network=True` it will start all network services right after that and will make
+    you connected to the BitDust network automatically.
 
     ###### HTTP
-        curl -X POST 'localhost:8180/identity/create/v1' -d '{"username": "alice"}'
+        curl -X POST 'localhost:8180/identity/create/v1' -d '{"username": "alice", "join_network": 1}'
 
     ###### WebSocket
-        websocket.send('{"command": "api_call", "method": "identity_create", "kwargs": {"username": "alice"} }');
+        websocket.send('{"command": "api_call", "method": "identity_create", "kwargs": {"username": "alice", "join_network": 1} }');
     """
     from lib import misc
     from userid import my_id
@@ -423,6 +427,8 @@ def identity_create(username, preferred_servers=[]):
                 return ERROR('identity creation failed, please try again later', api_method='identity_create')
             r = my_id.getLocalIdentity().serialize_json()
             r['xml'] = my_id.getLocalIdentity().serialize(as_text=True)
+            if join_network:
+                network_connected(wait_timeout=0.1)
             ret.callback(OK(r, api_method='identity_create'))
             return
 

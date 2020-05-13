@@ -906,6 +906,15 @@ def main(executable_path=None, start_reactor=True):
         )
         if len(appList) > 0:
             lg.out(0, 'found main BitDust process: %r, sending command "exit" ... ' % appList, '')
+            if cmd == 'kill':
+                ret = kill()
+                bpio.shutdown()
+                if opts.coverage:
+                    cov.stop()
+                    cov.save()
+                    if opts.coverage_report:
+                        cov.report(file=open(opts.coverage_report, 'w'))
+                return ret
             try:
                 from twisted.internet import reactor  # @UnresolvedImport
                 # from interface.command_line import run_url_command
