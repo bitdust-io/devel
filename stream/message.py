@@ -571,7 +571,7 @@ def push_message(direction, msg_type, recipient_id, sender_id, packet_id, owner_
             'time': utime.get_sec1970(),
         })
         if _Debug:
-            lg.args(_DebugLevel, dir=direction, msg_type=msg_type, packet_id=packet_id, to_id=recipient_id,
+            lg.args(_DebugLevel, dir=direction, msg_type=msg_type, to_id=recipient_id,
                     from_id=sender_id, cb=consumers_callback_id, pending=len(message_queue()[consumers_callback_id]))
     if not run_consumers:
         return 0

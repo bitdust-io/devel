@@ -204,7 +204,7 @@ def WriteIndex(filepath=None, encoding='utf-8'):
         encoding=encoding,
     )
     if _Debug:
-        lg.args(_DebugLevel, json_data=json_data)
+        lg.args(_DebugLevel, size=len(src), filepath=filepath)
     return bpio.WriteTextFile(filepath, src)
 
 

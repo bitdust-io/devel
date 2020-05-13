@@ -69,7 +69,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -92,8 +92,6 @@ from logs import lg
 from automats import automat
 
 from lib import strng
-
-from interface import api_web_socket
 
 from contacts import contactsdb
 

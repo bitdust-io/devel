@@ -118,7 +118,7 @@ from crypt import my_keys
 from access import key_ring
 
 from userid import global_id
-from storage import backup_fs
+
 from interface import api
 
 #------------------------------------------------------------------------------
@@ -432,5 +432,3 @@ def set_group_active(group_key_id, value):
     if old_value != value:
         lg.info('group %r "active" status changed: %r -> %r' % (group_key_id, old_value, value, ))
     return True
-
-#------------------------------------------------------------------------------

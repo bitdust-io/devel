@@ -1195,9 +1195,12 @@ class MessagePeddler(automat.Automat):
                 result_defer.callback(False)
                 return
         if not streams()[queue_id]['consumers'] and not streams()[queue_id]['producers']:
-            lg.info('no consumers and no producers left, closing queue %r' % queue_id)
-            stop_stream(queue_id)
-            close_stream(queue_id)
+            # TODO: need to find a better way to keep data for offline groups
+            # currently it will lead to a resources leakage - need to clean up queues which are not in use for a long time
+            if False:
+                lg.info('no consumers and no producers left, closing queue %r' % queue_id)
+                stop_stream(queue_id)
+                close_stream(queue_id)
         customer_idurl = global_id.GetGlobalQueueOwnerIDURL(queue_id)
         if customer_idurl in customers():
             if len(customers()[customer_idurl]) == 0:
