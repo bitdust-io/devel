@@ -39,7 +39,6 @@ This serves requests from peers:
     * Correspondent - request to be my correspondent
     TODO: describe other packets here
 
-TODO: need to move logic from this monolitic file into a services
 """
 
 #------------------------------------------------------------------------------
