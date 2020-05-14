@@ -424,7 +424,10 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @POST('^/identity/create/v1$')
     def identity_create_v1(self, request):
         data = _request_data(request, mandatory_keys=['username', ])
-        return api.identity_create(username=data['username'], )
+        return api.identity_create(
+            username=data['username'],
+            join_network=bool(data.get('join_network', '0') in ['1', 'true', ]),
+        )
 
     @POST('^/i/b')
     @POST('^/identity/backup$')

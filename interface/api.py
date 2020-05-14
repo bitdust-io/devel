@@ -382,17 +382,21 @@ def identity_get(include_xml_source=False):
     return OK(r)
 
 
-def identity_create(username, preferred_servers=[]):
+def identity_create(username, preferred_servers=[], join_network=False):
     """
     Generates new private key and creates new identity for you to be able to communicate with other nodes in the network.
 
-    Parameter `username` defines filename of the new identity.
+    Parameter `username` defines filename of the new identity, can not be changed anymore.
+
+    By default that method only connects to ID servers to be able to register a new identity file for you.
+    If you also pass `join_network=True` it will start all network services right after that and will make
+    you connected to the BitDust network automatically.
 
     ###### HTTP
-        curl -X POST 'localhost:8180/identity/create/v1' -d '{"username": "alice"}'
+        curl -X POST 'localhost:8180/identity/create/v1' -d '{"username": "alice", "join_network": 1}'
 
     ###### WebSocket
-        websocket.send('{"command": "api_call", "method": "identity_create", "kwargs": {"username": "alice"} }');
+        websocket.send('{"command": "api_call", "method": "identity_create", "kwargs": {"username": "alice", "join_network": 1} }');
     """
     from lib import misc
     from userid import my_id
@@ -423,6 +427,9 @@ def identity_create(username, preferred_servers=[]):
                 return ERROR('identity creation failed, please try again later', api_method='identity_create')
             r = my_id.getLocalIdentity().serialize_json()
             r['xml'] = my_id.getLocalIdentity().serialize(as_text=True)
+            if join_network:
+                from p2p import network_service
+                network_service.connected(wait_timeout=0.1)
             ret.callback(OK(r, api_method='identity_create'))
             return
 
@@ -4108,174 +4115,19 @@ def network_connected(wait_timeout=5):
         lg.out(_DebugLevel + 10, 'api.network_connected  wait_timeout=%r' % wait_timeout)
     if not driver.is_on('service_network'):
         return ERROR('service_network() is not started')
-    from userid import my_id
-    from automats import automat
     ret = Deferred()
 
-    if driver.is_enabled('service_proxy_transport'):
-        p2p_connector_lookup = automat.find('p2p_connector')
-        if p2p_connector_lookup:
-            p2p_connector_machine = automat.objects().get(p2p_connector_lookup[0])
-            if p2p_connector_machine and p2p_connector_machine.state == 'CONNECTED':
-                proxy_receiver_lookup = automat.find('proxy_receiver')
-                if proxy_receiver_lookup:
-                    proxy_receiver_machine = automat.objects().get(proxy_receiver_lookup[0])
-                    if proxy_receiver_machine and proxy_receiver_machine.state == 'LISTEN':
-                        # service_proxy_transport() is enabled, proxy_receiver() is listening: all good
-                        wait_timeout_defer = Deferred()
-                        wait_timeout_defer.addBoth(lambda _: ret.callback(OK({
-                            'service_network': 'started',
-                            'service_gateway': 'started',
-                            'service_p2p_hookups': 'started',
-                            'service_proxy_transport': 'started',
-                            'proxy_receiver_state': proxy_receiver_machine.state,
-                        }, api_method='network_connected')))
-                        wait_timeout_defer.addTimeout(wait_timeout, clock=reactor)
-                        return ret
-                else:
-                    # service_proxy_transport() is enabled, but proxy_receiver() is not ready yet: must wait a bit
-#                     wait_timeout_defer = Deferred()
-#                     wait_timeout_defer.addBoth(lambda _: ret.callback(OK({
-#                         'service_network': 'started',
-#                         'service_gateway': 'started',
-#                         'service_p2p_hookups': 'started',
-#                         'service_proxy_transport': 'not started',
-#                         'p2p_connector_state': p2p_connector_machine.state,
-#                     }, api_method='network_connected')))
-#                     wait_timeout_defer.addTimeout(wait_timeout, clock=reactor)
-#                     return ret
-                    lg.warn('disconnected, reason is proxy_receiver() not started yet')
-                    ret.callback(ERROR('disconnected', reason='proxy_receiver_not_started', api_method='network_connected'))
-                    return ret
-
-    if not my_id.isLocalIdentityReady():
-        lg.warn('local identity is not valid or not exist')
-        return ERROR('local identity is not valid or not exist', reason='identity_not_exist')
-    if not driver.is_enabled('service_network'):
-        lg.warn('service_network() is disabled')
-        return ERROR('service_network() is disabled', reason='service_network_disabled')
-    if not driver.is_enabled('service_gateway'):
-        lg.warn('service_gateway() is disabled')
-        return ERROR('service_gateway() is disabled', reason='service_gateway_disabled')
-    if not driver.is_enabled('service_p2p_hookups'):
-        lg.warn('service_p2p_hookups() is disabled')
-        return ERROR('service_p2p_hookups() is disabled', reason='service_p2p_hookups_disabled')
-
-    def _do_p2p_connector_test():
-        if _Debug:
-            lg.dbg(_DebugLevel, 'checking p2p_connector')
-        try:
-            p2p_connector_lookup = automat.find('p2p_connector')
-            if not p2p_connector_lookup:
-                lg.warn('disconnected, reason is "p2p_connector_not_found"')
-                ret.callback(ERROR('disconnected', reason='p2p_connector_not_found', api_method='network_connected'))
-                return None
-            p2p_connector_machine = automat.objects().get(p2p_connector_lookup[0])
-            if not p2p_connector_machine:
-                lg.warn('disconnected, reason is "p2p_connector_not_exist"')
-                ret.callback(ERROR('disconnected', reason='p2p_connector_not_exist', api_method='network_connected'))
-                return None
-            if p2p_connector_machine.state in ['DISCONNECTED', ]:
-                lg.warn('disconnected, reason is "p2p_connector_disconnected", sending "check-synchronize" event to p2p_connector()')
-                p2p_connector_machine.automat('check-synchronize')
-                ret.callback(ERROR('disconnected', reason='p2p_connector_disconnected', api_method='network_connected'))
-                return None
-            # ret.callback(OK('connected'))
-            _do_service_proxy_transport_test()
-        except:
-            lg.exc()
-            ret.callback(ERROR('disconnected', reason='p2p_connector_error', api_method='network_connected'))
-        return None
-
-    def _do_service_proxy_transport_test():
-        if _Debug:
-            lg.dbg(_DebugLevel, 'checking proxy_transport')
-        if not driver.is_enabled('service_proxy_transport'):
-            ret.callback(OK({
-                'service_network': 'started',
-                'service_gateway': 'started',
-                'service_p2p_hookups': 'started',
-                'service_proxy_transport': 'disabled',
-            }, api_method='network_connected'))
+    def _on_network_service_connected(resp):
+        if 'error' in resp:
+            ret.callback(ERROR(resp['error'], reason=resp.get('reason'), api_method='network_connected'))
             return None
-        try:
-            proxy_receiver_lookup = automat.find('proxy_receiver')
-            if not proxy_receiver_lookup:
-                lg.warn('disconnected, reason is "proxy_receiver_not_found"')
-                ret.callback(ERROR('disconnected', reason='proxy_receiver_not_found', api_method='network_connected'))
-                return None
-            proxy_receiver_machine = automat.objects().get(proxy_receiver_lookup[0])
-            if not proxy_receiver_machine:
-                lg.warn('disconnected, reason is "proxy_receiver_not_exist"')
-                ret.callback(ERROR('disconnected', reason='proxy_receiver_not_exist', api_method='network_connected'))
-                return None
-            if proxy_receiver_machine.state != 'LISTEN':
-                lg.warn('disconnected, reason is "proxy_receiver_disconnected", sending "start" event to proxy_receiver()')
-                proxy_receiver_machine.automat('start')
-                ret.callback(ERROR('disconnected', reason='proxy_receiver_disconnected', api_method='network_connected'))
-                return None
-            ret.callback(OK({
-                'service_network': 'started',
-                'service_gateway': 'started',
-                'service_p2p_hookups': 'started',
-                'service_proxy_transport': 'started',
-                'proxy_receiver_state': proxy_receiver_machine.state,
-            }, api_method='network_connected'))
-        except:
-            lg.exc()
-            ret.callback(ERROR('disconnected', reason='proxy_receiver_error', api_method='network_connected'))
+        ret.callback(OK(resp, api_method='network_connected'))
         return None
 
-    def _on_service_restarted(resp, service_name):
-        if _Debug:
-            lg.args(_DebugLevel, resp=resp, service_name=service_name)
-        if service_name == 'service_network':
-            _do_service_test('service_gateway')
-        elif service_name == 'service_gateway':
-            _do_service_test('service_p2p_hookups')
-        else:
-            _do_p2p_connector_test()
-        return resp
-
-    def _do_service_restart(service_name):
-        if _Debug:
-            lg.args(_DebugLevel, service_name=service_name)
-        d = service_restart(service_name, wait_timeout=wait_timeout)
-        d.addCallback(_on_service_restarted, service_name)
-        d.addErrback(lambda err: ret.callback(dict(
-            list(ERROR(err, api_method='network_connected').items()) + list({'reason': '{}_restart_error'.format(service_name)}.items()))))
-        return None
-
-    def _do_service_test(service_name):
-        if _Debug:
-            lg.args(_DebugLevel, service_name=service_name)
-        try:
-            svc_info = service_info(service_name)
-            svc_state = svc_info['result']['state']
-        except:
-            lg.exc('service "%s" test failed' % service_name)
-            ret.callback(ERROR(
-                'disconnected',
-                reason='{}_info_error'.format(service_name),
-                api_method='network_connected',
-            ))
-            return None
-        if svc_state != 'ON':
-            _do_service_restart(service_name)
-            return None
-        if service_name == 'service_network':
-            reactor.callLater(0, _do_service_test, 'service_gateway')  # @UndefinedVariable
-        elif service_name == 'service_gateway':
-            reactor.callLater(0, _do_service_test, 'service_p2p_hookups')  # @UndefinedVariable
-        elif service_name == 'service_p2p_hookups':
-            reactor.callLater(0, _do_p2p_connector_test)  # @UndefinedVariable
-        elif service_name == 'service_proxy_transport':
-            reactor.callLater(0, _do_service_proxy_transport_test)  # @UndefinedVariable
-        else:
-            raise Exception('unknown service to test %s' % service_name)
-        return None
-
-    _do_service_test('service_network')
+    from p2p import network_service
+    d = network_service.connected(wait_timeout=wait_timeout)
+    d.addCallback(_on_network_service_connected)
+    d.addErrback(lambda err: ret.callback(ERROR(err, api_method='network_connected')))
     return ret
 
 
@@ -4616,9 +4468,9 @@ def dht_user_random(layer_id=0, count=1):
         force_discovery=True,
         process_method=_process,
     )
-    tsk.result_defer.addTimeout(timeout=25, clock=reactor)
     tsk.result_defer.addCallback(_cb)
     tsk.result_defer.addErrback(_eb)
+    tsk.result_defer.addTimeout(timeout=25, clock=reactor)
     return ret
 
 

@@ -1074,8 +1074,6 @@ def SetCorrespondentsChangedCallback(cb):
 def AddContactsChangedCallback(cb):
     """
     Set callback to fire when any contact were changed.
-
-    on_contacts_changed(old_contacts_list, new_contacts_list)
     """
     global _ContactsChangedCallbacks
     _ContactsChangedCallbacks.append(cb)
@@ -1086,4 +1084,5 @@ def RemoveContactsChangedCallback(cb):
     Set callback to fire when any contact were changed.
     """
     global _ContactsChangedCallbacks
-    _ContactsChangedCallbacks.remove(cb)
+    if cb in _ContactsChangedCallbacks:
+        _ContactsChangedCallbacks.remove(cb)

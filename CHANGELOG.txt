@@ -2,6 +2,15 @@ Change Log
 ==========
 
 
+2020-05-13 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* added p2p.network_service and new task for automatic network reconnect in service_p2p_notifications()
+* added parameter "join_network" to api.identity_create() method
+* start group_member() instances for active groups at startup
+* make sure to restore all archived snapshots when reading message history
+
+
+
 2020-05-11 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * disabled some API methods

@@ -53,15 +53,20 @@ class P2PNotificationsService(LocalService):
         return depends
 
     def start(self):
+        from twisted.internet.task import LoopingCall
         from transport import callback
         from stream import p2p_queue
         p2p_queue.init()
         callback.append_inbox_callback(self._on_inbox_packet_received)
+        self.reconnect_task = LoopingCall(self._on_check_network_connect)
+        self.reconnect_task.start(30, now=False)
         return True
 
     def stop(self):
         from transport import callback
         from stream import p2p_queue
+        self.reconnect_task.stop()
+        self.reconnect_task = None
         callback.remove_inbox_callback(self._on_inbox_packet_received)
         p2p_queue.shutdown()
         return True
@@ -162,3 +167,10 @@ class P2PNotificationsService(LocalService):
         if newpacket.Command != commands.Event():
             return False
         return p2p_queue.on_event_packet_received(newpacket, info, status, error_message)
+
+    def _on_check_network_connect(self):
+        from p2p import network_service
+        from userid import my_id
+        if my_id.isLocalIdentityReady():
+            network_service.connected(wait_timeout=0.1)
+        return None
