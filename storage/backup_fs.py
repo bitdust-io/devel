@@ -190,6 +190,7 @@ def customerIDURLFromRootItemID(iterID):
             return customerIDURL
     return None
 
+#------------------------------------------------------------------------------
 
 def known_customers():
     """

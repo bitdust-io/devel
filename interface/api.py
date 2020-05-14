@@ -244,6 +244,147 @@ def process_health():
     return OK()
 
 
+def process_info():
+    """
+    Returns overall information about current process. This method can be used for live monitoring and statistics.
+
+    ###### HTTP
+        curl -X GET 'localhost:8180/process/info/v1'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "process_info", "kwargs": {} }');
+    """
+    from contacts import identitydb
+    from contacts import contactsdb
+    from automats import automat
+    from userid import my_id
+    result = {
+        'config': {
+            'options': len(config.conf().cache()),
+        },
+        'identity': {
+            'ready': my_id.isLocalIdentityReady(),
+            'cache': len(identitydb.cache()),
+            'cache_ids': len(identitydb.cache_ids()),
+            'cache_contacts': len(identitydb.cache_contacts()),
+        },
+        'contact': {
+            'active': 0,
+            'correspondents': contactsdb.num_correspondents(),
+            'customers': contactsdb.num_customers(),
+            'suppliers_hired': contactsdb.num_suppliers(),
+            'suppliers_total': contactsdb.total_suppliers(),
+            'suppliers_active': 0,
+            'customer_assistants': 0,
+        },
+        'service': {
+            'active': len(driver.services()),
+        },
+        'key': {
+            'registered': 0,
+        },
+        'file': {
+            'items': 0,
+            'files': 0,
+            'files_size': 0,
+            'folders': 0,
+            'folders_size': 0,
+            'backups_size': 0,
+            'customers': 0,
+        },
+        'dht': {
+            'layers': {},
+            'bytes_out': 0,
+            'bytes_in': 0,
+        },
+        'share': {
+            'active': 0,
+        },
+        'group': {
+            'active': 0,
+        },
+        'network': {
+            'protocols': 0,
+            'packets_out': 0,
+            'packets_out_total': 0,
+            'packets_in': 0,
+            'packets_in_total': 0,
+        },
+        'stream': {
+            'queues': 0,
+            'consumers': 0,
+            'producers': 0,
+            'supplier_queues': 0,
+        },
+        'automats': {
+            'active': len(automat.objects()),
+        },
+    }
+    if driver.is_on('service_customer'):
+        from customer import supplier_connector
+        result['contact']['suppliers_active'] = supplier_connector.total_connectors()
+    if driver.is_on('service_customer_support'):
+        from supplier import customer_assistant
+        result['contact']['customer_assistants'] = len(customer_assistant.assistants())
+    if driver.is_on('service_identity_propagate'):
+        from p2p import online_status
+        result['contact']['active'] = len(online_status.online_statuses())
+    if driver.is_on('service_keys_registry'):
+        from crypt import my_keys
+        result['key'] = {
+            'registered': len(my_keys.known_keys()),
+        }
+    if driver.is_on('service_entangled_dht'):
+        from dht import dht_service
+        result['dht']['bytes_out'] = dht_service.node().bytes_out
+        result['dht']['bytes_in'] = dht_service.node().bytes_in
+        for layer_id in dht_service.node().active_layers:
+            result['dht']['layers'][layer_id] = {
+                'cache': len(dht_service.cache().get(layer_id, [])),
+                'packets_in': dht_service.node().packets_in.get(layer_id, 0),
+                'packets_out': dht_service.node().packets_out.get(layer_id, 0),
+            }
+    if driver.is_on('service_backup_db'):
+        from storage import backup_fs
+        result['file'] = {
+            'items': backup_fs.counter(),
+            'files': backup_fs.numberfiles(),
+            'files_size': backup_fs.sizefiles(),
+            'folders': backup_fs.numberfolders(),
+            'folders_size': backup_fs.sizefolders(),
+            'backups_size': backup_fs.sizebackups(),
+            'customers': len(backup_fs.known_customers()),
+        }
+    if driver.is_on('service_shared_data'):
+        from access import shared_access_coordinator
+        result['share'] = {
+            'active': len(shared_access_coordinator.list_active_shares()),
+        }
+    if driver.is_on('service_private_groups'):
+        from access import group_member
+        result['group'] = {
+            'active': len(group_member.list_active_group_members()),
+        }
+    if driver.is_on('service_gateway'):
+        from transport import gateway
+        from transport import packet_in
+        from transport import packet_out
+        result['network']['packets_out'] = len(packet_out.queue())
+        result['network']['packets_out_total'] = packet_out.get_packets_counter()
+        result['network']['packets_in'] = len(packet_in.inbox_items())
+        result['network']['packets_in_total'] = packet_in.get_packets_counter()
+        result['network']['protocols'] = len(gateway.transports())
+    if driver.is_on('service_p2p_notifications'):
+        from stream import p2p_queue
+        result['stream']['queues'] = len(p2p_queue.queue())
+        result['stream']['consumers'] = len(p2p_queue.consumer())
+        result['stream']['producers'] = len(p2p_queue.producer())
+    if driver.is_on('service_data_motion'):
+        from stream import io_throttle
+        result['stream']['supplier_queues'] = len(io_throttle.throttle().ListSupplierQueues())
+    return OK(result)
+
+
 def process_debug():
     """
     Execute a breakpoint inside the main thread and start Python shell using standard `pdb.set_trace()` debugger method.
@@ -3323,6 +3464,10 @@ def customers_list(verbose=False):
     """
     if not driver.is_on('service_supplier'):
         return ERROR('service_supplier() is not started')
+    service_customer_support_on = False
+    if driver.is_on('service_customer_support'):
+        service_customer_support_on = True
+        from supplier import customer_assistant
     from contacts import contactsdb
     from p2p import online_status
     from userid import global_id
@@ -3335,6 +3480,7 @@ def customers_list(verbose=False):
                 'idurl': '',
                 'contact_status': 'offline',
                 'contact_state': 'OFFLINE',
+                'customer_assistant_state': 'OFFLINE',
             }
             results.append(r)
             continue
@@ -3344,14 +3490,15 @@ def customers_list(verbose=False):
             'idurl': customer_idurl,
             'contact_status': 'offline',
             'contact_state': 'OFFLINE',
+            'customer_assistant_state': 'OFFLINE',
         }
         if online_status.isKnown(customer_idurl):
             r['contact_status'] = online_status.getStatusLabel(customer_idurl)
             r['contact_state'] = online_status.getCurrentState(customer_idurl)
-        # if contact_status.isKnown(customer_idurl):
-        #     cur_state = contact_status.getInstance(customer_idurl).state
-        #     r['contact_status'] = contact_status.stateToLabel(cur_state)
-        #     r['contact_state'] = cur_state
+        if service_customer_support_on:
+            assistant = customer_assistant.by_idurl(customer_idurl)
+            if assistant:
+                r['customer_assistant_state'] = assistant.state
         results.append(r)
     return RESULT(results)
 

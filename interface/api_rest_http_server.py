@@ -336,6 +336,12 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     def process_health_v1(self, request):
         return api.process_health()
 
+    @GET('^/p/h$')
+    @GET('^/v1/process/info$')
+    @GET('^/process/info/v1$')
+    def process_info_v1(self, request):
+        return api.process_info()
+
     @GET('^/p/d$')
     @GET('^/v1/process/debug$')
     @GET('^/process/debug/v1$')
