@@ -220,7 +220,7 @@ def make_valid_filename(customerIDURL, glob_path):
 #------------------------------------------------------------------------------
 
 def on_data(newpacket):
-    if newpacket.OwnerID == my_id.getLocalID():
+    if id_url.to_bin(newpacket.OwnerID) == my_id.getLocalID().to_bin():
         # this Data belong to us, SKIP
         return False
 #     if not contactsdb.is_customer(newpacket.OwnerID):
