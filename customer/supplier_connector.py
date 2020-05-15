@@ -159,6 +159,15 @@ def by_idurl(supplier_idurl, customer_idurl=None):
     supplier_idurl = id_url.field(supplier_idurl)
     return connectors(customer_idurl).get(supplier_idurl, None)
 
+
+def total_connectors():
+    """
+    """
+    count = 0
+    for suppliers_list in _SuppliersConnectors.values():
+        count += len(suppliers_list)
+    return count
+
 #------------------------------------------------------------------------------
 
 

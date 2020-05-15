@@ -514,6 +514,13 @@ def total_suppliers():
         result.update(set(suppliers_list))
     return len(result)
 
+
+def num_correspondents():
+    """
+    Return current number of correspondents.
+    """
+    return len(correspondents())
+
 #------------------------------------------------------------------------------
 
 def supplier_position(idurl, customer_idurl=None):

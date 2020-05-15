@@ -1110,6 +1110,11 @@ def dump_local_db(value_as_json=False):
 
 #------------------------------------------------------------------------------
 
+def cache():
+    global _Cache
+    return _Cache
+
+
 def load_cache(cache_dir_path):
     global _Cache
     _Cache.clear()

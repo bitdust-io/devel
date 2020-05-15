@@ -82,6 +82,11 @@ def cache_ids():
     global _IdentityCacheIDs
     return _IdentityCacheIDs
 
+
+def cache_contacts():
+    global _Contact2IDURL
+    return _Contact2IDURL
+
 #------------------------------------------------------------------------------
 
 
