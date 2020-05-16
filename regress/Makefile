@@ -78,10 +78,20 @@ _one_up:
 _one_down:
 	@echo "DOWN ${TEST_NAME}"; docker-compose --file tests/${TEST_NAME}/docker-compose.yml down -v -t 1 1> /dev/null 2> /dev/null
 
+_one_clean_test:
+	@echo "DOCKER COMPOSE EXEC ${TEST_NAME} DEBUG=${_DEBUG}";
+	@mkdir -p logs;
+	@docker-compose --file tests/${TEST_NAME}/docker-compose.yml exec -T tester sh -c "TEST_NAME=${TEST_NAME} _DEBUG=${_DEBUG} STOP_NODES=1 CLEAN_NODES=1 python -u -m pytest /app/tests/${TEST_NAME}/ -v -s" 1> logs/container.${TEST_NAME}.out 2> logs/container.${TEST_NAME}.err
+
 _one_test:
 	@echo "TEST ${TEST_NAME} DEBUG=${_DEBUG}";
 	@mkdir -p logs;
 	@docker-compose --file tests/${TEST_NAME}/docker-compose.yml exec -T tester sh -c "TEST_NAME=${TEST_NAME} _DEBUG=${_DEBUG} python -u -m pytest /app/tests/${TEST_NAME}/ -v -s" 2> logs/container.${TEST_NAME}.stderr || (echo "test ${TEST_NAME} FAILED !!!" && echo "FAIL" > logs/container.${TEST_NAME}.fail && exit 1)
+
+_one_test_rerun_1:
+	@echo "TEST with 1 re-run ${TEST_NAME} DEBUG=${_DEBUG}";
+	@mkdir -p logs;
+	@$(MAKE) --no-print-directory --output-sync=none _one_clean_test || (echo "test ${TEST_NAME} DID NOT PASS FIRST TIME, try to re-run" && $(MAKE) --no-print-directory --output-sync=none _one_clean_test ) || (echo "test ${TEST_NAME} FAILED !!!" && echo "FAIL" > logs/container.${TEST_NAME}.fail && exit 1)
 
 _one_coverage:
 	@echo "COVERAGE ${TEST_NAME}";
@@ -103,7 +113,7 @@ _one_up_test_log_down:
 	@$(MAKE) --no-print-directory --output-sync=line _one_prepare && $(MAKE) --no-print-directory --output-sync=line _one_up && $(MAKE) --no-print-directory --output-sync=none _one_test && $(MAKE) --no-print-directory --output-sync=line _one_coverage && $(MAKE) --no-print-directory --output-sync=line _one_log && $(MAKE) --no-print-directory --output-sync=line _one_down
 
 _one_up_test_log_down_parallel:
-	@$(MAKE) --no-print-directory --output-sync=recurse _one_prepare && $(MAKE) --no-print-directory --output-sync=recurse _one_up && $(MAKE) --no-print-directory --output-sync=none _one_test && $(MAKE) --no-print-directory --output-sync=recurse _one_coverage && $(MAKE) --no-print-directory --output-sync=recurse _one_log && $(MAKE) --no-print-directory --output-sync=recurse _one_down
+	@$(MAKE) --no-print-directory --output-sync=recurse _one_prepare && $(MAKE) --no-print-directory --output-sync=recurse _one_up && $(MAKE) --no-print-directory --output-sync=none _one_test_rerun_1 && $(MAKE) --no-print-directory --output-sync=recurse _one_coverage && $(MAKE) --no-print-directory --output-sync=recurse _one_log && $(MAKE) --no-print-directory --output-sync=recurse _one_down
 
 _one_up_test_log:
 	@$(MAKE) --no-print-directory --output-sync=line _one_prepare && $(MAKE) --no-print-directory --output-sync=line _one_up && $(MAKE) --no-print-directory --output-sync=none _one_test && $(MAKE) --no-print-directory --output-sync=line _one_log
