@@ -354,9 +354,9 @@ def exception(level, maxTBlevel, exc_info):
             f_locals = ''
         if f_locals:
             out(level, 'locals: %s' % f_locals[:1000])
-            s += 'locals: %s\n' % f_locals
+            s += '\nlocals: %s\n' % f_locals
     if _StoreExceptionsEnabled and _LogFileName:
-        s += '%s\n' % datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
+        s = '\n%s\n' % datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f") + s
         exc_label = exc_name.lower().replace(' ', '_').replace('-', '_')[:80]
         exc_label = ''.join([c for c in exc_label if c in '0123456789abcdefghijklmnopqrstuvwxyz_'])
         exc_filename = os.path.join(os.path.dirname(_LogFileName), 'exception_' + exc_label + '.log')
@@ -370,7 +370,7 @@ def exception(level, maxTBlevel, exc_info):
         else:
             if not isinstance(s, str):
                 s = s.encode('utf-8')
-        s += b'==========================================================\n\n'
+        s += b'\n==========================================================\n'
         fout.write(s)
         fout.close()
         out(level, 'saved to: %s' % exc_filename)
