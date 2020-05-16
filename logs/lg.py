@@ -37,6 +37,7 @@ import six
 import os
 import sys
 import time
+import datetime
 import threading
 import traceback
 import platform
@@ -277,7 +278,7 @@ def exc(msg='', level=0, maxTBlevel=100, exc_info=None, exc_value=None, **kwargs
         if _UseColors:
             msg = '\033[1;31m%s\033[0m' % msg
         out(level, msg, showtime=True)
-        out(level, msg, log_name='exc', showtime=True)
+        # out(level, msg, log_name='exc', showtime=True)
     if exc_value:
         return exception(level, maxTBlevel, exc_info=('', exc_value, []))
     return exception(level, maxTBlevel, exc_info)
@@ -348,12 +349,14 @@ def exception(level, maxTBlevel, exc_info):
             out(level, l.replace('\n', ''))
     if trbk:
         try:
-            f_locals = str(repr(trbk.tb_next.tb_next.tb_frame.f_locals))[:1000]
+            f_locals = str(repr(trbk.tb_next.tb_next.tb_frame.f_locals))
         except:
             f_locals = ''
         if f_locals:
-            out(level, 'locals: %s' % f_locals)
+            out(level, 'locals: %s' % f_locals[:1000])
+            s += 'locals: %s\n' % f_locals
     if _StoreExceptionsEnabled and _LogFileName:
+        s += '%s\n' % datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
         exc_label = exc_name.lower().replace(' ', '_').replace('-', '_')[:80]
         exc_label = ''.join([c for c in exc_label if c in '0123456789abcdefghijklmnopqrstuvwxyz_'])
         exc_filename = os.path.join(os.path.dirname(_LogFileName), 'exception_' + exc_label + '.log')

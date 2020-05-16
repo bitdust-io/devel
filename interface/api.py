@@ -2616,6 +2616,8 @@ def group_share(group_key_id, trusted_user_id, timeout=30):
         return None
 
     def _on_group_access_donor_failed(err):
+        if _Debug:
+            lg.args(_DebugLevel, err=err)
         ret.callback(ERROR(err))
         return None
 

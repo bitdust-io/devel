@@ -130,6 +130,7 @@ run_log/%:
 	@$(MAKE) --no-print-directory --output-sync=line TEST_NAME=$* _DEBUG=1 _one_up_test_log_down
 
 spawn_run_log/%:
+	@echo "running $*"
 	@$(MAKE) --no-print-directory --output-sync=recurse TEST_NAME=$* _DEBUG=1 _one_up_test_log_down_parallel
 
 run_log_up/%:

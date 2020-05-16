@@ -164,7 +164,7 @@ def verify_packet_ownership(newpacket, raise_exception=False):
                     return creator_idurl
     # TODO: make possible to set "active": True/False for any key
     # scenario 9: customer wants to keep data/location read-only 
-    raise Exception('scenario not implemented yet')
+    raise Exception('scenario not implemented yet, received %r' % newpacket)
 
 #------------------------------------------------------------------------------
 
