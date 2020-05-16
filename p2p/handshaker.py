@@ -378,11 +378,12 @@ class Handshaker(automat.Automat):
             return
         status = kwargs.get('status')
         error = kwargs.get('error')
-        lg.warn('handshake failed because my Identity() packet was not sent to remote user %r : %r' % (status, error, ))
-        if status != 'cancelled':
-            lg.exc(exc_value=Exception('handshake failed because my Identity() packet was not sent to remote user'))
+        if status == 'cancelled':
+            lg.warn('handshake failed, my Identity() packet was not sent to remote user %r : %r' % (status, error, ))
+        else:
+            lg.err('handshake failed with status %r, my Identity() packet was not sent to remote user: %r' % (status, error, ))
         for result_defer in _RunningHandshakers[self.remote_idurl]['results']:
-            result_defer.errback(Exception('handshake failed because my Identity() packet was not sent to remote user'))
+            result_defer.errback(Exception('handshake failed, my Identity() packet was not sent to remote user'))
 
     def doReportTimeOut(self, *args, **kwargs):
         """

@@ -990,8 +990,9 @@ class GroupMember(automat.Automat):
     def _on_broker_hired(self, idurl, broker_pos):
         self.hired_brokers[broker_pos] = idurl or None
         if idurl:
-            self.connected_brokers[broker_pos] = idurl 
-        self.connecting_brokers.discard(broker_pos)
+            self.connected_brokers[broker_pos] = idurl
+        if self.connecting_brokers is not None:
+            self.connecting_brokers.discard(broker_pos)
         if _Debug:
             lg.args(_DebugLevel, idurl=idurl, broker_pos=broker_pos, connecting_brokers=self.connecting_brokers,
                     hired_brokers=self.hired_brokers, connected_brokers=self.connected_brokers)
@@ -1012,7 +1013,8 @@ class GroupMember(automat.Automat):
             lg.args(_DebugLevel, idurl=idurl, broker_pos=broker_pos, connecting_brokers=self.connecting_brokers)
         if idurl:
             self.connected_brokers[broker_pos] = idurl
-        self.connecting_brokers.discard(broker_pos)
+        if self.connecting_brokers is not None:
+            self.connecting_brokers.discard(broker_pos)
         if _Debug:
             lg.args(_DebugLevel, idurl=idurl, broker_pos=broker_pos, connecting_brokers=self.connecting_brokers,
                     connected_brokers=self.connected_brokers)
@@ -1035,7 +1037,8 @@ class GroupMember(automat.Automat):
         if _Debug:
             lg.args(_DebugLevel, err=err, broker_pos=broker_pos)
         self.hired_brokers[broker_pos] = None
-        self.connecting_brokers.discard(broker_pos)
+        if self.connecting_brokers is not None:
+            self.connecting_brokers.discard(broker_pos)
         if _Debug:
             lg.args(_DebugLevel, err=err, broker_pos=broker_pos, connecting_brokers=self.connecting_brokers, hired_brokers=self.hired_brokers)
         if self.connecting_brokers:
@@ -1048,7 +1051,8 @@ class GroupMember(automat.Automat):
     def _on_message_broker_connect_failed(self, err, broker_pos):
         if _Debug:
             lg.args(_DebugLevel, err=err, broker_pos=broker_pos)
-        self.connecting_brokers.discard(broker_pos)
+        if self.connecting_brokers is not None:
+            self.connecting_brokers.discard(broker_pos)
         if _Debug:
             lg.args(_DebugLevel, err=err, broker_pos=broker_pos, connecting_brokers=self.connecting_brokers)
         if self.connecting_brokers:

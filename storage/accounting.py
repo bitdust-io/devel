@@ -156,7 +156,7 @@ def update_customers_usage(new_space_usage_dict):
 
 def calculate_customers_usage_ratio(space_dict=None, used_dict=None):
     if space_dict is None:
-        space_dict, free_space = read_customers_quotas()
+        space_dict, _ = read_customers_quotas()
     if used_dict is None:
         used_dict = read_customers_usage()
     current_customers = contactsdb.customers()

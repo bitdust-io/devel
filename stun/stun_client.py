@@ -471,7 +471,7 @@ class StunClient(automat.Automat):
         self.deferreds.pop(node.id, None)
         if not isinstance(result, dict):
             if _Debug:
-                lg.dbg('empty result received from node %r : %r' % (node, result, ))
+                lg.dbg(_DebugLevel, 'empty result received from node %r : %r' % (node, result, ))
             return
         try:
             port = int(strng.to_text(result['stun_port']))

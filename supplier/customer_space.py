@@ -164,7 +164,7 @@ def verify_packet_ownership(newpacket, raise_exception=False):
                     return creator_idurl
     # TODO: make possible to set "active": True/False for any key
     # scenario 9: customer wants to keep data/location read-only 
-    raise Exception('scenario not implemented yet')
+    raise Exception('scenario not implemented yet, received %r' % newpacket)
 
 #------------------------------------------------------------------------------
 
@@ -220,7 +220,7 @@ def make_valid_filename(customerIDURL, glob_path):
 #------------------------------------------------------------------------------
 
 def on_data(newpacket):
-    if newpacket.OwnerID == my_id.getLocalID():
+    if id_url.to_bin(newpacket.OwnerID) == my_id.getLocalID().to_bin():
         # this Data belong to us, SKIP
         return False
 #     if not contactsdb.is_customer(newpacket.OwnerID):
