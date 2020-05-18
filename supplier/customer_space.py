@@ -126,7 +126,7 @@ def verify_packet_ownership(newpacket, raise_exception=False):
                 if _Debug:
                     lg.dbg(_DebugLevel, 'OK, scenario 1:  customer is sending own data to own supplier')
                 return owner_idurl
-            lg.err('FAIL, scenario 6: non-authorized user is trying to store data on the supplier')
+            lg.err('FAIL, scenario 6: user is not my customer but trying to store data')
             if raise_exception:
                 raise Exception('non-authorized user is trying to store data on the supplier')
             return None
@@ -141,6 +141,8 @@ def verify_packet_ownership(newpacket, raise_exception=False):
                     if _Debug:
                         lg.dbg(_DebugLevel, 'OK, scenario 3: another authorized user is sending data to customer to be stored on the supplier')
                     return creator_idurl
+        lg.err('non-authorized user is trying to store data on the supplier')
+        return None
     if newpacket.Command in [commands.DeleteFile(), commands.DeleteBackup(), ]:
         if owner_idurl == creator_idurl:
             if contactsdb.is_customer(creator_idurl):
@@ -162,8 +164,11 @@ def verify_packet_ownership(newpacket, raise_exception=False):
                     if _Debug:
                         lg.dbg(_DebugLevel, 'OK, scenario 5: another authorized user wants to remove already stored data from the supplier')
                     return creator_idurl
-    # TODO: make possible to set "active": True/False for any key
-    # scenario 9: customer wants to keep data/location read-only 
+        lg.err('non-authorized user is trying to erase data on the supplier')
+        return None
+    # TODO:
+    # scenario 9: make possible to set "active" flag True/False for any key
+    # this way customer can make virtual location available for other user but in read-only mode
     raise Exception('scenario not implemented yet, received %r' % newpacket)
 
 #------------------------------------------------------------------------------

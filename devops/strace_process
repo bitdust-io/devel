@@ -1,0 +1,3 @@
+#!/bin/bash
+
+sudo strace -p `pidof -s /home/bitdust/.bitdust/venv/bin/python` -f -e trace=network -s 1000000
