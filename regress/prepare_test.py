@@ -38,6 +38,7 @@ for container_name, container_info in conf['containers'].items():
         container_volumes_src = ''
         for volume in container_volumes:
             container_volumes_src +=  '\n      - %s' % volume
+        # container_volumes_src +=  '\n      - ./bash_history.txt:/root/.bash_history'
         container_src += '''
     volumes:%s''' % container_volumes_src
     if container_links:

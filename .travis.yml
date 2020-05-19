@@ -35,6 +35,4 @@ before_install:
 
 script:
   - make test_unit
-  - make regress_prepare
-  - make regress_run
-  - make regress_report
+  - make test_regress

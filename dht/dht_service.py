@@ -286,7 +286,8 @@ def connect(seed_nodes=[], layer_id=0, attach=False):
         d.addCallback(_on_join_success, resolved_seed_nodes, _layer_id=_layer_id)
         d.addErrback(_on_join_failed)
         if not node().expire_task.running:
-            node().expire_task.start(int(KEY_EXPIRE_MIN_SECONDS / 2), now=True)
+            # reactor.callLater(random.randint(0, 60), node().expire_task.start, int(KEY_EXPIRE_MIN_SECONDS / 2), now=True)  # @UndefinedVariable
+            node().expire_task.start(int(KEY_EXPIRE_MIN_SECONDS / 2), now=True)  # @UndefinedVariable
         return resolved_seed_nodes
 
     def _on_hosts_resolve_failed(x):
@@ -542,7 +543,7 @@ def delete_key(key, layer_id=0, parallel_calls=None):
 
 def on_read_json_response(response, key, result_defer=None):
     if _Debug:
-        lg.out(_DebugLevel + 6, 'dht_service.on_read_json_response [%r] : %r' % (key, response))
+        lg.out(_DebugLevel + 6, 'dht_service.on_read_json_response [%r] : %s' % (key, type(response)))
     json_value = None
     if isinstance(response, list):
         if _Debug:
