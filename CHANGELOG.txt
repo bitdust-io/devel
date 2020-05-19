@@ -2,6 +2,13 @@ Change Log
 ==========
 
 
+2020-05-20 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* try to run tests in parallel mode
+* small fix in  supplier/customer_space.py
+
+
+
 2020-05-16 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * cleanup responses in few api methods
