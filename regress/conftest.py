@@ -57,14 +57,14 @@ def open_all_tunnels(event_loop):
     print('\nAll SSH tunnels opened in %5.3f seconds\n' % (time.time() - _begin))
 
 
-def clean_all_nodes(event_loop, skip_checks=False):
+def clean_all_nodes(event_loop, skip_checks=False, verbose=False):
     _begin = time.time()
     print('\nCleaning all nodes')
     event_loop.run_until_complete(asyncio.gather(*[
-        tsup.clean_one_node_async(node, event_loop=event_loop) for node in ALL_NODES
+        tsup.clean_one_node_async(node, event_loop=event_loop, verbose=verbose) for node in ALL_NODES
     ]))
     event_loop.run_until_complete(asyncio.gather(*[
-        tsup.clean_one_customer_async(node['name'], event_loop=event_loop) for node in ALL_ROLES['customer']
+        tsup.clean_one_customer_async(node['name'], event_loop=event_loop, verbose=verbose) for node in ALL_ROLES['customer']
     ]))
     print('\n\nAll nodes cleaned in %5.3f seconds\n' % (time.time() - _begin))
 
@@ -76,7 +76,7 @@ def start_all_nodes(event_loop, verbose=False):
 
     for number, dhtseed in enumerate(ALL_ROLES.get('dht-seed', [])):
         # first seed to be started immediately, all other seeds must wait a bit before start
-        tsup.start_one_dht_seed(dhtseed, wait_seconds=(3 if number > 0 else 0))
+        tsup.start_one_dht_seed(dhtseed, wait_seconds=(3 if number > 0 else 0), verbose=verbose)
     if verbose:
         print('\nALL DHT SEEDS STARTED\n')
 
@@ -231,19 +231,21 @@ def global_wrapper(event_loop):
     print('\n\nENV:\n%s' % pprint.pformat(dict(os.environ)))
     print ('\n\nALL NODES:\n%s' % pprint.pformat(ALL_NODES))
 
+    verbose = True
+
     _begin = time.time()
 
     if os.environ.get('OPEN_TUNNELS', '1') == '1':
         open_all_tunnels(event_loop)
 
     if os.environ.get('STOP_NODES', '0') == '1':
-        stop_all_nodes(event_loop)
+        stop_all_nodes(event_loop, verbose=verbose)
 
     if os.environ.get('CLEAN_NODES', '0') == '1':
-        clean_all_nodes(event_loop, skip_checks=True)
+        clean_all_nodes(event_loop, skip_checks=True, verbose=verbose)
 
     if os.environ.get('START_NODES', '1') == '1':
-        start_all_nodes(event_loop)
+        start_all_nodes(event_loop, verbose=verbose)
 
     print('\nTest network prepared in %5.3f seconds\n' % (time.time() - _begin))
  

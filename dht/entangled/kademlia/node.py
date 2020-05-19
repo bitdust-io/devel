@@ -1159,7 +1159,11 @@ class MultiLayerNode(Node):
         self._joinDeferreds[layerID].addErrback(self._joinNetworkFailed, layerID=layerID)
         if self.refreshers.get(layerID, None) and not self.refreshers[layerID].called:
             self.refreshers[layerID].cancel()
-        self.refreshers[layerID] = twisted.internet.reactor.callLater(constants.checkRefreshInterval, self._refreshNode, layerID=layerID)  # IGNORE:E1101  @UndefinedVariable
+        self.refreshers[layerID] = twisted.internet.reactor.callLater(  # IGNORE:E1101  @UndefinedVariable
+            constants.checkRefreshInterval + float(random.randint(0, 15)),
+            self._refreshNode,
+            layerID=layerID,
+        )
         return self._joinDeferreds[layerID]
 
     def leaveNetwork(self, layerID):
@@ -1814,7 +1818,11 @@ class MultiLayerNode(Node):
     def _scheduleNextNodeRefresh(self, *args, **kwargs):
         if _Debug:
             print('[DHT NODE] will refresh layer %d in %d seconds' % (kwargs['layerID'], constants.checkRefreshInterval, ))
-        self.refreshers[kwargs['layerID']] = twisted.internet.reactor.callLater(constants.checkRefreshInterval, self._refreshNode, layerID=kwargs['layerID'])  # @UndefinedVariable
+        self.refreshers[kwargs['layerID']] = twisted.internet.reactor.callLater(  # @UndefinedVariable
+            constants.checkRefreshInterval,
+            self._refreshNode,
+            layerID=kwargs['layerID'],
+        )  # @UndefinedVariable
 
     def _threadedRepublishData(self, *args, **kwargs):
         """

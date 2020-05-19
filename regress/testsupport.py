@@ -55,12 +55,14 @@ async def run_ssh_command_and_wait_async(host, cmd, loop, verbose=False):
     )
     ssh_proc = await create
     stdout, stderr = await ssh_proc.communicate()
+    stdout = stdout.decode() if stdout else ''
+    stderr = stderr.decode() if stderr else ''
     if stderr:
         if verbose:
-            print(f'STDERR at {host}: %r' % stderr.decode())
+            print(f'STDERR at {host}: {stderr}')
     if verbose:
-        print(f'\nssh_command on [{host}] : {cmd}')
-    return stdout.decode(), stderr.decode()
+        print(f'\nssh_command on [{host}] "{cmd}" returned:\n{stdout}\n')
+    return stdout, stderr
 
 
 def run_ssh_command_and_wait(host, cmd, verbose=False) -> object:
@@ -75,12 +77,14 @@ def run_ssh_command_and_wait(host, cmd, verbose=False) -> object:
         shell=False,
     )
     output, err = ssh_proc.communicate()
+    output = output.decode() if output else ''
+    err = err.decode() if err else ''
     if err:
         if verbose:
-            print('\nSTDERR: %r' % err.decode())
+            print(f'\nSTDERR at {host}: {err}')
     if verbose:
-        print(f'\nssh_command on [{host}] : {cmd}')
-    return output.decode(), err.decode()
+        print(f'\nssh_command on [{host}] "{cmd}" returned:\n{output}\n')
+    return output, err
 
 #------------------------------------------------------------------------------
 
@@ -583,6 +587,8 @@ def stop_daemon(node, skip_checks=False):
                 bitdust_stop[0].strip().endswith('BitDust process finished correctly')
             ) or (
                 bitdust_stop[0].strip() == 'BitDust is not running at the moment'
+            ) or (
+                bitdust_stop[0].strip() == ''
             )
         )
     # print(f'stop_daemon [{node}] OK\n')
@@ -602,6 +608,8 @@ async def stop_daemon_async(node, loop, skip_checks=False, verbose=False):
                 resp.endswith('BitDust process finished correctly')
             ) or (
                 resp == 'BitDust is not running at the moment'
+            ) or (
+                resp == ''
             )
         ):
             print('process finished with unexpected response: %r' % resp)
@@ -610,7 +618,7 @@ async def stop_daemon_async(node, loop, skip_checks=False, verbose=False):
 
 #------------------------------------------------------------------------------
 
-def start_dht_seed(node, wait_seconds=0, dht_seeds='', attached_layers=''):
+def start_dht_seed(node, wait_seconds=0, dht_seeds='', attached_layers='', verbose=False):
     print(f'\nNEW DHT SEED (with STUN SERVER) at [{node}]\n')
     cmd = ''
     cmd += 'bitdust set logs/debug-level 18;'
@@ -640,7 +648,7 @@ def start_dht_seed(node, wait_seconds=0, dht_seeds='', attached_layers=''):
     run_ssh_command_and_wait(node, cmd)
     # start BitDust daemon
     time.sleep(wait_seconds)
-    start_daemon(node)
+    start_daemon(node, verbose=verbose)
     # get_client_certificate(node)
     health_check(node)
     print(f'\nSTARTED DHT SEED (with STUN SERVER) [{node}]\n')
@@ -901,12 +909,13 @@ async def start_customer_async(node, identity_name, loop, join_network=True, num
 
 #------------------------------------------------------------------------------
 
-def start_one_dht_seed(dht_seed, wait_seconds):
+def start_one_dht_seed(dht_seed, wait_seconds, verbose=False):
     start_dht_seed(
         node=dht_seed['name'],
         dht_seeds=dht_seed.get('known_dht_seeds', ''),
         attached_layers=dht_seed.get('attached_layers', '2,3'),
         wait_seconds=wait_seconds,
+        verbose=verbose,
     )
 
 
@@ -1060,19 +1069,30 @@ def print_stdout_one_node(node):
 
 #------------------------------------------------------------------------------
 
-async def clean_one_node_async(node, event_loop):
-    await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/metadata', event_loop)
-    await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/identitycache', event_loop)
-    await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/identityserver', event_loop)
-    await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/keys', event_loop)
-    await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/customers', event_loop)
-    await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/suppliers', event_loop)
-    await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/backups', event_loop)
-    await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/messages', event_loop)
+async def clean_one_node_async(node, event_loop, verbose=False):
+    # clean_up_folders = 'backups bandin bandout blockchain config customers identitycache identityhistory keys messages metadata ratings receipts servicedata suppliers temp'
+    # clean_up_folders = clean_up_folders.split(' ')
+    # await run_ssh_command_and_wait_async(node, 'rm -rf %s' % (' '.join([lambda i: f'/root/.bitdust/{i}' for i in clean_up_folders])), event_loop)
+
+    await run_ssh_command_and_wait_async(
+        node,
+        'find /root/.bitdust/ -maxdepth 1 -not -name X -not -name venv -not -name bitdust -not -name ".bitdust" -exec rm -r "{}" \;',
+        event_loop,
+        verbose=verbose,
+    )
+
+#     await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/backups', event_loop)
+#     await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/metadata', event_loop)
+#     await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/identitycache', event_loop)
+#     await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/identityserver', event_loop)
+#     await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/keys', event_loop)
+#     await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/customers', event_loop)
+#     await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/suppliers', event_loop)
+#     await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/messages', event_loop)
 
 
-async def clean_one_customer_async(node, event_loop):
-    await run_ssh_command_and_wait_async(node, 'rm -rf /%s/*' % node, event_loop)
+async def clean_one_customer_async(node, event_loop, verbose=False):
+    await run_ssh_command_and_wait_async(node, 'rm -rf /%s/*' % node, event_loop, verbose=verbose)
 
 
 async def collect_coverage_one_node_async(node, event_loop, wait_before=3):
