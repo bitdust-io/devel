@@ -37,6 +37,8 @@ TEST_NAME = os.environ['TEST_NAME']
 
 CONF = json.loads(open(f'/app/tests/{TEST_NAME}/conf.json', 'r').read())
 
+PAUSE_BEFORE = int(os.environ.get('PAUSE_BEFORE', CONF.get('pause_before', '0')))
+
 ALL_NODES = list(CONF['containers'].keys())
 
 ALL_ROLES = {}
@@ -228,8 +230,11 @@ def event_loop():
 
 @pytest.yield_fixture(scope='session', autouse=True)
 def global_wrapper(event_loop): 
+    print('\n\nPAUSE_BEFORE: %d' % PAUSE_BEFORE)
     print('\n\nENV:\n%s' % pprint.pformat(dict(os.environ)))
-    print ('\n\nALL NODES:\n%s' % pprint.pformat(ALL_NODES))
+    print('\n\nALL NODES:\n%s' % pprint.pformat(ALL_NODES))
+
+    time.sleep(PAUSE_BEFORE)
 
     verbose = True
 
@@ -265,4 +270,3 @@ def global_wrapper(event_loop):
     # kill_all_nodes()
 
     print('\nAll done in %5.3f seconds\n' % (time.time() - _begin))
-
