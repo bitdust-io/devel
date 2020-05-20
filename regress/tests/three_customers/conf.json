@@ -1,6 +1,7 @@
 {
     "default_image": "bitdust/app",
     "ports_offset": 1000,
+    "pause_before": 20,
     "containers": {
         "id-a": {
             "ports": "10001:22",
