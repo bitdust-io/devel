@@ -57,7 +57,6 @@ class PrivateGroupsService(LocalService):
         groups.init()
         events.add_subscriber(self._on_supplier_modified, 'supplier-modified')
         events.add_subscriber(self._on_dht_layer_connected, event_id='dht-layer-connected')
-        events.add_subscriber(self._on_identity_url_changed, 'identity-url-changed')
         if driver.is_on('service_entangled_dht'):
             self._do_join_message_brokers_dht_layer()
         group_member.start_group_members()
@@ -68,7 +67,6 @@ class PrivateGroupsService(LocalService):
         from access import groups
         from access import group_member
         group_member.shutdown_group_members()
-        events.remove_subscriber(self._on_identity_url_changed, 'identity-url-changed')
         events.remove_subscriber(self._on_dht_layer_connected, event_id='dht-layer-connected')
         events.remove_subscriber(self._on_supplier_modified, 'supplier-modified')
         groups.shutdown()
@@ -114,16 +112,3 @@ class PrivateGroupsService(LocalService):
             for group_key_id in my_keys_to_be_republished:
                 d = key_ring.transfer_key(group_key_id, trusted_idurl=evt.data['new_idurl'], include_private=False)
                 d.addErrback(lambda *a: lg.err('transfer key failed: %s' % str(*a)))
-
-    def _on_identity_url_changed(self, evt):
-        from userid import id_url
-        from userid import global_id
-        from access import group_member
-        for group_key_id in group_member.list_active_group_members():
-            gm = group_member.get_active_group_member(group_key_id)
-            if not gm:
-                continue
-            if gm.state not in ['BROKERS?', 'IN_SYNC!', 'QUEUE?', 'DHT_READ?', ]:
-                continue
-            # if global_id.glob2idurl(gm.active_broker_id) == id_url.field(evt.data['old_idurl']):
-            #     gm.automat('replace-active-broker')

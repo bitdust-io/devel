@@ -187,16 +187,16 @@ def test_id_server_is_dead():
     #--- preparation before switching of the ID server
     kw.config_set_v1('proxy-rotated', 'services/identity-propagate/automatic-rotate-enabled', 'true')
     kw.config_set_v1('proxy-rotated', 'services/identity-propagate/known-servers',
-                     'id-dead:8084:6661,id-a:8084:6661,id-b:8084:6661,id-c:8084:6661')
+                     'id-a:8084:6661,id-b:8084:6661,id-c:8084:6661')
     kw.config_set_v1('customer-rotated', 'services/identity-propagate/automatic-rotate-enabled', 'true')
     kw.config_set_v1('customer-rotated', 'services/identity-propagate/known-servers',
-                     'id-dead:8084:6661,id-a:8084:6661,id-b:8084:6661,id-c:8084:6661')
+                     'id-a:8084:6661,id-b:8084:6661,id-c:8084:6661')
     kw.config_set_v1('supplier-rotated', 'services/identity-propagate/automatic-rotate-enabled', 'true')
     kw.config_set_v1('supplier-rotated', 'services/identity-propagate/known-servers',
-                     'id-dead:8084:6661,id-a:8084:6661,id-b:8084:6661,id-c:8084:6661')
+                     'id-a:8084:6661,id-b:8084:6661,id-c:8084:6661')
     kw.config_set_v1('broker-rotated', 'services/identity-propagate/automatic-rotate-enabled', 'true')
     kw.config_set_v1('broker-rotated', 'services/identity-propagate/known-servers',
-                     'id-dead:8084:6661,id-a:8084:6661,id-b:8084:6661,id-c:8084:6661')
+                     'id-a:8084:6661,id-b:8084:6661,id-c:8084:6661')
     kw.config_set_v1('customer-3', 'services/employer/candidates', '')
 
     #--- put identity server offline
@@ -287,11 +287,6 @@ def test_id_server_is_dead():
     assert old_folder_second_supplier == ''
     assert new_folder_second_supplier != ''
 
-    #--- test that friend1 idurl changed for customer-2
-    new_customer_2_friends = kw.friend_list_v1('customer-2', extract_idurls=True)
-    assert new_customer_idurl in new_customer_2_friends
-    assert old_customer_idurl not in new_customer_2_friends
-
     #--- send one message to the group after brokers rotated
     kw.config_set_v1('customer-4', 'services/private-groups/preferred-brokers',
                      'http://id-b:8084/broker-2.xml,http://id-a:8084/broker-3.xml,http://id-b:8084/broker-4.xml,http://id-a:8084/broker-5.xml')
@@ -353,6 +348,11 @@ def test_id_server_is_dead():
     random_message = {
         'random_message': random_string,
     }
-    t = threading.Timer(1.0, kw.message_send_v1, ['customer-2', 'master$%s' % new_customer_global_id, random_message, ])
+    t = threading.Timer(1.0, kw.message_send_v1, ['customer-2', 'master$%s' % old_customer_global_id, random_message, ])
     t.start()
     kw.message_receive_v1('customer-rotated', expected_data=random_message, timeout=31, polling_timeout=30)
+
+    #--- test that friend's IDURL changed for customer-2
+    new_customer_2_friends = kw.friend_list_v1('customer-2', extract_idurls=True)
+    assert new_customer_idurl in new_customer_2_friends
+    assert old_customer_idurl not in new_customer_2_friends

@@ -402,7 +402,7 @@ class IdRegistrator(automat.Automat):
             # exclude already discovered servers
             s.difference_update(self.discovered_servers)
             if len(s) > 0:
-                # if found some known servers - just pick a randome one
+                # if found some known servers - just pick a random one
                 self.discovered_servers.append(random.choice(list(s)))
         lg.out(4, 'id_registrator.doSelectRandomServers %s' % str(self.discovered_servers))
 
