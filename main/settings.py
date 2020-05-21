@@ -267,14 +267,13 @@ def MinimumIdentitySources():
     """
     You need to host your identity (piblic key, signature and contacts) at least in one place.
     By default you will use identiy servers hard-coded in BitDust source code.
-    But you can start your own identity server and host your identiy there, set those settings:
+    But you can start your own identity server and host your identiy there.
+    Use those settings before you run identity register call:
 
         services/identity-propagate/known-servers
         services/identity-propagate/preferred-servers
         services/identity-propagate/min-servers
         services/identity-propagate/max-servers
-
-    before you run identiy register process.
     """
     return 1
 
@@ -283,7 +282,7 @@ def MaximumIdentitySources():
     """
     You can host your identity in many places, up to 10 identity servers allowed.
     You do not need to mirror your identity too much, this is just to keep users
-    consuming sufficient amount of network resousrces.
+    consuming sufficient amount of network resources.
     """
     return 10
 
@@ -295,24 +294,6 @@ def DefaultPrivateKeySize():
     Can be 1024, 2048 or 4096.
     """
     return 2048
-
-
-def BasePricePerGBmonth():
-    """
-    Dropbox have a 10$/month for 100-500 GB. So let's have 10$ for 1Tb. this is
-    0.01$.
-
-    Definitely - this is not very important thing at the moment. :-)
-
-    """
-    return 0.01
-
-
-def BasePricePerGBDay():
-    """
-    Almost the same.
-    """
-    return BasePricePerGBmonth() / 30.0
 
 
 def defaultDebugLevel():

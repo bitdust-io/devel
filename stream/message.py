@@ -358,7 +358,7 @@ def on_message_delivered(idurl, json_data, recipient_global_id, packet_id, respo
     global _LastUserPingTime
     idurl = id_url.to_bin(idurl)
     if _Debug:
-        lg.args(_DebugLevel, idurl=idurl, packet_id=packet_id, recipient_global_id=recipient_global_id)
+        lg.args(_DebugLevel, packet_id=packet_id, recipient_global_id=recipient_global_id)
     _LastUserPingTime[idurl] = time.time()
     if result_defer and not result_defer.called:
         result_defer.callback(response)
@@ -439,7 +439,7 @@ def send_message(json_data, recipient_global_id, packet_id=None,
     if not packet_id:
         packet_id = packetid.UniqueID()
     if _Debug:
-        lg.out(_DebugLevel, "message.send_message to %s with PacketID=%s ping_timeout=%d message_ack_timeout=%r ping_retries=%d" % (
+        lg.out(_DebugLevel, "message.send_message to %s with PacketID=%s timeout=%d ack_timeout=%r retries=%d" % (
             recipient_global_id, packet_id, ping_timeout, message_ack_timeout, ping_retries, ))
     remote_idurl = global_id.GlobalUserToIDURL(recipient_global_id, as_field=False)
     if not remote_idurl:

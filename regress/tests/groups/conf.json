@@ -63,24 +63,11 @@
                 "known_dht_seeds": "dht-2:14441,dht-3:14441"
             }
         },
-        "stun-2": {
-            "links": [
-                "dht-2",
-                "dht-3"
-            ],
-            "ports": "10022:22",
-            "node": {
-                "role": "stun-server",
-                "name": "stun-2",
-                "known_dht_seeds": "dht-2:14441,dht-3:14441"
-            }
-        },
         "proxy-1": {
             "links": [
                 "dht-2",
                 "dht-3",
                 "stun-1",
-                "stun-2",
                 "id-a",
                 "id-b"
             ],
@@ -97,7 +84,6 @@
                 "dht-2",
                 "dht-3",
                 "stun-1",
-                "stun-2",
                 "id-a",
                 "id-b"
             ],
@@ -132,7 +118,6 @@
                 "dht-2",
                 "dht-3",
                 "stun-1",
-                "stun-2",
                 "id-a",
                 "id-b"
             ],
@@ -150,7 +135,6 @@
                 "dht-2",
                 "dht-3",
                 "stun-1",
-                "stun-2",
                 "id-a",
                 "id-b"
             ],
@@ -168,7 +152,6 @@
                 "dht-2",
                 "dht-3",
                 "stun-1",
-                "stun-2",
                 "id-a",
                 "id-b"
             ],
@@ -186,7 +169,6 @@
                 "dht-2",
                 "dht-3",
                 "stun-1",
-                "stun-2",
                 "id-a",
                 "id-b"
             ],
@@ -200,6 +182,7 @@
                 "block_size": "10 KB",
                 "join_network": true,
                 "num_suppliers": 2,
+                "supplier_candidates": "http://id-a:8084/supplier-1.xml,http://id-a:8084/supplier-3.xml",
                 "known_id_servers": "id-a:8084:6661",
                 "known_dht_seeds": "dht-2:14441,dht-3:14441",
                 "preferred_routers": "http://id-a:8084/proxy-1.xml"
@@ -210,7 +193,6 @@
                 "dht-2",
                 "dht-3",
                 "stun-1",
-                "stun-2",
                 "id-a",
                 "id-b"
             ],
@@ -223,6 +205,7 @@
                 "name": "customer-2",
                 "join_network": true,
                 "num_suppliers": 2,
+                "supplier_candidates": "http://id-b:8084/supplier-2.xml,http://id-b:8084/supplier-4.xml",
                 "known_id_servers": "id-b:8084:6661",
                 "known_dht_seeds": "dht-2:14441,dht-3:14441",
                 "preferred_routers": "http://id-b:8084/proxy-2.xml"
@@ -233,7 +216,6 @@
                 "dht-2",
                 "dht-3",
                 "stun-1",
-                "stun-2",
                 "id-a",
                 "id-b"
             ],
@@ -246,6 +228,7 @@
                 "name": "customer-3",
                 "join_network": true,
                 "num_suppliers": 2,
+                "supplier_candidates": "http://id-a:8084/supplier-3.xml,http://id-b:8084/supplier-4.xml",
                 "known_id_servers": "id-a:8084:6661",
                 "known_dht_seeds": "dht-2:14441,dht-3:14441",
                 "preferred_routers": "http://id-a:8084/proxy-1.xml"
@@ -256,7 +239,6 @@
                 "dht-2",
                 "dht-3",
                 "stun-1",
-                "stun-2",
                 "id-a",
                 "id-b"
             ],
@@ -274,7 +256,6 @@
                 "dht-2",
                 "dht-3",
                 "stun-1",
-                "stun-2",
                 "id-a",
                 "id-b"
             ],
@@ -292,7 +273,6 @@
                 "dht-2",
                 "dht-3",
                 "stun-1",
-                "stun-2",
                 "id-a",
                 "id-b"
             ],
@@ -310,7 +290,6 @@
                 "dht-2",
                 "dht-3",
                 "stun-1",
-                "stun-2",
                 "id-a",
                 "id-b"
             ],
@@ -328,7 +307,6 @@
                 "dht-2",
                 "dht-3",
                 "stun-1",
-                "stun-2",
                 "id-a",
                 "id-b"
             ],
@@ -354,7 +332,6 @@
         "dht-2",
         "dht-3",
         "stun-1",
-        "stun-2",
         "proxy-1",
         "proxy-2",
         "supplier-1",

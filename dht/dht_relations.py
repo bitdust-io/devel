@@ -195,15 +195,18 @@ def read_customer_message_brokers(customer_idurl, positions=[0, ], return_detail
     result = Deferred()
 
     def _do_broker_identity_cache(dht_record, position, broker_result):
+        if _Debug:
+            lg.args(_DebugLevel, position=position, broker_idurl=dht_record['broker_idurl'])
         one_broker_task = identitycache.GetLatest(dht_record['broker_idurl'])
         if _Debug:
             one_broker_task.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='read_customer_message_brokers._do_broker_identity_cache')
         one_broker_task.addCallback(lambda xmlsrc: broker_result.callback(dht_record))
+        one_broker_task.addErrback(broker_result.errback)
         return None
 
     def _do_verify(dht_value, position, broker_result):
         if _Debug:
-            lg.args(_DebugLevel, dht_value=dht_value, position=position, broker_result=broker_result)
+            lg.args(_DebugLevel, position=position, dht_value=dht_value)
         ret = {
             'timestamp': None,
             'revision': 0,
@@ -265,11 +268,14 @@ def read_customer_message_brokers(customer_idurl, positions=[0, ], return_detail
 
     def _do_collect_results(all_results):
         if _Debug:
-            lg.args(_DebugLevel, all_results=all_results)
+            lg.args(_DebugLevel, all_results=len(all_results))
         final_result = []
+        all_brokers = []
         for one_success, one_result in all_results:
             if one_success and one_result['broker_idurl']:
-                final_result.append(one_result)
+                if id_url.is_not_in(one_result['broker_idurl'], all_brokers, as_field=False):
+                    all_brokers.append(one_result['broker_idurl'])
+                    final_result.append(one_result)
         result.callback(final_result)
         return None
 

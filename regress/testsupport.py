@@ -715,7 +715,8 @@ async def start_stun_server_async(node, loop, dht_seeds=''):
     print(f'\nSTARTED STUN SERVER [{node}]\n')
 
 
-async def start_proxy_server_async(node, identity_name, loop, known_servers='', dht_seeds=''):
+async def start_proxy_server_async(node, identity_name, loop, min_servers=1, max_servers=1, known_servers='',
+                                   preferred_servers='', health_check_interval_seconds=None, dht_seeds=''):
     print(f'\nNEW PROXY SERVER {identity_name} at [{node}]\n')
     cmd = ''
     cmd += 'bitdust set logs/debug-level 18;'
@@ -730,10 +731,16 @@ async def start_proxy_server_async(node, identity_name, loop, known_servers='', 
     cmd += 'bitdust set services/supplier/enabled false;'
     cmd += 'bitdust set services/proxy-transport/enabled false;'
     # configure ID servers
-    cmd += 'bitdust set services/identity-propagate/min-servers 1;'
-    cmd += 'bitdust set services/identity-propagate/max-servers 1;'
+    if min_servers is not None:
+        cmd += f'bitdust set services/identity-propagate/min-servers "{min_servers}";'
+    if max_servers is not None:
+        cmd += f'bitdust set services/identity-propagate/max-servers "{max_servers}";'
     if known_servers:
         cmd += f'bitdust set services/identity-propagate/known-servers "{known_servers}";'
+    if preferred_servers:
+        cmd += f'bitdust set services/identity-propagate/preferred-servers "{preferred_servers}";'
+    if health_check_interval_seconds:
+        cmd += f'bitdust set services/identity-propagate/health-check-interval-seconds "{health_check_interval_seconds}";'
     # configure DHT udp port and node ID
     cmd += 'bitdust set services/entangled-dht/udp-port "14441";'
     if dht_seeds:
@@ -752,9 +759,9 @@ async def start_proxy_server_async(node, identity_name, loop, known_servers='', 
     print(f'\nSTARTED PROXY SERVER [{node}]\n')
 
 
-async def start_supplier_async(node, identity_name, loop, join_network=True,
-                               min_servers=1, max_servers=1, known_servers='', dht_seeds='',
-                               preferred_servers='', preferred_routers=''):
+async def start_supplier_async(node, identity_name, loop, join_network=True, dht_seeds='',
+                               min_servers=1, max_servers=1, known_servers='',
+                               preferred_servers='', health_check_interval_seconds=None, preferred_routers=''):
     print(f'\nNEW SUPPLIER {identity_name} at [{node}]\n')
     cmd = ''
     cmd += 'bitdust set logs/debug-level 18;'
@@ -776,6 +783,8 @@ async def start_supplier_async(node, identity_name, loop, join_network=True,
         cmd += f'bitdust set services/identity-propagate/known-servers "{known_servers}";'
     if preferred_servers:
         cmd += f'bitdust set services/identity-propagate/preferred-servers "{preferred_servers}";'
+    if health_check_interval_seconds:
+        cmd += f'bitdust set services/identity-propagate/health-check-interval-seconds "{health_check_interval_seconds}";'
     # configure DHT udp port and node ID
     cmd += 'bitdust set services/entangled-dht/udp-port "14441";'
     if dht_seeds:
@@ -802,7 +811,7 @@ async def start_supplier_async(node, identity_name, loop, join_network=True,
 
 async def start_message_broker_async(node, identity_name, loop, join_network=True,
                                      min_servers=1, max_servers=1, known_servers='', dht_seeds='',
-                                     preferred_servers='', preferred_routers=''):
+                                     preferred_servers='', health_check_interval_seconds=None, preferred_routers=''):
     print(f'\nNEW MESSAGE BROKER {identity_name} at [{node}]\n')
     cmd = ''
     cmd += 'bitdust set logs/debug-level 18;'
@@ -825,6 +834,8 @@ async def start_message_broker_async(node, identity_name, loop, join_network=Tru
         cmd += f'bitdust set services/identity-propagate/known-servers "{known_servers}";'
     if preferred_servers:
         cmd += f'bitdust set services/identity-propagate/preferred-servers "{preferred_servers}";'
+    if health_check_interval_seconds:
+        cmd += f'bitdust set services/identity-propagate/health-check-interval-seconds "{health_check_interval_seconds}";'
     # configure DHT udp port and node ID
     cmd += 'bitdust set services/entangled-dht/udp-port "14441";'
     if dht_seeds:
@@ -851,7 +862,7 @@ async def start_message_broker_async(node, identity_name, loop, join_network=Tru
 async def start_customer_async(node, identity_name, loop, join_network=True, num_suppliers=2, block_size=None,
                                min_servers=1, max_servers=1, known_servers='', preferred_servers='', dht_seeds='',
                                supplier_candidates='', preferred_routers='', health_check_interval_seconds=None,
-                               sleep_before_start=None, ):
+                               preferred_brokers='', sleep_before_start=None, ):
     if sleep_before_start:
         # print('\nsleep %d seconds before start customer %r\n' % (sleep_before_start, identity_name))
         await asyncio.sleep(sleep_before_start)
@@ -886,6 +897,9 @@ async def start_customer_async(node, identity_name, loop, join_network=True, num
     # set desired Proxy router
     if preferred_routers:
         cmd += f'bitdust set services/proxy-transport/preferred-routers "{preferred_routers}";'
+    # set desired message brokers
+    if preferred_brokers:
+        cmd += f'bitdust set services/private-groups/preferred-brokers "{preferred_brokers}";'
     # enable customer service and prepare tests
     cmd += 'bitdust set services/customer/enabled true;'
     cmd += f'bitdust set services/customer/suppliers-number "{num_suppliers}";'
@@ -938,7 +952,11 @@ async def start_one_proxy_server_async(proxy_server, loop):
     await start_proxy_server_async(
         node=proxy_server['name'],
         identity_name=proxy_server['name'],
+        min_servers=proxy_server.get('min_servers', 1),
+        max_servers=proxy_server.get('max_servers', 1),
         known_servers=proxy_server.get('known_id_servers', ''),
+        preferred_servers=proxy_server.get('preferred_servers', ''),
+        health_check_interval_seconds=proxy_server.get('health_check_interval_seconds', None),
         dht_seeds=proxy_server.get('known_dht_seeds', ''),
         loop=loop,
     )
@@ -949,9 +967,11 @@ async def start_one_supplier_async(supplier, loop):
         node=supplier['name'],
         identity_name=supplier['name'],
         join_network=supplier.get('join_network', True),
-        min_servers=supplier.get('min_servers'),
-        max_servers=supplier.get('max_servers'),
+        min_servers=supplier.get('min_servers', 1),
+        max_servers=supplier.get('max_servers', 1),
         known_servers=supplier.get('known_id_servers', ''),
+        preferred_servers=supplier.get('preferred_servers', ''),
+        health_check_interval_seconds=supplier.get('health_check_interval_seconds', None),
         dht_seeds=supplier.get('known_dht_seeds', ''),
         preferred_routers=supplier.get('preferred_routers', ''),
         loop=loop,
@@ -965,13 +985,15 @@ async def start_one_customer_async(customer, loop, sleep_before_start=None):
         join_network=customer['join_network'],
         num_suppliers=customer['num_suppliers'],
         block_size=customer.get('block_size'),
-        min_servers=customer.get('min_servers'),
-        max_servers=customer.get('max_servers'),
-        known_servers=customer.get('known_id_servers', ''),
         dht_seeds=customer.get('known_dht_seeds', ''),
+        min_servers=customer.get('min_servers', 1),
+        max_servers=customer.get('max_servers', 1),
+        known_servers=customer.get('known_id_servers', ''),
+        preferred_servers=customer.get('preferred_servers', ''),
+        health_check_interval_seconds=customer.get('health_check_interval_seconds', None),
         supplier_candidates=customer.get('supplier_candidates', ''),
         preferred_routers=customer.get('preferred_routers', ''),
-        health_check_interval_seconds=customer.get('health_check_interval_seconds', None),
+        preferred_brokers=customer.get('preferred_brokers', ''),
         sleep_before_start=sleep_before_start,
         loop=loop,
     )
@@ -982,10 +1004,12 @@ async def start_one_message_broker_async(supplier, loop):
         node=supplier['name'],
         identity_name=supplier['name'],
         join_network=supplier.get('join_network', True),
-        min_servers=supplier.get('min_servers'),
-        max_servers=supplier.get('max_servers'),
-        known_servers=supplier.get('known_id_servers', ''),
         dht_seeds=supplier.get('known_dht_seeds', ''),
+        min_servers=supplier.get('min_servers', 1),
+        max_servers=supplier.get('max_servers', 1),
+        known_servers=supplier.get('known_id_servers', ''),
+        preferred_servers=supplier.get('preferred_servers', ''),
+        health_check_interval_seconds=supplier.get('health_check_interval_seconds', None),
         preferred_routers=supplier.get('preferred_routers', ''),
         loop=loop,
     )
