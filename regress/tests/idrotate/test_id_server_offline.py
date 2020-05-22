@@ -168,7 +168,7 @@ def test_id_server_is_dead():
     assert f'customer${old_customer_global_id}' in old_customer_keys
 
     #--- make customer-rotated and customer-2 friends to each other
-    kw.friend_add_v1('customer-rotated', 'http://id-a:8084/customer-2.xml', 'Alice')
+    kw.friend_add_v1('customer-rotated', 'http://id-b:8084/customer-2.xml', 'Alice')
     kw.friend_add_v1('customer-2', old_customer_idurl, 'Bob')
     old_customer_2_friends = kw.friend_list_v1('customer-2', extract_idurls=True)
     assert old_customer_idurl in old_customer_2_friends

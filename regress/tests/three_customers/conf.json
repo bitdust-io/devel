@@ -142,7 +142,7 @@
                 "name": "supplier-2",
                 "known_id_servers": "id-a:8084:6661",
                 "known_dht_seeds": "dht-2:14441,dht-3:14441",
-                "preferred_routers": "http://id-a:8084/proxy-2.xml"
+                "preferred_routers": "http://id-b:8084/proxy-2.xml"
             }
         },
         "supplier-3": {
@@ -176,7 +176,7 @@
                 "name": "supplier-4",
                 "known_id_servers": "id-a:8084:6661",
                 "known_dht_seeds": "dht-2:14441,dht-3:14441",
-                "preferred_routers": "http://id-a:8084/proxy-2.xml"
+                "preferred_routers": "http://id-b:8084/proxy-2.xml"
             }
         },
         "supplier-5": {
@@ -210,7 +210,7 @@
                 "name": "supplier-6",
                 "known_id_servers": "id-a:8084:6661",
                 "known_dht_seeds": "dht-2:14441,dht-3:14441",
-                "preferred_routers": "http://id-a:8084/proxy-2.xml"
+                "preferred_routers": "http://id-b:8084/proxy-2.xml"
             }
         },
         "supplier-7": {
@@ -289,7 +289,7 @@
                 "num_suppliers": 4,
                 "known_id_servers": "id-a:8084:6661",
                 "known_dht_seeds": "dht-2:14441,dht-3:14441",
-                "preferred_routers": "http://id-a:8084/proxy-2.xml"
+                "preferred_routers": "http://id-b:8084/proxy-2.xml"
             }
         },
         "customer-3": {

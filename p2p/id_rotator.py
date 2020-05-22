@@ -255,7 +255,7 @@ class IdRotator(automat.Automat):
         self.rotated = False
         if not self.preferred_servers:
             try:
-                for srv in strng.to_text(config.conf().getData('services/identity-propagate/preferred-servers')).split(','):
+                for srv in strng.to_text(config.conf().getData('services/identity-propagate/known-servers')).split(','):
                     if srv.strip():
                         host, web_port, tcp_port = srv.strip().split(':')
                         self.preferred_servers[host] = (int(web_port), int(tcp_port), )
