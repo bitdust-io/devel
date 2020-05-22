@@ -449,7 +449,10 @@ class IdRegistrator(automat.Automat):
         def _cb(xmlsrc, idurl, host):
             if not xmlsrc:
                 if self.preferred_servers and host in self.preferred_servers:
-                    self.free_idurls.insert(0, idurl)
+                    if self.preferred_servers[0] == host:
+                        self.free_idurls.insert(0, idurl)
+                    else:
+                        self.free_idurls.insert(1, idurl)
                 else:
                     self.free_idurls.append(idurl)
                 self.registrations.remove(idurl)
@@ -462,7 +465,10 @@ class IdRegistrator(automat.Automat):
         def _eb(err, idurl, host):
             lg.out(4, '            NOT EXIST: %s' % idurl)
             if self.preferred_servers and host in self.preferred_servers:
-                self.free_idurls.insert(0, idurl)
+                if self.preferred_servers[0] == host:
+                    self.free_idurls.insert(0, idurl)
+                else:
+                    self.free_idurls.insert(1, idurl)
             else:
                 self.free_idurls.append(idurl)
             self.registrations.remove(idurl)
