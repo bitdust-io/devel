@@ -22,7 +22,7 @@
             "node": {
                 "role": "dht-seed",
                 "name": "dht-1",
-                "attached_layers": "2,3",
+                "attached_layers": "2,3,7",
                 "known_dht_seeds": "genesis"
             }
         },
@@ -34,7 +34,7 @@
             "node": {
                 "role": "dht-seed",
                 "name": "dht-2",
-                "attached_layers": "2,3",
+                "attached_layers": "2,3,7",
                 "known_dht_seeds": "dht-1:14441"
             }
         },
@@ -47,7 +47,7 @@
             "node": {
                 "role": "dht-seed",
                 "name": "dht-3",
-                "attached_layers": "2,3",
+                "attached_layers": "2,3,7",
                 "known_dht_seeds": "dht-1:14441,dht-2:14441"
             }
         },
@@ -63,23 +63,13 @@
                 "known_dht_seeds": "dht-2:14441,dht-3:14441"
             }
         },
-        "stun-2": {
-            "links": [
-                "dht-2",
-                "dht-3"
-            ],
-            "ports": "10022:22",
-            "node": {
-                "role": "stun-server",
-                "name": "stun-2",
-                "known_dht_seeds": "dht-2:14441,dht-3:14441"
-            }
-        },
         "proxy-1": {
             "links": [
                 "dht-2",
                 "dht-3",
-                "id-a"
+                "stun-1",
+                "id-a",
+                "id-b"
             ],
             "ports": "10031:22",
             "node": {
@@ -93,13 +83,15 @@
             "links": [
                 "dht-2",
                 "dht-3",
-                "id-a"
+                "stun-1",
+                "id-a",
+                "id-b"
             ],
             "ports": "10032:22",
             "node": {
                 "role": "proxy-server",
                 "name": "proxy-2",
-                "known_id_servers": "id-a:8084:6661",
+                "known_id_servers": "id-b:8084:6661",
                 "known_dht_seeds": "dht-2:14441,dht-3:14441"
             }
         },
@@ -107,6 +99,8 @@
             "links": [
                 "dht-2",
                 "dht-3",
+                "stun-1",
+                "id-a",
                 "id-b"
             ],
             "ports": "10033:22",
@@ -121,7 +115,9 @@
             "links": [
                 "dht-2",
                 "dht-3",
-                "id-a"
+                "stun-1",
+                "id-a",
+                "id-b"
             ],
             "ports": "10041:22",
             "node": {
@@ -136,7 +132,9 @@
             "links": [
                 "dht-2",
                 "dht-3",
-                "id-a"
+                "stun-1",
+                "id-a",
+                "id-b"
             ],
             "ports": "10042:22",
             "node": {
@@ -144,14 +142,16 @@
                 "name": "supplier-2",
                 "known_id_servers": "id-a:8084:6661",
                 "known_dht_seeds": "dht-2:14441,dht-3:14441",
-                "preferred_routers": "http://id-a:8084/proxy-2.xml"
+                "preferred_routers": "http://id-b:8084/proxy-2.xml"
             }
         },
         "supplier-3": {
             "links": [
                 "dht-2",
                 "dht-3",
-                "id-a"
+                "stun-1",
+                "id-a",
+                "id-b"
             ],
             "ports": "10043:22",
             "node": {
@@ -166,7 +166,9 @@
             "links": [
                 "dht-2",
                 "dht-3",
-                "id-a"
+                "stun-1",
+                "id-a",
+                "id-b"
             ],
             "ports": "10044:22",
             "node": {
@@ -174,14 +176,16 @@
                 "name": "supplier-4",
                 "known_id_servers": "id-a:8084:6661",
                 "known_dht_seeds": "dht-2:14441,dht-3:14441",
-                "preferred_routers": "http://id-a:8084/proxy-2.xml"
+                "preferred_routers": "http://id-b:8084/proxy-2.xml"
             }
         },
         "supplier-5": {
             "links": [
                 "dht-2",
                 "dht-3",
-                "id-a"
+                "stun-1",
+                "id-a",
+                "id-b"
             ],
             "ports": "10045:22",
             "node": {
@@ -196,7 +200,9 @@
             "links": [
                 "dht-2",
                 "dht-3",
-                "id-a"
+                "stun-1",
+                "id-a",
+                "id-b"
             ],
             "ports": "10046:22",
             "node": {
@@ -204,13 +210,14 @@
                 "name": "supplier-6",
                 "known_id_servers": "id-a:8084:6661",
                 "known_dht_seeds": "dht-2:14441,dht-3:14441",
-                "preferred_routers": "http://id-a:8084/proxy-2.xml"
+                "preferred_routers": "http://id-b:8084/proxy-2.xml"
             }
         },
         "supplier-7": {
             "links": [
                 "dht-2",
                 "dht-3",
+                "stun-1",
                 "id-a",
                 "id-b"
             ],
@@ -227,6 +234,7 @@
             "links": [
                 "dht-2",
                 "dht-3",
+                "stun-1",
                 "id-a",
                 "id-b"
             ],
@@ -243,7 +251,9 @@
             "links": [
                 "dht-2",
                 "dht-3",
-                "id-a"
+                "stun-1",
+                "id-a",
+                "id-b"
             ],
             "ports": "10051:22",
             "volumes": [
@@ -264,7 +274,9 @@
             "links": [
                 "dht-2",
                 "dht-3",
-                "id-a"
+                "stun-1",
+                "id-a",
+                "id-b"
             ],
             "ports": "10052:22",
             "volumes": [
@@ -277,14 +289,16 @@
                 "num_suppliers": 4,
                 "known_id_servers": "id-a:8084:6661",
                 "known_dht_seeds": "dht-2:14441,dht-3:14441",
-                "preferred_routers": "http://id-a:8084/proxy-2.xml"
+                "preferred_routers": "http://id-b:8084/proxy-2.xml"
             }
         },
         "customer-3": {
             "links": [
                 "dht-2",
                 "dht-3",
-                "id-a"
+                "stun-1",
+                "id-a",
+                "id-b"
             ],
             "ports": "10053:22",
             "volumes": [
@@ -296,6 +310,91 @@
                 "join_network": true,
                 "num_suppliers": 2,
                 "supplier_candidates": "http://id-a:8084/supplier-1.xml,http://id-a:8084/supplier-2.xml",
+                "known_id_servers": "id-a:8084:6661",
+                "known_dht_seeds": "dht-2:14441,dht-3:14441",
+                "preferred_routers": "http://id-a:8084/proxy-1.xml"
+            }
+        },
+        "broker-1": {
+            "links": [
+                "dht-2",
+                "dht-3",
+                "stun-1",
+                "id-a",
+                "id-b"
+            ],
+            "ports": "10061:22",
+            "node": {
+                "role": "message-broker",
+                "name": "broker-1",
+                "known_id_servers": "id-a:8084:6661",
+                "known_dht_seeds": "dht-2:14441,dht-3:14441",
+                "preferred_routers": "http://id-a:8084/proxy-1.xml"
+            }
+        },
+        "broker-2": {
+            "links": [
+                "dht-2",
+                "dht-3",
+                "stun-1",
+                "id-a",
+                "id-b"
+            ],
+            "ports": "10062:22",
+            "node": {
+                "role": "message-broker",
+                "name": "broker-2",
+                "known_id_servers": "id-b:8084:6661",
+                "known_dht_seeds": "dht-2:14441,dht-3:14441",
+                "preferred_routers": "http://id-b:8084/proxy-2.xml"
+            }
+        },
+        "broker-3": {
+            "links": [
+                "dht-2",
+                "dht-3",
+                "stun-1",
+                "id-a",
+                "id-b"
+            ],
+            "ports": "10063:22",
+            "node": {
+                "role": "message-broker",
+                "name": "broker-3",
+                "known_id_servers": "id-a:8084:6661",
+                "known_dht_seeds": "dht-2:14441,dht-3:14441",
+                "preferred_routers": "http://id-a:8084/proxy-1.xml"
+            }
+        },
+        "broker-4": {
+            "links": [
+                "dht-2",
+                "dht-3",
+                "stun-1",
+                "id-a",
+                "id-b"
+            ],
+            "ports": "10064:22",
+            "node": {
+                "role": "message-broker",
+                "name": "broker-4",
+                "known_id_servers": "id-b:8084:6661",
+                "known_dht_seeds": "dht-2:14441,dht-3:14441",
+                "preferred_routers": "http://id-b:8084/proxy-2.xml"
+            }
+        },
+        "broker-5": {
+            "links": [
+                "dht-2",
+                "dht-3",
+                "stun-1",
+                "id-a",
+                "id-b"
+            ],
+            "ports": "10065:22",
+            "node": {
+                "role": "message-broker",
+                "name": "broker-5",
                 "known_id_servers": "id-a:8084:6661",
                 "known_dht_seeds": "dht-2:14441,dht-3:14441",
                 "preferred_routers": "http://id-a:8084/proxy-1.xml"
@@ -314,7 +413,6 @@
         "dht-2",
         "dht-3",
         "stun-1",
-        "stun-2",
         "proxy-1",
         "proxy-2",
         "proxy-3",
@@ -328,7 +426,12 @@
         "supplier-8",
         "customer-1",
         "customer-2",
-        "customer-3"
+        "customer-3",
+        "broker-1",
+        "broker-2",
+        "broker-3",
+        "broker-4",
+        "broker-5"
     ],
     "tester_volumes": [
         "customer_1:/customer_1",

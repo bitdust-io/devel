@@ -576,7 +576,7 @@ class P2PConnector(automat.Automat):
         last_time = identitycache.last_time_cached(my_idurl)
         if last_time and time.time() - last_time < config.conf().getInt('services/identity-propagate/health-check-interval-seconds'):
             if _Debug:
-                lg.dbg(_DebugLevel, 'skip health check of my current identity server, last time cached %d seconds ago' % (time.time() - last_time))
+                lg.dbg(_DebugLevel, 'skip health check of my current identity server, last time cached %f seconds ago' % (time.time() - last_time))
             return
 
         d = identitycache.immediatelyCaching(my_idurl, try_other_sources=False)

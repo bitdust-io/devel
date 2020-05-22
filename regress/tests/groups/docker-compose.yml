@@ -64,14 +64,6 @@ services:
       - dht-2
       - dht-3
 
-  stun-2:
-    image: bitdust/app
-    ports:
-      - "10722:22"
-    links:
-      - dht-2
-      - dht-3
-
   proxy-1:
     image: bitdust/app
     ports:
@@ -80,7 +72,6 @@ services:
       - dht-2
       - dht-3
       - stun-1
-      - stun-2
       - id-a
       - id-b
 
@@ -92,7 +83,6 @@ services:
       - dht-2
       - dht-3
       - stun-1
-      - stun-2
       - id-a
       - id-b
 
@@ -104,7 +94,6 @@ services:
       - dht-2
       - dht-3
       - stun-1
-      - stun-2
       - id-a
       - id-b
 
@@ -116,7 +105,6 @@ services:
       - dht-2
       - dht-3
       - stun-1
-      - stun-2
       - id-a
       - id-b
 
@@ -128,7 +116,6 @@ services:
       - dht-2
       - dht-3
       - stun-1
-      - stun-2
       - id-a
       - id-b
 
@@ -140,7 +127,6 @@ services:
       - dht-2
       - dht-3
       - stun-1
-      - stun-2
       - id-a
       - id-b
 
@@ -154,7 +140,6 @@ services:
       - dht-2
       - dht-3
       - stun-1
-      - stun-2
       - id-a
       - id-b
 
@@ -168,7 +153,6 @@ services:
       - dht-2
       - dht-3
       - stun-1
-      - stun-2
       - id-a
       - id-b
 
@@ -182,7 +166,6 @@ services:
       - dht-2
       - dht-3
       - stun-1
-      - stun-2
       - id-a
       - id-b
 
@@ -194,7 +177,6 @@ services:
       - dht-2
       - dht-3
       - stun-1
-      - stun-2
       - id-a
       - id-b
 
@@ -206,7 +188,6 @@ services:
       - dht-2
       - dht-3
       - stun-1
-      - stun-2
       - id-a
       - id-b
 
@@ -218,7 +199,6 @@ services:
       - dht-2
       - dht-3
       - stun-1
-      - stun-2
       - id-a
       - id-b
 
@@ -230,7 +210,6 @@ services:
       - dht-2
       - dht-3
       - stun-1
-      - stun-2
       - id-a
       - id-b
 
@@ -242,7 +221,6 @@ services:
       - dht-2
       - dht-3
       - stun-1
-      - stun-2
       - id-a
       - id-b
 
@@ -262,7 +240,6 @@ services:
       - dht-2
       - dht-3
       - stun-1
-      - stun-2
       - proxy-1
       - proxy-2
       - supplier-1

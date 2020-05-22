@@ -450,7 +450,7 @@ class QueueKeeper(automat.Automat):
                 self.known_brokers[broker_position] = broker_idurl
                 if broker_position == my_position:
                     my_position_info = broker_info
-                if broker_idurl == self.broker_idurl:
+                if id_url.to_bin(broker_idurl) == id_url.to_bin(self.broker_idurl):
                     if not my_broker_info:
                         my_broker_info = broker_info
                     else:
@@ -473,7 +473,7 @@ class QueueKeeper(automat.Automat):
             self.automat('my-record-not-exist', desired_position=my_position)
             return
         my_position_ok = int(my_broker_info['position']) == int(my_position)
-        my_idurl_ok = my_position_info and my_position_info['broker_idurl'] == my_broker_info['broker_idurl']
+        my_idurl_ok = my_position_info and id_url.to_bin(my_position_info['broker_idurl']) == id_url.to_bin(my_broker_info['broker_idurl'])
         if _Debug:
             lg.args(_DebugLevel, my_position_ok=my_position_ok, my_idurl_ok=my_idurl_ok)
         if not my_position_ok or not my_idurl_ok:

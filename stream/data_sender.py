@@ -58,7 +58,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 8
 
 #------------------------------------------------------------------------------
@@ -71,7 +71,6 @@ import time
 from logs import lg
 
 from automats import automat
-from automats import global_state
 
 from lib import misc
 
@@ -93,6 +92,8 @@ from stream import io_throttle
 from customer import list_files_orator
 
 #------------------------------------------------------------------------------
+
+STAT_KEEP_LATEST_RESULTS_COUNT = 5
 
 _DataSender = None
 _ShutdownFlag = False
@@ -267,9 +268,14 @@ class DataSender(automat.Automat):
                             if _Debug:
                                 lg.out(_DebugLevel, 'data_sender.doScanAndQueue    %s already in sending queue for %r' % (packetID, supplier_idurl))
                             continue
+                        latest_progress = self.statistic.get(supplier_idurl, {}).get('latest', '')
+                        if len(latest_progress) >= 3 and latest_progress.endswith('---'):
+                            if _Debug:
+                                lg.out(_DebugLevel + 6, 'data_sender.doScanAndQueue     skip sending to supplier %r because multiple packets already failed' % supplier_idurl)
+                            continue
                         if not io_throttle.OkToSend(supplier_idurl):
                             if _Debug:
-                                lg.out(_DebugLevel + 6, 'data_sender.doScanAndQueue     skip sending, queue is busy for %r\n' % supplier_idurl)
+                                lg.out(_DebugLevel + 6, 'data_sender.doScanAndQueue     skip sending, queue is busy for %r' % supplier_idurl)
                             continue
                         # customerGlobalID, pathID = packetid.SplitPacketID(packetID)
                         # tranByID = gate.transfers_out_by_idurl().get(supplier_idurl, [])
@@ -284,7 +290,7 @@ class DataSender(automat.Automat):
                         )
                         if not os.path.isfile(filename):
                             if _Debug:
-                                lg.out(_DebugLevel, 'data_sender.doScanAndQueue     %s is not a file\n' % filename)
+                                lg.out(_DebugLevel, 'data_sender.doScanAndQueue     %s is not a file' % filename)
                             continue
                         if io_throttle.QueueSendFile(
                             filename,
@@ -386,6 +392,7 @@ class DataSender(automat.Automat):
         """
         Action method.
         """
+        self.statistic = {}
         # io_throttle.DeleteAllSuppliers()
 
     def doDestroyMe(self, *args, **kwargs):
@@ -404,19 +411,29 @@ class DataSender(automat.Automat):
         backup_matrix.RemoteFileReport(
             backupID, blockNum, supplierNum, dataORparity, True)
         if ownerID not in self.statistic:
-            self.statistic[ownerID] = [0, 0]
-        self.statistic[ownerID][0] += 1
+            self.statistic[ownerID] = {
+                'acked': 0,
+                'failed': 0,
+                'latest': '',
+            }
+        self.statistic[ownerID]['acked'] += 1
+        self.statistic[ownerID]['latest'] += '+'
+        self.statistic[ownerID]['latest'] = self.statistic[ownerID]['latest'][-STAT_KEEP_LATEST_RESULTS_COUNT:]
         self.automat('block-acked', (ownerID, packetID))
 
     def _packetFailed(self, remoteID, packetID, why):
         from storage import backup_matrix
-        backupID, blockNum, supplierNum, dataORparity = packetid.BidBnSnDp(
-            packetID)
-        backup_matrix.RemoteFileReport(
-            backupID, blockNum, supplierNum, dataORparity, False)
+        backupID, blockNum, supplierNum, dataORparity = packetid.BidBnSnDp(packetID)
+        backup_matrix.RemoteFileReport(backupID, blockNum, supplierNum, dataORparity, False)
         if remoteID not in self.statistic:
-            self.statistic[remoteID] = [0, 0]
-        self.statistic[remoteID][1] += 1
+            self.statistic[remoteID] = {
+                'acked': 0,
+                'failed': 0,
+                'latest': '',
+            }
+        self.statistic[remoteID]['failed'] += 1
+        self.statistic[remoteID]['latest'] += '-'
+        self.statistic[remoteID]['latest'] = self.statistic[remoteID]['latest'][-STAT_KEEP_LATEST_RESULTS_COUNT:]
         self.automat('block-failed', (remoteID, packetID))
 
 

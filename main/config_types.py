@@ -72,8 +72,10 @@ def defaults():
         'interface/api/rest-http-port': TYPE_PORT_NUMBER,
         'interface/api/web-socket-enabled': TYPE_BOOLEAN,
         'interface/api/web-socket-port': TYPE_PORT_NUMBER,
+
         'interface/ftp/enabled': TYPE_BOOLEAN,
         'interface/ftp/port': TYPE_PORT_NUMBER,
+
         'logs/api-enabled': TYPE_BOOLEAN,
         'logs/automat-events-enabled': TYPE_BOOLEAN,
         'logs/automat-transitions-enabled': TYPE_BOOLEAN,
@@ -86,18 +88,22 @@ def defaults():
         'logs/stream-port': TYPE_PORT_NUMBER,
         'logs/traffic-enabled': TYPE_BOOLEAN,
         'logs/traffic-port': TYPE_PORT_NUMBER,
+
         'other/upnp-at-startup': TYPE_BOOLEAN,
+
         'paths/backups': TYPE_FOLDER_PATH,
         'paths/customers': TYPE_FOLDER_PATH,
         'paths/messages': TYPE_FOLDER_PATH,
         'paths/receipts': TYPE_FOLDER_PATH,
         'paths/restore': TYPE_FOLDER_PATH,
+
         'personal/betatester': TYPE_BOOLEAN,
         'personal/email': TYPE_STRING,
         'personal/name': TYPE_STRING,
         'personal/nickname': TYPE_STRING,
         'personal/private-key-size': TYPE_STRING,
         'personal/surname': TYPE_STRING,
+
         'services/accountant/enabled': TYPE_BOOLEAN,
         'services/backup-db/enabled': TYPE_BOOLEAN,
         'services/backups/block-size': TYPE_DISK_SPACE,
@@ -178,6 +184,7 @@ def defaults():
         'services/p2p-notifications/enabled': TYPE_BOOLEAN,
         'services/private-groups/enabled': TYPE_BOOLEAN,
         'services/private-groups/message-ack-timeout': TYPE_NON_ZERO_POSITIVE_INTEGER,
+        'services/private-groups/preferred-brokers': TYPE_TEXT,
         'services/private-messages/enabled': TYPE_BOOLEAN,
         'services/proxy-server/enabled': TYPE_BOOLEAN,
         'services/proxy-server/routes-limit': TYPE_POSITIVE_INTEGER,

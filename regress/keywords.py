@@ -449,7 +449,7 @@ def message_send_v1(node, recipient, data, timeout=30):
             'data': data,
             'timeout': timeout,
         },
-        timeout=20,
+        timeout=timeout+1,
     )
     assert response.status_code == 200
     print(f'\nmessage/send/v1 [%s] : %s\n' % (
@@ -709,6 +709,16 @@ def queue_producer_list_v1(node, extract_ids=False):
 def wait_packets_finished(nodes):
     for node in nodes:
         packet_list_v1(node, wait_all_finish=True)
+
+
+def wait_service_state(nodes, service_name, state):
+    for node in nodes:
+        service_info_v1(node, service_name, state)
+
+
+def wait_suppliers_connected(nodes, expected_min_suppliers=2, expected_max_suppliers=2):
+    for node in nodes:
+        supplier_list_v1(node, expected_min_suppliers=expected_min_suppliers, expected_max_suppliers=expected_max_suppliers)
 
 
 def verify_message_sent_received(group_key_id, producer_id, consumers_ids, message_label='A',

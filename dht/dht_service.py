@@ -34,7 +34,7 @@ from __future__ import print_function
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -702,7 +702,7 @@ def validate_before_store(key, value, originalPublisherID, age, expireSeconds, *
         lg.exc()
         raise ValueError('input data is not a json value: %r' % value)
     if _Debug:
-        lg.out(_DebugLevel + 8, 'dht_service.validate_before_store key=[%s] json=%r' % (key, json_new_value, ))
+        lg.out(_DebugLevel + 8, 'dht_service.validate_before_store key=[%s] with %d bytes value' % (key, len(value), ))
     new_record_type = json_new_value.get('type')
     if not new_record_type:
         if _Debug:

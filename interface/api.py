@@ -3221,7 +3221,7 @@ def message_receive(consumer_callback_id, direction='incoming', message_types='p
             p2p_service.SendAckNoRequest(owner_idurl, packet_id)
         packets_to_ack.clear()
         if _Debug:
-            lg.out(_DebugLevel, 'api.message_receive._on_pending_messages returning : %r' % result)
+            lg.out(_DebugLevel, 'api.message_receive._on_pending_messages returning %d results' % len(result))
         ret.callback(RESULT(result, api_method='message_receive'))
         return len(result) > 0
 

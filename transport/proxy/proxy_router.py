@@ -641,11 +641,29 @@ class ProxyRouter(automat.Automat):
         if not identitycache.HasKey(receiver_idurl):
             dl.append(identitycache.immediatelyCaching(receiver_idurl))
         d = DeferredList(dl, consumeErrors=True)
-        d.addCallback(lambda _: self._do_send_routed_data(newpacket, info, sender_idurl, receiver_idurl, routed_data, wide))
+        d.addCallback(self._do_check_cached_idurl, newpacket, info, sender_idurl, receiver_idurl, routed_data, wide)
         if _Debug:
             d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='_do_forward_outbox_packet')
+        d.addErrback(lambda err: self._do_send_routed_data(newpacket, info, None, None, routed_data, wide))
+
+    def _do_check_cached_idurl(self, cache_results, newpacket, info, sender_idurl, receiver_idurl, routed_data, wide):
+        if _Debug:
+            lg.args(_DebugLevel, cache_results=cache_results)
+        some_failed = False
+        for result, response in cache_results:
+            if not result:
+                some_failed = True
+        if some_failed:
+            self._do_send_routed_data(newpacket, info, None, None, routed_data, wide)
+        else:
+            self._do_send_routed_data(newpacket, info, sender_idurl, receiver_idurl, routed_data, wide)
+        return None
 
     def _do_send_routed_data(self, newpacket, info, sender_idurl, receiver_idurl, routed_data, wide):
+        if sender_idurl is None or receiver_idurl is None:
+            lg.warn('failed sending %r, sender or receiver IDURL was not cached' % newpacket)
+            p2p_service.SendFail(newpacket, 'sender or receiver IDURL was not found', remote_idurl=sender_idurl)
+            return
         # those must be already cached
         sender_idurl = id_url.field(sender_idurl)
         receiver_idurl = id_url.field(receiver_idurl)
@@ -672,7 +690,7 @@ class ProxyRouter(automat.Automat):
                 sender_idurl, routed_data, routed_packet.Serialize()))
             p2p_service.SendFail(newpacket, 'invalid packet', remote_idurl=sender_idurl)
             return
-        if receiver_idurl == my_id.getLocalID():
+        if receiver_idurl.to_bin() == my_id.getLocalID().to_bin():
             if _Debug:
                 lg.out(_DebugLevel, '        proxy_router() INCOMING packet %r from %s for me' % (
                     routed_packet, sender_idurl))
