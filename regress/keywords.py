@@ -449,7 +449,7 @@ def message_send_v1(node, recipient, data, timeout=30):
             'data': data,
             'timeout': timeout,
         },
-        timeout=20,
+        timeout=timeout+1,
     )
     assert response.status_code == 200
     print(f'\nmessage/send/v1 [%s] : %s\n' % (

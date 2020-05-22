@@ -35,9 +35,13 @@ BROKERS_IDS = ['broker-rotated', 'broker-2', 'broker-3', 'broker-4', 'broker-5',
 CUSTOMERS_IDS = ['customer-rotated', 'customer-2', 'customer-3', 'customer-4', ]
 
 
-def test_id_server_is_dead():
+def test_idrotate():
     if os.environ.get('RUN_TESTS', '1') == '0':
         return pytest.skip()  # @UndefinedVariable
+    #--- SCENARIO : customer-rotated IDURL was rotated
+    #--- SCENARIO : customer-2 and customer-rotated able to talk to each other after IDURL rotated 
+    #--- SCENARIO : customer-4 chat with customer-2 via broker-rotated, but his IDURL was rotated
+    #--- SCENARIO : one of the suppliers of customer-3 has IDURL rotated 
 
     #--- wait all nodes to be ready
     kw.wait_suppliers_connected(CUSTOMERS_IDS, expected_min_suppliers=2, expected_max_suppliers=2)
@@ -47,8 +51,10 @@ def test_id_server_is_dead():
     kw.wait_service_state(BROKERS_IDS, 'service_message_broker', 'ON')
     kw.wait_packets_finished(CUSTOMERS_IDS + BROKERS_IDS + SUPPLIERS_IDS)
 
-    #--- make sure supplier-rotated was hired by customer-2
-    old_customer_2_suppliers_idurls = kw.supplier_list_v1('customer-2', expected_min_suppliers=2, expected_max_suppliers=2)
+    #--- wait all processes to finish on customer-3
+    kw.packet_list_v1('customer-3', wait_all_finish=True)
+    kw.transfer_list_v1('customer-3', wait_all_finish=True)
+    kw.service_info_v1('customer-3', 'service_shared_data', 'ON')
 
     #--- create group owned by customer-4 and join
     group_key_id = kw.group_create_v1('customer-4', label='MyGroupABC')
@@ -137,7 +143,7 @@ def test_id_server_is_dead():
     old_broker_sources = r['result']['sources']
     old_broker_global_id = r['result']['global_id']
 
-    #--- upload one file for customer-rotated
+    #--- upload one file on customer-rotated
     share_id_customer_rotated = kw.share_create_v1('customer-rotated')
     filename = 'cat.txt'
     virtual_filename = filename
@@ -157,6 +163,7 @@ def test_id_server_is_dead():
 
     kw.service_info_v1('customer-rotated', 'service_shared_data', 'ON')
 
+    #--- make sure file is available to download on customer-rotated
     kw.share_open_v1('customer-rotated', share_id_customer_rotated)
     kw.file_download_start_v1('customer-rotated', remote_path=remote_path_customer_rotated, destination='/tmp')
     downloaded_file_src = run_ssh_command_and_wait('customer-rotated', 'cat %s' % downloaded_filepath)[0].strip()
@@ -183,6 +190,28 @@ def test_id_server_is_dead():
     t = threading.Timer(1.0, kw.message_send_v1, ['customer-2', 'master$%s' % old_customer_global_id, random_message, ])
     t.start()
     kw.message_receive_v1('customer-rotated', expected_data=random_message, timeout=31, polling_timeout=30)
+
+    #--- make sure supplier-rotated was hired by customer-3
+    old_customer_3_suppliers_idurls = kw.supplier_list_v1('customer-3', expected_min_suppliers=2, expected_max_suppliers=2)
+
+    #--- create share and upload some files for customer-3
+    kw.service_info_v1('customer-3', 'service_shared_data', 'ON')
+    old_share_id_customer_3 = kw.share_create_v1('customer-3')
+    filename = 'cat.txt'
+    virtual_filename = filename
+    volume_customer_3 = '/customer_3'
+    filepath_customer_3 = f'{volume_customer_3}/{filename}'
+    remote_path_customer_3 = f'{old_share_id_customer_3}:{virtual_filename}'
+    download_filepath_customer_3 = f'/tmp/{filename}'
+    run_ssh_command_and_wait('customer-3', f'echo "customer_3" > {filepath_customer_3}')
+    kw.file_create_v1('customer-3', remote_path_customer_3)
+    kw.file_upload_start_v1('customer-3', remote_path_customer_3, filepath_customer_3)
+
+    #--- make sure we can download the file back on customer-3
+    kw.file_download_start_v1('customer-3', remote_path=remote_path_customer_3, destination='/tmp')
+    file_body_source = run_ssh_command_and_wait('customer-3', f'cat {filepath_customer_3}')[0].strip()
+    file_body_downloaded = run_ssh_command_and_wait('customer-3', f'cat {download_filepath_customer_3}')[0].strip()
+    assert file_body_source == file_body_downloaded
 
     #--- preparation before switching of the ID server
     kw.config_set_v1('proxy-rotated', 'services/identity-propagate/automatic-rotate-enabled', 'true')
@@ -264,7 +293,7 @@ def test_id_server_is_dead():
     assert f'master${old_customer_global_id}' not in new_customer_keys
     assert f'customer${old_customer_global_id}' not in new_customer_keys
 
-    #--- make sure file is still available after identity rotate
+    #--- make sure file is still available after identity rotate on customer-rotated
     kw.service_info_v1('customer-rotated', 'service_shared_data', 'ON')
     new_share_id_customer_rotated = share_id_customer_rotated.replace(old_customer_global_id, new_customer_global_id)
     kw.share_open_v1('customer-rotated', new_share_id_customer_rotated)
@@ -275,17 +304,25 @@ def test_id_server_is_dead():
     assert local_file_src == downloaded_file_src, "source file and received file content is not equal after identity rotate"
     assert new_downloaded_file_src == downloaded_file_src, "received file content before identity rotate is not equal to received file after identity rotate"
 
-    #--- verify files on first supplier were moved to correct sub folder
+    #--- verify files on suppliers were moved to correct sub folder
     old_folder_first_supplier = run_ssh_command_and_wait(first_supplier, f'ls -la ~/.bitdust/customers/{old_customer_global_id}/')[0].strip()
     new_folder_first_supplier = run_ssh_command_and_wait(first_supplier, f'ls -la ~/.bitdust/customers/{new_customer_global_id}/')[0].strip()
     assert old_folder_first_supplier == ''
     assert new_folder_first_supplier != ''
-
-    #--- verify files on second supplier were moved to correct sub folder
     old_folder_second_supplier = run_ssh_command_and_wait(second_supplier, f'ls -la ~/.bitdust/customers/{old_customer_global_id}/')[0].strip()
     new_folder_second_supplier = run_ssh_command_and_wait(second_supplier, f'ls -la ~/.bitdust/customers/{new_customer_global_id}/')[0].strip()
     assert old_folder_second_supplier == ''
     assert new_folder_second_supplier != ''
+
+    #--- verify customer-3 still able to download the files
+    kw.service_info_v1('customer-3', 'service_shared_data', 'ON')
+    kw.file_list_all_v1('customer-3')
+    kw.share_open_v1('customer-3', old_share_id_customer_3)
+    run_ssh_command_and_wait('customer-3', 'rm -rfv %s' % download_filepath_customer_3)[0].strip()
+    kw.file_download_start_v1('customer-3', remote_path=remote_path_customer_3, destination='/tmp')
+    file_body_source = run_ssh_command_and_wait('customer-3', f'cat {filepath_customer_3}')[0].strip()
+    file_body_downloaded = run_ssh_command_and_wait('customer-3', f'cat {download_filepath_customer_3}')[0].strip()
+    assert file_body_source == file_body_downloaded
 
     #--- send one message to the group after brokers rotated
     kw.config_set_v1('customer-4', 'services/private-groups/preferred-brokers',
@@ -348,9 +385,9 @@ def test_id_server_is_dead():
     random_message = {
         'random_message': random_string,
     }
-    t = threading.Timer(1.0, kw.message_send_v1, ['customer-2', 'master$%s' % old_customer_global_id, random_message, ])
+    t = threading.Timer(1.0, kw.message_send_v1, ['customer-2', 'master$%s' % old_customer_global_id, random_message, 15, ])
     t.start()
-    kw.message_receive_v1('customer-rotated', expected_data=random_message, timeout=31, polling_timeout=30)
+    kw.message_receive_v1('customer-rotated', expected_data=random_message, timeout=16, polling_timeout=15)
 
     #--- test that friend's IDURL changed for customer-2
     new_customer_2_friends = kw.friend_list_v1('customer-2', extract_idurls=True)
