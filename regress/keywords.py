@@ -21,26 +21,28 @@
 # Please contact us if you have any questions at bitdust.io@gmail.com
 
 import os
+import sys
 import time
 import requests
 import pprint
 import base64
 import threading
 
-from testsupport import request_get, request_post, request_put, request_delete
+from testsupport import request_get, request_post, request_put, request_delete, run_ssh_command_and_wait
 
 #------------------------------------------------------------------------------
 
-def supplier_list_v1(customer: str, expected_min_suppliers=None, expected_max_suppliers=None, attempts=40, delay=3, extract_suppliers=True):
+def supplier_list_v1(customer: str, expected_min_suppliers=None, expected_max_suppliers=None, attempts=40, delay=3, extract_suppliers=True, verbose=True):
     count = 0
     num_connected = 0
     while True:
         if count > attempts:
             assert False, f'{customer} failed to hire correct number of suppliers after many attempts. currently %d, expected min %d and max %d' % (
                 num_connected, expected_min_suppliers, expected_max_suppliers, )
-        response = request_get(customer, 'supplier/list/v1', timeout=20)
+        response = request_get(customer, 'supplier/list/v1', timeout=20, verbose=verbose)
         assert response.status_code == 200
-        print('\nsupplier/list/v1 : %s\n' % pprint.pformat(response.json()))
+        if verbose:
+            print('supplier/list/v1 : %s\n' % pprint.pformat(response.json()))
         assert response.json()['status'] == 'OK', response.json()
         if expected_min_suppliers is None and expected_max_suppliers is None:
             break
@@ -50,16 +52,19 @@ def supplier_list_v1(customer: str, expected_min_suppliers=None, expected_max_su
             if s['supplier_state'] == 'CONNECTED' and s['contact_state'] == 'CONNECTED':
                 num_connected += 1
         if expected_min_suppliers is not None and (num_connected < expected_min_suppliers or num_total < expected_min_suppliers):
-            print('\nfound %d connected suppliers at the moment, but expect at least %d\n' % (num_connected, expected_min_suppliers))
+            if verbose:
+                print('found %d connected suppliers at the moment, but expect at least %d\n' % (num_connected, expected_min_suppliers))
             count += 1
             time.sleep(delay)
             continue
         if expected_max_suppliers is not None and (num_connected > expected_max_suppliers or num_total > expected_max_suppliers):
-            print('\nfound %d connected suppliers at the moment, but expect no more than %d\n' % (num_connected, expected_max_suppliers))
+            if verbose:
+                print('found %d connected suppliers at the moment, but expect no more than %d\n' % (num_connected, expected_max_suppliers))
             count += 1
             time.sleep(delay)
             continue
-        print('\nfound %d connected suppliers at the moment\n' % num_connected)
+        if verbose:
+            print('found %d connected suppliers at the moment\n' % num_connected)
         break
     if not extract_suppliers:
         return response.json()
@@ -76,19 +81,19 @@ def supplier_list_dht_v1(customer_id, observers_ids, expected_ecc_map, expected_
         while True:
             mistakes = 0
             if count >= retries:
-                print('\nDHT info still wrong after %d retries, currently see %d suppliers, but expected %d' % (
+                print('DHT info still wrong after %d retries, currently see %d suppliers, but expected %d' % (
                     count, num_suppliers, expected_suppliers_number))
                 return False
             try:
                 response = request_get(obs, 'supplier/list/dht/v1?id=%s' % customer_id, timeout=20)
             except requests.exceptions.ConnectionError as exc:
-                print('\nconnection error: %r' % exc)
+                print('connection error: %r' % exc)
                 return False
             if response.status_code != 200:
                 count += 1
                 time.sleep(delay)
                 continue
-            print('\nsupplier/list/dht/v1?id=%s from %s\n%s\n' % (customer_id, obs, pprint.pformat(response.json())))
+            print('supplier/list/dht/v1?id=%s from %s\n%s\n' % (customer_id, obs, pprint.pformat(response.json())))
             if not response.json()['status'] == 'OK':
                 count += 1
                 time.sleep(delay)
@@ -98,7 +103,7 @@ def supplier_list_dht_v1(customer_id, observers_ids, expected_ecc_map, expected_
                 time.sleep(delay)
                 continue
             if not response.json()['result']['customer_idurl'].count('%s.xml' % customer_node):
-                print('\ncurrently see customer_idurl=%r, but expect family owner to be %r\n' % (
+                print('currently see customer_idurl=%r, but expect family owner to be %r\n' % (
                     response.json()['result']['customer_idurl'], customer_node))
                 count += 1
                 time.sleep(delay)
@@ -106,19 +111,19 @@ def supplier_list_dht_v1(customer_id, observers_ids, expected_ecc_map, expected_
             ss = response.json()['result']['suppliers']
             num_suppliers = len(ss)
             if num_suppliers != expected_suppliers_number:
-                print('\ncurrently see %d suppliers but expected number is %d\n' % (num_suppliers, expected_suppliers_number))
+                print('currently see %d suppliers but expected number is %d\n' % (num_suppliers, expected_suppliers_number))
                 count += 1
                 time.sleep(delay)
                 continue
             if len(list(filter(None, ss))) != expected_suppliers_number:
                 mistakes += abs(expected_suppliers_number - len(list(filter(None, ss))))
-                print('\nfound missing suppliers\n')
+                print('found missing suppliers\n')
             if not response.json()['result']['ecc_map'] == expected_ecc_map:
                 mistakes += 1
-                print('\ncurrently see ecc_map=%r, but expect to be %r\n' % (
+                print('currently see ecc_map=%r, but expect to be %r\n' % (
                     response.json()['result']['ecc_map'], expected_ecc_map))
             if mistakes > accepted_mistakes:
-                print('\ncurrently see %d mistakes\n' % mistakes)
+                print('currently see %d mistakes\n' % mistakes)
                 count += 1
                 time.sleep(delay)
                 continue
@@ -144,7 +149,7 @@ def supplier_switch_v1(customer: str, supplier_idurl: str, position: int, valida
         'new_idurl': supplier_idurl,
     }, timeout=20)
     assert response.status_code == 200
-    print('\nsupplier/switch/v1 [%s] with new supplier %s at position %r : %s\n' % (
+    print('supplier/switch/v1 [%s] with new supplier %s at position %r : %s\n' % (
         customer, supplier_idurl, position, pprint.pformat(response.json())))
     assert response.json()['status'] == 'OK', response.json()
     if not validate_retries:
@@ -157,7 +162,7 @@ def supplier_switch_v1(customer: str, supplier_idurl: str, position: int, valida
         if supplier_idurl in current_suppliers_idurls:
             _pos = current_suppliers_idurls.index(supplier_idurl)
             assert position == _pos
-            print('\nfound supplier %r at position %d for customer %r' % (supplier_idurl, position, customer))
+            print('found supplier %r at position %d for customer %r' % (supplier_idurl, position, customer))
             return current_suppliers_idurls
         count += 1
         time.sleep(delay)
@@ -168,7 +173,7 @@ def supplier_switch_v1(customer: str, supplier_idurl: str, position: int, valida
 def share_create_v1(customer: str, key_size=1024):
     response = request_post(customer, 'share/create/v1', json={'key_size': key_size, }, timeout=20)
     assert response.status_code == 200
-    print('\nshare/create/v1 [%s] : %s\n' % (customer, pprint.pformat(response.json())))
+    print('share/create/v1 [%s] : %s\n' % (customer, pprint.pformat(response.json())))
     assert response.json()['status'] == 'OK', response.json()
     return response.json()['result']['key_id']
 
@@ -176,7 +181,7 @@ def share_create_v1(customer: str, key_size=1024):
 def share_open_v1(customer: str, key_id):
     response = request_post(customer, 'share/open/v1', json={'key_id': key_id, }, timeout=60)
     assert response.status_code == 200
-    print('\nshare/open/v1 [%s] key_id=%r : %s\n' % (customer, key_id, pprint.pformat(response.json())))
+    print('share/open/v1 [%s] key_id=%r : %s\n' % (customer, key_id, pprint.pformat(response.json())))
     assert response.json()['status'] == 'OK', response.json()
     return response.json()
 
@@ -184,7 +189,7 @@ def share_open_v1(customer: str, key_id):
 def group_create_v1(customer: str, key_size=1024, label=''):
     response = request_post(customer, 'group/create/v1', json={'key_size': key_size, 'label': label, }, timeout=20)
     assert response.status_code == 200
-    print('\ngroup/create/v1 [%s] : %s\n' % (customer, pprint.pformat(response.json())))
+    print('group/create/v1 [%s] : %s\n' % (customer, pprint.pformat(response.json())))
     assert response.json()['status'] == 'OK', response.json()
     return response.json()['result']['group_key_id']
 
@@ -192,7 +197,7 @@ def group_create_v1(customer: str, key_size=1024, label=''):
 def group_info_v1(customer: str, group_key_id):
     response = request_get(customer, 'group/info/v1?group_key_id=%s' % group_key_id, timeout=20)
     assert response.status_code == 200
-    print('\ngroup/info/v1 [%s] : %s\n' % (customer, pprint.pformat(response.json())))
+    print('group/info/v1 [%s] : %s\n' % (customer, pprint.pformat(response.json())))
     assert response.json()['status'] == 'OK', response.json()
     return response.json()
 
@@ -200,7 +205,7 @@ def group_info_v1(customer: str, group_key_id):
 def group_join_v1(customer: str, group_key_id, attempts=1):
     response = request_post(customer, 'group/join/v1', json={'group_key_id': group_key_id, }, timeout=60, attempts=attempts)
     assert response.status_code == 200
-    print('\ngroup/join/v1 [%s] group_key_id=%r : %s\n' % (customer, group_key_id, pprint.pformat(response.json())))
+    print('group/join/v1 [%s] group_key_id=%r : %s\n' % (customer, group_key_id, pprint.pformat(response.json())))
     assert response.json()['status'] == 'OK', response.json()
     return response.json()
 
@@ -208,7 +213,7 @@ def group_join_v1(customer: str, group_key_id, attempts=1):
 def group_leave_v1(customer: str, group_key_id):
     response = request_delete(customer, 'group/leave/v1', json={'group_key_id': group_key_id, }, timeout=20)
     assert response.status_code == 200
-    print('\ngroup/leave/v1 [%s] group_key_id=%r : %s\n' % (customer, group_key_id, pprint.pformat(response.json())))
+    print('group/leave/v1 [%s] group_key_id=%r : %s\n' % (customer, group_key_id, pprint.pformat(response.json())))
     assert response.json()['status'] == 'OK', response.json()
     return response.json()
 
@@ -219,7 +224,7 @@ def group_share_v1(customer: str, group_key_id, trusted_id):
         'trusted_id': trusted_id,
     }, timeout=60)
     assert response.status_code == 200
-    print('\ngroup/share/v1 [%s] group_key_id=%r trusted_id=%r : %s\n' % (customer, group_key_id, trusted_id, pprint.pformat(response.json())))
+    print('group/share/v1 [%s] group_key_id=%r trusted_id=%r : %s\n' % (customer, group_key_id, trusted_id, pprint.pformat(response.json())))
     assert response.json()['status'] == 'OK', response.json()
     return response.json()
 
@@ -227,7 +232,7 @@ def group_share_v1(customer: str, group_key_id, trusted_id):
 def file_sync_v1(node):
     response = request_get(node, 'file/sync/v1', timeout=20)
     assert response.status_code == 200
-    print('\nfile/sync/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
+    print('file/sync/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
     assert response.json()['status'] == 'OK', response.json()
     return response.json()
 
@@ -236,7 +241,7 @@ def file_list_all_v1(node, expected_reliable=100, attempts=30, delay=3):
     if not expected_reliable:
         response = request_get(node, 'file/list/all/v1', timeout=20)
         assert response.status_code == 200
-        print('\nfile/list/all/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
+        print('file/list/all/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
         assert response.json()['status'] == 'OK', response.json()
         return response.json()
 
@@ -246,7 +251,7 @@ def file_list_all_v1(node, expected_reliable=100, attempts=30, delay=3):
     while latest_reliable is None or latest_reliable <= expected_reliable:
         response = request_get(node, 'file/list/all/v1', timeout=20)
         assert response.status_code == 200
-        print('\nfile/list/all/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
+        print('file/list/all/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
         assert response.json()['status'] == 'OK', response.json()
         lowest = 100
         lowest_file = None
@@ -270,7 +275,7 @@ def file_list_all_v1(node, expected_reliable=100, attempts=30, delay=3):
 def file_create_v1(node, remote_path):
     response = request_post(node, 'file/create/v1', json={'remote_path': remote_path}, timeout=20)
     assert response.status_code == 200
-    print('\nfile/create/v1 [%s] remote_path=%s : %s\n' % (node, remote_path, pprint.pformat(response.json()), ))
+    print('file/create/v1 [%s] remote_path=%s : %s\n' % (node, remote_path, pprint.pformat(response.json()), ))
     assert response.json()['status'] == 'OK', response.json()
     return response.json()
 
@@ -292,14 +297,14 @@ def file_upload_start_v1(customer: str, remote_path: str, local_path: str,
         timeout=20,
     )
     assert response.status_code == 200
-    print('\nfile/upload/start/v1 [%r] remote_path=%s local_path=%s : %s\n' % (
+    print('file/upload/start/v1 [%r] remote_path=%s local_path=%s : %s\n' % (
         customer, remote_path, local_path, pprint.pformat(response.json()),))
     assert response.json()['status'] == 'OK', response.json()
     if wait_job_finish:
         for _ in range(attempts):
             response = request_get(customer, 'file/upload/v1', timeout=20)
             assert response.status_code == 200
-            print('\nfile/upload/v1 [%s] : %s\n' % (customer, pprint.pformat(response.json()), ))
+            print('file/upload/v1 [%s] : %s\n' % (customer, pprint.pformat(response.json()), ))
             assert response.json()['status'] == 'OK', response.json()
             if len(response.json()['result']['pending']) == 0 and len(response.json()['result']['running']) == 0:
                 break
@@ -328,15 +333,15 @@ def file_download_start_v1(customer: str, remote_path: str, destination: str,
             timeout=20,
         )
         assert response.status_code == 200
-        print('\nfile/download/start/v1 [%s] remote_path=%s destination_folder=%s : %s\n' % (
+        print('file/download/start/v1 [%s] remote_path=%s destination_folder=%s : %s\n' % (
             customer, remote_path, destination, pprint.pformat(response.json()), ))
         if response.json()['status'] == 'OK':
-            print('\nfile/download/start/v1 [%s] remote_path=%s destination_folder=%s : %s\n' % (
-                customer, remote_path, destination, pprint.pformat(response.json()), ))
+            # print('file/download/start/v1 [%s] remote_path=%s destination_folder=%s : %s\n' % (
+            #     customer, remote_path, destination, pprint.pformat(response.json()), ))
             break
         if response.json()['errors'][0].count('downloading') and response.json()['errors'][0].count('already scheduled'):
-            print('\nfile/download/start/v1 [%s] remote_path=%s destination_folder=%s : %s\n' % (
-                customer, remote_path, destination, 'ALREADY STARTED', ))
+            # print('file/download/start/v1 [%s] remote_path=%s destination_folder=%s : %s\n' % (
+            #     customer, remote_path, destination, 'ALREADY STARTED', ))
             break
         if response.json()['errors'][0].count('failed') and response.json()['errors'][0].count('downloading'):
             time.sleep(delay)
@@ -348,7 +353,7 @@ def file_download_start_v1(customer: str, remote_path: str, destination: str,
         for _ in range(attempts):
             response = request_get(customer, 'file/download/v1', timeout=20)
             assert response.status_code == 200
-            print('\nfile/download/v1 [%s] : %s\n' % (customer, pprint.pformat(response.json()), ))
+            print('file/download/v1 [%s] : %s\n' % (customer, pprint.pformat(response.json()), ))
             assert response.json()['status'] == 'OK', response.json()
             if len(response.json()['result']) == 0:
                 break
@@ -367,7 +372,7 @@ def config_set_v1(node, key, value):
         timeout=20,
     )
     assert response.status_code == 200
-    print('\nconfig/set/v1 [%s] key=%r value=%r : %s\n' % (
+    print('config/set/v1 [%s] key=%r value=%r : %s\n' % (
         node, key, value, pprint.pformat(response.json())))
     assert response.json()['status'] == 'OK', response.json()
     return response.json()
@@ -381,7 +386,7 @@ def dht_value_get_v1(node, key, expected_data, record_type='skip_validation', re
         response = request_get(node, 'dht/value/get/v1?record_type=%s&key=%s' % (record_type, key, ), timeout=20)
         try:
             assert response.status_code == 200
-            print('\ndht/value/get/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
+            print('dht/value/get/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
             assert response.json()['status'] == 'OK', response.json()
             assert len(response.json()['result']) > 0, response.json()
             assert response.json()['result']['key'] == key, response.json()
@@ -421,7 +426,7 @@ def dht_value_set_v1(node, key, new_data, record_type='skip_validation', ):
         timeout=20,
     )
     assert response.status_code == 200
-    print('\ndht/value/set/v1 [%s] key=%s : %s\n' % (node, key, pprint.pformat(response.json()), ))
+    print('dht/value/set/v1 [%s] key=%s : %s\n' % (node, key, pprint.pformat(response.json()), ))
     assert response.json()['status'] == 'OK', response.json()
     assert len(response.json()['result']) > 0, response.json()
     assert response.json()['result']['write'] == 'success', response.json()
@@ -438,7 +443,7 @@ def dht_db_dump_v1(node):
         response = request_get(node, 'dht/db/dump/v1', timeout=20)
     except:
         return None
-    print('\ndht/db/dump/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
+    print('dht/db/dump/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
     return response.json()
 
 
@@ -452,14 +457,14 @@ def message_send_v1(node, recipient, data, timeout=30):
         timeout=timeout+1,
     )
     assert response.status_code == 200
-    print(f'\nmessage/send/v1 [%s] : %s\n' % (
+    print(f'message/send/v1 [%s] : %s\n' % (
         node, pprint.pformat(response.json())))
     assert response.json()['status'] == 'OK', response.json()
     return response.json()
 
 
 def message_send_group_v1(node, group_key_id, data, timeout=20):
-    print('\nmessage/send/group/v1 [%s] data=%r' % (node, data, ))
+    print('message/send/group/v1 [%s] data=%r' % (node, data, ))
     response = request_post(node, 'message/send/group/v1',
         json={
             'group_key_id': group_key_id,
@@ -468,7 +473,7 @@ def message_send_group_v1(node, group_key_id, data, timeout=20):
         timeout=timeout,
     )
     assert response.status_code == 200
-    print(f'\nmessage/send/group/v1 [%s] : %s\n' % (
+    print(f'message/send/group/v1 [%s] : %s\n' % (
         node, pprint.pformat(response.json())))
     assert response.json()['status'] == 'OK', response.json()
     return response.json()
@@ -477,7 +482,7 @@ def message_send_group_v1(node, group_key_id, data, timeout=20):
 def message_receive_v1(node, expected_data=None, consumer='test_consumer', get_result=None, timeout=15, polling_timeout=10, attempts=1):
     response = request_get(node, f'message/receive/{consumer}/v1?polling_timeout=%d' % polling_timeout, timeout=timeout, attempts=attempts)
     assert response.status_code == 200
-    print(f'\nmessage/receive/{consumer}/v1 [%s] : %s\n' % (
+    print(f'message/receive/{consumer}/v1 [%s] : %s\n' % (
         node, pprint.pformat(response.json())))
     if get_result is not None:
         if response.json()['status'] == 'OK':
@@ -492,7 +497,7 @@ def message_receive_v1(node, expected_data=None, consumer='test_consumer', get_r
 def message_history_v1(node, recipient_id, message_type='private_message', timeout=15):
     response = request_get(node, f'message/history/v1?id={recipient_id}&message_type={message_type}', timeout=timeout)
     assert response.status_code == 200
-    print('\nmessage/history/v1 [%s] recipient_id=%s : %s\n' % (node, recipient_id, pprint.pformat(response.json()), ))
+    print('message/history/v1 [%s] recipient_id=%s : %s\n' % (node, recipient_id, pprint.pformat(response.json()), ))
     assert response.json()['status'] == 'OK', response.json()
     return response.json()
 
@@ -510,15 +515,16 @@ def user_ping_v1(node, remote_node_id, timeout=95, ack_timeout=30, retries=2):
     return response.json()
 
 
-def service_info_v1(node, service_name, expected_state, attempts=30, delay=3):
+def service_info_v1(node, service_name, expected_state, attempts=20, delay=3, verbose=True):
     current_state = None
     count = 0
     while current_state is None or current_state != expected_state:
-        response = request_get(node, f'service/info/{service_name}/v1', timeout=20)
+        response = request_get(node, f'service/info/{service_name}/v1', timeout=20, verbose=verbose)
         assert response.status_code == 200
         assert response.json()['status'] == 'OK', response.json()
         current_state = response.json()['result']['state']
-        print(f'\nservice/info/{service_name}/v1 [{node}] : %s' % pprint.pformat(response.json()))
+        if verbose:
+            print(f'service/info/{service_name}/v1 [{node}] : %s' % pprint.pformat(response.json()))
         if current_state == expected_state:
             break
         count += 1
@@ -526,13 +532,14 @@ def service_info_v1(node, service_name, expected_state, attempts=30, delay=3):
             assert False, f"service {service_name} is not {expected_state} after {attempts} attempts"
             return
         time.sleep(delay)
-    print(f'service/info/{service_name}/v1 [{node}] : OK\n')
+    if verbose:
+        print(f'service/info/{service_name}/v1 [{node}] : OK\n')
 
 
 def service_start_v1(node, service_name, timeout=10):
     response = request_post(node, 'service/start/%s/v1' % service_name, json={}, timeout=timeout)
     assert response.status_code == 200
-    print('\nservice/start/%s/v1 [%s]: %s\n' % (service_name, node, pprint.pformat(response.json()), ))
+    print('service/start/%s/v1 [%s]: %s\n' % (service_name, node, pprint.pformat(response.json()), ))
     assert response.json()['status'] == 'OK', response.json()
     return response.json()
 
@@ -540,7 +547,7 @@ def service_start_v1(node, service_name, timeout=10):
 def service_stop_v1(node, service_name, timeout=10):
     response = request_post(node, 'service/stop/%s/v1' % service_name, json={}, timeout=timeout)
     assert response.status_code == 200
-    print('\nservice/stop/%s/v1 [%s]: %s\n' % (service_name, node, pprint.pformat(response.json()), ))
+    print('service/stop/%s/v1 [%s]: %s\n' % (service_name, node, pprint.pformat(response.json()), ))
     assert response.json()['status'] == 'OK', response.json()
     return response.json()
 
@@ -552,7 +559,7 @@ def event_listen_v1(node, expected_event_id, consumer_id='regression_tests_wait_
         response = request_get(node, f'event/listen/{consumer_id}/v1', timeout=timeout)
         assert response.status_code == 200
         assert response.json()['status'] == 'OK', response.json()
-        print(f'\nevent/listen/{consumer_id}/v1 : %s\n' % pprint.pformat(response.json()))
+        print(f'event/listen/{consumer_id}/v1 : %s\n' % pprint.pformat(response.json()))
         for e in response.json()['result']:
             if e['id'] == expected_event_id:
                 found = e
@@ -565,14 +572,14 @@ def event_listen_v1(node, expected_event_id, consumer_id='regression_tests_wait_
     return found
 
 
-def packet_list_v1(node, wait_all_finish=False, attempts=60, delay=3, verbose=False):
+def packet_list_v1(node, wait_all_finish=False, attempts=30, delay=3, verbose=False):
     if verbose:
-        print('\npacket/list/v1 [%s]\n' % node)
+        print('packet/list/v1 [%s]\n' % node)
     for _ in range(attempts):
         response = request_get(node, 'packet/list/v1', timeout=20, verbose=verbose)
         assert response.status_code == 200
         if verbose:
-            print('\npacket/list/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
+            print('packet/list/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
         assert response.json()['status'] == 'OK', response.json()
         if len(response.json()['result']) == 0 or not wait_all_finish:
             break
@@ -582,14 +589,14 @@ def packet_list_v1(node, wait_all_finish=False, attempts=60, delay=3, verbose=Fa
     return response.json()
 
 
-def transfer_list_v1(node, wait_all_finish=False, attempts=60, delay=3, verbose=False):
+def transfer_list_v1(node, wait_all_finish=False, attempts=30, delay=3, verbose=False):
     if verbose:
-        print('\ntransfer/list/v1 [%s]\n' % node)
+        print('transfer/list/v1 [%s]\n' % node)
     for _ in range(attempts):
         response = request_get(node, 'transfer/list/v1', timeout=20, verbose=verbose)
         assert response.status_code == 200
         if verbose:
-            print('\ntransfer/list/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
+            print('transfer/list/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
         assert response.json()['status'] == 'OK', response.json()
         if not wait_all_finish:
             break
@@ -613,7 +620,7 @@ def transfer_list_v1(node, wait_all_finish=False, attempts=60, delay=3, verbose=
 def identity_get_v1(node):
     response = request_get(node, 'identity/get/v1', timeout=20)
     assert response.status_code == 200
-    print('\nidentity/get/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
+    print('identity/get/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
     assert response.json()['status'] == 'OK', response.json()
     return response.json()
 
@@ -621,7 +628,7 @@ def identity_get_v1(node):
 def identity_rotate_v1(node):
     response = request_put(node, 'identity/rotate/v1', timeout=30)
     assert response.status_code == 200
-    print('\nidentity/rotate/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
+    print('identity/rotate/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
     assert response.json()['status'] == 'OK', response.json()
     return response.json()
 
@@ -629,7 +636,7 @@ def identity_rotate_v1(node):
 def network_reconnect_v1(node):
     response = request_get(node, 'network/reconnect/v1', timeout=20)
     assert response.status_code == 200
-    print('\nnetwork/reconnect/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
+    print('network/reconnect/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
     assert response.json()['status'] == 'OK', response.json()
     return response.json()
 
@@ -637,7 +644,7 @@ def network_reconnect_v1(node):
 def network_info_v1(node):
     response = request_get(node, 'network/info/v1', timeout=20)
     assert response.status_code == 200
-    print('\nnetwork/info/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
+    print('network/info/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
     assert response.json()['status'] == 'OK', response.json()
     return response.json()
 
@@ -645,7 +652,7 @@ def network_info_v1(node):
 def key_list_v1(node):
     response = request_get(node, 'key/list/v1', timeout=20)
     assert response.status_code == 200
-    print('\nkey/list/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
+    print('key/list/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
     assert response.json()['status'] == 'OK', response.json()
     return response.json()
 
@@ -659,7 +666,7 @@ def friend_add_v1(node, friend_idurl, friend_alias=''):
         timeout=20,
     )
     assert response.status_code == 200
-    print('\nfriend/add/v1 [%s] idurl=%r alias=%r : %s\n' % (
+    print('friend/add/v1 [%s] idurl=%r alias=%r : %s\n' % (
         node, friend_idurl, friend_alias, pprint.pformat(response.json()), ))
     assert response.json()['status'] == 'OK', response.json()
     return response.json()
@@ -668,7 +675,7 @@ def friend_add_v1(node, friend_idurl, friend_alias=''):
 def friend_list_v1(node, extract_idurls=False):
     response = request_get(node, 'friend/list/v1', timeout=20)
     assert response.status_code == 200
-    print('\nfriend/list/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
+    print('friend/list/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
     assert response.json()['status'] == 'OK', response.json()
     if not extract_idurls:
         return response.json()
@@ -678,7 +685,7 @@ def friend_list_v1(node, extract_idurls=False):
 def queue_list_v1(node, extract_ids=False):
     response = request_get(node, 'queue/list/v1', timeout=20)
     assert response.status_code == 200
-    print('\nqueue/list/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
+    print('queue/list/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
     assert response.json()['status'] == 'OK', response.json()
     if not extract_ids:
         return response.json()
@@ -688,7 +695,7 @@ def queue_list_v1(node, extract_ids=False):
 def queue_consumer_list_v1(node, extract_ids=False):
     response = request_get(node, 'queue/consumer/list/v1', timeout=20)
     assert response.status_code == 200
-    print('\nqueue/consumer/list/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
+    print('queue/consumer/list/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
     assert response.json()['status'] == 'OK', response.json()
     if not extract_ids:
         return response.json()
@@ -698,7 +705,7 @@ def queue_consumer_list_v1(node, extract_ids=False):
 def queue_producer_list_v1(node, extract_ids=False):
     response = request_get(node, 'queue/producer/list/v1', timeout=20)
     assert response.status_code == 200
-    print('\nqueue/producer/list/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
+    print('queue/producer/list/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
     assert response.json()['status'] == 'OK', response.json()
     if not extract_ids:
         return response.json()
@@ -706,20 +713,30 @@ def queue_producer_list_v1(node, extract_ids=False):
 
 #------------------------------------------------------------------------------
 
-def wait_packets_finished(nodes):
+def wait_packets_finished(nodes, verbose=False):
+    print('wait packets finished on %d nodes' % len(nodes))
     for node in nodes:
-        packet_list_v1(node, wait_all_finish=True)
+        packet_list_v1(node, wait_all_finish=True, verbose=verbose)
+        sys.stdout.write('.')
+    print('')
 
 
-def wait_service_state(nodes, service_name, state):
+def wait_service_state(nodes, service_name, state, verbose=False):
+    print('wait service %r state to become %r on %d nodes' % (service_name, state, len(nodes), ))
     for node in nodes:
-        service_info_v1(node, service_name, state)
+        service_info_v1(node, service_name, state, verbose=verbose)
+        sys.stdout.write('.')
+    print('')
 
 
-def wait_suppliers_connected(nodes, expected_min_suppliers=2, expected_max_suppliers=2):
+def wait_suppliers_connected(nodes, expected_min_suppliers=2, expected_max_suppliers=2, verbose=False):
+    print('wait min %d and max %d suppliers to be connected on %d nodes' % (expected_min_suppliers, expected_max_suppliers, len(nodes), ))
     for node in nodes:
-        supplier_list_v1(node, expected_min_suppliers=expected_min_suppliers, expected_max_suppliers=expected_max_suppliers)
+        supplier_list_v1(node, expected_min_suppliers=expected_min_suppliers, expected_max_suppliers=expected_max_suppliers, verbose=verbose)
+        sys.stdout.write('.')
+    print('')
 
+#------------------------------------------------------------------------------
 
 def verify_message_sent_received(group_key_id, producer_id, consumers_ids, message_label='A',
                                  expected_results={}, expected_last_sequence_id={},
@@ -766,3 +783,32 @@ def verify_message_sent_received(group_key_id, producer_id, consumers_ids, messa
                         consumer_id, consumer_last_sequence_id, expected_last_sequence_id[consumer_id])
 
     return sample_message
+
+#------------------------------------------------------------------------------
+
+def verify_file_create_upload_start(node, key_id, volume_path, filename='cat.txt', randomize_bytes=0):
+    virtual_filename = filename
+    local_filepath = f'{volume_path}/{filename}'
+    remote_path = f'{key_id}:{virtual_filename}'
+    download_filepath = f'/tmp/{filename}'
+    if randomize_bytes == 0:
+        run_ssh_command_and_wait(node, f'echo "{node}" > {local_filepath}')
+    else:
+        run_ssh_command_and_wait(node, f'python -c "import os, base64; print(base64.b64encode(os.urandom({randomize_bytes})).decode())" > {local_filepath}')
+    file_list_all_v1(node)
+    file_create_v1(node, remote_path)
+    file_upload_start_v1(node, remote_path, local_filepath)
+    packet_list_v1(node, wait_all_finish=True)
+    transfer_list_v1(node, wait_all_finish=True)
+    return local_filepath, remote_path, download_filepath
+
+
+def verify_file_download_start(node, remote_path, destination_path, verify_from_local_path=None, verify_list_files=True):
+    if verify_list_files:
+        file_list_all_v1(node)
+    file_download_start_v1(node, remote_path=remote_path, destination=os.path.dirname(destination_path))
+    if verify_from_local_path is not None:
+        customer_1_file_body_source = run_ssh_command_and_wait('customer-1', f'cat {verify_from_local_path}')[0].strip()
+        customer_1_file_body_downloaded = run_ssh_command_and_wait('customer-1', f'cat {destination_path}')[0].strip()
+        assert customer_1_file_body_source == customer_1_file_body_downloaded
+    

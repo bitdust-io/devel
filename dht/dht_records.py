@@ -184,7 +184,7 @@ def set_udp_incoming():
 
 def get_suppliers(customer_idurl, return_details=True, use_cache=True):
     if _Debug:
-        lg.args(_DebugLevel, customer_idurl=customer_idurl)
+        lg.args(_DebugLevel, customer_idurl=customer_idurl, use_cache=use_cache)
     return dht_service.get_valid_data(
         key=dht_service.make_key(
             key=strng.to_text(customer_idurl),

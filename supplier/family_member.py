@@ -948,7 +948,7 @@ class FamilyMember(automat.Automat):
 
     def _on_dht_write_success(self, dht_result):
         if _Debug:
-            lg.out(_DebugLevel, 'family_member._on_dht_write_success  result: %r' % dht_result)
+            lg.out(_DebugLevel, 'family_member._on_dht_write_success  result: %r' % type(dht_result))
         self.my_info = self.transaction.copy()
         self.dht_info = None
         self.transaction = None

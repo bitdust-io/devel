@@ -557,6 +557,43 @@ def get_latest_revision(idurl):
     return latest_idurl, latest_rev
 
 
+def list_known_idurls(idurl, num_revisions=5, include_revisions=False):
+    """
+    Return latest known revisions of given `idurl` (as binary strings) and revision numbers as a list of tuples.
+    This info is extracted from in-memory "index" of all known identity objects. 
+    """
+    global _MergedIDURLs
+    global _KnownIDURLs
+    idurl_bin = to_bin(idurl)
+    if not idurl_bin:
+        if include_revisions:
+            return [(idurl_bin, -1, ), ]
+        return [idurl_bin, ]
+    if idurl_bin not in _KnownIDURLs:
+        if include_revisions:
+            return [(idurl_bin, -1, ), ]
+        return [idurl_bin, ]
+    pub_key = _KnownIDURLs[idurl_bin]
+    if pub_key not in _MergedIDURLs:
+        lg.warn('idurl %r does not have any known revisions' % idurl_bin)
+        if include_revisions:
+            return [(idurl_bin, -1, ), ]
+        return [idurl_bin, ]
+    known_revisions = sorted(_MergedIDURLs[pub_key].keys(), reverse=True)
+    results = []
+    for rev in known_revisions:
+        another_idurl = _MergedIDURLs[pub_key][rev]
+        if include_revisions:
+            if another_idurl not in [i[0] for i in results]:
+                results.append((another_idurl, rev, ))
+        else:
+            if another_idurl not in results:
+                results.append(another_idurl)
+        if len(results) >= num_revisions:
+            break
+    return results
+
+
 def idurl_to_id(idurl_text):
     """
     Translates IDURL into gobal id short form:

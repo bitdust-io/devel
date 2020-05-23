@@ -263,8 +263,7 @@ class FireHire(automat.Automat):
 
     def state_changed(self, oldstate, newstate, event, *args, **kwargs):
         """
-        This method intended to catch the moment when automat's state were
-        changed.
+        This method intended to catch the moment when automat's state was changed.
         """
         global_state.set_global_state('FIREHIRE ' + newstate)
         if newstate == 'READY' and event != 'instant':

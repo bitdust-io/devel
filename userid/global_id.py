@@ -125,7 +125,7 @@ def ParseIDURL(idurl):
     return ParseGlobalID(UrlToGlobalID(idurl, include_key=False))
 
 
-def ParseGlobalID(inp, detect_version=False, as_field=True):
+def ParseGlobalID(inp, detect_version=False, as_field=True, fast=True):
     """
     Split input string by parts according to different global ID formats:
 
@@ -195,14 +195,19 @@ def ParseGlobalID(inp, detect_version=False, as_field=True):
         if not user_and_key or not idhost:
             return result
         try:
-            user_key = re.match(_REGEX_GLOBAL_ID_KEY_USER, user_and_key)
-            if not user_key:
-                user_key = re.match(_REGEX_GLOBAL_ID_USER_KEY, user_and_key)
-            if user_key:
-                result['user'] = user_key.group('user')
-                result['key_alias'] = user_key.group('key_alias')
+            if fast:
+                _key_alias, _, _user = user_and_key.rpartition('$')
+                result['key_alias'] = _key_alias
+                result['user'] = _user
             else:
-                result['user'] = user_and_key
+                user_key = re.match(_REGEX_GLOBAL_ID_KEY_USER, user_and_key)
+                if not user_key:
+                    user_key = re.match(_REGEX_GLOBAL_ID_USER_KEY, user_and_key)
+                if user_key:
+                    result['user'] = user_key.group('user')
+                    result['key_alias'] = user_key.group('key_alias')
+                else:
+                    result['user'] = user_and_key
         except:
             return result
         result['idhost'] = idhost
@@ -292,6 +297,43 @@ def CanonicalID(inp, include_key=True):
     else:
         parts['key_alias'] = ''
     return MakeGlobalID(**parts)
+
+
+def SubstitutePacketID(packet_id, idurl=None, customer=None, key_id=None, path=None, key_alias=None, ):
+    from lib import nameurl
+    g = ParseGlobalID(packet_id, as_field=False)
+    if key_id is not None:
+        g['key_id'] = key_id
+        key_alias, _, customer = key_id.rpartition('$')
+    if key_alias is not None:
+        g['key_alias'] = key_alias
+    if path is not None:
+        g['path'] = path
+    if idurl is not None:
+        g['idurl'] = idurl
+        g['customer'] = UrlToGlobalID(g['idurl'])
+        _, idhost, port, filename = nameurl.UrlParse(idurl)
+        if port:
+            idhost += '_' + str(port)
+        g['user'] = filename.strip()[0:-4]
+        if key_id is None:
+            g['key_id'] = _FORMAT_GLOBAL_ID_KEY_USER.format(
+                key_alias=g['key_alias'],
+                user=g['customer'],
+            )
+    if customer is not None:
+        g['customer'] = customer
+        g['idurl'] = glob2idurl(g['customer'], as_field=False)
+        _, idhost, port, filename = nameurl.UrlParse(idurl)
+        if port:
+            idhost += '_' + str(port)
+        g['user'] = filename.strip()[0:-4]
+        if key_id is None:
+            g['key_id'] = _FORMAT_GLOBAL_ID_KEY_USER.format(
+                key_alias=g['key_alias'],
+                user=g['customer'],
+            )
+    return MakeGlobalID(**g)
 
 #------------------------------------------------------------------------------
 

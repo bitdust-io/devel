@@ -69,7 +69,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -645,7 +645,7 @@ class OnlineStatus(automat.Automat):
                 self.doReportOffline(*args, **kwargs)
             elif event == 'handshake' or event == 'ping-now':
                 self.doSetCallback(*args, **kwargs)
-            elif event == 'ack-received' or event == 'shook-up-hands':
+            elif event == 'inbox-packet' or event == 'ack-received' or event == 'shook-up-hands':
                 self.state = 'CONNECTED'
                 self.doRememberTime(*args, **kwargs)
                 self.doReportConnected(*args, **kwargs)

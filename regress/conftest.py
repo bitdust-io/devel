@@ -250,7 +250,11 @@ def global_wrapper(event_loop):
         clean_all_nodes(event_loop, skip_checks=True, verbose=verbose)
 
     if os.environ.get('START_NODES', '1') == '1':
-        start_all_nodes(event_loop, verbose=verbose)
+        try:
+            start_all_nodes(event_loop, verbose=verbose)
+        except Exception as exc:
+            report_all_nodes(event_loop)
+            raise exc
 
     print('\nTest network prepared in %5.3f seconds\n' % (time.time() - _begin))
  

@@ -220,6 +220,7 @@ class RSAKey(object):
                     signature_bytes = number.long_to_bytes(signature_int)
                     pkcs1_15.new(self.keyObject).verify(h, b'\x00' + signature_bytes)
                     result = True
+                    lg.warn('signature with additional "0" in front passed verification')
                 except:
                     # lg.err('signature verification failed: %r' % signature)
                     lg.err('signature=%r   message=%r   signature_as_digits=%r' % (

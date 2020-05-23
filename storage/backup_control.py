@@ -429,7 +429,7 @@ def IncomingSupplierBackupIndex(newpacket):
         except:
             pass
         return None
-    if revision() >= supplier_revision:
+    if revision() > supplier_revision:
         inpt.close()
         if _Debug:
             lg.out(_DebugLevel, 'backup_control.IncomingSupplierBackupIndex SKIP, supplier %s revision=%d, local revision=%d' % (

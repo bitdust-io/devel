@@ -228,6 +228,7 @@ class P2PServiceSeeker(automat.Automat):
             remote_idurl=self.target_idurl,
             service_name=self.target_service,
             json_payload=service_request_payload,
+            timeout=120,
             callbacks={
                 commands.Ack(): self._node_acked,
                 commands.Fail(): self._node_failed,

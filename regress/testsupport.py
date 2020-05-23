@@ -39,6 +39,13 @@ _SSHTunnels = {}
 _NodeTunnelPort = {} 
 _NextSSHTunnelPort = 10000
 _SSLContexts = {}
+_ActiveScenario = ''
+
+#------------------------------------------------------------------------------
+
+def set_active_scenario(scenario):
+    global _ActiveScenario
+    _ActiveScenario = scenario
 
 #------------------------------------------------------------------------------
 
@@ -298,9 +305,10 @@ def tunnel_port(node):
 
 def tunnel_url(node, endpoint, verbose=True):
     if verbose:
-        print('\n%s [%s]   /%s   %s' % (
-            datetime.datetime.now().strftime("%H:%M:%S.%f"), node, endpoint,
-            os.environ['PYTEST_CURRENT_TEST'].replace(' (setup)', '').replace(' (call)', ''), ))
+        print('\n%s [%s]   /%s    {%s}' % (
+            datetime.datetime.now().strftime("%H:%M:%S.%f"), node, endpoint, _ActiveScenario,
+            # os.environ['PYTEST_CURRENT_TEST'].replace(' (setup)', '').replace(' (call)', ''),
+        ))
     return f'http://127.0.0.1:{tunnel_port(node)}/{endpoint.lstrip("/")}'
 
 #------------------------------------------------------------------------------

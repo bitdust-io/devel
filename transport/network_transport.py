@@ -124,8 +124,7 @@ class NetworkTransport(automat.Automat):
 
     def state_changed(self, oldstate, newstate, event, *args, **kwargs):
         """
-        This method intended to catch the moment when automat's state were
-        changed.
+        This method intended to catch the moment when automat's state was changed.
         """
         if self.state_changed_callback:
             self.state_changed_callback(self, oldstate, newstate)

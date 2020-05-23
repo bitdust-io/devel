@@ -221,8 +221,7 @@ class IdRegistrator(automat.Automat):
 
     def state_changed(self, oldstate, newstate, event, *args, **kwargs):
         """
-        This method intended to catch the moment when automat's state were
-        changed.
+        This method intended to catch the moment when automat's state was changed.
         """
         from main import installer
         installer.A('id_registrator.state', newstate)
