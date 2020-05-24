@@ -266,6 +266,21 @@ services:
       - id-c
       - id-dead
 
+  customer-restore:
+    image: bitdust/app
+    ports:
+      - "10156:22"
+    volumes:
+      - customer_restore:/customer_restore
+    links:
+      - dht-2
+      - dht-3
+      - stun-1
+      - id-a
+      - id-b
+      - id-c
+      - id-dead
+
   broker-1:
     image: bitdust/app
     ports:
@@ -363,6 +378,7 @@ services:
       - customer-3
       - customer-4
       - customer-rotated
+      - customer-restore
       - broker-1
       - broker-2
       - broker-3
@@ -370,18 +386,20 @@ services:
       - broker-rotated
 
     volumes:
-      - customer_rotated:/customer_rotated
       - customer_1:/customer_1
       - customer_2:/customer_2
       - customer_3:/customer_3
       - customer_4:/customer_4
+      - customer_rotated:/customer_rotated
+      - customer_restore:/customer_restore
 
 
 
 volumes:
-  customer_rotated:
   customer_1:
   customer_2:
   customer_3:
   customer_4:
+  customer_rotated:
+  customer_restore:
 

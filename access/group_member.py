@@ -809,7 +809,11 @@ class GroupMember(automat.Automat):
             owner_id=self.group_creator_id,
             supplier_id=global_id.idurl2glob(possible_broker_idurl),
         )
-        group_key_info = my_keys.get_key_info(self.group_key_id, include_private=False, include_signature=True)
+        try:
+            group_key_info = my_keys.get_key_info(self.group_key_id, include_private=False, include_signature=True)
+        except:
+            lg.exc()
+            group_key_info = {}
         service_request_params = {
             'action': action,
             'queue_id': queue_id,

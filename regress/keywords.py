@@ -237,7 +237,7 @@ def file_sync_v1(node):
     return response.json()
 
 
-def file_list_all_v1(node, expected_reliable=100, attempts=30, delay=3):
+def file_list_all_v1(node, expected_reliable=100, reliable_shares=True, attempts=30, delay=3):
     if not expected_reliable:
         response = request_get(node, 'file/list/all/v1', timeout=20)
         assert response.status_code == 200
@@ -256,6 +256,8 @@ def file_list_all_v1(node, expected_reliable=100, attempts=30, delay=3):
         lowest = 100
         lowest_file = None
         for fil in response.json()['result']:
+            if fil['remote_path'].startswith('share_') and not reliable_shares:
+                continue
             for ver in fil['versions']:
                 reliable = int(ver['reliable'].replace('%', ''))
                 if reliable < lowest:
@@ -736,13 +738,28 @@ def wait_suppliers_connected(nodes, expected_min_suppliers=2, expected_max_suppl
         sys.stdout.write('.')
     print('')
 
+
+def wait_event(nodes, event, expected_count=1, attempts=20, delay=3, verbose=False):
+    print('wait event "%s" to occur %d times on %d nodes' % (event, expected_count, len(nodes), ))
+    for node in nodes:
+        for _ in range(attempts):
+            event_log = run_ssh_command_and_wait(node, 'cat /root/.bitdust/logs/event.log', verbose=verbose)[0].strip()
+            if event_log.count(event) == expected_count:
+                break
+            time.sleep(delay)
+            sys.stdout.write('.')
+        else:
+            assert False, f'event "{event}" did not occurred {expected_count} times on [{node}] after many attempts'
+        sys.stdout.write('.')
+    print('')
+
 #------------------------------------------------------------------------------
 
 def verify_message_sent_received(group_key_id, producer_id, consumers_ids, message_label='A',
                                  expected_results={}, expected_last_sequence_id={},
                                  receive_timeout=31, polling_timeout=30):
     sample_message = {
-        'random_message': 'MESSAGE_%s_%s' % (message_label, base64.b32encode(os.urandom(20)).decode(), ),
+        'random_message': 'MESSAGE_%s_%s' % (message_label, base64.b32encode(os.urandom(8)).decode(), ),
     }
     consumer_results = {}
     consumer_threads = {}
@@ -786,7 +803,7 @@ def verify_message_sent_received(group_key_id, producer_id, consumers_ids, messa
 
 #------------------------------------------------------------------------------
 
-def verify_file_create_upload_start(node, key_id, volume_path, filename='cat.txt', randomize_bytes=0):
+def verify_file_create_upload_start(node, key_id, volume_path, filename='cat.txt', randomize_bytes=0, verify_list_files=True, reliable_shares=True):
     virtual_filename = filename
     local_filepath = f'{volume_path}/{filename}'
     remote_path = f'{key_id}:{virtual_filename}'
@@ -794,8 +811,9 @@ def verify_file_create_upload_start(node, key_id, volume_path, filename='cat.txt
     if randomize_bytes == 0:
         run_ssh_command_and_wait(node, f'echo "{node}" > {local_filepath}')
     else:
-        run_ssh_command_and_wait(node, f'python -c "import os, base64; print(base64.b64encode(os.urandom({randomize_bytes})).decode())" > {local_filepath}')
-    file_list_all_v1(node)
+        run_ssh_command_and_wait(node, f'python -c "import os, base64; print(base64.b64encode(os.urandom({randomize_bytes})).decode()[:{randomize_bytes}])" > {local_filepath}')
+    if verify_list_files:
+        file_list_all_v1(node, reliable_shares=reliable_shares)
     file_create_v1(node, remote_path)
     file_upload_start_v1(node, remote_path, local_filepath)
     packet_list_v1(node, wait_all_finish=True)
@@ -803,12 +821,11 @@ def verify_file_create_upload_start(node, key_id, volume_path, filename='cat.txt
     return local_filepath, remote_path, download_filepath
 
 
-def verify_file_download_start(node, remote_path, destination_path, verify_from_local_path=None, verify_list_files=True):
+def verify_file_download_start(node, remote_path, destination_path, verify_from_local_path=None, verify_list_files=True, reliable_shares=True):
     if verify_list_files:
-        file_list_all_v1(node)
+        file_list_all_v1(node, reliable_shares=reliable_shares)
     file_download_start_v1(node, remote_path=remote_path, destination=os.path.dirname(destination_path))
     if verify_from_local_path is not None:
-        customer_1_file_body_source = run_ssh_command_and_wait('customer-1', f'cat {verify_from_local_path}')[0].strip()
-        customer_1_file_body_downloaded = run_ssh_command_and_wait('customer-1', f'cat {destination_path}')[0].strip()
-        assert customer_1_file_body_source == customer_1_file_body_downloaded
-    
+        file_body_source = run_ssh_command_and_wait(node, f'cat {verify_from_local_path}')[0].strip()
+        file_body_downloaded = run_ssh_command_and_wait(node, f'cat {destination_path}')[0].strip()
+        assert file_body_source == file_body_downloaded

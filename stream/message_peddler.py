@@ -704,7 +704,7 @@ def save_stream(queue_id):
     producers_dir = os.path.join(queue_dir, 'producers')
     stream_info = streams()[queue_id]
     if _Debug:
-        lg.args(_DebugLevel, queue_id=queue_id, typ=type(queue_id), queue_dir=queue_dir)
+        lg.args(_DebugLevel, queue_id=queue_id, typ=type(queue_id))
     if not os.path.isdir(messages_dir):
         bpio._dirs_make(messages_dir)
     if not os.path.isdir(consumers_dir):
@@ -773,7 +773,7 @@ def save_consumer(queue_id, consumer_id):
     consumer_path = os.path.join(consumers_dir, consumer_id)
     ret = local_fs.WriteTextFile(consumer_path, jsn.dumps(consumer_info))
     if _Debug:
-        lg.args(_DebugLevel, queue_id=queue_id, consumer_id=consumer_id, consumer_path=consumer_path, ret=ret)
+        lg.args(_DebugLevel, queue_id=queue_id, consumer_id=consumer_id, ret=ret)
     return ret
 
 
@@ -838,7 +838,7 @@ def save_producer(queue_id, producer_id):
     producer_path = os.path.join(producers_dir, producer_id)
     ret = local_fs.WriteTextFile(producer_path, jsn.dumps(producer_info))
     if _Debug:
-        lg.args(_DebugLevel, queue_id=queue_id, producer_id=producer_id, producer_path=producer_path, ret=ret)
+        lg.args(_DebugLevel, queue_id=queue_id, producer_id=producer_id, ret=ret)
     return ret
 
 
@@ -856,7 +856,7 @@ def erase_producer(queue_id, producer_id):
         lg.exc()
         return False
     if _Debug:
-        lg.args(_DebugLevel, queue_id=queue_id, producer_id=producer_id, producer_path=producer_path)
+        lg.args(_DebugLevel, queue_id=queue_id, producer_id=producer_id)
     return True
 
 #------------------------------------------------------------------------------
@@ -1294,6 +1294,14 @@ class MessagePeddler(automat.Automat):
             lg.args(_DebugLevel, queue_id=queue_id, consumer_id=consumer_id, producer_id=producer_id,
                     position=position, archive_folder_path=archive_folder_path)
         queue_keeper_result = Deferred()
+        if _Debug:
+            queue_keeper_result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='message_peddler._do_check_create_queue_keeper')
+        qk = queue_keeper.check_create(customer_idurl=customer_idurl, auto_create=True)
+        if qk.known_position >= 0 and position >= 0:
+            if position > qk.known_position:
+                lg.warn('SKIP request, current known position is %d but requested position is %d' % (qk.known_position, position, ))
+                p2p_service.SendFail(request_packet, 'requested position is ahead of current position of the broker')
+                return
         queue_keeper_result.addCallback(
             self._on_queue_keeper_connect_result,
             queue_id=queue_id,
@@ -1303,9 +1311,6 @@ class MessagePeddler(automat.Automat):
             request_packet=request_packet,
             result_defer=result_defer,
         )
-        if _Debug:
-            queue_keeper_result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='message_peddler._do_check_create_queue_keeper')
-        qk = queue_keeper.check_create(customer_idurl=customer_idurl, auto_create=True)
         qk.automat(
             'connect',
             queue_id=queue_id,
@@ -1421,6 +1426,8 @@ class MessagePeddler(automat.Automat):
                     last_sequence_id=last_sequence_id, request_packet=request_packet)
         if not result:
             lg.err('queue keeper failed to connect')
+            p2p_service.SendFail(request_packet, 'failed to connect')
+            result_defer.callback(False)
             return None
         if queue_id not in streams():
             open_stream(queue_id)

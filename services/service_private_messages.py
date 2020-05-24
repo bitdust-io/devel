@@ -90,12 +90,11 @@ class PrivateMessagesService(LocalService):
         new_idurl = id_url.field(evt.data['new_idurl'])
         contacts_changed = False
         for idurl, alias in list(contactsdb.correspondents()):
-            if old_idurl == id_url.field(idurl):
+            if old_idurl.to_bin() == id_url.field(idurl).to_bin():
                 contactsdb.remove_correspondent(idurl)
                 contactsdb.add_correspondent(new_idurl.to_bin(), alias)
                 contacts_changed = True
-                lg.info('found correspond idurl rotated : %r -> %r' % (
-                    evt.data['old_idurl'], evt.data['new_idurl'], ))
+                lg.info('found correspond idurl rotated : %r -> %r' % (old_idurl, new_idurl, ))
         if contacts_changed:
             contactsdb.save_correspondents()
 
