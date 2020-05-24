@@ -456,6 +456,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
         return api.identity_recover(
             private_key_source=private_key_source,
             known_idurl=data.get('known_idurl'),
+            join_network=bool(data.get('join_network', '0') in ['1', 'true', ]),
         )
 
     @DELETE('^/i/d$')
