@@ -80,25 +80,25 @@ def start_all_nodes(event_loop, verbose=False):
         # first seed to be started immediately, all other seeds must wait a bit before start
         tsup.start_one_dht_seed(dhtseed, wait_seconds=(3 if number > 0 else 0), verbose=verbose)
     if verbose:
-        print('\nALL DHT SEEDS STARTED\n')
+        print('ALL DHT SEEDS STARTED\n')
 
     event_loop.run_until_complete(asyncio.gather(*[
         tsup.start_one_identity_server_async(idsrv, event_loop) for idsrv in ALL_ROLES.get('identity-server', [])
     ]))
     if verbose:
-        print(f'\nALL ID SERVERS STARTED\n')
+        print(f'ALL ID SERVERS STARTED\n')
 
     event_loop.run_until_complete(asyncio.gather(*[
         tsup.start_one_stun_server_async(stunsrv, event_loop) for stunsrv in ALL_ROLES.get('stun-server', [])
     ]))
     if verbose:
-        print(f'\nALL STUN SERVERS STARTED\n')
+        print(f'ALL STUN SERVERS STARTED\n')
 
     event_loop.run_until_complete(asyncio.gather(*[
         tsup.start_one_proxy_server_async(proxy_server, event_loop) for proxy_server in ALL_ROLES.get('proxy-server', [])
     ]))
     if verbose:
-        print(f'\nALL PROXY SERVERS STARTED\n')
+        print(f'ALL PROXY SERVERS STARTED\n')
 
     event_loop.run_until_complete(asyncio.gather(*[
         tsup.start_one_supplier_async(supplier, event_loop) for supplier in ALL_ROLES.get('supplier', [])

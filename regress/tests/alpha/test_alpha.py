@@ -1343,20 +1343,21 @@ def scenario17(old_customer_1_info):
     else:
         assert False, 'customer-restore was not able to recover identity after few attempts'
 
-    response = request_get('customer-restore', 'network/connected/v1?wait_timeout=1')
-    assert response.json()['status'] == 'ERROR'
+#     response = request_get('customer-restore', 'network/connected/v1?wait_timeout=1')
+#     assert response.json()['status'] == 'ERROR'
+# 
+#     for _ in range(5):
+#         response = request_get('customer-restore', 'network/connected/v1?wait_timeout=5')
+#         if response.json()['status'] == 'OK':
+#             break
+#         time.sleep(5)
+#     else:
+#         assert False, 'customer-restore was not able to join the network after identity recover'
 
-    for _ in range(5):
-        response = request_get('customer-restore', 'network/connected/v1?wait_timeout=5')
-        if response.json()['status'] == 'OK':
-            break
-        time.sleep(5)
-    else:
-        assert False, 'customer-restore was not able to join the network after identity recover'
+    kw.service_info_v1('customer-restore', 'service_customer', 'ON')
+    kw.service_info_v1('customer-restore', 'service_shared_data', 'ON')
 
     kw.supplier_list_v1('customer-restore', expected_min_suppliers=2, expected_max_suppliers=2)
-
-    kw.service_info_v1('customer-restore', 'service_shared_data', 'ON')
 
     kw.supplier_list_dht_v1(
         customer_id='customer-1@id-a_8084',

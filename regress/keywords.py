@@ -716,7 +716,7 @@ def queue_producer_list_v1(node, extract_ids=False):
 #------------------------------------------------------------------------------
 
 def wait_packets_finished(nodes, verbose=False):
-    print('wait packets finished on %d nodes' % len(nodes))
+    print('wait %d nodes to stop sending packets' % len(nodes))
     for node in nodes:
         packet_list_v1(node, wait_all_finish=True, verbose=verbose)
         sys.stdout.write('.')

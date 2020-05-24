@@ -307,7 +307,6 @@
                 "join_network": true,
                 "known_dht_seeds": "dht-2:14441,dht-3:14441",
                 "known_id_servers": "id-b:8084:6661",
-                "preferred_routers": "http://id-b:8084/proxy-2.xml",
                 "block_size": "10 KB",
                 "num_suppliers": 2,
                 "supplier_candidates": "http://id-a:8084/supplier-3.xml,http://id-b:8084/supplier-4.xml"
@@ -414,10 +413,9 @@
                 "role": "customer",
                 "name": "customer-restore",
                 "join_network": false,
-                "num_suppliers": 2,
-                "known_id_servers": "id-a:8084:6661,id-b:8084:6661,id-c:8084:6661",
                 "known_dht_seeds": "dht-2:14441,dht-3:14441",
-                "preferred_routers": "http://id-a:8084/proxy-1.xml"
+                "num_suppliers": 2,
+                "preferred_routers": "http://id-b:8084/proxy-2.xml"
             }
         },
         "broker-1": {

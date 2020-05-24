@@ -627,7 +627,8 @@ async def stop_daemon_async(node, loop, skip_checks=False, verbose=False):
 #------------------------------------------------------------------------------
 
 def start_dht_seed(node, wait_seconds=0, dht_seeds='', attached_layers='', verbose=False):
-    print(f'\nNEW DHT SEED (with STUN SERVER) at [{node}]\n')
+    if verbose:
+        print(f'NEW DHT SEED (with STUN SERVER) at [{node}]')
     cmd = ''
     cmd += 'bitdust set logs/debug-level 18;'
     cmd += 'bitdust set logs/api-enabled true;'
@@ -656,14 +657,16 @@ def start_dht_seed(node, wait_seconds=0, dht_seeds='', attached_layers='', verbo
     run_ssh_command_and_wait(node, cmd)
     # start BitDust daemon
     time.sleep(wait_seconds)
-    start_daemon(node, verbose=verbose)
+    start_daemon(node, verbose=False)
     # get_client_certificate(node)
     health_check(node)
-    print(f'\nSTARTED DHT SEED (with STUN SERVER) [{node}]\n')
+    if verbose:
+        print(f'STARTED DHT SEED (with STUN SERVER) [{node}]')
 
 
-async def start_identity_server_async(node, loop):
-    print(f'\nNEW IDENTITY SERVER at [{node}]\n')
+async def start_identity_server_async(node, loop, verbose=True):
+    if verbose:
+        print(f'NEW IDENTITY SERVER at [{node}]')
     cmd = ''
     cmd += 'bitdust set logs/debug-level 18;'
     cmd += 'bitdust set logs/api-enabled true;'
@@ -687,11 +690,12 @@ async def start_identity_server_async(node, loop):
     await start_daemon_async(node, loop)
     # await get_client_certificate_async(node, loop)
     await health_check_async(node, loop)
-    print(f'\nSTARTED IDENTITY SERVER [{node}]\n')
+    if verbose:
+        print(f'STARTED IDENTITY SERVER [{node}]')
 
 
 async def start_stun_server_async(node, loop, dht_seeds=''):
-    print(f'\nNEW STUN SERVER at [{node}]\n')
+    print(f'NEW STUN SERVER at [{node}]')
     cmd = ''
     cmd += 'bitdust set logs/debug-level 18;'
     cmd += 'bitdust set logs/api-enabled true;'
@@ -720,12 +724,12 @@ async def start_stun_server_async(node, loop, dht_seeds=''):
     await start_daemon_async(node, loop)
     # await get_client_certificate_async(node, loop)
     await health_check_async(node, loop)
-    print(f'\nSTARTED STUN SERVER [{node}]\n')
+    print(f'STARTED STUN SERVER [{node}]')
 
 
 async def start_proxy_server_async(node, identity_name, loop, min_servers=1, max_servers=1, known_servers='',
                                    preferred_servers='', health_check_interval_seconds=None, dht_seeds=''):
-    print(f'\nNEW PROXY SERVER {identity_name} at [{node}]\n')
+    print(f'NEW PROXY SERVER {identity_name} at [{node}]')
     cmd = ''
     cmd += 'bitdust set logs/debug-level 18;'
     cmd += 'bitdust set logs/api-enabled true;'
@@ -764,13 +768,13 @@ async def start_proxy_server_async(node, identity_name, loop, min_servers=1, max
     await health_check_async(node, loop)
     await create_identity_async(node, identity_name, loop)
     await connect_network_async(node, loop)
-    print(f'\nSTARTED PROXY SERVER [{node}]\n')
+    print(f'STARTED PROXY SERVER [{node}]')
 
 
 async def start_supplier_async(node, identity_name, loop, join_network=True, dht_seeds='',
                                min_servers=1, max_servers=1, known_servers='',
                                preferred_servers='', health_check_interval_seconds=None, preferred_routers=''):
-    print(f'\nNEW SUPPLIER {identity_name} at [{node}]\n')
+    print(f'NEW SUPPLIER {identity_name} at [{node}]')
     cmd = ''
     cmd += 'bitdust set logs/debug-level 18;'
     cmd += 'bitdust set logs/api-enabled true;'
@@ -814,13 +818,13 @@ async def start_supplier_async(node, identity_name, loop, join_network=True, dht
         await connect_network_async(node, loop)
         await service_started_async(node, 'service_supplier', loop)
         await packet_list_async(node, loop)
-    print(f'\nSTARTED SUPPLIER [{node}]\n')
+    print(f'STARTED SUPPLIER [{node}]')
 
 
 async def start_message_broker_async(node, identity_name, loop, join_network=True,
                                      min_servers=1, max_servers=1, known_servers='', dht_seeds='',
                                      preferred_servers='', health_check_interval_seconds=None, preferred_routers=''):
-    print(f'\nNEW MESSAGE BROKER {identity_name} at [{node}]\n')
+    print(f'NEW MESSAGE BROKER {identity_name} at [{node}]')
     cmd = ''
     cmd += 'bitdust set logs/debug-level 18;'
     cmd += 'bitdust set logs/api-enabled true;'
@@ -864,7 +868,7 @@ async def start_message_broker_async(node, identity_name, loop, join_network=Tru
         await connect_network_async(node, loop)
         await service_started_async(node, 'service_message_broker', loop)
         await packet_list_async(node, loop)
-    print(f'\nSTARTED MESSAGE BROKER [{node}]\n')
+    print(f'STARTED MESSAGE BROKER [{node}]')
 
 
 async def start_customer_async(node, identity_name, loop, join_network=True, num_suppliers=2, block_size=None,
@@ -874,7 +878,7 @@ async def start_customer_async(node, identity_name, loop, join_network=True, num
     if sleep_before_start:
         # print('\nsleep %d seconds before start customer %r\n' % (sleep_before_start, identity_name))
         await asyncio.sleep(sleep_before_start)
-    print('\nNEW CUSTOMER %r at [%s]\n' % (identity_name, node, ))
+    print('NEW CUSTOMER %r at [%s]' % (identity_name, node, ))
     cmd = ''
     cmd += 'bitdust set logs/debug-level 18;'
     cmd += 'bitdust set logs/api-enabled true;'
@@ -927,7 +931,7 @@ async def start_customer_async(node, identity_name, loop, join_network=True, num
         await connect_network_async(node, loop)
         await service_started_async(node, 'service_shared_data', loop)
         await packet_list_async(node, loop)
-    print(f'\nSTARTED CUSTOMER [{node}]\n')
+    print(f'STARTED CUSTOMER [{node}]')
 
 #------------------------------------------------------------------------------
 
