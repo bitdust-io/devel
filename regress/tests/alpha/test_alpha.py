@@ -626,15 +626,23 @@ def scenario9():
     kw.config_set_v1('proxy-rotated', 'services/identity-propagate/automatic-rotate-enabled', 'true')
     kw.config_set_v1('proxy-rotated', 'services/identity-propagate/known-servers',
                      'id-a:8084:6661,id-b:8084:6661,id-c:8084:6661')
+    kw.config_set_v1('proxy-rotated', 'services/identity-propagate/preferred-servers', '')
+
     kw.config_set_v1('customer-rotated', 'services/identity-propagate/automatic-rotate-enabled', 'true')
     kw.config_set_v1('customer-rotated', 'services/identity-propagate/known-servers',
                      'id-a:8084:6661,id-b:8084:6661,id-c:8084:6661')
+    kw.config_set_v1('customer-rotated', 'services/identity-propagate/preferred-servers', '')
+
     kw.config_set_v1('supplier-rotated', 'services/identity-propagate/automatic-rotate-enabled', 'true')
     kw.config_set_v1('supplier-rotated', 'services/identity-propagate/known-servers',
                      'id-a:8084:6661,id-b:8084:6661,id-c:8084:6661')
+    kw.config_set_v1('supplier-rotated', 'services/identity-propagate/preferred-servers', '')
+
     kw.config_set_v1('broker-rotated', 'services/identity-propagate/automatic-rotate-enabled', 'true')
     kw.config_set_v1('broker-rotated', 'services/identity-propagate/known-servers',
                      'id-a:8084:6661,id-b:8084:6661,id-c:8084:6661')
+    kw.config_set_v1('broker-rotated', 'services/identity-propagate/preferred-servers', '')
+
     kw.config_set_v1('customer-3', 'services/employer/candidates', '')
 
     # put identity server offline
@@ -1121,25 +1129,6 @@ def scenario14(old_customer_1_info, customer_1_shared_file_info):
 
     kw.service_info_v1('customer-1', 'service_shared_data', 'ON')
 
-    kw.supplier_list_dht_v1(
-        customer_id='customer-1@id-a_8084',
-        observers_ids=['customer-1@id-a_8084', 'customer-3@id-a_8084', ],
-        expected_ecc_map='ecc/2x2',
-        expected_suppliers_number=2,
-    )
-    kw.supplier_list_dht_v1(
-        customer_id='customer-1@id-a_8084',
-        observers_ids=['customer-3@id-a_8084', 'customer-1@id-a_8084', ],
-        expected_ecc_map='ecc/2x2',
-        expected_suppliers_number=2,
-    )
-    kw.supplier_list_dht_v1(
-        customer_id='customer-1@id-a_8084',
-        observers_ids=['supplier-2@id-b_8084', 'customer-3@id-a_8084', 'customer-1@id-a_8084', ],
-        expected_ecc_map='ecc/2x2',
-        expected_suppliers_number=2,
-    )
-
     # make sure supplier was replaced
     count = 0
     while True:
@@ -1191,34 +1180,9 @@ def scenario15(old_customer_1_info, customer_1_shared_file_info):
     possible_suppliers.difference_update(set(customer_1_supplier_idurls_before))
     new_supplier_idurl = list(possible_suppliers)[0]
 
-    kw.supplier_list_dht_v1(
-        customer_id='customer-1@id-a_8084',
-        observers_ids=[new_supplier_idurl, 'customer-2@id-b_8084', 'customer-3@id-a_8084', ],
-        expected_ecc_map='ecc/2x2',
-        expected_suppliers_number=2,
-    )
-    kw.supplier_list_dht_v1(
-        customer_id='customer-1@id-a_8084',
-        observers_ids=['customer-2@id-b_8084', 'customer-3@id-a_8084', ],
-        expected_ecc_map='ecc/2x2',
-        expected_suppliers_number=2,
-    )
-    kw.supplier_list_dht_v1(
-        customer_id='customer-1@id-a_8084',
-        observers_ids=['customer-3@id-a_8084', 'customer-1@id-a_8084', ],
-        expected_ecc_map='ecc/2x2',
-        expected_suppliers_number=2,
-    )
-    kw.supplier_list_dht_v1(
-        customer_id='customer-1@id-a_8084',
-        observers_ids=['supplier-2@id-b_8084', 'customer-3@id-a_8084', 'customer-1@id-a_8084', ],
-        expected_ecc_map='ecc/2x2',
-        expected_suppliers_number=2,
-    )
-
     response = request_put('customer-1', 'supplier/switch/v1', json={
         'position': '1',
-        'new_global_id': new_supplier_idurl,
+        'new_idurl': new_supplier_idurl,
     })
     assert response.status_code == 200
 
