@@ -157,25 +157,11 @@ regress_clean_run_report:
 	PYTHON_VERSION=3.6 _DEBUG=1 _PAUSE_BEFORE=0 make --no-print-directory -C regress/ -j 1 run_parallel
 	make --no-print-directory -C regress/ report
 
-regress_clean_run_parallel_2:
+regress_clean_run_log_py27:
 	make --no-print-directory -C regress/ stop_all
 	make --no-print-directory -C regress/ clean_all
-	PYTHON_VERSION=3.6 make --no-print-directory -C regress/ prepare
-	PYTHON_VERSION=3.6 _DEBUG=1 make --no-print-directory -C regress/ -j 2 run_parallel
-	make --no-print-directory -C regress/ report
-
-regress_clean_run_parallel_3:
-	make --no-print-directory -C regress/ stop_all
-	make --no-print-directory -C regress/ clean_all
-	PYTHON_VERSION=3.6 make --no-print-directory -C regress/ prepare
-	PYTHON_VERSION=3.6 _DEBUG=1 make --no-print-directory -C regress/ -j 3 run_parallel
-	make --no-print-directory -C regress/ report
-
-regress_clean_run_parallel_4:
-	make --no-print-directory -C regress/ stop_all
-	make --no-print-directory -C regress/ clean_all
-	PYTHON_VERSION=3.6 make --no-print-directory -C regress/ prepare
-	PYTHON_VERSION=3.6 _DEBUG=1 make --no-print-directory -C regress/ -j 4 run_parallel
+	PYTHON_VERSION=2.7.15 make --no-print-directory -C regress/ prepare
+	PYTHON_VERSION=2.7.15 _DEBUG=1 make --no-print-directory -C regress/ run_all_log
 	make --no-print-directory -C regress/ report
 
 regress_clean_run_log_py3:
