@@ -75,7 +75,7 @@ from testsupport import stop_daemon, run_ssh_command_and_wait, request_get, requ
 import keywords as kw
 
 SUPPLIERS_IDS = ['supplier-1', 'supplier-2', 'supplier-3', 'supplier-4', 'supplier-5', 'supplier-rotated', ]
-BROKERS_IDS = ['broker-1', 'broker-2', 'broker-3', 'broker-4', 'broker-rotated', ]
+BROKERS_IDS = ['broker-1', 'broker-2', 'broker-3', 'broker-4', ]
 CUSTOMERS_IDS = ['customer-1', 'customer-2', 'customer-3', 'customer-4', 'customer-rotated', ]
 ROTATED_NODES = ['supplier-rotated', 'customer-rotated', 'broker-rotated', 'proxy-rotated', ]
 
@@ -165,8 +165,8 @@ def prepare():
     kw.wait_service_state(CUSTOMERS_IDS, 'service_customer', 'ON')
     kw.wait_service_state(CUSTOMERS_IDS, 'service_shared_data', 'ON')
     kw.wait_service_state(CUSTOMERS_IDS, 'service_private_groups', 'ON')
-    kw.wait_service_state(BROKERS_IDS, 'service_message_broker', 'ON')
-    kw.wait_packets_finished(CUSTOMERS_IDS + BROKERS_IDS + SUPPLIERS_IDS)
+    kw.wait_service_state(BROKERS_IDS + ['broker-rotated', ], 'service_message_broker', 'ON')
+    kw.wait_packets_finished(CUSTOMERS_IDS + BROKERS_IDS + ['broker-rotated', ] + SUPPLIERS_IDS)
 
 
 def scenario1():
@@ -883,7 +883,7 @@ def scenario12_begin():
 
     kw.group_join_v1('customer-4', customer_4_group_key_id)
 
-    kw.wait_packets_finished(CUSTOMERS_IDS + BROKERS_IDS)
+    kw.wait_packets_finished(CUSTOMERS_IDS + BROKERS_IDS + ['broker-rotated', ])
 
     customer_4_group_info_active = kw.group_info_v1('customer-4', customer_4_group_key_id)['result']
     assert customer_4_group_info_active['state'] == 'IN_SYNC!'
@@ -909,7 +909,7 @@ def scenario12_begin():
     # customer-2 joins the group
     kw.group_join_v1('customer-2', customer_4_group_key_id)
 
-    kw.wait_packets_finished(CUSTOMERS_IDS + BROKERS_IDS)
+    kw.wait_packets_finished(CUSTOMERS_IDS + BROKERS_IDS + ['broker-rotated', ])
 
     assert kw.group_info_v1('customer-2', customer_4_group_key_id)['result']['last_sequence_id'] == -1
 

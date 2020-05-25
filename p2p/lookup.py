@@ -559,6 +559,9 @@ class DiscoveryTask(object):
             self._on_node_proces_failed(None, node)
             return None
         if id_url.is_in(idurl, self.ignore_idurls):
+            if _Debug:
+                lg.dbg(_DebugLevel, 'lookup.DiscoveryTask[%r]._on_identity_cached IGNORE %r' % (self.id, idurl))
+            self._on_node_proces_failed(None, node)
             return None
         self.cached_count += 1
         idurl = id_url.to_bin(idurl)
