@@ -612,7 +612,7 @@ def identity_backup(destination_filepath):
     return OK(message='WARNING! keep your master key in a safe place and never ever publish it anywhere!')
 
 
-def identity_recover(private_key_source, known_idurl=None):
+def identity_recover(private_key_source, known_idurl=None, join_network=False):
     """
     Restores your identity from backup copy.
 
@@ -669,6 +669,9 @@ def identity_recover(private_key_source, known_idurl=None):
                 return ERROR('identity recovery FAILED', api_method='identity_recover')
             r = my_id.getLocalIdentity().serialize_json()
             r['xml'] = my_id.getLocalIdentity().serialize(as_text=True)
+            if join_network:
+                from p2p import network_service
+                network_service.connected(wait_timeout=0.1)
             ret.callback(OK(r, api_method='identity_recover'))
             return
 

@@ -64,6 +64,12 @@ def read_customer_suppliers(customer_idurl, as_fields=True, use_cache=True):
         customer_idurl = id_url.field(customer_idurl)
     else:
         customer_idurl = id_url.to_bin(customer_idurl)
+
+    rotated_idurls = id_url.list_known_idurls(customer_idurl, num_revisions=3)
+
+    if _Debug:
+        lg.args(_DebugLevel, customer_idurl=customer_idurl, rotated_idurls=rotated_idurls, as_fields=as_fields, use_cache=use_cache)
+
     result = Deferred()
 
     def _do_identity_cache(ret):
@@ -91,7 +97,9 @@ def read_customer_suppliers(customer_idurl, as_fields=True, use_cache=True):
         id_cache_story.addErrback(result.errback)
         return id_cache_story
 
-    def _do_verify(dht_value):
+    def _do_verify(dht_value, customer_idurl_bin):
+        if customer_idurl_bin in rotated_idurls:
+            rotated_idurls.remove(customer_idurl_bin)
         ret = {
             'suppliers': [],
             'ecc_map': None,
@@ -101,7 +109,14 @@ def read_customer_suppliers(customer_idurl, as_fields=True, use_cache=True):
             'timestamp': None,
         }
         if not dht_value or not isinstance(dht_value, dict):
-            result.callback(ret)
+            if not rotated_idurls:
+                result.callback(ret)
+                return ret
+            another_customer_idurl_bin = rotated_idurls.pop(0)
+            lg.warn('found another rotated idurl %r and re-try reading customer suppliers' % another_customer_idurl_bin)
+            d = dht_records.get_suppliers(another_customer_idurl_bin, return_details=True, use_cache=use_cache)
+            d.addCallback(_do_verify, another_customer_idurl_bin)
+            d.addErrback(_on_error)
             return ret
         try:
             _ecc_map = strng.to_text(dht_value['ecc_map'])
@@ -161,8 +176,11 @@ def read_customer_suppliers(customer_idurl, as_fields=True, use_cache=True):
         result.errback(err)
         return None
 
-    d = dht_records.get_suppliers(id_url.to_bin(customer_idurl), return_details=True, use_cache=use_cache)
-    d.addCallback(_do_verify)
+    customer_idurl_bin = id_url.to_bin(customer_idurl)
+#     if customer_idurl_bin in rotated_idurls:
+#         rotated_idurls.remove(customer_idurl_bin)
+    d = dht_records.get_suppliers(customer_idurl_bin, return_details=True, use_cache=use_cache)
+    d.addCallback(_do_verify, customer_idurl_bin)
     d.addErrback(_on_error)
     return result
 

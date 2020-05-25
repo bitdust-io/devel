@@ -277,6 +277,13 @@ class GroupMember(automat.Automat):
         unregister_group_member(self)
         return automat.Automat.unregister(self)
 
+    def state_changed(self, oldstate, newstate, event, *args, **kwargs):
+        """
+        This method intended to catch the moment when automat's state was changed.
+        """
+        if newstate == 'QUEUE?':
+            self.automat('instant')
+
     def A(self, event, *args, **kwargs):
         """
         The state machine code, generated using `visio2python <http://bitdust.io/visio2python/>`_ tool.
@@ -285,6 +292,7 @@ class GroupMember(automat.Automat):
         if self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'DISCONNECTED'
+                self.SyncedUp=False
                 self.doInit(*args, **kwargs)
         #---DISCONNECTED---
         elif self.state == 'DISCONNECTED':
@@ -300,6 +308,7 @@ class GroupMember(automat.Automat):
         elif self.state == 'DHT_READ?':
             if event == 'dht-read-failed':
                 self.state = 'DISCONNECTED'
+                self.SyncedUp=False
                 self.doDisconnected(event, *args, **kwargs)
             elif event == 'shutdown' or event == 'leave':
                 self.state = 'CLOSED'
@@ -311,14 +320,13 @@ class GroupMember(automat.Automat):
                 self.doConnectLookupRotateBrokers(*args, **kwargs)
             elif event == 'message-in':
                 self.doProcess(*args, **kwargs)
+            elif event == 'queue-in-sync':
+                self.SyncedUp=True
         #---QUEUE?---
         elif self.state == 'QUEUE?':
-            if event == 'queue-in-sync':
-                self.state = 'IN_SYNC!'
-                self.doPushPendingMessages(*args, **kwargs)
-                self.doConnected(*args, **kwargs)
-            elif event == 'queue-read-failed':
+            if event == 'queue-read-failed':
                 self.state = 'DISCONNECTED'
+                self.SyncedUp=False
                 self.doMarkDeadBroker(event, *args, **kwargs)
                 self.doDisconnected(event, *args, **kwargs)
             elif event == 'message-in':
@@ -334,8 +342,14 @@ class GroupMember(automat.Automat):
                 self.doReadArchive(*args, **kwargs)
             elif event == 'reconnect' or event == 'push-message-failed' or event == 'replace-active-broker':
                 self.state = 'DHT_READ?'
+                self.SyncedUp=False
                 self.doMarkDeadBroker(event, *args, **kwargs)
                 self.doDHTReadBrokers(*args, **kwargs)
+            elif event == 'queue-in-sync' or ( event == 'instant' and self.SyncedUp ):
+                self.state = 'IN_SYNC!'
+                self.SyncedUp=True
+                self.doPushPendingMessages(*args, **kwargs)
+                self.doConnected(*args, **kwargs)
         #---IN_SYNC!---
         elif self.state == 'IN_SYNC!':
             if event == 'message-in' and self.isInSync(*args, **kwargs):
@@ -351,9 +365,11 @@ class GroupMember(automat.Automat):
                 self.doNotifyMessageAccepted(*args, **kwargs)
             elif event == 'message-in' and not self.isInSync(*args, **kwargs):
                 self.state = 'QUEUE?'
+                self.SyncedUp=False
                 self.doReadQueue(*args, **kwargs)
             elif event == 'reconnect' or event == 'push-message-failed' or event == 'replace-active-broker':
                 self.state = 'DHT_READ?'
+                self.SyncedUp=False
                 self.doMarkDeadBroker(event, *args, **kwargs)
                 self.doDHTReadBrokers(*args, **kwargs)
         #---CLOSED---
@@ -363,6 +379,7 @@ class GroupMember(automat.Automat):
         elif self.state == 'BROKERS?':
             if event == 'brokers-failed':
                 self.state = 'DISCONNECTED'
+                self.SyncedUp=False
                 self.doForgetBrokers(*args, **kwargs)
                 self.doDisconnected(event, *args, **kwargs)
             elif event == 'shutdown' or event == 'leave':
@@ -376,6 +393,8 @@ class GroupMember(automat.Automat):
                 self.doReadQueue(*args, **kwargs)
             elif event == 'message-in':
                 self.doProcess(*args, **kwargs)
+            elif event == 'queue-in-sync':
+                self.SyncedUp=True
         return None
 
     def isDeadBroker(self, *args, **kwargs):
@@ -678,7 +697,9 @@ class GroupMember(automat.Automat):
         packets_to_ack.clear()
         if not received_group_messages:
             if latest_known_sequence_id < self.last_sequence_id:
-                raise Exception('found queue latest sequence %d is behind of my current position %d' % (latest_known_sequence_id, self.last_sequence_id, ))
+                lg.warn('found queue latest sequence %d is behind of my current position %d' % (latest_known_sequence_id, self.last_sequence_id, ))
+                self.automat('queue-in-sync')
+                return True
             if latest_known_sequence_id > self.last_sequence_id:
                 lg.warn('nothing received, but found queue latest sequence %d is ahead of my current position %d, need to read messages from archive' % (
                     latest_known_sequence_id, self.last_sequence_id, ))
@@ -788,7 +809,11 @@ class GroupMember(automat.Automat):
             owner_id=self.group_creator_id,
             supplier_id=global_id.idurl2glob(possible_broker_idurl),
         )
-        group_key_info = my_keys.get_key_info(self.group_key_id, include_private=False, include_signature=True)
+        try:
+            group_key_info = my_keys.get_key_info(self.group_key_id, include_private=False, include_signature=True)
+        except:
+            lg.exc()
+            group_key_info = {}
         service_request_params = {
             'action': action,
             'queue_id': queue_id,
@@ -1154,7 +1179,6 @@ class GroupMember(automat.Automat):
         self._do_process_group_messages(received_group_messages, latest_known_sequence_id)
 
     def _on_read_archive_failed(self, err, received_messages):
-        if _Debug:
-            lg.args(_DebugLevel, err=err, received_messages=received_messages)
+        lg.err('received %d recent messages but read archived messages failed with: %r' % (len(received_messages), err, ))
         self.automat('queue-read-failed')
         return None

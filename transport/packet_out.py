@@ -242,13 +242,23 @@ def search_by_response_packet(newpacket, proto=None, host=None):
         lg.out(_DebugLevel, 'packet_out.search_by_response_packet for incoming [%s/%s/%s]:%s(%s) from [%s://%s] :\n%s' % (
             nameurl.GetName(incoming_owner_idurl), nameurl.GetName(incoming_creator_idurl), nameurl.GetName(incoming_remote_idurl),
             newpacket.Command, newpacket.PacketID, proto, host, ('\n'.join([strng.to_text(p.outpacket) for p in queue()]))))
+    matching_packet_ids = []
+    matching_packet_ids.append(newpacket.PacketID.lower())
+    if newpacket.Command in [commands.Data(), commands.Retrieve(), ] and id_url.is_cached(newpacket.OwnerID) and newpacket.OwnerID == my_id.getIDURL():
+        my_rotated_idurls = id_url.list_known_idurls(my_id.getIDURL(), num_revisions=10, include_revisions=False)
+        for another_idurl in my_rotated_idurls:
+            another_packet_id = global_id.SubstitutePacketID(newpacket.PacketID, idurl=another_idurl).lower()
+            if another_packet_id not in matching_packet_ids:
+                matching_packet_ids.append(another_packet_id)
+    if len(matching_packet_ids) > 1:
+        lg.warn('multiple packet IDs expecting to match for that packet: %r' % matching_packet_ids)
     for p in queue():
-        # TODO: investigate 
-        if p.outpacket.PacketID.lower() != newpacket.PacketID.lower():
+        # TODO: investigate more
+        if p.outpacket.PacketID.lower() not in matching_packet_ids:
             # PacketID of incoming packet not matching with that outgoing packet
             continue
         if p.outpacket.PacketID != newpacket.PacketID:
-            lg.err('packet ID in queue "almost" matching with incoming: %s ~ %s' % (
+            lg.warn('packet ID in queue "almost" matching with incoming: %s ~ %s' % (
                 p.outpacket.PacketID, newpacket.PacketID, ))
         if not commands.IsCommandAck(p.outpacket.Command, newpacket.Command):
             # this command must not be in the reply

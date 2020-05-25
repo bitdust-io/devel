@@ -456,6 +456,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
         return api.identity_recover(
             private_key_source=private_key_source,
             known_idurl=data.get('known_idurl'),
+            join_network=bool(data.get('join_network', '0') in ['1', 'true', ]),
         )
 
     @DELETE('^/i/d$')
@@ -512,7 +513,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
         data = _request_data(request, mandatory_keys=['alias', ])
         return api.key_create(
             key_alias=data['alias'],
-            key_size=int(data.get('size', None)),
+            key_size=int(data['key_size']) if 'key_size' in data else None,
             label=data.get('label', ''),
             include_private=bool(data.get('include_private', '0') in ['1', 'true', ]),
         )
@@ -693,7 +694,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
         data = _request_data(request)
         return api.share_create(
             owner_id=data.get('owner_id', None),
-            key_size=int(data.get('key_size', None)),
+            key_size=int(data['key_size']) if 'key_size' in data else None,
             label=data.get('label', ''),
         )
 
@@ -756,7 +757,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
         data = _request_data(request)
         return api.group_create(
             creator_id=data.get('creator_id', None),
-            key_size=int(data.get('key_size', None)),
+            key_size=int(data['key_size']) if 'key_size' in data else None,
             label=data.get('label', ''),
         )
 

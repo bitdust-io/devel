@@ -199,7 +199,7 @@ def reset(conf_obj):
     conf_obj.setDefaultValue('services/private-messages/enabled', 'true')
     
     conf_obj.setDefaultValue('services/proxy-server/enabled', 'false')
-    conf_obj.setDefaultValue('services/proxy-server/routes-limit', 10)
+    conf_obj.setDefaultValue('services/proxy-server/routes-limit', 20)
     conf_obj.setDefaultValue('services/proxy-server/current-routes', '{}')
 
     conf_obj.setDefaultValue('services/proxy-transport/enabled', 'true')

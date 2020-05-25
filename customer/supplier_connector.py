@@ -237,8 +237,7 @@ class SupplierConnector(automat.Automat):
 
     def state_changed(self, oldstate, newstate, event, *args, **kwargs):
         """
-        This method intended to catch the moment when automat's state were
-        changed.
+        This method intended to catch the moment when automat's state was changed.
         """
         if newstate in ['CONNECTED', 'DISCONNECTED', 'NO_SERVICE']:
             supplierPath = settings.SupplierPath(self.supplier_idurl, customer_idurl=self.customer_idurl)
@@ -434,6 +433,8 @@ class SupplierConnector(automat.Automat):
             family_position=family_position,
             family_snapshot=family_snapshot,
         ))
+        if _Debug:
+            d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='supplier_connector.doPingRequestService')
         d.addErrback(lambda err: self.automat('fail', err))
 
     def doCancelService(self, *args, **kwargs):
