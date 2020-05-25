@@ -264,7 +264,7 @@ class SupplierFinder(automat.Automat):
         """
         Action method.
         """
-        tsk = lookup.random_supplier()
+        tsk = lookup.random_supplier(ignore_idurls=contactsdb.suppliers())
         tsk.result_defer.addCallback(self._nodes_lookup_finished)
         tsk.result_defer.addErrback(lambda err: self.automat('users-not-found'))
 
@@ -335,10 +335,10 @@ class SupplierFinder(automat.Automat):
             return
         found_idurl = None
         for idurl in idurls:
-            if id_url.is_in(idurl, contactsdb.suppliers(), as_field=False):
-                if _Debug:
-                    lg.out('    skip %r because already my supplier' % idurl)
-                continue
+#             if id_url.is_in(idurl, contactsdb.suppliers(), as_field=True):
+#                 if _Debug:
+#                     lg.out('    skip %r because already my supplier' % idurl)
+#                 continue
             ident = identitycache.FromCache(idurl)
             remoteprotos = set(ident.getProtoOrder())
             myprotos = set(my_id.getLocalIdentity().getProtoOrder())

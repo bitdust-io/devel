@@ -57,6 +57,7 @@ LAYER_REBUILDERS = 4
 LAYER_BROADCASTERS = 5
 LAYER_MERCHANTS = 6
 LAYER_MESSAGE_BROKERS = 7
+LAYER_CUSTOMERS = 8
 
 LAYERS_REGISTRY = {
     LAYER_ID_SERVERS: 'ID_SERVERS',
@@ -66,6 +67,7 @@ LAYERS_REGISTRY = {
     LAYER_BROADCASTERS: 'BROADCASTERS',
     LAYER_MERCHANTS: 'MERCHANTS',
     LAYER_MESSAGE_BROKERS: 'MESSAGE_BROKERS',
+    LAYER_CUSTOMERS: 'CUSTOMERS',
 }
 
 #------------------------------------------------------------------------------
@@ -111,6 +113,14 @@ _Rules = {
         'position': [{'op': 'exist', }, ],
         'archive_folder_path': [{'op': 'exist', }, ],
     },
+    # customers relations are not stored, so this is actually not needed, but decided to add it here just in case:
+    'customers': {
+        'key': [{'op': 'exist', }, ],
+        'type': [{'op': 'equal', 'arg': 'customers', }, ],
+        'timestamp': [{'op': 'exist', }, ],
+        'customer_idurl': [{'op': 'exist', }, ],
+        'revision': [{'op': 'exist', }, ],
+    },
     'skip_validation': {
         'type': [{'op': 'equal', 'arg': 'skip_validation', }, ],
     },
@@ -121,6 +131,11 @@ _Rules = {
 def get_rules(record_type):
     global _Rules
     return _Rules.get(record_type, {})
+
+
+def layer_name(layer_id):
+    global LAYERS_REGISTRY
+    return LAYERS_REGISTRY.get(layer_id, 'UNKNOWN')
 
 #------------------------------------------------------------------------------
 

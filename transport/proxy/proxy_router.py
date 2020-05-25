@@ -831,9 +831,11 @@ class ProxyRouter(automat.Automat):
             self.event('routed-inbox-packet-received', (receiver_idurl, newpacket, info))
             return True
         # this packet is not related to any of the routes
-        if _Debug:
-            lg.out(_DebugLevel, '        proxy_router() SKIP packet %s from %s : no relations found' % (
-                newpacket, newpacket.CreatorID))
+        lg.err('unknown %r received, no relations found' % newpacket)
+        self.automat('unknown-packet-received', (newpacket, info))
+#         if _Debug:
+#             lg.out(_DebugLevel, '        proxy_router() SKIP packet %s from %s : no relations found' % (
+#                 newpacket, newpacket.CreatorID))
         return False
 
     def _on_network_connector_state_changed(self, oldstate, newstate, event, *args, **kwargs):

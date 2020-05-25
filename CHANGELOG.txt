@@ -2,6 +2,20 @@ Change Log
 ==========
 
 
+2020-05-25 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* get back to sequential regression tests
+* merged all regression test into one "alpha" test
+* added "join_network" parameter to api.identity_recover()
+* group_member() state machine to be able to handle intermedieate states
+* fix in online_status()
+* attempt to fix signature error issue
+* fix in id_registrator()
+* IDURL fix in proxy_router
+* make sure after identity rotate customer is still available via old IDURL
+
+
+
 2020-05-20 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * try to run tests in parallel mode
