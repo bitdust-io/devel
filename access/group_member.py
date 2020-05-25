@@ -812,7 +812,7 @@ class GroupMember(automat.Automat):
         try:
             group_key_info = my_keys.get_key_info(self.group_key_id, include_private=False, include_signature=True)
         except:
-            lg.exc()
+            lg.exc(self.group_key_id)
             group_key_info = {}
         service_request_params = {
             'action': action,
