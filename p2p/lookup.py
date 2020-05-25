@@ -150,28 +150,38 @@ def extract_discovered_idurls(count=1, layer_id=0):
 
 #------------------------------------------------------------------------------
 
-def random_proxy_router():
+def random_proxy_router(**kwargs):
     from dht import dht_records
-    return start(layer_id=dht_records.LAYER_PROXY_ROUTERS)
+    kwargs['layer_id'] = dht_records.LAYER_PROXY_ROUTERS
+    return start(**kwargs)
 
 
-def random_supplier():
+def random_supplier(**kwargs):
     from dht import dht_records
-    return start(layer_id=dht_records.LAYER_SUPPLIERS)
+    kwargs['layer_id'] = dht_records.LAYER_SUPPLIERS
+    return start(**kwargs)
 
 
-def random_message_broker():
+def random_message_broker(**kwargs):
     from dht import dht_records
-    return start(layer_id=dht_records.LAYER_MESSAGE_BROKERS)
+    kwargs['layer_id'] = dht_records.LAYER_MESSAGE_BROKERS
+    return start(**kwargs)
 
 
-def random_merchant():
+def random_merchant(**kwargs):
     from dht import dht_records
-    return start(layer_id=dht_records.LAYER_MERCHANTS)
+    kwargs['layer_id'] = dht_records.LAYER_MERCHANTS
+    return start(**kwargs)
+
+
+def random_customer(**kwargs):
+    from dht import dht_records
+    kwargs['layer_id'] = dht_records.LAYER_CUSTOMERS
+    return start(**kwargs)
 
 #------------------------------------------------------------------------------
 
-def start(count=1, consume=True, lookup_method=None, observe_method=None, process_method=None, force_discovery=False, layer_id=0):
+def start(count=1, consume=True, lookup_method=None, observe_method=None, process_method=None, force_discovery=False, ignore_idurls=[], layer_id=0):
     """
     NOTE: no parallel threads, DHT lookup can be started only one at time.
     """
@@ -182,6 +192,7 @@ def start(count=1, consume=True, lookup_method=None, observe_method=None, proces
         lookup_method=lookup_method,
         observe_method=observe_method,
         process_method=process_method,
+        ignore_idurls=ignore_idurls,
         layer_id=layer_id,
     )
     if not force_discovery and len(discovered_idurls(layer_id=layer_id)) > count:
@@ -328,6 +339,7 @@ class DiscoveryTask(object):
         lookup_method=None,
         observe_method=None,
         process_method=None,
+        ignore_idurls=[],
         layer_id=0,
     ):
         global _LookupMethod
@@ -339,6 +351,7 @@ class DiscoveryTask(object):
         self.lookup_method = lookup_method or _LookupMethod
         self.observe_method = observe_method or _ObserveMethod
         self.process_method = process_method or _ProcessMethod
+        self.ignore_idurls = ignore_idurls
         self.started = time.time()
         self.layer_id = layer_id
         self.count = count
@@ -542,8 +555,10 @@ class DiscoveryTask(object):
     def _on_identity_cached(self, idurl, node):
         if self.stopped:
             return None
-        if idurl is None:
+        if not idurl:
             self._on_node_proces_failed(None, node)
+            return None
+        if id_url.is_in(idurl, self.ignore_idurls):
             return None
         self.cached_count += 1
         idurl = id_url.to_bin(idurl)
