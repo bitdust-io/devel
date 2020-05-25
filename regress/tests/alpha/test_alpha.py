@@ -723,6 +723,9 @@ def scenario9():
     # make sure event "my-identity-rotate-complete" is triggered on rotated nodes
     kw.wait_event(ROTATED_NODES, 'my-identity-rotate-complete')
 
+    # disable proxy-rotated so it will not affect other scenarios
+    stop_daemon('proxy-rotated')
+
     new_proxy_info = {'idurl': new_proxy_idurl, 'sources': new_proxy_sources, 'global_id': new_proxy_global_id, }
     new_customer_info = {'idurl': new_customer_idurl, 'sources': new_customer_sources, 'global_id': new_customer_global_id, }
     new_supplier_info = {'idurl': new_supplier_idurl, 'sources': new_supplier_sources, 'global_id': new_supplier_global_id, }
@@ -1041,7 +1044,7 @@ def scenario12_end(old_customer_4_info):
     assert customer_2_group_info_offline['last_sequence_id'] == 10
 
     # disable broker-rotated so it will not affect other scenarios
-    kw.config_set_v1('broker-rotated', 'services/message-broker/enabled', 'false')
+    stop_daemon('broker-rotated')
 
 
 def scenario13_begin():
