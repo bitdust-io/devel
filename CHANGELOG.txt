@@ -4,6 +4,14 @@ Change Log
 
 2020-05-25 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
+* make possible to ignore specific idurls in p2p.lookup
+* fix scenario 12
+* fix scenario 14
+
+
+
+2020-05-25 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
 * get back to sequential regression tests
 * merged all regression test into one "alpha" test
 * added "join_network" parameter to api.identity_recover()
