@@ -52,6 +52,8 @@ from twisted.internet.defer import Deferred
 
 from logs import lg
 
+from main import config
+
 from p2p import commands
 from p2p import online_status
 from p2p import p2p_service
@@ -345,7 +347,8 @@ def on_incoming_message(request, info, status, error_message):
         lg.args(_DebugLevel, msg=json_message, handled=handled)
     if handled:
         return True
-    p2p_service.SendAckNoRequest(request.OwnerID, request.PacketID, response='consumed')
+    if config.conf().getBool('services/private-messages/acknowledge-unread-messages-enabled'):
+        p2p_service.SendAckNoRequest(request.OwnerID, request.PacketID, response='unread')
     return True
 
 

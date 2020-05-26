@@ -186,6 +186,7 @@ def defaults():
         'services/private-groups/message-ack-timeout': TYPE_NON_ZERO_POSITIVE_INTEGER,
         'services/private-groups/preferred-brokers': TYPE_TEXT,
         'services/private-messages/enabled': TYPE_BOOLEAN,
+        'services/private-messages/acknowledge-unread-messages-enabled': TYPE_BOOLEAN,
         'services/proxy-server/enabled': TYPE_BOOLEAN,
         'services/proxy-server/routes-limit': TYPE_POSITIVE_INTEGER,
         'services/proxy-server/current-routes': TYPE_TEXT,

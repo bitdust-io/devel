@@ -205,19 +205,20 @@ def scenario3():
 
     kw.service_info_v1('customer-1', 'service_private_messages', 'ON')
     kw.service_info_v1('customer-2', 'service_private_messages', 'ON')
-    random_message_1 = {
-        'random_message_1': base64.b32encode(os.urandom(20)).decode(),
-    }
-    # send message in different thread to get one in blocked `receive` call
-    t = threading.Timer(1.0, kw.message_send_v1, ['customer-1', 'master$customer-2@id-b_8084', random_message_1, 30, True, ])
-    t.start()
-    kw.message_receive_v1('customer-2', expected_data=random_message_1, timeout=16, polling_timeout=15)
 
-    # send another message to customer-2 while he is not listening for messages, customer-1 still receives an Ack()
+    # send first message to customer-2 while he is not listening for messages, customer-1 still receives an Ack()
     random_message_2 = {
         'random_message_2': base64.b32encode(os.urandom(20)).decode(),
     }
     kw.message_send_v1('customer-1', 'master$customer-2@id-b_8084', random_message_2, expect_consumed=False)
+
+    random_message_1 = {
+        'random_message_1': base64.b32encode(os.urandom(20)).decode(),
+    }
+    # send another message in different thread to get one in blocked `receive` call, now customer-2 listen for new messages
+    t = threading.Timer(1.0, kw.message_send_v1, ['customer-1', 'master$customer-2@id-b_8084', random_message_1, 30, True, ])
+    t.start()
+    kw.message_receive_v1('customer-2', expected_data=random_message_1, timeout=16, polling_timeout=15)
 
 
 def scenario4():
