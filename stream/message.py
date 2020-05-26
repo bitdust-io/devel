@@ -343,6 +343,9 @@ def on_incoming_message(request, info, status, error_message):
         lg.exc()
     if _Debug:
         lg.args(_DebugLevel, msg=json_message, handled=handled)
+    if handled:
+        return True
+    p2p_service.SendAckNoRequest(request.OwnerID, request.PacketID, response='consumed')
     return True
 
 
@@ -637,7 +640,7 @@ def do_read():
     """
     """
     known_consumers = list(message_queue().keys())
-    total_consumed = 0
+    total_handled = 0
     for consumer_id in known_consumers:
         if consumer_id not in message_queue() or len(message_queue()[consumer_id]) == 0:
             continue
@@ -661,7 +664,7 @@ def do_read():
         if not consumer_messages:
             message_queue()[consumer_id] = []
             continue
-        # callback is a one-time Deferred object, must call now it and release the callback
+        # callback is a one-time Deferred object, must call it now and release the callback
         if isinstance(cb_info['callback'], Deferred):
             if cb_info['callback'].called:
                 if _Debug:
@@ -677,25 +680,28 @@ def do_read():
                 continue
             consumers_callbacks().pop(consumer_id, None)
             message_queue()[consumer_id] = []
-            total_consumed += len(consumer_messages)
+            total_handled += len(consumer_messages)
             continue
         # callback is a "callable" method which we must not release
         message_queue()[consumer_id] = []
         try:
-            ok = cb_info['callback'](consumer_messages)
+            handled = cb_info['callback'](consumer_messages)
         except:
             lg.exc()
             consumers_callbacks().pop(consumer_id, None)
             # put back failed messages to the queue so consumer can re-try
             message_queue()[consumer_id] = pending_messages
             continue
-        if not ok:
+        if _Debug:
+            lg.args(_DebugLevel, handled=handled, cb_info=cb_info)
+        if handled is None:
             lg.err('failed consuming messages by consumer %r' % consumer_id)
             consumers_callbacks().pop(consumer_id, None)
             # put back failed messages to the queue so consumer can re-try
             message_queue()[consumer_id] = pending_messages
             continue
-        total_consumed += len(consumer_messages)
+        if handled:
+            total_handled += len(consumer_messages)
     if _Debug:
-        lg.args(_DebugLevel, total_consumed=total_consumed)
-    return total_consumed
+        lg.args(_DebugLevel, total_handled=total_handled)
+    return total_handled

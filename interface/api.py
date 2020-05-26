@@ -3107,7 +3107,9 @@ def message_send(recipient_id, data, ping_timeout=30, message_ack_timeout=15):
         message_ack_timeout=message_ack_timeout,
     )
     ret = Deferred()
-    result.addCallback(lambda packet: ret.callback(OK(strng.to_text(packet), api_method='message_send')))
+    result.addCallback(lambda packet: ret.callback(OK({
+        'consumed': strng.to_text(packet.Payload) == 'consumed',
+    }, api_method='message_send')))
     result.addErrback(lambda err: ret.callback(ERROR(err, api_method='message_send')))
     return ret
 
