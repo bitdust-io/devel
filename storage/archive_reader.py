@@ -54,6 +54,10 @@ import os
 
 #------------------------------------------------------------------------------
 
+from twisted.internet import reactor  # @UnresolvedImport
+
+#------------------------------------------------------------------------------
+
 from logs import lg
 
 from automats import automat
@@ -188,6 +192,7 @@ class ArchiveReader(automat.Automat):
         self.correctable_errors = 0
         self.requested_list_files = {}
         self.extracted_messages = []
+        self.request_list_files_timer = None
 
     def doDHTReadSuppliers(self, *args, **kwargs):
         """
@@ -265,6 +270,7 @@ class ArchiveReader(automat.Automat):
         self.correctable_errors = 0
         self.requested_list_files = None
         self.extracted_messages = None
+        self.request_list_files_timer = None
         self.destroy()
 
     def _do_request_list_files(self, suppliers_list):
@@ -286,9 +292,10 @@ class ArchiveReader(automat.Automat):
                     commands.Fail(): lambda resp, info: self._on_list_files_failed(supplier_pos),
                     None: lambda pkt_out: self._on_list_files_failed(supplier_pos),
                 },
-                timeout=15,
+                timeout=10,
             )
             self.requested_list_files[supplier_pos] = None if outpacket else False
+        self.request_list_files_timer = reactor.callLater(10, self._on_request_list_files_timeout)  # @UndefinedVariable
 
     def _do_select_archive_snapshots(self):
         iterID_and_path = backup_fs.WalkByID(self.archive_folder_path, iterID=backup_fs.fsID(self.queue_owner_idurl))
@@ -385,11 +392,21 @@ class ArchiveReader(automat.Automat):
         return None
 
     def _on_list_files_response(self, supplier_num, new_files_count):
+        if not self.requested_list_files:
+            lg.warn('skip ListFiles() response, requested_list_files object is empty')
+            return
+        if self.requested_list_files.get(supplier_num) is not None:
+            lg.warn('skip ListFiles() response, supplier record at position %d already set to %r' % (
+                supplier_num, self.requested_list_files.get(supplier_num)))
+            return
         self.requested_list_files[supplier_num] = True
         lst = list(self.requested_list_files.values())
         if _Debug:
             lg.args(_DebugLevel, requested_list_files=lst, supplier_num=supplier_num, new_files_count=new_files_count)
         if lst.count(None) == 0:
+            if self.request_list_files_timer and self.request_list_files_timer.active():
+                self.request_list_files_timer.cancel()
+                self.request_list_files_timer = None
             backup_matrix.remove_list_files_query_callback(
                 customer_idurl=self.queue_owner_idurl,
                 query_path=self.queue_alias,
@@ -402,11 +419,21 @@ class ArchiveReader(automat.Automat):
         return None
 
     def _on_list_files_failed(self, supplier_num):
+        if not self.requested_list_files:
+            lg.warn('skip ListFiles() response, requested_list_files object is empty')
+            return
+        if self.requested_list_files.get(supplier_num) is not None:
+            lg.warn('skip ListFiles() response, supplier record at position %d already set to %r' % (
+                supplier_num, self.requested_list_files.get(supplier_num)))
+            return
         self.requested_list_files[supplier_num] = False
         lst = list(self.requested_list_files.values())
         if _Debug:
             lg.args(_DebugLevel, requested_list_files=lst, supplier_num=supplier_num)
         if lst.count(None) == 0:
+            if self.request_list_files_timer and self.request_list_files_timer.active():
+                self.request_list_files_timer.cancel()
+                self.request_list_files_timer = None
             backup_matrix.remove_list_files_query_callback(
                 customer_idurl=self.queue_owner_idurl,
                 query_path=self.queue_alias,
@@ -417,6 +444,24 @@ class ArchiveReader(automat.Automat):
             else:
                 self.automat('list-files-failed')
         return None
+
+    def _on_request_list_files_timeout(self):
+        self.request_list_files_timer = None
+        for supplier_num in self.requested_list_files:
+            if self.requested_list_files[supplier_num] is None:
+                self.requested_list_files[supplier_num] = False
+        lst = list(self.requested_list_files.values())
+        if _Debug:
+            lg.args(_DebugLevel, requested_list_files=lst)
+        backup_matrix.remove_list_files_query_callback(
+            customer_idurl=self.queue_owner_idurl,
+            query_path=self.queue_alias,
+        )
+        success_list_files = lst.count(True)
+        if success_list_files:
+            self.automat('list-files-collected')
+        else:
+            self.automat('list-files-failed')
 
     def _on_restore_done(self, result, backup_id, outfd, tarfilename, backup_index):
         try:

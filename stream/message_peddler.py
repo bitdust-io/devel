@@ -206,11 +206,11 @@ def on_consume_queue_messages(json_messages):
         queue_id = msg_data.get('queue_id')
         if msg_type == 'queue_message':
             if queue_id not in streams():
-                lg.warn('skipped incoming message, queue %r is not registered' % queue_id)
+                lg.warn('skipped incoming queue_message, queue %r is not registered' % queue_id)
                 p2p_service.SendFailNoRequest(from_idurl, packet_id, 'queue ID not registered')
                 continue
             if not streams()[queue_id]['active']:
-                lg.warn('skipped incoming message, queue %r is not active' % queue_id)
+                lg.warn('skipped incoming queue_message, queue %r is not active' % queue_id)
                 p2p_service.SendFailNoRequest(from_idurl, packet_id, 'queue is not active')
                 continue
         my_queue_id = queue_id
@@ -218,11 +218,11 @@ def on_consume_queue_messages(json_messages):
             queue_alias, owner_id, _ = global_id.SplitGlobalQueueID(queue_id)
             my_queue_id = global_id.MakeGlobalQueueID(queue_alias, owner_id, my_id.getID())
             if my_queue_id not in streams():
-                lg.warn('skipped incoming message, queue %r is not registered' % my_queue_id)
+                lg.warn('skipped incoming queue_message_replica, queue %r is not registered' % my_queue_id)
                 p2p_service.SendFailNoRequest(from_idurl, packet_id, 'queue ID not registered')
                 continue
             if not streams()[my_queue_id]['active']:
-                lg.warn('skipped incoming message, queue %r is not active' % my_queue_id)
+                lg.warn('skipped incoming queue_message_replica, queue %r is not active' % my_queue_id)
                 p2p_service.SendFailNoRequest(from_idurl, packet_id, 'queue is not active')
                 continue
         try:
@@ -235,14 +235,14 @@ def on_consume_queue_messages(json_messages):
             # request from queue_member() to catch up unread messages from the queue
             consumer_id = msg_data.get('consumer_id')
             if consumer_id not in streams()[queue_id]['consumers']:
-                lg.warn('skipped incoming message, consumer %r is not registered for queue %r' % (consumer_id, queue_id, ))
+                lg.warn('skipped incoming "queue-read" request, consumer %r is not registered for queue %r' % (consumer_id, queue_id, ))
                 p2p_service.SendFailNoRequest(from_idurl, packet_id, 'consumer is not registered')
                 continue
             if not streams()[queue_id]['consumers'][consumer_id]['active']:
-                lg.warn('skipped incoming message, consumer %r is not active in queue %r' % (consumer_id, queue_id, ))
+                lg.warn('skipped incoming "queue-read" request, consumer %r is not active in queue %r' % (consumer_id, queue_id, ))
                 p2p_service.SendFailNoRequest(from_idurl, packet_id, 'consumer is not active')
                 continue
-            consumer_last_sequence_id = msg_data.get('last_sequence_id')
+            consumer_last_sequence_id = int(msg_data.get('last_sequence_id', -1))
             if _Debug:
                 lg.args(_DebugLevel, event='queue-read', queue_id=queue_id, consumer_id=consumer_id, consumer_last_sequence_id=consumer_last_sequence_id)
             A('queue-read', queue_id=queue_id, consumer_id=consumer_id, consumer_last_sequence_id=consumer_last_sequence_id)
@@ -251,20 +251,20 @@ def on_consume_queue_messages(json_messages):
         producer_id = msg_data.get('producer_id')
         if msg_type == 'queue_message':
             if producer_id not in streams()[queue_id]['producers']:
-                lg.warn('skipped incoming message, producer %r is not registered for queue %r' % (producer_id, queue_id, ))
+                lg.warn('skipped incoming queue_message, producer %r is not registered for queue %r' % (producer_id, queue_id, ))
                 p2p_service.SendFailNoRequest(from_idurl, packet_id, 'producer is not registered')
                 continue
             if not streams()[queue_id]['producers'][producer_id]['active']:
-                lg.warn('skipped incoming message, producer %r is not active in queue %r' % (producer_id, queue_id, ))
+                lg.warn('skipped incoming queue_message, producer %r is not active in queue %r' % (producer_id, queue_id, ))
                 p2p_service.SendFailNoRequest(from_idurl, packet_id, 'producer is not active')
                 continue
         if msg_type == 'queue_message_replica':
             if producer_id not in streams()[my_queue_id]['producers']:
-                lg.warn('skipped incoming message, producer %r is not registered for queue %r' % (producer_id, my_queue_id, ))
+                lg.warn('skipped incoming queue_message_replica, producer %r is not registered for queue %r' % (producer_id, my_queue_id, ))
                 p2p_service.SendFailNoRequest(from_idurl, packet_id, 'producer is not registered')
                 continue
             if not streams()[my_queue_id]['producers'][producer_id]['active']:
-                lg.warn('skipped incoming message, producer %r is not active in queue %r' % (producer_id, my_queue_id, ))
+                lg.warn('skipped incoming queue_message_replica, producer %r is not active in queue %r' % (producer_id, my_queue_id, ))
                 p2p_service.SendFailNoRequest(from_idurl, packet_id, 'producer is not active')
                 continue
         if msg_type == 'queue_message_replica':
@@ -403,6 +403,7 @@ def get_latest_sequence_id(queue_id):
 
 
 def set_latest_sequence_id(queue_id, new_sequence_id):
+    new_sequence_id = int(new_sequence_id)
     current_sequence_id = streams()[queue_id]['last_sequence_id']
     streams()[queue_id]['last_sequence_id'] = new_sequence_id
     if new_sequence_id == current_sequence_id + 1: 
@@ -622,7 +623,8 @@ def load_streams():
         last_sequence_id = -1
         all_stored_queue_messages = os.listdir(messages_dir)
         all_stored_queue_messages.sort(key=lambda i: int(i))
-        for sequence_id in all_stored_queue_messages:
+        for _sequence_id in all_stored_queue_messages:
+            sequence_id = int(_sequence_id)
             stored_json_message = jsn.loads_text(local_fs.ReadTextFile(os.path.join(messages_dir, sequence_id)))
             if stored_json_message:
                 if stored_json_message.get('processed'):
@@ -631,7 +633,7 @@ def load_streams():
                 else:
                     streams()[queue_id]['messages'].append(sequence_id)
                 if int(sequence_id) >= last_sequence_id:
-                    last_sequence_id = sequence_id
+                    last_sequence_id = int(sequence_id)
                 loaded_messages += 1
             else:
                 lg.err('failed reading message %d from %r' % (sequence_id, queue_id, ))

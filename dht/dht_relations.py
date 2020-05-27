@@ -150,7 +150,7 @@ def read_customer_suppliers(customer_idurl, as_fields=True, use_cache=True):
             contactsdb.save_suppliers(customer_idurl=ret['customer_idurl'])
             if ret.get('ecc_map'):
                 for supplier_idurl in ret['suppliers']:
-                    if supplier_idurl:
+                    if supplier_idurl and id_url.is_cached(supplier_idurl):
                         contactsdb.add_supplier_meta_info(
                             supplier_idurl=supplier_idurl,
                             info={'ecc_map': ret['ecc_map'], },

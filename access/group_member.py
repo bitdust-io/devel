@@ -804,6 +804,9 @@ class GroupMember(automat.Automat):
         d.addErrback(self._on_message_to_broker_failed, outgoing_counter, packet_id)
 
     def _do_prepare_service_request_params(self, possible_broker_idurl, desired_broker_position=-1, action='queue-connect'):
+        if _Debug:
+            lg.args(_DebugLevel, possible_broker_idurl=possible_broker_idurl, desired_broker_position=desired_broker_position, action=action,
+                    queue_alias=self.group_queue_alias, owner_id=self.group_creator_id, )
         queue_id = global_id.MakeGlobalQueueID(
             queue_alias=self.group_queue_alias,
             owner_id=self.group_creator_id,
