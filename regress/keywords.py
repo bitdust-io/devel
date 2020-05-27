@@ -449,7 +449,7 @@ def dht_db_dump_v1(node):
     return response.json()
 
 
-def message_send_v1(node, recipient, data, timeout=30):
+def message_send_v1(node, recipient, data, timeout=30, expect_consumed=True):
     response = request_post(node, 'message/send/v1',
         json={
             'id': recipient,
@@ -462,6 +462,8 @@ def message_send_v1(node, recipient, data, timeout=30):
     print(f'message/send/v1 [%s] : %s\n' % (
         node, pprint.pformat(response.json())))
     assert response.json()['status'] == 'OK', response.json()
+    if expect_consumed is not None:
+        assert response.json()['result']['consumed'] is expect_consumed
     return response.json()
 
 

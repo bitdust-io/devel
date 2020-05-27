@@ -3095,8 +3095,6 @@ def message_send(recipient_id, data, ping_timeout=30, message_ack_timeout=15):
     target_glob_id = global_id.MakeGlobalID(**glob_id)
     if not my_keys.is_valid_key_id(target_glob_id):
         return ERROR('invalid key_id: %s' % target_glob_id)
-#     if not my_keys.is_key_registered(target_glob_id):
-#         return ERROR('unknown key_id: %s' % target_glob_id)
     if _Debug:
         lg.out(_DebugLevel, 'api.message_send to "%s" ping_timeout=%d message_ack_timeout=%d' % (
             target_glob_id, ping_timeout, message_ack_timeout, ))
@@ -3107,7 +3105,9 @@ def message_send(recipient_id, data, ping_timeout=30, message_ack_timeout=15):
         message_ack_timeout=message_ack_timeout,
     )
     ret = Deferred()
-    result.addCallback(lambda packet: ret.callback(OK(strng.to_text(packet), api_method='message_send')))
+    result.addCallback(lambda packet: ret.callback(OK({
+        'consumed': strng.to_text(packet.Payload) != 'unread',
+    }, api_method='message_send')))
     result.addErrback(lambda err: ret.callback(ERROR(err, api_method='message_send')))
     return ret
 

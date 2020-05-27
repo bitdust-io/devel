@@ -197,6 +197,7 @@ def reset(conf_obj):
     conf_obj.setDefaultValue('services/private-groups/preferred-brokers', '')
 
     conf_obj.setDefaultValue('services/private-messages/enabled', 'true')
+    conf_obj.setDefaultValue('services/private-messages/acknowledge-unread-messages-enabled', 'true')
     
     conf_obj.setDefaultValue('services/proxy-server/enabled', 'false')
     conf_obj.setDefaultValue('services/proxy-server/routes-limit', 20)

@@ -98,7 +98,7 @@ def on_consume_user_messages(json_messages):
             recipient=recipient_id,
             message_type=msg_type,
         )
-    return True
+    return False
 
 #------------------------------------------------------------------------------
 
