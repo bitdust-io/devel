@@ -83,7 +83,7 @@ _one_down:
 _one_clean_test:
 	@echo "DOCKER COMPOSE EXEC ${TEST_NAME} DEBUG=${_DEBUG} PAUSE_BEFORE=${_PAUSE_BEFORE}";
 	@mkdir -p logs;
-	@docker-compose --file tests/${TEST_NAME}/docker-compose.yml exec -T tester sh -c "TEST_NAME=${TEST_NAME} _DEBUG=${_DEBUG} STOP_NODES=1 CLEAN_NODES=1 PAUSE_BEFORE=${_PAUSE_BEFORE} python -u -m pytest /app/tests/${TEST_NAME}/ -v -s" 2> logs/container.${TEST_NAME}.err
+	@docker-compose --file tests/${TEST_NAME}/docker-compose.yml exec -T tester sh -c "TEST_NAME=${TEST_NAME} _DEBUG=${_DEBUG} STOP_NODES=1 CLEAN_NODES=1 PAUSE_BEFORE=${_PAUSE_BEFORE} python -u -m pytest /app/tests/${TEST_NAME}/ -v -s"   #  2> logs/container.${TEST_NAME}.err
 	# @docker-compose --file tests/${TEST_NAME}/docker-compose.yml exec -T tester sh -c "TEST_NAME=${TEST_NAME} _DEBUG=${_DEBUG} STOP_NODES=1 CLEAN_NODES=1 python -u -m pytest /app/tests/${TEST_NAME}/ -v -s" 1> logs/container.${TEST_NAME}.out 2> logs/container.${TEST_NAME}.err
 
 _one_test:
