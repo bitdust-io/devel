@@ -124,10 +124,10 @@ regress_prepare:
 	PYTHON_VERSION=$(REGRESSION_PY_VER) make --no-print-directory -C regress/ prepare
 
 regress_run:
-	PYTHON_VERSION=$(REGRESSION_PY_VER) make --no-print-directory -C regress/ run_all
+	PYTHON_VERSION=$(REGRESSION_PY_VER) _PAUSE_BEFORE=0 make --no-print-directory -C regress/ run_all
 
 regress_run_parallel:
-	PYTHON_VERSION=$(REGRESSION_PY_VER) make --no-print-directory -j 3 -C regress/ run_parallel
+	PYTHON_VERSION=$(REGRESSION_PY_VER) _PAUSE_BEFORE=0 make --no-print-directory -j 3 -C regress/ run_parallel
 
 regress_run_log:
 	PYTHON_VERSION=$(REGRESSION_PY_VER) make --no-print-directory -C regress/ run_all_log

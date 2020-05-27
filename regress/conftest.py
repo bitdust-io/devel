@@ -37,7 +37,7 @@ TEST_NAME = os.environ['TEST_NAME']
 
 CONF = json.loads(open(f'/app/tests/{TEST_NAME}/conf.json', 'r').read())
 
-PAUSE_BEFORE = int(os.environ.get('PAUSE_BEFORE', CONF.get('pause_before', '0')))
+PAUSE_BEFORE = 0  # int(os.environ.get('PAUSE_BEFORE', CONF.get('pause_before', '0')))
 
 ALL_NODES = list(CONF['containers'].keys())
 

@@ -2,6 +2,13 @@ Change Log
 ==========
 
 
+2020-05-27 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* added new option services/private-messages/acknowledge-unread-messages-enabled
+* reply back with Ack() for every incoming Message() even if it was not consumed
+
+
+
 2020-05-25 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * make possible to ignore specific idurls in p2p.lookup
