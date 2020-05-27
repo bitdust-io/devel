@@ -767,7 +767,7 @@ def get_key_info(key_id, include_private=False, include_signature=False):
         return make_master_key_info(include_private=include_private)
     key_alias, creator_idurl = split_key_id(key_id)
     if not key_alias or not creator_idurl:
-        raise Exception('incorrect key_id format')
+        raise Exception('incorrect key_id format: %s' % key_id)
     if key_id not in known_keys():
         key_id = make_key_id(
             alias=key_alias,
