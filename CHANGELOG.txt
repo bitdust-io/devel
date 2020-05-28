@@ -4,6 +4,15 @@ Change Log
 
 2020-05-27 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
+* IDURL fix in dht_relations.py
+* added 10 second timeout for ListFiles() request to archive_reader()
+* bug fix in  message_peddler()
+* try to re-run the failed regression test case 1 time
+
+
+
+2020-05-27 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
 * added new option services/private-messages/acknowledge-unread-messages-enabled
 * reply back with Ack() for every incoming Message() even if it was not consumed
 
