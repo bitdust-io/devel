@@ -206,6 +206,8 @@ class P2PServiceSeeker(automat.Automat):
         """
         Action method.
         """
+        if _Debug:
+            lg.args(_DebugLevel, target_idurl=self.target_idurl)
         d = handshaker.ping(
             idurl=self.target_idurl,
             channel='p2p_service_seeker',
@@ -221,6 +223,8 @@ class P2PServiceSeeker(automat.Automat):
         """
         Action method.
         """
+        if _Debug:
+            lg.args(_DebugLevel, target_idurl=self.target_idurl, target_service=self.target_service)
         service_request_payload = self.request_service_params
         if callable(service_request_payload):
             service_request_payload = service_request_payload(self.target_idurl)
