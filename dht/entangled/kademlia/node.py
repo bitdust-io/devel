@@ -1770,7 +1770,7 @@ class MultiLayerNode(Node):
 
     def _joinNetworkFailed(self, err, **kwargs):
         layerID = kwargs.get('layerID', 0)
-        self._joinDeferreds.pop(layerID)
+        self._joinDeferreds.pop(layerID, None)
         if _Debug:
             print('[DHT NODE]    failed joining DHT network layerID=%d ' % layerID, err)
 
