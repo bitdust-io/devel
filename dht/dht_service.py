@@ -207,9 +207,10 @@ def connect(seed_nodes=[], layer_id=0, attach=False):
     result = Deferred()
 
     if _Debug:
-        lg.args(_DebugLevel, seed_nodes=seed_nodes, layer_id=layer_id, attach=attach)
+        lg.args(_DebugLevel, layer_id=layer_id, attach=attach, seed_nodes=seed_nodes)
 
     if not node():
+        lg.err('node is not initialized')
         result.errback(Exception('node is not initialized'))
         return result
 
@@ -218,6 +219,7 @@ def connect(seed_nodes=[], layer_id=0, attach=False):
         if _Debug:
             lg.out(_DebugLevel, 'dht_service.connect SKIP, already joining layer %d' % layer_id)
         if joinDeferred.called:
+            lg.warn('joinDeferred already called')
             result.callback(True)
         else:
             joinDeferred.addBoth(lambda x: result.callback(True))
@@ -248,6 +250,8 @@ def connect(seed_nodes=[], layer_id=0, attach=False):
         return result
 
     def _on_connected(ok):
+        if _Debug:
+            lg.args(_DebugLevel, ok=ok, layer_id=layer_id)
         events.send('dht-layer-connected', data=dict(layer_id=layer_id, ))
         return ok
 
@@ -335,6 +339,12 @@ def reconnect():
     return node().reconnect()
 
 #------------------------------------------------------------------------------
+
+def is_layer_active(layer_id):
+    if not node():
+        return False
+    return layer_id in node().active_layers
+
 
 def open_layer(layer_id, seed_nodes=[], dht_dir_path=None, connect_now=False, attach=False):
     global _MyNode

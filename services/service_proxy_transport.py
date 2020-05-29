@@ -43,6 +43,7 @@ class ProxyTransportService(LocalService):
     service_name = 'service_proxy_transport'
     config_path = 'services/proxy-transport/enabled'
     proto = 'proxy'
+    transport = None
 
     def init(self):
         self.starting_deferred = None
@@ -68,18 +69,18 @@ class ProxyTransportService(LocalService):
         if len(self._available_transports()) == 0:
             lg.warn('no transports available')
             return False
+        events.add_subscriber(self._on_dht_layer_connected, event_id='dht-layer-connected')
         self._check_reset_original_identity()
         self.starting_deferred = Deferred()
         self.transport = network_transport.NetworkTransport('proxy', proxy_interface.GateInterface())
-        self.transport.automat(
-            'init', (gateway.listener(), self._on_transport_state_changed))
-        reactor.callLater(0, self.transport.automat, 'start')  # @UndefinedVariable
         conf().addConfigNotifier('services/proxy-transport/enabled', self._on_enabled_disabled)
         conf().addConfigNotifier('services/proxy-transport/sending-enabled', self._on_sending_enabled_disabled)
         conf().addConfigNotifier('services/proxy-transport/receiving-enabled', self._on_receiving_enabled_disabled)
         if driver.is_on('service_entangled_dht'):
             self._do_join_proxy_routers_dht_layer()
-        events.add_subscriber(self._on_dht_layer_connected, event_id='dht-layer-connected')
+        else:
+            self.transport.automat('init', (gateway.listener(), self._on_transport_state_changed))
+            reactor.callLater(0, self.transport.automat, 'start')  # @UndefinedVariable
         return self.starting_deferred
 
     def stop(self):
@@ -182,21 +183,37 @@ class ProxyTransportService(LocalService):
             attach=False,
         )
         d.addCallback(self._on_proxy_routers_dht_layer_connected)
-        d.addErrback(lambda *args: lg.err(str(args)))
+        d.addErrback(self._on_proxy_routers_dht_layer_connect_failed)
 
     def _on_proxy_routers_dht_layer_connected(self, ok):
+        from twisted.internet import reactor  # @UnresolvedImport
         from logs import lg
         from dht import dht_service
         from dht import dht_records
+        from transport import gateway
         from userid import my_id
         lg.info('connected to DHT layer for proxy routers: %r' % ok)
         if my_id.getLocalID():
             dht_service.set_node_data('idurl', my_id.getLocalID().to_text(), layer_id=dht_records.LAYER_PROXY_ROUTERS)
+        if self.transport:
+            if self.starting_deferred and not self.starting_deferred.called:
+                self.transport.automat('init', (gateway.listener(), self._on_transport_state_changed))
+                reactor.callLater(0, self.transport.automat, 'start')  # @UndefinedVariable
         return ok
 
+    def _on_proxy_routers_dht_layer_connect_failed(self, err):
+        from logs import lg
+        from transport import gateway
+        lg.err('failed to connect to DHT layer: %r' % err)
+        if self.starting_deferred and not self.starting_deferred.called:
+            self.transport.automat('init', (gateway.listener(), self._on_transport_state_changed))
+            reactor.callLater(0, self.transport.automat, 'start')  # @UndefinedVariable
+
     def _on_transport_state_changed(self, transport, oldstate, newstate):
+        from logs import lg
         from p2p import p2p_connector
         if self.starting_deferred:
+            lg.info('%s -> %s in %r' % (oldstate, newstate, transport, ))
             if newstate == 'LISTENING' and oldstate != 'LISTENING':
                 self.starting_deferred.callback(newstate)
                 self.starting_deferred = None
