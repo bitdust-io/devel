@@ -1103,6 +1103,9 @@ def scenario13_end(old_customer_3_info):
         verify_from_local_path=old_customer_3_info['local_filepath'],
     )
 
+    # disable supplier-rotated so it will not affect other scenarios
+    stop_daemon('supplier-rotated')
+
 
 def scenario14(old_customer_1_info, customer_1_shared_file_info):
     set_active_scenario('SCENARIO 14')
@@ -1351,17 +1354,6 @@ def scenario17(old_customer_1_info):
         time.sleep(1)
     else:
         assert False, 'customer-restore was not able to recover identity after few attempts'
-
-#     response = request_get('customer-restore', 'network/connected/v1?wait_timeout=1')
-#     assert response.json()['status'] == 'ERROR'
-# 
-#     for _ in range(5):
-#         response = request_get('customer-restore', 'network/connected/v1?wait_timeout=5')
-#         if response.json()['status'] == 'OK':
-#             break
-#         time.sleep(5)
-#     else:
-#         assert False, 'customer-restore was not able to join the network after identity recover'
 
     kw.service_info_v1('customer-restore', 'service_customer', 'ON')
     kw.service_info_v1('customer-restore', 'service_shared_data', 'ON')

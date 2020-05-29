@@ -237,11 +237,12 @@ def file_sync_v1(node):
     return response.json()
 
 
-def file_list_all_v1(node, expected_reliable=100, reliable_shares=True, attempts=30, delay=3):
+def file_list_all_v1(node, expected_reliable=100, reliable_shares=True, attempts=20, delay=3, verbose=False):
     if not expected_reliable:
         response = request_get(node, 'file/list/all/v1', timeout=20)
         assert response.status_code == 200
-        print('file/list/all/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
+        if verbose:
+            print('file/list/all/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
         assert response.json()['status'] == 'OK', response.json()
         return response.json()
 
@@ -251,7 +252,8 @@ def file_list_all_v1(node, expected_reliable=100, reliable_shares=True, attempts
     while latest_reliable is None or latest_reliable <= expected_reliable:
         response = request_get(node, 'file/list/all/v1', timeout=20)
         assert response.status_code == 200
-        print('file/list/all/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
+        if verbose:
+            print('file/list/all/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
         assert response.json()['status'] == 'OK', response.json()
         lowest = 100
         lowest_file = None
