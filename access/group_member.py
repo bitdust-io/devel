@@ -477,8 +477,9 @@ class GroupMember(automat.Automat):
             message_ack_timeout *= 2
         result = message.send_message(
             json_data={
+                'msg_type': 'queue_message',
+                'action': 'consume',
                 'created': utime.get_sec1970(),
-                'payload': 'queue-read',
                 'last_sequence_id': self.last_sequence_id,
                 'queue_id': self.active_queue_id,
                 'consumer_id': self.member_id,
@@ -656,12 +657,15 @@ class GroupMember(automat.Automat):
                 owner_idurl = json_message['owner_idurl']
                 # to_user = json_message['to']
                 msg_data = json_message['data']
+                msg_action = msg_data['action']
             except:
                 lg.exc()
                 continue
             if msg_direction != 'incoming':
                 continue
             if msg_type != 'queue_message':
+                continue
+            if msg_action != 'read':
                 continue
             try:
                 chunk_last_sequence_id = int(msg_data['last_sequence_id'])
@@ -786,6 +790,8 @@ class GroupMember(automat.Automat):
                 outgoing_counter, self.outgoing_messages[outgoing_counter]['attempts'], packet_id, ))
         d = message.send_message(
             json_data={
+                'msg_type': 'queue_message',
+                'action': 'produce',
                 'created': utime.get_sec1970(),
                 'payload': json_payload,
                 'queue_id': self.active_queue_id,

@@ -3068,7 +3068,16 @@ def message_history(recipient_id=None, sender_id=None, message_type=None, offset
 
 def message_send(recipient_id, data, ping_timeout=30, message_ack_timeout=15):
     """
-    Sends a text message to remote peer, `recipient_id` is a string with a nickname, global_id or IDURL of the remote user.
+    Sends a private message to remote peer, `recipient_id` is a string with a nickname, global_id or IDURL of the remote user.
+
+    Message will be encrypted first with public key of the recipient.
+    Public key must be already registered locally or populated from remote identity file.
+    Corresponding key will be recognized based on `recipient_id` parameter.
+
+    Recipient will receive incoming message of type "private_message" and de-crypt it.
+    If recipient is listening on the new private messages it will be marked as "consumed".
+
+    Input `data` must be a JSON dictionary.
 
     ###### HTTP
         curl -X POST 'localhost:8180/message/send/v1' -d '{"recipient_id": "carlos@computer-c.net", "data": {"message": "Hola Amigo!"}}'
@@ -3078,6 +3087,7 @@ def message_send(recipient_id, data, ping_timeout=30, message_ack_timeout=15):
     """
     if not driver.is_on('service_private_messages'):
         return ERROR('service_private_messages() is not started')
+    from lib import packetid
     from stream import message
     from userid import global_id
     from crypt import my_keys
@@ -3098,11 +3108,14 @@ def message_send(recipient_id, data, ping_timeout=30, message_ack_timeout=15):
     if _Debug:
         lg.out(_DebugLevel, 'api.message_send to "%s" ping_timeout=%d message_ack_timeout=%d' % (
             target_glob_id, ping_timeout, message_ack_timeout, ))
+    data['msg_type'] = 'private_message'
+    data['action'] = 'read'
     result = message.send_message(
         json_data=data,
         recipient_global_id=target_glob_id,
         ping_timeout=ping_timeout,
         message_ack_timeout=message_ack_timeout,
+        packet_id='private_%s' % packetid.UniqueID(),
     )
     ret = Deferred()
     result.addCallback(lambda packet: ret.callback(OK({
@@ -3114,7 +3127,9 @@ def message_send(recipient_id, data, ping_timeout=30, message_ack_timeout=15):
 
 def message_send_group(group_key_id, data):
     """
-    Sends a text message to a group of users.
+    Sends a "group_message" to a group of users.
+
+    Input `data` must be a JSON dictionary.
 
     ###### HTTP
         curl -X POST 'localhost:8180/message/send/group/v1' -d '{"group_key_id": "group_95d0fedc46308e2254477fcb96364af9$alice@server-a.com", "data": {"message": "Hola Amigos!"}}'

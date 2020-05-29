@@ -194,6 +194,7 @@ def on_consume_queue_messages(json_messages):
             from_idurl = json_message['owner_idurl']
             to_user = json_message['to']
             msg_data = json_message['data']
+            msg_action = msg_data['action']
         except:
             lg.exc()
             continue
@@ -202,6 +203,8 @@ def on_consume_queue_messages(json_messages):
         if to_user != my_id.getID():
             continue
         if msg_type not in ['queue_message', 'queue_message_replica', ]:
+            continue
+        if msg_action not in ['produce', 'consume', ]:
             continue
         queue_id = msg_data.get('queue_id')
         if msg_type == 'queue_message':
@@ -225,13 +228,7 @@ def on_consume_queue_messages(json_messages):
                 lg.warn('skipped incoming queue_message_replica, queue %r is not active' % my_queue_id)
                 p2p_service.SendFailNoRequest(from_idurl, packet_id, 'queue is not active')
                 continue
-        try:
-            payload = msg_data['payload']
-            created = msg_data['created']
-        except:
-            lg.exc()
-            continue
-        if payload == 'queue-read':
+        if msg_action == 'consume':
             # request from queue_member() to catch up unread messages from the queue
             consumer_id = msg_data.get('consumer_id')
             if consumer_id not in streams()[queue_id]['consumers']:
@@ -248,39 +245,48 @@ def on_consume_queue_messages(json_messages):
             A('queue-read', queue_id=queue_id, consumer_id=consumer_id, consumer_last_sequence_id=consumer_last_sequence_id)
             p2p_service.SendAckNoRequest(from_idurl, packet_id)
             continue
-        producer_id = msg_data.get('producer_id')
-        if msg_type == 'queue_message':
-            if producer_id not in streams()[queue_id]['producers']:
-                lg.warn('skipped incoming queue_message, producer %r is not registered for queue %r' % (producer_id, queue_id, ))
-                p2p_service.SendFailNoRequest(from_idurl, packet_id, 'producer is not registered')
+        if msg_action == 'produce':
+            try:
+                payload = msg_data['payload']
+                created = msg_data['created']
+                producer_id = msg_data['producer_id']
+            except:
+                lg.exc()
                 continue
-            if not streams()[queue_id]['producers'][producer_id]['active']:
-                lg.warn('skipped incoming queue_message, producer %r is not active in queue %r' % (producer_id, queue_id, ))
-                p2p_service.SendFailNoRequest(from_idurl, packet_id, 'producer is not active')
+            if msg_type == 'queue_message':
+                if producer_id not in streams()[queue_id]['producers']:
+                    lg.warn('skipped incoming queue_message, producer %r is not registered for queue %r' % (producer_id, queue_id, ))
+                    p2p_service.SendFailNoRequest(from_idurl, packet_id, 'producer is not registered')
+                    continue
+                if not streams()[queue_id]['producers'][producer_id]['active']:
+                    lg.warn('skipped incoming queue_message, producer %r is not active in queue %r' % (producer_id, queue_id, ))
+                    p2p_service.SendFailNoRequest(from_idurl, packet_id, 'producer is not active')
+                    continue
+            if msg_type == 'queue_message_replica':
+                if producer_id not in streams()[my_queue_id]['producers']:
+                    lg.warn('skipped incoming queue_message_replica, producer %r is not registered for queue %r' % (producer_id, my_queue_id, ))
+                    p2p_service.SendFailNoRequest(from_idurl, packet_id, 'producer is not registered')
+                    continue
+                if not streams()[my_queue_id]['producers'][producer_id]['active']:
+                    lg.warn('skipped incoming queue_message_replica, producer %r is not active in queue %r' % (producer_id, my_queue_id, ))
+                    p2p_service.SendFailNoRequest(from_idurl, packet_id, 'producer is not active')
+                    continue
+            if msg_type == 'queue_message_replica':
+                # incoming message replica from another message_peddler() to store locally in case brokers needs to be rotated
+                do_store_message_replica(from_idurl, packet_id, my_queue_id, producer_id, payload, created)
                 continue
-        if msg_type == 'queue_message_replica':
-            if producer_id not in streams()[my_queue_id]['producers']:
-                lg.warn('skipped incoming queue_message_replica, producer %r is not registered for queue %r' % (producer_id, my_queue_id, ))
-                p2p_service.SendFailNoRequest(from_idurl, packet_id, 'producer is not registered')
+            try:
+                known_brokers = {int(k): v for k, v in msg_data['brokers'].items()}
+            except:
+                lg.exc()
                 continue
-            if not streams()[my_queue_id]['producers'][producer_id]['active']:
-                lg.warn('skipped incoming queue_message_replica, producer %r is not active in queue %r' % (producer_id, my_queue_id, ))
-                p2p_service.SendFailNoRequest(from_idurl, packet_id, 'producer is not active')
+            # incoming message from queue_member() to push new message to the queue and deliver to all other group members
+            received += 1
+            if not do_push_message(from_idurl, packet_id, queue_id, producer_id, payload, created, known_brokers):
                 continue
-        if msg_type == 'queue_message_replica':
-            # incoming message replica from another message_peddler() to store locally in case brokers needs to be rotated
-            do_store_message_replica(from_idurl, packet_id, my_queue_id, producer_id, payload, created)
+            pushed += 1
             continue
-        try:
-            known_brokers = {int(k): v for k, v in msg_data['brokers'].items()}
-        except:
-            lg.exc()
-            continue
-        # incoming message from queue_member() to push new message to the queue and deliver to all other group members
-        received += 1
-        if not do_push_message(from_idurl, packet_id, queue_id, producer_id, payload, created, known_brokers):
-            continue
-        pushed += 1
+        raise Exception('unexpected message "action": %r' % msg_action)
     if received > pushed:
         lg.warn('some of the received messages was not pushed to the queue %r' % queue_id)
     return True
@@ -376,6 +382,9 @@ def on_consumer_notify(message_info):
                 sequence_id=sequence_id, last_sequence_id=last_sequence_id)
     ret = message.send_message(
         json_data={
+            'msg_type': 'queue_message',
+            'action': 'read',
+            'created': utime.get_sec1970(),
             'items': [{
                 'sequence_id': sequence_id,
                 'created': payload['created'],
@@ -1251,6 +1260,9 @@ class MessagePeddler(automat.Automat):
     def _do_send_past_messages(self, queue_id, consumer_id, list_messages):
         message.send_message(
             json_data={
+                'msg_type': 'queue_message',
+                'action': 'read',
+                'created': utime.get_sec1970(),
                 'items': list_messages,
                 'last_sequence_id': get_latest_sequence_id(queue_id),
             },
@@ -1333,10 +1345,12 @@ class MessagePeddler(automat.Automat):
                 continue
             d = message.send_message(
                 json_data={
+                    'msg_type': 'queue_message_replica',
+                    'action': 'read',
+                    'created': message_in.created,
                     'message_id': message_in.message_id,
                     'producer_id': message_in.producer_id,
                     'queue_id': message_in.queue_id,
-                    'created': message_in.created,
                     'payload': message_in.payload,
                     'broker_position': other_broker_pos,
                 },
