@@ -59,6 +59,8 @@ from main import settings
 
 from contacts import contactsdb
 
+from services import driver
+
 from p2p import p2p_service
 from p2p import commands
 
@@ -165,6 +167,10 @@ def verify_packet_ownership(newpacket, raise_exception=False):
                         lg.dbg(_DebugLevel, 'OK, scenario 5: another authorized user wants to remove already stored data from the supplier')
                     return creator_idurl
         lg.err('non-authorized user is trying to erase data on the supplier')
+        return None
+    if driver.is_enabled('service_proxy_server'):
+        if _Debug:
+            lg.dbg(_DebugLevel, 'IGNORE, scenario 9: received Data() not authorized, but proxy router service was enabled')
         return None
     # TODO:
     # scenario 9: make possible to set "active" flag True/False for any key

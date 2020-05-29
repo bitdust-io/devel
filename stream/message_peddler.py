@@ -1471,7 +1471,7 @@ class MessagePeddler(automat.Automat):
         new_id = global_id.idurl2glob(evt.data['new_idurl'])
         queues_to_be_closed = []
         if id_url.is_in(old_idurl, customers().keys(), as_field=False):
-            for queue_id in customers()[old_idurl]:
+            for queue_id in customers()[id_url.field(old_idurl)]:
                 queues_to_be_closed.append(queue_id)
         self._do_close_streams(queues_to_be_closed)
         for queue_id in streams().keys():

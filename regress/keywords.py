@@ -494,7 +494,10 @@ def message_receive_v1(node, expected_data=None, consumer='test_consumer', get_r
         return get_result
     assert response.json()['status'] == 'OK', response.json()
     if expected_data is not None:
-        assert response.json()['result'][0]['data'] == expected_data, response.json()
+        received_data = response.json()['result'][0]['data']
+        received_data.pop('action', None)
+        received_data.pop('msg_type', None)
+        assert received_data == expected_data, response.json()
     return response.json()
 
 
