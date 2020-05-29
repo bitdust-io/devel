@@ -2,6 +2,14 @@ Change Log
 ==========
 
 
+2020-05-29 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* bug fix in service_proxy_transport()
+* bug fix in group_member()
+* bug fix in DHT core
+
+
+
 2020-05-27 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * IDURL fix in dht_relations.py
