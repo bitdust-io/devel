@@ -971,17 +971,18 @@ class GroupMember(automat.Automat):
             preferred_broker_idurl = id_url.field(preferred_brokers[0])
             if _Debug:
                 lg.args(_DebugLevel, preferred_broker_idurl=preferred_broker_idurl)
-            result = p2p_service_seeker.connect_known_node(
-                remote_idurl=preferred_broker_idurl,
-                service_name='service_message_broker',
-                service_params=lambda idurl: self._do_prepare_service_request_params(idurl, broker_pos),
-                exclude_nodes=list(exclude_brokers),
-            )
-            result.addCallback(self._on_broker_hired, broker_pos)
-            if _Debug:
-                result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='group_member._do_lookup_one_broker')
-            result.addErrback(self._on_message_broker_lookup_failed, broker_pos)
-            return result
+            if preferred_broker_idurl:
+                result = p2p_service_seeker.connect_known_node(
+                    remote_idurl=preferred_broker_idurl,
+                    service_name='service_message_broker',
+                    service_params=lambda idurl: self._do_prepare_service_request_params(idurl, broker_pos),
+                    exclude_nodes=list(exclude_brokers),
+                )
+                result.addCallback(self._on_broker_hired, broker_pos)
+                if _Debug:
+                    result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='group_member._do_lookup_one_broker')
+                result.addErrback(self._on_message_broker_lookup_failed, broker_pos)
+                return result
         result = p2p_service_seeker.connect_random_node(
             lookup_method=lookup.random_message_broker,
             service_name='service_message_broker',
@@ -997,6 +998,9 @@ class GroupMember(automat.Automat):
     def _do_request_service_one_broker(self, broker_idurl, broker_pos):
         if _Debug:
             lg.args(_DebugLevel, broker_pos=broker_pos, broker_idurl=broker_idurl, connecting_brokers=self.connecting_brokers)
+        if not broker_idurl:
+            reactor.callLater(0, self._on_message_broker_connect_failed, broker_pos)  # @UndefinedVariable
+            return
         result = p2p_service_seeker.connect_known_node(
             remote_idurl=broker_idurl,
             service_name='service_message_broker',
