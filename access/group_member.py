@@ -232,6 +232,7 @@ class GroupMember(automat.Automat):
         self.outgoing_counter = 0
         self.dht_read_use_cache = True
         self.buffered_messages = {}
+        self.recorded_messages = []
         super(GroupMember, self).__init__(
             name="group_member_%s$%s" % (self.group_queue_alias[:10], self.group_creator_id),
             state="AT_STARTUP",
@@ -319,7 +320,7 @@ class GroupMember(automat.Automat):
                 self.state = 'BROKERS?'
                 self.doConnectLookupRotateBrokers(*args, **kwargs)
             elif event == 'message-in':
-                self.doProcess(*args, **kwargs)
+                self.doRecord(*args, **kwargs)
             elif event == 'queue-in-sync':
                 self.SyncedUp=True
         #---QUEUE?---
@@ -330,6 +331,7 @@ class GroupMember(automat.Automat):
                 self.doMarkDeadBroker(event, *args, **kwargs)
                 self.doDisconnected(event, *args, **kwargs)
             elif event == 'message-in':
+                self.doRecord(*args, **kwargs)
                 self.doProcess(*args, **kwargs)
             elif event == 'push-message':
                 self.doPublishLater(*args, **kwargs)
@@ -353,6 +355,7 @@ class GroupMember(automat.Automat):
         #---IN_SYNC!---
         elif self.state == 'IN_SYNC!':
             if event == 'message-in' and self.isInSync(*args, **kwargs):
+                self.doRecord(*args, **kwargs)
                 self.doProcess(*args, **kwargs)
             elif event == 'push-message':
                 self.doPublish(*args, **kwargs)
@@ -390,9 +393,10 @@ class GroupMember(automat.Automat):
             elif event == 'brokers-rotated' or event == 'brokers-hired' or event == 'brokers-connected':
                 self.state = 'QUEUE?'
                 self.doRememberBrokers(event, *args, **kwargs)
+                self.doProcess(*args, **kwargs)
                 self.doReadQueue(*args, **kwargs)
             elif event == 'message-in':
-                self.doProcess(*args, **kwargs)
+                self.doRecord(*args, **kwargs)
             elif event == 'queue-in-sync':
                 self.SyncedUp=True
         return None
@@ -513,11 +517,20 @@ class GroupMember(automat.Automat):
             result_defer=result_defer,
         )
 
+    def doRecord(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        self.recorded_messages.append(kwargs)
+
     def doProcess(self, *args, **kwargs):
         """
         Action method.
         """
-        message.push_group_message(**kwargs)
+        while self.recorded_messages:
+            recorded_kwargs = self.recorded_messages.pop(0)
+            message.push_group_message(**recorded_kwargs)
+            self.automat('message-consumed', recorded_kwargs)
 
     def doPublish(self, *args, **kwargs):
         """
@@ -639,6 +652,8 @@ class GroupMember(automat.Automat):
         self.latest_dht_brokers = None
         self.outgoing_messages = None
         self.outgoing_counter = None
+        self.buffered_messages = None
+        self.recorded_messages = None
 
     def _do_read_queue_messages(self, json_messages):
         if not json_messages:
@@ -1111,14 +1126,12 @@ class GroupMember(automat.Automat):
 
     def _on_broker_connected(self, idurl, broker_pos):
         if _Debug:
-            lg.args(_DebugLevel, idurl=idurl, broker_pos=broker_pos, connecting_brokers=self.connecting_brokers)
+            lg.args(_DebugLevel, idurl=idurl, broker_pos=broker_pos, connecting_brokers=self.connecting_brokers,
+                    connected_brokers=self.connected_brokers)
         if idurl:
             self.connected_brokers[broker_pos] = idurl
         if self.connecting_brokers is not None:
             self.connecting_brokers.discard(broker_pos)
-        if _Debug:
-            lg.args(_DebugLevel, idurl=idurl, broker_pos=broker_pos, connecting_brokers=self.connecting_brokers,
-                    connected_brokers=self.connected_brokers)
         if self.connecting_brokers:
             return
         if not self.connected_brokers:
