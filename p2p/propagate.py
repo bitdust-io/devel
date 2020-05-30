@@ -166,7 +166,7 @@ def start(AckHandler=None, wide=False, refresh_cache=False):
     if _Debug:
         lg.out(_DebugLevel, 'propagate.start wide=%r refresh_cache=%r' % (wide, refresh_cache))
     return propagate(
-        selected_contacts=contactsdb.contacts_remote(),
+        selected_contacts=contactsdb.contacts_remote(include_all=False),
         AckHandler=AckHandler,
         wide=wide,
         refresh_cache=refresh_cache,

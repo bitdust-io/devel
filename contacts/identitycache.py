@@ -186,6 +186,16 @@ def GetLatest(idurl):
     return result
 
 
+def GetPublicKey(idurl):
+    """
+    If given `idurl` is known will return public key from the corresponding identity file otherwise `None`.
+    """
+    ident = FromCache(idurl)
+    if not ident:
+        return None
+    return ident.getPublicKey()
+
+
 def GetIDURLsByContact(contact):
     """
     In the ``identitydb`` code we keep track of all identity objects and

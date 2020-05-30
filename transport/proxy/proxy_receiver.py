@@ -617,10 +617,31 @@ class ProxyReceiver(automat.Automat):
                 pass
             return
         inpt.close()
+
+        if newpacket.Command == commands.RelayFail():
+            try:
+                fail_info = serialization.BytesToDict(data)
+            except:
+                lg.exc()
+                return
+            if _Debug:
+                lg.out(_DebugLevel, '<<<Relay-FAIL %s:%s from %s://%s with %d bytes %s' % (
+                    fail_info['command'], fail_info['packet_id'], info.proto, info.host, len(data), fail_info['error'], ))
+            if _PacketLogFileEnabled:
+                lg.out(0, '                \033[0;49;33mRELAY FAIL %s(%s) with %d bytes from %s to %s TID:%s\033[0m' % (
+                    fail_info['command'], fail_info['packet_id'], info.bytes_received,
+                    global_id.UrlToGlobalID(fail_info['from']), global_id.UrlToGlobalID(fail_info['to']),
+                    info.transfer_id), log_name='packet', showtime=True)
+            from transport.proxy import proxy_sender
+            if proxy_sender.A():
+                proxy_sender.A('outbox-packet-failed', fail_info, info)
+            return True
+
         routed_packet = signed.Unserialize(data)
         if not routed_packet:
             lg.err('unserialize packet failed from %s' % newpacket.CreatorID)
             return
+
         if _Debug:
             lg.out(_DebugLevel, '<<<Relay-IN %s from %s://%s with %d bytes' % (
                 str(routed_packet), info.proto, info.host, len(data)))
@@ -811,7 +832,7 @@ class ProxyReceiver(automat.Automat):
             return True
         if newpacket.CreatorID == self.router_idurl:
             self.latest_packet_received = time.time()
-        if newpacket.Command in [commands.Relay(), commands.RelayIn(), ]:
+        if newpacket.Command in [commands.Relay(), commands.RelayIn(), commands.RelayFail(), ]:
             if driver.is_enabled('service_proxy_server'):
                 # TODO:
                 # in case this node already running proxy router service this will not work

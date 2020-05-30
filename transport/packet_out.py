@@ -233,21 +233,29 @@ def search_by_transfer_id(transfer_id):
     return None, None
 
 
-def search_by_response_packet(newpacket, proto=None, host=None):
+def search_by_response_packet(newpacket=None, proto=None, host=None, incoming_command=None, incoming_packet_id=None,
+                              incoming_owner_idurl=None, incoming_creator_idurl=None, incoming_remote_idurl=None):
     result = []
-    incoming_owner_idurl = newpacket.OwnerID
-    incoming_creator_idurl = newpacket.CreatorID
-    incoming_remote_idurl = newpacket.RemoteID
+    if incoming_owner_idurl is None:
+        incoming_owner_idurl = newpacket.OwnerID
+    if incoming_creator_idurl is None:
+        incoming_creator_idurl = newpacket.CreatorID
+    if incoming_remote_idurl is None:
+        incoming_remote_idurl = newpacket.RemoteID
+    if incoming_packet_id is None:
+        incoming_packet_id = newpacket.PacketID
+    if incoming_command is None:
+        incoming_command = newpacket.Command
     if _Debug:
         lg.out(_DebugLevel, 'packet_out.search_by_response_packet for incoming [%s/%s/%s]:%s(%s) from [%s://%s] :\n%s' % (
             nameurl.GetName(incoming_owner_idurl), nameurl.GetName(incoming_creator_idurl), nameurl.GetName(incoming_remote_idurl),
-            newpacket.Command, newpacket.PacketID, proto, host, ('\n'.join([strng.to_text(p.outpacket) for p in queue()]))))
+            incoming_command, incoming_packet_id, proto, host, ('\n'.join([strng.to_text(p.outpacket) for p in queue()]))))
     matching_packet_ids = []
-    matching_packet_ids.append(newpacket.PacketID.lower())
-    if newpacket.Command in [commands.Data(), commands.Retrieve(), ] and id_url.is_cached(newpacket.OwnerID) and newpacket.OwnerID == my_id.getIDURL():
+    matching_packet_ids.append(incoming_packet_id.lower())
+    if incoming_command in [commands.Data(), commands.Retrieve(), ] and id_url.is_cached(incoming_owner_idurl) and incoming_owner_idurl == my_id.getIDURL():
         my_rotated_idurls = id_url.list_known_idurls(my_id.getIDURL(), num_revisions=10, include_revisions=False)
         for another_idurl in my_rotated_idurls:
-            another_packet_id = global_id.SubstitutePacketID(newpacket.PacketID, idurl=another_idurl).lower()
+            another_packet_id = global_id.SubstitutePacketID(incoming_packet_id, idurl=another_idurl).lower()
             if another_packet_id not in matching_packet_ids:
                 matching_packet_ids.append(another_packet_id)
     if len(matching_packet_ids) > 1:
@@ -257,10 +265,10 @@ def search_by_response_packet(newpacket, proto=None, host=None):
         if p.outpacket.PacketID.lower() not in matching_packet_ids:
             # PacketID of incoming packet not matching with that outgoing packet
             continue
-        if p.outpacket.PacketID != newpacket.PacketID:
+        if p.outpacket.PacketID != incoming_packet_id:
             lg.warn('packet ID in queue "almost" matching with incoming: %s ~ %s' % (
-                p.outpacket.PacketID, newpacket.PacketID, ))
-        if not commands.IsCommandAck(p.outpacket.Command, newpacket.Command):
+                p.outpacket.PacketID, incoming_packet_id, ))
+        if not commands.IsCommandAck(p.outpacket.Command, incoming_command):
             # this command must not be in the reply
             continue
         # TODO: to be checked later - need to make sure we identify users correctly
@@ -279,7 +287,7 @@ def search_by_response_packet(newpacket, proto=None, host=None):
             if _Debug:
                 lg.out(_DebugLevel, 'packet_out.search_by_response_packet    matched with incoming creator: %s' % expected_recipient)
             matched = True
-        if incoming_remote_idurl in expected_recipient and my_id.getLocalID().to_bin() == incoming_owner_idurl.to_bin() and newpacket.Command == commands.Data():
+        if incoming_remote_idurl in expected_recipient and my_id.getLocalID().to_bin() == incoming_owner_idurl.to_bin() and incoming_command == commands.Data():
             if _Debug:
                 lg.out(_DebugLevel, 'packet_out.search_by_response_packet    matched my own incoming Data with incoming remote: %s' % expected_recipient)
             matched = True
@@ -292,8 +300,8 @@ def search_by_response_packet(newpacket, proto=None, host=None):
                     list(p.callbacks.keys())))
     if len(result) == 0:
         if _Debug:
-            lg.out(_DebugLevel, 'packet_out.search_by_response_packet        NOT FOUND pending packets in outbox queue matching incoming %s' % newpacket)
-        # if newpacket.Command in [commands.Ack(), commands.Fail()] and not newpacket.PacketID.lower().startswith('identity:'):
+            lg.out(_DebugLevel, 'packet_out.search_by_response_packet        NOT FOUND pending packets in outbox queue matching incoming %r' % newpacket)
+        # if incoming_command in [commands.Ack(), commands.Fail()] and not incoming_packet_id.lower().startswith('identity:'):
         #     lg.warn('received %s from %s://%s   but no matching outgoing packets found' % (newpacket, proto, host, ))
     return result
 

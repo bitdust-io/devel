@@ -84,6 +84,9 @@ def init():
     P2PCommandAcks[CancelService()] = [Ack(), Fail(), ]
     P2PCommandAcks[Broadcast()] = []
     P2PCommandAcks[Relay()] = []
+    P2PCommandAcks[RelayIn()] = []
+    P2PCommandAcks[RelayOut()] = []
+    P2PCommandAcks[RelayFail()] = []
     P2PCommandAcks[Coin()] = []
     P2PCommandAcks[RetrieveCoin()] = [Coin(), Fail(), ]
     P2PCommandAcks[Key()] = [Ack(), Fail(), ]
@@ -213,6 +216,13 @@ def RelayOut():
     Used by proxy transport to route packets in/out via third node.
     """
     return "RelayOut"
+
+
+def RelayFail():
+    """
+    Used by proxy transport to route packets in/out via third node.
+    """
+    return "RelayFail"
 
 
 def ListFiles():

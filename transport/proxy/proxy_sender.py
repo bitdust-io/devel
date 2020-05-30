@@ -36,6 +36,7 @@ BitDust proxy_sender() Automat
 
 EVENTS:
     * :red:`init`
+    * :red:`outbox-packet-failed`
     * :red:`outbox-packet-sent`
     * :red:`proxy_receiver.state`
     * :red:`shutdown`
@@ -180,6 +181,8 @@ class ProxySender(automat.Automat):
                 self.doDestroyMe(*args, **kwargs)
             elif event == 'proxy_receiver.state' is not 'LISTEN':
                 self.state = 'ROUTER?'
+            elif event == 'outbox-packet-failed':
+                self.doCancelPacket(*args, **kwargs)
         #---CLOSED---
         elif self.state == 'CLOSED':
             pass
@@ -220,6 +223,22 @@ class ProxySender(automat.Automat):
         """
         _, newpacket, _ = args[0]
         self.traffic_out += len(newpacket.Payload)
+
+    def doCancelPacket(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        fail_info = args[0]
+        for p in packet_out.search_by_response_packet(
+            newpacket=None,
+            incoming_command=fail_info['command'],
+            incoming_packet_id=fail_info['packet_id'],
+            incoming_owner_idurl=fail_info['from'],
+            incoming_creator_idurl=fail_info['from'],
+            incoming_remote_idurl=fail_info['to'],
+        ):
+            lg.warn('about to cancel %r because sending via proxy transport failed' % p)
+            p.automat('cancel')
 
     def doSendAllPendingPackets(self, *args, **kwargs):
         """
@@ -396,7 +415,6 @@ class ProxySender(automat.Automat):
                 pending_result.callback(result_packet)
 
 #------------------------------------------------------------------------------
-
 
 def main():
     reactor.callWhenRunning(A, 'init')  # @UndefinedVariable
