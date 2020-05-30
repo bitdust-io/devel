@@ -639,7 +639,7 @@ class ProxyReceiver(automat.Automat):
             if not identitycache.UpdateAfterChecking(idurl, routed_packet.Payload):
                 lg.warn("ERROR has non-Valid identity")
                 return
-        if routed_packet.Command == commands.Relay() and routed_packet.PacketID.lower().startswith('identity:'):
+        if routed_packet.Command in [commands.Relay(), commands.RelayIn(), ] and routed_packet.PacketID.lower().startswith('identity:'):
             if _Debug:
                 lg.out(_DebugLevel, '    found routed identity in relay packet %s' % routed_packet)
             try:
@@ -811,7 +811,7 @@ class ProxyReceiver(automat.Automat):
             return True
         if newpacket.CreatorID == self.router_idurl:
             self.latest_packet_received = time.time()
-        if newpacket.Command == commands.Relay():
+        if newpacket.Command in [commands.Relay(), commands.RelayIn(), ]:
             if driver.is_enabled('service_proxy_server'):
                 # TODO:
                 # in case this node already running proxy router service this will not work

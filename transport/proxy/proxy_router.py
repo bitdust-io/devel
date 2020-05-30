@@ -530,7 +530,7 @@ class ProxyRouter(automat.Automat):
         )
         raw_data = block.Serialize()
         routed_packet = signed.Packet(
-            Command=commands.Relay(),
+            Command=commands.RelayIn(),
             OwnerID=newpacket.OwnerID,
             CreatorID=my_id.getLocalID(),
             PacketID=newpacket.PacketID,
@@ -546,7 +546,7 @@ class ProxyRouter(automat.Automat):
                 'proto': receiver_proto,
                 'host': receiver_host,
                 'remoteid': receiver_idurl,
-                'description': ('Relay_%s[%s]_%s' % (
+                'description': ('RelayIn_%s[%s]_%s' % (
                     newpacket.Command, newpacket.PacketID,
                     nameurl.GetName(receiver_idurl))),
             },
@@ -754,7 +754,7 @@ class ProxyRouter(automat.Automat):
         # first filter all traffic addressed to me
         if newpacket.RemoteID == my_id.getLocalID():
             # check command type, filter Routed traffic first
-            if newpacket.Command == commands.Relay():
+            if newpacket.Command in [commands.Relay(), commands.RelayOut(), ]:
                 # look like this is a routed packet from node behind my proxy addressed to someone else
                 if (newpacket.CreatorID.original() in list(self.routes.keys()) or
                     newpacket.CreatorID.to_bin() in list(self.routes.keys()) or 

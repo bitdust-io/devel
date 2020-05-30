@@ -201,6 +201,20 @@ def Relay():
     return "Relay"
 
 
+def RelayIn():
+    """
+    Used by proxy transport to route packets in/out via third node.
+    """
+    return "RelayIn"
+
+
+def RelayOut():
+    """
+    Used by proxy transport to route packets in/out via third node.
+    """
+    return "RelayOut"
+
+
 def ListFiles():
     """
     Response from remote peer with a list of my files stored on his machine.

@@ -337,7 +337,7 @@ class ProxySender(automat.Automat):
         )
         block_encrypted = block.Serialize()
         newpacket = signed.Packet(
-            Command=commands.Relay(),
+            Command=commands.RelayOut(),
             OwnerID=outpacket.OwnerID,
             CreatorID=my_id.getLocalID(),
             PacketID=outpacket.PacketID,
@@ -354,7 +354,7 @@ class ProxySender(automat.Automat):
                 'proto': router_proto,
                 'host': router_host,
                 'remoteid': router_idurl,
-                'description': 'Relay_%s[%s]_%s' % (outpacket.Command, outpacket.PacketID, nameurl.GetName(router_idurl)),
+                'description': 'RelayOut_%s[%s]_%s' % (outpacket.Command, outpacket.PacketID, nameurl.GetName(router_idurl)),
             },
             response_timeout=response_timeout,
             keep_alive=keep_alive,
