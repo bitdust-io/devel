@@ -709,7 +709,9 @@ class ProxyRouter(automat.Automat):
         pout = packet_out.create(
             routed_packet,
             wide=wide,
-            callbacks={},
+            callbacks={
+                'failed': lambda pkt_out, msg: self._on_routed_out_packet_failed(pkt_out, msg, newpacket, sender_idurl),
+            },
             target=receiver_idurl,
             skip_ack=True,
         )
@@ -734,6 +736,12 @@ class ProxyRouter(automat.Automat):
         # need to filter my own packets here addressed to node A but Relay packets
         # in this case we need to send packet to the real address
         # because contacts in his identity are same that my own contacts
+        return None
+
+    def _on_routed_out_packet_failed(self, pkt_out, msg, newpacket, sender_idurl):
+        if _Debug:
+            lg.args(_DebugLevel, pkt_out=pkt_out, msg=pkt_out, newpacket=newpacket)
+        p2p_service.SendFail(newpacket, 'routed packet delivery failed', remote_idurl=sender_idurl)
         return None
 
     def _on_first_inbox_packet_received(self, newpacket, info, status, error_message):
