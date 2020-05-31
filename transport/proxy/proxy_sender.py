@@ -50,7 +50,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 _PacketLogFileEnabled = False
@@ -369,7 +369,7 @@ class ProxySender(automat.Automat):
             callbacks=callbacks,
             route={
                 'packet': newpacket,
-                # pointing "newpacket" to another node
+                # pointing "newpacket" to router node
                 'proto': router_proto,
                 'host': router_host,
                 'remoteid': router_idurl,

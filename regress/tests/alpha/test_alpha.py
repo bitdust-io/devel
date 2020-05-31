@@ -74,7 +74,7 @@ from testsupport import stop_daemon, run_ssh_command_and_wait, request_get, requ
 
 import keywords as kw
 
-SUPPLIERS_IDS = ['supplier-1', 'supplier-2', 'supplier-3', 'supplier-4', 'supplier-5', 'supplier-rotated', ]
+SUPPLIERS_IDS = ['supplier-1', 'supplier-2', 'supplier-3', 'supplier-4', 'supplier-5', ]
 BROKERS_IDS = ['broker-1', 'broker-2', 'broker-3', 'broker-4', ]
 CUSTOMERS_IDS = ['customer-1', 'customer-2', 'customer-3', 'customer-4', 'customer-rotated', ]
 ROTATED_NODES = ['supplier-rotated', 'customer-rotated', 'broker-rotated', 'proxy-rotated', ]
@@ -161,12 +161,12 @@ def test_alpha():
 def prepare():
     set_active_scenario('PREPARE')
     kw.wait_suppliers_connected(CUSTOMERS_IDS, expected_min_suppliers=2, expected_max_suppliers=2)
-    kw.wait_service_state(SUPPLIERS_IDS, 'service_supplier', 'ON')
+    kw.wait_service_state(SUPPLIERS_IDS + ['supplier-rotated', ], 'service_supplier', 'ON')
     kw.wait_service_state(CUSTOMERS_IDS, 'service_customer', 'ON')
     kw.wait_service_state(CUSTOMERS_IDS, 'service_shared_data', 'ON')
     kw.wait_service_state(CUSTOMERS_IDS, 'service_private_groups', 'ON')
     kw.wait_service_state(BROKERS_IDS + ['broker-rotated', ], 'service_message_broker', 'ON')
-    kw.wait_packets_finished(CUSTOMERS_IDS + BROKERS_IDS + ['broker-rotated', ] + SUPPLIERS_IDS)
+    kw.wait_packets_finished(CUSTOMERS_IDS + BROKERS_IDS + ['broker-rotated', ] + SUPPLIERS_IDS + ['supplier-rotated', ])
 
 
 def scenario1():
@@ -544,7 +544,7 @@ def scenario8():
     # customer-3 join the group, other group members are offline
     kw.group_join_v1('customer-3', customer_1_group_key_id)
 
-    kw.wait_packets_finished(CUSTOMERS_IDS + BROKERS_IDS + SUPPLIERS_IDS)
+    kw.wait_packets_finished(CUSTOMERS_IDS + BROKERS_IDS + SUPPLIERS_IDS + ['supplier-rotated', ])
 
     customer_1_broker_consumers = kw.queue_consumer_list_v1(customer_1_active_broker_name, extract_ids=True)
     customer_1_broker_producers = kw.queue_producer_list_v1(customer_1_active_broker_name, extract_ids=True)
@@ -1104,7 +1104,10 @@ def scenario13_end(old_customer_3_info):
     )
 
     # disable supplier-rotated so it will not affect other scenarios
+    # kw.config_set_v1('supplier-rotated', 'services/supplier/enabled', 'false')
     stop_daemon('supplier-rotated')
+
+    kw.wait_packets_finished(CUSTOMERS_IDS + SUPPLIERS_IDS)
 
 
 def scenario14(old_customer_1_info, customer_1_shared_file_info):

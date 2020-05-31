@@ -348,12 +348,12 @@ def contacts(include_all=False):
     Return a union of suppliers and customers ID's.
     """
     result = set()
-    if driver.is_enabled('service_customer') or include_all:
+    if include_all or driver.is_enabled('service_customer'):
         result.update(set(suppliers()))
-    if driver.is_enabled('service_supplier') or include_all:
+    if include_all or driver.is_enabled('service_supplier'):
         result.update(set(customers()))
-    if driver.is_enabled('service_private_messages') or include_all:
-        result.update(set(correspondents()))
+    if include_all or driver.is_enabled('service_private_messages'):
+        result.update(set(correspondents_ids()))
     return list(result)
 
 
