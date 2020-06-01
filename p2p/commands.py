@@ -68,7 +68,7 @@ def init():
     # Ack Files with Ack or Fail
     P2PCommandAcks[Files()] = [Ack(), Fail(), ]
     # If identity comes in and no interested party then transport sends an Ack
-    P2PCommandAcks[Identity()] = [Ack(), ]
+    P2PCommandAcks[Identity()] = [Ack(), Fail(), ]
     # Ack with Ack (maybe should be Files)
     P2PCommandAcks[DeleteFile()] = [Ack(), Fail(), ]
     # Ack with Ack (maybe should be Files)
@@ -85,9 +85,9 @@ def init():
     P2PCommandAcks[Broadcast()] = []
     P2PCommandAcks[Relay()] = []
     P2PCommandAcks[RelayIn()] = []
-    P2PCommandAcks[RelayOut()] = []
+    P2PCommandAcks[RelayOut()] = [RelayFail(), ]
     P2PCommandAcks[RelayFail()] = []
-    P2PCommandAcks[Coin()] = []
+    P2PCommandAcks[Coin()] = [Ack(), Fail(), ]
     P2PCommandAcks[RetrieveCoin()] = [Coin(), Fail(), ]
     P2PCommandAcks[Key()] = [Ack(), Fail(), ]
     P2PCommandAcks[AuditKey()] = [Ack(), Fail(), ]

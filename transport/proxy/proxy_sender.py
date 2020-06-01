@@ -81,13 +81,14 @@ from services import driver
 from p2p import commands
 from p2p import network_connector
 
-from userid import my_id
-from userid import global_id
-
 from transport import callback
 from transport import packet_out
 
 from transport.proxy import proxy_receiver
+
+from userid import id_url
+from userid import global_id
+from userid import my_id
 
 #------------------------------------------------------------------------------
 
@@ -229,16 +230,25 @@ class ProxySender(automat.Automat):
         Action method.
         """
         fail_info = args[0]
-        for p in packet_out.search_by_response_packet(
-            newpacket=None,
-            incoming_command=fail_info['command'],
-            incoming_packet_id=fail_info['packet_id'],
-            incoming_owner_idurl=fail_info['from'],
-            incoming_creator_idurl=fail_info['from'],
-            incoming_remote_idurl=fail_info['to'],
-        ):
-            lg.warn('about to cancel %r because sending via proxy transport failed' % p)
-            p.automat('cancel')
+        if _Debug:
+            lg.args(_DebugLevel, fail_info=fail_info)
+        for p in packet_out.search_by_packet_id(fail_info['packet_id']):
+            if p.outpacket.Command == fail_info['command']:
+                lg.warn('about to cancel %r because sending via proxy transport failed' % p)
+                p.automat('cancel')
+#         for p in packet_out.search_by_response_packet(
+#             newpacket=None,
+#             proto=None,
+#             host=None,
+#             outgoing_command=fail_info['command'],
+#             incoming_command=None,
+#             incoming_packet_id=fail_info['packet_id'],
+#             incoming_creator_idurl=id_url.field(fail_info['from']),
+#             incoming_owner_idurl=id_url.field(fail_info['from']),
+#             incoming_remote_idurl=id_url.field(fail_info['to']),
+#         ):
+#             lg.warn('about to cancel %r because sending via proxy transport failed' % p)
+#             p.automat('cancel')
 
     def doSendAllPendingPackets(self, *args, **kwargs):
         """

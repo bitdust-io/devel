@@ -182,13 +182,13 @@ def search(proto, host, filename, remote_idurl=None):
     return None, None
 
 
-def search_by_backup_id(backup_id):
+def search_by_packet_id(packet_id):
     result = []
     for p in queue():
-        if p.outpacket.PacketID.count(backup_id):
+        if p.outpacket.PacketID.count(packet_id):
             result.append(p)
     if _Debug:
-        lg.out(_DebugLevel, 'packet_out.search_by_backup_id %s:' % backup_id)
+        lg.out(_DebugLevel, 'packet_out.search_by_packet_id %s:' % packet_id)
         lg.out(_DebugLevel, '%s' % ('        \n'.join(map(str, result))))
     return result
 
@@ -233,26 +233,26 @@ def search_by_transfer_id(transfer_id):
     return None, None
 
 
-def search_by_response_packet(newpacket=None, proto=None, host=None, incoming_command=None, incoming_packet_id=None,
+def search_by_response_packet(newpacket=None, proto=None, host=None, outgoing_command=None, incoming_command=None, incoming_packet_id=None,
                               incoming_owner_idurl=None, incoming_creator_idurl=None, incoming_remote_idurl=None):
     result = []
-    if incoming_owner_idurl is None:
+    if incoming_owner_idurl is None and newpacket:
         incoming_owner_idurl = newpacket.OwnerID
-    if incoming_creator_idurl is None:
+    if incoming_creator_idurl is None and newpacket:
         incoming_creator_idurl = newpacket.CreatorID
-    if incoming_remote_idurl is None:
+    if incoming_remote_idurl is None and newpacket:
         incoming_remote_idurl = newpacket.RemoteID
-    if incoming_packet_id is None:
+    if incoming_packet_id is None and newpacket:
         incoming_packet_id = newpacket.PacketID
-    if incoming_command is None:
+    if incoming_command is None and newpacket:
         incoming_command = newpacket.Command
     if _Debug:
-        lg.out(_DebugLevel, 'packet_out.search_by_response_packet for incoming [%s/%s/%s]:%s(%s) from [%s://%s] :\n%s' % (
+        lg.out(_DebugLevel, 'packet_out.search_by_response_packet for incoming [%s/%s/%s]:%s|%s(%s) from [%s://%s] :\n%s' % (
             nameurl.GetName(incoming_owner_idurl), nameurl.GetName(incoming_creator_idurl), nameurl.GetName(incoming_remote_idurl),
-            incoming_command, incoming_packet_id, proto, host, ('\n'.join([strng.to_text(p.outpacket) for p in queue()]))))
+            outgoing_command, incoming_command, incoming_packet_id, proto, host, ('\n'.join([strng.to_text(p.outpacket) for p in queue()]))))
     matching_packet_ids = []
     matching_packet_ids.append(incoming_packet_id.lower())
-    if incoming_command in [commands.Data(), commands.Retrieve(), ] and id_url.is_cached(incoming_owner_idurl) and incoming_owner_idurl == my_id.getIDURL():
+    if incoming_command and incoming_command in [commands.Data(), commands.Retrieve(), ] and id_url.is_cached(incoming_owner_idurl) and incoming_owner_idurl == my_id.getIDURL():
         my_rotated_idurls = id_url.list_known_idurls(my_id.getIDURL(), num_revisions=10, include_revisions=False)
         for another_idurl in my_rotated_idurls:
             another_packet_id = global_id.SubstitutePacketID(incoming_packet_id, idurl=another_idurl).lower()
@@ -268,8 +268,11 @@ def search_by_response_packet(newpacket=None, proto=None, host=None, incoming_co
         if p.outpacket.PacketID != incoming_packet_id:
             lg.warn('packet ID in queue "almost" matching with incoming: %s ~ %s' % (
                 p.outpacket.PacketID, incoming_packet_id, ))
-        if not commands.IsCommandAck(p.outpacket.Command, incoming_command):
+        if outgoing_command is None and not commands.IsCommandAck(p.outpacket.Command, incoming_command):
             # this command must not be in the reply
+            continue
+        if outgoing_command is not None and outgoing_command != p.outpacket.Command:
+            # just in case if we are looking for some specific outgoing command
             continue
         # TODO: to be checked later - need to make sure we identify users correctly
         expected_recipient = [p.outpacket.RemoteID, ]
@@ -381,7 +384,7 @@ class PacketOut(automat.Automat):
         self.remote_idurl = id_url.field(target) if target else None
         self.route = route
         self.response_timeout = response_timeout
-        if self.route:
+        if self.route and 'remoteid' in self.route:
             self.description = self.route['description']
             self.remote_idurl = id_url.field(self.route['remoteid'])
         if not self.remote_idurl:
@@ -488,24 +491,24 @@ class PacketOut(automat.Automat):
                 self.doPopItems(*args, **kwargs)
                 self.doReportCancelled(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'unregister-item' and self.isAckNeeded(*args, **kwargs):
-                self.state = 'RESPONSE?'
-                self.doPopItem(*args, **kwargs)
-                self.doReportItem(*args, **kwargs)
             elif event == 'item-cancelled' and self.isMoreItems(*args, **kwargs):
                 self.doPopItem(*args, **kwargs)
                 self.doReportItem(*args, **kwargs)
-            elif event == 'unregister-item' and not self.isAckNeeded(*args, **kwargs):
-                self.state = 'SENT'
-                self.doPopItem(*args, **kwargs)
-                self.doReportItem(*args, **kwargs)
-                self.doReportDoneNoAck(*args, **kwargs)
-                self.doDestroyMe(*args, **kwargs)
-            elif event == 'item-cancelled' and not self.isMoreItems(*args, **kwargs):
+            elif ( event == 'unregister-item' and self.isFailed(*args, **kwargs) ) or ( event == 'item-cancelled' and not self.isMoreItems(*args, **kwargs) ):
                 self.state = 'FAILED'
                 self.doPopItem(*args, **kwargs)
                 self.doReportItem(*args, **kwargs)
                 self.doReportFailed(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
+            elif event == 'unregister-item' and not self.isFailed(*args, **kwargs) and self.isAckNeeded(*args, **kwargs):
+                self.state = 'RESPONSE?'
+                self.doPopItem(*args, **kwargs)
+                self.doReportItem(*args, **kwargs)
+            elif event == 'unregister-item' and not self.isFailed(*args, **kwargs) and not self.isAckNeeded(*args, **kwargs):
+                self.state = 'SENT'
+                self.doPopItem(*args, **kwargs)
+                self.doReportItem(*args, **kwargs)
+                self.doReportDoneNoAck(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
         #---AT_STARTUP---
         elif self.state == 'AT_STARTUP':
@@ -629,6 +632,12 @@ class PacketOut(automat.Automat):
             return True
         return commands.Ack() in list(self.callbacks.keys()) or commands.Fail() in list(self.callbacks.keys())
 
+    def isFailed(self, *args, **kwargs):
+        """
+        Condition method.
+        """
+        return args[0][1] != 'finished'
+
     def isMoreItems(self, *args, **kwargs):
         """
         Condition method.
@@ -676,7 +685,7 @@ class PacketOut(automat.Automat):
         # serialize and write packet on disk
         a_packet = self.outpacket
         if self.route:
-            a_packet = self.route['packet']
+            a_packet = self.route.get('packet', a_packet)
         try:
             fileno, self.filename = tmpfile.make('outbox', extension='.out')
             self.packetdata = a_packet.Serialize()
@@ -770,9 +779,14 @@ class PacketOut(automat.Automat):
             self, self.popped_item, self.popped_item.status,
             self.popped_item.bytes_sent, self.popped_item.error_message)
         if _PacketLogFileEnabled:
-            lg.out(0, '\033[0;49;90mSENT %d bytes to %s://%s TID:%s\033[0m' % (
-                self.popped_item.bytes_sent, strng.to_text(self.popped_item.proto),
-                strng.to_text(self.popped_item.host), self.popped_item.transfer_id), log_name='packet', showtime=True)
+            if self.popped_item.status == 'finished':
+                lg.out(0, '\033[0;49;90mSENT %d bytes to %s://%s TID:%s\033[0m' % (
+                    self.popped_item.bytes_sent, strng.to_text(self.popped_item.proto),
+                    strng.to_text(self.popped_item.host), self.popped_item.transfer_id), log_name='packet', showtime=True)
+            else:
+                lg.out(0, '\033[0;49;91mFAILED %d bytes to %s://%s with status=%r TID:%s\033[0m' % (
+                    self.popped_item.bytes_sent, strng.to_text(self.popped_item.proto),
+                    strng.to_text(self.popped_item.host), self.popped_item.status, self.popped_item.transfer_id), log_name='packet', showtime=True)
         self.popped_item = None
 
     def doReportCancelItems(self, *args, **kwargs):
@@ -933,7 +947,7 @@ class PacketOut(automat.Automat):
 
     def _push(self):
         from transport import gateway
-        if self.route:
+        if self.route and 'proto' in self.route and 'host' in self.route and 'remoteid' in self.route:
             # if this packet is routed - send directly to route host
             proto = strng.to_text(self.route['proto'])
             host = strng.to_bin(self.route['host'])

@@ -62,7 +62,7 @@ from io import BytesIO
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 _PacketLogFileEnabled = False
@@ -620,7 +620,7 @@ class ProxyReceiver(automat.Automat):
 
         if newpacket.Command == commands.RelayFail():
             try:
-                fail_info = serialization.BytesToDict(data)
+                fail_info = serialization.BytesToDict(data, keys_to_text=True, values_to_text=True)
             except:
                 lg.exc()
                 return
