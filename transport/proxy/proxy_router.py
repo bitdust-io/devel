@@ -706,11 +706,13 @@ class ProxyRouter(automat.Automat):
             route_closed_time = max(self.closed_routes.get(receiver_idurl.original(), 0), self.closed_routes.get(receiver_idurl.to_bin(), 0))
             if _Debug:
                 lg.args(_DebugLevel, route_closed_time=route_closed_time, time=time.time())
-            if time.time() - route_closed_time < 120:
+            if time.time() - route_closed_time < 900:
                 # route was closed but just recently - can not send outgoing data
                 lg.err('can not send routed data, route with %s already closed' % (receiver_idurl))
                 self._do_send_fail_packet(routed_packet, info, sender_idurl, receiver_idurl, 'route already closed')
                 return
+            self.closed_routes.pop(receiver_idurl.original(), None)
+            self.closed_routes.pop(receiver_idurl.to_bin(), None)
         if receiver_idurl.original() in routes_keys or receiver_idurl.to_bin() in routes_keys:
             # if both node A and node B are behind my proxy I need to send routed packet directly to B
             if _Debug:

@@ -291,7 +291,11 @@ class SupplierFinder(automat.Automat):
         Action method.
         """
         global _SuppliersToHire
-        self.target_idurl = id_url.field(_SuppliersToHire.pop(0))
+        for idurl in _SuppliersToHire:
+            if id_url.is_not_in(idurl, contactsdb.suppliers(), as_field=False):
+                self.target_idurl = id_url.field(idurl)
+                _SuppliersToHire.remove(idurl)
+                break
         lg.info('populate supplier %r from "hire" list, %d more in the list' % (
             self.target_idurl, len(_SuppliersToHire)))
 

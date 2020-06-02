@@ -234,21 +234,12 @@ class ProxySender(automat.Automat):
             lg.args(_DebugLevel, fail_info=fail_info)
         for p in packet_out.search_by_packet_id(fail_info['packet_id']):
             if p.outpacket.Command == fail_info['command']:
-                lg.warn('about to cancel %r because sending via proxy transport failed' % p)
-                p.automat('cancel')
-#         for p in packet_out.search_by_response_packet(
-#             newpacket=None,
-#             proto=None,
-#             host=None,
-#             outgoing_command=fail_info['command'],
-#             incoming_command=None,
-#             incoming_packet_id=fail_info['packet_id'],
-#             incoming_creator_idurl=id_url.field(fail_info['from']),
-#             incoming_owner_idurl=id_url.field(fail_info['from']),
-#             incoming_remote_idurl=id_url.field(fail_info['to']),
-#         ):
-#             lg.warn('about to cancel %r because sending via proxy transport failed' % p)
-#             p.automat('cancel')
+                to_idurl = id_url.field(fail_info['to'])
+                from_idurl = id_url.field(fail_info['from'])
+                if p.outpacket.RemoteID == to_idurl:
+                    if p.outpacket.CreatorID == from_idurl or p.outpacket.OwnerID == from_idurl:
+                        lg.warn('about to cancel %r because sending via proxy transport failed' % p)
+                        p.automat('cancel')
 
     def doSendAllPendingPackets(self, *args, **kwargs):
         """

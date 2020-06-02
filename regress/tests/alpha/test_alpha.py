@@ -1136,7 +1136,14 @@ def scenario14(old_customer_1_info, customer_1_shared_file_info):
     customer_1_supplier_idurls_before = kw.supplier_list_v1('customer-1', expected_min_suppliers=2, expected_max_suppliers=2)
     assert len(customer_1_supplier_idurls_before) == 2
 
-    # kw.config_set_v1('customer-1', 'services/employer/candidates', '')
+    possible_suppliers = set([
+        'http://id-a:8084/supplier-1.xml',
+        'http://id-b:8084/supplier-2.xml',
+        'http://id-a:8084/supplier-3.xml',
+        'http://id-b:8084/supplier-4.xml',
+        'http://id-a:8084/supplier-5.xml',
+    ])
+    kw.config_set_v1('customer-1', 'services/employer/candidates', ','.join(possible_suppliers))
     response = request_post('customer-1', 'supplier/change/v1', json={'position': '0'})
     assert response.status_code == 200
     assert response.json()['status'] == 'OK', response.json()
@@ -1151,7 +1158,7 @@ def scenario14(old_customer_1_info, customer_1_shared_file_info):
         if count > 20:
             assert False, 'supplier was not replaced after many attempts'
             break
-        customer_1_supplier_idurls_after = kw.supplier_list_v1('customer-1', expected_min_suppliers=2, expected_max_suppliers=2)
+        customer_1_supplier_idurls_after = kw.supplier_list_v1('customer-1', expected_min_suppliers=2, expected_max_suppliers=2, verbose=False)
         # customer_1_supplier_ids_after = list([x['global_id'] for x in customer_1_supplier_idurls_after])
         assert len(customer_1_supplier_idurls_after) == 2
         assert customer_1_supplier_idurls_after[1] == customer_1_supplier_idurls_after[1]
