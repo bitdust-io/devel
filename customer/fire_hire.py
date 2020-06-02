@@ -598,12 +598,13 @@ class FireHire(automat.Automat):
             return
         critical_offline_suppliers_count = eccmap.GetFireHireErrors(number_desired)
         if len(offline_suppliers) >= critical_offline_suppliers_count and len(offline_suppliers) > 0:
-            # TODO: check that issue
-            # too aggressive replacing suppliers who still have the data is very dangerous !!!
-            one_dead_supplier = offline_suppliers.pop()
-            lg.warn('found "CRITICALLY_OFFLINE" supplier %s, max offline limit is %d' % (
-                one_dead_supplier, critical_offline_suppliers_count, ))
-            potentialy_fired.add(one_dead_supplier)
+            if config.conf().getBool('services/employer/replace-critically-offline-enabled'):
+                # TODO: check that issue
+                # too aggressive replacing suppliers who still have the data is very dangerous !!!
+                one_dead_supplier = offline_suppliers.pop()
+                lg.warn('found "CRITICALLY_OFFLINE" supplier %s, max offline limit is %d' % (
+                    one_dead_supplier, critical_offline_suppliers_count, ))
+                potentialy_fired.add(one_dead_supplier)
         if not potentialy_fired:
             if _Debug:
                 lg.out(_DebugLevel, 'fire_hire.doDecideToDismiss   found no "bad" suppliers, all is good !!!!!')

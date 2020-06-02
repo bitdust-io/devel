@@ -140,6 +140,7 @@ def defaults():
         'services/entangled-dht/known-nodes': TYPE_STRING,
         'services/entangled-dht/attached-layers': TYPE_STRING,
         'services/employer/enabled': TYPE_BOOLEAN,
+        'services/employer/replace-critically-offline-enabled': TYPE_BOOLEAN,
         'services/employer/candidates': TYPE_STRING,
         'services/gateway/enabled': TYPE_BOOLEAN,
         'services/http-connections/enabled': TYPE_BOOLEAN,

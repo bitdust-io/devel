@@ -446,6 +446,7 @@ def scenario8():
 #     assert kw.queue_producer_list_v1('broker-4', extract_ids=True) == []
 
     # create group owned by customer-1 and join
+    kw.service_info_v1('customer-1', 'service_private_groups', 'ON')
     customer_1_group_key_id = kw.group_create_v1('customer-1', label='ArchivedGroupABC')
 
     customer_1_group_info_inactive = kw.group_info_v1('customer-1', customer_1_group_key_id)['result']

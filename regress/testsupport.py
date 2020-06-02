@@ -921,6 +921,7 @@ async def start_customer_async(node, identity_name, loop, join_network=True, num
         cmd += f'bitdust set services/backups/block-size "{block_size}";'
     if supplier_candidates:
         cmd += f'bitdust set services/employer/candidates "{supplier_candidates}";'
+    cmd += 'bitdust set services/employer/replace-critically-offline-enabled false;'
     await run_ssh_command_and_wait_async(node, cmd, loop)
     # start BitDust daemon and create new identity for supplier
     await start_daemon_async(node, loop)

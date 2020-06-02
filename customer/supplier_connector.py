@@ -645,10 +645,11 @@ class SupplierConnector(automat.Automat):
 
     def _on_online_status_state_changed(self, oldstate, newstate, event_string, *args, **kwargs):
         if oldstate != newstate and newstate in ['CONNECTED', 'OFFLINE', ]:
-            if _Debug:
-                lg.out(_DebugLevel, 'supplier_connector._on_online_status_state_changed %s : %s->%s, reconnecting now' % (
-                    self.supplier_idurl, oldstate, newstate))
-            reactor.callLater(0, self.automat, 'connect')  # @UndefinedVariable
+            if not (oldstate == 'PING?' and newstate == 'OFFLINE'):
+                if _Debug:
+                    lg.out(_DebugLevel, 'supplier_connector._on_online_status_state_changed %s : %s->%s, reconnecting now' % (
+                        self.supplier_idurl, oldstate, newstate))
+                reactor.callLater(0, self.automat, 'connect')  # @UndefinedVariable
 
     def _do_request_supplier_service(self, ecc_map, family_position, family_snapshot):
         if _Debug:

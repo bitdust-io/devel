@@ -132,6 +132,7 @@ def reset(conf_obj):
     conf_obj.setDefaultValue('services/entangled-dht/attached-layers', '')
 
     conf_obj.setDefaultValue('services/employer/enabled', 'true')
+    conf_obj.setDefaultValue('services/employer/replace-critically-offline-enabled', 'true')
     conf_obj.setDefaultValue('services/employer/candidates', '')
 
     conf_obj.setDefaultValue('services/gateway/enabled', 'true')
