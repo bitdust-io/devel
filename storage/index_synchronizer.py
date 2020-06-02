@@ -377,7 +377,7 @@ class IndexSynchronizer(automat.Automat):
             path=settings.BackupIndexFileName(),
         )
         self.sending_suppliers.clear()
-        self.outgoing_packets_ids.clear()
+        self.outgoing_packets_ids = []
         self.sent_suppliers_number = 0
         localID = my_id.getLocalID()
         b = encrypted.Block(
