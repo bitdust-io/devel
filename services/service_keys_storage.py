@@ -44,6 +44,7 @@ class KeysStorageService(LocalService):
     config_path = 'services/keys-storage/enabled'
 
     last_time_keys_synchronized = None
+    sync_keys_requested = False
 
     def dependent_on(self):
         return [
@@ -67,6 +68,8 @@ class KeysStorageService(LocalService):
         events.add_subscriber(self._on_key_erased, 'key-erased')
         events.add_subscriber(self._on_my_backup_index_synchronized, 'my-backup-index-synchronized')
         events.add_subscriber(self._on_my_backup_index_out_of_sync, 'my-backup-index-out-of-sync')
+        if index_synchronizer.A():
+            index_synchronizer.A().addStateChangedCallback(self._on_index_synchronizer_state_changed)
         if index_synchronizer.A() and index_synchronizer.A().state == 'NO_INFO':
             # it seems I am offline...  must start here, but expect to be online soon and sync keys later 
             return True
@@ -77,7 +80,10 @@ class KeysStorageService(LocalService):
 
     def stop(self):
         from main import events
+        from storage import index_synchronizer
         from storage import keys_synchronizer
+        if index_synchronizer.A():
+            index_synchronizer.A().removeStateChangedCallback(self._on_index_synchronizer_state_changed)
         events.remove_subscriber(self._on_my_backup_index_out_of_sync, 'my-backup-index-out-of-sync')
         events.remove_subscriber(self._on_my_backup_index_synchronized, 'my-backup-index-synchronized')
         events.remove_subscriber(self._on_key_erased, 'key-erased')
@@ -123,21 +129,33 @@ class KeysStorageService(LocalService):
         When key was renamed (after identity rotate) make sure to store the latest copy and remove older one. 
         """
         from logs import lg
-        from userid import global_id
-        from userid import my_id
-        from interface import api
         from storage import backup_control
         from storage import index_synchronizer
-        from storage import keys_synchronizer
         from twisted.internet.defer import Deferred
+        is_in_sync = index_synchronizer.is_synchronized() and backup_control.revision() > 0
+        if is_in_sync:
+            result = Deferred()
+            result.addCallback(self._on_keys_synchronized)
+            result.addErrback(self._on_keys_synchronize_failed)
+            self._do_check_sync_keys(result)
+            return
+        lg.warn('backup index database is not synchronized yet')
+        if index_synchronizer.is_synchronizing():
+            self.sync_keys_requested = True
+            return
         result = Deferred()
         result.addCallback(self._on_keys_synchronized)
         result.addErrback(self._on_keys_synchronize_failed)
-        is_in_sync = index_synchronizer.is_synchronized() and backup_control.revision() > 0
-        if not is_in_sync:
-            lg.warn('backup index database is not synchronized yet')
-            result.errback(Exception('backup index database is not synchronized yet'))
-            return None
+        result.errback(Exception('backup index database is not synchronized'))
+        return None
+
+    def _do_check_sync_keys(self, result):
+        from logs import lg
+        from interface import api
+        from storage import keys_synchronizer
+        from userid import global_id
+        from userid import my_id
+        self.sync_keys_requested = False
         global_keys_folder_path = global_id.MakeGlobalID(
             key_alias='master', customer=my_id.getGlobalID(), path='.keys')
         res = api.file_exists(global_keys_folder_path)
@@ -215,3 +233,12 @@ class KeysStorageService(LocalService):
         self._do_synchronize_keys()
         backup_control.Save()
         return None
+
+    def _on_index_synchronizer_state_changed(self, oldstate, newstate, event_string, *args, **kwargs):
+        from twisted.internet.defer import Deferred
+        if oldstate in ['REQUEST?', 'SENDING', ] and newstate == 'IN_SYNC!':
+            if self.sync_keys_requested:
+                result = Deferred()
+                result.addCallback(self._on_keys_synchronized)
+                result.addErrback(self._on_keys_synchronize_failed)
+                self._do_check_sync_keys(result)

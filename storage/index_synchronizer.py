@@ -144,6 +144,12 @@ def is_synchronized():
             return True
     return False
 
+
+def is_synchronizing():
+    if not A():
+        return False
+    return A().state in ['REQUEST?', 'SENDING', ]
+
 #------------------------------------------------------------------------------
 
 def A(event=None, *args, **kwargs):
