@@ -343,16 +343,16 @@ def clear_customers():
 
 #------------------------------------------------------------------------------
 
-def contacts(include_all=False):
+def contacts(include_all=False, include_enabled=True):
     """
     Return a union of suppliers and customers ID's.
     """
     result = set()
-    if include_all or driver.is_enabled('service_customer'):
+    if include_all or (include_enabled and driver.is_enabled('service_customer')) or driver.is_on('service_customer'):
         result.update(set(suppliers()))
-    if include_all or driver.is_enabled('service_supplier'):
+    if include_all or (include_enabled and driver.is_enabled('service_supplier')) or driver.is_on('service_supplier'):
         result.update(set(customers()))
-    if include_all or driver.is_enabled('service_private_messages'):
+    if include_all or (include_enabled and driver.is_enabled('service_private_messages')) or driver.is_on('service_private_messages'):
         result.update(set(correspondents_ids()))
     return list(result)
 
@@ -364,11 +364,11 @@ def contacts_list():
     return list(suppliers() + customers())
 
 
-def contacts_remote(include_all=False):
+def contacts_remote(include_all=False, include_enabled=True):
     """
     Return ID's list of all known peers.
     """
-    allcontactslist = id_url.to_bin_list(contacts(include_all=include_all))
+    allcontactslist = id_url.to_bin_list(contacts(include_all=include_all, include_enabled=include_enabled))
     if my_id.getLocalID().to_bin() in allcontactslist:
         allcontactslist.remove(my_id.getLocalID().to_bin())
     return id_url.fields_list(allcontactslist)

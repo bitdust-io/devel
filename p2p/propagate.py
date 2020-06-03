@@ -159,14 +159,14 @@ def fetch(list_ids, refresh_cache=False):
     return DeferredList(dl, consumeErrors=True)
 
 
-def start(AckHandler=None, wide=False, refresh_cache=False):
+def start(AckHandler=None, wide=False, refresh_cache=False, include_all=True, include_enabled=True):
     """
-    Call ``propagate()`` for all known contacts.
+    Call ``propagate()`` for all known contacts or only for those which are related to enabled/active services.
     """
     if _Debug:
         lg.out(_DebugLevel, 'propagate.start wide=%r refresh_cache=%r' % (wide, refresh_cache))
     return propagate(
-        selected_contacts=contactsdb.contacts_remote(include_all=False),
+        selected_contacts=contactsdb.contacts_remote(include_all=include_all, include_enabled=include_enabled),
         AckHandler=AckHandler,
         wide=wide,
         refresh_cache=refresh_cache,
