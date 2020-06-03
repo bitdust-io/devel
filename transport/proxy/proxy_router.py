@@ -249,23 +249,16 @@ class ProxyRouter(automat.Automat):
         """
         Action method.
         """
-        idurl = id_url.field(args[0])
-        identitycache.StopOverridingIdentity(idurl.original())
-        # self._remove_route(idurl)
-        self.routes.pop(idurl.original(), None)
-        self.routes.pop(idurl.to_bin(), None)
-        self.closed_routes[idurl.original()] = time.time()
-        self.closed_routes[idurl.to_bin()] = time.time()
+        self._do_unregister_route(args[0])
 
     def doUnregisterAllRouts(self, *args, **kwargs):
         """
         Action method.
         """
-        for idurl in self.routes.keys():
-            identitycache.StopOverridingIdentity(idurl)
+        for idurl in list(self.routes.keys()):
+            self._do_unregister_route(idurl)
         self.routes.clear()
         self.closed_routes.clear()
-        # self._clear_routes()
 
     def doForwardOutboxPacket(self, *args, **kwargs):
         """
@@ -330,6 +323,8 @@ class ProxyRouter(automat.Automat):
         global _PacketLogFileEnabled
         _PacketLogFileEnabled = False
         self.acks.clear()
+        for idurl in list(self.routes.keys()):
+            self._do_unregister_route(idurl)
         events.remove_subscriber(self._on_identity_url_changed, 'identity-url-changed')
         if network_connector.A():
             network_connector.A().removeStateChangedCallback(self._on_network_connector_state_changed)
@@ -395,6 +390,8 @@ class ProxyRouter(automat.Automat):
                 active_user_sessions = gateway.find_active_session(info.proto, info.host)
                 if not active_user_sessions:
                     active_user_sessions = gateway.find_active_session(info.proto, idurl=user_idurl.original())
+                if not active_user_sessions:
+                    active_user_sessions = gateway.find_active_session(info.proto, idurl=user_idurl.to_bin())
                 if active_user_sessions:
                     user_connection_info = {
                         'id': active_user_sessions[0].id,
@@ -406,11 +403,15 @@ class ProxyRouter(automat.Automat):
                     active_user_session_machine = automat.objects().get(user_connection_info['index'], None)
                     if active_user_session_machine:
                         self.routes[user_idurl.original()]['connection_info'] = user_connection_info
-                        if _Debug:
-                            lg.dbg(_DebugLevel, 'connected %s routed user, set active session: %s' % (
-                                oldnew.upper(), user_connection_info))
+                        active_user_session_machine.addStateChangedCallback(
+                            cb=lambda oldstate, newstate, event_string, *args, **kwargs:
+                                self._on_user_session_disconnected(user_idurl.original(), oldstate, newstate, event_string, *args, **kwargs),
+                            oldstate='CONNECTED',
+                            callback_id='proxy_router',
+                        )
+                        lg.info('connected %s routed user %r and set active session: %r' % (oldnew.upper(), user_idurl, active_user_session_machine))
                     else:
-                        lg.err('not found session state machine: %s' % user_connection_info['index'])
+                        lg.err('not found session state machine by index %s' % user_connection_info['index'])
                 else:
                     if _Debug:
                         lg.dbg(_DebugLevel, 'active connection with user %s at %s:%s not yet exist' % (
@@ -427,6 +428,13 @@ class ProxyRouter(automat.Automat):
         elif request.Command == commands.CancelService():
             if user_idurl.original() in list(self.routes.keys()) or user_idurl.to_bin() in list(self.routes.keys()):
                 # cancel existing route
+                active_user_session_machine_index = self.routes.get(user_idurl.original(), {}).get('connection_info', {}).get('index', None)
+                if active_user_session_machine_index is None:
+                    active_user_session_machine_index = self.routes.get(user_idurl.to_bin(), {}).get('connection_info', {}).get('index', None)
+                if active_user_session_machine_index is not None:
+                    active_user_session_machine = automat.objects().get(active_user_session_machine_index, None)
+                    if active_user_session_machine is not None:
+                        active_user_session_machine.removeStateChangedCallback(callback_id='proxy_router')
                 self.routes.pop(user_idurl.original(), None)
                 self.routes.pop(user_idurl.to_bin(), None)
                 self.closed_routes[user_idurl.original()] = time.time()
@@ -837,6 +845,24 @@ class ProxyRouter(automat.Automat):
         del routed_packet
         return raw_data, pout
 
+    def _do_unregister_route(self, idurl):
+        idurl = id_url.field(idurl)
+        if _Debug:
+            lg.args(_DebugLevel, idurl=idurl)
+        active_user_session_machine_index = self.routes.get(idurl.original(), {}).get('connection_info', {}).get('index', None)
+        if active_user_session_machine_index is None:
+            active_user_session_machine_index = self.routes.get(idurl.to_bin(), {}).get('connection_info', {}).get('index', None)
+        if active_user_session_machine_index is not None:
+            active_user_session_machine = automat.objects().get(active_user_session_machine_index, None)
+            if active_user_session_machine is not None:
+                active_user_session_machine.removeStateChangedCallback(callback_id='proxy_router')
+                lg.info('removed "proxy_router" callback from active user session %r' % active_user_session_machine)
+        identitycache.StopOverridingIdentity(idurl.original())
+        self.routes.pop(idurl.original(), None)
+        self.routes.pop(idurl.to_bin(), None)
+        self.closed_routes[idurl.original()] = time.time()
+        self.closed_routes[idurl.to_bin()] = time.time()
+
     def _on_routed_in_packet_failed(self, pkt_out, msg, newpacket, info, receiver_idurl):
         lg.err('routed packet transfer failed: %r %r %r %r %r' % ( pkt_out, msg, newpacket, info, receiver_idurl))
         p2p_service.SendFail(newpacket, 'routed packet transfer failed', remote_idurl=newpacket.CreatorID)
@@ -1049,7 +1075,7 @@ class ProxyRouter(automat.Automat):
         return found
 
     def _on_user_session_disconnected(self, user_id, oldstate, newstate, event_string, *args, **kwargs):
-        lg.warn('user session disconnected: %s->%s' % (oldstate, newstate))
+        lg.warn('user session disconnected  %r : %s->%s' % (user_id, oldstate, newstate))
         self.automat('routed-session-disconnected', user_id)
 
     def _on_identity_url_changed(self, evt):

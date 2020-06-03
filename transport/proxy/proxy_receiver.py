@@ -480,9 +480,9 @@ class ProxyReceiver(automat.Automat):
                 'global_id': global_id.UrlToGlobalID(self.router_idurl),
             }
             active_router_session_machine = automat.objects().get(self.router_connection_info['index'], None)
-            if active_router_session_machine:
-                # active_router_session_machine.addStateChangedCallback(
-                #     self._on_router_session_disconnected, oldstate='CONNECTED')
+            if active_router_session_machine is not None:
+                active_router_session_machine.addStateChangedCallback(
+                    self._on_router_session_disconnected, oldstate='CONNECTED')
                 lg.info('connected to proxy router and set active session: %s' % self.router_connection_info)
             else:
                 lg.err('not found proxy router session state machine: %s' % self.router_connection_info['index'])
@@ -505,6 +505,14 @@ class ProxyReceiver(automat.Automat):
                 idurl=self.router_idurl,
                 callback_method=self._on_router_contact_status_offline,
             )
+        active_router_session_machine_index = self.router_connection_info.get('index', None)
+        if active_router_session_machine_index is not None:
+            active_router_session_machine = automat.objects().get(active_router_session_machine_index, None)
+            if active_router_session_machine is not None:
+                active_router_session_machine.removeStateChangedCallback(self._on_router_session_disconnected)
+                lg.info('removed callback from router active session: %r' % active_router_session_machine)
+            else:
+                lg.err('did not found active router session state machine with index %s' % active_router_session_machine_index)
         # if contact_status.isKnown(self.router_idurl):
         #     contact_status.A(self.router_idurl).removeStateChangedCallback(self._on_router_contact_status_connected)
         #     contact_status.A(self.router_idurl).removeStateChangedCallback(self._on_router_contact_status_offline)
