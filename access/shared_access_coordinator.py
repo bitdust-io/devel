@@ -370,7 +370,7 @@ class SharedAccessCoordinator(automat.Automat):
         except:
             lg.exc()
             return
-        self.outgoing_list_files_packets_ids.clear()
+        self.outgoing_list_files_packets_ids = []
         self.known_ecc_map = args[0].get('ecc_map')
         for supplier_idurl in self.known_suppliers_list:
             sc = supplier_connector.by_idurl(supplier_idurl, customer_idurl=self.customer_idurl)
@@ -478,7 +478,7 @@ class SharedAccessCoordinator(automat.Automat):
         """
         Remove all references to the state machine object to destroy it.
         """
-        self.outgoing_list_files_packets_ids.clear()
+        self.outgoing_list_files_packets_ids = []
         self.result_defer = None
         self.destroy()
 

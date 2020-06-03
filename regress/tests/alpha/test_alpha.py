@@ -141,7 +141,7 @@ def test_alpha():
     scenario8()
 
     #--- SCENARIO 4: customer-1 share files to customer-2
-    customer_1_shared_file_info = scenario4()
+    customer_1_shared_file_info, customer_2_shared_file_info = scenario4()
 
     #--- SCENARIO 14: customer-1 replace supplier at position 0 by random node
     scenario14(old_customer_1_info, customer_1_shared_file_info)
@@ -152,8 +152,8 @@ def test_alpha():
     #--- SCENARIO 16: customer-4 increase and decrease suppliers amount
     scenario16()
 
-    #--- SCENARIO 17: customer-restore recover identity from customer-1
-    scenario17(old_customer_1_info)
+    #--- SCENARIO 17: customer-restore recover identity from customer-2
+    scenario17(customer_2_shared_file_info)
 
 
 #------------------------------------------------------------------------------
@@ -301,12 +301,17 @@ def scenario4():
     assert len(customer_2_cat_own) == 100
     assert len(customer_2_cat_shared) == 200
 
-    return {
+    return ({
         'share_id': customer_1_share_id_cat,
         'local_filepath': customer_1_local_filepath_cat,
         'remote_path': customer_1_remote_path_cat,
         'download_filepath': customer_1_download_filepath_cat,
-    }
+    }, {
+        'share_id': customer_2_share_id_cat,
+        'local_filepath': customer_2_local_filepath_cat,
+        'remote_path': customer_2_remote_path_cat,
+        'download_filepath': customer_2_download_filepath_cat,
+    })
 
 
 def scenario5():
@@ -1326,30 +1331,30 @@ def scenario16():
     )
 
 
-def scenario17(old_customer_1_info):
+def scenario17(old_customer_2_info):
     set_active_scenario('SCENARIO 17')
-    print('\n\n============\n[SCENARIO 17] customer-restore recover identity from customer-1')
+    print('\n\n============\n[SCENARIO 17] customer-restore recover identity from customer-2')
 
-    # backup customer-1 private key
-    backup_file_directory_c2 = '/customer_1/identity.backup'
+    # backup customer-2 private key
+    backup_file_directory_c2 = '/customer_2/identity.backup'
     backup_file_directory_c3 = '/customer_restore/identity.backup'
     assert not os.path.exists(backup_file_directory_c2)
 
-    response = request_post('customer-1', 'identity/backup/v1',
+    response = request_post('customer-2', 'identity/backup/v1',
         json={
             'destination_path': backup_file_directory_c2,
         },
     )
-    print('\nidentity/backup/v1 [customer-1] : %s\n' % response.json())
+    print('\nidentity/backup/v1 [customer-2] : %s\n' % response.json())
     assert response.json()['status'] == 'OK', response.json()
 
     # copy private key from one container to another
     # just like when you backup your private key and restore it from USB stick on another device
     shutil.move(backup_file_directory_c2, backup_file_directory_c3)
 
-    # stop customer-1 container
-    response = request_get('customer-1', 'process/stop/v1')
-    print('\nprocess/stop/v1 [customer-1] : %s\n' % response.json())
+    # stop customer-2 node
+    response = request_get('customer-2', 'process/stop/v1')
+    print('\nprocess/stop/v1 [customer-2] : %s\n' % response.json())
     assert response.json()['status'] == 'OK', response.json()
 
     # recover key on customer-restore container and join network
@@ -1373,21 +1378,21 @@ def scenario17(old_customer_1_info):
     kw.supplier_list_v1('customer-restore', expected_min_suppliers=2, expected_max_suppliers=2)
 
     kw.supplier_list_dht_v1(
-        customer_id='customer-1@id-a_8084',
+        customer_id='customer-2@id-b_8084',
         observers_ids=['customer-restore@id-a_8084', 'supplier-3@id-a_8084', 'supplier-1@id-a_8084', ],
         expected_ecc_map='ecc/2x2',
         expected_suppliers_number=2,
     )
 
     kw.supplier_list_dht_v1(
-        customer_id='customer-1@id-a_8084',
+        customer_id='customer-2@id-b_8084',
         observers_ids=['supplier-3@id-a_8084', 'supplier-1@id-a_8084', 'customer-restore@id-a_8084', ],
         expected_ecc_map='ecc/2x2',
         expected_suppliers_number=2,
     )
 
     kw.supplier_list_dht_v1(
-        customer_id='customer-1@id-a_8084',
+        customer_id='customer-2@id-b_8084',
         observers_ids=['supplier-1@id-a_8084', 'customer-restore@id-a_8084', 'supplier-3@id-a_8084', ],
         expected_ecc_map='ecc/2x2',
         expected_suppliers_number=2,
@@ -1398,8 +1403,8 @@ def scenario17(old_customer_1_info):
     # try to recover stored file again
     kw.verify_file_download_start(
         node='customer-restore',
-        remote_path=old_customer_1_info['remote_path'],
-        destination_path=old_customer_1_info['download_filepath'],
+        remote_path=old_customer_2_info['remote_path'],
+        destination_path=old_customer_2_info['download_filepath'],
     )
     # TODO:
     # test my keys also recovered
