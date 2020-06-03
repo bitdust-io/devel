@@ -100,7 +100,7 @@ def request_get(node, url, timeout=None, attempts=3, verbose=True):
     err = None
     count = 0
     while True:
-        if count > attempts:
+        if count >= attempts:
             if verbose:
                 print('\nGET request failed after few attempts :  node=%r   url=%r   err=%r\n' % (node, url, err))
             assert False, 'GET request failed after few attempts :  node=%r   url=%r    err=%r' % (node, url, err)
@@ -126,7 +126,7 @@ def request_post(node, url, json={}, timeout=None, attempts=3, verbose=True):
     err = None
     count = 0
     while True:
-        if count > attempts:
+        if count >= attempts:
             if verbose:
                 print('\nPOST request failed after few attempts :  node=%r   url=%r   json=%r   err=%r\n' % (node, url, json, err))
             assert False, 'POST request failed after few attempts :  node=%r   url=%r   json=%r   err=%r' % (node, url, json, err)
@@ -153,7 +153,7 @@ def request_put(node, url, json={}, timeout=None, attempts=3, verbose=True):
     err = None
     count = 0
     while True:
-        if count > attempts:
+        if count >= attempts:
             if verbose:
                 print('\nPUT request failed after few attempts :  node=%r   url=%r   json=%r   err=%r\n' % (node, url, json, err))
             assert False, 'PUT request failed after few attempts :  node=%r   url=%r   json=%r   err=%r' % (node, url, json, err)
@@ -180,7 +180,7 @@ def request_delete(node, url, json={}, timeout=None, attempts=3, verbose=True):
     err = None
     count = 0
     while True:
-        if count > attempts:
+        if count >= attempts:
             if verbose:
                 print('\nDELETE request failed after few attempts :  node=%r   url=%r   json=%r   err=%r\n' % (node, url, json, err))
             assert False, 'DELETE request failed after few attempts :  node=%r   url=%r   json=%r   err=%r' % (node, url, json, err)

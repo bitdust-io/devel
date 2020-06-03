@@ -112,8 +112,9 @@ class NetworkTransport(automat.Automat):
     def call(self, method_name, *args):
         method = getattr(self.interface, method_name, None)
         if method is None:
-            lg.err('method %s not found in %r transport' % (method_name, self.proto))
-            return fail(Exception('Method %s not found in the transport %s interface' % (method_name, self.proto)))
+            raise Exception('method %s not found in %r transport' % (method_name, self.proto))
+            # lg.err('method %s not found in %r transport' % (method_name, self.proto))
+            # return fail(Exception('Method %s not found in the transport %s interface' % (method_name, self.proto)))
         return method(*args)
 
     def init(self):

@@ -77,6 +77,7 @@ import keywords as kw
 SUPPLIERS_IDS = ['supplier-1', 'supplier-2', 'supplier-3', 'supplier-4', 'supplier-5', ]
 BROKERS_IDS = ['broker-1', 'broker-2', 'broker-3', 'broker-4', ]
 CUSTOMERS_IDS = ['customer-1', 'customer-2', 'customer-3', 'customer-4', 'customer-rotated', ]
+CUSTOMERS_IDS_SHORT = ['customer-1', 'customer-3', 'customer-4', ]
 ROTATED_NODES = ['supplier-rotated', 'customer-rotated', 'broker-rotated', 'proxy-rotated', ]
 
 group_customers_2_4_messages = []
@@ -1357,6 +1358,8 @@ def scenario17(old_customer_2_info):
     print('\nprocess/stop/v1 [customer-2] : %s\n' % response.json())
     assert response.json()['status'] == 'OK', response.json()
 
+    kw.wait_packets_finished(SUPPLIERS_IDS + CUSTOMERS_IDS_SHORT)
+
     # recover key on customer-restore container and join network
     for _ in range(5):
         response = request_post('customer-restore', 'identity/recover/v1',
@@ -1398,13 +1401,14 @@ def scenario17(old_customer_2_info):
         expected_suppliers_number=2,
     )
 
-    kw.file_list_all_v1('customer-restore')
+    kw.file_list_all_v1('customer-restore', expected_reliable=50)
 
     # try to recover stored file again
     kw.verify_file_download_start(
         node='customer-restore',
         remote_path=old_customer_2_info['remote_path'],
         destination_path=old_customer_2_info['download_filepath'],
+        expected_reliable=50,
     )
     # TODO:
     # test my keys also recovered

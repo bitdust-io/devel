@@ -641,18 +641,27 @@ def find_active_session(proto, host=None, idurl=None):
     """
     """
     if not is_ready():
-        return fail(Exception('gateway is not ready'))
+        # return fail(Exception('gateway is not ready'))
+        lg.warn('gateway is not ready')
+        return None
     if not is_installed(proto):
-        return fail(Exception('transport %r not installed' % proto))
+        # return fail(Exception('transport %r not installed' % proto))
+        lg.warn('transport %r not installed' % proto)
+        return None
     return transport(proto).call('find_session', host, idurl)
+
 
 def find_active_stream(proto, stream_id=None, transfer_id=None):
     """
     """
     if not is_ready():
-        return fail(Exception('gateway is not ready'))
+        # return fail(Exception('gateway is not ready'))
+        lg.warn('gateway is not ready')
+        return None
     if not is_installed(proto):
-        return fail(Exception('transport %r not installed' % proto))
+        # return fail(Exception('transport %r not installed' % proto))
+        lg.warn('transport %r not installed' % proto)
+        return None
     return transport(proto).call('find_stream', stream_id=stream_id, transfer_id=transfer_id)
 
 #------------------------------------------------------------------------------

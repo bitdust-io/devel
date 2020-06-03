@@ -186,8 +186,8 @@ def share_open_v1(customer: str, key_id):
     return response.json()
 
 
-def group_create_v1(customer: str, key_size=1024, label=''):
-    response = request_post(customer, 'group/create/v1', json={'key_size': key_size, 'label': label, }, timeout=20)
+def group_create_v1(customer: str, key_size=1024, label='', attempts=1):
+    response = request_post(customer, 'group/create/v1', json={'key_size': key_size, 'label': label, }, timeout=40, attempts=attempts)
     assert response.status_code == 200
     print('group/create/v1 [%s] : %s\n' % (customer, pprint.pformat(response.json())))
     assert response.json()['status'] == 'OK', response.json()
@@ -210,19 +210,19 @@ def group_join_v1(customer: str, group_key_id, attempts=1):
     return response.json()
 
 
-def group_leave_v1(customer: str, group_key_id):
-    response = request_delete(customer, 'group/leave/v1', json={'group_key_id': group_key_id, }, timeout=20)
+def group_leave_v1(customer: str, group_key_id, attempts=1):
+    response = request_delete(customer, 'group/leave/v1', json={'group_key_id': group_key_id, }, timeout=20, attempts=attempts)
     assert response.status_code == 200
     print('group/leave/v1 [%s] group_key_id=%r : %s\n' % (customer, group_key_id, pprint.pformat(response.json())))
     assert response.json()['status'] == 'OK', response.json()
     return response.json()
 
 
-def group_share_v1(customer: str, group_key_id, trusted_id):
+def group_share_v1(customer: str, group_key_id, trusted_id, attempts=1):
     response = request_put(customer, 'group/share/v1', json={
         'group_key_id': group_key_id,
         'trusted_id': trusted_id,
-    }, timeout=60)
+    }, timeout=60, attempts=attempts)
     assert response.status_code == 200
     print('group/share/v1 [%s] group_key_id=%r trusted_id=%r : %s\n' % (customer, group_key_id, trusted_id, pprint.pformat(response.json())))
     assert response.json()['status'] == 'OK', response.json()
@@ -238,7 +238,7 @@ def file_sync_v1(node):
 
 
 def file_list_all_v1(node, expected_reliable=100, reliable_shares=True, attempts=20, delay=3, verbose=False):
-    if not expected_reliable:
+    if expected_reliable is None:
         response = request_get(node, 'file/list/all/v1', timeout=20)
         assert response.status_code == 200
         if verbose:
@@ -828,9 +828,9 @@ def verify_file_create_upload_start(node, key_id, volume_path, filename='cat.txt
     return local_filepath, remote_path, download_filepath
 
 
-def verify_file_download_start(node, remote_path, destination_path, verify_from_local_path=None, verify_list_files=True, reliable_shares=True):
+def verify_file_download_start(node, remote_path, destination_path, verify_from_local_path=None, verify_list_files=True, reliable_shares=True, expected_reliable=100):
     if verify_list_files:
-        file_list_all_v1(node, reliable_shares=reliable_shares)
+        file_list_all_v1(node, reliable_shares=reliable_shares, expected_reliable=expected_reliable)
     file_download_start_v1(node, remote_path=remote_path, destination=os.path.dirname(destination_path))
     if verify_from_local_path is not None:
         file_body_source = run_ssh_command_and_wait(node, f'cat {verify_from_local_path}')[0].strip()
