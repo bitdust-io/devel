@@ -261,11 +261,12 @@ def handle(newpacket, info):
             newpacket, newpacket.OwnerID, newpacket.CreatorID, newpacket.RemoteID))
         return None
     try:
-        for p in packet_out.search_by_response_packet(newpacket, info.proto, info.host):
-            p.automat('inbox-packet', (newpacket, info))
-            handled = True
-            if _Debug:
-                lg.out(_DebugLevel, '    processed by %s as response packet' % p)
+        if not commands.IsRelay(newpacket.Command):
+            for p in packet_out.search_by_response_packet(newpacket, info.proto, info.host):
+                p.automat('inbox-packet', (newpacket, info))
+                handled = True
+                if _Debug:
+                    lg.out(_DebugLevel, '    processed by %s as response packet' % p)
     except:
         lg.exc()
     try:
