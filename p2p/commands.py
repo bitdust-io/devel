@@ -47,6 +47,8 @@ These are the valid values for the command field of a packet:
 
 P2PCommandAcks = {}
 
+RelayCommands = set()
+
 #------------------------------------------------------------------------------
 
 
@@ -55,6 +57,7 @@ def init():
     Initialize a list of valid p2p commands.
     """
     global P2PCommandAcks
+    global RelayCommands
     # No Ack for Ack
     P2PCommandAcks[Ack()] = []
     # No Ack for Fail
@@ -85,7 +88,8 @@ def init():
     P2PCommandAcks[Broadcast()] = []
     P2PCommandAcks[Relay()] = []
     P2PCommandAcks[RelayIn()] = []
-    P2PCommandAcks[RelayOut()] = [RelayFail(), ]
+    P2PCommandAcks[RelayOut()] = [RelayAck(), RelayFail(), ]
+    P2PCommandAcks[RelayAck()] = []
     P2PCommandAcks[RelayFail()] = []
     P2PCommandAcks[Coin()] = [Ack(), Fail(), ]
     P2PCommandAcks[RetrieveCoin()] = [Coin(), Fail(), ]
@@ -93,6 +97,8 @@ def init():
     P2PCommandAcks[AuditKey()] = [Ack(), Fail(), ]
     P2PCommandAcks[Event()] = [Ack(), Fail(), ]
     P2PCommandAcks[Contacts()] = [Contacts(), Ack(), Fail(), ]
+    # pre-define a set of commands for filtering out routed traffic
+    RelayCommands = set([RelayIn(), RelayOut(), RelayAck(), RelayFail(), Relay(), ])
 
 
 def IsCommand(com):
@@ -126,6 +132,13 @@ def IsReplyExpected(com):
     """
     expected = P2PCommandAcks.get(com, [])
     return len(expected) > 0
+
+
+def IsRelay(com):
+    """
+    """
+    global RelayCommands
+    return com in RelayCommands
 
 #------------------------------------------------------------------------------
 
@@ -216,6 +229,13 @@ def RelayOut():
     Used by proxy transport to route packets in/out via third node.
     """
     return "RelayOut"
+
+
+def RelayAck():
+    """
+    Used by proxy transport to route packets in/out via third node.
+    """
+    return "RelayAck"
 
 
 def RelayFail():
