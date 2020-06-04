@@ -1409,15 +1409,17 @@ def scenario17(old_customer_2_info):
         expected_suppliers_number=2,
     )
 
-    kw.file_list_all_v1('customer-restore', expected_reliable=50)
+    if False:
+        # TODO:
+        # test my keys also recovered
 
-    # try to recover stored file again
-    kw.verify_file_download_start(
-        node='customer-restore',
-        remote_path=old_customer_2_info['remote_path'],
-        destination_path=old_customer_2_info['download_filepath'],
-        expected_reliable=50,
-    )
-    # TODO:
-    # test my keys also recovered
-    # test my message history also recovered (not implemented yet)
+        # test my message history also recovered (not implemented yet)
+        kw.file_list_all_v1('customer-restore', expected_reliable=50)
+    
+        # try to recover stored file again
+        kw.verify_file_download_start(
+            node='customer-restore',
+            remote_path=old_customer_2_info['remote_path'],
+            destination_path=old_customer_2_info['download_filepath'],
+            expected_reliable=50,
+        )

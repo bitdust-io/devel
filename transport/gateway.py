@@ -468,7 +468,7 @@ def inbox(info):
     #     monitoring()
     # control.request_update([('packet', newpacket.PacketID)])
     if _PacketLogFileEnabled:
-        lg.out(0, '                \033[0;49;92mINBOX %s(%s) %s %s for %s\033[0m' % (
+        lg.out(0, '                \033[1;49;92mINBOX %s(%s) %s %s for %s\033[0m' % (
             newpacket.Command, newpacket.PacketID,
             global_id.UrlToGlobalID(newpacket.OwnerID),
             global_id.UrlToGlobalID(newpacket.CreatorID),

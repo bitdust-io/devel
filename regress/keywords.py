@@ -32,7 +32,7 @@ from testsupport import request_get, request_post, request_put, request_delete, 
 
 #------------------------------------------------------------------------------
 
-def supplier_list_v1(customer: str, expected_min_suppliers=None, expected_max_suppliers=None, attempts=40, delay=3, extract_suppliers=True, verbose=True):
+def supplier_list_v1(customer: str, expected_min_suppliers=None, expected_max_suppliers=None, attempts=10, delay=5, extract_suppliers=True, verbose=True):
     count = 0
     num_connected = 0
     while True:
@@ -237,7 +237,7 @@ def file_sync_v1(node):
     return response.json()
 
 
-def file_list_all_v1(node, expected_reliable=100, reliable_shares=True, attempts=20, delay=3, verbose=False):
+def file_list_all_v1(node, expected_reliable=100, reliable_shares=True, attempts=5, delay=5, verbose=False):
     if expected_reliable is None:
         response = request_get(node, 'file/list/all/v1', timeout=20)
         assert response.status_code == 200
@@ -286,7 +286,7 @@ def file_create_v1(node, remote_path):
 
 def file_upload_start_v1(customer: str, remote_path: str, local_path: str,
                          open_share=True, wait_result=True,
-                         attempts=30, delay=3,
+                         attempts=5, delay=3,
                          wait_job_finish=True,
                          wait_packets_finish=True,
                          wait_transfers_finish=True,
@@ -324,7 +324,7 @@ def file_upload_start_v1(customer: str, remote_path: str, local_path: str,
 
 def file_download_start_v1(customer: str, remote_path: str, destination: str,
                            open_share=True, wait_result=True,
-                           attempts=30, delay=3,
+                           attempts=5, delay=3,
                            wait_tasks_finish=True):
     for _ in range(attempts):
         response = request_post(customer, 'file/download/start/v1',
@@ -524,7 +524,7 @@ def user_ping_v1(node, remote_node_id, timeout=95, ack_timeout=30, retries=2):
     return response.json()
 
 
-def service_info_v1(node, service_name, expected_state, attempts=20, delay=3, verbose=True):
+def service_info_v1(node, service_name, expected_state, attempts=10, delay=5, verbose=True):
     current_state = None
     count = 0
     while current_state is None or current_state != expected_state:
@@ -581,7 +581,7 @@ def event_listen_v1(node, expected_event_id, consumer_id='regression_tests_wait_
     return found
 
 
-def packet_list_v1(node, wait_all_finish=False, attempts=30, delay=3, verbose=False):
+def packet_list_v1(node, wait_all_finish=False, attempts=10, delay=5, verbose=False):
     if verbose:
         print('packet/list/v1 [%s]\n' % node)
     for _ in range(attempts):
@@ -598,7 +598,7 @@ def packet_list_v1(node, wait_all_finish=False, attempts=30, delay=3, verbose=Fa
     return response.json()
 
 
-def transfer_list_v1(node, wait_all_finish=False, attempts=30, delay=3, verbose=False):
+def transfer_list_v1(node, wait_all_finish=False, attempts=10, delay=5, verbose=False):
     if verbose:
         print('transfer/list/v1 [%s]\n' % node)
     for _ in range(attempts):
@@ -746,7 +746,7 @@ def wait_suppliers_connected(nodes, expected_min_suppliers=2, expected_max_suppl
     print('')
 
 
-def wait_event(nodes, event, expected_count=1, attempts=20, delay=3, verbose=False):
+def wait_event(nodes, event, expected_count=1, attempts=10, delay=5, verbose=False):
     print('wait event "%s" to occur %d times on %d nodes' % (event, expected_count, len(nodes), ))
     for node in nodes:
         for _ in range(attempts):

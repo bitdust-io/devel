@@ -335,6 +335,54 @@ class ProxyRouter(automat.Automat):
         del _ProxyRouter
         _ProxyRouter = None
 
+    def _get_session_proto_host(self, sender_idurl, info=None):
+        route_info = self.routes.get(sender_idurl.original(), None)
+        if not route_info:
+            route_info = self.routes.get(sender_idurl.to_bin(), None)
+        if not route_info:
+            lg.warn('route with %s was not found, can not send Relay packet' % sender_idurl)
+            return None, None
+        connection_info = route_info.get('connection_info', {})
+        active_user_session_machine = None
+        if info is not None and not connection_info or not connection_info.get('index'):
+            active_user_sessions = gateway.find_active_session(info.proto, idurl=sender_idurl.original())
+            if not active_user_sessions:
+                active_user_sessions = gateway.find_active_session(info.proto, idurl=sender_idurl.to_bin())
+            if not active_user_sessions:
+                lg.err('route with %s found but no active sessions found with %s://%s, can not send Relay packet' % (
+                    sender_idurl, info.proto, info.host, ))
+                return None, None
+            active_user_session_machine = automat.objects().get(active_user_sessions[0].index, None)
+        if not active_user_session_machine:
+            if connection_info.get('index'):
+                active_user_session_machine = automat.objects().get(connection_info['index'], None)
+        if not active_user_session_machine:
+            lg.warn('route with %s found but no active user session, can not send Relay packet' % sender_idurl)
+            return None, None
+        if not active_user_session_machine.is_connected():
+            lg.warn('route with %s found but session is not connected, can not send Relay packet' % sender_idurl)
+            return None, None
+        hosts = []
+        try:
+            hosts.append((active_user_session_machine.get_proto(), active_user_session_machine.get_host(), ))
+        except:
+            lg.exc()
+        if not hosts:
+            lg.warn('found active user session but host is empty in %r, try use recorded info' % active_user_session_machine)
+            hosts = route_info['address']
+        if len(hosts) == 0:
+            lg.warn('route with %s do not have actual info about the host, use identity contacts instead' % sender_idurl)
+            hosts = route_info['contacts']
+        if len(hosts) == 0:
+            lg.warn('has no known contacts for route with %s, can not send Relay packet' % sender_idurl)
+            return None, None
+        if len(hosts) > 1:
+            lg.warn('found more then one channel with %s : %r' % (sender_idurl, hosts, ))
+        receiver_proto, receiver_host = strng.to_bin(hosts[0][0]), strng.to_bin(hosts[0][1])
+        if _Debug:
+            lg.args(_DebugLevel, proto=receiver_proto, host=receiver_host, user_session=active_user_session_machine)
+        return receiver_proto, receiver_host
+
     def _do_process_request(self, *args, **kwargs):
         global _MaxRoutesNumber
         json_payload, request, info = args[0]
@@ -457,10 +505,10 @@ class ProxyRouter(automat.Automat):
         receiver_idurl, newpacket, info = args[0]
         receiver_idurl = id_url.field(receiver_idurl)
         route_info = self.routes.get(receiver_idurl.original(), None)
-        if _Debug:
-            lg.args(_DebugLevel, newpacket=newpacket, info=info, receiver_idurl=receiver_idurl, route_info=route_info, )
         if not route_info:
             route_info = self.routes.get(receiver_idurl.to_bin(), None)
+        if _Debug:
+            lg.args(_DebugLevel, newpacket=newpacket, info=info, receiver_idurl=receiver_idurl, route_info=route_info)
         if not route_info:
             lg.warn('route with %s not found for inbox packet: %s' % (receiver_idurl, newpacket))
             return
@@ -643,6 +691,7 @@ class ProxyRouter(automat.Automat):
         route = self.routes.get(sender_idurl.original(), None)
         if not route:
             route = self.routes.get(sender_idurl.to_bin(), None)
+        #--- route not exist
         if not route:
             lg.warn('route with %s not exist' % (sender_idurl))
             self._do_send_fail_packet(newpacket, info, wide, response_timeout, keep_alive, sender_idurl, receiver_idurl, 'route not exist')
@@ -652,6 +701,7 @@ class ProxyRouter(automat.Automat):
         if _Debug:
             lg.args(_DebugLevel, newpacket=newpacket, info=info, sender_idurl=sender_idurl, receiver_idurl=receiver_idurl, route_contacts=route['contacts'], closed_routes=closed_route_keys, is_retry=is_retry)
         routed_packet = signed.Unserialize(routed_data)
+        #--- invalid packet
         if not routed_packet:
             lg.err('failed to unserialize incoming packet from %s' % newpacket.RemoteID)
             self._do_send_fail_packet(newpacket, info, wide, response_timeout, keep_alive, sender_idurl, receiver_idurl, 'invalid packet')
@@ -663,11 +713,13 @@ class ProxyRouter(automat.Automat):
             is_signature_valid = routed_packet.Valid(raise_signature_invalid=False)
         except:
             is_signature_valid = False
+        #--- signature invalid
         if not is_signature_valid:
             lg.err('new packet from %s is NOT VALID:\n\n%r\n\n\n%r\n' % (
                 sender_idurl, routed_data, routed_packet.Serialize()))
             self._do_send_fail_packet(newpacket, info, wide, response_timeout, keep_alive, sender_idurl, receiver_idurl, 'signature invalid')
             return
+        #--- packet addressed to me
         if receiver_idurl.to_bin() == my_id.getLocalID().to_bin():
             if _Debug:
                 lg.out(_DebugLevel, '        proxy_router() passing by INCOMING packet %r from %s to me' % (
@@ -675,6 +727,7 @@ class ProxyRouter(automat.Automat):
             # node A sending routed data but I am the actual recipient, so need to handle the packet right away
             packet_in.process(routed_packet, info)
             return
+        #--- route already closed
         if receiver_idurl.original() in closed_route_keys or receiver_idurl.to_bin() in closed_route_keys:
             route_closed_time = max(self.closed_routes.get(receiver_idurl.original(), 0), self.closed_routes.get(receiver_idurl.to_bin(), 0))
             if _Debug:
@@ -684,6 +737,7 @@ class ProxyRouter(automat.Automat):
                 lg.err('can not send routed data, route with %s already closed' % (receiver_idurl))
                 self._do_send_fail_packet(routed_packet, info, wide, response_timeout, keep_alive, sender_idurl, receiver_idurl, 'route already closed')
                 return
+        #--- routed-inbox-packet-received
         if receiver_idurl.original() in routes_keys or receiver_idurl.to_bin() in routes_keys:
             # if both node A and node B are behind my proxy I need to send routed packet directly to B
             if _Debug:
@@ -691,7 +745,7 @@ class ProxyRouter(automat.Automat):
                     routed_packet, sender_idurl, receiver_idurl))
             self.event('routed-inbox-packet-received', (receiver_idurl, routed_packet, info))
             return
-        #--- route is healthy, sending forward outgoing routed packet
+        #--- forward outgoing routed packet
         # send the packet directly to target user
         # do not pass callbacks, because all response packets from this call will be also re-routed
         pout = packet_out.create(
@@ -715,7 +769,7 @@ class ProxyRouter(automat.Automat):
                 len(routed_data), nameurl.GetName(sender_idurl), strng.to_text(info.proto), strng.to_text(info.host),))
             lg.out(_DebugLevel, '    routed to %s : %s' % (nameurl.GetName(receiver_idurl), pout))
         if _PacketLogFileEnabled:
-            lg.out(0, '        \033[0;49;36mROUTE OUT %s(%s) %s %s for %s forwarded to %s\033[0m' % (
+            lg.out(0, '                \033[0;49;36mROUTE OUT %s(%s) %s %s for %s forwarded to %s\033[0m' % (
                 routed_packet.Command, routed_packet.PacketID,
                 global_id.UrlToGlobalID(routed_packet.OwnerID),
                 global_id.UrlToGlobalID(routed_packet.CreatorID),
@@ -733,6 +787,7 @@ class ProxyRouter(automat.Automat):
         if not publickey:
             lg.err('%r : but can not send RelayFail(), identity %r is not cached' % (error, newpacket.CreatorID, ))
             return
+        receiver_proto, receiver_host = self._get_session_proto_host(sender_idurl, info)
         raw_data, pout = self._do_send_relay_packet(
             relay_cmd=commands.RelayFail(),
             inbox_packet=newpacket,
@@ -748,6 +803,8 @@ class ProxyRouter(automat.Automat):
             }),
             publickey=publickey,
             receiver_idurl=sender_idurl,
+            receiver_proto=receiver_proto,
+            receiver_host=receiver_host,
             error=error,
         )
         if _Debug:
@@ -804,7 +861,7 @@ class ProxyRouter(automat.Automat):
         if _PacketLogFileEnabled:
             label = relay_cmd.upper().replace('RELAY', 'ROUTE ')
             reason = error if relay_cmd == commands.RelayFail() else ''
-            lg.out(0, '        \033[0;49;32m%s %s(%s) %s %s for %s forwarded to %s at %s://%s %s\033[0m' % (
+            lg.out(0, '                \033[0;49;32m%s %s(%s) %s %s for %s forwarded to %s at %s://%s %s\033[0m' % (
                 label,
                 inbox_packet.Command, inbox_packet.PacketID,
                 global_id.UrlToGlobalID(inbox_packet.OwnerID),
@@ -848,49 +905,52 @@ class ProxyRouter(automat.Automat):
         if not publickey:
             lg.err('routed packet sent but can not send RelayAck(), identity %r is not cached' % newpacket.CreatorID)
             return
-        route_info = self.routes.get(sender_idurl.original(), None)
-        if not route_info:
-            route_info = self.routes.get(sender_idurl.to_bin(), None)
-        if not route_info:
-            lg.err('route with %s was not found, can not send RelayAck()' % sender_idurl)
-            return
-        connection_info = route_info.get('connection_info', {})
-        active_user_session_machine = None
-        if not connection_info or not connection_info.get('index'):
-            active_user_sessions = gateway.find_active_session(info.proto, idurl=sender_idurl.original())
-            if not active_user_sessions:
-                active_user_sessions = gateway.find_active_session(info.proto, idurl=sender_idurl.to_bin())
-            if not active_user_sessions:
-                lg.err('route with %s found but no active sessions found with %s://%s, can not send RelayAck()' % (
-                    sender_idurl, info.proto, info.host, ))
-                return
-            active_user_session_machine = automat.objects().get(active_user_sessions[0].index, None)
-        if not active_user_session_machine:
-            if connection_info.get('index'):
-                active_user_session_machine = automat.objects().get(connection_info['index'], None)
-        if not active_user_session_machine:
-            lg.err('route with %s found but no active user session, can not send RelayAck()' % sender_idurl)
-            return
-        if not active_user_session_machine.is_connected():
-            lg.err('route with %s found but session is not connected, can not send RelayAck()' % sender_idurl)
-            return
-        hosts = []
-        try:
-            hosts.append((active_user_session_machine.get_proto(), active_user_session_machine.get_host(), ))
-        except:
-            lg.exc()
-        if not hosts:
-            lg.warn('found active user session but host is empty in %r, try use recorded info' % active_user_session_machine)
-            hosts = route_info['address']
-        if len(hosts) == 0:
-            lg.warn('route with %s do not have actual info about the host, use identity contacts instead' % sender_idurl)
-            hosts = route_info['contacts']
-        if len(hosts) == 0:
-            lg.err('has no known contacts for route with %s, can not send RelayAck()' % sender_idurl)
-            return
-        if len(hosts) > 1:
-            lg.warn('found more then one channel with %s : %r' % (sender_idurl, hosts, ))
-        receiver_proto, receiver_host = strng.to_bin(hosts[0][0]), strng.to_bin(hosts[0][1])
+        receiver_proto, receiver_host = self._get_session_proto_host(sender_idurl, info)
+
+#         route_info = self.routes.get(sender_idurl.original(), None)
+#         if not route_info:
+#             route_info = self.routes.get(sender_idurl.to_bin(), None)
+#         if not route_info:
+#             lg.err('route with %s was not found, can not send RelayAck()' % sender_idurl)
+#             return
+#         connection_info = route_info.get('connection_info', {})
+#         active_user_session_machine = None
+#         if not connection_info or not connection_info.get('index'):
+#             active_user_sessions = gateway.find_active_session(info.proto, idurl=sender_idurl.original())
+#             if not active_user_sessions:
+#                 active_user_sessions = gateway.find_active_session(info.proto, idurl=sender_idurl.to_bin())
+#             if not active_user_sessions:
+#                 lg.err('route with %s found but no active sessions found with %s://%s, can not send RelayAck()' % (
+#                     sender_idurl, info.proto, info.host, ))
+#                 return
+#             active_user_session_machine = automat.objects().get(active_user_sessions[0].index, None)
+#         if not active_user_session_machine:
+#             if connection_info.get('index'):
+#                 active_user_session_machine = automat.objects().get(connection_info['index'], None)
+#         if not active_user_session_machine:
+#             lg.err('route with %s found but no active user session, can not send RelayAck()' % sender_idurl)
+#             return
+#         if not active_user_session_machine.is_connected():
+#             lg.err('route with %s found but session is not connected, can not send RelayAck()' % sender_idurl)
+#             return
+#         hosts = []
+#         try:
+#             hosts.append((active_user_session_machine.get_proto(), active_user_session_machine.get_host(), ))
+#         except:
+#             lg.exc()
+#         if not hosts:
+#             lg.warn('found active user session but host is empty in %r, try use recorded info' % active_user_session_machine)
+#             hosts = route_info['address']
+#         if len(hosts) == 0:
+#             lg.warn('route with %s do not have actual info about the host, use identity contacts instead' % sender_idurl)
+#             hosts = route_info['contacts']
+#         if len(hosts) == 0:
+#             lg.err('has no known contacts for route with %s, can not send RelayAck()' % sender_idurl)
+#             return
+#         if len(hosts) > 1:
+#             lg.warn('found more then one channel with %s : %r' % (sender_idurl, hosts, ))
+#         receiver_proto, receiver_host = strng.to_bin(hosts[0][0]), strng.to_bin(hosts[0][1])
+
         raw_data, pout = self._do_send_relay_packet(
             relay_cmd=commands.RelayAck(),
             inbox_packet=newpacket,
@@ -925,49 +985,7 @@ class ProxyRouter(automat.Automat):
         if not publickey:
             lg.err('routed packet delivery failed but can not send RelayFail(), identity %r is not cached' % newpacket.CreatorID)
             return
-        route_info = self.routes.get(sender_idurl.original(), None)
-        if not route_info:
-            route_info = self.routes.get(sender_idurl.to_bin(), None)
-        if not route_info:
-            lg.warn('route with %s was not found, can not send RelayFail()' % sender_idurl)
-            return
-        connection_info = route_info.get('connection_info', {})
-        active_user_session_machine = None
-        if not connection_info or not connection_info.get('index'):
-            active_user_sessions = gateway.find_active_session(info.proto, idurl=sender_idurl.original())
-            if not active_user_sessions:
-                active_user_sessions = gateway.find_active_session(info.proto, idurl=sender_idurl.to_bin())
-            if not active_user_sessions:
-                lg.err('route with %s found but no active sessions found with %s://%s, can not send RelayFail()' % (
-                    sender_idurl, info.proto, info.host, ))
-                return
-            active_user_session_machine = automat.objects().get(active_user_sessions[0].index, None)
-        if not active_user_session_machine:
-            if connection_info.get('index'):
-                active_user_session_machine = automat.objects().get(connection_info['index'], None)
-        if not active_user_session_machine:
-            lg.warn('route with %s found but no active user session, can not send RelayFail()' % sender_idurl)
-            return
-        if not active_user_session_machine.is_connected():
-            lg.warn('route with %s found but session is not connected, can not send RelayFail()' % sender_idurl)
-            return
-        hosts = []
-        try:
-            hosts.append((active_user_session_machine.get_proto(), active_user_session_machine.get_host(), ))
-        except:
-            lg.exc()
-        if not hosts:
-            lg.warn('found active user session but host is empty in %r, try use recorded info' % active_user_session_machine)
-            hosts = route_info['address']
-        if len(hosts) == 0:
-            lg.warn('route with %s do not have actual info about the host, use identity contacts instead' % sender_idurl)
-            hosts = route_info['contacts']
-        if len(hosts) == 0:
-            lg.warn('has no known contacts for route with %s, can not send RelayFail()' % sender_idurl)
-            return
-        if len(hosts) > 1:
-            lg.warn('found more then one channel with %s : %r' % (sender_idurl, hosts, ))
-        receiver_proto, receiver_host = strng.to_bin(hosts[0][0]), strng.to_bin(hosts[0][1])
+        receiver_proto, receiver_host = self._get_session_proto_host(sender_idurl, info)
         raw_data, pout = self._do_send_relay_packet(
             relay_cmd=commands.RelayFail(),
             inbox_packet=newpacket,
