@@ -778,6 +778,14 @@ class PacketOut(automat.Automat):
         callback.run_finish_file_sending_callbacks(
             self, self.popped_item, self.popped_item.status,
             self.popped_item.bytes_sent, self.popped_item.error_message)
+        if self.popped_item.status == 'failed':
+            if 'item-failed' in self.callbacks:
+                for cb in self.callbacks['item-failed']:
+                    cb(self, self.popped_item)
+        else:
+            if 'item-sent' in self.callbacks:
+                for cb in self.callbacks['item-sent']:
+                    cb(self, self.popped_item)
         if _PacketLogFileEnabled:
             if self.popped_item.status == 'finished':
                 lg.out(0, '\033[0;49;90mSENT %d bytes to %s://%s TID:%s\033[0m' % (
@@ -823,6 +831,9 @@ class PacketOut(automat.Automat):
         if None in self.callbacks:
             for cb in self.callbacks[None]:
                 cb(self)
+        if 'timeout' in self.callbacks:
+            for cb in self.callbacks['timeout']:
+                cb(self, 'timeout')
         if _PacketLogFileEnabled:
             lg.out(0, '\033[1;49;91mOUT TIMEOUT %s(%s) sending from %s to %s\033[0m' % (
                 self.outpacket.Command, self.outpacket.PacketID,
@@ -834,6 +845,9 @@ class PacketOut(automat.Automat):
         Action method.
         """
         callback.run_queue_item_status_callbacks(self, 'finished', '')
+        if 'acked' in self.callbacks:
+            for cb in self.callbacks['acked']:
+                cb(self, 'finished')
         if _PacketLogFileEnabled:
             newpacket, _ = args[0]
             if newpacket.Command in [commands.Fail(), ]:
@@ -855,6 +869,9 @@ class PacketOut(automat.Automat):
             callback.run_queue_item_status_callbacks(self, 'finished', '')
         else:
             callback.run_queue_item_status_callbacks(self, 'finished', 'unanswered')
+        if 'sent' in self.callbacks:
+            for cb in self.callbacks['sent']:
+                cb(self, 'finished')
         if _PacketLogFileEnabled:
             lg.out(0, '\033[0;49;95mOUT %s(%s) with %s bytes from %s to %s TID:%r\033[0m' % (
                 self.outpacket.Command, self.outpacket.PacketID, self.filesize or '?',
@@ -889,6 +906,9 @@ class PacketOut(automat.Automat):
         else:
             msg = 'cancelled'
         callback.run_queue_item_status_callbacks(self, 'cancelled', msg)
+        if 'cancelled' in self.callbacks:
+            for cb in self.callbacks['cancelled']:
+                cb(self, msg)
         if _PacketLogFileEnabled:
             lg.out(0, '\033[0;49;97mOUT CANCELED %s(%s) with %s bytes from %s to %s TID:%r : %s\033[0m' % (
                 self.outpacket.Command, self.outpacket.PacketID, self.filesize or '?',
@@ -908,16 +928,6 @@ class PacketOut(automat.Automat):
         """
         Remove all references to the state machine object to destroy it.
         """
-        if False:
-            events.send('outbox-packet-finished', data=dict(
-                description=self.description,
-                packet_id=self.outpacket.PacketID,
-                command=self.outpacket.Command,
-                creator_id=self.outpacket.CreatorID,
-                date=self.outpacket.Date,
-                size=len(self.outpacket.Payload),
-                remote_id=self.outpacket.RemoteID,
-            ))
         queue().remove(self)
         if self not in self.outpacket.Packets:
             lg.warn('packet_out not connected to the packet')

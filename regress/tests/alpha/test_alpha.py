@@ -1358,6 +1358,14 @@ def scenario17(old_customer_2_info):
     print('\nprocess/stop/v1 [customer-2] : %s\n' % response.json())
     assert response.json()['status'] == 'OK', response.json()
 
+    # reset proxy servers to make sure they forgot customer-2 route
+#     kw.config_set_v1('proxy-1', 'services/proxy-server/enabled', 'false')
+#     time.sleep(0.5)
+#     kw.config_set_v1('proxy-1', 'services/proxy-server/enabled', 'true')
+#     kw.config_set_v1('proxy-2', 'services/proxy-server/enabled', 'false')
+#     time.sleep(0.5)
+#     kw.config_set_v1('proxy-2', 'services/proxy-server/enabled', 'true')
+    kw.wait_service_state(CUSTOMERS_IDS_SHORT, 'service_shared_data', 'ON')
     kw.wait_packets_finished(SUPPLIERS_IDS + CUSTOMERS_IDS_SHORT)
 
     # recover key on customer-restore container and join network

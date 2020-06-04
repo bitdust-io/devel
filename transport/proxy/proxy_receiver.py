@@ -626,6 +626,25 @@ class ProxyReceiver(automat.Automat):
             return
         inpt.close()
 
+        if newpacket.Command == commands.RelayAck():
+            try:
+                ack_info = serialization.BytesToDict(data, keys_to_text=True, values_to_text=True)
+            except:
+                lg.exc()
+                return
+            if _Debug:
+                lg.out(_DebugLevel, '<<<Relay-ACK %s:%s from %s://%s with %d bytes %s' % (
+                    ack_info['command'], ack_info['packet_id'], info.proto, info.host, len(data), ack_info['error'], ))
+            if _PacketLogFileEnabled:
+                lg.out(0, '                \033[0;49;33mRELAY ACK %s(%s) with %d bytes from %s to %s TID:%s\033[0m' % (
+                    ack_info['command'], ack_info['packet_id'], info.bytes_received,
+                    global_id.UrlToGlobalID(ack_info['from']), global_id.UrlToGlobalID(ack_info['to']),
+                    info.transfer_id), log_name='packet', showtime=True)
+            from transport.proxy import proxy_sender
+            if proxy_sender.A():
+                proxy_sender.A('relay-ack', ack_info, info)
+            return True
+
         if newpacket.Command == commands.RelayFail():
             try:
                 fail_info = serialization.BytesToDict(data, keys_to_text=True, values_to_text=True)
@@ -642,7 +661,7 @@ class ProxyReceiver(automat.Automat):
                     info.transfer_id), log_name='packet', showtime=True)
             from transport.proxy import proxy_sender
             if proxy_sender.A():
-                proxy_sender.A('outbox-packet-failed', fail_info, info)
+                proxy_sender.A('relay-failed', fail_info, info)
             return True
 
         routed_packet = signed.Unserialize(data)
@@ -840,7 +859,7 @@ class ProxyReceiver(automat.Automat):
             return True
         if newpacket.CreatorID == self.router_idurl:
             self.latest_packet_received = time.time()
-        if newpacket.Command in [commands.Relay(), commands.RelayIn(), commands.RelayFail(), ]:
+        if newpacket.Command in [commands.Relay(), commands.RelayIn(), commands.RelayAck(), commands.RelayFail(), ]:
             if driver.is_enabled('service_proxy_server'):
                 # TODO:
                 # in case this node already running proxy router service this will not work
