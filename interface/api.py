@@ -2388,7 +2388,7 @@ def groups_list(only_active=False, include_mine=True, include_granted=True):
     return RESULT(results)
 
 
-def group_create(creator_id=None, key_size=None, label=''):
+def group_create(creator_id=None, key_size=None, label='', timeout=20):
     """
     Creates a new messaging group.
 
@@ -2425,6 +2425,7 @@ def group_create(creator_id=None, key_size=None, label=''):
     d = groups.send_group_pub_key_to_suppliers(group_key_id)
     d.addCallback(lambda results: ret.callback(OK(key_info, message='new group "%s" was created successfully' % group_key_id)))
     d.addErrback(lambda err: ret.callback(ERROR('failed to deliver group public key to my suppliers')))
+    d.addTimeout(timeout, clock=reactor)
     return ret
 
 

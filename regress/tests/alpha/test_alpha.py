@@ -1409,7 +1409,7 @@ def scenario17(old_customer_2_info):
         expected_suppliers_number=2,
     )
 
-    if False:
+    if True:
         # TODO:
         # test my keys also recovered
 
