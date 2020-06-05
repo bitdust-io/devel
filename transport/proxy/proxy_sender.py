@@ -380,7 +380,7 @@ class ProxySender(automat.Automat):
         )
         if not is_retry:
             _key = (outpacket.Command, outpacket.PacketID, outpacket.RemoteID.to_bin(), )
-            self.sent_packets[_key] = routed_packet
+            self.sent_packets[_key] = (routed_packet, outpacket, )
         self.event('relay-out', (outpacket, newpacket, routed_packet))
         if _Debug:
             lg.out(_DebugLevel, '>>>Relay-OUT %s' % str(outpacket))
@@ -414,7 +414,7 @@ class ProxySender(automat.Automat):
     def _do_retry_one_time(self, fail_info):
         to_idurl = id_url.field(fail_info['to']).to_bin()
         from_idurl = id_url.field(fail_info['from']).to_bin()
-        _key = (fail_info['packet_id'], from_idurl, to_idurl)
+        _key = (fail_info['command'], fail_info['packet_id'], from_idurl, to_idurl)
         current_retries = self.packets_retries.get(_key, 0)
         if _Debug:
             lg.args(_DebugLevel, key=_key, retries=current_retries)
@@ -442,42 +442,58 @@ class ProxySender(automat.Automat):
         to_idurl = id_url.to_bin(info['to'])
         to_remove = []
         for _key in self.sent_packets.keys():
-            routed_packet = self.sent_packets[_key]
-            if not routed_packet.outpacket:
+            routed_packet, outpacket = self.sent_packets.get(_key, (None, None, ))
+            if not outpacket:
                 if _Debug:
-                    lg.dbg(_DebugLevel, 'found empty outpacket for key %r : %r' % (_key, routed_packet, ))
+                    lg.dbg(_DebugLevel, 'found empty outpacket : %r' % routed_packet)
                 to_remove.append(_key)
                 continue
             if _Debug:
-                lg.args(_DebugLevel, routed_packet.outpacket.Command, routed_packet.outpacket.PacketID, routed_packet.outpacket.RemoteID)
-            if routed_packet.outpacket.Command != info['command']:
+                lg.args(_DebugLevel,
+                    routed_packet,
+                    outpacket,
+                    outpacket.Command == info['command'],
+                    outpacket.PacketID == info['packet_id'],
+                    outpacket.RemoteID.to_bin() == to_idurl,
+                )
+            if outpacket.Command != info['command']:
                 continue
-            if routed_packet.outpacket.PacketID != info['packet_id']:
+            if outpacket.PacketID != info['packet_id']:
                 continue
-            if routed_packet.outpacket.RemoteID.to_bin() != to_idurl:
+            if outpacket.RemoteID.to_bin() != to_idurl:
                 continue
             to_remove.append(_key)
         for _key in to_remove:
-            ok = self.sent_packets.pop(_key, None)
+            routed_packet, outpacket = self.sent_packets.pop(_key, (None, None, ))
             if _Debug:
-                lg.dbg(_DebugLevel, 'cleaned %r : %r' % (routed_packet, bool(ok), ))
+                lg.dbg(_DebugLevel, 'cleaned %r %r' % (routed_packet, outpacket, ))
 
     def _on_cache_retry_success(self, xmlsrc, fail_info):
         if _Debug:
             lg.args(_DebugLevel, sent_packets=len(self.sent_packets), fail_info=fail_info)
-        to_idurl = id_url.field(fail_info['to'])
+        to_idurl = id_url.to_bin(fail_info['to'])
         for _key in self.sent_packets.keys():
-            routed_packet = self.sent_packets[_key]
-            if not routed_packet.outpacket:
+            routed_packet, outpacket = self.sent_packets.get(_key, (None, None, ))
+            if not outpacket:
+                if _Debug:
+                    lg.dbg(_DebugLevel, 'found empty outpacket : %r' % routed_packet)
                 continue
-            if routed_packet.outpacket.Command != fail_info['command']:
+            if _Debug:
+                lg.args(_DebugLevel,
+                    routed_packet,
+                    outpacket,
+                    outpacket.Command == fail_info['command'],
+                    outpacket.PacketID == fail_info['packet_id'],
+                    outpacket.RemoteID.to_bin() == to_idurl,
+                )
+            if outpacket.Command != fail_info['command']:
                 continue
-            if routed_packet.outpacket.PacketID != fail_info['packet_id']:
+            if outpacket.PacketID != fail_info['packet_id']:
                 continue
-            if routed_packet.outpacket.RemoteID != to_idurl:
+            if outpacket.RemoteID.to_bin() != to_idurl:
                 continue
             routed_retry_packet = self._do_send_packet_to_router(
-                outpacket=routed_packet.outpacket,
+                outpacket=outpacket,
                 callbacks=routed_packet.callbacks,
                 wide=fail_info.get('wide', False),
                 keep_alive=fail_info.get('keep_alive', False),
@@ -487,8 +503,8 @@ class ProxySender(automat.Automat):
             if not routed_retry_packet:
                 self.automat('retry-send-failed', fail_info)
             else:
-                self.sent_packets[_key] = routed_retry_packet
-                self.automat('retry', fail_info, routed_packet)
+                self.sent_packets[_key] = (routed_retry_packet, outpacket, )
+                self.automat('retry', fail_info)
             del routed_packet
         return None
 

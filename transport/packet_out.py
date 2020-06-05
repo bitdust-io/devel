@@ -540,9 +540,6 @@ class PacketOut(automat.Automat):
                 self.doErrMsg(event,self.msg('MSG_4', *args, **kwargs))
                 self.doReportCancelled(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-        #---FAILED---
-        elif self.state == 'FAILED':
-            pass
         #---ITEMS?---
         elif self.state == 'ITEMS?':
             if event == 'nothing-to-send' or event == 'write-error':
@@ -582,12 +579,6 @@ class PacketOut(automat.Automat):
                 self.doReportItem(*args, **kwargs)
                 self.doReportFailed(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-        #---SENT---
-        elif self.state == 'SENT':
-            pass
-        #---CANCEL---
-        elif self.state == 'CANCEL':
-            pass
         #---RESPONSE?---
         elif self.state == 'RESPONSE?':
             if event == 'cancel':
@@ -614,6 +605,15 @@ class PacketOut(automat.Automat):
                 self.state = 'FAILED'
                 self.doReportFailed(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
+        #---FAILED---
+        elif self.state == 'FAILED':
+            pass
+        #---SENT---
+        elif self.state == 'SENT':
+            pass
+        #---CANCEL---
+        elif self.state == 'CANCEL':
+            pass
         return None
 
     def isRemoteIdentityKnown(self, *args, **kwargs):
