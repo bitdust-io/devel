@@ -236,7 +236,7 @@ class FireHire(automat.Automat):
     fast = False
 
     timers = {
-        'timer-15sec': (15.0, ['FIRE_MANY', 'SUPPLIERS?']),
+        'timer-15sec': (25.0, ['FIRE_MANY', 'SUPPLIERS?']),
     }
 
     def init(self):

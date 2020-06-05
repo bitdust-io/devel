@@ -630,7 +630,7 @@ class PacketOut(automat.Automat):
             return False
         if commands.IsReplyExpected(self.outpacket.Command):
             return True
-        return commands.Ack() in list(self.callbacks.keys()) or commands.Fail() in list(self.callbacks.keys())
+        return len(self.callbacks.get(commands.Ack(), [])) + len(self.callbacks.get(commands.Fail(), [])) > 0
 
     def isFailed(self, *args, **kwargs):
         """
@@ -649,7 +649,7 @@ class PacketOut(automat.Automat):
         Condition method.
         """
         newpacket, _ = args[0]
-        if newpacket.Command in list(self.callbacks.keys()):
+        if len(self.callbacks.get(newpacket.Command, [])) > 0:
             return True
         if not commands.IsCommandAck(self.outpacket.Command, newpacket.Command):
             return False
@@ -659,7 +659,7 @@ class PacketOut(automat.Automat):
         """
         Condition method.
         """
-        return commands.Data() in list(self.callbacks.keys())
+        return len(self.callbacks.get(commands.Data(), [])) > 0
 
     def doInit(self, *args, **kwargs):
         """

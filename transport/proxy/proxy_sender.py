@@ -366,7 +366,7 @@ class ProxySender(automat.Automat):
         routed_packet = packet_out.create(
             outpacket=outpacket,
             wide=False,
-            callbacks=callbacks,
+            callbacks={},
             route={
                 'packet': newpacket,
                 # pointing "newpacket" to router node
@@ -378,6 +378,12 @@ class ProxySender(automat.Automat):
             response_timeout=15,
             keep_alive=True,
         )
+        for command, cb_list in callbacks.items():
+            if isinstance(cb_list):
+                for cb in cb_list:
+                    routed_packet.set_callback(command, cb)
+            else:
+                routed_packet.set_callback(command, cb_list)
         if not is_retry:
             _key = (outpacket.Command, outpacket.PacketID, outpacket.RemoteID.to_bin(), )
             self.sent_packets[_key] = (routed_packet, outpacket, )
@@ -426,10 +432,10 @@ class ProxySender(automat.Automat):
             return
         if current_retries >= 1:
             lg.err('failed sending routed packet after few attempts : %r' % fail_info)
+            self.automat('retry-failed', fail_info)
             self._do_clean_sent_packet(fail_info)
             self._do_cancel_outbox_packets(fail_info)
             self.packets_retries.pop(_key, None)
-            self.automat('retry-failed', fail_info)
             return
         self.packets_retries[_key] = current_retries + 1
         d = identitycache.immediatelyCaching(fail_info['to'])
@@ -511,8 +517,8 @@ class ProxySender(automat.Automat):
     def _on_cache_retry_failed(self, err, fail_info):
         if _Debug:
             lg.args(_DebugLevel, err=err, fail_info=fail_info)
-        self._do_cancel_outbox_packets(fail_info)
         self.automat('retry-cache-failed', fail_info)
+        self._do_cancel_outbox_packets(fail_info)
         return None
 
     def _on_first_outbox_packet(self, outpacket, wide, callbacks, target=None, route=None, response_timeout=None, keep_alive=True):
