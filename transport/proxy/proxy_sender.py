@@ -448,14 +448,14 @@ class ProxySender(automat.Automat):
                     lg.dbg(_DebugLevel, 'found empty outpacket : %r' % routed_packet)
                 to_remove.append(_key)
                 continue
-            if _Debug:
-                lg.args(_DebugLevel,
-                    routed_packet,
-                    outpacket,
-                    outpacket.Command == info['command'],
-                    outpacket.PacketID == info['packet_id'],
-                    outpacket.RemoteID.to_bin() == to_idurl,
-                )
+#             if _Debug:
+#                 lg.args(_DebugLevel,
+#                     routed_packet,
+#                     outpacket,
+#                     outpacket.Command == info['command'],
+#                     outpacket.PacketID == info['packet_id'],
+#                     outpacket.RemoteID.to_bin() == to_idurl,
+#                 )
             if outpacket.Command != info['command']:
                 continue
             if outpacket.PacketID != info['packet_id']:
@@ -478,14 +478,14 @@ class ProxySender(automat.Automat):
                 if _Debug:
                     lg.dbg(_DebugLevel, 'found empty outpacket : %r' % routed_packet)
                 continue
-            if _Debug:
-                lg.args(_DebugLevel,
-                    routed_packet,
-                    outpacket,
-                    outpacket.Command == fail_info['command'],
-                    outpacket.PacketID == fail_info['packet_id'],
-                    outpacket.RemoteID.to_bin() == to_idurl,
-                )
+#             if _Debug:
+#                 lg.args(_DebugLevel,
+#                     routed_packet,
+#                     outpacket,
+#                     outpacket.Command == fail_info['command'],
+#                     outpacket.PacketID == fail_info['packet_id'],
+#                     outpacket.RemoteID.to_bin() == to_idurl,
+#                 )
             if outpacket.Command != fail_info['command']:
                 continue
             if outpacket.PacketID != fail_info['packet_id']:
