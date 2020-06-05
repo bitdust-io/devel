@@ -62,7 +62,7 @@ from io import BytesIO
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 _PacketLogFileEnabled = False
@@ -480,9 +480,9 @@ class ProxyReceiver(automat.Automat):
                 'global_id': global_id.UrlToGlobalID(self.router_idurl),
             }
             active_router_session_machine = automat.objects().get(self.router_connection_info['index'], None)
-            if active_router_session_machine:
-                # active_router_session_machine.addStateChangedCallback(
-                #     self._on_router_session_disconnected, oldstate='CONNECTED')
+            if active_router_session_machine is not None:
+                active_router_session_machine.addStateChangedCallback(
+                    self._on_router_session_disconnected, oldstate='CONNECTED')
                 lg.info('connected to proxy router and set active session: %s' % self.router_connection_info)
             else:
                 lg.err('not found proxy router session state machine: %s' % self.router_connection_info['index'])
@@ -505,6 +505,14 @@ class ProxyReceiver(automat.Automat):
                 idurl=self.router_idurl,
                 callback_method=self._on_router_contact_status_offline,
             )
+        active_router_session_machine_index = self.router_connection_info.get('index', None)
+        if active_router_session_machine_index is not None:
+            active_router_session_machine = automat.objects().get(active_router_session_machine_index, None)
+            if active_router_session_machine is not None:
+                active_router_session_machine.removeStateChangedCallback(self._on_router_session_disconnected)
+                lg.info('removed callback from router active session: %r' % active_router_session_machine)
+            else:
+                lg.err('did not found active router session state machine with index %s' % active_router_session_machine_index)
         # if contact_status.isKnown(self.router_idurl):
         #     contact_status.A(self.router_idurl).removeStateChangedCallback(self._on_router_contact_status_connected)
         #     contact_status.A(self.router_idurl).removeStateChangedCallback(self._on_router_contact_status_offline)
@@ -617,10 +625,50 @@ class ProxyReceiver(automat.Automat):
                 pass
             return
         inpt.close()
+
+        if newpacket.Command == commands.RelayAck():
+            try:
+                ack_info = serialization.BytesToDict(data, keys_to_text=True, values_to_text=True)
+            except:
+                lg.exc()
+                return
+            if _Debug:
+                lg.out(_DebugLevel, '<<<Relay-ACK %s:%s from %s://%s with %d bytes %s' % (
+                    ack_info['command'], ack_info['packet_id'], info.proto, info.host, len(data), ack_info['error'], ))
+            if _PacketLogFileEnabled:
+                lg.out(0, '                \033[0;49;33mRELAY ACK %s(%s) with %d bytes from %s to %s TID:%s\033[0m' % (
+                    ack_info['command'], ack_info['packet_id'], info.bytes_received,
+                    global_id.UrlToGlobalID(ack_info['from']), global_id.UrlToGlobalID(ack_info['to']),
+                    info.transfer_id), log_name='packet', showtime=True)
+            from transport.proxy import proxy_sender
+            if proxy_sender.A():
+                proxy_sender.A('relay-ack', ack_info, info)
+            return True
+
+        if newpacket.Command == commands.RelayFail():
+            try:
+                fail_info = serialization.BytesToDict(data, keys_to_text=True, values_to_text=True)
+            except:
+                lg.exc()
+                return
+            if _Debug:
+                lg.out(_DebugLevel, '<<<Relay-FAIL %s:%s from %s://%s with %d bytes %s' % (
+                    fail_info['command'], fail_info['packet_id'], info.proto, info.host, len(data), fail_info['error'], ))
+            if _PacketLogFileEnabled:
+                lg.out(0, '                \033[0;49;33mRELAY FAIL %s(%s) with %d bytes from %s to %s TID:%s\033[0m' % (
+                    fail_info['command'], fail_info['packet_id'], info.bytes_received,
+                    global_id.UrlToGlobalID(fail_info['from']), global_id.UrlToGlobalID(fail_info['to']),
+                    info.transfer_id), log_name='packet', showtime=True)
+            from transport.proxy import proxy_sender
+            if proxy_sender.A():
+                proxy_sender.A('relay-failed', fail_info, info)
+            return True
+
         routed_packet = signed.Unserialize(data)
         if not routed_packet:
             lg.err('unserialize packet failed from %s' % newpacket.CreatorID)
             return
+
         if _Debug:
             lg.out(_DebugLevel, '<<<Relay-IN %s from %s://%s with %d bytes' % (
                 str(routed_packet), info.proto, info.host, len(data)))
@@ -639,7 +687,7 @@ class ProxyReceiver(automat.Automat):
             if not identitycache.UpdateAfterChecking(idurl, routed_packet.Payload):
                 lg.warn("ERROR has non-Valid identity")
                 return
-        if routed_packet.Command == commands.Relay() and routed_packet.PacketID.lower().startswith('identity:'):
+        if routed_packet.Command in [commands.Relay(), commands.RelayIn(), ] and routed_packet.PacketID.lower().startswith('identity:'):
             if _Debug:
                 lg.out(_DebugLevel, '    found routed identity in relay packet %s' % routed_packet)
             try:
@@ -811,7 +859,7 @@ class ProxyReceiver(automat.Automat):
             return True
         if newpacket.CreatorID == self.router_idurl:
             self.latest_packet_received = time.time()
-        if newpacket.Command == commands.Relay():
+        if newpacket.Command in [commands.Relay(), commands.RelayIn(), commands.RelayAck(), commands.RelayFail(), ]:
             if driver.is_enabled('service_proxy_server'):
                 # TODO:
                 # in case this node already running proxy router service this will not work

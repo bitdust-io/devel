@@ -47,6 +47,8 @@ These are the valid values for the command field of a packet:
 
 P2PCommandAcks = {}
 
+RelayCommands = set()
+
 #------------------------------------------------------------------------------
 
 
@@ -55,6 +57,7 @@ def init():
     Initialize a list of valid p2p commands.
     """
     global P2PCommandAcks
+    global RelayCommands
     # No Ack for Ack
     P2PCommandAcks[Ack()] = []
     # No Ack for Fail
@@ -68,7 +71,7 @@ def init():
     # Ack Files with Ack or Fail
     P2PCommandAcks[Files()] = [Ack(), Fail(), ]
     # If identity comes in and no interested party then transport sends an Ack
-    P2PCommandAcks[Identity()] = [Ack(), ]
+    P2PCommandAcks[Identity()] = [Ack(), Fail(), ]
     # Ack with Ack (maybe should be Files)
     P2PCommandAcks[DeleteFile()] = [Ack(), Fail(), ]
     # Ack with Ack (maybe should be Files)
@@ -84,12 +87,18 @@ def init():
     P2PCommandAcks[CancelService()] = [Ack(), Fail(), ]
     P2PCommandAcks[Broadcast()] = []
     P2PCommandAcks[Relay()] = []
-    P2PCommandAcks[Coin()] = []
+    P2PCommandAcks[RelayIn()] = []
+    P2PCommandAcks[RelayOut()] = [RelayAck(), RelayFail(), ]
+    P2PCommandAcks[RelayAck()] = []
+    P2PCommandAcks[RelayFail()] = []
+    P2PCommandAcks[Coin()] = [Ack(), Fail(), ]
     P2PCommandAcks[RetrieveCoin()] = [Coin(), Fail(), ]
     P2PCommandAcks[Key()] = [Ack(), Fail(), ]
     P2PCommandAcks[AuditKey()] = [Ack(), Fail(), ]
     P2PCommandAcks[Event()] = [Ack(), Fail(), ]
     P2PCommandAcks[Contacts()] = [Contacts(), Ack(), Fail(), ]
+    # pre-define a set of commands for filtering out routed traffic
+    RelayCommands = set([RelayIn(), RelayOut(), RelayAck(), RelayFail(), Relay(), ])
 
 
 def IsCommand(com):
@@ -123,6 +132,13 @@ def IsReplyExpected(com):
     """
     expected = P2PCommandAcks.get(com, [])
     return len(expected) > 0
+
+
+def IsRelay(com):
+    """
+    """
+    global RelayCommands
+    return com in RelayCommands
 
 #------------------------------------------------------------------------------
 
@@ -199,6 +215,34 @@ def Relay():
     Used by proxy transport to route packets in/out via third node.
     """
     return "Relay"
+
+
+def RelayIn():
+    """
+    Used by proxy transport to route packets in/out via third node.
+    """
+    return "RelayIn"
+
+
+def RelayOut():
+    """
+    Used by proxy transport to route packets in/out via third node.
+    """
+    return "RelayOut"
+
+
+def RelayAck():
+    """
+    Used by proxy transport to route packets in/out via third node.
+    """
+    return "RelayAck"
+
+
+def RelayFail():
+    """
+    Used by proxy transport to route packets in/out via third node.
+    """
+    return "RelayFail"
 
 
 def ListFiles():

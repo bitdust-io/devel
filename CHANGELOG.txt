@@ -2,6 +2,38 @@ Change Log
 ==========
 
 
+2020-06-05 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* skip matching to outbox packets all incoming Relay*() packets in packet_in.handle()
+* make 1 retry in proxy_sender() after receving RelayFail()
+* drop routed connection in proxy_receiver() and proxy_router() when active session disconnects
+* propagate my identity to contacts which are related only to active services
+* added "services/employer/replace-critically-offline-enabled" option
+* properly cleanup failed routed packets
+* proxy_router() to remember recently closed routes to be able to properly reply
+* added RelayAck(), RelayFail(), RelayIn() and RelayOut() p2p commands
+* record and process later incoming group messages when group_member() is busy
+* bug fix in message_peddler()
+* bug fix in shared_access_coordinator()
+* bug fix in index_synchronizer()
+* bug fix in service_keys_storage()
+
+
+
+2020-05-29 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* make possible to run service_private_groups() and service_message_broker() together
+
+
+
+2020-05-29 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* bug fix in service_proxy_transport()
+* bug fix in group_member()
+* bug fix in DHT core
+
+
+
 2020-05-27 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * IDURL fix in dht_relations.py

@@ -261,11 +261,12 @@ def handle(newpacket, info):
             newpacket, newpacket.OwnerID, newpacket.CreatorID, newpacket.RemoteID))
         return None
     try:
-        for p in packet_out.search_by_response_packet(newpacket, info.proto, info.host):
-            p.automat('inbox-packet', (newpacket, info))
-            handled = True
-            if _Debug:
-                lg.out(_DebugLevel, '    processed by %s as response packet' % p)
+        if not commands.IsRelay(newpacket.Command):
+            for p in packet_out.search_by_response_packet(newpacket, info.proto, info.host):
+                p.automat('inbox-packet', (newpacket, info))
+                handled = True
+                if _Debug:
+                    lg.out(_DebugLevel, '    processed by %s as response packet' % p)
     except:
         lg.exc()
     try:
@@ -281,7 +282,7 @@ def handle(newpacket, info):
                 info.transfer_id), log_name='packet', showtime=True)
     else:
         if _PacketLogFileEnabled:
-            lg.out(0, '                \033[0;49;32mIN OK %s(%s) with %d bytes from %s to %s TID:%s\033[0m' % (
+            lg.out(0, '                \033[0;49;93mIN OK %s(%s) with %d bytes from %s to %s TID:%s\033[0m' % (
                 newpacket.Command, newpacket.PacketID, info.bytes_received,
                 global_id.UrlToGlobalID(info.sender_idurl), global_id.UrlToGlobalID(newpacket.RemoteID),
                 info.transfer_id), log_name='packet', showtime=True)

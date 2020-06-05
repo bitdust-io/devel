@@ -58,6 +58,8 @@ from system import local_fs
 
 from main import settings
 
+from services import driver
+
 from userid import id_url
 from userid import my_id
 from userid import global_id
@@ -341,13 +343,17 @@ def clear_customers():
 
 #------------------------------------------------------------------------------
 
-def contacts(include_all=False):
+def contacts(include_all=False, include_enabled=True):
     """
     Return a union of suppliers and customers ID's.
     """
-    result = set(suppliers() + customers())
-    if include_all:
-        result.intersection_update(correspondents())
+    result = set()
+    if include_all or (include_enabled and driver.is_enabled('service_customer')) or driver.is_on('service_customer'):
+        result.update(set(suppliers()))
+    if include_all or (include_enabled and driver.is_enabled('service_supplier')) or driver.is_on('service_supplier'):
+        result.update(set(customers()))
+    if include_all or (include_enabled and driver.is_enabled('service_private_messages')) or driver.is_on('service_private_messages'):
+        result.update(set(correspondents_ids()))
     return list(result)
 
 
@@ -358,18 +364,11 @@ def contacts_list():
     return list(suppliers() + customers())
 
 
-def contacts_full():
-    """
-    Return a union of suppliers, customers and correspondents.
-    """
-    return list(set(contacts() + correspondents_ids()))
-
-
-def contacts_remote():
+def contacts_remote(include_all=False, include_enabled=True):
     """
     Return ID's list of all known peers.
     """
-    allcontactslist = id_url.to_bin_list(contacts_full())
+    allcontactslist = id_url.to_bin_list(contacts(include_all=include_all, include_enabled=include_enabled))
     if my_id.getLocalID().to_bin() in allcontactslist:
         allcontactslist.remove(my_id.getLocalID().to_bin())
     return id_url.fields_list(allcontactslist)

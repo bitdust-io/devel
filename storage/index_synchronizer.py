@@ -144,6 +144,12 @@ def is_synchronized():
             return True
     return False
 
+
+def is_synchronizing():
+    if not A():
+        return False
+    return A().state in ['REQUEST?', 'SENDING', ]
+
 #------------------------------------------------------------------------------
 
 def A(event=None, *args, **kwargs):
@@ -194,6 +200,7 @@ class IndexSynchronizer(automat.Automat):
         self.requested_suppliers_number = 0
         self.sending_suppliers = set()
         self.sent_suppliers_number = 0
+        self.outgoing_packets_ids = []
         self.last_time_in_sync = -1
         self.PushAgain = False
 
@@ -265,17 +272,21 @@ class IndexSynchronizer(automat.Automat):
         elif self.state == 'SENDING':
             if event == 'shutdown':
                 self.state = 'CLOSED'
+                self.doCancelSendings(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
             elif event == 'push':
                 self.PushAgain=True
             elif event == 'timer-15sec' and not self.isSomeAcked(*args, **kwargs) and not self.PullAgain:
                 self.state = 'NO_INFO'
+                self.doCancelSendings(*args, **kwargs)
             elif ( event == 'all-acked' or ( event == 'timer-15sec' and self.isSomeAcked(*args, **kwargs) ) ) and not self.PullAgain:
                 self.state = 'IN_SYNC!'
+                self.doCancelSendings(*args, **kwargs)
             elif event == 'pull':
                 self.PullAgain=True
             elif ( event == 'all-acked' or event == 'timer-15sec' ) and self.PullAgain:
                 self.state = 'REQUEST?'
+                self.doCancelSendings(*args, **kwargs)
                 self.doSuppliersRequestIndexFile(*args, **kwargs)
                 self.PullAgain=False
         #---NO_INFO---
@@ -366,6 +377,7 @@ class IndexSynchronizer(automat.Automat):
             path=settings.BackupIndexFileName(),
         )
         self.sending_suppliers.clear()
+        self.outgoing_packets_ids = []
         self.sent_suppliers_number = 0
         localID = my_id.getLocalID()
         b = encrypted.Block(
@@ -397,9 +409,22 @@ class IndexSynchronizer(automat.Automat):
             if pkt_out:
                 self.sending_suppliers.add(supplierId)
                 self.sent_suppliers_number += 1
+                self.outgoing_packets_ids.append(packetID)
             if _Debug:
                 lg.out(_DebugLevel, '    %s sending to %s' %
                        (newpacket, nameurl.GetName(supplierId)))
+
+    def doCancelSendings(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        for packet_id in self.outgoing_packets_ids:
+            packetsToCancel = packet_out.search_by_packet_id(packet_id)
+            for pkt_out in packetsToCancel:
+                if pkt_out.outpacket.Command == commands.Data():
+                    lg.warn('sending "cancel" to %s addressed to %s from index_synchronizer' % (
+                        pkt_out, pkt_out.remote_idurl, ))
+                    pkt_out.automat('cancel')
 
     def doCancelRequests(self, *args, **kwargs):
         """
@@ -410,7 +435,7 @@ class IndexSynchronizer(automat.Automat):
 #             path=settings.BackupIndexFileName(),
 #         )
 #         from transport import packet_out
-#         packetsToCancel = packet_out.search_by_backup_id(packetID)
+#         packetsToCancel = packet_out.search_by_packet_id(packetID)
 #         for pkt_out in packetsToCancel:
 #             if pkt_out.outpacket.Command == commands.Retrieve():
 #                 lg.warn('sending "cancel" to %s addressed to %s from index_synchronizer' % (
@@ -466,6 +491,8 @@ class IndexSynchronizer(automat.Automat):
 
     def _on_supplier_acked(self, newpacket, info):
         self.sending_suppliers.discard(newpacket.OwnerID)
+        if newpacket.PacketID in self.outgoing_packets_ids:
+            self.outgoing_packets_ids.remove(newpacket.PacketID)
         sc = supplier_connector.by_idurl(newpacket.OwnerID)
         if sc:
             sc.automat(newpacket.Command.lower(), newpacket)

@@ -469,7 +469,7 @@ class DiscoveryTask(object):
         reactor.callLater(0, self._on_node_processed, node, idurl)  # @UndefinedVariable
         return node
 
-    def _on_node_proces_failed(self, err, node):
+    def _on_node_process_failed(self, err, node):
         self.failed += 1
         if _Debug:
             lg.warn('DiscoveryTask[%r] : node %r processing failed with  %r' % (self.id, node, err))
@@ -504,7 +504,7 @@ class DiscoveryTask(object):
             return idurl
         d = self.process_method(idurl, node)
         d.addCallback(self._on_identity_cached, node)
-        d.addErrback(self._on_node_proces_failed, node)
+        d.addErrback(self._on_node_process_failed, node)
         return idurl
 
     def _on_node_processed(self, node, idurl):
@@ -556,12 +556,12 @@ class DiscoveryTask(object):
         if self.stopped:
             return None
         if not idurl:
-            self._on_node_proces_failed(None, node)
+            self._on_node_process_failed(None, node)
             return None
         if id_url.is_in(idurl, self.ignore_idurls):
             if _Debug:
                 lg.dbg(_DebugLevel, 'lookup.DiscoveryTask[%r]._on_identity_cached IGNORE %r' % (self.id, idurl))
-            self._on_node_proces_failed(None, node)
+            self._on_node_process_failed(None, node)
             return None
         self.cached_count += 1
         idurl = id_url.to_bin(idurl)

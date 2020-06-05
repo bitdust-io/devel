@@ -196,7 +196,7 @@ def rate_all_users():
     lg.out(4, 'ratings.rate_all_users')
     monthStr = time.strftime('%B')
     from p2p import online_status
-    for idurl in contactsdb.contacts_full():
+    for idurl in contactsdb.contacts_remote(include_all=True):
         isalive = online_status.isOnline(idurl)
         mall, malive, tall, talive = increase_rating(idurl, isalive)
         month_percent = 100.0 * float(malive) / float(mall)

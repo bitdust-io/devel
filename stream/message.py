@@ -589,11 +589,15 @@ def push_message(direction, msg_type, recipient_id, sender_id, packet_id, owner_
 def push_incoming_message(request, private_message_object, json_message):
     """
     """
-    msg_type = 'private_message'
+    msg_type = None
+    if request.PacketID.startswith('private_'):
+        msg_type = 'private_message'
     if request.PacketID.startswith('queue_'):
         msg_type = 'queue_message'
     elif request.PacketID.startswith('qreplica_'):
         msg_type = 'queue_message_replica'
+    if msg_type is None:
+        raise Exception('undefined message type detected in %r' % request)
     return push_message(
         direction='incoming',
         msg_type=msg_type,

@@ -342,7 +342,7 @@ class NetworkConnector(automat.Automat):
                     lg.out(_DebugLevel, 'network_connector.isAllListening returning False : transport %s is not LISTENING' % t)
                 return False
         if _Debug:
-            lg.out(_DebugLevel, 'network_connector.isAllListening returning True :  HELLO BITDUST WORLD !!!!!!!!!!!!!!!!!!!!!!')
+            lg.out(_DebugLevel, 'network_connector.isAllListening returning True')
         return True
 
     def isAllReady(self, *args, **kwargs):

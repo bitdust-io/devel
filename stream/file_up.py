@@ -283,7 +283,7 @@ class FileUp(automat.Automat):
         """
         Action method.
         """
-        packetsToCancel = packet_out.search_by_backup_id(self.packetID)
+        packetsToCancel = packet_out.search_by_packet_id(self.packetID)
         for pkt_out in packetsToCancel:
             if pkt_out.outpacket.Command == commands.Data():
                 lg.warn('sending "cancel" to %s addressed to %s because downloading cancelled' % (

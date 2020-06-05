@@ -186,6 +186,16 @@ def GetLatest(idurl):
     return result
 
 
+def GetPublicKey(idurl):
+    """
+    If given `idurl` is known will return public key from the corresponding identity file otherwise `None`.
+    """
+    ident = FromCache(idurl)
+    if not ident:
+        return None
+    return ident.getPublicKey()
+
+
 def GetIDURLsByContact(contact):
     """
     In the ``identitydb`` code we keep track of all identity objects and
@@ -404,7 +414,7 @@ def immediatelyCaching(idurl, timeout=10, try_other_sources=True):
     if not idurl:
         raise Exception('can not cache, idurl is empty')
 
-    if idurl in _CachingTasks:
+    if idurl in _CachingTasks and not _CachingTasks[idurl].called:
         if _Debug:
             lg.out(_DebugLevel, 'identitycache.immediatelyCaching already have a task for %r' % idurl)
         return _CachingTasks[idurl]

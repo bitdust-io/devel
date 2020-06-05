@@ -564,7 +564,7 @@ class SupplierQueue:
     def OnDataReceived(self, newpacket, result):
         # we requested some data from a supplier, and just received it
         if self.shutdown:
-            lg.warn('supplier queue is shutting down')
+            lg.warn('skip, supplier queue is shutting down')
             self.StopAllRequests()
             return
         if _Debug:
@@ -652,7 +652,10 @@ class SupplierQueue:
 
     def OnFileSendingFinished(self, pkt_out, item, status, size, error_message):
         if self.shutdown:
-            lg.warn('supplier queue is shutting down')
+            lg.warn('skip, supplier queue is shutting down')
+            return
+        if not pkt_out.outpacket:
+            lg.warn('skip, outpacket is already None')
             return
         packetID = global_id.CanonicalID(pkt_out.outpacket.PacketID)
         if status == 'finished':

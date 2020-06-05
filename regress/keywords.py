@@ -32,7 +32,7 @@ from testsupport import request_get, request_post, request_put, request_delete, 
 
 #------------------------------------------------------------------------------
 
-def supplier_list_v1(customer: str, expected_min_suppliers=None, expected_max_suppliers=None, attempts=40, delay=3, extract_suppliers=True, verbose=True):
+def supplier_list_v1(customer: str, expected_min_suppliers=None, expected_max_suppliers=None, attempts=10, delay=5, extract_suppliers=True, verbose=True):
     count = 0
     num_connected = 0
     while True:
@@ -186,8 +186,8 @@ def share_open_v1(customer: str, key_id):
     return response.json()
 
 
-def group_create_v1(customer: str, key_size=1024, label=''):
-    response = request_post(customer, 'group/create/v1', json={'key_size': key_size, 'label': label, }, timeout=20)
+def group_create_v1(customer: str, key_size=1024, label='', attempts=1):
+    response = request_post(customer, 'group/create/v1', json={'key_size': key_size, 'label': label, }, timeout=40, attempts=attempts)
     assert response.status_code == 200
     print('group/create/v1 [%s] : %s\n' % (customer, pprint.pformat(response.json())))
     assert response.json()['status'] == 'OK', response.json()
@@ -210,19 +210,19 @@ def group_join_v1(customer: str, group_key_id, attempts=1):
     return response.json()
 
 
-def group_leave_v1(customer: str, group_key_id):
-    response = request_delete(customer, 'group/leave/v1', json={'group_key_id': group_key_id, }, timeout=20)
+def group_leave_v1(customer: str, group_key_id, attempts=1):
+    response = request_delete(customer, 'group/leave/v1', json={'group_key_id': group_key_id, }, timeout=20, attempts=attempts)
     assert response.status_code == 200
     print('group/leave/v1 [%s] group_key_id=%r : %s\n' % (customer, group_key_id, pprint.pformat(response.json())))
     assert response.json()['status'] == 'OK', response.json()
     return response.json()
 
 
-def group_share_v1(customer: str, group_key_id, trusted_id):
+def group_share_v1(customer: str, group_key_id, trusted_id, attempts=1):
     response = request_put(customer, 'group/share/v1', json={
         'group_key_id': group_key_id,
         'trusted_id': trusted_id,
-    }, timeout=60)
+    }, timeout=60, attempts=attempts)
     assert response.status_code == 200
     print('group/share/v1 [%s] group_key_id=%r trusted_id=%r : %s\n' % (customer, group_key_id, trusted_id, pprint.pformat(response.json())))
     assert response.json()['status'] == 'OK', response.json()
@@ -237,11 +237,12 @@ def file_sync_v1(node):
     return response.json()
 
 
-def file_list_all_v1(node, expected_reliable=100, reliable_shares=True, attempts=30, delay=3):
-    if not expected_reliable:
+def file_list_all_v1(node, expected_reliable=100, reliable_shares=True, attempts=5, delay=5, verbose=False):
+    if expected_reliable is None:
         response = request_get(node, 'file/list/all/v1', timeout=20)
         assert response.status_code == 200
-        print('file/list/all/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
+        if verbose:
+            print('file/list/all/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
         assert response.json()['status'] == 'OK', response.json()
         return response.json()
 
@@ -251,7 +252,8 @@ def file_list_all_v1(node, expected_reliable=100, reliable_shares=True, attempts
     while latest_reliable is None or latest_reliable <= expected_reliable:
         response = request_get(node, 'file/list/all/v1', timeout=20)
         assert response.status_code == 200
-        print('file/list/all/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
+        if verbose:
+            print('file/list/all/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
         assert response.json()['status'] == 'OK', response.json()
         lowest = 100
         lowest_file = None
@@ -284,7 +286,7 @@ def file_create_v1(node, remote_path):
 
 def file_upload_start_v1(customer: str, remote_path: str, local_path: str,
                          open_share=True, wait_result=True,
-                         attempts=30, delay=3,
+                         attempts=5, delay=3,
                          wait_job_finish=True,
                          wait_packets_finish=True,
                          wait_transfers_finish=True,
@@ -322,7 +324,7 @@ def file_upload_start_v1(customer: str, remote_path: str, local_path: str,
 
 def file_download_start_v1(customer: str, remote_path: str, destination: str,
                            open_share=True, wait_result=True,
-                           attempts=30, delay=3,
+                           attempts=5, delay=3,
                            wait_tasks_finish=True):
     for _ in range(attempts):
         response = request_post(customer, 'file/download/start/v1',
@@ -494,7 +496,10 @@ def message_receive_v1(node, expected_data=None, consumer='test_consumer', get_r
         return get_result
     assert response.json()['status'] == 'OK', response.json()
     if expected_data is not None:
-        assert response.json()['result'][0]['data'] == expected_data, response.json()
+        received_data = response.json()['result'][0]['data']
+        received_data.pop('action', None)
+        received_data.pop('msg_type', None)
+        assert received_data == expected_data, response.json()
     return response.json()
 
 
@@ -519,7 +524,7 @@ def user_ping_v1(node, remote_node_id, timeout=95, ack_timeout=30, retries=2):
     return response.json()
 
 
-def service_info_v1(node, service_name, expected_state, attempts=20, delay=3, verbose=True):
+def service_info_v1(node, service_name, expected_state, attempts=10, delay=5, verbose=True):
     current_state = None
     count = 0
     while current_state is None or current_state != expected_state:
@@ -576,7 +581,7 @@ def event_listen_v1(node, expected_event_id, consumer_id='regression_tests_wait_
     return found
 
 
-def packet_list_v1(node, wait_all_finish=False, attempts=30, delay=3, verbose=False):
+def packet_list_v1(node, wait_all_finish=False, attempts=10, delay=5, verbose=False):
     if verbose:
         print('packet/list/v1 [%s]\n' % node)
     for _ in range(attempts):
@@ -593,7 +598,7 @@ def packet_list_v1(node, wait_all_finish=False, attempts=30, delay=3, verbose=Fa
     return response.json()
 
 
-def transfer_list_v1(node, wait_all_finish=False, attempts=30, delay=3, verbose=False):
+def transfer_list_v1(node, wait_all_finish=False, attempts=10, delay=5, verbose=False):
     if verbose:
         print('transfer/list/v1 [%s]\n' % node)
     for _ in range(attempts):
@@ -741,7 +746,7 @@ def wait_suppliers_connected(nodes, expected_min_suppliers=2, expected_max_suppl
     print('')
 
 
-def wait_event(nodes, event, expected_count=1, attempts=20, delay=3, verbose=False):
+def wait_event(nodes, event, expected_count=1, attempts=10, delay=5, verbose=False):
     print('wait event "%s" to occur %d times on %d nodes' % (event, expected_count, len(nodes), ))
     for node in nodes:
         for _ in range(attempts):
@@ -823,9 +828,9 @@ def verify_file_create_upload_start(node, key_id, volume_path, filename='cat.txt
     return local_filepath, remote_path, download_filepath
 
 
-def verify_file_download_start(node, remote_path, destination_path, verify_from_local_path=None, verify_list_files=True, reliable_shares=True):
+def verify_file_download_start(node, remote_path, destination_path, verify_from_local_path=None, verify_list_files=True, reliable_shares=True, expected_reliable=100):
     if verify_list_files:
-        file_list_all_v1(node, reliable_shares=reliable_shares)
+        file_list_all_v1(node, reliable_shares=reliable_shares, expected_reliable=expected_reliable)
     file_download_start_v1(node, remote_path=remote_path, destination=os.path.dirname(destination_path))
     if verify_from_local_path is not None:
         file_body_source = run_ssh_command_and_wait(node, f'cat {verify_from_local_path}')[0].strip()

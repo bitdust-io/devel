@@ -119,8 +119,12 @@ def my_idurl():
     return _MyIDURL
 
 
-def my_host():
+def my_host(normalize=False):
     global _MyHost
+    if not _MyHost:
+        return None
+    if normalize:
+        return net_misc.normalize_address(_MyHost)
     return _MyHost
 
 #------------------------------------------------------------------------------
@@ -243,6 +247,8 @@ def send(filename, remoteaddress, description=None, keep_alive=True):
     """
     """
     remoteaddress = net_misc.normalize_address(remoteaddress)
+    if remoteaddress == my_host(normalize=True):
+        lg.warn('sending file %r %r to my own host connection at %r' % (filename, description, remoteaddress, ))
     result_defer = Deferred()
     if remoteaddress in started_connections():
         started_connections()[remoteaddress].add_outbox_file(filename, description, result_defer, keep_alive)

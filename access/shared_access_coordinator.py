@@ -70,6 +70,8 @@ from userid import id_url
 from p2p import commands
 from p2p import p2p_service
 
+from transport import packet_out
+
 from contacts import identitycache
 
 from crypt import my_keys
@@ -172,6 +174,7 @@ class SharedAccessCoordinator(automat.Automat):
         self.known_suppliers_list = []
         self.known_ecc_map = None
         self.dht_lookup_use_cache = True
+        self.outgoing_list_files_packets_ids = []
         super(SharedAccessCoordinator, self).__init__(
             name="%s$%s" % (self.glob_id['key_alias'][:10], self.glob_id['customer']),
             state='AT_STARTUP',
@@ -367,6 +370,7 @@ class SharedAccessCoordinator(automat.Automat):
         except:
             lg.exc()
             return
+        self.outgoing_list_files_packets_ids = []
         self.known_ecc_map = args[0].get('ecc_map')
         for supplier_idurl in self.known_suppliers_list:
             sc = supplier_connector.by_idurl(supplier_idurl, customer_idurl=self.customer_idurl)
@@ -391,15 +395,17 @@ class SharedAccessCoordinator(automat.Automat):
         Action method.
         """
         supplier_idurl = args[0]
-        p2p_service.SendListFiles(
+        pkt_out = p2p_service.SendListFiles(
             target_supplier=supplier_idurl,
             customer_idurl=self.customer_idurl,
             key_id=self.key_id,
             callbacks={
                 commands.Files(): lambda r, i: self._on_list_files_response(r, i, self.customer_idurl, supplier_idurl, self.key_id),
                 commands.Fail(): lambda r, i: self._on_list_files_failed(r, i, self.customer_idurl, supplier_idurl, self.key_id),
-            }
+            },
+            timeout=20,
         )
+        self.outgoing_list_files_packets_ids.append(pkt_out.PacketID)
 
     def doProcessCustomerListFiles(self, *args, **kwargs):
         """
@@ -435,6 +441,12 @@ class SharedAccessCoordinator(automat.Automat):
         Action method.
         """
         self.dht_lookup_use_cache = True
+        for packet_id in self.outgoing_list_files_packets_ids:
+            packetsToCancel = packet_out.search_by_packet_id(packet_id)
+            for pkt_out in packetsToCancel:
+                if pkt_out.outpacket.Command == commands.ListFiles():
+                    lg.warn('sending "cancel" to %r from %r' % (pkt_out, self, ))
+                    pkt_out.automat('cancel')
         events.send('share-connected', dict(self.to_json()))
         if self.result_defer:
             self.result_defer.callback(True)
@@ -448,6 +460,12 @@ class SharedAccessCoordinator(automat.Automat):
         Action method.
         """
         self.dht_lookup_use_cache = False
+        for packet_id in self.outgoing_list_files_packets_ids:
+            packetsToCancel = packet_out.search_by_packet_id(packet_id)
+            for pkt_out in packetsToCancel:
+                if pkt_out.outpacket.Command == commands.ListFiles():
+                    lg.warn('sending "cancel" to %r from %r' % (pkt_out, self, ))
+                    pkt_out.automat('cancel')
         events.send('share-disconnected', dict(self.to_json()))
         if self.result_defer:
             self.result_defer.errback(Exception('disconnected'))
@@ -460,6 +478,7 @@ class SharedAccessCoordinator(automat.Automat):
         """
         Remove all references to the state machine object to destroy it.
         """
+        self.outgoing_list_files_packets_ids = []
         self.result_defer = None
         self.destroy()
 
@@ -507,4 +526,5 @@ class SharedAccessCoordinator(automat.Automat):
             target_supplier=supplier_idurl,
             customer_idurl=customer_idurl,
             key_id=key_id,
+            timeout=20,
         )

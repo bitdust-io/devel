@@ -70,7 +70,7 @@ from io import open
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 _PacketLogFileEnabled = False
@@ -239,7 +239,7 @@ def start():
         if settings.transportIsEnabled(proto):
             if transp.state != 'LISTENING':
                 if _Debug:
-                    lg.out(4, '    sending "start" to %s' % transp)
+                    lg.out(4, '    sending "start" to %r' % transp)
                 transp.automat('start')
                 result.append(proto)
             else:
@@ -264,7 +264,7 @@ def cold_start():
         if settings.transportIsEnabled(proto):
             if transp.state != 'LISTENING':
                 if _Debug:
-                    lg.out(4, '    sending "start" to %s only' % transp)
+                    lg.out(4, '    sending "start" to %r only' % transp)
                 transp.automat('start')
                 result.append(proto)
                 break
@@ -289,12 +289,12 @@ def stop():
         if settings.transportIsEnabled(proto):
             if transp.state != 'OFFLINE':
                 if _Debug:
-                    lg.out(4, '    send "stop" to %s' % transp)
+                    lg.out(4, '    send "stop" to %r' % transp)
                 transp.automat('stop')
                 result.append(proto)
             else:
                 if _Debug:
-                    lg.out(4, '    %s already stopped' % proto)
+                    lg.out(4, '    %r already stopped' % proto)
     callback.remove_finish_file_receiving_callback(on_file_received)
     callback.remove_outbox_filter_callback(on_outbox_packet)
     return result
@@ -464,11 +464,11 @@ def inbox(info):
             nameurl.GetName(CreatorID),
             nameurl.GetName(RemoteID),
             info.proto, info.host))
-    if _Debug and lg.is_debug(_DebugLevel):
-        monitoring()
+    # if _Debug and lg.is_debug(_DebugLevel):
+    #     monitoring()
     # control.request_update([('packet', newpacket.PacketID)])
     if _PacketLogFileEnabled:
-        lg.out(0, '                \033[0;49;92mINBOX %s(%s) %s %s for %s\033[0m' % (
+        lg.out(0, '                \033[1;49;92mINBOX %s(%s) %s %s for %s\033[0m' % (
             newpacket.Command, newpacket.PacketID,
             global_id.UrlToGlobalID(newpacket.OwnerID),
             global_id.UrlToGlobalID(newpacket.CreatorID),
@@ -641,18 +641,27 @@ def find_active_session(proto, host=None, idurl=None):
     """
     """
     if not is_ready():
-        return fail(Exception('gateway is not ready'))
+        # return fail(Exception('gateway is not ready'))
+        lg.warn('gateway is not ready')
+        return None
     if not is_installed(proto):
-        return fail(Exception('transport %r not installed' % proto))
+        # return fail(Exception('transport %r not installed' % proto))
+        lg.warn('transport %r not installed' % proto)
+        return None
     return transport(proto).call('find_session', host, idurl)
+
 
 def find_active_stream(proto, stream_id=None, transfer_id=None):
     """
     """
     if not is_ready():
-        return fail(Exception('gateway is not ready'))
+        # return fail(Exception('gateway is not ready'))
+        lg.warn('gateway is not ready')
+        return None
     if not is_installed(proto):
-        return fail(Exception('transport %r not installed' % proto))
+        # return fail(Exception('transport %r not installed' % proto))
+        lg.warn('transport %r not installed' % proto)
+        return None
     return transport(proto).call('find_stream', stream_id=stream_id, transfer_id=transfer_id)
 
 #------------------------------------------------------------------------------
@@ -724,8 +733,7 @@ def shutdown_all_inbox_packets():
     """
     """
     if _Debug:
-        lg.out(_DebugLevel, 'gateway.shutdown_all_inbox_packets, %d live objects at the moment' % (
-            len(list(packet_in.inbox_items().values())), ))
+        lg.out(_DebugLevel, 'gateway.shutdown_all_inbox_packets, %d live objects at the moment' % len(list(packet_in.inbox_items().values())))
     for pkt_in in list(packet_in.inbox_items().values()):
         pkt_in.event('cancel', 'shutdown')
 
@@ -736,8 +744,8 @@ def packets_timeout_loop():
     global _PacketsTimeOutTask
     # lg.out(18, 'gateway.packets_timeout_loop')
     delay = 5
-    if _Debug:
-        delay = 1
+    # if _Debug:
+    #     delay = 1
     _PacketsTimeOutTask = reactor.callLater(delay, packets_timeout_loop)  # @UndefinedVariable
     for pkt_in in list(packet_in.inbox_items().values()):
         if pkt_in.is_timed_out():
@@ -749,8 +757,8 @@ def packets_timeout_loop():
             if _Debug:
                 lg.out(_DebugLevel, 'gateway.packets_timeout_loop %r is timed out: %s' % (pkt_out, pkt_out.timeout))
             pkt_out.automat('cancel', 'timeout')
-    if _Debug and lg.is_debug(_DebugLevel):
-        monitoring()
+    # if _Debug and lg.is_debug(_DebugLevel):
+    #     monitoring()
 
 
 def stop_packets_timeout_loop():
@@ -783,7 +791,7 @@ def monitoring():
 
 def on_file_received(info, data):
     if _Debug:
-        lg.out(_DebugLevel, '~~~~ received %d bytes in %s' % (len(data), info))
+        lg.dbg(_DebugLevel, 'received %d bytes in %s' % (len(data), info))
     return False
 
 
@@ -799,8 +807,8 @@ def on_outbox_packet(outpacket, wide, callbacks, target=None, route=None, respon
             lg.warn('skip creating new outbox packet because found similar packet: %r' % active_packet)
             return active_packet
     pkt_out = packet_out.create(outpacket, wide, callbacks, target, route, response_timeout, keep_alive)
-    if _Debug and lg.is_debug(_DebugLevel):
-        monitoring()
+    # if _Debug and lg.is_debug(_DebugLevel):
+    #     monitoring()
     control.request_update([('packet', outpacket.PacketID)])
     return pkt_out
 
@@ -1086,7 +1094,7 @@ class TransportGateLocalProxy():
 
         def _call(meth):
             if _Debug:
-                lg.dbg(_DebugLevel, method=meth, args=args)
+                lg.args(_DebugLevel, method=meth, args=args)
             r = maybeDeferred(m, *args)
             r.addCallback(_d.callback)
             r.addErrback(_d.errback)

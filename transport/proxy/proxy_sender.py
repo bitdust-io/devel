@@ -36,8 +36,14 @@ BitDust proxy_sender() Automat
 
 EVENTS:
     * :red:`init`
-    * :red:`outbox-packet-sent`
     * :red:`proxy_receiver.state`
+    * :red:`relay-ack`
+    * :red:`relay-failed`
+    * :red:`relay-out`
+    * :red:`retry`
+    * :red:`retry-cache-failed`
+    * :red:`retry-failed`
+    * :red:`retry-send-failed`
     * :red:`shutdown`
     * :red:`start`
     * :red:`stop`
@@ -49,7 +55,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 _PacketLogFileEnabled = False
@@ -77,16 +83,19 @@ from crypt import signed
 
 from services import driver
 
+from contacts import identitycache
+
 from p2p import commands
 from p2p import network_connector
-
-from userid import my_id
-from userid import global_id
 
 from transport import callback
 from transport import packet_out
 
 from transport.proxy import proxy_receiver
+
+from userid import id_url
+from userid import global_id
+from userid import my_id
 
 #------------------------------------------------------------------------------
 
@@ -123,6 +132,11 @@ class ProxySender(automat.Automat):
     This class implements all the functionality of the ``proxy_sender()`` state
     machine.
     """
+
+    def init(self, **kwargs):
+        global _PacketLogFileEnabled
+        _PacketLogFileEnabled = config.conf().getBool('logs/packet-enabled')
+        self._sending_enabled = settings.enablePROXYsending()
 
     def to_json(self):
         return {
@@ -169,9 +183,7 @@ class ProxySender(automat.Automat):
                 self.doStopFilterOutgoingTraffic(*args, **kwargs)
         #---REDIRECTING---
         elif self.state == 'REDIRECTING':
-            if event == 'outbox-packet-sent':
-                self.doCountTraffic(*args, **kwargs)
-            elif event == 'stop':
+            if event == 'stop':
                 self.state = 'STOPPED'
                 self.doStopFilterOutgoingTraffic(*args, **kwargs)
             elif event == 'shutdown':
@@ -180,6 +192,14 @@ class ProxySender(automat.Automat):
                 self.doDestroyMe(*args, **kwargs)
             elif event == 'proxy_receiver.state' is not 'LISTEN':
                 self.state = 'ROUTER?'
+            elif event == 'relay-failed':
+                self.doRetryCancelPacket(*args, **kwargs)
+            elif event == 'retry' or event == 'retry-cache-failed' or event == 'retry-send-failed' or event == 'retry-failed':
+                self.doReportRetry(event, *args, **kwargs)
+            elif event == 'relay-ack':
+                self.doCleanPacket(*args, **kwargs)
+            elif event == 'relay-out':
+                self.doCountTraffic(*args, **kwargs)
         #---CLOSED---
         elif self.state == 'CLOSED':
             pass
@@ -189,18 +209,18 @@ class ProxySender(automat.Automat):
         """
         Condition method.
         """
-        return settings.enablePROXYsending()
+        return self._sending_enabled
 
     def doInit(self, *args, **kwargs):
         """
         Action method.
         """
-        global _PacketLogFileEnabled
-        _PacketLogFileEnabled = config.conf().getBool('logs/packet-enabled')
         self.traffic_out = 0
         self.pending_packets = []
         self.pending_ping_packets = []
         self.max_pending_packets = 100  # TODO: read from settings
+        self.packets_retries = {}
+        self.sent_packets = {}
 
     def doStartFilterOutgoingTraffic(self, *args, **kwargs):
         """
@@ -221,17 +241,41 @@ class ProxySender(automat.Automat):
         _, newpacket, _ = args[0]
         self.traffic_out += len(newpacket.Payload)
 
+    def doCleanPacket(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        self._do_clean_sent_packet(args[0])
+
+    def doRetryCancelPacket(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        self._do_retry_one_time(args[0])
+
+    def doReportRetry(self, event, *args, **kwargs):
+        """
+        Action method.
+        """
+        if _PacketLogFileEnabled:
+            label = event.upper().replace('-', ' ')
+            fail_info = args[0]
+            lg.out(0, '\033[0;49;36m%s %s(%s) from %s to %s %s\033[0m' % (
+                label, fail_info['command'], fail_info['packet_id'],
+                global_id.UrlToGlobalID(fail_info['from']), global_id.UrlToGlobalID(fail_info['to']), fail_info['error']),
+                log_name='packet', showtime=True,)
+
     def doSendAllPendingPackets(self, *args, **kwargs):
         """
         Action method.
         """
         def _do_send():
             while len(self.pending_packets):
-                outpacket, wide, callbacks, pending_result = self.pending_packets.pop(0)
+                outpacket, callbacks, wide, response_timeout, keep_alive, pending_result = self.pending_packets.pop(0)
                 if _Debug:
                     lg.out(_DebugLevel, 'proxy_sender.doSendAllPendingPackets populate one more item, %d more in the queue' % (
                         len(self.pending_packets)))
-                result_packet = self._on_first_outbox_packet(outpacket, wide, callbacks)
+                result_packet = self._on_first_outbox_packet(outpacket, wide, callbacks, response_timeout=response_timeout, keep_alive=keep_alive)
                 if not isinstance(result_packet, packet_out.PacketOut):
                     lg.warn('failed sending pending packet %s, skip all pending packets' % outpacket)
                     self.pending_packets = []
@@ -249,21 +293,227 @@ class ProxySender(automat.Automat):
         self.pending_packets = []
         self.pending_ping_packets = []
         self.max_pending_packets = 0
+        self.packets_retries.clear()
+        self.sent_packets.clear()
         self.destroy()
         global _ProxySender
         del _ProxySender
         _ProxySender = None
 
-    def _add_pending_packet(self, outpacket, wide, callbacks):
+    def _do_add_pending_packet(self, outpacket, callbacks, wide, response_timeout, keep_alive):
         if len(self.pending_packets) > self.max_pending_packets:
             if _Debug:
                 lg.warn('pending packets queue is full, skip sending outgoing packet')
             return None
         pending_result = Deferred()
-        self.pending_packets.append((outpacket, wide, callbacks, pending_result))
+        self.pending_packets.append((outpacket, callbacks, wide, response_timeout, keep_alive, pending_result))
         if _Debug:
-            lg.out(_DebugLevel, 'proxy_sender._add_pending_packet %s' % outpacket)
+            lg.out(_DebugLevel, 'proxy_sender._do_add_pending_packet %s' % outpacket)
         return pending_result
+
+    def _do_send_packet_to_router(self, outpacket, callbacks, wide, response_timeout, keep_alive, is_retry=False):
+        router_idurl = proxy_receiver.GetRouterIDURL()
+        router_identity_obj = proxy_receiver.GetRouterIdentity()
+        router_proto_host = proxy_receiver.GetRouterProtoHost()
+        router_proto, router_host = router_proto_host
+        publickey = router_identity_obj.publickey
+        my_original_identity_src = proxy_receiver.ReadMyOriginalIdentitySource()
+        if not router_idurl or not router_identity_obj or not router_proto_host or not my_original_identity_src:
+            if _Debug:
+                lg.out(_DebugLevel, 'proxy_sender._do_send_packet_to_router SKIP because remote router not ready')
+            return self._do_add_pending_packet(outpacket, callbacks, wide, response_timeout, keep_alive)
+        if outpacket.RemoteID.to_bin() == router_idurl.to_bin():
+            if _Debug:
+                lg.out(_DebugLevel, 'proxy_sender._do_send_packet_to_router SKIP, packet addressed to router and must be sent in a usual way')
+            return None
+        try:
+            raw_data = outpacket.Serialize()
+        except:
+            lg.exc('failed to Serialize %s' % outpacket)
+            return None
+        # see proxy_router.ProxyRouter : doForwardOutboxPacket() for receiving part
+        json_payload = {
+            'f': my_id.getLocalID().to_bin(),    # from
+            't': outpacket.RemoteID.to_bin(),    # to
+            'p': raw_data,                       # payload
+            'w': wide,                           # wide
+            'i': response_timeout,
+            'a': keep_alive,
+            'r': is_retry,
+        }
+        if not json_payload['t']:
+            raise ValueError('receiver idurl was not set')
+        raw_bytes = serialization.DictToBytes(json_payload)
+        block = encrypted.Block(
+            CreatorID=my_id.getLocalID(),
+            BackupID='routed outgoing data',
+            BlockNumber=0,
+            SessionKey=key.NewSessionKey(session_key_type=key.SessionKeyType()),
+            SessionKeyType=key.SessionKeyType(),
+            LastBlock=True,
+            Data=raw_bytes,
+            EncryptKey=lambda inp: key.EncryptOpenSSHPublicKey(publickey, inp),
+        )
+        block_encrypted = block.Serialize()
+        newpacket = signed.Packet(
+            Command=commands.RelayOut(),
+            OwnerID=outpacket.OwnerID,
+            CreatorID=my_id.getLocalID(),
+            PacketID=outpacket.PacketID,
+            Payload=block_encrypted,
+            RemoteID=router_idurl,
+        )
+        routed_packet = packet_out.create(
+            outpacket=outpacket,
+            wide=False,
+            callbacks=callbacks,
+            route={
+                'packet': newpacket,
+                # pointing "newpacket" to router node
+                'proto': router_proto,
+                'host': router_host,
+                'remoteid': router_idurl,
+                'description': 'RelayOut_%s[%s]_%s' % (outpacket.Command, outpacket.PacketID, nameurl.GetName(router_idurl)),
+            },
+            response_timeout=15,
+            keep_alive=True,
+        )
+        if not is_retry:
+            _key = (outpacket.Command, outpacket.PacketID, outpacket.RemoteID.to_bin(), )
+            self.sent_packets[_key] = (routed_packet, outpacket, )
+        self.event('relay-out', (outpacket, newpacket, routed_packet))
+        if _Debug:
+            lg.out(_DebugLevel, '>>>Relay-OUT %s' % str(outpacket))
+            lg.out(_DebugLevel, '        sent to %s://%s with %d bytes' % (
+                router_proto, router_host, len(block_encrypted)))
+        if _PacketLogFileEnabled:
+            lg.out(0, '\033[0;49;36mRELAY OUT %s(%s) with %s bytes from %s to %s via %s\033[0m' % (
+                outpacket.Command, outpacket.PacketID, len(raw_bytes),
+                global_id.UrlToGlobalID(outpacket.CreatorID), global_id.UrlToGlobalID(outpacket.RemoteID),
+                global_id.UrlToGlobalID(router_idurl), ),
+                log_name='packet', showtime=True,)
+        del raw_bytes
+        del block
+        del newpacket
+        del outpacket
+        del router_identity_obj
+        del router_idurl
+        del router_proto_host
+        return routed_packet
+
+    def _do_cancel_outbox_packets(self, fail_info):
+        to_idurl = id_url.field(fail_info['to'])
+        from_idurl = id_url.field(fail_info['from'])
+        for p in packet_out.search_by_packet_id(fail_info['packet_id']):
+            if p.outpacket.Command == fail_info['command']:
+                if p.outpacket.RemoteID == to_idurl:
+                    if p.outpacket.CreatorID == from_idurl or p.outpacket.OwnerID == from_idurl:
+                        lg.warn('about to cancel %r because sending via proxy transport failed' % p)
+                        p.automat('cancel')
+
+    def _do_retry_one_time(self, fail_info):
+        to_idurl = id_url.field(fail_info['to']).to_bin()
+        from_idurl = id_url.field(fail_info['from']).to_bin()
+        _key = (fail_info['command'], fail_info['packet_id'], from_idurl, to_idurl)
+        current_retries = self.packets_retries.get(_key, 0)
+        if _Debug:
+            lg.args(_DebugLevel, key=_key, retries=current_retries)
+        if fail_info.get('error') != 'route already closed':
+            lg.err('failed sending routed packet : %r' % fail_info)
+            self._do_clean_sent_packet(fail_info)
+            self._do_cancel_outbox_packets(fail_info)
+            self.packets_retries.pop(_key, None)
+            return
+        if current_retries >= 1:
+            lg.err('failed sending routed packet after few attempts : %r' % fail_info)
+            self._do_clean_sent_packet(fail_info)
+            self._do_cancel_outbox_packets(fail_info)
+            self.packets_retries.pop(_key, None)
+            self.automat('retry-failed', fail_info)
+            return
+        self.packets_retries[_key] = current_retries + 1
+        d = identitycache.immediatelyCaching(fail_info['to'])
+        d.addCallback(self._on_cache_retry_success, fail_info)
+        d.addErrback(self._on_cache_retry_failed, fail_info)
+
+    def _do_clean_sent_packet(self, info):
+        if _Debug:
+            lg.args(_DebugLevel, sent_packets=len(self.sent_packets), info=info)
+        to_idurl = id_url.to_bin(info['to'])
+        to_remove = []
+        for _key in self.sent_packets.keys():
+            routed_packet, outpacket = self.sent_packets.get(_key, (None, None, ))
+            if not outpacket:
+                if _Debug:
+                    lg.dbg(_DebugLevel, 'found empty outpacket : %r' % routed_packet)
+                to_remove.append(_key)
+                continue
+#             if _Debug:
+#                 lg.args(_DebugLevel,
+#                     routed_packet,
+#                     outpacket,
+#                     outpacket.Command == info['command'],
+#                     outpacket.PacketID == info['packet_id'],
+#                     outpacket.RemoteID.to_bin() == to_idurl,
+#                 )
+            if outpacket.Command != info['command']:
+                continue
+            if outpacket.PacketID != info['packet_id']:
+                continue
+            if outpacket.RemoteID.to_bin() != to_idurl:
+                continue
+            to_remove.append(_key)
+        for _key in to_remove:
+            routed_packet, outpacket = self.sent_packets.pop(_key, (None, None, ))
+            if _Debug:
+                lg.dbg(_DebugLevel, 'cleaned %r %r' % (routed_packet, outpacket, ))
+
+    def _on_cache_retry_success(self, xmlsrc, fail_info):
+        if _Debug:
+            lg.args(_DebugLevel, sent_packets=len(self.sent_packets), fail_info=fail_info)
+        to_idurl = id_url.to_bin(fail_info['to'])
+        for _key in self.sent_packets.keys():
+            routed_packet, outpacket = self.sent_packets.get(_key, (None, None, ))
+            if not outpacket:
+                if _Debug:
+                    lg.dbg(_DebugLevel, 'found empty outpacket : %r' % routed_packet)
+                continue
+#             if _Debug:
+#                 lg.args(_DebugLevel,
+#                     routed_packet,
+#                     outpacket,
+#                     outpacket.Command == fail_info['command'],
+#                     outpacket.PacketID == fail_info['packet_id'],
+#                     outpacket.RemoteID.to_bin() == to_idurl,
+#                 )
+            if outpacket.Command != fail_info['command']:
+                continue
+            if outpacket.PacketID != fail_info['packet_id']:
+                continue
+            if outpacket.RemoteID.to_bin() != to_idurl:
+                continue
+            routed_retry_packet = self._do_send_packet_to_router(
+                outpacket=outpacket,
+                callbacks=routed_packet.callbacks,
+                wide=fail_info.get('wide', False),
+                keep_alive=fail_info.get('keep_alive', False),
+                response_timeout=fail_info.get('response_timeout', None),
+                is_retry=True,
+            )
+            if not routed_retry_packet:
+                self.automat('retry-send-failed', fail_info)
+            else:
+                self.sent_packets[_key] = (routed_retry_packet, outpacket, )
+                self.automat('retry', fail_info)
+            del routed_packet
+        return None
+
+    def _on_cache_retry_failed(self, err, fail_info):
+        if _Debug:
+            lg.args(_DebugLevel, err=err, fail_info=fail_info)
+        self._do_cancel_outbox_packets(fail_info)
+        self.automat('retry-cache-failed', fail_info)
+        return None
 
     def _on_first_outbox_packet(self, outpacket, wide, callbacks, target=None, route=None, response_timeout=None, keep_alive=True):
         """
@@ -295,89 +545,14 @@ class ProxySender(automat.Automat):
         if proxy_receiver.A().state != 'LISTEN':
             if _Debug:
                 lg.out(_DebugLevel, 'proxy_sender._on_first_outbox_packet DELLAYED %r because proxy_receiver state is not LISTEN yet' % outpacket)
-            return self._add_pending_packet(outpacket, wide, callbacks)
-        router_idurl = proxy_receiver.GetRouterIDURL()
-        router_identity_obj = proxy_receiver.GetRouterIdentity()
-        router_proto_host = proxy_receiver.GetRouterProtoHost()
-        router_proto, router_host = router_proto_host
-        publickey = router_identity_obj.publickey
-        my_original_identity_src = proxy_receiver.ReadMyOriginalIdentitySource()
-        if not router_idurl or not router_identity_obj or not router_proto_host or not my_original_identity_src:
-            if _Debug:
-                lg.out(_DebugLevel, 'proxy_sender._on_first_outbox_packet SKIP because remote router not ready')
-            return self._add_pending_packet(outpacket, wide, callbacks)
-        if outpacket.RemoteID.to_bin() == router_idurl.to_bin():
-            if _Debug:
-                lg.out(_DebugLevel, 'proxy_sender._on_first_outbox_packet SKIP, packet addressed to router and must be sent in a usual way')
-            return None
-        try:
-            raw_data = outpacket.Serialize()
-        except:
-            lg.exc('failed to Serialize %s' % outpacket)
-            return None
-        # see proxy_router.ProxyRouter : doForwardOutboxPacket() for receiving part
-        json_payload = {
-            'f': my_id.getLocalID().to_bin(),    # from
-            't': outpacket.RemoteID.to_bin(),    # to
-            'w': wide,                           # wide
-            'p': raw_data,                       # payload
-        }
-        if not json_payload['t']:
-            raise ValueError('receiver idurl was not set')
-        raw_bytes = serialization.DictToBytes(json_payload)
-        block = encrypted.Block(
-            CreatorID=my_id.getLocalID(),
-            BackupID='routed outgoing data',
-            BlockNumber=0,
-            SessionKey=key.NewSessionKey(session_key_type=key.SessionKeyType()),
-            SessionKeyType=key.SessionKeyType(),
-            LastBlock=True,
-            Data=raw_bytes,
-            EncryptKey=lambda inp: key.EncryptOpenSSHPublicKey(publickey, inp),
-        )
-        block_encrypted = block.Serialize()
-        newpacket = signed.Packet(
-            Command=commands.Relay(),
-            OwnerID=outpacket.OwnerID,
-            CreatorID=my_id.getLocalID(),
-            PacketID=outpacket.PacketID,
-            Payload=block_encrypted,
-            RemoteID=router_idurl,
-        )
-        routed_packet = packet_out.create(
-            outpacket,
-            wide=wide,
+            return self._do_add_pending_packet(outpacket, callbacks, wide, response_timeout, keep_alive)
+        return self._do_send_packet_to_router(
+            outpacket=outpacket,
             callbacks=callbacks,
-            route={
-                'packet': newpacket,
-                # pointing "newpacket" to another node
-                'proto': router_proto,
-                'host': router_host,
-                'remoteid': router_idurl,
-                'description': 'Relay_%s[%s]_%s' % (outpacket.Command, outpacket.PacketID, nameurl.GetName(router_idurl)),
-            },
-            response_timeout=response_timeout,
+            wide=wide,
             keep_alive=keep_alive,
+            response_timeout=response_timeout,
         )
-        self.event('outbox-packet-sent', (outpacket, newpacket, routed_packet))
-        if _Debug:
-            lg.out(_DebugLevel, '>>>Relay-OUT %s' % str(outpacket))
-            lg.out(_DebugLevel, '        sent to %s://%s with %d bytes' % (
-                router_proto, router_host, len(block_encrypted)))
-        if _PacketLogFileEnabled:
-            lg.out(0, '\033[0;49;36mRELAY OUT %s(%s) with %s bytes from %s to %s via %s\033[0m' % (
-                outpacket.Command, outpacket.PacketID, len(raw_bytes),
-                global_id.UrlToGlobalID(outpacket.CreatorID), global_id.UrlToGlobalID(outpacket.RemoteID),
-                global_id.UrlToGlobalID(router_idurl), ),
-                log_name='packet', showtime=True,)
-        del raw_bytes
-        del block
-        del newpacket
-        del outpacket
-        del router_identity_obj
-        del router_idurl
-        del router_proto_host
-        return routed_packet
 
     def _on_network_connector_state_changed(self, oldstate, newstate, event_string, *args, **kwargs):
         if newstate == 'CONNECTED' and oldstate != newstate:
