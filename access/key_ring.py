@@ -119,7 +119,8 @@ def _do_request_service_keys_registry(key_id, idurl, include_private, include_si
 
 def _on_service_keys_registry_response(response, info, key_id, idurl, include_private, include_signature, result, timeout):
     if not strng.to_text(response.Payload).startswith('accepted'):
-        result.errback(Exception('request for "service_keys_registry" refused by remote node'))
+        if not result.called:
+            result.errback(Exception('request for "service_keys_registry" refused by remote node'))
         return None
     d = transfer_key(
         key_id,
@@ -135,12 +136,14 @@ def _on_service_keys_registry_response(response, info, key_id, idurl, include_pr
 
 def _on_transfer_key_response(response, info, key_id, result):
     if not response or not info:
-        result.errback(Exception('timeout'))
+        if not result.called:
+            result.errback(Exception('timeout'))
         if _Debug:
             lg.warn('transfer failed, response timeout')
         return None
     if response.Command == commands.Ack():
-        result.callback(response)
+        if not result.called:
+            result.callback(response)
         if _Debug:
             lg.info('key %s transfer success to %s' % (key_id, response.OwnerID))
         return None
@@ -148,11 +151,13 @@ def _on_transfer_key_response(response, info, key_id, result):
         err_msg = strng.to_text(response.Payload, errors='ignore')
         if err_msg.count('key already registered'):
             # it is okay to have "Fail()" response in that case
-            result.callback(response)
+            if not result.called:
+                result.callback(response)
             if _Debug:
                 lg.warn('key %s already registered on %s' % (key_id, response.OwnerID))
             return None
-    result.errback(Exception(response.Payload))
+    if not result.called:
+        result.errback(Exception(response.Payload))
     if _Debug:
         lg.warn('key transfer failed: %s' % response.Payload)
     return None

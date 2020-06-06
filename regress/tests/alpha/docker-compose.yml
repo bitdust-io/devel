@@ -116,7 +116,7 @@ services:
   proxy-rotated:
     image: bitdust/app
     ports:
-      - "10033:22"
+      - "10034:22"
     links:
       - dht-2
       - dht-3

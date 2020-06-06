@@ -654,7 +654,7 @@ class ProxyRouter(automat.Automat):
         del block
         if identitycache.HasKey(sender_idurl) and identitycache.HasKey(receiver_idurl) and not is_retry:
             return self._do_verify_routed_data(newpacket, info, sender_idurl, receiver_idurl, routed_data, wide, response_timeout, keep_alive, is_retry)
-        lg.warn('will send routed data after caching, sender_idurl=%r receiver_idurl=%r' % (sender_idurl, receiver_idurl, ))
+        lg.warn('will send routed data after caching, is_retry=%s sender_idurl=%r receiver_idurl=%r' % (is_retry, sender_idurl, receiver_idurl, ))
         dl = []
         if not identitycache.HasKey(sender_idurl) or is_retry:
             dl.append(identitycache.immediatelyCaching(sender_idurl))
