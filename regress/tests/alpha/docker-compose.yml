@@ -100,10 +100,23 @@ services:
       - id-c
       - id-dead
 
-  proxy-rotated:
+  proxy-3:
     image: bitdust/app
     ports:
       - "10033:22"
+    links:
+      - dht-2
+      - dht-3
+      - stun-1
+      - id-a
+      - id-b
+      - id-c
+      - id-dead
+
+  proxy-rotated:
+    image: bitdust/app
+    ports:
+      - "10034:22"
     links:
       - dht-2
       - dht-3
@@ -366,6 +379,7 @@ services:
       - stun-1
       - proxy-1
       - proxy-2
+      - proxy-3
       - proxy-rotated
       - supplier-1
       - supplier-2

@@ -759,6 +759,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
             creator_id=data.get('creator_id', None),
             key_size=int(data['key_size']) if 'key_size' in data else None,
             label=data.get('label', ''),
+            timeout=data.get('timeout', 20),
         )
 
     @GET('^/gr/i$')

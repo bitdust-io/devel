@@ -32,7 +32,7 @@ from testsupport import request_get, request_post, request_put, request_delete, 
 
 #------------------------------------------------------------------------------
 
-def supplier_list_v1(customer: str, expected_min_suppliers=None, expected_max_suppliers=None, attempts=10, delay=5, extract_suppliers=True, verbose=True):
+def supplier_list_v1(customer: str, expected_min_suppliers=None, expected_max_suppliers=None, attempts=20, delay=5, extract_suppliers=True, verbose=True):
     count = 0
     num_connected = 0
     while True:
@@ -237,7 +237,7 @@ def file_sync_v1(node):
     return response.json()
 
 
-def file_list_all_v1(node, expected_reliable=100, reliable_shares=True, attempts=5, delay=5, verbose=False):
+def file_list_all_v1(node, expected_reliable=100, reliable_shares=True, attempts=20, delay=5, verbose=False):
     if expected_reliable is None:
         response = request_get(node, 'file/list/all/v1', timeout=20)
         assert response.status_code == 200
@@ -524,7 +524,7 @@ def user_ping_v1(node, remote_node_id, timeout=95, ack_timeout=30, retries=2):
     return response.json()
 
 
-def service_info_v1(node, service_name, expected_state, attempts=10, delay=5, verbose=True):
+def service_info_v1(node, service_name, expected_state, attempts=20, delay=5, verbose=True):
     current_state = None
     count = 0
     while current_state is None or current_state != expected_state:
@@ -581,7 +581,7 @@ def event_listen_v1(node, expected_event_id, consumer_id='regression_tests_wait_
     return found
 
 
-def packet_list_v1(node, wait_all_finish=False, attempts=10, delay=5, verbose=False):
+def packet_list_v1(node, wait_all_finish=False, attempts=20, delay=5, verbose=False):
     if verbose:
         print('packet/list/v1 [%s]\n' % node)
     for _ in range(attempts):
@@ -590,7 +590,12 @@ def packet_list_v1(node, wait_all_finish=False, attempts=10, delay=5, verbose=Fa
         if verbose:
             print('packet/list/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
         assert response.json()['status'] == 'OK', response.json()
-        if len(response.json()['result']) == 0 or not wait_all_finish:
+        found_packet = False
+        for r in response.json()['result']:
+            if r['packet_id'].count('idle_ping:'):
+                continue
+            found_packet = True
+        if not found_packet or not wait_all_finish:
             break
         time.sleep(delay)
     else:
@@ -598,7 +603,7 @@ def packet_list_v1(node, wait_all_finish=False, attempts=10, delay=5, verbose=Fa
     return response.json()
 
 
-def transfer_list_v1(node, wait_all_finish=False, attempts=10, delay=5, verbose=False):
+def transfer_list_v1(node, wait_all_finish=False, attempts=20, delay=5, verbose=False):
     if verbose:
         print('transfer/list/v1 [%s]\n' % node)
     for _ in range(attempts):
@@ -810,7 +815,7 @@ def verify_message_sent_received(group_key_id, producer_id, consumers_ids, messa
 
 #------------------------------------------------------------------------------
 
-def verify_file_create_upload_start(node, key_id, volume_path, filename='cat.txt', randomize_bytes=0, verify_list_files=True, reliable_shares=True):
+def verify_file_create_upload_start(node, key_id, volume_path, filename='cat.txt', randomize_bytes=0, verify_list_files=True, reliable_shares=True, expected_reliable=100):
     virtual_filename = filename
     local_filepath = f'{volume_path}/{filename}'
     remote_path = f'{key_id}:{virtual_filename}'
@@ -820,7 +825,7 @@ def verify_file_create_upload_start(node, key_id, volume_path, filename='cat.txt
     else:
         run_ssh_command_and_wait(node, f'python -c "import os, base64; print(base64.b64encode(os.urandom({randomize_bytes})).decode()[:{randomize_bytes}])" > {local_filepath}')
     if verify_list_files:
-        file_list_all_v1(node, reliable_shares=reliable_shares)
+        file_list_all_v1(node, reliable_shares=reliable_shares, expected_reliable=expected_reliable)
     file_create_v1(node, remote_path)
     file_upload_start_v1(node, remote_path, local_filepath)
     packet_list_v1(node, wait_all_finish=True)

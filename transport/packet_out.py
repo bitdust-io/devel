@@ -471,7 +471,7 @@ class PacketOut(automat.Automat):
         return time.time() - self.time > self.timeout
 
     def set_callback(self, command, cb):
-        if command not in list(self.callbacks.keys()):
+        if command not in self.callbacks.keys():
             self.callbacks[command] = []
         self.callbacks[command].append(cb)
         if _Debug:
@@ -630,7 +630,7 @@ class PacketOut(automat.Automat):
             return False
         if commands.IsReplyExpected(self.outpacket.Command):
             return True
-        return commands.Ack() in list(self.callbacks.keys()) or commands.Fail() in list(self.callbacks.keys())
+        return len(self.callbacks.get(commands.Ack(), [])) + len(self.callbacks.get(commands.Fail(), [])) > 0
 
     def isFailed(self, *args, **kwargs):
         """
@@ -649,7 +649,7 @@ class PacketOut(automat.Automat):
         Condition method.
         """
         newpacket, _ = args[0]
-        if newpacket.Command in list(self.callbacks.keys()):
+        if len(self.callbacks.get(newpacket.Command, [])) > 0:
             return True
         if not commands.IsCommandAck(self.outpacket.Command, newpacket.Command):
             return False
@@ -659,7 +659,7 @@ class PacketOut(automat.Automat):
         """
         Condition method.
         """
-        return commands.Data() in list(self.callbacks.keys())
+        return len(self.callbacks.get(commands.Data(), [])) > 0
 
     def doInit(self, *args, **kwargs):
         """
@@ -779,13 +779,11 @@ class PacketOut(automat.Automat):
             self, self.popped_item, self.popped_item.status,
             self.popped_item.bytes_sent, self.popped_item.error_message)
         if self.popped_item.status == 'failed':
-            if 'item-failed' in self.callbacks:
-                for cb in self.callbacks['item-failed']:
-                    cb(self, self.popped_item)
+            for cb in self.callbacks.pop('item-failed', []):
+                cb(self, self.popped_item)
         else:
-            if 'item-sent' in self.callbacks:
-                for cb in self.callbacks['item-sent']:
-                    cb(self, self.popped_item)
+            for cb in self.callbacks.pop('item-sent', []):
+                cb(self, self.popped_item)
         if _PacketLogFileEnabled:
             if self.popped_item.status == 'finished':
                 lg.out(0, '\033[0;49;90mSENT %d bytes to %s://%s TID:%s\033[0m' % (
@@ -815,25 +813,22 @@ class PacketOut(automat.Automat):
         """
         if _Debug:
             lg.out(_DebugLevel, 'packet_out.doReportResponse %d callbacks known' % len(self.callbacks))
-        if self.response_packet.Command in self.callbacks:
-            for cb in self.callbacks[self.response_packet.Command]:
-                if _Debug:
-                    lg.out(_DebugLevel, '        calling to %r with %r' % (cb, self.response_packet))
-                try:
-                    cb(self.response_packet, self.response_info)
-                except:
-                    lg.exc()
+        for cb in self.callbacks.pop(self.response_packet.Command, []):
+            if _Debug:
+                lg.out(_DebugLevel, '        calling to %r with %r' % (cb, self.response_packet))
+            try:
+                cb(self.response_packet, self.response_info)
+            except:
+                lg.exc()
 
     def doReportTimeOut(self, *args, **kwargs):
         """
         Action method.
         """
-        if None in self.callbacks:
-            for cb in self.callbacks[None]:
-                cb(self)
-        if 'timeout' in self.callbacks:
-            for cb in self.callbacks['timeout']:
-                cb(self, 'timeout')
+        for cb in self.callbacks.pop(None, []):
+            cb(self)
+        for cb in self.callbacks.pop('timeout', []):
+            cb(self, 'timeout')
         if _PacketLogFileEnabled:
             lg.out(0, '\033[1;49;91mOUT TIMEOUT %s(%s) sending from %s to %s\033[0m' % (
                 self.outpacket.Command, self.outpacket.PacketID,
@@ -845,9 +840,8 @@ class PacketOut(automat.Automat):
         Action method.
         """
         callback.run_queue_item_status_callbacks(self, 'finished', '')
-        if 'acked' in self.callbacks:
-            for cb in self.callbacks['acked']:
-                cb(self, 'finished')
+        for cb in self.callbacks.pop('acked', []):
+            cb(self, 'finished')
         if _PacketLogFileEnabled:
             newpacket, _ = args[0]
             if newpacket.Command in [commands.Fail(), ]:
@@ -869,9 +863,8 @@ class PacketOut(automat.Automat):
             callback.run_queue_item_status_callbacks(self, 'finished', '')
         else:
             callback.run_queue_item_status_callbacks(self, 'finished', 'unanswered')
-        if 'sent' in self.callbacks:
-            for cb in self.callbacks['sent']:
-                cb(self, 'finished')
+        for cb in self.callbacks.pop('sent', []):
+            cb(self, 'finished')
         if _PacketLogFileEnabled:
             lg.out(0, '\033[0;49;95mOUT %s(%s) with %s bytes from %s to %s TID:%r\033[0m' % (
                 self.outpacket.Command, self.outpacket.PacketID, self.filesize or '?',
@@ -887,9 +880,8 @@ class PacketOut(automat.Automat):
         except:
             msg = 'failed'
         callback.run_queue_item_status_callbacks(self, 'failed', msg)
-        if 'failed' in self.callbacks:
-            for cb in self.callbacks['failed']:
-                cb(self, msg)
+        for cb in self.callbacks.pop('failed', []):
+            cb(self, msg)
         if _PacketLogFileEnabled:
             lg.out(0, '\033[0;49;91mOUT FAILED %s(%s) with %s bytes from %s to %s TID:%r : %s\033[0m' % (
                 self.outpacket.Command, self.outpacket.PacketID, self.filesize or '?',
@@ -906,9 +898,8 @@ class PacketOut(automat.Automat):
         else:
             msg = 'cancelled'
         callback.run_queue_item_status_callbacks(self, 'cancelled', msg)
-        if 'cancelled' in self.callbacks:
-            for cb in self.callbacks['cancelled']:
-                cb(self, msg)
+        for cb in self.callbacks.pop('cancelled', []):
+            cb(self, msg)
         if _PacketLogFileEnabled:
             lg.out(0, '\033[0;49;97mOUT CANCELED %s(%s) with %s bytes from %s to %s TID:%r : %s\033[0m' % (
                 self.outpacket.Command, self.outpacket.PacketID, self.filesize or '?',

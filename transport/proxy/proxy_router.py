@@ -292,7 +292,6 @@ class ProxyRouter(automat.Automat):
         if idurl in self.routes and (new_address not in self.routes[idurl]['address']):
             self.routes[idurl]['address'].append(new_address)
             lg.info('added new active address %r for %s' % (new_address, nameurl.GetName(idurl), ))
-        # self._write_route(idurl)
 
     def doSetContactsOverride(self, *args, **kwargs):
         """
@@ -429,6 +428,7 @@ class ProxyRouter(automat.Automat):
                         lg.out(_DebugLevel, '        SKIP OVERRIDE identity for %s' % user_idurl)
                 self.routes[user_idurl.original()]['time'] = time.time()
                 self.routes[user_idurl.original()]['identity'] = cached_ident.serialize(as_text=True)
+                self.routes[user_idurl.original()]['identity_rev'] = cached_ident.getRevisionValue()
                 self.routes[user_idurl.original()]['publickey'] = strng.to_text(cached_ident.publickey)
                 self.routes[user_idurl.original()]['contacts'] = cached_ident.getContactsAsTuples(as_text=True)
                 self.routes[user_idurl.original()]['address'] = []
@@ -654,11 +654,11 @@ class ProxyRouter(automat.Automat):
         del block
         if identitycache.HasKey(sender_idurl) and identitycache.HasKey(receiver_idurl) and not is_retry:
             return self._do_verify_routed_data(newpacket, info, sender_idurl, receiver_idurl, routed_data, wide, response_timeout, keep_alive, is_retry)
-        lg.warn('will send routed data after caching, sender_idurl=%r receiver_idurl=%r' % (sender_idurl, receiver_idurl, ))
+        lg.warn('will send routed data after caching, is_retry=%s sender_idurl=%r receiver_idurl=%r' % (is_retry, sender_idurl, receiver_idurl, ))
         dl = []
-        if not identitycache.HasKey(sender_idurl):
+        if not identitycache.HasKey(sender_idurl) or is_retry:
             dl.append(identitycache.immediatelyCaching(sender_idurl))
-        if not identitycache.HasKey(receiver_idurl):
+        if not identitycache.HasKey(receiver_idurl) or is_retry:
             dl.append(identitycache.immediatelyCaching(receiver_idurl))
         d = DeferredList(dl, consumeErrors=True)
         d.addCallback(self._do_check_cached_idurl, newpacket, info, sender_idurl, receiver_idurl, routed_data, wide, response_timeout, keep_alive, is_retry)
@@ -668,19 +668,34 @@ class ProxyRouter(automat.Automat):
         return True
 
     def _do_check_cached_idurl(self, cache_results, newpacket, info, sender_idurl, receiver_idurl, routed_data, wide, response_timeout, keep_alive, is_retry):
+        sender_id_rev = self.routes.get(sender_idurl, {}).get('identity_rev', None)
+        receiver_id_rev = self.routes.get(receiver_idurl, {}).get('identity_rev', None)
         if _Debug:
-            lg.args(_DebugLevel, cache_results=cache_results, is_retry=is_retry)
+            lg.args(_DebugLevel, sender_id_rev=sender_id_rev, receiver_id_rev=receiver_id_rev, is_retry=is_retry, cache_results=len(cache_results))
         some_failed = False
         for result, _ in cache_results:
             if not result:
                 some_failed = True
+        route_changed = False
+        if sender_idurl in self.routes:
+            sender_ident = identitydb.get_ident(sender_idurl)
+            if sender_ident and sender_id_rev is not None and sender_id_rev != sender_ident.getRevisionValue():
+                route_changed = True
+                self.routes[sender_idurl]['identity_rev'] = sender_ident.getRevisionValue()
+                self.closed_routes.pop(sender_idurl, None)
+        if receiver_idurl in self.routes:
+            receiver_ident = identitydb.get_ident(receiver_idurl)
+            if receiver_ident and receiver_id_rev is not None and receiver_id_rev != receiver_ident.getRevisionValue():
+                route_changed = True
+                self.routes[receiver_idurl]['identity_rev'] = receiver_ident.getRevisionValue()
+                self.closed_routes.pop(receiver_idurl, None)
         if some_failed:
-            self._do_verify_routed_data(newpacket, info, None, None, routed_data, wide, response_timeout, keep_alive, is_retry)
+            self._do_verify_routed_data(newpacket, info, None, None, routed_data, wide, response_timeout, keep_alive, is_retry, route_changed)
         else:
-            self._do_verify_routed_data(newpacket, info, sender_idurl, receiver_idurl, routed_data, wide, response_timeout, keep_alive, is_retry)
+            self._do_verify_routed_data(newpacket, info, sender_idurl, receiver_idurl, routed_data, wide, response_timeout, keep_alive, is_retry, route_changed)
         return None
 
-    def _do_verify_routed_data(self, newpacket, info, sender_idurl, receiver_idurl, routed_data, wide, response_timeout, keep_alive, is_retry):
+    def _do_verify_routed_data(self, newpacket, info, sender_idurl, receiver_idurl, routed_data, wide, response_timeout, keep_alive, is_retry, route_changed=False):
         if sender_idurl is None or receiver_idurl is None:
             lg.warn('failed sending %r, sender or receiver IDURL was not cached' % newpacket)
             self._do_send_fail_packet(newpacket, info, wide, response_timeout, keep_alive, newpacket.CreatorID, receiver_idurl, 'sender or receiver IDURL was not found')
@@ -699,7 +714,9 @@ class ProxyRouter(automat.Automat):
         routes_keys = list(self.routes.keys())
         closed_route_keys = list(self.closed_routes.keys())
         if _Debug:
-            lg.args(_DebugLevel, newpacket=newpacket, info=info, sender_idurl=sender_idurl, receiver_idurl=receiver_idurl, route_contacts=route['contacts'], closed_routes=closed_route_keys, is_retry=is_retry)
+            lg.args(_DebugLevel, newpacket=newpacket, info=info, sender_idurl=sender_idurl,
+                    receiver_idurl=receiver_idurl, route_contacts=route['contacts'],
+                    closed_routes=closed_route_keys, is_retry=is_retry, route_changed=route_changed)
         routed_packet = signed.Unserialize(routed_data)
         #--- invalid packet
         if not routed_packet:
@@ -728,7 +745,9 @@ class ProxyRouter(automat.Automat):
             packet_in.process(routed_packet, info)
             return
         #--- route already closed
-        if receiver_idurl.original() in closed_route_keys or receiver_idurl.to_bin() in closed_route_keys:
+        if False:
+        # if receiver_idurl.original() in closed_route_keys or receiver_idurl.to_bin() in closed_route_keys:
+        # if not route_changed and ( receiver_idurl.original() in closed_route_keys or receiver_idurl.to_bin() in closed_route_keys ):
             route_closed_time = max(self.closed_routes.get(receiver_idurl.original(), 0), self.closed_routes.get(receiver_idurl.to_bin(), 0))
             if _Debug:
                 lg.args(_DebugLevel, route_closed_time=route_closed_time, time=time.time())
@@ -906,51 +925,6 @@ class ProxyRouter(automat.Automat):
             lg.err('routed packet sent but can not send RelayAck(), identity %r is not cached' % newpacket.CreatorID)
             return
         receiver_proto, receiver_host = self._get_session_proto_host(sender_idurl, info)
-
-#         route_info = self.routes.get(sender_idurl.original(), None)
-#         if not route_info:
-#             route_info = self.routes.get(sender_idurl.to_bin(), None)
-#         if not route_info:
-#             lg.err('route with %s was not found, can not send RelayAck()' % sender_idurl)
-#             return
-#         connection_info = route_info.get('connection_info', {})
-#         active_user_session_machine = None
-#         if not connection_info or not connection_info.get('index'):
-#             active_user_sessions = gateway.find_active_session(info.proto, idurl=sender_idurl.original())
-#             if not active_user_sessions:
-#                 active_user_sessions = gateway.find_active_session(info.proto, idurl=sender_idurl.to_bin())
-#             if not active_user_sessions:
-#                 lg.err('route with %s found but no active sessions found with %s://%s, can not send RelayAck()' % (
-#                     sender_idurl, info.proto, info.host, ))
-#                 return
-#             active_user_session_machine = automat.objects().get(active_user_sessions[0].index, None)
-#         if not active_user_session_machine:
-#             if connection_info.get('index'):
-#                 active_user_session_machine = automat.objects().get(connection_info['index'], None)
-#         if not active_user_session_machine:
-#             lg.err('route with %s found but no active user session, can not send RelayAck()' % sender_idurl)
-#             return
-#         if not active_user_session_machine.is_connected():
-#             lg.err('route with %s found but session is not connected, can not send RelayAck()' % sender_idurl)
-#             return
-#         hosts = []
-#         try:
-#             hosts.append((active_user_session_machine.get_proto(), active_user_session_machine.get_host(), ))
-#         except:
-#             lg.exc()
-#         if not hosts:
-#             lg.warn('found active user session but host is empty in %r, try use recorded info' % active_user_session_machine)
-#             hosts = route_info['address']
-#         if len(hosts) == 0:
-#             lg.warn('route with %s do not have actual info about the host, use identity contacts instead' % sender_idurl)
-#             hosts = route_info['contacts']
-#         if len(hosts) == 0:
-#             lg.err('has no known contacts for route with %s, can not send RelayAck()' % sender_idurl)
-#             return
-#         if len(hosts) > 1:
-#             lg.warn('found more then one channel with %s : %r' % (sender_idurl, hosts, ))
-#         receiver_proto, receiver_host = strng.to_bin(hosts[0][0]), strng.to_bin(hosts[0][1])
-
         raw_data, pout = self._do_send_relay_packet(
             relay_cmd=commands.RelayAck(),
             inbox_packet=newpacket,
@@ -1060,10 +1034,6 @@ class ProxyRouter(automat.Automat):
                     lg.out(_DebugLevel, '        sending "unknown-identity-received" event')
                 self.automat('unknown-identity-received', newpacket)
                 return False
-            # it can be a RequestService or CancelService packets...
-#             elif newpacket.Command == commands.RequestService():
-#                 self.automat(event_string, *args, **kwargs)
-#                 'request-route-received'....
             # so this packet may be of any kind, but addressed to me
             # for example if I am a supplier for node A he will send me packets in usual way
             # need to skip this packet here and process it as a normal inbox packet
@@ -1150,8 +1120,8 @@ class ProxyRouter(automat.Automat):
         self.automat('routed-session-disconnected', user_id)
 
     def _on_identity_url_changed(self, evt):
-        old = evt.data['old_idurl']
-        new = evt.data['new_idurl']
+        old = id_url.to_bin(evt.data['old_idurl'])
+        new = id_url.to_bin(evt.data['new_idurl'])
         if old in self.routes and new not in self.routes:
             current_route = self.routes[old]
             identitycache.StopOverridingIdentity(old)
@@ -1162,6 +1132,8 @@ class ProxyRouter(automat.Automat):
                 if _Debug:
                     lg.out(_DebugLevel, '    DO OVERRIDE identity for %r' % new)
                 identitycache.OverrideIdentity(new, new_ident.serialize(as_text=True))
+            if new_ident:
+                self.routes[new]['identity_rev'] = new_ident.getRevisionValue()
             lg.info('replaced route for user after identity rotate detected : %r -> %r' % (old, new))
 
     def _is_my_contacts_present_in_identity(self, ident):

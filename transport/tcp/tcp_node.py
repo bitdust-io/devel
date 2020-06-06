@@ -247,9 +247,11 @@ def send(filename, remoteaddress, description=None, keep_alive=True):
     """
     """
     remoteaddress = net_misc.normalize_address(remoteaddress)
-    if remoteaddress == my_host(normalize=True):
-        lg.warn('sending file %r %r to my own host connection at %r' % (filename, description, remoteaddress, ))
     result_defer = Deferred()
+    if remoteaddress == my_host(normalize=True):
+        lg.err('sending file %r %r to my own host connection at %r is blocked' % (filename, description, remoteaddress, ))
+        result_defer.callback((filename, description, 'failed', 'cancelled'))
+        return result_defer
     if remoteaddress in started_connections():
         started_connections()[remoteaddress].add_outbox_file(filename, description, result_defer, keep_alive)
         if not keep_alive:
