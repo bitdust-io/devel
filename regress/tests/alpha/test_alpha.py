@@ -1418,7 +1418,6 @@ def scenario17(old_customer_2_info):
 
     # TODO:
     # test my keys also recovered
-
     # test my message history also recovered (not implemented yet)
     kw.file_list_all_v1('customer-restore', expected_reliable=50, reliable_shares=False, attempts=20)
 
