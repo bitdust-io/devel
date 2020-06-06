@@ -590,7 +590,12 @@ def packet_list_v1(node, wait_all_finish=False, attempts=20, delay=5, verbose=Fa
         if verbose:
             print('packet/list/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
         assert response.json()['status'] == 'OK', response.json()
-        if len(response.json()['result']) == 0 or not wait_all_finish:
+        found_packet = False
+        for r in response.json()['result']:
+            if r['packet_id'].count('idle_ping:'):
+                continue
+            found_packet = True
+        if not found_packet or not wait_all_finish:
             break
         time.sleep(delay)
     else:
@@ -810,7 +815,7 @@ def verify_message_sent_received(group_key_id, producer_id, consumers_ids, messa
 
 #------------------------------------------------------------------------------
 
-def verify_file_create_upload_start(node, key_id, volume_path, filename='cat.txt', randomize_bytes=0, verify_list_files=True, reliable_shares=True):
+def verify_file_create_upload_start(node, key_id, volume_path, filename='cat.txt', randomize_bytes=0, verify_list_files=True, reliable_shares=True, expected_reliable=100):
     virtual_filename = filename
     local_filepath = f'{volume_path}/{filename}'
     remote_path = f'{key_id}:{virtual_filename}'
@@ -820,7 +825,7 @@ def verify_file_create_upload_start(node, key_id, volume_path, filename='cat.txt
     else:
         run_ssh_command_and_wait(node, f'python -c "import os, base64; print(base64.b64encode(os.urandom({randomize_bytes})).decode()[:{randomize_bytes}])" > {local_filepath}')
     if verify_list_files:
-        file_list_all_v1(node, reliable_shares=reliable_shares)
+        file_list_all_v1(node, reliable_shares=reliable_shares, expected_reliable=expected_reliable)
     file_create_v1(node, remote_path)
     file_upload_start_v1(node, remote_path, local_filepath)
     packet_list_v1(node, wait_all_finish=True)

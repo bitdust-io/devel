@@ -745,7 +745,9 @@ class ProxyRouter(automat.Automat):
             packet_in.process(routed_packet, info)
             return
         #--- route already closed
-        if not route_changed and ( receiver_idurl.original() in closed_route_keys or receiver_idurl.to_bin() in closed_route_keys ):
+        if False:
+        # if receiver_idurl.original() in closed_route_keys or receiver_idurl.to_bin() in closed_route_keys:
+        # if not route_changed and ( receiver_idurl.original() in closed_route_keys or receiver_idurl.to_bin() in closed_route_keys ):
             route_closed_time = max(self.closed_routes.get(receiver_idurl.original(), 0), self.closed_routes.get(receiver_idurl.to_bin(), 0))
             if _Debug:
                 lg.args(_DebugLevel, route_closed_time=route_closed_time, time=time.time())
@@ -1032,10 +1034,6 @@ class ProxyRouter(automat.Automat):
                     lg.out(_DebugLevel, '        sending "unknown-identity-received" event')
                 self.automat('unknown-identity-received', newpacket)
                 return False
-            # it can be a RequestService or CancelService packets...
-#             elif newpacket.Command == commands.RequestService():
-#                 self.automat(event_string, *args, **kwargs)
-#                 'request-route-received'....
             # so this packet may be of any kind, but addressed to me
             # for example if I am a supplier for node A he will send me packets in usual way
             # need to skip this packet here and process it as a normal inbox packet

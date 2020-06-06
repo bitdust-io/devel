@@ -74,7 +74,7 @@ from testsupport import stop_daemon, run_ssh_command_and_wait, request_get, requ
 
 import keywords as kw
 
-PROXY_IDS = ['proxy-1', 'proxy-2', 'proxy-3', ]
+PROXY_IDS = []  # ['proxy-1', 'proxy-2', 'proxy-3', ]
 SUPPLIERS_IDS = ['supplier-1', 'supplier-2', 'supplier-3', 'supplier-4', 'supplier-5', ]
 CUSTOMERS_IDS = ['customer-1', 'customer-2', 'customer-3', 'customer-4', 'customer-rotated', ]
 CUSTOMERS_IDS_SHORT = ['customer-1', 'customer-3', 'customer-4', ]
@@ -241,6 +241,7 @@ def scenario4():
         volume_path='/customer_1',
         filename='cat.txt',
         randomize_bytes=200,
+        expected_reliable=50,
     )
     # make sure we can download the file back on customer-1
     kw.verify_file_download_start(
@@ -248,6 +249,7 @@ def scenario4():
         remote_path=customer_1_remote_path_cat,
         destination_path=customer_1_download_filepath_cat,
         verify_from_local_path=customer_1_local_filepath_cat,
+        expected_reliable=50,
     )
 
     # upload another different "cat.txt" for customer-2
@@ -257,6 +259,7 @@ def scenario4():
         volume_path='/customer_2',
         filename='cat.txt',
         randomize_bytes=100,
+        expected_reliable=50,
     )
     # make sure we can download the file back on customer-2
     kw.verify_file_download_start(
@@ -264,6 +267,7 @@ def scenario4():
         remote_path=customer_2_remote_path_cat,
         destination_path=customer_2_download_filepath_cat,
         verify_from_local_path=customer_2_local_filepath_cat,
+        expected_reliable=50,
     )
 
     response = request_put('customer-1', 'share/grant/v1',
@@ -286,6 +290,7 @@ def scenario4():
         destination_path='/customer_2/cat_mine/cat.txt',
         verify_from_local_path=customer_2_local_filepath_cat,
         reliable_shares=False,
+        expected_reliable=50,
     )
 
     # now try to download shared by customer-1 cat.txt file on customer-2 to another folder
@@ -294,6 +299,7 @@ def scenario4():
         remote_path=customer_1_remote_path_cat,
         destination_path='/customer_2/cat_shared/cat.txt',
         reliable_shares=False,
+        expected_reliable=50,
     )
 
     # make sure those are different files
