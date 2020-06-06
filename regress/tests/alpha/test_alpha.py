@@ -74,10 +74,11 @@ from testsupport import stop_daemon, run_ssh_command_and_wait, request_get, requ
 
 import keywords as kw
 
+PROXY_IDS = ['proxy-1', 'proxy-2', 'proxy-3', ]
 SUPPLIERS_IDS = ['supplier-1', 'supplier-2', 'supplier-3', 'supplier-4', 'supplier-5', ]
-BROKERS_IDS = ['broker-1', 'broker-2', 'broker-3', 'broker-4', ]
 CUSTOMERS_IDS = ['customer-1', 'customer-2', 'customer-3', 'customer-4', 'customer-rotated', ]
 CUSTOMERS_IDS_SHORT = ['customer-1', 'customer-3', 'customer-4', ]
+BROKERS_IDS = ['broker-1', 'broker-2', 'broker-3', 'broker-4', ]
 ROTATED_NODES = ['supplier-rotated', 'customer-rotated', 'broker-rotated', 'proxy-rotated', ]
 
 group_customers_2_4_messages = []
@@ -167,7 +168,7 @@ def prepare():
     kw.wait_service_state(CUSTOMERS_IDS, 'service_shared_data', 'ON')
     kw.wait_service_state(CUSTOMERS_IDS, 'service_private_groups', 'ON')
     kw.wait_service_state(BROKERS_IDS + ['broker-rotated', ], 'service_message_broker', 'ON')
-    kw.wait_packets_finished(CUSTOMERS_IDS + BROKERS_IDS + ['broker-rotated', ] + SUPPLIERS_IDS + ['supplier-rotated', ])
+    kw.wait_packets_finished(PROXY_IDS + CUSTOMERS_IDS + BROKERS_IDS + ['broker-rotated', ] + SUPPLIERS_IDS + ['supplier-rotated', ])
 
 
 def scenario1():
@@ -440,7 +441,7 @@ def scenario8():
 
     kw.wait_service_state(CUSTOMERS_IDS, 'service_shared_data', 'ON')
     kw.wait_service_state(CUSTOMERS_IDS, 'service_private_groups', 'ON')
-    kw.wait_packets_finished(CUSTOMERS_IDS + BROKERS_IDS)
+    kw.wait_packets_finished(PROXY_IDS + CUSTOMERS_IDS + BROKERS_IDS)
 
 #     assert kw.queue_consumer_list_v1('broker-1', extract_ids=True) == []
 #     assert kw.queue_consumer_list_v1('broker-2', extract_ids=True) == []
@@ -462,7 +463,7 @@ def scenario8():
 
     kw.group_join_v1('customer-1', customer_1_group_key_id)
 
-    kw.wait_packets_finished(CUSTOMERS_IDS + BROKERS_IDS)
+    kw.wait_packets_finished(PROXY_IDS + CUSTOMERS_IDS + BROKERS_IDS)
 
     customer_1_group_info_active = kw.group_info_v1('customer-1', customer_1_group_key_id)['result']
     assert customer_1_group_info_active['state'] == 'IN_SYNC!'
@@ -488,7 +489,7 @@ def scenario8():
     # second member join the group
     kw.group_join_v1('customer-2', customer_1_group_key_id)
 
-    kw.wait_packets_finished(CUSTOMERS_IDS + BROKERS_IDS)
+    kw.wait_packets_finished(PROXY_IDS + CUSTOMERS_IDS + BROKERS_IDS)
 
     assert kw.group_info_v1('customer-2', customer_1_group_key_id)['result']['last_sequence_id'] == -1
 
@@ -526,7 +527,7 @@ def scenario8():
     kw.group_leave_v1('customer-1', customer_1_group_key_id)
     kw.group_leave_v1('customer-2', customer_1_group_key_id)
 
-    kw.wait_packets_finished(CUSTOMERS_IDS + BROKERS_IDS)
+    kw.wait_packets_finished(PROXY_IDS + CUSTOMERS_IDS + BROKERS_IDS)
 
     customer_1_broker_consumers = kw.queue_consumer_list_v1(customer_1_active_broker_name, extract_ids=True)
     customer_1_broker_producers = kw.queue_producer_list_v1(customer_1_active_broker_name, extract_ids=True)
@@ -551,7 +552,7 @@ def scenario8():
     # customer-3 join the group, other group members are offline
     kw.group_join_v1('customer-3', customer_1_group_key_id)
 
-    kw.wait_packets_finished(CUSTOMERS_IDS + BROKERS_IDS + SUPPLIERS_IDS)
+    kw.wait_packets_finished(PROXY_IDS + CUSTOMERS_IDS + BROKERS_IDS + SUPPLIERS_IDS)
 
     customer_1_broker_consumers = kw.queue_consumer_list_v1(customer_1_active_broker_name, extract_ids=True)
     customer_1_broker_producers = kw.queue_producer_list_v1(customer_1_active_broker_name, extract_ids=True)
@@ -572,7 +573,7 @@ def scenario8():
     # customer-3 leave the group
     kw.group_leave_v1('customer-3', customer_1_group_key_id)
 
-    kw.wait_packets_finished(CUSTOMERS_IDS + BROKERS_IDS)
+    kw.wait_packets_finished(PROXY_IDS + CUSTOMERS_IDS + BROKERS_IDS)
 
     # assert len(kw.queue_consumer_list_v1(customer_1_active_broker_name, extract_ids=True)) == 0
     # assert len(kw.queue_producer_list_v1(customer_1_active_broker_name, extract_ids=True)) == 0
@@ -897,7 +898,7 @@ def scenario12_begin():
 
     kw.group_join_v1('customer-4', customer_4_group_key_id)
 
-    kw.wait_packets_finished(CUSTOMERS_IDS + BROKERS_IDS + ['broker-rotated', ])
+    kw.wait_packets_finished(PROXY_IDS + CUSTOMERS_IDS + BROKERS_IDS + ['broker-rotated', ])
 
     customer_4_group_info_active = kw.group_info_v1('customer-4', customer_4_group_key_id)['result']
     assert customer_4_group_info_active['state'] == 'IN_SYNC!'
@@ -923,7 +924,7 @@ def scenario12_begin():
     # customer-2 joins the group
     kw.group_join_v1('customer-2', customer_4_group_key_id)
 
-    kw.wait_packets_finished(CUSTOMERS_IDS + BROKERS_IDS + ['broker-rotated', ])
+    kw.wait_packets_finished(PROXY_IDS + CUSTOMERS_IDS + BROKERS_IDS + ['broker-rotated', ])
 
     assert kw.group_info_v1('customer-2', customer_4_group_key_id)['result']['last_sequence_id'] == -1
 
@@ -1038,7 +1039,7 @@ def scenario12_end(old_customer_4_info):
     kw.group_leave_v1('customer-4', customer_4_group_key_id)
     kw.group_leave_v1('customer-2', customer_4_group_key_id)
 
-    kw.wait_packets_finished(CUSTOMERS_IDS + BROKERS_IDS)
+    kw.wait_packets_finished(PROXY_IDS + CUSTOMERS_IDS + BROKERS_IDS)
 
     customer_4_broker_consumers = kw.queue_consumer_list_v1(customer_4_active_broker_name, extract_ids=True)
     customer_4_broker_producers = kw.queue_producer_list_v1(customer_4_active_broker_name, extract_ids=True)
@@ -1115,7 +1116,7 @@ def scenario13_end(old_customer_3_info):
     # kw.config_set_v1('supplier-rotated', 'services/supplier/enabled', 'false')
     stop_daemon('supplier-rotated')
 
-    kw.wait_packets_finished(CUSTOMERS_IDS + SUPPLIERS_IDS)
+    kw.wait_packets_finished(PROXY_IDS + CUSTOMERS_IDS + SUPPLIERS_IDS)
 
 
 def scenario14(old_customer_1_info, customer_1_shared_file_info):
@@ -1155,7 +1156,7 @@ def scenario14(old_customer_1_info, customer_1_shared_file_info):
     assert response.status_code == 200
     assert response.json()['status'] == 'OK', response.json()
 
-    kw.wait_packets_finished(SUPPLIERS_IDS + CUSTOMERS_IDS)
+    kw.wait_packets_finished(PROXY_IDS + SUPPLIERS_IDS + CUSTOMERS_IDS)
 
     kw.service_info_v1('customer-1', 'service_shared_data', 'ON')
 
@@ -1366,7 +1367,7 @@ def scenario17(old_customer_2_info):
 #     time.sleep(0.5)
 #     kw.config_set_v1('proxy-2', 'services/proxy-server/enabled', 'true')
     kw.wait_service_state(CUSTOMERS_IDS_SHORT, 'service_shared_data', 'ON')
-    kw.wait_packets_finished(SUPPLIERS_IDS + CUSTOMERS_IDS_SHORT)
+    kw.wait_packets_finished(PROXY_IDS + SUPPLIERS_IDS + CUSTOMERS_IDS_SHORT)
 
     # recover key on customer-restore container and join network
     for _ in range(5):
@@ -1384,7 +1385,7 @@ def scenario17(old_customer_2_info):
         assert False, 'customer-restore was not able to recover identity after few attempts'
 
     kw.service_info_v1('customer-restore', 'service_customer', 'ON')
-    kw.service_info_v1('customer-restore', 'service_shared_data', 'ON')
+    kw.service_info_v1('customer-restore', 'service_shared_data', 'ON', attempts=20)
 
     kw.supplier_list_v1('customer-restore', expected_min_suppliers=2, expected_max_suppliers=2)
 
@@ -1413,7 +1414,7 @@ def scenario17(old_customer_2_info):
     # test my keys also recovered
 
     # test my message history also recovered (not implemented yet)
-    kw.file_list_all_v1('customer-restore', expected_reliable=50)
+    kw.file_list_all_v1('customer-restore', expected_reliable=50, reliable_shares=False, attempts=20)
 
     # try to recover stored file again
     kw.verify_file_download_start(
@@ -1421,4 +1422,5 @@ def scenario17(old_customer_2_info):
         remote_path=old_customer_2_info['remote_path'],
         destination_path=old_customer_2_info['download_filepath'],
         expected_reliable=50,
+        reliable_shares=False,
     )
