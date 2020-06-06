@@ -379,7 +379,7 @@ class ProxySender(automat.Automat):
             keep_alive=True,
         )
         for command, cb_list in callbacks.items():
-            if isinstance(cb_list):
+            if isinstance(cb_list, list):
                 for cb in cb_list:
                     routed_packet.set_callback(command, cb)
             else:

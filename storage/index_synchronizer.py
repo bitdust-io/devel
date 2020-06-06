@@ -390,16 +390,19 @@ class IndexSynchronizer(automat.Automat):
             Data=bpio.ReadBinaryFile(settings.BackupIndexFilePath()),
         )
         Payload = b.Serialize()
-        for supplierId in contactsdb.suppliers():
-            if not supplierId:
+        for supplier_idurl in contactsdb.suppliers():
+            if not supplier_idurl:
                 continue
-            if online_status.isOffline(supplierId):
+            sc = supplier_connector.by_idurl(supplier_idurl)
+            if sc is None or sc.state != 'CONNECTED':
+                continue
+            if online_status.isOffline(supplier_idurl):
                 continue
             newpacket, pkt_out = p2p_service.SendData(
                 raw_data=Payload,
                 ownerID=localID,
                 creatorID=localID,
-                remoteID=supplierId,
+                remoteID=supplier_idurl,
                 packetID=packetID,
                 callbacks={
                     commands.Ack(): self._on_supplier_acked,
@@ -407,12 +410,12 @@ class IndexSynchronizer(automat.Automat):
                 },
             )
             if pkt_out:
-                self.sending_suppliers.add(supplierId)
+                self.sending_suppliers.add(supplier_idurl)
                 self.sent_suppliers_number += 1
                 self.outgoing_packets_ids.append(packetID)
             if _Debug:
                 lg.out(_DebugLevel, '    %s sending to %s' %
-                       (newpacket, nameurl.GetName(supplierId)))
+                       (newpacket, nameurl.GetName(supplier_idurl)))
 
     def doCancelSendings(self, *args, **kwargs):
         """
@@ -510,16 +513,19 @@ class IndexSynchronizer(automat.Automat):
             path=settings.BackupIndexFileName(),
         )
         localID = my_id.getLocalID()
-        for supplierId in contactsdb.suppliers():
-            if not supplierId:
+        for supplier_idurl in contactsdb.suppliers():
+            if not supplier_idurl:
                 continue
-            if online_status.isOffline(supplierId):
+            sc = supplier_connector.by_idurl(supplier_idurl)
+            if sc is None or sc.state != 'CONNECTED':
+                continue
+            if online_status.isOffline(supplier_idurl):
                 continue
             pkt_out = p2p_service.SendRetreive(
                 ownerID=localID,
                 creatorID=localID,
                 packetID=packetID,
-                remoteID=supplierId,
+                remoteID=supplier_idurl,
                 response_timeout=60*2,
                 callbacks={
                     commands.Data(): self._on_supplier_response,
@@ -527,9 +533,9 @@ class IndexSynchronizer(automat.Automat):
                 }
             )
             if pkt_out:
-                self.requesting_suppliers.add(supplierId)
+                self.requesting_suppliers.add(supplier_idurl)
                 self.requested_suppliers_number += 1
-                self.requests_packets_sent.append((packetID, supplierId))
+                self.requests_packets_sent.append((packetID, supplier_idurl))
             if _Debug:
                 lg.out(_DebugLevel, '    %s sending to %s' %
-                       (pkt_out, nameurl.GetName(supplierId)))
+                       (pkt_out, nameurl.GetName(supplier_idurl)))

@@ -416,7 +416,7 @@
                 "join_network": false,
                 "known_dht_seeds": "dht-2:14441,dht-3:14441",
                 "num_suppliers": 2,
-                "preferred_routers": "http://id-a:8084/proxy-1.xml"
+                "preferred_routers": "http://id-b:8084/proxy-2.xml"
             }
         },
         "broker-1": {

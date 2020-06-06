@@ -668,8 +668,10 @@ class ProxyRouter(automat.Automat):
         return True
 
     def _do_check_cached_idurl(self, cache_results, newpacket, info, sender_idurl, receiver_idurl, routed_data, wide, response_timeout, keep_alive, is_retry):
+        sender_id_rev = self.routes.get(sender_idurl, {}).get('identity_rev', None)
+        receiver_id_rev = self.routes.get(receiver_idurl, {}).get('identity_rev', None)
         if _Debug:
-            lg.args(_DebugLevel, cache_results=cache_results, is_retry=is_retry)
+            lg.args(_DebugLevel, sender_id_rev=sender_id_rev, receiver_id_rev=receiver_id_rev, is_retry=is_retry, cache_results=len(cache_results))
         some_failed = False
         for result, _ in cache_results:
             if not result:
@@ -677,13 +679,13 @@ class ProxyRouter(automat.Automat):
         route_changed = False
         if sender_idurl in self.routes:
             sender_ident = identitydb.get_ident(sender_idurl)
-            if sender_ident and self.routes[sender_idurl].get('identity_rev') and self.routes[sender_idurl].get('identity_rev') != sender_ident.getRevisionValue():
+            if sender_ident and sender_id_rev is not None and sender_id_rev != sender_ident.getRevisionValue():
                 route_changed = True
                 self.routes[sender_idurl]['identity_rev'] = sender_ident.getRevisionValue()
                 self.closed_routes.pop(sender_idurl, None)
         if receiver_idurl in self.routes:
             receiver_ident = identitydb.get_ident(receiver_idurl)
-            if receiver_ident and self.routes[receiver_idurl].get('identity_rev') and self.routes[receiver_idurl].get('identity_rev') != receiver_ident.getRevisionValue():
+            if receiver_ident and receiver_id_rev is not None and receiver_id_rev != receiver_ident.getRevisionValue():
                 route_changed = True
                 self.routes[receiver_idurl]['identity_rev'] = receiver_ident.getRevisionValue()
                 self.closed_routes.pop(receiver_idurl, None)
