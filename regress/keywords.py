@@ -316,9 +316,9 @@ def file_upload_start_v1(customer: str, remote_path: str, local_path: str,
         else:
             assert False, 'some uploading tasks are still running on [%s]' % customer
     if wait_packets_finish:
-        packet_list_v1(customer, wait_all_finish=True, attempts=attempts, delay=delay)
+        packet_list_v1(customer, wait_all_finish=True)
     if wait_transfers_finish:
-        transfer_list_v1(customer, wait_all_finish=True, attempts=attempts, delay=delay)
+        transfer_list_v1(customer, wait_all_finish=True)
     return response.json()
 
 
@@ -592,7 +592,7 @@ def packet_list_v1(node, wait_all_finish=False, attempts=20, delay=5, verbose=Fa
         assert response.json()['status'] == 'OK', response.json()
         found_packet = False
         for r in response.json()['result']:
-            if r['packet_id'].count('idle_ping:'):
+            if r.get('packet_id', '').count('idle_ping:'):
                 continue
             found_packet = True
         if not found_packet or not wait_all_finish:
