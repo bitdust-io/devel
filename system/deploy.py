@@ -212,6 +212,7 @@ def run(args):
     """
     status = 1
     on_windows = platform.uname()[0] == "Windows"
+    on_mac = platform.uname()[0] == "Darwin"
     source_dir = get_executable_location()
     init_base_dir()
     base_dir = current_base_dir()
@@ -247,6 +248,7 @@ def run(args):
     if status != 0:
         print_text('\n***** Failed to create virtual environment, please check/install virtualenv package\n')
         return status
+
     if on_windows:
         pass
     else:
@@ -254,6 +256,13 @@ def run(args):
         status = os.system('{} install -U pip'.format(pip_bin))
         if status != 0:
             print_text('\n***** Failed to install latest pip version, please check/install latest pip version manually\n')
+            return status
+
+    if on_mac:
+        print_text('\n***** Updating setuptools version in "%s"' % venv_path)
+        status = os.system('{} install setuptools==40.9.0'.format(pip_bin))
+        if status != 0:
+            print_text('\n***** Failed to install setuptools==40.9.0, please check/install setuptools manually\n')
             return status
 
     requirements_txt = os.path.join(source_dir, 'requirements.txt')
