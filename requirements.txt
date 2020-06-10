@@ -13,6 +13,8 @@ Automat==0.8.0
 cffi==1.13.2
 constantly==15.1.0
 cryptography==2.8
+distlib==0.3.0
+filelock==3.0.12
 hyperlink==19.0.0
 idna==2.8
 incremental==17.5.0
@@ -26,4 +28,5 @@ pyparsing==2.4.6
 service-identity==18.1.0
 six==1.13.0
 zope.interface==4.7.1
+virtualenv==20.0.21
 Twisted==20.3.0

@@ -276,7 +276,7 @@ def run(args):
             'python-virtualenv',
         ]
         print_text('\n***** Please try to install those binary packages manually and try again:\n')
-        print_text('    sudo apt-get install %s\n\n' % (' '.join(depends)))
+        print_text('    %s\n\n' % (' '.join(depends)))
         return status
 
     script = u"#!/bin/sh\n"
