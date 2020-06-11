@@ -488,10 +488,11 @@ class PacketIn(automat.Automat):
                 os.close(fd)
             except:
                 lg.exc()
-            try:
-                os.remove(self.filename)
-            except:
-                lg.exc()
+            if os.path.isfile(self.filename):
+                try:
+                    os.remove(self.filename)
+                except:
+                    lg.exc()
             self.automat('unserialize-failed', None)
             return
         self.label = '[%s(%s)]' % (newpacket.Command, newpacket.PacketID)

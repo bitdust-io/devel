@@ -194,7 +194,7 @@ def on_consume_queue_messages(json_messages):
             from_idurl = json_message['owner_idurl']
             to_user = json_message['to']
             msg_data = json_message['data']
-            msg_action = msg_data['action']
+            msg_action = msg_data.get('action', 'read')
         except:
             lg.exc()
             continue
@@ -207,6 +207,8 @@ def on_consume_queue_messages(json_messages):
         if msg_action not in ['produce', 'consume', ]:
             continue
         queue_id = msg_data.get('queue_id')
+        if not queue_id:
+            continue
         if msg_type == 'queue_message':
             if queue_id not in streams():
                 lg.warn('skipped incoming queue_message, queue %r is not registered' % queue_id)
@@ -413,7 +415,7 @@ def get_latest_sequence_id(queue_id):
 
 def set_latest_sequence_id(queue_id, new_sequence_id):
     new_sequence_id = int(new_sequence_id)
-    current_sequence_id = streams()[queue_id]['last_sequence_id']
+    current_sequence_id = int(streams()[queue_id]['last_sequence_id'])
     streams()[queue_id]['last_sequence_id'] = new_sequence_id
     if new_sequence_id == current_sequence_id + 1: 
         if _Debug:
@@ -425,7 +427,7 @@ def set_latest_sequence_id(queue_id, new_sequence_id):
 
 
 def increment_sequence_id(queue_id):
-    last_sequence_id = streams()[queue_id]['last_sequence_id']
+    last_sequence_id = int(streams()[queue_id]['last_sequence_id'])
     new_sequence_id = last_sequence_id + 1
     streams()[queue_id]['last_sequence_id'] = new_sequence_id
     return new_sequence_id
@@ -634,15 +636,15 @@ def load_streams():
         all_stored_queue_messages.sort(key=lambda i: int(i))
         for _sequence_id in all_stored_queue_messages:
             sequence_id = int(_sequence_id)
-            stored_json_message = jsn.loads_text(local_fs.ReadTextFile(os.path.join(messages_dir, sequence_id)))
+            stored_json_message = jsn.loads_text(local_fs.ReadTextFile(os.path.join(messages_dir, strng.to_text(_sequence_id))))
             if stored_json_message:
                 if stored_json_message.get('processed'):
                     streams()[queue_id]['archive'].append(sequence_id)
                     loaded_archive_messages += 1
                 else:
                     streams()[queue_id]['messages'].append(sequence_id)
-                if int(sequence_id) >= last_sequence_id:
-                    last_sequence_id = int(sequence_id)
+                if sequence_id >= last_sequence_id:
+                    last_sequence_id = sequence_id
                 loaded_messages += 1
             else:
                 lg.err('failed reading message %d from %r' % (sequence_id, queue_id, ))
