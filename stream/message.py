@@ -196,21 +196,14 @@ class PrivateMessage(object):
     with encrypted body.
     """
 
-    def __init__(self, recipient_global_id, sender=None, encrypted_session=None, encrypted_body=None):
+    def __init__(self, recipient, sender=None, encrypted_session=None, encrypted_body=None):
         self.sender = strng.to_text(sender or my_id.getGlobalID(key_alias='master'))
-        self.recipient = strng.to_text(recipient_global_id)
+        self.recipient = strng.to_text(recipient)
         self.encrypted_session = encrypted_session
         self.encrypted_body = encrypted_body
-        # if _Debug:
-        #     lg.out(_DebugLevel, 'message.%s created' % self)
 
     def __str__(self):
-        return 'PrivateMessage (%r->%r) : %r %r' % (
-            self.sender,
-            self.recipient,
-            type(self.encrypted_session),
-            type(self.encrypted_body),
-        )
+        return 'PrivateMessage(%s->%s)' % (self.sender, self.recipient, )
 
     def sender_id(self):
         return self.sender
@@ -235,7 +228,7 @@ class PrivateMessage(object):
             glob_id = global_id.ParseGlobalID(self.recipient)
             if glob_id['key_alias'] == 'master':
                 if glob_id['idurl'] == my_id.getLocalID():
-                    lg.warn('making private message addressed to me ???')
+                    lg.warn('making encrypted message addressed to me ???')
                     # if _Debug:
                     #     lg.out(_DebugLevel, 'message.PrivateMessage.encrypt with "master" key')
                     encrypt_session_func = lambda inp: my_keys.encrypt('master', inp)
@@ -285,24 +278,27 @@ class PrivateMessage(object):
         }
         return serialization.DictToBytes(dct, encoding='utf-8')
 
-    @staticmethod
-    def deserialize(input_string):
+    @classmethod
+    def deserialize(cls, input_string):
         try:
             dct = serialization.BytesToDict(input_string, keys_to_text=True, encoding='utf-8')
-            _recipient = strng.to_text(dct['r'])
-            _sender = strng.to_text(dct['s'])
-            _encrypted_session_key=base64.b64decode(strng.to_bin(dct['k']))
-            _encrypted_body = dct['p']
-            message_obj = PrivateMessage(
-                recipient_global_id=_recipient,
-                sender=_sender,
-                encrypted_session=_encrypted_session_key,
-                encrypted_body=_encrypted_body,
+            message_obj = cls(
+                recipient=strng.to_text(dct['r']),
+                sender=strng.to_text(dct['s']),
+                encrypted_session=base64.b64decode(strng.to_bin(dct['k'])),
+                encrypted_body=dct['p'],
             )
         except:
             lg.exc()
             return None
         return message_obj
+
+#------------------------------------------------------------------------------
+
+class GroupMessage(PrivateMessage):
+
+    def __str__(self):
+        return 'GroupMessage(%s->%s)' % (self.sender, self.recipient, )
 
 #------------------------------------------------------------------------------
 
@@ -400,7 +396,7 @@ def do_send_message(json_data, recipient_global_id, packet_id, message_ack_timeo
         lg.out(_DebugLevel, "message.do_send_message to %s with %d bytes message timeout=%s" % (
             recipient_global_id, len(message_body), message_ack_timeout))
     try:
-        private_message_object = PrivateMessage(recipient_global_id=recipient_global_id)
+        private_message_object = PrivateMessage(recipient=recipient_global_id)
         private_message_object.encrypt(message_body)
     except:
         lg.exc()
