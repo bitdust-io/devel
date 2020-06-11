@@ -45,9 +45,13 @@ import pprint
 import re
 
 # For formatters
-import cgi  # cgi.escape
 import six.moves.urllib.request, six.moves.urllib.parse, six.moves.urllib.error  # for urllib.encode
 import six.moves.urllib.parse  # for urljoin
+
+if not six.PY2:
+    from html import escape as html_escape
+else:
+    from cgi import escape as html_escape
 
 
 class Error(Exception):
@@ -599,7 +603,7 @@ def _ToString(x):
 
 
 def _HtmlAttrValue(x):
-    return cgi.escape(x, quote=True)
+    return html_escape(x, quote=True)
 
 
 def _AbsUrl(relative_url, context, unused_args):
@@ -625,7 +629,7 @@ def _AbsUrl(relative_url, context, unused_args):
 # This is a *public* constant, so that callers can use it construct their own
 # formatter lookup dictionaries, and pass them in to Template.
 _DEFAULT_FORMATTERS = {
-    'html': cgi.escape,
+    'html': html_escape,
 
     # The 'htmltag' name is deprecated.  The html-attr-value name is preferred
     # because it can be read with "as":
@@ -652,7 +656,7 @@ _DEFAULT_FORMATTERS = {
 
     # Just show a plain URL on an HTML page (without anchor text).
     'plain-url': lambda x: '<a href="%s">%s</a>' % (
-        cgi.escape(x, quote=True), cgi.escape(x)),
+        html_escape(x, quote=True), html_escape(x)),
 
     # A context formatter
     'AbsUrl': _AbsUrl,
@@ -896,7 +900,7 @@ def CompileTemplate(
 
       more_formatters:
           Something that can map format strings to formatter functions.  One of:
-            - A plain dictionary of names -> functions  e.g. {'html': cgi.escape}
+            - A plain dictionary of names -> functions  e.g. {'html': html_escape}
             - A higher-order function which takes format strings and returns
               formatter functions.  Useful for when formatters have parsed
               arguments.
