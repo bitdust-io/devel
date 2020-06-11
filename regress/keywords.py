@@ -202,8 +202,8 @@ def group_info_v1(customer: str, group_key_id):
     return response.json()
 
 
-def group_join_v1(customer: str, group_key_id, attempts=1):
-    response = request_post(customer, 'group/join/v1', json={'group_key_id': group_key_id, }, timeout=60, attempts=attempts)
+def group_join_v1(customer: str, group_key_id, attempts=1, timeout=120):
+    response = request_post(customer, 'group/join/v1', json={'group_key_id': group_key_id, }, timeout=timeout, attempts=attempts)
     assert response.status_code == 200
     print('group/join/v1 [%s] group_key_id=%r : %s\n' % (customer, group_key_id, pprint.pformat(response.json())))
     assert response.json()['status'] == 'OK', response.json()
@@ -286,7 +286,7 @@ def file_create_v1(node, remote_path):
 
 def file_upload_start_v1(customer: str, remote_path: str, local_path: str,
                          open_share=True, wait_result=True,
-                         attempts=5, delay=3,
+                         attempts=10, delay=5,
                          wait_job_finish=True,
                          wait_packets_finish=True,
                          wait_transfers_finish=True,
@@ -298,7 +298,7 @@ def file_upload_start_v1(customer: str, remote_path: str, local_path: str,
             'wait_result': '1' if wait_result else '0',
             'open_share': '1' if open_share else '0',
         },
-        timeout=20,
+        timeout=30,
     )
     assert response.status_code == 200
     print('file/upload/start/v1 [%r] remote_path=%s local_path=%s : %s\n' % (
@@ -316,15 +316,15 @@ def file_upload_start_v1(customer: str, remote_path: str, local_path: str,
         else:
             assert False, 'some uploading tasks are still running on [%s]' % customer
     if wait_packets_finish:
-        packet_list_v1(customer, wait_all_finish=True, attempts=attempts, delay=delay)
+        packet_list_v1(customer, wait_all_finish=True)
     if wait_transfers_finish:
-        transfer_list_v1(customer, wait_all_finish=True, attempts=attempts, delay=delay)
+        transfer_list_v1(customer, wait_all_finish=True)
     return response.json()
 
 
 def file_download_start_v1(customer: str, remote_path: str, destination: str,
                            open_share=True, wait_result=True,
-                           attempts=5, delay=3,
+                           attempts=10, delay=5,
                            wait_tasks_finish=True):
     for _ in range(attempts):
         response = request_post(customer, 'file/download/start/v1',
@@ -334,7 +334,7 @@ def file_download_start_v1(customer: str, remote_path: str, destination: str,
                 'wait_result': '1' if wait_result else '0',
                 'open_share': '1' if open_share else '0',
             },
-            timeout=20,
+            timeout=30,
         )
         assert response.status_code == 200
         print('file/download/start/v1 [%s] remote_path=%s destination_folder=%s : %s\n' % (
@@ -592,7 +592,7 @@ def packet_list_v1(node, wait_all_finish=False, attempts=20, delay=5, verbose=Fa
         assert response.json()['status'] == 'OK', response.json()
         found_packet = False
         for r in response.json()['result']:
-            if r['packet_id'].count('idle_ping:'):
+            if r.get('packet_id', '').count('idle_ping:'):
                 continue
             found_packet = True
         if not found_packet or not wait_all_finish:
