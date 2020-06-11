@@ -77,6 +77,7 @@ from automats import automat
 from lib import utime
 from lib import packetid
 from lib import strng
+from lib import serialization
 
 from main import events
 from main import config
@@ -672,7 +673,7 @@ class GroupMember(automat.Automat):
                 owner_idurl = json_message['owner_idurl']
                 # to_user = json_message['to']
                 msg_data = json_message['data']
-                msg_action = msg_data['action']
+                msg_action = msg_data.get('action', 'read')
             except:
                 lg.exc()
                 continue
@@ -695,8 +696,22 @@ class GroupMember(automat.Automat):
                     lg.warn('invalid item sequence_id %d   vs.  last_sequence_id %d known' % (
                         one_message['sequence_id'], latest_known_sequence_id))
                     continue
+                group_message_object = message.GroupMessage.deserialize(one_message['payload'])
+                if group_message_object is None:
+                    lg.err("GroupMessage deserialize failed, can not extract message from payload of %d bytes" % len(one_message['payload']))
+                    continue
+                try:
+                    decrypted_message = group_message_object.decrypt()
+                    json_message = serialization.BytesToDict(
+                        decrypted_message,
+                        unpack_types=True,
+                        encoding='utf-8',
+                    )
+                except:
+                    lg.exc()
+                    continue
                 received_group_messages.append(dict(
-                    json_message=one_message['payload'],
+                    json_message=json_message,
                     direction='incoming',
                     group_key_id=self.group_key_id,
                     producer_id=one_message['producer_id'],
@@ -750,13 +765,13 @@ class GroupMember(automat.Automat):
         buffered_sequence_ids = sorted(self.buffered_messages.keys())
         for new_sequence_id in buffered_sequence_ids:
             if self.last_sequence_id + 1 == new_sequence_id:
+                inp_message = self.buffered_messages.pop(new_sequence_id)
                 self.last_sequence_id = new_sequence_id
                 newly_processed += 1
                 groups.set_last_sequence_id(self.group_key_id, self.last_sequence_id)
                 groups.save_group_info(self.group_key_id)
-                self.buffered_messages.pop(new_sequence_id)
                 lg.info('new message consumed in %r, last_sequence_id incremented to %d' % (self.group_key_id, self.last_sequence_id, ))
-                self.automat('message-in', **new_message)
+                self.automat('message-in', **inp_message)
         if len(self.buffered_messages) > MAX_BUFFERED_MESSAGES:
             raise Exception('message sequence is broken by message broker %s, currently %d buffered messages' % (self.active_broker_id, len(self.buffered_messages), ))
         if _Debug:
@@ -803,12 +818,27 @@ class GroupMember(automat.Automat):
             json_payload = self.outgoing_messages[outgoing_counter]['payload']
             lg.warn('re-trying sending message to broker   outgoing_counter=%d attempts=%d packet_id=%s' % (
                 outgoing_counter, self.outgoing_messages[outgoing_counter]['attempts'], packet_id, ))
+        raw_payload = serialization.DictToBytes(
+            json_payload,
+            pack_types=True,
+            encoding='utf-8',
+        )
+        try:
+            private_message_object = message.GroupMessage(
+                recipient=self.group_key_id,
+                sender=self.member_id,
+            )
+            private_message_object.encrypt(raw_payload)
+        except:
+            lg.exc()
+            raise Exception('message encryption failed')
+        encrypted_payload = private_message_object.serialize()
         d = message.send_message(
             json_data={
                 'msg_type': 'queue_message',
                 'action': 'produce',
                 'created': utime.get_sec1970(),
-                'payload': json_payload,
+                'payload': encrypted_payload,
                 'queue_id': self.active_queue_id,
                 'producer_id': self.member_id,
                 'brokers': self.connected_brokers,
