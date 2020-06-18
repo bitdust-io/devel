@@ -537,11 +537,11 @@ class ProxySender(automat.Automat):
             return None
         if outpacket.Command == commands.Identity() and outpacket.CreatorID == my_id.getLocalID():
             if proxy_receiver.GetPossibleRouterIDURL() and proxy_receiver.GetPossibleRouterIDURL().to_bin() == outpacket.RemoteID.to_bin():
-                if network_connector.A().state is 'DISCONNECTED':
+                if network_connector.A().state == 'DISCONNECTED':
                     if _Debug:
                         lg.out(_DebugLevel, 'proxy_sender._on_first_outbox_packet SKIP sending %r because network_connector() is DISCONNECTED' % outpacket)
                     return None
-                if network_connector.A().state is 'CONNECTED':
+                if network_connector.A().state == 'CONNECTED':
                     lg.warn('sending %r to "possible" proxy router %r' % (outpacket, proxy_receiver.GetPossibleRouterIDURL()))
                     pkt_out = packet_out.create(outpacket, wide, callbacks, target, route, response_timeout, keep_alive)
                     return pkt_out

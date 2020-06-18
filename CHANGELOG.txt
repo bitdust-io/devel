@@ -4,6 +4,12 @@ Change Log
 
 2020-06-11 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
+* enrypted group chat messages
+
+
+
+2020-06-11 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
 * bug fix in message_peddler()
 * bug fix in packet_in()
 * bug fix in lib/jsontemplate.py

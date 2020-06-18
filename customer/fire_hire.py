@@ -507,7 +507,7 @@ class FireHire(automat.Automat):
                 lg.out(_DebugLevel, 'fire_hire.doDecideToDismiss    network_connector() is not ready yet, SKIP')
             self.automat('made-decision', [])
             return
-        if p2p_connector.A().state is not 'CONNECTED' or network_connector.A().state is not 'CONNECTED':
+        if p2p_connector.A().state != 'CONNECTED' or network_connector.A().state != 'CONNECTED':
             if _Debug:
                 lg.out(_DebugLevel, 'fire_hire.doDecideToDismiss    p2p/network is not connected at the moment, SKIP')
             self.automat('made-decision', [])
@@ -629,7 +629,7 @@ class FireHire(automat.Automat):
             lg.out(_DebugLevel, 'fire_hire.doFindNewSupplier desired_suppliers=%d current_suppliers=%r' % (
                 settings.getSuppliersNumberDesired(), contactsdb.suppliers()))
         from p2p import network_connector
-        if network_connector.A().state is not 'CONNECTED':
+        if network_connector.A().state != 'CONNECTED':
             if _Debug:
                 lg.out(_DebugLevel, '        network_connector is not CONNECTED at the moment, SKIP')
             self.automat('search-failed')
@@ -847,7 +847,7 @@ class FireHire(automat.Automat):
             if _Debug:
                 lg.out(_DebugLevel, 'fire_hire.doScheduleNextRestart after %r sec.' % self.restart_interval)
             from p2p import network_connector
-            if network_connector.A().state is not 'CONNECTED':
+            if network_connector.A().state != 'CONNECTED':
                 self.restart_interval = 60 * 5
             else:
                 self.restart_interval *= 1.1

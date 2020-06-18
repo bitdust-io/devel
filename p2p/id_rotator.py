@@ -617,7 +617,7 @@ class IdRotator(automat.Automat):
         if _Debug:
             lg.args(_DebugLevel, err)
         from p2p import network_connector
-        if network_connector.A().state is not 'CONNECTED':
+        if network_connector.A().state != 'CONNECTED':
             self.automat('ping-failed', err)
         else:
             self.automat('ping-done', [])
