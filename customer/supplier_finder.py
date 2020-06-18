@@ -366,7 +366,7 @@ class SupplierFinder(automat.Automat):
         if newstate in ['DISCONNECTED', 'NO_SERVICE', ]:
             self.automat('supplier-not-connected')
             return
-        if newstate is not 'CONNECTED':
+        if newstate != 'CONNECTED':
             return
         if contactsdb.is_supplier(self.target_idurl):
             return

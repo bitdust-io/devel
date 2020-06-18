@@ -107,7 +107,6 @@ def init(filepath=None):
 
     if not os.path.isfile(filepath):
         _HistoryDB = sqlite3.connect(filepath, timeout=1)
-        # _HistoryDB.text_factory = str
         _HistoryDB.execute('PRAGMA case_sensitive_like = 1;')
         _HistoryCursor = _HistoryDB.cursor()
         _HistoryCursor.execute('''CREATE TABLE IF NOT EXISTS "history" (
@@ -158,7 +157,7 @@ def convert_json(blob):
 
 #------------------------------------------------------------------------------
 
-def build_json_message(data, message_id, message_time=None, sender=None, recipient=None, message_type=None):
+def build_json_message(data, message_id, message_time=None, sender=None, recipient=None, message_type=None, direction=None):
     """
     """
     if not sender:
@@ -177,7 +176,8 @@ def build_json_message(data, message_id, message_time=None, sender=None, recipie
         },
         'recipient': {
             'glob_id': recipient,
-        }
+        },
+        'direction': direction,
     }
     return new_json
 
@@ -192,6 +192,8 @@ def insert(message_json):
     payload_time = message_json['payload']['time']
     payload_message_id = message_json['payload']['message_id']
     payload_body = message_json['payload']['data']
+    # TODO: store "direction"
+    direction = message_json['direction']
     if _Debug:
         lg.args(_DebugLevel, sender=sender_glob_id, recipient=recipient_glob_id, typ=payload_type, message_id=payload_message_id)
     cur().execute('''INSERT INTO history (

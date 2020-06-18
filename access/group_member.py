@@ -687,7 +687,7 @@ class GroupMember(automat.Automat):
                 chunk_last_sequence_id = int(msg_data['last_sequence_id'])
                 list_messages = msg_data['items']
             except:
-                lg.exc()
+                lg.exc(msg_data)
                 continue
             if chunk_last_sequence_id > latest_known_sequence_id:
                 latest_known_sequence_id = chunk_last_sequence_id

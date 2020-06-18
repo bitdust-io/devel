@@ -44,9 +44,6 @@ from logs import lg
 
 from interface import api_web_socket
 
-# from userid import my_id
-# from userid import global_id
-
 from stream import message
 
 from chat import message_database
@@ -71,13 +68,6 @@ def shutdown():
 
 #------------------------------------------------------------------------------
 
-# def messages_key_id():
-#     """
-#     """
-#     return global_id.MakeGlobalID(key_alias='messages', customer=my_id.getGlobalID())
-
-#------------------------------------------------------------------------------
-
 def on_consume_user_messages(json_messages):
     """
     """
@@ -87,6 +77,7 @@ def on_consume_user_messages(json_messages):
             packet_id = json_message['packet_id']
             sender_id = json_message['from']
             recipient_id = json_message['to']
+            direction = json_message['dir']
             msg_data = json_message['data']
         except:
             lg.exc()
@@ -97,12 +88,13 @@ def on_consume_user_messages(json_messages):
             sender=sender_id,
             recipient=recipient_id,
             message_type=msg_type,
+            direction=direction,
         )
     return False
 
 #------------------------------------------------------------------------------
 
-def cache_message(data, message_id, sender, recipient, message_type=None):
+def cache_message(data, message_id, sender, recipient, message_type=None, direction=None):
     """
     """
     message_json = message_database.build_json_message(
@@ -111,6 +103,7 @@ def cache_message(data, message_id, sender, recipient, message_type=None):
         sender=sender,
         recipient=recipient,
         message_type=message_type,
+        direction=direction,
     )
     message_database.insert(message_json)
     api_web_socket.on_stream_message(message_json)

@@ -219,9 +219,9 @@ def run(args):
     if on_windows and os.path.isfile(os.path.join(base_dir, 'shortpath.txt')):
         base_dir = open(os.path.join(base_dir, 'shortpath.txt')).read().strip()
     venv_path = os.path.join(base_dir, 'venv')
-    pip_bin = '{}/bin/pip'.format(venv_path)
     if len(args) > 1 and not os.path.exists(args[1]) and os.path.isdir(os.path.dirname(args[1])):
         venv_path = args[1]
+    pip_bin = '{}/bin/pip'.format(venv_path)
     script_path = os.path.join(base_dir, 'bitdust')
 
     if os.path.exists(venv_path):
@@ -242,21 +242,28 @@ def run(args):
     if on_windows:
         python_exe = '"%s"' % os.path.join(base_dir, 'python', 'python.exe')
         make_venv_cmd = "{} -m virtualenv --system-site-packages {}".format(python_exe, venv_path)
+    if on_mac:
+        make_venv_cmd = "{} -m virtualenv --system-site-packages {}".format(current_python, venv_path)
 
     print_text('\n***** Executing "{}"'.format(make_venv_cmd))
     status = os.system(make_venv_cmd)
+    if on_mac and status != 0:
+        make_venv_cmd = 'virtualenv -p {} {}'.format(current_python, venv_path)
+        status = os.system(make_venv_cmd)
+
     if status != 0:
         print_text('\n***** Failed to create virtual environment, please check/install virtualenv package\n')
         return status
 
-    if on_windows:
+    if on_windows or on_mac:
         pass
     else:
         print_text('\n***** Install/Upgrade pip in "%s"' % venv_path)
         status = os.system('{} install -U pip'.format(pip_bin))
         if status != 0:
-            print_text('\n***** Failed to install latest pip version, please check/install latest pip version manually\n')
-            return status
+            # print_text('\n***** Failed to install latest pip version, please check/install latest pip version manually\n')
+            # return status
+            pass
 
     if on_mac:
         print_text('\n***** Updating setuptools version in "%s"' % venv_path)
@@ -271,6 +278,8 @@ def run(args):
     if on_windows:
         venv_python_path = os.path.join(base_dir, 'venv', 'Scripts', 'python.exe')
         requirements_cmd = '{} -m pip install -r "{}"'.format(venv_python_path, requirements_txt)
+    if on_mac:
+        requirements_cmd = '{} -m pip install -r "{}"'.format(current_python, requirements_txt)
 
     print_text('\n***** Executing "{}"'.format(requirements_cmd))
     status = os.system(requirements_cmd)
@@ -281,8 +290,8 @@ def run(args):
             'build-essential',
             'libssl-dev',
             'libffi-dev',
-            'python-dev',
-            'python-virtualenv',
+            'python3-dev',
+            'python3-virtualenv',
         ]
         print_text('\n***** Please try to install those binary packages manually and try again:\n')
         print_text('    %s\n\n' % (' '.join(depends)))
@@ -298,9 +307,9 @@ def run(args):
     os.chmod(script_path, 0o775)
 
     print_text('\n***** BitDust environment files created successfully in {}\n'.format(base_dir))
-    print_text('To run the programm use this executable script:\n\n    {}\n\n'.format(script_path))
-    print_text('To create system-wide shell command, add {} to your PATH, or create a symlink:\n'.format(script_path))
+    print_text('To create system-wide shell command you can add folder {} to your PATH, or create a symbolic link:\n'.format(script_path))
     print_text('    sudo ln -s -f {} /usr/local/bin/bitdust\n\n'.format(script_path))
-    print_text('Learn more about available shell commands:\n\n    bitdust help\n\n')
+    print_text('To run BitDust without system-wide alias use that executable file:\n\n    {}\n\n'.format(script_path))
+    print_text('Learn more about how to use the software via command line:\n\n    bitdust help\n\n')
     print_text('Welcome to BitDust!\n\n')
     return 0
