@@ -286,6 +286,7 @@ def kill():
     while True:
         appList = bpio.find_process([
             'regexp:^.*python.*bitdust.py.*?$',
+            'regexp:^.*Python.*bitdust.py.*?$',
             'bitdustnode.exe',
             'BitDustNode.exe',
             'BitDustConsole.exe',
@@ -328,6 +329,7 @@ def wait_then_kill(x):
     while True:
         appList = bpio.find_process([
             'regexp:^.*python.*bitdust.py.*?$',
+            'regexp:^.*Python.*bitdust.py.*?$',
             'bitdustnode.exe',
             'BitDustNode.exe',
             'BitDustConsole.exe',
@@ -1338,7 +1340,10 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
         else:
             appListAllChilds = bpio.find_main_process(
                 check_processid_file=False,
-                extra_lookups=['regexp:^.*python.*bitdust.py.*?$', ],
+                extra_lookups=[
+                    'regexp:^.*python.*bitdust.py.*?$',
+                    'regexp:^.*Python.*bitdust.py.*?$',
+                ],
             )
             if appListAllChilds:
                 print_text('found child BitDust processes: %s, perform "kill process" action ... ' % str(appList), '')
@@ -1468,7 +1473,10 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
     elif cmd == 'dhtseed':
         appList = bpio.find_main_process(
             check_processid_file=False,
-            extra_lookups=['regexp:^.*python.*bitdust.py.*?$', ],
+            extra_lookups=[
+                'regexp:^.*python.*bitdust.py.*?$',
+                'regexp:^.*Python.*bitdust.py.*?$',
+            ],
         )
         running = (len(appList) > 0)
         if running:

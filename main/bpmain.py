@@ -431,6 +431,7 @@ def kill():
     while True:
         appList = bpio.find_process([
             'regexp:^.*python.*bitdust.py.*?$',
+            'regexp:^.*Python.*bitdust.py.*?$',
             'bitdustnode.exe',
             'BitDustNode.exe',
             'BitDustConsole.exe',
@@ -472,6 +473,7 @@ def wait_then_kill(x):
     while True:
         appList = bpio.find_process([
             'regexp:^.*python.*bitdust.py.*?$',
+            'regexp:^.*Python.*bitdust.py.*?$',
             'bitdustnode.exe',
             'BitDustNode.exe',
             'BitDustConsole.exe',
@@ -951,7 +953,10 @@ def main(executable_path=None, start_reactor=True):
         else:
             appListAllChilds = bpio.find_main_process(
                 check_processid_file=False,
-                extra_lookups=['regexp:^.*python.*bitdust.py.*?$', ],
+                extra_lookups=[
+                    'regexp:^.*python.*bitdust.py.*?$',
+                    'regexp:^.*Python.*bitdust.py.*?$',
+                ],
             )
             if len(appListAllChilds) > 0:
                 lg.out(0, 'BitDust child processes found: %r, performing "kill process" actions ...\n' % appListAllChilds, '')
