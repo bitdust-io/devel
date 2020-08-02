@@ -178,6 +178,8 @@ def find_active_group_members(group_creator_idurl):
 def start_group_members():
     started = 0
     for group_key_id, group_info in groups.known_groups().items():
+        if not group_key_id:
+            continue
         if not group_info['active']:
             continue
         existing_group_member = get_active_group_member(group_key_id)
@@ -979,6 +981,9 @@ class GroupMember(automat.Automat):
             self._do_hire_next_broker(None, 0, hiring_positions, skip_brokers=id_url.to_bin_list(exclude_idurls))
 
     def _do_hire_next_broker(self, prev_result, index, hiring_positions, skip_brokers):
+        if not self.group_key_id:
+            lg.warn('skip hire process, because group_key_id is empty')
+            return
         if index >= len(hiring_positions):
             if _Debug:
                 lg.args(_DebugLevel, index=index, hiring_positions=hiring_positions, skip_brokers=skip_brokers,

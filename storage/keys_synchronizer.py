@@ -274,7 +274,7 @@ class KeysSynchronizer(automat.Automat):
                     except:
                         lg.exc()
                         reliable = 0.0
-                    if reliable > minimum_reliable_percent:
+                    if reliable >= minimum_reliable_percent:
                         is_reliable = True
                         break
                 if is_reliable:
@@ -297,9 +297,10 @@ class KeysSynchronizer(automat.Automat):
         Action method.
         """
         if self.unreliable_keys:
-            lg.err('not possible to restore some keys, backup copies unreliable')
             if _Debug:
                 lg.args(_DebugLevel, unreliable_keys=list(self.unreliable_keys.keys()))
+            lg.err('not possible to restore some keys, backup copies unreliable stored_keys=%d not_stored_keys=%d unreliable_keys=%d' % (
+                len(self.stored_keys), len(self.not_stored_keys), len(self.unreliable_keys), ))
             self.automat('error', Exception('not possible to restore some keys, backup copies unreliable'))
             return
         keys_to_be_restored = []
