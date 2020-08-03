@@ -186,14 +186,18 @@ def build_json_message(data, message_id, message_time=None, sender=None, recipie
 def insert(message_json):
     """
     """
-    sender_glob_id = message_json['sender']['glob_id']
-    recipient_glob_id = message_json['recipient']['glob_id']
-    payload_type = MESSAGE_TYPES.get(message_json['payload']['type'], 1)
-    payload_time = message_json['payload']['time']
-    payload_message_id = message_json['payload']['message_id']
-    payload_body = message_json['payload']['data']
-    # TODO: store "direction"
-    direction = message_json['direction']
+    try:
+        sender_glob_id = message_json['sender']['glob_id']
+        recipient_glob_id = message_json['recipient']['glob_id']
+        payload_type = MESSAGE_TYPES.get(message_json['payload']['type'], 1)
+        payload_time = message_json['payload']['time']
+        payload_message_id = message_json['payload']['message_id']
+        payload_body =  message_json['payload']['data']
+        # TODO: store "direction"
+        direction = message_json['direction']
+    except:
+        lg.exc()
+        return False
     if _Debug:
         lg.args(_DebugLevel, sender=sender_glob_id, recipient=recipient_glob_id, typ=payload_type, message_id=payload_message_id)
     cur().execute('''INSERT INTO history (
@@ -212,6 +216,7 @@ def insert(message_json):
         payload_body,
     ))
     db().commit()
+    return True
 
 
 def query(sender_id=None, recipient_id=None, bidirectional=True, order_by_time=True, message_types=[], offset=None, limit=None):

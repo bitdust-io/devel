@@ -61,6 +61,7 @@ from p2p import p2p_service
 from lib import packetid
 from lib import utime
 from lib import serialization
+from lib import jsn
 from lib import strng
 
 from crypt import key
@@ -320,6 +321,7 @@ def on_incoming_message(request, info, status, error_message):
             unpack_types=True,
             encoding='utf-8',
         )
+        json_message = jsn.dict_keys_to_text(jsn.dict_values_to_text(json_message))
     except:
         lg.exc()
         return False

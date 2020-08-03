@@ -685,6 +685,8 @@ class GroupMember(automat.Automat):
                 continue
             if msg_action != 'read':
                 continue
+            if 'last_sequence_id' not in msg_data:
+                continue
             try:
                 chunk_last_sequence_id = int(msg_data['last_sequence_id'])
                 list_messages = msg_data['items']
