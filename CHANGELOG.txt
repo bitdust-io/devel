@@ -2,6 +2,12 @@ Change Log
 ==========
 
 
+2020-08-01 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* fix issue with detecting already runnign BitDust process
+
+
+
 2020-06-18 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * fix deploy script for Mac
