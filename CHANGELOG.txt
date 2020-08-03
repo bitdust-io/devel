@@ -2,6 +2,12 @@ Change Log
 ==========
 
 
+2020-08-03 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* try to fix issue with unreliable keys
+
+
+
 2020-08-01 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * fix issue with detecting already runnign BitDust process
