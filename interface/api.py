@@ -1026,8 +1026,7 @@ def files_sync():
     return OK('the main files sync loop has been restarted')
 
 
-def files_list(remote_path=None, key_id=None, recursive=True, all_customers=False,
-               include_uploads=False, include_downloads=False, ):
+def files_list(remote_path=None, key_id=None, recursive=True, all_customers=False, include_uploads=False, include_downloads=False):
     """
     Returns list of known files registered in the catalog under given `remote_path` folder.
     By default returns items from root of the catalog.
@@ -4299,8 +4298,7 @@ def network_connected(wait_timeout=5):
     return ret
 
 
-def network_status(suppliers=False, customers=False, cache=False,
-                   tcp=False, udp=False, proxy=False, dht=False):
+def network_status(suppliers=False, customers=False, cache=False, tcp=False, udp=False, proxy=False, dht=False):
     """
     Returns detailed info about current network status, protocols and active connections.
 
