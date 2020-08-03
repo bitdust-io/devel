@@ -67,7 +67,7 @@ def dict_values_to_text(dct, encoding='utf-8', errors='strict'):
     """
     Returns dict where all values are converted to text strings.
     Can go recursively, but not super smart.
-    If value is a list of dicts - will not be covered. 
+    If value is a list of dicts - will not be converted.
     """
     # TODO: make it fully recursive... for example if list of lists is passed 
     _d = {}
