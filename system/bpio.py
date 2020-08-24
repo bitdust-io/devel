@@ -347,7 +347,8 @@ def move_dir_recursive(src, dest, ignore=None):
                                    os.path.join(dest, f), 
                                    ignore)
     else:
-        shutil.copyfile(src, dest)
+        if os.path.isfile(src):
+            shutil.copyfile(src, dest)
 
 
 def getDirectorySize(directory, include_subfolders=True):
