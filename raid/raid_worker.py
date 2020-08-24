@@ -499,7 +499,7 @@ class ThreadedRaidProcessor(object):
 
     def cancel(self, task_id):
         if task_id not in self.active_tasks:
-            raise Exception('active task not found')
+            lg.warn('can not cancel task %r, task was not found' % task_id)
         self.active_tasks[task_id].stop()
 
     def destroy(self):

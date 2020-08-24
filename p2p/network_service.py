@@ -62,6 +62,13 @@ def do_service_test(service_name, result_defer, wait_timeout):
         lg.args(_DebugLevel, service_name=service_name)
     try:
         svc_info = api.service_info(service_name)
+        if not svc_info or 'result' not in svc_info:
+            lg.err('failed to fetch service info: %r' % svc_info)
+            result_defer.callback(dict(
+                error='disconnected',
+                reason='{}_info_error'.format(service_name),
+            ))
+            return None
         svc_state = svc_info['result']['state']
     except:
         lg.exc('service "%s" test failed' % service_name)
