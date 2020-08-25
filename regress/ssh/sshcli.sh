@@ -17,5 +17,5 @@ cp /app/ssh/id_rsa.pub $id_rsa_pub
 chmod 600 $id_rsa_pub
 
 
-echo "Starting SSH client! id_rsa=$id_rsa   id_rsa.pub=$id_rsa_pub"
+echo "Configured SSH client: id_rsa=$id_rsa   id_rsa.pub=$id_rsa_pub"
 /bin/sh -c "trap : TERM INT; (while true; do sleep 1000; done) & wait"
