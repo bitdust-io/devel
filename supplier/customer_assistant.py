@@ -193,6 +193,7 @@ class CustomerAssistant(automat.Automat):
         Action method.
         """
         customer_key_id = my_keys.make_key_id(alias='customer', creator_idurl=self.customer_idurl)
+        customer_key_id = my_keys.latest_key_id(customer_key_id)
         if my_keys.is_key_registered(customer_key_id):
             list_files.send(
                 customer_idurl=self.customer_idurl,
