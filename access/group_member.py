@@ -867,11 +867,12 @@ class GroupMember(automat.Automat):
             owner_id=self.group_creator_id,
             supplier_id=global_id.idurl2glob(possible_broker_idurl),
         )
-        try:
-            group_key_info = my_keys.get_key_info(self.group_key_id, include_private=False, include_signature=True)
-        except:
-            lg.exc(self.group_key_id)
-            group_key_info = {}
+        group_key_info = {}
+        if self.group_key_id:
+            try:
+                group_key_info = my_keys.get_key_info(self.group_key_id, include_private=False, include_signature=True)
+            except:
+                lg.exc()
         service_request_params = {
             'action': action,
             'queue_id': queue_id,
