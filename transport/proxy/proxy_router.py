@@ -898,9 +898,9 @@ class ProxyRouter(automat.Automat):
         idurl = id_url.field(idurl)
         if _Debug:
             lg.args(_DebugLevel, idurl=idurl)
-        active_user_session_machine_index = self.routes.get(idurl.original(), {}).get('connection_info', {}).get('index', None)
+        active_user_session_machine_index = ((self.routes.get(idurl.original()) or {}).get('connection_info') or {}).get('index', None)
         if active_user_session_machine_index is None:
-            active_user_session_machine_index = self.routes.get(idurl.to_bin(), {}).get('connection_info', {}).get('index', None)
+            active_user_session_machine_index = ((self.routes.get(idurl.to_bin()) or {}).get('connection_info') or {}).get('index', None)
         if active_user_session_machine_index is not None:
             active_user_session_machine = automat.objects().get(active_user_session_machine_index, None)
             if active_user_session_machine is not None:
