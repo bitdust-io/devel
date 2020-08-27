@@ -2,6 +2,13 @@ Change Log
 ==========
 
 
+2020-08-27 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* bug fix in backup_rebuilder()
+* IDURL fix in customer_assistant()
+
+
+
 2020-08-25 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * small bug fixes
