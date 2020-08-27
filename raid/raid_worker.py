@@ -379,7 +379,8 @@ class RaidWorker(automat.Automat):
             lg.out(_DebugLevel, 'raid_worker.doStartTask job_id=%r active=%d cpus=%d %s' % (
                 task_id, len(self.activetasks), self.processor.get_ncpus(), threading.currentThread().getName()))
 
-        reactor.callLater(0.01, self.automat, 'task-started', task_id)  # @UndefinedVariable
+        # reactor.callLater(0, self.automat, 'task-started', task_id)  # @UndefinedVariable
+        self.automat('task-started', task_id)
 
     def doReportTaskDone(self, *args, **kwargs):
         """
@@ -425,10 +426,10 @@ class RaidWorker(automat.Automat):
                 task_id, result, list(self.activetasks.keys()), cmd, params, threading.currentThread().getName()))
         reactor.callFromThread(self.automat, 'task-done', (task_id, cmd, params, result))  # @UndefinedVariable
 
-    def _job_failed(self, task_id, cmd, params, err):
-        lg.err('task %r FAILED : %r   active:%r cmd=%r params=%r' % (
-            task_id, err, list(self.activetasks.keys()), cmd, params))
-        self.automat('shutdown')
+    # def _job_failed(self, task_id, cmd, params, err):
+    #     lg.err('task %r FAILED : %r   active:%r cmd=%r params=%r' % (
+    #         task_id, err, list(self.activetasks.keys()), cmd, params))
+    #     self.automat('shutdown')
 
     def _kill_processor(self):
         if self.processor:

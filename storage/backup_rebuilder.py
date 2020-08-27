@@ -183,8 +183,12 @@ class BackupRebuilder(automat.Automat):
         Need to notify backup_monitor() machine about my new state.
         """
         # global_state.set_global_state('REBUILD ' + newstate)
-        if newstate in ['NEXT_BACKUP', 'REQUEST', 'REBUILDING', ] and event != 'instant':
-            self.automat('instant')
+        if newstate in ['NEXT_BACKUP', 'REQUEST', 'REBUILDING', ]:
+            if event != 'instant':
+                self.automat('instant')
+            else:
+                if oldstate == 'DONE':
+                    self.automat('instant')
         elif newstate == 'DONE' or newstate == 'STOPPED':
             if driver.is_on('service_backups'):
                 from storage import backup_monitor
