@@ -1011,10 +1011,6 @@ def cmd_automats(opts, args, overDict):
     if len(args) < 2 or args[1] == 'list':
         tpl = jsontemplate.Template(templ.TPL_AUTOMATS)
         return call_jsonrpc_method_template_and_stop('automats_list', tpl)
-        # return call_rest_http_method_and_stop('/automat/list/v1')
-#     if len(args) == 2 and args[1] in ['log', 'monitor', 'watch',]:\
-#         reactor.
-#         reactor.run()  # @UndefinedVariable
     return 2
 
 #------------------------------------------------------------------------------

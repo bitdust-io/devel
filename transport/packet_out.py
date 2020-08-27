@@ -414,7 +414,7 @@ class PacketOut(automat.Automat):
 
     def __repr__(self):
         """
-        Will print something like: "out_123_alice[Data(9999999999)](SENDING)".
+        Will return something like: "out_123_alice[Data(9999999999)](SENDING)".
         """
         packet_label = '?'
         if self.outpacket:

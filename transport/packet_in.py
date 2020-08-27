@@ -337,7 +337,7 @@ class PacketIn(automat.Automat):
 
     def __repr__(self):
         """
-        Will print something like: "in_4_1315435345[Ack(987654321)](DONE)".
+        Will return something like: "in_4_1315435345[Ack(987654321)](DONE)".
         """
         return '%s%s(%s)' % (self.id, self.label, self.state)
 
