@@ -185,13 +185,7 @@ def A(event=None, *args, **kwargs):
         return _ProxyReceiver
     if _ProxyReceiver is None:
         # set automat name and starting state here
-        _ProxyReceiver = ProxyReceiver(
-            name='proxy_receiver',
-            state='AT_STARTUP',
-            debug_level=_DebugLevel,
-            log_events=False,
-            log_transitions=_Debug,
-        )
+        _ProxyReceiver = ProxyReceiver()
     if event is not None:
         _ProxyReceiver.automat(event, *args, **kwargs)
     return _ProxyReceiver
@@ -210,6 +204,31 @@ class ProxyReceiver(automat.Automat):
         'timer-10sec': (10.0, ['LISTEN']),
     }
 
+    def __init__(self):
+        """
+        Builds `proxy_receiver()` state machine.
+        """
+        self.possible_router_idurl = None
+        self.router_idurl = None
+        self.router_identity = None
+        self.router_id = ''
+        self.router_proto_host = None
+        self.request_service_packet_id = []
+        self.latest_packet_received = 0
+        self.router_connection_info = None
+        self.traffic_in = 0
+        super(ProxyReceiver, self).__init__(
+            name='proxy_receiver',
+            state='AT_STARTUP',
+            debug_level=_DebugLevel,
+            log_events=False,
+            log_transitions=_Debug,
+            publish_events=False,
+        )
+
+    def __repr__(self):
+        return '%s[%s](%s)' % (self.id, self.router_id, self.state)
+
     def to_json(self):
         return {
             'name': self.name,
@@ -219,20 +238,6 @@ class ProxyReceiver(automat.Automat):
             'bytes_received': self.traffic_in,
             'bytes_sent': 0,
         }
-
-    def init(self):
-        """
-        Method to initialize additional variables and flags at creation phase
-        of proxy_receiver() machine.
-        """
-        self.possible_router_idurl = None
-        self.router_idurl = None
-        self.router_identity = None
-        self.router_proto_host = None
-        self.request_service_packet_id = []
-        self.latest_packet_received = 0
-        self.router_connection_info = None
-        self.traffic_in = 0
 
     def state_changed(self, oldstate, newstate, event, *args, **kwargs):
         """
@@ -360,6 +365,7 @@ class ProxyReceiver(automat.Automat):
         s = config.conf().getString('services/proxy-transport/current-router').strip()
         try:
             self.router_idurl = id_url.field(s.split(' ')[0])
+            self.router_id = global_id.idurl2glob(self.router_idurl)
         except:
             lg.exc()
         if _Debug:
@@ -388,6 +394,7 @@ class ProxyReceiver(automat.Automat):
         """
         self.possible_router_idurl = None
         self.router_idurl = id_url.field(args[0])
+        self.router_id = global_id.idurl2glob(self.router_idurl)
         self.router_identity = None
         self.router_proto_host = None
         if _Debug:
@@ -521,6 +528,7 @@ class ProxyReceiver(automat.Automat):
         callback.remove_inbox_callback(self._on_inbox_packet_received)
         self.router_identity = None
         self.router_idurl = None
+        self.router_id = ''
         self.router_proto_host = None
         self.request_service_packet_id = []
         self.router_connection_info = None
@@ -594,6 +602,7 @@ class ProxyReceiver(automat.Automat):
         callback.remove_queue_item_status_callback(self._on_queue_item_status_changed)
         self.possible_router_idurl = None
         self.router_idurl = None
+        self.router_id = ''
         self.router_identity = None
         self.router_proto_host = None
         self.request_service_packet_id = []

@@ -385,7 +385,7 @@ class Automat(object):
 
     def __repr__(self):
         """
-        Will print something like: "network_connector(CONNECTED)".
+        Will return something like: "network_connector(CONNECTED)".
         """
         return '%s(%s)' % (self.id, self.state)
 

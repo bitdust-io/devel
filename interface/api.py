@@ -4836,6 +4836,7 @@ def automats_list():
         'index': a.index,
         'name': a.name,
         'state': a.state,
+        'repr': repr(a),
         'timers': (','.join(list(a.getTimers().keys()))),
     } for a in automat.objects().values()]
     if _Debug:
