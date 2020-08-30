@@ -183,6 +183,7 @@ def defaults():
         'services/nodes-lookup/enabled': TYPE_BOOLEAN,
         'services/p2p-hookups/enabled': TYPE_BOOLEAN,
         'services/p2p-notifications/enabled': TYPE_BOOLEAN,
+        'services/personal-messages/enabled': TYPE_BOOLEAN,
         'services/private-groups/enabled': TYPE_BOOLEAN,
         'services/private-groups/message-ack-timeout': TYPE_NON_ZERO_POSITIVE_INTEGER,
         'services/private-groups/preferred-brokers': TYPE_TEXT,
