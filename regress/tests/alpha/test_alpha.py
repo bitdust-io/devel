@@ -919,8 +919,8 @@ def scenario12_begin():
 
     customer_4_broker_consumers = kw.queue_consumer_list_v1(customer_4_active_broker_name, extract_ids=True)
     customer_4_broker_producers = kw.queue_producer_list_v1(customer_4_active_broker_name, extract_ids=True)
-    assert len(customer_4_broker_consumers) == 1
-    assert len(customer_4_broker_producers) == 1
+    assert len(customer_4_broker_consumers) == 3
+    assert len(customer_4_broker_producers) == 3
     assert 'customer-4@id-b_8084' in customer_4_broker_consumers
     assert 'customer-4@id-b_8084' in customer_4_broker_producers
 
@@ -936,8 +936,8 @@ def scenario12_begin():
 
     customer_4_broker_consumers = kw.queue_consumer_list_v1(customer_4_active_broker_name, extract_ids=True)
     customer_4_broker_producers = kw.queue_producer_list_v1(customer_4_active_broker_name, extract_ids=True)
-    assert len(customer_4_broker_consumers) == 2
-    assert len(customer_4_broker_producers) == 2
+    assert len(customer_4_broker_consumers) == 3
+    assert len(customer_4_broker_producers) == 3
     assert 'customer-4@id-b_8084' in customer_4_broker_consumers
     assert 'customer-4@id-b_8084' in customer_4_broker_producers
     assert 'customer-2@id-b_8084' in customer_4_broker_consumers
@@ -1019,8 +1019,8 @@ def scenario12_end(old_customer_4_info):
 
     customer_4_rotated_broker_consumers = kw.queue_consumer_list_v1(customer_4_rotated_broker_name, extract_ids=True)
     customer_4_rotated_broker_producers = kw.queue_producer_list_v1(customer_4_rotated_broker_name, extract_ids=True)
-    assert len(customer_4_rotated_broker_consumers) == 2
-    assert len(customer_4_rotated_broker_producers) == 2
+    assert len(customer_4_rotated_broker_consumers) == 3
+    assert len(customer_4_rotated_broker_producers) == 3
     assert 'customer-2@id-b_8084' in customer_4_rotated_broker_consumers
     assert 'customer-2@id-b_8084' in customer_4_rotated_broker_producers
     assert 'customer-4@id-b_8084' in customer_4_rotated_broker_consumers

@@ -92,3 +92,7 @@ class PersonalMessagesService(LocalService):
         from interface import api
         lg.info('about to join my personal message group: %r' % self.personal_group_key_id)
         api.group_join(self.personal_group_key_id)
+        if self.starting_deferred:
+            if not self.starting_deferred.called:
+                self.starting_deferred.callback(True)
+            self.starting_deferred = None

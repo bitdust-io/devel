@@ -2488,7 +2488,7 @@ def group_join(group_key_id):
     if not driver.is_on('service_private_groups'):
         return ERROR('service_private_groups() is not started')
     group_key_id = strng.to_text(group_key_id)
-    if not group_key_id.startswith('group_'):
+    if not group_key_id.startswith('group_') and not group_key_id.startswith('person$'):
         return ERROR('invalid group id')
     from crypt import my_keys
     from userid import id_url
@@ -2564,6 +2564,7 @@ def group_leave(group_key_id, erase_key=False):
     if not driver.is_on('service_private_groups'):
         return ERROR('service_private_groups() is not started')
     from access import group_member
+    from access import groups
     from crypt import my_keys
     group_key_id = strng.to_text(group_key_id)
     if not group_key_id.startswith('group_'):
@@ -2572,11 +2573,12 @@ def group_leave(group_key_id, erase_key=False):
         return ERROR('unknown group key')
     this_group_member = group_member.get_active_group_member(group_key_id)
     if not this_group_member:
-        if not erase_key:
-            lg.warn('active group_member() instance was not found for %r' % group_key_id)
-            return ERROR('active group_member() instance was not found for %r' % group_key_id)
-        my_keys.erase_key(group_key_id)
-        return OK(message='group key "%s" erased' % group_key_id)
+        groups.set_group_active(group_key_id, False)
+        groups.save_group_info(group_key_id)
+        if erase_key:
+            my_keys.erase_key(group_key_id)
+            return OK(message='group key "%s" erased' % group_key_id)
+        return OK(message='group "%s" deactivated' % group_key_id)
     this_group_member.automat('leave', erase_key=erase_key)
     if erase_key:
         OK(message='group "%s" deleted' % group_key_id)
@@ -2673,7 +2675,7 @@ def friends_list():
     return RESULT(result)
 
 
-def friend_add(trusted_user_id, alias=''):
+def friend_add(trusted_user_id, alias='', share_person_key=True):
     """
     Add user to the list of correspondents.
 
@@ -2693,6 +2695,7 @@ def friend_add(trusted_user_id, alias=''):
     from p2p import online_status
     from userid import global_id
     from userid import id_url
+    from userid import my_id
     idurl = strng.to_text(trusted_user_id)
     if global_id.IsValidGlobalUser(trusted_user_id):
         idurl = global_id.GlobalUserToIDURL(trusted_user_id, as_field=False)
@@ -2700,7 +2703,9 @@ def friend_add(trusted_user_id, alias=''):
     if not idurl:
         return ERROR('you must specify the global IDURL address of remote user')
 
-    def _add():
+    ret = Deferred()
+
+    def _add(idurl, result_defer):
         added = False
         if not contactsdb.is_correspondent(idurl):
             contactsdb.add_correspondent(idurl, alias)
@@ -2712,19 +2717,36 @@ def friend_add(trusted_user_id, alias=''):
                 alias=alias,
             ))
         d = online_status.handshake(idurl, channel='friend_add', keep_alive=True)
+        if share_person_key:
+            from access import key_ring
+            from crypt import my_keys
+            my_person_key_id = my_id.getGlobalID(key_alias='person')
+            if my_keys.is_key_registered(my_person_key_id):
+                d.addCallback(lambda *args: [
+                    key_ring.share_key(
+                        key_id=my_person_key_id,
+                        trusted_idurl=idurl,
+                        include_private=False,
+                        include_signature=True,
+                        timeout=15,
+                    ),
+                    result_defer.callback(),
+                ])
+
         if _Debug:
             d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='api.friend_add')
+        d.addErrback(result_defer)
         if added:
             return OK(message='new friend has been added', api_method='friend_add')
         return OK(message='this friend has been already added', api_method='friend_add')
 
     if id_url.is_cached(idurl):
-        return _add()
+        _add(idurl, ret)
+        return ret
 
-    ret = Deferred()
     d = identitycache.immediatelyCaching(idurl)
     d.addErrback(lambda *args: ret.callback(ERROR('failed caching user identity')))
-    d.addCallback(lambda *args: ret.callback(_add()))
+    d.addCallback(lambda *args: _add(idurl, ret))
     return ret
 
 
@@ -3089,8 +3111,8 @@ def message_send(recipient_id, data, ping_timeout=30, message_ack_timeout=15):
         return ERROR('service_private_messages() is not started')
     from lib import packetid
     from stream import message
-    from userid import global_id
     from crypt import my_keys
+    from userid import global_id
     if not recipient_id.count('@'):
         from contacts import contactsdb
         recipient_idurl = contactsdb.find_correspondent_by_nickname(recipient_id)
@@ -3105,6 +3127,17 @@ def message_send(recipient_id, data, ping_timeout=30, message_ack_timeout=15):
     target_glob_id = global_id.MakeGlobalID(**glob_id)
     if not my_keys.is_valid_key_id(target_glob_id):
         return ERROR('invalid key_id: %s' % target_glob_id)
+    if recipient_id.startswith('person$'):
+        if not driver.is_on('service_personal_messages'):
+            return ERROR('service_personal_messages() is not started')
+        if _Debug:
+            lg.out(_DebugLevel, 'api.message_send to %r via message_producer' % recipient_id)
+        from stream import message_producer
+        ret = Deferred()
+        result = message_producer.push_message(recipient_id, data)
+        result.addCallback(lambda ok: ret.callback(OK(api_method='message_send')))
+        result.addErrback(lambda err: ret.callback(ERROR(err, api_method='message_send')))
+        return ret
     if _Debug:
         lg.out(_DebugLevel, 'api.message_send to "%s" ping_timeout=%d message_ack_timeout=%d' % (
             target_glob_id, ping_timeout, message_ack_timeout, ))

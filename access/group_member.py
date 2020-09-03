@@ -76,7 +76,6 @@ from automats import automat
 
 from lib import utime
 from lib import packetid
-from lib import strng
 from lib import serialization
 
 from main import events
@@ -210,7 +209,7 @@ class GroupMember(automat.Automat):
     This class implements all the functionality of ``group_member()`` state machine.
     """
 
-    def __init__(self, group_key_id, member_idurl=None, debug_level=0, log_events=_Debug, log_transitions=_Debug, **kwargs):
+    def __init__(self, group_key_id, member_idurl=None, debug_level=_DebugLevel, log_events=_Debug, log_transitions=_Debug, **kwargs):
         """
         Builds `group_member()` state machine.
         """
@@ -1202,11 +1201,9 @@ class GroupMember(automat.Automat):
 
     def _on_message_broker_connect_failed(self, err, broker_pos):
         if _Debug:
-            lg.args(_DebugLevel, err=err, broker_pos=broker_pos)
+            lg.args(_DebugLevel, err=err, broker_pos=broker_pos, connecting_brokers=self.connecting_brokers)
         if self.connecting_brokers is not None:
             self.connecting_brokers.discard(broker_pos)
-        if _Debug:
-            lg.args(_DebugLevel, err=err, broker_pos=broker_pos, connecting_brokers=self.connecting_brokers)
         if self.connecting_brokers:
             return
         if 0 in self.connected_brokers:

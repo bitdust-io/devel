@@ -243,7 +243,7 @@ def set_group_info(group_key_id, group_info=None):
 def create_new_group(label, creator_id=None, key_size=4096, group_alias=None, with_group_info=True):
     if _Debug:
         lg.args(_DebugLevel, label=label, creator_id=creator_id, key_size=key_size, group_alias=group_alias)
-    group_key_id = generate_group_key(creator_id, label, key_size)
+    group_key_id = generate_group_key(creator_id=creator_id, label=label, key_size=key_size, group_alias=group_alias)
     remote_path = create_archive_folder(group_key_id)
     if remote_path is None:
         return None
@@ -283,8 +283,9 @@ def load_groups():
     if not os.path.isdir(brokers_dir):
         bpio._dirs_make(brokers_dir)
     for group_key_id in os.listdir(groups_dir):
-        if group_key_id not in known_groups():
-            known_groups()[group_key_id] = {
+        latest_group_key_id = my_keys.latest_key_id(group_key_id)
+        if latest_group_key_id not in known_groups():
+            known_groups()[latest_group_key_id] = {
                 'last_sequence_id': -1,
                 'active': False,
                 'archive_folder_path': None,
@@ -292,7 +293,16 @@ def load_groups():
         group_path = os.path.join(groups_dir, group_key_id)
         group_info = jsn.loads_text(local_fs.ReadTextFile(group_path))
         if group_info:
-            known_groups()[group_key_id] = group_info
+            if latest_group_key_id != group_key_id:
+                latest_group_path = os.path.join(groups_dir, latest_group_key_id)
+                lg.info('going to rename rotated group key: %r -> %r' % (group_key_id, latest_group_key_id, ))
+                try:
+                    os.rename(group_path, latest_group_path)
+                except:
+                    lg.exc()
+                    continue
+                group_info = jsn.loads_text(local_fs.ReadTextFile(latest_group_path))
+            known_groups()[latest_group_key_id] = group_info
     for customer_id in os.listdir(brokers_dir):
         customer_path = os.path.join(brokers_dir, customer_id)
         for broker_id in os.listdir(customer_path):

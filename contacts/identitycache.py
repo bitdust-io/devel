@@ -401,7 +401,7 @@ def last_time_cached(idurl):
 
 def on_caching_task_failed(err, idurl):
     lg.warn('failed caching %s : %r' % (idurl, err))
-    return None
+    return err
 
 
 def immediatelyCaching(idurl, timeout=10, try_other_sources=True):
