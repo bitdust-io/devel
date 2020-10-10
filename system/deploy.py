@@ -253,6 +253,8 @@ def run(args):
 
     if status != 0:
         print_text('\n***** Failed to create virtual environment, please check/install virtualenv package\n')
+        print_text('\n***** Please try to install virtualenv package manually:\n')
+        print_text('    {} -m pip install virtualenv\n\n'.format(current_python))
         return status
 
     if on_windows or on_mac:
@@ -293,7 +295,7 @@ def run(args):
             'python3-dev',
             'python3-virtualenv',
         ]
-        print_text('\n***** Please try to install those binary packages manually and try again:\n')
+        print_text('\n***** Please try to install those binary packages manually:\n')
         print_text('    %s\n\n' % (' '.join(depends)))
         return status
 

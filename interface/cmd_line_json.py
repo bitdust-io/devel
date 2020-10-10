@@ -560,6 +560,9 @@ def cmd_identity(opts, args, overDict, running, executablePath):
                 print_text('BitDust is running at the moment, need to stop the software first\n')
                 return 0
             oldname = my_id.getIDName()
+            if not oldname:
+                print_text('local identity is not exist\n')
+                return 0
             my_id.forgetLocalIdentity()
             my_id.eraseLocalIdentity()
             print_text('local identity [%s] is no longer exist\n' % oldname)

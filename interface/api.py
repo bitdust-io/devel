@@ -2730,15 +2730,15 @@ def friend_add(trusted_user_id, alias='', share_person_key=True):
                         include_signature=True,
                         timeout=15,
                     ),
-                    result_defer.callback(),
                 ])
 
         if _Debug:
             d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='api.friend_add')
-        d.addErrback(result_defer)
         if added:
-            return OK(message='new friend has been added', api_method='friend_add')
-        return OK(message='this friend has been already added', api_method='friend_add')
+            result_defer.callback(OK(message='new friend has been added', api_method='friend_add'))
+        else:
+            result_defer.callback(OK(message='this friend has been already added', api_method='friend_add'))
+        return
 
     if id_url.is_cached(idurl):
         _add(idurl, ret)

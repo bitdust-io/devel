@@ -164,6 +164,8 @@ def build_json_message(data, message_id, message_time=None, sender=None, recipie
         sender = my_id.getGlobalID(key_alias='master')
     if not recipient:
         recipient = my_id.getGlobalID(key_alias='master')
+    if direction is None and message_type in ['private_message', None, ]:
+        direction = 'out' if sender == my_id.getGlobalID(key_alias='master') else 'in'
     new_json = {
         "payload": {
             "type": message_type or "message",
@@ -257,6 +259,7 @@ def query(sender_id=None, recipient_id=None, bidirectional=True, order_by_time=T
             message_time=row[3],
             sender=row[0],
             recipient=row[1],
+            message_type=MESSAGE_TYPE_CODES.get(int(row[2]), 'private_message'),
         )
 
 #------------------------------------------------------------------------------
