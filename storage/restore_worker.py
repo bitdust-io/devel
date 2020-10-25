@@ -734,6 +734,8 @@ class RestoreWorker(automat.Automat):
             self.automat('raid-done', filename)
 
     def _on_packet_request_result(self, NewPacketOrPacketID, result):
+        if self.block_requests is None:
+            return
         if _Debug:
             lg.args(_DebugLevel, packet=NewPacketOrPacketID, result=result)
         packet_id = None

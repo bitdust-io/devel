@@ -220,6 +220,7 @@ class GroupMember(automat.Automat):
         self.group_queue_alias = self.group_glob_id['key_alias']
         self.group_creator_id = self.group_glob_id['customer']
         self.group_creator_idurl = self.group_glob_id['idurl']
+        self.member_sender_id = global_id.MakeGlobalID(idurl=self.member_idurl, key_alias=self.group_queue_alias)
         self.active_broker_id = None
         self.active_queue_id = None
         self.dead_broker_id = None
@@ -491,7 +492,7 @@ class GroupMember(automat.Automat):
                 'consumer_id': self.member_id,
             },
             recipient_global_id=self.active_broker_id,
-            packet_id='queue_%s_%s' % (self.active_queue_id, packetid.UniqueID()),
+            packet_id=packetid.MakeQueueMessagePacketID(self.active_queue_id, packetid.UniqueID()),
             message_ack_timeout=message_ack_timeout,
             skip_handshake=True,
             fire_callbacks=False,
@@ -638,6 +639,7 @@ class GroupMember(automat.Automat):
         self.destroy()
         self.member_idurl = None
         self.member_id = None
+        self.member_sender_id = None
         self.group_key_id = None
         self.group_glob_id = None
         self.group_queue_alias = None
@@ -661,18 +663,19 @@ class GroupMember(automat.Automat):
         if not json_messages:
             return True
         if _Debug:
-            lg.args(_DebugLevel, active_broker_id=self.active_broker_id, json_messages=len(json_messages))
+            lg.args(_DebugLevel, active_queue_id=self.active_queue_id, active_broker_id=self.active_broker_id, json_messages=len(json_messages))
         latest_known_sequence_id = -1
         received_group_messages = []
         packets_to_ack = {}
         to_be_reconnected = False
+        found_group_ids = set()
+        found_broker_ids = set()
         for json_message in json_messages:
             try:
                 msg_type = json_message.get('type', '')
                 msg_direction = json_message['dir']
                 packet_id = json_message['packet_id']
                 owner_idurl = json_message['owner_idurl']
-                # to_user = json_message['to']
                 msg_data = json_message['data']
                 msg_action = msg_data.get('action', 'read')
             except:
@@ -691,6 +694,16 @@ class GroupMember(automat.Automat):
                 list_messages = msg_data['items']
             except:
                 lg.exc(msg_data)
+                continue
+            incoming_queue_id = packetid.SplitQueueMessagePacketID(packet_id)[0]
+            incoming_group_alias, incoming_group_creator_id, incoming_broker_id = global_id.SplitGlobalQueueID(incoming_queue_id)
+            incoming_group_creator_id = global_id.glob2idurl(incoming_group_creator_id).to_id()
+            incoming_group_key_id = global_id.MakeGlobalKeyID(incoming_group_alias, incoming_group_creator_id)
+            found_group_ids.add(incoming_group_key_id)
+            found_broker_ids.add(incoming_broker_id)
+            if incoming_group_key_id != self.group_key_id:
+                if _Debug:
+                    lg.dbg(_DebugLevel, 'skip message based on packet_id for %r : %r' % (self.group_key_id, incoming_group_key_id, ))
                 continue
             if chunk_last_sequence_id > latest_known_sequence_id:
                 latest_known_sequence_id = chunk_last_sequence_id
@@ -729,18 +742,33 @@ class GroupMember(automat.Automat):
             if self.active_broker_id and received_broker_id != self.active_broker_id:
                 if not to_be_reconnected:
                     to_be_reconnected = True
-                    lg.info('received message from broker %r which is different from my active broker %r' % (
+                    lg.warn('received message from broker %r which is different from my active broker %r' % (
                         received_broker_id, self.active_broker_id, ))
+        if len(found_broker_ids) > 0 and self.active_broker_id not in found_broker_ids:
+            to_be_reconnected = True
+            lg.warn('found incoming message from another broker: %r' % list(found_broker_ids))
         packets_to_ack.clear()
         if not received_group_messages:
+            if json_messages and self.group_key_id not in found_group_ids:
+                if _Debug:
+                    lg.dbg(_DebugLevel, 'no messages for %r found in the incoming stream' % self.active_queue_id)
+                return True
             if latest_known_sequence_id < self.last_sequence_id:
                 lg.warn('found queue latest sequence %d is behind of my current position %d' % (latest_known_sequence_id, self.last_sequence_id, ))
                 self.automat('queue-in-sync')
+                if to_be_reconnected:
+                    if _Debug:
+                        lg.dbg(_DebugLevel, 'going to reconnect %r' % self)
+                    reactor.callLater(0.01, self.automat, 'reconnect')  # @UndefinedVariable
                 return True
             if latest_known_sequence_id > self.last_sequence_id:
                 lg.warn('nothing received, but found queue latest sequence %d is ahead of my current position %d, need to read messages from archive' % (
                     latest_known_sequence_id, self.last_sequence_id, ))
                 self.automat('queue-is-ahead', latest_known_sequence_id=latest_known_sequence_id, received_messages=received_group_messages, )
+                if to_be_reconnected:
+                    if _Debug:
+                        lg.dbg(_DebugLevel, 'going to reconnect %r' % self)
+                    reactor.callLater(0.01, self.automat, 'reconnect')  # @UndefinedVariable
                 return True
             self.last_sequence_id = latest_known_sequence_id
             groups.set_last_sequence_id(self.group_key_id, latest_known_sequence_id)
@@ -748,10 +776,16 @@ class GroupMember(automat.Automat):
             if _Debug:
                 lg.dbg(_DebugLevel, 'no new messages, queue in sync, latest_known_sequence_id=%d' % latest_known_sequence_id)
             self.automat('queue-in-sync')
+            if to_be_reconnected:
+                if _Debug:
+                    lg.dbg(_DebugLevel, 'going to reconnect %r' % self)
+                reactor.callLater(0.01, self.automat, 'reconnect')  # @UndefinedVariable
             return True
         received_group_messages.sort(key=lambda m: m['sequence_id'])
         ret = self._do_process_group_messages(received_group_messages, latest_known_sequence_id)
         if to_be_reconnected:
+            if _Debug:
+                lg.dbg(_DebugLevel, 'going to reconnect %r' % self)
             self.automat('reconnect')
         return ret
 
@@ -829,7 +863,7 @@ class GroupMember(automat.Automat):
         try:
             private_message_object = message.GroupMessage(
                 recipient=self.group_key_id,
-                sender=self.member_id,
+                sender=self.member_sender_id,
             )
             private_message_object.encrypt(raw_payload)
         except:
@@ -847,7 +881,7 @@ class GroupMember(automat.Automat):
                 'brokers': self.connected_brokers,
             },
             recipient_global_id=self.active_broker_id,
-            packet_id='queue_%s_%s' % (self.active_queue_id, packet_id, ),
+            packet_id=packetid.MakeQueueMessagePacketID(self.active_queue_id, packet_id),
             message_ack_timeout=config.conf().getInt('services/private-groups/message-ack-timeout'),
             skip_handshake=True,
             fire_callbacks=False,
@@ -965,7 +999,12 @@ class GroupMember(automat.Automat):
         lg.info('brokers were rotated, starting new lookups and connect to existing brokers')
         exclude_from_lookup.update(set(id_url.to_bin_list(filter(None, known_brokers))))
         if self.dead_broker_id:
-            exclude_from_lookup.add(id_url.to_bin(global_id.glob2idurl(self.dead_broker_id, as_field=False)))
+            dead_broker_idurl_bin = id_url.to_bin(global_id.glob2idurl(self.dead_broker_id, as_field=False))
+            exclude_from_lookup.add(dead_broker_idurl_bin)
+            for broker_pos_idurl in brokers_to_be_connected:
+                if id_url.to_bin(broker_pos_idurl[1]) == dead_broker_idurl_bin:
+                    brokers_to_be_connected.remove(broker_pos_idurl)
+                    break
         self._do_lookup_connect_brokers(
             hiring_positions=list(self.missing_brokers),
             available_brokers=brokers_to_be_connected,

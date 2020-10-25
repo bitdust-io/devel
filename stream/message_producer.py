@@ -520,7 +520,7 @@ class MessageProducer(automat.Automat):
                 'producer_id': self.producer_id,
             },
             recipient_global_id=self.active_broker_id,
-            packet_id='queue_%s_%s' % (self.active_queue_id, packet_id, ),
+            packet_id=packetid.MakeQueueMessagePacketID(self.active_queue_id, packet_id),
             message_ack_timeout=config.conf().getInt('services/private-groups/message-ack-timeout'),
             skip_handshake=True,
             fire_callbacks=False,

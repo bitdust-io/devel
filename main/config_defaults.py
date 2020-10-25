@@ -231,8 +231,6 @@ def reset(conf_obj):
 
     conf_obj.setDefaultValue('services/supplier-contracts/enabled', 'false')
 
-    conf_obj.setDefaultValue('services/supplier-relations/enabled', 'false')
-
     conf_obj.setDefaultValue('services/tcp-connections/enabled', 'true')
     conf_obj.setDefaultValue('services/tcp-connections/tcp-port', settings.DefaultTCPPort())
     conf_obj.setDefaultValue('services/tcp-connections/upnp-enabled', 'true')
