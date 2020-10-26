@@ -1051,12 +1051,12 @@ def report_one_node(node):
     num_packet_route_in = packet_log.count('ROUTE IN')
     event_log = run_ssh_command_and_wait(node, 'cat /root/.bitdust/logs/event.log', verbose=False)[0].strip()
     num_events = event_log.count('\n')
-    print(f'[{node:>18}]  api: {num_apis:<4} evt: {num_events:<4}'
-          f' out: {num_packet_out:<4} in: {num_packet_in:<4}'
-          f' prox-out: {num_packet_relay_out:<4} prox-in: {num_packet_relay_in:<4}'
-          f' re-out: {num_packet_route_out:<4} re-in: {num_packet_route_in:<4}'
-          f' inf: {num_infos:<4} warn: {num_warnings:<4} err: {num_errors:<4}'
-          f' trcbk: {num_tracebacks:<4} fails: {num_failures:<4} excepts: {num_exceptions:<4}')
+    print(f'[{node:>15}] api:{num_apis:<4} evt:{num_events:<4}'
+          f' out:{num_packet_out:<4} in:{num_packet_in:<4}'
+          f' px-out:{num_packet_relay_out:<4} px-in:{num_packet_relay_in:<4}'
+          f' re-out:{num_packet_route_out:<4} re-in:{num_packet_route_in:<4}'
+          f' inf:{num_infos:<4} wrn:{num_warnings:<4} err:{num_errors:<4}'
+          f' tbk:{num_tracebacks:<3} fail:{num_failures:<3} exc:{num_exceptions:<3}')
     return num_exceptions
 
 
@@ -1115,7 +1115,7 @@ async def clean_one_node_async(node, event_loop, verbose=False):
 
     await run_ssh_command_and_wait_async(
         node,
-        'find /root/.bitdust/ -maxdepth 1 -not -name X -not -name venv -not -name bitdust -not -name ".bitdust" -exec rm -r "{}" \;',
+        'find /root/.bitdust/ -maxdepth 1 -not -name X -not -name venv -not -name bitdust -not -name ".bitdust" -exec rm -r "{}" \\;',
         event_loop,
         verbose=verbose,
     )
