@@ -420,12 +420,13 @@ def config_get(key):
         key = strng.to_text(key).strip('/')
     except:
         return ERROR('wrong key')
+    if not key:
+        return ERROR('empty key')
     if _Debug:
         lg.out(_DebugLevel, 'api.config_get [%s]' % key)
-    if key and not config.conf().exist(key):
+    if not config.conf().exist(key):
         return ERROR('option "%s" not exist' % key)
-
-    if key and not config.conf().hasChilds(key):
+    if not config.conf().hasChilds(key):
         return RESULT([config.conf().toJson(key), ], )
     childs = []
     for child in config.conf().listEntries(key):
