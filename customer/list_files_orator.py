@@ -184,10 +184,10 @@ class ListFilesOrator(automat.Automat):
                 pass
         #---LOCAL_FILES---
         elif self.state == 'LOCAL_FILES':
-            if event == 'local-files-done' and p2p_connector.A().state is 'CONNECTED':
+            if event == 'local-files-done' and p2p_connector.A().state == 'CONNECTED':
                 self.state = 'REMOTE_FILES'
                 self.doRequestFilesAllSuppliers(*args, **kwargs)
-            elif event == 'local-files-done' and p2p_connector.A().state is not 'CONNECTED':
+            elif event == 'local-files-done' and p2p_connector.A().state != 'CONNECTED':
                 self.state = 'NO_FILES'
         #---REMOTE_FILES---
         elif self.state == 'REMOTE_FILES':

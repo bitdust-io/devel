@@ -95,11 +95,11 @@ class PrivateGroupsService(LocalService):
             self._do_join_message_brokers_dht_layer()
 
     def _on_supplier_modified(self, evt):
+        from logs import lg
         from access import key_ring
         from crypt import my_keys
         from userid import global_id
         from userid import my_id
-        from logs import lg
         if evt.data['new_idurl']:
             my_keys_to_be_republished = []
             for key_id in my_keys.known_keys():

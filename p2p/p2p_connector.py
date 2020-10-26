@@ -268,9 +268,9 @@ class P2PConnector(automat.Automat):
             elif event == 'my-id-updated' and not self.isMyContactsChanged(*args, **kwargs) and ( self.NeedPropagate or self.isMyIdentityChanged(*args, **kwargs) ):
                 self.state = 'PROPAGATE'
                 self.doCheckRotatePropagateMyIdentity(*args, **kwargs)
-            elif event == 'my-id-updated' and not ( self.NeedPropagate or self.isMyIdentityChanged(*args, **kwargs) ) and ( network_connector.A().state is not 'CONNECTED' ):
+            elif event == 'my-id-updated' and not ( self.NeedPropagate or self.isMyIdentityChanged(*args, **kwargs) ) and ( network_connector.A().state != 'CONNECTED' ):
                 self.state = 'DISCONNECTED'
-            elif event == 'my-id-updated' and not ( self.NeedPropagate or self.isMyIdentityChanged(*args, **kwargs) ) and ( network_connector.A().state is 'CONNECTED' ):
+            elif event == 'my-id-updated' and not ( self.NeedPropagate or self.isMyIdentityChanged(*args, **kwargs) ) and ( network_connector.A().state == 'CONNECTED' ):
                 self.state = 'CONNECTED'
         #---PROPAGATE---
         elif self.state == 'PROPAGATE':

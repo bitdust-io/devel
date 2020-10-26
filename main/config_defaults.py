@@ -193,6 +193,8 @@ def reset(conf_obj):
 
     conf_obj.setDefaultValue('services/p2p-notifications/enabled', 'true')
 
+    conf_obj.setDefaultValue('services/personal-messages/enabled', 'true')
+
     conf_obj.setDefaultValue('services/private-groups/enabled', 'true')
     conf_obj.setDefaultValue('services/private-groups/message-ack-timeout', 10)
     conf_obj.setDefaultValue('services/private-groups/preferred-brokers', '')
@@ -228,8 +230,6 @@ def reset(conf_obj):
     conf_obj.setDefaultValue('services/supplier/donated-space', diskspace.MakeStringFromBytes(settings.DefaultDonatedBytes()))
 
     conf_obj.setDefaultValue('services/supplier-contracts/enabled', 'false')
-
-    conf_obj.setDefaultValue('services/supplier-relations/enabled', 'false')
 
     conf_obj.setDefaultValue('services/tcp-connections/enabled', 'true')
     conf_obj.setDefaultValue('services/tcp-connections/tcp-port', settings.DefaultTCPPort())

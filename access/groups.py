@@ -174,16 +174,20 @@ def is_group_stored(group_key_id):
     return os.path.isfile(group_info_path)
 
 
-def generate_group_key(creator_id=None, label=None, key_size=4096):
+def generate_group_key(creator_id=None, label=None, key_size=4096, group_alias=None):
     group_key_id = None
-    group_alias = None
-    while True:
-        random_sample = os.urandom(24)
-        group_alias = 'group_%s' % strng.to_text(key.HashMD5(random_sample, hexdigest=True))
+    if group_alias:
         group_key_id = my_keys.make_key_id(alias=group_alias, creator_glob_id=creator_id)
         if my_keys.is_key_registered(group_key_id):
-            continue
-        break
+            return group_key_id
+    else:
+        while True:
+            random_sample = os.urandom(24)
+            group_alias = 'group_%s' % strng.to_text(key.HashMD5(random_sample, hexdigest=True))
+            group_key_id = my_keys.make_key_id(alias=group_alias, creator_glob_id=creator_id)
+            if my_keys.is_key_registered(group_key_id):
+                continue
+            break
     if not label:
         label = 'group%s' % utime.make_timestamp()
     my_keys.generate_key(key_id=group_key_id, label=label, key_size=key_size)
@@ -198,6 +202,17 @@ def create_archive_folder(group_key_id, force_path_id=None):
     catalog_path = os.path.join('.archive', group_key_alias)
     archive_folder_catalog_path = global_id.MakeGlobalID(
         key_alias=group_key_alias, customer=group_creator_idurl.to_id(), path=catalog_path)
+    res = api.file_exists(archive_folder_catalog_path)
+    if res['status'] != 'OK':
+        lg.err('failed to check archive folder in the catalog: %r' % res)
+        return None
+    if res['result']['exist']:
+        ret = res['result']['path_id']
+        if force_path_id is not None:
+            if force_path_id != ret:
+                lg.err('archive folder exists, but have different path ID in the catalog: %r' % ret)
+                return None
+        return ret
     res = api.file_create(archive_folder_catalog_path, as_folder=True, exist_ok=True, force_path_id=force_path_id)
     if res['status'] != 'OK':
         lg.err('failed to create archive folder in the catalog: %r' % res)
@@ -225,19 +240,20 @@ def set_group_info(group_key_id, group_info=None):
     return True
 
 
-def create_new_group(label, creator_id=None, key_size=4096):
+def create_new_group(label, creator_id=None, key_size=4096, group_alias=None, with_group_info=True):
     if _Debug:
-        lg.args(_DebugLevel, label=label, creator_id=creator_id, key_size=key_size)
-    group_key_id = generate_group_key(creator_id, label, key_size)
+        lg.args(_DebugLevel, label=label, creator_id=creator_id, key_size=key_size, group_alias=group_alias)
+    group_key_id = generate_group_key(creator_id=creator_id, label=label, key_size=key_size, group_alias=group_alias)
     remote_path = create_archive_folder(group_key_id)
     if remote_path is None:
         return None
-    set_group_info(group_key_id, {
-        'last_sequence_id': -1,
-        'active': False,
-        'archive_folder_path': remote_path,
-    })
-    save_group_info(group_key_id)
+    if with_group_info:
+        set_group_info(group_key_id, {
+            'last_sequence_id': -1,
+            'active': False,
+            'archive_folder_path': remote_path,
+        })
+        save_group_info(group_key_id)
     return group_key_id
 
 #------------------------------------------------------------------------------
@@ -251,6 +267,8 @@ def send_group_pub_key_to_suppliers(group_key_id):
                 d.addCallback(lg.cb, debug=_Debug, debug_level=_DebugLevel, method='groups.write_group_key_to_suppliers')
                 d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='groups.write_group_key_to_suppliers')
             # TODO: build some kind of retry mechanism - if some supplier did not received the key
+            # it must be some process with each supplier that first verifies a list of my public keys supplier currently possess
+            # and then transfer the missing keys or send a note to erase "unused" keys to be able to cleanup old keys
             l.append(d)
     return DeferredList(l, consumeErrors=True)
 
@@ -265,8 +283,9 @@ def load_groups():
     if not os.path.isdir(brokers_dir):
         bpio._dirs_make(brokers_dir)
     for group_key_id in os.listdir(groups_dir):
-        if group_key_id not in known_groups():
-            known_groups()[group_key_id] = {
+        latest_group_key_id = my_keys.latest_key_id(group_key_id)
+        if latest_group_key_id not in known_groups():
+            known_groups()[latest_group_key_id] = {
                 'last_sequence_id': -1,
                 'active': False,
                 'archive_folder_path': None,
@@ -274,7 +293,16 @@ def load_groups():
         group_path = os.path.join(groups_dir, group_key_id)
         group_info = jsn.loads_text(local_fs.ReadTextFile(group_path))
         if group_info:
-            known_groups()[group_key_id] = group_info
+            if latest_group_key_id != group_key_id:
+                latest_group_path = os.path.join(groups_dir, latest_group_key_id)
+                lg.info('going to rename rotated group key: %r -> %r' % (group_key_id, latest_group_key_id, ))
+                try:
+                    os.rename(group_path, latest_group_path)
+                except:
+                    lg.exc()
+                    continue
+                group_info = jsn.loads_text(local_fs.ReadTextFile(latest_group_path))
+            known_groups()[latest_group_key_id] = group_info
     for customer_id in os.listdir(brokers_dir):
         customer_path = os.path.join(brokers_dir, customer_id)
         for broker_id in os.listdir(customer_path):

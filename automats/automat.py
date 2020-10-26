@@ -309,14 +309,13 @@ class Automat(object):
 
     fast = True
     """
-    By default, a state machine is called like this::
+    By default, incoming state machine events are passing via Twisted reactor like that:
 
         reactor.callLater(0, self.event, 'event-01', (arg1, arg2, ... ))
 
-    If ``fast = True`` it will call state machine method directly:
+    But when ``fast = True`` event will be passed directly as function call of the state machine:
 
         self.event('event-01', (arg1, arg2, ... ))
-
     """
 
     post = False
@@ -368,7 +367,7 @@ class Automat(object):
         """
         global _StateChangedCallback
         if self is None:
-            # Some crazy stuff happens?
+            self.log(_DebugLevel, 'Some crazy stuff happens?')
             return
         automatid = self.id
         name = self.name

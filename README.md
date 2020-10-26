@@ -124,9 +124,9 @@ Start as background process:
 
 
 To get some more insights or just to know how to start playing with software
-you can visit [BitDust Commands](https://bitdust.io/commands.html) page. 
+you can visit [BitDust Commands](https://bitdust.io/wiki/commands.html) page. 
 
-To get more info about API methods available go to [BitDust API](https://bitdust.io/api.html) page.
+To get more info about API methods available go to [BitDust API](https://bitdust.io/wiki/api.html) page.
 
 
 

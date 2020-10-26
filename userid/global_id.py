@@ -73,6 +73,14 @@ def glob2idurl(glob_id, as_field=True):
 
 #------------------------------------------------------------------------------
 
+def MakeGlobalKeyID(key_alias, user_id):
+    return _FORMAT_GLOBAL_ID_KEY_USER.format(
+        key_alias=key_alias,
+        user=user_id,
+    )
+
+#------------------------------------------------------------------------------
+
 def MakeGlobalID(
     idurl=None,
     user=None,
@@ -95,7 +103,8 @@ def MakeGlobalID(
         out = key_id
     else:
         if customer:
-            idurl = GlobalUserToIDURL(customer)
+            if not idurl:
+                idurl = GlobalUserToIDURL(customer)
             if customer.count('$'):
                 key_alias, _, _ = customer.rpartition('$')
             if customer.count('!'):
@@ -240,10 +249,7 @@ def ParseGlobalID(inp, detect_version=False, as_field=True, fast=True):
     if not result['key_alias']:
         result['key_alias'] = 'master'
     if result['customer']:
-        result['key_id'] = _FORMAT_GLOBAL_ID_KEY_USER.format(
-            key_alias=result['key_alias'],
-            user=result['customer'],
-        )
+        result['key_id'] = MakeGlobalKeyID(result['key_alias'], result['customer'])
     if as_field:
         from userid import id_url
         result['idurl'] = id_url.field(result['idurl'])
@@ -278,10 +284,7 @@ def NormalizeGlobalID(inp, detect_version=False, as_field=True):
         from lib import nameurl
         g['idhost'] = nameurl.GetHost(g['idurl'])
     if not g['key_id']:
-        g['key_id'] = _FORMAT_GLOBAL_ID_KEY_USER.format(
-            key_alias=g['key_alias'],
-            user=g['customer'],
-        )
+        g['key_id'] = MakeGlobalKeyID(g['key_alias'], g['customer'])
     if as_field:
         from userid import id_url
         g['idurl'] = id_url.field(g['idurl'])
@@ -317,10 +320,7 @@ def SubstitutePacketID(packet_id, idurl=None, customer=None, key_id=None, path=N
             idhost += '_' + str(port)
         g['user'] = filename.strip()[0:-4]
         if key_id is None:
-            g['key_id'] = _FORMAT_GLOBAL_ID_KEY_USER.format(
-                key_alias=g['key_alias'],
-                user=g['customer'],
-            )
+            g['key_id'] = MakeGlobalKeyID(g['key_alias'], g['customer'])
     if customer is not None:
         g['customer'] = customer
         g['idurl'] = glob2idurl(g['customer'], as_field=False)
@@ -329,10 +329,7 @@ def SubstitutePacketID(packet_id, idurl=None, customer=None, key_id=None, path=N
             idhost += '_' + str(port)
         g['user'] = filename.strip()[0:-4]
         if key_id is None:
-            g['key_id'] = _FORMAT_GLOBAL_ID_KEY_USER.format(
-                key_alias=g['key_alias'],
-                user=g['customer'],
-            )
+            g['key_id'] = MakeGlobalKeyID(g['key_alias'], g['customer'])
     return MakeGlobalID(**g)
 
 #------------------------------------------------------------------------------
@@ -461,8 +458,5 @@ def GetGlobalQueueOwnerIDURL(queue_id, as_field=True):
 def GetGlobalQueueKeyID(queue_id):
     queue_alias_owner_id, _, _ = queue_id.rpartition('&')
     queue_alias, _, owner_id = queue_alias_owner_id.partition('&')
-    key_id = _FORMAT_GLOBAL_ID_KEY_USER.format(
-        key_alias=queue_alias,
-        user=owner_id,
-    )
+    key_id = MakeGlobalKeyID(queue_alias, owner_id)
     return key_id

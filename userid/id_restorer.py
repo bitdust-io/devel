@@ -137,7 +137,7 @@ class IdRestorer(automat.Automat):
         'MSG_01': ['requesting user identity from remote ID server', ],
         'MSG_02': ['key verification failed!', 'red'],
         'MSG_03': ['downloading user identity from remote ID server', ],
-        'MSG_04': ['incorrect IDURL or user identity file not exist anymore', 'red'],
+        'MSG_04': ['incorrect or non-existing IDURL provided', 'red'],
         'MSG_05': ['verifying user identity and private key', ],
         'MSG_06': ['your identity restored successfully!', 'green'],
         'MSG_07': ['checking network connectivity', ],

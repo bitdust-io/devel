@@ -303,7 +303,8 @@
                 "known_id_servers": "id-a:8084:6661",
                 "preferred_routers": "http://id-a:8084/proxy-1.xml",
                 "block_size": "10 KB",
-                "num_suppliers": 2
+                "num_suppliers": 2,
+                "preferred_brokers": "http://id-a:8084/broker-1.xml,http://id-b:8084/broker-2.xml,http://id-a:8084/broker-3.xml,http://id-b:8084/broker-4.xml"
             }
         },
         "customer-2": {

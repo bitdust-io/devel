@@ -250,6 +250,7 @@ def loads(s, encoding='utf-8', keys_to_bin=False, **kw):
     """
     Calls `json.loads()` with parameters.
     Always translates all json values into binary strings using encoding.
+    Also do the same for keys when `keys_to_bin=True`.
     """
     if not s:
         return None

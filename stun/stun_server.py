@@ -118,19 +118,19 @@ class StunServer(automat.Automat):
 
     def A(self, event, *args, **kwargs):
         #---AT_STARTUP---
-        if self.state is 'AT_STARTUP':
+        if self.state == 'AT_STARTUP':
             if event == 'start':
                 self.state = 'LISTEN'
                 self.doInit(*args, **kwargs)
         #---LISTEN---
-        elif self.state is 'LISTEN':
+        elif self.state == 'LISTEN':
             if event == 'stop':
                 self.state = 'STOPPED'
                 self.doStop(*args, **kwargs)
             elif event == 'datagram-received' and self.isSTUN(*args, **kwargs):
                 self.doSendYourIPPort(*args, **kwargs)
         #---STOPPED---
-        elif self.state is 'STOPPED':
+        elif self.state == 'STOPPED':
             if event == 'start':
                 self.state = 'LISTEN'
                 self.doInit(*args, **kwargs)

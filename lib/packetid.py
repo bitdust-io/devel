@@ -464,3 +464,20 @@ def LatestBackupID(backupID):
         path=glob_id['path'],
         version=glob_id['version'],
     )
+
+
+def MakeQueueMessagePacketID(queue_id, unique_id):
+    """
+    Prepare text string to be used as PacketID when sending queue message.
+    """
+    return 'queue_{}_{}'.format(queue_id, unique_id)
+
+
+def SplitQueueMessagePacketID(packet_id):
+    """
+    Extract `queue_id` and `unique_id` from PacketID expecting to have queue_message format.
+    """
+    if packet_id.startswith('queue_'):
+        packet_id = packet_id[6:]
+    queue_id, _, unique_id = packet_id.rpartition('_')
+    return queue_id, unique_id
