@@ -402,8 +402,9 @@ class BackupRebuilder(automat.Automat):
         # send them again
         from stream import io_throttle
         io_throttle.DeleteBackupRequests(self.currentBackupID)
-        lg.out(8, 'backup_rebuilder.doScanBrokenBlocks for %s : %s' % (
-            self.currentBackupID, str(self.workingBlocksQueue)))
+        if _Debug:
+            lg.out(_DebugLevel, 'backup_rebuilder.doScanBrokenBlocks for %s : %s' % (
+                self.currentBackupID, str(self.workingBlocksQueue)))
         self.automat('backup-ready')
 
     def doRequestAvailablePieces(self, *args, **kwargs):
@@ -464,7 +465,8 @@ class BackupRebuilder(automat.Automat):
         total_requests_count = 0
         # at the moment I do download everything I have available and needed
         if id_url.is_some_empty(contactsdb.suppliers(customer_idurl=self.currentCustomerIDURL)):
-            lg.out(8, 'backup_rebuilder._request_files SKIP - empty supplier')
+            if _Debug:
+                lg.out(_DebugLevel, 'backup_rebuilder._request_files SKIP - empty supplier')
             self.automat('no-requests')
             return
         for supplierNum in range(contactsdb.num_suppliers(customer_idurl=self.currentCustomerIDURL)):
@@ -556,14 +558,17 @@ class BackupRebuilder(automat.Automat):
                         data_sender.A('new-data')
             total_requests_count += requests_count
         if total_requests_count > 0:
-            lg.out(8, 'backup_rebuilder._request_files : %d chunks requested' % total_requests_count)
+            if _Debug:
+                lg.out(_DebugLevel, 'backup_rebuilder._request_files : %d chunks requested' % total_requests_count)
             self.automat('requests-sent', total_requests_count)
         else:
             if self.missingPackets:
-                lg.out(8, 'backup_rebuilder._request_files : found %d missing packets' % self.missingPackets)
+                if _Debug:
+                    lg.out(_DebugLevel, 'backup_rebuilder._request_files : found %d missing packets' % self.missingPackets)
                 self.automat('found-missing')
             else:
-                lg.out(8, 'backup_rebuilder._request_files : nothing was requested')
+                if _Debug:
+                    lg.out(_DebugLevel, 'backup_rebuilder._request_files : nothing was requested')
                 self.automat('no-requests')
 
     def _file_received(self, newpacket, state):
@@ -594,25 +599,28 @@ class BackupRebuilder(automat.Automat):
             try:
                 bpio._dirs_make(dirname)
             except:
-                lg.out(2, "backup_rebuilder._file_received ERROR can not create sub dir: " + dirname)
+                lg.exc("can not create sub dir: " + dirname)
                 return
         if not bpio.WriteBinaryFile(filename, newpacket.Payload):
-            lg.out(2, "backup_rebuilder._file_received ERROR writing " + filename)
+            lg.err("failed writing " + filename)
             return
         from storage import backup_matrix
         backup_matrix.LocalFileReport(packetID)
-        lg.out(10, "backup_rebuilder._file_received and wrote to " + filename)
+        if _Debug:
+            lg.out(_DebugLevel, "backup_rebuilder._file_received and wrote to " + filename)
         self.automat('inbox-data-packet', packetID)
 
     def _start_one_block(self):
         from storage import backup_matrix
         if self.blockIndex < 0:
-            lg.out(10, 'backup_rebuilder._start_one_block finish all blocks blockIndex=%d' % self.blockIndex)
+            if _Debug:
+                lg.out(_DebugLevel, 'backup_rebuilder._start_one_block finish all blocks blockIndex=%d' % self.blockIndex)
             reactor.callLater(0, self._finish_rebuilding)  # @UndefinedVariable
             return
         BlockNumber = self.workingBlocksQueue[self.blockIndex]
-        lg.out(10, 'backup_rebuilder._start_one_block %d to rebuild, blockIndex=%d, other blocks: %s' % (
-            (BlockNumber, self.blockIndex, str(self.workingBlocksQueue))))
+        if _Debug:
+            lg.out(_DebugLevel, 'backup_rebuilder._start_one_block %d to rebuild, blockIndex=%d, other blocks: %s' % (
+                BlockNumber, self.blockIndex, str(self.workingBlocksQueue), ))
         task_params = (
             self.currentBackupID,
             BlockNumber,
@@ -626,7 +634,8 @@ class BackupRebuilder(automat.Automat):
 
     def _block_finished(self, result, params):
         if not result:
-            lg.out(10, 'backup_rebuilder._block_finished FAILED, blockIndex=%d' % self.blockIndex)
+            if _Debug:
+                lg.out(_DebugLevel, 'backup_rebuilder._block_finished FAILED, blockIndex=%d' % self.blockIndex)
             reactor.callLater(0, self._finish_rebuilding)  # @UndefinedVariable
             return
         try:
@@ -637,9 +646,11 @@ class BackupRebuilder(automat.Automat):
             lg.exc()
             reactor.callLater(0, self._finish_rebuilding)  # @UndefinedVariable
             return
-        lg.out(10, 'backup_rebuilder._block_finished   backupID=%r  blockNumber=%r  newData=%r' % (
-            _backupID, _blockNumber, newData))
-        lg.out(10, '        localData=%r  localParity=%r' % (localData, localParity))
+        if _Debug:
+            lg.out(_DebugLevel, 'backup_rebuilder._block_finished   backupID=%r  blockNumber=%r  newData=%r' % (
+                _backupID, _blockNumber, newData))
+        if _Debug:
+            lg.out(_DebugLevel, '        localData=%r  localParity=%r' % (localData, localParity))
         err = False
         if newData:
             from storage import backup_matrix
@@ -655,7 +666,8 @@ class BackupRebuilder(automat.Automat):
                 except:
                     err = True
                     lg.err('invalid result from the task: %s' % repr(params))
-                    lg.out(10, 'result is %s' % repr(result))
+                    if _Debug:
+                        lg.out(_DebugLevel, 'result is %s' % repr(result))
                     break
                 if localData[supplierNum] == 1 and reconstructedData[supplierNum] == 1:
                     backup_matrix.LocalFileReport(None, _backupID, _blockNumber, supplierNum, 'Data')
@@ -664,15 +676,17 @@ class BackupRebuilder(automat.Automat):
                     backup_matrix.LocalFileReport(None, _backupID, _blockNumber, supplierNum, 'Parity')
                     count += 1
             if err:
-                lg.out(10, 'found ERROR! seems suppliers were changed, stop rebuilding')
+                lg.err('seems suppliers were changed, stop rebuilding')
                 reactor.callLater(0, self._finish_rebuilding)  # @UndefinedVariable
                 return
             self.blocksSucceed.append(_blockNumber)
             data_sender.A('new-data')
-            lg.out(10, '        !!!!!! %d NEW DATA segments reconstructed, blockIndex=%d' % (
-                count, self.blockIndex))
+            if _Debug:
+                lg.out(_DebugLevel, '        !!!!!! %d NEW DATA segments reconstructed, blockIndex=%d' % (
+                    count, self.blockIndex, ))
         else:
-            lg.out(10, '        NO CHANGES, blockIndex=%d' % self.blockIndex)
+            if _Debug:
+                lg.out(_DebugLevel, '        NO CHANGES, blockIndex=%d' % self.blockIndex)
         self.blockIndex -= 1
         reactor.callLater(0, self._start_one_block)  # @UndefinedVariable
 
@@ -682,8 +696,9 @@ class BackupRebuilder(automat.Automat):
                 self.workingBlocksQueue.remove(blockNum)
             else:
                 lg.warn('block %d not present in workingBlocksQueue')
-        lg.out(10, 'backup_rebuilder._finish_rebuilding succeed:%s working:%s' % (
-            str(self.blocksSucceed), str(self.workingBlocksQueue)))
+        if _Debug:
+            lg.out(_DebugLevel, 'backup_rebuilder._finish_rebuilding succeed:%s working:%s' % (
+                str(self.blocksSucceed), str(self.workingBlocksQueue)))
         if len(self.blocksSucceed):
             self.backupsWasRebuilt.append(self.currentBackupID)
         self.blocksSucceed = []
@@ -726,6 +741,7 @@ def BlockBackup(backupID):
     _BackupIDsExclude.add(backupID)
     if A():
         if A().currentBackupID == backupID:
+            lg.info('going to stop currently running rebuilding %r' % backupID)
             SetStoppedFlag()
 
 
