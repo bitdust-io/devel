@@ -412,8 +412,8 @@ class ProxySender(automat.Automat):
         from_idurl = id_url.field(fail_info['from'])
         for p in packet_out.search_by_packet_id(fail_info['packet_id']):
             if p.outpacket.Command == fail_info['command']:
-                if p.outpacket.RemoteID == to_idurl:
-                    if p.outpacket.CreatorID == from_idurl or p.outpacket.OwnerID == from_idurl:
+                if id_url.to_bin(to_idurl) == p.outpacket.RemoteID.to_bin():
+                    if p.outpacket.CreatorID.to_bin() == id_url.to_bin(from_idurl) or p.outpacket.OwnerID.to_bin() == id_url.to_bin(from_idurl):
                         lg.warn('about to cancel %r because sending via proxy transport failed' % p)
                         p.automat('cancel')
 

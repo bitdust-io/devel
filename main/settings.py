@@ -310,7 +310,7 @@ def MinimumSendingDelay():
     DO NOT SET TO 0 - the main process will be blocked.
     See ``lib.misc.LoopAttenuation`` method.
     """
-    return 0.01
+    return 0.03
 
 
 def MaximumSendingDelay():
@@ -327,7 +327,7 @@ def MinimumReceivingDelay():
     """
     Lower limit for receiving processes.
     """
-    return 0.05
+    return 0.08
 
 
 def MaximumReceivingDelay():
@@ -352,11 +352,11 @@ def SendingSpeedLimit():
     If sending below this speed - we count this supplier as failed.
     If we sending too slow to all nodes - it's our problems, not suppliers.
     """
-    return 3 * 1024
+    return 30 * 1024
 
 
 def ReceivingSpeedLimit():
-    return 3 * 1024
+    return 30 * 1024
 
 
 def DefaultBandwidthInLimit():
