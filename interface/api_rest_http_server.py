@@ -384,7 +384,6 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @GET('^/v1/config/get$')
     @GET('^/config/get/v1$')
     def config_get_v1(self, request):
-        # cgi.escape(dict({} or request.args).get('key', [''])[0]),)
         return api.config_get(key=_request_arg(request, 'key', mandatory=True))
 
     @POST('^/c/s/(?P<key1>[^/]+)/(?P<key2>[^/]+)/(?P<key3>[^/]+)/$')

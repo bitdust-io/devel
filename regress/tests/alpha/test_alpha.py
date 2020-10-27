@@ -283,21 +283,21 @@ def scenario4():
     run_ssh_command_and_wait('customer-2', f'mkdir /customer_2/cat_mine/', verbose=ssh_cmd_verbose)
     run_ssh_command_and_wait('customer-2', f'mkdir /customer_2/cat_shared/', verbose=ssh_cmd_verbose)
 
-    # first make sure customer-2 able to download own cat.txt file after received access to another cat.txt shared by customer-1
+    # now try to download shared by customer-1 cat.txt file on customer-2 to another local folder
+    kw.verify_file_download_start(
+        node='customer-2',
+        remote_path=customer_1_remote_path_cat,
+        destination_path='/customer_2/cat_shared/cat.txt',
+        reliable_shares=False,
+        expected_reliable=50,
+    )
+
+    # also make sure customer-2 still able to download own cat.txt file after received access to another cat.txt shared by customer-1
     kw.verify_file_download_start(
         node='customer-2',
         remote_path=customer_2_remote_path_cat,
         destination_path='/customer_2/cat_mine/cat.txt',
         verify_from_local_path=customer_2_local_filepath_cat,
-        reliable_shares=False,
-        expected_reliable=50,
-    )
-
-    # now try to download shared by customer-1 cat.txt file on customer-2 to another folder
-    kw.verify_file_download_start(
-        node='customer-2',
-        remote_path=customer_1_remote_path_cat,
-        destination_path='/customer_2/cat_shared/cat.txt',
         reliable_shares=False,
         expected_reliable=50,
     )

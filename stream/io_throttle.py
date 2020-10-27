@@ -265,7 +265,6 @@ def GetRequestQueueLength(supplierIDURL):
 
 #------------------------------------------------------------------------------
 
-
 class SupplierQueue:
 
     def __init__(self, supplierIdentity, creatorID, customerIDURL=None):

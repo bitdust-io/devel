@@ -1051,12 +1051,12 @@ def report_one_node(node):
     num_packet_route_in = packet_log.count('ROUTE IN')
     event_log = run_ssh_command_and_wait(node, 'cat /root/.bitdust/logs/event.log', verbose=False)[0].strip()
     num_events = event_log.count('\n')
-    print(f'[{node:>15}] api:{num_apis:<4} evt:{num_events:<4}'
-          f' out:{num_packet_out:<4} in:{num_packet_in:<4}'
-          f' px-out:{num_packet_relay_out:<4} px-in:{num_packet_relay_in:<4}'
-          f' re-out:{num_packet_route_out:<4} re-in:{num_packet_route_in:<4}'
-          f' inf:{num_infos:<4} wrn:{num_warnings:<4} err:{num_errors:<4}'
-          f' tbk:{num_tracebacks:<3} fail:{num_failures:<3} exc:{num_exceptions:<3}')
+    print(f'[{node:>17}] api:{num_apis:<2} evt:{num_events:<2}'
+          f' out:{num_packet_out:<2} in:{num_packet_in:<2}'
+          f' pxout:{num_packet_relay_out:<2} pxin:{num_packet_relay_in:<2}'
+          f' reout:{num_packet_route_out:<2} rein:{num_packet_route_in:<2}'
+          f' wrn:{num_warnings:<2} err:{num_errors:<2} tbk:{num_tracebacks:<2}'
+          f' fail:{num_failures:<2} exc:{num_exceptions:<2}')
     return num_exceptions
 
 

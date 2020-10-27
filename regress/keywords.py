@@ -286,7 +286,7 @@ def file_create_v1(node, remote_path):
 
 def file_upload_start_v1(customer: str, remote_path: str, local_path: str,
                          open_share=True, wait_result=True,
-                         attempts=10, delay=5,
+                         wait_finish_attempts=20, delay=5,
                          wait_job_finish=True,
                          wait_packets_finish=True,
                          wait_transfers_finish=True,
@@ -305,7 +305,7 @@ def file_upload_start_v1(customer: str, remote_path: str, local_path: str,
         customer, remote_path, local_path, pprint.pformat(response.json()),))
     assert response.json()['status'] == 'OK', response.json()
     if wait_job_finish:
-        for _ in range(attempts):
+        for _ in range(wait_finish_attempts):
             response = request_get(customer, 'file/upload/v1', timeout=20)
             assert response.status_code == 200
             print('file/upload/v1 [%s] : %s\n' % (customer, pprint.pformat(response.json()), ))
@@ -324,9 +324,9 @@ def file_upload_start_v1(customer: str, remote_path: str, local_path: str,
 
 def file_download_start_v1(customer: str, remote_path: str, destination: str,
                            open_share=True, wait_result=True,
-                           attempts=10, delay=5,
+                           download_attempts=1, wait_finish_attempts=20, delay=5,
                            wait_tasks_finish=True):
-    for _ in range(attempts):
+    for _ in range(download_attempts):
         response = request_post(customer, 'file/download/start/v1',
             json={
                 'remote_path': remote_path,
@@ -354,7 +354,7 @@ def file_download_start_v1(customer: str, remote_path: str, destination: str,
     else:
         assert False, 'failed to start downloading uploaded file on [%r]: %r' % (customer, response.json(), )
     if wait_tasks_finish:
-        for _ in range(attempts):
+        for _ in range(wait_finish_attempts):
             response = request_get(customer, 'file/download/v1', timeout=20)
             assert response.status_code == 200
             print('file/download/v1 [%s] : %s\n' % (customer, pprint.pformat(response.json()), ))
