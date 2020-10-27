@@ -237,15 +237,15 @@ class RestoreWorker(automat.Automat):
                 self.doScanExistingPackets(*args, **kwargs)
                 self.doRequestPackets(*args, **kwargs)
                 self.Attempts+=1
-            elif ( event == 'instant' or event == 'request-finished' ) and not self.isBlockReceiving(*args, **kwargs) and self.isBlockFixable(*args, **kwargs):
-                self.state = 'RAID'
-                self.doReadRaid(*args, **kwargs)
             elif ( event == 'abort' or ( event == 'request-failed' and ( not self.isStillCorrectable(*args, **kwargs) or self.Attempts>=3 ) ) ) or ( ( event == 'instant' or event == 'request-finished' ) and not self.isBlockReceiving(*args, **kwargs) and not self.isBlockFixable(*args, **kwargs) ):
                 self.state = 'FAILED'
                 self.doDeleteAllRequests(*args, **kwargs)
                 self.doRemoveTempFile(*args, **kwargs)
                 self.doReportFailed(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
+            elif ( event == 'instant' or event == 'request-finished' ) and self.isBlockFixable(*args, **kwargs):
+                self.state = 'RAID'
+                self.doReadRaid(*args, **kwargs)
         #---RECEIVING---
         elif self.state == 'RECEIVING':
             if event == 'data-receiving-stopped' and self.isStillCorrectable(*args, **kwargs):
@@ -254,15 +254,15 @@ class RestoreWorker(automat.Automat):
                 self.doRequestPackets(*args, **kwargs)
             elif event == 'data-received':
                 self.doSavePacket(*args, **kwargs)
-            elif ( event == 'instant' or event == 'request-finished' ) and not self.isBlockReceiving(*args, **kwargs) and self.isBlockFixable(*args, **kwargs):
-                self.state = 'RAID'
-                self.doReadRaid(*args, **kwargs)
             elif ( event == 'abort' or ( ( event == 'request-failed' or event == 'data-receiving-stopped' ) and not self.isStillCorrectable(*args, **kwargs) ) ) or ( ( event == 'instant' or event == 'request-finished' ) and not self.isBlockReceiving(*args, **kwargs) and not self.isBlockFixable(*args, **kwargs) ):
                 self.state = 'FAILED'
                 self.doDeleteAllRequests(*args, **kwargs)
                 self.doRemoveTempFile(*args, **kwargs)
                 self.doReportFailed(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
+            elif ( event == 'instant' or event == 'request-finished' ) and self.isBlockFixable(*args, **kwargs):
+                self.state = 'RAID'
+                self.doReadRaid(*args, **kwargs)
         #---RAID---
         elif self.state == 'RAID':
             if event == 'raid-done':
