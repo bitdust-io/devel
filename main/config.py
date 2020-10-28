@@ -175,7 +175,7 @@ class BaseConfig(object):
         data = self.getData(entryPath)
         if data is None:
             return default
-        return True if data.strip() == 'true' else False
+        return True if data.strip() in ['true', '1', 'on', ] else False
 
     def setBool(self, entryPath, value):
         return self._set(entryPath, 'true' if value else 'false')
@@ -430,7 +430,7 @@ class FixedTypesConfig(NotifiableConfig):
             return {}
         elif typ == config_types.TYPE_COMBO_BOX:
             if entryPath == 'services/customer/suppliers-number':
-                return {'possible_values': [2, 4, 7, 13, 18, 26, 64, ], }
+                return {'possible_values': ['2', '4', '7', '13', '18', '26', '64', ], }
             else:
                 raise TypeError('unexpected option type for %r' % entryPath)
         return {}
@@ -476,7 +476,7 @@ class FixedTypesConfig(NotifiableConfig):
             self.setData(entryPath, strng.text_type(value))
         elif typ in [config_types.TYPE_BOOLEAN, ]:
             if strng.is_string(value):
-                vl = strng.to_text(value).strip().lower() == 'true'
+                vl = strng.to_text(value).strip().lower() in ['true', '1', 'on', ]
             else:
                 vl = bool(value)
             self.setBool(entryPath, vl)
