@@ -123,6 +123,7 @@ from p2p import online_status
 from p2p import propagate
 
 from stream import data_receiver
+from stream import io_throttle
 
 from raid import raid_worker
 from raid import eccmap
@@ -627,6 +628,7 @@ class RestoreWorker(automat.Automat):
     def _do_block_rebuilding(self):
         from storage import backup_rebuilder
         backup_rebuilder.BlockBackup(self.backup_id)
+        io_throttle.DeleteBackupRequests(self.backup_id)
 
     def _do_unblock_rebuilding(self):
         from storage import backup_rebuilder
