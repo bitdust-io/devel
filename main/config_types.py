@@ -27,7 +27,7 @@
 """
 ..
 
-module:: config_defaults
+module:: config_types
 """
 
 
@@ -89,7 +89,7 @@ def defaults():
         'logs/traffic-enabled': TYPE_BOOLEAN,
         'logs/traffic-port': TYPE_PORT_NUMBER,
 
-        'other/upnp-at-startup': TYPE_BOOLEAN,
+        # 'other/upnp-at-startup': TYPE_BOOLEAN,
 
         'paths/backups': TYPE_FOLDER_PATH,
         'paths/customers': TYPE_FOLDER_PATH,
@@ -97,12 +97,7 @@ def defaults():
         'paths/receipts': TYPE_FOLDER_PATH,
         'paths/restore': TYPE_FOLDER_PATH,
 
-        'personal/betatester': TYPE_BOOLEAN,
-        'personal/email': TYPE_STRING,
-        'personal/name': TYPE_STRING,
-        'personal/nickname': TYPE_STRING,
         'personal/private-key-size': TYPE_STRING,
-        'personal/surname': TYPE_STRING,
 
         'services/accountant/enabled': TYPE_BOOLEAN,
         'services/backup-db/enabled': TYPE_BOOLEAN,

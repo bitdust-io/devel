@@ -162,7 +162,4 @@ class InstallWizard(automat.Automat):
             config.conf().setString('paths/restore', restoredir)
 
     def doSaveContacts(self, *args, **kwargs):
-        config.conf().setData('personal/email', args[0].get('email', '').strip())
-        config.conf().setData('personal/name', args[0].get('name', '').strip())
-        config.conf().setData('personal/surname', args[0].get('surname', '').strip())
-        config.conf().setData('personal/nickname', args[0].get('nickname', '').strip())
+        pass

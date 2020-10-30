@@ -32,42 +32,359 @@ module:: config_details
 
 
 def raw():
+    # in case option does not have any description it will be marked as "internal"
+    # "internal" options should not be displayed in the UI and so must not be available to the user
+    return """
+{interface/api/json-rpc-enabled}
+
+{interface/api/json-rpc-port}
+
+{interface/api/rest-http-enabled}
+
+{interface/api/rest-http-port}
+
+{interface/api/web-socket-enabled}
+
+{interface/api/web-socket-port}
+
+{interface/ftp/enabled}
+
+{interface/ftp/port}
+
+{logs/api-enabled}
+Enable logging of all API calls that reach the main process to the `~/.bitdust/logs/api.log` file.
+
+{logs/automat-events-enabled}
+This option enables logging of all events that are submitted to state machines, see `~/.bitdust/logs/automats.log` file.
+
+{logs/automat-transitions-enabled}
+By enabling this option, you can also monitor the life cycle of each state machine running in the main process, see `~/.bitdust/logs/automats.log` file.
+
+{logs/debug-level}
+Higher values of `debug-level` option will produce more log messages in the console output, see `~/.bitdust/logs/main.log` file.
+
+{logs/packet-enabled}
+This option enables logging of all incoming & outgoing peer-to-peer packets - very helpful when analyzing/debugging network communications, see `~/.bitdust/logs/packet.log` file.
+
+{logs/stream-enabled}
+
+{logs/stream-port}
+
+{logs/traffic-enabled}
+
+{logs/traffic-port}
+
+
+{paths/backups}
+
+{paths/customers}
+
+{paths/messages}
+
+{paths/receipts}
+
+{paths/restore}
+
+
+[personal/private-key-size] RSA private key size
+This value you specified when created your identity file for the first time.
+
+{services/accountant/enabled} enable accountant service
+This service is under development.
+
+{services/backup-db/enabled} enable backup-db service
+The `backup_db()` service is responsible for storing service information about your files stored on the network, such as: name, version, size.
+
+{services/backups/enabled} enable data uploading
+This service enables uploading of personal data to the BitDust network.
+
+{services/backups/block-size} preferred block size
+Large files are also divided by chunks during uploading, that parameter defines preferred block size in bytes
+which is used to split the raw data during uploading.
+
+{services/backups/max-block-size} maximum block size
+Maximum block size in bytes which used to split the raw data during uploading process.
+The actual block size is calculated depending on size of the particular backup to optimize performance and data storage.
+If you plan to do a large file uploads - set higher values to increase the performance.
+    
+{services/backups/keep-local-copies-enabled}
+Enable this to keep a copy of every new backup on your local HDD as well as on remote machines of your suppliers.
+This increases data reliability, rebuilding performance and decrease network load,
+but consumes space on your HDD.
+Every one Mb of source data uploaded will consume two Mb on your local HDD.
+
+
+{services/backups/max-copies}
+
+{services/backups/wait-suppliers-enabled}
+
+{services/blockchain/enabled} enable  service
+
+{services/blockchain/host}
+
+{services/blockchain/port}
+
+{services/blockchain/explorer/enabled}
+
+{services/blockchain/explorer/port}
+
+{services/blockchain/wallet/enabled}
+
+{services/blockchain/wallet/port}
+
+{services/blockchain/miner/enabled}
+
+{services/broadcasting/enabled} enable  service
+
+{services/broadcasting/routing-enabled}
+
+{services/broadcasting/max-broadcast-connections}
+
+{services/contract-chain/enabled}
+
+{services/customer/enabled} store encrypted data on other nodes
+
+{services/customer/needed-space}
+
+{services/customer/suppliers-number}
+
+{services/customer-contracts/enabled} enable  service
+
+{services/customer-family/enabled} enable  service
+
+{services/customer-patrol/enabled} enable  service
+
+{services/customer-support/enabled} enable  service
+
+{services/data-disintegration/enabled} enable  service
+
+{services/data-motion/enabled} enable  service
+
+{services/data-motion/supplier-request-queue-size}
+
+{services/data-motion/supplier-sending-queue-size}
+
+{services/entangled-dht/enabled} enable  service
+
+{services/entangled-dht/udp-port}
+
+{services/entangled-dht/known-nodes}
+
+{services/entangled-dht/attached-layers}
+
+{services/employer/enabled} enable  service
+
+{services/employer/replace-critically-offline-enabled}
+
+{services/employer/candidates}
+
+{services/gateway/enabled} enable  service
+
+{services/http-connections/enabled} enable  service
+
+{services/http-connections/http-port}
+
+{services/http-transport/enabled} enable  service
+
+{services/http-transport/receiving-enabled}
+
+{services/http-transport/sending-enabled}
+
+{services/http-transport/priority}
+
+{services/identity-server/enabled} start Identity server
+You can start own Identity server and store identity files of other users on your machine.
+This will help others to join and operate in the BitDust network.
+
+{services/identity-server/host} your server host name
+Each ID server must have a unique address within the network, set your external IP address or domain name here.
+
+{services/identity-server/tcp-port}
+
+{services/identity-server/web-port}
+
+{services/identity-propagate/enabled} enable  service
+
+{services/identity-propagate/known-servers}
+
+{services/identity-propagate/preferred-servers}
+
+{services/identity-propagate/min-servers}
+
+{services/identity-propagate/max-servers}
+
+{services/identity-propagate/automatic-rotate-enabled}
+
+{services/identity-propagate/health-check-interval-seconds}
+
+{services/identity-server/enabled} enable  service
+
+{services/ip-port-responder/enabled} enable  service
+
+{services/keys-registry/enabled} enable  service
+
+{services/keys-storage/enabled} keys synchronization with my suppliers
+
+{services/list-files/enabled} exchange service data with suppliers
+
+{services/message-broker/enabled} help others to stream encrypted messages
+
+{services/message-broker/archive-chunk-size}
+
+{services/message-history/enabled} maintain message history
+
+{services/miner/enabled} enable blockchain mining
+
+{services/my-data/enabled} enable files index synchronization
+
+{services/my-ip-port/enabled} detect my external IP via other nodes
+
+{services/network/enabled} network services are enabled
+
+{services/network/proxy/enabled}
+
+{services/network/proxy/host}
+
+{services/network/proxy/password}
+
+{services/network/proxy/port}
+
+{services/network/proxy/ssl}
+
+{services/network/proxy/username}
+
+{services/network/receive-limit}
+
+{services/network/send-limit}
+
+{services/nodes-lookup/enabled} enable network lookup service
+
+{services/p2p-hookups/enabled} enable peer-to-peer communications
+
+{services/p2p-notifications/enabled} enable peer-to-peer events delivery
+
+{services/personal-messages/enabled} streamed personal notifications
+
+{services/private-groups/enabled} encrypted group messaging
+
+{services/private-groups/message-ack-timeout}
+
+{services/private-groups/preferred-brokers}
+
+{services/private-messages/enabled} encrypted peer-to-peer messaging
+
+{services/private-messages/acknowledge-unread-messages-enabled}
+
+{services/proxy-server/enabled} help others transmit encrypted traffic
+
+{services/proxy-server/routes-limit}
+
+{services/proxy-server/current-routes}
+
+{services/proxy-transport/enabled} route my in/out traffic via extra node
+
+{services/proxy-transport/sending-enabled}
+
+{services/proxy-transport/receiving-enabled}
+
+{services/proxy-transport/priority}
+
+{services/proxy-transport/my-original-identity}
+
+{services/proxy-transport/current-router}
+
+{services/proxy-transport/preferred-routers}
+
+{services/proxy-transport/router-lifetime-seconds}
+
+{services/rebuilding/enabled} automatic data rebuilding
+
+{services/rebuilding/child-processes-enabled}
+
+{services/restores/enabled} enable data downloading
+
+{services/shared-data/enabled} enable data sharing
+
+{services/supplier/donated-space}
+
+{services/supplier/enabled} donate own disk space to people
+
+{services/supplier-contracts/enabled}
+
+{services/tcp-connections/enabled}
+
+{services/tcp-connections/tcp-port}
+
+{services/tcp-connections/upnp-enabled}
+
+{services/tcp-transport/enabled} use TCP as a transport protocol
+Your BitDust node must have at least one active and reliable transport protocol to be able
+to connect to other nodes via Internet.
+
+{services/tcp-transport/receiving-enabled}
+
+{services/tcp-transport/sending-enabled}
+
+{services/tcp-transport/priority}
+
+{services/udp-datagrams/enabled} enable UDP
+
+{services/udp-datagrams/udp-port}
+
+{services/udp-transport/enabled} use UDP as a transport protocol
+Your BitDust node must have at least one active and reliable transport protocol to be able
+to connect to other nodes via Internet.
+
+{services/udp-transport/receiving-enabled}
+
+{services/udp-transport/sending-enabled}
+
+{services/udp-transport/priority}
+
+"""
+
+
+def raw2():
     return """
 {logs} logs
-    Program logs settings.
 {logs/debug-level} debug level
-    Higher values will produce more log messages.
 {logs/memdebug-enabled} enable memory debugger
     Enabled this and go to http://127.0.0.1:[memdebug port number] to watch memory usage.
     Requires "cherrypy" and "dowser" python packages to be installed inside ~/.bitdust/venv/.
+
 {logs/memprofile-enabled} enable memory profiler
     Use "guppy" package to profile memory usage.
+
 {logs/stream-enabled} enable web logs
     Enabled this and go to http://127.0.0.1:[logs port number] to browse the program log.
     Need to restart the program.
 
 {personal} personal information
     Your personal information.
-{personal/betatester} betatester
-    Are you agree to participate in the BitDust project testing?
-    We are going to provide some bonuses to people who help us at this stage, to be decided later.
+
 {personal/name} name
     Set your name if you wish.
+
 {personal/surname} surname
     Set your family name if you wish.
+
 {personal/nickname} nickname
     Set your nickname to private messaging.
     If you leave this blank your identity address will be used to form a nickname.
 
 {paths/backups} local backups location
     Place for your local backups files.
+
 {paths/customers} donated space location
     Place for your donated space.
     All encrypted files, uploaded by other users, will kept here.
+
 {paths/messages} messages location
     Folder to store your private messages.
+
 {paths/receipts} receipts location
     Folder to store financial receipts.
+
 {paths/restore} restored files location
     Location where your restored files should be placed by default.
 
@@ -76,15 +393,17 @@ def raw():
 
 {services/backup-db} backup database
     Backup database settings.
+
 {services/backup-db/enabled} enable backups
     Enable service "backup-db".
 
 {services/backups} backups settings
-    Backups setting.
+
 {services/backups/enabled} enable backups
-    Enable service "Backups".
+
 {services/backups/block-size} preferred block size
     Preferred block size in bytes which used to split the raw data during backup.
+
 {services/backups/max-block-size} maximum block size
     Maximum block size in bytes which used to split the raw data during backup.
     The actual block size is calculated depending on size of the particular backup to optimize performance and data storage.

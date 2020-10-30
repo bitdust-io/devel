@@ -75,11 +75,6 @@ def reset(conf_obj):
     conf_obj.setDefaultValue('paths/restore', '')
 
     conf_obj.setDefaultValue('personal/private-key-size', settings.DefaultPrivateKeySize())
-    conf_obj.setDefaultValue('personal/betatester', 'false')
-    conf_obj.setDefaultValue('personal/email', '')
-    conf_obj.setDefaultValue('personal/name', '')
-    conf_obj.setDefaultValue('personal/nickname', '')
-    conf_obj.setDefaultValue('personal/surname', '')
 
     conf_obj.setDefaultValue('services/accountant/enabled', 'false')
 
