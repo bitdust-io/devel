@@ -447,7 +447,7 @@ class SharedAccessCoordinator(automat.Automat):
                 if pkt_out.outpacket.Command == commands.ListFiles():
                     lg.warn('sending "cancel" to %r from %r' % (pkt_out, self, ))
                     pkt_out.automat('cancel')
-        events.send('share-connected', dict(self.to_json()))
+        events.send('share-connected', data=dict(self.to_json()))
         if self.result_defer:
             self.result_defer.callback(True)
         for cb_id in list(self.connected_callbacks.keys()):
@@ -466,7 +466,7 @@ class SharedAccessCoordinator(automat.Automat):
                 if pkt_out.outpacket.Command == commands.ListFiles():
                     lg.warn('sending "cancel" to %r from %r' % (pkt_out, self, ))
                     pkt_out.automat('cancel')
-        events.send('share-disconnected', dict(self.to_json()))
+        events.send('share-disconnected', data=dict(self.to_json()))
         if self.result_defer:
             self.result_defer.errback(Exception('disconnected'))
         for cb_id in list(self.connected_callbacks.keys()):

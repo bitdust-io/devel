@@ -33,7 +33,6 @@ module:: config
 #------------------------------------------------------------------------------
 
 from __future__ import absolute_import
-from __future__ import print_function
 from io import open
 
 #------------------------------------------------------------------------------
@@ -498,6 +497,7 @@ class FixedTypesConfig(NotifiableConfig):
 
 
 class CachedConfig(FixedTypesConfig):
+
     _cache = {}
 
     def _set(self, entryPath, data):
@@ -534,7 +534,9 @@ class CachedConfig(FixedTypesConfig):
 
 
 class DetailedConfig(CachedConfig):
+
     _labels = {}
+    _read_only = {}
     _infos = {}
 
     def __init__(self, configDir):
@@ -552,7 +554,11 @@ class DetailedConfig(CachedConfig):
         for line in src.splitlines():
             if not line.strip():
                 continue
-            r = re.match('^{(.+?)}(.+?)$', line)
+            ro = re.match('^\[(.+?)\](.*?)$', line)
+            if ro:
+                self._read_only[ro.group(1).strip()] = True
+                line = line.replace('[', '{').replace(']', '}')
+            r = re.match('^\{(.+?)\}(.*?)$', line)
             if r:
                 current_option = r.group(1).strip()
                 self._labels[current_option] = r.group(2).strip()
@@ -563,10 +569,13 @@ class DetailedConfig(CachedConfig):
                     self._infos[current_option] += line.strip() + '\n'
 
     def getLabel(self, entryPath):
-        return self._labels.get(entryPath, '')
+        return self._labels.get(entryPath, '') or entryPath.split('/')[-1]
 
     def getInfo(self, entryPath):
-        return self._infos.get(entryPath, '')
+        return (self._infos.get(entryPath, '') or '').strip(' \n\t')
+
+    def getReadOnly(self, entryPath):
+        return self._read_only.get(entryPath)
 
     def toJson(self, entryPath):
         result = {
@@ -575,6 +584,7 @@ class DetailedConfig(CachedConfig):
             'type': self.getTypeLabel(entryPath),
             'label': self.getLabel(entryPath),
             'info': self.getInfo(entryPath),
+            'readonly': self.getReadOnly(entryPath),
             'default': self.getDefaultValue(entryPath),
         }
         result.update(self.getTypeMetaInfo(entryPath))

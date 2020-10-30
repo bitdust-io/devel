@@ -68,6 +68,7 @@ from logs import lg
 from system import bpio
 
 from main import config
+from main import events
 
 #------------------------------------------------------------------------------
 
@@ -612,6 +613,7 @@ def on_service_callback(result, service_name):
     if result == 'started':
         if _Debug:
             lg.out(_DebugLevel, '[%s] STARTED' % service_name)
+        events.send('service-started', data=dict(name=service_name))
         relative_services = []
         for other_name in services().keys():
             if other_name == service_name:
@@ -634,6 +636,7 @@ def on_service_callback(result, service_name):
     elif result == 'stopped':
         if _Debug:
             lg.out(_DebugLevel, '[%s] STOPPED' % service_name)
+        events.send('service-stopped', data=dict(name=service_name))
         for depend_name in svc.dependent_on():
             depend_service = services().get(depend_name, None)
             if not depend_service:

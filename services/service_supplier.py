@@ -217,10 +217,10 @@ class SupplierService(LocalService):
             reactor.callLater(0, local_tester.TestUpdateCustomers)  # @UndefinedVariable
             if new_customer:
                 lg.info("NEW CUSTOMER: DENIED     not enough space available")
-                events.send('new-customer-denied', dict(idurl=customer_idurl))
+                events.send('new-customer-denied', data=dict(idurl=customer_idurl))
             else:
                 lg.info("OLD CUSTOMER: DENIED     not enough space available")
-                events.send('existing-customer-denied', dict(idurl=customer_idurl))
+                events.send('existing-customer-denied', data=dict(idurl=customer_idurl))
             return p2p_service.SendAck(newpacket, 'deny')
         free_bytes = free_bytes - bytes_for_customer
         current_customers.append(customer_idurl)
@@ -238,7 +238,7 @@ class SupplierService(LocalService):
         if new_customer:
             lg.info("NEW CUSTOMER: ACCEPTED   %s family_position=%s ecc_map=%s allocated_bytes=%s" % (
                 customer_idurl, family_position, ecc_map, bytes_for_customer))
-            events.send('new-customer-accepted', dict(
+            events.send('new-customer-accepted', data=dict(
                 idurl=customer_idurl,
                 allocated_bytes=bytes_for_customer,
                 ecc_map=ecc_map,
@@ -249,7 +249,7 @@ class SupplierService(LocalService):
         else:
             lg.info("OLD CUSTOMER: ACCEPTED  %s family_position=%s ecc_map=%s allocated_bytes=%s" % (
                 customer_idurl, family_position, ecc_map, bytes_for_customer))
-            events.send('existing-customer-accepted', dict(
+            events.send('existing-customer-accepted', data=dict(
                 idurl=customer_idurl,
                 allocated_bytes=bytes_for_customer,
                 ecc_map=ecc_map,
@@ -303,7 +303,7 @@ class SupplierService(LocalService):
         from supplier import local_tester
         reactor.callLater(0, local_tester.TestUpdateCustomers)  # @UndefinedVariable
         lg.info("OLD CUSTOMER TERMINATED %r" % customer_idurl)
-        events.send('existing-customer-terminated', dict(idurl=customer_idurl, ecc_map=customer_ecc_map))
+        events.send('existing-customer-terminated', data=dict(idurl=customer_idurl, ecc_map=customer_ecc_map))
         return p2p_service.SendAck(newpacket, 'accepted')
 
     def _do_connect_suppliers_dht_layer(self):

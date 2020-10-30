@@ -428,8 +428,14 @@ def config_get(key):
         return ERROR('option "%s" not exist' % key)
     if not config.conf().hasChilds(key):
         return RESULT([config.conf().toJson(key), ], )
+    known_childs = sorted(config.conf().listEntries(key))
+    if key.startswith('services/') and key.count('/') == 1:
+        svc_enabled_key = key + '/enabled'
+        if svc_enabled_key in known_childs:
+            known_childs.remove(svc_enabled_key)
+            known_childs.insert(0, svc_enabled_key)
     childs = []
-    for child in config.conf().listEntries(key):
+    for child in known_childs:
         if config.conf().hasChilds(child):
             childs.append({
                 'key': child,
@@ -3600,7 +3606,7 @@ def customer_reject(customer_id):
     accounting.write_customers_quotas(space_dict, new_free_space)
     contactsdb.update_customers(current_customers)
     contactsdb.save_customers()
-    events.send('existing-customer-terminated', dict(
+    events.send('existing-customer-terminated', data=dict(
         idurl=customer_idurl,
         ecc_map=eccmap.Current().name,
     ))

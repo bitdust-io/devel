@@ -194,7 +194,7 @@ class GroupAccessDonor(automat.Automat):
         Action method.
         """
         lg.info('share group key [%s] with %r finished with success' % (self.group_key_id, self.remote_idurl, ))
-        events.send('group-key-shared', dict(
+        events.send('group-key-shared', data=dict(
             global_id=global_id.UrlToGlobalID(self.remote_idurl),
             remote_idurl=self.remote_idurl,
             group_key_id=self.group_key_id,
@@ -210,7 +210,7 @@ class GroupAccessDonor(automat.Automat):
         reason = 'share group key failed with unknown reason'
         if args and args[0]:
             reason = args[0]
-        events.send('group-key-share-failed', dict(
+        events.send('group-key-share-failed', data=dict(
             global_id=global_id.UrlToGlobalID(self.remote_idurl),
             remote_idurl=self.remote_idurl,
             group_key_id=self.group_key_id,

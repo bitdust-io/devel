@@ -114,7 +114,7 @@ def extract_done(retcode, backupID, source_filename, output_location, callback_m
             callback_method(backupID, 'restore done')
         except:
             lg.exc()
-    events.send('restore-done', dict(
+    events.send('restore-done', data=dict(
         backup_id=backupID,
         output_location=output_location,
     ))
@@ -134,7 +134,7 @@ def extract_failed(err, backupID, source_filename, output_location, callback_met
             callback_method(backupID, 'extract failed')
         except:
             lg.exc()
-    events.send('restore-failed', dict(
+    events.send('restore-failed', data=dict(
         backup_id=backupID,
         output_location=output_location,
         reason='extracting file failed',

@@ -66,17 +66,12 @@ class GatewayService(LocalService):
         from transport import gateway
         from transport import callback
         from transport import bandwidth
-        from services import driver
-        from userid import my_id 
         packet_out.init()
         packet_in.init()
         gateway.init()
         bandwidth.init()
         callback.insert_inbox_callback(0, bandwidth.INfile)
         callback.add_finish_file_sending_callback(bandwidth.OUTfile)
-#         if driver.is_on('service_entangled_dht'):
-#             from dht import dht_service
-#             dht_service.set_node_data('idurl', my_id.getLocalID().to_text())
         return True
 
     def stop(self):

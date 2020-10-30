@@ -209,7 +209,7 @@ class CustomersRejector(automat.Automat):
         space_dict, free_space, spent_bytes, current_customers, removed_customers = args[0]
         for customer_idurl in removed_customers:
             p2p_service.SendFailNoRequest(customer_idurl, packetid.UniqueID(), 'service rejected')
-            events.send('existing-customer-terminated', dict(
+            events.send('existing-customer-terminated', data=dict(
                 idurl=customer_idurl,
                 ecc_map=eccmap.Current().name,
             ))

@@ -117,11 +117,11 @@ def sync_callback(result):
     lg.out(6, 'git_proc.sync_callback: %s' % result)
 
     if result == 'code-fetched':
-        events.send('source-code-fetched')
+        events.send('source-code-fetched', data=dict())
     elif result == 'up-to-date':
-        events.send('source-code-up-to-date')
+        events.send('source-code-up-to-date', data=dict())
     else:
-        events.send('source-code-update-error', dict(result=result))
+        events.send('source-code-update-error', data=dict(result=result))
 
     try:
         from system import tray_icon

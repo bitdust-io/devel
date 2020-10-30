@@ -193,7 +193,7 @@ class RestoreWorker(automat.Automat):
             publish_events=publish_events,
             **kwargs
         )
-        events.send('restore-started', dict(backup_id=self.backup_id))
+        events.send('restore-started', data=dict(backup_id=self.backup_id))
 
     def set_packet_in_callback(self, cb):
         self.packetInCallback = cb
@@ -586,7 +586,7 @@ class RestoreWorker(automat.Automat):
             lg.out(_DebugLevel, 'restore_worker.doReportDone')
         self.done_flag = True
         self.MyDeferred.callback('done')
-        # events.send('restore-done', dict(backup_id=self.backup_id))
+        # events.send('restore-done', data=dict(backup_id=self.backup_id))
 
     def doReportFailed(self, *args, **kwargs):
         """
@@ -600,7 +600,7 @@ class RestoreWorker(automat.Automat):
             lg.out(_DebugLevel, 'restore_worker.doReportFailed : %s' % reason)
         self.done_flag = True
         self.MyDeferred.callback(reason)
-        events.send('restore-failed', dict(
+        events.send('restore-failed', data=dict(
             backup_id=self.backup_id,
             block_number=self.block_number,
             args=args,
