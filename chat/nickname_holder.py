@@ -218,8 +218,7 @@ class NicknameHolder(automat.Automat):
         """
         Action method.
         """
-        self.nickname = args[0] if (args and args[0]) else (settings.getNickName() or my_id.getLocalIdentity().getIDName())
-        settings.setNickName(self.nickname)
+        self.nickname = my_id.getLocalIdentity().getIDName()
 
     def doMakeKey(self, *args, **kwargs):
         """

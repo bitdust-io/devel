@@ -306,7 +306,7 @@ class backup(automat.Automat):
         """
         Action method.
         """
-        events.send('backup-started', dict(backup_id=self.backupID))
+        events.send('backup-started', data=dict(backup_id=self.backupID))
 
     def doRead(self, *args, **kwargs):
         """
@@ -483,12 +483,12 @@ class backup(automat.Automat):
             if self.finishCallback:
                 self.finishCallback(self.backupID, 'abort')
             self.resultDefer.callback('abort')
-            events.send('backup-aborted', dict(backup_id=self.backupID, source_path=self.sourcePath))
+            events.send('backup-aborted', data=dict(backup_id=self.backupID, source_path=self.sourcePath))
         else:
             if self.finishCallback:
                 self.finishCallback(self.backupID, 'done')
             self.resultDefer.callback('done')
-            events.send('backup-done', dict(backup_id=self.backupID, source_path=self.sourcePath))
+            events.send('backup-done', data=dict(backup_id=self.backupID, source_path=self.sourcePath))
 
     def doDestroyMe(self, *args, **kwargs):
         """
@@ -541,7 +541,7 @@ class backup(automat.Automat):
             if _Debug:
                 lg.out(_DebugLevel, 'backup._raidmakeCallback WARNING - result is None :  %r eof=%s dt=%s' % (
                     blockNumber, str(self.stateEOF), str(time.time() - dt)))
-            events.send('backup-raidmake-failed', dict(backup_id=self.backupID))
+            events.send('backup-raidmake-failed', data=dict(backup_id=self.backupID))
             self.ask4abort = True
             self._kill_pipe()
         else:

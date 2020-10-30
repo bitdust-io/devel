@@ -355,7 +355,7 @@ class Automat(object):
     def _on_state_change(self, oldstate, newstate, event_string, *args, **kwargs):
         from main import events
         if oldstate != newstate:
-            events.send('%s-state-changed' % self.name.replace('_', '-'), dict(
+            events.send('%s-state-changed' % self.name.replace('_', '-'), data=dict(
                 newstate=newstate,
                 oldstate=oldstate,
                 event=event_string,

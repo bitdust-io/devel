@@ -106,7 +106,7 @@ which is used to split the raw data during uploading.
 Maximum block size in bytes which used to split the raw data during uploading process.
 The actual block size is calculated depending on size of the particular backup to optimize performance and data storage.
 If you plan to do a large file uploads - set higher values to increase the performance.
-    
+
 {services/backups/keep-local-copies-enabled}
 Enable this to keep a copy of every new backup on your local HDD as well as on remote machines of your suppliers.
 This increases data reliability, rebuilding performance and decrease network load,

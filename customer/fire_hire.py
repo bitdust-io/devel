@@ -708,7 +708,7 @@ class FireHire(automat.Automat):
         if family_position < 0:
             lg.info('added new supplier, family position unknown: %s desired_suppliers=%d current_suppliers=%d' % (
                 new_idurl, desired_suppliers, len(contactsdb.suppliers())))
-            events.send('supplier-modified', dict(
+            events.send('supplier-modified', data=dict(
                 new_idurl=new_idurl,
                 old_idurl=None,
                 position=family_position,
@@ -719,7 +719,7 @@ class FireHire(automat.Automat):
             if old_idurl:
                 lg.info('hired new supplier and substitute existing supplier on position %d : %s->%s desired_suppliers=%d current_suppliers=%d' % (
                     family_position, old_idurl, new_idurl, desired_suppliers, len(contactsdb.suppliers())))
-                events.send('supplier-modified', dict(
+                events.send('supplier-modified', data=dict(
                     new_idurl=new_idurl,
                     old_idurl=old_idurl,
                     position=family_position,
@@ -729,7 +729,7 @@ class FireHire(automat.Automat):
             else:
                 lg.info('hired new supplier on empty position %d : %s desired_suppliers=%d current_suppliers=%d' % (
                     family_position, new_idurl, desired_suppliers, len(contactsdb.suppliers())))
-                events.send('supplier-modified', dict(
+                events.send('supplier-modified', data=dict(
                     new_idurl=new_idurl,
                     old_idurl=None,
                     position=family_position,
@@ -769,7 +769,7 @@ class FireHire(automat.Automat):
         from main import control
         control.on_suppliers_changed(current_suppliers)
         for position, supplier_idurl in removed_suppliers:
-            events.send('supplier-modified', dict(
+            events.send('supplier-modified', data=dict(
                 new_idurl=None, old_idurl=supplier_idurl, position=position,
             ))
         lg.info('removed some suppliers : %d  desired_suppliers=%d current_suppliers=%d' % (

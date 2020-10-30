@@ -3600,7 +3600,7 @@ def customer_reject(customer_id):
     accounting.write_customers_quotas(space_dict, new_free_space)
     contactsdb.update_customers(current_customers)
     contactsdb.save_customers()
-    events.send('existing-customer-terminated', dict(
+    events.send('existing-customer-terminated', data=dict(
         idurl=customer_idurl,
         ecc_map=eccmap.Current().name,
     ))

@@ -804,7 +804,7 @@ def on_files_received(newpacket, info):
             backup_control.Save()
             lg.info('imported %d shared files from %s, key_id=%s' % (
                 count, trusted_customer_idurl, incoming_key_id, ))
-        events.send('shared-list-files-received', dict(
+        events.send('shared-list-files-received', data=dict(
             customer_idurl=trusted_customer_idurl,
             new_items=count,
         ))

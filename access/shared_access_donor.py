@@ -349,7 +349,7 @@ class SharedAccessDonor(automat.Automat):
         Action method.
         """
         lg.info('share key [%s] with %r finished with success' % (self.key_id, self.remote_idurl, ))
-        events.send('private-key-shared', dict(
+        events.send('private-key-shared', data=dict(
             global_id=global_id.UrlToGlobalID(self.remote_idurl),
             remote_idurl=self.remote_idurl,
             key_id=self.key_id,
@@ -374,7 +374,7 @@ class SharedAccessDonor(automat.Automat):
                 else:
                     if self.suppliers_responses:
                         reason = 'connection timeout with my suppliers'
-        events.send('private-key-share-failed', dict(
+        events.send('private-key-share-failed', data=dict(
             global_id=global_id.UrlToGlobalID(self.remote_idurl),
             remote_idurl=self.remote_idurl,
             key_id=self.key_id,
