@@ -497,6 +497,7 @@ class FixedTypesConfig(NotifiableConfig):
 
 
 class CachedConfig(FixedTypesConfig):
+
     _cache = {}
 
     def _set(self, entryPath, data):
@@ -533,6 +534,7 @@ class CachedConfig(FixedTypesConfig):
 
 
 class DetailedConfig(CachedConfig):
+
     _labels = {}
     _read_only = {}
     _infos = {}
