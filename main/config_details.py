@@ -51,19 +51,19 @@ def raw():
 
 {interface/ftp/port}
 
-{logs/api-enabled}
+{logs/api-enabled} log API calls
 Enable logging of all API calls that reach the main process to the `~/.bitdust/logs/api.log` file.
 
-{logs/automat-events-enabled}
+{logs/automat-events-enabled} log state machines events
 This option enables logging of all events that are submitted to state machines, see `~/.bitdust/logs/automats.log` file.
 
-{logs/automat-transitions-enabled}
+{logs/automat-transitions-enabled} log state machines transitions
 By enabling this option, you can also monitor the life cycle of each state machine running in the main process, see `~/.bitdust/logs/automats.log` file.
 
-{logs/debug-level}
+{logs/debug-level} debug level
 Higher values of `debug-level` option will produce more log messages in the console output, see `~/.bitdust/logs/main.log` file.
 
-{logs/packet-enabled}
+{logs/packet-enabled} log network packets
 This option enables logging of all incoming & outgoing peer-to-peer packets - very helpful when analyzing/debugging network communications, see `~/.bitdust/logs/packet.log` file.
 
 {logs/stream-enabled}
@@ -90,13 +90,13 @@ This option enables logging of all incoming & outgoing peer-to-peer packets - ve
 This value you specified when created your identity file for the first time.
 
 {services/accountant/enabled} enable accountant service
-This service is under development.
+The service is under development.
 
 {services/backup-db/enabled} enable backup-db service
 The `backup_db()` service is responsible for storing service information about your files stored on the network, such as: name, version, size.
 
 {services/backups/enabled} enable data uploading
-This service enables uploading of personal data to the BitDust network.
+This service enables uploading of encrypted personal data to the BitDust network.
 
 {services/backups/block-size} preferred block size
 Large files are also divided by chunks during uploading, that parameter defines preferred block size in bytes
@@ -107,18 +107,22 @@ Maximum block size in bytes which used to split the raw data during uploading pr
 The actual block size is calculated depending on size of the particular backup to optimize performance and data storage.
 If you plan to do a large file uploads - set higher values to increase the performance.
 
-{services/backups/keep-local-copies-enabled}
-Enable this to keep a copy of every new backup on your local HDD as well as on remote machines of your suppliers.
-This increases data reliability, rebuilding performance and decrease network load,
-but consumes space on your HDD.
-Every one Mb of source data uploaded will consume two Mb on your local HDD.
+{services/backups/keep-local-copies-enabled} keep locally copies of uploaded files
+Enable this to keep a copy of every uploaded file on your local disk as well as on remote machines of your suppliers.
+This increases data reliability, rebuilding performance and decrease network load, but consumes much storage space of your own device.
 
+{services/backups/max-copies} number of copies
+When you upload same file multiple times data is not overwritten - another version is created instead.
+This value indicates how many versions of same uploaded file must be stored on remote suppliers.
+The oldest copies are removed automatically. A value of `0` indicates unlimited number of versions.
 
-{services/backups/max-copies}
+{services/backups/wait-suppliers-enabled} extra check after 24 hours
+When critical amount of your suppliers become unreliable - your uploaded data is lost completely.
+Enable this option to wait for 24 hours after any file upload and perform an extra check of all suppliers before cleaning up the local copy.
+This is a compromise solution that does not sacrifice reliability but also decrease local storage consumption.
 
-{services/backups/wait-suppliers-enabled}
-
-{services/blockchain/enabled} enable  service
+{services/blockchain/enabled} enable blockchain
+The service is under development.
 
 {services/blockchain/host}
 
@@ -134,57 +138,70 @@ Every one Mb of source data uploaded will consume two Mb on your local HDD.
 
 {services/blockchain/miner/enabled}
 
-{services/broadcasting/enabled} enable  service
+{services/broadcasting/enabled} send & receive encrypted broadcast messages
+The service is under development.
 
 {services/broadcasting/routing-enabled}
 
 {services/broadcasting/max-broadcast-connections}
 
-{services/contract-chain/enabled}
+{services/contract-chain/enabled} accounting of spent & donated resources
+The service is under development.
 
 {services/customer/enabled} store encrypted data on other nodes
+To be able to upload files to the BitDust network other nodes, called suppliers, must be already connected and allocate storage space for you.
+The `customer()` service is responsible for maintaining real-time connections with all of your suppliers and requesting storage space.
 
-{services/customer/needed-space}
+{services/customer/needed-space} needed space
+How much storage space do you require to store your uploaded files?
 
-{services/customer/suppliers-number}
+{services/customer/suppliers-number} number of suppliers
+Number of suppliers who stores your encrypted files. You may select one of the following values: 2, 4, 7, 13, 18, 26, 64.
+**WARNING!** You will lose all of your uploaded files when changing preferred number of suppliers.
 
-{services/customer-contracts/enabled} enable  service
+{services/customer-contracts/enabled} digitally signed customer contracts
+The service is under development.
 
-{services/customer-family/enabled} enable  service
+{services/customer-family/enabled} maintain service info for my customers
 
-{services/customer-patrol/enabled} enable  service
 
-{services/customer-support/enabled} enable  service
+{services/customer-patrol/enabled} reject customers who are out of quota
 
-{services/data-disintegration/enabled} enable  service
+{services/customer-support/enabled} monitor and re-connect with my customers
 
-{services/data-motion/enabled} enable  service
+{services/data-disintegration/enabled} enable RAID & ECC data processing
+
+{services/data-motion/enabled} enable streaming of encrypted data
 
 {services/data-motion/supplier-request-queue-size}
 
 {services/data-motion/supplier-sending-queue-size}
 
-{services/entangled-dht/enabled} enable  service
+{services/entangled-dht/enabled} distributed hash-table node
 
 {services/entangled-dht/udp-port}
+Set a UDP port number to be used for distributed hash-table communications.
 
 {services/entangled-dht/known-nodes}
 
 {services/entangled-dht/attached-layers}
 
-{services/employer/enabled} enable  service
+{services/employer/enabled} search & connect with available suppliers
 
 {services/employer/replace-critically-offline-enabled}
 
 {services/employer/candidates}
 
-{services/gateway/enabled} enable  service
+{services/gateway/enabled} send & receive encrypted peer-to-peer packets
 
-{services/http-connections/enabled} enable  service
+{services/http-connections/enabled} HTTP enabled
 
 {services/http-connections/http-port}
 
-{services/http-transport/enabled} enable  service
+{services/http-transport/enabled} use HTTP as a transport protocol
+Your BitDust node must have at least one active and reliable transport protocol to be able
+to connect to other nodes via Internet.
+The service is under development.
 
 {services/http-transport/receiving-enabled}
 
@@ -192,18 +209,7 @@ Every one Mb of source data uploaded will consume two Mb on your local HDD.
 
 {services/http-transport/priority}
 
-{services/identity-server/enabled} start Identity server
-You can start own Identity server and store identity files of other users on your machine.
-This will help others to join and operate in the BitDust network.
-
-{services/identity-server/host} your server host name
-Each ID server must have a unique address within the network, set your external IP address or domain name here.
-
-{services/identity-server/tcp-port}
-
-{services/identity-server/web-port}
-
-{services/identity-propagate/enabled} enable  service
+{services/identity-propagate/enabled} enables signed identity files exchange
 
 {services/identity-propagate/known-servers}
 
@@ -217,11 +223,23 @@ Each ID server must have a unique address within the network, set your external 
 
 {services/identity-propagate/health-check-interval-seconds}
 
-{services/identity-server/enabled} enable  service
+{services/identity-server/enabled} start Identity server
+You can start own Identity server and store identity files of other users on your machine.
+This will help others to join and operate in the BitDust network.
 
-{services/ip-port-responder/enabled} enable  service
+{services/identity-server/host} your server host name
+Each ID server must have a unique address within the network, set your external IP address or domain name here.
 
-{services/keys-registry/enabled} enable  service
+{services/identity-server/tcp-port}
+TCP protocol is used for receiving identity files from other nodes and that option defines port number to listen for incoming connections.
+
+{services/identity-server/web-port}
+Port number for Identity server HTTP interface.
+This is used when other nodes are "reading" identity files from your Identity server.
+
+{services/ip-port-responder/enabled} reply to STUN requests from other nodes
+
+{services/keys-registry/enabled} enables keys management
 
 {services/keys-storage/enabled} keys synchronization with my suppliers
 
@@ -234,6 +252,7 @@ Each ID server must have a unique address within the network, set your external 
 {services/message-history/enabled} maintain message history
 
 {services/miner/enabled} enable blockchain mining
+The service is under development.
 
 {services/my-data/enabled} enable files index synchronization
 
@@ -254,8 +273,12 @@ Each ID server must have a unique address within the network, set your external 
 {services/network/proxy/username}
 
 {services/network/receive-limit}
+The value in bytes per second to limit incoming network traffic.
+Set value to `0` if you do not want to use incoming limit.
 
 {services/network/send-limit}
+The value in bytes per second to limit outgoing network traffic.
+Set value to `0` if you do not want to use outgoing limit.
 
 {services/nodes-lookup/enabled} enable network lookup service
 
@@ -309,16 +332,20 @@ Each ID server must have a unique address within the network, set your external 
 
 {services/supplier/enabled} donate own disk space to people
 
-{services/supplier-contracts/enabled}
+{services/supplier-contracts/enabled} digitally signed supplier contracts
+The service is under development.
 
-{services/tcp-connections/enabled}
+{services/tcp-connections/enabled} TCP enabled
 
 {services/tcp-connections/tcp-port}
+Port number to listen for incoming TCP connections.
 
 {services/tcp-connections/upnp-enabled}
+The feature is under development and temporarily disabled.
 
 {services/tcp-transport/enabled} use TCP as a transport protocol
-Your BitDust node must have at least one active and reliable transport protocol to be able
+BitDust can use different protocols to transfer packets across the network.
+Your node must have at least one active and reliable transport protocol to be able
 to connect to other nodes via Internet.
 
 {services/tcp-transport/receiving-enabled}
@@ -327,13 +354,16 @@ to connect to other nodes via Internet.
 
 {services/tcp-transport/priority}
 
-{services/udp-datagrams/enabled} enable UDP
+{services/udp-datagrams/enabled} UDP enabled
 
 {services/udp-datagrams/udp-port}
+Port number to listen for incoming UDP datagrams.
 
 {services/udp-transport/enabled} use UDP as a transport protocol
-Your BitDust node must have at least one active and reliable transport protocol to be able
+BitDust can use different protocols to transfer packets across the network.
+Your node must have at least one active and reliable transport protocol to be able
 to connect to other nodes via Internet.
+The service is under development.
 
 {services/udp-transport/receiving-enabled}
 
@@ -342,6 +372,7 @@ to connect to other nodes via Internet.
 {services/udp-transport/priority}
 
 """
+
 
 
 def raw2():
