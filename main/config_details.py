@@ -340,7 +340,7 @@ The service is under development.
 {services/tcp-connections/tcp-port}
 Port number to listen for incoming TCP connections.
 
-{services/tcp-connections/upnp-enabled}
+[services/tcp-connections/upnp-enabled]
 The feature is under development and temporarily disabled.
 
 {services/tcp-transport/enabled} use TCP as a transport protocol
@@ -359,17 +359,17 @@ to connect to other nodes via Internet.
 {services/udp-datagrams/udp-port}
 Port number to listen for incoming UDP datagrams.
 
-{services/udp-transport/enabled} use UDP as a transport protocol
+[services/udp-transport/enabled] use UDP as a transport protocol
 BitDust can use different protocols to transfer packets across the network.
 Your node must have at least one active and reliable transport protocol to be able
 to connect to other nodes via Internet.
 The service is under development.
 
-{services/udp-transport/receiving-enabled}
+[services/udp-transport/receiving-enabled]
 
-{services/udp-transport/sending-enabled}
+[services/udp-transport/sending-enabled]
 
-{services/udp-transport/priority}
+[services/udp-transport/priority]
 
 """
 

@@ -192,10 +192,6 @@ class BitDustWebSocketFactory(Factory):
         """
         Only accepting connections from local machine!
         """
-        global _WebSocketTransports
-        # if _WebSocketTransports:
-        #     lg.warn('refused connection to web socket - another connection already made')
-        #     return None
         if addr.host != '127.0.0.1':
             lg.err('refused connection from remote host: %r' % addr.host)
             return None

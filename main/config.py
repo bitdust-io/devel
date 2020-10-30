@@ -575,18 +575,19 @@ class DetailedConfig(CachedConfig):
         return (self._infos.get(entryPath, '') or '').strip(' \n\t')
 
     def getReadOnly(self, entryPath):
-        return self._read_only.get(entryPath)
+        return self._read_only.get(entryPath, False) or False
 
-    def toJson(self, entryPath):
+    def toJson(self, entryPath, include_info=True):
         result = {
             'key': entryPath,
             'value': self.getValueOfType(entryPath),
             'type': self.getTypeLabel(entryPath),
             'label': self.getLabel(entryPath),
-            'info': self.getInfo(entryPath),
             'readonly': self.getReadOnly(entryPath),
             'default': self.getDefaultValue(entryPath),
         }
+        if include_info:
+            result['info'] = self.getInfo(entryPath)
         result.update(self.getTypeMetaInfo(entryPath))
         return result
 
