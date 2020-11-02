@@ -150,10 +150,11 @@ The service is under development.
 
 {services/customer/enabled} store encrypted data on other nodes
 To be able to upload files to the BitDust network other nodes, called suppliers, must be already connected and allocate storage space for you.
-The `customer()` service is responsible for maintaining real-time connections with all of your suppliers and requesting storage space.
+The `customer()` service is responsible for maintaining real-time connections with all of your suppliers and requesting storage space automatically.
 
 {services/customer/needed-space} needed space
 How much storage space do you require to store your uploaded files?
+**WARNING!** When your uploaded files exceed the quota size you set here the older versions will be automatically erased by suppliers.
 
 {services/customer/suppliers-number} number of suppliers
 Number of suppliers who stores your encrypted files. You may select one of the following values: 2, 4, 7, 13, 18, 26, 64.
@@ -163,40 +164,71 @@ Number of suppliers who stores your encrypted files. You may select one of the f
 The service is under development.
 
 {services/customer-family/enabled} maintain service info for my customers
-
+When `supplier()` service is enabled and started your device will also write additional service information to distributed hash table.
+This way people are able to access encrypted shared files of each other on different suppliers across the network.
 
 {services/customer-patrol/enabled} reject customers who are out of quota
+When you are running `supplier()` service other people are able to store files on your device.
+The `customer_patrol()` service makes sure that your customers do not exceed requested and agreed storage quotas.
 
 {services/customer-support/enabled} monitor and re-connect with my customers
+When you are running a 
 
 {services/data-disintegration/enabled} enable RAID & ECC data processing
+Before the encrypted data is sent to the target storage nodes, it will be chunked and processed.
+Each fragment corresponds to a supplier position in accordance with the number of suppliers you have selected.
+Data processing includes error correction codes and redundancy to enable restoration of missing fragments in the future.
 
-{services/data-motion/enabled} enable streaming of encrypted data
+{services/data-motion/enabled} streaming of encrypted data
+The service creates a queue of incoming and outgoing encrypted fragments of your data when uploading and downloading from the nodes of remote providers.
 
-{services/data-motion/supplier-request-queue-size}
+{services/data-motion/supplier-request-queue-size} concurrent outgoing packets
+Determines the maximum number of encrypted data packets sent at the same time.
+Affects the speed of data uploading to the suppliers' machines.
 
-{services/data-motion/supplier-sending-queue-size}
+{services/data-motion/supplier-sending-queue-size} concurrent incoming packets
+Determines the maximum number of simultaneously received encrypted data packets.
+Affects the speed of data downloading from the suppliers' machines.
 
 {services/entangled-dht/enabled} distributed hash-table node
+Your device becomes one of the peers in the DHT network.
+Provides the ability to read and write to a distributed hash table and access networking service layers.
 
-{services/entangled-dht/udp-port}
+{services/entangled-dht/udp-port} UDP port number
 Set a UDP port number to be used for distributed hash-table communications.
 
-{services/entangled-dht/known-nodes}
+{services/entangled-dht/known-nodes} override seed-nodes list
+For the initial entrance to the DHT network, a list of so-called seed-nodes is required.
+In the future, your device will work autonomously - thanks to the local routing table.
+This value allows you to override the initial set of hard-coded seed-nodes and is intended for advanced software use.
 
-{services/entangled-dht/attached-layers}
+{services/entangled-dht/attached-layers} override attached DHT layers
+The software supports several local routing tables for the ability to store service data on the DHT at different parallel "layers".
+This allows the network services to be separated from each other and also makes possible to run lookups in the DHT more faster.
+On startup, your device will be automatically connected to some of the layers.
+This value overrides this list and is intended for advanced software use.
 
 {services/employer/enabled} search & connect with available suppliers
+In order to store data on the network, you must already have your suppliers ready and accepting your uploads.
+The `employer()` network service automatically searches for new suppliers through the DHT network and monitors their reliability.
 
-{services/employer/replace-critically-offline-enabled}
+{services/employer/replace-critically-offline-enabled} automatically replace unreliable suppliers
+The moment a critical number of your suppliers become unreliable, your uploaded data is no longer available for downloading.
+When this option is enabled, your software will automatically replace the unreliable supplier when needed and reconstruct missing fragments.
 
-{services/employer/candidates}
+{services/employer/candidates} candidates list
+Place here a comma-separated list of nodes identifiers, in IDURL format, to be used first when the service tries to find a new supplier for you.
+This way you can control who will be your supplier and where your data is stored.
+Option is intended for advanced software use.
 
-{services/gateway/enabled} send & receive encrypted peer-to-peer packets
+{services/gateway/enabled} enable encrypted peer-to-peer traffic
+You can use `TCP`, `UDP`, and other network protocols to communicate with people on the network.
+The `gateway()` service controls application transport protocols and all encrypted packets passing through and reaching application engine.
+Every incoming packet is digitally verified here, processed and sent to the underlying services.
 
 {services/http-connections/enabled} HTTP enabled
 
-{services/http-connections/http-port}
+{services/http-connections/http-port} HTTP port number
 
 {services/http-transport/enabled} use HTTP as a transport protocol
 Your BitDust node must have at least one active and reliable transport protocol to be able
@@ -209,7 +241,7 @@ The service is under development.
 
 {services/http-transport/priority}
 
-{services/identity-propagate/enabled} enables signed identity files exchange
+{services/identity-propagate/enabled} signed identity files exchange
 
 {services/identity-propagate/known-servers}
 
