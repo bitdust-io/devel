@@ -69,6 +69,11 @@ from storage import accounting
 
 #------------------------------------------------------------------------------
 
+_Debug = True
+_DebugLevel = 8
+
+#------------------------------------------------------------------------------
+
 _CustomersRejector = None
 
 #------------------------------------------------------------------------------
@@ -148,7 +153,8 @@ class CustomersRejector(automat.Automat):
         + used_bytes : size of all files, which you store on your disk for your customers
         + ratio : currently used space compared to consumed space
         """
-        lg.out(8, 'customers_rejector.doTestMyCapacity')
+        if _Debug:
+            lg.out(_DebugLevel, 'customers_rejector.doTestMyCapacity')
         failed_customers = set()
         current_customers = contactsdb.customers()
         donated_bytes = settings.getDonatedBytes()
@@ -164,14 +170,17 @@ class CustomersRejector(automat.Automat):
         free_space = donated_bytes - consumed_bytes
         if consumed_bytes < donated_bytes and len(failed_customers) == 0:
             accounting.write_customers_quotas(space_dict, free_space)
-            lg.out(8, '        space is OK !!!!!!!!')
+            if _Debug:
+                lg.out(_DebugLevel, '        space is OK !!!!!!!!')
             self.automat('space-enough')
             return
         if failed_customers:
-            lg.out(8, '        found FAILED Customers: %d')
+            if _Debug:
+                lg.out(_DebugLevel, '        found FAILED Customers: %d')
             for idurl in failed_customers:
                 current_customers.remove(idurl)
-                lg.out(8, '            %r' % idurl)
+                if _Debug:
+                    lg.out(_DebugLevel, '            %r' % idurl)
             self.automat('space-overflow', (
                 space_dict, free_space, consumed_bytes, current_customers, failed_customers))
             return
@@ -185,9 +194,11 @@ class CustomersRejector(automat.Automat):
             space_dict.pop(idurl)
             failed_customers.add(idurl)
             current_customers.remove(idurl)
-            lg.out(8, '        customer %s will be REMOVED' % idurl)
+            if _Debug:
+                lg.out(_DebugLevel, '        customer %s will be REMOVED' % idurl)
         free_space = donated_bytes - consumed_bytes
-        lg.out(8, '        SPACE NOT ENOUGH !!!!!!!!!!')
+        if _Debug:
+            lg.out(_DebugLevel, '        SPACE NOT ENOUGH !!!!!!!!!!')
         self.automat('space-overflow', (
             space_dict, free_space, consumed_bytes, current_customers, failed_customers))
 

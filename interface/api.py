@@ -406,7 +406,7 @@ def process_debug():
 
 #------------------------------------------------------------------------------
 
-def config_get(key):
+def config_get(key, include_info=False):
     """
     Returns current key/value from the program settings.
 
@@ -427,7 +427,7 @@ def config_get(key):
     if not config.conf().exist(key):
         return ERROR('option "%s" not exist' % key)
     if not config.conf().hasChilds(key):
-        return RESULT([config.conf().toJson(key), ], )
+        return RESULT([config.conf().toJson(key, include_info=include_info), ], )
     known_childs = sorted(config.conf().listEntries(key))
     if key.startswith('services/') and key.count('/') == 1:
         svc_enabled_key = key + '/enabled'
@@ -442,7 +442,7 @@ def config_get(key):
                 'childs': len(config.conf().listEntries(child)),
             })
         else:
-            childs.append(config.conf().toJson(child))
+            childs.append(config.conf().toJson(child, include_info=include_info))
     return RESULT(childs)
 
 
@@ -464,11 +464,11 @@ def config_set(key, value):
     if _Debug:
         lg.out(_DebugLevel, 'api.config_set [%s]=%s type is %s' % (key, value, typ_label))
     config.conf().setValueOfType(key, value)
-    v.update(config.conf().toJson(key))
+    v.update(config.conf().toJson(key, include_info=False))
     return RESULT([v, ])
 
 
-def configs_list(sort=False):
+def configs_list(sort=False, include_info=False):
     """
     Provide detailed info about all program settings.
 
@@ -481,13 +481,13 @@ def configs_list(sort=False):
     if _Debug:
         lg.out(_DebugLevel, 'api.configs_list')
     r = config.conf().cache()
-    r = [config.conf().toJson(key) for key in list(r.keys())]
+    r = [config.conf().toJson(key, include_info=include_info) for key in list(r.keys())]
     if sort:
         r = sorted(r, key=lambda i: i['key'])
     return RESULT(r)
 
 
-def configs_tree():
+def configs_tree(include_info=False):
     """
     Returns all options as a tree structure, can be more suitable for UI operations.
 
@@ -506,7 +506,7 @@ def configs_tree():
             if part not in cursor:
                 cursor[part] = {}
             cursor = cursor[part]
-        cursor.update(config.conf().toJson(key))
+        cursor.update(config.conf().toJson(key, include_info=include_info))
     return RESULT([r, ])
 
 #------------------------------------------------------------------------------
@@ -3717,7 +3717,7 @@ def services_list(with_configs=False):
         if with_configs:
             svc_configs = []
             for child in config.conf().listEntries(svc.config_path.replace('/enabled', '')):
-                svc_configs.append(config.conf().toJson(child))
+                svc_configs.append(config.conf().toJson(child, include_info=False))
             svc_info['configs'] = svc_configs
         result.append(svc_info)
     if _Debug:
