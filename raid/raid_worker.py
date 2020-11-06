@@ -312,17 +312,19 @@ class RaidWorker(automat.Automat):
             # TODO: make an option in the software settings
             ncpus = int(ncpus / 2.0)
 
-        if bpio.Android() or not config.conf().getBool('services/rebuilding/child-processes-enabled'):
-            self.processor = ThreadedRaidProcessor()
-        else:
-            os.environ['PYTHONUNBUFFERED'] = '1'
-            from parallelp import pp
-            self.processor = pp.Server(
-                secret='bitdust',
-                ncpus=ncpus,
-                loglevel=lg.get_loging_level(_DebugLevel),
-                logfile=settings.ParallelPLogFilename(),
-            )
+        self.processor = ThreadedRaidProcessor()
+
+        # if bpio.Android() or not config.conf().getBool('services/rebuilding/child-processes-enabled'):
+        #     self.processor = ThreadedRaidProcessor()
+        # else:
+        #     os.environ['PYTHONUNBUFFERED'] = '1'
+        #     from parallelp import pp
+        #     self.processor = pp.Server(
+        #         secret='bitdust',
+        #         ncpus=ncpus,
+        #         loglevel=lg.get_loging_level(_DebugLevel),
+        #         logfile=settings.ParallelPLogFilename(),
+        #     )
         # else:
         #     from raid import worker
         #     self.processor = worker.Manager(ncpus=ncpus)

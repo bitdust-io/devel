@@ -266,8 +266,8 @@ def LocalTesterLogFilename():
 def MinimumIdentitySources():
     """
     You need to host your identity (piblic key, signature and contacts) at least in one place.
-    By default you will use identiy servers hard-coded in BitDust source code.
-    But you can start your own identity server and host your identiy there.
+    By default you will use identity servers hard-coded in BitDust source code and maintained for you by enthusiasts.
+    But you can also start your own identity server and host your identity on your own host.
     Use those settings before you run identity register call:
 
         services/identity-propagate/known-servers

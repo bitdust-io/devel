@@ -93,7 +93,7 @@ This value you specified when created your identity file for the first time.
 The service is under development.
 
 {services/backup-db/enabled} enable backup-db service
-The `backup_db()` service is responsible for storing service information about your files stored on the network, such as: name, version, size.
+The `backup-db` service is responsible for storing service information about your files uploaded to the network, such as: file name, version, size.
 
 {services/backups/enabled} enable data uploading
 This service enables uploading of encrypted personal data to the BitDust network.
@@ -150,7 +150,7 @@ The service is under development.
 
 {services/customer/enabled} store encrypted data on other nodes
 To be able to upload files to the BitDust network other nodes, called suppliers, must be already connected and allocate storage space for you.
-The `customer()` service is responsible for maintaining real-time connections with all of your suppliers and requesting storage space automatically.
+The `customer` service is responsible for maintaining real-time connections with all of your suppliers and requesting storage space automatically.
 
 {services/customer/needed-space} needed space
 How much storage space do you require to store your uploaded files?
@@ -164,15 +164,16 @@ Number of suppliers who stores your encrypted files. You may select one of the f
 The service is under development.
 
 {services/customer-family/enabled} maintain service info for my customers
-When `supplier()` service is enabled and started your device will also write additional service information to distributed hash table.
+When `supplier` service is enabled and started your device will also write additional service information to distributed hash table.
 This way people are able to access encrypted shared files of each other on different suppliers across the network.
 
 {services/customer-patrol/enabled} reject customers who are out of quota
-When you are running `supplier()` service other people are able to store files on your device.
-The `customer_patrol()` service makes sure that your customers do not exceed requested and agreed storage quotas.
+When you are running `supplier` service other people are able to store files on your device.
+The `customer-patrol` service makes sure that your customers do not exceed requested and agreed storage quotas.
 
-{services/customer-support/enabled} monitor and re-connect with my customers
-When you are running a 
+{services/customer-support/enabled} assist my customers
+This service performs periodic synchronization for your customers when you also enabled the `supplier` service and thus agreed to store encrypted data for them.
+Your device will try to reconnect with all known customers and keep them up to date with the full list of files they own.
 
 {services/data-disintegration/enabled} enable RAID & ECC data processing
 Before the encrypted data is sent to the target storage nodes, it will be chunked and processed.
@@ -210,7 +211,7 @@ This value overrides this list and is intended for advanced software use.
 
 {services/employer/enabled} search & connect with available suppliers
 In order to store data on the network, you must already have your suppliers ready and accepting your uploads.
-The `employer()` network service automatically searches for new suppliers through the DHT network and monitors their reliability.
+The `employer` network service automatically searches for new suppliers through the DHT network and monitors their reliability.
 
 {services/employer/replace-critically-offline-enabled} automatically replace unreliable suppliers
 The moment a critical number of your suppliers become unreliable, your uploaded data is no longer available for downloading.
@@ -223,25 +224,33 @@ Option is intended for advanced software use.
 
 {services/gateway/enabled} enable encrypted peer-to-peer traffic
 You can use `TCP`, `UDP`, and other network protocols to communicate with people on the network.
-The `gateway()` service controls application transport protocols and all encrypted packets passing through and reaching application engine.
+The `gateway` service controls application transport protocols and all encrypted packets passing through and reaching application engine.
 Every incoming packet is digitally verified here, processed and sent to the underlying services.
 
 {services/http-connections/enabled} HTTP enabled
+This will allow BitDust to use the HTTP protocol for service data and encrypted traffic
 
 {services/http-connections/http-port} HTTP port number
+That option defines a port number to be used to listen for incoming HTTP connections.
 
 {services/http-transport/enabled} use HTTP as a transport protocol
 Your BitDust node must have at least one active and reliable transport protocol to be able
 to connect to other nodes via Internet.
 The service is under development.
 
-{services/http-transport/receiving-enabled}
+{services/http-transport/receiving-enabled} receiving via HTTP
+Disable this option if you do not want other nodes to send you encrypted data over HTTP and use transport protocol in unidirectional mode.
 
-{services/http-transport/sending-enabled}
+{services/http-transport/sending-enabled} sending via HTTP
+Disable this option if you do not want to send encrypted data over HTTP and use transport protocol in unidirectional mode.
 
-{services/http-transport/priority}
+{services/http-transport/priority} priority
+You can change this setting if you want BitDust to use the `http-transport` more often than other transport protocols.
+Lower values have higher priority.
 
 {services/identity-propagate/enabled} signed identity files exchange
+Your identity file stores service information that is used by other nodes when they connect to your device to transfer data.
+This service manages the synchronization and propagating of your identity file, and also remembers the identity files of other users.
 
 {services/identity-propagate/known-servers}
 
@@ -251,9 +260,12 @@ The service is under development.
 
 {services/identity-propagate/max-servers}
 
-{services/identity-propagate/automatic-rotate-enabled}
+{services/identity-propagate/automatic-rotate-enabled} automatic identity rotation
+Automatically replaces untrusted ID servers - nodes that store a copy of your identity file.
+This way, your device will remain identifiable on the network even when it is offline.
 
-{services/identity-propagate/health-check-interval-seconds}
+{services/identity-propagate/health-check-interval-seconds} health check interval
+The period in seconds between checks that could potentially cause an automatic identity rotation when your primary ID server is down.
 
 {services/identity-server/enabled} start Identity server
 You can start own Identity server and store identity files of other users on your machine.
@@ -262,35 +274,49 @@ This will help others to join and operate in the BitDust network.
 {services/identity-server/host} your server host name
 Each ID server must have a unique address within the network, set your external IP address or domain name here.
 
-{services/identity-server/tcp-port}
-TCP protocol is used for receiving identity files from other nodes and that option defines port number to listen for incoming connections.
+{services/identity-server/tcp-port} TCP port number
+TCP transport protocol is used for receiving digitally-signed identity files from other nodes.
+That option defines TCP port number to be used to listen for incoming connections.
 
-{services/identity-server/web-port}
+{services/identity-server/web-port} HTTP port number
 Port number for Identity server HTTP interface.
 This is used when other nodes are "reading" identity files from your Identity server.
 
-{services/ip-port-responder/enabled} reply to STUN requests from other nodes
+{services/ip-port-responder/enabled} reply STUN requests
+Helps other hosts connect to the network.
+When the device is behind a NAT router, additional steps are required to determine the real external IP address.
 
 {services/keys-registry/enabled} enables keys management
+Keeps track of all your RSA keys that are used to encrypt files and messages.
 
-{services/keys-storage/enabled} keys synchronization with my suppliers
+{services/keys-storage/enabled} enable keys synchronization
+The service maintains an encrypted backup of every RSA key you possess on your suppliers so that you can recover the keys and encrypted data in case of loss.
 
 {services/list-files/enabled} exchange service data with suppliers
+The supplier does not know the real name of the file you uploaded to the network, but stores indexed fragments of your encrypted data.
+The `list-files` service synchronizes index data and file lists with your suppliers.
 
 {services/message-broker/enabled} help others to stream encrypted messages
+The `message-broker` service stores and organizes a message queue of encrypted JSON message thru your device.
+Other users are able to connect to your device to exchange messages and thus you will supports group chats for other users particularly.
 
-{services/message-broker/archive-chunk-size}
+{services/message-broker/archive-chunk-size} archive chunk size
+Old messages in the queue are split into blocks, encrypted and archived on the suppliers nodes.
 
-{services/message-history/enabled} maintain message history
+{services/message-history/enabled} store messaging history
+All your conversations are stored in a local SQLite3 database and are quickly searchable.
 
 {services/miner/enabled} enable blockchain mining
 The service is under development.
 
-{services/my-data/enabled} enable files index synchronization
+{services/my-data/enabled} remote files indexing
+The service synchronizes with my suppliers in real time and prepares the encrypted storage environment for other dependent network services. 
 
 {services/my-ip-port/enabled} detect my external IP via other nodes
+The service relies on other nodes and uses the STUN protocol to recognize your public IP address when connecting to the network.
 
-{services/network/enabled} network services are enabled
+{services/network/enabled} network is enabled
+Basic network service of the application. If you disable it, all other network services will be turned off as well and your device will go offline.
 
 {services/network/proxy/enabled}
 
@@ -304,45 +330,62 @@ The service is under development.
 
 {services/network/proxy/username}
 
-{services/network/receive-limit}
+{services/network/receive-limit} limit incoming traffic
 The value in bytes per second to limit incoming network traffic.
-Set value to `0` if you do not want to use incoming limit.
+Set value to `0` if you do not want to limit your incoming traffic.
 
-{services/network/send-limit}
+{services/network/send-limit} limit outgoing traffic
 The value in bytes per second to limit outgoing network traffic.
-Set value to `0` if you do not want to use outgoing limit.
+Set value to `0` if you do not want to limit your outgoing traffic.
 
-{services/nodes-lookup/enabled} enable network lookup service
+{services/nodes-lookup/enabled} lookup nodes via DHT
+The `network-lookup` service allows nodes to find each other in distributed hash table and initiate direct peer-to-peer connection when resources need to be allocated.
 
-{services/p2p-hookups/enabled} enable peer-to-peer communications
+{services/p2p-hookups/enabled} peer-to-peer connections
+The service is responsible for starting and maintaining direct network connections with other nodes in order to be able to transfer personal data instantly.
 
-{services/p2p-notifications/enabled} enable peer-to-peer events delivery
+{services/p2p-notifications/enabled} events & notifications delivery
+Supports other network services while sending and receiving service events.
 
-{services/personal-messages/enabled} streamed personal notifications
+{services/personal-messages/enabled} personal messages
+Allows you to read incoming encrypted messages even when your device is disconnected.
+Other nodes, called "message brokers", will maintain a stream of messages that you can subscribe to and receive at any time.
 
-{services/private-groups/enabled} encrypted group messaging
+{services/private-groups/enabled} group communications
+Allows the exchange of encrypted messages with multiple users using the same secret key through message brokers.
 
-{services/private-groups/message-ack-timeout}
+{services/private-groups/message-ack-timeout} acknowledgment timeout
+Specifies the timeout that will be used to wait for an acknowledgment when sending an encrypted message to the broker.
 
 {services/private-groups/preferred-brokers}
 
 {services/private-messages/enabled} encrypted peer-to-peer messaging
+Enables peer-to-peer sending & receiving of encrypted JSON messages and also supports underlying services.
 
 {services/private-messages/acknowledge-unread-messages-enabled}
 
 {services/proxy-server/enabled} help others transmit encrypted traffic
+Your device will act as an intermediate node and help other users stay connected to the network and exchange encrypted packets with each other.
+This will consume your Internet traffic.
 
-{services/proxy-server/routes-limit}
+{services/proxy-server/routes-limit} maximum simultaneous connections
+This option sets a limit on the number of connections your device will support at any given time.
 
 {services/proxy-server/current-routes}
 
-{services/proxy-transport/enabled} route my in/out traffic via extra node
+{services/proxy-transport/enabled} use intermediate nodes
+The `proxy-transport` network protocol allows you to use another user's device as an intermediate node for encrypted data exchange.
+This solves certain problems when connecting to the network and also makes your network connection more anonymous.
 
-{services/proxy-transport/sending-enabled}
+{services/proxy-transport/receiving-enabled} receiving enabled
+Disable this option if you do not want other nodes to send you encrypted data via intermediate node and use that transport protocol in unidirectional mode.
 
-{services/proxy-transport/receiving-enabled}
+{services/proxy-transport/sending-enabled} sending enabled
+Disable this option if you do not want to send encrypted data via intermediate node and use that transport protocol in unidirectional mode.
 
-{services/proxy-transport/priority}
+{services/proxy-transport/priority} priority
+You can change this setting if you want BitDust to use the `proxy-transport` more often than other transport protocols.
+Lower values have higher priority.
 
 {services/proxy-transport/my-original-identity}
 
@@ -353,21 +396,28 @@ Set value to `0` if you do not want to use outgoing limit.
 {services/proxy-transport/router-lifetime-seconds}
 
 {services/rebuilding/enabled} automatic data rebuilding
-
-{services/rebuilding/child-processes-enabled}
+When one of your suppliers is not available for some reason, all encrypted fragments that he stored for you are lost.
+The `rebuilding` service will automatically download the available fragments from those suppliers that are still online, and "rebuild" the lost fragments that the new supplier receives.
+**WARNING!** At the moment when a critical number of fragments are lost, downloading data is no longer possible.
 
 {services/restores/enabled} enable data downloading
+Controls network connections and incoming data streams when downloading encrypted fragments from suppliers nodes.
 
 {services/shared-data/enabled} enable data sharing
-
-{services/supplier/donated-space}
+Makes possible decentralized sharing of encrypted files with other users. 
 
 {services/supplier/enabled} donate own disk space to people
+To make it possible to store any files on the network, some other nodes must already be connected and provide storage space.
+The `supplier` service allocates a part of your disk and serves encrypted files uploaded to your device from remote nodes.
+
+{services/supplier/donated-space} donated space
+The amount of storage space you want to donate to other people who also use BitDust.
 
 {services/supplier-contracts/enabled} digitally signed supplier contracts
 The service is under development.
 
 {services/tcp-connections/enabled} TCP enabled
+This will allow BitDust to use the TCP protocol for service data and encrypted traffic
 
 {services/tcp-connections/tcp-port}
 Port number to listen for incoming TCP connections.
@@ -380,13 +430,18 @@ BitDust can use different protocols to transfer packets across the network.
 Your node must have at least one active and reliable transport protocol to be able
 to connect to other nodes via Internet.
 
-{services/tcp-transport/receiving-enabled}
+{services/tcp-transport/receiving-enabled} receiving via TCP
+Disable this option if you do not want other nodes to send you encrypted data over TCP and use `tcp-transport` in unidirectional mode.
 
-{services/tcp-transport/sending-enabled}
+{services/tcp-transport/sending-enabled} sending via TCP
+Disable this option if you do not want to send encrypted data over TCP and use `tcp-transport` in unidirectional mode.
 
-{services/tcp-transport/priority}
+{services/tcp-transport/priority} priority
+You can change this setting if you want BitDust to use the `tcp-transport` more often than other transport protocols.
+Lower values have higher priority.
 
 {services/udp-datagrams/enabled} UDP enabled
+This will allow BitDust to use the UDP protocol for service data and encrypted traffic.
 
 {services/udp-datagrams/udp-port}
 Port number to listen for incoming UDP datagrams.
@@ -398,163 +453,12 @@ to connect to other nodes via Internet.
 The service is under development.
 
 [services/udp-transport/receiving-enabled]
+Disable this option if you do not want other nodes to send you encrypted data over UDP and use `udp-transport` in unidirectional mode.
 
 [services/udp-transport/sending-enabled]
+Disable this option if you do not want to send encrypted data over UDP and use `udp-transport` in unidirectional mode.
 
 [services/udp-transport/priority]
-
-"""
-
-
-
-def raw2():
-    return """
-{logs} logs
-{logs/debug-level} debug level
-{logs/memdebug-enabled} enable memory debugger
-    Enabled this and go to http://127.0.0.1:[memdebug port number] to watch memory usage.
-    Requires "cherrypy" and "dowser" python packages to be installed inside ~/.bitdust/venv/.
-
-{logs/memprofile-enabled} enable memory profiler
-    Use "guppy" package to profile memory usage.
-
-{logs/stream-enabled} enable web logs
-    Enabled this and go to http://127.0.0.1:[logs port number] to browse the program log.
-    Need to restart the program.
-
-{personal} personal information
-    Your personal information.
-
-{personal/name} name
-    Set your name if you wish.
-
-{personal/surname} surname
-    Set your family name if you wish.
-
-{personal/nickname} nickname
-    Set your nickname to private messaging.
-    If you leave this blank your identity address will be used to form a nickname.
-
-{paths/backups} local backups location
-    Place for your local backups files.
-
-{paths/customers} donated space location
-    Place for your donated space.
-    All encrypted files, uploaded by other users, will kept here.
-
-{paths/messages} messages location
-    Folder to store your private messages.
-
-{paths/receipts} receipts location
-    Folder to store financial receipts.
-
-{paths/restore} restored files location
-    Location where your restored files should be placed by default.
-
-{services} network services
-    Network services settings.
-
-{services/backup-db} backup database
-    Backup database settings.
-
-{services/backup-db/enabled} enable backups
-    Enable service "backup-db".
-
-{services/backups} backups settings
-
-{services/backups/enabled} enable backups
-
-{services/backups/block-size} preferred block size
-    Preferred block size in bytes which used to split the raw data during backup.
-
-{services/backups/max-block-size} maximum block size
-    Maximum block size in bytes which used to split the raw data during backup.
-    The actual block size is calculated depending on size of the particular backup to optimize performance and data storage.
-    If you plan to do a huge backups - set higher values to increase the speed.
-{services/backups/max-copies} number of copies
-    This value indicates how many copies of each file or directory need to keep on remote machines.
-    Once a fresh backup of given file or directory were finished - the oldest copy will be removed automatically.
-    A "0" value means unlimited number of copies, be sure you have enough amount of donated space on remote machines.
-{services/backups/keep-local-copies-enabled} keep local copies
-    Enable this to keep a copy of every new backup on your local HDD as well as on remote machines of your suppliers.
-    This increases data reliability, rebuilding performance and decrease network load,
-    but consumes space on your HDD.
-    Every one Mb of source data uploaded will consume two Mb on your local HDD.
-{services/backups/wait-suppliers-enabled} wait suppliers 24 hours
-    If you disabled storing of local data of your backups but one day a critical amount of your suppliers become unreliable - your data may be lost completely.
-    Enable this option to wait for 24 hours after finishing any backup and perform a check all of your suppliers before removing the locally backed up data for this copy.
-
-{services/supplier} supplier service
-    "Supplier" service settings.
-{services/supplier/donated} donated space
-    How many megabytes you ready to donate to other users?
-
-{services/identity-server} own identity server
-    You can start own Identity server and store identity files of other users on your machine to support the BitDustwork.
-{services/identity-server/enabled} enable identity server
-    Enable this to start "identity-server" service.
-{services/identity-server/host} identity server hostname
-    Set a domain name of your machine if you have it.
-    Otherwise your external IP will be used as a host name.
-    The host name is used to form a unique IDURL of any hosted identity.
-    User ID looking more pretty and safe without IP address.
-{services/identity-server/tcp-port} TCP port number
-    A TCP port number to receive user's identity files.
-{services/identity-server/web-port} WEB port number
-    If port 80 is already taken you can start identity server on a different port.
-
-{services/customer} customer service
-    "Customer" service settings.
-{services/customer/needed-space} needed space
-    How many megabytes you need to store your files?
-{services/customer/suppliers-number} number of suppliers
-    Number of remote suppliers which keeps your backups.
-    You can select one of the following values: 2, 4, 7, 13, 18, 26, 64.
-    Right now we have only few testing nodes in the network, so high values is not working yet.
-    WARNING! You will lost all your existing backups after changing suppliers number.
-
-{services/network} network service
-    "Network" service settings.
-{services/network/receive-limit} incoming bandwidth limit
-    Limit incoming traffic with a value in bytes per second.
-    A value of "0" means no incoming limit.
-{services/network/send-limit} outgoing bandwidth limit
-    The value in bytes per second to decrease network load.
-    A value of "0" means no outgoing limit.
-
-{services/entangled-dht} entangled-dht service
-    "Entangled-DHT" service settings.
-{services/entangled-dht/udp-port} udp port number for distributed hash table
-    This is a UDP port number for Distributed Hash Table communications.
-    BitDust uses <a href="http://entangled.sourceforge.net/">Entangled Project</a> to implement DHT functionality.
-
-{services/tcp-connections/tcp-port} tcp port number
-    Enter the TCP port number, it will be used to connect with your machine by other users.
-{services/tcp-connections/upnp-enabled} UPnP enable
-    Enable this if you want to perform checking of UPnP devices to configure port forwarding automatically.
-
-{services/tcp-transport} tcp-transport service
-    You can use different protocols to transfer packets across the network, they are called "transports".
-    Here you can customize your "TCP-transport" service, it is based on standard TCP protocol.
-{services/tcp-transport/enabled} enable tcp-transport service
-    Enable "TCP-transport" service.
-{services/tcp-transport/receiving-enabled} enable tcp receiving
-    Disable this if you do not want to use TCP-transport for receiving packets from other users.
-{services/tcp-transport/sending-enabled} enable tcp sending
-    Disable this if you do not want to use TCP-transport for sending packets to other users.
-
-{services/udp-datagrams/udp-port} udp port number
-    Set a UDP port for sending and receiving UDP datagrams.
-
-{services/udp-transport} udp-transport service
-    You can use different protocols to transfer packets across the network, they are called "transports".
-    Here you can customize your "UDP-transport" service.
-    It sends and receives UDP datagrams to transfer data from one peer to another in the network.
-    UDP-transport performs own bandwidth management and load balancing.
-{services/udp-transport/enabled} enable udp-transport service
-    Enable "UDP-transport" service.
-{services/udp-transport/receiving-enabled} enable udp receiving
-    Disable this if you do not want to use UDP-transport for receiving packets from other users.
-{services/udp-transport/sending-enabled} enable udp sending
-    Disable this if you do not want to use UDP-transport for sending packets to other users.
+You can change this setting if you want BitDust to use the `udp-transport` more often than other transport protocols.
+Lower values have higher priority.
 """

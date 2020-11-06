@@ -3095,6 +3095,11 @@ def message_history(recipient_id=None, sender_id=None, message_type=None, offset
     return RESULT(messages)
 
 
+def message_recipients():
+    """
+    """
+
+
 def message_send(recipient_id, data, ping_timeout=30, message_ack_timeout=15):
     """
     Sends a private message to remote peer, `recipient_id` is a string with a nickname, global_id or IDURL of the remote user.
