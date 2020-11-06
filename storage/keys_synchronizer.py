@@ -296,9 +296,10 @@ class KeysSynchronizer(automat.Automat):
         """
         Action method.
         """
-        if self.unreliable_keys and not self.stored_keys:
+        is_any_private_key_unreliable = bool(True in self.unreliable_keys.values())
+        if is_any_private_key_unreliable and not self.stored_keys:
             if _Debug:
-                lg.args(_DebugLevel, unreliable_keys=list(self.unreliable_keys.keys()))
+                lg.args(_DebugLevel, unreliable_keys=self.unreliable_keys)
             lg.err('not possible to restore any keys, all backup copies unreliable stored_keys=%d not_stored_keys=%d unreliable_keys=%d' % (
                 len(self.stored_keys), len(self.not_stored_keys), len(self.unreliable_keys), ))
             self.automat('error', Exception('not possible to restore any keys, all backup copies unreliable'))

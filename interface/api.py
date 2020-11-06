@@ -1463,7 +1463,7 @@ def file_delete(remote_path):
     Removes virtual file or folder from the catalog and also notifies your remote suppliers to clean up corresponding uploaded data.
 
     ###### HTTP
-        curl -X POST 'localhost:8180/file/delete/v1' -d '{"remote_path": "abcd1234$alice@server-a.com:cars/ferrari.gif"}'
+        curl -X DELETE 'localhost:8180/file/delete/v1' -d '{"remote_path": "abcd1234$alice@server-a.com:cars/ferrari.gif"}'
 
     ###### WebSocket
         websocket.send('{"command": "api_call", "method": "file_delete", "kwargs": {"remote_path": "abcd1234$alice@server-a.com:cars/ferrari.gif"} }');
@@ -3084,7 +3084,7 @@ def message_history(recipient_id=None, sender_id=None, message_type=None, offset
     if _Debug:
         lg.out(_DebugLevel, 'api.message_history with recipient_id=%s sender_id=%s message_type=%s' % (
             recipient_id, sender_id, message_type, ))
-    messages = [{'doc': m, } for m in message_database.query(
+    messages = [{'doc': m, } for m in message_database.query_messages(
         sender_id=sender_id,
         recipient_id=recipient_id,
         bidirectional=bidirectional,
@@ -3095,9 +3095,14 @@ def message_history(recipient_id=None, sender_id=None, message_type=None, offset
     return RESULT(messages)
 
 
-def message_recipients():
+def message_conversations():
     """
     """
+    if not driver.is_on('service_message_history'):
+        return ERROR('service_message_history() is not started')
+    from chat import message_database
+    from userid import my_id, global_id
+    from crypt import my_keys    
 
 
 def message_send(recipient_id, data, ping_timeout=30, message_ack_timeout=15):

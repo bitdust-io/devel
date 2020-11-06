@@ -34,8 +34,6 @@ module:: message_database
 
 from __future__ import absolute_import
 from __future__ import print_function
-from six.moves import map  # @UnresolvedImport
-import six
 
 #------------------------------------------------------------------------------
 
@@ -185,7 +183,7 @@ def build_json_message(data, message_id, message_time=None, sender=None, recipie
 
 #------------------------------------------------------------------------------
 
-def insert(message_json):
+def insert_message(message_json):
     """
     """
     try:
@@ -221,7 +219,7 @@ def insert(message_json):
     return True
 
 
-def query(sender_id=None, recipient_id=None, bidirectional=True, order_by_time=True, message_types=[], offset=None, limit=None):
+def query_messages(sender_id=None, recipient_id=None, bidirectional=True, order_by_time=True, message_types=[], offset=None, limit=None):
     """
     """
     sql = 'SELECT * FROM history WHERE'
@@ -267,7 +265,7 @@ def query(sender_id=None, recipient_id=None, bidirectional=True, order_by_time=T
 def main():
     import pprint
     init()
-    pprint.pprint(list(query(
+    pprint.pprint(list(query_messages(
         sender_id='master$alice@abc.com',
         recipient_id='master$bob@xyz.prg',
         # offset=4,
