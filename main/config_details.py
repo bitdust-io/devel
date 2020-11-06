@@ -93,7 +93,7 @@ This value you specified when created your identity file for the first time.
 The service is under development.
 
 {services/backup-db/enabled} enable backup-db service
-The `backup-db` service is responsible for storing service information about your files stored on the network, such as: name, version, size.
+The `backup-db` service is responsible for storing service information about your files uploaded to the network, such as: file name, version, size.
 
 {services/backups/enabled} enable data uploading
 This service enables uploading of encrypted personal data to the BitDust network.
@@ -228,7 +228,7 @@ The `gateway` service controls application transport protocols and all encrypted
 Every incoming packet is digitally verified here, processed and sent to the underlying services.
 
 {services/http-connections/enabled} HTTP enabled
-This will allow BitDust to use the HTTP protocol for encrypted traffic.
+This will allow BitDust to use the HTTP protocol for service data and encrypted traffic
 
 {services/http-connections/http-port} HTTP port number
 That option defines a port number to be used to listen for incoming HTTP connections.
@@ -245,8 +245,8 @@ Disable this option if you do not want other nodes to send you encrypted data ov
 Disable this option if you do not want to send encrypted data over HTTP and use transport protocol in unidirectional mode.
 
 {services/http-transport/priority} priority
-You can change that option if you want BitDust to be using HTTP transport protocol more often against other transport protocols.
-Lower values have higher priority
+You can change this setting if you want BitDust to use the `http-transport` more often than other transport protocols.
+Lower values have higher priority.
 
 {services/identity-propagate/enabled} signed identity files exchange
 Your identity file stores service information that is used by other nodes when they connect to your device to transfer data.
@@ -354,28 +354,38 @@ Other nodes, called "message brokers", will maintain a stream of messages that y
 {services/private-groups/enabled} group communications
 Allows the exchange of encrypted messages with multiple users using the same secret key through message brokers.
 
-{services/private-groups/message-ack-timeout}
+{services/private-groups/message-ack-timeout} acknowledgment timeout
+Specifies the timeout that will be used to wait for an acknowledgment when sending an encrypted message to the broker.
 
 {services/private-groups/preferred-brokers}
 
 {services/private-messages/enabled} encrypted peer-to-peer messaging
-Enables sending & receiving of encrypted JSON messages.
+Enables peer-to-peer sending & receiving of encrypted JSON messages and also supports underlying services.
 
 {services/private-messages/acknowledge-unread-messages-enabled}
 
 {services/proxy-server/enabled} help others transmit encrypted traffic
+Your device will act as an intermediate node and help other users stay connected to the network and exchange encrypted packets with each other.
+This will consume your Internet traffic.
 
-{services/proxy-server/routes-limit}
+{services/proxy-server/routes-limit} maximum simultaneous connections
+This option sets a limit on the number of connections your device will support at any given time.
 
 {services/proxy-server/current-routes}
 
-{services/proxy-transport/enabled} route my in/out traffic via extra node
+{services/proxy-transport/enabled} use intermediate nodes
+The `proxy-transport` network protocol allows you to use another user's device as an intermediate node for encrypted data exchange.
+This solves certain problems when connecting to the network and also makes your network connection more anonymous.
 
-{services/proxy-transport/sending-enabled}
+{services/proxy-transport/receiving-enabled} receiving enabled
+Disable this option if you do not want other nodes to send you encrypted data via intermediate node and use that transport protocol in unidirectional mode.
 
-{services/proxy-transport/receiving-enabled}
+{services/proxy-transport/sending-enabled} sending enabled
+Disable this option if you do not want to send encrypted data via intermediate node and use that transport protocol in unidirectional mode.
 
-{services/proxy-transport/priority}
+{services/proxy-transport/priority} priority
+You can change this setting if you want BitDust to use the `proxy-transport` more often than other transport protocols.
+Lower values have higher priority.
 
 {services/proxy-transport/my-original-identity}
 
@@ -386,12 +396,15 @@ Enables sending & receiving of encrypted JSON messages.
 {services/proxy-transport/router-lifetime-seconds}
 
 {services/rebuilding/enabled} automatic data rebuilding
-
-{services/rebuilding/child-processes-enabled}
+When one of your suppliers is not available for some reason, all encrypted fragments that he stored for you are lost.
+The `rebuilding` service will automatically download the available fragments from those suppliers that are still online, and "rebuild" the lost fragments that the new supplier receives.
+**WARNING!** At the moment when a critical number of fragments are lost, downloading data is no longer possible.
 
 {services/restores/enabled} enable data downloading
+Controls network connections and incoming data streams when downloading encrypted fragments from suppliers nodes.
 
 {services/shared-data/enabled} enable data sharing
+Makes possible decentralized sharing of encrypted files with other users. 
 
 {services/supplier/enabled} donate own disk space to people
 To make it possible to store any files on the network, some other nodes must already be connected and provide storage space.
@@ -404,6 +417,7 @@ The amount of storage space you want to donate to other people who also use BitD
 The service is under development.
 
 {services/tcp-connections/enabled} TCP enabled
+This will allow BitDust to use the TCP protocol for service data and encrypted traffic
 
 {services/tcp-connections/tcp-port}
 Port number to listen for incoming TCP connections.
@@ -416,13 +430,18 @@ BitDust can use different protocols to transfer packets across the network.
 Your node must have at least one active and reliable transport protocol to be able
 to connect to other nodes via Internet.
 
-{services/tcp-transport/receiving-enabled}
+{services/tcp-transport/receiving-enabled} receiving via TCP
+Disable this option if you do not want other nodes to send you encrypted data over TCP and use `tcp-transport` in unidirectional mode.
 
-{services/tcp-transport/sending-enabled}
+{services/tcp-transport/sending-enabled} sending via TCP
+Disable this option if you do not want to send encrypted data over TCP and use `tcp-transport` in unidirectional mode.
 
-{services/tcp-transport/priority}
+{services/tcp-transport/priority} priority
+You can change this setting if you want BitDust to use the `tcp-transport` more often than other transport protocols.
+Lower values have higher priority.
 
 {services/udp-datagrams/enabled} UDP enabled
+This will allow BitDust to use the UDP protocol for service data and encrypted traffic.
 
 {services/udp-datagrams/udp-port}
 Port number to listen for incoming UDP datagrams.
@@ -434,9 +453,12 @@ to connect to other nodes via Internet.
 The service is under development.
 
 [services/udp-transport/receiving-enabled]
+Disable this option if you do not want other nodes to send you encrypted data over UDP and use `udp-transport` in unidirectional mode.
 
 [services/udp-transport/sending-enabled]
+Disable this option if you do not want to send encrypted data over UDP and use `udp-transport` in unidirectional mode.
 
 [services/udp-transport/priority]
-
+You can change this setting if you want BitDust to use the `udp-transport` more often than other transport protocols.
+Lower values have higher priority.
 """

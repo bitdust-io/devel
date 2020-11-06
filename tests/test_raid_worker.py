@@ -14,13 +14,10 @@ from logs import lg
 
 from system import bpio
 
-from system import local_fs
-
 from main import settings
-from main import config
 
 
-class _Helper(object):
+class TestRaidWorker(TestCase):
 
     def setUp(self):
         try:
@@ -33,11 +30,6 @@ class _Helper(object):
             os.makedirs('/tmp/.bitdust_tmp/logs')
         except:
             pass
-        local_fs.WriteTextFile('/tmp/.bitdust_tmp/logs/parallelp.log', '')
-        if self.child_processes_enabled:
-            config.conf().setBool('services/rebuilding/child-processes-enabled', True)
-        else:
-            config.conf().setBool('services/rebuilding/child-processes-enabled', False)
 
     def tearDown(self):
         settings.shutdown()
@@ -313,16 +305,3 @@ class _Helper(object):
         reactor.callLater(0.55, raid_worker.cancel_task, 'make', '/tmp/source1.txt')  # @UndefinedVariable
 
         return test_result
-
-
-
-class TestRaidWorkerWithParallelP(_Helper, TestCase):
-
-    child_processes_enabled = True
-
-
-
-class TestRaidWorkerWithThreads(_Helper, TestCase):
-
-    child_processes_enabled = False
-

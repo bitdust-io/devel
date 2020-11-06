@@ -206,7 +206,7 @@ def reset(conf_obj):
     conf_obj.setDefaultValue('services/proxy-transport/receiving-enabled', 'true')
     conf_obj.setDefaultValue('services/proxy-transport/priority', 100)
     conf_obj.setDefaultValue('services/proxy-transport/preferred-routers', '')
-    conf_obj.setDefaultValue('services/proxy-transport/router-lifetime-seconds', 600)
+    # conf_obj.setDefaultValue('services/proxy-transport/router-lifetime-seconds', 600)
     # TODO: those two settings needs to be removed.
     # if service require storing locally value which user should not modify be implemented
     # inside service (for example read/write to local file inside ~/.bitdust/*/ folder)
@@ -215,7 +215,6 @@ def reset(conf_obj):
     conf_obj.setDefaultValue('services/proxy-transport/current-router', '')
 
     conf_obj.setDefaultValue('services/rebuilding/enabled', 'true')
-    conf_obj.setDefaultValue('services/rebuilding/child-processes-enabled', 'false')
 
     conf_obj.setDefaultValue('services/restores/enabled', 'true')
 
