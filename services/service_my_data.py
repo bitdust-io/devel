@@ -35,10 +35,10 @@ from services.local_service import LocalService
 
 
 def create_service():
-    return KeysStorageService()
+    return MyDataService()
 
 
-class KeysStorageService(LocalService):
+class MyDataService(LocalService):
 
     service_name = 'service_my_data'
     config_path = 'services/my-data/enabled'

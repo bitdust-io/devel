@@ -548,7 +548,7 @@ def scenario8():
 
     assert len(kw.message_conversation_v1('customer-1')['result']) == 2
     assert len(kw.message_conversation_v1('customer-2')['result']) == 5
-    assert len(kw.message_conversation_v1('customer-3')['result']) == 1
+    assert len(kw.message_conversation_v1('customer-3')['result']) == 0
 
     # customers 1 and 2 leave the group
     kw.group_leave_v1('customer-1', customer_1_group_key_id)
@@ -573,6 +573,10 @@ def scenario8():
     assert customer_2_group_info_offline['label'] == 'ArchivedGroupABC'
     assert customer_2_group_info_offline['last_sequence_id'] == 10
 
+    assert len(kw.message_conversation_v1('customer-1')['result']) == 2
+    assert len(kw.message_conversation_v1('customer-2')['result']) == 5
+    assert len(kw.message_conversation_v1('customer-3')['result']) == 0
+
     # customer-2 share group key to customer-3
     kw.group_share_v1('customer-2', customer_1_group_key_id, 'customer-3@id-a_8084')
 
@@ -593,9 +597,9 @@ def scenario8():
     # assert 'customer-3@id-a_8084' in customer_1_broker_producers
 
     # customer-3 must also see all message that was sent to the group when he was not present yet
-    # assert kw.group_info_v1('customer-3', customer_1_group_key_id)['result']['last_sequence_id'] == 10
+    assert kw.group_info_v1('customer-3', customer_1_group_key_id)['result']['last_sequence_id'] == 10
     assert len(kw.message_history_v1('customer-3', customer_1_group_key_id, message_type='group_message')['result']) == 11
-    assert len(group_customers_1_2_3_messages) == 11
+    assert len(kw.message_conversation_v1('customer-3')['result']) == 1
 
     # customer-3 leave the group
     kw.group_leave_v1('customer-3', customer_1_group_key_id)
@@ -619,6 +623,10 @@ def scenario8():
     assert customer_3_group_info_offline['state'] == 'OFFLINE'
     assert customer_3_group_info_offline['label'] == 'ArchivedGroupABC'
     assert customer_3_group_info_offline['last_sequence_id'] == 10
+
+    assert len(kw.message_conversation_v1('customer-1')['result']) == 2
+    assert len(kw.message_conversation_v1('customer-2')['result']) == 5
+    assert len(kw.message_conversation_v1('customer-3')['result']) == 1
 
     # make sure brokers are cleaned up
 #     assert kw.queue_consumer_list_v1('broker-1', extract_ids=True) == []
@@ -1025,7 +1033,7 @@ def scenario12_end(old_customer_4_info):
     ))
 
     # verify group queue ID suppose to be changed
-    customer_4_group_info_rotated = kw.group_info_v1('customer-4', customer_4_group_key_id)['result']
+    customer_4_group_info_rotated = kw.group_info_v1('customer-4', customer_4_group_key_id, wait_state='IN_SYNC!')['result']
     assert customer_4_group_info_rotated['state'] == 'IN_SYNC!'
     assert customer_4_group_info_rotated['last_sequence_id'] == 5
 
@@ -1046,6 +1054,20 @@ def scenario12_end(old_customer_4_info):
     assert 'customer-2@id-b_8084' in customer_4_rotated_broker_producers
     assert 'customer-4@id-b_8084' in customer_4_rotated_broker_consumers
     assert 'customer-4@id-b_8084' in customer_4_rotated_broker_producers
+
+    # same for customer-2 group queue ID suppose to be changed
+    customer_2_group_info_rotated = kw.group_info_v1('customer-2', customer_4_group_key_id, wait_state='IN_SYNC!')['result']
+    assert customer_2_group_info_rotated['state'] == 'IN_SYNC!'
+    assert customer_2_group_info_rotated['last_sequence_id'] == 5
+
+    customer_2_rotated_queue_id = customer_2_group_info_rotated['active_queue_id']
+    customer_2_rotated_broker_id = customer_2_group_info_rotated['active_broker_id']
+
+    assert customer_2_rotated_queue_id == customer_4_rotated_queue_id
+    assert customer_2_rotated_broker_id == customer_4_rotated_broker_id
+
+    assert customer_2_rotated_queue_id != customer_4_active_queue_id
+    assert customer_2_rotated_broker_id != customer_4_active_broker_id
 
     # sending again few messages to the group from customer-4
     for i in range(5):

@@ -221,7 +221,7 @@ class FileUp(automat.Automat):
                 self.doReportDelivered(*args, **kwargs)
                 self.doQueueNext(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'error' or event == 'timeout' or event == 'fail-received':
+            elif event == 'error' or event == 'timeout' or event == 'fail-received' or event == 'sending-failed':
                 self.state = 'FAILED'
                 self.doCancelPackets(*args, **kwargs)
                 self.doQueueRemove(*args, **kwargs)

@@ -3110,12 +3110,25 @@ def message_conversations_list(message_types=[], offset=0, limit=100):
     if not driver.is_on('service_message_history'):
         return ERROR('service_message_history() is not started')
     from chat import message_database
-    conversations = list(message_database.list_conversations(
+    from crypt import my_keys
+    from userid import my_id
+    conversations = []
+    for conv in list(message_database.list_conversations(
         order_by_time=True,
         message_types=message_types,
         offset=offset,
         limit=limit,
-    ))
+    )):
+        conv['name'] = conv['conversation_id']
+        if conv['type'] == 'private_message':
+            usr1, _, usr2 = conv['conversation_id'].partition('&')
+            if usr1.replace('master$', '') == my_id.getID():
+                conv['name'] = usr2.replace('master$', '')
+            else:
+                conv['name'] = usr1.replace('master$', '')
+        elif conv['type'] == 'group_message':
+            conv['name'] = my_keys.get_label(conv['conversation_id']) or conv['conversation_id']
+        conversations.append(conv)
     if _Debug:
         lg.out(_DebugLevel, 'api.message_conversations with message_types=%s found %d conversations' % (
             message_types, len(conversations), ))
