@@ -511,6 +511,14 @@ def message_history_v1(node, recipient_id, message_type='private_message', timeo
     return response.json()
 
 
+def message_conversation_v1(node, message_types='private_message,group_message', timeout=15):
+    response = request_get(node, f'message/conversation/v1?message_types={message_types}', timeout=timeout)
+    assert response.status_code == 200
+    print('message/conversation/v1 [%s] message_types=%s : %s\n' % (node, message_types, pprint.pformat(response.json()), ))
+    assert response.json()['status'] == 'OK', response.json()
+    return response.json()
+
+
 def user_ping_v1(node, remote_node_id, timeout=95, ack_timeout=30, retries=2):
     err = None
     try:

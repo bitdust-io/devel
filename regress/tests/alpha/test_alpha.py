@@ -70,9 +70,9 @@ import time
 import base64
 import threading
 
-from testsupport import stop_daemon, run_ssh_command_and_wait, request_get, request_post, request_put, set_active_scenario
+from testsupport import stop_daemon, run_ssh_command_and_wait, request_get, request_post, request_put, set_active_scenario  # @UnresolvedImport
 
-import keywords as kw
+import keywords as kw  # @UnresolvedImport
 
 PROXY_IDS = []  # ['proxy-1', 'proxy-2', 'proxy-3', ]
 SUPPLIERS_IDS = ['supplier-1', 'supplier-2', 'supplier-3', 'supplier-4', 'supplier-5', ]
@@ -208,6 +208,14 @@ def scenario3():
     kw.service_info_v1('customer-1', 'service_private_messages', 'ON')
     kw.service_info_v1('customer-2', 'service_private_messages', 'ON')
 
+    kw.service_info_v1('customer-1', 'service_message_history', 'ON')
+    kw.service_info_v1('customer-2', 'service_message_history', 'ON')
+
+    assert len(kw.message_conversation_v1('customer-1')['result']) == 0
+    assert len(kw.message_conversation_v1('customer-2')['result']) == 0
+    assert len(kw.message_history_v1('customer-1', 'master$customer-2@id-b_8084', message_type='private_message')['result']) == 0
+    assert len(kw.message_history_v1('customer-2', 'master$customer-1@id-a_8084', message_type='private_message')['result']) == 0
+
     # send first message to customer-2 while he is not listening for messages, customer-1 still receives an Ack()
     random_message_2 = {
         'random_message_2': base64.b32encode(os.urandom(20)).decode(),
@@ -221,6 +229,11 @@ def scenario3():
     t = threading.Timer(1.0, kw.message_send_v1, ['customer-1', 'master$customer-2@id-b_8084', random_message_1, 30, True, ])
     t.start()
     kw.message_receive_v1('customer-2', expected_data=random_message_1, timeout=16, polling_timeout=15)
+
+    assert len(kw.message_conversation_v1('customer-1')['result']) == 1
+    assert len(kw.message_conversation_v1('customer-2')['result']) == 1
+    assert len(kw.message_history_v1('customer-1', 'master$customer-2@id-b_8084', message_type='private_message')['result']) == 2
+    assert len(kw.message_history_v1('customer-2', 'master$customer-1@id-a_8084', message_type='private_message')['result']) == 2
 
 
 def scenario4():
@@ -512,6 +525,10 @@ def scenario8():
     assert len(kw.message_history_v1('customer-2', customer_1_group_key_id, message_type='group_message')['result']) == 0
     assert len(kw.message_history_v1('customer-3', customer_1_group_key_id, message_type='group_message')['result']) == 0
 
+    assert len(kw.message_conversation_v1('customer-1')['result']) == 1
+    assert len(kw.message_conversation_v1('customer-2')['result']) == 4
+    assert len(kw.message_conversation_v1('customer-3')['result']) == 0
+
     # sending 11 messages to the group from customer 1
     for i in range(11):
         group_customers_1_2_3_messages.append(kw.verify_message_sent_received(
@@ -528,6 +545,10 @@ def scenario8():
     assert kw.group_info_v1('customer-2', customer_1_group_key_id)['result']['last_sequence_id'] == 10
     assert len(kw.message_history_v1('customer-1', customer_1_group_key_id, message_type='group_message')['result']) == 11
     assert len(kw.message_history_v1('customer-2', customer_1_group_key_id, message_type='group_message')['result']) == 11
+
+    assert len(kw.message_conversation_v1('customer-1')['result']) == 2
+    assert len(kw.message_conversation_v1('customer-2')['result']) == 5
+    assert len(kw.message_conversation_v1('customer-3')['result']) == 1
 
     # customers 1 and 2 leave the group
     kw.group_leave_v1('customer-1', customer_1_group_key_id)

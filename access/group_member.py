@@ -1137,11 +1137,6 @@ class GroupMember(automat.Automat):
                     supplier_id=self.active_broker_id,
                 )
         if self.active_broker_id is None:
-            hired_brokers = self.hired_brokers
-            connected_brokers = self.connected_brokers
-            rotated_brokers = self.rotated_brokers
-            missing_brokers = self.missing_brokers
-            connecting_brokers = self.connecting_brokers
             raise Exception('no active broker is connected after event %r' % event)
         self.rotated_brokers = []
         self.hired_brokers.clear()
@@ -1202,7 +1197,8 @@ class GroupMember(automat.Automat):
         if self.rotated_brokers:
             self.automat('brokers-rotated')
         else:
-            self.automat('brokers-hired')
+            if self.hired_brokers.get(0):
+                self.automat('brokers-hired')
         return idurl
 
     def _on_broker_connected(self, idurl, broker_pos):
