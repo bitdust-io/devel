@@ -3102,15 +3102,18 @@ def message_conversations_list(message_types=[], offset=0, limit=100):
     Parameter `message_types` can be used to select conversations of specific types: "group_message", "private_message", "personal_message".
 
     ###### HTTP
-        curl -X GET 'localhost:8180/message/conversation/v1?message_types=group_message,personal_message'
+        curl -X GET 'localhost:8180/message/conversation/v1?message_types=group_message,private_message'
 
     ###### WebSocket
-        websocket.send('{"command": "api_call", "method": "message_conversations_list", "kwargs": {"message_types" : ["group_message", "personal_message"]} }');
+        websocket.send('{"command": "api_call", "method": "message_conversations_list", "kwargs": {"message_types" : ["group_message", "private_message"]} }');
     """
     if not driver.is_on('service_message_history'):
         return ERROR('service_message_history() is not started')
     from chat import message_database
     from crypt import my_keys
+    from p2p import online_status
+    from access import group_member
+    from userid import global_id
     from userid import my_id
     conversations = []
     for conv in list(message_database.list_conversations(
@@ -3120,14 +3123,19 @@ def message_conversations_list(message_types=[], offset=0, limit=100):
         limit=limit,
     )):
         conv['name'] = conv['conversation_id']
+        conv['state'] = 'OFFLINE'
         if conv['type'] == 'private_message':
             usr1, _, usr2 = conv['conversation_id'].partition('&')
             if usr1.replace('master$', '') == my_id.getID():
                 conv['name'] = usr2.replace('master$', '')
             else:
                 conv['name'] = usr1.replace('master$', '')
-        elif conv['type'] == 'group_message':
+            conv['state'] = online_status.getCurrentState(global_id.glob2idurl(conv['name']))
+        elif conv['type'] == 'group_message' or conv['type'] == 'personal_message':
             conv['name'] = my_keys.get_label(conv['conversation_id']) or conv['conversation_id']
+            gm = group_member.get_active_group_member(conv['conversation_id'])
+            if gm:
+                conv['state'] = gm.state or conv['state']
         conversations.append(conv)
     if _Debug:
         lg.out(_DebugLevel, 'api.message_conversations with message_types=%s found %d conversations' % (

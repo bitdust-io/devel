@@ -1117,12 +1117,13 @@ class MessagePeddler(automat.Automat):
         try:
             group_key_id, key_object = my_keys.read_key_info(group_key_info)
         except Exception as exc:
+            lg.exc()
             p2p_service.SendFail(request_packet, strng.to_text(exc))
             result_defer.callback(False)
             return
         group_key_alias, group_creator_idurl = my_keys.split_key_id(group_key_id)
         if not group_key_alias or not group_creator_idurl:
-            lg.warn('wrong group_key_id')
+            lg.warn('wrong group_key_id: %r' % group_key_id)
             p2p_service.SendFail(request_packet, 'wrong group_key_id')
             result_defer.callback(False)
             return
@@ -1505,6 +1506,8 @@ class MessagePeddler(automat.Automat):
                     start_producer(queue_id, new_producer_id)
 
     def _on_group_creator_idurl_cache_failed(self, err, request_packet, result_defer):
+        if _Debug:
+            lg.args(_DebugLevel, err=err, request_packet=request_packet)
         p2p_service.SendFail(request_packet, 'group creator idurl cache failed')
         result_defer.callback(False)
         return None

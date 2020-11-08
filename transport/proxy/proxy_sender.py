@@ -443,8 +443,8 @@ class ProxySender(automat.Automat):
         d.addErrback(self._on_cache_retry_failed, fail_info)
 
     def _do_clean_sent_packet(self, info):
-        if _Debug:
-            lg.args(_DebugLevel, sent_packets=len(self.sent_packets), info=info)
+        # if _Debug:
+        #     lg.args(_DebugLevel, sent_packets=len(self.sent_packets), info=info)
         to_idurl = id_url.to_bin(info['to'])
         to_remove = []
         for _key in self.sent_packets.keys():
@@ -471,8 +471,8 @@ class ProxySender(automat.Automat):
             to_remove.append(_key)
         for _key in to_remove:
             routed_packet, outpacket = self.sent_packets.pop(_key, (None, None, ))
-            if _Debug:
-                lg.dbg(_DebugLevel, 'cleaned %r %r' % (routed_packet, outpacket, ))
+            # if _Debug:
+            #     lg.dbg(_DebugLevel, 'cleaned %r %r' % (routed_packet, outpacket, ))
 
     def _on_cache_retry_success(self, xmlsrc, fail_info):
         if _Debug:
