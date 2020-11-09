@@ -373,22 +373,12 @@ class SharedAccessCoordinator(automat.Automat):
         self.outgoing_list_files_packets_ids = []
         self.known_ecc_map = args[0].get('ecc_map')
         for supplier_idurl in self.known_suppliers_list:
-            sc = supplier_connector.by_idurl(supplier_idurl, customer_idurl=self.customer_idurl)
-            if sc is None:
-                sc = supplier_connector.create(
-                    supplier_idurl=supplier_idurl,
-                    customer_idurl=self.customer_idurl,
-                    # we only want to read the data at the moment,
-                    # so requesting 0 bytes from that supplier
-                    needed_bytes=0,
-                    key_id=self.key_id,
-                    queue_subscribe=False,
-                )
-            if sc.state in ['CONNECTED', 'QUEUE?', ]:
-                self.automat('supplier-connected', supplier_idurl)
+            if id_url.is_cached(supplier_idurl):
+                self._do_connect_with_supplier(supplier_idurl)
             else:
-                sc.set_callback('shared_access_coordinator', self._on_supplier_connector_state_changed)
-                sc.automat('connect')
+                d = identitycache.immediatelyCaching(supplier_idurl)
+                d.addCallback(lambda *a: self._do_connect_with_supplier(supplier_idurl))
+                d.addErrback(lambda err: lg.warn('failed caching supplier %r identity: %r' % (supplier_idurl, str(err), )))
 
     def doRequestSupplierFiles(self, *args, **kwargs):
         """
@@ -417,6 +407,8 @@ class SharedAccessCoordinator(automat.Automat):
         Action method.
         """
         for supplier_idurl in self.known_suppliers_list:
+            if not id_url.is_cached(supplier_idurl):
+                continue
             sc = supplier_connector.by_idurl(supplier_idurl, customer_idurl=self.customer_idurl)
             if sc is None or sc.state != 'CONNECTED':
                 return
@@ -528,3 +520,21 @@ class SharedAccessCoordinator(automat.Automat):
             key_id=key_id,
             timeout=20,
         )
+
+    def _do_connect_with_supplier(self, supplier_idurl):
+        if _Debug:
+            lg.args(_DebugLevel, supplier_idurl=supplier_idurl, customer_idurl=self.customer_idurl)
+        sc = supplier_connector.by_idurl(supplier_idurl, customer_idurl=self.customer_idurl)
+        if sc is None:
+            sc = supplier_connector.create(
+                supplier_idurl=supplier_idurl,
+                customer_idurl=self.customer_idurl,
+                needed_bytes=0,  # we only want to read the data at the moment - requesting 0 bytes from the supplier
+                key_id=self.key_id,
+                queue_subscribe=False,
+            )
+        if sc.state in ['CONNECTED', 'QUEUE?', ]:
+            self.automat('supplier-connected', supplier_idurl)
+        else:
+            sc.set_callback('shared_access_coordinator', self._on_supplier_connector_state_changed)
+            sc.automat('connect')

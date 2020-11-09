@@ -170,6 +170,17 @@ def prepare():
     kw.wait_service_state(BROKERS_IDS + ['broker-rotated', ], 'service_message_broker', 'ON')
     kw.wait_packets_finished(PROXY_IDS + CUSTOMERS_IDS + BROKERS_IDS + ['broker-rotated', ] + SUPPLIERS_IDS + ['supplier-rotated', ])
 
+    customer_1_supplier_idurls = kw.supplier_list_v1('customer-1', expected_min_suppliers=2, expected_max_suppliers=2)
+    assert len(customer_1_supplier_idurls) == 2
+    if 'http://id-dead:8084/supplier-rotated.xml' in customer_1_supplier_idurls:
+        pos = customer_1_supplier_idurls.index('http://id-dead:8084/supplier-rotated.xml')
+        print('customer-1 is going to replace supplier at position %d because found supplier-rotated there' % pos)
+        response = request_post('customer-1', 'supplier/change/v1', json={'position': pos, })
+        assert response.status_code == 200
+        assert response.json()['status'] == 'OK', response.json()
+        kw.wait_service_state(['customer-1', ], 'service_shared_data', 'ON')
+        kw.wait_packets_finished(['customer-1', ])
+
 
 def scenario1():
     set_active_scenario('SCENARIO 1')
@@ -1172,6 +1183,8 @@ def scenario14(old_customer_1_info, customer_1_shared_file_info):
     set_active_scenario('SCENARIO 14')
     print('\n\n============\n[SCENARIO 14] customer-1 replace supplier at position 0')
 
+    kw.wait_packets_finished(PROXY_IDS + CUSTOMERS_IDS + SUPPLIERS_IDS)
+
     kw.supplier_list_dht_v1(
         customer_id='customer-1@id-a_8084',
         observers_ids=['customer-1@id-a_8084', 'customer-3@id-a_8084', ],
@@ -1200,7 +1213,9 @@ def scenario14(old_customer_1_info, customer_1_shared_file_info):
         'http://id-b:8084/supplier-4.xml',
         'http://id-a:8084/supplier-5.xml',
     ])
+    possible_suppliers.discard(customer_1_supplier_idurls_before[0])
     kw.config_set_v1('customer-1', 'services/employer/candidates', ','.join(possible_suppliers))
+
     response = request_post('customer-1', 'supplier/change/v1', json={'position': '0'})
     assert response.status_code == 200
     assert response.json()['status'] == 'OK', response.json()

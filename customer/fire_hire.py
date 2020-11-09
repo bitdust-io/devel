@@ -516,7 +516,7 @@ class FireHire(automat.Automat):
         to_be_fired = id_url.to_list(set(_SuppliersToFire))
         _SuppliersToFire = []
         if to_be_fired:
-            lg.warn('going to fire %d suppliers from external request' % len(to_be_fired))
+            lg.info('going to fire %d suppliers from external request' % len(to_be_fired))
             self.automat('made-decision', to_be_fired)
             return
         # make sure to not go too far when i just want to decrease number of my suppliers

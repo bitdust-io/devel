@@ -3114,6 +3114,7 @@ def message_conversations_list(message_types=[], offset=0, limit=100):
     from p2p import online_status
     from access import group_member
     from userid import global_id
+    from userid import id_url
     from userid import my_id
     conversations = []
     for conv in list(message_database.list_conversations(
@@ -3122,20 +3123,38 @@ def message_conversations_list(message_types=[], offset=0, limit=100):
         offset=offset,
         limit=limit,
     )):
-        conv['name'] = conv['conversation_id']
+        conv['key_id'] = conv['conversation_id']
+        conv['label'] = conv['conversation_id']
         conv['state'] = 'OFFLINE'
         if conv['type'] == 'private_message':
             usr1, _, usr2 = conv['conversation_id'].partition('&')
-            if usr1.replace('master$', '') == my_id.getID():
-                conv['name'] = usr2.replace('master$', '')
-            else:
-                conv['name'] = usr1.replace('master$', '')
-            conv['state'] = online_status.getCurrentState(global_id.glob2idurl(conv['name']))
+            usr1 = usr1.replace('master$', '')
+            usr2 = usr2.replace('master$', '')
+            idurl1 = global_id.glob2idurl(usr1, as_field=True)
+            idurl2 = global_id.glob2idurl(usr2, as_field=True)
+            conv_key_id = None
+            conv_label = None
+            user_idurl = None
+            if (id_url.is_cached(idurl1) and idurl1 == my_id.getIDURL()) or usr1.split('@')[0] == my_id.getIDName():
+                conv_key_id = usr2
+                conv_label = usr2.split('@')[0]
+                user_idurl = idurl2
+            if (id_url.is_cached(idurl2) and idurl2 == my_id.getIDURL()) or usr2.split('@')[0] == my_id.getIDName():
+                conv_key_id = usr1
+                conv_label = usr1.split('@')[0]
+                user_idurl = idurl1
+            if conv_key_id:
+                conv['key_id'] = conv_key_id
+            if conv_label:
+                conv['label'] = conv_label
+            if user_idurl:
+                conv['state'] = online_status.getCurrentState(user_idurl) or 'OFFLINE'
         elif conv['type'] == 'group_message' or conv['type'] == 'personal_message':
-            conv['name'] = my_keys.get_label(conv['conversation_id']) or conv['conversation_id']
+            conv['key_id'] = conv['conversation_id']
+            conv['label'] = my_keys.get_label(conv['conversation_id']) or conv['conversation_id']
             gm = group_member.get_active_group_member(conv['conversation_id'])
             if gm:
-                conv['state'] = gm.state or conv['state']
+                conv['state'] = gm.state or 'OFFLINE'
         conversations.append(conv)
     if _Debug:
         lg.out(_DebugLevel, 'api.message_conversations with message_types=%s found %d conversations' % (

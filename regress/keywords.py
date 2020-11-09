@@ -28,7 +28,7 @@ import pprint
 import base64
 import threading
 
-from testsupport import request_get, request_post, request_put, request_delete, run_ssh_command_and_wait
+from testsupport import request_get, request_post, request_put, request_delete, run_ssh_command_and_wait  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 

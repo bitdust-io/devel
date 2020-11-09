@@ -162,7 +162,7 @@ def setLocalIdentityXML(idxml):
 
 def getLocalIdentity():
     """
-    Return my identity object.
+    Returns my identity object.
     """
     global _LocalIdentity
     if not isLocalIdentityReady():
@@ -172,7 +172,7 @@ def getLocalIdentity():
 
 def getLocalID():
     """
-    Return my IDURL.
+    Returns my IDURL as a field.
     """
     global _LocalIDURL
     if _LocalIDURL is None:
@@ -184,7 +184,7 @@ def getLocalID():
 
 def getIDName():
     """
-    Return my account name, this is a filename part of IDURL without '.xml'.
+    Returns my account name, this is a filename part of IDURL without '.xml'.
     """
     global _LocalName
     if _LocalName is None:
@@ -196,7 +196,7 @@ def getIDName():
 
 def getGlobalID(key_alias=None):
     """
-    Return my global user id - according to my current IDURL.
+    Returns my global user id - according to my current IDURL.
     """
     global _LocalID
     if not key_alias and _LocalID is not None:
@@ -210,14 +210,14 @@ def getGlobalID(key_alias=None):
 
 def getIDURL():
     """
-    Return my IDURL.
+    Returns my IDURL as a field.
     """
     return getLocalID()
 
 
 def getID():
     """
-    Return my global ID.
+    Returns my global ID as a string.
     """
     return getGlobalID()
 
