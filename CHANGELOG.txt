@@ -2,6 +2,26 @@ Change Log
 ==========
 
 
+2020-11-11 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* IDURL fix in shared_access_coordinator()
+* fix in dht_relations.py
+* bug fix in stream.file_up()
+* built new api.message_conversations_list() method
+* fix in keys_synchronizer()
+* added descriptions for all settings
+* always use identity name when search for people
+* cleaned up some of the settings
+* populate service-started and service-stopped events
+* Bump cryptography from 2.8 to 3.2
+* adjusted some settings related to packet timeouts
+* fix in storage.restore_worker()
+* IDURL fixes in group messaging
+* added new state machine message_producer() and fixed api.group_leave() method
+* added new service_personal_messages()
+
+
+
 2020-08-27 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * bug fix in backup_rebuilder()
