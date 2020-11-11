@@ -922,6 +922,18 @@ class BitDustRESTHTTPServer(JsonAPIResource):
             recipient_id=_request_arg(request, 'id', None, True),
             sender_id=_request_arg(request, 'sender_id', None, False),
             message_type=_request_arg(request, 'message_type', 'private_message'),
+            offset=int(_request_arg(request, 'offset', '0')),
+            limit=int(_request_arg(request, 'limit', '100')),
+        )
+
+    @GET('^/msg/c?')
+    @GET('^/v1/message/conversation$')
+    @GET('^/message/conversation/v1$')
+    def message_conversation_v1(self, request):
+        return api.message_conversations_list(
+            message_types=list(filter(None, _request_arg(request, 'message_types', '').split(','))),
+            offset=int(_request_arg(request, 'offset', '0')),
+            limit=int(_request_arg(request, 'limit', '100')),
         )
 
     @GET('^/msg/r/(?P<consumer_callback_id>[^/]+)/$')

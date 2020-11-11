@@ -35,10 +35,10 @@ from services.local_service import LocalService
 
 
 def create_service():
-    return CoinsAccountantService()
+    return AccountantService()
 
 
-class CoinsAccountantService(LocalService):
+class AccountantService(LocalService):
 
     service_name = 'service_accountant'
     config_path = 'services/accountant/enabled'

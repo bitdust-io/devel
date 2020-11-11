@@ -36,7 +36,8 @@ import gc
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
+_DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
@@ -200,8 +201,6 @@ class RSAKey(object):
             signature_text = strng.to_text(signature)
             signature_int = int(signature_text)
             signature_bytes = number.long_to_bytes(signature_int)
-            # if signature[0:1] == b'0':
-            #     signature_bytes = b'\x00' + signature_bytes
         if not strng.is_bin(signature_bytes):
             raise ValueError('signature must be byte string')
         if not strng.is_bin(message):
@@ -213,21 +212,20 @@ class RSAKey(object):
             result = True
         except (ValueError, TypeError, ):
             if signature_as_digits and signature[0:1] == b'0':
-                lg.warn('signature starts with "0", will try to verify again')
+                if _Debug:
+                    lg.dbg(_DebugLevel, 'signature starts with "0", will try to verify again')
                 try:
                     signature_text = strng.to_text(signature)
                     signature_int = int(signature_text)
                     signature_bytes = number.long_to_bytes(signature_int)
                     pkcs1_15.new(self.keyObject).verify(h, b'\x00' + signature_bytes)
                     result = True
-                    lg.warn('signature with additional "0" in front passed verification')
+                    if _Debug:
+                        lg.dbg(_DebugLevel, 'signature with additional "0" in front passed verification')
                 except:
-                    # lg.err('signature verification failed: %r' % signature)
                     lg.err('signature=%r   message=%r   signature_as_digits=%r' % (
                         signature, message, signature_as_digits))
-                    # lg.exc(msg='signature=%r\nmessage=%r\nsignature_as_digits=%r\n' % (
-                    #     signature, message, signature_as_digits))
-                    # do not raise any exception...
+                    # do not raise any exception... just return False
         return result
 
     def encrypt(self, private_message):

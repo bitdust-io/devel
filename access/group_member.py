@@ -1197,7 +1197,11 @@ class GroupMember(automat.Automat):
         if self.rotated_brokers:
             self.automat('brokers-rotated')
         else:
-            self.automat('brokers-hired')
+            if 0 in self.hired_brokers and not self.hired_brokers[0]:
+                lg.err('broker at position 0 was not hired for %r' % self)
+                self.automat('brokers-failed')
+            else:
+                self.automat('brokers-hired')
         return idurl
 
     def _on_broker_connected(self, idurl, broker_pos):

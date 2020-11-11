@@ -284,10 +284,10 @@ class BitDustJsonRPCServer(JSONRPCServer):
         return api.suppliers_list()
 
     def jsonrpc_supplier_replace(self, position=None, supplier_id=None):
-        return api.supplier_replace(position=position, supplier_id=supplier_id)
+        return api.supplier_change(position=position, supplier_id=supplier_id)
 
     def jsonrpc_supplier_change(self, index_or_idurl, new_idurl):
-        return api.supplier_change(index_or_idurl, new_idurl)
+        return api.supplier_change(position=index_or_idurl, new_supplier_id=new_idurl)
 
     def jsonrpc_suppliers_ping(self):
         return api.suppliers_ping()

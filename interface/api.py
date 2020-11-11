@@ -1463,7 +1463,7 @@ def file_delete(remote_path):
     Removes virtual file or folder from the catalog and also notifies your remote suppliers to clean up corresponding uploaded data.
 
     ###### HTTP
-        curl -X POST 'localhost:8180/file/delete/v1' -d '{"remote_path": "abcd1234$alice@server-a.com:cars/ferrari.gif"}'
+        curl -X DELETE 'localhost:8180/file/delete/v1' -d '{"remote_path": "abcd1234$alice@server-a.com:cars/ferrari.gif"}'
 
     ###### WebSocket
         websocket.send('{"command": "api_call", "method": "file_delete", "kwargs": {"remote_path": "abcd1234$alice@server-a.com:cars/ferrari.gif"} }');
@@ -3062,29 +3062,27 @@ def message_history(recipient_id=None, sender_id=None, message_type=None, offset
     from chat import message_database
     from userid import my_id, global_id
     from crypt import my_keys
-    if recipient_id is None and sender_id is None:
+    if not recipient_id and not sender_id:
         return ERROR('recipient_id or sender_id is required')
-    if not recipient_id.count('@'):
-        from contacts import contactsdb
-        recipient_idurl = contactsdb.find_correspondent_by_nickname(recipient_id)
-        if not recipient_idurl:
-            return ERROR('recipient was not found')
-        recipient_id = global_id.UrlToGlobalID(recipient_idurl)
-    recipient_glob_id = global_id.ParseGlobalID(recipient_id)
-    if not recipient_glob_id['idurl']:
-        return ERROR('wrong recipient_id')
-    recipient_id = global_id.MakeGlobalID(**recipient_glob_id)
-    if not my_keys.is_valid_key_id(recipient_id):
-        return ERROR('invalid recipient_id: %s' % recipient_id)
+    if recipient_id:
+        if not recipient_id.count('@'):
+            from contacts import contactsdb
+            recipient_idurl = contactsdb.find_correspondent_by_nickname(recipient_id)
+            if not recipient_idurl:
+                return ERROR('recipient was not found')
+            recipient_id = global_id.UrlToGlobalID(recipient_idurl)
+        recipient_glob_id = global_id.ParseGlobalID(recipient_id)
+        if not recipient_glob_id['idurl']:
+            return ERROR('wrong recipient_id')
+        recipient_id = global_id.MakeGlobalID(**recipient_glob_id)
+        if not my_keys.is_valid_key_id(recipient_id):
+            return ERROR('invalid recipient_id: %s' % recipient_id)
     bidirectional = False
     if message_type in [None, 'private_message', ]:
         bidirectional = True
         if sender_id is None:
             sender_id = my_id.getGlobalID(key_alias='master')
-    if _Debug:
-        lg.out(_DebugLevel, 'api.message_history with recipient_id=%s sender_id=%s message_type=%s' % (
-            recipient_id, sender_id, message_type, ))
-    messages = [{'doc': m, } for m in message_database.query(
+    messages = [{'doc': m, } for m in message_database.query_messages(
         sender_id=sender_id,
         recipient_id=recipient_id,
         bidirectional=bidirectional,
@@ -3092,12 +3090,76 @@ def message_history(recipient_id=None, sender_id=None, message_type=None, offset
         offset=offset,
         limit=limit,
     )]
+    if _Debug:
+        lg.out(_DebugLevel, 'api.message_history with recipient_id=%s sender_id=%s message_type=%s found %d messages' % (
+            recipient_id, sender_id, message_type, len(messages), ))
     return RESULT(messages)
 
 
-def message_recipients():
+def message_conversations_list(message_types=[], offset=0, limit=100):
     """
+    Returns list of all known conversations with other users.
+    Parameter `message_types` can be used to select conversations of specific types: "group_message", "private_message", "personal_message".
+
+    ###### HTTP
+        curl -X GET 'localhost:8180/message/conversation/v1?message_types=group_message,private_message'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "message_conversations_list", "kwargs": {"message_types" : ["group_message", "private_message"]} }');
     """
+    if not driver.is_on('service_message_history'):
+        return ERROR('service_message_history() is not started')
+    from chat import message_database
+    from crypt import my_keys
+    from p2p import online_status
+    from access import group_member
+    from userid import global_id
+    from userid import id_url
+    from userid import my_id
+    conversations = []
+    for conv in list(message_database.list_conversations(
+        order_by_time=True,
+        message_types=message_types,
+        offset=offset,
+        limit=limit,
+    )):
+        conv['key_id'] = conv['conversation_id']
+        conv['label'] = conv['conversation_id']
+        conv['state'] = 'OFFLINE'
+        if conv['type'] == 'private_message':
+            usr1, _, usr2 = conv['conversation_id'].partition('&')
+            usr1 = usr1.replace('master$', '')
+            usr2 = usr2.replace('master$', '')
+            idurl1 = global_id.glob2idurl(usr1, as_field=True)
+            idurl2 = global_id.glob2idurl(usr2, as_field=True)
+            conv_key_id = None
+            conv_label = None
+            user_idurl = None
+            if (id_url.is_cached(idurl1) and idurl1 == my_id.getIDURL()) or usr1.split('@')[0] == my_id.getIDName():
+                conv_key_id = usr2
+                conv_label = usr2.split('@')[0]
+                user_idurl = idurl2
+            if (id_url.is_cached(idurl2) and idurl2 == my_id.getIDURL()) or usr2.split('@')[0] == my_id.getIDName():
+                conv_key_id = usr1
+                conv_label = usr1.split('@')[0]
+                user_idurl = idurl1
+            if conv_key_id:
+                conv['key_id'] = conv_key_id
+            if conv_label:
+                conv['label'] = conv_label
+            if user_idurl:
+                conv['state'] = online_status.getCurrentState(user_idurl) or 'OFFLINE'
+        elif conv['type'] == 'group_message' or conv['type'] == 'personal_message':
+            conv['key_id'] = conv['conversation_id']
+            conv['label'] = my_keys.get_label(conv['conversation_id']) or conv['conversation_id']
+            gm = group_member.get_active_group_member(conv['conversation_id'])
+            if gm:
+                conv['state'] = gm.state or 'OFFLINE'
+        conversations.append(conv)
+    if _Debug:
+        lg.out(_DebugLevel, 'api.message_conversations with message_types=%s found %d conversations' % (
+            message_types, len(conversations), ))
+    return RESULT(conversations)
 
 
 def message_send(recipient_id, data, ping_timeout=30, message_ack_timeout=15):

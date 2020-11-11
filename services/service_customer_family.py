@@ -35,10 +35,10 @@ from services.local_service import LocalService
 
 
 def create_service():
-    return SupplierRelationsService()
+    return CustomerFamilyService()
 
 
-class SupplierRelationsService(LocalService):
+class CustomerFamilyService(LocalService):
 
     service_name = 'service_customer_family'
     config_path = 'services/customer-family/enabled'

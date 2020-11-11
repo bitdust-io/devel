@@ -212,7 +212,7 @@ class NicknameHolder(automat.Automat):
         """
         Condition method.
         """
-        return args[0] == my_id.getLocalID()
+        return id_url.to_bin(args[0]) == my_id.getLocalID().to_bin()
 
     def doSetNickname(self, *args, **kwargs):
         """

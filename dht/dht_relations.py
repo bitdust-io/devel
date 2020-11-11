@@ -219,7 +219,14 @@ def read_customer_message_brokers(customer_idurl, positions=[0, ], return_detail
         if _Debug:
             one_broker_task.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='read_customer_message_brokers._do_broker_identity_cache')
         one_broker_task.addCallback(lambda xmlsrc: broker_result.callback(dht_record))
-        one_broker_task.addErrback(broker_result.errback)
+        one_broker_task.addErrback(lambda err: broker_result.callback({
+            'timestamp': None,
+            'revision': 0,
+            'customer_idurl': customer_idurl,
+            'broker_idurl': None,
+            'position': position,
+            'archive_folder_path': None,
+        }))
         return None
 
     def _do_verify(dht_value, position, broker_result):

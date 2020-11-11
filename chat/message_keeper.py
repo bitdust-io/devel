@@ -105,7 +105,7 @@ def cache_message(data, message_id, sender, recipient, message_type=None, direct
         message_type=message_type,
         direction=direction,
     )
-    message_database.insert(message_json)
+    message_database.insert_message(message_json)
     api_web_socket.on_stream_message(message_json)
     if _Debug:
-        lg.out(_DebugLevel, 'message_keeper.cache_message [%s]:%s from %r to %r' % (message_type, message_id, sender, recipient, ))
+        lg.out(_DebugLevel, 'message_keeper.cache_message [%s]:%s from %r to %r of type %r' % (message_type, message_id, sender, recipient, type(data)))

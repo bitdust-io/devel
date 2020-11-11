@@ -545,7 +545,7 @@ class DetailedConfig(CachedConfig):
             from . import config_details
             self._load_details(config_details.raw())
         except:
-            pass
+            lg.exc()
 
     def _load_details(self, src):
         """

@@ -28,7 +28,7 @@ import pprint
 import base64
 import threading
 
-from testsupport import request_get, request_post, request_put, request_delete, run_ssh_command_and_wait
+from testsupport import request_get, request_post, request_put, request_delete, run_ssh_command_and_wait  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 
@@ -194,12 +194,26 @@ def group_create_v1(customer: str, key_size=1024, label='', attempts=1):
     return response.json()['result']['group_key_id']
 
 
-def group_info_v1(customer: str, group_key_id):
+def group_info_v1(customer: str, group_key_id, wait_state=None, validate_retries=30, delay=3):
     response = request_get(customer, 'group/info/v1?group_key_id=%s' % group_key_id, timeout=20)
     assert response.status_code == 200
     print('group/info/v1 [%s] : %s\n' % (customer, pprint.pformat(response.json())))
     assert response.json()['status'] == 'OK', response.json()
-    return response.json()
+    if wait_state is None:
+        return response.json()
+    count = 0
+    while True:
+        if count >= validate_retries:
+            break
+        response = request_get(customer, 'group/info/v1?group_key_id=%s' % group_key_id, timeout=20)
+        assert response.status_code == 200
+        print('group/info/v1 [%s] attempt %d : %s\n' % (customer, count, pprint.pformat(response.json())))
+        assert response.json()['status'] == 'OK', response.json()
+        if response.json()['result']['state'] == wait_state:
+            return response.json()
+        count += 1
+        time.sleep(delay)
+    assert False, 'state %r was not detected for %r after %d retries' % (wait_state, group_key_id, count, )
 
 
 def group_join_v1(customer: str, group_key_id, attempts=1, timeout=120):
@@ -507,6 +521,14 @@ def message_history_v1(node, recipient_id, message_type='private_message', timeo
     response = request_get(node, f'message/history/v1?id={recipient_id}&message_type={message_type}', timeout=timeout)
     assert response.status_code == 200
     print('message/history/v1 [%s] recipient_id=%s : %s\n' % (node, recipient_id, pprint.pformat(response.json()), ))
+    assert response.json()['status'] == 'OK', response.json()
+    return response.json()
+
+
+def message_conversation_v1(node, message_types='private_message,group_message', timeout=15):
+    response = request_get(node, f'message/conversation/v1?message_types={message_types}', timeout=timeout)
+    assert response.status_code == 200
+    print('message/conversation/v1 [%s] message_types=%s : %s\n' % (node, message_types, pprint.pformat(response.json()), ))
     assert response.json()['status'] == 'OK', response.json()
     return response.json()
 
