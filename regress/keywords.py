@@ -194,7 +194,7 @@ def group_create_v1(customer: str, key_size=1024, label='', attempts=1):
     return response.json()['result']['group_key_id']
 
 
-def group_info_v1(customer: str, group_key_id, wait_state=None, validate_retries=30, delay=3):
+def group_info_v1(customer: str, group_key_id, wait_state=None, validate_retries=30, delay=3, stop_state=None):
     response = request_get(customer, 'group/info/v1?group_key_id=%s' % group_key_id, timeout=20)
     assert response.status_code == 200
     print('group/info/v1 [%s] : %s\n' % (customer, pprint.pformat(response.json())))
@@ -210,6 +210,8 @@ def group_info_v1(customer: str, group_key_id, wait_state=None, validate_retries
         print('group/info/v1 [%s] attempt %d : %s\n' % (customer, count, pprint.pformat(response.json())))
         assert response.json()['status'] == 'OK', response.json()
         if response.json()['result']['state'] == wait_state:
+            return response.json()
+        if stop_state and response.json()['result']['state'] == stop_state:
             return response.json()
         count += 1
         time.sleep(delay)

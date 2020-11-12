@@ -3136,13 +3136,13 @@ def message_conversations_list(message_types=[], offset=0, limit=100):
             conv_label = None
             user_idurl = None
             if (id_url.is_cached(idurl1) and idurl1 == my_id.getIDURL()) or usr1.split('@')[0] == my_id.getIDName():
-                conv_key_id = usr2
-                conv_label = usr2.split('@')[0]
                 user_idurl = idurl2
+                conv_key_id = global_id.UrlToGlobalID(idurl2, include_key=True)
+                conv_label = conv_key_id.replace('master$', '').split('@')[0]
             if (id_url.is_cached(idurl2) and idurl2 == my_id.getIDURL()) or usr2.split('@')[0] == my_id.getIDName():
-                conv_key_id = usr1
-                conv_label = usr1.split('@')[0]
                 user_idurl = idurl1
+                conv_key_id = global_id.UrlToGlobalID(idurl1, include_key=True)
+                conv_label = conv_key_id.replace('master$', '').split('@')[0]
             if conv_key_id:
                 conv['key_id'] = conv_key_id
             if conv_label:
@@ -3150,7 +3150,7 @@ def message_conversations_list(message_types=[], offset=0, limit=100):
             if user_idurl:
                 conv['state'] = online_status.getCurrentState(user_idurl) or 'OFFLINE'
         elif conv['type'] == 'group_message' or conv['type'] == 'personal_message':
-            conv['key_id'] = conv['conversation_id']
+            conv['key_id'] = my_keys.latest_key_id(conv['conversation_id'])
             conv['label'] = my_keys.get_label(conv['conversation_id']) or conv['conversation_id']
             gm = group_member.get_active_group_member(conv['conversation_id'])
             if gm:

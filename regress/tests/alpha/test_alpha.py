@@ -254,6 +254,9 @@ def scenario4():
     kw.service_info_v1('customer-1', 'service_shared_data', 'ON')
     kw.service_info_v1('customer-2', 'service_shared_data', 'ON')
 
+    kw.supplier_list_v1('customer-1', expected_min_suppliers=2, expected_max_suppliers=2)
+    kw.supplier_list_v1('customer-2', expected_min_suppliers=2, expected_max_suppliers=2)
+
     # create shares (logic unit to upload/download/share files) on customer-1 and customer-2
     customer_1_share_id_cat = kw.share_create_v1('customer-1')
     customer_2_share_id_cat = kw.share_create_v1('customer-2')
@@ -1018,7 +1021,7 @@ def scenario12_begin():
 def scenario12_end(old_customer_4_info):
     global group_customers_2_4_messages
     set_active_scenario('SCENARIO 12 end')
-    print('\n\n============\n[SCENARIO 12] customer-4 chat with customer-2 via broker-rotated, but his IDURL was rotated')
+    print('\n\n============\n[SCENARIO 12] customer-4 chat with customer-2 via broker-rotated, but broker IDURL was rotated')
 
     # just to make sure customer-2 or customer-4 to not pick up rotated broker again
     kw.config_set_v1('customer-2', 'services/private-groups/preferred-brokers',
@@ -1067,12 +1070,27 @@ def scenario12_end(old_customer_4_info):
     assert 'customer-4@id-b_8084' in customer_4_rotated_broker_producers
 
     # same for customer-2 group queue ID suppose to be changed
-    customer_2_group_info_rotated = kw.group_info_v1('customer-2', customer_4_group_key_id, wait_state='IN_SYNC!')['result']
+    customer_2_group_info_rotated = kw.group_info_v1('customer-2', customer_4_group_key_id, wait_state='IN_SYNC!', stop_state='DISCONNECTED')['result']
+    if customer_2_group_info_rotated['state'] == 'DISCONNECTED':
+        # try to reconnect - it is fine to be disconnected when top broker's IDURL was rotated
+        kw.group_join_v1('customer-2', customer_4_group_key_id)
+        kw.wait_packets_finished(PROXY_IDS + CUSTOMERS_IDS + BROKERS_IDS + ['broker-rotated', ])
+        customer_2_group_info_rotated = kw.group_info_v1('customer-2', customer_4_group_key_id, wait_state='IN_SYNC!')['result']
+
     assert customer_2_group_info_rotated['state'] == 'IN_SYNC!'
     assert customer_2_group_info_rotated['last_sequence_id'] == 5
 
     customer_2_rotated_queue_id = customer_2_group_info_rotated['active_queue_id']
     customer_2_rotated_broker_id = customer_2_group_info_rotated['active_broker_id']
+
+    if customer_2_rotated_queue_id != customer_4_rotated_queue_id:
+        customer_4_group_info_rotated = kw.group_info_v1('customer-4', customer_4_group_key_id, wait_state='IN_SYNC!')['result']
+        assert customer_4_group_info_rotated['state'] == 'IN_SYNC!'
+        assert customer_4_group_info_rotated['last_sequence_id'] == 5
+
+        customer_4_rotated_queue_id = customer_4_group_info_rotated['active_queue_id']
+        customer_4_rotated_broker_id = customer_4_group_info_rotated['active_broker_id']
+        customer_4_rotated_broker_name = customer_4_rotated_broker_id.split('@')[0]
 
     assert customer_2_rotated_queue_id == customer_4_rotated_queue_id
     assert customer_2_rotated_broker_id == customer_4_rotated_broker_id
