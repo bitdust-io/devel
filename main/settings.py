@@ -1259,7 +1259,7 @@ def APISecretFile():
 def ChatMessagesHistoryDatabaseFile():
     """
     """
-    return os.path.join(ChatMessagesDir(), 'local.db')
+    return os.path.join(ChatMessagesDir(), 'message.db')
 
 #------------------------------------------------------------------------------
 #--- BINARY FILES -------------------------------------------------------------

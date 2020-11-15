@@ -3127,7 +3127,11 @@ def message_conversations_list(message_types=[], offset=0, limit=100):
         conv['label'] = conv['conversation_id']
         conv['state'] = 'OFFLINE'
         if conv['type'] == 'private_message':
-            usr1, _, usr2 = conv['conversation_id'].partition('&')
+            loc_usr1, _, loc_usr2 = conv['conversation_id'].partition('&')
+            usr1 = my_keys.local_keys().get(loc_usr1)
+            usr2 = my_keys.local_keys().get(loc_usr2)
+            if not usr1 or not usr2:
+                continue
             usr1 = usr1.replace('master$', '')
             usr2 = usr2.replace('master$', '')
             idurl1 = global_id.glob2idurl(usr1, as_field=True)
@@ -3150,9 +3154,13 @@ def message_conversations_list(message_types=[], offset=0, limit=100):
             if user_idurl:
                 conv['state'] = online_status.getCurrentState(user_idurl) or 'OFFLINE'
         elif conv['type'] == 'group_message' or conv['type'] == 'personal_message':
-            conv['key_id'] = my_keys.latest_key_id(conv['conversation_id'])
-            conv['label'] = my_keys.get_label(conv['conversation_id']) or conv['conversation_id']
-            gm = group_member.get_active_group_member(conv['conversation_id'])
+            local_key_id, _, _ = conv['conversation_id'].partition('&')
+            key_id = my_keys.local_keys().get(local_key_id)
+            if not key_id:
+                continue
+            conv['key_id'] = key_id
+            conv['label'] = my_keys.get_label(key_id) or key_id
+            gm = group_member.get_active_group_member(key_id)
             if gm:
                 conv['state'] = gm.state or 'OFFLINE'
         conversations.append(conv)

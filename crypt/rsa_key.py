@@ -68,6 +68,7 @@ class RSAKey(object):
     
     def __init__(self):
         self.keyObject = None
+        self.local_key_id = None
         self.label = ''
         self.signed = None
     
@@ -76,6 +77,7 @@ class RSAKey(object):
 
     def forget(self):
         self.keyObject = None
+        self.local_key_id = None
         self.label = ''
         self.signed = None
         # gc.collect()
@@ -116,6 +118,7 @@ class RSAKey(object):
         result = self.fromString(key_src)
         if result:
             self.label = key_dict.get('label', '')
+            self.local_key_id = key_dict.get('local_key_id', None)
             if 'signature' in key_dict and 'signature_pubkey' in key_dict:
                 self.signed = (key_dict['signature'], key_dict['signature_pubkey'], )
         del key_src
@@ -127,10 +130,11 @@ class RSAKey(object):
             raise ValueError('key object already exist')
         key_src = strng.to_bin(key_src)
         try:
-            self.keyObject = RSA.import_key(key_src)
+            self.keyObject = RSA.import_key(key_src)  # @UndefinedVariable
         except:
             if _Debug:
                 lg.exc('key_src=%r' % key_src)
+            raise ValueError('failed to read key body')
         del key_src
         # gc.collect()
         return True
@@ -141,7 +145,7 @@ class RSAKey(object):
         key_src = local_fs.ReadTextFile(keyfilename)
         key_src = strng.to_bin(key_src)
         try:
-            self.keyObject = RSA.import_key(key_src)
+            self.keyObject = RSA.import_key(key_src)  # @UndefinedVariable
         except:
             if _Debug:
                 lg.exc('key_src=%r' % key_src)
@@ -172,6 +176,7 @@ class RSAKey(object):
             key_body = strng.to_text(self.keyObject.publickey().exportKey(format=output_format_public))
         key_dict = {
             'body': key_body,
+            'local_key_id': self.local_key_id,
             'label': self.label,
         }
         if self.isSigned():
