@@ -70,14 +70,14 @@ from crypt import key
 from crypt import rsa_key
 from crypt import hashes
 
-from userid import my_id
 from userid import global_id
 from userid import id_url
+from userid import my_id
 
 #------------------------------------------------------------------------------
 
 _KnownKeys = {}
-_LatestLocalKeyID = -1
+_LatestLocalKeyID = 0
 _LocalKeysRegistry = {}
 _LocalKeysIndex = {}
 
@@ -267,8 +267,14 @@ def scan_local_keys(keys_folder=None):
     if latest_local_key_id_src:
         _LatestLocalKeyID = int(latest_local_key_id_src)
     else:
-        _LatestLocalKeyID = -1
+        _LatestLocalKeyID = 0
     known_keys().clear()
+    local_keys().clear()
+    local_keys_index().clear()
+    my_master_key_id = my_id.getGlobalID(key_alias='master')
+    if my_master_key_id:
+        local_keys()[0] = my_master_key_id
+        local_keys_index()[key.MyPublicKey()] = 0
     count = 0
     unregistered_keys = []
     for key_filename in os.listdir(keys_folder):
@@ -371,7 +377,7 @@ def load_key(key_id, keys_folder=None):
                 lg.out(_DebugLevel, 'my_keys.load_key %r  label=%r  is_private=%r  local_key_id=%r  from %s' % (
                     key_id, key_object.label, not key_object.isPublic(), key_object.local_key_id, keys_folder, ))
         else:
-            lg.err('for key %r local_key_id was not set' % key_id)
+            lg.warn('for key %r local_key_id was not set' % key_id)
     return True
 
 

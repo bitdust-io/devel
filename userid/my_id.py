@@ -203,6 +203,8 @@ def getGlobalID(key_alias=None):
         return _LocalID
     from userid import global_id
     glob_id = global_id.UrlToGlobalID(getLocalID())
+    if not glob_id:
+        return glob_id
     if key_alias:
         glob_id = '{}${}'.format(key_alias, glob_id)
     return glob_id
