@@ -551,7 +551,7 @@ def check_rename_my_keys():
 
 #------------------------------------------------------------------------------
 
-def do_backup_key(key_id, keys_folder=None, wait_result=False):
+def do_backup_key(key_id, keys_folder=None):
     """
     Send given key to my suppliers to store it remotely.
     This will make a regular backup copy of that key file - encrypted with my master key.
@@ -560,14 +560,10 @@ def do_backup_key(key_id, keys_folder=None, wait_result=False):
         lg.out(_DebugLevel, 'key_ring.do_backup_key     key_id=%r' % key_id)
     if key_id == my_id.getGlobalID(key_alias='master') or key_id == 'master':
         lg.err('master key must never leave local host')
-        if wait_result:
-            return fail(Exception('master key must never leave local host'))
-        return False
+        return fail(Exception('master key must never leave local host'))
     if not my_keys.is_key_registered(key_id):
         lg.err('unknown key: "%s"' % key_id)
-        if wait_result:
-            return fail(Exception('unknown key: "%s"' % key_id))
-        return False
+        return fail(Exception('unknown key: "%s"' % key_id))
     if not keys_folder:
         keys_folder = settings.KeyStoreDir()
     if my_keys.is_key_private(key_id):
@@ -584,8 +580,6 @@ def do_backup_key(key_id, keys_folder=None, wait_result=False):
         global_key_path_id = res['result'].get('path_id')
         if global_key_path_id and backup_control.IsPathInProcess(global_key_path_id):
             lg.warn('skip, another backup for key already started: %s' % global_key_path_id)
-            if not wait_result:
-                return True
             backup_id_list = backup_control.FindRunningBackup(global_key_path_id)
             if backup_id_list:
                 backup_id = backup_id_list[0]
@@ -609,23 +603,14 @@ def do_backup_key(key_id, keys_folder=None, wait_result=False):
         res = api.file_create(global_key_path)
         if res['status'] != 'OK':
             lg.err('failed to create path "%s" in the catalog: %r' % (global_key_path, res))
-            if wait_result:
-                return fail(Exception('failed to create path "%s" in the catalog: %r' % (global_key_path, res)))
-            return False
+            return fail(Exception('failed to create path "%s" in the catalog: %r' % (global_key_path, res)))
     res = api.file_upload_start(
         local_path=local_key_filepath,
         remote_path=global_key_path,
-        wait_result=wait_result,
+        wait_result=True,
+        wait_finish=False,
         open_share=False,
     )
-    if not wait_result:
-        if res['status'] != 'OK':
-            lg.err('failed to upload key "%s": %r' % (global_key_path, res))
-            return False
-        if _Debug:
-            lg.out(_DebugLevel, 'key_ring.do_backup_key key_id=%s : %r' % (key_id, res))
-        return True
-
     backup_result = Deferred()
 
     # TODO: put that code bellow into api.file_upload_start() method with additional parameter

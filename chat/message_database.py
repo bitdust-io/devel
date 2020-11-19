@@ -77,12 +77,14 @@ MESSAGE_TYPES = {
     'message': 1,
     'private_message': 2,
     'group_message': 3,
+    'personal_message': 4,
 }
 
 MESSAGE_TYPE_CODES = {
     1: 'message',
     2: 'private_message',
     3: 'group_message',
+    4: 'personal_message',
 }
 
 #------------------------------------------------------------------------------
@@ -116,8 +118,8 @@ def init(filepath=None):
             "payload_time" INTEGER,
             "payload_message_id" TEXT,
             "payload_body" JSON)''')
-        _HistoryCursor.execute('CREATE INDEX "sender public key id" on history(sender_local_key_id)')
-        _HistoryCursor.execute('CREATE INDEX "recipient public key id" on history(recipient_local_key_id)')
+        _HistoryCursor.execute('CREATE INDEX "sender local key id" on history(sender_local_key_id)')
+        _HistoryCursor.execute('CREATE INDEX "recipient local key id" on history(recipient_local_key_id)')
 
         _HistoryCursor.execute('''CREATE TABLE IF NOT EXISTS "conversations" (
             "conversation_id" TEXT,
@@ -218,8 +220,11 @@ def insert_message(message_json):
         return False
     if _Debug:
         lg.args(_DebugLevel, sender=sender_glob_id, recipient=recipient_glob_id, typ=payload_type, message_id=payload_message_id)
-    sender_local_key_id = my_keys.get_local_key_id(sender_glob_id)
     recipient_local_key_id = my_keys.get_local_key_id(recipient_glob_id)
+    if payload_type in [3, 4, ]:
+        sender_local_key_id = recipient_local_key_id
+    else:
+        sender_local_key_id = my_keys.get_local_key_id(sender_glob_id)
     if sender_local_key_id is None or recipient_local_key_id is None:
         lg.err('failed to store message because local_key_id is not found, sender=%r recipient=%r' % (
             sender_local_key_id, recipient_local_key_id, ))
@@ -240,30 +245,22 @@ def insert_message(message_json):
         payload_body,
     ))
     db().commit()
-    update_conversation(sender_glob_id, recipient_glob_id, payload_type, payload_time, payload_message_id)
+    update_conversation(sender_local_key_id, recipient_local_key_id, payload_type, payload_time, payload_message_id)
     return True
 
 
-def update_conversation(sender_glob_id, recipient_glob_id, payload_type, payload_time, payload_message_id):
+def update_conversation(sender_local_key_id, recipient_local_key_id, payload_type, payload_time, payload_message_id):
     conversation_id = None
-    if recipient_glob_id.startswith('group_'):
-        local_key_id = my_keys.get_local_key_id(recipient_glob_id)
-        if local_key_id is not None:
-            conversation_id = '{}&{}'.format(local_key_id, local_key_id)
-    elif recipient_glob_id.startswith('person_'):
-        local_key_id = my_keys.get_local_key_id(recipient_glob_id)
-        if local_key_id is not None:
-            conversation_id = '{}&{}'.format(local_key_id, local_key_id)
+    if payload_type in [3, 4, ]:
+        conversation_id = '{}&{}'.format(recipient_local_key_id, recipient_local_key_id)
+    elif payload_type == 2:
+        if recipient_local_key_id < sender_local_key_id:
+            conversation_id = '{}&{}'.format(recipient_local_key_id, sender_local_key_id)
+        else:
+            conversation_id = '{}&{}'.format(sender_local_key_id, recipient_local_key_id)
     else:
-        recipient_local_key_id = my_keys.get_local_key_id(recipient_glob_id)
-        sender_local_key_id = my_keys.get_local_key_id(sender_glob_id)
-        if recipient_local_key_id is not None and sender_local_key_id is not None:
-            if recipient_local_key_id < sender_local_key_id:
-                conversation_id = '{}&{}'.format(recipient_local_key_id, sender_local_key_id)
-            else:
-                conversation_id = '{}&{}'.format(sender_local_key_id, recipient_local_key_id)
-    if _Debug:
-        lg.args(_DebugLevel, conversation_id=conversation_id, sender=sender_glob_id, recipient=recipient_glob_id)
+        lg.err('unexpected message type: %r' % payload_type)
+        return
     if conversation_id is None:
         lg.err('failed to update conversation, local_key_id was not found')
         return
@@ -277,7 +274,7 @@ def update_conversation(sender_glob_id, recipient_glob_id, payload_type, payload
         sql = 'INSERT INTO conversations (conversation_id, payload_type, started_time, last_updated_time, last_message_id) VALUES(?, ?, ?, ?, ?)'
         params = [conversation_id, payload_type, payload_time, payload_time, payload_message_id, ]
     if _Debug:
-        lg.args(_DebugLevel, found_conversation=found_conversation, params=params)
+        lg.args(_DebugLevel, conversation_id=conversation_id, found_conversation=len(found_conversation), params=params)
     cur().execute(sql, params)
     db().commit()
     return True
@@ -333,21 +330,21 @@ def query_messages(sender_id=None, recipient_id=None, bidirectional=True, order_
     results = []
     local_key_ids = {}
     for row in cur().execute(sql, params):
-        sender_loc_id = row[0]
-        recipient_loc_id = row[1]
-        if sender_loc_id not in local_key_ids:
-            local_key_ids[sender_loc_id] = my_keys.local_keys().get(sender_loc_id)
-        if recipient_loc_id not in local_key_ids:
-            local_key_ids[recipient_loc_id] = my_keys.load_key().get(recipient_loc_id)
-        if not local_key_ids.get(sender_loc_id) or not local_key_ids.get(recipient_loc_id):
+        sender_local_key_id = row[0]
+        recipient_local_key_id = row[1]
+        if sender_local_key_id not in local_key_ids:
+            local_key_ids[sender_local_key_id] = my_keys.get_local_key(sender_local_key_id)
+        if recipient_local_key_id not in local_key_ids:
+            local_key_ids[recipient_local_key_id] = my_keys.get_local_key(recipient_local_key_id)
+        if not local_key_ids.get(sender_local_key_id) or not local_key_ids.get(recipient_local_key_id):
             lg.warn('unknown sender or recipient local key_id')
             continue
         json_msg = build_json_message(
             data=json.loads(row[5]),
             message_id=row[4],
             message_time=row[3],
-            sender=local_key_ids[sender_loc_id],
-            recipient=local_key_ids[recipient_loc_id],
+            sender=local_key_ids[sender_local_key_id],
+            recipient=local_key_ids[recipient_local_key_id],
             message_type=MESSAGE_TYPE_CODES.get(int(row[2]), 'private_message'),
         )
         if order_by_time:
@@ -403,10 +400,16 @@ def rebuild_conversations():
     db().commit()
 
     for message_json in list(query_messages()):
+        payload_type = MESSAGE_TYPES.get(message_json['payload']['type'], 1)
+        recipient_local_key_id = my_keys.get_local_key_id(message_json['recipient']['glob_id'])
+        if payload_type in [3, 4, ]:
+            sender_local_key_id = recipient_local_key_id
+        else:
+            sender_local_key_id = my_keys.get_local_key_id(message_json['sender']['glob_id'])
         update_conversation(
-            sender_glob_id=message_json['sender']['glob_id'],
-            recipient_glob_id=message_json['recipient']['glob_id'],
-            payload_type=MESSAGE_TYPES.get(message_json['payload']['type'], 1),
+            sender_local_key_id=sender_local_key_id,
+            recipient_local_key_id=recipient_local_key_id,
+            payload_type=payload_type,
             payload_time=message_json['payload']['time'],
             payload_message_id=message_json['payload']['message_id'],
         )

@@ -357,7 +357,7 @@ class KeysSynchronizer(automat.Automat):
                 self.keys_to_upload.add(key_id)
         keys_saved = []
         for key_id in self.keys_to_upload:
-            res = key_ring.do_backup_key(key_id, wait_result=True)
+            res = key_ring.do_backup_key(key_id)
             keys_saved.append(res)
             self.saved_count += 1
         if _Debug:

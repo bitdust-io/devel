@@ -77,7 +77,7 @@ from userid import my_id
 #------------------------------------------------------------------------------
 
 _KnownKeys = {}
-_LatestLocalKeyID = 0
+_LatestLocalKeyID = -1
 _LocalKeysRegistry = {}
 _LocalKeysIndex = {}
 
@@ -100,7 +100,7 @@ def shutdown():
     known_keys().clear()
     local_keys().clear()
     local_keys_index().clear()
-    _LatestLocalKeyID = -1
+    _LatestLocalKeyID = 0
 
 #------------------------------------------------------------------------------
 
@@ -271,10 +271,6 @@ def scan_local_keys(keys_folder=None):
     known_keys().clear()
     local_keys().clear()
     local_keys_index().clear()
-    my_master_key_id = my_id.getGlobalID(key_alias='master')
-    if my_master_key_id:
-        local_keys()[0] = my_master_key_id
-        local_keys_index()[key.MyPublicKey()] = 0
     count = 0
     unregistered_keys = []
     for key_filename in os.listdir(keys_folder):
@@ -306,7 +302,7 @@ def scan_local_keys(keys_folder=None):
         known_keys()[key_id].local_key_id = new_local_key_id
         save_key(key_id, keys_folder=keys_folder)
         registered_count += 1
-    unregistered_keys.clear()
+    unregistered_keys = []
     save_latest_local_key_id(keys_folder=keys_folder)
     if _Debug:
         lg.out(_DebugLevel, '    %d keys found and %d registered' % (count, registered_count, ))
@@ -581,7 +577,6 @@ def rename_key(current_key_id, new_key_id, keys_folder=None):
         return False
     key_object = known_keys().pop(current_key_id)
     known_keys()[new_key_id] = key_object
-    local_keys().pop(key_object.local_key_id, None)
     local_keys()[key_object.local_key_id] = new_key_id
     gc.collect()
     if _Debug:
@@ -766,8 +761,16 @@ def get_label(key_id):
 def get_local_key_id(key_id):
     key_id = latest_key_id(strng.to_text(key_id))
     if key_id not in known_keys():
+        if key_id == my_id.getGlobalID('master'):
+            return 0
         return None
     return key_obj(key_id).local_key_id
+
+
+def get_local_key(local_key_id):
+    if local_key_id == 0:
+        return my_id.getGlobalID('master')
+    return local_keys().get(local_key_id)
 
 #------------------------------------------------------------------------------
 
@@ -913,3 +916,8 @@ if __name__ == '__main__':
     lg.set_debug_level(18)
     settings.init()
     init()
+    import pprint
+    pprint.pprint(local_keys_index())
+    pprint.pprint(local_keys())
+    print(get_key_info('master$recalx@seed.bitdust.io'))
+    pprint.pprint(local_keys_index())

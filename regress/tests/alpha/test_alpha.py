@@ -540,7 +540,7 @@ def scenario8():
     assert len(kw.message_history_v1('customer-3', customer_1_group_key_id, message_type='group_message')['result']) == 0
 
     assert len(kw.message_conversation_v1('customer-1')['result']) == 1
-    assert len(kw.message_conversation_v1('customer-2')['result']) == 4
+    assert len(kw.message_conversation_v1('customer-2')['result']) == 3
     assert len(kw.message_conversation_v1('customer-3')['result']) == 0
 
     # sending 11 messages to the group from customer 1
@@ -561,7 +561,7 @@ def scenario8():
     assert len(kw.message_history_v1('customer-2', customer_1_group_key_id, message_type='group_message')['result']) == 11
 
     assert len(kw.message_conversation_v1('customer-1')['result']) == 2
-    assert len(kw.message_conversation_v1('customer-2')['result']) == 5
+    assert len(kw.message_conversation_v1('customer-2')['result']) == 4
     assert len(kw.message_conversation_v1('customer-3')['result']) == 0
 
     # customers 1 and 2 leave the group
@@ -588,7 +588,7 @@ def scenario8():
     assert customer_2_group_info_offline['last_sequence_id'] == 10
 
     assert len(kw.message_conversation_v1('customer-1')['result']) == 2
-    assert len(kw.message_conversation_v1('customer-2')['result']) == 5
+    assert len(kw.message_conversation_v1('customer-2')['result']) == 4
     assert len(kw.message_conversation_v1('customer-3')['result']) == 0
 
     # customer-2 share group key to customer-3
@@ -639,7 +639,7 @@ def scenario8():
     assert customer_3_group_info_offline['last_sequence_id'] == 10
 
     assert len(kw.message_conversation_v1('customer-1')['result']) == 2
-    assert len(kw.message_conversation_v1('customer-2')['result']) == 5
+    assert len(kw.message_conversation_v1('customer-2')['result']) == 4
     assert len(kw.message_conversation_v1('customer-3')['result']) == 1
 
     # make sure brokers are cleaned up
@@ -1436,18 +1436,14 @@ def scenario17(old_customer_2_info):
     # just like when you backup your private key and restore it from USB stick on another device
     shutil.move(backup_file_directory_c2, backup_file_directory_c3)
 
+    # before start the restore make sure all files actually are delivered to suppliers
+    kw.file_list_all_v1('customer-2', expected_reliable=100, reliable_shares=False, attempts=20)
+
     # stop customer-2 node
     response = request_get('customer-2', 'process/stop/v1')
     print('\nprocess/stop/v1 [customer-2] : %s\n' % response.json())
     assert response.json()['status'] == 'OK', response.json()
 
-    # reset proxy servers to make sure they forgot customer-2 route
-#     kw.config_set_v1('proxy-1', 'services/proxy-server/enabled', 'false')
-#     time.sleep(0.5)
-#     kw.config_set_v1('proxy-1', 'services/proxy-server/enabled', 'true')
-#     kw.config_set_v1('proxy-2', 'services/proxy-server/enabled', 'false')
-#     time.sleep(0.5)
-#     kw.config_set_v1('proxy-2', 'services/proxy-server/enabled', 'true')
     kw.wait_service_state(CUSTOMERS_IDS_SHORT, 'service_shared_data', 'ON')
     kw.wait_packets_finished(PROXY_IDS + SUPPLIERS_IDS + CUSTOMERS_IDS_SHORT)
 

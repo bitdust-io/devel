@@ -286,8 +286,9 @@ class FileUp(automat.Automat):
         packetsToCancel = packet_out.search_by_packet_id(self.packetID)
         for pkt_out in packetsToCancel:
             if pkt_out.outpacket.Command == commands.Data():
-                lg.warn('sending "cancel" to %s addressed to %s because downloading cancelled' % (
-                    pkt_out, pkt_out.remote_idurl, ))
+                if _Debug:
+                    lg.dbg(_DebugLevel, 'sending "cancel" to %s addressed to %s because downloading cancelled' % (
+                        pkt_out, pkt_out.remote_idurl, ))
                 pkt_out.automat('cancel')
 
     def doQueueNext(self, *args, **kwargs):

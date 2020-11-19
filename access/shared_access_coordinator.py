@@ -406,13 +406,20 @@ class SharedAccessCoordinator(automat.Automat):
         """
         Action method.
         """
+        connected_count = 0
         for supplier_idurl in self.known_suppliers_list:
             if not id_url.is_cached(supplier_idurl):
                 continue
             sc = supplier_connector.by_idurl(supplier_idurl, customer_idurl=self.customer_idurl)
             if sc is None or sc.state != 'CONNECTED':
-                return
-        self.automat('all-suppliers-connected')
+                continue
+            connected_count += 1
+        critical_suppliers_number = 1
+        if self.known_ecc_map:
+            from raid import eccmap
+            critical_suppliers_number = eccmap.GetCorrectableErrors(eccmap.GetEccMapSuppliersNumber(self.known_ecc_map))
+        if connected_count >= critical_suppliers_number:
+            self.automat('all-suppliers-connected')
 
     def doCheckReconnectSuppliers(self, *args, **kwargs):
         """

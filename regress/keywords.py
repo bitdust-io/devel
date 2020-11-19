@@ -264,6 +264,7 @@ def file_list_all_v1(node, expected_reliable=100, reliable_shares=True, attempts
 
     response = None
     latest_reliable = None
+    latest_reliable_fileinfo = None
     count = 0
     while latest_reliable is None or latest_reliable <= expected_reliable:
         response = request_get(node, 'file/list/all/v1', timeout=20)
@@ -282,10 +283,12 @@ def file_list_all_v1(node, expected_reliable=100, reliable_shares=True, attempts
                     lowest = reliable
                     lowest_file = fil
         latest_reliable = lowest
+        latest_reliable_fileinfo = fil
         if latest_reliable >= expected_reliable:
             break
         count += 1
         if count >= attempts:
+            print(f'    latest reliable item info: {latest_reliable_fileinfo}')
             assert False, f"file {lowest_file} is not {expected_reliable} % reliable after {attempts} attempts"
             return
         time.sleep(delay)

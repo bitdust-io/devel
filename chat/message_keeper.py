@@ -44,9 +44,15 @@ from logs import lg
 
 from interface import api_web_socket
 
+from crypt import my_keys
+
+from contacts import identitycache
+
 from stream import message
 
 from chat import message_database
+
+from userid import global_id
 
 #------------------------------------------------------------------------------
 
@@ -85,8 +91,8 @@ def on_consume_user_messages(json_messages):
         cache_message(
             data=msg_data,
             message_id=packet_id,
-            sender=sender_id,
-            recipient=recipient_id,
+            sender_id=sender_id,
+            recipient_id=recipient_id,
             message_type=msg_type,
             direction=direction,
         )
@@ -94,18 +100,43 @@ def on_consume_user_messages(json_messages):
 
 #------------------------------------------------------------------------------
 
-def cache_message(data, message_id, sender, recipient, message_type=None, direction=None):
+def cache_message(data, message_id, sender_id, recipient_id, message_type=None, direction=None):
     """
     """
+    if message_type == 'private_message':
+        if not my_keys.is_key_registered(sender_id):
+            sender_idurl = global_id.glob2idurl(sender_id)
+            known_ident = identitycache.FromCache(sender_idurl)
+            if not known_ident:
+                lg.warn('sender identity %r was not cached, not possible to store message locally' % sender_idurl)
+                return False
+            if not my_keys.register_key(sender_id, known_ident.getPublicKey()):
+                lg.err('failed to register known public key of the sender: %r' % sender_id)
+                return False
+        if not my_keys.is_key_registered(recipient_id):
+            recipient_idurl = global_id.glob2idurl(recipient_id)
+            known_ident = identitycache.FromCache(recipient_idurl)
+            if not known_ident:
+                lg.warn('recipient identity %r was not cached, not possible to store message locally' % recipient_idurl)
+                return False
+            if not my_keys.register_key(recipient_id, known_ident.getPublicKey()):
+                lg.err('failed to register known public key of the recipient: %r' % recipient_id)
+                return False
+    elif message_type == 'group_message' or message_type == 'personal_message':
+        if not my_keys.is_key_registered(recipient_id):
+            lg.err('failed to cache %r because key %r was not register' % (message_type, recipient_id, ))
+            return False
     message_json = message_database.build_json_message(
         data=data,
         message_id=message_id,
-        sender=sender,
-        recipient=recipient,
+        sender=sender_id,
+        recipient=recipient_id,
         message_type=message_type,
         direction=direction,
     )
     message_database.insert_message(message_json)
     api_web_socket.on_stream_message(message_json)
     if _Debug:
-        lg.out(_DebugLevel, 'message_keeper.cache_message [%s]:%s from %r to %r of type %r' % (message_type, message_id, sender, recipient, type(data)))
+        lg.out(_DebugLevel, 'message_keeper.cache_message [%s]:%s from %r to %r' % (
+            message_type, message_id, sender_id, recipient_id, ))
+    return True

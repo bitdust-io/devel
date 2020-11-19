@@ -673,12 +673,14 @@ class SupplierQueue:
         else:
             if pkt_out.outpacket.Command == commands.Retrieve():
                 if packetID in self.fileRequestQueue:
-                    lg.warn('packet %r is %r during downloading from %s' % (packetID, status, self.remoteID))
+                    if _Debug:
+                        lg.dbg(_DebugLevel, 'packet %r is %r during downloading from %s' % (packetID, status, self.remoteID))
                     f_down = self.fileRequestDict[packetID]
                     f_down.event('request-failed')
             elif pkt_out.outpacket.Command == commands.Data():
                 if packetID in self.fileSendQueue:
-                    lg.warn('packet %r is %r during uploading to %s' % (packetID, status, self.remoteID))
+                    if _Debug:
+                        lg.dbg(_DebugLevel, 'packet %r is %r during uploading to %s' % (packetID, status, self.remoteID))
                     f_up = self.fileSendDict[packetID]
                     f_up.event('sending-failed')
 
