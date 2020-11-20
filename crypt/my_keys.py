@@ -797,7 +797,7 @@ def make_master_key_info(include_private=False):
     return r
 
 
-def make_key_info(key_object, key_id=None, key_alias=None, creator_idurl=None, include_private=False, sign_key=False, include_signature=False):
+def make_key_info(key_object, key_id=None, key_alias=None, creator_idurl=None, include_private=False, sign_key=False, include_signature=False, include_local_id=False):
     if key_id:
         key_id = latest_key_id(key_id)
         key_alias, creator_idurl = split_key_id(key_id)
@@ -833,6 +833,8 @@ def make_key_info(key_object, key_id=None, key_alias=None, creator_idurl=None, i
         if include_signature and key_object.isSigned():
             r['signature'] = key_object.signed[0]
             r['signature_pubkey'] = key_object.signed[1]
+    if include_local_id:
+        r['local_key_id'] = getattr(key_object, 'local_key_id', None)
     return r
 
 

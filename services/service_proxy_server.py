@@ -65,14 +65,14 @@ class ProxyServerService(LocalService):
             self._do_connect_proxy_routers_dht_layer()
         else:
             lg.warn('service service_entangled_dht is OFF')
-        events.add_subscriber(self._on_dht_layer_connected, event_id='dht-layer-connected')
+        events.add_subscriber(self._on_dht_layer_connected, 'dht-layer-connected')
         return True
 
     def stop(self):
         from services import driver
         from main import events
         from transport.proxy import proxy_router
-        events.remove_subscriber(self._on_dht_layer_connected, event_id='dht-layer-connected')
+        events.remove_subscriber(self._on_dht_layer_connected, 'dht-layer-connected')
         proxy_router.A('stop')
         proxy_router.A('shutdown')
         if driver.is_on('service_entangled_dht'):

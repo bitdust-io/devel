@@ -817,9 +817,9 @@ def keys_list(sort=False, include_private=False):
             lg.warn('incorrect key_id: %s' % key_id)
             continue
         try:
-            key_info = my_keys.make_key_info(key_object, key_id=key_id, include_private=include_private)
+            key_info = my_keys.make_key_info(key_object, key_id=key_id, include_private=include_private, include_local_id=True)
         except:
-            key_info = my_keys.make_key_info(key_object, key_id=key_id, include_private=False)
+            key_info = my_keys.make_key_info(key_object, key_id=key_id, include_private=False, include_local_id=True)
         key_info.pop('include_private', None)
         r.append(key_info)
     if sort:

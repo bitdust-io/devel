@@ -57,7 +57,7 @@ class MessageBrokerService(LocalService):
         from stream import message_peddler
         message_peddler.A('start')
         self._do_connect_message_brokers_dht_layer()
-        events.add_subscriber(self._on_dht_layer_connected, event_id='dht-layer-connected')
+        events.add_subscriber(self._on_dht_layer_connected, 'dht-layer-connected')
         events.add_subscriber(self._on_my_identity_url_changed, 'my-identity-url-changed')
         return True
 
@@ -67,7 +67,7 @@ class MessageBrokerService(LocalService):
         from main import events
         from stream import message_peddler
         events.remove_subscriber(self._on_my_identity_url_changed, 'my-identity-url-changed')
-        events.remove_subscriber(self._on_dht_layer_connected, event_id='dht-layer-connected')
+        events.remove_subscriber(self._on_dht_layer_connected, 'dht-layer-connected')
         dht_service.suspend(layer_id=dht_records.LAYER_MESSAGE_BROKERS)
         message_peddler.A('stop')
         return True

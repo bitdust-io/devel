@@ -69,7 +69,7 @@ class EmployerService(LocalService):
         conf().addConfigNotifier('services/customer/suppliers-number', self._on_suppliers_number_modified)
         conf().addConfigNotifier('services/customer/needed-space', self._on_needed_space_modified)
         events.add_subscriber(self._on_supplier_modified, 'supplier-modified')
-        events.add_subscriber(self._on_dht_layer_connected, event_id='dht-layer-connected')
+        events.add_subscriber(self._on_dht_layer_connected, 'dht-layer-connected')
         if fire_hire.IsAllHired():
             self.starting_deferred.callback(True)
             self.starting_deferred = None
@@ -83,7 +83,7 @@ class EmployerService(LocalService):
         from main import events
         from customer import fire_hire
         fire_hire.A().removeStateChangedCallback(self._on_fire_hire_ready)
-        events.remove_subscriber(self._on_dht_layer_connected, event_id='dht-layer-connected')
+        events.remove_subscriber(self._on_dht_layer_connected, 'dht-layer-connected')
         events.remove_subscriber(self._on_supplier_modified, 'supplier-modified')
         conf().removeConfigNotifier('services/customer/suppliers-number')
         conf().removeConfigNotifier('services/customer/needed-space')
