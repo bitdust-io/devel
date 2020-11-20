@@ -201,8 +201,12 @@ def getGlobalID(key_alias=None):
     global _LocalID
     if not key_alias and _LocalID is not None:
         return _LocalID
+    if key_alias == 'master' and _LocalID is not None:
+        return '{}${}'.format(key_alias, _LocalID)
     from userid import global_id
     glob_id = global_id.UrlToGlobalID(getLocalID())
+    if not glob_id:
+        return glob_id
     if key_alias:
         glob_id = '{}${}'.format(key_alias, glob_id)
     return glob_id

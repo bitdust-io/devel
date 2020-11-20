@@ -70,13 +70,16 @@ from crypt import key
 from crypt import rsa_key
 from crypt import hashes
 
-from userid import my_id
 from userid import global_id
 from userid import id_url
+from userid import my_id
 
 #------------------------------------------------------------------------------
 
 _KnownKeys = {}
+_LatestLocalKeyID = -1
+_LocalKeysRegistry = {}
+_LocalKeysIndex = {}
 
 #------------------------------------------------------------------------------
 
@@ -91,9 +94,13 @@ def init():
 def shutdown():
     """
     """
+    global _LatestLocalKeyID
     if _Debug:
         lg.out(_DebugLevel, 'my_keys.shutdown')
     known_keys().clear()
+    local_keys().clear()
+    local_keys_index().clear()
+    _LatestLocalKeyID = 0
 
 #------------------------------------------------------------------------------
 
@@ -116,6 +123,20 @@ def known_keys():
     """
     global _KnownKeys
     return _KnownKeys
+
+
+def local_keys():
+    """
+    """
+    global _LocalKeysRegistry
+    return _LocalKeysRegistry
+
+
+def local_keys_index():
+    """
+    """
+    global _LocalKeysIndex
+    return _LocalKeysIndex
 
 #------------------------------------------------------------------------------
 
@@ -236,29 +257,60 @@ def get_creator_idurl(key_id, as_field=True):
 def scan_local_keys(keys_folder=None):
     """
     """
+    global _LatestLocalKeyID
     if not keys_folder:
         keys_folder = settings.KeyStoreDir()
     if _Debug:
-        lg.out(_DebugLevel, 'my_keys.scan_local_keys will read files from %s' % keys_folder)
+        lg.out(_DebugLevel, 'my_keys.scan_local_keys will read files from %r' % keys_folder)
+    latest_local_key_id_filepath = os.path.join(keys_folder, 'latest_local_key_id')
+    latest_local_key_id_src = local_fs.ReadTextFile(latest_local_key_id_filepath)
+    if latest_local_key_id_src:
+        _LatestLocalKeyID = int(latest_local_key_id_src)
+    else:
+        _LatestLocalKeyID = 0
     known_keys().clear()
+    local_keys().clear()
+    local_keys_index().clear()
     count = 0
+    unregistered_keys = []
     for key_filename in os.listdir(keys_folder):
+        if key_filename == 'latest_local_key_id':
+            continue
         key_id = key_filename.replace('.private', '').replace('.public', '')
         if not is_valid_key_id(key_id):
-            lg.warn('key_id is not valid: %s' % key_id)
+            lg.warn('key_id is not valid: %r' % key_id)
             continue
+        key_dict = read_key_file(key_id, keys_folder=keys_folder)
+        local_key_id = key_dict.get('local_key_id')
+        if local_key_id is None:
+            key_dict['key_id'] = key_id
+            unregistered_keys.append(key_dict)
+            continue
+        if _LatestLocalKeyID < local_key_id:
+            _LatestLocalKeyID = local_key_id
+        local_keys()[local_key_id] = key_id
         known_keys()[key_id] = None
         count += 1
+    registered_count = 0
+    for key_dict in unregistered_keys:
+        key_id = key_dict['key_id']
+        if not load_key(key_id, keys_folder=keys_folder):
+            continue
+        _LatestLocalKeyID += 1
+        new_local_key_id = _LatestLocalKeyID
+        lg.warn('about to register key %r with local_key_id=%r' % (key_id, new_local_key_id, ))
+        known_keys()[key_id].local_key_id = new_local_key_id
+        save_key(key_id, keys_folder=keys_folder)
+        registered_count += 1
+    unregistered_keys = []
+    save_latest_local_key_id(keys_folder=keys_folder)
     if _Debug:
-        lg.out(_DebugLevel, '    %d keys found' % count)
+        lg.out(_DebugLevel, '    %d keys found and %d registered' % (count, registered_count, ))
 
 
-def load_key(key_id, keys_folder=None):
+def read_key_file(key_id, keys_folder=None):
     """
     """
-    if not is_valid_key_id(key_id):
-        lg.warn('key_id is not valid: %s' % key_id)
-        return False
     if not keys_folder:
         keys_folder = settings.KeyStoreDir()
     key_filepath = os.path.join(keys_folder, '%s.private' % key_id)
@@ -269,21 +321,33 @@ def load_key(key_id, keys_folder=None):
     key_raw = local_fs.ReadTextFile(key_filepath)
     if not key_raw:
         lg.warn('failed reading key from %r' % key_filepath)
-        return False
+        return None
     key_raw_strip = key_raw.strip()
-    need_to_convert = False
     try:
         if key_raw_strip.startswith('{') and key_raw_strip.endswith('}'):
             key_dict = jsn.loads_text(key_raw_strip)
         else:
             key_dict = {
                 'label': key_id,
+                'is_private': is_private,
                 'body': key_raw_strip,
+                'local_key_id': None,
+                'need_to_convert': True,
             }
-            need_to_convert = True
     except:
         lg.exc()
+        return None
+    return key_dict
+
+
+def load_key(key_id, keys_folder=None):
+    """
+    """
+    global _LatestLocalKeyID
+    if not is_valid_key_id(key_id):
+        lg.warn('key_id is not valid: %r' % key_id)
         return False
+    key_dict = read_key_file(key_id, keys_folder=keys_folder)
     try:
         key_object = rsa_key.RSAKey()
         key_object.fromDict(key_dict)
@@ -292,64 +356,25 @@ def load_key(key_id, keys_folder=None):
         return False
     if not key_object.isPublic():
         if not validate_key(key_object):
-            lg.warn('validation failed for %s' % key_filepath)
+            lg.warn('validation failed for %r' % key_id)
             return False
     known_keys()[key_id] = key_object
-    if _Debug:
-        lg.out(_DebugLevel, 'my_keys.load_key %r  label=%r  is_private=%r  from %s' % (
-            key_id, key_object.label, is_private, keys_folder, ))
-    if need_to_convert:
+    if key_dict.get('need_to_convert'):
         save_key(key_id, keys_folder=keys_folder)
         lg.info('key %r format converted to JSON' % key_id)
+    else:
+        if key_object.local_key_id is not None:
+            if _LatestLocalKeyID < key_object.local_key_id:
+                _LatestLocalKeyID = key_object.local_key_id
+                save_latest_local_key_id(keys_folder=keys_folder)
+            local_keys()[key_object.local_key_id] = key_id
+            local_keys_index()[key_object.toPublicString()] = key_object.local_key_id
+            if _Debug:
+                lg.out(_DebugLevel, 'my_keys.load_key %r  label=%r  is_private=%r  local_key_id=%r  from %s' % (
+                    key_id, key_object.label, not key_object.isPublic(), key_object.local_key_id, keys_folder, ))
+        else:
+            lg.warn('for key %r local_key_id was not set' % key_id)
     return True
-
-
-def load_local_keys(keys_folder=None):
-    """
-    """
-    if not keys_folder:
-        keys_folder = settings.KeyStoreDir()
-    if _Debug:
-        lg.out(_DebugLevel, 'my_keys.load_local_keys will read files from %s' % keys_folder)
-    known_keys().clear()
-    count = 0
-    for key_filename in os.listdir(keys_folder):
-        key_filepath = os.path.join(keys_folder, key_filename)
-        key_id = key_filename.replace('.private', '').replace('.public', '')
-        if not is_valid_key_id(key_id):
-            lg.warn('key_id is not valid: %s' % key_id)
-            continue
-        key_raw = local_fs.ReadTextFile(key_filepath)
-        if not key_raw:
-            lg.warn('failed reading key from %r' % key_filepath)
-            continue
-        key_raw_strip = key_raw.strip()
-        try:
-            if key_raw_strip.startswith('{') and key_raw_strip.endswith('}'):
-                key_dict = jsn.loads_text(key_raw_strip)
-            else:
-                key_dict = {
-                    'label': key_id,
-                    'body': key_raw_strip,
-                }
-        except:
-            lg.exc()
-            continue
-        try:
-            key_object = rsa_key.RSAKey()
-            key_object.fromDict(key_dict)
-        except:
-            lg.exc()
-            continue
-        if not key_object.isPublic():
-            if not validate_key(key_object):
-                lg.warn('validation failed for %s' % key_filepath)
-                continue
-        known_keys()[key_id] = key_object
-        count += 1
-    if _Debug:
-        lg.out(_DebugLevel, '    %d keys loaded' % count)
-    return count
 
 
 def save_key(key_id, keys_folder=None):
@@ -359,6 +384,8 @@ def save_key(key_id, keys_folder=None):
     if key_object is None:
         lg.warn('can not save key %s because it is not loaded yet' % key_id)
         return False
+    if key_object.local_key_id is None:
+        raise Exception('local key id was not set for %r' % key_id)
     if not keys_folder:
         keys_folder = settings.KeyStoreDir()
     if key_object.isPublic():
@@ -372,8 +399,10 @@ def save_key(key_id, keys_folder=None):
     if not bpio.WriteTextFile(key_filepath, key_string):
         lg.warn('failed saving key %r to %r' % (key_id, key_filepath, ))
         return False
+    local_keys()[key_object.local_key_id] = key_id
+    local_keys_index()[key_object.toPublicString()] = key_object.local_key_id
     if _Debug:
-        lg.out(_DebugLevel, 'my_keys.save_key stored key %r locally in %r' % (key_id, key_filepath, ))
+        lg.out(_DebugLevel, 'my_keys.save_key stored key %r with local_key_id=%r in %r' % (key_id, key_object.local_key_id, key_filepath, ))
     return True
 
 
@@ -392,24 +421,41 @@ def save_keys_local(keys_folder=None):
         lg.out(_DebugLevel, '    %d keys saved' % count)
     return count
 
+
+def save_latest_local_key_id(keys_folder=None):
+    """
+    """
+    global _LatestLocalKeyID
+    if not keys_folder:
+        keys_folder = settings.KeyStoreDir()
+    latest_local_key_id_filepath = os.path.join(keys_folder, 'latest_local_key_id')
+    if not bpio.WriteTextFile(latest_local_key_id_filepath, '{}'.format(_LatestLocalKeyID)):
+        lg.warn('failed saving latest_local_key_id to %r' % latest_local_key_id_filepath)
+        return False
+    return True
+
 #------------------------------------------------------------------------------
 
 def generate_key(key_id, label='', key_size=4096, keys_folder=None):
     """
     """
+    global _LatestLocalKeyID
     if key_id in known_keys():
-        lg.warn('key "%s" already exists' % key_id)
+        lg.warn('key %r already exists' % key_id)
         return None
     if not label:
         label = 'key%s' % utime.make_timestamp() 
     if _Debug:
-        lg.out(_DebugLevel, 'my_keys.generate_key "%s" of %d bits, label=%r' % (key_id, key_size, label))
+        lg.out(_DebugLevel, 'my_keys.generate_key %r of %d bits, label=%r' % (key_id, key_size, label))
+    _LatestLocalKeyID += 1
+    save_latest_local_key_id(keys_folder=keys_folder)
     key_object = rsa_key.RSAKey()
     key_object.generate(key_size)
     key_object.label = label
+    key_object.local_key_id = _LatestLocalKeyID
     known_keys()[key_id] = key_object
     if _Debug:
-        lg.out(_DebugLevel, '    key %s generated' % key_id)
+        lg.out(_DebugLevel, '    key %r generated' % key_id)
     if not keys_folder:
         keys_folder = settings.KeyStoreDir()
     save_key(key_id, keys_folder=keys_folder)
@@ -420,14 +466,17 @@ def generate_key(key_id, label='', key_size=4096, keys_folder=None):
 def register_key(key_id, key_object_or_string, label='', keys_folder=None):
     """
     """
+    global _LatestLocalKeyID
     if key_id in known_keys():
         lg.warn('key %s already exists' % key_id)
         return None
+    if not keys_folder:
+        keys_folder = settings.KeyStoreDir()
     if not label:
         label = 'key%s' % utime.make_timestamp() 
     if strng.is_string(key_object_or_string):
         if _Debug:
-            lg.out(_DebugLevel, 'my_keys.register_key %s from %d bytes openssh_input_string' % (
+            lg.out(_DebugLevel, 'my_keys.register_key %r from %d bytes openssh_input_string' % (
                 key_id, len(key_object_or_string)))
         key_object = unserialize_key_to_object(key_object_or_string)
         if not key_object:
@@ -435,13 +484,25 @@ def register_key(key_id, key_object_or_string, label='', keys_folder=None):
             return None
     else:
         if _Debug:
-            lg.out(_DebugLevel, 'my_keys.register_key %s from object' % key_id)
+            lg.out(_DebugLevel, 'my_keys.register_key %r from object' % key_id)
         key_object = key_object_or_string
+    known_local_key_id = local_keys_index().get(key_object.toPublicString())
+    if known_local_key_id is not None:
+        known_key_id = local_keys().get(known_local_key_id)
+        if known_key_id is not None:
+            known_key_id = latest_key_id(known_key_id)
+            if known_key_id != key_id:
+                raise Exception('must not register same key with local_key_id=%r twice with different key_id: %r ~ %r' % (
+                    known_local_key_id, known_key_id, key_id, ))
+    new_local_key_id = known_local_key_id
+    if new_local_key_id is None:
+        _LatestLocalKeyID += 1
+        save_latest_local_key_id(keys_folder=keys_folder)
+        new_local_key_id = _LatestLocalKeyID
+    key_object.local_key_id = new_local_key_id
     known_keys()[key_id] = key_object
     if _Debug:
-        lg.out(_DebugLevel, '    key %s added' % key_id)
-    if not keys_folder:
-        keys_folder = settings.KeyStoreDir()
+        lg.out(_DebugLevel, '    key %r registered' % key_id)
     save_key(key_id, keys_folder=keys_folder)
     events.send('key-registered', data=dict(key_id=key_id, label=label, key_size=key_object.size(), ))
     return key_object
@@ -466,7 +527,9 @@ def erase_key(key_id, keys_folder=None):
     except:
         lg.exc()
         return False
-    known_keys().pop(key_id)
+    k_obj = known_keys().pop(key_id)
+    local_keys().pop(k_obj.local_key_id, None)
+    local_keys_index().pop(k_obj.toPublicString(), None)
     gc.collect()
     if _Debug:
         lg.out(_DebugLevel, '    key %s removed, file %s deleted' % (key_id, key_filepath))
@@ -514,10 +577,10 @@ def rename_key(current_key_id, new_key_id, keys_folder=None):
         return False
     key_object = known_keys().pop(current_key_id)
     known_keys()[new_key_id] = key_object
+    local_keys()[key_object.local_key_id] = new_key_id
     gc.collect()
     if _Debug:
         lg.out(_DebugLevel, 'my_keys.rename_key   key %s renamed to %s' % (current_key_id, new_key_id, ))
-        lg.out(_DebugLevel, '    file %s renamed to %s' % (current_key_filepath, new_key_filepath, ))
     events.send('key-renamed', data=dict(old_key_id=current_key_id, new_key_id=new_key_id, is_private=is_private))
     return True
 
@@ -694,6 +757,21 @@ def get_label(key_id):
         return None
     return key_obj(key_id).label
 
+
+def get_local_key_id(key_id):
+    key_id = latest_key_id(strng.to_text(key_id))
+    if key_id not in known_keys():
+        if key_id == my_id.getGlobalID('master'):
+            return 0
+        return None
+    return key_obj(key_id).local_key_id
+
+
+def get_local_key(local_key_id):
+    if local_key_id == 0:
+        return my_id.getGlobalID('master')
+    return local_keys().get(local_key_id)
+
 #------------------------------------------------------------------------------
 
 def make_master_key_info(include_private=False):
@@ -809,7 +887,7 @@ def sign_key_info(key_info):
     sorted_fields = sorted(key_info.keys())
     hash_items = []
     for field in sorted_fields:
-        if field not in ['include_private', 'signature', 'private', ]:
+        if field not in ['include_private', 'signature', 'private', 'local_key_id', ]:
             hash_items.append(strng.to_text(key_info[field]))
     hash_text = '-'.join(hash_items)
     hash_bin = key.Hash(strng.to_bin(hash_text))
@@ -823,7 +901,7 @@ def verify_key_info_signature(key_info):
     sorted_fields = sorted(key_info.keys())
     hash_items = []
     for field in sorted_fields:
-        if field not in ['include_private', 'signature', 'private', ]:
+        if field not in ['include_private', 'signature', 'private', 'local_key_id', ]:
             hash_items.append(strng.to_text(key_info[field]))
     hash_text = '-'.join(hash_items)
     hash_bin = key.Hash(strng.to_bin(hash_text))
@@ -832,3 +910,14 @@ def verify_key_info_signature(key_info):
     return result
 
 #------------------------------------------------------------------------------
+
+if __name__ == '__main__':
+    bpio.init()
+    lg.set_debug_level(18)
+    settings.init()
+    init()
+    import pprint
+    pprint.pprint(local_keys_index())
+    pprint.pprint(local_keys())
+    print(get_key_info('master$recalx@seed.bitdust.io'))
+    pprint.pprint(local_keys_index())

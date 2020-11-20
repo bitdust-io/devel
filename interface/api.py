@@ -1562,7 +1562,7 @@ def files_uploads(include_running=True, include_pending=True):
     return RESULT(r)
 
 
-def file_upload_start(local_path, remote_path, wait_result=False, open_share=False):
+def file_upload_start(local_path, remote_path, wait_result=False, wait_finish=False, open_share=False):
     """
     Starts a new file or folder (including all sub-folders and files) upload from `local_path` on your disk drive
     to the virtual location `remote_path` in the catalog. New "version" of the data will be created for given catalog item
@@ -1618,33 +1618,74 @@ def file_upload_start(local_path, remote_path, wait_result=False, open_share=Fal
         if active_share.state != 'CONNECTED':
             active_share.automat('restart')
     if wait_result:
-        d = Deferred()
+        task_created_defer = Deferred()
         tsk = backup_control.StartSingle(
             pathID=pathIDfull,
             localPath=local_path,
             keyID=keyID,
         )
-        tsk.result_defer.addCallback(lambda result: d.callback(OK(
-            {
-                'remote_path': remote_path,
-                'version': result[0],
-                'key_id': tsk.keyID,
-                'source_path': local_path,
-                'path_id': pathID,
-            },
-            message='item "%s" uploaded, local path is: "%s"' % (remote_path, local_path),
-            api_method='file_upload_start',
-        )))
-        tsk.result_defer.addErrback(lambda result: d.callback(ERROR(
-            'upload task %d for "%s" failed: %s' % (tsk.number, tsk.pathID, result[1], ),
-            api_method='file_upload_start',
-        )))
-        backup_fs.Calculate()
-        backup_control.Save()
-        control.request_update([('pathID', pathIDfull), ])
-        if _Debug:
-            lg.out(_DebugLevel, 'api.file_upload_start %s with %s, wait_result=True' % (remote_path, pathIDfull))
-        return d
+        if not wait_finish:
+            tsk.result_defer.addCallback(
+                lambda result: task_created_defer.callback(OK({
+                    'remote_path': remote_path,
+                    'version': result[0],
+                    'key_id': tsk.keyID,
+                    'source_path': local_path,
+                    'path_id': pathID,
+                },
+                message='item "%s" uploaded, local path is: "%s"' % (remote_path, local_path),
+                api_method='file_upload_start',
+            )))
+            tsk.result_defer.addErrback(
+                lambda result: task_created_defer.callback(ERROR('upload task %d for "%s" failed: %s' % (
+                    tsk.number, tsk.pathID, result[1],
+                ),
+                api_method='file_upload_start',
+            )))
+            backup_fs.Calculate()
+            backup_control.Save()
+            control.request_update([('pathID', pathIDfull), ])
+            if _Debug:
+                lg.out(_DebugLevel, 'api.file_upload_start %s with %s, wait_result=True' % (remote_path, pathIDfull))
+            return task_created_defer
+
+        task_finished_defer = Deferred()
+
+        def _job_done(result):
+            if _Debug:
+                lg.args(_DebugLevel, key_id=keyID, result=result)
+            if result == 'done':
+                task_finished_defer.callback(
+                    lambda result: task_created_defer.callback(OK({
+                        'remote_path': remote_path,
+                        'version': result[0],
+                        'key_id': tsk.keyID,
+                        'source_path': local_path,
+                        'path_id': pathID,
+                    },
+                    message='item "%s" uploaded, local path is: "%s"' % (remote_path, local_path),
+                    api_method='file_upload_start',
+                )))
+            else:
+                task_finished_defer.errback(Exception('failed to upload key "%s", backup is %r' % (keyID, result)))
+            return None
+
+        def _task_started(resp):
+            if _Debug:
+                lg.args(_DebugLevel, key_id=keyID, upload_response_status=resp['status'])
+            if resp['status'] != 'OK':
+                task_finished_defer.errback(Exception('failed to upload key "%s", task was not started: %r' % (pathIDfull, resp)))
+                return None
+            backupObj = backup_control.jobs().get(resp['version'])
+            if not backupObj:
+                task_finished_defer.errback(Exception('failed to upload key "%s", task %r failed to start' % (pathIDfull, resp['version'])))
+                return None
+            backupObj.resultDefer.addCallback(_job_done)
+            backupObj.resultDefer.addErrback(task_finished_defer.errback)
+            return None
+
+        return task_finished_defer
+
     tsk = backup_control.StartSingle(
         pathID=pathIDfull,
         localPath=local_path,
@@ -3049,7 +3090,7 @@ def user_observe(nickname, attempts=3):
 
 def message_history(recipient_id=None, sender_id=None, message_type=None, offset=0, limit=100):
     """
-    Returns chat history stored during communications with given user or messaging group.
+    Returns chat communications history stored for given user or messaging group.
 
     ###### HTTP
         curl -X GET 'localhost:8180/message/history/v1?message_type=group_message&recipient_id=group_95d0fedc46308e2254477fcb96364af9$alice@server-a.com'
@@ -3082,6 +3123,16 @@ def message_history(recipient_id=None, sender_id=None, message_type=None, offset
         bidirectional = True
         if sender_id is None:
             sender_id = my_id.getGlobalID(key_alias='master')
+    if sender_id:
+        sender_local_key_id = my_keys.get_local_key_id(sender_id)
+        if sender_local_key_id is None:
+            lg.warn('sender %r local key id was not registered' % sender_id)
+            return RESULT([])
+    if recipient_id:
+        recipient_local_key_id = my_keys.get_local_key_id(recipient_id)
+        if recipient_local_key_id is None:
+            lg.warn('recipient %r local key id was not registered' % recipient_id)
+            return RESULT([])
     messages = [{'doc': m, } for m in message_database.query_messages(
         sender_id=sender_id,
         recipient_id=recipient_id,
@@ -3123,11 +3174,22 @@ def message_conversations_list(message_types=[], offset=0, limit=100):
         offset=offset,
         limit=limit,
     )):
-        conv['key_id'] = conv['conversation_id']
-        conv['label'] = conv['conversation_id']
+        conv['key_id'] = ''
+        conv['label'] = ''
         conv['state'] = 'OFFLINE'
         if conv['type'] == 'private_message':
-            usr1, _, usr2 = conv['conversation_id'].partition('&')
+            local_key_id1, _, local_key_id2 = conv['conversation_id'].partition('&')
+            try:
+                local_key_id1 = int(local_key_id1)
+                local_key_id2 = int(local_key_id2)
+            except:
+                lg.exc()
+                continue
+            usr1 = my_keys.get_local_key(local_key_id1)
+            usr2 = my_keys.get_local_key(local_key_id2)
+            if not usr1 or not usr2:
+                lg.warn('%r %r : not found sender or recipient key_id for %r' % (usr1, usr2, conv, ))
+                continue
             usr1 = usr1.replace('master$', '')
             usr2 = usr2.replace('master$', '')
             idurl1 = global_id.glob2idurl(usr1, as_field=True)
@@ -3147,15 +3209,30 @@ def message_conversations_list(message_types=[], offset=0, limit=100):
                 conv['key_id'] = conv_key_id
             if conv_label:
                 conv['label'] = conv_label
+            else:
+                conv['label'] = conv_key_id
             if user_idurl:
                 conv['state'] = online_status.getCurrentState(user_idurl) or 'OFFLINE'
         elif conv['type'] == 'group_message' or conv['type'] == 'personal_message':
-            conv['key_id'] = my_keys.latest_key_id(conv['conversation_id'])
-            conv['label'] = my_keys.get_label(conv['conversation_id']) or conv['conversation_id']
-            gm = group_member.get_active_group_member(conv['conversation_id'])
+            local_key_id, _, _ = conv['conversation_id'].partition('&')
+            try:
+                local_key_id = int(local_key_id)
+            except:
+                lg.exc()
+                continue
+            key_id = my_keys.get_local_key(local_key_id)
+            if not key_id:
+                lg.warn('key_id was not found for %r' % conv)
+                continue
+            conv['key_id'] = key_id
+            conv['label'] = my_keys.get_label(key_id) or key_id
+            gm = group_member.get_active_group_member(key_id)
             if gm:
                 conv['state'] = gm.state or 'OFFLINE'
-        conversations.append(conv)
+        if conv['key_id']:
+            conversations.append(conv)
+        else:
+            lg.warn('unknown key_id for %r' % conv)
     if _Debug:
         lg.out(_DebugLevel, 'api.message_conversations with message_types=%s found %d conversations' % (
             message_types, len(conversations), ))

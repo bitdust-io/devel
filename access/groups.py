@@ -70,7 +70,7 @@ In case primary broker went offline but one of the producers wanted to publish a
 to the queue - he will fail and switch to the secondary message broker quickly.
 So producer will just re-try the message but to the secondary message broker.
 Because other consumers are already connected to the secondary broker they will not recognize
-any difference and will receive the message right away. This way mechanism of automatic failover
+any difference and will receive the message right away. This way mechanism of automatic fail-over
 of message broker from primary to secondary suppose to prevent message lost.
 
 In short group is:
@@ -95,7 +95,7 @@ import os
 
 #------------------------------------------------------------------------------
 
-from twisted.internet.defer import DeferredList
+from twisted.internet.defer import DeferredList, Deferred, fail
 
 #------------------------------------------------------------------------------
 

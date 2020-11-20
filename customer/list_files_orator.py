@@ -71,7 +71,6 @@ from automats import automat
 
 from contacts import contactsdb
 
-
 from main import events
 
 from services import driver
