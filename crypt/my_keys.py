@@ -233,6 +233,7 @@ def latest_key_id(key_id):
     """
     if not key_id:
         return key_id
+    key_id = strng.to_text(key_id)
     if key_id == 'master':
         return my_id.getGlobalID(key_alias='master')
     glob_id = global_id.ParseGlobalID(key_id, as_field=True)
@@ -475,6 +476,7 @@ def register_key(key_id, key_object_or_string, label='', keys_folder=None):
     if not label:
         label = 'key%s' % utime.make_timestamp() 
     if strng.is_string(key_object_or_string):
+        key_object_or_string = strng.to_bin(key_object_or_string)
         if _Debug:
             lg.out(_DebugLevel, 'my_keys.register_key %r from %d bytes openssh_input_string' % (
                 key_id, len(key_object_or_string)))

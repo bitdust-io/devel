@@ -485,9 +485,13 @@ def scenario8():
 #     assert kw.queue_producer_list_v1('broker-3', extract_ids=True) == []
 #     assert kw.queue_producer_list_v1('broker-4', extract_ids=True) == []
 
+    assert len(kw.message_conversation_v1('customer-1')['result']) == 1
+
     # create group owned by customer-1 and join
     kw.service_info_v1('customer-1', 'service_private_groups', 'ON')
     customer_1_group_key_id = kw.group_create_v1('customer-1', label='ArchivedGroupABC')
+
+    assert len(kw.message_conversation_v1('customer-1')['result']) == 2
 
     customer_1_group_info_inactive = kw.group_info_v1('customer-1', customer_1_group_key_id)['result']
     assert customer_1_group_info_inactive['state'] == 'OFFLINE'
@@ -516,8 +520,12 @@ def scenario8():
     assert 'customer-1@id-a_8084' in customer_1_broker_consumers
     assert 'customer-1@id-a_8084' in customer_1_broker_producers
 
+    assert len(kw.message_conversation_v1('customer-2')['result']) == 3
+
     # share group key from customer-1 to customer-2
     kw.group_share_v1('customer-1', customer_1_group_key_id, 'customer-2@id-b_8084')
+
+    assert len(kw.message_conversation_v1('customer-2')['result']) == 4
 
     # second member join the group
     kw.group_join_v1('customer-2', customer_1_group_key_id)
@@ -539,8 +547,8 @@ def scenario8():
     assert len(kw.message_history_v1('customer-2', customer_1_group_key_id, message_type='group_message')['result']) == 0
     assert len(kw.message_history_v1('customer-3', customer_1_group_key_id, message_type='group_message')['result']) == 0
 
-    assert len(kw.message_conversation_v1('customer-1')['result']) == 1
-    assert len(kw.message_conversation_v1('customer-2')['result']) == 3
+    assert len(kw.message_conversation_v1('customer-1')['result']) == 2
+    assert len(kw.message_conversation_v1('customer-2')['result']) == 4
     assert len(kw.message_conversation_v1('customer-3')['result']) == 0
 
     # sending 11 messages to the group from customer 1
@@ -593,6 +601,8 @@ def scenario8():
 
     # customer-2 share group key to customer-3
     kw.group_share_v1('customer-2', customer_1_group_key_id, 'customer-3@id-a_8084')
+
+    assert len(kw.message_conversation_v1('customer-3')['result']) == 1
 
     # customer-3 join the group, other group members are offline
     kw.group_join_v1('customer-3', customer_1_group_key_id)

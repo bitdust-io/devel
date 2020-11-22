@@ -125,7 +125,7 @@ def MakeGlobalID(
         out += ':{}'.format(path)
         if version:
             out += '#{}'.format(version)
-    return out
+    return strng.to_text(out)
 
 
 def ParseIDURL(idurl):
@@ -349,7 +349,7 @@ def UrlToGlobalID(url, include_key=False):
         host = '%s_%s' % (host, port)
     if include_key:
         username = 'master$%s' % username
-    return '%s@%s' % (username, host)
+    return strng.to_text('%s@%s' % (username, host))
 
 
 def GlobalUserToIDURL(inp, as_field=True):
