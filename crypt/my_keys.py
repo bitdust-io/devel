@@ -233,6 +233,7 @@ def latest_key_id(key_id):
     """
     if not key_id:
         return key_id
+    key_id = strng.to_text(key_id)
     if key_id == 'master':
         return my_id.getGlobalID(key_alias='master')
     glob_id = global_id.ParseGlobalID(key_id, as_field=True)
@@ -475,6 +476,7 @@ def register_key(key_id, key_object_or_string, label='', keys_folder=None):
     if not label:
         label = 'key%s' % utime.make_timestamp() 
     if strng.is_string(key_object_or_string):
+        key_object_or_string = strng.to_bin(key_object_or_string)
         if _Debug:
             lg.out(_DebugLevel, 'my_keys.register_key %r from %d bytes openssh_input_string' % (
                 key_id, len(key_object_or_string)))
@@ -797,7 +799,7 @@ def make_master_key_info(include_private=False):
     return r
 
 
-def make_key_info(key_object, key_id=None, key_alias=None, creator_idurl=None, include_private=False, sign_key=False, include_signature=False):
+def make_key_info(key_object, key_id=None, key_alias=None, creator_idurl=None, include_private=False, sign_key=False, include_signature=False, include_local_id=False):
     if key_id:
         key_id = latest_key_id(key_id)
         key_alias, creator_idurl = split_key_id(key_id)
@@ -833,6 +835,8 @@ def make_key_info(key_object, key_id=None, key_alias=None, creator_idurl=None, i
         if include_signature and key_object.isSigned():
             r['signature'] = key_object.signed[0]
             r['signature_pubkey'] = key_object.signed[1]
+    if include_local_id:
+        r['local_key_id'] = getattr(key_object, 'local_key_id', None)
     return r
 
 

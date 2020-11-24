@@ -485,9 +485,13 @@ def scenario8():
 #     assert kw.queue_producer_list_v1('broker-3', extract_ids=True) == []
 #     assert kw.queue_producer_list_v1('broker-4', extract_ids=True) == []
 
+    assert len(kw.message_conversation_v1('customer-1')['result']) == 1
+
     # create group owned by customer-1 and join
     kw.service_info_v1('customer-1', 'service_private_groups', 'ON')
     customer_1_group_key_id = kw.group_create_v1('customer-1', label='ArchivedGroupABC')
+
+    assert len(kw.message_conversation_v1('customer-1')['result']) == 2
 
     customer_1_group_info_inactive = kw.group_info_v1('customer-1', customer_1_group_key_id)['result']
     assert customer_1_group_info_inactive['state'] == 'OFFLINE'
@@ -516,8 +520,12 @@ def scenario8():
     assert 'customer-1@id-a_8084' in customer_1_broker_consumers
     assert 'customer-1@id-a_8084' in customer_1_broker_producers
 
+    assert len(kw.message_conversation_v1('customer-2')['result']) == 3
+
     # share group key from customer-1 to customer-2
     kw.group_share_v1('customer-1', customer_1_group_key_id, 'customer-2@id-b_8084')
+
+    assert len(kw.message_conversation_v1('customer-2')['result']) == 4
 
     # second member join the group
     kw.group_join_v1('customer-2', customer_1_group_key_id)
@@ -539,8 +547,8 @@ def scenario8():
     assert len(kw.message_history_v1('customer-2', customer_1_group_key_id, message_type='group_message')['result']) == 0
     assert len(kw.message_history_v1('customer-3', customer_1_group_key_id, message_type='group_message')['result']) == 0
 
-    assert len(kw.message_conversation_v1('customer-1')['result']) == 1
-    assert len(kw.message_conversation_v1('customer-2')['result']) == 3
+    assert len(kw.message_conversation_v1('customer-1')['result']) == 2
+    assert len(kw.message_conversation_v1('customer-2')['result']) == 4
     assert len(kw.message_conversation_v1('customer-3')['result']) == 0
 
     # sending 11 messages to the group from customer 1
@@ -593,6 +601,8 @@ def scenario8():
 
     # customer-2 share group key to customer-3
     kw.group_share_v1('customer-2', customer_1_group_key_id, 'customer-3@id-a_8084')
+
+    assert len(kw.message_conversation_v1('customer-3')['result']) == 1
 
     # customer-3 join the group, other group members are offline
     kw.group_join_v1('customer-3', customer_1_group_key_id)
@@ -896,6 +906,12 @@ def scenario11_begin():
     # verify that customer-2 can chat with customer-rotated
     kw.service_info_v1('customer-2', 'service_private_messages', 'ON')
     kw.service_info_v1('customer-rotated', 'service_private_messages', 'ON')
+
+    assert len(kw.message_conversation_v1('customer-rotated')['result']) == 0
+    assert len(kw.message_conversation_v1('customer-2')['result']) == 2
+    assert len(kw.message_history_v1('customer-rotated', 'master$customer-2@id-b_8084', message_type='private_message')['result']) == 0
+    assert len(kw.message_history_v1('customer-2', 'master$customer-rotated@id-dead_8084', message_type='private_message')['result']) == 0
+
     random_string = base64.b32encode(os.urandom(20)).decode()
     random_message = {
         'random_message': random_string,
@@ -903,6 +919,11 @@ def scenario11_begin():
     t = threading.Timer(1.0, kw.message_send_v1, ['customer-2', 'master$customer-rotated@id-dead_8084', random_message, ])
     t.start()
     kw.message_receive_v1('customer-rotated', expected_data=random_message, timeout=31, polling_timeout=30)
+
+    assert len(kw.message_conversation_v1('customer-rotated')['result']) == 1
+    assert len(kw.message_conversation_v1('customer-2')['result']) == 3
+    assert len(kw.message_history_v1('customer-rotated', 'master$customer-2@id-b_8084', message_type='private_message')['result']) == 1
+    assert len(kw.message_history_v1('customer-2', 'master$customer-rotated@id-dead_8084', message_type='private_message')['result']) == 1
 
     return {
         'friends': old_customer_2_friends,
@@ -916,6 +937,12 @@ def scenario11_end(old_customer_rotated_info, new_customer_rotated_info, old_cus
     # test customer-2 can still chat with customer-rotated
     kw.service_info_v1('customer-2', 'service_private_messages', 'ON')
     kw.service_info_v1('customer-rotated', 'service_private_messages', 'ON')
+
+    assert len(kw.message_conversation_v1('customer-rotated')['result']) == 1
+    assert len(kw.message_conversation_v1('customer-2')['result']) == 3
+    assert len(kw.message_history_v1('customer-rotated', 'master$customer-2@id-b_8084', message_type='private_message')['result']) == 1
+    assert len(kw.message_history_v1('customer-2', 'master$customer-rotated@id-dead_8084', message_type='private_message')['result']) == 1
+
     random_string = base64.b32encode(os.urandom(20)).decode()
     random_message = {
         'random_message': random_string,
@@ -924,6 +951,12 @@ def scenario11_end(old_customer_rotated_info, new_customer_rotated_info, old_cus
     t.start()
     kw.message_receive_v1('customer-rotated', expected_data=random_message, timeout=16, polling_timeout=15)
     kw.wait_packets_finished(['customer-2', 'customer-rotated', ])
+
+    assert len(kw.message_conversation_v1('customer-rotated')['result']) == 1
+    assert len(kw.message_conversation_v1('customer-2')['result']) == 3
+    assert len(kw.message_history_v1('customer-rotated', 'master$customer-2@id-b_8084', message_type='private_message')['result']) == 2
+    assert len(kw.message_history_v1('customer-2', 'master$%s' % new_customer_rotated_info['global_id'], message_type='private_message')['result']) == 2
+    assert len(kw.message_history_v1('customer-2', 'master$customer-rotated@id-dead_8084', message_type='private_message')['result']) == 2
 
     # test that friend's IDURL changed for customer-2
     new_customer_2_friends = kw.friend_list_v1('customer-2', extract_idurls=True)

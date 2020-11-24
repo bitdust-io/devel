@@ -52,16 +52,56 @@ class MessageHistoryService(LocalService):
     def start(self):
         from chat import message_database
         from chat import message_keeper
+        from main import events
         message_database.init()
         message_keeper.init()
+        events.add_subscriber(self.on_key_registered, 'key-registered')
+        events.add_subscriber(self.on_key_renamed, 'key-renamed')
+        events.add_subscriber(self.on_key_generated, 'key-generated')
         return True
 
     def stop(self):
         from chat import message_database
         from chat import message_keeper
+        from main import events
+        events.remove_subscriber(self.on_key_generated, 'key-generated')
+        events.remove_subscriber(self.on_key_renamed, 'key-renamed')
+        events.remove_subscriber(self.on_key_registered, 'key-registered')
         message_keeper.shutdown()
         message_database.shutdown()
         return True
 
     def health_check(self):
         return True
+
+    def on_key_generated(self, evt):
+        self.do_check_create_rename_key(evt.data['key_id'])
+
+    def on_key_registered(self, evt):
+        self.do_check_create_rename_key(evt.data['key_id'])
+
+    def on_key_renamed(self, evt):
+        self.do_check_create_rename_key(evt.data['new_key_id'])
+
+    def do_check_create_rename_key(self, new_key_id):
+        from logs import lg
+        from crypt import my_keys
+        from chat import message_database
+        try:
+            new_public_key = my_keys.get_public_key_raw(new_key_id)
+        except:
+            lg.exc()
+            return
+        try:
+            new_local_key_id = my_keys.get_local_key_id(new_key_id)
+        except:
+            lg.exc()
+            return
+        if new_local_key_id is None:
+            lg.err('did not found local_key_id for %r' % new_key_id)
+            return
+        message_database.check_create_rename_key(
+            new_public_key=new_public_key,
+            new_key_id=new_key_id,
+            new_local_key_id=new_local_key_id,
+        )

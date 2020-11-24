@@ -129,6 +129,14 @@ def init(filepath=None):
             "last_message_id" TEXT)''')
         _HistoryCursor.execute('CREATE INDEX "conversation id" on conversations(conversation_id)')
 
+        _HistoryCursor.execute('''CREATE TABLE IF NOT EXISTS "keys" (
+            "key_id" TEXT,
+            "local_key_id" INTEGER,
+            "public_key" TEXT)''')
+        _HistoryCursor.execute('CREATE INDEX "key id" on keys(key_id)')
+        _HistoryCursor.execute('CREATE INDEX "local key id" on keys(local_key_id)')
+        _HistoryCursor.execute('CREATE INDEX "public key" on keys(public_key)')
+
         _HistoryDB.commit()
         _HistoryDB.close()
 
@@ -138,20 +146,19 @@ def init(filepath=None):
     _HistoryDB.commit()
     _HistoryCursor = _HistoryDB.cursor()
 
-    if True:
-        # TODO: remove later
-        rebuild_conversations()
-
 
 def shutdown():
     """
     """
     global _HistoryDB
     global _HistoryCursor
-    _HistoryDB.commit()
-    _HistoryDB.close()
     if _Debug:
         lg.dbg(_DebugLevel, '')
+
+    _HistoryDB.commit()
+    _HistoryDB.close()
+    _HistoryDB = None
+    _HistoryCursor = None
 
 #------------------------------------------------------------------------------
 
@@ -236,7 +243,7 @@ def insert_message(message_json):
             payload_time,
             payload_message_id,
             payload_body
-        ) VALUES  (?, ?, ?, ?, ?, ?)''', (
+        ) VALUES (?, ?, ?, ?, ?, ?)''', (
         sender_local_key_id,
         recipient_local_key_id,
         payload_type,
@@ -271,7 +278,7 @@ def update_conversation(sender_local_key_id, recipient_local_key_id, payload_typ
         sql = 'UPDATE conversations SET last_updated_time=?, last_message_id=? WHERE conversation_id=?'
         params = [payload_time, payload_message_id, conversation_id, ]
     else:
-        sql = 'INSERT INTO conversations (conversation_id, payload_type, started_time, last_updated_time, last_message_id) VALUES(?, ?, ?, ?, ?)'
+        sql = 'INSERT INTO conversations (conversation_id, payload_type, started_time, last_updated_time, last_message_id) VALUES (?, ?, ?, ?, ?)'
         params = [conversation_id, payload_type, payload_time, payload_time, payload_message_id, ]
     if _Debug:
         lg.args(_DebugLevel, conversation_id=conversation_id, found_conversation=len(found_conversation), params=params)
@@ -326,7 +333,7 @@ def query_messages(sender_id=None, recipient_id=None, bidirectional=True, order_
         sql += ' OFFSET ?'
         params += [offset, ]
     if _Debug:
-        lg.args(_DebugLevel, sql=repr(sql), params=repr(params))
+        lg.args(_DebugLevel, sql=sql, params=params)
     results = []
     local_key_ids = {}
     for row in cur().execute(sql, params):
@@ -372,7 +379,7 @@ def list_conversations(order_by_time=True, message_types=[], offset=None, limit=
         sql += ' OFFSET ?'
         params += [offset, ]
     if _Debug:
-        lg.args(_DebugLevel, sql=repr(sql), params=repr(params))
+        lg.args(_DebugLevel, sql=sql, params=params)
     results = []
     for row in cur().execute(sql, params):
         results.append(dict(
@@ -385,11 +392,58 @@ def list_conversations(order_by_time=True, message_types=[], offset=None, limit=
     return results
 
 
-def rebuild_conversations():    
+#------------------------------------------------------------------------------
+
+def update_history_with_new_local_key_id(old_id, new_id):
+    sql = 'UPDATE history SET sender_local_key_id=? WHERE sender_local_key_id=?'
+    params = [new_id, old_id, ]
+    cur().execute(sql, params)
+    db().commit()
+    if _Debug:
+        lg.args(_DebugLevel, sql=sql, params=params)
+    sql = 'UPDATE history SET recipient_local_key_id=? WHERE recipient_local_key_id=?'
+    params = [new_id, old_id, ]
+    cur().execute(sql, params)
+    db().commit()
+    if _Debug:
+        lg.args(_DebugLevel, sql=sql, params=params)
+
+
+def update_conversations_with_new_local_key_id(old_id, new_id):
+    sql = 'SELECT * FROM conversations'
+    params = []
+    modifications = {}
+    for row in cur().execute(sql, params):
+        conversation_id = row[0]
+        new_conversation_id = conversation_id
+        id1, _, id2 = conversation_id.partition('&')
+        try:
+            id1 = int(id1)
+            id2 = int(id2)
+        except:
+            lg.exc()
+            continue
+        if id1 == old_id:
+            new_conversation_id = '{}&{}'.format(new_id, id2)
+        if id2 == old_id:
+            new_conversation_id = '{}&{}'.format(id1, new_id)
+        if conversation_id != new_conversation_id:
+            modifications[conversation_id] = new_conversation_id
+    if _Debug:
+        lg.args(_DebugLevel, modifications=modifications)
+    for old_conv_id, new_conv_id in modifications.items():
+        sql = 'UPDATE conversations SET conversation_id=? WHERE conversation_id=?'
+        params = [new_conv_id, old_conv_id, ]
+        cur().execute(sql, params)
+        db().commit()
+        if _Debug:
+            lg.args(_DebugLevel, sql=sql, params=params)
+
+
+def rebuild_conversations():
     cur().execute('SELECT count(name) FROM sqlite_master WHERE type="table" AND name="conversations"')
     if cur().fetchone()[0]:
         return
-
     cur().execute('''CREATE TABLE IF NOT EXISTS "conversations" (
         "conversation_id" TEXT,
         "payload_type" INTEGER,
@@ -398,7 +452,6 @@ def rebuild_conversations():
         "last_message_id" TEXT)''')
     cur().execute('CREATE INDEX "conversation id" on conversations(conversation_id)')
     db().commit()
-
     for message_json in list(query_messages()):
         payload_type = MESSAGE_TYPES.get(message_json['payload']['type'], 1)
         recipient_local_key_id = my_keys.get_local_key_id(message_json['recipient']['glob_id'])
@@ -413,6 +466,67 @@ def rebuild_conversations():
             payload_time=message_json['payload']['time'],
             payload_message_id=message_json['payload']['message_id'],
         )
+
+#------------------------------------------------------------------------------
+
+def check_create_rename_key(new_public_key, new_key_id, new_local_key_id):
+    conversation_type = None
+    if new_key_id.startswith('group_'):
+        conversation_type = 'group_message'
+    elif new_key_id.startswith('person_'):
+        conversation_type = 'personal_message'
+    elif new_key_id.startswith('master$'):
+        conversation_type = 'private_message'
+    if conversation_type is None:
+        return False
+    sql = 'SELECT * FROM keys WHERE public_key=?'
+    params = [new_public_key, ]
+    found_public_keys = list(cur().execute(sql, params))
+    if found_public_keys:
+        if len(found_public_keys) > 1:
+            raise Exception('Found multiple records for same public key: %r' % found_public_keys)
+        key_id = found_public_keys[0][0]
+        local_key_id = found_public_keys[0][1]
+        changed = False
+        if key_id != new_key_id:
+            changed = True
+            sql = 'UPDATE keys SET key_id=? WHERE public_key=?'
+            params = [new_key_id, new_public_key, ]
+            cur().execute(sql, params)
+            db().commit()
+            if _Debug:
+                lg.args(_DebugLevel, sql=sql, params=params)
+        if local_key_id != new_local_key_id:
+            changed = True
+            lg.warn('found new public key which is re-using already known key with different local key id: %r -> %r' % (
+                local_key_id, new_local_key_id, ))
+            update_history_with_new_local_key_id(local_key_id, new_local_key_id)
+            update_conversations_with_new_local_key_id(local_key_id, new_local_key_id)
+            sql = 'UPDATE keys SET local_key_id=? WHERE public_key=?'
+            params = [new_local_key_id, new_public_key, ]
+            cur().execute(sql, params)
+            db().commit()
+            if _Debug:
+                lg.args(_DebugLevel, sql=sql, params=params)
+        return changed
+    # new key will be registered in the "keys" table
+    # also new conversation record can be created if that was a group type
+    # unlike groups, private messages suppose to record a new conversation only when a first message appears and delivered between two
+    sql = 'INSERT INTO keys (key_id, local_key_id, public_key) VALUES (?, ?, ?)'
+    params = [new_key_id, new_local_key_id, new_public_key, ]
+    cur().execute(sql, params)
+    db().commit()
+    if _Debug:
+        lg.args(_DebugLevel, sql=sql, params=params)
+    if conversation_type in ['group_message', 'personal_message', ]:
+        update_conversation(
+            sender_local_key_id=new_local_key_id,
+            recipient_local_key_id=new_local_key_id,
+            payload_type=MESSAGE_TYPES.get(conversation_type, 1),
+            payload_time=utime.utcnow_to_sec1970(),
+            payload_message_id='',
+        )
+    return True
 
 #------------------------------------------------------------------------------
 

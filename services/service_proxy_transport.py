@@ -69,7 +69,7 @@ class ProxyTransportService(LocalService):
         if len(self._available_transports()) == 0:
             lg.warn('no transports available')
             return False
-        events.add_subscriber(self._on_dht_layer_connected, event_id='dht-layer-connected')
+        events.add_subscriber(self._on_dht_layer_connected, 'dht-layer-connected')
         self._check_reset_original_identity()
         self.starting_deferred = Deferred()
         self.transport = network_transport.NetworkTransport('proxy', proxy_interface.GateInterface())
@@ -87,7 +87,7 @@ class ProxyTransportService(LocalService):
         from twisted.internet.defer import succeed
         from main import events
         from main.config import conf
-        events.remove_subscriber(self._on_dht_layer_connected, event_id='dht-layer-connected')
+        events.remove_subscriber(self._on_dht_layer_connected, 'dht-layer-connected')
         conf().removeConfigNotifier('services/proxy-transport/enabled')
         conf().removeConfigNotifier('services/proxy-transport/sending-enabled')
         conf().removeConfigNotifier('services/proxy-transport/receiving-enabled')

@@ -83,7 +83,7 @@ class SupplierService(LocalService):
             self._do_connect_suppliers_dht_layer()
         else:
             lg.warn('service service_entangled_dht is OFF')
-        events.add_subscriber(self._on_dht_layer_connected, event_id='dht-layer-connected')
+        events.add_subscriber(self._on_dht_layer_connected, 'dht-layer-connected')
         return True
 
     def stop(self):
@@ -91,7 +91,7 @@ class SupplierService(LocalService):
         from main import events
         from services import driver
         from supplier import customer_space
-        events.remove_subscriber(self._on_dht_layer_connected, event_id='dht-layer-connected')
+        events.remove_subscriber(self._on_dht_layer_connected, 'dht-layer-connected')
         if driver.is_on('service_entangled_dht'):
             from dht import dht_service
             from dht import dht_records

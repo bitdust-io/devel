@@ -466,8 +466,6 @@ class ProxyRouter(automat.Automat):
                             user_idurl.original(), info.proto, info.host, ))
                         lg.dbg(_DebugLevel, 'current active sessions: %d' % len(gateway.list_active_sessions(info.proto)))
                 out_ack = p2p_service.SendAck(request, 'accepted', wide=True)
-                if out_ack.PacketID in self.acks:
-                    raise Exception('Ack() already sent: %r' % out_ack.PacketID)
                 self.acks[out_ack.PacketID] = out_ack.RemoteID
                 if _Debug:
                     lg.out(_DebugLevel, 'proxy_server.doProcessRequest !!!!!!! ACCEPTED %s ROUTE for %r  contacts=%s' % (
