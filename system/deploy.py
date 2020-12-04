@@ -241,6 +241,8 @@ def run(args):
     make_venv_cmd = 'virtualenv -p {} {}'.format(current_python, venv_path)
     if on_windows:
         python_exe = '"%s"' % os.path.join(base_dir, 'python', 'python.exe')
+        if not os.path.exists(python_exe):
+            python_exe = current_python
         make_venv_cmd = "{} -m virtualenv --system-site-packages {}".format(python_exe, venv_path)
     if on_mac:
         make_venv_cmd = "{} -m virtualenv --system-site-packages {}".format(current_python, venv_path)

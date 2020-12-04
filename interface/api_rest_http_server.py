@@ -455,8 +455,8 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @POST('^/identity/backup$')
     @POST('^/identity/backup/v1$')
     def identity_backup_v1(self, request):
-        data = _request_data(request, mandatory_keys=['destination_path', ])
-        return api.identity_backup(destination_filepath=data['destination_path'])
+        data = _request_data(request, mandatory_keys=['destination_filepath', ])
+        return api.identity_backup(destination_filepath=data['destination_filepath'])
 
     @POST('^/i/r$')
     @POST('^/v1/identity/recover$')

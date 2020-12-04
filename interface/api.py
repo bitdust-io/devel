@@ -616,7 +616,7 @@ def identity_backup(destination_filepath):
         return ERROR('error writing to %s\n' % destination_filepath)
     del TextToSave
     gc.collect()
-    return OK(message='WARNING! keep your master key in a safe place and never ever publish it anywhere!')
+    return OK(message='WARNING! keep the master key in a safe place and never publish it anywhere!')
 
 
 def identity_recover(private_key_source, known_idurl=None, join_network=False):
