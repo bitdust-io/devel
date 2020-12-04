@@ -392,9 +392,9 @@ def ValidNickName(username):
         return False
     if len(username) > settings.MaximumUsernameLength():
         return False
-    # for c in username:
-    #     if c not in settings.LegalNickNameChars():
-    #         return False
+    for c in username:
+        if c not in settings.LegalNickNameChars():
+            return False
     return True
 
 
