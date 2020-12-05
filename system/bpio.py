@@ -1253,14 +1253,16 @@ def kill_process_win32(pid):
 def find_main_process(pid_file_path=None, extra_lookups=[], check_processid_file=True):
     """
     """
-    appList = find_process([
+    q = [
         'bitdustnode.exe',
         'BitDustNode.exe',
         'BitDustConsole.exe',
         # 'bitdust.py',
         'regexp:^.*python.*bitdust.py$',
         'regexp:^.*Python.*bitdust.py$',
-    ] + extra_lookups)
+    ]
+    q += extra_lookups
+    appList = find_process(q)
     if not appList:
         return []
     if not check_processid_file:

@@ -367,10 +367,10 @@ def ValidUserName(username):
     A method to validate account name entered by user.
     """
     if len(username) < settings.MinimumUsernameLength():
-        lg.warn("username is too long")
+        lg.warn("username is too short")
         return False
     if len(username) > settings.MaximumUsernameLength():
-        lg.warn("username is too short")
+        lg.warn("username is too long")
         return False
     pos = 0
     for c in username:
@@ -392,9 +392,9 @@ def ValidNickName(username):
         return False
     if len(username) > settings.MaximumUsernameLength():
         return False
-    # for c in username:
-    #     if c not in settings.LegalNickNameChars():
-    #         return False
+    for c in username:
+        if c not in settings.LegalNickNameChars():
+            return False
     return True
 
 

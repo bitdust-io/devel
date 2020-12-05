@@ -2,6 +2,22 @@ Change Log
 ==========
 
 
+2020-12-04 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* fix few typos and small bugs on Windows
+
+
+
+2020-11-27 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* update conversations list when new group created
+* added "keys" table also in message history db
+* fix in shared_access_coordinator()
+* my master key always registered locally with local_key_id=0
+* index all locally registered keys by permanent local_key_id
+
+
+
 2020-11-11 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * IDURL fix in shared_access_coordinator()

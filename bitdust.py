@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
 # bitdust.py
 #
 # Copyright (C) 2008 Veselin Penev, https://bitdust.io
@@ -26,6 +28,10 @@
 
 from __future__ import absolute_import
 import os
+
+
+import locale
+locale.setlocale(locale.LC_CTYPE, 'en_US.UTF-8')
 
 
 def main():

@@ -903,6 +903,15 @@ def main(executable_path=None, start_reactor=True):
 
     #---stop---
     elif cmd == 'stop' or cmd == 'kill' or cmd == 'shutdown':
+        if cmd == 'kill':
+            ret = kill()
+            bpio.shutdown()
+            if opts.coverage:
+                cov.stop()
+                cov.save()
+                if opts.coverage_report:
+                    cov.report(file=open(opts.coverage_report, 'w'))
+            return ret
         appList = bpio.find_main_process(
             pid_file_path=os.path.join(appdata, 'metadata', 'processid'),
         )

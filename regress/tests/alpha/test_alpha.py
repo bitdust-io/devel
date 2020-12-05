@@ -1459,7 +1459,7 @@ def scenario17(old_customer_2_info):
 
     response = request_post('customer-2', 'identity/backup/v1',
         json={
-            'destination_path': backup_file_directory_c2,
+            'destination_filepath': backup_file_directory_c2,
         },
     )
     print('\nidentity/backup/v1 [customer-2] : %s\n' % response.json())
