@@ -152,7 +152,7 @@ class BitDustWebSocketProtocol(Protocol):
 
     def dataReceived(self, data):
         try:
-            json_data = serialization.BytesToDict(data, keys_to_text=True, values_to_text=True)
+            json_data = serialization.BytesToDict(data, keys_to_text=True, values_to_text=True, encoding='utf-8')
         except:
             lg.exc()
             return
@@ -303,7 +303,7 @@ def push(json_data):
     global _WebSocketTransports
     if not _WebSocketTransports:
         return False
-    raw_bytes = serialization.DictToBytes(json_data)
+    raw_bytes = serialization.DictToBytes(json_data, encoding='utf-8')
     for _key, transp in _WebSocketTransports.items():
         transp.write(raw_bytes)
         if _Debug:
