@@ -333,8 +333,8 @@ class P2PConnector(automat.Automat):
         self._pop_active_proto()
 
     def doInitRatings(self, *args, **kwargs):
-        if False:
-            ratings.init()
+        # ratings.init()
+        pass
 
     def doRestartCustomersRejector(self, *args, **kwargs):
         """

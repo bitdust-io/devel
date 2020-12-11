@@ -2371,14 +2371,14 @@ def _checkStaticDirectories():
         if _Debug:
             lg.out(_DebugLevel, 'settings.init want to create folder: ' + TempDir())
         os.makedirs(TempDir())
-    if not os.path.exists(BandwidthInDir()):
-        if _Debug:
-            lg.out(_DebugLevel, 'settings.init want to create folder: ' + BandwidthInDir())
-        os.makedirs(BandwidthInDir())
-    if not os.path.exists(BandwidthOutDir()):
-        if _Debug:
-            lg.out(_DebugLevel, 'settings.init want to create folder: ' + BandwidthOutDir())
-        os.makedirs(BandwidthOutDir())
+#     if not os.path.exists(BandwidthInDir()):
+#         if _Debug:
+#             lg.out(_DebugLevel, 'settings.init want to create folder: ' + BandwidthInDir())
+#         os.makedirs(BandwidthInDir())
+#     if not os.path.exists(BandwidthOutDir()):
+#         if _Debug:
+#             lg.out(_DebugLevel, 'settings.init want to create folder: ' + BandwidthOutDir())
+#         os.makedirs(BandwidthOutDir())
     if not os.path.exists(LogsDir()):
         if _Debug:
             lg.out(_DebugLevel, 'settings.init want to create folder: ' + LogsDir())
@@ -2391,10 +2391,10 @@ def _checkStaticDirectories():
         if _Debug:
             lg.out(_DebugLevel, 'settings.init want to create folder: ' + SuppliersDir())
         os.makedirs(SuppliersDir())
-    if not os.path.exists(RatingsDir()):
-        if _Debug:
-            lg.out(_DebugLevel, 'settings.init want to create folder: ' + RatingsDir())
-        os.makedirs(RatingsDir())
+#     if not os.path.exists(RatingsDir()):
+#         if _Debug:
+#             lg.out(_DebugLevel, 'settings.init want to create folder: ' + RatingsDir())
+#         os.makedirs(RatingsDir())
     if not os.path.exists(KeyStoreDir()):
         if _Debug:
             lg.out(_DebugLevel, 'settings.init want to create folder: ' + KeyStoreDir())
@@ -2407,10 +2407,10 @@ def _checkStaticDirectories():
         if _Debug:
             lg.out(_DebugLevel, 'settings.init want to create folder: ' + ChatHistoryDir())
         os.makedirs(ChatHistoryDir())
-    if not os.path.exists(BlockchainDir()):
-        if _Debug:
-            lg.out(_DebugLevel, 'settings.init want to create folder: ' + BlockchainDir())
-        os.makedirs(BlockchainDir())
+#     if not os.path.exists(BlockchainDir()):
+#         if _Debug:
+#             lg.out(_DebugLevel, 'settings.init want to create folder: ' + BlockchainDir())
+#         os.makedirs(BlockchainDir())
 
 
 def _checkCustomDirectories():

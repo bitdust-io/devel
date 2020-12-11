@@ -219,7 +219,8 @@ def Android():
     """
     Return True if running on Android inside Kivy.
     """
-    # return 'ANDROID_ARGUMENT' in os.environ
+    if 'ANDROID_ARGUMENT' in os.environ:
+        return True
     return ostype() == 'Android'
 
 

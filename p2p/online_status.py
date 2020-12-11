@@ -502,7 +502,7 @@ def Inbox(newpacket, info, status, message):
         return False
     check_create(newpacket.OwnerID)
     A(newpacket.OwnerID, 'inbox-packet', (newpacket, info, status, message))
-    ratings.remember_connected_time(newpacket.OwnerID)
+    # ratings.remember_connected_time(newpacket.OwnerID)
     return False
 
 
