@@ -393,18 +393,15 @@ def detach(transport_instance):
 def inbox(info):
     """
     1) The protocol modules write to temporary files and gives us that filename
-    2) We unserialize 3) We check that it is for us 4) We check that it is from
-    one of our contacts.
-
-    5) We use signed.validate() to check signature and that number
-    fields are numbers 6) Any other sanity checks we can do and if
-    anything funny we toss out the packet . 7) Then change the filename
-    to the PackedID that it should be.    and call the right function(s)
-    for this new packet    (encryptedblock, scrubber, remotetester,
-    customerservice, ...)    to dispatch it to right place(s). 8) We
-    have to keep track of bandwidth to/from everyone, and make a report
-    every 24 hours    which we send to BitDust sometime in the 24 hours
-    after that.
+    2) We unserialize
+    3) We check that it is for us
+    4) We check that it is from one of our contacts.
+    5) We use signed.validate() to check signature and that number fields are numbers
+    6) Any other sanity checks we can do and if anything funny we toss out the packet
+    7) Then change the filename to the PackedID that it should be
+      and call the right function(s) for this new packet:
+      (encryptedblock, scrubber, remotetester, customerservice, ...)
+      to dispatch it to right place(s).
     """
     global _LastInboxPacketTime
 #     if _DoingShutdown:

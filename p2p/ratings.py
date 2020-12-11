@@ -87,7 +87,7 @@ def run():
     interval = maths.interval_to_next_hour()
     # debug
     #interval = 5
-    reactor.callLater(interval, start)
+    reactor.callLater(interval, start)  # @UndefinedVariable
     lg.out(6, 'ratings.run will start after %s minutes' % str(interval / 60.0))
 
 

@@ -64,7 +64,7 @@ or to restore to another location on disk, or to just recover certain files.  Ho
 in this module we have to read block by block all of the blocks.
 
 How do we restore if we lost everything?
-Our ( public/private-key and eccmap) needs to be stored previously
+Our public/private-key needs to be stored previously
 on USB, in safe or deposit box (encrypted with passphrase or clear text).
 
 The other thing we need is the backupIDs which we can get from our suppliers with the ListFiles command.
