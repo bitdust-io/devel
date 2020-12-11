@@ -880,7 +880,7 @@ def BlockchainDir():
 def APICertificatesDir():
     """
     """
-    return os.path.join(BaseDir(), 'blockchain')
+    return os.path.join(BaseDir(), 'apicerts')
 
 
 def ServicesDataDir():
