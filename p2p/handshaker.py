@@ -183,6 +183,7 @@ class Handshaker(automat.Automat):
         """
         global _KnownChannels
         self.remote_idurl = strng.to_bin(remote_idurl)
+        self.remote_global_id = global_id.idurl2glob(self.remote_idurl)
         self.ack_timeout = ack_timeout
         self.cache_timeout = cache_timeout
         self.cache_retries = cache_retries
@@ -196,8 +197,7 @@ class Handshaker(automat.Automat):
             _KnownChannels[self.channel] = 0
         _KnownChannels[self.channel] += 1
         super(Handshaker, self).__init__(
-            name="handshake_%s%d_%s" % (self.channel.replace('_', ''), _KnownChannels[self.channel],
-                                      global_id.idurl2glob(self.remote_idurl)),
+            name="handshake_%s%d_%s" % (self.channel.replace('_', ''), _KnownChannels[self.channel], self.remote_global_id),
             state="AT_STARTUP",
             debug_level=debug_level,
             log_events=log_events,
@@ -374,7 +374,7 @@ class Handshaker(automat.Automat):
             lg.warn('handshake failed because received Fail() from remote user %r : %r' % (response, info, ))
             lg.exc(exc_value=Exception('handshake failed because received Fail() from remote user'))
             for result_defer in _RunningHandshakers[self.remote_idurl]['results']:
-                result_defer.errback(Exception('handshake failed because received Fail() from remote user'))
+                result_defer.errback(Exception('handshake failed because received Fail() packet from remote user'))
             return
         status = kwargs.get('status')
         error = kwargs.get('error')
@@ -390,10 +390,10 @@ class Handshaker(automat.Automat):
         Action method.
         """
         global _RunningHandshakers
-        lg.warn('remote user %r did not responded after %d ping attempts' % (self.remote_idurl, self.ping_attempts, ))
+        lg.warn('remote node %r did not respond after %d ping attempts' % (self.remote_global_id, self.ping_attempts, ))
         for result_defer in _RunningHandshakers[self.remote_idurl]['results']:
-            result_defer.errback(Exception('remote user %r did not responded after %d ping attempts' % (
-                self.remote_idurl, self.ping_attempts, )))
+            result_defer.errback(Exception('remote node %s did not respond after %d ping attempt(s)' % (
+                self.remote_global_id, self.ping_attempts, )))
 
     def doReportSuccess(self, *args, **kwargs):
         """

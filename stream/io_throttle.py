@@ -570,6 +570,12 @@ class SupplierQueue:
             lg.args(_DebugLevel, newpacket=newpacket, result=result, queue=len(self.fileRequestQueue), remoteName=self.remoteName)
         packetID = global_id.CanonicalID(newpacket.PacketID)
         if (packetID not in self.fileRequestQueue) or (packetID not in self.fileRequestDict):
+            latest_idurl = global_id.ParseGlobalID(packetID, as_field=True)['idurl'].latest
+            another_packetID = global_id.SubstitutePacketID(packetID, idurl=latest_idurl)
+            if (another_packetID in self.fileRequestQueue) and (another_packetID in self.fileRequestDict):
+                packetID = another_packetID
+                lg.warn('found incoming %r with outdated packet id, corrected: %r' % (newpacket, another_packetID, ))
+        if (packetID not in self.fileRequestQueue) or (packetID not in self.fileRequestDict):
             lg.err('unexpected %r received which is not in the downloading queue' % newpacket)
         else:
             f_down = self.fileRequestDict[packetID]

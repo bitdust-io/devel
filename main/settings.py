@@ -79,8 +79,6 @@ _BackupBlockSize = None
 _BackupMaxBlockSize = None
 
 #------------------------------------------------------------------------------
-#---INIT-----------------------------------------------------------------------
-#------------------------------------------------------------------------------
 
 def init(base_dir=None):
     """
@@ -100,7 +98,7 @@ def init(base_dir=None):
     _InitDone = True
     deploy.init_base_dir(base_dir)
     if _Debug:
-        lg.out(_DebugLevel, 'settings.init data location is %r' % BaseDir())
+        lg.out(_DebugLevel, 'settings.init data folder location is %r' % BaseDir())
     _checkMetaDataDirectory()
     _checkConfigDirectory()
     _setUpDefaultSettings()

@@ -106,7 +106,7 @@ class Packet(object):
         """
         # Legal Commands are in commands.py
         self.Command = strng.to_text(Command)
-        # who owns this data and pays bills - http://cate.com/id1.xml
+        # who owns this data and pays bills - http://somehost.com/id1.xml
         self.OwnerID = id_url.field(OwnerID)
         # signer - http://cate.com/id1.xml - might be an authorized scrubber
         self.CreatorID = id_url.field(CreatorID)
