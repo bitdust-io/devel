@@ -6,10 +6,10 @@ jobs:
     steps:
       - checkout
       - run:
-          name: "Use Python v3.7.0"
+          name: "Use Python v3.6.5"
           command: |
             pyenv versions
-            pyenv global 3.7.0
+            pyenv global 3.6.5
       - run:
           name: "Build"
           command: |
@@ -19,5 +19,5 @@ jobs:
             make regress_report
           environment:
             DOCKER_COMPOSE_VERSION: 1.25.5
-            REGRESSION_PY_VER: 3.7.0
-            VENV_PYTHON_VERSION: python3.7
+            REGRESSION_PY_VER: 3.6.5
+            VENV_PYTHON_VERSION: python3.6
