@@ -1,27 +1,19 @@
-version: 2.1
-
-orbs:
-  python: circleci/python@0.2.1
-
+version: 2
 jobs:
-  build-and-test:
-    executor: python/3.8
+  build:
+    machine:
+      image: circleci/classic:201808-01
     steps:
       - checkout
-      - python/load-cache
-      - python/install-deps
-      - python/save-cache
-      - setup_remote_docker:
-          version: 19.03.13
       - run:
-          command:
+          name: "Use Python v3.8.1"
+          command: |
+            pyenv versions
+            pyenv global 3.8.1
+      - run:
+          name: "Build"
+          command: |
             make test_unit
             make regress_prepare
             make regress_run
             make regress_report
-          name: Test
-
-workflows:
-  main:
-    jobs:
-      - build-and-test
