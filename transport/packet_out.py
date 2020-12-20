@@ -260,7 +260,7 @@ def search_by_response_packet(newpacket=None, proto=None, host=None, outgoing_co
                 matching_packet_ids.append(another_packet_id)
     if len(matching_packet_ids) > 1:
         if _Debug:
-            lg.warn('multiple packet IDs expecting to match for that packet: %r' % matching_packet_ids)
+            lg.dbg(_DebugLevel, 'multiple packet IDs expecting to match for that packet: %r' % matching_packet_ids)
     for p in queue():
         # TODO: investigate more
         if p.outpacket.PacketID.lower() not in matching_packet_ids:
