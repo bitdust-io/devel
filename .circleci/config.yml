@@ -1,4 +1,4 @@
-version: 2
+version: 2.1
 jobs:
   build:
     machine:
@@ -17,3 +17,7 @@ jobs:
             make regress_prepare
             make regress_run
             make regress_report
+          environment:
+            DOCKER_COMPOSE_VERSION: 1.25.5
+            REGRESSION_PY_VER: 3.7.0
+            VENV_PYTHON_VERSION: python3.7
