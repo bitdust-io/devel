@@ -13,6 +13,8 @@ jobs:
       - run:
           name: "Build"
           command: |
+            python -m pip install -r requirements.txt
+            python3 -m pip install -r requirements.txt
             make test_unit
             make regress_prepare
             make regress_run
