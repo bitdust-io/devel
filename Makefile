@@ -55,8 +55,12 @@ VENV_TEST=${VENV}/.venv_test
 .PHONY: install
 
 install:
-	@echo "Building BitDust environment and installing requirements";
-	@if [ "$(VENV_PYTHON_VERSION)" = "python2.7" ]; then python bitdust.py install; else python3 bitdust.py install; fi;
+	@echo "Building BitDust environment and installing requirements VENV_PYTHON_VERSION=$(VENV_PYTHON_VERSION)";
+	@if [ "$(VENV_PYTHON_VERSION)" = "" ]; then\
+		python3 bitdust.py install;\
+	else\
+		$(VENV_PYTHON_VERSION) bitdust.py install;\
+	fi;
 
 venv_install: install
 

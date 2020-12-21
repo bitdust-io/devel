@@ -183,6 +183,9 @@ def ParseGlobalID(inp, detect_version=False, as_field=True, fast=True):
         "version": "",
     }
     if not inp:
+        if as_field:
+            from userid import id_url
+            result['idurl'] = id_url.field(result['idurl'])
         return result
     inp = strng.to_text(inp)
     if inp.count('&') == 2:
