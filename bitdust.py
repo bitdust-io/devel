@@ -30,8 +30,11 @@ from __future__ import absolute_import
 import os
 
 
-import locale
-locale.setlocale(locale.LC_CTYPE, 'en_US.UTF-8')
+try:
+    import locale
+    locale.setlocale(locale.LC_CTYPE, 'en_US.UTF-8')
+except:
+    pass
 
 
 def main():
