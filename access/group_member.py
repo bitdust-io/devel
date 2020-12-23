@@ -672,7 +672,7 @@ class GroupMember(automat.Automat):
         found_broker_ids = set()
         for json_message in json_messages:
             try:
-                msg_type = json_message.get('type', '')
+                msg_type = json_message.get('msg_type', '') or json_message.get('type', '')  # TODO: need to cleanup that later
                 msg_direction = json_message['dir']
                 packet_id = json_message['packet_id']
                 owner_idurl = json_message['owner_idurl']

@@ -431,9 +431,9 @@ class FSItemInfo():
         try:
             details, name = strng.to_text(src, encoding=decoding).split('\n')[:2]
         except:
-            raise Exception('Incorrect item format:\n%s' % src)
+            raise Exception('incorrect item format:\n%s' % src)
         if not details or not name:
-            raise Exception('Incorrect item format:\n%s' % src)
+            raise Exception('incorrect item format:\n%s' % src)
         try:
             self.unicodename = name
             details = details.split(' ')
@@ -442,7 +442,7 @@ class FSItemInfo():
             self.unpack_versions(' '.join(details[3:]))
         except:
             lg.exc()
-            raise KeyError('Incorrect item format:\n%s' % src)
+            raise KeyError('incorrect item format:\n%s' % src)
         return True
 
 #------------------------------------------------------------------------------
@@ -789,7 +789,7 @@ def SetDir(item, iter=None, iterID=None):
                     found = True
                     break
                 continue
-            raise Exception('Wrong data type in the index')
+            raise Exception('wrong data type in the index')
         if not found:
             return False
     return False
@@ -825,14 +825,14 @@ def WalkByPath(path, iter=None):
             return None
         if isinstance(iter[name], dict):
             if 0 not in iter[name]:
-                raise Exception('Error, file or directory ID missed in the index')
+                raise Exception('file or directory ID missed in the index')
             path_id += '/' + str(iter[name][0])
         elif isinstance(iter[name], int):
             if j != len(parts) - 1:
                 return None
             path_id += '/' + str(iter[name])
         else:
-            raise Exception('Wrong data type in the index')
+            raise Exception('wrong data type in the index')
         if j == len(parts) - 1:
             return iter[name], path_id.lstrip('/')
         iter = iter[name]
@@ -863,7 +863,7 @@ def WalkByID(pathID, iterID=None):
             return None
         if isinstance(iterID[id], dict):
             if INFO_KEY not in iterID[id]:
-                raise Exception('Error, directory info missed in the index')
+                raise Exception('directory info missed in the index')
             name = iterID[id][INFO_KEY].name()
             if bpio.pathIsDriveLetter(name) or bpio.pathIsNetworkLocation(name):
                 path += name
@@ -874,7 +874,7 @@ def WalkByID(pathID, iterID=None):
                 return None
             path += '/' + iterID[id].name()
         else:
-            raise Exception('Wrong data type in the index')
+            raise Exception('wrong data type in the index')
         if j == len(parts) - 1:
             return iterID[id], ResolvePath(path)
         iterID = iterID[id]
@@ -900,7 +900,7 @@ def DeleteByID(pathID, iter=None, iterID=None):
             return None
         if isinstance(iterID[id], dict):
             if INFO_KEY not in iterID[id]:
-                raise Exception('Error, directory info missed in the index')
+                raise Exception('directory info missed in the index')
             name = iterID[id][INFO_KEY].name()
             if bpio.pathIsDriveLetter(name) or bpio.pathIsNetworkLocation(name):
                 path += name
@@ -912,9 +912,9 @@ def DeleteByID(pathID, iter=None, iterID=None):
             if j != len(parts) - 1:
                 return None
         else:
-            raise Exception('Wrong data type in the index')
+            raise Exception('wrong data type in the index')
         if name not in iter:
-            raise Exception('Can not found target name in the index')
+            raise Exception('can not found target name in the index')
         if j == len(parts) - 1:
             iterID.pop(id)
             iter.pop(name)
@@ -946,7 +946,7 @@ def DeleteByPath(path, iter=None, iterID=None):
             return None
         if isinstance(iter[name], dict):
             if 0 not in iter[name]:
-                raise Exception('Error, directory ID missed in the index')
+                raise Exception('directory ID missed in the index')
             id = iter[name][0]
             path_id += '/' + str(id)
         elif isinstance(iter[name], int):
@@ -955,9 +955,9 @@ def DeleteByPath(path, iter=None, iterID=None):
             if j != len(parts) - 1:
                 return None
         else:
-            raise Exception('Wrong data type in the index')
+            raise Exception('wrong data type in the index')
         if id not in iterID:
-            raise Exception('Can not found target ID in the index')
+            raise Exception('can not found target ID in the index')
         if j == len(parts) - 1:
             iter.pop(name)
             iterID.pop(id)
@@ -1072,7 +1072,7 @@ def IsDir(path, iter=None):
     if not isinstance(iter, dict):
         return False
     if 0 not in iter:
-        raise Exception('Error, directory ID missed in the index')
+        raise Exception('directory ID missed in the index')
     return True
 
 
@@ -1102,7 +1102,7 @@ def IsDirID(pathID, iterID=None):
     if isinstance(iterID, FSItemInfo):
         return False
     if INFO_KEY not in iterID:
-        raise Exception('Error, directory info missed in the index')
+        raise Exception('directory info missed in the index')
     return True
 
 
@@ -1170,7 +1170,7 @@ def HasChilds(path, iter=None):
     if not isinstance(iter, dict):
         return False
     if 0 not in iter:
-        raise Exception('Error, directory ID missed in the index')
+        raise Exception('directory ID missed in the index')
     return len(iter) > 0
 
 
@@ -1189,7 +1189,7 @@ def HasChildsID(pathID, iterID=None):
     if not isinstance(iterID, dict):
         return False
     if INFO_KEY not in iterID:
-        raise Exception('Error, directory info missed in the index')
+        raise Exception('directory info missed in the index')
     return len(iterID) > 0
 
 #------------------------------------------------------------------------------
@@ -1236,7 +1236,7 @@ def TraverseByID(callback, iterID=None, base_path_id=''):
                     i[id],                                                          # item
                 )
             else:
-                raise Exception('Error, wrong item of type %r in the index: %r' % (type(i[id]), i[id], ))
+                raise Exception('wrong item of type %r in the index: %r' % (type(i[id]), i[id], ))
 
     startpth = '' if bpio.Windows() else '/'
     recursive_traverse(iterID, base_path_id, startpth, callback)
@@ -1270,7 +1270,7 @@ def TraverseByIDSorted(callback, iterID=None):
             elif isinstance(i[id], FSItemInfo):
                 files.append((id, ResolvePath(path, i[id].name()),))
             else:
-                raise Exception('Error, wrong item type in the index')
+                raise Exception('wrong item type in the index')
         dirs.sort(key=lambda e: e[1])
         files.sort(key=lambda e: e[1])
         for id, pth in dirs:
@@ -1312,7 +1312,7 @@ def TraverseChildsByID(callback, iterID=None):
                 item_name = i[id].name()
                 files.append((id, item_name))
             else:
-                raise Exception('Error, wrong item type in the index')
+                raise Exception('wrong item type in the index')
         dirs.sort(key=lambda e: e[1])
         files.sort(key=lambda e: e[1])
         for id, pth, num_childs in dirs:
@@ -1383,7 +1383,7 @@ def IterateIDs(iterID=None):
                     i[id],                                                          # item
                 )
             else:
-                raise Exception('Error, wrong item type in the index')
+                raise Exception('wrong item type in the index')
 
     startpth = '' if bpio.Windows() else '/'
     return recursive_iterate(iterID, '', startpth)
@@ -1489,22 +1489,22 @@ def ListChilds(iterID):
     if isinstance(iterID, FSItemInfo):
         return [('', '', iterID), ]
     if not isinstance(iterID, dict):
-        raise Exception('Wrong data type in the index')
+        raise Exception('wrong data type in the index')
     if INFO_KEY not in iterID:
-        raise Exception('Error, directory info missed in the index')
+        raise Exception('directory info missed in the index')
     for id in iterID.keys():
         if id == INFO_KEY:
             continue
         if isinstance(iterID[id], dict):
             if INFO_KEY not in iterID[id]:
-                raise Exception('Error, directory info missed in the index')
+                raise Exception('directory info missed in the index')
             name = iterID[id][INFO_KEY].name()
             itm = iterID[id][INFO_KEY]
         elif isinstance(iterID[id], FSItemInfo):
             name = iterID[id].name()
             itm = iterID[id]
         else:
-            raise Exception('Wrong data type in the index')
+            raise Exception('wrong data type in the index')
         result.append((str(id), name, itm))
     return result
 
@@ -1525,22 +1525,22 @@ def ListByID(pathID, iterID=None):
     if isinstance(iterID, FSItemInfo):
         return [(pathID, ResolvePath(path), iterID), ]
     if not isinstance(iterID, dict):
-        raise Exception('Wrong data type in the index')
+        raise Exception('wrong data type in the index')
     if INFO_KEY not in iterID and pathID.strip() != '':
-        raise Exception('Error, directory info missed in the index')
+        raise Exception('directory info missed in the index')
     for id in iterID.keys():
         if id == INFO_KEY:
             continue
         if isinstance(iterID[id], dict):
             if INFO_KEY not in iterID[id]:
-                raise Exception('Error, directory info missed in the index')
+                raise Exception('directory info missed in the index')
             name = iterID[id][INFO_KEY].name()
             itm = iterID[id][INFO_KEY]
         elif isinstance(iterID[id], FSItemInfo):
             name = iterID[id].name()
             itm = iterID[id]
         else:
-            raise Exception('Wrong data type in the index')
+            raise Exception('wrong data type in the index')
         result.append(((pathID + '/' + str(id)).lstrip('/'), ResolvePath(path, name), itm))
     return result
 
@@ -1564,20 +1564,20 @@ def ListByPath(path, iter=None):
     if isinstance(iter, int):
         return [(path_id, ResolvePath(path), None), ]
     if not isinstance(iter, dict):
-        raise Exception('Wrong data type in the index')
+        raise Exception('wrong data type in the index')
     if 0 not in iter:
-        raise Exception('Error, directory ID missed in the index')
+        raise Exception('directory ID missed in the index')
     for key in iter.keys():
         if key == 0:
             continue
         if isinstance(iter[key], dict):
             if 0 not in iter[key]:
-                raise Exception('Error, directory ID missed in the index')
+                raise Exception('directory ID missed in the index')
             id = iter[key][0]
         elif isinstance(iter[key], int):
             id = iter[key]
         else:
-            raise Exception('Wrong data type in the index')
+            raise Exception('wrong data type in the index')
         result.append(((path_id + '/' + str(id)).lstrip('/'), ResolvePath(path, key)))
     return result
 
@@ -1795,14 +1795,14 @@ def MakeLocalDir(basedir, backupID):
     Do some checking and call built-in method ``os.makedirs()``.
     """
     if not bpio.pathIsDir(basedir):
-        raise Exception('Directory not exist: %s' % basedir)
+        raise Exception('directory not exist: %s' % basedir)
     customerGlobalID, remotePath = packetid.SplitPacketID(backupID)
     if not customerGlobalID:
         customerGlobalID = my_id.getGlobalID()
     path = os.path.join(basedir, customerGlobalID, remotePath)
     if os.path.exists(path):
         if not bpio.pathIsDir(path):
-            raise Exception('Can not create directory %s' % path)
+            raise Exception('can not create directory %s' % path)
     else:
         os.makedirs(path)
     return path
@@ -1813,13 +1813,13 @@ def DeleteLocalDir(basedir, pathID):
     Remove local sub folder at given ``basedir`` root path.
     """
     if not bpio.pathIsDir(basedir):
-        raise Exception('Directory not exist: %s' % basedir)
+        raise Exception('directory not exist: %s' % basedir)
     customer, pth = packetid.SplitPacketID(pathID)
     path = os.path.join(basedir, customer, pth)
     if not os.path.exists(path):
         return
     if not bpio.pathIsDir(path):
-        raise Exception('Error, %s is not a directory' % path)
+        raise Exception('path %s is not a directory' % path)
     bpio.rmdir_recursive(path, ignore_errors=True)
 
 
@@ -1829,13 +1829,13 @@ def DeleteLocalBackup(basedir, backupID):
     """
     count_and_size = [0, 0, ]
     if not bpio.pathIsDir(basedir):
-        raise Exception('Directory not exist: %s' % basedir)
+        raise Exception('directory not exist: %s' % basedir)
     customer, pth = packetid.SplitPacketID(backupID)
     backupDir = os.path.join(basedir, customer, pth)
     if not bpio.pathExist(backupDir):
         return count_and_size[0], count_and_size[1]
     if not bpio.pathIsDir(backupDir):
-        raise Exception('Error, %s is not a directory' % backupDir)
+        raise Exception('path %s is not a directory' % backupDir)
 
     def visitor(fullpath):
         if os.path.isfile(fullpath):
@@ -1955,7 +1955,7 @@ def Calculate(iterID=None):
                 if sub_folder_size != -1:
                     folder_size += sub_folder_size
             else:
-                raise Exception('Error, wrong item type in the index')
+                raise Exception('wrong item type in the index')
         if INFO_KEY in i:
             i[INFO_KEY].size = folder_size
             if i[INFO_KEY].type == FILE:

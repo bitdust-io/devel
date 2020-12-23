@@ -159,21 +159,20 @@ regress_clean_run_report:
 	make --no-print-directory -C regress/ clean_all
 	PYTHON_VERSION=$(REGRESSION_PY_VER) make --no-print-directory -C regress/ prepare
 	PYTHON_VERSION=$(REGRESSION_PY_VER) _DEBUG=1 _PAUSE_BEFORE=0 make --no-print-directory -C regress/ -j 1 run_parallel
-	make --no-print-directory -C regress/ report
 
 regress_clean_run_log_py27:
 	make --no-print-directory -C regress/ stop_all
 	make --no-print-directory -C regress/ clean_all
 	PYTHON_VERSION=2.7.15 make --no-print-directory -C regress/ prepare
 	PYTHON_VERSION=2.7.15 _DEBUG=1 make --no-print-directory -C regress/ run_all_log
-	make --no-print-directory -C regress/ report
 
-regress_clean_run_log_py3:
+regress_full:
 	make --no-print-directory -C regress/ stop_all
 	make --no-print-directory -C regress/ clean_all
+	make --no-print-directory -C regress/ clean_coverage
+	make --no-print-directory -C regress/ clean_logs
 	PYTHON_VERSION=3.6 make --no-print-directory -C regress/ prepare
-	PYTHON_VERSION=3.6 _DEBUG=1 make --no-print-directory -C regress/ run_all_log
-	make --no-print-directory -C regress/ report
+	PYTHON_VERSION=3.6 make --no-print-directory -C regress/ TEST_NAME=alpha _one_up_test_log
 
 
 

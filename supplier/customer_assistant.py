@@ -90,7 +90,7 @@ def create(customer_idurl):
     """
     """
     if customer_idurl in assistants():
-        raise Exception('CustomerAssistant for %s already exists' % customer_idurl)
+        raise Exception('another CustomerAssistant instance for %s already exists' % customer_idurl)
     assistants()[customer_idurl] = CustomerAssistant(customer_idurl)
     return assistants()[customer_idurl]
 

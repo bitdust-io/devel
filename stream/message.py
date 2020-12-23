@@ -534,7 +534,6 @@ def consume_messages(consumer_callback_id, callback=None, direction=None, messag
     }
     if _Debug:
         lg.out(_DebugLevel, 'message.consume_messages added callback for consumer %r' % consumer_callback_id)
-    # reactor.callLater(0, do_read)  # @UndefinedVariable
     do_read()
     return cb
 

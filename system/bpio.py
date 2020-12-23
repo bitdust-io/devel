@@ -822,7 +822,7 @@ def pathIsDir(localpath):
         except:
             return False
     # now we are in really big trouble
-    raise Exception('Path not exist: %s' % p)
+    raise Exception('path is not exist: %s' % p)
     return False
 
 

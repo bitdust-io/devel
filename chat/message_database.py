@@ -113,7 +113,10 @@ def init(filepath=None):
 
         _HistoryCursor.execute('''CREATE TABLE IF NOT EXISTS "history" (
             "sender_local_key_id" INTEGER,
+            "sender_id" TEXT,
             "recipient_local_key_id" INTEGER,
+            "recipient_id" TEXT,
+            "direction" INTEGER,
             "payload_type" INTEGER,
             "payload_time" INTEGER,
             "payload_message_id" TEXT,
@@ -188,11 +191,16 @@ def build_json_message(data, message_id, message_time=None, sender=None, recipie
         sender = my_id.getGlobalID(key_alias='master')
     if not recipient:
         recipient = my_id.getGlobalID(key_alias='master')
-    if direction is None and message_type in ['private_message', None, ]:
-        direction = 'out' if sender == my_id.getGlobalID(key_alias='master') else 'in'
+    if direction is None:
+        if message_type in ['private_message', None, ]:
+            direction = 'out' if sender == my_id.getGlobalID(key_alias='master') else 'in'
+        else:
+            direction = 'in'
+    else:
+        direction = direction.replace('incoming', 'in').replace('outgoing', 'out')
     new_json = {
         "payload": {
-            "type": message_type or "message",
+            "msg_type": message_type or "message",
             "message_id": strng.to_text(message_id),
             "time": message_time or utime.utcnow_to_sec1970(),
             "data": data,
@@ -216,12 +224,11 @@ def insert_message(message_json):
     try:
         sender_glob_id = message_json['sender']['glob_id']
         recipient_glob_id = message_json['recipient']['glob_id']
-        payload_type = MESSAGE_TYPES.get(message_json['payload']['type'], 1)
+        direction = message_json['direction']
+        payload_type = MESSAGE_TYPES.get(message_json['payload']['msg_type'], 1)
         payload_time = message_json['payload']['time']
         payload_message_id = message_json['payload']['message_id']
         payload_body =  message_json['payload']['data']
-        # TODO: store "direction"
-        # direction = message_json['direction']
     except:
         lg.exc()
         return False
@@ -238,14 +245,20 @@ def insert_message(message_json):
         return False
     cur().execute('''INSERT INTO history (
             sender_local_key_id,
+            sender_id,
             recipient_local_key_id,
+            recipient_id,
+            direction,
             payload_type,
             payload_time,
             payload_message_id,
             payload_body
-        ) VALUES (?, ?, ?, ?, ?, ?)''', (
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''', (
         sender_local_key_id,
+        sender_glob_id,
         recipient_local_key_id,
+        recipient_glob_id,
+        0 if direction == 'in' else 1,
         payload_type,
         payload_time,
         payload_message_id,
@@ -338,7 +351,9 @@ def query_messages(sender_id=None, recipient_id=None, bidirectional=True, order_
     local_key_ids = {}
     for row in cur().execute(sql, params):
         sender_local_key_id = row[0]
-        recipient_local_key_id = row[1]
+        sender_id_recorded = row[1]
+        recipient_local_key_id = row[2]
+        recipient_id_recorded = row[3]
         if sender_local_key_id not in local_key_ids:
             local_key_ids[sender_local_key_id] = my_keys.get_local_key(sender_local_key_id)
         if recipient_local_key_id not in local_key_ids:
@@ -347,12 +362,13 @@ def query_messages(sender_id=None, recipient_id=None, bidirectional=True, order_
             lg.warn('unknown sender or recipient local key_id')
             continue
         json_msg = build_json_message(
-            data=json.loads(row[5]),
-            message_id=row[4],
-            message_time=row[3],
-            sender=local_key_ids[sender_local_key_id],
-            recipient=local_key_ids[recipient_local_key_id],
-            message_type=MESSAGE_TYPE_CODES.get(int(row[2]), 'private_message'),
+            sender=sender_id_recorded,
+            recipient=recipient_id_recorded,
+            direction='in' if row[4] == 0 else 'out',
+            message_type=MESSAGE_TYPE_CODES.get(int(row[5]), 'private_message'),
+            message_time=row[6],
+            message_id=row[7],
+            data=json.loads(row[8]),
         )
         if order_by_time:
             results.insert(0, json_msg)
@@ -453,7 +469,8 @@ def rebuild_conversations():
     cur().execute('CREATE INDEX "conversation id" on conversations(conversation_id)')
     db().commit()
     for message_json in list(query_messages()):
-        payload_type = MESSAGE_TYPES.get(message_json['payload']['type'], 1)
+        msg_typ = message_json['payload'].get('msg_type') or message_json['payload'].get('type')
+        payload_type = MESSAGE_TYPES.get(msg_typ, 1)
         recipient_local_key_id = my_keys.get_local_key_id(message_json['recipient']['glob_id'])
         if payload_type in [3, 4, ]:
             sender_local_key_id = recipient_local_key_id
@@ -484,7 +501,7 @@ def check_create_rename_key(new_public_key, new_key_id, new_local_key_id):
     found_public_keys = list(cur().execute(sql, params))
     if found_public_keys:
         if len(found_public_keys) > 1:
-            raise Exception('Found multiple records for same public key: %r' % found_public_keys)
+            raise Exception('found multiple records for same public key: %r' % found_public_keys)
         key_id = found_public_keys[0][0]
         local_key_id = found_public_keys[0][1]
         changed = False
@@ -535,14 +552,15 @@ def main():
     my_keys.init()
     init()
     pprint.pprint(list(query_messages(
-        sender_id='',
-        recipient_id='',
-        offset=2,
-        limit=3,
+        # sender_id='',
+        recipient_id='group_96b1fa942b556e2e0dbccdcc9eeed84a$veselibro@seed.bitdust.io',
+        # offset=2,
+        # limit=3,
+        message_types=['group_message', ]
     )))
-    pprint.pprint(list(list_conversations(
+    # pprint.pprint(list(list_conversations(
         # message_types=['group_message', ]
-    )))
+    # )))
     shutdown()
 
 

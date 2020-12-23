@@ -512,7 +512,9 @@ class ProxyReceiver(automat.Automat):
                 idurl=self.router_idurl,
                 callback_method=self._on_router_contact_status_offline,
             )
-        active_router_session_machine_index = self.router_connection_info.get('index', None)
+        active_router_session_machine_index = None
+        if self.router_connection_info:
+            active_router_session_machine_index = self.router_connection_info.get('index', None)
         if active_router_session_machine_index is not None:
             active_router_session_machine = automat.objects().get(active_router_session_machine_index, None)
             if active_router_session_machine is not None:
@@ -520,9 +522,6 @@ class ProxyReceiver(automat.Automat):
                 lg.info('removed callback from router active session: %r' % active_router_session_machine)
             else:
                 lg.err('did not found active router session state machine with index %s' % active_router_session_machine_index)
-        # if contact_status.isKnown(self.router_idurl):
-        #     contact_status.A(self.router_idurl).removeStateChangedCallback(self._on_router_contact_status_connected)
-        #     contact_status.A(self.router_idurl).removeStateChangedCallback(self._on_router_contact_status_offline)
         WriteMyOriginalIdentitySource('')
         config.conf().setString('services/proxy-transport/current-router', '')
         callback.remove_inbox_callback(self._on_inbox_packet_received)
