@@ -1116,14 +1116,13 @@ def scenario12_end(old_customer_4_info):
     customer_2_rotated_queue_id = customer_2_group_info_rotated['active_queue_id']
     customer_2_rotated_broker_id = customer_2_group_info_rotated['active_broker_id']
 
-    if customer_2_rotated_queue_id != customer_4_rotated_queue_id:
-        customer_4_group_info_rotated = kw.group_info_v1('customer-4', customer_4_group_key_id, wait_state='IN_SYNC!')['result']
-        assert customer_4_group_info_rotated['state'] == 'IN_SYNC!'
-        assert customer_4_group_info_rotated['last_sequence_id'] == 5
+    customer_4_group_info_rotated = kw.group_info_v1('customer-4', customer_4_group_key_id, wait_state='IN_SYNC!')['result']
+    assert customer_4_group_info_rotated['state'] == 'IN_SYNC!'
+    assert customer_4_group_info_rotated['last_sequence_id'] == 5
 
-        customer_4_rotated_queue_id = customer_4_group_info_rotated['active_queue_id']
-        customer_4_rotated_broker_id = customer_4_group_info_rotated['active_broker_id']
-        customer_4_rotated_broker_name = customer_4_rotated_broker_id.split('@')[0]
+    customer_4_rotated_queue_id = customer_4_group_info_rotated['active_queue_id']
+    customer_4_rotated_broker_id = customer_4_group_info_rotated['active_broker_id']
+    customer_4_rotated_broker_name = customer_4_rotated_broker_id.split('@')[0]
 
     assert customer_2_rotated_queue_id == customer_4_rotated_queue_id
     assert customer_2_rotated_broker_id == customer_4_rotated_broker_id

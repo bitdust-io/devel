@@ -322,8 +322,8 @@ def on_incoming_message(request, info, status, error_message):
             encoding='utf-8',
         )
         json_message = jsn.dict_keys_to_text(jsn.dict_values_to_text(json_message))
-    except:
-        lg.exc()
+    except Exception as exc:
+        lg.err('decrypt %r failed: %r' % (private_message_object, exc, ))
         return False
     if request.PacketID in received_messages_ids():
         lg.warn("skip incoming message %s because found in recent history" % request.PacketID)
