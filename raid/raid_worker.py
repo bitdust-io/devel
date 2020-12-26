@@ -542,7 +542,7 @@ class ThreadedRaidProcessor(object):
     def submit(self, func, args=None, depfuncs=None, modules=None, callback=None):
         task_id = self.latest_task_id + 1
         if task_id in self.tasks:
-            raise Exception('RaidTask already exists')
+            raise Exception('another RaidTask already exists with task_id=%r' % task_id)
         rt = RaidTask(
             task_id=task_id,
             worker_method=func,

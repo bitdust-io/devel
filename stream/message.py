@@ -322,8 +322,8 @@ def on_incoming_message(request, info, status, error_message):
             encoding='utf-8',
         )
         json_message = jsn.dict_keys_to_text(jsn.dict_values_to_text(json_message))
-    except:
-        lg.exc()
+    except Exception as exc:
+        lg.err('decrypt %r failed: %r' % (private_message_object, exc, ))
         return False
     if request.PacketID in received_messages_ids():
         lg.warn("skip incoming message %s because found in recent history" % request.PacketID)
@@ -534,7 +534,6 @@ def consume_messages(consumer_callback_id, callback=None, direction=None, messag
     }
     if _Debug:
         lg.out(_DebugLevel, 'message.consume_messages added callback for consumer %r' % consumer_callback_id)
-    # reactor.callLater(0, do_read)  # @UndefinedVariable
     do_read()
     return cb
 

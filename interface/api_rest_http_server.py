@@ -1041,9 +1041,9 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @DELETE('^/v1/customer/reject$')
     @DELETE('^/customer/reject/v1$')
     def customer_reject_v1(self, request):
-        data = _request_data(request, mandatory_keys=[('idurl', 'global_id', 'id', ), ])
+        data = _request_data(request, mandatory_keys=[('customer_id', 'idurl', 'global_id', 'id', ), ])
         return api.customer_reject(
-            idurl_or_global_id=data.get('global_id') or data.get('idurl') or data.get('id'),
+            customer_id=data.get('customer_id') or data.get('global_id') or data.get('idurl') or data.get('id'),
         )
 
     @POST('^/cu/png$')

@@ -288,7 +288,7 @@ def erase(name, filename, why='no reason'):
             lg.out(_DebugLevel, 'tmpfile.erase recursive [%s] : "%s"' % (filename, why))
 
     else:
-        raise Exception('[%s] not exist' % filename)
+        raise Exception('path [%s] not exist' % filename)
 
 
 def throw_out(filepath, why='dont know'):
@@ -384,7 +384,7 @@ def startup_clean():
                     if counter > limit_counts:
                         break
                 else:
-                    raise Exception('%s not exist' % filepath)
+                    raise Exception('path %s not exist' % filepath)
 
 #------------------------------------------------------------------------------
 

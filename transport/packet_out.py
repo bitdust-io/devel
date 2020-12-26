@@ -772,7 +772,7 @@ class PacketOut(automat.Automat):
         Action method.
         """
         if not self.popped_item:
-            raise Exception('Current outgoing item not exist')
+            raise Exception('current outgoing item not exist')
         p2p_stats.count_outbox(
             self.remote_idurl, self.popped_item.proto,
             self.popped_item.status, self.popped_item.bytes_sent)
@@ -1149,6 +1149,6 @@ class PacketOut(automat.Automat):
                             i.transfer_id, i.status), log_name='packet', showtime=True)
                     break
         if not self.popped_item:
-            raise Exception('Failed to populate active item')
+            raise Exception('failed to populate active item')
 
 #------------------------------------------------------------------------------

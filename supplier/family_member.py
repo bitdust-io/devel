@@ -87,7 +87,7 @@ def create_family(customer_idurl):
     """
     customer_idurl = id_url.field(customer_idurl)
     if customer_idurl in families():
-        raise Exception('FamilyMember for %s already exists' % customer_idurl)
+        raise Exception('another FamilyMember for %s already exists' % customer_idurl)
     families()[customer_idurl] = FamilyMember(customer_idurl)
     return families()[customer_idurl]
 
@@ -95,7 +95,7 @@ def create_family(customer_idurl):
 def delete_family(customer_idurl):
     customer_idurl = id_url.field(customer_idurl)
     if customer_idurl not in families():
-        raise Exception('FamilyMember for %s not exist' % customer_idurl)
+        raise Exception('instance of FamilyMember for %s is not exist' % customer_idurl)
     families().pop(customer_idurl)
     return True
 
