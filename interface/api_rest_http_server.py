@@ -1044,6 +1044,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
         data = _request_data(request, mandatory_keys=[('customer_id', 'idurl', 'global_id', 'id', ), ])
         return api.customer_reject(
             customer_id=data.get('customer_id') or data.get('global_id') or data.get('idurl') or data.get('id'),
+            erase_customer_key=bool(_request_arg(request, 'erase_customer_key', '1') in ['1', 'true', ]),
         )
 
     @POST('^/cu/png$')

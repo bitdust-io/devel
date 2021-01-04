@@ -34,7 +34,7 @@ setup(**{'author': 'Veselin Penev',
  'description': 'BitDust is a decentralized on-line storage network for safe, '
                 'independent and private communications.',
  'include_package_data': True,
- 'install_requires': ['twisted==18.7.0',
+ 'install_requires': ['twisted',
                       'service_identity',
                       'pycryptodomex',
                       'pyparsing',
@@ -101,8 +101,8 @@ setup(**{'author': 'Veselin Penev',
                      'Seems like in Ubuntu (probably most other distros) you '
                      'can install all dependencies in that way:\n'
                      '\n'
-                     '        sudo apt-get install git gcc python-dev '
-                     'python-virtualenv\n'
+                     '        sudo apt-get install git gcc python3-dev '
+                     'python3-virtualenv\n'
                      '\n'
                      '\n'
                      'Optionally, you can also install '
@@ -117,7 +117,7 @@ setup(**{'author': 'Veselin Penev',
                      'On MacOSX platform you can install requirements in that '
                      'way:\n'
                      '\n'
-                     '        brew install git python2\n'
+                     '        brew install git python3\n'
                      '\n'
                      '\n'
                      'And use pip to get all required packages:\n'
@@ -130,8 +130,8 @@ setup(**{'author': 'Veselin Penev',
                      'On Raspberry PI you will need to install those '
                      'packages:\n'
                      '\n'
-                     '        sudo apt-get install git gcc python-dev '
-                     'python-virtualenv libffi-dev libssl-dev\n'
+                     '        sudo apt-get install git gcc python3-dev '
+                     'python3-virtualenv libffi-dev libssl-dev\n'
                      '\n'
                      '\n'
                      '\n'
@@ -176,7 +176,7 @@ setup(**{'author': 'Veselin Penev',
                      'sub-folder:\n'
                      '\n'
                      '        cd bitdust\n'
-                     '        python bitdust.py install\n'
+                     '        python3 bitdust.py install\n'
                      '\n'
                      '\n'
                      'Last step to make BitDust software ready is to make a '
