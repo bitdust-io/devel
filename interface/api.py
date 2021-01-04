@@ -3707,7 +3707,7 @@ def customers_list(verbose=False):
     return RESULT(results)
 
 
-def customer_reject(customer_id):
+def customer_reject(customer_id, erase_customer_key=True):
     """
     Stop supporting given customer, remove all related files from local disc, close connections with that node.
 
@@ -3727,6 +3727,7 @@ def customer_reject(customer_id):
     from raid import eccmap
     from p2p import p2p_service
     from lib import packetid
+    from crypt import my_keys
     from userid import global_id
     from userid import id_url
     customer_idurl = customer_id
@@ -3750,6 +3751,11 @@ def customer_reject(customer_id):
     accounting.write_customers_quotas(space_dict, new_free_space)
     contactsdb.update_customers(current_customers)
     contactsdb.save_customers()
+    if erase_customer_key:
+        customer_key_id = my_keys.make_key_id(alias='customer', creator_idurl=customer_idurl)
+        resp = key_erase(customer_key_id)
+        if resp['status'] != 'OK':
+            lg.warn('key %r removal failed' % customer_key_id)
     events.send('existing-customer-terminated', data=dict(
         idurl=customer_idurl,
         ecc_map=eccmap.Current().name,
