@@ -28,12 +28,12 @@ Make sure the unit tests pass:
 
 Run regression tests via Docker:
 
-    REGRESSION_PY_VER=3.6 make regress_test
+    make regress_full
 
 
 Make your change. Add tests for your change. Make the tests pass:
 
-    rake
+    make
 
 Push to your fork and [submit a pull request][pr].
 

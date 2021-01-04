@@ -94,7 +94,6 @@ except:
 from logs import lg
 
 from automats import automat
-from automats import global_state
 
 from lib import diskspace
 from lib import nameurl
@@ -102,6 +101,8 @@ from lib import packetid
 from lib import misc
 
 from main import settings
+
+from services import driver
 
 from contacts import contactsdb
 
@@ -111,7 +112,6 @@ from storage import backup_control
 
 from userid import global_id
 from userid import my_id
-from userid import id_url
 
 from p2p import online_status
 
