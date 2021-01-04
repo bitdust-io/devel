@@ -759,10 +759,6 @@ def on_files_received(newpacket, info):
     if block is None:
         lg.warn('failed reading data from %s' % newpacket.RemoteID)
         return False
-#         if block.CreatorID != trusted_customer_idurl:
-#             lg.warn('invalid packet, creator ID must be present in packet ID : %s ~ %s' % (
-#                 block.CreatorID, list_files_global_id['idurl'], ))
-#             return False
     try:
         raw_files = block.Data()
     except:
@@ -812,19 +808,6 @@ def on_files_received(newpacket, info):
         if known_supplier_pos >= 0 and known_supplier_pos != supplier_pos:
             lg.err('known external supplier %r position %d is not matching to received list files position %d for customer %s' % (
                 external_supplier_idurl, known_supplier_pos,  supplier_pos, trusted_customer_idurl))
-        # TODO: we should remove that bellow because we do not need it
-        #     service_customer_family() should take care of suppliers list for trusted customer
-        #     so we need to just read that list from DHT
-        #     contactsdb.erase_supplier(
-        #         idurl=external_supplier_idurl,
-        #         customer_idurl=trusted_customer_idurl,
-        #     )
-        # contactsdb.add_supplier(
-        #     idurl=external_supplier_idurl,
-        #     position=supplier_pos,
-        #     customer_idurl=trusted_customer_idurl,
-        # )
-        # contactsdb.save_suppliers(customer_idurl=trusted_customer_idurl)
     else:
         lg.warn('not possible to detect external supplier position for customer %s from received list files, known position is %s' % (
             trusted_customer_idurl, known_supplier_pos))

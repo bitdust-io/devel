@@ -328,7 +328,6 @@ class KeysSynchronizer(automat.Automat):
             return None
 
         def _on_failed_one(err, pos, key_id):
-            # self.automat('error', Exception('failed to restore key %r : %r' % (key_id, err, )))
             lg.err('failed to restore key %r : %r' % (key_id, err, ))
             _do_restore_one(pos+1)
             return None

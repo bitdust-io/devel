@@ -3752,6 +3752,7 @@ def customer_reject(customer_id, erase_customer_key=True):
     contactsdb.update_customers(current_customers)
     contactsdb.save_customers()
     if erase_customer_key:
+        # erase customer key
         customer_key_id = my_keys.make_key_id(alias='customer', creator_idurl=customer_idurl)
         resp = key_erase(customer_key_id)
         if resp['status'] != 'OK':

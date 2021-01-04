@@ -42,11 +42,6 @@ EVENTS:
 """
 
 from __future__ import absolute_import
-from six.moves import range
-
-#------------------------------------------------------------------------------
-
-import os
 
 #------------------------------------------------------------------------------
 
@@ -57,6 +52,8 @@ from automats import automat
 from main import settings
 from main import events
 
+from interface import api
+
 from contacts import contactsdb
 
 from lib import packetid
@@ -64,6 +61,8 @@ from lib import packetid
 from p2p import p2p_service
 
 from raid import eccmap
+
+from crypt import my_keys
 
 from storage import accounting
 
@@ -212,6 +211,11 @@ class CustomersRejector(automat.Automat):
         accounting.write_customers_quotas(space_dict, free_space)
         contactsdb.update_customers(current_customers)
         contactsdb.save_customers()
+        for customer_idurl in removed_customers:
+            customer_key_id = my_keys.make_key_id(alias='customer', creator_idurl=customer_idurl)
+            resp = api.key_erase(customer_key_id)
+            if resp['status'] != 'OK':
+                lg.warn('key %r removal failed' % customer_key_id)
 
     def doSendRejectService(self, *args, **kwargs):
         """
