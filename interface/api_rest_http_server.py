@@ -520,6 +520,8 @@ class BitDustRESTHTTPServer(JsonAPIResource):
         return api.key_get(
             key_id=_request_arg(request, 'key_id', mandatory=True),
             include_private=bool(_request_arg(request, 'include_private', '0') in ['1', 'true', ]),
+            include_signature=bool(_request_arg(request, 'include_signature', '0') in ['1', 'true', ]),
+            generate_signature=bool(_request_arg(request, 'generate_signature', '0') in ['1', 'true', ]),
         )
 
     @POST('^/k/c$')
@@ -559,7 +561,9 @@ class BitDustRESTHTTPServer(JsonAPIResource):
         return api.key_share(
             key_id=data['key_id'],
             trusted_user_id=data['trusted_user_id'],
-            include_private=bool(data.get('include_private', '0') in ['1', 'true', ]), )
+            include_private=bool(data.get('include_private', '0') in ['1', 'true', ]),
+            include_signature=bool(data.get('include_signature', '0') in ['1', 'true', ]),
+        )
 
     @POST('^/k/a$')
     @POST('^/v1/key/audit$')

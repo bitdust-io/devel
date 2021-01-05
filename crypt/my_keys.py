@@ -572,6 +572,7 @@ def rename_key(current_key_id, new_key_id, keys_folder=None):
         current_key_filepath = os.path.join(keys_folder, current_key_id + '.private')
         new_key_filepath = os.path.join(keys_folder, new_key_id + '.private')
         is_private = True
+    is_signed = key_obj(current_key_id).isSigned()
     try:
         os.rename(current_key_filepath, new_key_filepath)
     except:
@@ -580,6 +581,8 @@ def rename_key(current_key_id, new_key_id, keys_folder=None):
     key_object = known_keys().pop(current_key_id)
     known_keys()[new_key_id] = key_object
     local_keys()[key_object.local_key_id] = new_key_id
+    if is_signed:
+        sign_key(new_key_id, keys_folder=keys_folder)
     gc.collect()
     if _Debug:
         lg.out(_DebugLevel, 'my_keys.rename_key   key %s renamed to %s' % (current_key_id, new_key_id, ))
@@ -595,7 +598,7 @@ def sign_key(key_id, keys_folder=None):
     if not keys_folder:
         keys_folder = settings.KeyStoreDir()
     key_object = known_keys()[key_id]
-    signed_key_info = make_key_info(key_object, key_id=key_id, include_private=True, sign_key=True)
+    signed_key_info = make_key_info(key_object, key_id=key_id, include_private=True, generate_signature=True)
     key_object.signed = (signed_key_info['signature'], signed_key_info['signature_pubkey'], )
     known_keys()[key_id] = key_object
     save_key(key_id, keys_folder=keys_folder)
@@ -799,7 +802,7 @@ def make_master_key_info(include_private=False):
     return r
 
 
-def make_key_info(key_object, key_id=None, key_alias=None, creator_idurl=None, include_private=False, sign_key=False, include_signature=False, include_local_id=False):
+def make_key_info(key_object, key_id=None, key_alias=None, creator_idurl=None, include_private=False, generate_signature=False, include_signature=False, include_local_id=False):
     if key_id:
         key_id = latest_key_id(key_id)
         key_alias, creator_idurl = split_key_id(key_id)
@@ -829,18 +832,18 @@ def make_key_info(key_object, key_id=None, key_alias=None, creator_idurl=None, i
         r['size'] = strng.to_text(key_object.size())
     else:
         r['size'] = '0'
-    if sign_key:
+    if include_local_id:
+        r['local_key_id'] = getattr(key_object, 'local_key_id', None)
+    if generate_signature:
         r = sign_key_info(r)
     else:
         if include_signature and key_object.isSigned():
             r['signature'] = key_object.signed[0]
             r['signature_pubkey'] = key_object.signed[1]
-    if include_local_id:
-        r['local_key_id'] = getattr(key_object, 'local_key_id', None)
     return r
 
 
-def get_key_info(key_id, include_private=False, include_signature=False):
+def get_key_info(key_id, include_private=False, include_signature=False, generate_signature=False):
     """
     Returns dictionary with full key info or raise an Exception.
     """
@@ -861,7 +864,13 @@ def get_key_info(key_id, include_private=False, include_signature=False):
         if not load_key(key_id):
             raise Exception('key load failed: %s' % key_id)
     key_object = known_keys()[key_id]
-    key_info = make_key_info(key_object, key_id=key_id, include_private=include_private, include_signature=include_signature)
+    key_info = make_key_info(
+        key_object=key_object,
+        key_id=key_id,
+        include_private=include_private,
+        include_signature=include_signature,
+        generate_signature=generate_signature,
+    )
     return key_info
 
 
@@ -869,7 +878,7 @@ def read_key_info(key_json):
     try:
         key_id = strng.to_text(key_json['key_id'])
         include_private = bool(key_json['include_private'])
-        if include_private:
+        if include_private or key_json.get('private'):
             raw_openssh_string = strng.to_text(key_json['private'])
         else:
             raw_openssh_string = strng.to_text(key_json['public'])
@@ -888,12 +897,12 @@ def read_key_info(key_json):
 
 def sign_key_info(key_info):
     key_info['signature_pubkey'] = key.MyPublicKey()
-    sorted_fields = sorted(key_info.keys())
     hash_items = []
-    for field in sorted_fields:
-        if field not in ['include_private', 'signature', 'private', 'local_key_id', ]:
-            hash_items.append(strng.to_text(key_info[field]))
+    for field in ['key_id', 'label', 'size', 'public', 'signature_pubkey', ]:
+        hash_items.append(strng.to_text(key_info[field]))
     hash_text = '-'.join(hash_items)
+    if _Debug:
+        lg.dbg(_DebugLevel, hash_text)
     hash_bin = key.Hash(strng.to_bin(hash_text))
     key_info['signature'] = strng.to_text(key.Sign(hash_bin))
     return key_info
@@ -901,13 +910,14 @@ def sign_key_info(key_info):
 
 def verify_key_info_signature(key_info):
     if 'signature' not in key_info or 'signature_pubkey' not in key_info:
+        lg.warn('signature was not found in the key info')
         return False
-    sorted_fields = sorted(key_info.keys())
     hash_items = []
-    for field in sorted_fields:
-        if field not in ['include_private', 'signature', 'private', 'local_key_id', ]:
-            hash_items.append(strng.to_text(key_info[field]))
+    for field in ['key_id', 'label', 'size', 'public', 'signature_pubkey', ]:
+        hash_items.append(strng.to_text(key_info[field]))
     hash_text = '-'.join(hash_items)
+    if _Debug:
+        lg.dbg(_DebugLevel, hash_text)
     hash_bin = key.Hash(strng.to_bin(hash_text))
     signature_bin = strng.to_bin(key_info['signature'])
     result = key.VerifySignature(key_info['signature_pubkey'], hash_bin, signature_bin)

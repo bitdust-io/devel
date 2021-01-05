@@ -110,5 +110,5 @@ class PrivateGroupsService(LocalService):
                     # only send public keys of my own groups
                     my_keys_to_be_republished.append(key_id)
             for group_key_id in my_keys_to_be_republished:
-                d = key_ring.transfer_key(group_key_id, trusted_idurl=evt.data['new_idurl'], include_private=False)
+                d = key_ring.transfer_key(group_key_id, trusted_idurl=evt.data['new_idurl'], include_private=False, include_signature=False)
                 d.addErrback(lambda *a: lg.err('transfer key failed: %s' % str(*a)))
