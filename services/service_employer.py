@@ -215,6 +215,8 @@ class EmployerService(LocalService):
                 service_info['customer_public_key'] = my_keys.get_key_info(
                     key_id=my_customer_key_id,
                     include_private=False,
+                    include_signature=False,
+                    generate_signature=False,
                 )
             p2p_service.SendCancelService(
                 remote_idurl=supplier_idurl,

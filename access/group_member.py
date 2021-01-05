@@ -903,7 +903,7 @@ class GroupMember(automat.Automat):
         group_key_info = {}
         if self.group_key_id:
             try:
-                group_key_info = my_keys.get_key_info(self.group_key_id, include_private=False, include_signature=True)
+                group_key_info = my_keys.get_key_info(self.group_key_id, include_private=False, include_signature=True, generate_signature=True)
             except:
                 lg.exc()
         service_request_params = {

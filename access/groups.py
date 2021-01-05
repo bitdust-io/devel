@@ -262,7 +262,7 @@ def send_group_pub_key_to_suppliers(group_key_id):
     l = []
     for supplier_idurl in contactsdb.suppliers():
         if supplier_idurl:
-            d = key_ring.transfer_key(group_key_id, supplier_idurl, include_private=False)
+            d = key_ring.transfer_key(group_key_id, supplier_idurl, include_private=False, include_signature=False)
             if _Debug:
                 d.addCallback(lg.cb, debug=_Debug, debug_level=_DebugLevel, method='groups.write_group_key_to_suppliers')
                 d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='groups.write_group_key_to_suppliers')

@@ -290,7 +290,7 @@ class SharedAccessDonor(automat.Automat):
         self.suppliers_acks = 0
         for supplier_idurl in contactsdb.suppliers():
             if supplier_idurl:
-                d = key_ring.share_key(self.key_id, supplier_idurl, include_private=False)
+                d = key_ring.share_key(self.key_id, supplier_idurl, include_private=False, include_signature=False)
                 d.addCallback(self._on_supplier_pub_key_shared, supplier_idurl)
                 d.addErrback(self._on_supplier_pub_key_failed, supplier_idurl)
                 self.suppliers_responses[supplier_idurl] = d
@@ -306,7 +306,7 @@ class SharedAccessDonor(automat.Automat):
         """
         Action method.
         """
-        d = key_ring.share_key(self.key_id, self.remote_idurl, include_private=True)
+        d = key_ring.share_key(self.key_id, self.remote_idurl, include_private=True, include_signature=True)
         d.addCallback(self._on_user_priv_key_shared)
         d.addErrback(self._on_user_priv_key_failed)
 

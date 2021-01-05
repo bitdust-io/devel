@@ -447,6 +447,8 @@ class SupplierConnector(automat.Automat):
             service_info['customer_public_key'] = my_keys.get_key_info(
                 key_id=my_customer_key_id,
                 include_private=False,
+                include_signature=False,
+                generate_signature=False,
             )
         ecc_map = kwargs.get('ecc_map')
         if ecc_map:
@@ -667,6 +669,8 @@ class SupplierConnector(automat.Automat):
             service_info['customer_public_key'] = my_keys.get_key_info(
                 key_id=my_customer_key_id,
                 include_private=False,
+                include_signature=True,
+                generate_signature=True,
             )
         if self.key_id:
             service_info['key_id'] = self.key_id
