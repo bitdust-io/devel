@@ -797,7 +797,7 @@ def on_outbox_packet(outpacket, wide, callbacks, target=None, route=None, respon
     """
     started_packets = packet_out.search_similar_packets(outpacket)
     if started_packets:
-        for active_packet, active_item in started_packets:
+        for active_packet, _ in started_packets:
             if callbacks:
                 for command, cb in callbacks.items():
                     active_packet.set_callback(command, cb)
