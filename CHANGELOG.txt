@@ -1,6 +1,17 @@
 Change Log
 ==========
 
+
+2021-01-05 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* another IDURL fix in  supplier/customer_space.py
+* solved issues with keys signing and verification during transfers
+* also erase customer key in customers_rejector() and api.customer_reject()
+* fix in keys_synchronizer()
+* updated docs
+
+
+
 2020-12-26 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * stop building PRs with python2
