@@ -414,6 +414,7 @@ def on_list_files(newpacket):
         # by default returning back all files from that recipient if he is a customer
         customer_idurl = newpacket.OwnerID
         key_id = my_keys.make_key_id(alias='customer', creator_idurl=customer_idurl)
+    key_id = my_keys.latest_key_id(key_id)
     list_files.send(
         customer_idurl=customer_idurl,
         packet_id=newpacket.PacketID,
