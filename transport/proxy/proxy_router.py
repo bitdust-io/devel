@@ -82,7 +82,6 @@ from automats import automat
 from lib import nameurl
 from lib import serialization
 from lib import strng
-from lib import net_misc
 
 from main import config
 from main import events
@@ -98,7 +97,6 @@ from userid import global_id
 
 from contacts import identitydb
 from contacts import identitycache
-from contacts import contactsdb
 
 from transport import callback
 from transport import packet_out

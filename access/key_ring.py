@@ -437,10 +437,13 @@ def on_key_received(newpacket, info, status, error_message):
                 # but we already have a key with that ID
                 if my_keys.is_key_private(key_id):
                     # we should not overwrite existing private key
-                    raise Exception('private key already registered')
+                    # TODO: check other scenarios
+                    raise Exception('private key already registered with %r' % key_id)
                 if my_keys.get_public_key_raw(key_id) != key_object.toPublicString():
-                    # and we should not overwrite existing public key as well
-                    raise Exception('another public key already registered with that ID and it is not matching')
+                    # normally should not overwrite existing public key
+                    # TODO: look more if need to add some extra checks
+                    # for example need to be able to overwrite or erase remotely some keys to cleanup
+                    raise Exception('another public key already registered with %r and new key is not matching' % key_id)
                 p2p_service.SendAck(newpacket)
                 lg.warn('received existing public key: %s, skip' % key_id)
                 return True

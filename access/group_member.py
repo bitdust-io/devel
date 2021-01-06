@@ -66,6 +66,7 @@ import re
 
 #------------------------------------------------------------------------------
 
+from twisted.internet import reactor  # @UnresolvedImport
 from twisted.internet.defer import Deferred
 
 #------------------------------------------------------------------------------
@@ -902,10 +903,11 @@ class GroupMember(automat.Automat):
         )
         group_key_info = {}
         if self.group_key_id:
-            try:
-                group_key_info = my_keys.get_key_info(self.group_key_id, include_private=False, include_signature=True, generate_signature=True)
-            except:
-                lg.exc()
+            if my_keys.is_key_registered(self.group_key_id):
+                try:
+                    group_key_info = my_keys.get_key_info(self.group_key_id, include_private=False, include_signature=True, generate_signature=True)
+                except:
+                    lg.exc()
         service_request_params = {
             'action': action,
             'queue_id': queue_id,
@@ -1237,7 +1239,7 @@ class GroupMember(automat.Automat):
             lg.args(_DebugLevel, err=err, broker_pos=broker_pos, connecting_brokers=self.connecting_brokers, hired_brokers=self.hired_brokers)
         if self.connecting_brokers:
             return
-        if 0 in self.hired_brokers and self.hired_brokers:
+        if self.hired_brokers and self.hired_brokers.get(0):
             self.automat('brokers-hired')
         else:
             self.automat('brokers-failed')
