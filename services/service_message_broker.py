@@ -52,6 +52,10 @@ class MessageBrokerService(LocalService):
             'service_data_disintegration',
         ]
 
+    def attached_dht_layers(self):
+        from dht import dht_records
+        return [dht_records.LAYER_MESSAGE_BROKERS, ]
+
     def start(self):
         from main import events
         from stream import message_peddler

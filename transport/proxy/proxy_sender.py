@@ -232,7 +232,7 @@ class ProxySender(automat.Automat):
         """
         Action method.
         """
-        callback.remove_finish_file_sending_callback(self._on_first_outbox_packet)
+        callback.remove_outbox_filter_callback(self._on_first_outbox_packet)
 
     def doCountTraffic(self, *args, **kwargs):
         """

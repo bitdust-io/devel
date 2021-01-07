@@ -953,14 +953,18 @@ class PacketOut(automat.Automat):
             # if this packet is routed - send directly to route host
             proto = strng.to_text(self.route['proto'])
             host = strng.to_bin(self.route['host'])
-            gateway.send_file(
+            if not gateway.send_file(
                 strng.to_bin(self.route['remoteid']),
                 proto,
                 host,
                 self.filename,
                 self.description,
                 self,
-            )
+            ):
+                self.automat('nothing-to-send')
+                if _PacketLogFileEnabled:
+                    lg.out(0, '\033[0;49;97mSKIP sending routed %r : filtered out\033[0m' % self, log_name='packet', showtime=True)
+                return
             self.items.append(WorkItem(
                 proto,
                 host,
@@ -986,14 +990,15 @@ class PacketOut(automat.Automat):
                         gateway.can_send(proto):
                     if proto == 'tcp' and localIP:
                         host = localIP
-                    gateway.send_file(
+                    if not gateway.send_file(
                         self.remote_idurl.to_bin(),
                         proto,
                         host,
                         self.filename,
                         self.description,
                         self,
-                    )
+                    ):
+                        continue
                     self.items.append(WorkItem(proto, host, self.filesize))
                     workitem_sent = True
                     if _PacketLogFileEnabled:
@@ -1002,6 +1007,8 @@ class PacketOut(automat.Automat):
             if not workitem_sent:
                 self.automat('nothing-to-send')
                 lg.warn('(wide) no supported protocols with %s' % self.remote_idurl)
+                if _PacketLogFileEnabled:
+                    lg.out(0, '\033[0;49;97mSKIP wide sending %r : no supported protocols\033[0m' % self, log_name='packet', showtime=True)
             else:
                 self.automat('items-sent')
             return
@@ -1033,13 +1040,13 @@ class PacketOut(automat.Automat):
                     host = localIP + ':' + str(port)
                 proto = strng.to_text(proto)
                 host = strng.to_bin(host)
-                gateway.send_file(self.remote_idurl.to_bin(), proto, host, self.filename, self.description, self)
-                self.items.append(WorkItem(proto, host, self.filesize))
-                if _PacketLogFileEnabled:
-                    lg.out(0, '\033[0;49;90mPUSH %d bytes to %s://%s\033[0m' % (
-                        self.filesize, strng.to_text(proto), strng.to_text(host)), log_name='packet', showtime=True)
-                self.automat('items-sent')
-                return
+                if gateway.send_file(self.remote_idurl.to_bin(), proto, host, self.filename, self.description, self):
+                    self.items.append(WorkItem(proto, host, self.filesize))
+                    if _PacketLogFileEnabled:
+                        lg.out(0, '\033[0;49;90mPUSH %d bytes to %s://%s\033[0m' % (
+                            self.filesize, strng.to_text(proto), strng.to_text(host)), log_name='packet', showtime=True)
+                    self.automat('items-sent')
+                    return
         # tcp is the best proto - if it is working - this is the best case!!!
         if tcp_contact and 'tcp' in working_protos:
             proto, host, port, fn = nameurl.UrlParse(tcp_contact)
@@ -1048,26 +1055,26 @@ class PacketOut(automat.Automat):
                     host = host + ':' + str(port)
                 proto = strng.to_text(proto)
                 host = strng.to_bin(host)
-                gateway.send_file(self.remote_idurl.to_bin(), proto, host, self.filename, self.description)
-                self.items.append(WorkItem(proto, host, self.filesize))
-                if _PacketLogFileEnabled:
-                    lg.out(0, '\033[0;49;90mPUSH %d bytes to %s://%s\033[0m' % (
-                        self.filesize, strng.to_text(proto), strng.to_text(host)), log_name='packet', showtime=True)
-                self.automat('items-sent')
-                return
+                if gateway.send_file(self.remote_idurl.to_bin(), proto, host, self.filename, self.description):
+                    self.items.append(WorkItem(proto, host, self.filesize))
+                    if _PacketLogFileEnabled:
+                        lg.out(0, '\033[0;49;90mPUSH %d bytes to %s://%s\033[0m' % (
+                            self.filesize, strng.to_text(proto), strng.to_text(host)), log_name='packet', showtime=True)
+                    self.automat('items-sent')
+                    return
         # udp contact
         if udp_contact and 'udp' in working_protos:
             proto, host = nameurl.IdContactSplit(udp_contact)
             if host.strip() and gateway.is_installed('udp') and gateway.can_send(proto):
                 proto = strng.to_text(proto)
                 host = strng.to_bin(host)
-                gateway.send_file(self.remote_idurl.to_bin(), proto, host, self.filename, self.description, self)
-                self.items.append(WorkItem(proto, host, self.filesize))
-                if _PacketLogFileEnabled:
-                    lg.out(0, '\033[0;49;90mPUSH %d bytes to %s://%s\033[0m' % (
-                        self.filesize, strng.to_text(proto), strng.to_text(host)), log_name='packet', showtime=True)
-                self.automat('items-sent')
-                return
+                if gateway.send_file(self.remote_idurl.to_bin(), proto, host, self.filename, self.description, self):
+                    self.items.append(WorkItem(proto, host, self.filesize))
+                    if _PacketLogFileEnabled:
+                        lg.out(0, '\033[0;49;90mPUSH %d bytes to %s://%s\033[0m' % (
+                            self.filesize, strng.to_text(proto), strng.to_text(host)), log_name='packet', showtime=True)
+                    self.automat('items-sent')
+                    return
         # http contact
         if http_contact and 'http' in working_protos:
             proto, host, port, _ = nameurl.UrlParse(http_contact)
@@ -1076,26 +1083,26 @@ class PacketOut(automat.Automat):
                     host = host + ':' + str(port)
                 proto = strng.to_text(proto)
                 host = strng.to_bin(host)
-                gateway.send_file(self.remote_idurl.to_bin(), proto, host, self.filename, self.description, self)
-                self.items.append(WorkItem(proto, host, self.filesize))
-                if _PacketLogFileEnabled:
-                    lg.out(0, '\033[0;49;90mPUSH %d bytes to %s://%s\033[0m' % (
-                        self.filesize, strng.to_text(proto), strng.to_text(host)), log_name='packet', showtime=True)
-                self.automat('items-sent')
-                return
+                if gateway.send_file(self.remote_idurl.to_bin(), proto, host, self.filename, self.description, self):
+                    self.items.append(WorkItem(proto, host, self.filesize))
+                    if _PacketLogFileEnabled:
+                        lg.out(0, '\033[0;49;90mPUSH %d bytes to %s://%s\033[0m' % (
+                            self.filesize, strng.to_text(proto), strng.to_text(host)), log_name='packet', showtime=True)
+                    self.automat('items-sent')
+                    return
         # proxy contact - he may use other node to receive and send packets
         if proxy_contact and 'proxy' in working_protos:
             proto, host = nameurl.IdContactSplit(proxy_contact)
             if host.strip() and gateway.is_installed('proxy') and gateway.can_send(proto):
                 proto = strng.to_text(proto)
                 host = strng.to_bin(host)
-                gateway.send_file(self.remote_idurl.to_bin(), proto, host, self.filename, self.description, self)
-                self.items.append(WorkItem(proto, host, self.filesize))
-                if _PacketLogFileEnabled:
-                    lg.out(0, '\033[0;49;90mPUSH %d bytes to %s://%s\033[0m' % (
-                        self.filesize, strng.to_text(proto), strng.to_text(host)), log_name='packet', showtime=True)
-                self.automat('items-sent')
-                return
+                if gateway.send_file(self.remote_idurl.to_bin(), proto, host, self.filename, self.description, self):
+                    self.items.append(WorkItem(proto, host, self.filesize))
+                    if _PacketLogFileEnabled:
+                        lg.out(0, '\033[0;49;90mPUSH %d bytes to %s://%s\033[0m' % (
+                            self.filesize, strng.to_text(proto), strng.to_text(host)), log_name='packet', showtime=True)
+                    self.automat('items-sent')
+                    return
         # finally use the first proto we supported if we can not find the best preferable method
         for contactmethod in self.remote_identity.getContacts():
             proto, host, port, fn = nameurl.UrlParse(contactmethod)
@@ -1106,16 +1113,18 @@ class PacketOut(automat.Automat):
                 # try sending with tcp even if it is switched off in the settings
                 if gateway.is_installed(proto) and gateway.can_send(proto):
                     if settings.enableTransport(proto) and settings.transportSendingIsEnabled(proto):
-                        gateway.send_file(self.remote_idurl.to_bin(), strng.to_text(proto), strng.to_bin(host), self.filename, self.description, self)
-                        self.items.append(WorkItem(strng.to_text(proto), strng.to_bin(host), self.filesize))
-                        if _PacketLogFileEnabled:
-                            lg.out(0, '\033[0;49;90mPUSH %d bytes to %s://%s\033[0m' % (
-                                self.filesize, strng.to_text(proto), strng.to_text(host)), log_name='packet', showtime=True)
-                        self.automat('items-sent')
-                        return
+                        if gateway.send_file(self.remote_idurl.to_bin(), strng.to_text(proto), strng.to_bin(host), self.filename, self.description, self):
+                            self.items.append(WorkItem(strng.to_text(proto), strng.to_bin(host), self.filesize))
+                            if _PacketLogFileEnabled:
+                                lg.out(0, '\033[0;49;90mPUSH %d bytes to %s://%s\033[0m' % (
+                                    self.filesize, strng.to_text(proto), strng.to_text(host)), log_name='packet', showtime=True)
+                            self.automat('items-sent')
+                            return
         self.automat('nothing-to-send')
         lg.warn('no supported protocols with %s : %s %s %s, byproto:%s' % (
             self.remote_idurl, tcp_contact, udp_contact, working_protos, str(byproto)))
+        if _PacketLogFileEnabled:
+            lg.out(0, '\033[0;49;97mSKIP sending %r : no supported protocols\033[0m' % self, log_name='packet', showtime=True)
 
     def _pop(self, packet_args):
         self.popped_item = None

@@ -83,9 +83,7 @@ import optparse
 
 from twisted.web import xmlrpc
 from twisted.internet import reactor  # @UnresolvedImport
-from twisted.internet.defer import Deferred, succeed
-from twisted.internet.defer import maybeDeferred
-from twisted.internet.defer import fail
+from twisted.internet.defer import Deferred, maybeDeferred, succeed, fail
 
 #------------------------------------------------------------------------------
 
@@ -571,34 +569,44 @@ def send_file(remote_idurl, proto, host, filename, description='', pkt_out=None)
         + remote_idurl (idurl): remote user idurl (optional)
     """
     if not is_ready():
-        return fail(Exception('gateway is not ready'))
+        lg.warn('gateway is not ready')
+        return False
     if not is_installed(proto):
-        return fail(Exception('transport %r not installed' % proto))
+        lg.warn('transport %r not installed' % proto)
+        return False
+    filtered = callback.run_file_sending_filter_callbacks(remote_idurl, proto, host, filename, description, pkt_out)
+    if filtered is not None:
+        return filtered
     result_defer = transport(proto).call('send_file', remote_idurl, filename, host, description)
     callback.run_begin_file_sending_callbacks(result_defer, remote_idurl, proto, host, filename, description, pkt_out)
-    return result_defer
+    return True
 
 
 def send_file_single(remote_idurl, proto, host, filename, description='', pkt_out=None):
     """
     """
     if not is_ready():
-        return fail(Exception('gateway is not ready'))
+        lg.warn('gateway is not ready')
+        return False
     if not is_installed(proto):
-        return fail(Exception('transport %r not installed' % proto))
+        lg.warn('transport %r not installed' % proto)
+        return False
     result_defer = transport(proto).call('send_file_single', remote_idurl, filename, host, description)
     callback.run_begin_file_sending_callbacks(result_defer, remote_idurl, proto, host, filename, description, pkt_out)
-    return result_defer
+    return True
 
 
 def send_keep_alive(proto, host):
     """
     """
     if not is_ready():
-        return fail(Exception('gateway is not ready'))
+        lg.warn('gateway is not ready')
+        return False
     if not is_installed(proto):
-        return fail(Exception('transport %r not installed' % proto))
-    return transport(proto).call('send_keep_alive', host)
+        lg.warn('transport %r not installed' % proto)
+        return False
+    transport(proto).call('send_keep_alive', host)
+    return True
 
 
 def list_active_transports():

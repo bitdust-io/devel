@@ -135,6 +135,9 @@ class LocalService(automat.Automat):
     def network_configuration(self):
         return None
 
+    def attached_dht_layers(self):
+        return []
+
     def add_callback(self, cb):
         if not self.result_deferred:
             self.result_deferred = Deferred()
