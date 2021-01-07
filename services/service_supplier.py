@@ -56,6 +56,10 @@ class SupplierService(LocalService):
             return False
         return True
 
+    def attached_dht_layers(self):
+        from dht import dht_records
+        return [dht_records.LAYER_SUPPLIERS, ]
+
     def start(self):
         from logs import lg
         from transport import callback

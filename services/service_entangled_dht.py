@@ -130,22 +130,32 @@ class EntangledDHTService(LocalService):
         from dht import dht_service
         from dht import known_nodes
         from main.config import conf
-        lg.info('DHT node connected  ID0=[%s] : %r' % (dht_service.node().layers[0], ok))
+        from services import driver
+        lg.info('DHT node connected    ID0=[%s] : %r' % (dht_service.node().layers[0], ok))
         dht_service.node().add_rpc_callback('store', self._on_dht_rpc_store)
         dht_service.node().add_rpc_callback('request', self._on_dht_rpc_request)
         known_seeds = known_nodes.nodes()
         dl = []
         attached_layers = conf().getData('services/entangled-dht/attached-layers', default='')
         if attached_layers:
-            lg.info('more DHT layers to be attached: %r' % attached_layers)
-            for layer_id in attached_layers.split(','):
-                if layer_id.strip():
-                    dl.append(dht_service.open_layer(
-                        layer_id=int(layer_id.strip()),
-                        seed_nodes=known_seeds, 
-                        connect_now=True,
-                        attach=True,
-                    ))
+            attached_layers = list(filter(None, map(lambda v: int(str(v).strip()), attached_layers.split(','))))
+        else:
+            attached_layers = []
+        lg.info('reading attached DHT layers from configuration: %r' % attached_layers)
+        all_services_attached_layers = driver.get_attached_dht_layers().values()
+        combined_services_attached_layers = set()
+        count_combined = len(list(map(combined_services_attached_layers.update, all_services_attached_layers)))
+        services_attached_layers = list(combined_services_attached_layers)
+        lg.info('combined attached DHT layers from %d services: %r' % (count_combined, services_attached_layers, ))
+        attached_layers = list(set(attached_layers + services_attached_layers))
+        lg.info('DHT layers to be attached at startup: %r' % attached_layers)
+        for layer_id in attached_layers:
+            dl.append(dht_service.open_layer(
+                layer_id=layer_id,
+                seed_nodes=known_seeds,
+                connect_now=True,
+                attach=True,
+            ))
         if dl:
             d = DeferredList(dl)
             d.addCallback(self._on_layers_attached)

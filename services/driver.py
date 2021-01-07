@@ -599,6 +599,24 @@ def get_network_configuration(services_list=[]):
             result[name] = network_configuration
     return result
 
+
+def get_attached_dht_layers(services_list=[]):
+    if not services_list:
+        services_list.extend(reversed(boot_up_order()))
+    if _Debug:
+        lg.out(_DebugLevel, 'driver.get_attached_dht_layers with %d services' % len(services_list))
+    result = {}
+    for name in services_list:
+        svc = services().get(name, None)
+        if not svc:
+            continue
+        if not svc.enabled():
+            continue
+        dht_layers = svc.attached_dht_layers()
+        if dht_layers:
+            result[name] = dht_layers
+    return result
+
 #------------------------------------------------------------------------------
 
 

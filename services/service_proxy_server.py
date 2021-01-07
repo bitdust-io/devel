@@ -54,6 +54,10 @@ class ProxyServerService(LocalService):
             return False
         return settings.enableProxyServer()
 
+    def attached_dht_layers(self):
+        from dht import dht_records
+        return [dht_records.LAYER_PROXY_ROUTERS, ]
+
     def start(self):
         from logs import lg
         from services import driver
