@@ -153,7 +153,7 @@ def ConnectionFailed(param=None, proto=None, info=None):
 def normalize_address(host_port):
     """
     Input argument `host` can be string: "123.45.67.89:8080" or tuple: (b"123.45.67.89", 8080)
-    Method always return tuple and make sure host is of type bytes but not unicode and port is integer.
+    Method always return tuple and make sure host is a binary string and port is an integer.
     """
     if not host_port:
         return host_port

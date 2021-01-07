@@ -57,6 +57,7 @@ _OutboxPacketFilterCallbacksList = []
 _QueueItemStatusCallbacksList = []
 _BeginFileSendingCallbacksList = []
 _FinishFileSendingCallbacksList = []
+_FileSendingFilterCallbacksList = []
 
 #------------------------------------------------------------------------------
 
@@ -215,6 +216,14 @@ def add_begin_file_sending_callback(cb):
         _BeginFileSendingCallbacksList.append(cb)
 
 
+def remove_begin_file_sending_callback(cb):
+    """
+    """
+    global _BeginFileSendingCallbacksList
+    if cb in _BeginFileSendingCallbacksList:
+        _BeginFileSendingCallbacksList.remove(cb)
+
+
 def add_finish_file_sending_callback(cb):
     """
     cb(pkt_out, item, status, size, error_message)
@@ -263,6 +272,23 @@ def remove_finish_file_receiving_callback(cb):
     global _FinishFileReceivingCallbacksList
     if cb in _FinishFileReceivingCallbacksList:
         _FinishFileReceivingCallbacksList.remove(cb)
+
+
+def add_file_sending_filter_callback(cb):
+    """
+    cb(remote_idurl, proto, host, filename, description, pkt_out) : True / False
+    """
+    global _FileSendingFilterCallbacksList
+    if cb not in _FileSendingFilterCallbacksList:
+        _FileSendingFilterCallbacksList.append(cb)
+
+
+def remove_file_sending_filter_callback(cb):
+    """
+    """
+    global _FileSendingFilterCallbacksList
+    if cb in _FileSendingFilterCallbacksList:
+        _FileSendingFilterCallbacksList.remove(cb)
 
 #------------------------------------------------------------------------------
 
@@ -353,6 +379,25 @@ def run_queue_item_status_callbacks(pkt_out, status, error_message):
         if handled:
             break
     return handled
+
+
+def run_file_sending_filter_callbacks(remote_idurl, proto, host, filename, description, pkt_out):
+    global _FileSendingFilterCallbacksList
+    if _Debug:
+        lg.out(_DebugLevel, 'callback.run_file_sending_filter_callbacks %s to %s:%s at %s' % (
+            description, proto, host, remote_idurl))
+    one_result = None
+    for cb in _FileSendingFilterCallbacksList:
+        try:
+            one_result = cb(remote_idurl, proto, host, filename, description, pkt_out)
+        except:
+            lg.exc()
+            continue
+        if one_result is not None:
+            if _Debug:
+                lg.out(_DebugLevel, '    filtered by %r : %r' % (cb, one_result, ))
+            break
+    return one_result
 
 
 def run_begin_file_sending_callbacks(result_defer, remote_idurl, proto, host, filename, description, pkt_out):
