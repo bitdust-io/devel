@@ -82,9 +82,12 @@ from automats import automat
 from lib import nameurl
 from lib import serialization
 from lib import strng
+from lib import net_misc
 
 from main import config
 from main import events
+
+from services import driver
 
 from crypt import key
 from crypt import signed
@@ -152,6 +155,7 @@ class ProxyRouter(automat.Automat):
         self.routes = {}
         self.closed_routes = {}
         self.acks = {}
+        self.my_hosts = {}
 
     def state_changed(self, oldstate, newstate, event, *args, **kwargs):
         """
@@ -232,9 +236,16 @@ class ProxyRouter(automat.Automat):
         # proxy router must always start with no routes and keep them in memory
         # when proxy router restarts all connections with other nodes will be stopped anyway
         # self._load_routes()
+        if driver.is_on('service_tcp_transport'):
+            from transport.tcp import tcp_node
+            self.my_hosts['tcp'] = tcp_node.my_host(normalize=True)
+        if driver.is_on('service_udp_datagrams'):
+            from transport.udp import udp_node
+            self.my_hosts['udp'] = net_misc.normalize_address(udp_node.A().my_address)
         network_connector.A().addStateChangedCallback(self._on_network_connector_state_changed)
         callback.insert_inbox_callback(0, self._on_first_inbox_packet_received)
         callback.add_finish_file_sending_callback(self._on_finish_file_sending)
+        callback.add_file_sending_filter_callback(self._on_file_sending_filter)
         events.add_subscriber(self._on_identity_url_changed, 'identity-url-changed')
 
     def doProcessRequest(self, *args, **kwargs):
@@ -325,8 +336,10 @@ class ProxyRouter(automat.Automat):
         events.remove_subscriber(self._on_identity_url_changed, 'identity-url-changed')
         if network_connector.A():
             network_connector.A().removeStateChangedCallback(self._on_network_connector_state_changed)
+        callback.remove_file_sending_filter_callback(self._on_file_sending_filter)
         callback.remove_inbox_callback(self._on_first_inbox_packet_received)
         callback.remove_finish_file_sending_callback(self._on_finish_file_sending)
+        self.my_hosts.clear()
         self.destroy()
         global _ProxyRouter
         del _ProxyRouter
@@ -612,7 +625,7 @@ class ProxyRouter(automat.Automat):
     def _do_forward_outbox_packet(self, outpacket_info_tuple):
         """
         This packet addressed to me but contain routed data to be transferred to another node.
-        I will decrypt with my private key and send to outside world further.
+        I will decrypt with my private key and send to outside world
         """
         newpacket, info = outpacket_info_tuple
         if _Debug:
@@ -1076,6 +1089,30 @@ class ProxyRouter(automat.Automat):
         lg.err('unknown %r received, no relations found' % newpacket)
         self.automat('unknown-packet-received', (newpacket, info))
         return False
+
+    def _on_file_sending_filter(self, remote_idurl, proto, host, filename, description, pkt_out):
+        if id_url.to_bin(remote_idurl) == my_id.getIDURL().to_bin():
+            # somehow outgoing file is addressed to my self - do not filter it, but give a warning
+            lg.warn('outgoing file addressed to my self: %r' % pkt_out)
+            return None
+        # now need to check here : the outgoing packet must not be addressed to that host
+        # otherwise it must be a "routed" packet - not for me but for another node "routed" via my host
+        if proto not in self.my_hosts:
+            return None
+        if net_misc.normalize_address(host) != self.my_hosts[proto]:
+            return None
+        if _Debug:
+            lg.args(_DebugLevel, proto=proto, host=host, remote_idurl=remote_idurl, description=description, my_hosts=self.my_hosts)
+        remote_idurl = id_url.field(remote_idurl)
+        receiver_proto, receiver_host = self._get_session_proto_host(remote_idurl)
+        if receiver_proto and receiver_host:
+            lg.warn('switched %s://%s to %s://%s for outgoing %r' % (proto, host, receiver_proto, receiver_host, pkt_out))
+            reactor.callLater(0, gateway.send_file, remote_idurl, receiver_proto, receiver_host, filename, description, pkt_out)  # @UndefinedVariable
+            # accept the packet and return "was filtered" status
+            return True
+        # do not filter out the packet - because of unknown route
+        lg.err('did not found receiver proto/host for outgoing %r' % pkt_out)
+        return None
 
     def _on_network_connector_state_changed(self, oldstate, newstate, event, *args, **kwargs):
         if oldstate != 'CONNECTED' and newstate == 'CONNECTED':
