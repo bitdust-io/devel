@@ -693,7 +693,7 @@ def DefaultRestoreDir():
     """
     Default location to place restored files and folders.
     """
-    if sys.executable == 'android_python':
+    if sys.executable == 'android_python' or ('ANDROID_ARGUMENT' in os.environ):
         return '/storage/emulated/0'
     return os.path.expanduser('~')
 
