@@ -586,7 +586,7 @@ def rename_key(current_key_id, new_key_id, keys_folder=None):
             key_id=new_key_id,
             keys_folder=keys_folder,
             ignore_shared_keys=True,
-            save_key=False,
+            save=False,
         )
     save_key(new_key_id, keys_folder=keys_folder)
 
@@ -597,7 +597,7 @@ def rename_key(current_key_id, new_key_id, keys_folder=None):
     return True
 
 
-def sign_key(key_id, keys_folder=None, ignore_shared_keys=False, save_key=True):
+def sign_key(key_id, keys_folder=None, ignore_shared_keys=False, save=True):
     key_id = latest_key_id(strng.to_text(key_id))
     if key_id not in known_keys():
         lg.warn('key %s is not found' % key_id)
@@ -620,7 +620,7 @@ def sign_key(key_id, keys_folder=None, ignore_shared_keys=False, save_key=True):
     )
     key_object.signed = (signed_key_info['signature'], signed_key_info['signature_pubkey'], )
     known_keys()[key_id] = key_object
-    if save_key:
+    if save:
         save_key(key_id, keys_folder=keys_folder)
     events.send('key-signed', data=dict(key_id=key_id, label=key_object.label, key_size=key_object.size(), ))
     return key_object
