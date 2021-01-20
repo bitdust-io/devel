@@ -110,7 +110,7 @@ def out(level, msg, nl='\n', log_name='main', showtime=False):
     if level:
         s = ' ' * level + s
     if _IsAndroid is None:
-        _IsAndroid = sys.executable == 'android_python'
+        _IsAndroid = (sys.executable == 'android_python' or ('ANDROID_ARGUMENT' in os.environ))
     # if _IsAndroid and not _InterceptedLogFile:
     #     open_intercepted_log_file('/storage/emulated/0/.bitdust/logs/android_%d.log' % int(time.time()))
     if ( _ShowTime and level > 0 ) or showtime:

@@ -129,7 +129,7 @@ def ostype():
     global PlatformInfo
     if PlatformInfo is None:
         PlatformInfo = list(platform.uname())
-        if sys.executable == 'android_python':
+        if sys.executable == 'android_python' or ('ANDROID_ARGUMENT' in os.environ):
             PlatformInfo[0] = 'Android'
     return PlatformInfo[0]
 
@@ -219,8 +219,6 @@ def Android():
     """
     Return True if running on Android inside Kivy.
     """
-    if 'ANDROID_ARGUMENT' in os.environ:
-        return True
     return ostype() == 'Android'
 
 

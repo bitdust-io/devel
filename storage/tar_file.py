@@ -131,7 +131,7 @@ def sharedPath(filename, subdir='logs'):
             if not os.path.isdir(appdata):
                 appdata = os.path.join(os.path.expanduser('~'), '.bitdust')
         else:
-            if sys.executable == 'android_python':
+            if sys.executable == 'android_python' or ('ANDROID_ARGUMENT' in os.environ):
                 appdata = '/storage/emulated/0/.bitdust'
             else:
                 appdata = os.path.join(os.path.expanduser('~'), '.bitdust')
