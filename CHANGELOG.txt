@@ -1,6 +1,14 @@
 Change Log
 ==========
 
+
+2021-01-20 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* solve issue with signatures for renamed keys after id rotations
+* few Android fixes
+
+
+
 2021-01-07 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * attach to pre-defined DHT layers at startup

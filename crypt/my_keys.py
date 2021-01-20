@@ -582,7 +582,14 @@ def rename_key(current_key_id, new_key_id, keys_folder=None):
     known_keys()[new_key_id] = key_object
     local_keys()[key_object.local_key_id] = new_key_id
     if is_signed:
-        sign_key(new_key_id, keys_folder=keys_folder)
+        sign_key(
+            key_id=new_key_id,
+            keys_folder=keys_folder,
+            ignore_shared_keys=True,
+            save=False,
+        )
+    save_key(new_key_id, keys_folder=keys_folder)
+
     gc.collect()
     if _Debug:
         lg.out(_DebugLevel, 'my_keys.rename_key   key %s renamed to %s' % (current_key_id, new_key_id, ))
@@ -590,7 +597,7 @@ def rename_key(current_key_id, new_key_id, keys_folder=None):
     return True
 
 
-def sign_key(key_id, keys_folder=None):
+def sign_key(key_id, keys_folder=None, ignore_shared_keys=False, save=True):
     key_id = latest_key_id(strng.to_text(key_id))
     if key_id not in known_keys():
         lg.warn('key %s is not found' % key_id)
@@ -598,6 +605,13 @@ def sign_key(key_id, keys_folder=None):
     if not keys_folder:
         keys_folder = settings.KeyStoreDir()
     key_object = known_keys()[key_id]
+    if key_object.signed:
+        if key_object.signed[1] != key.MyPublicKey():
+            if ignore_shared_keys:
+                if _Debug:
+                    lg.dbg(_DebugLevel, 'skip generating signature for shared key: %r' % key_id)
+                return True
+            raise Exception('must not generate and overwrite existing signature for shared key: %r' % key_id)
     signed_key_info = make_key_info(
         key_object=key_object,
         key_id=key_id,
@@ -606,7 +620,8 @@ def sign_key(key_id, keys_folder=None):
     )
     key_object.signed = (signed_key_info['signature'], signed_key_info['signature_pubkey'], )
     known_keys()[key_id] = key_object
-    save_key(key_id, keys_folder=keys_folder)
+    if save:
+        save_key(key_id, keys_folder=keys_folder)
     events.send('key-signed', data=dict(key_id=key_id, label=key_object.label, key_size=key_object.size(), ))
     return key_object
 
