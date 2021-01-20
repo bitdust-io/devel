@@ -598,7 +598,12 @@ def sign_key(key_id, keys_folder=None):
     if not keys_folder:
         keys_folder = settings.KeyStoreDir()
     key_object = known_keys()[key_id]
-    signed_key_info = make_key_info(key_object, key_id=key_id, include_private=True, generate_signature=True)
+    signed_key_info = make_key_info(
+        key_object=key_object,
+        key_id=key_id,
+        include_private=not key_object.isPublic(),
+        generate_signature=True,
+    )
     key_object.signed = (signed_key_info['signature'], signed_key_info['signature_pubkey'], )
     known_keys()[key_id] = key_object
     save_key(key_id, keys_folder=keys_folder)

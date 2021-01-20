@@ -628,7 +628,6 @@ def main(executable_path=None, start_reactor=True):
     except:
         dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
         sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..')))
-        # sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..', '..')))
         from distutils.sysconfig import get_python_lib
         sys.path.append(os.path.join(get_python_lib(), 'bitdust'))
         try:
@@ -643,9 +642,8 @@ def main(executable_path=None, start_reactor=True):
         AppDataDir = appdata
 
     else:
-        curdir = os.getcwd()  # os.path.dirname(os.path.abspath(sys.executable))
+        curdir = os.getcwd()
         appdatafile = os.path.join(curdir, 'appdata')
-        # defaultappdata = os.path.join(os.path.expanduser('~'), '.bitdust')
         defaultappdata = deploy.default_base_dir_portable()
         appdata = defaultappdata
         if os.path.isfile(appdatafile):
