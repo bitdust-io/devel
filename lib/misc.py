@@ -1012,7 +1012,6 @@ def str2gmtime(time_string, format):
 
 #------------------------------------------------------------------------------
 
-
 def ReadRepoLocation():
     """
     This method reutrn a tuple of two strings: "name of the current repo" and

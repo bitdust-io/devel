@@ -1489,11 +1489,11 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
         from lib import misc
         ver = bpio.ReadTextFile(settings.VersionNumberFile()).strip()
         chksum = bpio.ReadTextFile(settings.CheckSumFile()).strip()
-        repo, location = misc.ReadRepoLocation()
+        # repo, location = misc.ReadRepoLocation()
         print_text('checksum:   %s' % chksum)
         print_text('version:    %s' % ver)
-        print_text('repository: %s' % repo)
-        print_text('location:   %s' % location)
+        # print_text('repository: %s' % repo)
+        # print_text('location:   %s' % location)
         return 0
 
     #---integrate---

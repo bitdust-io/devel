@@ -354,5 +354,6 @@ if __name__ == "__main__":
     def _result(res):
         print('RESULT:', res)
         reactor.stop()  # @UndefinedVariable
+
     reactor.callWhenRunning(sync, _result)  # @UndefinedVariable
     reactor.run()  # @UndefinedVariable
