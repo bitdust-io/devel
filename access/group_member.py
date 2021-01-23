@@ -1019,6 +1019,7 @@ class GroupMember(automat.Automat):
         self.connecting_brokers.update(set(hiring_positions))
         for broker_pos, broker_idurl in available_brokers:
             self.connecting_brokers.add(broker_pos)
+        for broker_pos, broker_idurl in available_brokers:
             self._do_request_service_one_broker(broker_idurl, broker_pos)
         if hiring_positions:
             self._do_hire_next_broker(None, 0, hiring_positions, skip_brokers=id_url.to_bin_list(exclude_idurls))
@@ -1197,9 +1198,13 @@ class GroupMember(automat.Automat):
             self.automat('brokers-failed')
             return idurl
         if self.rotated_brokers:
-            self.automat('brokers-rotated')
+            if 0 not in self.connected_brokers or not self.connected_brokers[0]:
+                lg.err('broker at position 0 was not hired for %r' % self)
+                self.automat('brokers-failed')
+            else:
+                self.automat('brokers-rotated')
         else:
-            if 0 in self.hired_brokers and not self.hired_brokers[0]:
+            if 0 not in self.connected_brokers or not self.connected_brokers[0]:
                 lg.err('broker at position 0 was not hired for %r' % self)
                 self.automat('brokers-failed')
             else:

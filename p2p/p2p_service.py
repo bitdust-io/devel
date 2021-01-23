@@ -232,8 +232,12 @@ def SendAckNoRequest(remoteID, packetid, response='', wide=False, callbacks={}):
 
 
 def Fail(newpacket):
-    if _Debug:
-        lg.out(_DebugLevel, "p2p_service.Fail from [%s]: %s" % (newpacket.CreatorID, newpacket.Payload))
+    if newpacket.Payload:
+        if _Debug:
+            lg.warn('%r received from [%s] in %r' % (newpacket.Payload, newpacket.CreatorID, newpacket))
+    else:
+        if _Debug:
+            lg.out(_DebugLevel, "p2p_service.Fail from [%s]: %s" % (newpacket.CreatorID, newpacket.Payload))
 
 
 def SendFail(request, response='', remote_idurl=None, wide=False):
