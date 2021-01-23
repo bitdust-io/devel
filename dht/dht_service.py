@@ -258,19 +258,20 @@ def connect(seed_nodes=[], layer_id=0, attach=False):
     result.addCallback(_on_connected)
 
     def _on_join_success(live_contacts, resolved_seed_nodes, _layer_id):
-        if _Debug:
-            if isinstance(live_contacts, dict):
-                lg.err('Unexpected result from joinNetwork: %s' % pprint.pformat(live_contacts))
-            else: 
-                if live_contacts and len(live_contacts) > 0 and live_contacts[0]:
+        ok = live_contacts and len(live_contacts) > 0 and live_contacts[0]
+        if isinstance(live_contacts, dict):
+            lg.err('Unexpected result from joinNetwork: %s' % pprint.pformat(live_contacts))
+        else: 
+            if ok:
+                if _Debug:
                     lg.out(_DebugLevel, 'dht_service.connect DHT JOIN SUCCESS   layer_id=%d attach=%r' % (_layer_id, attach))
-                else:
-                    lg.out(_DebugLevel, 'dht_service.connect DHT JOINED, but still OFFLINE   layer_id=%d attach=%r' % (_layer_id, attach))
-                    lg.warn('No live DHT contacts found...  your node is NOT CONNECTED TO DHT NETWORK')
+            else:
+                lg.warn('No live DHT contacts found...  your node is NOT CONNECTED TO DHT NETWORK at layer %d' % _layer_id)
+        if _Debug:
             lg.out(_DebugLevel, 'for layer %d found DHT nodes: %s' % (_layer_id, live_contacts))
             lg.out(_DebugLevel, 'resolved SEED nodes: %r' % resolved_seed_nodes)
             lg.out(_DebugLevel, 'DHT node is active, ID%d=[%s]' % (_layer_id, node().layers[_layer_id]))
-        result.callback(True)
+        result.callback(ok)
         return live_contacts
 
     def _on_join_failed(x):
