@@ -327,6 +327,27 @@ class GroupMember(automat.Automat):
                 self.doRecord(*args, **kwargs)
             elif event == 'queue-in-sync':
                 self.SyncedUp=True
+        #---BROKERS?---
+        elif self.state == 'BROKERS?':
+            if event == 'brokers-failed':
+                self.state = 'DISCONNECTED'
+                self.SyncedUp=False
+                self.doForgetBrokers(*args, **kwargs)
+                self.doDisconnected(event, *args, **kwargs)
+            elif event == 'shutdown' or event == 'leave':
+                self.state = 'CLOSED'
+                self.doDeactivate(event, *args, **kwargs)
+                self.doCancelService(event, *args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
+            elif event == 'brokers-rotated' or event == 'brokers-hired' or event == 'brokers-connected':
+                self.state = 'QUEUE?'
+                self.doRememberBrokers(event, *args, **kwargs)
+                self.doProcess(*args, **kwargs)
+                self.doReadQueue(*args, **kwargs)
+            elif event == 'message-in':
+                self.doRecord(*args, **kwargs)
+            elif event == 'queue-in-sync':
+                self.SyncedUp=True
         #---QUEUE?---
         elif self.state == 'QUEUE?':
             if event == 'queue-read-failed':
@@ -382,27 +403,6 @@ class GroupMember(automat.Automat):
         #---CLOSED---
         elif self.state == 'CLOSED':
             pass
-        #---BROKERS?---
-        elif self.state == 'BROKERS?':
-            if event == 'brokers-failed':
-                self.state = 'DISCONNECTED'
-                self.SyncedUp=False
-                self.doForgetBrokers(*args, **kwargs)
-                self.doDisconnected(event, *args, **kwargs)
-            elif event == 'shutdown' or event == 'leave':
-                self.state = 'CLOSED'
-                self.doDeactivate(event, *args, **kwargs)
-                self.doCancelService(event, *args, **kwargs)
-                self.doDestroyMe(*args, **kwargs)
-            elif event == 'brokers-rotated' or event == 'brokers-hired' or event == 'brokers-connected':
-                self.state = 'QUEUE?'
-                self.doRememberBrokers(event, *args, **kwargs)
-                self.doProcess(*args, **kwargs)
-                self.doReadQueue(*args, **kwargs)
-            elif event == 'message-in':
-                self.doRecord(*args, **kwargs)
-            elif event == 'queue-in-sync':
-                self.SyncedUp=True
         return None
 
     def isDeadBroker(self, *args, **kwargs):
