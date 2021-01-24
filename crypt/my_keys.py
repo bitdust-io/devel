@@ -833,19 +833,16 @@ def make_key_info(key_object, key_id=None, key_alias=None, creator_idurl=None, i
         'alias': key_alias,
         'label': key_object.label,
         'creator': creator_idurl,
-        'is_public': key_object.isPublic(),
-        # 'fingerprint': str(key_object.fingerprint()),
-        # 'type': str(key_object.type()),
-        # 'ssh_type': str(key_object.sshType()),
+        'public': strng.to_text(key_object.toPublicString()),
+        'private': None,
         'include_private': include_private,
     }
-    r['private'] = None
     if key_object.isPublic():
-        r['public'] = strng.to_text(key_object.toPublicString())
+        r['is_public'] = True
         if include_private:
             raise Exception('this key contains only public component')
     else:
-        r['public'] = strng.to_text(key_object.toPublicString())
+        r['is_public'] = not include_private
         if include_private:
             r['private'] = strng.to_text(key_object.toPrivateString())
     if hasattr(key_object, 'size'):

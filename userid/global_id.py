@@ -343,6 +343,10 @@ def UrlToGlobalID(url, include_key=False):
     if not url:
         return url
     from lib import nameurl
+    from userid import id_url
+    if isinstance(url, id_url.ID_URL_FIELD):
+        # small optimization
+        return url.to_id()
     _, host, port, _, filename = nameurl.UrlParseFast(url)
     if filename.count('.'):
         username = filename.split('.')[0]

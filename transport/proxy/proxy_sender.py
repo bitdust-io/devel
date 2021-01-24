@@ -333,7 +333,7 @@ class ProxySender(automat.Automat):
             return None
         # see proxy_router.ProxyRouter : doForwardOutboxPacket() for receiving part
         json_payload = {
-            'f': my_id.getLocalID().to_bin(),    # from
+            'f': my_id.getIDURL().to_bin(),    # from
             't': outpacket.RemoteID.to_bin(),    # to
             'p': raw_data,                       # payload
             'w': wide,                           # wide
@@ -345,7 +345,7 @@ class ProxySender(automat.Automat):
             raise ValueError('receiver idurl was not set')
         raw_bytes = serialization.DictToBytes(json_payload)
         block = encrypted.Block(
-            CreatorID=my_id.getLocalID(),
+            CreatorID=my_id.getIDURL(),
             BackupID='routed outgoing data',
             BlockNumber=0,
             SessionKey=key.NewSessionKey(session_key_type=key.SessionKeyType()),
@@ -358,7 +358,7 @@ class ProxySender(automat.Automat):
         newpacket = signed.Packet(
             Command=commands.RelayOut(),
             OwnerID=outpacket.OwnerID,
-            CreatorID=my_id.getLocalID(),
+            CreatorID=my_id.getIDURL(),
             PacketID=outpacket.PacketID,
             Payload=block_encrypted,
             RemoteID=router_idurl,
@@ -524,7 +524,7 @@ class ProxySender(automat.Automat):
     def _on_first_outbox_packet(self, outpacket, wide, callbacks, target=None, route=None, response_timeout=None, keep_alive=True):
         """
         Will be called first for every outgoing packet.
-        Must return `None` if that packet should be send normal way.
+        Must return `None` if that packet should be sent in a normal way.
         Otherwise will create another "routed" packet instead and return it.
         """
         if not driver.is_on('service_proxy_transport'):
@@ -535,7 +535,7 @@ class ProxySender(automat.Automat):
             if _Debug:
                 lg.out(_DebugLevel, 'proxy_sender._on_first_outbox_packet SKIP sending %r because proxy_receiver() not exist' % outpacket)
             return None
-        if outpacket.Command == commands.Identity() and outpacket.CreatorID == my_id.getLocalID():
+        if outpacket.Command == commands.Identity() and outpacket.CreatorID == my_id.getIDURL():
             if proxy_receiver.GetPossibleRouterIDURL() and proxy_receiver.GetPossibleRouterIDURL().to_bin() == outpacket.RemoteID.to_bin():
                 if network_connector.A().state == 'DISCONNECTED':
                     if _Debug:
