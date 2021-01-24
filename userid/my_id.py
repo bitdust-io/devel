@@ -585,7 +585,8 @@ def rebuildLocalIdentity(identity_object=None, skip_transports=[], new_sources=N
     # update software version number
     # TODO: need to read GIT commit hash here instead of version
     vernum = strng.to_bin(bpio.ReadTextFile(settings.VersionNumberFile())).strip()
-    repo, _ = misc.ReadRepoLocation()
+    # repo, _ = misc.ReadRepoLocation()
+    repo = 'sources'
     lid.setVersion((vernum + b' ' + strng.to_bin(repo.strip()) + b' ' + strng.to_bin(bpio.osinfo().strip()).strip()))
     # generate signature with changed content
     lid.sign()
