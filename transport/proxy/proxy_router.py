@@ -245,7 +245,7 @@ class ProxyRouter(automat.Automat):
         network_connector.A().addStateChangedCallback(self._on_network_connector_state_changed)
         callback.insert_inbox_callback(0, self._on_first_inbox_packet_received)
         callback.add_finish_file_sending_callback(self._on_finish_file_sending)
-        callback.insert_outbox_filter_callback(0, self._on_first_outbox_packet)
+        callback.insert_outbox_filter_callback(0, self._on_first_outbox_packet_direct)
         # callback.add_file_sending_filter_callback(self._on_file_sending_filter)
         events.add_subscriber(self._on_identity_url_changed, 'identity-url-changed')
 
@@ -338,7 +338,7 @@ class ProxyRouter(automat.Automat):
         if network_connector.A():
             network_connector.A().removeStateChangedCallback(self._on_network_connector_state_changed)
         # callback.remove_file_sending_filter_callback(self._on_file_sending_filter)
-        callback.remove_outbox_filter_callback(self._on_first_outbox_packet)
+        callback.remove_outbox_filter_callback(self._on_first_outbox_packet_direct)
         callback.remove_inbox_callback(self._on_first_inbox_packet_received)
         callback.remove_finish_file_sending_callback(self._on_finish_file_sending)
         self.my_hosts.clear()
@@ -1093,7 +1093,7 @@ class ProxyRouter(automat.Automat):
         self.automat('unknown-packet-received', (newpacket, info))
         return False
 
-    def _on_first_outbox_packet(self, outpacket, wide, callbacks, target=None, route=None, response_timeout=None, keep_alive=True):
+    def _on_first_outbox_packet_direct(self, outpacket, wide, callbacks, target=None, route=None, response_timeout=None, keep_alive=True):
         """
         Will be called first for every outgoing packet.
         When this node A is routing packets for another node B it still must be able to talk to B normally.
@@ -1105,8 +1105,6 @@ class ProxyRouter(automat.Automat):
         already doing proxy routing - those will be re-routed directly to B using the real contacts.
         Must return `None` if that packet should be sent in a normal way - when recipient is not present in my active "routes".
         """
-        if _Debug:
-            lg.args(_DebugLevel, state=self.state, outpacket=outpacket, wide=wide, route=route)
         if self.state != 'LISTEN':
             return None
         if route:
@@ -1116,6 +1114,8 @@ class ProxyRouter(automat.Automat):
         receiver_proto, receiver_host = self._get_session_proto_host(outpacket.RemoteID)
         if not receiver_proto or not receiver_host:
             return None
+        if _Debug:
+            lg.args(_DebugLevel, state=self.state, outpacket=outpacket, wide=wide, route=route)
         route = {
             'packet': outpacket,
             'remoteid': outpacket.RemoteID,
