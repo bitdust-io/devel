@@ -1261,19 +1261,23 @@ class MessagePeddler(automat.Automat):
         _MessagePeddler = None
 
     def _do_send_past_messages(self, queue_id, consumer_id, list_messages):
+        latest_sequence_id = get_latest_sequence_id(queue_id)
         message.send_message(
             json_data={
                 'msg_type': 'queue_message',
                 'action': 'read',
                 'created': utime.get_sec1970(),
                 'items': list_messages,
-                'last_sequence_id': get_latest_sequence_id(queue_id),
+                'last_sequence_id': latest_sequence_id,
             },
             recipient_global_id=consumer_id,
             packet_id=packetid.MakeQueueMessagePacketID(queue_id, packetid.UniqueID()),
             skip_handshake=True,
             fire_callbacks=False,
         )
+        if _Debug:
+            lg.out(_DebugLevel, '>>> PAST MSG >>>    from %r to consumer %r with %d messages at sequence %d' % (
+                queue_id, consumer_id, len(list_messages), latest_sequence_id, ))
 
     def _do_close_streams(self, queues_list):
         for queue_id in queues_list:

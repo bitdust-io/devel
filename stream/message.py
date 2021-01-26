@@ -219,6 +219,8 @@ class PrivateMessage(object):
         return self.encrypted_body
 
     def encrypt(self, message_body, encrypt_session_func=None):
+        if _Debug:
+            lg.args(_DebugLevel, encrypt_session_func=encrypt_session_func, recipient=self.recipient)
         new_sessionkey = key.NewSessionKey(session_key_type=key.SessionKeyType())
         if not encrypt_session_func:
             if my_keys.is_key_registered(self.recipient):
@@ -253,6 +255,8 @@ class PrivateMessage(object):
         return self.encrypted_session, self.encrypted_body
 
     def decrypt(self, decrypt_session_func=None):
+        if _Debug:
+            lg.args(_DebugLevel, decrypt_session_func=decrypt_session_func, recipient=self.recipient)
         if not decrypt_session_func:
             if my_keys.is_key_registered(self.recipient):
                 decrypt_session_func = lambda inp: my_keys.decrypt(self.recipient, inp)
@@ -310,6 +314,8 @@ def on_incoming_message(request, info, status, error_message):
     if private_message_object is None:
         lg.err("PrivateMessage deserialize failed, can not extract message from request payload of %d bytes" % len(request.Payload))
         return False
+    # if request.PacketID.startswith('queue_'):
+    #     queue_id, unique_id = packetid.SplitQueueMessagePacketID(request.PacketID)
     try:
         decrypted_message = private_message_object.decrypt()
         json_message = serialization.BytesToDict(
