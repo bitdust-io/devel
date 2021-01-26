@@ -57,7 +57,7 @@ from six.moves import range
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 8
 
 _PacketLogFileEnabled = False
@@ -950,7 +950,7 @@ class PacketOut(automat.Automat):
     def _push(self):
         from transport import gateway
         if self.route and 'proto' in self.route and 'host' in self.route and 'remoteid' in self.route:
-            # if this packet is routed - send directly to route host
+            # if this packet is routed - send directly to the host specified in the route info
             proto = strng.to_text(self.route['proto'])
             host = strng.to_bin(self.route['host'])
             if not gateway.send_file(

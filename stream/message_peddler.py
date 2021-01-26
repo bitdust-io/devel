@@ -1116,15 +1116,15 @@ class MessagePeddler(automat.Automat):
             return
         try:
             group_key_id, key_object = my_keys.read_key_info(group_key_info)
-        except Exception as exc:
+        except:
             lg.exc()
-            p2p_service.SendFail(request_packet, strng.to_text(exc))
+            p2p_service.SendFail(request_packet, 'failed reading key info')
             result_defer.callback(False)
             return
         group_key_alias, group_creator_idurl = my_keys.split_key_id(group_key_id)
         if not group_key_alias or not group_creator_idurl:
             lg.warn('wrong group_key_id: %r' % group_key_id)
-            p2p_service.SendFail(request_packet, 'wrong group_key_id')
+            p2p_service.SendFail(request_packet, 'invalid group_key_id')
             result_defer.callback(False)
             return
         if my_keys.is_key_registered(group_key_id):
@@ -1133,7 +1133,7 @@ class MessagePeddler(automat.Automat):
                 result_defer.callback(False)
                 return
             if my_keys.get_public_key_raw(group_key_id) != key_object.toPublicString():
-                p2p_service.SendFail(request_packet, 'another public key already registered')
+                p2p_service.SendFail(request_packet, 'another public key already registered with same id')
                 result_defer.callback(False)
                 return
         else:

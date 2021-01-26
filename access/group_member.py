@@ -905,7 +905,12 @@ class GroupMember(automat.Automat):
         if self.group_key_id:
             if my_keys.is_key_registered(self.group_key_id):
                 try:
-                    group_key_info = my_keys.get_key_info(self.group_key_id, include_private=False, include_signature=True, generate_signature=True)
+                    group_key_info = my_keys.get_key_info(
+                        key_id=self.group_key_id,
+                        include_private=False,
+                        include_signature=True,
+                        generate_signature=True,
+                    )
                 except:
                     lg.exc()
         service_request_params = {

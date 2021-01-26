@@ -373,7 +373,9 @@ def update(idurl, xml_src):
 
         if oldidentity.publickey != newid.publickey:
             # TODO: SECURITY   add some kind of black list to be able to block certain IP's if the DDoS me
-            lg.err("new public key does not match with old, SECURITY VIOLATION : %r" % idurl)
+            if _Debug:
+                lg.args(_DebugLevel, old=oldidentity.publickey, new=newid.publickey)
+            lg.err("new public key does not match with old, SECURITY VIOLATION for %r" % idurl)
             return False
 
         if oldidentity.signature != newid.signature:

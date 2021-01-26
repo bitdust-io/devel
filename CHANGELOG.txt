@@ -1,6 +1,13 @@
 Change Log
 ==========
 
+2021-01-24 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* fixes in group chat
+* fixes in dht_service
+* decommissiong old code for windows release auto-update
+
+
 
 2021-01-20 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 

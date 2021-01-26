@@ -464,20 +464,20 @@ def OutboxStatus(pkt_out, status, error=''):
     global _ShutdownFlag
     if _ShutdownFlag:
         return False
-    if pkt_out.outpacket.RemoteID.to_bin() == my_id.getLocalID().to_bin():
+    if pkt_out.outpacket.RemoteID.to_bin() == my_id.getIDURL().to_bin():
         return False
-    if pkt_out.outpacket.CreatorID.to_bin() != my_id.getLocalID().to_bin():
+    if pkt_out.outpacket.CreatorID.to_bin() != my_id.getIDURL().to_bin():
         return False
     if status == 'finished':
         if error == 'unanswered' and pkt_out.outpacket.Command == commands.Identity():
-            if pkt_out.outpacket.OwnerID == my_id.getLocalID() and pkt_out.outpacket.CreatorID == my_id.getLocalID():
+            if pkt_out.outpacket.OwnerID == my_id.getIDURL() and pkt_out.outpacket.CreatorID == my_id.getIDURL():
                 if not handshaker.is_running(pkt_out.outpacket.RemoteID):
                     lg.warn('packet %s was "unanswered" and this was not a handshake' % pkt_out)
     else:
         if _Debug:
             lg.dbg(_DebugLevel, 'packet %s is "%s" with %s error: %r' % (pkt_out, status, pkt_out.outpacket, error))
     if pkt_out.outpacket.Command == commands.Identity():
-        if pkt_out.outpacket.OwnerID == my_id.getLocalID() and pkt_out.outpacket.CreatorID == my_id.getLocalID():
+        if pkt_out.outpacket.OwnerID == my_id.getIDURL() and pkt_out.outpacket.CreatorID == my_id.getIDURL():
             if handshaker.is_running(pkt_out.outpacket.RemoteID):
                 handshaker.on_identity_packet_outbox_status(pkt_out, status, error)
     return False
@@ -491,14 +491,14 @@ def Inbox(newpacket, info, status, message):
     if _ShutdownFlag:
         return False
     if id_url.is_cached(newpacket.OwnerID):
-        if newpacket.OwnerID == my_id.getLocalID():
+        if newpacket.OwnerID == my_id.getIDURL():
             return False
     else:
-        if newpacket.OwnerID.to_bin() == my_id.getLocalID().to_bin():
+        if newpacket.OwnerID.to_bin() == my_id.getIDURL().to_bin():
             return False
     if not id_url.is_cached(newpacket.OwnerID):
         return False
-    if newpacket.RemoteID != my_id.getLocalID():
+    if newpacket.RemoteID != my_id.getIDURL():
         return False
     check_create(newpacket.OwnerID)
     A(newpacket.OwnerID, 'inbox-packet', (newpacket, info, status, message))
@@ -515,7 +515,7 @@ def PacketSendingTimeout(remoteID, packetID):
     global _ShutdownFlag
     if _ShutdownFlag:
         return False
-    if remoteID == my_id.getLocalID():
+    if remoteID == my_id.getIDURL():
         return False
     check_create(remoteID)
     # TODO: do something in that case ... send event "ping-now" ?
