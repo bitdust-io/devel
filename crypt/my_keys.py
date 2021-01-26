@@ -677,16 +677,16 @@ def encrypt(key_id, inp):
     """
     if key_id == 'master':  # master
         if _Debug:
-            lg.out(_DebugLevel, 'my_keys.encrypt  payload of %d bytes using my master key' % len(inp))
+            lg.out(_DebugLevel, 'my_keys.encrypt  payload of %d bytes using my "master" key alias' % len(inp))
         return key.EncryptLocalPublicKey(inp)
     key_id = latest_key_id(key_id)
     if key_id == my_id.getGlobalID(key_alias='master'):  # master$user@host.org
         if _Debug:
-            lg.out(_DebugLevel, 'my_keys.encrypt  payload of %d bytes using my master key' % len(inp))
+            lg.out(_DebugLevel, 'my_keys.encrypt  payload of %d bytes using my "master" key, full format' % len(inp))
         return key.EncryptLocalPublicKey(inp)
     if key_id == my_id.getGlobalID():  # user@host.org
         if _Debug:
-            lg.out(_DebugLevel, 'my_keys.encrypt  payload of %d bytes using my master key' % len(inp))
+            lg.out(_DebugLevel, 'my_keys.encrypt  payload of %d bytes using my "master" key, short format' % len(inp))
         return key.EncryptLocalPublicKey(inp)
     if key_id not in known_keys():
         raise Exception('key %s is unknown' % key_id)
@@ -711,16 +711,16 @@ def decrypt(key_id, inp):
     """
     if key_id == 'master':  # master
         if _Debug:
-            lg.out(_DebugLevel, 'my_keys.decrypt  payload of %d bytes using my "master" key' % len(inp))
+            lg.out(_DebugLevel, 'my_keys.decrypt  payload of %d bytes using my "master" key alias' % len(inp))
         return key.DecryptLocalPrivateKey(inp)
     key_id = latest_key_id(key_id)
     if key_id == my_id.getGlobalID(key_alias='master'):  # master$user@host.org
         if _Debug:
-            lg.out(_DebugLevel, 'my_keys.decrypt  payload of %d bytes using my "master" (full format) key' % len(inp))
+            lg.out(_DebugLevel, 'my_keys.decrypt  payload of %d bytes using my "master" key, full format' % len(inp))
         return key.DecryptLocalPrivateKey(inp)
     if key_id == my_id.getGlobalID():  # user@host.org
         if _Debug:
-            lg.out(_DebugLevel, 'my_keys.decrypt  payload of %d bytes using my "master" (short format) key' % len(inp))
+            lg.out(_DebugLevel, 'my_keys.decrypt  payload of %d bytes using my "master" key, short format' % len(inp))
         return key.DecryptLocalPrivateKey(inp)
     if key_id not in known_keys():
         raise Exception('key %s is unknown' % key_id)
@@ -729,7 +729,7 @@ def decrypt(key_id, inp):
             raise Exception('key load failed: %s' % key_id)
     key_object = known_keys()[key_id]
     if _Debug:
-        lg.out(_DebugLevel, 'my_keys.decrypt  payload of %d bytes with key %s' % (len(inp), key_id, ))
+        lg.out(_DebugLevel, 'my_keys.decrypt  payload of %d bytes with registered key %s' % (len(inp), key_id, ))
     result = key_object.decrypt(inp)
     return result
 
