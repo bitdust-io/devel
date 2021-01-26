@@ -393,6 +393,8 @@ class IdRotator(automat.Automat):
         for current_idurl in current_sources:
             if current_idurl not in self.alive_idurls:
                 continue
+            if current_idurl in new_sources:
+                continue
             new_sources.append(current_idurl)
         if self.force and len(new_sources) == len(current_sources):
             # do not increase number of identity sources, only rotate them
@@ -510,7 +512,31 @@ class IdRotator(automat.Automat):
         # also we can check here if I have enough sources according to those configs:
         #     services/identity-propagate/min-servers
         #     services/identity-propagate/max-servers
-        return ping_results and bool(ping_results[0])
+        if not ping_results:
+            return False
+        if not bool(ping_results[0]):
+            return False
+        unique_idurls = []
+        for idurl in ping_results:
+            if idurl not in unique_idurls:
+                unique_idurls.append(idurl)
+        min_servers = max(
+            settings.MinimumIdentitySources(),
+            config.conf().getInt('services/identity-propagate/min-servers') or settings.MinimumIdentitySources(),
+        )
+        max_servers = min(
+            settings.MaximumIdentitySources(),
+            config.conf().getInt('services/identity-propagate/max-servers') or settings.MaximumIdentitySources(),
+        )
+        if _Debug:
+            lg.args(_DebugLevel, min_servers=min_servers, max_servers=max_servers, ping_results=ping_results, unique_idurls=unique_idurls)
+        if len(unique_idurls) != len(ping_results):
+            return False
+        if len(unique_idurls) < min_servers:
+            return False
+        if len(unique_idurls) > max_servers:
+            return False
+        return True
 
     def _do_check_ping_results(self, ping_results):
         """
@@ -540,7 +566,8 @@ class IdRotator(automat.Automat):
                 lg.exc()
                 self.alive_idurls.append(None)
                 continue
-            self.alive_idurls.append(idurl_bin)
+            if idurl_bin not in self.alive_idurls:
+                self.alive_idurls.append(idurl_bin)
         if not self.new_revision:
             self.new_revision = max(local_revision, latest_revision) + 1
         if _Debug:
