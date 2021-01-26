@@ -246,7 +246,7 @@ class ProxyRouter(automat.Automat):
         callback.insert_inbox_callback(0, self._on_first_inbox_packet_received)
         callback.add_finish_file_sending_callback(self._on_finish_file_sending)
         callback.insert_outbox_filter_callback(0, self._on_first_outbox_packet_direct)
-        # callback.add_file_sending_filter_callback(self._on_file_sending_filter)
+        callback.add_file_sending_filter_callback(self._on_file_sending_filter)
         events.add_subscriber(self._on_identity_url_changed, 'identity-url-changed')
 
     def doProcessRequest(self, *args, **kwargs):
@@ -337,7 +337,7 @@ class ProxyRouter(automat.Automat):
         events.remove_subscriber(self._on_identity_url_changed, 'identity-url-changed')
         if network_connector.A():
             network_connector.A().removeStateChangedCallback(self._on_network_connector_state_changed)
-        # callback.remove_file_sending_filter_callback(self._on_file_sending_filter)
+        callback.remove_file_sending_filter_callback(self._on_file_sending_filter)
         callback.remove_outbox_filter_callback(self._on_first_outbox_packet_direct)
         callback.remove_inbox_callback(self._on_first_inbox_packet_received)
         callback.remove_finish_file_sending_callback(self._on_finish_file_sending)
@@ -1153,18 +1153,25 @@ class ProxyRouter(automat.Automat):
             return None
         if net_misc.normalize_address(host) != self.my_hosts[proto]:
             return None
-        if _Debug:
-            lg.args(_DebugLevel, proto=proto, host=host, remote_idurl=remote_idurl, description=description, my_hosts=self.my_hosts)
         remote_idurl = id_url.field(remote_idurl)
         receiver_proto, receiver_host = self._get_session_proto_host(remote_idurl)
-        if receiver_proto and receiver_host:
-            lg.warn('switched %s://%s to %s://%s for outgoing %r' % (proto, host, receiver_proto, receiver_host, pkt_out))
-            reactor.callLater(0, gateway.send_file, remote_idurl, receiver_proto, receiver_host, filename, description, pkt_out)  # @UndefinedVariable
-            # accept the packet and return "was filtered" status
-            return True
-        # do not filter out the packet - because of unknown route
-        lg.err('did not found receiver proto/host for outgoing %r' % pkt_out)
-        return None
+        if not receiver_proto or not receiver_host:
+            # filter out the packet - because of unknown route we can't send it anyway
+            lg.warn('did not found the real host for outgoing %r addressed to my own host' % pkt_out)
+            return False
+        if _Debug:
+            lg.dbg(_DebugLevel, 'switched %s://%s to %s://%s for outgoing %r' % (proto, host, receiver_proto, receiver_host, pkt_out))
+        if _PacketLogFileEnabled:
+            lg.out(0, '\033[1;49;94mOUTBOX HOST SWITCH %s://%s to %s://%s for %s towards %s\033[0m' % (
+                proto, host,
+                receiver_proto, receiver_host,
+                description,
+                global_id.UrlToGlobalID(remote_idurl),
+            ), log_name='packet', showtime=True)
+        result_defer = gateway.transport(receiver_proto).call('send_file', remote_idurl, filename, receiver_host, description)
+        callback.run_begin_file_sending_callbacks(result_defer, remote_idurl, receiver_proto, receiver_host, filename, description, pkt_out)
+        # accept the packet and return "filtered" status
+        return True
 
     def _on_network_connector_state_changed(self, oldstate, newstate, event, *args, **kwargs):
         if oldstate != 'CONNECTED' and newstate == 'CONNECTED':
