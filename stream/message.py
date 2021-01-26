@@ -255,15 +255,11 @@ class PrivateMessage(object):
     def decrypt(self, decrypt_session_func=None):
         if not decrypt_session_func:
             if my_keys.is_key_registered(self.recipient):
-                # if _Debug:
-                #     lg.out(_DebugLevel, 'message.PrivateMessage.decrypt with "%s" key' % self.recipient)
                 decrypt_session_func = lambda inp: my_keys.decrypt(self.recipient, inp)
         if not decrypt_session_func:
             glob_id = global_id.ParseGlobalID(self.recipient)
             if glob_id['idurl'] == my_id.getLocalID():
                 if glob_id['key_alias'] == 'master':
-                    # if _Debug:
-                    #     lg.out(_DebugLevel, 'message.PrivateMessage.decrypt with "master" key')
                     decrypt_session_func = lambda inp: my_keys.decrypt('master', inp)
         if not decrypt_session_func:
             raise Exception('can not find key for given recipient: %s' % self.recipient)
