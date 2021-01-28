@@ -2760,6 +2760,9 @@ def friend_add(trusted_user_id, alias='', share_person_key=True):
     ret = Deferred()
 
     def _add(idurl, result_defer):
+        if idurl == my_id.getIDURL():
+            result_defer.callback(ERROR('can not add my own identity as a new friend', api_method='friend_add'))
+            return
         added = False
         if not contactsdb.is_correspondent(idurl):
             contactsdb.add_correspondent(idurl, alias)
