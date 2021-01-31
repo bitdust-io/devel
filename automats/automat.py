@@ -741,9 +741,9 @@ class Automat(object):
         Can be used to 
         """
         state_snapshot = dict(
-            name=self.name,
-            id=self.id,
             index=self.index,
+            id=self.id,
+            name=self.__class__.__name__,
             newstate=newstate,
             oldstate=oldstate,
             event=event_string,
@@ -752,7 +752,7 @@ class Automat(object):
             if self.publish_fast:
                 publisher(state_snapshot)
             else:
-                reactor.callLater(0, publisher, state_snapshot)
+                reactor.callLater(0, publisher, state_snapshot)  # @UndefinedVariable
             return
         from main import events
         events.send('state-changed', data=state_snapshot, fast=self.publish_fast)

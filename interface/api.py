@@ -23,7 +23,6 @@
 #
 #
 #
-from celery.canvas import group
 
 """
 .. module:: api.
@@ -102,7 +101,7 @@ def OK(result='', message=None, status='OK', **kwargs):
             'process_health',
             'network_connected',
         ] or _DebugLevel > 10:
-            lg.out(_DebugLevel, 'api.%s return OK(%s)' % (api_method, sample[:150]))
+            lg.out(_DebugLevel, 'api.%s return OK(%s)' % (api_method, sample[:80]))
     if _APILogFileEnabled is None:
         _APILogFileEnabled = config.conf().getBool('logs/api-enabled')
     if _APILogFileEnabled:
@@ -2719,15 +2718,16 @@ def friends_list():
         glob_id = global_id.ParseIDURL(idurl)
         contact_status = 'offline'
         contact_state = 'OFFLINE'
+        contact_index = None
+        contact_publish_events = None
         if driver.is_on('service_identity_propagate'):
             from p2p import online_status
-            if online_status.isKnown(idurl):
-                contact_state = online_status.getCurrentState(idurl)
-                contact_status = online_status.getStatusLabel(idurl)
-            # state_machine_inst = contact_status.getInstance(idurl)
-            # if state_machine_inst:
-            #     contact_status_label = contact_status.stateToLabel(state_machine_inst.state)
-            #     contact_state = state_machine_inst.state
+            state_machine_inst = online_status.getInstance(idurl, autocreate=False)
+            if state_machine_inst:
+                contact_state = state_machine_inst.state
+                contact_status = online_status.stateToLabel(state_machine_inst.state)
+                contact_index = state_machine_inst.index
+                contact_publish_events = state_machine_inst.publish_events
         result.append({
             'idurl': idurl,
             'global_id': glob_id['customer'],
@@ -2736,6 +2736,8 @@ def friends_list():
             'alias': alias,
             'contact_status': contact_status,
             'contact_state': contact_state,
+            'contact_index': contact_index,
+            'contact_events': contact_publish_events,
         })
     return RESULT(result)
 
@@ -3197,6 +3199,8 @@ def message_conversations_list(message_types=[], offset=0, limit=100):
         conv['key_id'] = ''
         conv['label'] = ''
         conv['state'] = 'OFFLINE'
+        conv['index'] = None
+        conv['events'] = None
         if conv['type'] == 'private_message':
             local_key_id1, _, local_key_id2 = conv['conversation_id'].partition('&')
             try:
@@ -3232,7 +3236,11 @@ def message_conversations_list(message_types=[], offset=0, limit=100):
             else:
                 conv['label'] = conv_key_id
             if user_idurl:
-                conv['state'] = online_status.getCurrentState(user_idurl) or 'OFFLINE'
+                on_st = online_status.getInstance(user_idurl, autocreate=False)
+                if on_st:
+                    conv['state'] = on_st.state or 'OFFLINE'
+                    conv['index'] = on_st.index
+                    conv['events'] = on_st.publish_events
         elif conv['type'] == 'group_message' or conv['type'] == 'personal_message':
             local_key_id, _, _ = conv['conversation_id'].partition('&')
             try:
@@ -3249,7 +3257,8 @@ def message_conversations_list(message_types=[], offset=0, limit=100):
             gm = group_member.get_active_group_member(key_id)
             if gm:
                 conv['state'] = gm.state or 'OFFLINE'
-                conv['group_member_id'] = gm.id
+                conv['index'] = gm.index
+                conv['events'] = gm.publish_events
         if conv['key_id']:
             conversations.append(conv)
         else:
@@ -3924,7 +3933,7 @@ def service_info(service_name):
         'enabled': svc.enabled(),
         'installed': svc.installed(),
         'config_path': svc.config_path,
-        'depends': svc.dependent_on()
+        'depends': svc.dependent_on(),
     })
 
 
@@ -5054,10 +5063,11 @@ def automats_list():
     result = [{
         'index': a.index,
         'id': a.id,
-        'name': a.name,
+        'name': a.__class__.__name__,
         'state': a.state,
         'repr': repr(a),
         'timers': (','.join(list(a.getTimers().keys()))),
+        'events': a.publish_events,
     } for a in automat.objects().values()]
     if _Debug:
         lg.out(_DebugLevel, 'api.automats_list responded with %d items' % len(result))
@@ -5077,7 +5087,7 @@ def automat_events_start(index, state_unchanged=False):
         curl -X POST 'localhost:8180/automat/12345/events/start/v1' -d '{"state_unchanged": 1}
 
     ###### WebSocket
-        websocket.send('{"command": "api_call", "method": "automat_events_start", "kwargs": {"state_unchanged": 1} }');
+        websocket.send('{"command": "api_call", "method": "automat_events_start", "kwargs": {"index": 12345, "state_unchanged": 1} }');
     """
     from automats import automat
     inst = automat.by_index(int(index))

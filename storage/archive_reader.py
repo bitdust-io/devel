@@ -213,7 +213,7 @@ class ArchiveReader(automat.Automat):
         """
         Action method.
         """
-        self._do_request_list_files(contactsdb.num_suppliers())
+        self._do_request_list_files(contactsdb.suppliers())
 
     def doStartRestoreWorker(self, *args, **kwargs):
         """
@@ -410,6 +410,7 @@ class ArchiveReader(automat.Automat):
             backup_matrix.remove_list_files_query_callback(
                 customer_idurl=self.queue_owner_idurl,
                 query_path=self.queue_alias,
+                callback_method=self._on_list_files_response,
             )
             success_list_files = lst.count(True)
             if success_list_files:
@@ -437,6 +438,7 @@ class ArchiveReader(automat.Automat):
             backup_matrix.remove_list_files_query_callback(
                 customer_idurl=self.queue_owner_idurl,
                 query_path=self.queue_alias,
+                callback_method=self._on_list_files_response,
             )
             success_list_files = lst.count(True)
             if success_list_files:
@@ -456,6 +458,7 @@ class ArchiveReader(automat.Automat):
         backup_matrix.remove_list_files_query_callback(
             customer_idurl=self.queue_owner_idurl,
             query_path=self.queue_alias,
+            callback_method=self._on_list_files_response,
         )
         success_list_files = lst.count(True)
         if success_list_files:
