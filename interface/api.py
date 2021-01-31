@@ -3235,6 +3235,7 @@ def message_conversations_list(message_types=[], offset=0, limit=100):
             gm = group_member.get_active_group_member(key_id)
             if gm:
                 conv['state'] = gm.state or 'OFFLINE'
+                conv['group_member_id'] = gm.id
         if conv['key_id']:
             conversations.append(conv)
         else:
@@ -4521,12 +4522,12 @@ def network_status(suppliers=False, customers=False, cache=False, tcp=False, udp
     }
     p2p_connector_lookup = automat.find('p2p_connector')
     if p2p_connector_lookup:
-        p2p_connector_machine = automat.objects().get(p2p_connector_lookup[0])
+        p2p_connector_machine = automat.by_index(p2p_connector_lookup[0])
         if p2p_connector_machine:
             r['p2p_connector_state'] = p2p_connector_machine.state
     network_connector_lookup = automat.find('network_connector')
     if network_connector_lookup:
-        network_connector_machine = automat.objects().get(network_connector_lookup[0])
+        network_connector_machine = automat.by_index(network_connector_lookup[0])
         if network_connector_machine:
             r['network_connector_state'] = network_connector_machine.state
     if my_id.isLocalIdentityReady():
@@ -5039,5 +5040,15 @@ def automats_list():
     if _Debug:
         lg.out(_DebugLevel, 'api.automats_list responded with %d items' % len(result))
     return RESULT(result)
+
+
+def automat_publish_events_start():
+    """
+    """
+
+
+def automat_publish_events_stop():
+    """
+    """
 
 #------------------------------------------------------------------------------

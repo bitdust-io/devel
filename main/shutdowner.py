@@ -273,7 +273,7 @@ class Shutdowner(automat.Automat):
         if _Debug:
             lg.out(_DebugLevel, 'shutdowner.doDestroyMe %d machines left in memory:\n        %s' % (
                 len(automat.objects()), '\n        '.join(
-                    ['%d: %r' % (k, automat.objects()[k]) for k in automat.objects().keys()])))
+                    ['%d: %r' % (k, automat.by_index(k)) for k in automat.objects().keys()])))
 
         if self.enableMemoryProfile:
             try:

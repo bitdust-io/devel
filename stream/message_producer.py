@@ -142,7 +142,7 @@ def find_active_message_producers(group_creator_idurl):
     global _ActiveMessageProducersByIDURL
     result = []
     for automat_index in _ActiveMessageProducersByIDURL.values():
-        A = automat.objects().get(automat_index, None)
+        A = automat.by_index(automat_index)
         if not A:
             continue
         if A.group_creator_idurl == group_creator_idurl:

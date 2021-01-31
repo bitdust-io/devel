@@ -166,7 +166,7 @@ def find_active_group_members(group_creator_idurl):
     global _ActiveGroupMembersByIDURL
     result = []
     for automat_index in _ActiveGroupMembersByIDURL.values():
-        A = automat.objects().get(automat_index, None)
+        A = automat.by_index(automat_index, None)
         if not A:
             continue
         if A.group_creator_idurl == group_creator_idurl:
