@@ -1112,17 +1112,15 @@ class ProxyRouter(automat.Automat):
         if outpacket.CreatorID != my_id.getIDURL():
             return None
         receiver_idurl = outpacket.RemoteID
-        receiver_proto, receiver_host = self._get_session_proto_host(outpacket.RemoteID)
+        receiver_proto, receiver_host = self._get_session_proto_host(receiver_idurl)
         if not receiver_proto or not receiver_host:
             return None
-        route_info = self.routes.get(receiver_idurl.original(), None)
-        if not route_info:
-            route_info = self.routes.get(receiver_idurl.to_bin(), None)
-        if not route_info or 'publickey' not in route_info:
-            lg.warn('found proto & host in the current routes for %r but did not found public key' % receiver_idurl)
-            return None
-        #--- sending "direct" packet to the node known to be one of my routes
-
+#         route_info = self.routes.get(receiver_idurl.original(), None)
+#         if not route_info:
+#             route_info = self.routes.get(receiver_idurl.to_bin(), None)
+#         if not route_info or 'publickey' not in route_info:
+#             lg.warn('found proto & host in the current routes for %r but did not found public key' % receiver_idurl)
+#             return None
 #         raw_data, pkt_out = self._do_send_relay_packet(
 #             relay_cmd=commands.RelayIn(),
 #             inbox_packet=outpacket,
@@ -1143,10 +1141,11 @@ class ProxyRouter(automat.Automat):
 #         del raw_data
 #         return pkt_out
 
+        #--- sending "direct" packet to the node known to be one of my routes
         route = {
             'packet': outpacket,
-            'remoteid': outpacket.RemoteID,
-            'description': 'direct_%s[%s]_%s' % (outpacket.Command, outpacket.PacketID, nameurl.GetName(outpacket.RemoteID)),
+            'remoteid': receiver_idurl,
+            'description': 'direct_%s[%s]_%s' % (outpacket.Command, outpacket.PacketID, nameurl.GetName(receiver_idurl)),
             'proto': receiver_proto,
             'host': receiver_host,
         }
@@ -1164,7 +1163,7 @@ class ProxyRouter(automat.Automat):
                 outpacket.Command, outpacket.PacketID,
                 global_id.UrlToGlobalID(outpacket.OwnerID),
                 global_id.UrlToGlobalID(outpacket.CreatorID),
-                global_id.UrlToGlobalID(outpacket.RemoteID),
+                global_id.UrlToGlobalID(receiver_idurl),
                 receiver_proto, receiver_host,
             ), log_name='packet', showtime=True)
         if _Debug:
