@@ -51,7 +51,7 @@ import time
 #------------------------------------------------------------------------------
 
 from twisted.internet import reactor  # @UnresolvedImport
-from twisted.web.server import Site
+from twisted.web.server import Site  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 
@@ -168,7 +168,7 @@ def serve_https(port):
         local_fs.WriteBinaryFile(settings.APIClientCertificateFile(), client_cert_pem)
 
     try:
-        from twisted.internet import ssl
+        from twisted.internet import ssl  # @UnresolvedImport
         api_resource = BitDustRESTHTTPServer()
         site = BitDustAPISite(api_resource, timeout=None)
         auth = ssl.Certificate.loadPEM(server_cert_pem)
@@ -655,6 +655,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
             remote_path=data['remote_path'],
             wait_result=bool(data.get('wait_result', '0') in ['1', 'true', ]),
             open_share=bool(data.get('open_share', '0') in ['1', 'true', ]),
+            publish_events=bool(data.get('publish_events', '0') in ['1', 'true', ]),
         )
 
     @POST('^/f/u/c$')
@@ -680,6 +681,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
             destination_path=data.get('destination_folder', None),
             wait_result=bool(data.get('wait_result', '0') in ['1', 'true', ]),
             open_share=bool(data.get('open_share', '1') in ['1', 'true', ]),
+            publish_events=bool(data.get('publish_events', '0') in ['1', 'true', ]),
         )
 
     @POST('^/f/d/c$')
@@ -736,6 +738,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
             key_id=data['key_id'],
             trusted_user_id=data.get('trusted_user_id') or data.get('trusted_global_id') or data.get('trusted_idurl') or data.get('trusted_id'),
             timeout=data.get('timeout', 30),
+            publish_events=bool(data.get('publish_events', '0') in ['1', 'true', ]),
         )
 
     @POST('^/sh/o$')
@@ -745,6 +748,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
         data = _request_data(request, mandatory_keys=['key_id', ])
         return api.share_open(
             key_id=data['key_id'],
+            publish_events=bool(data.get('publish_events', '0') in ['1', 'true', ]),
         )
 
     @DELETE('^/sh/cl$')
@@ -793,7 +797,10 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @POST('^/group/join/v1$')
     def group_join_v1(self, request):
         data = _request_data(request, mandatory_keys=['group_key_id', ])
-        return api.group_join(group_key_id=data['group_key_id'])
+        return api.group_join(
+            group_key_id=data['group_key_id'],
+            publish_events=bool(data.get('publish_events', '0') in ['1', 'true', ]),
+        )
 
     @DELETE('^/gr/lv$')
     @DELETE('^/v1/group/leave$')
@@ -814,6 +821,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
             group_key_id=data['group_key_id'],
             trusted_user_id=data.get('trusted_user_id') or data.get('trusted_global_id') or data.get('trusted_idurl') or data.get('trusted_id'),
             timeout=data.get('timeout', 30),
+            publish_events=bool(data.get('publish_events', '0') in ['1', 'true', ]),
         )
 
     #------------------------------------------------------------------------------
@@ -1310,6 +1318,26 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @GET('^/automat/list/v1$')
     def automat_list_v1(self, request):
         return api.automats_list()
+
+    @POST('^/st/(?P<index>[^/]+)/events/start/$')
+    @POST('^/v1/state/(?P<index>[^/]+)/events/start$')
+    @POST('^/v1/automat/(?P<index>[^/]+)/events/start$')
+    @POST('^/state/(?P<index>[^/]+)/events/start/v1$')
+    @POST('^/automat/(?P<index>[^/]+)/events/start/v1$')
+    def automat_events_start_v1(self, request, index):
+        data = _request_data(request)
+        return api.automat_events_start(
+            index=index,
+            state_unchanged=bool(data.get('state_unchanged', '0') in ['1', 'true', ]),
+        )
+
+    @POST('^/st/(?P<index>[^/]+)/events/stop/$')
+    @POST('^/v1/state/(?P<index>[^/]+)/events/stop$')
+    @POST('^/v1/automat/(?P<index>[^/]+)/events/stop$')
+    @POST('^/state/(?P<index>[^/]+)/events/stop/v1$')
+    @POST('^/automat/(?P<index>[^/]+)/events/stop/v1$')
+    def automat_events_stop_v1(self, request, index):
+        return api.automat_events_stop(index=index)
 
     #------------------------------------------------------------------------------
 

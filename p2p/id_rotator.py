@@ -126,7 +126,7 @@ class IdRotator(automat.Automat):
     This class implements all the functionality of ``id_rotator()`` state machine.
     """
 
-    def __init__(self, debug_level=_DebugLevel, log_events=_Debug, log_transitions=_Debug, publish_events=False, **kwargs):
+    def __init__(self, debug_level=_DebugLevel, log_events=_Debug, log_transitions=_Debug, publish_events=True, **kwargs):
         """
         Builds `id_rotator()` state machine.
         """
