@@ -486,7 +486,7 @@ class ProxyReceiver(automat.Automat):
                 'idurl': self.router_idurl,
                 'global_id': global_id.UrlToGlobalID(self.router_idurl),
             }
-            active_router_session_machine = automat.objects().get(self.router_connection_info['index'], None)
+            active_router_session_machine = automat.by_index(self.router_connection_info['index'])
             if active_router_session_machine is not None:
                 active_router_session_machine.addStateChangedCallback(
                     self._on_router_session_disconnected, oldstate='CONNECTED')
@@ -516,7 +516,7 @@ class ProxyReceiver(automat.Automat):
         if self.router_connection_info:
             active_router_session_machine_index = self.router_connection_info.get('index', None)
         if active_router_session_machine_index is not None:
-            active_router_session_machine = automat.objects().get(active_router_session_machine_index, None)
+            active_router_session_machine = automat.by_index(active_router_session_machine_index)
             if active_router_session_machine is not None:
                 active_router_session_machine.removeStateChangedCallback(self._on_router_session_disconnected)
                 lg.info('removed callback from router active session: %r' % active_router_session_machine)

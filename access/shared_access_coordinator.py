@@ -136,7 +136,7 @@ def find_active_shares(customer_idurl):
     global _ActiveSharesByIDURL
     result = []
     for automat_index in _ActiveSharesByIDURL.values():
-        A = automat.objects().get(automat_index, None)
+        A = automat.by_index(automat_index)
         if not A:
             continue
         if A.customer_idurl == customer_idurl:

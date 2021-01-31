@@ -364,10 +364,10 @@ class ProxyRouter(automat.Automat):
             if not active_user_sessions:
                 lg.warn('route with %s found but no active sessions found with %s://%s' % (sender_idurl, info.proto, info.host, ))
                 return None, None
-            active_user_session_machine = automat.objects().get(active_user_sessions[0].index, None)
+            active_user_session_machine = automat.by_index(active_user_sessions[0].index)
         if not active_user_session_machine:
             if connection_info.get('index'):
-                active_user_session_machine = automat.objects().get(connection_info['index'], None)
+                active_user_session_machine = automat.by_index(connection_info['index'])
         if not active_user_session_machine:
             lg.warn('route with %s found but no active user session exist' % sender_idurl)
             return None, None
@@ -461,7 +461,7 @@ class ProxyRouter(automat.Automat):
                         'host': info.host,
                         'idurl': user_idurl,
                     }
-                    active_user_session_machine = automat.objects().get(user_connection_info['index'], None)
+                    active_user_session_machine = automat.by_index(user_connection_info['index'])
                     if active_user_session_machine:
                         self.routes[user_idurl.original()]['connection_info'] = user_connection_info
                         active_user_session_machine.addStateChangedCallback(
@@ -491,7 +491,7 @@ class ProxyRouter(automat.Automat):
                 if active_user_session_machine_index is None:
                     active_user_session_machine_index = self.routes.get(user_idurl.to_bin(), {}).get('connection_info', {}).get('index', None)
                 if active_user_session_machine_index is not None:
-                    active_user_session_machine = automat.objects().get(active_user_session_machine_index, None)
+                    active_user_session_machine = automat.by_index(active_user_session_machine_index)
                     if active_user_session_machine is not None:
                         active_user_session_machine.removeStateChangedCallback(callback_id='proxy_router')
                 self.routes.pop(user_idurl.original(), None)
@@ -541,7 +541,7 @@ class ProxyRouter(automat.Automat):
                 'host': info.host,
                 'idurl': receiver_idurl,
             }
-            active_user_session_machine = automat.objects().get(user_connection_info['index'], None)
+            active_user_session_machine = automat.by_index(user_connection_info['index'])
             if active_user_session_machine:
                 if receiver_idurl.original() in self.routes:
                     self.routes[receiver_idurl.original()]['connection_info'] = user_connection_info
@@ -551,7 +551,7 @@ class ProxyRouter(automat.Automat):
                     lg.info('found and remember active connection info (for latest IDURL): %r' % user_connection_info)
         if not active_user_session_machine:
             if connection_info.get('index'):
-                active_user_session_machine = automat.objects().get(connection_info['index'], None)
+                active_user_session_machine = automat.by_index(connection_info['index'])
         if not active_user_session_machine:
             lg.warn('route with %s found but no active user session, fire "routed-session-disconnected" event' % receiver_idurl)
             self.automat('routed-session-disconnected', receiver_idurl)
@@ -913,7 +913,7 @@ class ProxyRouter(automat.Automat):
         if active_user_session_machine_index is None:
             active_user_session_machine_index = ((self.routes.get(idurl.to_bin()) or {}).get('connection_info') or {}).get('index', None)
         if active_user_session_machine_index is not None:
-            active_user_session_machine = automat.objects().get(active_user_session_machine_index, None)
+            active_user_session_machine = automat.by_index(active_user_session_machine_index)
             if active_user_session_machine is not None:
                 active_user_session_machine.removeStateChangedCallback(callback_id='proxy_router')
                 lg.info('removed "proxy_router" callback from active user session %r' % active_user_session_machine)

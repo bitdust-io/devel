@@ -166,7 +166,7 @@ def find_active_group_members(group_creator_idurl):
     global _ActiveGroupMembersByIDURL
     result = []
     for automat_index in _ActiveGroupMembersByIDURL.values():
-        A = automat.objects().get(automat_index, None)
+        A = automat.by_index(automat_index, None)
         if not A:
             continue
         if A.group_creator_idurl == group_creator_idurl:
@@ -210,7 +210,16 @@ class GroupMember(automat.Automat):
     This class implements all the functionality of ``group_member()`` state machine.
     """
 
-    def __init__(self, group_key_id, member_idurl=None, debug_level=_DebugLevel, log_events=_Debug, log_transitions=_Debug, **kwargs):
+    def __init__(
+        self,
+        group_key_id,
+        member_idurl=None,
+        debug_level=_DebugLevel,
+        log_events=_Debug,
+        log_transitions=_Debug,
+        publish_events=False,
+        **kwargs
+    ):
         """
         Builds `group_member()` state machine.
         """
@@ -243,7 +252,7 @@ class GroupMember(automat.Automat):
             debug_level=debug_level,
             log_events=log_events,
             log_transitions=log_transitions,
-            publish_events=False,
+            publish_events=publish_events,
             **kwargs
         )
 
