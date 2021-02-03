@@ -2430,7 +2430,7 @@ def groups_list(only_active=False, include_mine=True, include_granted=True):
             result.update(this_group_member.to_json())
             results.append(result)
             continue
-        offline_group_info = groups.known_groups().get(group_key_id)
+        offline_group_info = groups.active_groups().get(group_key_id)
         if offline_group_info:
             result.update(offline_group_info)
             result['state'] = 'OFFLINE'
@@ -2520,7 +2520,7 @@ def group_info(group_key_id):
     if this_group_member:
         response.update(this_group_member.to_json())
         return OK(response)
-    offline_group_info = groups.known_groups().get(group_key_id)
+    offline_group_info = groups.active_groups().get(group_key_id)
     if offline_group_info:
         response.update(offline_group_info)
         response['state'] = 'OFFLINE'
@@ -2718,16 +2718,16 @@ def friends_list():
         glob_id = global_id.ParseIDURL(idurl)
         contact_status = 'offline'
         contact_state = 'OFFLINE'
-        contact_index = None
-        contact_publish_events = None
+        # contact_index = None
+        # contact_publish_events = None
         if driver.is_on('service_identity_propagate'):
             from p2p import online_status
             state_machine_inst = online_status.getInstance(idurl, autocreate=False)
             if state_machine_inst:
                 contact_state = state_machine_inst.state
                 contact_status = online_status.stateToLabel(state_machine_inst.state)
-                contact_index = state_machine_inst.index
-                contact_publish_events = state_machine_inst.publish_events
+                # contact_index = state_machine_inst.index
+                # contact_publish_events = state_machine_inst.publish_events
         result.append({
             'idurl': idurl,
             'global_id': glob_id['customer'],
@@ -2736,8 +2736,8 @@ def friends_list():
             'alias': alias,
             'contact_status': contact_status,
             'contact_state': contact_state,
-            'contact_index': contact_index,
-            'contact_events': contact_publish_events,
+            # 'contact_index': contact_index,
+            # 'contact_events': contact_publish_events,
         })
     return RESULT(result)
 

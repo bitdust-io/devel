@@ -60,12 +60,14 @@ class PrivateGroupsService(LocalService):
         if driver.is_on('service_entangled_dht'):
             self._do_join_message_brokers_dht_layer()
         group_member.start_group_members()
+        events.add_subscriber(groups.on_identity_url_changed, 'identity-url-changed')
         return True
 
     def stop(self):
         from main import events
         from access import groups
         from access import group_member
+        events.remove_subscriber(groups.on_identity_url_changed, 'identity-url-changed')
         group_member.shutdown_group_members()
         events.remove_subscriber(self._on_dht_layer_connected, 'dht-layer-connected')
         events.remove_subscriber(self._on_supplier_modified, 'supplier-modified')

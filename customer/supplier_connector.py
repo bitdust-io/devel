@@ -580,19 +580,6 @@ class SupplierConnector(automat.Automat):
                     ecc_map=self._last_known_ecc_map,
                     family_snapshot=self._last_known_family_snapshot,
                 )
-#         if self._last_known_family_position is not None:
-#             p2p_service.SendContacts(
-#                 remote_idurl=self.supplier_idurl,
-#                 json_payload={
-#                     'space': 'family_member',
-#                     'type': 'supplier_position',
-#                     'customer_idurl': my_id.getLocalID(),
-#                     'customer_ecc_map': self._last_known_ecc_map,
-#                     'supplier_idurl': self.supplier_idurl,
-#                     'supplier_position': self._last_known_family_position,
-#                     'family_snapshot': self._last_known_family_snapshot,
-#                 },
-#             )
 
     def doDestroyMe(self, *args, **kwargs):
         """
@@ -602,9 +589,6 @@ class SupplierConnector(automat.Automat):
             idurl=self.supplier_idurl,
             callback_method=self._on_online_status_state_changed,
         )
-        # contact_peer = contact_status.getInstance(self.supplier_idurl)
-        # if contact_peer:
-        #     contact_peer.removeStateChangedCallback(self._on_contact_status_state_changed)
         connectors(self.customer_idurl).pop(self.supplier_idurl)
         self.request_packet_id = None
         self.request_queue_packet_id = None

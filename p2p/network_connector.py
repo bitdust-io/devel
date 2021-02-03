@@ -129,7 +129,7 @@ def A(event=None, *args, **kwargs):
             state='AT_STARTUP',
             log_events=_DebugLevel,
             log_transitions=_DebugLevel,
-            publish_events=True,
+            publish_events=False,
         )
     if event is not None:
         _NetworkConnector.automat(event, *args, **kwargs)

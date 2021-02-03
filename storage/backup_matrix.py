@@ -767,7 +767,6 @@ def ReadLocalFiles():
         return False
 
     all_keys = os.listdir(settings.getLocalBackupsDir())
-    from crypt import my_keys
     for key_id in all_keys:
         latest_key_id = my_keys.latest_key_id(key_id)
         if key_id != latest_key_id:
@@ -776,10 +775,12 @@ def ReadLocalFiles():
             if os.path.isdir(old_path):
                 try:
                     bpio.move_dir_recursive(old_path, new_path)
-                    lg.warn('copied %r into %r' % (old_path, new_path, ))
+                    if _Debug:
+                        lg.dbg(_DebugLevel, 'copied %r into %r' % (old_path, new_path, ))
                     if os.path.exists(old_path):
                         bpio._dir_remove(old_path)
-                        lg.warn('removed %r' % old_path)
+                        if _Debug:
+                            lg.dbg(_DebugLevel,'removed %r' % old_path)
                 except:
                     lg.exc()
         backup_path = os.path.join(settings.getLocalBackupsDir(), latest_key_id)
