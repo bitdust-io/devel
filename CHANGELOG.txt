@@ -1,6 +1,18 @@
 Change Log
 ==========
 
+
+2021-02-04 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* properly rotate customer and broker IDURL in service_private_groups()
+* bug fix in archive_reader()
+* make possible to start/stop publishing events from any state machine in real-time
+* small fix in api.friend_add()
+* fixes in id_rotator()
+* use routed packets to deliver "direct" traffic from router node
+
+
+
 2021-01-24 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * fixes in group chat
