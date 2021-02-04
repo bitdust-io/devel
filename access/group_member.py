@@ -124,6 +124,8 @@ def register_group_member(A):
     if id_url.is_not_in(A.group_creator_idurl, _ActiveGroupMembersByIDURL):
         _ActiveGroupMembersByIDURL[A.group_creator_idurl] = []
     _ActiveGroupMembersByIDURL[A.group_creator_idurl].append(A)
+    if _Debug:
+        lg.args(_DebugLevel, group_creator_idurl=A.group_creator_idurl, group_key_id=A.group_key_id)
 
 
 def unregister_group_member(A):
@@ -138,9 +140,11 @@ def unregister_group_member(A):
     else:
         if A in _ActiveGroupMembersByIDURL[A.group_creator_idurl]:
             _ActiveGroupMembersByIDURL[A.group_creator_idurl].remove(A)
+            if _Debug:
+                lg.args(_DebugLevel, group_creator_idurl=A.group_creator_idurl, group_key_id=A.group_key_id)
         else:
             lg.warn('group_member() instance not found for customer %r' % A.group_creator_idurl)
-    _ActiveGroupMembers.pop(A.group_key_id, None)
+    return _ActiveGroupMembers.pop(A.group_key_id, None)
 
 #------------------------------------------------------------------------------
 
@@ -166,7 +170,7 @@ def find_active_group_members(group_creator_idurl):
     global _ActiveGroupMembersByIDURL
     result = []
     for automat_index in _ActiveGroupMembersByIDURL.values():
-        A = automat.objects().get(automat_index, None)
+        A = automat.by_index(automat_index, None)
         if not A:
             continue
         if A.group_creator_idurl == group_creator_idurl:
@@ -175,9 +179,21 @@ def find_active_group_members(group_creator_idurl):
 
 #------------------------------------------------------------------------------
 
+def rotate_active_group_memeber(old_group_key_id, new_group_key_id):
+    if not get_active_group_member(old_group_key_id):
+        return False
+    if get_active_group_member(new_group_key_id):
+        return False
+    A = _ActiveGroupMembers.pop(old_group_key_id)
+    unregister_group_member(A)
+    A.update_group_key_id(new_group_key_id)
+    register_group_member(A)
+
+#------------------------------------------------------------------------------
+
 def start_group_members():
     started = 0
-    for group_key_id, group_info in groups.known_groups().items():
+    for group_key_id, group_info in groups.active_groups().items():
         if not group_key_id:
             continue
         if not group_info['active']:
@@ -195,7 +211,7 @@ def start_group_members():
 
 def shutdown_group_members():
     stopped = 0
-    for group_key_id in groups.known_groups().keys():
+    for group_key_id in groups.active_groups().keys():
         existing_group_member = get_active_group_member(group_key_id)
         if not existing_group_member:
             continue
@@ -210,18 +226,22 @@ class GroupMember(automat.Automat):
     This class implements all the functionality of ``group_member()`` state machine.
     """
 
-    def __init__(self, group_key_id, member_idurl=None, debug_level=_DebugLevel, log_events=_Debug, log_transitions=_Debug, **kwargs):
+    def __init__(
+        self,
+        group_key_id,
+        member_idurl=None,
+        debug_level=_DebugLevel,
+        log_events=_Debug,
+        log_transitions=_Debug,
+        publish_events=False,
+        **kwargs
+    ):
         """
         Builds `group_member()` state machine.
         """
         self.member_idurl = member_idurl or my_id.getIDURL()
         self.member_id = self.member_idurl.to_id()
-        self.group_key_id = group_key_id
-        self.group_glob_id = global_id.ParseGlobalID(self.group_key_id)
-        self.group_queue_alias = self.group_glob_id['key_alias']
-        self.group_creator_id = self.group_glob_id['customer']
-        self.group_creator_idurl = self.group_glob_id['idurl']
-        self.member_sender_id = global_id.MakeGlobalID(idurl=self.member_idurl, key_alias=self.group_queue_alias)
+        self.update_group_key_id(group_key_id)
         self.active_broker_id = None
         self.active_queue_id = None
         self.dead_broker_id = None
@@ -243,9 +263,17 @@ class GroupMember(automat.Automat):
             debug_level=debug_level,
             log_events=log_events,
             log_transitions=log_transitions,
-            publish_events=False,
+            publish_events=publish_events,
             **kwargs
         )
+
+    def update_group_key_id(self, new_group_key_id):
+        self.group_key_id = new_group_key_id
+        self.group_glob_id = global_id.ParseGlobalID(self.group_key_id)
+        self.group_queue_alias = self.group_glob_id['key_alias']
+        self.group_creator_id = self.group_glob_id['customer']
+        self.group_creator_idurl = self.group_glob_id['idurl']
+        self.member_sender_id = global_id.MakeGlobalID(idurl=self.member_idurl, key_alias=self.group_queue_alias)
 
     def to_json(self):
         return {
@@ -288,6 +316,29 @@ class GroupMember(automat.Automat):
         """
         if newstate == 'QUEUE?':
             self.automat('instant')
+        if _Debug:
+            lg.out(_DebugLevel - 2, '%s : [%s]->[%s]' % (self.name, oldstate, newstate))
+        if newstate == 'IN_SYNC!':
+            lg.info('group synchronized : %s' % self.group_key_id)
+            events.send('group-synchronized', data=dict(
+                group_key_id=self.group_key_id,
+                old_state=oldstate,
+                new_state=newstate,
+            ))
+        if newstate not in ['DISCONNECTED', 'IN_SYNC!', ] and oldstate in ['DISCONNECTED', 'IN_SYNC!', ]:
+            lg.info('group connecting : %s' % self.group_key_id)
+            events.send('group-connecting', data=dict(
+                group_key_id=self.group_key_id,
+                old_state=oldstate,
+                new_state=newstate,
+            ))
+        if newstate == 'DISCONNECTED' and oldstate != 'AT_STARTUP':
+            lg.info('group disconnected : %s' % self.group_key_id)
+            events.send('group-disconnected', data=dict(
+                group_key_id=self.group_key_id,
+                old_state=oldstate,
+                new_state=newstate,
+            ))
 
     def A(self, event, *args, **kwargs):
         """
@@ -586,22 +637,12 @@ class GroupMember(automat.Automat):
         Action method.
         """
         self.dht_read_use_cache = True
-        events.send('group-connected', data=dict(
-            group_key_id=self.group_key_id,
-            member_id=self.member_id,
-            queue_id=self.active_queue_id,
-        ))
 
     def doDisconnected(self, *args, **kwargs):
         """
         Action method.
         """
         self.dht_read_use_cache = False
-        events.send('group-disconnected', data=dict(
-            group_key_id=self.group_key_id,
-            member_id=self.member_id,
-            queue_id=self.active_queue_id,
-        ))
 
     def doDeactivate(self, event, *args, **kwargs):
         """

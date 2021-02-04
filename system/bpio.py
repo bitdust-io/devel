@@ -342,9 +342,7 @@ def move_dir_recursive(src, dest, ignore=None):
             ignored = set()
         for f in files:
             if f not in ignored:
-                move_dir_recursive(os.path.join(src, f), 
-                                   os.path.join(dest, f), 
-                                   ignore)
+                move_dir_recursive(os.path.join(src, f), os.path.join(dest, f), ignore=ignore)
     else:
         if os.path.isfile(src):
             shutil.copyfile(src, dest)

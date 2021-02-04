@@ -125,7 +125,7 @@ def do_service_proxy_transport_test(result_defer):
                 reason='proxy_receiver_not_found',
             ))
             return None
-        proxy_receiver_machine = automat.objects().get(proxy_receiver_lookup[0])
+        proxy_receiver_machine = automat.by_index(proxy_receiver_lookup[0])
         if not proxy_receiver_machine:
             lg.warn('disconnected, reason is "proxy_receiver_not_exist"')
             result_defer.callback(dict(
@@ -169,7 +169,7 @@ def do_p2p_connector_test(result_defer):
                 reason='p2p_connector_not_found',
             ))
             return None
-        p2p_connector_machine = automat.objects().get(p2p_connector_lookup[0])
+        p2p_connector_machine = automat.by_index(p2p_connector_lookup[0])
         if not p2p_connector_machine:
             lg.warn('disconnected, reason is "p2p_connector_not_exist"')
             result_defer.callback(dict(
@@ -215,11 +215,11 @@ def connected(wait_timeout=5):
     if driver.is_enabled('service_proxy_transport'):
         p2p_connector_lookup = automat.find('p2p_connector')
         if p2p_connector_lookup:
-            p2p_connector_machine = automat.objects().get(p2p_connector_lookup[0])
+            p2p_connector_machine = automat.by_index(p2p_connector_lookup[0])
             if p2p_connector_machine and p2p_connector_machine.state == 'CONNECTED':
                 proxy_receiver_lookup = automat.find('proxy_receiver')
                 if proxy_receiver_lookup:
-                    proxy_receiver_machine = automat.objects().get(proxy_receiver_lookup[0])
+                    proxy_receiver_machine = automat.by_index(proxy_receiver_lookup[0])
                     if proxy_receiver_machine and proxy_receiver_machine.state == 'LISTEN':
                         # service_proxy_transport() is enabled, proxy_receiver() is listening: all good
                         wait_timeout_defer = Deferred()

@@ -596,8 +596,8 @@ def list_known_idurls(idurl, num_revisions=5, include_revisions=False):
 
 def idurl_to_id(idurl_text):
     """
-    Translates IDURL into gobal id short form:
-        http://somehost.com/alice.xml -> alice@somehost.com
+    Translates raw IDURL string (not ID_URL_FIELD) into global id short form:
+        "http://somehost.com/alice.xml" -> "alice@somehost.com"
     """
     if not idurl_text:
         return idurl_text

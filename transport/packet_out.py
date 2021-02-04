@@ -247,9 +247,9 @@ def search_by_response_packet(newpacket=None, proto=None, host=None, outgoing_co
     if incoming_command is None and newpacket:
         incoming_command = newpacket.Command
     if _Debug:
-        lg.out(_DebugLevel, 'packet_out.search_by_response_packet for incoming [%s/%s/%s]:%s|%s(%s) from [%s://%s] :\n%s' % (
+        lg.out(_DebugLevel, 'packet_out.search_by_response_packet for incoming [%s/%s/%s]:%s|%s(%s) from [%s://%s]' % (
             nameurl.GetName(incoming_owner_idurl), nameurl.GetName(incoming_creator_idurl), nameurl.GetName(incoming_remote_idurl),
-            outgoing_command, incoming_command, incoming_packet_id, proto, host, ('\n'.join([strng.to_text(p.outpacket) for p in queue()]))))
+            outgoing_command, incoming_command, incoming_packet_id, proto, host, ))
     matching_packet_ids = []
     matching_packet_ids.append(incoming_packet_id.lower())
     if incoming_command and incoming_command in [commands.Data(), commands.Retrieve(), ] and id_url.is_cached(incoming_owner_idurl) and incoming_owner_idurl == my_id.getIDURL():
@@ -298,13 +298,13 @@ def search_by_response_packet(newpacket=None, proto=None, host=None, outgoing_co
         if matched:
             result.append(p)
             if _Debug:
-                lg.out(_DebugLevel, 'packet_out.search_by_response_packet        found pending outbox [%s/%s/%s]:%s(%s) cb:%s' % (
+                lg.out(_DebugLevel, 'packet_out.search_by_response_packet        FOUND pending outbox [%s/%s/%s]:%s(%s) cb:%s' % (
                     nameurl.GetName(p.outpacket.OwnerID), nameurl.GetName(p.outpacket.CreatorID),
                     nameurl.GetName(p.outpacket.RemoteID), p.outpacket.Command, p.outpacket.PacketID,
                     list(p.callbacks.keys())))
     if len(result) == 0:
         if _Debug:
-            lg.out(_DebugLevel, 'packet_out.search_by_response_packet        NOT FOUND pending packets in outbox queue matching incoming %r' % newpacket)
+            lg.out(_DebugLevel, 'packet_out.search_by_response_packet        DID NOT FOUND pending packets in outbox queue matching incoming %r' % newpacket)
         # if incoming_command in [commands.Ack(), commands.Fail()] and not incoming_packet_id.lower().startswith('identity:'):
         #     lg.warn('received %s from %s://%s   but no matching outgoing packets found' % (newpacket, proto, host, ))
     return result
@@ -386,7 +386,7 @@ class PacketOut(automat.Automat):
         self.route = route
         self.response_timeout = response_timeout
         if self.route and 'remoteid' in self.route:
-            self.description = self.route['description']
+            self.description = self.route.get('description', self.description)
             self.remote_idurl = id_url.field(self.route['remoteid'])
         if not self.remote_idurl:
             self.remote_idurl = self.outpacket.RemoteID
@@ -475,9 +475,9 @@ class PacketOut(automat.Automat):
         if command not in self.callbacks.keys():
             self.callbacks[command] = []
         self.callbacks[command].append(cb)
-        if _Debug:
-            lg.out(_DebugLevel, '%s : new callback for [%s] added, expecting: %r' % (
-                self, command, list(self.callbacks.keys())))
+        # if _Debug:
+        #     lg.out(_DebugLevel, '%s : new callback for [%s] added, expecting: %r' % (
+        #         self, command, list(self.callbacks.keys())))
 
     def A(self, event, *args, **kwargs):
         #---SENDING---

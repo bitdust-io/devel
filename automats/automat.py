@@ -182,6 +182,13 @@ def find(name):
     return results
 
 
+def by_index(index):
+    """
+    Returns state machine instance with given ``index`` if exists, otherwise returns `None`.
+    """
+    return objects().get(index, None)
+
+
 def communicate(index, event, *args, **kwargs):
     """
     You can pass an event to any state machine - select by its ``index``.
@@ -190,7 +197,7 @@ def communicate(index, event, *args, **kwargs):
     into the state machine and return that defer to outside - to catch result.
     In the action method you must call ``callback`` or ``errback`` to pass result.
     """
-    A = objects().get(index, None)
+    A = by_index(index)
     if not A:
         return fail(Exception('state machine with index %d not exist' % index))
     d = Deferred()
@@ -327,39 +334,36 @@ class Automat(object):
     put ``[post]`` string into the last line of the LABEL shape.
     """
 
-    def __init__(self,
-                 name,
-                 state,
-                 debug_level=_DebugLevel * 2,
-                 log_events=False,
-                 log_transitions=False,
-                 publish_events=False,
-                 **kwargs):
+    def __init__(
+            self,
+            name,
+            state,
+            debug_level=_DebugLevel * 2,
+            log_events=False,
+            log_transitions=False,
+            publish_events=False,
+            publish_event_state_not_changed=False,
+            publish_fast=True,
+            **kwargs
+        ):
         self.id, self.index = create_index(name)
         self.name = name
         self.state = state
         self.debug_level = debug_level
         self.log_events = log_events
         self.log_transitions = log_transitions
-        self.publish_events = publish_events
         self._timers = {}
         self._state_callbacks = {}
         self._callbacks_before_die = {}
         self.init(**kwargs)
         self.startTimers()
         self.register()
+        self.publish_events = publish_events
+        self.publish_event_state_not_changed = publish_event_state_not_changed
+        self.publish_fast = publish_fast
         if _GlobalLogTransitions or ( _Debug and self.log_transitions ):
             self.log(max(_DebugLevel, self.debug_level), 'CREATED AUTOMAT with index %d, total running %d' % (
                 self.index, len(objects())))
-
-    def _on_state_change(self, oldstate, newstate, event_string, *args, **kwargs):
-        from main import events
-        if oldstate != newstate:
-            events.send('%s-state-changed' % self.name.replace('_', '-'), data=dict(
-                newstate=newstate,
-                oldstate=oldstate,
-                event=event_string,
-            ))
 
     def __del__(self):
         """
@@ -415,15 +419,12 @@ class Automat(object):
         Put reference to this automat instance into a global dictionary.
         """
         set_object(self.index, self)
-        if self.publish_events:
-            self.addStateChangedCallback(self._on_state_change)
         return self.index
 
     def unregister(self):
         """
         Removes reference to this instance from global dictionary tracking all state machines.
         """
-        self.removeStateChangedCallback(self._on_state_change)
         clear_object(self.index)
         return True
 
@@ -499,8 +500,6 @@ class Automat(object):
         global _StateChangedCallback
         if _GlobalLogEvents or ( _LogEvents and _Debug and getattr(self, 'log_events', False)):
             if self.log_events or not event_string.startswith('timer-'):
-#                 self.log(max(self.debug_level, _DebugLevel), '%s fired with event "%s", refs=%d' % (
-#                     repr(self), event_string, sys.getrefcount(self)))
                 self.log(max(self.debug_level, _DebugLevel), '%s fired with event "%s"' % (repr(self), event_string, ))
         old_state = self.state
         if self.post:
@@ -529,11 +528,16 @@ class Automat(object):
                         repr(self), event_string, old_state, new_state))
             self.stopTimers()
             self.state_changed(old_state, new_state, event_string, *args, **kwargs)
+            if self.publish_events:
+                self.pushEvent(old_state, new_state, event_string)
             self.startTimers()
             if _StateChangedCallback is not None:
                 _StateChangedCallback(self.index, self.id, self.name, new_state)
         else:
             self.state_not_changed(self.state, event_string, *args, **kwargs)
+            if self.publish_events:
+                if self.publish_event_state_not_changed:
+                    self.pushEvent(old_state, new_state, event_string)
         self.executeStateChangedCallbacks(old_state, new_state, event_string, *args, **kwargs)
         return self
 
@@ -567,7 +571,6 @@ class Automat(object):
                 continue
             self._timers[name] = LoopingCall(self.timerEvent, name, interval)
             self._timers[name].start(interval, self.instant_timers)
-            # self.log(self.debug_level * 4, '%s.startTimers timer %s started' % (self, name))
 
     def restartTimers(self):
         """
@@ -722,3 +725,34 @@ class Automat(object):
                     cb_id, cb = cb_tupl
                     cb(oldstate, newstate, event_string, *args, **kwargs)
         self._callbacks_before_die.clear()
+
+    def publishEvents(self, on_off, publish_event_state_not_changed=None, publish_fast=None):
+        """
+        This can be used to enable "publishing" of all updates of the state machine to external "listeners".
+        """
+        self.publish_events = bool(on_off)
+        if publish_event_state_not_changed is not None:
+            self.publish_event_state_not_changed = publish_event_state_not_changed
+        if publish_fast is not None:
+            self.publish_fast = publish_fast
+
+    def pushEvent(self, oldstate, newstate, event_string, publisher=None):
+        """
+        Can be used to 
+        """
+        state_snapshot = dict(
+            index=self.index,
+            id=self.id,
+            name=self.__class__.__name__,
+            newstate=newstate,
+            oldstate=oldstate,
+            event=event_string,
+        )
+        if publisher is not None:
+            if self.publish_fast:
+                publisher(state_snapshot)
+            else:
+                reactor.callLater(0, publisher, state_snapshot)  # @UndefinedVariable
+            return
+        from main import events
+        events.send('state-changed', data=state_snapshot, fast=self.publish_fast)

@@ -54,13 +54,19 @@ or "producer" who is interested in the particular queue will have to check and h
 a new message broker for given customer.
 
 Customer can create multiple groups&queues but will have only one primary message broker
-and possibly secondary and third brokers in stand by mode. This way there is no concurrency
+and also secondary and third brokers in stand by mode. This way there is no concurrency
 exist in that flow and all group messages just passing by via single host from producers to
 consumers: `producer -> message broker -> consumer`.
 
-To hire a message broker owner, consumer or producer needs to find a new host in the network
-via DHT and share public part of the group key with him. So message broker is not able to
-read messages content but only validate the signatures and verify that participants are authorized.
+The primary message broker also replicates received messages to secondary and third brokers
+so that they also store the history of all messages, but do not participate yet in the flow
+between producers and consumers.
+
+To hire a message broker any of the group members (owner, consumer or producer) must find
+a new host in the network via DHT and share public part of the group key with him.
+
+Message broker is not able to read messages content but only validate the signatures
+and verify that participants are authorized.
 
 Message broker publishes his info on DHT and so all of the group members
 are able to find and connect to it. Secondary and third message broker also will be
@@ -77,6 +83,7 @@ In short group is:
     1. group key created by "group owner" and shared to participants
     2. message queue served by message broker
     3. DHT record holding ID of primary, secondary and third message brokers
+    4. consumers and producers subscribed to the queue and able to send/receive messages
 
 """
 
@@ -95,7 +102,7 @@ import os
 
 #------------------------------------------------------------------------------
 
-from twisted.internet.defer import DeferredList, Deferred, fail
+from twisted.internet.defer import DeferredList
 
 #------------------------------------------------------------------------------
 
@@ -118,6 +125,7 @@ from crypt import my_keys
 from access import key_ring
 
 from userid import global_id
+from userid import id_url
 
 from interface import api
 
@@ -141,12 +149,13 @@ def init():
 def shutdown():
     """
     """
+    unload_groups()
     if _Debug:
         lg.out(_DebugLevel, 'groups.shutdown')
 
 #------------------------------------------------------------------------------
 
-def known_groups():
+def active_groups():
     global _ActiveGroups
     return _ActiveGroups
 
@@ -155,6 +164,7 @@ def known_brokers(customer_id=None, erase_brokers=False):
     global _KnownBrokers
     if not customer_id:
         return _KnownBrokers
+    customer_id = global_id.latest_glob_id(customer_id)
     if erase_brokers:
         return _KnownBrokers.pop(customer_id, None)
     if customer_id not in _KnownBrokers:
@@ -164,7 +174,8 @@ def known_brokers(customer_id=None, erase_brokers=False):
 #------------------------------------------------------------------------------
 
 def is_group_exist(group_key_id):
-    return group_key_id in known_groups()
+    group_key_id = my_keys.latest_key_id(group_key_id)
+    return group_key_id in active_groups()
 
 
 def is_group_stored(group_key_id):
@@ -230,13 +241,14 @@ def create_archive_folder(group_key_id, force_path_id=None):
 
 
 def set_group_info(group_key_id, group_info=None):
+    group_key_id = my_keys.latest_key_id(group_key_id)
     if not group_info:
         group_info = {
             'last_sequence_id': -1,
             'active': False,
             'archive_folder_path': None,
         }
-    known_groups()[group_key_id] = group_info
+    active_groups()[group_key_id] = group_info
     return True
 
 
@@ -275,6 +287,8 @@ def send_group_pub_key_to_suppliers(group_key_id):
 #------------------------------------------------------------------------------
 
 def load_groups():
+    loaded_brokers = 0
+    loaded_groups = 0
     service_dir = settings.ServiceDir('service_private_groups')
     groups_dir = os.path.join(service_dir, 'groups')
     if not os.path.isdir(groups_dir):
@@ -284,43 +298,72 @@ def load_groups():
         bpio._dirs_make(brokers_dir)
     for group_key_id in os.listdir(groups_dir):
         latest_group_key_id = my_keys.latest_key_id(group_key_id)
-        if latest_group_key_id not in known_groups():
-            known_groups()[latest_group_key_id] = {
-                'last_sequence_id': -1,
-                'active': False,
-                'archive_folder_path': None,
-            }
-        group_path = os.path.join(groups_dir, group_key_id)
-        group_info = jsn.loads_text(local_fs.ReadTextFile(group_path))
-        if group_info:
-            if latest_group_key_id != group_key_id:
-                latest_group_path = os.path.join(groups_dir, latest_group_key_id)
-                lg.info('going to rename rotated group key: %r -> %r' % (group_key_id, latest_group_key_id, ))
+        latest_group_path = os.path.join(groups_dir, latest_group_key_id)
+        if latest_group_key_id != group_key_id:
+            lg.info('going to rename rotated group key: %r -> %r' % (group_key_id, latest_group_key_id, ))
+            old_group_path = os.path.join(groups_dir, group_key_id)
+            try:
+                os.rename(old_group_path, latest_group_path)
+            except:
+                lg.exc()
+                continue
+        latest_group_info = jsn.loads_text(local_fs.ReadTextFile(latest_group_path))
+        if not latest_group_info:
+            lg.err('was not able to load group info from %r' % latest_group_path)
+            continue
+        active_groups()[latest_group_key_id] = latest_group_info
+        loaded_groups += 1
+    for customer_id in os.listdir(brokers_dir):
+        latest_customer_id = global_id.latest_glob_id(customer_id)
+        latest_customer_dir = os.path.join(brokers_dir, latest_customer_id)
+        if latest_customer_id != customer_id:
+            lg.info('going to rename rotated customer id: %r -> %r' % (customer_id, latest_customer_id, ))
+            old_customer_dir = os.path.join(brokers_dir, customer_id)
+            try:
+                bpio.move_dir_recursive(old_customer_dir, latest_customer_dir)
+            except:
+                lg.exc()
+                continue
+        for broker_id in os.listdir(latest_customer_dir):
+            if latest_customer_id not in known_brokers():
+                known_brokers()[latest_customer_id] = [None, ] * REQUIRED_BROKERS_COUNT
+            latest_broker_id = global_id.latest_glob_id(broker_id)
+            latest_broker_path = os.path.join(latest_customer_dir, latest_broker_id)
+            if latest_broker_id != broker_id:
+                lg.info('going to rename rotated broker id: %r -> %r' % (broker_id, latest_broker_id, ))
+                old_broker_path = os.path.join(latest_customer_dir, broker_id)
                 try:
-                    os.rename(group_path, latest_group_path)
+                    os.rename(old_broker_path, latest_broker_path)
                 except:
                     lg.exc()
                     continue
-                group_info = jsn.loads_text(local_fs.ReadTextFile(latest_group_path))
-            known_groups()[latest_group_key_id] = group_info
-    for customer_id in os.listdir(brokers_dir):
-        customer_path = os.path.join(brokers_dir, customer_id)
-        for broker_id in os.listdir(customer_path):
-            if customer_id not in known_brokers():
-                known_brokers()[customer_id] = [None, ] * REQUIRED_BROKERS_COUNT
-            if broker_id in known_brokers(customer_id):
-                lg.warn('broker %r already exist' % broker_id)
+            if latest_broker_id in known_brokers(latest_customer_id):
+                lg.warn('broker %r already exist' % latest_broker_id)
                 continue
-            broker_path = os.path.join(customer_path, broker_id)
-            broker_info = jsn.loads_text(local_fs.ReadTextFile(broker_path))
-            known_brokers()[customer_id][int(broker_info['position'])] = broker_id
+            latest_broker_info = jsn.loads_text(local_fs.ReadTextFile(latest_broker_path))
+            if not latest_broker_info:
+                lg.err('was not able to load broker info from %r' % latest_broker_path)
+                continue
+            known_brokers()[latest_customer_id][int(latest_broker_info['position'])] = latest_broker_id
+            loaded_brokers += 1
+    if _Debug:
+        lg.args(_DebugLevel, loaded_groups=loaded_groups, loaded_brokers=loaded_brokers)
 
+
+def unload_groups():
+    known_brokers().clear()
+    active_groups().clear()
+    if _Debug:
+        lg.dbg(_DebugLevel, 'known groups and brokers are erased')
+
+#------------------------------------------------------------------------------
 
 def save_group_info(group_key_id):
+    group_key_id = my_keys.latest_key_id(group_key_id)
     if not is_group_exist(group_key_id):
         lg.warn('group %r is not known' % group_key_id)
         return False
-    group_info = known_groups()[group_key_id]
+    group_info = active_groups()[group_key_id]
     service_dir = settings.ServiceDir('service_private_groups')
     groups_dir = os.path.join(service_dir, 'groups')
     group_info_path = os.path.join(groups_dir, group_key_id)
@@ -359,35 +402,41 @@ def read_group_info(group_key_id):
 #------------------------------------------------------------------------------
 
 def get_last_sequence_id(group_key_id):
+    group_key_id = my_keys.latest_key_id(group_key_id)
     if not is_group_exist(group_key_id):
         return -1
-    return known_groups()[group_key_id]['last_sequence_id']
+    return active_groups()[group_key_id]['last_sequence_id']
 
 
 def set_last_sequence_id(group_key_id, last_sequence_id):
+    group_key_id = my_keys.latest_key_id(group_key_id)
     if not is_group_exist(group_key_id):
         lg.warn('group %r is not known' % group_key_id)
         return False
-    known_groups()[group_key_id]['last_sequence_id'] = last_sequence_id
+    active_groups()[group_key_id]['last_sequence_id'] = last_sequence_id
     return True
 
 
 def get_archive_folder_path(group_key_id):
+    group_key_id = my_keys.latest_key_id(group_key_id)
     if not is_group_exist(group_key_id):
         return None
-    return known_groups()[group_key_id].get('archive_folder_path', None)
+    return active_groups()[group_key_id].get('archive_folder_path', None)
 
 
 def set_archive_folder_path(group_key_id, archive_folder_path):
+    group_key_id = my_keys.latest_key_id(group_key_id)
     if not is_group_exist(group_key_id):
         lg.warn('group %r is not known' % group_key_id)
         return False
-    known_groups()[group_key_id]['archive_folder_path'] = archive_folder_path
+    active_groups()[group_key_id]['archive_folder_path'] = archive_folder_path
     return True
 
 #------------------------------------------------------------------------------
 
 def set_broker(customer_id, broker_id, position=0):
+    customer_id = global_id.latest_glob_id(customer_id)
+    broker_id = global_id.latest_glob_id(broker_id)
     service_dir = settings.ServiceDir('service_private_groups')
     brokers_dir = os.path.join(service_dir, 'brokers')
     customer_dir = os.path.join(brokers_dir, customer_id)
@@ -409,6 +458,7 @@ def set_broker(customer_id, broker_id, position=0):
 
 
 def clear_broker(customer_id, position):
+    customer_id = global_id.latest_glob_id(customer_id)
     service_dir = settings.ServiceDir('service_private_groups')
     brokers_dir = os.path.join(service_dir, 'brokers')
     customer_dir = os.path.join(brokers_dir, customer_id)
@@ -442,6 +492,7 @@ def clear_broker(customer_id, position):
 
 
 def clear_brokers(customer_id):
+    customer_id = global_id.latest_glob_id(customer_id)
     service_dir = settings.ServiceDir('service_private_groups')
     brokers_dir = os.path.join(service_dir, 'brokers')
     customer_dir = os.path.join(brokers_dir, customer_id)
@@ -452,11 +503,68 @@ def clear_brokers(customer_id):
 #------------------------------------------------------------------------------
 
 def set_group_active(group_key_id, value):
+    group_key_id = my_keys.latest_key_id(group_key_id)
     if not is_group_exist(group_key_id):
         lg.warn('group %r is not known' % group_key_id)
         return False
-    old_value = known_groups()[group_key_id]['active']
-    known_groups()[group_key_id]['active'] = value
+    old_value = active_groups()[group_key_id]['active']
+    active_groups()[group_key_id]['active'] = value
     if old_value != value:
         lg.info('group %r "active" status changed: %r -> %r' % (group_key_id, old_value, value, ))
     return True
+
+#------------------------------------------------------------------------------
+
+def on_identity_url_changed(evt):
+    from access import group_member
+    service_dir = settings.ServiceDir('service_private_groups')
+    groups_dir = os.path.join(service_dir, 'groups')
+    brokers_dir = os.path.join(service_dir, 'brokers')
+    old_idurl = id_url.field(evt.data['old_idurl'])
+    new_idurl = id_url.field(evt.data['new_idurl'])
+    active_group_keys = list(active_groups())
+    for group_key_id in active_group_keys:
+        group_creator_idurl = global_id.glob2idurl(group_key_id)
+        if group_creator_idurl == old_idurl:
+            old_group_path = os.path.join(groups_dir, group_key_id)
+            latest_group_key_id = my_keys.latest_key_id(group_key_id)
+            latest_group_path = os.path.join(groups_dir, latest_group_key_id)
+            lg.info('going to rename rotated group key: %r -> %r' % (group_key_id, latest_group_key_id, ))
+            try:
+                os.rename(old_group_path, latest_group_path)
+            except:
+                lg.exc()
+                continue
+            active_groups()[latest_group_key_id] = active_groups().pop(group_key_id)
+            group_member.rotate_active_group_memeber(group_key_id, latest_group_key_id)
+    known_customers = list(known_brokers())
+    for customer_id in known_customers:
+        customer_idurl = global_id.glob2idurl(customer_id)
+        if customer_idurl == old_idurl:
+            latest_customer_id = global_id.idurl2glob(new_idurl)
+            latest_customer_dir = os.path.join(brokers_dir, latest_customer_id)
+            lg.info('going to rename rotated customer id: %r -> %r' % (customer_id, latest_customer_id, ))
+            old_customer_dir = os.path.join(brokers_dir, customer_id)
+            try:
+                bpio.move_dir_recursive(old_customer_dir, latest_customer_dir)
+            except:
+                lg.exc()
+                continue
+            known_brokers()[latest_customer_id] = known_brokers().pop(customer_id)
+            for broker_pos, broker_id in enumerate(known_brokers(latest_customer_id)):
+                broker_idurl = global_id.glob2idurl(broker_id)
+                if broker_idurl == old_idurl:
+                    latest_broker_id = global_id.idurl2glob(new_idurl)
+                    latest_broker_path = os.path.join(latest_customer_dir, latest_broker_id)
+                    lg.info('going to rename rotated broker id: %r -> %r' % (broker_id, latest_broker_id, ))
+                    old_broker_path = os.path.join(latest_customer_dir, broker_id)
+                    try:
+                        os.rename(old_broker_path, latest_broker_path)
+                    except:
+                        lg.exc()
+                        continue
+                    if latest_broker_id in known_brokers(latest_customer_id):
+                        lg.warn('broker %r already exist' % latest_broker_id)
+                        continue
+                    known_brokers()[latest_customer_id][broker_pos] = latest_broker_id
+

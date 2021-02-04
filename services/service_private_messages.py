@@ -105,6 +105,8 @@ class PrivateMessagesService(LocalService):
             events.send('friend-connected', data=dict(
                 idurl=evt.data['idurl'],
                 global_id=evt.data['global_id'],
+                old_state=evt.data['old_state'],
+                new_state=evt.data['new_state'],
             ))
 
     def _on_user_disconnected(self, evt):
@@ -114,4 +116,6 @@ class PrivateMessagesService(LocalService):
             events.send('friend-disconnected', data=dict(
                 idurl=evt.data['idurl'],
                 global_id=evt.data['global_id'],
+                old_state=evt.data['old_state'],
+                new_state=evt.data['new_state'],
             ))

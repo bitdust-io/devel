@@ -364,10 +364,10 @@ class ProxyRouter(automat.Automat):
             if not active_user_sessions:
                 lg.warn('route with %s found but no active sessions found with %s://%s' % (sender_idurl, info.proto, info.host, ))
                 return None, None
-            active_user_session_machine = automat.objects().get(active_user_sessions[0].index, None)
+            active_user_session_machine = automat.by_index(active_user_sessions[0].index)
         if not active_user_session_machine:
             if connection_info.get('index'):
-                active_user_session_machine = automat.objects().get(connection_info['index'], None)
+                active_user_session_machine = automat.by_index(connection_info['index'])
         if not active_user_session_machine:
             lg.warn('route with %s found but no active user session exist' % sender_idurl)
             return None, None
@@ -461,7 +461,7 @@ class ProxyRouter(automat.Automat):
                         'host': info.host,
                         'idurl': user_idurl,
                     }
-                    active_user_session_machine = automat.objects().get(user_connection_info['index'], None)
+                    active_user_session_machine = automat.by_index(user_connection_info['index'])
                     if active_user_session_machine:
                         self.routes[user_idurl.original()]['connection_info'] = user_connection_info
                         active_user_session_machine.addStateChangedCallback(
@@ -491,7 +491,7 @@ class ProxyRouter(automat.Automat):
                 if active_user_session_machine_index is None:
                     active_user_session_machine_index = self.routes.get(user_idurl.to_bin(), {}).get('connection_info', {}).get('index', None)
                 if active_user_session_machine_index is not None:
-                    active_user_session_machine = automat.objects().get(active_user_session_machine_index, None)
+                    active_user_session_machine = automat.by_index(active_user_session_machine_index)
                     if active_user_session_machine is not None:
                         active_user_session_machine.removeStateChangedCallback(callback_id='proxy_router')
                 self.routes.pop(user_idurl.original(), None)
@@ -541,7 +541,7 @@ class ProxyRouter(automat.Automat):
                 'host': info.host,
                 'idurl': receiver_idurl,
             }
-            active_user_session_machine = automat.objects().get(user_connection_info['index'], None)
+            active_user_session_machine = automat.by_index(user_connection_info['index'])
             if active_user_session_machine:
                 if receiver_idurl.original() in self.routes:
                     self.routes[receiver_idurl.original()]['connection_info'] = user_connection_info
@@ -551,7 +551,7 @@ class ProxyRouter(automat.Automat):
                     lg.info('found and remember active connection info (for latest IDURL): %r' % user_connection_info)
         if not active_user_session_machine:
             if connection_info.get('index'):
-                active_user_session_machine = automat.objects().get(connection_info['index'], None)
+                active_user_session_machine = automat.by_index(connection_info['index'])
         if not active_user_session_machine:
             lg.warn('route with %s found but no active user session, fire "routed-session-disconnected" event' % receiver_idurl)
             self.automat('routed-session-disconnected', receiver_idurl)
@@ -913,7 +913,7 @@ class ProxyRouter(automat.Automat):
         if active_user_session_machine_index is None:
             active_user_session_machine_index = ((self.routes.get(idurl.to_bin()) or {}).get('connection_info') or {}).get('index', None)
         if active_user_session_machine_index is not None:
-            active_user_session_machine = automat.objects().get(active_user_session_machine_index, None)
+            active_user_session_machine = automat.by_index(active_user_session_machine_index)
             if active_user_session_machine is not None:
                 active_user_session_machine.removeStateChangedCallback(callback_id='proxy_router')
                 lg.info('removed "proxy_router" callback from active user session %r' % active_user_session_machine)
@@ -1098,9 +1098,9 @@ class ProxyRouter(automat.Automat):
         Will be called first for every outgoing packet.
         When this node A is routing packets for another node B it still must be able to talk to B normally.
         Scenario when packet is routed C -> A -> B is handled in `_on_first_inbox_packet_received()` method.
-        Here is another scenario when node A itself wants to start a new packet towards B - must be no routing in that case. 
+        Here is another scenario when node A itself wants to talk to B normally - must be no routing in that case.
         The gateway will try to use contacts from the "overridden" identity of the node B - but those "overridden" contacts are
-        already pointing to that node A and gateway will try to send a packet to my own host (tn node A) instead.
+        already pointing to that node A and gateway will try to send a packet to my own host (to host A instead of host B).
         This method filters all packets created by me (not routed via me) and addressed to some of the nodes for whom I am
         already doing proxy routing - those will be re-routed directly to B using the real contacts.
         Must return `None` if that packet should be sent in a normal way - when recipient is not present in my active "routes".
@@ -1111,19 +1111,45 @@ class ProxyRouter(automat.Automat):
             return None
         if outpacket.CreatorID != my_id.getIDURL():
             return None
-        receiver_proto, receiver_host = self._get_session_proto_host(outpacket.RemoteID)
+        receiver_idurl = outpacket.RemoteID
+        receiver_proto, receiver_host = self._get_session_proto_host(receiver_idurl)
         if not receiver_proto or not receiver_host:
             return None
-        if _Debug:
-            lg.args(_DebugLevel, state=self.state, outpacket=outpacket, wide=wide, route=route)
+#         route_info = self.routes.get(receiver_idurl.original(), None)
+#         if not route_info:
+#             route_info = self.routes.get(receiver_idurl.to_bin(), None)
+#         if not route_info or 'publickey' not in route_info:
+#             lg.warn('found proto & host in the current routes for %r but did not found public key' % receiver_idurl)
+#             return None
+#         raw_data, pkt_out = self._do_send_relay_packet(
+#             relay_cmd=commands.RelayIn(),
+#             inbox_packet=outpacket,
+#             data=outpacket.Serialize(),
+#             publickey=route_info['publickey'],
+#             receiver_idurl=receiver_idurl,
+#             receiver_proto=receiver_proto,
+#             receiver_host=receiver_host,
+#             failed_callback=lambda p_out, msg: self._on_routed_in_packet_failed(p_out, msg, outpacket, None, receiver_idurl)
+#         )
+#         if _Debug:
+#             lg.out(_DebugLevel, '<<<Route-DIRECT %s %s:%s' % (
+#                 str(outpacket), strng.to_text(receiver_proto), strng.to_text(receiver_host),))
+#             lg.out(_DebugLevel, '           sent to %s://%s with %d bytes in %s' % (
+#                 strng.to_text(receiver_proto), strng.to_text(receiver_host), len(raw_data), pkt_out))
+#         if _Debug:
+#             lg.args(_DebugLevel, state=self.state, outpacket=outpacket, wide=wide, route=route, pkt_out=pkt_out, raw=len(raw_data))
+#         del raw_data
+#         return pkt_out
+
+        #--- sending "direct" packet to the node known to be one of my routes
         route = {
             'packet': outpacket,
-            'remoteid': outpacket.RemoteID,
-            'description': 'direct_%s[%s]_%s' % (outpacket.Command, outpacket.PacketID, nameurl.GetName(outpacket.RemoteID)),
+            'remoteid': receiver_idurl,
+            'description': 'direct_%s[%s]_%s' % (outpacket.Command, outpacket.PacketID, nameurl.GetName(receiver_idurl)),
             'proto': receiver_proto,
             'host': receiver_host,
         }
-        pout = packet_out.create(
+        pkt_out = packet_out.create(
             outpacket=outpacket,
             wide=wide,
             callbacks=callbacks,
@@ -1137,10 +1163,13 @@ class ProxyRouter(automat.Automat):
                 outpacket.Command, outpacket.PacketID,
                 global_id.UrlToGlobalID(outpacket.OwnerID),
                 global_id.UrlToGlobalID(outpacket.CreatorID),
-                global_id.UrlToGlobalID(outpacket.RemoteID),
+                global_id.UrlToGlobalID(receiver_idurl),
                 receiver_proto, receiver_host,
             ), log_name='packet', showtime=True)
-        return pout
+        if _Debug:
+            lg.args(_DebugLevel, state=self.state, outpacket=outpacket, wide=wide, route=route, pkt_out=pkt_out)
+        return pkt_out
+
 
     def _on_file_sending_filter(self, remote_idurl, proto, host, filename, description, pkt_out):
         if id_url.to_bin(remote_idurl) == my_id.getIDURL().to_bin():

@@ -282,7 +282,7 @@ def MaximumIdentitySources():
     You do not need to mirror your identity too much, this is just to keep users
     consuming sufficient amount of network resources.
     """
-    return 10
+    return 6
 
 
 def DefaultPrivateKeySize():

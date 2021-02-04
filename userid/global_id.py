@@ -467,3 +467,8 @@ def GetGlobalQueueKeyID(queue_id):
     queue_alias, _, owner_id = queue_alias_owner_id.partition('&')
     key_id = MakeGlobalKeyID(queue_alias, owner_id)
     return key_id
+
+#------------------------------------------------------------------------------
+
+def latest_glob_id(glob_id):
+    return  glob2idurl(glob_id, as_field=True).to_id()

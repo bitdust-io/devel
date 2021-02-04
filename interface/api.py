@@ -101,7 +101,7 @@ def OK(result='', message=None, status='OK', **kwargs):
             'process_health',
             'network_connected',
         ] or _DebugLevel > 10:
-            lg.out(_DebugLevel, 'api.%s return OK(%s)' % (api_method, sample[:150]))
+            lg.out(_DebugLevel, 'api.%s return OK(%s)' % (api_method, sample[:80]))
     if _APILogFileEnabled is None:
         _APILogFileEnabled = config.conf().getBool('logs/api-enabled')
     if _APILogFileEnabled:
@@ -1567,7 +1567,7 @@ def files_uploads(include_running=True, include_pending=True):
     return RESULT(r)
 
 
-def file_upload_start(local_path, remote_path, wait_result=False, wait_finish=False, open_share=False):
+def file_upload_start(local_path, remote_path, wait_result=False, wait_finish=False, open_share=False, publish_events=False):
     """
     Starts a new file or folder (including all sub-folders and files) upload from `local_path` on your disk drive
     to the virtual location `remote_path` in the catalog. New "version" of the data will be created for given catalog item
@@ -1619,7 +1619,10 @@ def file_upload_start(local_path, remote_path, wait_result=False, wait_finish=Fa
         active_share = shared_access_coordinator.get_active_share(keyID)
         if not active_share:
             active_share = shared_access_coordinator.SharedAccessCoordinator(
-                keyID, log_events=True, publish_events=False, )
+                key_id=keyID,
+                log_events=True,
+                publish_events=publish_events,
+            )
         if active_share.state != 'CONNECTED':
             active_share.automat('restart')
     if wait_result:
@@ -1792,7 +1795,7 @@ def files_downloads():
     } for r in restore_monitor.GetWorkingObjects()])
 
 
-def file_download_start(remote_path, destination_path=None, wait_result=False, open_share=True):
+def file_download_start(remote_path, destination_path=None, wait_result=False, open_share=True, publish_events=False):
     """
     Download data from remote suppliers to your local machine.
 
@@ -1978,7 +1981,7 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, o
             active_share = shared_access_coordinator.SharedAccessCoordinator(
                 key_id=key_id,
                 log_events=True,
-                publish_events=False,
+                publish_events=publish_events,
             )
             if _Debug:
                 lg.out(_DebugLevel, 'api.download_start._open_share opened new share : %s' % active_share.key_id)
@@ -2072,7 +2075,7 @@ def file_download_stop(remote_path):
 
 def file_explore(local_path):
     """
-    Useful method to be executed from the UI right after downloading is finished.
+    Useful method to be executed from inside of the UI application right after downloading is finished.
 
     It will open default OS file manager and display
     given `local_path` to the user so he can do something with the file.
@@ -2089,7 +2092,7 @@ def file_explore(local_path):
     if not bpio.pathExist(locpath):
         return ERROR('local path not exist')
     misc.ExplorePathInOS(locpath)
-    return OK()
+    return OK(message='system file explorer opened')
 
 #------------------------------------------------------------------------------
 
@@ -2233,7 +2236,7 @@ def share_delete(key_id):
     return OK(this_share.to_json(), message='share %r deleted' % key_id, )
 
 
-def share_grant(key_id, trusted_user_id, timeout=30):
+def share_grant(key_id, trusted_user_id, timeout=30, publish_events=True):
     """
     Provide access to given share identified by `key_id` to another trusted user.
 
@@ -2267,7 +2270,7 @@ def share_grant(key_id, trusted_user_id, timeout=30):
     ret = Deferred()
 
     def _on_shared_access_donor_success(result):
-        ret.callback(OK(api_method='share_grant') if result else ERROR('share grant failed', api_method='share_grant'))
+        ret.callback(OK(message='access granted', api_method='share_grant') if result else ERROR('grant access failed', api_method='share_grant'))
         return None
 
     def _on_shared_access_donor_failed(err):
@@ -2278,12 +2281,12 @@ def share_grant(key_id, trusted_user_id, timeout=30):
     d.addCallback(_on_shared_access_donor_success)
     d.addErrback(_on_shared_access_donor_failed)
     d.addTimeout(timeout, clock=reactor)
-    shared_access_donor_machine = shared_access_donor.SharedAccessDonor(log_events=True, publish_events=False, )
+    shared_access_donor_machine = shared_access_donor.SharedAccessDonor(log_events=True, publish_events=publish_events, )
     shared_access_donor_machine.automat('init', trusted_idurl=remote_idurl, key_id=key_id, result_defer=d)
     return ret
 
 
-def share_open(key_id):
+def share_open(key_id, publish_events=False):
     """
     Activates given share and initiate required connections to remote suppliers to make possible to upload and download shared files.
 
@@ -2303,7 +2306,11 @@ def share_open(key_id):
     new_share = False
     if not active_share:
         new_share = True
-        active_share = shared_access_coordinator.SharedAccessCoordinator(key_id, log_events=True, publish_events=False, )
+        active_share = shared_access_coordinator.SharedAccessCoordinator(
+            key_id=key_id,
+            log_events=True,
+            publish_events=publish_events,
+        )
     ret = Deferred()
 
     def _on_shared_access_coordinator_state_changed(oldstate, newstate, event_string, *args, **kwargs):
@@ -2312,9 +2319,9 @@ def share_open(key_id):
         if newstate == 'CONNECTED' and oldstate != newstate:
             active_share.removeStateChangedCallback(_on_shared_access_coordinator_state_changed)
             if new_share:
-                ret.callback(OK(active_share.to_json(), 'share %r opened' % key_id, api_method='share_open'))
+                ret.callback(OK(active_share.to_json(), message='share %r opened' % key_id, api_method='share_open'))
             else:
-                ret.callback(OK(active_share.to_json(), 'share %r refreshed' % key_id, api_method='share_open'))
+                ret.callback(OK(active_share.to_json(), message='share %r refreshed' % key_id, api_method='share_open'))
         if newstate == 'DISCONNECTED' and oldstate != newstate:
             active_share.removeStateChangedCallback(_on_shared_access_coordinator_state_changed)
             ret.callback(ERROR('share %r disconnected' % key_id, details=active_share.to_json(), api_method='share_open'))
@@ -2345,7 +2352,7 @@ def share_close(key_id):
     if not this_share:
         return ERROR('share %r not opened' % key_id)
     this_share.automat('shutdown')
-    return OK(this_share.to_json(), 'share %r closed' % key_id, )
+    return OK(this_share.to_json(), message='share %r closed' % key_id, )
 
 
 def share_history():
@@ -2423,7 +2430,7 @@ def groups_list(only_active=False, include_mine=True, include_granted=True):
             result.update(this_group_member.to_json())
             results.append(result)
             continue
-        offline_group_info = groups.known_groups().get(group_key_id)
+        offline_group_info = groups.active_groups().get(group_key_id)
         if offline_group_info:
             result.update(offline_group_info)
             result['state'] = 'OFFLINE'
@@ -2513,7 +2520,7 @@ def group_info(group_key_id):
     if this_group_member:
         response.update(this_group_member.to_json())
         return OK(response)
-    offline_group_info = groups.known_groups().get(group_key_id)
+    offline_group_info = groups.active_groups().get(group_key_id)
     if offline_group_info:
         response.update(offline_group_info)
         response['state'] = 'OFFLINE'
@@ -2528,7 +2535,7 @@ def group_info(group_key_id):
     return OK(response)
 
 
-def group_join(group_key_id):
+def group_join(group_key_id, publish_events=False):
     """
     Activates given messaging group to be able to receive streamed messages or send a new message to the group.
 
@@ -2558,10 +2565,10 @@ def group_join(group_key_id):
         if newstate == 'IN_SYNC!' and oldstate != newstate:
             if existing_group_members:
                 existing_group_members[0].removeStateChangedCallback(_on_group_member_state_changed)
-                ret.callback(OK(existing_group_members[0].to_json(), 'group %r refreshed' % group_key_id, api_method='group_join'))
+                ret.callback(OK(existing_group_members[0].to_json(), message='group %r refreshed' % group_key_id, api_method='group_join'))
             else:
                 started_group_members[0].removeStateChangedCallback(_on_group_member_state_changed)
-                ret.callback(OK(started_group_members[0].to_json(), 'group %r connected' % group_key_id, api_method='group_join'))
+                ret.callback(OK(started_group_members[0].to_json(), message='group %r connected' % group_key_id, api_method='group_join'))
         if newstate == 'DISCONNECTED' and oldstate != newstate and oldstate != 'AT_STARTUP':
             if existing_group_members:
                 existing_group_members[0].removeStateChangedCallback(_on_group_member_state_changed)
@@ -2579,11 +2586,14 @@ def group_join(group_key_id):
         if existing_group_member:
             existing_group_members.append(existing_group_member)
         else:
-            existing_group_member = group_member.GroupMember(group_key_id)
+            existing_group_member = group_member.GroupMember(
+                group_key_id=group_key_id,
+                publish_events=publish_events,
+            )
             started_group_members.append(existing_group_member)
         if existing_group_member.state in ['DHT_READ?', 'BROKERS?', 'QUEUE?', 'IN_SYNC!', ]:
             connecting_word = 'active' if existing_group_member.state == 'IN_SYNC!' else 'connecting'
-            ret.callback(OK(existing_group_member.to_json(), 'group %r already %s' % (group_key_id, connecting_word, ), api_method='group_join'))
+            ret.callback(OK(existing_group_member.to_json(), message='group %r already %s' % (group_key_id, connecting_word, ), api_method='group_join'))
             return None
         existing_group_member.addStateChangedCallback(_on_group_member_state_changed)
         if started_group_members:
@@ -2639,7 +2649,7 @@ def group_leave(group_key_id, erase_key=False):
     return OK(message='group %r deactivated' % group_key_id)
 
 
-def group_share(group_key_id, trusted_user_id, timeout=30):
+def group_share(group_key_id, trusted_user_id, timeout=30, publish_events=False):
     """
     Provide access to given group identified by `group_key_id` to another trusted user.
 
@@ -2671,7 +2681,7 @@ def group_share(group_key_id, trusted_user_id, timeout=30):
     ret = Deferred()
 
     def _on_group_access_donor_success(result):
-        ret.callback(OK( api_method='share_grant') if result else ERROR('share grant failed', api_method='group_share'))
+        ret.callback(OK(message='access granted', api_method='share_grant') if result else ERROR('grant access failed', api_method='group_share'))
         return None
 
     def _on_group_access_donor_failed(err):
@@ -2684,7 +2694,7 @@ def group_share(group_key_id, trusted_user_id, timeout=30):
     d.addCallback(_on_group_access_donor_success)
     d.addErrback(_on_group_access_donor_failed)
     d.addTimeout(timeout, clock=reactor)
-    group_access_donor_machine = group_access_donor.GroupAccessDonor(log_events=True, publish_events=False)
+    group_access_donor_machine = group_access_donor.GroupAccessDonor(log_events=True, publish_events=publish_events)
     group_access_donor_machine.automat('init', trusted_idurl=remote_idurl, group_key_id=group_key_id, result_defer=d)
     return ret
 
@@ -2708,15 +2718,16 @@ def friends_list():
         glob_id = global_id.ParseIDURL(idurl)
         contact_status = 'offline'
         contact_state = 'OFFLINE'
+        # contact_index = None
+        # contact_publish_events = None
         if driver.is_on('service_identity_propagate'):
             from p2p import online_status
-            if online_status.isKnown(idurl):
-                contact_state = online_status.getCurrentState(idurl)
-                contact_status = online_status.getStatusLabel(idurl)
-            # state_machine_inst = contact_status.getInstance(idurl)
-            # if state_machine_inst:
-            #     contact_status_label = contact_status.stateToLabel(state_machine_inst.state)
-            #     contact_state = state_machine_inst.state
+            state_machine_inst = online_status.getInstance(idurl, autocreate=False)
+            if state_machine_inst:
+                contact_state = state_machine_inst.state
+                contact_status = online_status.stateToLabel(state_machine_inst.state)
+                # contact_index = state_machine_inst.index
+                # contact_publish_events = state_machine_inst.publish_events
         result.append({
             'idurl': idurl,
             'global_id': glob_id['customer'],
@@ -2725,6 +2736,8 @@ def friends_list():
             'alias': alias,
             'contact_status': contact_status,
             'contact_state': contact_state,
+            # 'contact_index': contact_index,
+            # 'contact_events': contact_publish_events,
         })
     return RESULT(result)
 
@@ -2760,6 +2773,9 @@ def friend_add(trusted_user_id, alias='', share_person_key=True):
     ret = Deferred()
 
     def _add(idurl, result_defer):
+        if idurl == my_id.getIDURL():
+            result_defer.callback(ERROR('can not add my own identity as a new friend', api_method='friend_add'))
+            return
         added = False
         if not contactsdb.is_correspondent(idurl):
             contactsdb.add_correspondent(idurl, alias)
@@ -2878,7 +2894,7 @@ def user_ping(user_id, timeout=15, retries=2):
         channel='api_user_ping',
         keep_alive=False,
     )
-    d.addCallback(lambda ok: ret.callback(OK(ok or 'connected', api_method='user_ping')))
+    d.addCallback(lambda ok: ret.callback(OK(message=(ok or 'connected'), api_method='user_ping')))
     d.addErrback(lambda err: ret.callback(ERROR(err, api_method='user_ping')))
     return ret
 
@@ -3183,6 +3199,8 @@ def message_conversations_list(message_types=[], offset=0, limit=100):
         conv['key_id'] = ''
         conv['label'] = ''
         conv['state'] = 'OFFLINE'
+        conv['index'] = None
+        conv['events'] = None
         if conv['type'] == 'private_message':
             local_key_id1, _, local_key_id2 = conv['conversation_id'].partition('&')
             try:
@@ -3218,7 +3236,11 @@ def message_conversations_list(message_types=[], offset=0, limit=100):
             else:
                 conv['label'] = conv_key_id
             if user_idurl:
-                conv['state'] = online_status.getCurrentState(user_idurl) or 'OFFLINE'
+                on_st = online_status.getInstance(user_idurl, autocreate=False)
+                if on_st:
+                    conv['state'] = on_st.state or 'OFFLINE'
+                    conv['index'] = on_st.index
+                    conv['events'] = on_st.publish_events
         elif conv['type'] == 'group_message' or conv['type'] == 'personal_message':
             local_key_id, _, _ = conv['conversation_id'].partition('&')
             try:
@@ -3235,6 +3257,8 @@ def message_conversations_list(message_types=[], offset=0, limit=100):
             gm = group_member.get_active_group_member(key_id)
             if gm:
                 conv['state'] = gm.state or 'OFFLINE'
+                conv['index'] = gm.index
+                conv['events'] = gm.publish_events
         if conv['key_id']:
             conversations.append(conv)
         else:
@@ -3292,7 +3316,7 @@ def message_send(recipient_id, data, ping_timeout=30, message_ack_timeout=15):
         from stream import message_producer
         ret = Deferred()
         result = message_producer.push_message(recipient_id, data)
-        result.addCallback(lambda ok: ret.callback(OK(api_method='message_send')))
+        result.addCallback(lambda ok: ret.callback(OK(message='message sent', api_method='message_send')))
         result.addErrback(lambda err: ret.callback(ERROR(err, api_method='message_send')))
         return ret
     if _Debug:
@@ -3308,9 +3332,13 @@ def message_send(recipient_id, data, ping_timeout=30, message_ack_timeout=15):
         packet_id='private_%s' % packetid.UniqueID(),
     )
     ret = Deferred()
-    result.addCallback(lambda packet: ret.callback(OK({
-        'consumed': strng.to_text(packet.Payload) != 'unread',
-    }, api_method='message_send')))
+    result.addCallback(lambda packet: ret.callback(OK(
+        result={
+            'consumed': bool(strng.to_text(packet.Payload) != 'unread'),
+        },
+        message='message sent',
+        api_method='message_send',
+    )))
     result.addErrback(lambda err: ret.callback(ERROR(err, api_method='message_send')))
     return ret
 
@@ -3347,7 +3375,7 @@ def message_send_group(group_key_id, data):
     if _Debug:
         lg.out(_DebugLevel, 'api.message_send_group to %r' % group_key_id)
     this_group_member.automat('push-message', json_payload=data)
-    return OK()
+    return OK(message='group message sent')
 
 
 # def message_send_broadcast(payload):
@@ -3593,9 +3621,9 @@ def supplier_change(position=None, supplier_id=None, new_supplier_id=None):
         fire_hire.AddSupplierToFire(supplier_idurl)
         fire_hire.A('restart')
         if new_supplier_idurl is not None:
-            ret.callback(OK('supplier %r will be replaced by %r' % (supplier_idurl, new_supplier_idurl), api_method='supplier_change'))
+            ret.callback(OK(message='supplier %r will be replaced by %r' % (supplier_idurl, new_supplier_idurl), api_method='supplier_change'))
         else:
-            ret.callback(OK('supplier %r will be replaced by a new random peer' % supplier_idurl, api_method='supplier_change'))
+            ret.callback(OK(message='supplier %r will be replaced by a new random peer' % supplier_idurl, api_method='supplier_change'))
         return None
 
     if new_supplier_id is None:
@@ -3626,7 +3654,7 @@ def suppliers_ping():
         return ERROR('service_customer() is not started')
     from p2p import propagate
     propagate.SlowSendSuppliers(0.1)
-    return OK('sent requests to all suppliers')
+    return OK(message='sent requests to all suppliers')
 
 
 def suppliers_dht_lookup(customer_id=None):
@@ -3769,7 +3797,7 @@ def customer_reject(customer_id, erase_customer_key=True):
     ))
     # restart local tester
     local_tester.TestUpdateCustomers()
-    return OK('customer %r rejected, %r bytes were freed' % (customer_idurl, consumed_by_cutomer))
+    return OK(message='customer %r rejected, %r bytes freed' % (customer_idurl, consumed_by_cutomer))
 
 
 def customers_ping():
@@ -3786,7 +3814,7 @@ def customers_ping():
         return ERROR('service_supplier() is not started')
     from p2p import propagate
     propagate.SlowSendCustomers(0.1)
-    return OK('sent requests to all customers')
+    return OK(message='sent requests to all customers')
 
 #------------------------------------------------------------------------------
 
@@ -3905,7 +3933,7 @@ def service_info(service_name):
         'enabled': svc.enabled(),
         'installed': svc.installed(),
         'config_path': svc.config_path,
-        'depends': svc.dependent_on()
+        'depends': svc.dependent_on(),
     })
 
 
@@ -3942,7 +3970,7 @@ def service_start(service_name):
         lg.warn('service %r already enabled' % service_name)
         return ERROR('service %s already enabled' % service_name)
     config.conf().setBool(svc.config_path, True)
-    return OK('service %s switched on' % service_name)
+    return OK(message='service %s switched on' % service_name)
 
 
 def service_stop(service_name):
@@ -3978,7 +4006,7 @@ def service_stop(service_name):
         lg.warn('service %r already disabled' % service_name)
         return ERROR('service %s already disabled' % service_name)
     config.conf().setBool(svc.config_path, False)
-    return OK('service %s switched off' % service_name)
+    return OK(message='service %s switched off' % service_name)
 
 
 def service_restart(service_name, wait_timeout=10):
@@ -4384,7 +4412,10 @@ def event_send(event_id, data=None):
     evt = events.send(event_id, data=json_payload)
     if _Debug:
         lg.out(_DebugLevel, 'api.event_send %r was fired to local node' % event_id)
-    return OK({'event_id': event_id, 'created': evt.created, })
+    return OK({
+        'event_id': event_id,
+        'created': evt.created,
+    })
 
 
 def event_listen(consumer_callback_id):
@@ -4460,7 +4491,7 @@ def network_reconnect():
     if _Debug:
         lg.out(_DebugLevel, 'api.network_reconnect')
     network_connector.A('reconnect')
-    return OK('reconnected')
+    return OK(message='reconnected')
 
 
 def network_connected(wait_timeout=5):
@@ -4521,12 +4552,12 @@ def network_status(suppliers=False, customers=False, cache=False, tcp=False, udp
     }
     p2p_connector_lookup = automat.find('p2p_connector')
     if p2p_connector_lookup:
-        p2p_connector_machine = automat.objects().get(p2p_connector_lookup[0])
+        p2p_connector_machine = automat.by_index(p2p_connector_lookup[0])
         if p2p_connector_machine:
             r['p2p_connector_state'] = p2p_connector_machine.state
     network_connector_lookup = automat.find('network_connector')
     if network_connector_lookup:
-        network_connector_machine = automat.objects().get(network_connector_lookup[0])
+        network_connector_machine = automat.by_index(network_connector_lookup[0])
         if network_connector_machine:
             r['network_connector_state'] = network_connector_machine.state
     if my_id.isLocalIdentityReady():
@@ -5031,13 +5062,56 @@ def automats_list():
     from automats import automat
     result = [{
         'index': a.index,
-        'name': a.name,
+        'id': a.id,
+        'name': a.__class__.__name__,
         'state': a.state,
         'repr': repr(a),
         'timers': (','.join(list(a.getTimers().keys()))),
+        'events': a.publish_events,
     } for a in automat.objects().values()]
     if _Debug:
         lg.out(_DebugLevel, 'api.automats_list responded with %d items' % len(result))
     return RESULT(result)
+
+
+def automat_events_start(index, state_unchanged=False):
+    """
+    Can be used to capture any state machine updates in real-time: state transitions, incoming events.
+
+    Changes will be published as "events" and can be captured with `event_listen()` API method.
+
+    Positive value of parameter `state_unchanged` will enable all updates from the state machine - 
+    even when incoming automat event did not changed its state it will be published.
+
+    ###### HTTP
+        curl -X POST 'localhost:8180/automat/12345/events/start/v1' -d '{"state_unchanged": 1}
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "automat_events_start", "kwargs": {"index": 12345, "state_unchanged": 1} }');
+    """
+    from automats import automat
+    inst = automat.by_index(int(index))
+    if not inst:
+        return ERROR('state machine was not found')
+    inst.publishEvents(True, publish_event_state_not_changed=state_unchanged)
+    return OK(message='started publishing events from state machine %r' % inst)
+
+
+def automat_events_stop(index):
+    """
+    Turns off publishing of the state machine updates as events.
+
+    ###### HTTP
+        curl -X POST 'localhost:8180/automat/12345/events/stop/v1'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "automat_events_stop", "kwargs": {} }');
+    """
+    from automats import automat
+    inst = automat.by_index(int(index))
+    if not inst:
+        return ERROR('state machine was not found')
+    inst.publishEvents(False, publish_event_state_not_changed=False)
+    return OK(message='stopped publishing events from state machine %r' % inst)
 
 #------------------------------------------------------------------------------

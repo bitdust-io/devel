@@ -687,8 +687,8 @@ def process_raw_list_files(supplier_num, list_files_text_body, customer_idurl=No
         backup_control.Save()
     for query_key in query_results:
         if query_key in _ListFilesQueryCallbacks:
-            cb = _ListFilesQueryCallbacks[query_key]
-            cb(supplier_num, newfiles)
+            for cb in _ListFilesQueryCallbacks[query_key]:
+                cb(supplier_num, newfiles)
     query_results.clear()
     # finally return list of items which are too old but stored on suppliers machines
     return remote_files_changed, backups2remove, paths2remove, missed_backups
@@ -767,7 +767,6 @@ def ReadLocalFiles():
         return False
 
     all_keys = os.listdir(settings.getLocalBackupsDir())
-    from crypt import my_keys
     for key_id in all_keys:
         latest_key_id = my_keys.latest_key_id(key_id)
         if key_id != latest_key_id:
@@ -776,10 +775,12 @@ def ReadLocalFiles():
             if os.path.isdir(old_path):
                 try:
                     bpio.move_dir_recursive(old_path, new_path)
-                    lg.warn('copied %r into %r' % (old_path, new_path, ))
+                    if _Debug:
+                        lg.dbg(_DebugLevel, 'copied %r into %r' % (old_path, new_path, ))
                     if os.path.exists(old_path):
                         bpio._dir_remove(old_path)
-                        lg.warn('removed %r' % old_path)
+                        if _Debug:
+                            lg.dbg(_DebugLevel,'removed %r' % old_path)
                 except:
                     lg.exc()
         backup_path = os.path.join(settings.getLocalBackupsDir(), latest_key_id)
@@ -1657,18 +1658,22 @@ def SetLocalFilesNotifyCallback(callback):
 
 def add_list_files_query_callback(customer_idurl, query_path, callback_method):
     global _ListFilesQueryCallbacks
-    if (customer_idurl, query_path) in _ListFilesQueryCallbacks:
-        raise Exception('callback for query %r : %r already exist')
-    _ListFilesQueryCallbacks[(customer_idurl, query_path)] = callback_method
+    if (customer_idurl, query_path) not in _ListFilesQueryCallbacks:
+        _ListFilesQueryCallbacks[(customer_idurl, query_path)] = []
+    _ListFilesQueryCallbacks[(customer_idurl, query_path)].append(callback_method)
     if _Debug:
         lg.args(_DebugLevel, customer_idurl=customer_idurl, query_path=query_path, active_callbacks=len(_ListFilesQueryCallbacks))
 
 
-def remove_list_files_query_callback(customer_idurl, query_path):
+def remove_list_files_query_callback(customer_idurl, query_path, callback_method):
     global _ListFilesQueryCallbacks
     if (customer_idurl, query_path) not in _ListFilesQueryCallbacks:
-        raise Exception('callback for query %r : %r not exist')
-    _ListFilesQueryCallbacks.pop((customer_idurl, query_path))
+        raise Exception('callbacks for query %r : %r are not exist' % (customer_idurl, query_path, ))
+    if callback_method not in _ListFilesQueryCallbacks[(customer_idurl, query_path)]:
+        raise Exception('callback %r for query %r : %r not exist' % (callback_method, customer_idurl, query_path, ))
+    _ListFilesQueryCallbacks[(customer_idurl, query_path)].remove(callback_method)
+    if len(_ListFilesQueryCallbacks[(customer_idurl, query_path)]) == 0:
+        _ListFilesQueryCallbacks.pop((customer_idurl, query_path))
     if _Debug:
         lg.args(_DebugLevel, customer_idurl=customer_idurl, query_path=query_path, active_callbacks=len(_ListFilesQueryCallbacks))
 

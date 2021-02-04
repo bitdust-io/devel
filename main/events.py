@@ -195,12 +195,15 @@ def dispatch(evt):
     return handled
 
 
-def send(event_id, data=None, created=None):
+def send(event_id, data=None, created=None, fast=False):
     """
     """
     evt = Event(event_id, data=data, created=created)
-    # reactor.callWhenRunning(dispatch, evt)  # @UndefinedVariable
-    reactor.callLater(0, dispatch, evt)  # @UndefinedVariable
+    if fast:
+        dispatch(evt)
+    else:
+        # reactor.callWhenRunning(dispatch, evt)  # @UndefinedVariable
+        reactor.callLater(0, dispatch, evt)  # @UndefinedVariable
     return evt
 
 #------------------------------------------------------------------------------
