@@ -679,9 +679,9 @@ class ID_URL_FIELD(object):
             if caller_method.count('lambda') or caller_method.startswith('_'):
                 caller_method = sys._getframe(1).f_back.f_code.co_name
             if my_pub_key is None:
-                exc = KeyError('unknown idurl: %r' % self.current)
+                exc = KeyError('unknown idurl %r in %s.%s' % (self.current, caller_modul, caller_method, ))
             else:
-                exc = KeyError('unknown idurl: %r' % idurl.current)
+                exc = KeyError('unknown idurl %r in %s.%s' % (idurl.current, caller_modul, caller_method, ))
             lg.exc(msg='called from %s.%s()' % (caller_modul, caller_method), exc_value=exc)
             raise exc
 
@@ -723,9 +723,9 @@ class ID_URL_FIELD(object):
             if caller_method.count('lambda') or caller_method.startswith('_'):
                 caller_method = sys._getframe(1).f_back.f_code.co_name
             if my_pub_key is None:
-                exc = KeyError('unknown idurl: %r' % self.current)
+                exc = KeyError('unknown idurl %r in %s.%s' % (self.current, caller_modul, caller_method, ))
             else:
-                exc = KeyError('unknown idurl: %r' % idurl.current)
+                exc = KeyError('unknown idurl %r in %s.%s' % (idurl.current, caller_modul, caller_method, ))
             lg.exc(msg='called from %s.%s()' % (caller_modul, caller_method), exc_value=exc)
             raise exc
 
@@ -846,7 +846,7 @@ class ID_URL_FIELD(object):
             caller_modul = os.path.basename(caller_code.co_filename).replace('.py', '')
             if caller_method.count('lambda') or caller_method.startswith('_'):
                 caller_method = sys._getframe(1).f_back.f_code.co_name
-            exc = KeyError('unknown idurl: %r' % self.current)
+            exc = KeyError('unknown idurl %r in %s.%s' % (self.current, caller_modul, caller_method, ))
             lg.exc(msg='called from %s.%s()' % (caller_modul, caller_method), exc_value=exc)
             raise exc
         pub_key = _KnownIDURLs[self.current]

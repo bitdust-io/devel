@@ -355,9 +355,9 @@ class ProxyRouter(automat.Automat):
             if _Debug:
                 lg.dbg(_DebugLevel, 'route with %s was not found' % sender_idurl)
             return None, None
-        connection_info = route_info.get('connection_info', {})
+        connection_info = route_info.get('connection_info') or {}
         active_user_session_machine = None
-        if info is not None and not connection_info or not connection_info.get('index'):
+        if (info is not None and not connection_info) or not connection_info.get('index'):
             active_user_sessions = gateway.find_active_session(info.proto, idurl=sender_idurl.original())
             if not active_user_sessions:
                 active_user_sessions = gateway.find_active_session(info.proto, idurl=sender_idurl.to_bin())
