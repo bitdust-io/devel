@@ -1339,7 +1339,8 @@ class MessagePeddler(automat.Automat):
         if qk.known_position >= 0 and position >= 0:
             if position > qk.known_position:
                 lg.warn('SKIP request, current known position is %d but requested position is %d' % (qk.known_position, position, ))
-                p2p_service.SendFail(request_packet, 'requested position is ahead of current position of the broker')
+                p2p_service.SendFail(request_packet, 'requested position %d is ahead of current position of the broker %d' % (
+                    position, qk.known_position, ))
                 return
         queue_keeper_result.addCallback(
             self._on_queue_keeper_connect_result,

@@ -4,7 +4,7 @@
 #
 # Copyright (C) 2008 Veselin Penev, https://bitdust.io
 #
-# This file (online_status.py) is part of BitDust Software.
+# This file (queue_keeper.py) is part of BitDust Software.
 #
 # BitDust is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -61,7 +61,7 @@ import sys
 try:
     from twisted.internet import reactor  # @UnresolvedImport
 except:
-    sys.exit('Error initializing twisted.internet.reactor in online_status.py')
+    sys.exit('Error initializing twisted.internet.reactor in queue_keeper.py')
 
 #------------------------------------------------------------------------------
 
@@ -210,6 +210,21 @@ class QueueKeeper(automat.Automat):
             if event == 'init':
                 self.state = 'DISCONNECTED'
                 self.doInit(*args, **kwargs)
+        #---DISCONNECTED---
+        elif self.state == 'DISCONNECTED':
+            if event == 'shutdown':
+                self.state = 'CLOSED'
+                self.doRunCallbacks(event, *args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
+            elif event == 'connect':
+                self.state = 'DHT_READ'
+                self.doCheckRotated(*args, **kwargs)
+                self.doSetDesiredPosition(*args, **kwargs)
+                self.doAddCallback(*args, **kwargs)
+                self.doDHTRead(*args, **kwargs)
+            elif event == 'msg-in':
+                self.doProc(*args, **kwargs)
+                self.doReconnect(*args, **kwargs)
         #---DHT_READ---
         elif self.state == 'DHT_READ':
             if event == 'shutdown':
@@ -267,21 +282,6 @@ class QueueKeeper(automat.Automat):
                 self.doCheckRotated(*args, **kwargs)
                 self.doAddCallback(*args, **kwargs)
                 self.doRunCallbacks(event, *args, **kwargs)
-        #---DISCONNECTED---
-        elif self.state == 'DISCONNECTED':
-            if event == 'shutdown':
-                self.state = 'CLOSED'
-                self.doRunCallbacks(event, *args, **kwargs)
-                self.doDestroyMe(*args, **kwargs)
-            elif event == 'connect':
-                self.state = 'DHT_READ'
-                self.doCheckRotated(*args, **kwargs)
-                self.doSetDesiredPosition(*args, **kwargs)
-                self.doAddCallback(*args, **kwargs)
-                self.doDHTRead(*args, **kwargs)
-            elif event == 'msg-in':
-                self.doProc(*args, **kwargs)
-                self.doReconnect(*args, **kwargs)
         #---CLOSED---
         elif self.state == 'CLOSED':
             pass
