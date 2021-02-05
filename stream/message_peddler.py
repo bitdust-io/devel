@@ -756,7 +756,7 @@ def add_consumer(queue_id, consumer_id, consumer_info=None):
         }
     streams()[queue_id]['consumers'][consumer_id] = consumer_info
     if _Debug:
-        lg.args(_DebugLevel, queue_id=queue_id, consumer_id=consumer_id)
+        lg.args(_DebugLevel, queue_id=queue_id, consumer_id=consumer_id, consumer_info=consumer_info)
     if not save_consumer(queue_id, consumer_id):
         raise Exception('failed to save consumer info')
     return True
@@ -821,7 +821,7 @@ def add_producer(queue_id, producer_id, producer_info=None):
         }
     streams()[queue_id]['producers'][producer_id] = producer_info
     if _Debug:
-        lg.args(_DebugLevel, queue_id=queue_id, producer_id=producer_id)
+        lg.args(_DebugLevel, queue_id=queue_id, producer_id=producer_id, producer_info=producer_info)
     if not save_producer(queue_id, producer_id):
         raise Exception('failed to store producer info')
     return True
@@ -884,8 +884,10 @@ def is_consumer_active(queue_id, consumer_id):
 
 def start_consumer(queue_id, consumer_id):
     if queue_id not in streams():
+        lg.warn('queue % is not active, can not start consumer %r' % (queue_id, consumer_id, ))
         return False
     if consumer_id not in streams()[queue_id]['consumers']:
+        lg.warn('not able to start consumer %r because it was not added to the queue %r' % (consumer_id, queue_id, ))
         return False
     if not p2p_queue.is_consumer_exists(consumer_id):
         p2p_queue.add_consumer(consumer_id)
@@ -894,19 +896,23 @@ def start_consumer(queue_id, consumer_id):
     if not p2p_queue.is_consumer_subscribed(consumer_id, queue_id):
         p2p_queue.subscribe_consumer(consumer_id, queue_id)
     streams()[queue_id]['consumers'][consumer_id]['active'] = True
+    lg.info('consumer %r started in the queue %r' % (consumer_id, queue_id, ))
     return True
 
 
 def stop_consumer(queue_id, consumer_id):
     if queue_id not in streams():
+        lg.warn('queue % is not active, can not stop consumer %r' % (queue_id, consumer_id, ))
         return False
     if consumer_id not in streams()[queue_id]['consumers']:
+        lg.warn('not able to stop consumer %r because it was not added to the queue %r' % (consumer_id, queue_id, ))
         return False
     if p2p_queue.is_callback_method_registered(consumer_id, on_consumer_notify):
         p2p_queue.remove_callback_method(consumer_id, on_consumer_notify)
     if p2p_queue.is_consumer_subscribed(consumer_id, queue_id):
         p2p_queue.unsubscribe_consumer(consumer_id, queue_id, remove_empty=True)
     streams()[queue_id]['consumers'][consumer_id]['active'] = False
+    lg.info('consumer %r stopped in the queue %r' % (consumer_id, queue_id, ))
     return True
 
 #------------------------------------------------------------------------------
@@ -921,25 +927,31 @@ def is_producer_active(queue_id, producer_id):
 
 def start_producer(queue_id, producer_id):
     if queue_id not in streams():
+        lg.warn('queue % is not active, can not start producer %r' % (queue_id, producer_id, ))
         return False
     if producer_id not in streams()[queue_id]['producers']:
+        lg.warn('not able to start producer %r because it was not added to the queue %r' % (producer_id, queue_id, ))
         return False
     if not p2p_queue.is_producer_exist(producer_id):
         p2p_queue.add_producer(producer_id)
     if not p2p_queue.is_producer_connected(producer_id, queue_id):
         p2p_queue.connect_producer(producer_id, queue_id)
     streams()[queue_id]['producers'][producer_id]['active'] = True
+    lg.info('producer %r started in the queue %r' % (producer_id, queue_id, ))
     return True
 
 
 def stop_producer(queue_id, producer_id):
     if queue_id not in streams():
+        lg.warn('queue % is not active, can not stop producer %r' % (queue_id, producer_id, ))
         return False
     if producer_id not in streams()[queue_id]['producers']:
+        lg.warn('not able to stop producer %r because it was not added to the queue %r' % (producer_id, queue_id, ))
         return False
     if p2p_queue.is_producer_connected(producer_id, queue_id):
         p2p_queue.disconnect_producer(producer_id, queue_id, remove_empty=True)
     streams()[queue_id]['producers'][producer_id]['active'] = False
+    lg.info('producer %r stopped in the queue %r' % (producer_id, queue_id, ))
     return True
 
 #------------------------------------------------------------------------------

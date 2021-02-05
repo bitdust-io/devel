@@ -442,7 +442,8 @@ def set_broker(customer_id, broker_id, position=0):
     customer_dir = os.path.join(brokers_dir, customer_id)
     broker_path = os.path.join(customer_dir, broker_id)
     if os.path.isfile(broker_path):
-        lg.warn('broker %r already exist for customer %r, overwriting' % (broker_id, customer_id, ))
+        if _Debug:
+            lg.dbg(_DebugLevel, 'broker %r already exist for customer %r, overwriting' % (broker_id, customer_id, ))
     if not os.path.isdir(customer_dir):
         bpio._dirs_make(customer_dir)
     broker_info = {

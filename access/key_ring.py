@@ -462,10 +462,10 @@ def on_key_received(newpacket, info, status, error_message):
                 # we have already private key with same ID!!!
                 if my_keys.get_private_key_raw(key_id) != key_object.toPrivateString():
                     # and this is a new private key : we should not overwrite!
-                    raise Exception('private key already registered and it is not matching')
+                    raise Exception('private key already registered and it is not matching with received copy')
                 # this is the same private key
                 p2p_service.SendAck(newpacket)
-                lg.warn('received existing private key: %s, skip' % key_id)
+                lg.warn('received again an exact copy of already existing private key: %s, skip' % key_id)
                 return True
             # but we have a public key with same ID already
             if my_keys.get_public_key_raw(key_id) != key_object.toPublicString():
