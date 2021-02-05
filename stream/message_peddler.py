@@ -1335,13 +1335,17 @@ class MessagePeddler(automat.Automat):
         queue_keeper_result = Deferred()
         if _Debug:
             queue_keeper_result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='message_peddler._do_check_create_queue_keeper')
+
+        qk = queue_keeper.existing(customer_idurl)
+        if qk:
+            if qk.state in ['DHT_WRITE', 'CONNECTED', ]:
+                if qk.known_position == 0 and position > 0:
+                    lg.warn('SKIP request, current known position is %d but requested position is %d' % (qk.known_position, position, ))
+                    p2p_service.SendFail(request_packet, 'requested position %d is ahead of current position of the broker %d' % (
+                        position, qk.known_position, ))
+                    return
+
         qk = queue_keeper.check_create(customer_idurl=customer_idurl, auto_create=True)
-        if qk.known_position >= 0 and position >= 0:
-            if position > qk.known_position:
-                lg.warn('SKIP request, current known position is %d but requested position is %d' % (qk.known_position, position, ))
-                p2p_service.SendFail(request_packet, 'requested position %d is ahead of current position of the broker %d' % (
-                    position, qk.known_position, ))
-                return
         queue_keeper_result.addCallback(
             self._on_queue_keeper_connect_result,
             queue_id=queue_id,
