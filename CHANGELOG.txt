@@ -18,6 +18,14 @@ Change Log
 
 
 
+2021-01-26 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* added host filtering for proxy_router() - make sure to not send to my own host
+* solving issue with proxy_router()
+* fixes for group messaging (#135)
+
+
+
 2021-01-24 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * fixes in group chat
