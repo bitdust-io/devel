@@ -1,6 +1,11 @@
 Change Log
 ==========
 
+2021-02-05 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* adjusted logging to be able to trace down IDURL rotation issues
+
+
 
 2021-02-04 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
