@@ -196,6 +196,9 @@ def start_group_members():
     for group_key_id, group_info in groups.active_groups().items():
         if not group_key_id:
             continue
+        if group_key_id.startswith('person'):
+            # TODO: temporarily disabled
+            continue
         if not group_info['active']:
             continue
         existing_group_member = get_active_group_member(group_key_id)

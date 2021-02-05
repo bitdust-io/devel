@@ -397,6 +397,7 @@ def on_consumer_notify(message_info):
         },
         recipient_global_id=consumer_id,
         packet_id=packet_id,
+        message_ack_timeout=25,
         skip_handshake=True,
         fire_callbacks=False,
     )
@@ -896,6 +897,7 @@ def start_consumer(queue_id, consumer_id):
     if not p2p_queue.is_consumer_subscribed(consumer_id, queue_id):
         p2p_queue.subscribe_consumer(consumer_id, queue_id)
     streams()[queue_id]['consumers'][consumer_id]['active'] = True
+    save_consumer(queue_id, consumer_id)
     lg.info('consumer %r started in the queue %r' % (consumer_id, queue_id, ))
     return True
 
@@ -912,6 +914,7 @@ def stop_consumer(queue_id, consumer_id):
     if p2p_queue.is_consumer_subscribed(consumer_id, queue_id):
         p2p_queue.unsubscribe_consumer(consumer_id, queue_id, remove_empty=True)
     streams()[queue_id]['consumers'][consumer_id]['active'] = False
+    save_consumer(queue_id, consumer_id)
     lg.info('consumer %r stopped in the queue %r' % (consumer_id, queue_id, ))
     return True
 
@@ -937,6 +940,7 @@ def start_producer(queue_id, producer_id):
     if not p2p_queue.is_producer_connected(producer_id, queue_id):
         p2p_queue.connect_producer(producer_id, queue_id)
     streams()[queue_id]['producers'][producer_id]['active'] = True
+    save_producer(queue_id, producer_id)
     lg.info('producer %r started in the queue %r' % (producer_id, queue_id, ))
     return True
 
@@ -951,6 +955,7 @@ def stop_producer(queue_id, producer_id):
     if p2p_queue.is_producer_connected(producer_id, queue_id):
         p2p_queue.disconnect_producer(producer_id, queue_id, remove_empty=True)
     streams()[queue_id]['producers'][producer_id]['active'] = False
+    save_producer(queue_id, producer_id)
     lg.info('producer %r stopped in the queue %r' % (producer_id, queue_id, ))
     return True
 
@@ -1284,6 +1289,7 @@ class MessagePeddler(automat.Automat):
             },
             recipient_global_id=consumer_id,
             packet_id=packetid.MakeQueueMessagePacketID(queue_id, packetid.UniqueID()),
+            message_ack_timeout=25,
             skip_handshake=True,
             fire_callbacks=False,
         )
@@ -1375,7 +1381,7 @@ class MessagePeddler(automat.Automat):
                 },
                 recipient_global_id=global_id.idurl2glob(other_broker_idurl),
                 packet_id='qreplica_%s_%s' % (message_in.queue_id, packetid.UniqueID()),
-                message_ack_timeout=15,
+                message_ack_timeout=25,
                 skip_handshake=False,
                 fire_callbacks=False,
             )

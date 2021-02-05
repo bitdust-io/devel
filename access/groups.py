@@ -337,9 +337,9 @@ def load_groups():
                 except:
                     lg.exc()
                     continue
-            if latest_broker_id in known_brokers(latest_customer_id):
-                lg.warn('broker %r already exist' % latest_broker_id)
-                continue
+            # if latest_broker_id in known_brokers(latest_customer_id):
+            #     lg.warn('broker %r already exist' % latest_broker_id)
+            #     continue
             latest_broker_info = jsn.loads_text(local_fs.ReadTextFile(latest_broker_path))
             if not latest_broker_info:
                 lg.err('was not able to load broker info from %r' % latest_broker_path)
