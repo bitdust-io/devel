@@ -169,6 +169,8 @@ def known_brokers(customer_id=None, erase_brokers=False):
         return _KnownBrokers.pop(customer_id, None)
     if customer_id not in _KnownBrokers:
         _KnownBrokers[customer_id] = [None, ] * REQUIRED_BROKERS_COUNT
+    if len(_KnownBrokers[customer_id]) < REQUIRED_BROKERS_COUNT:
+        _KnownBrokers[customer_id] += [None, ] * (REQUIRED_BROKERS_COUNT - len(_KnownBrokers[customer_id]))
     return _KnownBrokers[customer_id]
 
 #------------------------------------------------------------------------------
@@ -321,12 +323,13 @@ def load_groups():
             old_customer_dir = os.path.join(brokers_dir, customer_id)
             try:
                 bpio.move_dir_recursive(old_customer_dir, latest_customer_dir)
+                bpio.rmdir_recursive(old_customer_dir)
             except:
                 lg.exc()
                 continue
         for broker_id in os.listdir(latest_customer_dir):
             if latest_customer_id not in known_brokers():
-                known_brokers()[latest_customer_id] = [None, ] * REQUIRED_BROKERS_COUNT
+                known_brokers(latest_customer_id)
             latest_broker_id = global_id.latest_glob_id(broker_id)
             latest_broker_path = os.path.join(latest_customer_dir, latest_broker_id)
             if latest_broker_id != broker_id:
@@ -337,12 +340,18 @@ def load_groups():
                 except:
                     lg.exc()
                     continue
-            # if latest_broker_id in known_brokers(latest_customer_id):
-            #     lg.warn('broker %r already exist' % latest_broker_id)
-            #     continue
             latest_broker_info = jsn.loads_text(local_fs.ReadTextFile(latest_broker_path))
             if not latest_broker_info:
                 lg.err('was not able to load broker info from %r' % latest_broker_path)
+                continue
+            existing_broker_id = known_brokers(latest_customer_id)[int(latest_broker_info['position'])]
+            if existing_broker_id:
+                lg.err('found duplicated broker for customer %r on position %d, erasing file %r' % (
+                    latest_customer_id, int(latest_broker_info['position']), latest_broker_path, ))
+                try:
+                    os.remove(latest_broker_path)
+                except:
+                    lg.exc()
                 continue
             known_brokers()[latest_customer_id][int(latest_broker_info['position'])] = latest_broker_id
             loaded_brokers += 1
@@ -449,6 +458,16 @@ def set_broker(customer_id, broker_id, position=0):
     broker_info = {
         'position': position,
     }
+    prev_borker_id = known_brokers(customer_id)[position]
+    if prev_borker_id:
+        prev_broker_path = os.path.join(customer_dir, prev_borker_id)
+        try:
+            os.remove(prev_broker_path)
+        except:
+            lg.exc()
+            return False
+        lg.info('replacing existing broker for customer %r at position %d : %r -> %r' % (
+            customer_id, position, prev_borker_id, broker_id, ))
     if not local_fs.WriteTextFile(broker_path, jsn.dumps(broker_info)):
         lg.err('failed to set broker %r at position %d for customer %r' % (broker_id, position, customer_id, ))
         return False
@@ -485,7 +504,11 @@ def clear_broker(customer_id, position):
     removed = []
     for broker_id in to_be_erased:
         broker_path = os.path.join(customer_dir, broker_id)
-        os.remove(broker_path)
+        try:
+            os.remove(broker_path)
+        except:
+            lg.exc()
+            continue
         removed.append(broker_path)
     if _Debug:
         lg.args(_DebugLevel, customer_id=customer_id, position=position, removed=removed)
@@ -538,34 +561,37 @@ def on_identity_url_changed(evt):
                 continue
             active_groups()[latest_group_key_id] = active_groups().pop(group_key_id)
             group_member.rotate_active_group_memeber(group_key_id, latest_group_key_id)
-    known_customers = list(known_brokers())
+    known_customers = list(known_brokers().keys())
     for customer_id in known_customers:
+        latest_customer_id = global_id.idurl2glob(new_idurl)
         customer_idurl = global_id.glob2idurl(customer_id)
         if customer_idurl == old_idurl:
-            latest_customer_id = global_id.idurl2glob(new_idurl)
             latest_customer_dir = os.path.join(brokers_dir, latest_customer_id)
             lg.info('going to rename rotated customer id: %r -> %r' % (customer_id, latest_customer_id, ))
             old_customer_dir = os.path.join(brokers_dir, customer_id)
             try:
                 bpio.move_dir_recursive(old_customer_dir, latest_customer_dir)
+                bpio.rmdir_recursive(old_customer_dir)
             except:
                 lg.exc()
                 continue
             known_brokers()[latest_customer_id] = known_brokers().pop(customer_id)
-            for broker_pos, broker_id in enumerate(known_brokers(latest_customer_id)):
-                broker_idurl = global_id.glob2idurl(broker_id)
-                if broker_idurl == old_idurl:
-                    latest_broker_id = global_id.idurl2glob(new_idurl)
-                    latest_broker_path = os.path.join(latest_customer_dir, latest_broker_id)
-                    lg.info('going to rename rotated broker id: %r -> %r' % (broker_id, latest_broker_id, ))
-                    old_broker_path = os.path.join(latest_customer_dir, broker_id)
-                    try:
-                        os.rename(old_broker_path, latest_broker_path)
-                    except:
-                        lg.exc()
-                        continue
-                    if latest_broker_id in known_brokers(latest_customer_id):
-                        lg.warn('broker %r already exist' % latest_broker_id)
-                        continue
-                    known_brokers()[latest_customer_id][broker_pos] = latest_broker_id
+        for broker_pos, broker_id in enumerate(known_brokers(latest_customer_id)):
+            if not broker_id:
+                continue
+            broker_idurl = global_id.glob2idurl(broker_id)
+            if broker_idurl == old_idurl:
+                latest_broker_id = global_id.idurl2glob(new_idurl)
+                latest_broker_path = os.path.join(latest_customer_dir, latest_broker_id)
+                lg.info('going to rename rotated broker id: %r -> %r' % (broker_id, latest_broker_id, ))
+                old_broker_path = os.path.join(latest_customer_dir, broker_id)
+                try:
+                    os.rename(old_broker_path, latest_broker_path)
+                except:
+                    lg.exc()
+                    continue
+                if latest_broker_id in known_brokers(latest_customer_id):
+                    lg.warn('broker %r already exist' % latest_broker_id)
+                    continue
+                known_brokers()[latest_customer_id][broker_pos] = latest_broker_id
 
