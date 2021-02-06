@@ -1126,7 +1126,6 @@ def scenario12_end(old_customer_4_info):
 
     assert customer_2_rotated_queue_id == customer_4_rotated_queue_id
     assert customer_2_rotated_broker_id == customer_4_rotated_broker_id
-
     assert customer_2_rotated_queue_id != customer_4_active_queue_id
     assert customer_2_rotated_broker_id != customer_4_active_broker_id
 

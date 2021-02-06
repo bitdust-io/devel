@@ -47,7 +47,7 @@ _DebugLevel = 10
 import sys
 import time
 
-from twisted.internet.defer import Deferred
+from twisted.internet.defer import Deferred, DeferredList
 
 #------------------------------------------------------------------------------
 
@@ -97,6 +97,33 @@ def shutdown():
 
 #------------------------------------------------------------------------------
 
+def get_one(idurl):
+    """
+    An alias for `FromCache()` method.
+    """
+    return FromCache(id_url.to_original(idurl))
+
+
+def start_one(idurl, timeout=10, try_other_sources=True):
+    """
+    An alias for `immediatelyCaching()` method.
+    """
+    return immediatelyCaching(id_url.to_original(idurl), timeout=timeout, try_other_sources=try_other_sources)
+
+
+def start_multiple(idurl_list, timeout=10, try_other_sources=True):
+    """
+    Executes in parallel multiple `immediatelyCaching()` calls on the list of IDURL items.
+    Returns `DeferredList` object.
+    """
+    idurl_list = list(set(id_url.to_original_list(idurl_list)))
+    dl = []
+    for idurl in idurl_list:
+        if idurl:
+            dl.append(immediatelyCaching(idurl, timeout=timeout, try_other_sources=try_other_sources))
+    return DeferredList(dl, consumeErrors=True)
+
+#------------------------------------------------------------------------------
 
 def Clear(excludeList=None):
     """
@@ -521,7 +548,6 @@ def immediatelyCaching(idurl, timeout=10, try_other_sources=True):
     return _CachingTasks[idurl]
 
 #------------------------------------------------------------------------------
-
 
 def SetLocalIPs(local_ips):
     """
