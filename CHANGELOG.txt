@@ -1,6 +1,15 @@
 Change Log
 ==========
 
+
+2021-02-06 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* added refresh task to queue_keeper() to keep DHT record alive
+* set message_ack_timeout=25 in message_peddler()
+* do not enable service_message_broker() by default
+
+
+
 2021-02-05 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * adjusted logging to be able to trace down IDURL rotation issues

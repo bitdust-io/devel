@@ -64,7 +64,7 @@ except:
 
 #------------------------------------------------------------------------------
 
-from twisted.internet.defer import Deferred
+from twisted.internet.defer import Deferred, DeferredList
 
 #------------------------------------------------------------------------------
 
@@ -609,80 +609,6 @@ def close_all_streams():
         close_stream(queue_id)
     return True
 
-
-def load_streams():
-    service_dir = settings.ServiceDir('service_message_broker')
-    queues_dir = os.path.join(service_dir, 'queues')
-    loaded_queues = 0
-    loaded_consumers = 0
-    loaded_producers = 0
-    loaded_messages = 0
-    loaded_archive_messages = 0
-    if not os.path.isdir(queues_dir):
-        bpio._dirs_make(queues_dir)
-    for queue_id in os.listdir(queues_dir):
-        queue_dir = os.path.join(queues_dir, queue_id)
-        messages_dir = os.path.join(queue_dir, 'messages')
-        consumers_dir = os.path.join(queue_dir, 'consumers')
-        producers_dir = os.path.join(queue_dir, 'producers')
-        if queue_id not in streams():
-            try:
-                register_stream(queue_id)
-            except:
-                lg.exc()
-                continue
-            loaded_queues += 1
-        last_sequence_id = -1
-        all_stored_queue_messages = os.listdir(messages_dir)
-        all_stored_queue_messages.sort(key=lambda i: int(i))
-        for _sequence_id in all_stored_queue_messages:
-            sequence_id = int(_sequence_id)
-            stored_json_message = jsn.loads_text(local_fs.ReadTextFile(os.path.join(messages_dir, strng.to_text(_sequence_id))))
-            if stored_json_message:
-                if stored_json_message.get('processed'):
-                    streams()[queue_id]['archive'].append(sequence_id)
-                    loaded_archive_messages += 1
-                else:
-                    streams()[queue_id]['messages'].append(sequence_id)
-                if sequence_id >= last_sequence_id:
-                    last_sequence_id = sequence_id
-                loaded_messages += 1
-            else:
-                lg.err('failed reading message %d from %r' % (sequence_id, queue_id, ))
-        streams()[queue_id]['last_sequence_id'] = last_sequence_id
-        for consumer_id in os.listdir(consumers_dir):
-            if consumer_id in streams()[queue_id]['consumers']:
-                lg.warn('consumer %r already exist in stream %r' % (consumer_id, queue_id, ))
-                continue
-            consumer_info = jsn.loads_text(local_fs.ReadTextFile(os.path.join(consumers_dir, consumer_id)))
-            if not consumer_info:
-                lg.err('failed reading consumer info %r from %r' % (consumer_id, queue_id, ))
-                continue
-            streams()[queue_id]['consumers'][consumer_id] = consumer_info
-            streams()[queue_id]['consumers'][consumer_id]['active'] = False
-            loaded_consumers += 1
-        for producer_id in os.listdir(producers_dir):
-            if producer_id in streams()[queue_id]['producers']:
-                lg.warn('producer %r already exist in stream %r' % (producer_id, queue_id, ))
-                continue
-            producer_info = jsn.loads_text(local_fs.ReadTextFile(os.path.join(producers_dir, producer_id)))
-            if not producer_info:
-                lg.err('failed reading producer info %r from %r' % (producer_id, queue_id, ))
-                continue
-            streams()[queue_id]['producers'][producer_id] = producer_info
-            streams()[queue_id]['producers'][producer_id]['active'] = False
-            loaded_producers += 1
-    ret = {
-        'queues': loaded_queues,
-        'consumers': loaded_consumers,
-        'producers': loaded_producers,
-        'messages': loaded_messages,
-        'archive': loaded_archive_messages,
-    }
-    if _Debug:
-        lg.args(_DebugLevel, **ret)
-    return ret
-
 #------------------------------------------------------------------------------
 
 def open_stream(queue_id):
@@ -1099,8 +1025,7 @@ class MessagePeddler(automat.Automat):
         """
         Action method.
         """
-        load_streams()
-        reactor.callLater(0, self.automat, 'queues-loaded')  # @UndefinedVariable
+        self._do_cache_known_customers()
 
     def doRunQueues(self, *args, **kwargs):
         """
@@ -1276,6 +1201,101 @@ class MessagePeddler(automat.Automat):
         events.remove_subscriber(self._on_identity_url_changed, 'identity-url-changed')
         self.destroy()
         _MessagePeddler = None
+
+    def _do_cache_known_customers(self):
+        service_dir = settings.ServiceDir('service_message_broker')
+        queues_dir = os.path.join(service_dir, 'queues')
+        if not os.path.isdir(queues_dir):
+            bpio._dirs_make(queues_dir)
+        to_be_cached = []
+        for queue_id in os.listdir(queues_dir):
+            queue_info = global_id.ParseGlobalQueueID(queue_id)
+            customer_idurl = global_id.glob2idurl(queue_info['owner_id'])
+            if not customer_idurl:
+                lg.err('unknown customer IDURL for queue: %r' % queue_id)
+                continue
+            if not id_url.is_cached(customer_idurl):
+                to_be_cached.append(customer_idurl)
+        if not to_be_cached:
+            return self._do_load_streams()
+        d = identitycache.start_multiple(to_be_cached)
+        if _Debug:
+            d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='message_peddler._do_cache_known_customers')
+        d.addBoth(self._do_load_streams)
+        return d
+
+    def _do_load_streams(self, *args):
+        service_dir = settings.ServiceDir('service_message_broker')
+        queues_dir = os.path.join(service_dir, 'queues')
+        loaded_queues = 0
+        loaded_consumers = 0
+        loaded_producers = 0
+        loaded_messages = 0
+        loaded_archive_messages = 0
+        if not os.path.isdir(queues_dir):
+            bpio._dirs_make(queues_dir)
+        for queue_id in os.listdir(queues_dir):
+            queue_dir = os.path.join(queues_dir, queue_id)
+            messages_dir = os.path.join(queue_dir, 'messages')
+            consumers_dir = os.path.join(queue_dir, 'consumers')
+            producers_dir = os.path.join(queue_dir, 'producers')
+            if queue_id not in streams():
+                try:
+                    register_stream(queue_id)
+                except:
+                    lg.exc()
+                    continue
+                loaded_queues += 1
+            last_sequence_id = -1
+            all_stored_queue_messages = os.listdir(messages_dir)
+            all_stored_queue_messages.sort(key=lambda i: int(i))
+            for _sequence_id in all_stored_queue_messages:
+                sequence_id = int(_sequence_id)
+                stored_json_message = jsn.loads_text(local_fs.ReadTextFile(os.path.join(messages_dir, strng.to_text(_sequence_id))))
+                if stored_json_message:
+                    if stored_json_message.get('processed'):
+                        streams()[queue_id]['archive'].append(sequence_id)
+                        loaded_archive_messages += 1
+                    else:
+                        streams()[queue_id]['messages'].append(sequence_id)
+                    if sequence_id >= last_sequence_id:
+                        last_sequence_id = sequence_id
+                    loaded_messages += 1
+                else:
+                    lg.err('failed reading message %d from %r' % (sequence_id, queue_id, ))
+            streams()[queue_id]['last_sequence_id'] = last_sequence_id
+            for consumer_id in os.listdir(consumers_dir):
+                if consumer_id in streams()[queue_id]['consumers']:
+                    lg.warn('consumer %r already exist in stream %r' % (consumer_id, queue_id, ))
+                    continue
+                consumer_info = jsn.loads_text(local_fs.ReadTextFile(os.path.join(consumers_dir, consumer_id)))
+                if not consumer_info:
+                    lg.err('failed reading consumer info %r from %r' % (consumer_id, queue_id, ))
+                    continue
+                streams()[queue_id]['consumers'][consumer_id] = consumer_info
+                streams()[queue_id]['consumers'][consumer_id]['active'] = False
+                loaded_consumers += 1
+            for producer_id in os.listdir(producers_dir):
+                if producer_id in streams()[queue_id]['producers']:
+                    lg.warn('producer %r already exist in stream %r' % (producer_id, queue_id, ))
+                    continue
+                producer_info = jsn.loads_text(local_fs.ReadTextFile(os.path.join(producers_dir, producer_id)))
+                if not producer_info:
+                    lg.err('failed reading producer info %r from %r' % (producer_id, queue_id, ))
+                    continue
+                streams()[queue_id]['producers'][producer_id] = producer_info
+                streams()[queue_id]['producers'][producer_id]['active'] = False
+                loaded_producers += 1
+        ret = {
+            'queues': loaded_queues,
+            'consumers': loaded_consumers,
+            'producers': loaded_producers,
+            'messages': loaded_messages,
+            'archive': loaded_archive_messages,
+        }
+        if _Debug:
+            lg.args(_DebugLevel, **ret)
+        reactor.callLater(0, self.automat, 'queues-loaded')  # @UndefinedVariable
 
     def _do_send_past_messages(self, queue_id, consumer_id, list_messages):
         latest_sequence_id = get_latest_sequence_id(queue_id)
