@@ -4,6 +4,8 @@ Change Log
 
 2021-02-06 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
+* IDURL bug fixes in  access/groups.py
+* cache missing IDURLs in message_peddler() before loading all known streams
 * added refresh task to queue_keeper() to keep DHT record alive
 * set message_ack_timeout=25 in message_peddler()
 * do not enable service_message_broker() by default
