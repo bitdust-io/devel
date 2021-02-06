@@ -397,6 +397,7 @@ def on_consumer_notify(message_info):
         },
         recipient_global_id=consumer_id,
         packet_id=packet_id,
+        message_ack_timeout=25,
         skip_handshake=True,
         fire_callbacks=False,
     )
@@ -756,7 +757,7 @@ def add_consumer(queue_id, consumer_id, consumer_info=None):
         }
     streams()[queue_id]['consumers'][consumer_id] = consumer_info
     if _Debug:
-        lg.args(_DebugLevel, queue_id=queue_id, consumer_id=consumer_id)
+        lg.args(_DebugLevel, queue_id=queue_id, consumer_id=consumer_id, consumer_info=consumer_info)
     if not save_consumer(queue_id, consumer_id):
         raise Exception('failed to save consumer info')
     return True
@@ -821,7 +822,7 @@ def add_producer(queue_id, producer_id, producer_info=None):
         }
     streams()[queue_id]['producers'][producer_id] = producer_info
     if _Debug:
-        lg.args(_DebugLevel, queue_id=queue_id, producer_id=producer_id)
+        lg.args(_DebugLevel, queue_id=queue_id, producer_id=producer_id, producer_info=producer_info)
     if not save_producer(queue_id, producer_id):
         raise Exception('failed to store producer info')
     return True
@@ -884,8 +885,10 @@ def is_consumer_active(queue_id, consumer_id):
 
 def start_consumer(queue_id, consumer_id):
     if queue_id not in streams():
+        lg.warn('queue % is not active, can not start consumer %r' % (queue_id, consumer_id, ))
         return False
     if consumer_id not in streams()[queue_id]['consumers']:
+        lg.warn('not able to start consumer %r because it was not added to the queue %r' % (consumer_id, queue_id, ))
         return False
     if not p2p_queue.is_consumer_exists(consumer_id):
         p2p_queue.add_consumer(consumer_id)
@@ -894,19 +897,25 @@ def start_consumer(queue_id, consumer_id):
     if not p2p_queue.is_consumer_subscribed(consumer_id, queue_id):
         p2p_queue.subscribe_consumer(consumer_id, queue_id)
     streams()[queue_id]['consumers'][consumer_id]['active'] = True
+    save_consumer(queue_id, consumer_id)
+    lg.info('consumer %r started in the queue %r' % (consumer_id, queue_id, ))
     return True
 
 
 def stop_consumer(queue_id, consumer_id):
     if queue_id not in streams():
+        lg.warn('queue % is not active, can not stop consumer %r' % (queue_id, consumer_id, ))
         return False
     if consumer_id not in streams()[queue_id]['consumers']:
+        lg.warn('not able to stop consumer %r because it was not added to the queue %r' % (consumer_id, queue_id, ))
         return False
     if p2p_queue.is_callback_method_registered(consumer_id, on_consumer_notify):
         p2p_queue.remove_callback_method(consumer_id, on_consumer_notify)
     if p2p_queue.is_consumer_subscribed(consumer_id, queue_id):
         p2p_queue.unsubscribe_consumer(consumer_id, queue_id, remove_empty=True)
     streams()[queue_id]['consumers'][consumer_id]['active'] = False
+    save_consumer(queue_id, consumer_id)
+    lg.info('consumer %r stopped in the queue %r' % (consumer_id, queue_id, ))
     return True
 
 #------------------------------------------------------------------------------
@@ -921,25 +930,33 @@ def is_producer_active(queue_id, producer_id):
 
 def start_producer(queue_id, producer_id):
     if queue_id not in streams():
+        lg.warn('queue % is not active, can not start producer %r' % (queue_id, producer_id, ))
         return False
     if producer_id not in streams()[queue_id]['producers']:
+        lg.warn('not able to start producer %r because it was not added to the queue %r' % (producer_id, queue_id, ))
         return False
     if not p2p_queue.is_producer_exist(producer_id):
         p2p_queue.add_producer(producer_id)
     if not p2p_queue.is_producer_connected(producer_id, queue_id):
         p2p_queue.connect_producer(producer_id, queue_id)
     streams()[queue_id]['producers'][producer_id]['active'] = True
+    save_producer(queue_id, producer_id)
+    lg.info('producer %r started in the queue %r' % (producer_id, queue_id, ))
     return True
 
 
 def stop_producer(queue_id, producer_id):
     if queue_id not in streams():
+        lg.warn('queue % is not active, can not stop producer %r' % (queue_id, producer_id, ))
         return False
     if producer_id not in streams()[queue_id]['producers']:
+        lg.warn('not able to stop producer %r because it was not added to the queue %r' % (producer_id, queue_id, ))
         return False
     if p2p_queue.is_producer_connected(producer_id, queue_id):
         p2p_queue.disconnect_producer(producer_id, queue_id, remove_empty=True)
     streams()[queue_id]['producers'][producer_id]['active'] = False
+    save_producer(queue_id, producer_id)
+    lg.info('producer %r stopped in the queue %r' % (producer_id, queue_id, ))
     return True
 
 #------------------------------------------------------------------------------
@@ -1272,6 +1289,7 @@ class MessagePeddler(automat.Automat):
             },
             recipient_global_id=consumer_id,
             packet_id=packetid.MakeQueueMessagePacketID(queue_id, packetid.UniqueID()),
+            message_ack_timeout=25,
             skip_handshake=True,
             fire_callbacks=False,
         )
@@ -1317,12 +1335,17 @@ class MessagePeddler(automat.Automat):
         queue_keeper_result = Deferred()
         if _Debug:
             queue_keeper_result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='message_peddler._do_check_create_queue_keeper')
+
+        qk = queue_keeper.existing(customer_idurl)
+        if qk:
+            if qk.state in ['DHT_WRITE', 'CONNECTED', ]:
+                if qk.known_position == 0 and position > 0:
+                    lg.warn('SKIP request, current known position is %d but requested position is %d' % (qk.known_position, position, ))
+                    p2p_service.SendFail(request_packet, 'requested position %d is ahead of current position of the broker %d' % (
+                        position, qk.known_position, ))
+                    return
+
         qk = queue_keeper.check_create(customer_idurl=customer_idurl, auto_create=True)
-        if qk.known_position >= 0 and position >= 0:
-            if position > qk.known_position:
-                lg.warn('SKIP request, current known position is %d but requested position is %d' % (qk.known_position, position, ))
-                p2p_service.SendFail(request_packet, 'requested position is ahead of current position of the broker')
-                return
         queue_keeper_result.addCallback(
             self._on_queue_keeper_connect_result,
             queue_id=queue_id,
@@ -1363,7 +1386,7 @@ class MessagePeddler(automat.Automat):
                 },
                 recipient_global_id=global_id.idurl2glob(other_broker_idurl),
                 packet_id='qreplica_%s_%s' % (message_in.queue_id, packetid.UniqueID()),
-                message_ack_timeout=15,
+                message_ack_timeout=25,
                 skip_handshake=False,
                 fire_callbacks=False,
             )

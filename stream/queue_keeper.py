@@ -4,7 +4,7 @@
 #
 # Copyright (C) 2008 Veselin Penev, https://bitdust.io
 #
-# This file (online_status.py) is part of BitDust Software.
+# This file (queue_keeper.py) is part of BitDust Software.
 #
 # BitDust is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -61,7 +61,9 @@ import sys
 try:
     from twisted.internet import reactor  # @UnresolvedImport
 except:
-    sys.exit('Error initializing twisted.internet.reactor in online_status.py')
+    sys.exit('Error initializing twisted.internet.reactor in queue_keeper.py')
+
+from twisted.internet.task import LoopingCall
 
 #------------------------------------------------------------------------------
 
@@ -81,6 +83,10 @@ from userid import my_id
 #------------------------------------------------------------------------------
 
 _QueueKeepers = {}
+
+#------------------------------------------------------------------------------
+
+DHT_RECORD_REFRESH_INTERVAL = 3 * 60
 
 #------------------------------------------------------------------------------
 
@@ -107,9 +113,23 @@ def queue_keepers():
     return _QueueKeepers
 
 
+def existing(customer_idurl):
+    """
+    Returns instance of existing `queue_keeper()` or None.
+    """
+    customer_idurl = id_url.to_bin(customer_idurl)
+    if id_url.is_empty(customer_idurl):
+        return None
+    if not id_url.is_cached(customer_idurl):
+        lg.warn('customer idurl is not cached yet, can not start QueueKeeper()')
+        return None
+    customer_idurl = id_url.field(customer_idurl)
+    return A(customer_idurl)
+
+
 def check_create(customer_idurl, auto_create=True):
     """
-    Creates new instance of queue_keeper() state machine and send "init" event to it.
+    Creates new instance of `queue_keeper()` state machine and send "init" event to it.
     """
     customer_idurl = id_url.to_bin(customer_idurl)
     if id_url.is_empty(customer_idurl):
@@ -188,6 +208,7 @@ class QueueKeeper(automat.Automat):
         self.dht_read_use_cache = True
         self.known_archive_folder_path = None
         self.requested_archive_folder_path = None
+        self.refresh_task = None
         super(QueueKeeper, self).__init__(
             name="queue_keeper_%s" % self.customer_id,
             state="AT_STARTUP",
@@ -210,6 +231,21 @@ class QueueKeeper(automat.Automat):
             if event == 'init':
                 self.state = 'DISCONNECTED'
                 self.doInit(*args, **kwargs)
+        #---DISCONNECTED---
+        elif self.state == 'DISCONNECTED':
+            if event == 'shutdown':
+                self.state = 'CLOSED'
+                self.doRunCallbacks(event, *args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
+            elif event == 'connect':
+                self.state = 'DHT_READ'
+                self.doCheckRotated(*args, **kwargs)
+                self.doSetDesiredPosition(*args, **kwargs)
+                self.doAddCallback(*args, **kwargs)
+                self.doDHTRead(*args, **kwargs)
+            elif event == 'msg-in':
+                self.doProc(*args, **kwargs)
+                self.doReconnect(*args, **kwargs)
         #---DHT_READ---
         elif self.state == 'DHT_READ':
             if event == 'shutdown':
@@ -267,21 +303,6 @@ class QueueKeeper(automat.Automat):
                 self.doCheckRotated(*args, **kwargs)
                 self.doAddCallback(*args, **kwargs)
                 self.doRunCallbacks(event, *args, **kwargs)
-        #---DISCONNECTED---
-        elif self.state == 'DISCONNECTED':
-            if event == 'shutdown':
-                self.state = 'CLOSED'
-                self.doRunCallbacks(event, *args, **kwargs)
-                self.doDestroyMe(*args, **kwargs)
-            elif event == 'connect':
-                self.state = 'DHT_READ'
-                self.doCheckRotated(*args, **kwargs)
-                self.doSetDesiredPosition(*args, **kwargs)
-                self.doAddCallback(*args, **kwargs)
-                self.doDHTRead(*args, **kwargs)
-            elif event == 'msg-in':
-                self.doProc(*args, **kwargs)
-                self.doReconnect(*args, **kwargs)
         #---CLOSED---
         elif self.state == 'CLOSED':
             pass
@@ -308,6 +329,7 @@ class QueueKeeper(automat.Automat):
         """
         Action method.
         """
+        self.refresh_task = LoopingCall(self._on_queue_keeper_refresh_task)
 
     def doAddCallback(self, *args, **kwargs):
         """
@@ -389,6 +411,9 @@ class QueueKeeper(automat.Automat):
         """
         Action method.
         """
+        if self.refresh_task.running:
+            self.refresh_task.stop()
+        self.refresh_task.start(DHT_RECORD_REFRESH_INTERVAL, now=False)
 
     def doReconnect(self, *args, **kwargs):
         """
@@ -422,6 +447,9 @@ class QueueKeeper(automat.Automat):
         Remove all references to the state machine object to destroy it.
         """
         global _QueueKeepers
+        if self.refresh_task.running:
+            self.refresh_task.stop()
+        self.refresh_task = None
         _QueueKeepers.pop(self.customer_idurl)
         self.customer_idurl = None
         self.broker_idurl = None
@@ -488,7 +516,6 @@ class QueueKeeper(automat.Automat):
         if _Debug:
             lg.args(_DebugLevel, nodes=nodes, desired_broker_position=desired_broker_position)
         if nodes:
-            # self.has_rotated = False
             self.requested_archive_folder_path = None
             self.automat('dht-write-success', desired_position=desired_broker_position)
         else:
@@ -500,3 +527,10 @@ class QueueKeeper(automat.Automat):
             lg.args(_DebugLevel, err=err, desired_broker_position=desired_broker_position)
         self.dht_read_use_cache = False
         self.automat('dht-write-failed', desired_position=desired_broker_position)
+
+    def _on_queue_keeper_refresh_task(self):
+        if _Debug:
+            lg.args(_DebugLevel, state=self.state, known_position=self.known_position, connected_queues=self.connected_queues)
+        if self.state == 'CONNECTED':
+            self.dht_read_use_cache = False
+            reactor.callLater(0, self.automat, 'connect')  # @UndefinedVariable

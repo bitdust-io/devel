@@ -337,9 +337,9 @@ def load_groups():
                 except:
                     lg.exc()
                     continue
-            if latest_broker_id in known_brokers(latest_customer_id):
-                lg.warn('broker %r already exist' % latest_broker_id)
-                continue
+            # if latest_broker_id in known_brokers(latest_customer_id):
+            #     lg.warn('broker %r already exist' % latest_broker_id)
+            #     continue
             latest_broker_info = jsn.loads_text(local_fs.ReadTextFile(latest_broker_path))
             if not latest_broker_info:
                 lg.err('was not able to load broker info from %r' % latest_broker_path)
@@ -442,7 +442,8 @@ def set_broker(customer_id, broker_id, position=0):
     customer_dir = os.path.join(brokers_dir, customer_id)
     broker_path = os.path.join(customer_dir, broker_id)
     if os.path.isfile(broker_path):
-        lg.warn('broker %r already exist for customer %r, overwriting' % (broker_id, customer_id, ))
+        if _Debug:
+            lg.dbg(_DebugLevel, 'broker %r already exist for customer %r, overwriting' % (broker_id, customer_id, ))
     if not os.path.isdir(customer_dir):
         bpio._dirs_make(customer_dir)
     broker_info = {

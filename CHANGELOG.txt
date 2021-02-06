@@ -1,6 +1,11 @@
 Change Log
 ==========
 
+2021-02-05 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* adjusted logging to be able to trace down IDURL rotation issues
+
+
 
 2021-02-04 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
@@ -10,6 +15,14 @@ Change Log
 * small fix in api.friend_add()
 * fixes in id_rotator()
 * use routed packets to deliver "direct" traffic from router node
+
+
+
+2021-01-26 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* added host filtering for proxy_router() - make sure to not send to my own host
+* solving issue with proxy_router()
+* fixes for group messaging (#135)
 
 
 

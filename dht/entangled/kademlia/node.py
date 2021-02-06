@@ -1462,7 +1462,7 @@ class MultiLayerNode(Node):
             if rpcSenderID is not None:
                 originalPublisherID = rpcSenderID
             else:
-                raise TypeError('No publisher specifed, and RPC caller ID not available. Data requires an original publisher.')
+                raise TypeError('No publisher specified, and RPC caller ID not available. Data requires an original publisher.')
         now = int(time.time())
         originallyPublished = now - age
         self._dataStores[layerID].setItem(key, value, now, originallyPublished, originalPublisherID, expireSeconds=expireSeconds, **kwargs)

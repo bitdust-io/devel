@@ -182,7 +182,7 @@ def find_active_group_members(group_creator_idurl):
 def rotate_active_group_memeber(old_group_key_id, new_group_key_id):
     if not get_active_group_member(old_group_key_id):
         return False
-    if get_active_group_member(new_group_key_id):
+    if get_active_group_member(new_group_key_id) in _ActiveGroupMembers:
         return False
     A = _ActiveGroupMembers.pop(old_group_key_id)
     unregister_group_member(A)
@@ -195,6 +195,9 @@ def start_group_members():
     started = 0
     for group_key_id, group_info in groups.active_groups().items():
         if not group_key_id:
+            continue
+        if group_key_id.startswith('person'):
+            # TODO: temporarily disabled
             continue
         if not group_info['active']:
             continue
@@ -788,7 +791,8 @@ class GroupMember(automat.Automat):
                         received_broker_id, self.active_broker_id, ))
         if len(found_broker_ids) > 0 and self.active_broker_id not in found_broker_ids:
             to_be_reconnected = True
-            lg.warn('found incoming message from another broker: %r' % list(found_broker_ids))
+            lg.warn('active broker is %r but incoming message received from another broker %r in %r' % (
+                self.active_broker_id, list(found_broker_ids), self, ))
         packets_to_ack.clear()
         if not received_group_messages:
             if json_messages and self.group_key_id not in found_group_ids:

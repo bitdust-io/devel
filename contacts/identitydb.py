@@ -372,10 +372,10 @@ def update(idurl, xml_src):
         oldidentity = identity.identity(xmlsrc=oldidentityxml)
 
         if oldidentity.publickey != newid.publickey:
-            # TODO: SECURITY   add some kind of black list to be able to block certain IP's if the DDoS me
+            # TODO: SECURITY   add some kind of black list to be able to block certain IP's if they DDoS me?
             if _Debug:
                 lg.args(_DebugLevel, old=oldidentity.publickey, new=newid.publickey)
-            lg.err("new public key does not match with old, SECURITY VIOLATION for %r" % idurl)
+            lg.exc(exc_value=Exception("received public key from %s does not match with already cached identity" % idurl))
             return False
 
         if oldidentity.signature != newid.signature:
@@ -385,7 +385,7 @@ def update(idurl, xml_src):
             idset(idurl, newid)
             return True
 
-    # publickeys match so we can update it
+    # public keys are matching so we can update it
     bpio.WriteTextFile(filename, xml_src)
     idset(idurl, newid)
 

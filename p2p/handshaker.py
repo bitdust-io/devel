@@ -372,7 +372,6 @@ class Handshaker(automat.Automat):
         info = kwargs.get('info')
         if response and info:
             lg.warn('handshake failed because received Fail() from remote user %r : %r' % (response, info, ))
-            lg.exc(exc_value=Exception('handshake failed because received Fail() from remote user'))
             for result_defer in _RunningHandshakers[self.remote_idurl]['results']:
                 result_defer.errback(Exception('handshake failed because received Fail() packet from remote user'))
             return

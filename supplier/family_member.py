@@ -35,10 +35,6 @@ _DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
-DHT_RECORD_REFRESH_INTERVAL = 2 * 60
-
-#------------------------------------------------------------------------------
-
 import re
 
 from twisted.internet.task import LoopingCall
@@ -72,6 +68,10 @@ from p2p import commands
 _CustomersFamilies = {}
 
 _ValidRequests = ['family-refresh', 'family-join', 'family-leave', ]
+
+#------------------------------------------------------------------------------
+
+DHT_RECORD_REFRESH_INTERVAL = 3 * 60
 
 #------------------------------------------------------------------------------
 
@@ -923,7 +923,8 @@ class FamilyMember(automat.Automat):
         d.addErrback(self._on_dht_write_failed, retries)
 
     def _on_family_refresh_task(self):
-        self.automat('family-refresh')
+        if self.state == 'CONNECTED':
+            self.automat('family-refresh')
 
     def _on_dht_read_success(self, dht_result):
         if dht_result and isinstance(dht_result, dict) and len(dht_result.get('suppliers', [])) > 0:
