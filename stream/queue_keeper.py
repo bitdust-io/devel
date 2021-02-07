@@ -462,37 +462,35 @@ class QueueKeeper(automat.Automat):
         self.known_brokers.clear()
         self.destroy()
 
-    def _on_read_customer_message_brokers(self, brokers_info_list, my_position):
+    def _on_read_customer_message_brokers(self, dht_brokers_info_list, my_position):
         self.known_brokers.clear()
-        if not brokers_info_list:
+        if not dht_brokers_info_list:
             lg.warn('no brokers found in DHT records for customer %r' % self.customer_idurl)
             self.dht_read_use_cache = False
             self.automat('my-record-not-exist', desired_position=my_position)
             return
         my_broker_info = None
         my_position_info = None
-        for broker_info in brokers_info_list:
-            if broker_info:
-                broker_idurl = broker_info.get('broker_idurl')
-                broker_position = broker_info.get('position')
-                self.known_brokers[broker_position] = broker_idurl
-                if broker_position == my_position:
-                    my_position_info = broker_info
-                if id_url.to_bin(broker_idurl) == id_url.to_bin(self.broker_idurl):
+        for dht_broker_info in dht_brokers_info_list:
+            if dht_broker_info:
+                dht_broker_idurl = dht_broker_info.get('broker_idurl')
+                dht_broker_position = int(dht_broker_info.get('position'))
+                self.known_brokers[dht_broker_position] = dht_broker_idurl
+                if int(dht_broker_position) == int(my_position):
+                    my_position_info = dht_broker_info
+                if id_url.to_bin(dht_broker_idurl) == id_url.to_bin(self.broker_idurl):
                     if not my_broker_info:
-                        my_broker_info = broker_info
+                        my_broker_info = dht_broker_info
                     else:
                         if my_broker_info['position'] == my_position:
-                            lg.warn('my broker info already found on correct position, ignoring record: %r' % broker_info)
+                            lg.warn('my broker info already found on correct position, ignoring record: %r' % dht_broker_info)
                         else:
                             lg.warn('my broker info already found, but on different position: %d' % my_broker_info['position'])
-                            if my_broker_info['position'] == broker_position:
+                            if int(my_broker_info['position']) == int(dht_broker_position):
                                 pass
                             else:
-                                lg.warn('overwriting already populated broker record found on another position: %d' % broker_position)
-                                my_broker_info = broker_info
-                if my_broker_info:
-                    lg.dbg(_DebugLevel, 'found my broker record: %r' % my_broker_info)
+                                lg.warn('overwriting already populated broker record found on another position: %d' % dht_broker_position)
+                                my_broker_info = dht_broker_info
         if _Debug:
             lg.args(_DebugLevel, my_position=my_position, my_broker_info=my_broker_info, my_position_info=my_position_info,
                     known_brokers=self.known_brokers)

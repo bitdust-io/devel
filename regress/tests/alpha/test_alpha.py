@@ -1080,6 +1080,9 @@ def scenario12_end(old_customer_4_info):
     ))
 
     # verify group queue ID suppose to be changed
+    customer_4_group_reconnected = kw.group_reconnect_v1('customer-4', customer_4_group_key_id)['result']
+    assert customer_4_group_reconnected['state'] == 'IN_SYNC!'
+
     customer_4_group_info_rotated = kw.group_info_v1('customer-4', customer_4_group_key_id, wait_state='IN_SYNC!')['result']
     assert customer_4_group_info_rotated['state'] == 'IN_SYNC!'
     assert customer_4_group_info_rotated['last_sequence_id'] == 5
@@ -1103,6 +1106,9 @@ def scenario12_end(old_customer_4_info):
     assert 'customer-4@id-b_8084' in customer_4_rotated_broker_producers
 
     # same for customer-2 group queue ID suppose to be changed
+    customer_2_group_reconnected = kw.group_reconnect_v1('customer-2', customer_4_group_key_id)['result']
+    assert customer_2_group_reconnected['state'] == 'IN_SYNC!'
+
     customer_2_group_info_rotated = kw.group_info_v1('customer-2', customer_4_group_key_id, wait_state='IN_SYNC!', stop_state='DISCONNECTED')['result']
     if customer_2_group_info_rotated['state'] == 'DISCONNECTED':
         # try to reconnect - it is fine to be disconnected when top broker's IDURL was rotated
@@ -1116,6 +1122,9 @@ def scenario12_end(old_customer_4_info):
     customer_2_rotated_queue_id = customer_2_group_info_rotated['active_queue_id']
     customer_2_rotated_broker_id = customer_2_group_info_rotated['active_broker_id']
 
+    customer_4_group_reconnected = kw.group_reconnect_v1('customer-4', customer_4_group_key_id)['result']
+    assert customer_4_group_reconnected['state'] == 'IN_SYNC!'
+
     customer_4_group_info_rotated = kw.group_info_v1('customer-4', customer_4_group_key_id, wait_state='IN_SYNC!')['result']
     assert customer_4_group_info_rotated['state'] == 'IN_SYNC!'
     assert customer_4_group_info_rotated['last_sequence_id'] == 5
@@ -1124,8 +1133,8 @@ def scenario12_end(old_customer_4_info):
     customer_4_rotated_broker_id = customer_4_group_info_rotated['active_broker_id']
     customer_4_rotated_broker_name = customer_4_rotated_broker_id.split('@')[0]
 
-    assert customer_2_rotated_queue_id == customer_4_rotated_queue_id
-    assert customer_2_rotated_broker_id == customer_4_rotated_broker_id
+    assert customer_2_rotated_queue_id != customer_4_rotated_queue_id
+    assert customer_2_rotated_broker_id != customer_4_rotated_broker_id
     assert customer_2_rotated_queue_id != customer_4_active_queue_id
     assert customer_2_rotated_broker_id != customer_4_active_broker_id
 

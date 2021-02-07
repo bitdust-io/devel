@@ -183,14 +183,29 @@ def restart_active_group_member(group_key_id):
     existing_group_member = get_active_group_member(group_key_id)
     if not existing_group_member:
         lg.err('did not found active group member %r' % group_key_id)
-        return False
+        return None
+    result = Deferred()
     existing_group_member.automat('shutdown')
     new_group_member = GroupMember(group_key_id)
     new_group_member.automat('init')
     new_group_member.automat('join')
     if _Debug:
         lg.args(_DebugLevel, group_key_id=group_key_id, existing=existing_group_member.index, new=new_group_member.index)
-    return
+
+    def _on_group_member_state_changed(oldstate, newstate, event_string, *args, **kwargs):
+        if _Debug:
+            lg.args(_DebugLevel, oldstate=oldstate, newstate=newstate, event_string=event_string)
+        if newstate == 'IN_SYNC!' and oldstate != newstate:
+            new_group_member.removeStateChangedCallback(_on_group_member_state_changed)
+            result.callback(new_group_member.to_json())
+        return None
+        if newstate == 'DISCONNECTED' and oldstate != newstate:
+            new_group_member.removeStateChangedCallback(_on_group_member_state_changed)
+            result.callback(new_group_member.to_json())
+        return None
+
+    new_group_member.addStateChangedCallback(_on_group_member_state_changed)
+    return result
 
 #------------------------------------------------------------------------------
 

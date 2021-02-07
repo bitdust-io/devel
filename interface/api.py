@@ -2669,11 +2669,13 @@ def group_reconnect(group_key_id):
         return ERROR('invalid group id')
     if not my_keys.is_key_registered(group_key_id):
         return ERROR('unknown group key')
-    this_group_member = group_member.get_active_group_member(group_key_id)
-    if not this_group_member:
+    ret = Deferred()
+    d = group_member.restart_active_group_member(group_key_id)
+    if not d:
         return ERROR('group is not active at the moment')
-    group_member.restart_active_group_member(group_key_id)
-    return OK(message='reconnecting to the group %r ' % group_key_id)
+    d.addCallback(lambda resp: ret.callback(OK(resp, api_method='group_reconnect')))
+    d.addErrback(lambda err: ret.callback(ERROR(err, api_method='group_reconnect')))
+    return ret
 
 
 def group_share(group_key_id, trusted_user_id, timeout=30, publish_events=False):
