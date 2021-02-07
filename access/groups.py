@@ -460,6 +460,10 @@ def set_broker(customer_id, broker_id, position=0):
     }
     prev_borker_id = known_brokers(customer_id)[position]
     if prev_borker_id:
+        if prev_borker_id == broker_id:
+            if _Debug:
+                lg.args(_DebugLevel, customer_id=customer_id, position=position, broker_id=broker_id, prev_borker_id=prev_borker_id)
+            return True
         prev_broker_path = os.path.join(customer_dir, prev_borker_id)
         try:
             os.remove(prev_broker_path)

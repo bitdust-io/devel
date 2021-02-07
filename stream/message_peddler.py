@@ -132,7 +132,7 @@ def register_stream(queue_id):
     if not customer_idurl:
         raise Exception('unknown customer')
     if not id_url.is_cached(customer_idurl):
-        raise Exception('customer idurl is not cached yet')
+        raise Exception('customer idurl %r is not cached yet' % customer_idurl)
     if customer_idurl not in customers():
         customers()[customer_idurl] = []
     else:
@@ -160,7 +160,7 @@ def unregister_stream(queue_id):
     if not customer_idurl:
         raise Exception('unknown customer')
     if not id_url.is_cached(customer_idurl):
-        raise Exception('customer idurl is not cached yet')
+        raise Exception('customer idurl %r is not cached yet' % customer_idurl)
     if customer_idurl not in customers():
         raise Exception('customer is not registered')
     if queue_id not in customers()[customer_idurl]:
@@ -1240,6 +1240,12 @@ class MessagePeddler(automat.Automat):
             consumers_dir = os.path.join(queue_dir, 'consumers')
             producers_dir = os.path.join(queue_dir, 'producers')
             if queue_id not in streams():
+                queue_info = global_id.ParseGlobalQueueID(queue_id)
+                customer_idurl = global_id.glob2idurl(queue_info['owner_id'])
+                if not id_url.is_cached(customer_idurl):
+                    lg.warn('customer %r idurl still is not cached yet, not able to load stream %r' % (
+                        customer_idurl, queue_id, ))
+                    continue
                 try:
                     register_stream(queue_id)
                 except:
