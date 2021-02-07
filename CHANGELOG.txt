@@ -2,6 +2,13 @@ Change Log
 ==========
 
 
+2021-02-07 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* one more minor fix in message_peddler()
+* added api.group_reconnect() method
+
+
+
 2021-02-06 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * IDURL bug fixes in  access/groups.py
