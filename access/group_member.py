@@ -179,15 +179,32 @@ def find_active_group_members(group_creator_idurl):
 
 #------------------------------------------------------------------------------
 
+def restart_active_group_member(group_key_id):
+    existing_group_member = get_active_group_member(group_key_id)
+    if not existing_group_member:
+        lg.err('did not found active group member %r' % group_key_id)
+        return False
+    existing_group_member.automat('shutdown')
+    new_group_member = GroupMember(group_key_id)
+    new_group_member.automat('init')
+    new_group_member.automat('join')
+    if _Debug:
+        lg.args(_DebugLevel, group_key_id=group_key_id, existing=existing_group_member.index, new=new_group_member.index)
+    return
+
+#------------------------------------------------------------------------------
+
 def rotate_active_group_memeber(old_group_key_id, new_group_key_id):
+    global _ActiveGroupMembers
     if not get_active_group_member(old_group_key_id):
         return False
     if get_active_group_member(new_group_key_id) in _ActiveGroupMembers:
         return False
-    A = _ActiveGroupMembers.pop(old_group_key_id)
+    A = get_active_group_member(old_group_key_id)
     unregister_group_member(A)
     A.update_group_key_id(new_group_key_id)
     register_group_member(A)
+    return True
 
 #------------------------------------------------------------------------------
 
@@ -328,7 +345,7 @@ class GroupMember(automat.Automat):
                 old_state=oldstate,
                 new_state=newstate,
             ))
-        if newstate not in ['DISCONNECTED', 'IN_SYNC!', ] and oldstate in ['DISCONNECTED', 'IN_SYNC!', ]:
+        if newstate not in ['DISCONNECTED', 'IN_SYNC!', 'CLOSED', ] and oldstate in ['DISCONNECTED', 'IN_SYNC!', ]:
             lg.info('group connecting : %s' % self.group_key_id)
             events.send('group-connecting', data=dict(
                 group_key_id=self.group_key_id,

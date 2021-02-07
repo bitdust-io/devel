@@ -812,6 +812,15 @@ class BitDustRESTHTTPServer(JsonAPIResource):
             erase_key=data.get('erase_key', False),
         )
 
+    @PUT('^/gr/r$')
+    @PUT('^/v1/group/reconnect$')
+    @PUT('^/group/reconnect/v1$')
+    def group_reconnect_v1(self, request):
+        data = _request_data(request, mandatory_keys=['group_key_id', ])
+        return api.group_reconnect(
+            group_key_id=data['group_key_id'],
+        )
+
     @PUT('^/gr/sh$')
     @PUT('^/v1/group/share$')
     @PUT('^/group/share/v1$')
