@@ -1243,7 +1243,7 @@ class MessagePeddler(automat.Automat):
                 queue_info = global_id.ParseGlobalQueueID(queue_id)
                 customer_idurl = global_id.glob2idurl(queue_info['owner_id'])
                 if not id_url.is_cached(customer_idurl):
-                    lg.warn('customer %r idurl still is not cached yet, not able to load stream %r' % (
+                    lg.err('customer %r IDURL still is not cached, not able to load stream %r' % (
                         customer_idurl, queue_id, ))
                     continue
                 try:

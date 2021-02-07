@@ -186,7 +186,7 @@ def restart_active_group_member(group_key_id):
         return None
     result = Deferred()
     existing_group_member.automat('shutdown')
-    new_group_member = GroupMember(group_key_id)
+    new_group_member = GroupMember(group_key_id, use_dht_cache=False)
     new_group_member.automat('init')
     new_group_member.automat('join')
     if _Debug:
@@ -265,6 +265,7 @@ class GroupMember(automat.Automat):
         self,
         group_key_id,
         member_idurl=None,
+        use_dht_cache=True,
         debug_level=_DebugLevel,
         log_events=_Debug,
         log_transitions=_Debug,
@@ -289,7 +290,7 @@ class GroupMember(automat.Automat):
         self.last_sequence_id = groups.get_last_sequence_id(self.group_key_id)
         self.outgoing_messages = {}
         self.outgoing_counter = 0
-        self.dht_read_use_cache = True
+        self.dht_read_use_cache = use_dht_cache
         self.buffered_messages = {}
         self.recorded_messages = []
         super(GroupMember, self).__init__(

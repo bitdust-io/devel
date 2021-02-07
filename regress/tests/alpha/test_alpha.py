@@ -1063,9 +1063,9 @@ def scenario12_end(old_customer_4_info):
                      'http://id-a:8084/broker-1.xml,http://id-b:8084/broker-2.xml,http://id-a:8084/broker-3.xml,http://id-b:8084/broker-4.xml')
 
     customer_4_group_key_id = old_customer_4_info['group_key_id']
-    customer_4_active_queue_id = old_customer_4_info['active_queue_id']
-    customer_4_active_broker_id = old_customer_4_info['active_broker_id']
-    customer_4_active_broker_name = old_customer_4_info['active_broker_name']
+    customer_4_old_queue_id = old_customer_4_info['active_queue_id']
+    customer_4_old_broker_id = old_customer_4_info['active_broker_id']
+    customer_4_old_broker_name = old_customer_4_info['active_broker_name']
 
     # send one message to the group after brokers rotated from customer-4
     group_customers_2_4_messages.append(kw.verify_message_sent_received(
@@ -1091,10 +1091,10 @@ def scenario12_end(old_customer_4_info):
     customer_4_rotated_broker_id = customer_4_group_info_rotated['active_broker_id']
     customer_4_rotated_broker_name = customer_4_rotated_broker_id.split('@')[0]
 
-    assert customer_4_rotated_queue_id != customer_4_active_queue_id
-    assert customer_4_rotated_broker_id != customer_4_active_broker_id
+    assert customer_4_rotated_queue_id != customer_4_old_queue_id
+    assert customer_4_rotated_broker_id != customer_4_old_broker_id
     assert customer_4_rotated_queue_id in kw.queue_list_v1(customer_4_rotated_broker_name, extract_ids=True)
-    assert customer_4_active_queue_id not in kw.queue_list_v1(customer_4_rotated_broker_name, extract_ids=True)
+    assert customer_4_old_queue_id not in kw.queue_list_v1(customer_4_rotated_broker_name, extract_ids=True)
 
     customer_4_rotated_broker_consumers = kw.queue_consumer_list_v1(customer_4_rotated_broker_name, extract_ids=True)
     customer_4_rotated_broker_producers = kw.queue_producer_list_v1(customer_4_rotated_broker_name, extract_ids=True)
@@ -1133,10 +1133,10 @@ def scenario12_end(old_customer_4_info):
     customer_4_rotated_broker_id = customer_4_group_info_rotated['active_broker_id']
     customer_4_rotated_broker_name = customer_4_rotated_broker_id.split('@')[0]
 
-    assert customer_2_rotated_queue_id != customer_4_rotated_queue_id
-    assert customer_2_rotated_broker_id != customer_4_rotated_broker_id
-    assert customer_2_rotated_queue_id != customer_4_active_queue_id
-    assert customer_2_rotated_broker_id != customer_4_active_broker_id
+    assert customer_2_rotated_queue_id == customer_4_rotated_queue_id
+    assert customer_2_rotated_broker_id == customer_4_rotated_broker_id
+    assert customer_2_rotated_queue_id != customer_4_old_queue_id
+    assert customer_2_rotated_broker_id != customer_4_old_broker_id
 
     # sending again few messages to the group from customer-4
     for i in range(5):
@@ -1159,8 +1159,8 @@ def scenario12_end(old_customer_4_info):
 
     kw.wait_packets_finished(PROXY_IDS + CUSTOMERS_IDS + BROKERS_IDS)
 
-    customer_4_broker_consumers = kw.queue_consumer_list_v1(customer_4_active_broker_name, extract_ids=True)
-    customer_4_broker_producers = kw.queue_producer_list_v1(customer_4_active_broker_name, extract_ids=True)
+    customer_4_broker_consumers = kw.queue_consumer_list_v1(customer_4_old_broker_name, extract_ids=True)
+    customer_4_broker_producers = kw.queue_producer_list_v1(customer_4_old_broker_name, extract_ids=True)
     assert 'customer-4@id-b_8084' not in customer_4_broker_consumers
     assert 'customer-4@id-b_8084' not in customer_4_broker_producers
     # assert 'customer-2@id-b_8084' not in customer_4_broker_consumers
