@@ -2535,7 +2535,7 @@ def group_info(group_key_id):
     return OK(response)
 
 
-def group_join(group_key_id, publish_events=False):
+def group_join(group_key_id, publish_events=False, use_dht_cache=True):
     """
     Activates given messaging group to be able to receive streamed messages or send a new message to the group.
 
@@ -2589,6 +2589,7 @@ def group_join(group_key_id, publish_events=False):
             existing_group_member = group_member.GroupMember(
                 group_key_id=group_key_id,
                 publish_events=publish_events,
+                use_dht_cache=use_dht_cache,
             )
             started_group_members.append(existing_group_member)
         if existing_group_member.state in ['DHT_READ?', 'BROKERS?', 'QUEUE?', 'IN_SYNC!', ]:
@@ -2649,7 +2650,7 @@ def group_leave(group_key_id, erase_key=False):
     return OK(message='group %r deactivated' % group_key_id)
 
 
-def group_reconnect(group_key_id):
+def group_reconnect(group_key_id, use_dht_cache=False):
     """
     Refreshing given messaging group - disconnect from the group first and then join again.
     Helpful method to reconnect with the message brokers effectively.
@@ -2670,7 +2671,7 @@ def group_reconnect(group_key_id):
     if not my_keys.is_key_registered(group_key_id):
         return ERROR('unknown group key')
     ret = Deferred()
-    d = group_member.restart_active_group_member(group_key_id)
+    d = group_member.restart_active_group_member(group_key_id, use_dht_cache=use_dht_cache)
     if not d:
         return ERROR('group is not active at the moment')
     d.addCallback(lambda resp: ret.callback(OK(resp, api_method='group_reconnect')))

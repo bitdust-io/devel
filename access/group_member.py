@@ -179,18 +179,22 @@ def find_active_group_members(group_creator_idurl):
 
 #------------------------------------------------------------------------------
 
-def restart_active_group_member(group_key_id):
+def restart_active_group_member(group_key_id, use_dht_cache=False):
     existing_group_member = get_active_group_member(group_key_id)
     if not existing_group_member:
         lg.err('did not found active group member %r' % group_key_id)
         return None
     result = Deferred()
+    existing_index = existing_group_member.index
     existing_group_member.automat('shutdown')
-    new_group_member = GroupMember(group_key_id, use_dht_cache=False)
+    existing_group_member = None
+    del existing_group_member
+    new_group_member = GroupMember(group_key_id, use_dht_cache=use_dht_cache)
+    new_index = new_group_member.index
     new_group_member.automat('init')
     new_group_member.automat('join')
     if _Debug:
-        lg.args(_DebugLevel, group_key_id=group_key_id, existing=existing_group_member.index, new=new_group_member.index)
+        lg.args(_DebugLevel, group_key_id=group_key_id, existing=existing_index, new=new_index)
 
     def _on_group_member_state_changed(oldstate, newstate, event_string, *args, **kwargs):
         if _Debug:
@@ -211,14 +215,18 @@ def restart_active_group_member(group_key_id):
 
 def rotate_active_group_memeber(old_group_key_id, new_group_key_id):
     global _ActiveGroupMembers
-    if not get_active_group_member(old_group_key_id):
+    A_old = get_active_group_member(old_group_key_id)
+    if not A_old:
         return False
-    if get_active_group_member(new_group_key_id) in _ActiveGroupMembers:
+    A_new = get_active_group_member(new_group_key_id)
+    if A_new and A_new in _ActiveGroupMembers:
+        lg.err('it seems group %r already rotated, but older copy also exists at the moment: %r' % (A_new, A_old, ))
         return False
-    A = get_active_group_member(old_group_key_id)
-    unregister_group_member(A)
-    A.update_group_key_id(new_group_key_id)
-    register_group_member(A)
+    del A_new  # just my paranoia
+    unregister_group_member(A_old)
+    A_old.update_group_key_id(new_group_key_id)
+    register_group_member(A_old)
+    restart_active_group_member(new_group_key_id)
     return True
 
 #------------------------------------------------------------------------------
@@ -277,7 +285,12 @@ class GroupMember(automat.Automat):
         """
         self.member_idurl = member_idurl or my_id.getIDURL()
         self.member_id = self.member_idurl.to_id()
-        self.update_group_key_id(group_key_id)
+        self.group_key_id = group_key_id
+        self.group_glob_id = global_id.ParseGlobalID(self.group_key_id)
+        self.group_queue_alias = self.group_glob_id['key_alias']
+        self.group_creator_id = self.group_glob_id['customer']
+        self.group_creator_idurl = self.group_glob_id['idurl']
+        self.member_sender_id = global_id.MakeGlobalID(idurl=self.member_idurl, key_alias=self.group_queue_alias)
         self.active_broker_id = None
         self.active_queue_id = None
         self.dead_broker_id = None
