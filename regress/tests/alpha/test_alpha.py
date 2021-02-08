@@ -1477,7 +1477,7 @@ def scenario17(old_customer_2_info):
     shutil.move(backup_file_directory_c2, backup_file_directory_c3)
 
     # before start the restore make sure all files actually are delivered to suppliers
-    kw.file_list_all_v1('customer-2', expected_reliable=100, reliable_shares=False, attempts=20)
+    kw.file_list_all_v1('customer-2', expected_reliable=50, reliable_shares=False, attempts=20)
 
     # stop customer-2 node
     response = request_get('customer-2', 'process/stop/v1')

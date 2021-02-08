@@ -274,7 +274,7 @@ def file_list_all_v1(node, expected_reliable=100, reliable_shares=True, attempts
     latest_reliable = None
     latest_reliable_fileinfo = None
     count = 0
-    while latest_reliable is None or latest_reliable <= expected_reliable:
+    while latest_reliable is None or latest_reliable < expected_reliable:
         response = request_get(node, 'file/list/all/v1', timeout=20)
         assert response.status_code == 200
         if verbose:
