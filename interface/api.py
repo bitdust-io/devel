@@ -2649,6 +2649,35 @@ def group_leave(group_key_id, erase_key=False):
     return OK(message='group %r deactivated' % group_key_id)
 
 
+def group_reconnect(group_key_id):
+    """
+    Refreshing given messaging group - disconnect from the group first and then join again.
+    Helpful method to reconnect with the message brokers effectively.
+
+    ###### HTTP
+        curl -X PUT 'localhost:8180/group/reconnect/v1' -d '{"group_key_id": "group_95d0fedc46308e2254477fcb96364af9$alice@server-a.com"}'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "group_reconnect", "kwargs": {"group_key_id": "group_95d0fedc46308e2254477fcb96364af9$alice@server-a.com"} }');
+    """
+    if not driver.is_on('service_private_groups'):
+        return ERROR('service_private_groups() is not started')
+    from access import group_member
+    from crypt import my_keys
+    group_key_id = strng.to_text(group_key_id)
+    if not group_key_id.startswith('group_'):
+        return ERROR('invalid group id')
+    if not my_keys.is_key_registered(group_key_id):
+        return ERROR('unknown group key')
+    ret = Deferred()
+    d = group_member.restart_active_group_member(group_key_id)
+    if not d:
+        return ERROR('group is not active at the moment')
+    d.addCallback(lambda resp: ret.callback(OK(resp, api_method='group_reconnect')))
+    d.addErrback(lambda err: ret.callback(ERROR(err, api_method='group_reconnect')))
+    return ret
+
+
 def group_share(group_key_id, trusted_user_id, timeout=30, publish_events=False):
     """
     Provide access to given group identified by `group_key_id` to another trusted user.

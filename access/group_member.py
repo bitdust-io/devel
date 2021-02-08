@@ -179,15 +179,47 @@ def find_active_group_members(group_creator_idurl):
 
 #------------------------------------------------------------------------------
 
+def restart_active_group_member(group_key_id):
+    existing_group_member = get_active_group_member(group_key_id)
+    if not existing_group_member:
+        lg.err('did not found active group member %r' % group_key_id)
+        return None
+    result = Deferred()
+    existing_group_member.automat('shutdown')
+    new_group_member = GroupMember(group_key_id, use_dht_cache=False)
+    new_group_member.automat('init')
+    new_group_member.automat('join')
+    if _Debug:
+        lg.args(_DebugLevel, group_key_id=group_key_id, existing=existing_group_member.index, new=new_group_member.index)
+
+    def _on_group_member_state_changed(oldstate, newstate, event_string, *args, **kwargs):
+        if _Debug:
+            lg.args(_DebugLevel, oldstate=oldstate, newstate=newstate, event_string=event_string)
+        if newstate == 'IN_SYNC!' and oldstate != newstate:
+            new_group_member.removeStateChangedCallback(_on_group_member_state_changed)
+            result.callback(new_group_member.to_json())
+        return None
+        if newstate == 'DISCONNECTED' and oldstate != newstate:
+            new_group_member.removeStateChangedCallback(_on_group_member_state_changed)
+            result.callback(new_group_member.to_json())
+        return None
+
+    new_group_member.addStateChangedCallback(_on_group_member_state_changed)
+    return result
+
+#------------------------------------------------------------------------------
+
 def rotate_active_group_memeber(old_group_key_id, new_group_key_id):
+    global _ActiveGroupMembers
     if not get_active_group_member(old_group_key_id):
         return False
     if get_active_group_member(new_group_key_id) in _ActiveGroupMembers:
         return False
-    A = _ActiveGroupMembers.pop(old_group_key_id)
+    A = get_active_group_member(old_group_key_id)
     unregister_group_member(A)
     A.update_group_key_id(new_group_key_id)
     register_group_member(A)
+    return True
 
 #------------------------------------------------------------------------------
 
@@ -233,6 +265,7 @@ class GroupMember(automat.Automat):
         self,
         group_key_id,
         member_idurl=None,
+        use_dht_cache=True,
         debug_level=_DebugLevel,
         log_events=_Debug,
         log_transitions=_Debug,
@@ -257,7 +290,7 @@ class GroupMember(automat.Automat):
         self.last_sequence_id = groups.get_last_sequence_id(self.group_key_id)
         self.outgoing_messages = {}
         self.outgoing_counter = 0
-        self.dht_read_use_cache = True
+        self.dht_read_use_cache = use_dht_cache
         self.buffered_messages = {}
         self.recorded_messages = []
         super(GroupMember, self).__init__(
@@ -328,7 +361,7 @@ class GroupMember(automat.Automat):
                 old_state=oldstate,
                 new_state=newstate,
             ))
-        if newstate not in ['DISCONNECTED', 'IN_SYNC!', ] and oldstate in ['DISCONNECTED', 'IN_SYNC!', ]:
+        if newstate not in ['DISCONNECTED', 'IN_SYNC!', 'CLOSED', ] and oldstate in ['DISCONNECTED', 'IN_SYNC!', ]:
             lg.info('group connecting : %s' % self.group_key_id)
             events.send('group-connecting', data=dict(
                 group_key_id=self.group_key_id,
