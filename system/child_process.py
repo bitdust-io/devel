@@ -51,7 +51,6 @@ from system import nonblocking
 
 #------------------------------------------------------------------------------
 
-
 class ChildProcessProtocol(protocol.ProcessProtocol):
 
     def __init__(self, name):
@@ -65,7 +64,6 @@ class ChildProcessProtocol(protocol.ProcessProtocol):
         lg.out(2, 'child process [%s] FINISHED' % self.name)
 
 #------------------------------------------------------------------------------
-
 
 def run(child_name, params=[], base_dir='.', process_protocol=None):
     """

@@ -1075,9 +1075,14 @@ class MessagePeddler(automat.Automat):
                 result_defer.callback(False)
                 return
             if my_keys.get_public_key_raw(group_key_id) != key_object.toPublicString():
-                p2p_service.SendFail(request_packet, 'another public key already registered with same id')
-                result_defer.callback(False)
-                return
+                my_keys.erase_key(group_key_id)
+                if not my_keys.register_key(group_key_id, key_object, group_key_info.get('label', '')):
+                    p2p_service.SendFail(request_packet, 'key register failed')
+                    result_defer.callback(False)
+                    return
+                # p2p_service.SendFail(request_packet, 'another public key already registered with same id')
+                # result_defer.callback(False)
+                # return
         else:
             if not my_keys.register_key(group_key_id, key_object, group_key_info.get('label', '')):
                 p2p_service.SendFail(request_packet, 'key register failed')
