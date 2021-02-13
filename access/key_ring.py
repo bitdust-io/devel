@@ -440,10 +440,15 @@ def on_key_received(newpacket, info, status, error_message):
                     # TODO: check other scenarios
                     raise Exception('private key already registered with %r' % key_id)
                 if my_keys.get_public_key_raw(key_id) != key_object.toPublicString():
+                    my_keys.erase_key(key_id)
+                    if not my_keys.register_key(key_id, key_object, label=key_label):
+                        raise Exception('key register failed')
+                    else:
+                        lg.info('replaced existing key %s, is_public=%s' % (key_id, key_object.isPublic()))
                     # normally should not overwrite existing public key
                     # TODO: look more if need to add some extra checks
                     # for example need to be able to overwrite or erase remotely some keys to cleanup
-                    raise Exception('another public key already registered with %r and new key is not matching' % key_id)
+                    # raise Exception('another public key already registered with %r and new key is not matching' % key_id)
                 p2p_service.SendAck(newpacket)
                 lg.warn('received existing public key: %s, skip' % key_id)
                 return True
@@ -468,9 +473,9 @@ def on_key_received(newpacket, info, status, error_message):
                 lg.warn('received again an exact copy of already existing private key: %s, skip' % key_id)
                 return True
             # but we have a public key with same ID already
-            if my_keys.get_public_key_raw(key_id) != key_object.toPublicString():
-                # and we should not overwrite existing public key as well
-                raise Exception('another public key already registered with that ID and it is not matching with private key')
+            # if my_keys.get_public_key_raw(key_id) != key_object.toPublicString():
+            #     # and we should not overwrite existing public key as well
+            #     raise Exception('another public key already registered with that ID and it is not matching with private key')
             lg.info('erasing public key %s' % key_id)
             my_keys.erase_key(key_id)
             if not my_keys.register_key(key_id, key_object, label=key_label):

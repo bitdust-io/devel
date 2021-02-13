@@ -510,7 +510,7 @@ def total_suppliers():
     global _SuppliersList
     result = set()
     for suppliers_list in _SuppliersList.values():
-        result.update(set(suppliers_list))
+        result.update(set(id_url.to_bin_list(suppliers_list)))
     return len(result)
 
 
