@@ -2,6 +2,22 @@ Change Log
 ==========
 
 
+2021-02-13 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* able to replace existing public keys received from other nodes
+* bump cryptography from 3.2 to 3.4.4
+
+
+
+2021-02-08 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* api.group_reconnect() should not use DHT cache
+* fixed issue in message group reconnecting
+* another issue with duplicated DHT records for message brokers
+* bug fix in  access/groups.py
+
+
+
 2021-02-07 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * one more minor fix in message_peddler()
