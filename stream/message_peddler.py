@@ -1122,7 +1122,7 @@ class MessagePeddler(automat.Automat):
             result_defer.callback(True)
             return
         if not my_keys.verify_key_info_signature(group_key_info):
-            p2p_service.SendFail(request_packet, 'group key verification failed')
+            p2p_service.SendFail(request_packet, 'group key verification failed while stopping consumer or producer')
             result_defer.callback(False)
             return
         try:
