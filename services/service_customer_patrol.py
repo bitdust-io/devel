@@ -53,8 +53,7 @@ class CustomerPatrolService(LocalService):
         from main.config import conf
         from supplier import local_tester
         customers_rejector.A('restart')
-        conf().addConfigNotifier('services/supplier/donated-space',
-                           self._on_donated_space_modified)
+        conf().addConfigNotifier('services/supplier/donated-space', self._on_donated_space_modified)
         local_tester.init()
         local_tester.start()
         return True

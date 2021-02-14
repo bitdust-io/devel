@@ -2389,10 +2389,10 @@ def _checkStaticDirectories():
         if _Debug:
             lg.out(_DebugLevel, 'settings.init want to create folder: ' + SuppliersDir())
         os.makedirs(SuppliersDir())
-#     if not os.path.exists(RatingsDir()):
-#         if _Debug:
-#             lg.out(_DebugLevel, 'settings.init want to create folder: ' + RatingsDir())
-#         os.makedirs(RatingsDir())
+    if not os.path.exists(RatingsDir()):
+        if _Debug:
+            lg.out(_DebugLevel, 'settings.init want to create folder: ' + RatingsDir())
+        os.makedirs(RatingsDir())
     if not os.path.exists(KeyStoreDir()):
         if _Debug:
             lg.out(_DebugLevel, 'settings.init want to create folder: ' + KeyStoreDir())

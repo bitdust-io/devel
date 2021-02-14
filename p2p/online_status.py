@@ -75,7 +75,6 @@ _DebugLevel = 10
 #------------------------------------------------------------------------------
 
 import sys
-import time
 
 try:
     from twisted.internet import reactor  # @UnresolvedImport
@@ -92,6 +91,7 @@ from logs import lg
 from automats import automat
 
 from lib import strng
+from lib import utime
 
 from contacts import contactsdb
 
@@ -502,7 +502,6 @@ def Inbox(newpacket, info, status, message):
         return False
     check_create(newpacket.OwnerID)
     A(newpacket.OwnerID, 'inbox-packet', (newpacket, info, status, message))
-    # ratings.remember_connected_time(newpacket.OwnerID)
     return False
 
 
@@ -533,11 +532,11 @@ def RunOfflineChecks():
             # if no checks done yet but he is offline: ping user
             o_status.automat('offline-check')
             continue
-        if time.time() - o_status.latest_check_time > 10 * 60:
+        if utime.get_sec1970() - o_status.latest_check_time > 10 * 60:
             # user is offline and latest check was sent a while ago: lets try to ping user again
             o_status.automat('offline-check')
             continue
-        if o_status.latest_inbox_time and time.time() - o_status.latest_inbox_time < 60:
+        if o_status.latest_inbox_time and utime.get_sec1970() - o_status.latest_inbox_time < 60:
             # user is offline, but we know that he was online recently: lets try to ping him again
             o_status.automat('offline-check')
             continue
@@ -701,7 +700,7 @@ class OnlineStatus(automat.Automat):
         """
         if not self.latest_inbox_time:
             return False
-        return time.time() - self.latest_inbox_time > 20
+        return utime.get_sec1970() - self.latest_inbox_time > 20
 
     def doInit(self, *args, **kwargs):
         """
@@ -769,13 +768,19 @@ class OnlineStatus(automat.Automat):
         """
         Action method.
         """
-        self.latest_inbox_time = time.time()
+        to_be_remembered = True
+        if self.latest_inbox_time:
+            if utime.get_sec1970() - self.latest_inbox_time < 5 * 60:
+                to_be_remembered = False
+        if to_be_remembered:
+            ratings.remember_connected_time(self.idurl.to_bin())
+        self.latest_inbox_time = utime.get_sec1970()
 
     def doRememberCheckTime(self, *args, **kwargs):
         """
         Action method.
         """
-        self.latest_check_time = time.time()
+        self.latest_check_time = utime.get_sec1970()
 
     def doReportAlreadyConnected(self, *args, **kwargs):
         """

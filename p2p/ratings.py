@@ -34,6 +34,11 @@ import time
 
 #------------------------------------------------------------------------------
 
+_Debug = True
+_DebugLevel = 14
+
+#------------------------------------------------------------------------------
+
 try:
     from twisted.internet import reactor  # @UnresolvedImport
 except:
@@ -65,15 +70,19 @@ def init():
     global _InitDone
     if _InitDone:
         return
-    lg.out(4, 'ratings.init')
+    if _Debug:
+        lg.out(_DebugLevel, 'ratings.init')
     read_index()
     run()
     _InitDone = True
 
 
 def shutdown():
-    lg.out(4, 'ratings.shutdown')
+    global _InitDone
+    if _Debug:
+        lg.out(_DebugLevel, 'ratings.shutdown')
     stop()
+    _InitDone = False
 
 
 def run():
@@ -88,14 +97,16 @@ def run():
     # debug
     #interval = 5
     reactor.callLater(interval, start)  # @UndefinedVariable
-    lg.out(6, 'ratings.run will start after %s minutes' % str(interval / 60.0))
+    if _Debug:
+        lg.out(_DebugLevel, 'ratings.run will start after %s minutes' % str(interval / 60.0))
 
 
 def start():
     global _LoopCountRatingsTask
     _LoopCountRatingsTask = task.LoopingCall(rate_all_users)
     _LoopCountRatingsTask.start(settings.DefaultAlivePacketTimeOut())
-    lg.out(6, 'ratings.start will count ratings every %s minutes' % str(settings.DefaultAlivePacketTimeOut() / 60.0))
+    if _Debug:
+        lg.out(_DebugLevel, 'ratings.start will count ratings every %s minutes' % str(settings.DefaultAlivePacketTimeOut() / 60.0))
 
 
 def stop():
@@ -105,7 +116,8 @@ def stop():
             _LoopCountRatingsTask.stop()
         del _LoopCountRatingsTask
         _LoopCountRatingsTask = None
-        lg.out(6, 'ratings.stop task finished')
+        if _Debug:
+            lg.out(_DebugLevel, 'ratings.stop task finished')
 
 
 def rating_dir(idurl):
@@ -193,23 +205,32 @@ def increase_rating(idurl, alive_state):
 
 
 def rate_all_users():
-    lg.out(4, 'ratings.rate_all_users')
-    monthStr = time.strftime('%B')
     from p2p import online_status
+    from p2p import p2p_connector
+    if not p2p_connector.A():
+        lg.warn('ratings update skipped, p2p_connector() is not running')
+        return
+    if p2p_connector.A().state != 'CONNECTED':
+        lg.warn('ratings update skipped, p2p_connector() is CONNECTED')
+        return
+    if _Debug:
+        lg.out(_DebugLevel, 'ratings.rate_all_users')
+    monthStr = time.strftime('%B')
     for idurl in contactsdb.contacts_remote(include_all=True):
         isalive = online_status.isOnline(idurl)
         mall, malive, tall, talive = increase_rating(idurl, isalive)
         month_percent = 100.0 * float(malive) / float(mall)
         total_percent = 100.0 * float(talive) / float(tall)
-        lg.out(4, '[%6.2f%%: %s/%s] in %s and [%6.2f%%: %s/%s] total - %s' % (
-            month_percent,
-            malive,
-            mall,
-            monthStr,
-            total_percent,
-            talive,
-            tall,
-            nameurl.GetName(idurl),))
+        if _Debug:
+            lg.out(_DebugLevel, '[%6.2f%%: %s/%s] in %s and [%6.2f%%: %s/%s] total - %s' % (
+                month_percent,
+                malive,
+                mall,
+                monthStr,
+                total_percent,
+                talive,
+                tall,
+                nameurl.GetName(idurl),))
     read_index()
 
 

@@ -112,6 +112,7 @@ def reset(conf_obj):
     conf_obj.setDefaultValue('services/customer-family/enabled', 'true')
 
     conf_obj.setDefaultValue('services/customer-patrol/enabled', 'true')
+    conf_obj.setDefaultValue('services/customer-patrol/customer-idle-days', 14)
 
     conf_obj.setDefaultValue('services/customer-support/enabled', 'true')
 
