@@ -63,8 +63,10 @@ class P2PHookupsService(LocalService):
         from p2p import p2p_service
         from p2p import p2p_connector
         from p2p import network_connector
+        from p2p import ratings
         p2p_service.init()
         online_status.init()
+        ratings.init()
         self._starting_defer = Deferred()
         p2p_connector.A('init')
         p2p_connector.A().addStateChangedCallback(
@@ -84,6 +86,7 @@ class P2PHookupsService(LocalService):
         from p2p import p2p_service
         from p2p import p2p_connector
         from p2p import network_connector
+        from p2p import ratings
         events.remove_subscriber(self._on_my_identity_url_changed, 'my-identity-url-changed')
         events.remove_subscriber(self._on_identity_url_changed, 'identity-url-changed')
         callback.remove_inbox_callback(self._on_inbox_packet_received)
@@ -93,6 +96,7 @@ class P2PHookupsService(LocalService):
                 self._on_network_connector_switched)
         p2p_connector.A().removeStateChangedCallback(
             self._on_p2p_connector_switched)
+        ratings.shutdown()
         online_status.shutdown()
         p2p_connector.Destroy()
         p2p_service.shutdown()

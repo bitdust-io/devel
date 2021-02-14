@@ -125,6 +125,7 @@ def defaults():
         'services/customer-contracts/enabled': TYPE_BOOLEAN,
         'services/customer-family/enabled': TYPE_BOOLEAN,
         'services/customer-patrol/enabled': TYPE_BOOLEAN,
+        'services/customer-patrol/customer-idle-days': TYPE_POSITIVE_INTEGER,
         'services/customer-support/enabled': TYPE_BOOLEAN,
         'services/data-disintegration/enabled': TYPE_BOOLEAN,
         'services/data-motion/enabled': TYPE_BOOLEAN,

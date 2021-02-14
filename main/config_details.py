@@ -171,6 +171,11 @@ This way people are able to access encrypted shared files of each other on diffe
 When you are running `supplier` service other people are able to store files on your device.
 The `customer-patrol` service makes sure that your customers do not exceed requested and agreed storage quotas.
 
+{services/customer-patrol/customer-idle-days} customer idle limit
+This option enables few periodic checks and will auto-reject customers who are no longer using your device to store any data.
+Specify number of days of customer inactivity before user will be rejected and data erased automatically.
+A value of `0` disables the feature.
+
 {services/customer-support/enabled} assist my customers
 This service performs periodic synchronization for your customers when you also enabled the `supplier` service and thus agreed to store encrypted data for them.
 Your device will try to reconnect with all known customers and keep them up to date with the full list of files they own.

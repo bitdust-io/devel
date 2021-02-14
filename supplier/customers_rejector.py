@@ -50,19 +50,15 @@ from logs import lg
 from automats import automat
 
 from main import settings
-from main import events
+from main import config
 
 from interface import api
 
 from contacts import contactsdb
 
-from lib import packetid
+from lib import utime
 
-from p2p import p2p_service
-
-from raid import eccmap
-
-from crypt import my_keys
+from p2p import ratings
 
 from storage import accounting
 
@@ -169,19 +165,19 @@ class CustomersRejector(automat.Automat):
         free_space = donated_bytes - consumed_bytes
         if consumed_bytes < donated_bytes and len(failed_customers) == 0:
             accounting.write_customers_quotas(space_dict, free_space)
-            if _Debug:
-                lg.out(_DebugLevel, '        space is OK !!!!!!!!')
-            self.automat('space-enough')
+            dead_customers = self._find_dead_customers()
+            if not dead_customers:
+                lg.info('storage quota checks succeed, all customers are verified')
+                self.automat('space-enough')
+                return
+            lg.warn('found dead customers: %r' % dead_customers)
+            self.automat('space-overflow', dead_customers)
             return
         if failed_customers:
-            if _Debug:
-                lg.out(_DebugLevel, '        found FAILED Customers: %d')
             for idurl in failed_customers:
+                lg.warn('customer %r failed storage quota verification' % idurl)
                 current_customers.remove(idurl)
-                if _Debug:
-                    lg.out(_DebugLevel, '            %r' % idurl)
-            self.automat('space-overflow', (
-                space_dict, free_space, consumed_bytes, current_customers, failed_customers))
+            self.automat('space-overflow', failed_customers)
             return
         used_space_ratio_dict = accounting.calculate_customers_usage_ratio(space_dict, used_dict)
         customers_sorted = sorted(current_customers,
@@ -193,41 +189,23 @@ class CustomersRejector(automat.Automat):
             space_dict.pop(idurl)
             failed_customers.add(idurl)
             current_customers.remove(idurl)
-            if _Debug:
-                lg.out(_DebugLevel, '        customer %s will be REMOVED' % idurl)
+            lg.warn('customer %r will be removed because of storage quota overflow' % idurl)
         free_space = donated_bytes - consumed_bytes
-        if _Debug:
-            lg.out(_DebugLevel, '        SPACE NOT ENOUGH !!!!!!!!!!')
-        self.automat('space-overflow', (
-            space_dict, free_space, consumed_bytes, current_customers, failed_customers))
+        self.automat('space-overflow', failed_customers)
 
     def doRemoveCustomers(self, *args, **kwargs):
         """
         Action method.
         """
-        space_dict, free_space, spent_bytes, current_customers, removed_customers = args[0]
+        removed_customers = args[0]
         for customer_idurl in removed_customers:
-            contactsdb.remove_customer_meta_info(customer_idurl)
-        accounting.write_customers_quotas(space_dict, free_space)
-        contactsdb.update_customers(current_customers)
-        contactsdb.save_customers()
-        for customer_idurl in removed_customers:
-            customer_key_id = my_keys.make_key_id(alias='customer', creator_idurl=customer_idurl)
-            resp = api.key_erase(customer_key_id)
-            if resp['status'] != 'OK':
-                lg.warn('key %r removal failed' % customer_key_id)
+            api.customer_reject(customer_id=customer_idurl, erase_customer_key=True)
 
     def doSendRejectService(self, *args, **kwargs):
         """
         Action method.
         """
-        space_dict, free_space, spent_bytes, current_customers, removed_customers = args[0]
-        for customer_idurl in removed_customers:
-            p2p_service.SendFailNoRequest(customer_idurl, packetid.UniqueID(), 'service rejected')
-            events.send('existing-customer-terminated', data=dict(
-                idurl=customer_idurl,
-                ecc_map=eccmap.Current().name,
-            ))
+        # TODO: rebuild state machine properly
         self.automat('packets-sent')
 
     def doRestartLocalTester(self, *args, **kwargs):
@@ -236,3 +214,17 @@ class CustomersRejector(automat.Automat):
         """
         from supplier import local_tester
         local_tester.TestSpaceTime()
+
+    def _find_dead_customers(self):
+        dead_customers = []
+        customer_idle_days = config.conf().getInt('services/customer-patrol/customer-idle-days', 0)
+        if not customer_idle_days:
+            return []
+        for customer_idurl in contactsdb.customers():
+            connected_time = ratings.connected_time(customer_idurl.to_bin())
+            if not connected_time:
+                lg.warn('last connected_time for customer %r is unknown' % customer_idurl)
+                continue
+            if utime.get_sec1970() - connected_time > customer_idle_days * 24 * 60 * 60:
+                dead_customers.append(customer_idurl)
+        return dead_customers
