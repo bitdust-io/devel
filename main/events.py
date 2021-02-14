@@ -72,6 +72,7 @@ MAX_PENDING_EVENTS_PER_CONSUMER = 100
 _Subscribers = {}
 _ConsumersCallbacks = {}
 _EventQueuePerConsumer = {}
+_EventsCount = {}
 
 #------------------------------------------------------------------------------
 
@@ -158,7 +159,11 @@ def dispatch(evt):
     """
     global _EventLogFileEnabled
     global _EventLogUseColors
+    global _EventsCount
     handled = 0
+    if evt.event_id not in _EventsCount:
+        _EventsCount[evt.event_id] = 0
+    _EventsCount[evt.event_id] += 1
     if evt.event_id in subscribers():
         for subscriber_callback in subscribers()[evt.event_id]:
             try:
@@ -202,7 +207,6 @@ def send(event_id, data=None, created=None, fast=False):
     if fast:
         dispatch(evt)
     else:
-        # reactor.callWhenRunning(dispatch, evt)  # @UndefinedVariable
         reactor.callLater(0, dispatch, evt)  # @UndefinedVariable
     return evt
 
@@ -283,3 +287,9 @@ def pop_event():
         consumers_callbacks()[consumer_id] = []
 
 #------------------------------------------------------------------------------
+
+def count(event_id=None):
+    global _EventsCount
+    if event_id is None:
+        return _EventsCount
+    return _EventsCount.get(event_id, 0)

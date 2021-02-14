@@ -1195,6 +1195,12 @@ class BitDustRESTHTTPServer(JsonAPIResource):
 
     #------------------------------------------------------------------------------
 
+    @GET('^/ev/l$')
+    @GET('^/v1/event/list$')
+    @GET('^/event/list/v1$')
+    def event_list_v1(self, request):
+        return api.events_list()
+
     @POST('^/ev/s/(?P<event_id>[^/]+)/$')
     @POST('^/v1/event/send/(?P<event_id>[^/]+)$')
     @POST('^/event/send/(?P<event_id>[^/]+)/v1$')

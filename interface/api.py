@@ -4420,6 +4420,20 @@ def queue_producers_list():
 
 #------------------------------------------------------------------------------
 
+def events_list():
+    """
+    Returns a list of all logged events since the start of the main process and the total number of occurrences of each event.
+
+    ###### HTTP
+        curl -X GET 'localhost:8180/event/list/v1'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "events_list", "kwargs": {} }');
+    """
+    from main import events
+    return OK(events.count())
+
+
 def event_send(event_id, data=None):
     """
     Method will generate and inject a new event inside the main process.
@@ -5101,7 +5115,7 @@ def automats_list():
     } for a in automat.objects().values()]
     if _Debug:
         lg.out(_DebugLevel, 'api.automats_list responded with %d items' % len(result))
-    return RESULT(result)
+    return OK(result)
 
 
 def automat_events_start(index, state_unchanged=False):
