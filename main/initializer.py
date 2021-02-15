@@ -262,9 +262,6 @@ class Initializer(automat.Automat):
         d.addBoth(lambda x: self.automat('init-services-done'))
 
     def doInitInterfaces(self, *args, **kwargs):
-        if bpio.Android():
-            lg.close_intercepted_log_file()
-            lg.open_intercepted_log_file(os.path.join(settings.LogsDir(), 'android.log'))
         if _Debug:
             lg.out(_DebugLevel, 'initializer.doInitInterfaces')
         if settings.enableFTPServer():

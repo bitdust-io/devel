@@ -277,11 +277,12 @@ def search_by_response_packet(newpacket=None, proto=None, host=None, outgoing_co
             continue
         # TODO: to be checked later - need to make sure we identify users correctly
         expected_recipient = [p.outpacket.RemoteID, ]
-        if p.outpacket.RemoteID != id_url.field(p.remote_idurl):
-            # for Retreive() packets I expect response exactly from target node
-            if p.outpacket.Command != commands.Retrieve():
-                # outgoing packet was addressed to another node, so that means we need to expect response from another node also
-                expected_recipient.append(id_url.field(p.remote_idurl))
+        if id_url.is_cached(p.outpacket.RemoteID) and id_url.is_cached(p.remote_idurl):
+            if p.outpacket.RemoteID != id_url.field(p.remote_idurl):
+                # for Retreive() packets I expect response exactly from target node
+                if p.outpacket.Command != commands.Retrieve():
+                    # outgoing packet was addressed to another node, so that means we need to expect response from another node also
+                    expected_recipient.append(id_url.field(p.remote_idurl))
         matched = False
         if incoming_owner_idurl in expected_recipient and my_id.getLocalID().to_bin() == incoming_remote_idurl.to_bin():
             if _Debug:

@@ -555,6 +555,8 @@ def on_identity_url_changed(evt):
     new_idurl = id_url.field(evt.data['new_idurl'])
     active_group_keys = list(active_groups())
     for group_key_id in active_group_keys:
+        if not group_key_id:
+            continue
         group_creator_idurl = global_id.glob2idurl(group_key_id)
         if group_creator_idurl == old_idurl:
             old_group_path = os.path.join(groups_dir, group_key_id)

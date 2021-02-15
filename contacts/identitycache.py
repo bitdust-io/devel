@@ -79,16 +79,9 @@ _OverriddenIdentities = {}
 
 
 def init():
-    """
-    This should be called before all other things.
-
-    Call to initialize identitydb and cache several important IDs.
-    """
     if _Debug:
         lg.out(_DebugLevel, 'identitycache.init')
-    if False:
-        # TODO: add settings here
-        identitydb.clear()
+    identitydb.clear()
 
 
 def shutdown():

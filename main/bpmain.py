@@ -618,11 +618,6 @@ def main(executable_path=None, start_reactor=True):
     if len(args) > 0:
         cmd = args[0].lower()
 
-    #---install---
-    if cmd in ['deploy', 'install', 'venv', 'virtualenv', ]:
-        from system import deploy
-        return deploy.run(args)
-
     try:
         from system import deploy
     except:
@@ -636,6 +631,11 @@ def main(executable_path=None, start_reactor=True):
             print('ERROR! can not import working code.  Python Path:')
             print('\n'.join(sys.path))
             return 1
+
+    #---install---
+    if cmd in ['deploy', 'install', 'venv', 'virtualenv', ]:
+        from system import deploy
+        return deploy.run(args)
 
     if opts.appdir:
         appdata = opts.appdir
@@ -663,6 +663,10 @@ def main(executable_path=None, start_reactor=True):
     # init IO module, update locale
     from system import bpio
     bpio.init()
+
+    if bpio.Android():
+        lg.close_intercepted_log_file()
+        lg.open_intercepted_log_file('/storage/emulated/0/.bitdust/logs/android.log')
 
     # sys.excepthook = lg.exception_hook
 
