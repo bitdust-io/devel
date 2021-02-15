@@ -222,9 +222,12 @@ class CustomersRejector(automat.Automat):
             return []
         for customer_idurl in contactsdb.customers():
             connected_time = ratings.connected_time(customer_idurl.to_bin())
-            if not connected_time:
-                lg.warn('last connected_time for customer %r is unknown' % customer_idurl)
+            if connected_time is None:
+                lg.warn('last connected_time for customer %r is unknown, rejecting customer' % customer_idurl)
+                dead_customers.append(customer_idurl)
                 continue
             if utime.get_sec1970() - connected_time > customer_idle_days * 24 * 60 * 60:
+                lg.warn('customer %r connected last time %r seconds ago, rejecting customer' % (
+                    customer_idurl, utime.get_sec1970() - connected_time, ))
                 dead_customers.append(customer_idurl)
         return dead_customers

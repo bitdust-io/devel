@@ -243,12 +243,12 @@ def remember_connected_time(idurl):
 def connected_time(idurl):
     s = bpio.ReadTextFile(os.path.join(rating_dir(idurl), 'connected'))
     if not s:
-        return 0
+        return None
     try:
         return time.mktime(time.strptime(s, '%d%m%y %H:%M:%S'))
     except:
         lg.exc()
-        return 0
+        return None
 
 
 def read_all_monthly_ratings(idurl):
