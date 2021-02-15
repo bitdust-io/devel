@@ -241,6 +241,8 @@ def start_group_members():
             continue
         if not group_info['active']:
             continue
+        if not id_url.is_cached(global_id.glob2idurl(group_key_id, as_field=False)):
+            continue
         existing_group_member = get_active_group_member(group_key_id)
         if not existing_group_member:
             existing_group_member = GroupMember(group_key_id)
