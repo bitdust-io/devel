@@ -800,7 +800,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
         return api.group_join(
             group_key_id=data['group_key_id'],
             publish_events=bool(data.get('publish_events', '0') in ['1', 'true', ]),
-            use_dht_cache=bool(data.get('use_dht_cache', '1') in ['1', 'true', ]),
+            use_dht_cache=bool(data.get('use_dht_cache', '0') in ['1', 'true', ]),
         )
 
     @DELETE('^/gr/lv$')
