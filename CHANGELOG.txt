@@ -2,6 +2,18 @@ Change Log
 ==========
 
 
+2021-02-16 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* do not use DHT cache for group_member()
+* more aggressive rejecting of idle customers
+* IDURL bug fix in transport/packet_out.py
+* always cleanup identitycache on startup
+* added new api.events_list() method
+* added services/customer-patrol/customer-idle-days option
+* new feature to cleanup inactive customers automaticslly
+
+
+
 2021-02-13 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * able to replace existing public keys received from other nodes

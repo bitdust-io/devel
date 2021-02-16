@@ -687,13 +687,13 @@ class GroupMember(automat.Automat):
         """
         Action method.
         """
-        self.dht_read_use_cache = True
+        # self.dht_read_use_cache = True
 
     def doDisconnected(self, *args, **kwargs):
         """
         Action method.
         """
-        self.dht_read_use_cache = False
+        # self.dht_read_use_cache = False
 
     def doDeactivate(self, event, *args, **kwargs):
         """
@@ -1269,7 +1269,7 @@ class GroupMember(automat.Automat):
             self.automat('brokers-not-found', [])
             return
         self.latest_dht_brokers = brokers_info_list
-        self.dht_read_use_cache = True
+        # self.dht_read_use_cache = True
         if groups.get_archive_folder_path(self.group_key_id) is None:
             dht_archive_folder_path = None
             for broker_info in brokers_info_list:
