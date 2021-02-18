@@ -933,8 +933,8 @@ def verify_key_info_signature(key_info):
     for field in ['key_id', 'label', 'size', 'public', 'signature_pubkey', ]:
         hash_items.append(strng.to_text(key_info[field]))
     hash_text = '-'.join(hash_items)
-    if _Debug:
-        lg.dbg(_DebugLevel, hash_text)
+    # if _Debug:
+    #     lg.dbg(_DebugLevel, hash_text)
     hash_bin = key.Hash(strng.to_bin(hash_text))
     signature_bin = strng.to_bin(key_info['signature'])
     result = key.VerifySignature(key_info['signature_pubkey'], hash_bin, signature_bin)

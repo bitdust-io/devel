@@ -290,6 +290,10 @@ def pop_event():
 
 def count(event_id=None):
     global _EventsCount
+    if 'my-identity-rotated' not in _EventsCount:
+        _EventsCount['my-identity-rotated'] = 0
+    if 'identity-rotated' not in _EventsCount:
+        _EventsCount['identity-rotated'] = 0
     if event_id is None:
         return _EventsCount
     return _EventsCount.get(event_id, 0)
