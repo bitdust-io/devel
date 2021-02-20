@@ -656,6 +656,8 @@ class SupplierConnector(automat.Automat):
                 include_signature=True,
                 generate_signature=True,
             )
+        else:
+            lg.err('my own customer key is not registered: %r' % my_customer_key_id)
         if self.key_id:
             service_info['key_id'] = self.key_id
         self._last_known_ecc_map = ecc_map

@@ -1046,6 +1046,8 @@ def get_supplier_meta_info(supplier_idurl, customer_idurl=None):
     global _SuppliersMetaInfo
     if not customer_idurl:
         customer_idurl = my_id.getLocalID()
+    if not id_url.is_cached(customer_idurl) or not id_url.is_cached(supplier_idurl):
+        return {}
     customer_idurl = id_url.field(customer_idurl)
     supplier_idurl = id_url.field(supplier_idurl)
     return jsn.dict_keys_to_text(jsn.dict_values_to_text(
