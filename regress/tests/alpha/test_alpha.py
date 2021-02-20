@@ -1081,8 +1081,8 @@ def scenario12_end(old_customer_4_info):
         message_label='G',
         expected_results={'customer-4': True, 'customer-2': True, },
         expected_last_sequence_id={'customer-4': 5, 'customer-2': 5, },
-        polling_timeout=90,
-        receive_timeout=91,
+        polling_timeout=120,
+        receive_timeout=121,
     ))
 
     # verify group queue ID suppose to be changed

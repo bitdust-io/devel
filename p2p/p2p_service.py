@@ -397,7 +397,7 @@ def CancelService(request, info):
             request.RemoteID, request.OwnerID, request.CreatorID))
 
 
-def SendCancelService(remote_idurl, service_name, json_payload={}, wide=False, callbacks={}):
+def SendCancelService(remote_idurl, service_name, json_payload={}, wide=False, callbacks={}, timeout=20):
     service_info = {
         'name': service_name,
         'payload': json_payload,
@@ -414,7 +414,7 @@ def SendCancelService(remote_idurl, service_name, json_payload={}, wide=False, c
         Payload=service_info_raw,
         RemoteID=remote_idurl,
     )
-    gateway.outbox(result, wide=wide, callbacks=callbacks)
+    gateway.outbox(result, wide=wide, callbacks=callbacks, response_timeout=timeout)
     return result
 
 #------------------------------------------------------------------------------
