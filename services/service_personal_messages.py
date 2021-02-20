@@ -62,6 +62,8 @@ class PersonalMessagesService(LocalService):
         self.starting_deferred.addErrback(lambda err: lg.warn('service %r was not started: %r' % (
             self.service_name, err.getErrorMessage() if err else 'unknown reason')))
         self.personal_group_key_id = my_keys.make_key_id(alias='person', creator_glob_id=my_id.getGlobalID())
+        # TODO: needs more work, service_private_groups() must be reliable first
+        return True
         if not my_keys.is_key_registered(self.personal_group_key_id):
             self.personal_group_key_id = groups.create_new_group(
                 label='my personal messages',

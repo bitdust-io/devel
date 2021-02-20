@@ -36,6 +36,7 @@ EVENTS:
     * :red:`service-accepted`
     * :red:`service-denied`
     * :red:`shook-hands`
+    * :red:`timer-90sec`
     * :red:`users-not-found`
 """
 
@@ -83,6 +84,10 @@ class P2PServiceSeeker(automat.Automat):
     """
 
     fast = True
+
+    timers = {
+        'timer-90sec': (90.0, ['SERVICE?']),
+        }
 
     def __repr__(self):
         return '%s[%s@%s](%s)' % (self.id, self.target_service or '', self.target_id or '', self.state)
@@ -154,11 +159,11 @@ class P2PServiceSeeker(automat.Automat):
                 self.state = 'SUCCESS'
                 self.doNotifyServiceAccepted(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-            elif ( self.Attempts==5 or not self.RandomLookup ) and ( event == 'fail' or event == 'service-denied' ):
+            elif ( self.Attempts==5 or not self.RandomLookup ) and ( event == 'timer-90sec' or event == 'fail' or event == 'service-denied' ):
                 self.state = 'FAILED'
                 self.doNotifyServiceRequestFailed(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-            elif ( event == 'fail' or event == 'service-denied' ) and self.Attempts<5 and self.RandomLookup:
+            elif ( event == 'timer-90sec' or event == 'fail' or event == 'service-denied' ) and self.Attempts<5 and self.RandomLookup:
                 self.state = 'RANDOM_USER?'
                 self.doLookupRandomNode(*args, **kwargs)
         #---SUCCESS---

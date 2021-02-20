@@ -224,14 +224,14 @@ class PrivateMessage(object):
         new_sessionkey = key.NewSessionKey(session_key_type=key.SessionKeyType())
         if not encrypt_session_func:
             if my_keys.is_key_registered(self.recipient):
-                # if _Debug:
-                #     lg.out(_DebugLevel, 'message.PrivateMessage.encrypt with "%s" key' % self.recipient)
+                if _Debug:
+                    lg.dbg(_DebugLevel, 'encrypt with registered key %r' % self.recipient)
                 encrypt_session_func = lambda inp: my_keys.encrypt(self.recipient, inp)
         if not encrypt_session_func:
             glob_id = global_id.ParseGlobalID(self.recipient)
             if glob_id['key_alias'] == 'master':
                 if glob_id['idurl'] == my_id.getLocalID():
-                    lg.warn('making encrypted message addressed to me ???')
+                    lg.warn('making encrypted message addressed to me ?')
                     # if _Debug:
                     #     lg.out(_DebugLevel, 'message.PrivateMessage.encrypt with "master" key')
                     encrypt_session_func = lambda inp: my_keys.encrypt('master', inp)
@@ -239,14 +239,14 @@ class PrivateMessage(object):
                     remote_identity = identitycache.FromCache(glob_id['idurl'])
                     if not remote_identity:
                         raise Exception('remote identity is not cached yet, not able to encrypt the message')
-                    # if _Debug:
-                    #     lg.out(_DebugLevel, 'message.PrivateMessage.encrypt with remote identity public key')
+                    if _Debug:
+                        lg.dbg(_DebugLevel, 'encrypt with remote identity public key %r' % remote_identity)
                     encrypt_session_func = remote_identity.encrypt
             else:
                 own_key = global_id.MakeGlobalID(idurl=my_id.getLocalID(), key_alias=glob_id['key_alias'])
                 if my_keys.is_key_registered(own_key):
-                    # if _Debug:
-                    #     lg.out(_DebugLevel, 'message.PrivateMessage.encrypt with "%s" key' % own_key)
+                    if _Debug:
+                        lg.dbg(_DebugLevel, 'encrypt with registered key (found by alias) %r' % own_key)
                     encrypt_session_func = lambda inp: my_keys.encrypt(own_key, inp)
         if not encrypt_session_func:
             raise Exception('can not find key for given recipient')
@@ -259,11 +259,15 @@ class PrivateMessage(object):
             lg.args(_DebugLevel, decrypt_session_func=decrypt_session_func, recipient=self.recipient)
         if not decrypt_session_func:
             if my_keys.is_key_registered(self.recipient):
+                if _Debug:
+                    lg.dbg(_DebugLevel, 'decrypt with registered key %r' % self.recipient)
                 decrypt_session_func = lambda inp: my_keys.decrypt(self.recipient, inp)
         if not decrypt_session_func:
             glob_id = global_id.ParseGlobalID(self.recipient)
             if glob_id['idurl'] == my_id.getLocalID():
                 if glob_id['key_alias'] == 'master':
+                    if _Debug:
+                        lg.dbg(_DebugLevel, 'decrypt with my master key %r' % self.recipient)
                     decrypt_session_func = lambda inp: my_keys.decrypt('master', inp)
         if not decrypt_session_func:
             raise Exception('can not find key for given recipient: %s' % self.recipient)
