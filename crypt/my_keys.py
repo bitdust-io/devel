@@ -144,8 +144,13 @@ def is_key_registered(key_id, include_master=True):
     """
     Returns True if this key is known.
     """
-    if include_master and (key_id == my_id.getGlobalID(key_alias='master') or key_id == 'master'):
-        return True
+    if include_master:
+        if key_id == 'master':
+            return True
+        if key_id == my_id.getGlobalID():
+            return True
+        if key_id == my_id.getGlobalID(key_alias='master'):
+            return True
     return key_id in known_keys()
 
 
@@ -154,8 +159,13 @@ def is_key_private(key_id, include_master=True):
     """
     if not is_key_registered(key_id):
         return False
-    if include_master and (key_id == my_id.getGlobalID(key_alias='master') or key_id == 'master'):
-        return True
+    if include_master:
+        if key_id == 'master':
+            return True
+        if key_id == my_id.getGlobalID():
+            return True
+        if key_id == my_id.getGlobalID(key_alias='master'):
+            return True
     return not key_obj(key_id).isPublic()
 
 #------------------------------------------------------------------------------
@@ -181,10 +191,11 @@ def make_key_id(alias, creator_idurl=None, creator_glob_id=None):
     if not alias:
         alias = 'master'
     if creator_glob_id is not None:
-        return global_id.MakeGlobalID(
-            customer=creator_glob_id,
-            key_alias=alias,
-        )
+        return '{}${}'.format(alias, creator_glob_id)
+        # return global_id.MakeGlobalID(
+        #     customer=creator_glob_id,
+        #     key_alias=alias,
+        # )
     if creator_idurl is None:
         creator_idurl = my_id.getLocalID()
     return global_id.MakeGlobalID(
@@ -680,13 +691,13 @@ def encrypt(key_id, inp):
             lg.out(_DebugLevel, 'my_keys.encrypt  payload of %d bytes using my "master" key alias' % len(inp))
         return key.EncryptLocalPublicKey(inp)
     key_id = latest_key_id(key_id)
-    if key_id == my_id.getGlobalID(key_alias='master'):  # master$user@host.org
-        if _Debug:
-            lg.out(_DebugLevel, 'my_keys.encrypt  payload of %d bytes using my "master" key, full format' % len(inp))
-        return key.EncryptLocalPublicKey(inp)
     if key_id == my_id.getGlobalID():  # user@host.org
         if _Debug:
             lg.out(_DebugLevel, 'my_keys.encrypt  payload of %d bytes using my "master" key, short format' % len(inp))
+        return key.EncryptLocalPublicKey(inp)
+    if key_id == my_id.getGlobalID(key_alias='master'):  # master$user@host.org
+        if _Debug:
+            lg.out(_DebugLevel, 'my_keys.encrypt  payload of %d bytes using my "master" key, full format' % len(inp))
         return key.EncryptLocalPublicKey(inp)
     if key_id not in known_keys():
         raise Exception('key %s is unknown' % key_id)
