@@ -225,28 +225,26 @@ class PrivateMessage(object):
         if not encrypt_session_func:
             if my_keys.is_key_registered(self.recipient):
                 if _Debug:
-                    lg.dbg(_DebugLevel, 'encrypt with registered key %r' % self.recipient)
+                    lg.dbg(_DebugLevel, 'with registered key %r' % self.recipient)
                 encrypt_session_func = lambda inp: my_keys.encrypt(self.recipient, inp)
         if not encrypt_session_func:
             glob_id = global_id.ParseGlobalID(self.recipient)
             if glob_id['key_alias'] == 'master':
                 if glob_id['idurl'] == my_id.getLocalID():
                     lg.warn('making encrypted message addressed to me ?')
-                    # if _Debug:
-                    #     lg.out(_DebugLevel, 'message.PrivateMessage.encrypt with "master" key')
                     encrypt_session_func = lambda inp: my_keys.encrypt('master', inp)
                 else:
                     remote_identity = identitycache.FromCache(glob_id['idurl'])
                     if not remote_identity:
                         raise Exception('remote identity is not cached yet, not able to encrypt the message')
                     if _Debug:
-                        lg.dbg(_DebugLevel, 'encrypt with remote identity public key %r' % remote_identity)
+                        lg.dbg(_DebugLevel, 'with remote identity public key %r' % glob_id['idurl'])
                     encrypt_session_func = remote_identity.encrypt
             else:
                 own_key = global_id.MakeGlobalID(idurl=my_id.getLocalID(), key_alias=glob_id['key_alias'])
                 if my_keys.is_key_registered(own_key):
                     if _Debug:
-                        lg.dbg(_DebugLevel, 'encrypt with registered key (found by alias) %r' % own_key)
+                        lg.dbg(_DebugLevel, 'with registered key (found by alias) %r' % own_key)
                     encrypt_session_func = lambda inp: my_keys.encrypt(own_key, inp)
         if not encrypt_session_func:
             raise Exception('can not find key for given recipient')

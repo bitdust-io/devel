@@ -1003,6 +1003,7 @@ class GroupMember(automat.Automat):
                         include_private=False,
                         include_signature=True,
                         generate_signature=True,
+                        include_label=False,
                     )
                 except:
                     lg.exc()

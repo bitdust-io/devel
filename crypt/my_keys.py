@@ -822,7 +822,9 @@ def make_master_key_info(include_private=False):
     return r
 
 
-def make_key_info(key_object, key_id=None, key_alias=None, creator_idurl=None, include_private=False, generate_signature=False, include_signature=False, include_local_id=False):
+def make_key_info(key_object, key_id=None, key_alias=None, creator_idurl=None,
+                  include_private=False, generate_signature=False, include_signature=False,
+                  include_local_id=False, include_label=True, ):
     if key_id:
         key_id = latest_key_id(key_id)
         key_alias, creator_idurl = split_key_id(key_id)
@@ -831,12 +833,13 @@ def make_key_info(key_object, key_id=None, key_alias=None, creator_idurl=None, i
     r = {
         'key_id': key_id,
         'alias': key_alias,
-        'label': key_object.label,
         'creator': creator_idurl,
         'public': strng.to_text(key_object.toPublicString()),
         'private': None,
         'include_private': include_private,
     }
+    if include_label:
+        r['label'] = key_object.label
     if key_object.isPublic():
         r['is_public'] = True
         if include_private:
@@ -860,7 +863,7 @@ def make_key_info(key_object, key_id=None, key_alias=None, creator_idurl=None, i
     return r
 
 
-def get_key_info(key_id, include_private=False, include_signature=False, generate_signature=False):
+def get_key_info(key_id, include_private=False, include_signature=False, generate_signature=False, include_label=True):
     """
     Returns dictionary with full key info or raise an Exception.
     """
@@ -887,6 +890,7 @@ def get_key_info(key_id, include_private=False, include_signature=False, generat
         include_private=include_private,
         include_signature=include_signature,
         generate_signature=generate_signature,
+        include_label=include_label,
     )
     return key_info
 
@@ -915,7 +919,7 @@ def read_key_info(key_json):
 def sign_key_info(key_info):
     key_info['signature_pubkey'] = key.MyPublicKey()
     hash_items = []
-    for field in ['key_id', 'label', 'size', 'public', 'signature_pubkey', ]:
+    for field in ['alias', 'public', 'signature_pubkey', ]:
         hash_items.append(strng.to_text(key_info[field]))
     hash_text = '-'.join(hash_items)
     if _Debug:
@@ -930,7 +934,7 @@ def verify_key_info_signature(key_info):
         lg.warn('signature was not found in the key info')
         return False
     hash_items = []
-    for field in ['key_id', 'label', 'size', 'public', 'signature_pubkey', ]:
+    for field in ['alias', 'public', 'signature_pubkey', ]:
         hash_items.append(strng.to_text(key_info[field]))
     hash_text = '-'.join(hash_items)
     # if _Debug:
