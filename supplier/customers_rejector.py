@@ -35,10 +35,13 @@ BitDust customers_rejector() Automat
     </a>
 
 EVENTS:
-    * :red:`packets-sent`
+    * :red:`customers-rejected`
+    * :red:`found-idle-customers`
+    * :red:`no-idle-customers`
     * :red:`restart`
     * :red:`space-enough`
     * :red:`space-overflow`
+    * :red:`start`
 """
 
 from __future__ import absolute_import
@@ -105,10 +108,6 @@ class CustomersRejector(automat.Automat):
     state machine.
     """
 
-    timers = {
-        'timer-10sec': (10.0, ['REJECT_GUYS']),
-    }
-
     def init(self):
         """
         Method to initialize additional variables and flags at creation of the
@@ -118,25 +117,36 @@ class CustomersRejector(automat.Automat):
     def A(self, event, *args, **kwargs):
         #---READY---
         if self.state == 'READY':
-            if event == 'restart':
+            if event == 'start' or event == 'restart':
                 self.state = 'CAPACITY?'
                 self.doTestMyCapacity(*args, **kwargs)
         #---CAPACITY?---
         elif self.state == 'CAPACITY?':
             if event == 'space-enough':
-                self.state = 'READY'
+                self.state = 'IDLE?'
+                self.doTestIdleDays(*args, **kwargs)
             elif event == 'space-overflow':
-                self.state = 'REJECT_GUYS'
+                self.state = 'REJECT!'
                 self.doRemoveCustomers(*args, **kwargs)
-                self.doSendRejectService(*args, **kwargs)
-        #---REJECT_GUYS---
-        elif self.state == 'REJECT_GUYS':
+        #---REJECT!---
+        elif self.state == 'REJECT!':
             if event == 'restart':
                 self.state = 'CAPACITY?'
                 self.doTestMyCapacity(*args, **kwargs)
-            elif event == 'packets-sent':
+            elif event == 'customers-rejected':
                 self.state = 'READY'
                 self.doRestartLocalTester(*args, **kwargs)
+        #---IDLE?---
+        elif self.state == 'IDLE?':
+            if event == 'found-idle-customers':
+                self.state = 'REJECT!'
+                self.doRemoveCustomers(*args, **kwargs)
+            elif event == 'restart':
+                self.state = 'CAPACITY?'
+                self.doTestMyCapacity(*args, **kwargs)
+            elif event == 'no-idle-customers':
+                self.state = 'READY'
+        return None
 
     def doTestMyCapacity(self, *args, **kwargs):
         """
@@ -165,13 +175,8 @@ class CustomersRejector(automat.Automat):
         free_space = donated_bytes - consumed_bytes
         if consumed_bytes < donated_bytes and len(failed_customers) == 0:
             accounting.write_customers_quotas(space_dict, free_space)
-            dead_customers = self._find_dead_customers()
-            if not dead_customers:
-                lg.info('storage quota checks succeed, all customers are verified')
-                self.automat('space-enough')
-                return
-            lg.warn('found dead customers: %r' % dead_customers)
-            self.automat('space-overflow', dead_customers)
+            lg.info('storage quota checks succeed, all customers are verified')
+            self.automat('space-enough')
             return
         if failed_customers:
             for idurl in failed_customers:
@@ -193,33 +198,15 @@ class CustomersRejector(automat.Automat):
         free_space = donated_bytes - consumed_bytes
         self.automat('space-overflow', failed_customers)
 
-    def doRemoveCustomers(self, *args, **kwargs):
+    def doTestIdleDays(self, *args, **kwargs):
         """
         Action method.
         """
-        removed_customers = args[0]
-        for customer_idurl in removed_customers:
-            api.customer_reject(customer_id=customer_idurl, erase_customer_key=True)
-
-    def doSendRejectService(self, *args, **kwargs):
-        """
-        Action method.
-        """
-        # TODO: rebuild state machine properly
-        self.automat('packets-sent')
-
-    def doRestartLocalTester(self, *args, **kwargs):
-        """
-        Action method.
-        """
-        from supplier import local_tester
-        local_tester.TestSpaceTime()
-
-    def _find_dead_customers(self):
         dead_customers = []
         customer_idle_days = config.conf().getInt('services/customer-patrol/customer-idle-days', 0)
         if not customer_idle_days:
-            return []
+            self.automat('no-idle-customers')
+            return
         for customer_idurl in contactsdb.customers():
             connected_time = ratings.connected_time(customer_idurl.to_bin())
             if connected_time is None:
@@ -230,4 +217,25 @@ class CustomersRejector(automat.Automat):
                 lg.warn('customer %r connected last time %r seconds ago, rejecting customer' % (
                     customer_idurl, utime.get_sec1970() - connected_time, ))
                 dead_customers.append(customer_idurl)
-        return dead_customers
+        if dead_customers:
+            lg.warn('found idle customers: %r' % dead_customers)
+            self.automat('found-idle-customers', dead_customers)
+        else:
+            lg.info('all customers has some activity recently, no idle customers found')
+            self.automat('no-idle-customers')
+
+    def doRemoveCustomers(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        removed_customers = args[0]
+        for customer_idurl in removed_customers:
+            api.customer_reject(customer_id=customer_idurl, erase_customer_key=True)
+        self.automat('customers-rejected', removed_customers)
+
+    def doRestartLocalTester(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        from supplier import local_tester
+        local_tester.TestSpaceTime()
