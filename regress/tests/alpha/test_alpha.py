@@ -490,6 +490,9 @@ def scenario8():
     # create group owned by customer-1 and join
     kw.service_info_v1('customer-1', 'service_private_groups', 'ON')
     customer_1_group_key_id = kw.group_create_v1('customer-1', label='ArchivedGroupABC')
+    kw.wait_service_state(CUSTOMERS_IDS, 'service_shared_data', 'ON')
+    kw.wait_service_state(CUSTOMERS_IDS, 'service_private_groups', 'ON')
+    kw.wait_packets_finished(PROXY_IDS + CUSTOMERS_IDS + BROKERS_IDS)
 
     assert len(kw.message_conversation_v1('customer-1')['result']) == 2
 
@@ -972,6 +975,9 @@ def scenario12_begin():
 
     # create group owned by customer-4 and join
     customer_4_group_key_id = kw.group_create_v1('customer-4', label='MyGroupABC')
+    kw.wait_service_state(CUSTOMERS_IDS, 'service_shared_data', 'ON')
+    kw.wait_service_state(CUSTOMERS_IDS, 'service_private_groups', 'ON')
+    kw.wait_packets_finished(PROXY_IDS + CUSTOMERS_IDS + BROKERS_IDS)
 
     customer_4_group_info_inactive = kw.group_info_v1('customer-4', customer_4_group_key_id)['result']
     assert customer_4_group_info_inactive['state'] == 'OFFLINE'
