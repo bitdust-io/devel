@@ -389,14 +389,14 @@ class identity(object):
     def encrypt(self, inp):
         """
         Encrypt some `inp` data with public key from this identity object.
-        You can use this method to send a private messages addressed to the onwer of this identity.
+        You can use this method to send a private messages addressed to the owner of this identity.
         """
         return key.EncryptOpenSSHPublicKey(self.publickey, inp)
 
     def decrypt(self, inp, private_key=None):
         """
-        Decrypt `inp` data with private key provided (callable, key_id or openssh format),
-        or by using locally stored "master" key.
+        Decrypt `inp` data with private key provided (callable, key_id or openssh format).
+        When `private_key` is not provided will decrypt using my own "master" key.
         """
         if private_key is None:
             return key.DecryptLocalPrivateKey(inp)

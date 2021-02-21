@@ -916,7 +916,7 @@ async def start_customer_async(node, identity_name, loop, join_network=True, num
     cmd += 'bitdust set services/customer/enabled true;'
     cmd += f'bitdust set services/customer/suppliers-number "{num_suppliers}";'
     # decrease message timeout for group communications
-    cmd += 'bitdust set services/private-groups/message-ack-timeout 10;'
+    cmd += 'bitdust set services/private-groups/message-ack-timeout 15;'
     if block_size:
         cmd += f'bitdust set services/backups/block-size "{block_size}";'
     if supplier_candidates:

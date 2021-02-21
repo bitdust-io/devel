@@ -375,7 +375,7 @@ class ProxySender(automat.Automat):
                 'remoteid': router_idurl,
                 'description': 'RelayOut_%s[%s]_%s' % (outpacket.Command, outpacket.PacketID, nameurl.GetName(router_idurl)),
             },
-            response_timeout=15,
+            response_timeout=response_timeout,
             keep_alive=True,
         )
         for command, cb_list in callbacks.items():

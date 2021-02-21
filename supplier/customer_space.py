@@ -92,15 +92,15 @@ def register_customer_key(customer_public_key_id, customer_public_key):
     if my_keys.is_key_registered(customer_public_key_id):
         known_customer_public_key = my_keys.get_public_key_raw(customer_public_key_id)
         if known_customer_public_key == customer_public_key:
-            lg.warn('customer public key %r already known' % customer_public_key_id)
-            return False
-        lg.warn('rewriting customer public key %r' % customer_public_key_id)
-        my_keys.erase_key(customer_public_key_id)
+            lg.info('customer public key %r already known and public key is matching' % customer_public_key_id)
+        else:
+            lg.warn('rewriting customer public key %r' % customer_public_key_id)
+            my_keys.erase_key(customer_public_key_id)
     key_id, key_object = my_keys.read_key_info(customer_public_key)
-    if my_keys.register_key(key_id, key_object):
-        lg.info('new customer public key registered: %r' % customer_public_key_id)
-    else:
+    if not my_keys.register_key(key_id, key_object):
         lg.err('failed to register customer public key: %r' % customer_public_key_id)
+        return False
+    lg.info('new customer public key registered: %r' % customer_public_key_id)
     return True
 
 #------------------------------------------------------------------------------

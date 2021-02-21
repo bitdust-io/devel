@@ -271,7 +271,7 @@ def report_donated_storage():
     for idurl in used_space_dict.keys():
         real = bpio.getDirectorySize(settings.getCustomerFilesDir(idurl))
         try:
-            used = used_space_dict[idurl]
+            used = int(used_space_dict[idurl])
         except:
             r['errors'].append('incorrect value of used space for customer %r' % idurl)
             continue

@@ -207,11 +207,11 @@ class RestoreWorker(automat.Automat):
         """
         if event != 'instant':
             if newstate in ['REQUESTED', 'RECEIVING', ] and oldstate not in ['REQUESTED', 'RECEIVING', ]:
-                reactor.callLater(0, self.automat, 'instant')  # @UndefinedVariable
+                reactor.callLater(0.01, self.automat, 'instant')  # @UndefinedVariable
 
     def state_not_changed(self, curstate, event, *args, **kwargs):
         if event == 'data-received' and curstate in ['REQUESTED', 'RECEIVING', ]:
-            reactor.callLater(0, self.automat, 'instant')  # @UndefinedVariable
+            reactor.callLater(0.01, self.automat, 'instant')  # @UndefinedVariable
 
     def A(self, event, *args, **kwargs):
         """
@@ -575,7 +575,6 @@ class RestoreWorker(automat.Automat):
         """
         Action method.
         """
-        from stream import io_throttle
         io_throttle.DeleteBackupRequests(self.backup_id)
 
     def doReportDone(self, *args, **kwargs):
@@ -637,7 +636,6 @@ class RestoreWorker(automat.Automat):
     def _do_check_run_requests(self):
         if _Debug:
             lg.out(_DebugLevel, 'restore_worker._do_check_run_requests for %s at block %d' % (self.backup_id, self.block_number, ))
-        from stream import io_throttle
         packetsToRequest = []
         for SupplierNumber in range(self.EccMap.datasegments):
             request_packet_id = packetid.MakePacketID(self.backup_id, self.block_number, SupplierNumber, 'Data')
@@ -759,13 +757,16 @@ class RestoreWorker(automat.Automat):
         if result in ['received', 'exist', ]:
             self.block_requests[packet_id] = True
             if result == 'exist':
-                reactor.callLater(0, self.automat, 'data-received', (None, packet_id, ))  # @UndefinedVariable
+                # reactor.callLater(0, self.automat, 'data-received', (None, packet_id, ))  # @UndefinedVariable
+                self.event('data-received', (None, packet_id, ))
             else:
-                reactor.callLater(0, self.automat, 'data-received', (NewPacketOrPacketID, packet_id, ))  # @UndefinedVariable
+                # reactor.callLater(0, self.automat, 'data-received', (NewPacketOrPacketID, packet_id, ))  # @UndefinedVariable
+                self.event('data-received', (NewPacketOrPacketID, packet_id, ))
         else:
             self.block_requests[packet_id] = False
             self.RequestFails.append(packet_id)
-            reactor.callLater(0, self.automat, 'request-failed', packet_id)  # @UndefinedVariable
+            # reactor.callLater(0, self.automat, 'request-failed', packet_id)  # @UndefinedVariable
+            self.event('request-failed', packet_id)
 
     def _on_data_receiver_state_changed(self, oldstate, newstate, event_string, *args, **kwargs):
         if newstate == 'RECEIVING' and oldstate != 'RECEIVING':

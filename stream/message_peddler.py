@@ -395,7 +395,7 @@ def on_consumer_notify(message_info):
             }, ],
             'last_sequence_id': last_sequence_id,
         },
-        recipient_global_id=consumer_id,
+        recipient_global_id=my_keys.make_key_id(alias='master', creator_glob_id=consumer_id),
         packet_id=packet_id,
         message_ack_timeout=25,
         skip_handshake=True,
@@ -1318,7 +1318,7 @@ class MessagePeddler(automat.Automat):
                 'items': list_messages,
                 'last_sequence_id': latest_sequence_id,
             },
-            recipient_global_id=consumer_id,
+            recipient_global_id=my_keys.make_key_id(alias='master', creator_glob_id=consumer_id),
             packet_id=packetid.MakeQueueMessagePacketID(queue_id, packetid.UniqueID()),
             message_ack_timeout=25,
             skip_handshake=True,
@@ -1392,6 +1392,7 @@ class MessagePeddler(automat.Automat):
             desired_position=position,
             archive_folder_path=archive_folder_path,
             result_callback=queue_keeper_result,
+            use_dht_cache=False,
         )
 
     def _do_replicate_message(self, message_in, known_brokers={}):
@@ -1415,7 +1416,7 @@ class MessagePeddler(automat.Automat):
                     'payload': message_in.payload,
                     'broker_position': other_broker_pos,
                 },
-                recipient_global_id=global_id.idurl2glob(other_broker_idurl),
+                recipient_global_id=my_keys.make_key_id(alias='master', creator_idurl=other_broker_idurl),
                 packet_id='qreplica_%s_%s' % (message_in.queue_id, packetid.UniqueID()),
                 message_ack_timeout=25,
                 skip_handshake=False,

@@ -212,21 +212,25 @@ def read_customer_message_brokers(customer_idurl, positions=[0, ], return_detail
         customer_idurl = id_url.to_bin(customer_idurl)
     result = Deferred()
 
-    def _do_broker_identity_cache(dht_record, position, broker_result):
+    def _on_borker_identity_cache_failed(err, position, broker_result):
         if _Debug:
-            lg.args(_DebugLevel, position=position, broker_idurl=dht_record['broker_idurl'])
-        one_broker_task = identitycache.GetLatest(dht_record['broker_idurl'])
-        if _Debug:
-            one_broker_task.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='read_customer_message_brokers._do_broker_identity_cache')
-        one_broker_task.addCallback(lambda xmlsrc: broker_result.callback(dht_record))
-        one_broker_task.addErrback(lambda err: broker_result.callback({
+            lg.args(_DebugLevel, position=position, err=err)
+        broker_result.callback({
             'timestamp': None,
             'revision': 0,
             'customer_idurl': customer_idurl,
             'broker_idurl': None,
             'position': position,
             'archive_folder_path': None,
-        }))
+        })
+        return None
+
+    def _do_broker_identity_cache(dht_record, position, broker_result):
+        one_broker_task = identitycache.GetLatest(dht_record['broker_idurl'])
+        one_broker_task.addCallback(lambda xmlsrc: broker_result.callback(dht_record))
+        one_broker_task.addErrback(_on_borker_identity_cache_failed, position, broker_result)
+        if _Debug:
+            lg.args(_DebugLevel, position=position, broker_idurl=dht_record['broker_idurl'], task=one_broker_task)
         return None
 
     def _do_verify(dht_value, position, broker_result):
@@ -319,7 +323,7 @@ def read_customer_message_brokers(customer_idurl, positions=[0, ], return_detail
             if _Debug:
                 d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='read_customer_message_brokers._do_read_brokers')
             d.addErrback(_on_error, position, one_broker_result)
-        join_all_brokers = DeferredList(all_brokers_results, consumeErrors=True)
+        join_all_brokers = DeferredList(all_brokers_results, consumeErrors=False)
         join_all_brokers.addCallback(_do_collect_results)
         if _Debug:
             join_all_brokers.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='read_customer_message_brokers._do_read_brokers')
