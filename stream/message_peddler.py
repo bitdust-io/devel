@@ -1392,6 +1392,7 @@ class MessagePeddler(automat.Automat):
             desired_position=position,
             archive_folder_path=archive_folder_path,
             result_callback=queue_keeper_result,
+            use_dht_cache=False,
         )
 
     def _do_replicate_message(self, message_in, known_brokers={}):

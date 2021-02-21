@@ -371,6 +371,8 @@ class QueueKeeper(automat.Automat):
         if expected_broker_position < 0:
             expected_broker_position = 0
         use_cache = self.dht_read_use_cache
+        if 'use_dht_cache' in kwargs:
+            use_cache = kwargs['use_dht_cache']
         if self.has_rotated:
             use_cache = False
         if _Debug:
