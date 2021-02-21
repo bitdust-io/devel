@@ -525,7 +525,7 @@ class SharedAccessCoordinator(automat.Automat):
             target_supplier=supplier_idurl,
             customer_idurl=customer_idurl,
             key_id=key_id,
-            timeout=20,
+            timeout=30,
         )
 
     def _do_connect_with_supplier(self, supplier_idurl):
