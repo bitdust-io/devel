@@ -2646,8 +2646,8 @@ def group_leave(group_key_id, erase_key=False):
         return OK(message='group %r deactivated' % group_key_id)
     this_group_member.automat('leave', erase_key=erase_key)
     if erase_key:
-        OK(message='group %r deleted' % group_key_id)
-    return OK(message='group %r deactivated' % group_key_id)
+        OK(message='group %r deleted' % group_key_id, result=this_group_member.to_json())
+    return OK(message='group %r deactivated' % group_key_id, result=this_group_member.to_json())
 
 
 def group_reconnect(group_key_id, use_dht_cache=False):
@@ -5104,18 +5104,27 @@ def automats_list():
         websocket.send('{"command": "api_call", "method": "automats_list", "kwargs": {} }');
     """
     from automats import automat
-    result = [{
-        'index': a.index,
-        'id': a.id,
-        'name': a.__class__.__name__,
-        'state': a.state,
-        'repr': repr(a),
-        'timers': (','.join(list(a.getTimers().keys()))),
-        'events': a.publish_events,
-    } for a in automat.objects().values()]
+    result = [a.to_json() for a in automat.objects().values()]
     if _Debug:
         lg.out(_DebugLevel, 'api.automats_list responded with %d items' % len(result))
     return OK(result)
+
+
+def automat_info(index):
+    """
+    Returns detailed info about given state machine identified by index number.
+
+    ###### HTTP
+        curl -X GET 'localhost:8180/automat/12345/v1'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "automat_info", "kwargs": {"index": 12345} }');
+    """
+    from automats import automat
+    inst = automat.by_index(int(index))
+    if not inst:
+        return ERROR('state machine was not found')
+    return OK(inst.to_json())
 
 
 def automat_events_start(index, state_unchanged=False):
@@ -5138,7 +5147,7 @@ def automat_events_start(index, state_unchanged=False):
     if not inst:
         return ERROR('state machine was not found')
     inst.publishEvents(True, publish_event_state_not_changed=state_unchanged)
-    return OK(message='started publishing events from state machine %r' % inst)
+    return OK(message='started publishing events from state machine %r' % inst, result=inst.to_json())
 
 
 def automat_events_stop(index):
@@ -5156,6 +5165,6 @@ def automat_events_stop(index):
     if not inst:
         return ERROR('state machine was not found')
     inst.publishEvents(False, publish_event_state_not_changed=False)
-    return OK(message='stopped publishing events from state machine %r' % inst)
+    return OK(message='stopped publishing events from state machine %r' % inst, result=inst.to_json())
 
 #------------------------------------------------------------------------------

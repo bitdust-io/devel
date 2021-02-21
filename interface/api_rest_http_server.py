@@ -1336,7 +1336,15 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     def automat_list_v1(self, request):
         return api.automats_list()
 
-    @POST('^/st/(?P<index>[^/]+)/events/start/$')
+    @GET('^/st/(?P<index>[^/]+)/$')
+    @GET('^/v1/state/(?P<index>[^/]+)/$')
+    @GET('^/v1/automat/(?P<index>[^/]+)$')
+    @GET('^/state/(?P<index>[^/]+)/v1$')
+    @GET('^/automat/(?P<index>[^/]+)/v1$')
+    def automat_info_v1(self, request, index):
+        return api.automat_info(index=index)
+
+    @POST('^/st/(?P<index>[^/]+)/events/start$')
     @POST('^/v1/state/(?P<index>[^/]+)/events/start$')
     @POST('^/v1/automat/(?P<index>[^/]+)/events/start$')
     @POST('^/state/(?P<index>[^/]+)/events/start/v1$')
@@ -1348,7 +1356,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
             state_unchanged=bool(data.get('state_unchanged', '0') in ['1', 'true', ]),
         )
 
-    @POST('^/st/(?P<index>[^/]+)/events/stop/$')
+    @POST('^/st/(?P<index>[^/]+)/events/stop$')
     @POST('^/v1/state/(?P<index>[^/]+)/events/stop$')
     @POST('^/v1/automat/(?P<index>[^/]+)/events/stop$')
     @POST('^/state/(?P<index>[^/]+)/events/stop/v1$')

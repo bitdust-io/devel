@@ -523,7 +523,8 @@ def message_receive_v1(node, expected_data=None, consumer='test_consumer', get_r
         return get_result
     assert response.json()['status'] == 'OK', response.json()
     if expected_data is not None:
-        received_data = response.json()['result'][0]['data']
+        received_result = response.json()['result']
+        received_data = {} if not received_result else received_result[0]['data']
         received_data.pop('action', None)
         received_data.pop('msg_type', None)
         assert received_data == expected_data, response.json()
@@ -703,6 +704,24 @@ def key_list_v1(node):
     assert response.status_code == 200
     print('key/list/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
     assert response.json()['status'] == 'OK', response.json()
+    return response.json()
+
+
+def automat_list_v1(node):
+    response = request_get(node, 'automat/list/v1', timeout=20)
+    assert response.status_code == 200
+    print('automat/list/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
+    assert response.json()['status'] == 'OK', response.json()
+    return response.json()
+
+
+def automat_info_v1(node, automat_index, expected_state=None):
+    response = request_get(node, 'automat/%d/v1' % int(automat_index), timeout=20)
+    assert response.status_code == 200
+    print('automat/%d/v1 [%s] : %s\n' % (int(automat_index), node, pprint.pformat(response.json()), ))
+    assert response.json()['status'] == 'OK', response.json()
+    if expected_state is not None:
+        assert response.json()['result']['state'] == expected_state, response.json()
     return response.json()
 
 

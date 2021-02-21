@@ -78,6 +78,7 @@ PROXY_IDS = []  # ['proxy-1', 'proxy-2', 'proxy-3', ]
 SUPPLIERS_IDS = ['supplier-1', 'supplier-2', 'supplier-3', 'supplier-4', 'supplier-5', ]
 CUSTOMERS_IDS = ['customer-1', 'customer-2', 'customer-3', 'customer-4', 'customer-rotated', ]
 CUSTOMERS_IDS_SHORT = ['customer-1', 'customer-3', 'customer-4', ]
+CUSTOMERS_IDS_124 = ['customer-1', 'customer-2', 'customer-4', ]
 BROKERS_IDS = ['broker-1', 'broker-2', 'broker-3', 'broker-4', ]
 ROTATED_NODES = ['supplier-rotated', 'customer-rotated', 'broker-rotated', 'proxy-rotated', ]
 
@@ -510,6 +511,8 @@ def scenario8():
     assert len(customer_1_group_info_active['connected_brokers']) >= 2
     assert customer_1_group_info_active['last_sequence_id'] == -1
 
+    kw.automat_info_v1('customer-1', automat_index=customer_1_group_info_active['index'], expected_state='IN_SYNC!')
+
     customer_1_active_queue_id = customer_1_group_info_active['active_queue_id']
     customer_1_active_broker_id = customer_1_group_info_active['active_broker_id']
     customer_1_active_broker_name = customer_1_active_broker_id.split('@')[0]
@@ -610,7 +613,7 @@ def scenario8():
     # customer-3 join the group, other group members are offline
     kw.group_join_v1('customer-3', customer_1_group_key_id)
 
-    kw.wait_packets_finished(PROXY_IDS + CUSTOMERS_IDS + BROKERS_IDS + SUPPLIERS_IDS)
+    kw.wait_packets_finished(PROXY_IDS + CUSTOMERS_IDS_124 + BROKERS_IDS + SUPPLIERS_IDS)
 
     customer_1_broker_consumers = kw.queue_consumer_list_v1(customer_1_active_broker_name, extract_ids=True)
     customer_1_broker_producers = kw.queue_producer_list_v1(customer_1_active_broker_name, extract_ids=True)
@@ -631,7 +634,7 @@ def scenario8():
     # customer-3 leave the group
     kw.group_leave_v1('customer-3', customer_1_group_key_id)
 
-    kw.wait_packets_finished(PROXY_IDS + CUSTOMERS_IDS + BROKERS_IDS)
+    kw.wait_packets_finished(PROXY_IDS + CUSTOMERS_IDS_124 + BROKERS_IDS)
 
     # assert len(kw.queue_consumer_list_v1(customer_1_active_broker_name, extract_ids=True)) == 0
     # assert len(kw.queue_producer_list_v1(customer_1_active_broker_name, extract_ids=True)) == 0

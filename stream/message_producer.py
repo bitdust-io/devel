@@ -258,13 +258,14 @@ class MessageProducer(automat.Automat):
         )
 
     def to_json(self):
-        return {
+        j = super().to_json()
+        j.update({
             'group_key_id': self.group_key_id,
             'label': my_keys.get_label(self.group_key_id),
             'creator': self.group_creator_idurl,
             'active_broker_id': self.active_broker_id,
-            'state': self.state,
-        }
+        })
+        return j
 
     def init(self):
         """

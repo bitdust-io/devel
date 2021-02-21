@@ -230,14 +230,14 @@ class ProxyReceiver(automat.Automat):
         return '%s[%s](%s)' % (self.id, self.router_id, self.state)
 
     def to_json(self):
-        return {
-            'name': self.name,
-            'state': self.state,
+        j = super().to_json()
+        j.update({
             'host': ('%s://%s' % self.router_proto_host) if self.router_proto_host else '',
             'idurl': self.router_idurl,
             'bytes_received': self.traffic_in,
             'bytes_sent': 0,
-        }
+        })
+        return j
 
     def state_changed(self, oldstate, newstate, event, *args, **kwargs):
         """

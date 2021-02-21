@@ -139,14 +139,14 @@ class ProxySender(automat.Automat):
         self._sending_enabled = settings.enablePROXYsending()
 
     def to_json(self):
-        return {
-            'name': self.name,
-            'state': self.state,
+        j = super().to_json()
+        j.update({
             'host': ('%s://%s' % proxy_receiver.GetRouterProtoHost()) if proxy_receiver.GetRouterProtoHost() else '',
             'idurl': proxy_receiver.GetRouterIDURL(),
             'bytes_received': 0,
             'bytes_sent': self.traffic_out,
-        }
+        })
+        return j
 
     def A(self, event, *args, **kwargs):
         """

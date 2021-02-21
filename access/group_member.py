@@ -327,7 +327,8 @@ class GroupMember(automat.Automat):
         self.member_sender_id = global_id.MakeGlobalID(idurl=self.member_idurl, key_alias=self.group_queue_alias)
 
     def to_json(self):
-        return {
+        j = super().to_json()
+        j.update({
             'member_id': self.member_id,
             'group_key_id': self.group_key_id,
             'alias': self.group_glob_id['key_alias'],
@@ -339,8 +340,8 @@ class GroupMember(automat.Automat):
             'connected_brokers': self.connected_brokers,
             'last_sequence_id': self.last_sequence_id,
             'archive_folder_path': groups.get_archive_folder_path(self.group_key_id),
-            'state': self.state,
-        }
+        })
+        return j
 
     def init(self):
         """

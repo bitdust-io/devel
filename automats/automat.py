@@ -592,6 +592,17 @@ class Automat(object):
         """
         return self._timers
 
+    def to_json(self):
+        return {
+            'index': self.index,
+            'id': self.id,
+            'name': self.__class__.__name__,
+            'state': self.state,
+            'repr': repr(self),
+            'timers': (','.join(list(self.getTimers().keys()))),
+            'events': self.publish_events,
+        }
+
     def exc(self, msg='', to_logfile=False):
         """
         Print exception in stdout, optionally to log file.
