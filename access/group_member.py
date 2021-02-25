@@ -186,10 +186,15 @@ def restart_active_group_member(group_key_id, use_dht_cache=False):
         return None
     result = Deferred()
     existing_index = existing_group_member.index
+    existing_publish_events = existing_group_member.publish_events
     existing_group_member.automat('shutdown')
     existing_group_member = None
     del existing_group_member
-    new_group_member = GroupMember(group_key_id, use_dht_cache=use_dht_cache)
+    new_group_member = GroupMember(
+        group_key_id=group_key_id,
+        use_dht_cache=use_dht_cache,
+        publish_events=existing_publish_events,
+    )
     new_index = new_group_member.index
     new_group_member.automat('init')
     new_group_member.automat('join')

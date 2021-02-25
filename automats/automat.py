@@ -189,6 +189,16 @@ def by_index(index):
     return objects().get(index, None)
 
 
+def by_id(automat_id):
+    """
+    Returns state machine instance with given ``id`` if exists, otherwise returns `None`.
+    """
+    _index = index().get(automat_id, None)
+    if _index is None:
+        return None
+    return by_index(_index)
+
+
 def communicate(index, event, *args, **kwargs):
     """
     You can pass an event to any state machine - select by its ``index``.

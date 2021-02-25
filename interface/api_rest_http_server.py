@@ -801,6 +801,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
             group_key_id=data['group_key_id'],
             publish_events=bool(data.get('publish_events', '0') in ['1', 'true', ]),
             use_dht_cache=bool(data.get('use_dht_cache', '0') in ['1', 'true', ]),
+            wait_result=bool(data.get('wait_result', '1') in ['1', 'true', ]),
         )
 
     @DELETE('^/gr/lv$')
@@ -1317,7 +1318,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
             value=data['value'],
             expire=data.get('expire', None),
             record_type=data.get('record_type', 'skip_validation'),
-            layer_id=int(_request_arg(request, 'layer_id', mandatory=False, default=0)),
+            layer_id=int(data.get('layer_id', 0)),
         )
 
     @GET('^/d/d/d$')
@@ -1336,33 +1337,41 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     def automat_list_v1(self, request):
         return api.automats_list()
 
-    @GET('^/st/(?P<index>[^/]+)/$')
-    @GET('^/v1/state/(?P<index>[^/]+)/$')
-    @GET('^/v1/automat/(?P<index>[^/]+)$')
-    @GET('^/state/(?P<index>[^/]+)/v1$')
-    @GET('^/automat/(?P<index>[^/]+)/v1$')
-    def automat_info_v1(self, request, index):
-        return api.automat_info(index=index)
+    @GET('^/st/i$')
+    @GET('^/v1/state/info$')
+    @GET('^/v1/automat/info$')
+    @GET('^/state/info/v1$')
+    @GET('^/automat/info/v1$')
+    def automat_info_v1(self, request):
+        return api.automat_info(
+            index=_request_arg(request, 'index', default=None, mandatory=False),
+            automat_id=_request_arg(request, 'automat_id', default=None, mandatory=False),
+        )
 
-    @POST('^/st/(?P<index>[^/]+)/events/start$')
-    @POST('^/v1/state/(?P<index>[^/]+)/events/start$')
-    @POST('^/v1/automat/(?P<index>[^/]+)/events/start$')
-    @POST('^/state/(?P<index>[^/]+)/events/start/v1$')
-    @POST('^/automat/(?P<index>[^/]+)/events/start/v1$')
-    def automat_events_start_v1(self, request, index):
+    @POST('^/st/e/start$')
+    @POST('^/v1/state/events/start$')
+    @POST('^/v1/automat/events/start$')
+    @POST('^/state/events/start/v1$')
+    @POST('^/automat/events/start/v1$')
+    def automat_events_start_v1(self, request):
         data = _request_data(request)
         return api.automat_events_start(
-            index=index,
+            index=data.get('index', None),
+            automat_id=data.get('automat_id', None),
             state_unchanged=bool(data.get('state_unchanged', '0') in ['1', 'true', ]),
         )
 
-    @POST('^/st/(?P<index>[^/]+)/events/stop$')
-    @POST('^/v1/state/(?P<index>[^/]+)/events/stop$')
-    @POST('^/v1/automat/(?P<index>[^/]+)/events/stop$')
-    @POST('^/state/(?P<index>[^/]+)/events/stop/v1$')
-    @POST('^/automat/(?P<index>[^/]+)/events/stop/v1$')
-    def automat_events_stop_v1(self, request, index):
-        return api.automat_events_stop(index=index)
+    @POST('^/st/e/stop$')
+    @POST('^/v1/state/events/stop$')
+    @POST('^/v1/automat/events/stop$')
+    @POST('^/state/events/stop/v1$')
+    @POST('^/automat/events/stop/v1$')
+    def automat_events_stop_v1(self, request):
+        data = _request_data(request)
+        return api.automat_events_stop(
+            index=data.get('index', None),
+            automat_id=data.get('automat_id', None),
+        )
 
     #------------------------------------------------------------------------------
 
