@@ -392,7 +392,7 @@ def process_debug():
     This is only useful if you already have executed the BitDust engine manually via shell console and would like
     to interrupt it and investigate things.
 
-    This call will block the main process and it will stop responding to any API calls.
+    This call will block the main process and it will stop responding to any API calls until pdb shell is released.
 
     ###### HTTP
         curl -X GET 'localhost:8180/process/debug/v1'
@@ -2620,10 +2620,10 @@ def group_leave(group_key_id, erase_key=False):
     Deactivates given messaging group. If `erase_key=True` will also erase the private key related to that group.
 
     ###### HTTP
-        curl -X DELETE 'localhost:8180/group/leave/v1' -d '{"group_key_id": "group_95d0fedc46308e2254477fcb96364af9$alice@server-a.com"}'
+        curl -X DELETE 'localhost:8180/group/leave/v1' -d '{"group_key_id": "group_95d0fedc46308e2254477fcb96364af9$alice@server-a.com", "erase_key": 1}'
 
     ###### WebSocket
-        websocket.send('{"command": "api_call", "method": "group_leave", "kwargs": {"group_key_id": "group_95d0fedc46308e2254477fcb96364af9$alice@server-a.com"} }');
+        websocket.send('{"command": "api_call", "method": "group_leave", "kwargs": {"group_key_id": "group_95d0fedc46308e2254477fcb96364af9$alice@server-a.com", "erase_key": 1} }');
     """
     if not driver.is_on('service_private_groups'):
         return ERROR('service_private_groups() is not started')
@@ -2644,10 +2644,11 @@ def group_leave(group_key_id, erase_key=False):
         groups.set_group_active(group_key_id, False)
         groups.save_group_info(group_key_id)
         return OK(message='group %r deactivated' % group_key_id)
+    result_json = this_group_member.to_json()
     this_group_member.automat('leave', erase_key=erase_key)
     if erase_key:
-        OK(message='group %r deleted' % group_key_id, result=this_group_member.to_json())
-    return OK(message='group %r deactivated' % group_key_id, result=this_group_member.to_json())
+        OK(message='group %r deleted' % group_key_id, result=result_json)
+    return OK(message='group %r deactivated' % group_key_id, result=result_json)
 
 
 def group_reconnect(group_key_id, use_dht_cache=False):
@@ -2748,17 +2749,7 @@ def friends_list():
         glob_id = global_id.ParseIDURL(idurl)
         contact_status = 'offline'
         contact_state = 'OFFLINE'
-        # contact_index = None
-        # contact_publish_events = None
-        if driver.is_on('service_identity_propagate'):
-            from p2p import online_status
-            state_machine_inst = online_status.getInstance(idurl, autocreate=False)
-            if state_machine_inst:
-                contact_state = state_machine_inst.state
-                contact_status = online_status.stateToLabel(state_machine_inst.state)
-                # contact_index = state_machine_inst.index
-                # contact_publish_events = state_machine_inst.publish_events
-        result.append({
+        friend = {
             'idurl': idurl,
             'global_id': glob_id['customer'],
             'idhost': glob_id['idhost'],
@@ -2766,9 +2757,16 @@ def friends_list():
             'alias': alias,
             'contact_status': contact_status,
             'contact_state': contact_state,
-            # 'contact_index': contact_index,
-            # 'contact_events': contact_publish_events,
-        })
+            'index': None,
+        }
+        if driver.is_on('service_identity_propagate'):
+            from p2p import online_status
+            state_machine_inst = online_status.getInstance(idurl, autocreate=False)
+            if state_machine_inst:
+                friend.update(state_machine_inst.to_json())
+                friend['contact_status'] = online_status.stateToLabel(state_machine_inst.state)
+                friend['contact_state'] = state_machine_inst.state
+        result.append(friend)
     return RESULT(result)
 
 
