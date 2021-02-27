@@ -52,6 +52,7 @@ EVENTS:
     * :red:`start`
     * :red:`stop`
     * :red:`timer-10sec`
+    * :red:`timer-15sec`
     * :red:`timer-30sec`
 """
 
@@ -200,8 +201,9 @@ class ProxyReceiver(automat.Automat):
     """
 
     timers = {
-        'timer-30sec': (30.0, ['FIND_NODE?']),
         'timer-10sec': (10.0, ['LISTEN']),
+        'timer-15sec': (15.0, ['ACK?']),
+        'timer-30sec': (30.0, ['FIND_NODE?']),
     }
 
     def __init__(self):
@@ -273,7 +275,7 @@ class ProxyReceiver(automat.Automat):
             elif event == 'sending-failed':
                 self.Retries+=1
                 self.doSendMyIdentity(*args, **kwargs)
-            elif ( event == 'sending-failed' and self.Retries>3 ) or event == 'ack-timeout' or event == 'fail-received':
+            elif ( event == 'sending-failed' and self.Retries>3 ) or event == 'ack-timeout' or event == 'fail-received' or event == 'timer-15sec':
                 self.state = 'FIND_NODE?'
                 self.doLookupRandomNode(*args, **kwargs)
         #---LISTEN---

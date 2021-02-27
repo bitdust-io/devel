@@ -2642,15 +2642,15 @@ def group_leave(group_key_id, erase_key=False):
         if erase_key:
             groups.erase_group_info(group_key_id)
             my_keys.erase_key(group_key_id)
-            return OK(message='group deactivated and key %r erased' % group_key_id)
+            return OK(message='group deleted')
         groups.set_group_active(group_key_id, False)
         groups.save_group_info(group_key_id)
-        return OK(message='group %r deactivated' % group_key_id)
+        return OK(message='group deactivated')
     result_json = this_group_member.to_json()
     this_group_member.automat('leave', erase_key=erase_key)
     if erase_key:
-        OK(message='group %r deleted' % group_key_id, result=result_json)
-    return OK(message='group %r deactivated' % group_key_id, result=result_json)
+        return OK(message='group deactivated and deleted', result=result_json)
+    return OK(message='group deactivated', result=result_json)
 
 
 def group_reconnect(group_key_id, use_dht_cache=False):
