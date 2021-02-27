@@ -716,9 +716,9 @@ def automat_list_v1(node):
 
 
 def automat_info_v1(node, automat_index, expected_state=None):
-    response = request_get(node, 'automat/%d/v1' % int(automat_index), timeout=20)
+    response = request_get(node, 'automat/info/v1?index=%d' % int(automat_index), timeout=20)
     assert response.status_code == 200
-    print('automat/%d/v1 [%s] : %s\n' % (int(automat_index), node, pprint.pformat(response.json()), ))
+    print('automat/info/v1?index=%d [%s] : %s\n' % (int(automat_index), node, pprint.pformat(response.json()), ))
     assert response.json()['status'] == 'OK', response.json()
     if expected_state is not None:
         assert response.json()['result']['state'] == expected_state, response.json()

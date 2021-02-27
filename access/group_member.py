@@ -735,6 +735,7 @@ class GroupMember(automat.Automat):
         Remove all references to the state machine object to destroy it.
         """
         message.clear_consumer_callbacks(self.name)
+        self.destroy()
         self.member_idurl = None
         self.member_id = None
         self.member_sender_id = None
@@ -756,7 +757,6 @@ class GroupMember(automat.Automat):
         self.outgoing_counter = None
         self.buffered_messages = None
         self.recorded_messages = None
-        self.destroy()
 
     def _do_read_queue_messages(self, json_messages):
         if not json_messages:
