@@ -252,6 +252,7 @@ class ListFilesOrator(automat.Automat):
             lg.out(_DebugLevel, 'list_files_orator.doRequestFilesOneSupplier from %s' % supplier_idurl)
         outpacket = p2p_service.SendListFiles(
             target_supplier=supplier_idurl,
+            timeout=30,
         )
         if outpacket:
             _RequestedListFilesPacketIDs.add(outpacket.PacketID)
@@ -270,6 +271,7 @@ class ListFilesOrator(automat.Automat):
                         lg.out(_DebugLevel, 'list_files_orator._do_request  ListFiles() from my supplier %s' % idurl)
                     outpacket = p2p_service.SendListFiles(
                         target_supplier=idurl,
+                        timeout=30,
                     )
                     if outpacket:
                         _RequestedListFilesPacketIDs.add(outpacket.PacketID)

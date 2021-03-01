@@ -72,7 +72,6 @@ def on_api_result_prepared(result):
 
 #------------------------------------------------------------------------------
 
-
 def OK(result='', message=None, status='OK', **kwargs):
     global _APILogFileEnabled
     o = {'status': status, }
@@ -392,7 +391,7 @@ def process_debug():
     This is only useful if you already have executed the BitDust engine manually via shell console and would like
     to interrupt it and investigate things.
 
-    This call will block the main process and it will stop responding to any API calls.
+    This call will block the main process and it will stop responding to any API calls until pdb shell is released.
 
     ###### HTTP
         curl -X GET 'localhost:8180/process/debug/v1'
@@ -2535,7 +2534,7 @@ def group_info(group_key_id):
     return OK(response)
 
 
-def group_join(group_key_id, publish_events=False, use_dht_cache=True):
+def group_join(group_key_id, publish_events=False, use_dht_cache=True, wait_result=True):
     """
     Activates given messaging group to be able to receive streamed messages or send a new message to the group.
 
@@ -2565,17 +2564,17 @@ def group_join(group_key_id, publish_events=False, use_dht_cache=True):
         if newstate == 'IN_SYNC!' and oldstate != newstate:
             if existing_group_members:
                 existing_group_members[0].removeStateChangedCallback(_on_group_member_state_changed)
-                ret.callback(OK(existing_group_members[0].to_json(), message='group %r refreshed' % group_key_id, api_method='group_join'))
+                ret.callback(OK(existing_group_members[0].to_json(), message='group is refreshed', api_method='group_join'))
             else:
                 started_group_members[0].removeStateChangedCallback(_on_group_member_state_changed)
-                ret.callback(OK(started_group_members[0].to_json(), message='group %r connected' % group_key_id, api_method='group_join'))
+                ret.callback(OK(started_group_members[0].to_json(), message='group is connected', api_method='group_join'))
         if newstate == 'DISCONNECTED' and oldstate != newstate and oldstate != 'AT_STARTUP':
             if existing_group_members:
                 existing_group_members[0].removeStateChangedCallback(_on_group_member_state_changed)
-                ret.callback(ERROR('group %r disconnected' % group_key_id, details=existing_group_members[0].to_json(), api_method='group_join'))
+                ret.callback(ERROR('group is disconnected', details=existing_group_members[0].to_json(), api_method='group_join'))
             else:
                 started_group_members[0].removeStateChangedCallback(_on_group_member_state_changed)
-                ret.callback(ERROR('group %r disconnected' % group_key_id, details=started_group_members[0].to_json(), api_method='group_join'))
+                ret.callback(ERROR('group is disconnected', details=started_group_members[0].to_json(), api_method='group_join'))
         return None
 
     def _do_start_group_member(): 
@@ -2594,12 +2593,15 @@ def group_join(group_key_id, publish_events=False, use_dht_cache=True):
             started_group_members.append(existing_group_member)
         if existing_group_member.state in ['DHT_READ?', 'BROKERS?', 'QUEUE?', 'IN_SYNC!', ]:
             connecting_word = 'active' if existing_group_member.state == 'IN_SYNC!' else 'connecting'
-            ret.callback(OK(existing_group_member.to_json(), message='group %r already %s' % (group_key_id, connecting_word, ), api_method='group_join'))
+            ret.callback(OK(existing_group_member.to_json(), message='group is already %s' % connecting_word, api_method='group_join'))
             return None
-        existing_group_member.addStateChangedCallback(_on_group_member_state_changed)
+        if wait_result:
+            existing_group_member.addStateChangedCallback(_on_group_member_state_changed)
         if started_group_members:
             started_group_members[0].automat('init')
         existing_group_member.automat('join')
+        if not wait_result:
+            ret.callback(OK(existing_group_member.to_json(), message='group connection started', api_method='group_join'))
         return None
 
     def _do_cache_creator_idurl():
@@ -2620,10 +2622,10 @@ def group_leave(group_key_id, erase_key=False):
     Deactivates given messaging group. If `erase_key=True` will also erase the private key related to that group.
 
     ###### HTTP
-        curl -X DELETE 'localhost:8180/group/leave/v1' -d '{"group_key_id": "group_95d0fedc46308e2254477fcb96364af9$alice@server-a.com"}'
+        curl -X DELETE 'localhost:8180/group/leave/v1' -d '{"group_key_id": "group_95d0fedc46308e2254477fcb96364af9$alice@server-a.com", "erase_key": 1}'
 
     ###### WebSocket
-        websocket.send('{"command": "api_call", "method": "group_leave", "kwargs": {"group_key_id": "group_95d0fedc46308e2254477fcb96364af9$alice@server-a.com"} }');
+        websocket.send('{"command": "api_call", "method": "group_leave", "kwargs": {"group_key_id": "group_95d0fedc46308e2254477fcb96364af9$alice@server-a.com", "erase_key": 1} }');
     """
     if not driver.is_on('service_private_groups'):
         return ERROR('service_private_groups() is not started')
@@ -2640,14 +2642,15 @@ def group_leave(group_key_id, erase_key=False):
         if erase_key:
             groups.erase_group_info(group_key_id)
             my_keys.erase_key(group_key_id)
-            return OK(message='group deactivated and key %r erased' % group_key_id)
+            return OK(message='group deleted')
         groups.set_group_active(group_key_id, False)
         groups.save_group_info(group_key_id)
-        return OK(message='group %r deactivated' % group_key_id)
+        return OK(message='group deactivated')
+    result_json = this_group_member.to_json()
     this_group_member.automat('leave', erase_key=erase_key)
     if erase_key:
-        OK(message='group %r deleted' % group_key_id)
-    return OK(message='group %r deactivated' % group_key_id)
+        return OK(message='group deactivated and deleted', result=result_json)
+    return OK(message='group deactivated', result=result_json)
 
 
 def group_reconnect(group_key_id, use_dht_cache=False):
@@ -2748,17 +2751,7 @@ def friends_list():
         glob_id = global_id.ParseIDURL(idurl)
         contact_status = 'offline'
         contact_state = 'OFFLINE'
-        # contact_index = None
-        # contact_publish_events = None
-        if driver.is_on('service_identity_propagate'):
-            from p2p import online_status
-            state_machine_inst = online_status.getInstance(idurl, autocreate=False)
-            if state_machine_inst:
-                contact_state = state_machine_inst.state
-                contact_status = online_status.stateToLabel(state_machine_inst.state)
-                # contact_index = state_machine_inst.index
-                # contact_publish_events = state_machine_inst.publish_events
-        result.append({
+        friend = {
             'idurl': idurl,
             'global_id': glob_id['customer'],
             'idhost': glob_id['idhost'],
@@ -2766,9 +2759,16 @@ def friends_list():
             'alias': alias,
             'contact_status': contact_status,
             'contact_state': contact_state,
-            # 'contact_index': contact_index,
-            # 'contact_events': contact_publish_events,
-        })
+            'index': None,
+        }
+        if driver.is_on('service_identity_propagate'):
+            from p2p import online_status
+            state_machine_inst = online_status.getInstance(idurl, autocreate=False)
+            if state_machine_inst:
+                friend.update(state_machine_inst.to_json())
+                friend['contact_status'] = online_status.stateToLabel(state_machine_inst.state)
+                friend['contact_state'] = state_machine_inst.state
+        result.append(friend)
     return RESULT(result)
 
 
@@ -3230,6 +3230,9 @@ def message_conversations_list(message_types=[], offset=0, limit=100):
         conv['label'] = ''
         conv['state'] = 'OFFLINE'
         conv['index'] = None
+        conv['id'] = None
+        conv['name'] = None
+        conv['repr'] = None
         conv['events'] = None
         if conv['type'] == 'private_message':
             local_key_id1, _, local_key_id2 = conv['conversation_id'].partition('&')
@@ -3268,9 +3271,7 @@ def message_conversations_list(message_types=[], offset=0, limit=100):
             if user_idurl:
                 on_st = online_status.getInstance(user_idurl, autocreate=False)
                 if on_st:
-                    conv['state'] = on_st.state or 'OFFLINE'
-                    conv['index'] = on_st.index
-                    conv['events'] = on_st.publish_events
+                    conv.update(on_st.to_json())
         elif conv['type'] == 'group_message' or conv['type'] == 'personal_message':
             local_key_id, _, _ = conv['conversation_id'].partition('&')
             try:
@@ -3286,9 +3287,7 @@ def message_conversations_list(message_types=[], offset=0, limit=100):
             conv['label'] = my_keys.get_label(key_id) or key_id
             gm = group_member.get_active_group_member(key_id)
             if gm:
-                conv['state'] = gm.state or 'OFFLINE'
-                conv['index'] = gm.index
-                conv['events'] = gm.publish_events
+                conv.update(gm.to_json())
         if conv['key_id']:
             conversations.append(conv)
         else:
@@ -5104,21 +5103,40 @@ def automats_list():
         websocket.send('{"command": "api_call", "method": "automats_list", "kwargs": {} }');
     """
     from automats import automat
-    result = [{
-        'index': a.index,
-        'id': a.id,
-        'name': a.__class__.__name__,
-        'state': a.state,
-        'repr': repr(a),
-        'timers': (','.join(list(a.getTimers().keys()))),
-        'events': a.publish_events,
-    } for a in automat.objects().values()]
+    result = [a.to_json() for a in automat.objects().values()]
     if _Debug:
         lg.out(_DebugLevel, 'api.automats_list responded with %d items' % len(result))
     return OK(result)
 
 
-def automat_events_start(index, state_unchanged=False):
+def automat_info(index=None, automat_id=None):
+    """
+    Returns detailed info about given state machine.
+
+    Target instance is selected using one of the identifiers: `index` (integer) or `automat_id` (string).
+
+    ###### HTTP
+        curl -X GET 'localhost:8180/automat/info/v1?index=12345'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "automat_info", "kwargs": {"index": 12345} }');
+    """
+    if index is None and automat_id is None:
+        return ERROR('one of the identifiers must be provided')
+    if index is not None and automat_id is not None:
+        return ERROR('only one of the identifiers must be provided')
+    from automats import automat
+    inst = None
+    if automat_id is not None:
+        inst = automat.by_id(automat_id)
+    else:
+        inst = automat.by_index(int(index))
+    if not inst:
+        return ERROR('state machine is not found')
+    return OK(inst.to_json())
+
+
+def automat_events_start(index=None, automat_id=None, state_unchanged=False):
     """
     Can be used to capture any state machine updates in real-time: state transitions, incoming events.
 
@@ -5127,35 +5145,55 @@ def automat_events_start(index, state_unchanged=False):
     Positive value of parameter `state_unchanged` will enable all updates from the state machine - 
     even when incoming automat event did not changed its state it will be published.
 
+    Target instance is selected using one of the identifiers: `index` (integer) or `automat_id` (string).
+
     ###### HTTP
-        curl -X POST 'localhost:8180/automat/12345/events/start/v1' -d '{"state_unchanged": 1}
+        curl -X POST 'localhost:8180/automat/events/start/v1' -d '{"index": 12345, "state_unchanged": 1}
 
     ###### WebSocket
         websocket.send('{"command": "api_call", "method": "automat_events_start", "kwargs": {"index": 12345, "state_unchanged": 1} }');
     """
+    if index is None and automat_id is None:
+        return ERROR('one of the identifiers must be provided')
+    if index is not None and automat_id is not None:
+        return ERROR('only one of the identifiers must be provided')
     from automats import automat
-    inst = automat.by_index(int(index))
+    inst = None
+    if automat_id is not None:
+        inst = automat.by_id(automat_id)
+    else:
+        inst = automat.by_index(int(index))
     if not inst:
-        return ERROR('state machine was not found')
+        return ERROR('state machine is not found')
     inst.publishEvents(True, publish_event_state_not_changed=state_unchanged)
-    return OK(message='started publishing events from state machine %r' % inst)
+    return OK(message='started publishing events from the state machine', result=inst.to_json())
 
 
-def automat_events_stop(index):
+def automat_events_stop(index=None, automat_id=None):
     """
-    Turns off publishing of the state machine updates as events.
+    Turn off publishing of the state machine updates as events.
+
+    Target instance is selected using one of the identifiers: `index` (integer) or `automat_id` (string).
 
     ###### HTTP
-        curl -X POST 'localhost:8180/automat/12345/events/stop/v1'
+        curl -X POST 'localhost:8180/automat/events/stop/v1' -d '{"index": 12345}
 
     ###### WebSocket
         websocket.send('{"command": "api_call", "method": "automat_events_stop", "kwargs": {} }');
     """
+    if index is None and automat_id is None:
+        return ERROR('one of the identifiers must be provided')
+    if index is not None and automat_id is not None:
+        return ERROR('only one of the identifiers must be provided')
     from automats import automat
-    inst = automat.by_index(int(index))
+    inst = None
+    if automat_id is not None:
+        inst = automat.by_id(automat_id)
+    else:
+        inst = automat.by_index(int(index))
     if not inst:
-        return ERROR('state machine was not found')
+        return ERROR('state machine is not found')
     inst.publishEvents(False, publish_event_state_not_changed=False)
-    return OK(message='stopped publishing events from state machine %r' % inst)
+    return OK(message='stopped publishing events from the state machine', result=inst.to_json())
 
 #------------------------------------------------------------------------------

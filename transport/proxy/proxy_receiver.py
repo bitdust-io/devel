@@ -52,6 +52,7 @@ EVENTS:
     * :red:`start`
     * :red:`stop`
     * :red:`timer-10sec`
+    * :red:`timer-15sec`
     * :red:`timer-30sec`
 """
 
@@ -200,8 +201,9 @@ class ProxyReceiver(automat.Automat):
     """
 
     timers = {
-        'timer-30sec': (30.0, ['FIND_NODE?']),
         'timer-10sec': (10.0, ['LISTEN']),
+        'timer-15sec': (15.0, ['ACK?']),
+        'timer-30sec': (30.0, ['FIND_NODE?']),
     }
 
     def __init__(self):
@@ -230,14 +232,14 @@ class ProxyReceiver(automat.Automat):
         return '%s[%s](%s)' % (self.id, self.router_id, self.state)
 
     def to_json(self):
-        return {
-            'name': self.name,
-            'state': self.state,
+        j = super().to_json()
+        j.update({
             'host': ('%s://%s' % self.router_proto_host) if self.router_proto_host else '',
             'idurl': self.router_idurl,
             'bytes_received': self.traffic_in,
             'bytes_sent': 0,
-        }
+        })
+        return j
 
     def state_changed(self, oldstate, newstate, event, *args, **kwargs):
         """
@@ -273,7 +275,7 @@ class ProxyReceiver(automat.Automat):
             elif event == 'sending-failed':
                 self.Retries+=1
                 self.doSendMyIdentity(*args, **kwargs)
-            elif ( event == 'sending-failed' and self.Retries>3 ) or event == 'ack-timeout' or event == 'fail-received':
+            elif ( event == 'sending-failed' and self.Retries>3 ) or event == 'ack-timeout' or event == 'fail-received' or event == 'timer-15sec':
                 self.state = 'FIND_NODE?'
                 self.doLookupRandomNode(*args, **kwargs)
         #---LISTEN---

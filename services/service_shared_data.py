@@ -113,6 +113,7 @@ class SharedDataService(LocalService):
                         target_supplier=supplier_idurl,
                         customer_idurl=cur_share.customer_idurl,
                         key_id=cur_share.key_id,
+                        timeout=30,
                         callbacks={
                             commands.Files(): lambda r, i: self._on_list_files_response(r, i, cur_share.customer_idurl, supplier_idurl, cur_share.key_id),
                             commands.Fail(): lambda r, i: self._on_list_files_failed(r, i, cur_share.customer_idurl, supplier_idurl, cur_share.key_id),
@@ -146,6 +147,7 @@ class SharedDataService(LocalService):
             target_supplier=supplier_idurl,
             customer_idurl=customer_idurl,
             key_id=key_id,
+            timeout=30,
         )
 
     def _on_inbox_packet_received(self, newpacket, info, status, error_message):

@@ -186,10 +186,15 @@ def restart_active_group_member(group_key_id, use_dht_cache=False):
         return None
     result = Deferred()
     existing_index = existing_group_member.index
+    existing_publish_events = existing_group_member.publish_events
     existing_group_member.automat('shutdown')
     existing_group_member = None
     del existing_group_member
-    new_group_member = GroupMember(group_key_id, use_dht_cache=use_dht_cache)
+    new_group_member = GroupMember(
+        group_key_id=group_key_id,
+        use_dht_cache=use_dht_cache,
+        publish_events=existing_publish_events,
+    )
     new_index = new_group_member.index
     new_group_member.automat('init')
     new_group_member.automat('join')
@@ -327,7 +332,8 @@ class GroupMember(automat.Automat):
         self.member_sender_id = global_id.MakeGlobalID(idurl=self.member_idurl, key_alias=self.group_queue_alias)
 
     def to_json(self):
-        return {
+        j = super().to_json()
+        j.update({
             'member_id': self.member_id,
             'group_key_id': self.group_key_id,
             'alias': self.group_glob_id['key_alias'],
@@ -339,8 +345,8 @@ class GroupMember(automat.Automat):
             'connected_brokers': self.connected_brokers,
             'last_sequence_id': self.last_sequence_id,
             'archive_folder_path': groups.get_archive_folder_path(self.group_key_id),
-            'state': self.state,
-        }
+        })
+        return j
 
     def init(self):
         """

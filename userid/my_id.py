@@ -136,10 +136,6 @@ def setLocalIdentity(ident):
             old_json['revision'] = li_json['revision']
             old_json['contacts'] = li_json['contacts']
     _LocalIdentity = ident
-    try:
-        id_url.identity_cached(_LocalIdentity)
-    except:
-        lg.exc()
     _LocalIDURL = _LocalIdentity.getIDURL()
     _LocalIDURL.refresh(replace_original=True)
     _LocalID = _LocalIDURL.to_id()
@@ -151,6 +147,10 @@ def setLocalIdentity(ident):
         events.send('local-identity-modified', data=dict(old=old_json, new=new_json))
     else:
         events.send('local-identity-set', data=new_json)
+    try:
+        id_url.identity_cached(_LocalIdentity)
+    except:
+        lg.exc()
 
 
 def setLocalIdentityXML(idxml):

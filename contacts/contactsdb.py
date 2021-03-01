@@ -349,9 +349,9 @@ def contacts(include_all=False, include_enabled=True):
     """
     result = set()
     if include_all or (include_enabled and driver.is_enabled('service_customer')) or driver.is_on('service_customer'):
-        result.update(set(suppliers()))
+        result.update(set(all_suppliers()))
     if include_all or (include_enabled and driver.is_enabled('service_supplier')) or driver.is_on('service_supplier'):
-        result.update(set(customers()))
+        result.update(set(customers() + known_customers()))
     if include_all or (include_enabled and driver.is_enabled('service_private_messages')) or driver.is_on('service_private_messages'):
         result.update(set(correspondents_ids()))
     return list(result)

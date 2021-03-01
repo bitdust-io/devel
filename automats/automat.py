@@ -189,6 +189,16 @@ def by_index(index):
     return objects().get(index, None)
 
 
+def by_id(automat_id):
+    """
+    Returns state machine instance with given ``id`` if exists, otherwise returns `None`.
+    """
+    _index = index().get(automat_id, None)
+    if _index is None:
+        return None
+    return by_index(_index)
+
+
 def communicate(index, event, *args, **kwargs):
     """
     You can pass an event to any state machine - select by its ``index``.
@@ -591,6 +601,17 @@ class Automat(object):
         Get internal timers dictionary.
         """
         return self._timers
+
+    def to_json(self):
+        return {
+            'index': self.index,
+            'id': self.id,
+            'name': self.__class__.__name__,
+            'state': self.state,
+            'repr': repr(self),
+            'timers': (','.join(list(self.getTimers().keys()))),
+            'events': self.publish_events,
+        }
 
     def exc(self, msg='', to_logfile=False):
         """

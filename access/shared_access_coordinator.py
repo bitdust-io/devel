@@ -186,15 +186,16 @@ class SharedAccessCoordinator(automat.Automat):
         )
 
     def to_json(self):
-        return {
+        j = super().to_json()
+        j.update({
             'key_id': self.key_id,
             'alias': self.glob_id['key_alias'],
             'label': my_keys.get_label(self.key_id),
             'creator': self.customer_idurl,
-            'state': self.state,
             'suppliers': self.known_suppliers_list,
             'ecc_map': self.known_ecc_map,
-        }
+        })
+        return j
 
     def add_connected_callback(self, callback_id, callback_method):
         self.connected_callbacks[callback_id] = callback_method
@@ -525,7 +526,7 @@ class SharedAccessCoordinator(automat.Automat):
             target_supplier=supplier_idurl,
             customer_idurl=customer_idurl,
             key_id=key_id,
-            timeout=20,
+            timeout=30,
         )
 
     def _do_connect_with_supplier(self, supplier_idurl):

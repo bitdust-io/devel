@@ -513,8 +513,7 @@ class P2PConnector(automat.Automat):
             d = propagate.start(
                 wide=True,
                 refresh_cache=True,
-                include_all=False,
-                include_enabled=False,
+                include_all=True,
             )
             d.addCallback(lambda contacts_list: self.automat('my-id-propagated', contacts_list))
             if _Debug:
