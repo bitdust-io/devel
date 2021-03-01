@@ -164,7 +164,7 @@ def start(AckHandler=None, wide=False, refresh_cache=False, include_all=True, in
     Call ``propagate()`` for all known contacts or only for those which are related to enabled/active services.
     """
     if _Debug:
-        lg.out(_DebugLevel, 'propagate.start wide=%r refresh_cache=%r' % (wide, refresh_cache))
+        lg.args(_DebugLevel, wide=wide, refresh_cache=refresh_cache, include_all=include_all, include_enabled=include_enabled)
     return propagate(
         selected_contacts=contactsdb.contacts_remote(include_all=include_all, include_enabled=include_enabled),
         AckHandler=AckHandler,

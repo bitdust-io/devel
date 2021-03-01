@@ -91,6 +91,7 @@ from main import config
 from main import events
 
 from p2p import p2p_service
+from p2p import propagate
 
 from access import groups
 
@@ -930,6 +931,19 @@ def stop_all_streams():
     for queue_id, one_stream in streams().items():
         if one_stream['active']:
             stop_stream(queue_id)
+
+
+def ping_all_streams():
+    target_nodes = set()
+    for queue_id, one_stream in streams().items():
+        if one_stream['active']:
+            for consumer_id in list(streams()[queue_id]['consumers'].keys()):
+                target_nodes.add(global_id.glob2idurl(consumer_id))
+            for producer_id in list(streams()[queue_id]['producers'].keys()):
+                target_nodes.add(global_id.glob2idurl(producer_id))
+    if _Debug:
+        lg.args(_DebugLevel, target_nodes=len(target_nodes), )
+    propagate.propagate(selected_contacts=target_nodes, wide=True, refresh_cache=True)
 
 #------------------------------------------------------------------------------
 

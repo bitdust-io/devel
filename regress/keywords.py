@@ -234,8 +234,8 @@ def group_leave_v1(customer: str, group_key_id, attempts=1):
     return response.json()
 
 
-def group_reconnect_v1(customer: str, group_key_id, attempts=1, timeout=120):
-    response = request_put(customer, 'group/reconnect/v1', json={'group_key_id': group_key_id, }, timeout=timeout, attempts=attempts)
+def group_reconnect_v1(customer: str, group_key_id, timeout=120):
+    response = request_put(customer, 'group/reconnect/v1', json={'group_key_id': group_key_id, }, timeout=timeout)
     assert response.status_code == 200
     print('group/reconnect/v1 [%s] group_key_id=%r : %s\n' % (customer, group_key_id, pprint.pformat(response.json())))
     assert response.json()['status'] == 'OK', response.json()
