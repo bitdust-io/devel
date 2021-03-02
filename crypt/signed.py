@@ -52,7 +52,7 @@ from __future__ import print_function
 _Debug = False
 _DebugLevel = 10
 
-_LogSignVerify = False
+# _LogSignVerify = False
 
 #------------------------------------------------------------------------------
 
@@ -178,13 +178,13 @@ class Packet(object):
         except Exception as exc:
             lg.exc()
             raise exc
-        if _Debug:
-            if _LogSignVerify:
-                try:
-                    from main import settings
-                    open(os.path.join(settings.LogsDir(), 'crypt.log'), 'wb').write(b'\nGenerateHashBase:\n' + stufftosum + b'\n\n')
-                except:
-                    lg.exc()
+#         if _Debug:
+#             if _LogSignVerify:
+#                 try:
+#                     from main import settings
+#                     open(os.path.join(settings.LogsDir(), 'crypt.log'), 'wb').write(b'\nGenerateHashBase:\n' + stufftosum + b'\n\n')
+#                 except:
+#                     lg.exc()
         return stufftosum
 
     def GenerateHash(self):
@@ -203,17 +203,17 @@ class Packet(object):
         #     signature = key.Sign(_hash_base)
         # else:
         #     signature = my_keys.sign(self.KeyID, _hash_base)
-        if _Debug:
-            if _LogSignVerify:
-                try:
-                    from main import settings
-                    try:
-                        from Cryptodome.Util import number
-                    except:
-                        from Crypto.Util import number  # @UnresolvedImport @Reimport
-                    open(os.path.join(settings.LogsDir(), 'crypt.log'), 'wb').write(b'\GenerateSignature:\n' + strng.to_bin(number.long_to_bytes(signature)) + b'\n\n')
-                except:
-                    lg.exc()
+#         if _Debug:
+#             if _LogSignVerify:
+#                 try:
+#                     from main import settings
+#                     try:
+#                         from Cryptodome.Util import number
+#                     except:
+#                         from Crypto.Util import number  # @UnresolvedImport @Reimport
+#                     open(os.path.join(settings.LogsDir(), 'crypt.log'), 'wb').write(b'\GenerateSignature:\n' + strng.to_bin(number.long_to_bytes(signature)) + b'\n\n')
+#                 except:
+#                     lg.exc()
         return signature
 
     def SignatureChecksOut(self, raise_signature_invalid=False):
@@ -237,27 +237,27 @@ class Packet(object):
             lg.err("could not get Identity for %r so returning False" % self.CreatorID)
             return False
 
-        if _Debug:
-            if _LogSignVerify:
-                try:
-                    from main import settings
-                    try:
-                        from Cryptodome.Util import number
-                    except:
-                        from Crypto.Util import number  # @UnresolvedImport @Reimport
-                    open(os.path.join(settings.LogsDir(), 'crypt.log'), 'wb').write(b'\SignatureChecksOut:\n' + strng.to_bin(number.long_to_bytes(self.Signature)) + b'\n\n')
-                except:
-                    lg.exc()
+#         if _Debug:
+#             if _LogSignVerify:
+#                 try:
+#                     from main import settings
+#                     try:
+#                         from Cryptodome.Util import number
+#                     except:
+#                         from Crypto.Util import number  # @UnresolvedImport @Reimport
+#                     open(os.path.join(settings.LogsDir(), 'crypt.log'), 'wb').write(b'\SignatureChecksOut:\n' + strng.to_bin(number.long_to_bytes(self.Signature)) + b'\n\n')
+#                 except:
+#                     lg.exc()
 
         Result = key.Verify(CreatorIdentity, self.GenerateHash(), self.Signature)
 
-        if _Debug:
-            if _LogSignVerify:
-                try:
-                    from main import settings
-                    open(os.path.join(settings.LogsDir(), 'crypt.log'), 'wb').write(b'\Result:' + strng.to_bin(str(Result)) + b'\n\n')
-                except:
-                    lg.exc()
+#         if _Debug:
+#             if _LogSignVerify:
+#                 try:
+#                     from main import settings
+#                     open(os.path.join(settings.LogsDir(), 'crypt.log'), 'wb').write(b'\Result:' + strng.to_bin(str(Result)) + b'\n\n')
+#                 except:
+#                     lg.exc()
 
         return Result
 
