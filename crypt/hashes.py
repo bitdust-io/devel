@@ -29,9 +29,18 @@
 
 """
 
-#------------------------------------------------------------------------------
+#------------------------------------------------------------------------------ 
 
 from __future__ import absolute_import
+import os
+
+#------------------------------------------------------------------------------
+
+_Debug = True
+_DebugLevel = 10
+_CryptoLog = None
+
+#------------------------------------------------------------------------------
 
 try:
     from Cryptodome.Hash import MD5
@@ -42,14 +51,23 @@ except:
     from Crypto.Hash import SHA1  # @UnresolvedImport @Reimport
     from Crypto.Hash import SHA256  # @UnresolvedImport @Reimport
 
+#------------------------------------------------------------------------------
+
 from lib import strng
+from logs import lg
 
 #------------------------------------------------------------------------------
 
 def md5(inp, hexdigest=False, return_object=False):
+    global _CryptoLog
+    if _CryptoLog is None:
+        _CryptoLog = os.environ.get('CRYPTO_LOG') == '1'
     if not strng.is_bin(inp):
         raise ValueError('input must by byte string')
     h = MD5.new(inp)
+    if _CryptoLog:
+        if _Debug:
+            lg.args(_DebugLevel, hexdigest=h.hexdigest())
     if return_object:
         return h
     if hexdigest:
@@ -58,9 +76,15 @@ def md5(inp, hexdigest=False, return_object=False):
 
 
 def sha1(inp, hexdigest=False, return_object=False):
+    global _CryptoLog
+    if _CryptoLog is None:
+        _CryptoLog = os.environ.get('CRYPTO_LOG') == '1'
     if not strng.is_bin(inp):
         raise ValueError('input must by byte string')
     h = SHA1.new(inp)
+    if _CryptoLog:
+        if _Debug:
+            lg.args(_DebugLevel, hexdigest=h.hexdigest())
     if return_object:
         return h
     if hexdigest:
@@ -69,9 +93,15 @@ def sha1(inp, hexdigest=False, return_object=False):
 
 
 def sha256(inp, hexdigest=False, return_object=False):
+    global _CryptoLog
+    if _CryptoLog is None:
+        _CryptoLog = os.environ.get('CRYPTO_LOG') == '1'
     if not strng.is_bin(inp):
         raise ValueError('input must by byte string')
     h = SHA256.new(inp)
+    if _CryptoLog:
+        if _Debug:
+            lg.args(_DebugLevel, hexdigest=h.hexdigest())
     if return_object:
         return h
     if hexdigest:

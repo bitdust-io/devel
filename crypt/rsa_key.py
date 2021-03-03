@@ -32,12 +32,13 @@
 #------------------------------------------------------------------------------
 
 from __future__ import absolute_import
-import gc
+import os
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
+_CryptoLog = None
 
 #------------------------------------------------------------------------------
 
@@ -65,13 +66,13 @@ from crypt import hashes
 #------------------------------------------------------------------------------
 
 class RSAKey(object):
-    
+
     def __init__(self):
         self.keyObject = None
         self.local_key_id = None
         self.label = ''
         self.signed = None
-    
+
     def isReady(self):
         return self.keyObject is not None
 
@@ -187,25 +188,34 @@ class RSAKey(object):
         return key_dict
 
     def sign(self, message, as_digits=True):
+        global _CryptoLog
+        if _CryptoLog is None:
+            _CryptoLog = os.environ.get('CRYPTO_LOG') == '1'
         if not self.keyObject:
             raise ValueError('key object is not exist')
         if not strng.is_bin(message):
             raise ValueError('message must be byte string')
         h = hashes.sha1(message, return_object=True)
-        signature_bytes = pkcs1_15.new(self.keyObject).sign(h)
+        signature_raw = pkcs1_15.new(self.keyObject).sign(h)
         if not as_digits:
-            return signature_bytes
-        signature_raw = strng.to_bin(number.bytes_to_long(signature_bytes))
-        if signature_bytes[0:1] == b'\x00':
-            signature_raw = b'0' + signature_raw
-        return signature_raw
+            if _CryptoLog:
+                if _Debug:
+                    lg.args(_DebugLevel, signature_raw=signature_raw)
+            return signature_raw
+        signature_long = number.bytes_to_long(signature_raw)
+        signature_bytes = strng.to_bin(signature_long)
+        if _CryptoLog:
+            if _Debug:
+                lg.args(_DebugLevel, signature_bytes=signature_bytes)
+        return signature_bytes
 
     def verify(self, signature, message, signature_as_digits=True):
+        global _CryptoLog
+        if _CryptoLog is None:
+            _CryptoLog = os.environ.get('CRYPTO_LOG') == '1'
         signature_bytes = signature
         if signature_as_digits:
-            signature_text = strng.to_text(signature)
-            signature_int = int(signature_text)
-            signature_bytes = number.long_to_bytes(signature_int)
+            signature_bytes = number.long_to_bytes(signature, blocksize=4)
         if not strng.is_bin(signature_bytes):
             raise ValueError('signature must be byte string')
         if not strng.is_bin(message):
@@ -216,21 +226,11 @@ class RSAKey(object):
             pkcs1_15.new(self.keyObject).verify(h, signature_bytes)
             result = True
         except (ValueError, TypeError, ):
-            if signature_as_digits and signature[0:1] == b'0':
-                if _Debug:
-                    lg.dbg(_DebugLevel, 'signature starts with "0", will try to verify again')
-                try:
-                    signature_text = strng.to_text(signature)
-                    signature_int = int(signature_text)
-                    signature_bytes = number.long_to_bytes(signature_int)
-                    pkcs1_15.new(self.keyObject).verify(h, b'\x00' + signature_bytes)
-                    result = True
-                    if _Debug:
-                        lg.dbg(_DebugLevel, 'signature with additional "0" in front passed verification')
-                except:
-                    lg.err('signature=%r   message=%r   signature_as_digits=%r' % (
-                        signature, message, signature_as_digits))
-                    # do not raise any exception... just return False
+            # do not raise any exception... just return False
+            lg.exc('signature=%r message=%r' % (signature, message, ))
+        if _CryptoLog:
+            if _Debug:
+                lg.args(_DebugLevel, result=result, signature=signature)
         return result
 
     def encrypt(self, private_message):
