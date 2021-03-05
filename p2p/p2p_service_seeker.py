@@ -218,6 +218,7 @@ class P2PServiceSeeker(automat.Automat):
             channel='p2p_service_seeker',
             keep_alive=True,
             force_cache=False,
+            ping_retries=1,
         )
         d.addCallback(lambda ok: self.automat('shook-hands'))
         if _Debug:
