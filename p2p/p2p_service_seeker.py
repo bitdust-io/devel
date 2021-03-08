@@ -103,6 +103,7 @@ class P2PServiceSeeker(automat.Automat):
         self.target_id = None
         self.target_service = None
         self.request_service_params = None
+        self.request_service_timeout = None
         self.exclude_nodes = []
         self.lookup_task = None
         self.requested_packet_id = None
@@ -181,6 +182,7 @@ class P2PServiceSeeker(automat.Automat):
         self.lookup_method = kwargs.get('lookup_method', None)
         self.target_service = kwargs['target_service']
         self.request_service_params = kwargs.get('request_service_params', None)
+        self.request_service_timeout = kwargs.get('request_service_timeout', 120)
         self.result_callback = kwargs.get('result_callback', None)
         self.exclude_nodes = id_url.to_bin_list(kwargs.get('exclude_nodes', []))
 
@@ -238,7 +240,7 @@ class P2PServiceSeeker(automat.Automat):
             remote_idurl=self.target_idurl,
             service_name=self.target_service,
             json_payload=service_request_payload,
-            timeout=120,
+            timeout=self.request_service_timeout,
             callbacks={
                 commands.Ack(): self._node_acked,
                 commands.Fail(): self._node_failed,
@@ -297,6 +299,7 @@ class P2PServiceSeeker(automat.Automat):
         self.target_id = None
         self.target_service = None
         self.request_service_params = None
+        self.request_service_timeout = None
         self.exclude_nodes = []
         self.requested_packet_id = None
         self.lookup_task = None
@@ -358,7 +361,7 @@ def on_lookup_result(event, result_defer, *args, **kwargs):
         result_defer.callback(None)
 
 
-def connect_random_node(lookup_method, service_name, service_params=None, exclude_nodes=[]):
+def connect_random_node(lookup_method, service_name, service_params=None, exclude_nodes=[], request_service_timeout=None):
     """
     """
     global _P2PServiceSeekerInstaceCounter
@@ -376,13 +379,14 @@ def connect_random_node(lookup_method, service_name, service_params=None, exclud
         lookup_method=lookup_method,
         target_service=service_name,
         request_service_params=service_params,
+        request_service_timeout=request_service_timeout,
         result_callback=lambda evt, *a, **kw: on_lookup_result(evt, result, *a, **kw),
         exclude_nodes=exclude_nodes,
     )
     return result
 
 
-def connect_known_node(remote_idurl, service_name, service_params=None, exclude_nodes=[]):
+def connect_known_node(remote_idurl, service_name, service_params=None, exclude_nodes=[], request_service_timeout=None):
     """
     """
     global _P2PServiceSeekerInstaceCounter
@@ -400,6 +404,7 @@ def connect_known_node(remote_idurl, service_name, service_params=None, exclude_
         remote_idurl=remote_idurl,
         target_service=service_name,
         request_service_params=service_params,
+        request_service_timeout=request_service_timeout,
         result_callback=lambda evt, *a, **kw: on_lookup_result(evt, result, *a, **kw),
         exclude_nodes=exclude_nodes,
     )

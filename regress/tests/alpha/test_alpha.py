@@ -1612,8 +1612,9 @@ def scenario18():
             expected_last_sequence_id={},
         )
 
-    # clean preferred brokers on customer-4 so he can select another broker except the top broker
-    kw.config_set_v1('customer-4', 'services/private-groups/preferred-brokers', '')
+    # clean preferred brokers on customer-4 so he can select another node except the top broker-1
+    kw.config_set_v1('customer-4', 'services/private-groups/preferred-brokers',
+                     'http://id-b:8084/broker-2.xml,http://id-a:8084/broker-3.xml,http://id-b:8084/broker-4.xml')
 
     # verify active broker for customer-4
     customer_4_group_info_before = kw.group_info_v1('customer-4', customer_2_group_key_id)['result']

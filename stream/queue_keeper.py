@@ -42,6 +42,10 @@ EVENTS:
     * :red:`my-record-correct`
     * :red:`my-record-not-correct`
     * :red:`my-record-not-exist`
+    * :red:`other-broker-connected`
+    * :red:`other-broker-disconnected`
+    * :red:`other-broker-exist`
+    * :red:`other-broker-timeout`
     * :red:`shutdown`
 """
 
@@ -76,6 +80,8 @@ from lib import strng
 from dht import dht_relations
 
 from access import groups
+
+from p2p import p2p_service_seeker
 
 from userid import id_url
 from userid import my_id
@@ -268,6 +274,9 @@ class QueueKeeper(automat.Automat):
             elif ( event == 'my-record-not-correct' and self.isRotated(*args, **kwargs) ) or event == 'my-record-not-exist':
                 self.state = 'DHT_WRITE'
                 self.doDHTWrite(*args, **kwargs)
+            elif event == 'other-broker-exist':
+                self.state = 'OTHER_BROKER?'
+                self.doVerifyOtherBroker(*args, **kwargs)
         #---DHT_WRITE---
         elif self.state == 'DHT_WRITE':
             if event == 'shutdown':
@@ -306,6 +315,18 @@ class QueueKeeper(automat.Automat):
         #---CLOSED---
         elif self.state == 'CLOSED':
             pass
+        #---OTHER_BROKER?---
+        elif self.state == 'OTHER_BROKER?':
+            if event == 'other-broker-connected':
+                self.state = 'DISCONNECTED'
+                self.doRunCallbacks(event, *args, **kwargs)
+            elif event == 'shutdown':
+                self.state = 'CLOSED'
+                self.doRunCallbacks(event, *args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
+            elif event == 'other-broker-disconnected' or event == 'other-broker-timeout':
+                self.state = 'DHT_WRITE'
+                self.doDHTWrite(*args, **kwargs)
         return None
 
     def isPositionDesired(self, *args, **kwargs):
@@ -417,6 +438,28 @@ class QueueKeeper(automat.Automat):
             self.refresh_task.stop()
         self.refresh_task.start(DHT_RECORD_REFRESH_INTERVAL, now=False)
 
+    def doVerifyOtherBroker(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        other_broker_info = kwargs['broker_info']
+        service_request_params = {
+            'action': 'broker-verify',
+            'customer_idurl': self.customer_idurl,
+        }
+        # TODO: add an extra verification for other broker using group_key_info from the "connect" event
+        # to make sure he is really possess the public key for the group - need to do "audit" of the pub. key
+        result = p2p_service_seeker.connect_known_node(
+            remote_idurl=other_broker_info['broker_idurl'],
+            service_name='service_message_broker',
+            service_params=service_request_params,
+            request_service_timeout=15,
+        )
+        result.addCallback(self._on_other_broker_response)
+        if _Debug:
+            result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='queue_keeper.doVerifyOtherBroker')
+        result.addErrback(self._on_other_broker_failed)
+
     def doReconnect(self, *args, **kwargs):
         """
         Action method.
@@ -481,7 +524,7 @@ class QueueKeeper(automat.Automat):
             dht_broker_idurl = dht_broker_info.get('broker_idurl')
             dht_broker_position = int(dht_broker_info.get('position'))
             self.known_brokers[dht_broker_position] = dht_broker_idurl
-            if int(dht_broker_position) == int(my_position):
+            if dht_broker_position == my_position:
                 my_position_info = dht_broker_info
             if id_url.to_bin(dht_broker_idurl) == id_url.to_bin(self.broker_idurl):
                 if not my_broker_info:
@@ -500,7 +543,10 @@ class QueueKeeper(automat.Automat):
             lg.args(_DebugLevel, my_broker_info=my_broker_info, my_position_info=my_position_info)
         if not my_broker_info:
             self.dht_read_use_cache = False
-            self.automat('my-record-not-exist', desired_position=my_position)
+            if not my_position_info:
+                self.automat('my-record-not-exist', desired_position=my_position)
+            else:
+                self.automat('other-broker-exist', broker_info=my_position_info)
             return
         my_position_ok = int(my_broker_info['position']) == int(my_position)
         my_idurl_ok = False
@@ -509,7 +555,10 @@ class QueueKeeper(automat.Automat):
         if not my_position_ok or not my_idurl_ok:
             lg.err('found my broker info in DHT, but it is not correct: pos=%s idurl=%s' % (my_position_ok, my_idurl_ok, ))
             self.dht_read_use_cache = False
-            self.automat('my-record-not-correct', desired_position=my_position)
+            if not my_idurl_ok:
+                self.automat('other-broker-exist', broker_info=my_position_info)
+            else:
+                self.automat('my-record-not-correct', desired_position=my_position)
             return
         self.dht_read_use_cache = True
         self.known_archive_folder_path = my_broker_info['archive_folder_path']
@@ -537,3 +586,16 @@ class QueueKeeper(automat.Automat):
         if self.state == 'CONNECTED':
             self.dht_read_use_cache = False
             reactor.callLater(0, self.automat, 'connect')  # @UndefinedVariable
+
+    def _on_other_broker_response(self, idurl):
+        if _Debug:
+            lg.args(_DebugLevel, idurl=idurl)
+        if idurl:
+            self.automat('other-broker-connected')
+        else:
+            self.automat('other-broker-disconnected')
+
+    def _on_other_broker_failed(self, err):
+        if _Debug:
+            lg.args(_DebugLevel, err=err)
+        self.automat('other-broker-disconnected')

@@ -31,6 +31,7 @@
 BitDust message_peddler() Automat
 
 EVENTS:
+    * :red:`broker-verify`
     * :red:`message-pushed`
     * :red:`queue-connect`
     * :red:`queue-disconnect`
@@ -65,7 +66,7 @@ except:
 
 #------------------------------------------------------------------------------
 
-from twisted.internet.defer import Deferred, DeferredList
+from twisted.internet.defer import Deferred
 
 #------------------------------------------------------------------------------
 
@@ -1019,6 +1020,8 @@ class MessagePeddler(automat.Automat):
                 self.doProcessMessage(*args, **kwargs)
             elif event == 'rotate':
                 self.doStopAffectedQueues(*args, **kwargs)
+            elif event == 'broker-verify':
+                self.doSendAck(*args, **kwargs)
         #---CLOSED---
         elif self.state == 'CLOSED':
             pass
@@ -1112,12 +1115,12 @@ class MessagePeddler(automat.Automat):
         if id_url.is_cached(group_creator_idurl):
             self._do_verify_queue_keeper(
                 group_creator_idurl, request_packet, queue_id, consumer_id, producer_id,
-                position, last_sequence_id, archive_folder_path, result_defer)
+                position, last_sequence_id, archive_folder_path, group_key_info, result_defer)
             return
         caching_story = identitycache.immediatelyCaching(group_creator_idurl)
         caching_story.addCallback(lambda _: self._do_verify_queue_keeper(
             group_creator_idurl, request_packet, queue_id, consumer_id, producer_id,
-            position, last_sequence_id, archive_folder_path, result_defer))
+            position, last_sequence_id, archive_folder_path, group_key_info, result_defer))
         if _Debug:
             # TODO: need to cleanup registered key in case request was rejected or ID cache failed
             caching_story.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='message_peddler.doStartJoinQueue')
@@ -1195,22 +1198,23 @@ class MessagePeddler(automat.Automat):
         """
         Action method.
         """
-        customer_idurl = kwargs['customer_idurl']
-        request_packet = kwargs['request_packet']
-        queue_id = kwargs['queue_id']
-        consumer_id = kwargs['consumer_id']
-        producer_id = kwargs['producer_id']
-        position = kwargs['position']
-        last_sequence_id = kwargs['last_sequence_id']
-        archive_folder_path = kwargs['archive_folder_path']
-        result_defer = kwargs['result_defer']
-        affected_queues = customers().get(customer_idurl, [])
-        if _Debug:
-            lg.args(_DebugLevel, affected_queues=affected_queues)
-        self._do_close_streams(affected_queues, erase_key=False)
-        lg.info('for customer %r all affected streams are closed, starting new queue keeper' % customer_idurl)
-        self._do_connect_queue_keeper(customer_idurl, request_packet, queue_id, consumer_id, producer_id,
-                                    position, last_sequence_id, archive_folder_path, result_defer)
+        # TODO: check and probably clean up that method
+#         customer_idurl = kwargs['customer_idurl']
+#         request_packet = kwargs['request_packet']
+#         queue_id = kwargs['queue_id']
+#         consumer_id = kwargs['consumer_id']
+#         producer_id = kwargs['producer_id']
+#         position = kwargs['position']
+#         last_sequence_id = kwargs['last_sequence_id']
+#         archive_folder_path = kwargs['archive_folder_path']
+#         result_defer = kwargs['result_defer']
+#         affected_queues = customers().get(customer_idurl, [])
+#         if _Debug:
+#             lg.args(_DebugLevel, affected_queues=affected_queues)
+#         self._do_close_streams(affected_queues, erase_key=False)
+#         lg.info('for customer %r all affected streams are closed, starting new queue keeper' % customer_idurl)
+#         self._do_connect_queue_keeper(customer_idurl, request_packet, queue_id, consumer_id, producer_id,
+#                                     position, last_sequence_id, archive_folder_path, result_defer)
 
     def doConsumeMessages(self, *args, **kwargs):
         """
@@ -1235,6 +1239,25 @@ class MessagePeddler(automat.Automat):
         message_in = args[0]
         self._do_replicate_message(message_in, known_brokers=kwargs.get('known_brokers', {}))
         self._do_archive_other_messages(message_in.queue_id)
+
+    def doSendAck(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        customer_idurl = id_url.field(kwargs['customer_idurl'])
+        request_packet = kwargs['request_packet']
+        result_defer = kwargs['result_defer']
+        qk = queue_keeper.existing(customer_idurl)
+        if not qk:
+            p2p_service.SendFail(request_packet, 'customer queue not exist')
+            result_defer.callback(False)
+            return
+        if qk.state not in ['DHT_READ', 'DHT_WRITE', 'CONNECTED', ]:
+            p2p_service.SendFail(request_packet, 'customer queue not connected')
+            result_defer.callback(False)
+            return
+        p2p_service.SendAck(request_packet, 'accepted')
+        result_defer.callback(True)
 
     def doDestroyMe(self, *args, **kwargs):
         """
@@ -1397,7 +1420,7 @@ class MessagePeddler(automat.Automat):
                         my_keys.erase_key(group_key_id)
 
     def _do_verify_queue_keeper(self, customer_idurl, request_packet, queue_id, consumer_id, producer_id,
-                                      position, last_sequence_id, archive_folder_path, result_defer):
+                                position, last_sequence_id, archive_folder_path, group_key_info, result_defer):
         if _Debug:
             lg.args(_DebugLevel, queue_id=queue_id, consumer_id=consumer_id, producer_id=producer_id,
                     position=position, archive_folder_path=archive_folder_path)
@@ -1414,10 +1437,10 @@ class MessagePeddler(automat.Automat):
                     else:
                         lg.info('connecting to existing %r on same position %d' % (qk, position, ))
         self._do_connect_queue_keeper(customer_idurl, request_packet, queue_id, consumer_id, producer_id,
-                                      position, last_sequence_id, archive_folder_path, result_defer)
+                                      position, last_sequence_id, archive_folder_path, group_key_info, result_defer)
 
     def _do_connect_queue_keeper(self, customer_idurl, request_packet, queue_id, consumer_id, producer_id,
-                                 position, last_sequence_id, archive_folder_path, result_defer):
+                                 position, last_sequence_id, archive_folder_path, group_key_info, result_defer):
         if _Debug:
             lg.args(_DebugLevel, customer_idurl=customer_idurl, queue_id=queue_id, position=position)
         queue_keeper_result = Deferred()
@@ -1438,6 +1461,7 @@ class MessagePeddler(automat.Automat):
             queue_id=queue_id,
             desired_position=position,
             archive_folder_path=archive_folder_path,
+            group_key_info=group_key_info,
             result_callback=queue_keeper_result,
             use_dht_cache=False,
         )

@@ -690,7 +690,7 @@ class GroupMember(automat.Automat):
         if event == 'top-broker-failed':
             self.dead_broker_id = None
             for broker_info in self.latest_dht_brokers:
-                if broker_info['position'] == 0:
+                if broker_info['position'] == 0 and broker_info.get('idurl'):
                     self.dead_broker_id = global_id.idurl2glob(broker_info['idurl'])
         elif event == 'replace-active-broker':
             self.dead_broker_id = args[0]
