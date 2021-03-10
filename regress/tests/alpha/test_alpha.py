@@ -1637,8 +1637,8 @@ def scenario18():
         message_label='N',
         expected_results={'customer-4': True, 'customer-2': True, },
         expected_last_sequence_id={},
-        polling_timeout=120,
-        receive_timeout=121,
+        polling_timeout=150,
+        receive_timeout=151,
     )
 
     # verify active broker for customer-4 again

@@ -454,6 +454,9 @@ class QueueKeeper(automat.Automat):
             service_name='service_message_broker',
             service_params=service_request_params,
             request_service_timeout=15,
+            ping_retries=0,
+            ack_timeout=15,
+            force_handshake=True,
         )
         result.addCallback(self._on_other_broker_response)
         if _Debug:
@@ -543,22 +546,26 @@ class QueueKeeper(automat.Automat):
             lg.args(_DebugLevel, my_broker_info=my_broker_info, my_position_info=my_position_info)
         if not my_broker_info:
             self.dht_read_use_cache = False
-            if not my_position_info:
-                self.automat('my-record-not-exist', desired_position=my_position)
-            else:
+            if my_position_info:
+                lg.warn('found another broker %r on my position %d in DHT' % (my_position_info.get('broker_idurl'), my_position, ))
                 self.automat('other-broker-exist', broker_info=my_position_info)
+            else:
+                lg.info('broker info on position %d in DHT does not exist, going to put my info there' % my_position)
+                self.automat('my-record-not-exist', desired_position=my_position)
             return
         my_position_ok = int(my_broker_info['position']) == int(my_position)
+        if not my_position_ok:
+            lg.info('broker info on position %d in DHT does not exist or is not valid, going to put my info there' % my_position)
+            self.dht_read_use_cache = False
+            self.automat('my-record-not-correct', desired_position=my_position)
+            return
         my_idurl_ok = False
         if my_position_info:
             my_idurl_ok = id_url.to_bin(my_position_info['broker_idurl']) == id_url.to_bin(my_broker_info['broker_idurl'])
-        if not my_position_ok or not my_idurl_ok:
-            lg.err('found my broker info in DHT, but it is not correct: pos=%s idurl=%s' % (my_position_ok, my_idurl_ok, ))
+        if not my_idurl_ok:
+            lg.warn('found another broker %r on my position %d in DHT' % (my_position_info.get('broker_idurl'), my_position, ))
             self.dht_read_use_cache = False
-            if not my_idurl_ok:
-                self.automat('other-broker-exist', broker_info=my_position_info)
-            else:
-                self.automat('my-record-not-correct', desired_position=my_position)
+            self.automat('other-broker-exist', broker_info=my_position_info)
             return
         self.dht_read_use_cache = True
         self.known_archive_folder_path = my_broker_info['archive_folder_path']

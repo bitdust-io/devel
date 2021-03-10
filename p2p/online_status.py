@@ -471,8 +471,8 @@ def OutboxStatus(pkt_out, status, error=''):
     if status == 'finished':
         if error == 'unanswered' and pkt_out.outpacket.Command == commands.Identity():
             if pkt_out.outpacket.OwnerID == my_id.getIDURL() and pkt_out.outpacket.CreatorID == my_id.getIDURL():
-                if not handshaker.is_running(pkt_out.outpacket.RemoteID):
-                    lg.warn('packet %s was "unanswered" and this was not a handshake' % pkt_out)
+                # if not handshaker.is_running(pkt_out.outpacket.RemoteID):
+                lg.warn('ping packet %s was "unanswered"' % pkt_out)
     else:
         if _Debug:
             lg.dbg(_DebugLevel, 'packet %s is "%s" with %s error: %r' % (pkt_out, status, pkt_out.outpacket, error))

@@ -1161,35 +1161,88 @@ class GroupMember(automat.Automat):
         if _Debug:
             lg.args(_DebugLevel, hiring_positions=hiring_positions, available_brokers=available_brokers, exclude_idurls=exclude_idurls)
         self.connecting_brokers.update(set(hiring_positions))
-        for broker_pos, broker_idurl in available_brokers:
+        for broker_pos, _ in available_brokers:
             self.connecting_brokers.add(broker_pos)
+        self.targets = []
         for broker_pos, broker_idurl in available_brokers:
-            self._do_request_service_one_broker(broker_idurl, broker_pos)
-        if hiring_positions:
-            self._do_hire_next_broker(None, 0, hiring_positions, skip_brokers=id_url.to_bin_list(exclude_idurls))
+            # self._do_request_service_one_broker(broker_idurl, broker_pos)
+            self.targets.append({
+                'action': 'connect',
+                'broker_idurl': broker_idurl,
+                'broker_pos': broker_pos,
+            })
+        for broker_pos in hiring_positions:
+            # self._do_hire_next_broker(None, 0, hiring_positions, skip_brokers=id_url.to_bin_list(exclude_idurls))
+            self.targets.append({
+                'action': 'hire',
+                'broker_pos': broker_pos,
+                'skip_brokers': id_url.to_bin_list(exclude_idurls),
+            })
+        self._do_connect_hire_next_broker()
 
-    def _do_hire_next_broker(self, prev_result, index, hiring_positions, skip_brokers):
+    def _do_connect_hire_next_broker(self):
         if _Debug:
-            lg.args(_DebugLevel, prev_result=prev_result, index=index, hiring_positions=hiring_positions, skip_brokers=skip_brokers)
+            lg.args(_DebugLevel, targets=self.targets)
+        if not self.targets:
+            if not self.connected_brokers:
+                lg.err('failed to hire any brokers')
+                self.automat('brokers-failed')
+                return
+#             if self.rotated_brokers:
+#                 if 0 not in self.connected_brokers or not self.connected_brokers[0]:
+#                     lg.err('broker at position 0 was not hired for %r' % self)
+#                     self.automat('brokers-failed')
+#                 else:
+#                     self.automat('brokers-rotated')
+#             else:
+            if 0 not in self.connected_brokers or not self.connected_brokers[0]:
+                lg.err('broker at position 0 was not connect for %r' % self)
+                self.automat('brokers-failed')
+            else:
+                self.automat('brokers-connected')
+            return
+        target = self.targets.pop(0)
+        if target['action'] == 'connect':
+            self._do_request_service_one_broker(target['broker_idurl'], target['broker_pos'])
+        elif target['action'] == 'hire':
+            self._do_hire_one_broker(target['broker_pos'], skip_brokers=target['skip_brokers'])
+
+    def _do_hire_one_broker(self, broker_pos, skip_brokers):
+        if _Debug:
+            lg.args(_DebugLevel, broker_pos=broker_pos, skip_brokers=skip_brokers)
         if not self.group_key_id:
             lg.warn('skip hire process, because group_key_id is empty')
             return
-        if index >= len(hiring_positions):
-            if _Debug:
-                lg.args(_DebugLevel, index=index, hiring_positions=hiring_positions, skip_brokers=skip_brokers,
-                        prev_result=prev_result, connecting_brokers=self.connecting_brokers)
-            return
-        broker_pos = hiring_positions[index]
-        if _Debug:
-            lg.args(_DebugLevel, broker_pos=broker_pos, index=index, hiring_positions=hiring_positions,
-                    skip_brokers=skip_brokers, prev_result=prev_result, connecting_brokers=self.connecting_brokers)
-        if prev_result and id_url.is_not_in(prev_result, skip_brokers, as_field=False, as_bin=True):
-            skip_brokers.append(id_url.to_bin(prev_result))
-        d = self._do_lookup_one_broker(broker_pos, skip_brokers)
-        d.addCallback(self._do_hire_next_broker, index + 1, hiring_positions, skip_brokers)
-        if _Debug:
-            d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='group_member._do_hire_next_broker')
-        d.addErrback(self._do_hire_next_broker, index + 1, hiring_positions, skip_brokers)
+        self._do_lookup_one_broker(broker_pos, skip_brokers)
+#         d.addCallback(self._do_hire_next_broker, index + 1, hiring_positions, skip_brokers)
+#         if _Debug:
+#             d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='group_member._do_hire_next_broker')
+#         d.addErrback(self._do_hire_next_broker, index + 1, hiring_positions, skip_brokers)
+#     def _on_broker_
+
+
+#     def _do_hire_next_broker(self, prev_result, index, hiring_positions, skip_brokers):
+#         if _Debug:
+#             lg.args(_DebugLevel, prev_result=prev_result, index=index, hiring_positions=hiring_positions, skip_brokers=skip_brokers)
+#         if not self.group_key_id:
+#             lg.warn('skip hire process, because group_key_id is empty')
+#             return
+#         if index >= len(hiring_positions):
+#             if _Debug:
+#                 lg.args(_DebugLevel, index=index, hiring_positions=hiring_positions, skip_brokers=skip_brokers,
+#                         prev_result=prev_result, connecting_brokers=self.connecting_brokers)
+#             return
+#         broker_pos = hiring_positions[index]
+#         if _Debug:
+#             lg.args(_DebugLevel, broker_pos=broker_pos, index=index, hiring_positions=hiring_positions,
+#                     skip_brokers=skip_brokers, prev_result=prev_result, connecting_brokers=self.connecting_brokers)
+#         if prev_result and id_url.is_not_in(prev_result, skip_brokers, as_field=False, as_bin=True):
+#             skip_brokers.append(id_url.to_bin(prev_result))
+#         d = self._do_lookup_one_broker(broker_pos, skip_brokers)
+#         d.addCallback(self._do_hire_next_broker, index + 1, hiring_positions, skip_brokers)
+#         if _Debug:
+#             d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='group_member._do_hire_next_broker')
+#         d.addErrback(self._do_hire_next_broker, index + 1, hiring_positions, skip_brokers)
 
     def _do_lookup_one_broker(self, broker_pos, skip_brokers):
         if _Debug:
@@ -1222,40 +1275,43 @@ class GroupMember(automat.Automat):
                     remote_idurl=preferred_broker_idurl,
                     service_name='service_message_broker',
                     service_params=lambda idurl: self._do_prepare_service_request_params(idurl, broker_pos),
+                    request_service_timeout=60,
                     exclude_nodes=list(exclude_brokers),
                 )
                 result.addCallback(self._on_broker_hired, broker_pos)
                 if _Debug:
                     result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='group_member._do_lookup_one_broker')
-                result.addErrback(self._on_message_broker_lookup_failed, broker_pos)
+                result.addErrback(self._on_broker_lookup_failed, broker_pos)
                 return result
         result = p2p_service_seeker.connect_random_node(
             lookup_method=lookup.random_message_broker,
             service_name='service_message_broker',
             service_params=lambda idurl: self._do_prepare_service_request_params(idurl, broker_pos),
+            request_service_timeout=60,
             exclude_nodes=list(exclude_brokers),
         )
         result.addCallback(self._on_broker_hired, broker_pos)
         if _Debug:
             result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='group_member._do_lookup_one_broker')
-        result.addErrback(self._on_message_broker_lookup_failed, broker_pos)
+        result.addErrback(self._on_broker_lookup_failed, broker_pos)
         return result
 
     def _do_request_service_one_broker(self, broker_idurl, broker_pos):
         if _Debug:
             lg.args(_DebugLevel, broker_pos=broker_pos, broker_idurl=broker_idurl, connecting_brokers=self.connecting_brokers)
         if not broker_idurl:
-            reactor.callLater(0, self._on_message_broker_connect_failed, broker_pos)  # @UndefinedVariable
+            reactor.callLater(0, self._on_broker_connect_failed, broker_pos)  # @UndefinedVariable
             return
         result = p2p_service_seeker.connect_known_node(
             remote_idurl=broker_idurl,
             service_name='service_message_broker',
             service_params=lambda idurl: self._do_prepare_service_request_params(idurl, broker_pos),
+            request_service_timeout=60,
         )
         result.addCallback(self._on_broker_connected, broker_pos)
         if _Debug:
             result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='group_member._do_request_service_one_broker')
-        result.addErrback(self._on_message_broker_connect_failed, broker_pos)
+        result.addErrback(self._on_broker_connect_failed, broker_pos)
 
     def _do_remember_brokers(self, event, *args, **kwargs):
         if _Debug:
@@ -1332,30 +1388,34 @@ class GroupMember(automat.Automat):
         self.hired_brokers[broker_pos] = idurl or None
         if idurl:
             self.connected_brokers[broker_pos] = idurl
+            self.automat('one-broker-hired', idurl)
+        else:
+            self.automat('one-broker-hire-failed')
         if self.connecting_brokers is not None:
             self.connecting_brokers.discard(broker_pos)
         if _Debug:
             lg.args(_DebugLevel, idurl=idurl, broker_pos=broker_pos, connecting_brokers=self.connecting_brokers,
                     hired_brokers=self.hired_brokers, connected_brokers=self.connected_brokers)
-        if self.connecting_brokers:
-            return idurl
-        if not self.connected_brokers:
-            lg.err('failed to hire any brokers')
-            self.automat('brokers-failed')
-            return idurl
-        if self.rotated_brokers:
-            if 0 not in self.connected_brokers or not self.connected_brokers[0]:
-                lg.err('broker at position 0 was not hired for %r' % self)
-                self.automat('brokers-failed')
-            else:
-                self.automat('brokers-rotated')
-        else:
-            if 0 not in self.connected_brokers or not self.connected_brokers[0]:
-                lg.err('broker at position 0 was not hired for %r' % self)
-                self.automat('brokers-failed')
-            else:
-                self.automat('brokers-hired')
-        return idurl
+        self._do_connect_hire_next_broker()
+#         if self.connecting_brokers:
+#             return idurl
+#         if not self.connected_brokers:
+#             lg.err('failed to hire any brokers')
+#             self.automat('brokers-failed')
+#             return idurl
+#         if self.rotated_brokers:
+#             if 0 not in self.connected_brokers or not self.connected_brokers[0]:
+#                 lg.err('broker at position 0 was not hired for %r' % self)
+#                 self.automat('brokers-failed')
+#             else:
+#                 self.automat('brokers-rotated')
+#         else:
+#             if 0 not in self.connected_brokers or not self.connected_brokers[0]:
+#                 lg.err('broker at position 0 was not hired for %r' % self)
+#                 self.automat('brokers-failed')
+#             else:
+#                 self.automat('brokers-hired')
+#         return idurl
 
     def _on_broker_connected(self, idurl, broker_pos):
         if _Debug:
@@ -1366,49 +1426,57 @@ class GroupMember(automat.Automat):
             return
         if idurl:
             self.connected_brokers[broker_pos] = idurl
+            self.automat('one-broker-connected', idurl)
+        else:
+            self.automat('one-broker-connect-failed')
         if self.connecting_brokers is not None:
             self.connecting_brokers.discard(broker_pos)
-        if self.connecting_brokers:
-            return
-        if not self.connected_brokers:
-            lg.err('failed to connect with any brokers')
-            self.automat('brokers-failed')
-            return
-        if 0 not in self.connected_brokers:
-            lg.warn('some brokers connected, but broker at position 0 is still empty')
-            self.automat('top-broker-failed')
-            return
-        if self.rotated_brokers:
-            self.automat('brokers-rotated')
-        else:
-            self.automat('brokers-connected')
+        self._do_connect_hire_next_broker()
+#         if self.connecting_brokers:
+#             return
+#         if not self.connected_brokers:
+#             lg.err('failed to connect with any brokers')
+#             self.automat('brokers-failed')
+#             return
+#         if 0 not in self.connected_brokers:
+#             lg.warn('some brokers connected, but broker at position 0 is still empty')
+#             self.automat('top-broker-failed')
+#             return
+#         if self.rotated_brokers:
+#             self.automat('brokers-rotated')
+#         else:
+#             self.automat('brokers-connected')
 
-    def _on_message_broker_lookup_failed(self, err, broker_pos):
+    def _on_broker_lookup_failed(self, err, broker_pos):
         if _Debug:
             lg.args(_DebugLevel, err=err, broker_pos=broker_pos)
+        self.automat('one-broker-lookup-failed', broker_pos)
         self.hired_brokers[broker_pos] = None
         if self.connecting_brokers is not None:
             self.connecting_brokers.discard(broker_pos)
         if _Debug:
             lg.args(_DebugLevel, err=err, broker_pos=broker_pos, connecting_brokers=self.connecting_brokers, hired_brokers=self.hired_brokers)
-        if self.connecting_brokers:
-            return
-        if self.hired_brokers and self.hired_brokers.get(0):
-            self.automat('brokers-hired')
-        else:
-            self.automat('brokers-failed')
+        self._do_connect_hire_next_broker()
+#         if self.connecting_brokers:
+#             return
+#         if self.hired_brokers and self.hired_brokers.get(0):
+#             self.automat('brokers-hired')
+#         else:
+#             self.automat('brokers-failed')
 
-    def _on_message_broker_connect_failed(self, err, broker_pos):
+    def _on_broker_connect_failed(self, err, broker_pos):
         if _Debug:
             lg.args(_DebugLevel, err=err, broker_pos=broker_pos, connecting_brokers=self.connecting_brokers)
+        self.automat('one-broker-connect-failed', broker_pos)
         if self.connecting_brokers is not None:
             self.connecting_brokers.discard(broker_pos)
-        if self.connecting_brokers:
-            return
-        if 0 in self.connected_brokers:
-            self.automat('brokers-connected')
-        else:
-            self.automat('brokers-failed')
+        self._do_connect_hire_next_broker()
+#         if self.connecting_brokers:
+#             return
+#         if 0 in self.connected_brokers:
+#             self.automat('brokers-connected')
+#         else:
+#             self.automat('brokers-failed')
 
     def _on_read_archive_success(self, archive_messages, received_messages):
         if _Debug:

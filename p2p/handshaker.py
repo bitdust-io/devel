@@ -32,6 +32,7 @@ EVENTS:
     * :red:`ack-received`
     * :red:`ack-timeout`
     * :red:`cache-and-ping`
+    * :red:`cancel`
     * :red:`fail-received`
     * :red:`outbox-failed`
     * :red:`ping`
@@ -85,6 +86,7 @@ def ping(idurl,
          force_cache=False, skip_outbox=False, keep_alive=True,
          fake_identity=None,
          channel='identity', channel_counter=True,
+         cancel_running=False,
     ):
     """
     Doing peer-to-peer ping with acknowledgment and return `Deferred` object to receive result.
@@ -99,10 +101,18 @@ def ping(idurl,
         raise Exception('empty idurl provided')
     result = Deferred()
     if remote_idurl in _RunningHandshakers:
-        _RunningHandshakers[remote_idurl]['results'].append(result)
-        if _Debug:
-            lg.args(_DebugLevel, already_opened=True, idurl=remote_idurl, channel=channel, skip_outbox=skip_outbox, )
-        return result
+        if cancel_running:
+            running_info = _RunningHandshakers.pop(remote_idurl)
+            inst = running_info.pop('instance')
+            if inst:
+                inst.automat('cancel')
+            for result_defer in running_info.pop('results'):
+                result_defer.errback(Exception('handshake process was cancelled'))
+        else:
+            _RunningHandshakers[remote_idurl]['results'].append(result)
+            if _Debug:
+                lg.args(_DebugLevel, already_opened=True, idurl=remote_idurl, channel=channel, skip_outbox=skip_outbox, )
+            return result
     _RunningHandshakers[remote_idurl] = {
         'instance': None,
         'results': [result, ],
@@ -239,6 +249,9 @@ class Handshaker(automat.Automat):
             elif event == 'remote-identity-cached':
                 self.state = 'ACK?'
                 self.doSendMyIdentity(*args, **kwargs)
+            elif event == 'cancel':
+                self.state = 'NO_IDENT'
+                self.doDestroyMe(*args, **kwargs)
         #---ACK?---
         elif self.state == 'ACK?':
             if event == 'ack-received':
@@ -254,6 +267,9 @@ class Handshaker(automat.Automat):
             elif event == 'fail-received' or event == 'outbox-failed':
                 self.state = 'FAILED'
                 self.doReportFailed(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
+            elif event == 'cancel':
+                self.state = 'NO_IDENT'
                 self.doDestroyMe(*args, **kwargs)
         #---SUCCESS---
         elif self.state == 'SUCCESS':
@@ -428,4 +444,5 @@ class Handshaker(automat.Automat):
         self.channel = None
         self.channel_counter = None
         self.destroy()
+
 

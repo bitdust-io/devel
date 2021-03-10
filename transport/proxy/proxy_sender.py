@@ -389,9 +389,8 @@ class ProxySender(automat.Automat):
             self.sent_packets[_key] = (routed_packet, outpacket, )
         self.event('relay-out', (outpacket, newpacket, routed_packet))
         if _Debug:
-            lg.out(_DebugLevel, '>>>Relay-OUT %s' % str(outpacket))
-            lg.out(_DebugLevel, '        sent to %s://%s with %d bytes' % (
-                router_proto, router_host, len(block_encrypted)))
+            lg.out(_DebugLevel, '>>>Relay-OUT %s sent to %s://%s with %d bytes, timeout=%r' % (
+                str(outpacket),router_proto, router_host, len(block_encrypted), response_timeout, ))
         if _PacketLogFileEnabled:
             lg.out(0, '\033[0;49;36mRELAY OUT %s(%s) with %s bytes from %s to %s via %s\033[0m' % (
                 outpacket.Command, outpacket.PacketID, len(raw_bytes),
