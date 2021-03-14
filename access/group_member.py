@@ -858,12 +858,12 @@ class GroupMember(automat.Automat):
             if self.active_broker_id and received_broker_id != self.active_broker_id:
                 if not to_be_reconnected:
                     to_be_reconnected = True
-                    to_be_rotated = True
+                    # to_be_rotated = True
                     lg.warn('received message from broker %r which is different from my active broker %r' % (
                         received_broker_id, self.active_broker_id, ))
         if len(found_broker_ids) > 0 and self.active_broker_id not in found_broker_ids:
             to_be_reconnected = True
-            to_be_rotated = True
+            # to_be_rotated = True
             lg.warn('active broker is %r but incoming message received from another broker %r in %r' % (
                 self.active_broker_id, list(found_broker_ids), self, ))
         packets_to_ack.clear()
