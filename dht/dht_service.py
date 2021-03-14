@@ -1201,7 +1201,6 @@ def get_cached_json_value(key, layer_id=0, cache_ttl=DEFAULT_CACHE_TTL):
 
 #------------------------------------------------------------------------------
 
-
 class DHTNode(MultiLayerNode):
 
     def __init__(self, udpPort=4000, dataStores=None, routingTables=None, networkProtocol=None, nodeID=None):
@@ -1311,8 +1310,7 @@ class DHTNode(MultiLayerNode):
         return {key: value, layerID:layerID, }
 
     @rpcmethod
-    def verify_update(self, key, value, originalPublisherID=None,
-                            age=0, expireSeconds=KEY_EXPIRE_MAX_SECONDS, **kwargs):
+    def verify_update(self, key, value, originalPublisherID=None, age=0, expireSeconds=KEY_EXPIRE_MAX_SECONDS, **kwargs):
         count('verify_update')
         if _Debug:
             lg.out(_DebugLevel, 'dht_service.DHTNode.verify_update key=[%s]' % strng.to_text(key, errors='ignore')[:10])

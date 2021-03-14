@@ -143,6 +143,9 @@ def test_alpha():
     #--- SCENARIO 8: customer-3 receive all archived messages
     scenario8()
 
+    #--- SCENARIO 18: customer-2 send message to the group but active broker-1 is offline
+    scenario18()
+
     #--- SCENARIO 4: customer-1 share files to customer-2
     customer_1_shared_file_info, customer_2_shared_file_info = scenario4()
 
@@ -155,7 +158,7 @@ def test_alpha():
     #--- SCENARIO 16: customer-4 increase and decrease suppliers amount
     scenario16()
 
-    #--- SCENARIO 17: customer-restore recover identity from customer-2
+    #--- SCENARIO 17: customer-2 went offline and customer-restore recover identity from customer-2
     scenario17(customer_2_shared_file_info)
 
 
@@ -477,15 +480,6 @@ def scenario8():
     kw.wait_service_state(CUSTOMERS_IDS, 'service_private_groups', 'ON')
     kw.wait_packets_finished(PROXY_IDS + CUSTOMERS_IDS + BROKERS_IDS)
 
-#     assert kw.queue_consumer_list_v1('broker-1', extract_ids=True) == []
-#     assert kw.queue_consumer_list_v1('broker-2', extract_ids=True) == []
-#     assert kw.queue_consumer_list_v1('broker-3', extract_ids=True) == []
-#     assert kw.queue_consumer_list_v1('broker-4', extract_ids=True) == []
-#     assert kw.queue_producer_list_v1('broker-1', extract_ids=True) == []
-#     assert kw.queue_producer_list_v1('broker-2', extract_ids=True) == []
-#     assert kw.queue_producer_list_v1('broker-3', extract_ids=True) == []
-#     assert kw.queue_producer_list_v1('broker-4', extract_ids=True) == []
-
     assert len(kw.message_conversation_v1('customer-1')['result']) == 1
 
     # create group owned by customer-1 and join
@@ -526,12 +520,12 @@ def scenario8():
     assert 'customer-1@id-a_8084' in customer_1_broker_consumers
     assert 'customer-1@id-a_8084' in customer_1_broker_producers
 
-    assert len(kw.message_conversation_v1('customer-2')['result']) == 3
+    assert len(kw.message_conversation_v1('customer-2')['result']) == 4
 
     # share group key from customer-1 to customer-2
     kw.group_share_v1('customer-1', customer_1_group_key_id, 'customer-2@id-b_8084')
 
-    assert len(kw.message_conversation_v1('customer-2')['result']) == 4
+    assert len(kw.message_conversation_v1('customer-2')['result']) == 5
 
     # second member join the group
     kw.group_join_v1('customer-2', customer_1_group_key_id)
@@ -554,10 +548,10 @@ def scenario8():
     assert len(kw.message_history_v1('customer-3', customer_1_group_key_id, message_type='group_message')['result']) == 0
 
     assert len(kw.message_conversation_v1('customer-1')['result']) == 2
-    assert len(kw.message_conversation_v1('customer-2')['result']) == 4
+    assert len(kw.message_conversation_v1('customer-2')['result']) == 5
     assert len(kw.message_conversation_v1('customer-3')['result']) == 0
 
-    # sending 11 messages to the group from customer 1
+    # sending messages to the group from customer-1
     for i in range(11):
         group_customers_1_2_3_messages.append(kw.verify_message_sent_received(
             customer_1_group_key_id,
@@ -568,14 +562,14 @@ def scenario8():
             expected_last_sequence_id={},
         ))
 
-    # must be 3 archive snapshots be created and 1 message not archived 
+    # must be 3 archive snapshots created and 1 message not archived
     assert kw.group_info_v1('customer-1', customer_1_group_key_id)['result']['last_sequence_id'] == 10
     assert kw.group_info_v1('customer-2', customer_1_group_key_id)['result']['last_sequence_id'] == 10
     assert len(kw.message_history_v1('customer-1', customer_1_group_key_id, message_type='group_message')['result']) == 11
     assert len(kw.message_history_v1('customer-2', customer_1_group_key_id, message_type='group_message')['result']) == 11
 
     assert len(kw.message_conversation_v1('customer-1')['result']) == 2
-    assert len(kw.message_conversation_v1('customer-2')['result']) == 4
+    assert len(kw.message_conversation_v1('customer-2')['result']) == 5
     assert len(kw.message_conversation_v1('customer-3')['result']) == 0
 
     # customers 1 and 2 leave the group
@@ -586,10 +580,6 @@ def scenario8():
 
     customer_1_broker_consumers = kw.queue_consumer_list_v1(customer_1_active_broker_name, extract_ids=True)
     customer_1_broker_producers = kw.queue_producer_list_v1(customer_1_active_broker_name, extract_ids=True)
-    # assert 'customer-1@id-a_8084' not in customer_1_broker_consumers
-    # assert 'customer-1@id-a_8084' not in customer_1_broker_producers
-    # assert 'customer-2@id-b_8084' not in customer_1_broker_consumers
-    # assert 'customer-2@id-b_8084' not in customer_1_broker_producers
 
     customer_1_group_info_offline = kw.group_info_v1('customer-1', customer_1_group_key_id)['result']
     assert customer_1_group_info_offline['state'] == 'OFFLINE'
@@ -602,7 +592,7 @@ def scenario8():
     assert customer_2_group_info_offline['last_sequence_id'] == 10
 
     assert len(kw.message_conversation_v1('customer-1')['result']) == 2
-    assert len(kw.message_conversation_v1('customer-2')['result']) == 4
+    assert len(kw.message_conversation_v1('customer-2')['result']) == 5
     assert len(kw.message_conversation_v1('customer-3')['result']) == 0
 
     # customer-2 share group key to customer-3
@@ -617,14 +607,6 @@ def scenario8():
 
     customer_1_broker_consumers = kw.queue_consumer_list_v1(customer_1_active_broker_name, extract_ids=True)
     customer_1_broker_producers = kw.queue_producer_list_v1(customer_1_active_broker_name, extract_ids=True)
-    # assert len(customer_1_broker_consumers) >= 1
-    # assert len(customer_1_broker_producers) >= 1
-    # assert 'customer-1@id-a_8084' not in customer_1_broker_consumers
-    # assert 'customer-1@id-a_8084' not in customer_1_broker_producers
-    # assert 'customer-2@id-b_8084' not in customer_1_broker_consumers
-    # assert 'customer-2@id-b_8084' not in customer_1_broker_producers
-    # assert 'customer-3@id-a_8084' in customer_1_broker_consumers
-    # assert 'customer-3@id-a_8084' in customer_1_broker_producers
 
     # customer-3 must also see all message that was sent to the group when he was not present yet
     assert kw.group_info_v1('customer-3', customer_1_group_key_id)['result']['last_sequence_id'] == 10
@@ -635,9 +617,6 @@ def scenario8():
     kw.group_leave_v1('customer-3', customer_1_group_key_id)
 
     kw.wait_packets_finished(PROXY_IDS + CUSTOMERS_IDS_124 + BROKERS_IDS)
-
-    # assert len(kw.queue_consumer_list_v1(customer_1_active_broker_name, extract_ids=True)) == 0
-    # assert len(kw.queue_producer_list_v1(customer_1_active_broker_name, extract_ids=True)) == 0
 
     customer_1_group_info_offline = kw.group_info_v1('customer-1', customer_1_group_key_id)['result']
     assert customer_1_group_info_offline['state'] == 'OFFLINE'
@@ -655,18 +634,8 @@ def scenario8():
     assert customer_3_group_info_offline['last_sequence_id'] == 10
 
     assert len(kw.message_conversation_v1('customer-1')['result']) == 2
-    assert len(kw.message_conversation_v1('customer-2')['result']) == 4
+    assert len(kw.message_conversation_v1('customer-2')['result']) == 5
     assert len(kw.message_conversation_v1('customer-3')['result']) == 1
-
-    # make sure brokers are cleaned up
-#     assert kw.queue_consumer_list_v1('broker-1', extract_ids=True) == []
-#     assert kw.queue_consumer_list_v1('broker-2', extract_ids=True) == []
-#     assert kw.queue_consumer_list_v1('broker-3', extract_ids=True) == []
-#     assert kw.queue_consumer_list_v1('broker-4', extract_ids=True) == []
-#     assert kw.queue_producer_list_v1('broker-1', extract_ids=True) == []
-#     assert kw.queue_producer_list_v1('broker-2', extract_ids=True) == []
-#     assert kw.queue_producer_list_v1('broker-3', extract_ids=True) == []
-#     assert kw.queue_producer_list_v1('broker-4', extract_ids=True) == []
 
 
 def scenario9(): 
@@ -930,7 +899,7 @@ def scenario11_begin():
     kw.service_info_v1('customer-rotated', 'service_private_messages', 'ON')
 
     assert len(kw.message_conversation_v1('customer-rotated')['result']) == 0
-    assert len(kw.message_conversation_v1('customer-2')['result']) == 2
+    assert len(kw.message_conversation_v1('customer-2')['result']) == 3
     assert len(kw.message_history_v1('customer-rotated', 'master$customer-2@id-b_8084', message_type='private_message')['result']) == 0
     assert len(kw.message_history_v1('customer-2', 'master$customer-rotated@id-dead_8084', message_type='private_message')['result']) == 0
 
@@ -943,7 +912,7 @@ def scenario11_begin():
     kw.message_receive_v1('customer-rotated', expected_data=random_message, timeout=31, polling_timeout=30)
 
     assert len(kw.message_conversation_v1('customer-rotated')['result']) == 1
-    assert len(kw.message_conversation_v1('customer-2')['result']) == 3
+    assert len(kw.message_conversation_v1('customer-2')['result']) == 4
     assert len(kw.message_history_v1('customer-rotated', 'master$customer-2@id-b_8084', message_type='private_message')['result']) == 1
     assert len(kw.message_history_v1('customer-2', 'master$customer-rotated@id-dead_8084', message_type='private_message')['result']) == 1
 
@@ -961,7 +930,7 @@ def scenario11_end(old_customer_rotated_info, new_customer_rotated_info, old_cus
     kw.service_info_v1('customer-rotated', 'service_private_messages', 'ON')
 
     assert len(kw.message_conversation_v1('customer-rotated')['result']) == 1
-    assert len(kw.message_conversation_v1('customer-2')['result']) == 3
+    assert len(kw.message_conversation_v1('customer-2')['result']) == 4
     assert len(kw.message_history_v1('customer-rotated', 'master$customer-2@id-b_8084', message_type='private_message')['result']) == 1
     assert len(kw.message_history_v1('customer-2', 'master$customer-rotated@id-dead_8084', message_type='private_message')['result']) == 1
 
@@ -975,7 +944,7 @@ def scenario11_end(old_customer_rotated_info, new_customer_rotated_info, old_cus
     kw.wait_packets_finished(['customer-2', 'customer-rotated', ])
 
     assert len(kw.message_conversation_v1('customer-rotated')['result']) == 1
-    assert len(kw.message_conversation_v1('customer-2')['result']) == 3
+    assert len(kw.message_conversation_v1('customer-2')['result']) == 4
     assert len(kw.message_history_v1('customer-rotated', 'master$customer-2@id-b_8084', message_type='private_message')['result']) == 2
     assert len(kw.message_history_v1('customer-2', 'master$%s' % new_customer_rotated_info['global_id'], message_type='private_message')['result']) == 2
     assert len(kw.message_history_v1('customer-2', 'master$customer-rotated@id-dead_8084', message_type='private_message')['result']) == 2
@@ -1020,8 +989,6 @@ def scenario12_begin():
 
     customer_4_broker_consumers = kw.queue_consumer_list_v1(customer_4_active_broker_name, extract_ids=True)
     customer_4_broker_producers = kw.queue_producer_list_v1(customer_4_active_broker_name, extract_ids=True)
-    # assert len(customer_4_broker_consumers) == 4
-    # assert len(customer_4_broker_producers) == 4
     assert 'customer-4@id-b_8084' in customer_4_broker_consumers
     assert 'customer-4@id-b_8084' in customer_4_broker_producers
 
@@ -1037,8 +1004,6 @@ def scenario12_begin():
 
     customer_4_broker_consumers = kw.queue_consumer_list_v1(customer_4_active_broker_name, extract_ids=True)
     customer_4_broker_producers = kw.queue_producer_list_v1(customer_4_active_broker_name, extract_ids=True)
-    # assert len(customer_4_broker_consumers) == 5
-    # assert len(customer_4_broker_producers) == 5
     assert 'customer-4@id-b_8084' in customer_4_broker_consumers
     assert 'customer-4@id-b_8084' in customer_4_broker_producers
     assert 'customer-2@id-b_8084' in customer_4_broker_consumers
@@ -1064,6 +1029,44 @@ def scenario12_begin():
     assert len(kw.message_history_v1('customer-2', customer_4_group_key_id, message_type='group_message')['result']) == 5
     assert len(group_customers_2_4_messages) == 5
 
+    # create another group owned by customer-4 and join
+    customer_4_group2_key_id = kw.group_create_v1('customer-4', label='MyGroupXYZ')
+    kw.wait_service_state(CUSTOMERS_IDS, 'service_shared_data', 'ON')
+    kw.wait_service_state(CUSTOMERS_IDS, 'service_private_groups', 'ON')
+    kw.wait_packets_finished(PROXY_IDS + CUSTOMERS_IDS + BROKERS_IDS)
+
+    kw.group_join_v1('customer-4', customer_4_group2_key_id)
+    kw.wait_packets_finished(PROXY_IDS + CUSTOMERS_IDS + BROKERS_IDS + ['broker-rotated', ])
+
+    # share second group key from customer-4 to customer-2
+    kw.group_share_v1('customer-4', customer_4_group2_key_id, 'customer-2@id-b_8084')
+
+    # customer-2 also joins the second group
+    kw.group_join_v1('customer-2', customer_4_group2_key_id)
+    kw.wait_packets_finished(PROXY_IDS + CUSTOMERS_IDS + BROKERS_IDS + ['broker-rotated', ])
+
+    # sending few messages to the second group from customer-2
+    for i in range(3):
+        kw.verify_message_sent_received(
+            customer_4_group2_key_id,
+            producer_id='customer-2',
+            consumers_ids=['customer-4', 'customer-2', ],
+            message_label='J%d' % (i + 1),
+            expected_results={'customer-4': True, 'customer-2': True, },
+            expected_last_sequence_id={},
+        )
+
+    # sending few messages to the second group from customer-4
+    for i in range(3):
+        kw.verify_message_sent_received(
+            customer_4_group2_key_id,
+            producer_id='customer-4',
+            consumers_ids=['customer-4', 'customer-2', ],
+            message_label='K%d' % (i + 1),
+            expected_results={'customer-4': True, 'customer-2': True, },
+            expected_last_sequence_id={},
+        )
+
     # clean preferred brokers on customer-4 so he can select another broker except broker-rotated
     kw.config_set_v1('customer-4', 'services/private-groups/preferred-brokers',
                      'http://id-a:8084/broker-1.xml,http://id-b:8084/broker-2.xml,http://id-a:8084/broker-3.xml,http://id-b:8084/broker-4.xml')
@@ -1073,6 +1076,7 @@ def scenario12_begin():
         'active_queue_id': customer_4_active_queue_id,
         'active_broker_id': customer_4_active_broker_id,
         'active_broker_name': customer_4_active_broker_name,
+        'group2_key_id': customer_4_group2_key_id,
     }
 
 
@@ -1085,13 +1089,15 @@ def scenario12_end(old_customer_4_info):
     customer_4_old_queue_id = old_customer_4_info['active_queue_id']
     customer_4_old_broker_id = old_customer_4_info['active_broker_id']
     customer_4_old_broker_name = old_customer_4_info['active_broker_name']
+    customer_4_group2_key_id = old_customer_4_info['group2_key_id']
 
     # send one message to the group after brokers rotated from customer-2
+    # this suppose to trigger brokers rotation because broker-rotated is dead
     group_customers_2_4_messages.append(kw.verify_message_sent_received(
         customer_4_group_key_id,
         producer_id='customer-2',
         consumers_ids=['customer-4', 'customer-2', ],
-        message_label='G',
+        message_label='G_to_be_rotated',
         expected_results={'customer-4': True, 'customer-2': True, },
         expected_last_sequence_id={'customer-4': 5, 'customer-2': 5, },
         polling_timeout=120,
@@ -1175,6 +1181,9 @@ def scenario12_end(old_customer_4_info):
 
     kw.group_leave_v1('customer-4', customer_4_group_key_id)
     kw.group_leave_v1('customer-2', customer_4_group_key_id)
+
+    kw.group_leave_v1('customer-4', customer_4_group2_key_id)
+    kw.group_leave_v1('customer-2', customer_4_group2_key_id)
 
     kw.wait_packets_finished(PROXY_IDS + CUSTOMERS_IDS + BROKERS_IDS)
 
@@ -1474,7 +1483,7 @@ def scenario16():
 
 def scenario17(old_customer_2_info):
     set_active_scenario('SCENARIO 17')
-    print('\n\n============\n[SCENARIO 17] customer-restore recover identity from customer-2')
+    print('\n\n============\n[SCENARIO 17] customer-2 went offline and customer-restore recover identity from customer-2')
 
     # backup customer-2 private key
     backup_file_directory_c2 = '/customer_2/identity.backup'
@@ -1558,3 +1567,198 @@ def scenario17(old_customer_2_info):
         expected_reliable=50,
         reliable_shares=False,
     )
+
+
+def scenario18():
+    set_active_scenario('SCENARIO 18')
+    print('\n\n============\n[SCENARIO 18] customer-2 send message to the group but active broker-1 is offline')
+
+    # create new group by customer-2
+    customer_2_groupA_key_id = kw.group_create_v1('customer-2', label='MyGroupAAA')
+    kw.wait_service_state(CUSTOMERS_IDS_124, 'service_shared_data', 'ON')
+    kw.wait_service_state(CUSTOMERS_IDS_124, 'service_private_groups', 'ON')
+    kw.wait_packets_finished(PROXY_IDS + CUSTOMERS_IDS_124 + BROKERS_IDS)
+
+    # customer-2 join the group
+    kw.group_join_v1('customer-2', customer_2_groupA_key_id)
+    kw.wait_packets_finished(PROXY_IDS + CUSTOMERS_IDS_124 + BROKERS_IDS)
+
+    # share group key from customer-2 to customer-4
+    kw.group_share_v1('customer-2', customer_2_groupA_key_id, 'customer-4@id-b_8084')
+
+    # customer-4 also join the group
+    kw.group_join_v1('customer-4', customer_2_groupA_key_id)
+    kw.wait_packets_finished(PROXY_IDS + CUSTOMERS_IDS_124 + BROKERS_IDS)
+
+    # sending few messages to the group from customer-2
+    for i in range(2):
+        kw.verify_message_sent_received(
+            customer_2_groupA_key_id,
+            producer_id='customer-2',
+            consumers_ids=['customer-4', 'customer-2', ],
+            message_label='L%d' % (i + 1),
+            expected_results={'customer-4': True, 'customer-2': True, },
+            expected_last_sequence_id={},
+        )
+
+    # sending few messages to the group from customer-4
+    for i in range(2):
+        kw.verify_message_sent_received(
+            customer_2_groupA_key_id,
+            producer_id='customer-4',
+            consumers_ids=['customer-4', 'customer-2', ],
+            message_label='M%d' % (i + 1),
+            expected_results={'customer-4': True, 'customer-2': True, },
+            expected_last_sequence_id={},
+        )
+
+    # create second group by customer-2
+    customer_2_groupB_key_id = kw.group_create_v1('customer-2', label='MyGroupBBB')
+    kw.wait_service_state(CUSTOMERS_IDS_124, 'service_shared_data', 'ON')
+    kw.wait_service_state(CUSTOMERS_IDS_124, 'service_private_groups', 'ON')
+    kw.wait_packets_finished(PROXY_IDS + CUSTOMERS_IDS_124 + BROKERS_IDS)
+
+    # customer-2 join the second group
+    kw.group_join_v1('customer-2', customer_2_groupB_key_id)
+    kw.wait_packets_finished(PROXY_IDS + CUSTOMERS_IDS_124 + BROKERS_IDS)
+
+    # share second group key from customer-2 to customer-4
+    kw.group_share_v1('customer-2', customer_2_groupB_key_id, 'customer-4@id-b_8084')
+
+    # customer-4 also joins the second group
+    kw.group_join_v1('customer-4', customer_2_groupB_key_id)
+    kw.wait_packets_finished(PROXY_IDS + CUSTOMERS_IDS_124 + BROKERS_IDS)
+
+    # sending few messages to the second group from customer-2
+    for i in range(1):
+        kw.verify_message_sent_received(
+            customer_2_groupB_key_id,
+            producer_id='customer-2',
+            consumers_ids=['customer-4', 'customer-2', ],
+            message_label='O%d' % (i + 1),
+            expected_results={'customer-4': True, 'customer-2': True, },
+            expected_last_sequence_id={},
+        )
+
+    # sending few messages to the second group from customer-4
+    for i in range(1):
+        kw.verify_message_sent_received(
+            customer_2_groupB_key_id,
+            producer_id='customer-4',
+            consumers_ids=['customer-4', 'customer-2', ],
+            message_label='P%d' % (i + 1),
+            expected_results={'customer-4': True, 'customer-2': True, },
+            expected_last_sequence_id={},
+        )
+
+    # clean preferred brokers on customer-4 so he can select another node except the top broker-1
+    kw.config_set_v1('customer-4', 'services/private-groups/preferred-brokers',
+                     'http://id-b:8084/broker-2.xml,http://id-a:8084/broker-3.xml,http://id-b:8084/broker-4.xml')
+
+    # verify active broker for customer-4
+    customer_4_groupA_info_before = kw.group_info_v1('customer-4', customer_2_groupA_key_id)['result']
+    assert customer_4_groupA_info_before['state'] == 'IN_SYNC!'
+    assert len(customer_4_groupA_info_before['connected_brokers']) >= 2
+    customer_4_active_broker_id_before = customer_4_groupA_info_before['active_broker_id']
+    customer_4_active_broker_name_before = customer_4_active_broker_id_before.split('@')[0]
+    assert customer_4_active_broker_name_before == 'broker-1'
+
+    # also check the second group have similar info for customer-4
+    customer_4_groupB_info_before = kw.group_info_v1('customer-4', customer_2_groupB_key_id)['result']
+    assert customer_4_groupB_info_before['state'] == 'IN_SYNC!'
+    assert len(customer_4_groupB_info_before['connected_brokers']) >= 2
+
+    # verify active broker for customer-2
+    customer_2_groupA_info_before = kw.group_info_v1('customer-2', customer_2_groupA_key_id)['result']
+    assert customer_2_groupA_info_before['state'] == 'IN_SYNC!'
+    assert len(customer_2_groupA_info_before['connected_brokers']) >= 2
+    customer_2_active_broker_id_before = customer_2_groupA_info_before['active_broker_id']
+    customer_2_active_broker_name_before = customer_2_active_broker_id_before.split('@')[0]
+    assert customer_2_active_broker_name_before == 'broker-1'
+
+    # also check the second group have similar info for customer-2
+    customer_2_groupB_info_before = kw.group_info_v1('customer-2', customer_2_groupB_key_id)['result']
+    assert customer_2_groupB_info_before['state'] == 'IN_SYNC!'
+    assert len(customer_2_groupB_info_before['connected_brokers']) >= 2
+
+    # the brokers must be the same for both groups
+    assert customer_4_active_broker_id_before == customer_2_active_broker_id_before
+    assert customer_4_active_broker_id_before == customer_4_groupA_info_before['active_broker_id']
+    assert customer_4_active_broker_id_before == customer_4_groupB_info_before['active_broker_id']
+    assert customer_4_active_broker_id_before == customer_2_groupA_info_before['active_broker_id']
+    assert customer_4_active_broker_id_before == customer_2_groupB_info_before['active_broker_id']
+    assert customer_2_groupA_info_before['connected_brokers']['0'] == customer_4_groupA_info_before['connected_brokers']['0']
+    assert customer_2_groupA_info_before['connected_brokers']['1'] == customer_4_groupA_info_before['connected_brokers']['1']
+    assert customer_2_groupA_info_before['connected_brokers']['2'] == customer_4_groupA_info_before['connected_brokers']['2']
+    assert customer_2_groupB_info_before['connected_brokers']['0'] == customer_4_groupA_info_before['connected_brokers']['0']
+    assert customer_2_groupB_info_before['connected_brokers']['1'] == customer_4_groupA_info_before['connected_brokers']['1']
+    assert customer_2_groupB_info_before['connected_brokers']['2'] == customer_4_groupA_info_before['connected_brokers']['2']
+    assert customer_2_groupB_info_before['connected_brokers']['0'] == customer_4_groupB_info_before['connected_brokers']['0']
+    assert customer_2_groupB_info_before['connected_brokers']['1'] == customer_4_groupB_info_before['connected_brokers']['1']
+    assert customer_2_groupB_info_before['connected_brokers']['2'] == customer_4_groupB_info_before['connected_brokers']['2']
+
+    # stop broker-1 node
+    response = request_get('broker-1', 'process/stop/v1')
+    print('\nprocess/stop/v1 [broker-1] : %s\n' % response.json())
+    assert response.json()['status'] == 'OK', response.json()
+
+    # send again a message to the second group from customer-4
+    # this should rotate message brokers for both customers
+    kw.verify_message_sent_received(
+        customer_2_groupB_key_id,
+        producer_id='customer-4',
+        consumers_ids=['customer-4', 'customer-2', ],
+        message_label='N',
+        expected_results={'customer-4': True, 'customer-2': True, },
+        expected_last_sequence_id={},
+        polling_timeout=150,
+        receive_timeout=151,
+    )
+
+    # verify active broker for customer-4 again
+    customer_4_groupA_info_after = kw.group_info_v1('customer-4', customer_2_groupA_key_id, wait_state='IN_SYNC!')['result']
+    assert customer_4_groupA_info_after['state'] == 'IN_SYNC!'
+    assert len(customer_4_groupA_info_after['connected_brokers']) >= 2
+    customer_4_active_broker_id_after = customer_4_groupA_info_after['active_broker_id']
+    customer_4_active_broker_name_after = customer_4_active_broker_id_after.split('@')[0]
+    assert customer_4_active_broker_name_after != customer_4_active_broker_name_before
+
+    # also check again the second group have similar info for customer-4
+    customer_4_groupB_info_after = kw.group_info_v1('customer-4', customer_2_groupB_key_id)['result']
+    assert customer_4_groupB_info_after['state'] == 'IN_SYNC!'
+    assert len(customer_4_groupB_info_after['connected_brokers']) >= 2
+
+    # verify active broker for customer-2 again
+    customer_2_groupA_info_after = kw.group_info_v1('customer-2', customer_2_groupA_key_id, wait_state='IN_SYNC!')['result']
+    assert customer_2_groupA_info_after['state'] == 'IN_SYNC!'
+    assert len(customer_2_groupA_info_after['connected_brokers']) >= 2
+    customer_2_active_broker_id_after = customer_2_groupA_info_after['active_broker_id']
+    customer_2_active_broker_name_after = customer_2_active_broker_id_after.split('@')[0]
+    assert customer_2_active_broker_name_after != customer_2_active_broker_name_before
+
+    # also check again the second group have similar info for customer-2
+    customer_2_groupB_info_after = kw.group_info_v1('customer-2', customer_2_groupB_key_id)['result']
+    assert customer_2_groupB_info_after['state'] == 'IN_SYNC!'
+    assert len(customer_2_groupB_info_after['connected_brokers']) >= 2
+
+    # verify brokers are really rotated
+    assert customer_4_groupA_info_after['connected_brokers']['0'] == customer_4_groupA_info_before['connected_brokers']['1']
+    assert customer_4_groupA_info_after['connected_brokers']['1'] == customer_4_groupA_info_before['connected_brokers']['2']
+    assert customer_4_active_broker_id_after != customer_4_active_broker_id_after
+    assert customer_2_active_broker_id_after != customer_2_active_broker_id_after
+
+    # the brokers must be the same for both groups
+    assert customer_4_active_broker_id_after == customer_2_active_broker_id_after
+    assert customer_4_active_broker_id_after == customer_4_groupA_info_after['active_broker_id']
+    assert customer_4_active_broker_id_after == customer_4_groupB_info_after['active_broker_id']
+    assert customer_4_active_broker_id_after == customer_2_groupA_info_after['active_broker_id']
+    assert customer_4_active_broker_id_after == customer_2_groupB_info_after['active_broker_id']
+    assert customer_2_groupA_info_after['connected_brokers']['0'] == customer_4_groupA_info_after['connected_brokers']['0']
+    assert customer_2_groupA_info_after['connected_brokers']['1'] == customer_4_groupA_info_after['connected_brokers']['1']
+    assert customer_2_groupA_info_after['connected_brokers']['2'] == customer_4_groupA_info_after['connected_brokers']['2']
+    assert customer_2_groupB_info_after['connected_brokers']['0'] == customer_4_groupA_info_after['connected_brokers']['0']
+    assert customer_2_groupB_info_after['connected_brokers']['1'] == customer_4_groupA_info_after['connected_brokers']['1']
+    assert customer_2_groupB_info_after['connected_brokers']['2'] == customer_4_groupA_info_after['connected_brokers']['2']
+    assert customer_2_groupB_info_after['connected_brokers']['0'] == customer_4_groupB_info_after['connected_brokers']['0']
+    assert customer_2_groupB_info_after['connected_brokers']['1'] == customer_4_groupB_info_after['connected_brokers']['1']
+    assert customer_2_groupB_info_after['connected_brokers']['2'] == customer_4_groupB_info_after['connected_brokers']['2']
