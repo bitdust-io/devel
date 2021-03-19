@@ -103,6 +103,10 @@ class P2PServiceSeeker(automat.Automat):
         self.target_id = None
         self.target_service = None
         self.request_service_params = None
+        self.request_service_timeout = None
+        self.ping_retries = None
+        self.ack_timeout = None
+        self.force_handshake = None
         self.exclude_nodes = []
         self.lookup_task = None
         self.requested_packet_id = None
@@ -181,6 +185,10 @@ class P2PServiceSeeker(automat.Automat):
         self.lookup_method = kwargs.get('lookup_method', None)
         self.target_service = kwargs['target_service']
         self.request_service_params = kwargs.get('request_service_params', None)
+        self.request_service_timeout = kwargs.get('request_service_timeout', 120)
+        self.ping_retries = kwargs.get('ping_retries', None)
+        self.ack_timeout = kwargs.get('ack_timeout', None)
+        self.force_handshake = kwargs.get('force_handshake', False)
         self.result_callback = kwargs.get('result_callback', None)
         self.exclude_nodes = id_url.to_bin_list(kwargs.get('exclude_nodes', []))
 
@@ -218,6 +226,9 @@ class P2PServiceSeeker(automat.Automat):
             channel='p2p_service_seeker',
             keep_alive=True,
             force_cache=False,
+            ping_retries=(1 if self.ping_retries is None else self.ping_retries),
+            ack_timeout=(15 if self.ack_timeout is None else self.ack_timeout),
+            cancel_running=self.force_handshake,
         )
         d.addCallback(lambda ok: self.automat('shook-hands'))
         if _Debug:
@@ -237,7 +248,7 @@ class P2PServiceSeeker(automat.Automat):
             remote_idurl=self.target_idurl,
             service_name=self.target_service,
             json_payload=service_request_payload,
-            timeout=120,
+            timeout=self.request_service_timeout,
             callbacks={
                 commands.Ack(): self._node_acked,
                 commands.Fail(): self._node_failed,
@@ -296,6 +307,10 @@ class P2PServiceSeeker(automat.Automat):
         self.target_id = None
         self.target_service = None
         self.request_service_params = None
+        self.request_service_timeout = None
+        self.ping_retries = None
+        self.ack_timeout = None
+        self.force_handshake = None
         self.exclude_nodes = []
         self.requested_packet_id = None
         self.lookup_task = None
@@ -309,7 +324,7 @@ class P2PServiceSeeker(automat.Automat):
         if not strng.to_text(response.Payload).startswith('accepted'):
             if _Debug:
                 lg.out(_DebugLevel, 'p2p_service_seeker._node_acked with service denied %r %r' % (response, info))
-            self.automat('service-denied')
+            self.automat('service-denied', (response, info, ))
             return
         if _Debug:
             lg.out(_DebugLevel, 'p2p_service_seeker._node_acked %s is connected' % response.CreatorID)
@@ -318,12 +333,12 @@ class P2PServiceSeeker(automat.Automat):
     def _node_failed(self, response, info):
         if _Debug:
             lg.out(_DebugLevel, 'p2p_service_seeker._node_failed %r %r' % (response, info))
-        self.automat('service-denied')
+        self.automat('service-denied', (response, info, ))
 
     def _node_timed_out(self, pkt_out):
         if _Debug:
             lg.out(_DebugLevel, 'p2p_service_seeker._node_timed_out for outgoing packet %r' % pkt_out)
-        self.automat('fail')
+        self.automat('fail', pkt_out)
 
     def _nodes_lookup_finished(self, idurls):
         if _Debug:
@@ -354,10 +369,12 @@ def on_lookup_result(event, result_defer, *args, **kwargs):
     if event == 'node-connected':
         result_defer.callback(args[0])
     else:
-        result_defer.callback(None)
+        result_defer.errback(Exception((event, args, kwargs, )))
 
+#------------------------------------------------------------------------------
 
-def connect_random_node(lookup_method, service_name, service_params=None, exclude_nodes=[]):
+def connect_random_node(lookup_method, service_name, service_params=None, exclude_nodes=[],
+                        request_service_timeout=None, ping_retries=None, ack_timeout=None, force_handshake=False):
     """
     """
     global _P2PServiceSeekerInstaceCounter
@@ -375,13 +392,18 @@ def connect_random_node(lookup_method, service_name, service_params=None, exclud
         lookup_method=lookup_method,
         target_service=service_name,
         request_service_params=service_params,
+        request_service_timeout=request_service_timeout,
+        ping_retries=ping_retries,
+        ack_timeout=ack_timeout,
+        force_handshake=force_handshake,
         result_callback=lambda evt, *a, **kw: on_lookup_result(evt, result, *a, **kw),
         exclude_nodes=exclude_nodes,
     )
     return result
 
 
-def connect_known_node(remote_idurl, service_name, service_params=None, exclude_nodes=[]):
+def connect_known_node(remote_idurl, service_name, service_params=None, exclude_nodes=[],
+                       request_service_timeout=None, ping_retries=None, ack_timeout=None, force_handshake=False):
     """
     """
     global _P2PServiceSeekerInstaceCounter
@@ -399,6 +421,10 @@ def connect_known_node(remote_idurl, service_name, service_params=None, exclude_
         remote_idurl=remote_idurl,
         target_service=service_name,
         request_service_params=service_params,
+        request_service_timeout=request_service_timeout,
+        ping_retries=ping_retries,
+        ack_timeout=ack_timeout,
+        force_handshake=force_handshake,
         result_callback=lambda evt, *a, **kw: on_lookup_result(evt, result, *a, **kw),
         exclude_nodes=exclude_nodes,
     )

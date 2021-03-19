@@ -36,7 +36,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 14
 
 #------------------------------------------------------------------------------
@@ -249,7 +249,7 @@ def work():
     if _Debug:
         lg.out(_DebugLevel - 4, 'lookup.work starting next task in the queue')
     _CurrentLookupTask = _LookupTasks.pop(0)
-    if not _CurrentLookupTask.result_defer:
+    if _CurrentLookupTask.stopped or not _CurrentLookupTask.result_defer or not _CurrentLookupTask.lookup_method:
         lg.warn('task %s is closed' % _CurrentLookupTask)
         _CurrentLookupTask = None
         return

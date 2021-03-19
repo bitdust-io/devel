@@ -28,11 +28,13 @@
 BitDust group_member() Automat
 
 EVENTS:
+    * :red:`broker-position-mismatch`
+    * :red:`brokers-changed`
     * :red:`brokers-connected`
     * :red:`brokers-failed`
     * :red:`brokers-found`
-    * :red:`brokers-hired`
     * :red:`brokers-not-found`
+    * :red:`brokers-read`
     * :red:`brokers-rotated`
     * :red:`dht-read-failed`
     * :red:`init`
@@ -68,6 +70,7 @@ import re
 
 from twisted.internet import reactor  # @UnresolvedImport
 from twisted.internet.defer import Deferred
+from twisted.python.failure import Failure
 
 #------------------------------------------------------------------------------
 
@@ -77,6 +80,7 @@ from automats import automat
 
 from lib import utime
 from lib import packetid
+from lib import strng
 from lib import serialization
 
 from main import events
@@ -300,6 +304,8 @@ class GroupMember(automat.Automat):
         self.member_sender_id = global_id.MakeGlobalID(idurl=self.member_idurl, key_alias=self.group_queue_alias)
         self.active_broker_id = None
         self.active_queue_id = None
+        self.targets = []
+        self.current_target = None
         self.dead_broker_id = None
         self.hired_brokers = {}
         self.connected_brokers = {}
@@ -413,10 +419,10 @@ class GroupMember(automat.Automat):
                 self.state = 'CLOSED'
                 self.doDeactivate(event, *args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'join' or ( event == 'instant' and self.isDeadBroker(*args, **kwargs) ):
+            elif event == 'join' or ( event == 'brokers-changed' and self.isActive(*args, **kwargs) ) or ( event == 'instant' and self.isActive(*args, **kwargs) and self.isDeadBroker(*args, **kwargs) ):
                 self.state = 'DHT_READ?'
                 self.doActivate(*args, **kwargs)
-                self.doDHTReadBrokers(*args, **kwargs)
+                self.doDHTReadBrokers(event, *args, **kwargs)
         #---DHT_READ?---
         elif self.state == 'DHT_READ?':
             if event == 'dht-read-failed':
@@ -428,13 +434,13 @@ class GroupMember(automat.Automat):
                 self.doDeactivate(event, *args, **kwargs)
                 self.doCancelService(event, *args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'brokers-found' or event == 'brokers-not-found':
-                self.state = 'BROKERS?'
-                self.doConnectLookupRotateBrokers(*args, **kwargs)
             elif event == 'message-in':
                 self.doRecord(*args, **kwargs)
             elif event == 'queue-in-sync':
                 self.SyncedUp=True
+            elif event == 'brokers-changed' or event == 'brokers-read' or event == 'brokers-found' or event == 'brokers-not-found':
+                self.state = 'BROKERS?'
+                self.doConnectBrokers(event, *args, **kwargs)
         #---BROKERS?---
         elif self.state == 'BROKERS?':
             if event == 'brokers-failed':
@@ -447,15 +453,22 @@ class GroupMember(automat.Automat):
                 self.doDeactivate(event, *args, **kwargs)
                 self.doCancelService(event, *args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'brokers-rotated' or event == 'brokers-hired' or event == 'brokers-connected':
-                self.state = 'QUEUE?'
-                self.doRememberBrokers(event, *args, **kwargs)
-                self.doProcess(*args, **kwargs)
-                self.doReadQueue(*args, **kwargs)
             elif event == 'message-in':
                 self.doRecord(*args, **kwargs)
             elif event == 'queue-in-sync':
                 self.SyncedUp=True
+            elif event == 'brokers-rotated' or event == 'brokers-connected':
+                self.state = 'QUEUE?'
+                self.doRememberBrokers(event, *args, **kwargs)
+                self.doProcess(*args, **kwargs)
+                self.doReadQueue(*args, **kwargs)
+            elif event == 'brokers-changed':
+                self.doCleanRequests(*args, **kwargs)
+                self.doConnectBrokers(event, *args, **kwargs)
+            elif event == 'broker-position-mismatch':
+                self.state = 'DHT_READ?'
+                self.doCleanRequests(*args, **kwargs)
+                self.doDHTReadBrokers(event, *args, **kwargs)
         #---QUEUE?---
         elif self.state == 'QUEUE?':
             if event == 'queue-read-failed':
@@ -479,7 +492,7 @@ class GroupMember(automat.Automat):
                 self.state = 'DHT_READ?'
                 self.SyncedUp=False
                 self.doMarkDeadBroker(event, *args, **kwargs)
-                self.doDHTReadBrokers(*args, **kwargs)
+                self.doDHTReadBrokers(event, *args, **kwargs)
             elif event == 'queue-in-sync' or ( event == 'instant' and self.SyncedUp ):
                 self.state = 'IN_SYNC!'
                 self.SyncedUp=True
@@ -503,11 +516,11 @@ class GroupMember(automat.Automat):
                 self.state = 'QUEUE?'
                 self.SyncedUp=False
                 self.doReadQueue(*args, **kwargs)
-            elif event == 'reconnect' or event == 'push-message-failed' or event == 'replace-active-broker':
+            elif event == 'reconnect' or event == 'brokers-changed' or event == 'push-message-failed' or event == 'replace-active-broker':
                 self.state = 'DHT_READ?'
                 self.SyncedUp=False
                 self.doMarkDeadBroker(event, *args, **kwargs)
-                self.doDHTReadBrokers(*args, **kwargs)
+                self.doDHTReadBrokers(event, *args, **kwargs)
         #---CLOSED---
         elif self.state == 'CLOSED':
             pass
@@ -528,6 +541,12 @@ class GroupMember(automat.Automat):
         # TODO: ...
         return True
 
+    def isActive(self, *args, **kwargs):
+        """
+        Condition method.
+        """
+        return groups.is_group_active(self.group_key_id)
+
     def doInit(self, *args, **kwargs):
         """
         Action method.
@@ -541,6 +560,7 @@ class GroupMember(automat.Automat):
             direction='incoming',
             message_types=['queue_message', ],
         )
+        events.add_subscriber(self._on_group_brokers_updated, 'group-brokers-updated')
 
     def doActivate(self, *args, **kwargs):
         """
@@ -549,11 +569,23 @@ class GroupMember(automat.Automat):
         groups.set_group_active(self.group_key_id, True)
         groups.save_group_info(self.group_key_id)
 
-    def doDHTReadBrokers(self, *args, **kwargs):
+    def doDHTReadBrokers(self, event, *args, **kwargs):
         """
         Action method.
         """
         self.latest_dht_brokers = None
+        if event == 'brokers-changed':
+            if kwargs['action'] != 'failed':
+                self.dht_read_use_cache = True
+                known_brokers = {}
+                for pos, broker_id in enumerate(groups.known_brokers(self.group_creator_id)):
+                    known_brokers[pos] = global_id.glob2idurl(broker_id)
+                if _Debug:
+                    lg.args(_DebugLevel, known_brokers=known_brokers)
+                self.automat('brokers-read', known_brokers=known_brokers)
+                return
+        if event in ['reconnect', 'push-message-failed', 'replace-active-broker', 'broker-position-mismatch', ]:
+            self.dht_read_use_cache = False
         result = dht_relations.read_customer_message_brokers(
             self.group_creator_idurl,
             positions=list(range(groups.REQUIRED_BROKERS_COUNT)),
@@ -565,11 +597,24 @@ class GroupMember(automat.Automat):
             result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='group_member.doDHTReadBrokers')
         result.addErrback(lambda err: self.automat('dht-read-failed', err))
 
-    def doConnectLookupRotateBrokers(self, *args, **kwargs):
+    def doConnectBrokers(self, event, *args, **kwargs):
         """
         Action method.
         """
-        self._do_connect_lookup_rotate_brokers(args[0])
+        if _Debug:
+            lg.args(_DebugLevel, event=event, kwargs=kwargs)
+        if event == 'brokers-changed':
+            self._do_lookup_connect_brokers(hiring_positions=[], available_brokers=list(kwargs['connected_brokers'].items()))
+        elif event == 'brokers-read':
+            self._do_lookup_connect_brokers(hiring_positions=[], available_brokers=list(kwargs['known_brokers'].items()))
+        else:
+            self._do_connect_lookup_rotate_brokers(existing_brokers=kwargs['dht_brokers'])
+
+    def doCleanRequests(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        self._do_cleanup_targets()
 
     def doRememberBrokers(self, event, *args, **kwargs):
         """
@@ -681,8 +726,21 @@ class GroupMember(automat.Automat):
         """
         Action method.
         """
-        if event != 'reconnect':
-            self.dead_broker_id = self.active_broker_id
+        if event == 'top-broker-failed':
+            self.dead_broker_id = None
+            if self.latest_dht_brokers is not None:
+                for broker_info in self.latest_dht_brokers:
+                    if broker_info['position'] == 0 and broker_info.get('idurl'):
+                        self.dead_broker_id = global_id.idurl2glob(broker_info['idurl'])
+        elif event == 'replace-active-broker':
+            self.dead_broker_id = args[0]
+        elif event == 'brokers-changed':
+            self.dead_broker_id = None
+        else:
+            if event == 'reconnect':
+                self.dead_broker_id = None
+            else:
+                self.dead_broker_id = self.active_broker_id
         self.dht_read_use_cache = False
         for outgoing_counter in self.outgoing_messages.keys():
             self.outgoing_messages[outgoing_counter]['attempts'] = 0
@@ -693,13 +751,13 @@ class GroupMember(automat.Automat):
         """
         Action method.
         """
-        # self.dht_read_use_cache = True
+        self.dht_read_use_cache = True
 
     def doDisconnected(self, *args, **kwargs):
         """
         Action method.
         """
-        # self.dht_read_use_cache = False
+        self.dht_read_use_cache = False
 
     def doDeactivate(self, event, *args, **kwargs):
         """
@@ -734,6 +792,7 @@ class GroupMember(automat.Automat):
         """
         Remove all references to the state machine object to destroy it.
         """
+        events.remove_subscriber(self._on_group_brokers_updated, 'group-brokers-updated')
         message.clear_consumer_callbacks(self.name)
         self.destroy()
         self.member_idurl = None
@@ -767,6 +826,7 @@ class GroupMember(automat.Automat):
         received_group_messages = []
         packets_to_ack = {}
         to_be_reconnected = False
+        to_be_rotated = False
         found_group_ids = set()
         found_broker_ids = set()
         for json_message in json_messages:
@@ -841,15 +901,17 @@ class GroupMember(automat.Automat):
             if self.active_broker_id and received_broker_id != self.active_broker_id:
                 if not to_be_reconnected:
                     to_be_reconnected = True
+                    # to_be_rotated = True
                     lg.warn('received message from broker %r which is different from my active broker %r' % (
                         received_broker_id, self.active_broker_id, ))
-        if len(found_broker_ids) > 0 and self.active_broker_id not in found_broker_ids:
+        if received_group_messages and len(found_broker_ids) > 0 and self.active_broker_id not in found_broker_ids:
             to_be_reconnected = True
+            # to_be_rotated = True
             lg.warn('active broker is %r but incoming message received from another broker %r in %r' % (
                 self.active_broker_id, list(found_broker_ids), self, ))
         packets_to_ack.clear()
         if not received_group_messages:
-            if json_messages and self.group_key_id not in found_group_ids:
+            if self.group_key_id not in found_group_ids:
                 if _Debug:
                     lg.dbg(_DebugLevel, 'no messages for %r found in the incoming stream' % self.active_queue_id)
                 return True
@@ -857,18 +919,28 @@ class GroupMember(automat.Automat):
                 lg.warn('found queue latest sequence %d is behind of my current position %d' % (latest_known_sequence_id, self.last_sequence_id, ))
                 self.automat('queue-in-sync')
                 if to_be_reconnected:
-                    if _Debug:
-                        lg.dbg(_DebugLevel, 'going to reconnect %r' % self)
-                    reactor.callLater(0.01, self.automat, 'reconnect')  # @UndefinedVariable
+                    if to_be_rotated:
+                        if _Debug:
+                            lg.dbg(_DebugLevel, 'going to reconnect and replace active broker %r' % self)
+                        reactor.callLater(0.01, self.automat, 'replace-active-broker', self.active_broker_id)  # @UndefinedVariable
+                    else:
+                        if _Debug:
+                            lg.dbg(_DebugLevel, 'going to reconnect %r' % self)
+                        reactor.callLater(0.01, self.automat, 'reconnect')  # @UndefinedVariable
                 return True
             if latest_known_sequence_id > self.last_sequence_id:
                 lg.warn('nothing received, but found queue latest sequence %d is ahead of my current position %d, need to read messages from archive' % (
                     latest_known_sequence_id, self.last_sequence_id, ))
                 self.automat('queue-is-ahead', latest_known_sequence_id=latest_known_sequence_id, received_messages=received_group_messages, )
                 if to_be_reconnected:
-                    if _Debug:
-                        lg.dbg(_DebugLevel, 'going to reconnect %r' % self)
-                    reactor.callLater(0.01, self.automat, 'reconnect')  # @UndefinedVariable
+                    if to_be_rotated:
+                        if _Debug:
+                            lg.dbg(_DebugLevel, 'going to reconnect and replace active broker %r' % self)
+                        reactor.callLater(0.01, self.automat, 'replace-active-broker', self.active_broker_id)  # @UndefinedVariable
+                    else:
+                        if _Debug:
+                            lg.dbg(_DebugLevel, 'going to reconnect %r' % self)
+                        reactor.callLater(0.01, self.automat, 'reconnect')  # @UndefinedVariable
                 return True
             self.last_sequence_id = latest_known_sequence_id
             groups.set_last_sequence_id(self.group_key_id, latest_known_sequence_id)
@@ -877,16 +949,26 @@ class GroupMember(automat.Automat):
                 lg.dbg(_DebugLevel, 'no new messages, queue in sync, latest_known_sequence_id=%d' % latest_known_sequence_id)
             self.automat('queue-in-sync')
             if to_be_reconnected:
-                if _Debug:
-                    lg.dbg(_DebugLevel, 'going to reconnect %r' % self)
-                reactor.callLater(0.01, self.automat, 'reconnect')  # @UndefinedVariable
+                if to_be_rotated:
+                    if _Debug:
+                        lg.dbg(_DebugLevel, 'going to reconnect and replace active broker %r' % self)
+                    reactor.callLater(0.01, self.automat, 'replace-active-broker', self.active_broker_id)  # @UndefinedVariable
+                else:
+                    if _Debug:
+                        lg.dbg(_DebugLevel, 'going to reconnect %r' % self)
+                    reactor.callLater(0.01, self.automat, 'reconnect')  # @UndefinedVariable
             return True
         received_group_messages.sort(key=lambda m: m['sequence_id'])
         ret = self._do_process_group_messages(received_group_messages, latest_known_sequence_id)
         if to_be_reconnected:
-            if _Debug:
-                lg.dbg(_DebugLevel, 'going to reconnect %r' % self)
-            self.automat('reconnect')
+            if to_be_rotated:
+                if _Debug:
+                    lg.dbg(_DebugLevel, 'going to reconnect and replace active broker %r' % self)
+                self.automat('replace-active-broker', self.active_broker_id)
+            else:
+                if _Debug:
+                    lg.dbg(_DebugLevel, 'going to reconnect %r' % self)
+                self.automat('reconnect')
         return ret
 
     def _do_process_group_messages(self, received_group_messages, latest_known_sequence_id):
@@ -994,7 +1076,7 @@ class GroupMember(automat.Automat):
     def _do_prepare_service_request_params(self, possible_broker_idurl, desired_broker_position=-1, action='queue-connect'):
         if _Debug:
             lg.args(_DebugLevel, possible_broker_idurl=possible_broker_idurl, desired_broker_position=desired_broker_position, action=action,
-                    queue_alias=self.group_queue_alias, owner_id=self.group_creator_id, )
+                    owner_id=self.group_creator_id, )
         queue_id = global_id.MakeGlobalQueueID(
             queue_alias=self.group_queue_alias,
             owner_id=self.group_creator_id,
@@ -1074,16 +1156,16 @@ class GroupMember(automat.Automat):
         if _Debug:
             lg.args(_DebugLevel, known_brokers=known_brokers, missing_brokers=self.missing_brokers)
         if top_broker_pos is None:
-            lg.info('did not found any existing brokers, starting new lookups')
+            lg.info('did not found any existing brokers, starting new lookups for %r' % self)
             self._do_lookup_connect_brokers(
                 hiring_positions=list(range(groups.REQUIRED_BROKERS_COUNT)),
             )
             return
         if top_broker_pos == 0:
             if self.missing_brokers:
-                lg.warn('top broker is found, but there are missing brokers')
+                lg.warn('top broker is found, but there are missing brokers in %r' % self)
             else:
-                lg.info('did not found any missing brokers')
+                lg.info('all good, did not found any missing brokers in %r' % self)
             self._do_lookup_connect_brokers(
                 hiring_positions=list(self.missing_brokers),
                 available_brokers=brokers_to_be_connected,
@@ -1091,9 +1173,9 @@ class GroupMember(automat.Automat):
             )
             return
         self.rotated_brokers = [None, ] * groups.REQUIRED_BROKERS_COUNT
+        self.missing_brokers = set()
         brokers_to_be_connected = []
         exclude_from_lookup = set()
-        self.missing_brokers = set()
         for pos in list(range(groups.REQUIRED_BROKERS_COUNT)):
             known_pos = pos + top_broker_pos
             if known_pos < groups.REQUIRED_BROKERS_COUNT:
@@ -1103,7 +1185,9 @@ class GroupMember(automat.Automat):
                 exclude_from_lookup.add(id_url.to_bin(self.rotated_brokers[pos]))
             else:
                 self.missing_brokers.add(pos)
-        lg.info('brokers were rotated, starting new lookups and connect to existing brokers')
+        if _Debug:
+            lg.args(_DebugLevel, rotated_brokers=self.rotated_brokers, missing_brokers=self.missing_brokers)
+        lg.info('brokers were rotated, starting new lookups and connect to existing brokers in %r' % self)
         exclude_from_lookup.update(set(id_url.to_bin_list(filter(None, known_brokers))))
         if self.dead_broker_id:
             dead_broker_idurl_bin = id_url.to_bin(global_id.glob2idurl(self.dead_broker_id, as_field=False))
@@ -1122,33 +1206,83 @@ class GroupMember(automat.Automat):
         if _Debug:
             lg.args(_DebugLevel, hiring_positions=hiring_positions, available_brokers=available_brokers, exclude_idurls=exclude_idurls)
         self.connecting_brokers.update(set(hiring_positions))
-        for broker_pos, broker_idurl in available_brokers:
+        for broker_pos, _ in available_brokers:
             self.connecting_brokers.add(broker_pos)
+        self.targets = []
         for broker_pos, broker_idurl in available_brokers:
-            self._do_request_service_one_broker(broker_idurl, broker_pos)
-        if hiring_positions:
-            self._do_hire_next_broker(None, 0, hiring_positions, skip_brokers=id_url.to_bin_list(exclude_idurls))
+            self.targets.append({
+                'action': 'connect',
+                'broker_idurl': broker_idurl,
+                'broker_pos': broker_pos,
+            })
+        for broker_pos in hiring_positions:
+            self.targets.append({
+                'action': 'hire',
+                'broker_pos': broker_pos,
+                'skip_brokers': id_url.to_bin_list(exclude_idurls),
+            })
+        self._do_connect_hire_next_broker()
 
-    def _do_hire_next_broker(self, prev_result, index, hiring_positions, skip_brokers):
+    def _do_connect_hire_next_broker(self):
+        if _Debug:
+            lg.args(_DebugLevel, targets=self.targets)
+        if self.targets:
+            self.current_target = self.targets.pop(0)
+            if self.current_target:
+                if self.current_target['action'] == 'connect':
+                    self._do_request_service_one_broker(self.current_target['broker_idurl'], self.current_target['broker_pos'])
+                elif self.current_target['action'] == 'hire':
+                    self._do_hire_one_broker(self.current_target['broker_pos'], skip_brokers=self.current_target['skip_brokers'])
+            return
+        if not self.connected_brokers:
+            lg.err('failed to hire any brokers')
+            self.automat('brokers-failed')
+            events.send('group-brokers-updated', data=dict(
+                action='failed',
+                group_creator_id=self.group_creator_id,
+                group_key_id=self.group_key_id,
+                member_id=self.member_id,
+                connected_brokers=self.connected_brokers,
+            ))
+            return
+        if 0 not in self.connected_brokers or not self.connected_brokers[0]:
+            lg.err('broker at position 0 did not connected for %r' % self)
+            self.automat('brokers-failed')
+            events.send('group-brokers-updated', data=dict(
+                action='failed',
+                group_creator_id=self.group_creator_id,
+                group_key_id=self.group_key_id,
+                member_id=self.member_id,
+                connected_brokers=self.connected_brokers,
+            ))
+        else:
+            if self.rotated_brokers:
+                self.automat('brokers-rotated')
+                events.send('group-brokers-updated', data=dict(
+                    action='rotated',
+                    group_creator_id=self.group_creator_id,
+                    group_key_id=self.group_key_id,
+                    member_id=self.member_id,
+                    rotated_brokers=self.rotated_brokers,
+                    connected_brokers=self.connected_brokers,
+                ))
+            else:
+                self.automat('brokers-connected')
+                events.send('group-brokers-updated', data=dict(
+                    action='connected',
+                    group_creator_id=self.group_creator_id,
+                    group_key_id=self.group_key_id,
+                    member_id=self.member_id,
+                    connected_brokers=self.connected_brokers,
+                ))
+
+    def _do_hire_one_broker(self, broker_pos, skip_brokers):
+        if _Debug:
+            lg.args(_DebugLevel, broker_pos=broker_pos, skip_brokers=skip_brokers)
         if not self.group_key_id:
             lg.warn('skip hire process, because group_key_id is empty')
             return
-        if index >= len(hiring_positions):
-            if _Debug:
-                lg.args(_DebugLevel, index=index, hiring_positions=hiring_positions, skip_brokers=skip_brokers,
-                        prev_result=prev_result, connecting_brokers=self.connecting_brokers)
-            return
-        broker_pos = hiring_positions[index]
-        if _Debug:
-            lg.args(_DebugLevel, broker_pos=broker_pos, index=index, hiring_positions=hiring_positions,
-                    skip_brokers=skip_brokers, prev_result=prev_result, connecting_brokers=self.connecting_brokers)
-        if prev_result and id_url.is_not_in(prev_result, skip_brokers, as_field=False, as_bin=True):
-            skip_brokers.append(id_url.to_bin(prev_result))
-        d = self._do_lookup_one_broker(broker_pos, skip_brokers)
-        d.addCallback(self._do_hire_next_broker, index + 1, hiring_positions, skip_brokers)
-        if _Debug:
-            d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='group_member._do_hire_next_broker')
-        d.addErrback(self._do_hire_next_broker, index + 1, hiring_positions, skip_brokers)
+        self._do_lookup_one_broker(broker_pos, skip_brokers)
 
     def _do_lookup_one_broker(self, broker_pos, skip_brokers):
         if _Debug:
@@ -1181,40 +1315,43 @@ class GroupMember(automat.Automat):
                     remote_idurl=preferred_broker_idurl,
                     service_name='service_message_broker',
                     service_params=lambda idurl: self._do_prepare_service_request_params(idurl, broker_pos),
+                    request_service_timeout=60,
                     exclude_nodes=list(exclude_brokers),
                 )
                 result.addCallback(self._on_broker_hired, broker_pos)
                 if _Debug:
                     result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='group_member._do_lookup_one_broker')
-                result.addErrback(self._on_message_broker_lookup_failed, broker_pos)
+                result.addErrback(self._on_broker_lookup_failed, broker_pos)
                 return result
         result = p2p_service_seeker.connect_random_node(
             lookup_method=lookup.random_message_broker,
             service_name='service_message_broker',
             service_params=lambda idurl: self._do_prepare_service_request_params(idurl, broker_pos),
+            request_service_timeout=60,
             exclude_nodes=list(exclude_brokers),
         )
         result.addCallback(self._on_broker_hired, broker_pos)
         if _Debug:
             result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='group_member._do_lookup_one_broker')
-        result.addErrback(self._on_message_broker_lookup_failed, broker_pos)
+        result.addErrback(self._on_broker_lookup_failed, broker_pos)
         return result
 
     def _do_request_service_one_broker(self, broker_idurl, broker_pos):
         if _Debug:
             lg.args(_DebugLevel, broker_pos=broker_pos, broker_idurl=broker_idurl, connecting_brokers=self.connecting_brokers)
         if not broker_idurl:
-            reactor.callLater(0, self._on_message_broker_connect_failed, broker_pos)  # @UndefinedVariable
+            reactor.callLater(0, self._on_broker_connect_failed, None, broker_pos)  # @UndefinedVariable
             return
         result = p2p_service_seeker.connect_known_node(
             remote_idurl=broker_idurl,
             service_name='service_message_broker',
             service_params=lambda idurl: self._do_prepare_service_request_params(idurl, broker_pos),
+            request_service_timeout=60,
         )
         result.addCallback(self._on_broker_connected, broker_pos)
         if _Debug:
             result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='group_member._do_request_service_one_broker')
-        result.addErrback(self._on_message_broker_connect_failed, broker_pos)
+        result.addErrback(self._on_broker_connect_failed, broker_pos)
 
     def _do_remember_brokers(self, event, *args, **kwargs):
         if _Debug:
@@ -1251,6 +1388,17 @@ class GroupMember(automat.Automat):
         self.missing_brokers.clear()
         self.connecting_brokers.clear()
 
+    def _do_cleanup_targets(self):
+        if _Debug:
+            lg.args(_DebugLevel, targets=len(self.targets), current_target=self.current_target)
+        self.current_target = None
+        self.targets.clear()
+        self.connected_brokers.clear()
+        self.connecting_brokers.clear()
+        self.hired_brokers.clear()
+        self.missing_brokers.clear()
+        self.rotated_brokers.clear()
+
     def _on_message_to_broker_sent(self, response_packet, outgoing_counter, packet_id):
         if _Debug:
             lg.args(_DebugLevel, response_packet=response_packet, outgoing_counter=outgoing_counter)
@@ -1273,7 +1421,7 @@ class GroupMember(automat.Automat):
             lg.args(_DebugLevel, brokers=len(brokers_info_list))
         if not brokers_info_list:
             self.dht_read_use_cache = False
-            self.automat('brokers-not-found', [])
+            self.automat('brokers-not-found', dht_brokers=[])
             return
         self.latest_dht_brokers = brokers_info_list
         # self.dht_read_use_cache = True
@@ -1285,86 +1433,112 @@ class GroupMember(automat.Automat):
             if dht_archive_folder_path is not None:
                 groups.set_archive_folder_path(self.group_key_id, dht_archive_folder_path)
                 lg.info('recognized archive folder path for %r from dht: %r' % (self.group_key_id, dht_archive_folder_path, ))
-        self.automat('brokers-found', brokers_info_list)
+        self.automat('brokers-found', dht_brokers=brokers_info_list)
 
     def _on_broker_hired(self, idurl, broker_pos):
+        if _Debug:
+            lg.args(_DebugLevel, idurl=idurl, broker_pos=broker_pos, current_target=self.current_target, connecting_brokers=self.connecting_brokers,
+                    hired_brokers=self.hired_brokers, connected_brokers=self.connected_brokers)
+        if not self.current_target:
+            lg.warn('current target for %r is empty, broker %r was not hired' % (self, idurl, ))
+            return
+        if self.current_target['broker_pos'] != broker_pos or self.current_target['action'] != 'hire':
+            lg.warn('current target for %r is different, skip out-dated broker hire response' % self)
+            return
+        self.current_target = None
         self.hired_brokers[broker_pos] = idurl or None
         if idurl:
             self.connected_brokers[broker_pos] = idurl
+            self.automat('one-broker-hired', idurl)
+        else:
+            self.automat('one-broker-hire-failed')
         if self.connecting_brokers is not None:
             self.connecting_brokers.discard(broker_pos)
-        if _Debug:
-            lg.args(_DebugLevel, idurl=idurl, broker_pos=broker_pos, connecting_brokers=self.connecting_brokers,
-                    hired_brokers=self.hired_brokers, connected_brokers=self.connected_brokers)
-        if self.connecting_brokers:
-            return idurl
-        if not self.connected_brokers:
-            lg.err('failed to hire any brokers')
-            self.automat('brokers-failed')
-            return idurl
-        if self.rotated_brokers:
-            if 0 not in self.connected_brokers or not self.connected_brokers[0]:
-                lg.err('broker at position 0 was not hired for %r' % self)
-                self.automat('brokers-failed')
-            else:
-                self.automat('brokers-rotated')
-        else:
-            if 0 not in self.connected_brokers or not self.connected_brokers[0]:
-                lg.err('broker at position 0 was not hired for %r' % self)
-                self.automat('brokers-failed')
-            else:
-                self.automat('brokers-hired')
-        return idurl
+        self._do_connect_hire_next_broker()
 
     def _on_broker_connected(self, idurl, broker_pos):
         if _Debug:
-            lg.args(_DebugLevel, idurl=idurl, broker_pos=broker_pos, connecting_brokers=self.connecting_brokers,
+            lg.args(_DebugLevel, idurl=idurl, broker_pos=broker_pos, current_target=self.current_target, connecting_brokers=self.connecting_brokers,
                     connected_brokers=self.connected_brokers)
+        if not self.current_target:
+            lg.warn('current target for %r is empty, skip connecting to the broker %r' % (self, idurl, ))
+            return
+        if self.current_target['action'] != 'connect' or self.current_target['broker_pos'] != broker_pos or self.current_target['broker_idurl'] != idurl:
+            lg.warn('current target for %r is different, skip out-dated broker connect response' % self)
+            return
+        self.current_target = None
+        if self.connecting_brokers is None and self.connected_brokers is None:
+            lg.warn('skip, no connected brokers and not any is connecting at the moment')
+            return
         if idurl:
             self.connected_brokers[broker_pos] = idurl
+            self.automat('one-broker-connected', idurl)
+        else:
+            self.automat('one-broker-connect-failed')
         if self.connecting_brokers is not None:
             self.connecting_brokers.discard(broker_pos)
-        if self.connecting_brokers:
-            return
-        if not self.connected_brokers:
-            lg.err('failed to connect with any brokers')
-            self.automat('brokers-failed')
-            return
-        if 0 not in self.connected_brokers:
-            lg.warn('some brokers connected, but broker at position 0 is still empty')
-            self.automat('brokers-failed')
-            return
-        if self.rotated_brokers:
-            self.automat('brokers-rotated')
-        else:
-            self.automat('brokers-connected')
+        self._do_connect_hire_next_broker()
 
-    def _on_message_broker_lookup_failed(self, err, broker_pos):
+    def _on_broker_lookup_failed(self, err, broker_pos):
         if _Debug:
-            lg.args(_DebugLevel, err=err, broker_pos=broker_pos)
+            lg.args(_DebugLevel, err=err, broker_pos=broker_pos, current_target=self.current_target)
+        if not self.current_target:
+            lg.warn('current target for %r is empty' % self)
+            return
+        if self.current_target['broker_pos'] != broker_pos or self.current_target['action'] != 'hire':
+            lg.warn('current target for %r is different, skip out-dated broker hire response' % self)
+            return
+        if isinstance(err, Failure) and isinstance(err.value, tuple):
+            request_result, resp_args, resp_kwargs = err.value
+            resp_payload = strng.to_text(resp_args[0].Payload).strip()
+            lg.warn('request to broker at position %d failed: %r' % (broker_pos, resp_payload, ))
+            if resp_payload.startswith('position mismatch'):
+                _, _, expected_position = resp_payload.rpartition(' ')
+                try:
+                    expected_position = int(expected_position)
+                except:
+                    lg.exc()
+                    expected_position = None
+                if expected_position is not None:
+                    if expected_position != broker_pos:
+                        self.automat('broker-position-mismatch')
+                        return
+        self.current_target = None
+        self.automat('one-broker-lookup-failed', broker_pos)
         self.hired_brokers[broker_pos] = None
         if self.connecting_brokers is not None:
             self.connecting_brokers.discard(broker_pos)
-        if _Debug:
-            lg.args(_DebugLevel, err=err, broker_pos=broker_pos, connecting_brokers=self.connecting_brokers, hired_brokers=self.hired_brokers)
-        if self.connecting_brokers:
-            return
-        if self.hired_brokers and self.hired_brokers.get(0):
-            self.automat('brokers-hired')
-        else:
-            self.automat('brokers-failed')
+        self._do_connect_hire_next_broker()
 
-    def _on_message_broker_connect_failed(self, err, broker_pos):
+    def _on_broker_connect_failed(self, err, broker_pos):
         if _Debug:
-            lg.args(_DebugLevel, err=err, broker_pos=broker_pos, connecting_brokers=self.connecting_brokers)
+            lg.args(_DebugLevel, err=err, broker_pos=broker_pos, current_target=self.current_target)
+        if not self.current_target:
+            lg.warn('current target for %r is empty' % self)
+            return
+        if self.current_target['action'] != 'connect' or self.current_target['broker_pos'] != broker_pos:
+            lg.warn('current target for %r is different, skip out-dated broker connect response' % self)
+            return
+        if isinstance(err, Failure) and isinstance(err.value, tuple):
+            request_result, resp_args, resp_kwargs = err.value
+            resp_payload = strng.to_text(resp_args[0].Payload).strip()
+            lg.warn('request to broker at position %d failed: %r' % (broker_pos, resp_payload, ))
+            if resp_payload.startswith('position mismatch'):
+                _, _, expected_position = resp_payload.rpartition(' ')
+                try:
+                    expected_position = int(expected_position)
+                except:
+                    lg.exc()
+                    expected_position = None
+                if expected_position is not None:
+                    if expected_position != broker_pos:
+                        self.automat('broker-position-mismatch')
+                        return
+        self.current_target = None
+        self.automat('one-broker-connect-failed', broker_pos)
         if self.connecting_brokers is not None:
             self.connecting_brokers.discard(broker_pos)
-        if self.connecting_brokers:
-            return
-        if 0 in self.connected_brokers:
-            self.automat('brokers-connected')
-        else:
-            self.automat('brokers-failed')
+        self._do_connect_hire_next_broker()
 
     def _on_read_archive_success(self, archive_messages, received_messages):
         if _Debug:
@@ -1398,3 +1572,22 @@ class GroupMember(automat.Automat):
         lg.err('received %d recent messages but read archived messages failed with: %r' % (len(received_messages), err, ))
         self.automat('queue-read-failed')
         return None
+
+    def _on_group_brokers_updated(self, evt):
+        d = evt.data
+        if d.get('group_creator_id') != self.group_creator_id:
+            return
+        if d.get('group_key_id') == self.group_key_id:
+            return
+        changed = False
+        for pos, broker_idurl in d['connected_brokers'].items():
+            if pos not in self.connected_brokers:
+                changed = True
+                break
+            if self.connected_brokers[pos] != broker_idurl:
+                changed = True
+                break
+        if _Debug:
+            lg.args(_DebugLevel, changed=changed, this=repr(self))
+        if changed:
+            self.automat('brokers-changed', action=d['action'], connected_brokers=d['connected_brokers'])

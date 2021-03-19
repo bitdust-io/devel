@@ -51,6 +51,7 @@ _DebugLevel = 6
 #------------------------------------------------------------------------------
 
 from twisted.internet import reactor  # @UnresolvedImport
+from twisted.python.failure import Failure
 
 #------------------------------------------------------------------------------
 
@@ -205,7 +206,7 @@ class ContractChainConsumer(automat.Automat):
         if self.state != 'ACCOUNTANTS?':
             lg.warn('internal state was changed during accountant lookup, SKIP next lookup')
             return None
-        if not idurl:
+        if not idurl or isinstance(idurl, Exception) or isinstance(idurl, Failure):
             if _Debug:
                 lg.out(_DebugLevel, 'contract_chain_consumer._on_accountant_lookup_finished with no results, try again')
             reactor.callLater(0, self._lookup_next_accountant)  # @UndefinedVariable
@@ -245,7 +246,7 @@ class ContractChainConsumer(automat.Automat):
         ).addBoth(self._on_accountant_lookup_finished)
 
     def _on_miner_lookup_finished(self, idurl):
-        if not idurl:
+        if not idurl or isinstance(idurl, Exception) or isinstance(idurl, Failure):
             if _Debug:
                 lg.out(_DebugLevel, 'contract_chain_consumer._on_miner_lookup_finished with no results, try again')
             reactor.callLater(0, self._lookup_miner)  # @UndefinedVariable
