@@ -533,6 +533,13 @@ def clear_brokers(customer_id):
 
 #------------------------------------------------------------------------------
 
+def is_group_active(group_key_id):
+    group_key_id = my_keys.latest_key_id(group_key_id)
+    if not is_group_exist(group_key_id):
+        return False
+    return active_groups()[group_key_id]['active']
+
+
 def set_group_active(group_key_id, value):
     group_key_id = my_keys.latest_key_id(group_key_id)
     if not is_group_exist(group_key_id):
@@ -573,7 +580,7 @@ def on_identity_url_changed(evt):
             group_member.rotate_active_group_memeber(group_key_id, latest_group_key_id)
         gm = group_member.get_active_group_member(group_key_id)
         if gm and gm.connected_brokers and id_url.is_in(old_idurl, gm.connected_brokers.values()):
-            lg.info('connected brokers %r was rotated, restarting %r' % (old_idurl, gm, ))
+            lg.info('connected broker %r IDURL is rotated, restarting %r' % (old_idurl, gm, ))
             group_member.restart_active_group_member(group_key_id)
     known_customers = list(known_brokers().keys())
     for customer_id in known_customers:

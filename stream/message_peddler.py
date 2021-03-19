@@ -1245,15 +1245,26 @@ class MessagePeddler(automat.Automat):
         Action method.
         """
         customer_idurl = id_url.field(kwargs['customer_idurl'])
+        desired_position = kwargs['desired_position']
         request_packet = kwargs['request_packet']
         result_defer = kwargs['result_defer']
         qk = queue_keeper.existing(customer_idurl)
         if not qk:
+            if _Debug:
+                lg.dbg(_DebugLevel, 'customer queue not exist: %r' % customer_idurl)
             p2p_service.SendFail(request_packet, 'customer queue not exist')
             result_defer.callback(False)
             return
         if qk.state not in ['DHT_READ', 'DHT_WRITE', 'CONNECTED', ]:
+            if _Debug:
+                lg.dbg(_DebugLevel, 'customer queue not connected: %r' % qk)
             p2p_service.SendFail(request_packet, 'customer queue not connected')
+            result_defer.callback(False)
+            return
+        if qk.known_position is not None and desired_position is not None and desired_position >= 0 and qk.known_position == desired_position:
+            if _Debug:
+                lg.dbg(_DebugLevel, 'customer queue already connected on position %r rejecting: %r' % (qk.known_position, request_packet, ))
+            p2p_service.SendFail(request_packet, 'customer queue connected on another position')
             result_defer.callback(False)
             return
         p2p_service.SendAck(request_packet, 'accepted')
@@ -1430,7 +1441,7 @@ class MessagePeddler(automat.Automat):
                 if qk.known_position >= 0 and position >= 0:
                     if qk.known_position < position:
                         lg.warn('SKIP request, current known position is %d but requested position is %d' % (qk.known_position, position, ))
-                        p2p_service.SendFail(request_packet, 'requested position is higher than current position of the broker: %d' % qk.known_position)
+                        p2p_service.SendFail(request_packet, 'position mismatch, expected position is %d' % qk.known_position)
                         return
                     if qk.known_position > position:
                         lg.info('about to rotate message broker, my position is %d, requested position is %d' % (qk.known_position, position, ))

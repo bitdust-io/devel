@@ -94,6 +94,7 @@ class MessageBrokerService(LocalService):
             message_peddler.A(
                 'broker-verify',
                 customer_idurl=json_payload.get('customer_idurl'),
+                desired_position=json_payload.get('desired_position'),
                 request_packet=newpacket,
                 result_defer=result,
             )

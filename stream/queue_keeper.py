@@ -365,7 +365,7 @@ class QueueKeeper(automat.Automat):
         Action method.
         """
         desired_position = kwargs.get('desired_position', -1)
-        if desired_position >= 0 and self.known_position >= 0:
+        if desired_position >= 0 and self.known_position is not None and self.known_position >= 0:
             self.has_rotated = desired_position < self.known_position
             if self.has_rotated:
                 lg.info('found that group brokers were rotated, my position: %d -> %d' % (self.known_position, desired_position, ))
@@ -446,6 +446,7 @@ class QueueKeeper(automat.Automat):
         service_request_params = {
             'action': 'broker-verify',
             'customer_idurl': self.customer_idurl,
+            'desired_position': self.new_possible_position,
         }
         # TODO: add an extra verification for other broker using group_key_info from the "connect" event
         # to make sure he is really possess the public key for the group - need to do "audit" of the pub. key

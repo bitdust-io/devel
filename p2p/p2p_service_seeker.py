@@ -324,7 +324,7 @@ class P2PServiceSeeker(automat.Automat):
         if not strng.to_text(response.Payload).startswith('accepted'):
             if _Debug:
                 lg.out(_DebugLevel, 'p2p_service_seeker._node_acked with service denied %r %r' % (response, info))
-            self.automat('service-denied')
+            self.automat('service-denied', (response, info, ))
             return
         if _Debug:
             lg.out(_DebugLevel, 'p2p_service_seeker._node_acked %s is connected' % response.CreatorID)
@@ -333,12 +333,12 @@ class P2PServiceSeeker(automat.Automat):
     def _node_failed(self, response, info):
         if _Debug:
             lg.out(_DebugLevel, 'p2p_service_seeker._node_failed %r %r' % (response, info))
-        self.automat('service-denied')
+        self.automat('service-denied', (response, info, ))
 
     def _node_timed_out(self, pkt_out):
         if _Debug:
             lg.out(_DebugLevel, 'p2p_service_seeker._node_timed_out for outgoing packet %r' % pkt_out)
-        self.automat('fail')
+        self.automat('fail', pkt_out)
 
     def _nodes_lookup_finished(self, idurls):
         if _Debug:
@@ -369,8 +369,9 @@ def on_lookup_result(event, result_defer, *args, **kwargs):
     if event == 'node-connected':
         result_defer.callback(args[0])
     else:
-        result_defer.callback(None)
+        result_defer.errback(Exception((event, args, kwargs, )))
 
+#------------------------------------------------------------------------------
 
 def connect_random_node(lookup_method, service_name, service_params=None, exclude_nodes=[],
                         request_service_timeout=None, ping_retries=None, ack_timeout=None, force_handshake=False):
