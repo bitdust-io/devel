@@ -1,6 +1,27 @@
 Change Log
 ==========
 
+2021-03-19 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* few critical changes in group_member(), queue_keeper() and message_peddler()
+* solved concurency issues between message brokers
+* solved critical issue with signature verifications using RSA keys
+* solve some issues when broker IDURL was rotated
+* added api.automat_info() method
+* fix issue in proxy_receiver()
+* added timeout to p2p_service.SendListFiles()
+* added response_timeout to CancelService()
+* bug fix in restore_worker()
+* IDURL fix in contactsdb.get_supplier_meta_info()
+* bug fix in accounting.report_donated_storage()
+* rebuilt customers_rejector() state machine
+* fix in message broker to deliver messages properly
+* do not share group key label with message brokers
+* fix in p2p_service_seeker()
+* bug fixes in access/groups.py
+* added option to cleanup inactive customers automatically (#145)
+
+
 
 2021-02-16 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
