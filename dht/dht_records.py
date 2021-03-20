@@ -113,14 +113,14 @@ _Rules = {
         'position': [{'op': 'exist', }, ],
         'archive_folder_path': [{'op': 'exist', }, ],
     },
-    # customers relations are not stored, so this is actually not needed, but decided to add it here just in case:
-    'customers': {
-        'key': [{'op': 'exist', }, ],
-        'type': [{'op': 'equal', 'arg': 'customers', }, ],
-        'timestamp': [{'op': 'exist', }, ],
-        'customer_idurl': [{'op': 'exist', }, ],
-        'revision': [{'op': 'exist', }, ],
-    },
+    # customers relations are not stored, so this is actually not needed, but decided to leave it here just in case:
+    # 'customers': {
+    #     'key': [{'op': 'exist', }, ],
+    #     'type': [{'op': 'equal', 'arg': 'customers', }, ],
+    #     'timestamp': [{'op': 'exist', }, ],
+    #     'customer_idurl': [{'op': 'exist', }, ],
+    #     'revision': [{'op': 'exist', }, ],
+    # },
     'skip_validation': {
         'type': [{'op': 'equal', 'arg': 'skip_validation', }, ],
     },

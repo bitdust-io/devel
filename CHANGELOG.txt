@@ -19,7 +19,6 @@ Change Log
 * do not share group key label with message brokers
 * fix in p2p_service_seeker()
 * bug fixes in access/groups.py
-* added option to cleanup inactive customers automatically (#145)
 
 
 
