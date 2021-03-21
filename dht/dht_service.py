@@ -668,7 +668,7 @@ def validate_rules(value, key, rules, result_defer=None, raise_for_result=False,
                 value['type'] = expected_record_type
             if value.get('key') != key:
                 value['key'] = key
-    
+
         for field, field_rules in rules.items():
             if _Debug:
                 lg.out(_DebugLevel, '    %r : %r' % (field, field_rules, ))
@@ -782,6 +782,16 @@ def validate_before_store(key, value, originalPublisherID, age, expireSeconds, *
                     if _Debug:
                         lg.out(_DebugLevel, '        new json data have same revision but different suppliers list, store operation FAILED')
                     raise ValueError('new json data have same revision but different suppliers list, current revision is %d ' % prev_revision)
+            if prev_record_type == 'message_broker':
+                prev_broker_idurl = json_prev_value.get('broker_idurl')
+                new_broker_idurl = json_new_value.get('broker_idurl')
+                prev_position = json_prev_value.get('position')
+                new_position = json_new_value.get('position')
+                if prev_broker_idurl is not None and prev_position is not None:
+                    if prev_broker_idurl != new_broker_idurl or prev_position != new_position:
+                        if _Debug:
+                            lg.out(_DebugLevel, '        new json data have same revision but different broker info, store operation FAILED')
+                        raise ValueError('new json data have same revision but different broker info, current revision is %d ' % prev_revision)
     if _Debug:
         lg.out(_DebugLevel, '        new json data is valid and matching existing DHT record, store OK')
     return True

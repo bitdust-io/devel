@@ -61,6 +61,7 @@ _DebugLevel = 10
 #------------------------------------------------------------------------------
 
 import sys
+import re
 
 try:
     from twisted.internet import reactor  # @UnresolvedImport
@@ -211,6 +212,7 @@ class QueueKeeper(automat.Automat):
         self.new_possible_position = None
         self.has_rotated = False
         self.known_brokers = {}
+        self.latest_dht_records = {}
         self.dht_read_use_cache = True
         self.known_archive_folder_path = None
         self.requested_archive_folder_path = None
@@ -417,18 +419,31 @@ class QueueKeeper(automat.Automat):
         archive_folder_path = self.requested_archive_folder_path
         if archive_folder_path is None:
             archive_folder_path = self.known_archive_folder_path
+        prev_revision = self.latest_dht_records.get(desired_position, {}).get('revision', None)
+        if prev_revision is None:
+            prev_revision = 0
         if _Debug:
-            lg.args(_DebugLevel, desired_position=desired_position, broker_idurl=self.broker_idurl, archive_folder_path=archive_folder_path)
+            lg.args(_DebugLevel, prev_revision=prev_revision, desired_position=desired_position,
+                    broker_idurl=self.broker_idurl, archive_folder_path=archive_folder_path)
+        self._do_dht_write(
+            desired_position=desired_position,
+            archive_folder_path=archive_folder_path,
+            revision=prev_revision+1,
+            retry=True,
+        )
+
+    def _do_dht_write(self, desired_position, archive_folder_path, revision, retry):
         result = dht_relations.write_customer_message_broker(
             customer_idurl=self.customer_idurl,
             broker_idurl=self.broker_idurl,
             position=desired_position,
             archive_folder_path=archive_folder_path,
+            revision=revision,
         )
-        result.addCallback(self._on_write_customer_message_broker, desired_position)
+        result.addCallback(self._on_write_customer_message_broker, desired_position, archive_folder_path, revision)
         if _Debug:
             result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='queue_keeper.doDHTWrite')
-        result.addErrback(self._on_write_customer_message_broker_failed, desired_position)
+        result.addErrback(self._on_write_customer_message_broker_failed, desired_position, archive_folder_path, revision, retry)
 
     def doDHTRefresh(self, *args, **kwargs):
         """
@@ -509,12 +524,14 @@ class QueueKeeper(automat.Automat):
         self.known_archive_folder_path = None
         self.requested_archive_folder_path = None
         self.known_brokers.clear()
+        self.latest_dht_records.clear()
         self.destroy()
 
     def _on_read_customer_message_brokers(self, dht_brokers_info_list, my_position):
         if _Debug:
             lg.args(_DebugLevel, my_position=my_position, dht_brokers=dht_brokers_info_list)
         self.known_brokers.clear()
+        self.latest_dht_records.clear()
         if not dht_brokers_info_list:
             lg.warn('no brokers found in DHT records for customer %r' % self.customer_idurl)
             self.dht_read_use_cache = False
@@ -527,7 +544,10 @@ class QueueKeeper(automat.Automat):
                 continue
             dht_broker_idurl = dht_broker_info.get('broker_idurl')
             dht_broker_position = int(dht_broker_info.get('position'))
+            dht_revision = dht_broker_info.get('revision')
+            dht_timestamp = dht_broker_info.get('timestamp')
             self.known_brokers[dht_broker_position] = dht_broker_idurl
+            self.latest_dht_records[dht_broker_position] = dht_broker_info
             if dht_broker_position == my_position:
                 my_position_info = dht_broker_info
             if id_url.to_bin(dht_broker_idurl) == id_url.to_bin(self.broker_idurl):
@@ -572,7 +592,7 @@ class QueueKeeper(automat.Automat):
         self.known_archive_folder_path = my_broker_info['archive_folder_path']
         self.automat('my-record-correct', broker_idurl=my_broker_info['broker_idurl'], position=my_broker_info['position'])
 
-    def _on_write_customer_message_broker(self, nodes, desired_broker_position):
+    def _on_write_customer_message_broker(self, nodes, desired_broker_position, archive_folder_path, revision):
         if _Debug:
             lg.args(_DebugLevel, nodes=nodes, desired_broker_position=desired_broker_position)
         if nodes:
@@ -582,10 +602,41 @@ class QueueKeeper(automat.Automat):
             self.dht_read_use_cache = False
             self.automat('dht-write-failed', desired_position=desired_broker_position)
 
-    def _on_write_customer_message_broker_failed(self, err, desired_broker_position):
+    def _on_write_customer_message_broker_failed(self, err, desired_broker_position, archive_folder_path, revision, retry):
         if _Debug:
             lg.args(_DebugLevel, err=err, desired_broker_position=desired_broker_position)
         self.dht_read_use_cache = False
+
+        try:
+            errmsg = err.value.subFailure.getErrorMessage()
+        except:
+            try:
+                errmsg = err.getErrorMessage()
+            except:
+                try:
+                    errmsg = err.value
+                except:
+                    errmsg = str(err)
+        err_msg = strng.to_text(errmsg)
+        lg.err('failed to write new broker info for %s : %s' % (self.customer_idurl, err_msg))
+        if err_msg.count('current revision is'):
+            try:
+                current_revision = re.search("current revision is (\d+)", err_msg).group(1)
+                current_revision = int(current_revision)
+            except:
+                lg.exc()
+                current_revision = self.transaction['revision']
+            current_revision += 1
+            if _Debug:
+                lg.warn('recognized "DHT write operation failed" because of late revision, increase revision to %d and retry' % current_revision)
+            if retry:
+                self._do_dht_write(
+                    desired_position=desired_broker_position,
+                    archive_folder_path=archive_folder_path,
+                    revision=current_revision,
+                    retry=False,
+                )
+                return
         self.automat('dht-write-failed', desired_position=desired_broker_position)
 
     def _on_queue_keeper_refresh_task(self):

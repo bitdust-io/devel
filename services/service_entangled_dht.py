@@ -187,7 +187,7 @@ class EntangledDHTService(LocalService):
     def _on_dht_rpc_store(self, key, value, originalPublisherID, age, expireSeconds, **kwargs):
         from dht import dht_service
         return dht_service.validate_before_store(key, value, originalPublisherID, age, expireSeconds, **kwargs)
-    
+
     def _on_dht_rpc_request(self, key, **kwargs):
         from dht import dht_service
         return dht_service.validate_before_request(key, **kwargs)
