@@ -310,7 +310,7 @@ def push(json_data):
             lg.dbg(_DebugLevel, 'sent %d bytes to web socket %s' % (
                 len(raw_bytes), '%s://%s:%s' % (_key[0], _key[1], _key[2]), ))
     if _Debug:
-        lg.out(_DebugLevel, '***   API WS PUSH  %d bytes : %r' % (len(raw_bytes), json_data, ))
+        lg.out(_DebugLevel, '***   API WS PUSH  %d bytes' % len(raw_bytes))
     if _APILogFileEnabled:
         lg.out(0, '*** WS PUSH  %d bytes : %r' % (len(raw_bytes), json_data, ), log_name='api', showtime=True)
     return True

@@ -184,6 +184,8 @@ def find_active_group_members(group_creator_idurl):
 #------------------------------------------------------------------------------
 
 def restart_active_group_member(group_key_id, use_dht_cache=False):
+    if _Debug:
+        lg.args(_DebugLevel, group_key_id=group_key_id, use_dht_cache=use_dht_cache)
     existing_group_member = get_active_group_member(group_key_id)
     if not existing_group_member:
         lg.err('did not found active group member %r' % group_key_id)
@@ -329,6 +331,10 @@ class GroupMember(automat.Automat):
             **kwargs
         )
 
+    def __repr__(self):
+        connected_brokers_short = ['+' if (self.connected_brokers or {}).get(p) else ' ' for p in range(groups.REQUIRED_BROKERS_COUNT)]
+        return '%s[%s](%s)' % (self.id, ''.join(connected_brokers_short), self.state)
+
     def update_group_key_id(self, new_group_key_id):
         self.group_key_id = new_group_key_id
         self.group_glob_id = global_id.ParseGlobalID(self.group_key_id)
@@ -340,6 +346,7 @@ class GroupMember(automat.Automat):
     def to_json(self):
         j = super().to_json()
         j.update({
+            'active': groups.is_group_active(self.group_key_id),
             'member_id': self.member_id,
             'group_key_id': self.group_key_id,
             'alias': self.group_glob_id['key_alias'],
@@ -579,7 +586,8 @@ class GroupMember(automat.Automat):
                 self.dht_read_use_cache = True
                 known_brokers = {}
                 for pos, broker_id in enumerate(groups.known_brokers(self.group_creator_id)):
-                    known_brokers[pos] = global_id.glob2idurl(broker_id)
+                    if broker_id:
+                        known_brokers[pos] = global_id.glob2idurl(broker_id)
                 if _Debug:
                     lg.args(_DebugLevel, known_brokers=known_brokers)
                 self.automat('brokers-read', known_brokers=known_brokers)
