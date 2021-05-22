@@ -544,8 +544,8 @@ class QueueKeeper(automat.Automat):
                 continue
             dht_broker_idurl = dht_broker_info.get('broker_idurl')
             dht_broker_position = int(dht_broker_info.get('position'))
-            dht_revision = dht_broker_info.get('revision')
-            dht_timestamp = dht_broker_info.get('timestamp')
+            # dht_revision = dht_broker_info.get('revision')
+            # dht_timestamp = dht_broker_info.get('timestamp')
             self.known_brokers[dht_broker_position] = dht_broker_idurl
             self.latest_dht_records[dht_broker_position] = dht_broker_info
             if dht_broker_position == my_position:
