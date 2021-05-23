@@ -620,6 +620,7 @@ def event_listen_v1(node, expected_event_id, consumer_id='regression_tests_wait_
 def packet_list_v1(node, wait_all_finish=False, attempts=20, delay=5, verbose=False):
     if verbose:
         print('packet/list/v1 [%s]\n' % node)
+    response = None
     for _ in range(attempts):
         response = request_get(node, 'packet/list/v1', timeout=20, verbose=verbose)
         assert response.status_code == 200
@@ -635,6 +636,7 @@ def packet_list_v1(node, wait_all_finish=False, attempts=20, delay=5, verbose=Fa
             break
         time.sleep(delay)
     else:
+        print('packet/list/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
         assert False, 'some packets are still have in/out progress on [%s]' % node
     return response.json()
 

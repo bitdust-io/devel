@@ -140,25 +140,25 @@ class P2PServiceSeeker(automat.Automat):
                 self.doSelectOneUser(*args, **kwargs)
                 self.Attempts+=1
                 self.doHandshake(*args, **kwargs)
-            elif event == 'users-not-found' and self.Attempts==5:
-                self.state = 'FAILED'
-                self.doNotifyLookupFailed(*args, **kwargs)
-                self.doDestroyMe(*args, **kwargs)
             elif event == 'users-not-found' and self.Attempts<5:
                 self.Attempts+=1
                 self.doLookupRandomNode(*args, **kwargs)
+            elif event == 'users-not-found' and self.Attempts>=5:
+                self.state = 'FAILED'
+                self.doNotifyLookupFailed(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
         #---HANDSHAKE?---
         elif self.state == 'HANDSHAKE?':
             if event == 'shook-hands':
                 self.state = 'SERVICE?'
                 self.doSendRequestService(*args, **kwargs)
-            elif ( self.Attempts==5 or not self.RandomLookup ) and event == 'fail':
-                self.state = 'FAILED'
-                self.doNotifyHandshakeFailed(*args, **kwargs)
-                self.doDestroyMe(*args, **kwargs)
             elif event == 'fail' and self.Attempts<5 and self.RandomLookup:
                 self.state = 'RANDOM_USER?'
                 self.doLookupRandomNode(*args, **kwargs)
+            elif ( self.Attempts>=5 or not self.RandomLookup ) and event == 'fail':
+                self.state = 'FAILED'
+                self.doNotifyHandshakeFailed(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
         #---SERVICE?---
         elif self.state == 'SERVICE?':
             if event == 'service-accepted':
@@ -168,7 +168,7 @@ class P2PServiceSeeker(automat.Automat):
             elif ( event == 'timer-90sec' or event == 'fail' or event == 'service-denied' ) and self.Attempts<5 and self.RandomLookup:
                 self.state = 'RANDOM_USER?'
                 self.doLookupRandomNode(*args, **kwargs)
-            elif ( event == 'timer-90sec' or event == 'fail' or event == 'service-denied' ) and ( not self.RandomLookup or ( self.Attempts==5 and self.RandomLookup ) ):
+            elif ( event == 'timer-90sec' or event == 'fail' or event == 'service-denied' ) and ( not self.RandomLookup or ( self.Attempts>=5 and self.RandomLookup ) ):
                 self.state = 'FAILED'
                 self.doNotifyServiceRequestFailed(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
