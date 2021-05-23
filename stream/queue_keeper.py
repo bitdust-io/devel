@@ -550,7 +550,10 @@ class QueueKeeper(automat.Automat):
             self.latest_dht_records[dht_broker_position] = dht_broker_info
             if dht_broker_position == my_position:
                 my_position_info = dht_broker_info
-            if id_url.to_bin(dht_broker_idurl) == id_url.to_bin(self.broker_idurl):
+            if id_url.to_bin(dht_broker_idurl) == id_url.to_bin(self.broker_idurl) or (
+                id_url.is_cached(dht_broker_idurl) and id_url.is_cached(self.broker_idurl) and
+                id_url.field(self.broker_idurl) == id_url.field(dht_broker_idurl)
+            ):
                 if not my_broker_info:
                     my_broker_info = dht_broker_info
                 else:
@@ -582,7 +585,10 @@ class QueueKeeper(automat.Automat):
             return
         my_idurl_ok = False
         if my_position_info:
-            my_idurl_ok = id_url.to_bin(my_position_info['broker_idurl']) == id_url.to_bin(my_broker_info['broker_idurl'])
+            my_idurl_ok = (id_url.to_bin(my_position_info['broker_idurl']) == id_url.to_bin(my_broker_info['broker_idurl']) or (
+                id_url.is_cached(my_position_info['broker_idurl']) and id_url.is_cached(my_broker_info['broker_idurl']) and
+                id_url.field(my_broker_info['broker_idurl']) == id_url.field(my_position_info['broker_idurl'])
+            ))
         if not my_idurl_ok:
             lg.warn('found another broker %r on my position %d in DHT' % (my_position_info.get('broker_idurl'), my_position, ))
             self.dht_read_use_cache = False
