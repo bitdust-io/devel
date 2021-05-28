@@ -299,9 +299,13 @@ class ProxyRouter(automat.Automat):
         idurl, _, item, _, _, _ = args[0]
         idurl = id_url.field(idurl).original()
         new_address = (strng.to_text(item.proto), strng.to_text(item.host), )
-        if idurl in self.routes and (new_address not in self.routes[idurl]['address']):
-            self.routes[idurl]['address'].append(new_address)
-            lg.info('added new active address %r for %s' % (new_address, nameurl.GetName(idurl), ))
+        if idurl not in self.routes:
+            lg.exc(exc_value=Exception('route with %r is not registered yet' % idurl))
+        else:
+            if new_address not in self.routes[idurl]['address']:
+                self.routes[idurl]['address'].append(new_address)
+                lg.info('added new active address %r for %s, currently %d active addresses' % (
+                    new_address, nameurl.GetName(idurl), len(self.routes[idurl]['address']), ))
 
     def doSetContactsOverride(self, *args, **kwargs):
         """
@@ -424,30 +428,11 @@ class ProxyRouter(automat.Automat):
                         user_idurl.original(), cached_ident.getIDURL().original()))
                     return
                 identitycache.UpdateAfterChecking(cached_ident.getIDURL().original(), idsrc)
-                oldnew = ''
                 if user_idurl.original() not in list(self.routes.keys()) and user_idurl.to_bin() not in list(self.routes.keys()):
-                    # accept new route
                     oldnew = 'NEW'
-                    self.routes[user_idurl.original()] = {}
                 else:
-                    # accept existing routed user
                     oldnew = 'OLD'
-                if not self._is_my_contacts_present_in_identity(cached_ident):
-                    if _Debug:
-                        lg.out(_DebugLevel, '    DO OVERRIDE identity for %s' % user_idurl)
-                    identitycache.OverrideIdentity(user_idurl, cached_ident.serialize())
-                else:
-                    if _Debug:
-                        lg.out(_DebugLevel, '        SKIP OVERRIDE identity for %s' % user_idurl)
-                self.routes[user_idurl.original()]['time'] = time.time()
-                self.routes[user_idurl.original()]['identity'] = cached_ident.serialize(as_text=True)
-                self.routes[user_idurl.original()]['identity_rev'] = cached_ident.getRevisionValue()
-                self.routes[user_idurl.original()]['publickey'] = strng.to_text(cached_ident.publickey)
-                self.routes[user_idurl.original()]['contacts'] = cached_ident.getContactsAsTuples(as_text=True)
-                self.routes[user_idurl.original()]['address'] = []
-                self.routes[user_idurl.original()]['connection_info'] = None
-                self.closed_routes.pop(user_idurl.original(), None)
-                self.closed_routes.pop(user_idurl.to_bin(), None)
+                self._do_register_route(user_idurl, cached_ident)
                 active_user_sessions = gateway.find_active_session(info.proto, info.host)
                 if not active_user_sessions:
                     active_user_sessions = gateway.find_active_session(info.proto, idurl=user_idurl.original())
@@ -519,7 +504,7 @@ class ProxyRouter(automat.Automat):
         if not route_info:
             route_info = self.routes.get(receiver_idurl.to_bin(), None)
         if _Debug:
-            lg.args(_DebugLevel, newpacket=newpacket, info=info, receiver_idurl=receiver_idurl, route_info=route_info)
+            lg.args(_DebugLevel, newpacket=newpacket, info=info, receiver_idurl=receiver_idurl)
         if not route_info:
             lg.warn('route with %s not found for inbox packet: %s' % (receiver_idurl, newpacket))
             return
@@ -905,6 +890,35 @@ class ProxyRouter(automat.Automat):
         del routed_packet
         return raw_data, pout
 
+    def _do_register_route(self, idurl, ident_obj):
+        idurl = id_url.field(idurl)
+        oldnew = ''
+        if idurl.original() not in list(self.routes.keys()) and idurl.to_bin() not in list(self.routes.keys()):
+            # accept new route
+            oldnew = 'NEW'
+            self.routes[idurl.original()] = {}
+        else:
+            # accept existing routed user
+            oldnew = 'OLD'
+        if _Debug:
+            lg.args(_DebugLevel, idurl=idurl, oldnew=oldnew, rev=ident_obj.getRevisionValue())
+        if not self._is_my_contacts_present_in_identity(ident_obj):
+            if _Debug:
+                lg.out(_DebugLevel, '    DO OVERRIDE identity for %s' % idurl)
+            identitycache.OverrideIdentity(idurl, ident_obj.serialize())
+        else:
+            if _Debug:
+                lg.out(_DebugLevel, '        SKIP OVERRIDE identity for %s' % idurl)
+        self.routes[idurl.original()]['time'] = time.time()
+        self.routes[idurl.original()]['identity'] = ident_obj.serialize(as_text=True)
+        self.routes[idurl.original()]['identity_rev'] = ident_obj.getRevisionValue()
+        self.routes[idurl.original()]['publickey'] = strng.to_text(ident_obj.publickey)
+        self.routes[idurl.original()]['contacts'] = ident_obj.getContactsAsTuples(as_text=True)
+        self.routes[idurl.original()]['address'] = []
+        self.routes[idurl.original()]['connection_info'] = None
+        self.closed_routes.pop(idurl.original(), None)
+        self.closed_routes.pop(idurl.to_bin(), None)
+
     def _do_unregister_route(self, idurl):
         idurl = id_url.field(idurl)
         if _Debug:
@@ -1003,7 +1017,7 @@ class ProxyRouter(automat.Automat):
             lg.out(_DebugLevel, '    creator=%s owner=%s' % (newpacket.CreatorID.original(), newpacket.OwnerID.original(), ))
             lg.out(_DebugLevel, '    sender=%s remote_id=%s' % (info.sender_idurl, newpacket.RemoteID.original(), ))
             for k, v in self.routes.items():
-                lg.out(_DebugLevel, '        route with %r :  address=%s  contacts=%s' % (k, v.get('address'), v.get('contacts'), ))
+                lg.out(_DebugLevel * 2, '        route with %r :  address=%s  contacts=%s' % (k, v.get('address'), v.get('contacts'), ))
         # first filter all traffic addressed to me
         if newpacket.RemoteID == my_id.getLocalID():
             # check command type, filter Routed traffic first

@@ -464,7 +464,7 @@ class QueueKeeper(automat.Automat):
             'desired_position': self.new_possible_position,
         }
         # TODO: add an extra verification for other broker using group_key_info from the "connect" event
-        # to make sure he is really possess the public key for the group - need to do "audit" of the pub. key
+        # to make sure he really possess the public key for the group - need to do "audit" of the pub. key first
         result = p2p_service_seeker.connect_known_node(
             remote_idurl=other_broker_info['broker_idurl'],
             service_name='service_message_broker',
@@ -590,7 +590,7 @@ class QueueKeeper(automat.Automat):
                 id_url.field(my_broker_info['broker_idurl']) == id_url.field(my_position_info['broker_idurl'])
             ))
         if not my_idurl_ok:
-            lg.warn('found another broker %r on my position %d in DHT' % (my_position_info.get('broker_idurl'), my_position, ))
+            lg.warn('there is another broker %r on my position %d in DHT' % (my_position_info.get('broker_idurl'), my_position, ))
             self.dht_read_use_cache = False
             self.automat('other-broker-exist', broker_info=my_position_info)
             return
