@@ -447,6 +447,8 @@ class ProxyReceiver(automat.Automat):
             except:
                 lg.exc()
         self.router_identity = identitycache.FromCache(self.router_idurl)
+        if _Debug:
+            lg.args(_DebugLevel, router_idurl=self.router_idurl)
         config.conf().setString('services/proxy-transport/current-router', '%s %s %s' % (
             strng.to_text(self.router_idurl),
             strng.to_text(self.router_proto_host[0]),
@@ -497,6 +499,8 @@ class ProxyReceiver(automat.Automat):
                 lg.err('not found proxy router session state machine: %s' % self.router_connection_info['index'])
         else:
             lg.err('active connection with proxy router at %s:%s was not found' % (info.proto, info.host, ))
+            if _Debug:
+                lg.args(_DebugLevel, ack_packet=info, active_sessions=gateway.list_active_sessions(info.proto))
         if _Debug:
             lg.out(_DebugLevel, 'proxy_receiver.doStartListening !!!!!!! router: %s at %s://%s' % (
                 self.router_idurl, self.router_proto_host[0], self.router_proto_host[1]))

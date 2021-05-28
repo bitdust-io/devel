@@ -421,12 +421,13 @@ def set_latest_sequence_id(queue_id, new_sequence_id):
     new_sequence_id = int(new_sequence_id)
     current_sequence_id = int(streams()[queue_id]['last_sequence_id'])
     streams()[queue_id]['last_sequence_id'] = new_sequence_id
-    if new_sequence_id == current_sequence_id + 1: 
+    if new_sequence_id == current_sequence_id + 1:
         if _Debug:
             lg.args(_DebugLevel, queue_id=queue_id, current_sequence_id=current_sequence_id, new_sequence_id=new_sequence_id)
     else:
-        lg.warn('message sequence_id update is not consistent in %r : %r -> %r' % (
-            queue_id, current_sequence_id, new_sequence_id, ))
+        if current_sequence_id >= 0:
+            lg.warn('message sequence_id update is not consistent in %r : %r -> %r' % (
+                queue_id, current_sequence_id, new_sequence_id, ))
     return new_sequence_id
 
 
@@ -1261,14 +1262,21 @@ class MessagePeddler(automat.Automat):
             p2p_service.SendFail(request_packet, 'customer queue not connected')
             result_defer.callback(False)
             return
-        if qk.known_position is not None and desired_position is not None and desired_position >= 0 and qk.known_position == desired_position:
+        if qk.known_position is not None and desired_position is not None and desired_position >= 0:
+            if qk.known_position == desired_position:
+                if _Debug:
+                    lg.dbg(_DebugLevel, 'customer queue already connected on same position %r, accepting: %r' % (qk.known_position, request_packet, ))
+                p2p_service.SendAck(request_packet, 'accepted')
+                result_defer.callback(True)
+                return
             if _Debug:
-                lg.dbg(_DebugLevel, 'customer queue already connected on position %r rejecting: %r' % (qk.known_position, request_packet, ))
-            p2p_service.SendFail(request_packet, 'customer queue connected on another position')
+                lg.dbg(_DebugLevel, 'customer queue already connected on different position %r, rejecting: %r' % (qk.known_position, request_packet, ))
+            p2p_service.SendFail(request_packet, 'customer queue already connected on different position')
             result_defer.callback(False)
             return
-        p2p_service.SendAck(request_packet, 'accepted')
-        result_defer.callback(True)
+        lg.warn('customer queue is connected, but position is yet unknown: %r' % qk)
+        p2p_service.SendFail(request_packet, 'customer queue already connected but position is yet unknown')
+        result_defer.callback(False)
 
     def doDestroyMe(self, *args, **kwargs):
         """
@@ -1601,7 +1609,7 @@ class MessagePeddler(automat.Automat):
             start_producer(queue_id, producer_id)
         cur_sequence_id = get_latest_sequence_id(queue_id)
         if last_sequence_id > cur_sequence_id:
-            lg.warn('based on request from connected group member going to update last_sequence_id: %d -> %d' % (
+            lg.info('based on request from connected group member going to update last_sequence_id: %d -> %d' % (
                 cur_sequence_id, last_sequence_id, ))
             set_latest_sequence_id(queue_id, last_sequence_id)
         p2p_service.SendAck(request_packet, 'accepted')
