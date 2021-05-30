@@ -33,7 +33,7 @@ module:: config_details
 
 def raw():
     # in case option does not have any description it will be marked as "internal"
-    # "internal" options should not be displayed in the UI and so must not be available to the user
+    # "internal" options should not be displayed in the UI, but still can be manipulated via API or command line
     return """
 {interface/api/json-rpc-enabled}
 
@@ -296,6 +296,10 @@ Keeps track of all your RSA keys that are used to encrypt files and messages.
 
 {services/keys-storage/enabled} enable keys synchronization
 The service maintains an encrypted backup of every RSA key you possess on your suppliers so that you can recover the keys and encrypted data in case of loss.
+
+{services/keys-storage/reset-unreliable-backup-copies} reset unreliable backup copies
+In worst scenario, when your suppliers are not reliable anymore and uploaded data got lost, software will be blocked trying to synchronize your keys.
+This setting helps to overcome this situation by using locally stored copies of the keys.
 
 {services/list-files/enabled} exchange service data with suppliers
 The supplier does not know the real name of the file you uploaded to the network, but stores indexed fragments of your encrypted data.

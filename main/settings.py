@@ -717,7 +717,6 @@ def MetaDataDir():
 
 def ConfigDir():
     """
-    
     """
     return os.path.join(BaseDir(), 'config')
 
@@ -751,7 +750,6 @@ def IdentityCacheDir():
 
 def IdentityServerDir():
     """
-    
     """
     return os.path.join(BaseDir(), 'identityserver')
 
@@ -777,7 +775,6 @@ def DefaultBackupsDBDir():
 def DefaultCustomersDir():
     """
     Here will be placed files uploaded by other users.
-
     Your customers will user your HDD to keep their personal data.
     """
     return os.path.join(BaseDir(), "customers")
@@ -1025,14 +1022,12 @@ def LocalWSGIPortFilename():
 
 def LocalXMLRPCPortFilename():
     """
-    
     """
     return os.path.join(MetaDataDir(), 'localxmlrpcport')
 
 
 def LocalJsonRPCPortFilename():
     """
-    
     """
     return os.path.join(MetaDataDir(), 'localjsonrpcport')
 
@@ -1167,14 +1162,12 @@ def RevisionNumberFile():
 
 def VersionNumberFile():
     """
-    
     """
     return os.path.join(bpio.getExecutableDir(), 'version')
 
 
 def CheckSumFile():
     """
-    
     """
     return os.path.join(bpio.getExecutableDir(), 'checksum')
 
@@ -1188,7 +1181,6 @@ def CustomersSpaceFile():
 
 def CustomersUsedSpaceFile():
     """
-    
     """
     return os.path.join(MetaDataDir(), 'spaceused')
 
@@ -1305,14 +1297,12 @@ def IconFilename():
 
 def StyleSheetsFilename():
     """
-    
     """
     return 'styles.css'
 
 
 def StyleSheetsPath():
     """
-    
     """
     return os.path.join(bpio.getExecutableDir(), 'html', StyleSheetsFilename())
 

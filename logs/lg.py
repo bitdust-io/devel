@@ -262,7 +262,7 @@ def err(message, level=0):
         message = 'ERROR!!!  ' + message
     message = '%s%s   ' % ((' ' * (level + 11)), message)
     if _UseColors:
-        message = '\033[6;37;41m%s\033[0m' % message
+        message = '\033[1;37;41m%s\033[0m' % message
     out(level, message, showtime=True)
     out(level, message, log_name='err', showtime=True)
     return message
