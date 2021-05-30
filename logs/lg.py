@@ -124,7 +124,7 @@ def out(level, msg, nl='\n', log_name='main', showtime=False):
         if _UseColors is None:
             _UseColors = platform.uname()[0] != 'Windows' and os.environ.get('BITDUST_LOG_USE_COLORS', '1') != '0'
         if _UseColors:
-            tm_string = '\033[2;32m%s\033[0m' % tm_string
+            tm_string = '\033[0;49;97m%s\033[0m' % tm_string
         if level == 0:
             tm_string += '  '
         s = tm_string + s
@@ -220,11 +220,11 @@ def info(message, level=2):
     cod = sys._getframe().f_back.f_code
     modul = os.path.basename(cod.co_filename).replace('.py', '')
     caller = cod.co_name
+    output_string = 'INFO %s in %s.%s()' % (message, modul, caller, )
     if _UseColors:
         output_string = '\033[0;49;92mINFO %s \033[0m\033[0;49;37min %s.%s()\033[0m' % (message, modul, caller, )
-    else:
-        output_string = 'INFO %s in %s.%s()' % (message, modul, caller, )
     out(level, output_string, showtime=True)
+    out(level, output_string, log_name='info', showtime=True)
     return message
 
 
@@ -235,10 +235,9 @@ def warn(message, level=2):
     cod = sys._getframe().f_back.f_code
     modul = os.path.basename(cod.co_filename).replace('.py', '')
     caller = cod.co_name
+    output_string = 'WARNING %s in %s.%s()' % (message, modul, caller, )
     if _UseColors:
         output_string = '\033[0;35mWARNING %s \033[0m\033[0;49;37min %s.%s()\033[0m' % (message, modul, caller, )
-    else:
-        output_string = 'WARNING %s in %s.%s()' % (message, modul, caller, )
     out(level, output_string, showtime=True)
     out(level, output_string, log_name='warn', showtime=True)
     return message
@@ -259,7 +258,7 @@ def err(message, level=0):
     if not message.count(funcname):
         message = ' in %s() : "%s"' % (funcname, message)
     if not message.count('ERROR'):
-        message = 'ERROR!!!  ' + message
+        message = 'ERROR ' + message
     message = '%s%s   ' % ((' ' * (level + 11)), message)
     if _UseColors:
         message = '\033[1;37;41m%s\033[0m' % message
@@ -276,7 +275,6 @@ def exc(msg='', level=0, maxTBlevel=100, exc_info=None, exc_value=None, **kwargs
         if _UseColors:
             msg = '\033[1;31m%s\033[0m' % msg
         out(level, msg, showtime=True)
-        # out(level, msg, log_name='exc', showtime=True)
     if exc_value:
         return exception(level, maxTBlevel, exc_info=('', exc_value, []))
     return exception(level, maxTBlevel, exc_info)
