@@ -239,7 +239,7 @@ class ProxyRouter(automat.Automat):
         if driver.is_on('service_tcp_transport'):
             from transport.tcp import tcp_node
             self.my_hosts['tcp'] = tcp_node.my_host(normalize=True)
-        if driver.is_on('service_udp_datagrams'):
+        if driver.is_on('service_udp_transport'):
             from transport.udp import udp_node
             self.my_hosts['udp'] = net_misc.normalize_address(udp_node.A().my_address)
         network_connector.A().addStateChangedCallback(self._on_network_connector_state_changed)
