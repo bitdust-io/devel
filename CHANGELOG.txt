@@ -1,6 +1,14 @@
 Change Log
 ==========
 
+2021-05-30 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* added option "services/keys-storage/reset-unreliable-backup-copies"
+* bug fix in proxy_router()
+* bug fixes in messages streaming (#147)
+
+
+
 2021-05-28 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * bug fix in message_peddler()
