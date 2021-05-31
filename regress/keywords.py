@@ -631,6 +631,8 @@ def packet_list_v1(node, wait_all_finish=False, attempts=20, delay=5, verbose=Fa
         for r in response.json()['result']:
             if r.get('packet_id', '').count('idle_ping:'):
                 continue
+            if r.get('command') == 'Retrieve' and r.get('direction') == 'outgoing' and r.get('label', '').count('-rotated'):
+                continue
             found_packet = True
         if not found_packet or not wait_all_finish:
             break
