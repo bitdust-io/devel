@@ -424,7 +424,7 @@ class FamilyMember(automat.Automat):
         if another_supplier_position < 0:
             # this must never happen actually... only if another supplier is really uncooperative
             # this is dangerous because can lead to infinite loop between me and another supplier
-            lg.info('found uncooperative supplier %s who raised the conflict but replied with invalid response' % another_supplier_idurl)
+            lg.err('found uncooperative supplier %s who raised the conflict but replied with invalid response' % another_supplier_idurl)
             # TODO: solve later
             self.transaction = None
         if self.transaction:

@@ -281,21 +281,34 @@ def Unserialize(data, decrypt_key=None):
     if _Debug:
         lg.out(_DebugLevel, 'encrypted.Unserialize %s' % repr(dct)[:100])
     try:
+        _c = dct['c']
+        _b = dct['b']
+        _n = dct['n']
+        _e = dct['e']
+        _k = dct['k']
+        _t = dct['t']
+        _l = dct['l']
+        _p = dct['p']
+        _s = dct['s']
+    except Exception as exc:
+        lg.exc('data unserialize failed with %r: %r' % (exc, list(dct.keys())))
+        if _Debug:
+            lg.out(_DebugLevel, repr(dct))
+        return None
+    try:
         newobject = Block(
-            CreatorID=id_url.field(dct['c']),
-            BackupID=strng.to_text(dct['b']),
-            BlockNumber=dct['n'],
-            LastBlock=dct['e'],
-            EncryptedSessionKey=base64.b64decode(strng.to_bin(dct['k'])),
-            SessionKeyType=strng.to_text(dct['t']),
-            Length=dct['l'],
-            EncryptedData=dct['p'],
-            Signature=dct['s'],
+            CreatorID=id_url.field(_c),
+            BackupID=strng.to_text(_b),
+            BlockNumber=_n,
+            LastBlock=_e,
+            EncryptedSessionKey=base64.b64decode(strng.to_bin(_k)),
+            SessionKeyType=strng.to_text(_t),
+            Length=_l,
+            EncryptedData=_p,
+            Signature=_s,
             DecryptKey=decrypt_key,
         )
     except:
         lg.exc()
-        if _Debug:
-            lg.out(_DebugLevel, repr(dct))
         return None
     return newobject

@@ -160,6 +160,7 @@ def defaults():
         'services/ip-port-responder/enabled': TYPE_BOOLEAN,
         'services/keys-registry/enabled': TYPE_BOOLEAN,
         'services/keys-storage/enabled': TYPE_BOOLEAN,
+        'services/keys-storage/reset-unreliable-backup-copies': TYPE_BOOLEAN,
         'services/list-files/enabled': TYPE_BOOLEAN,
         'services/message-broker/enabled': TYPE_BOOLEAN,
         'services/message-broker/archive-chunk-size': TYPE_NON_ZERO_POSITIVE_INTEGER,

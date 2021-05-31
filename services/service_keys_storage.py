@@ -68,6 +68,7 @@ class KeysStorageService(LocalService):
         events.add_subscriber(self._on_key_erased, 'key-erased')
         events.add_subscriber(self._on_my_backup_index_synchronized, 'my-backup-index-synchronized')
         events.add_subscriber(self._on_my_backup_index_out_of_sync, 'my-backup-index-out-of-sync')
+        events.add_subscriber(self._on_my_keys_synchronize_failed, 'my-keys-synchronize-failed')
         if index_synchronizer.A():
             index_synchronizer.A().addStateChangedCallback(self._on_index_synchronizer_state_changed)
         if index_synchronizer.A() and index_synchronizer.A().state == 'NO_INFO':
@@ -84,6 +85,7 @@ class KeysStorageService(LocalService):
         from storage import keys_synchronizer
         if index_synchronizer.A():
             index_synchronizer.A().removeStateChangedCallback(self._on_index_synchronizer_state_changed)
+        events.remove_subscriber(self._on_my_keys_synchronize_failed, 'my-keys-synchronize-failed')
         events.remove_subscriber(self._on_my_backup_index_out_of_sync, 'my-backup-index-out-of-sync')
         events.remove_subscriber(self._on_my_backup_index_synchronized, 'my-backup-index-synchronized')
         events.remove_subscriber(self._on_key_erased, 'key-erased')
@@ -242,3 +244,18 @@ class KeysStorageService(LocalService):
                 result.addCallback(self._on_keys_synchronized)
                 result.addErrback(self._on_keys_synchronize_failed)
                 self._do_check_sync_keys(result)
+
+    def _on_my_keys_synchronize_failed(self, evt):
+        from logs import lg
+        from main import config
+        from interface import api
+        from userid import global_id
+        from userid import my_id
+        if not config.conf().getBool('services/keys-storage/reset-unreliable-backup-copies'):
+            return
+        global_keys_folder_path = global_id.MakeGlobalID(
+            key_alias='master', customer=my_id.getGlobalID(), path='.keys')
+        lg.info('about to erase ".keys" folder in the catalog: %r' % global_keys_folder_path)
+        res = api.file_delete(global_keys_folder_path)
+        if res['status'] == 'OK':
+            api.network_reconnect()

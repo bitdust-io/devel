@@ -124,7 +124,7 @@ def propagate(selected_contacts, AckHandler=None, wide=False, refresh_cache=Fals
     """
     Run the "propagate" process.
 
-    First need to fetch ``selected_contacts`` IDs from id server. And
+    First need to fetch ``selected_contacts`` IDs from id servers. And
     then send our Identity file to that contacts.
     """
     if _Debug:
@@ -260,8 +260,7 @@ def FetchCustomers():
 
 def SendServers():
     """
-    My identity file can be stored in different locations, see the "sources"
-    field.
+    My identity file can be stored in different locations, see the "sources" field.
 
     So I can use different identity servers to store more secure and reliable. This
     method will send my identity file to all my identity servers via

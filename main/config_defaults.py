@@ -36,13 +36,13 @@ def reset(conf_obj):
     Configure default values for all BitDust local settings inside ~/.bitdust/config/ folder.
 
     Every option must have a default value, however there are exceptions possible.
-    
+
     Here all items suppose to have some widget in UI to interact with human.
     Keep it simple and understandable.
     """
     from lib import diskspace
     from main import settings
-    
+
     conf_obj.setDefaultValue('interface/api/json-rpc-enabled', 'true')
     conf_obj.setDefaultValue('interface/api/json-rpc-port', settings.DefaultJsonRPCPort())
 
@@ -119,8 +119,8 @@ def reset(conf_obj):
     conf_obj.setDefaultValue('services/data-disintegration/enabled', 'true')
 
     conf_obj.setDefaultValue('services/data-motion/enabled', 'true')
-    conf_obj.setDefaultValue('services/data-motion/supplier-request-queue-size', 4)            
-    conf_obj.setDefaultValue('services/data-motion/supplier-sending-queue-size', 4)            
+    conf_obj.setDefaultValue('services/data-motion/supplier-request-queue-size', 4)
+    conf_obj.setDefaultValue('services/data-motion/supplier-sending-queue-size', 4)
 
     conf_obj.setDefaultValue('services/entangled-dht/enabled', 'true')
     conf_obj.setDefaultValue('services/entangled-dht/udp-port', settings.DefaultDHTPort())
@@ -159,6 +159,7 @@ def reset(conf_obj):
     conf_obj.setDefaultValue('services/keys-registry/enabled', 'true')
 
     conf_obj.setDefaultValue('services/keys-storage/enabled', 'true')
+    conf_obj.setDefaultValue('services/keys-storage/reset-unreliable-backup-copies', 'true')
 
     conf_obj.setDefaultValue('services/list-files/enabled', 'true')
 
@@ -197,7 +198,7 @@ def reset(conf_obj):
 
     conf_obj.setDefaultValue('services/private-messages/enabled', 'true')
     conf_obj.setDefaultValue('services/private-messages/acknowledge-unread-messages-enabled', 'true')
-    
+
     conf_obj.setDefaultValue('services/proxy-server/enabled', 'false')
     conf_obj.setDefaultValue('services/proxy-server/routes-limit', 20)
     conf_obj.setDefaultValue('services/proxy-server/current-routes', '{}')

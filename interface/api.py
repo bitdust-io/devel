@@ -4209,6 +4209,7 @@ def connections_list(protocols=None):
     """
     if not driver.is_on('service_gateway'):
         return ERROR('service_gateway() is not started')
+    from lib import net_misc
     from transport import gateway
     from userid import global_id
     result = []
@@ -4233,7 +4234,7 @@ def connections_list(protocols=None):
             if proto == 'tcp':
                 if hasattr(connection, 'stream'):
                     try:
-                        host = '%s:%s' % (connection.peer_address[0], connection.peer_address[1])
+                        host = net_misc.pack_address_text(connection.peer_address)
                     except:
                         host = 'unknown'
                     item.update({
@@ -4247,7 +4248,7 @@ def connections_list(protocols=None):
                     })
                 else:
                     try:
-                        host = '%s:%s' % (connection.connection_address[0], connection.connection_address[1])
+                        host = net_misc.pack_address_text(connection.connection_address)
                     except:
                         host = 'unknown'
                     item.update({
@@ -4256,7 +4257,7 @@ def connections_list(protocols=None):
                     })
             elif proto == 'udp':
                 try:
-                    host = '%s:%s' % (connection.peer_address[0], connection.peer_address[1])
+                    host = net_misc.pack_address_text(connection.peer_address)
                 except:
                     host = 'unknown'
                 item.update({

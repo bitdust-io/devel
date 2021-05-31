@@ -430,7 +430,7 @@ def on_key_received(newpacket, info, status, error_message):
         key_id, key_object = my_keys.read_key_info(key_json)
         if key_object.isSigned():
             if not my_keys.verify_key_info_signature(key_json):
-                raise Exception('key signature verification failed')
+                raise Exception('key %s signature verification failed' % key_id)
         if key_object.isPublic():
             # received key is a public key
             if my_keys.is_key_registered(key_id):

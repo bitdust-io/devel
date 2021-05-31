@@ -602,13 +602,12 @@ def rebuildLocalIdentity(identity_object=None, skip_transports=[], new_sources=N
             return False
         # generate signature again because revision were changed !!!
         lid.sign()
-        if _Debug:
-            lg.out(_DebugLevel, '    incremented revision: %s' % lid.revision)
+        lg.info('incremented my identity revision: %d' % lid.getRevisionValue())
         changed = True
     else:
         # no modifications in my identity - cool !!!
         if _Debug:
-            lg.out(_DebugLevel, '    same revision: %r' % lid.revision)
+            lg.out(_DebugLevel, '    same revision: %d' % lid.getRevisionValue())
     if _Debug:
         lg.out(_DebugLevel, '    version: %r' % lid.version)
         lg.out(_DebugLevel, '    contacts: %r' % lid.contacts)
