@@ -83,6 +83,7 @@ from logs import lg
 from lib import packetid
 from lib import strng
 from lib import serialization
+from lib import net_misc
 
 from automats import automat
 
@@ -107,10 +108,10 @@ from transport import packet_out
 from transport import gateway
 from transport.proxy import proxy_interface
 
-from userid import my_id
 from userid import identity
 from userid import global_id
 from userid import id_url
+from userid import my_id
 
 #------------------------------------------------------------------------------
 
@@ -160,10 +161,10 @@ def ReadCurrentRouter():
 
 def VerifyExistingRouter():
     if ReadCurrentRouter() and not ReadMyOriginalIdentitySource():
-        lg.warn('current router is set, but my original identity is empty')
+        lg.err('current router is set, but my original identity is empty')
         return False
     if not ReadCurrentRouter() and ReadMyOriginalIdentitySource():
-        lg.warn('current router is not set, but some wrong data found as original identity')
+        lg.err('current router is not set, but some wrong data found as original identity')
         return False
     return True
 
@@ -234,10 +235,13 @@ class ProxyReceiver(automat.Automat):
     def to_json(self):
         j = super().to_json()
         j.update({
-            'host': ('%s://%s' % self.router_proto_host) if self.router_proto_host else '',
+            'proto': self.router_proto_host[0] if self.router_proto_host else '',
+            'host': net_misc.pack_address(self.router_proto_host[1]) if self.router_proto_host else '',
             'idurl': self.router_idurl,
             'bytes_received': self.traffic_in,
             'bytes_sent': 0,
+            'connection_info': self.router_connection_info,
+            'idle_seconds': int(time.time() - self.latest_packet_received),
         })
         return j
 
@@ -348,9 +352,11 @@ class ProxyReceiver(automat.Automat):
         """
         Condition method.
         """
+        if not ReadCurrentRouter():
+            return False
         if not ReadMyOriginalIdentitySource():
             return False
-        return config.conf().getString('services/proxy-transport/current-router', '').strip() != ''
+        return True
 
     def doInit(self, *args, **kwargs):
         """
@@ -436,7 +442,7 @@ class ProxyReceiver(automat.Automat):
         Action method.
         """
         try:
-            _, info = args[0]
+            _, info, active_router_session_machine = args[0]
             self.router_proto_host = (info.proto, info.host)
         except:
             try:
@@ -457,12 +463,11 @@ class ProxyReceiver(automat.Automat):
         current_identity = my_id.getLocalIdentity().serialize(as_text=True)
         previous_identity = ReadMyOriginalIdentitySource()
         if previous_identity:
-            lg.warn('my original identity is not empty, SKIP overwriting')
+            lg.err('my original identity is not empty, SKIP overwriting')
             if _Debug:
-                lg.out(_DebugLevel, '\nPREVIOUS ORIGINAL IDENTITY:\n%s\n' % current_identity)
-        else:
-            WriteMyOriginalIdentitySource(current_identity)
-            lg.warn('current identity was stored as my-original-identity')
+                lg.out(_DebugLevel, 'PREVIOUS ORIGINAL IDENTITY:\n%s\n' % previous_identity)
+        WriteMyOriginalIdentitySource(current_identity)
+        lg.info('copy of my current identity was stored as my "original" identity')
         self.request_service_packet_id = []
         callback.insert_inbox_callback(0, self._on_inbox_packet_received)
         if online_status.isKnown(self.router_idurl):
@@ -476,39 +481,16 @@ class ProxyReceiver(automat.Automat):
                 callback_method=self._on_router_contact_status_offline,
                 newstate='OFFLINE',
             )
-            # contact_status.A(self.router_idurl).addStateChangedCallback(
-            #     self._on_router_contact_status_connected, newstate='CONNECTED')
-            # contact_status.A(self.router_idurl).addStateChangedCallback(
-            #     self._on_router_contact_status_offline, newstate='OFFLINE')
-        active_router_sessions = gateway.find_active_session(info.proto, info.host)
-        if active_router_sessions:
-            self.router_connection_info = {
-                'id': active_router_sessions[0].id,
-                'index': active_router_sessions[0].index,
-                'proto': info.proto,
-                'host': info.host,
-                'idurl': self.router_idurl,
-                'global_id': global_id.UrlToGlobalID(self.router_idurl),
-            }
-            active_router_session_machine = automat.by_index(self.router_connection_info['index'])
-            if active_router_session_machine is not None:
-                active_router_session_machine.addStateChangedCallback(
-                    self._on_router_session_disconnected, oldstate='CONNECTED')
-                lg.info('connected to proxy router and set active session: %s' % self.router_connection_info)
-            else:
-                lg.err('not found proxy router session state machine: %s' % self.router_connection_info['index'])
-        else:
-            lg.err('active connection with proxy router at %s:%s was not found' % (info.proto, info.host, ))
-            if _Debug:
-                lg.args(_DebugLevel, ack_packet=info, active_sessions=gateway.list_active_sessions(info.proto))
-        if _Debug:
-            lg.out(_DebugLevel, 'proxy_receiver.doStartListening !!!!!!! router: %s at %s://%s' % (
-                self.router_idurl, self.router_proto_host[0], self.router_proto_host[1]))
+        active_router_session_machine.addStateChangedCallback(self._on_router_session_disconnected, oldstate='CONNECTED')
+        lg.info('router %s is connected at %s://%s' % (self.router_idurl, self.router_proto_host[0], self.router_proto_host[1], ))
+        my_id.rebuildLocalIdentity()
 
     def doStopListening(self, *args, **kwargs):
         """
         Action method.
         """
+        if _Debug:
+            lg.args(_DebugLevel, router_idurl=self.router_idurl)
         if online_status.isKnown(self.router_idurl):
             online_status.remove_online_status_listener_callback(
                 idurl=self.router_idurl,
@@ -520,9 +502,17 @@ class ProxyReceiver(automat.Automat):
             )
         active_router_session_machine_index = None
         if self.router_connection_info:
+            active_router_session_machine = None
             active_router_session_machine_index = self.router_connection_info.get('index', None)
-        if active_router_session_machine_index is not None:
-            active_router_session_machine = automat.by_index(active_router_session_machine_index)
+            if active_router_session_machine_index is not None:
+                active_router_session_machine = automat.by_index(active_router_session_machine_index)
+            if not active_router_session_machine:
+                active_router_sessions = gateway.find_active_session(
+                    proto=self.router_connection_info.get('proto'),
+                    host=self.router_connection_info.get('host'),
+                )
+                if active_router_sessions:
+                    active_router_session_machine = automat.by_index(active_router_sessions[0].index)
             if active_router_session_machine is not None:
                 active_router_session_machine.removeStateChangedCallback(self._on_router_session_disconnected)
                 lg.info('removed callback from router active session: %r' % active_router_session_machine)
@@ -538,8 +528,6 @@ class ProxyReceiver(automat.Automat):
         self.request_service_packet_id = []
         self.router_connection_info = None
         my_id.rebuildLocalIdentity()
-        if _Debug:
-            lg.out(_DebugLevel, 'proxy_receiver.doStopListening')
 
     def doUpdateRouterID(self, *args, **kwargs):
         """
@@ -839,6 +827,7 @@ class ProxyReceiver(automat.Automat):
             self.automat('nodes-not-found')
 
     def _on_request_service_ack(self, response, info):
+        self.router_connection_info = None
         if response.PacketID not in self.request_service_packet_id:
             lg.warn('wrong PacketID in response: %s, but outgoing was : %s' % (
                 response.PacketID, str(self.request_service_packet_id)))
@@ -851,10 +840,34 @@ class ProxyReceiver(automat.Automat):
         if _Debug:
             lg.out(_DebugLevel, 'proxy_receiver._on_request_service_ack : %s' % str(response.Payload))
         service_ack_info = strng.to_text(response.Payload)
-        if not service_ack_info.startswith('rejected'):
-            self.automat('service-accepted', (response, info))
-        else:
+        if service_ack_info.startswith('rejected'):
             self.automat('service-refused', (response, info))
+            return
+        active_router_sessions = gateway.find_active_session(info.proto, info.host)
+        if not active_router_sessions:
+            lg.err('active connection with proxy router at %s:%s was not found' % (info.proto, info.host, ))
+            if _Debug:
+                lg.args(_DebugLevel, ack_packet=info, active_sessions=gateway.list_active_sessions(info.proto))
+            self.automat('service-refused', (response, info))
+            return
+        self.router_connection_info = {
+            'id': active_router_sessions[0].id,
+            'index': active_router_sessions[0].index,
+            'proto': info.proto,
+            'host': info.host,
+            'idurl': self.router_idurl,
+            'global_id': global_id.UrlToGlobalID(self.router_idurl),
+        }
+        active_router_session_machine = automat.by_index(self.router_connection_info['index'])
+        if active_router_session_machine is None:
+            lg.err('did not found proxy router session state machine instance: %s' % self.router_connection_info)
+            self.router_connection_info = None
+            if _Debug:
+                lg.args(_DebugLevel, automats=automat.objects())
+            self.automat('service-refused', (response, info))
+            return
+        lg.info('found active session for proxy router: %s' % active_router_session_machine)
+        self.automat('service-accepted', (response, info, active_router_session_machine))
 
     def _on_request_service_fail(self, response, info):
         if response.PacketID not in self.request_service_packet_id:
@@ -892,7 +905,7 @@ class ProxyReceiver(automat.Automat):
         # self.automat('router-disconnected')
 
     def _on_router_session_disconnected(self, oldstate, newstate, event_string, *args, **kwargs):
-        lg.warn('router session disconnected: %s->%s' % (oldstate, newstate, ))
+        lg.warn('router session disconnected: %s->%s because of %r' % (oldstate, newstate, event_string))
         self.automat('router-disconnected')
 
     def _on_queue_item_status_changed(self, pkt_out, status, error=''):
@@ -909,7 +922,7 @@ class ProxyReceiver(automat.Automat):
             return False
         if pkt_out.remote_idurl != proxy_receiver.GetRouterIDURL():
             return False
-        lg.warn('connection failed with proxy router, must reconnect to another router')
+        lg.err('connection failed with current proxy router, must reconnect to another router: %r %r %r' % (pkt_out, status, error, ))
         self.automat('router-disconnected')
         return True
 

@@ -272,7 +272,6 @@ def SendServers():
     bpio.WriteTextFile(sendfilename, LocalIdentity.serialize(as_text=True))
     dlist = []
     for idurl in LocalIdentity.getSources(as_originals=True):
-        # sources for out identity are servers we need to send to
         protocol, host, port, filename = nameurl.UrlParse(idurl)
         # TODO: rebuild identity-server logic to be able to send my identity via HTTP POST instead of TCP and
         # get rid of second TCP port at all 

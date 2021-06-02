@@ -88,7 +88,6 @@ from lib import net_misc
 from lib import strng
 
 from automats import automat
-from automats import global_state
 
 from contacts import identitycache
 from contacts import contactsdb
@@ -98,7 +97,6 @@ from transport import callback
 from services import driver
 
 from p2p import propagate
-from p2p import ratings
 from p2p import network_connector
 
 from userid import identity

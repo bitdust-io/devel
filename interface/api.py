@@ -4609,6 +4609,7 @@ def network_status(suppliers=False, customers=False, cache=False, tcp=False, udp
         r['global_id'] = my_id.getGlobalID()
         r['identity_sources'] = my_id.getLocalIdentity().getSources(as_originals=True)
         r['identity_contacts'] = my_id.getLocalIdentity().getContacts()
+        r['identity_revision'] = my_id.getLocalIdentity().getRevisionValue()
     if True in [suppliers, customers, cache, ] and driver.is_on('service_p2p_hookups'):
         from contacts import contactsdb
         from p2p import online_status
@@ -4685,7 +4686,8 @@ def network_status(suppliers=False, customers=False, cache=False, tcp=False, udp
             if driver.is_on('service_tcp_transport'):
                 sessions = []
                 for s in gateway.list_active_sessions('tcp'):
-                    i = {
+                    i = s.to_json()
+                    i.update({
                         'peer': getattr(s, 'peer', None),
                         'state': getattr(s, 'state', None),
                         'id': getattr(s, 'id', None),
@@ -4695,7 +4697,7 @@ def network_status(suppliers=False, customers=False, cache=False, tcp=False, udp
                         'connection_address': net_misc.pack_address_text(getattr(s, 'connection_address', None)),
                         'bytes_received': getattr(s, 'total_bytes_received', 0),
                         'bytes_sent': getattr(s, 'total_bytes_sent', 0),
-                    }
+                    })
                     sessions.append(i)
                 streams = []
                 for s in gateway.list_active_streams('tcp'):
@@ -4721,7 +4723,8 @@ def network_status(suppliers=False, customers=False, cache=False, tcp=False, udp
             if driver.is_on('service_udp_transport'):
                 sessions = []
                 for s in gateway.list_active_sessions('udp'):
-                    sessions.append({
+                    i = s.to_json()
+                    i.update({
                         'peer': s.peer_id,
                         'state': s.state,
                         'id': s.id,
@@ -4734,6 +4737,7 @@ def network_status(suppliers=False, customers=False, cache=False, tcp=False, udp
                         'queue': len(s.file_queue.outboxQueue),
                         'dead_streams': len(s.file_queue.dead_streams),
                     })
+                    sessions.append(i)
                 streams = []
                 for s in gateway.list_active_streams('udp'):
                     streams.append({
@@ -4752,20 +4756,10 @@ def network_status(suppliers=False, customers=False, cache=False, tcp=False, udp
             if driver.is_on('service_proxy_transport'):
                 sessions = []
                 for s in gateway.list_active_sessions('proxy'):
-                    i = {
-                        'state': s.state,
-                        'id': s.id,
-                    }
-                    if getattr(s, 'router_proto_host', None):
-                        i['proto'] = s.router_proto_host[0]
-                        i['peer'] = s.router_proto_host[1]
+                    i = s.to_json()
                     if getattr(s, 'router_idurl', None):
                         i['idurl'] = s.router_idurl
                         i['router'] = global_id.UrlToGlobalID(s.router_idurl)
-                    if getattr(s, 'traffic_out', None):
-                        i['bytes_sent'] = s.traffic_out
-                    if getattr(s, 'traffic_in', None):
-                        i['bytes_received'] = s.traffic_in
                     if getattr(s, 'pending_packets', None):
                         i['queue'] = len(s.pending_packets)
                     sessions.append(i)

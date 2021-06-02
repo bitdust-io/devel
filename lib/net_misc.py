@@ -162,6 +162,8 @@ def normalize_address(host_port):
     if isinstance(host_port, six.string_types):
         host_port = host_port.split(':')
         host_port = (host_port[0], int(host_port[1]), )
+    if isinstance(host_port[0], six.binary_type):
+        host_port = (host_port[0].decode('utf-8'), int(host_port[1]), )
     if isinstance(host_port[0], six.text_type):
         host_port = (host_port[0].encode('utf-8'), int(host_port[1]), )
     return host_port

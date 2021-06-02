@@ -73,6 +73,7 @@ from logs import lg
 
 from lib import nameurl
 from lib import serialization
+from lib import net_misc
 
 from main import config
 from main import settings
@@ -141,7 +142,8 @@ class ProxySender(automat.Automat):
     def to_json(self):
         j = super().to_json()
         j.update({
-            'host': ('%s://%s' % proxy_receiver.GetRouterProtoHost()) if proxy_receiver.GetRouterProtoHost() else '',
+            'proto': proxy_receiver.GetRouterProtoHost()[0] if proxy_receiver.GetRouterProtoHost() else '',
+            'host': net_misc.pack_address_text(proxy_receiver.GetRouterProtoHost()[1]) if proxy_receiver.GetRouterProtoHost() else '',
             'idurl': proxy_receiver.GetRouterIDURL(),
             'bytes_received': 0,
             'bytes_sent': self.traffic_out,
@@ -320,7 +322,7 @@ class ProxySender(automat.Automat):
         my_original_identity_src = proxy_receiver.ReadMyOriginalIdentitySource()
         if not router_idurl or not router_identity_obj or not router_proto_host or not my_original_identity_src:
             if _Debug:
-                lg.out(_DebugLevel, 'proxy_sender._do_send_packet_to_router SKIP because remote router not ready')
+                lg.out(_DebugLevel, 'proxy_sender._do_send_packet_to_router SKIP because router not ready yet')
             return self._do_add_pending_packet(outpacket, callbacks, wide, response_timeout, keep_alive)
         if outpacket.RemoteID.to_bin() == router_idurl.to_bin():
             if _Debug:
@@ -333,7 +335,7 @@ class ProxySender(automat.Automat):
             return None
         # see proxy_router.ProxyRouter : doForwardOutboxPacket() for receiving part
         json_payload = {
-            'f': my_id.getIDURL().to_bin(),    # from
+            'f': my_id.getIDURL().to_bin(),      # from
             't': outpacket.RemoteID.to_bin(),    # to
             'p': raw_data,                       # payload
             'w': wide,                           # wide

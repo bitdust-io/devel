@@ -75,7 +75,6 @@ from lib import net_misc
 
 from main import settings
 
-from userid import id_url
 from userid import identity
 from userid import known_servers
 
