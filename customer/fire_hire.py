@@ -182,8 +182,7 @@ def IsAllHired():
     if contactsdb.num_suppliers() != settings.getSuppliersNumberDesired():
         # I must have exactly that amount of suppliers already
         if _Debug:
-            lg.args(_DebugLevel, desiried_suppliers=settings.getSuppliersNumberDesired(),
-                current_suppliers=contactsdb.num_suppliers(), )
+            lg.args(_DebugLevel, desiried_suppliers=settings.getSuppliersNumberDesired(), current_suppliers=contactsdb.num_suppliers(), )
         return False
     if id_url.is_some_empty(contactsdb.suppliers()):
         # I must know all of my suppliers

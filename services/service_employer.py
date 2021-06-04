@@ -125,7 +125,7 @@ class EmployerService(LocalService):
                 self.starting_deferred = None
         else:
             self.all_suppliers_hired_event_sent = False
-            lg.info('some of my supplies are not hired yet')
+            lg.info('some of my suppliers are not hired yet, or needs to be removed')
             events.send('my-suppliers-yet-not-hired', data=dict())
             if self.starting_deferred and not self.starting_deferred.called:
                 self.starting_deferred.errback(Exception('not possible to hire enough suppliers'))

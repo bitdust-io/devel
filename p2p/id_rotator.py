@@ -87,8 +87,9 @@ from main import settings
 from main import events
 
 from userid import identity
-from userid import my_id
 from userid import known_servers
+from userid import id_url
+from userid import my_id
 
 #------------------------------------------------------------------------------
 
@@ -369,7 +370,7 @@ class IdRotator(automat.Automat):
             d = net_misc.getPageTwisted(server_url, timeout=10)
             d.addCallback(_server_replied, host, pos)
             d.addErrback(_server_failed, host, pos)
-        
+
         _ping_one_server(0)
 
     def doRebuildMyIdentity(self, *args, **kwargs):
@@ -385,6 +386,7 @@ class IdRotator(automat.Automat):
             config.conf().getInt('services/identity-propagate/max-servers') or settings.MaximumIdentitySources(),
         )
         current_sources = my_id.getLocalIdentity().getSources(as_originals=True)
+        current_contacts = list(my_id.getLocalIdentity().getContacts())
         new_sources = []
         new_idurl = args[0]
         if _Debug:
@@ -418,14 +420,23 @@ class IdRotator(automat.Automat):
             lg.warn('not enough identity sources, need to rotate again')
             self.automat('need-more-sources')
             return
-        if _Debug:
-            lg.args(_DebugLevel, new_sources=new_sources)
-        my_id.rebuildLocalIdentity(
+        contacts_changed = False
+        id_changed = my_id.rebuildLocalIdentity(
             new_sources=new_sources,
             new_revision=self.new_revision,
         )
+        new_contacts = my_id.getLocalIdentity().getContacts()
+        if len(current_contacts) != len(new_contacts):
+            contacts_changed = True
+        if not contacts_changed:
+            for pos in range(len(current_contacts)):
+                if current_contacts[pos] != new_contacts[pos]:
+                    contacts_changed = True
+                    break
         self.rotated = True
-        self.automat('my-id-updated')
+        if _Debug:
+            lg.args(_DebugLevel, new_sources=new_sources, contacts_changed=contacts_changed, id_changed=id_changed)
+        self.automat('my-id-updated', (contacts_changed, id_changed))
 
     def doSendMyIdentity(self, *args, **kwargs):
         """

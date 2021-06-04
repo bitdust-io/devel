@@ -478,6 +478,8 @@ class P2PConnector(automat.Automat):
         old_contacts = list(my_id.getLocalIdentity().getContacts())
         identity_changed = my_id.rebuildLocalIdentity()
         if not identity_changed and len(active_protos()) > 0:
+            if _Debug:
+                lg.args(_DebugLevel, identity_changed=identity_changed, contacts_changed=contacts_changed, active_protos=active_protos())
             self.automat('my-id-updated', (False, False))
             return
         new_contacts = my_id.getLocalIdentity().getContacts()
@@ -492,7 +494,7 @@ class P2PConnector(automat.Automat):
             # erase all stats about received packets
             # if some contacts in my identity has been changed
             if _Debug:
-                lg.out(4, '    my contacts were changed, erase active_protos() flags')
+                lg.out(4, '    my contacts were changed, erasing active_protos() flags')
             active_protos().clear()
         if _Debug:
             lg.out(4, '    identity HAS %sBEEN CHANGED' % ('' if identity_changed else 'NOT '))
@@ -519,6 +521,7 @@ class P2PConnector(automat.Automat):
 
         def _on_propagate_failed(err):
             lg.err('failed propagate my identity: %r' % err)
+            self.automat('my-id-propagated', [])
 
         def _do_update(check_rotate_result):
             if _Debug:
@@ -530,7 +533,6 @@ class P2PConnector(automat.Automat):
             d = propagate.update()
             d.addCallback(_do_propagate)
             d.addErrback(_on_propagate_failed)
-            d.addErrback(lambda *args: self.automat('my-id-propagated', []))
 
         def _do_rotate(check_result):
             if _Debug:
