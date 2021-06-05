@@ -508,13 +508,13 @@ def immediatelyCaching(idurl, timeout=10, try_other_sources=True):
                 lg.warn('caching task for %s was not found' % idurl)
             return None
 
-        latest_idurl, latest_rev = id_url.get_latest_revision(idurl)
+        latest_idurl, _ = id_url.get_latest_revision(idurl)
         latest_ident = None
         sources = []
         if latest_idurl:
             latest_ident = identitydb.get_ident(latest_idurl)
         if latest_ident:
-            sources = latest_ident.getSources(as_fields=False)
+            sources = latest_ident.getSources(as_originals=True)
         if sources:
             if idurl in sources:
                 sources = sources.remove(idurl)
