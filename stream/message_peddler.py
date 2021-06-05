@@ -1594,7 +1594,7 @@ class MessagePeddler(automat.Automat):
                     last_sequence_id=last_sequence_id, request_packet=request_packet)
         if not result:
             lg.err('queue keeper failed to connect to %r' % queue_id)
-            p2p_service.SendFail(request_packet, 'failed to connect')
+            p2p_service.SendFail(request_packet, 'failed to connect to the queue')
             result_defer.callback(False)
             return None
         if queue_id not in streams():
