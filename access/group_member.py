@@ -1527,21 +1527,26 @@ class GroupMember(automat.Automat):
         if self.current_target['action'] != 'connect' or self.current_target['broker_pos'] != broker_pos:
             lg.warn('current target for %r is different, skip out-dated broker connect response' % self)
             return
-        if isinstance(err, Failure) and isinstance(err.value, tuple):
-            request_result, resp_args, resp_kwargs = err.value
-            resp_payload = strng.to_text(resp_args[0].Payload).strip()
-            lg.warn('request to broker at position %d failed: %r' % (broker_pos, resp_payload, ))
-            if resp_payload.startswith('position mismatch'):
-                _, _, expected_position = resp_payload.rpartition(' ')
-                try:
-                    expected_position = int(expected_position)
-                except:
-                    lg.exc()
-                    expected_position = None
-                if expected_position is not None:
-                    if expected_position != broker_pos:
-                        self.automat('broker-position-mismatch')
-                        return
+        if isinstance(err, Failure):
+            resp_args = None
+            try:
+                request_result, resp_args, resp_kwargs = err.value
+            except:
+                lg.exc()
+            if resp_args:
+                resp_payload = strng.to_text(resp_args[0].Payload).strip()
+                lg.warn('request to broker at position %d failed: %r' % (broker_pos, resp_payload, ))
+                if resp_payload.startswith('position mismatch'):
+                    _, _, expected_position = resp_payload.rpartition(' ')
+                    try:
+                        expected_position = int(expected_position)
+                    except:
+                        lg.exc()
+                        expected_position = None
+                    if expected_position is not None:
+                        if expected_position != broker_pos:
+                            self.automat('broker-position-mismatch')
+                            return
         self.current_target = None
         self.automat('one-broker-connect-failed', broker_pos)
         if self.connecting_brokers is not None:

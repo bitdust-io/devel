@@ -203,14 +203,15 @@ class TCPFileStream():
         inbox_file_ids_to_remove = [fid for fid in self.inboxFiles.keys()]
         outbox_file_ids_to_remove = [fid for fid in self.outboxFiles.keys()]
         if _Debug:
-            lg.args(_DebugLevel, inbox_file_ids_to_remove=inbox_file_ids_to_remove, outbox_file_ids_to_remove=outbox_file_ids_to_remove)
+            lg.args(_DebugLevel, reason=reason, inbox_file_ids_to_remove=inbox_file_ids_to_remove, outbox_file_ids_to_remove=outbox_file_ids_to_remove)
         for file_id in inbox_file_ids_to_remove:
             # self.send_data(tcp_connection.CMD_ABORT, struct.pack('i', file_id) + b' ' + strng.to_bin(reason))
             self.inbox_file_done(file_id, 'failed', reason)
         for file_id in outbox_file_ids_to_remove:
-            self.send_data(tcp_connection.CMD_ABORT, struct.pack('i', file_id) + b' ' + strng.to_bin(reason))
             if self.sender.is_sending(file_id):
                 self.sender.stopFileTransfer(file_id, reason=reason)
+                if reason == 'disconnecting':
+                    self.send_data(tcp_connection.CMD_ABORT, struct.pack('i', file_id) + b' ' + strng.to_bin(reason))
             self.outbox_file_done(file_id, 'failed', reason)
 
     def data_received(self, payload):

@@ -353,7 +353,10 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         """
         Action method.
         """
-        self.stream.abort_files('disconnecting')
+        if self.state == 'DISCONNECT':
+            self.stream.abort_files('disconnecting')
+        else:
+            self.stream.abort_files()
 
     def doOpenStream(self, *args, **kwargs):
         """

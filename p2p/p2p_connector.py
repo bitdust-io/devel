@@ -199,8 +199,12 @@ class P2PConnector(automat.Automat):
         if newstate == 'INCOMMING?' and event != 'instant':
             self.automat('instant')
         if newstate == 'CONNECTED':
-            self.health_check_task = LoopingCall(self._do_id_server_health_check)
-            self.health_check_task.start(config.conf().getInt('services/identity-propagate/health-check-interval-seconds'), now=False)
+            if self.health_check_task:
+                self.health_check_task.stop()
+            health_check_interval = config.conf().getInt('services/identity-propagate/health-check-interval-seconds')
+            if health_check_interval:
+                self.health_check_task = LoopingCall(self._do_id_server_health_check)
+                self.health_check_task.start(health_check_interval, now=False)
         else:
             if self.health_check_task:
                 self.health_check_task.stop()
@@ -518,9 +522,14 @@ class P2PConnector(automat.Automat):
             d.addCallback(lambda contacts_list: self.automat('my-id-propagated', contacts_list))
             if _Debug:
                 d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='_check_rotate_propagate_my_identity._do_propagate')
+            d.addErrback(_on_propagate_failed)
 
         def _on_propagate_failed(err):
             lg.err('failed propagate my identity: %r' % err)
+            self.automat('my-id-propagated', [])
+
+        def _on_update_failed(err):
+            lg.err('failed to update my identity: %r' % err)
             self.automat('my-id-propagated', [])
 
         def _do_update(check_rotate_result):
@@ -532,7 +541,9 @@ class P2PConnector(automat.Automat):
                 return None
             d = propagate.update()
             d.addCallback(_do_propagate)
-            d.addErrback(_on_propagate_failed)
+            if _Debug:
+                d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='_check_rotate_propagate_my_identity._do_update')
+            d.addErrback(_on_update_failed)
 
         def _do_rotate(check_result):
             if _Debug:
@@ -544,6 +555,8 @@ class P2PConnector(automat.Automat):
             lg.err('identity sources are not healthy, will execute identity rotate flow now')
             d = id_rotator.run()
             d.addCallback(_do_update)
+            if _Debug:
+                d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='_check_rotate_propagate_my_identity._do_rotate')
             d.addErrback(lambda _: _do_update(False))
 
         def _do_check(x):
@@ -551,6 +564,8 @@ class P2PConnector(automat.Automat):
                 lg.out(_DebugLevel, 'p2p_connector._do_check')
             d = id_rotator.check()
             d.addCallback(_do_rotate)
+            if _Debug:
+                d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='_check_rotate_propagate_my_identity._do_check')
             d.addErrback(lambda _: _do_rotate(False))
 
         _do_check(None)
