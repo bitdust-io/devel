@@ -92,7 +92,7 @@
                 "role": "proxy-server",
                 "name": "proxy-1",
                 "join_network": true,
-                "known_id_servers": "id-a:8084:6661",
+                "known_id_servers": "id-a:8084",
                 "known_dht_seeds": "dht-2:14441,dht-3:14441"
             }
         },
@@ -111,7 +111,7 @@
                 "role": "proxy-server",
                 "name": "proxy-2",
                 "join_network": true,
-                "known_id_servers": "id-b:8084:6661",
+                "known_id_servers": "id-b:8084",
                 "known_dht_seeds": "dht-2:14441,dht-3:14441"
             }
         },
@@ -130,7 +130,7 @@
                 "role": "proxy-server",
                 "name": "proxy-3",
                 "join_network": true,
-                "known_id_servers": "id-a:8084:6661",
+                "known_id_servers": "id-a:8084",
                 "known_dht_seeds": "dht-2:14441,dht-3:14441"
             }
         },
@@ -151,7 +151,7 @@
                 "join_network": false,
                 "min_servers": 2,
                 "max_servers": 2,
-                "known_id_servers": "id-dead:8084:6661,id-a:8084:6661",
+                "known_id_servers": "id-dead:8084,id-a:8084",
                 "preferred_servers": "id-dead,id-a",
                 "health_check_interval_seconds": 5,
                 "known_dht_seeds": "dht-2:14441,dht-3:14441"
@@ -172,7 +172,7 @@
                 "role": "supplier",
                 "name": "supplier-1",
                 "join_network": true,
-                "known_id_servers": "id-a:8084:6661",
+                "known_id_servers": "id-a:8084",
                 "known_dht_seeds": "dht-2:14441,dht-3:14441",
                 "preferred_routers": "http://id-a:8084/proxy-1.xml"
             }
@@ -192,7 +192,7 @@
                 "role": "supplier",
                 "name": "supplier-2",
                 "join_network": true,
-                "known_id_servers": "id-b:8084:6661",
+                "known_id_servers": "id-b:8084",
                 "known_dht_seeds": "dht-2:14441,dht-3:14441",
                 "preferred_routers": "http://id-b:8084/proxy-2.xml"
             }
@@ -212,7 +212,7 @@
                 "role": "supplier",
                 "name": "supplier-3",
                 "join_network": true,
-                "known_id_servers": "id-a:8084:6661",
+                "known_id_servers": "id-a:8084",
                 "known_dht_seeds": "dht-2:14441,dht-3:14441",
                 "preferred_routers": "http://id-a:8084/proxy-1.xml"
             }
@@ -232,7 +232,7 @@
                 "role": "supplier",
                 "name": "supplier-4",
                 "join_network": true,
-                "known_id_servers": "id-b:8084:6661",
+                "known_id_servers": "id-b:8084",
                 "known_dht_seeds": "dht-2:14441,dht-3:14441",
                 "preferred_routers": "http://id-b:8084/proxy-2.xml"
             }
@@ -252,7 +252,7 @@
                 "role": "supplier",
                 "name": "supplier-5",
                 "join_network": true,
-                "known_id_servers": "id-a:8084:6661",
+                "known_id_servers": "id-a:8084",
                 "known_dht_seeds": "dht-2:14441,dht-3:14441",
                 "preferred_routers": "http://id-a:8084/proxy-1.xml"
             }
@@ -275,7 +275,7 @@
                 "known_dht_seeds": "dht-2:14441,dht-3:14441",
                 "min_servers": 2,
                 "max_servers": 2,
-                "known_id_servers": "id-dead:8084:6661,id-a:8084:6661",
+                "known_id_servers": "id-dead:8084,id-a:8084",
                 "preferred_servers": "id-dead,id-a",
                 "health_check_interval_seconds": 5,
                 "preferred_routers": "http://id-a:8084/proxy-1.xml"
@@ -300,7 +300,7 @@
                 "name": "customer-1",
                 "join_network": true,
                 "known_dht_seeds": "dht-2:14441,dht-3:14441",
-                "known_id_servers": "id-a:8084:6661",
+                "known_id_servers": "id-a:8084",
                 "preferred_routers": "http://id-a:8084/proxy-1.xml",
                 "block_size": "10 KB",
                 "num_suppliers": 2,
@@ -326,7 +326,7 @@
                 "name": "customer-2",
                 "join_network": true,
                 "known_dht_seeds": "dht-2:14441,dht-3:14441",
-                "known_id_servers": "id-b:8084:6661",
+                "known_id_servers": "id-b:8084",
                 "preferred_routers": "http://id-a:8084/proxy-3.xml",
                 "block_size": "10 KB",
                 "num_suppliers": 2,
@@ -352,7 +352,7 @@
                 "name": "customer-3",
                 "join_network": true,
                 "known_dht_seeds": "dht-2:14441,dht-3:14441",
-                "known_id_servers": "id-a:8084:6661",
+                "known_id_servers": "id-a:8084",
                 "preferred_routers": "http://id-a:8084/proxy-1.xml",
                 "block_size": "10 KB",
                 "num_suppliers": 2,
@@ -378,7 +378,7 @@
                 "name": "customer-4",
                 "join_network": true,
                 "known_dht_seeds": "dht-2:14441,dht-3:14441",
-                "known_id_servers": "id-b:8084:6661",
+                "known_id_servers": "id-b:8084",
                 "preferred_routers": "http://id-b:8084/proxy-2.xml",
                 "block_size": "10 KB",
                 "num_suppliers": 2,
@@ -407,7 +407,7 @@
                 "known_dht_seeds": "dht-2:14441,dht-3:14441",
                 "min_servers": 2,
                 "max_servers": 2,
-                "known_id_servers": "id-dead:8084:6661,id-a:8084:6661",
+                "known_id_servers": "id-dead:8084,id-a:8084",
                 "preferred_servers": "id-dead,id-a",
                 "health_check_interval_seconds": 5,
                 "preferred_routers": "http://id-a:8084/proxy-1.xml",
@@ -454,7 +454,7 @@
                 "role": "message-broker",
                 "name": "broker-1",
                 "join_network": true,
-                "known_id_servers": "id-a:8084:6661",
+                "known_id_servers": "id-a:8084",
                 "known_dht_seeds": "dht-2:14441,dht-3:14441",
                 "preferred_routers": "http://id-a:8084/proxy-1.xml"
             }
@@ -474,7 +474,7 @@
                 "role": "message-broker",
                 "name": "broker-2",
                 "join_network": true,
-                "known_id_servers": "id-b:8084:6661",
+                "known_id_servers": "id-b:8084",
                 "known_dht_seeds": "dht-2:14441,dht-3:14441",
                 "preferred_routers": "http://id-b:8084/proxy-2.xml"
             }
@@ -494,7 +494,7 @@
                 "role": "message-broker",
                 "name": "broker-3",
                 "join_network": true,
-                "known_id_servers": "id-a:8084:6661",
+                "known_id_servers": "id-a:8084",
                 "known_dht_seeds": "dht-2:14441,dht-3:14441",
                 "preferred_routers": "http://id-a:8084/proxy-1.xml"
             }
@@ -514,7 +514,7 @@
                 "role": "message-broker",
                 "name": "broker-4",
                 "join_network": true,
-                "known_id_servers": "id-b:8084:6661",
+                "known_id_servers": "id-b:8084",
                 "known_dht_seeds": "dht-2:14441,dht-3:14441",
                 "preferred_routers": "http://id-b:8084/proxy-2.xml"
             }
@@ -536,7 +536,7 @@
                 "join_network": true,
                 "min_servers": 2,
                 "max_servers": 2,
-                "known_id_servers": "id-dead:8084:6661,id-a:8084:6661",
+                "known_id_servers": "id-dead:8084,id-a:8084",
                 "preferred_servers": "id-dead,id-a",
                 "health_check_interval_seconds": 5,
                 "known_dht_seeds": "dht-2:14441,dht-3:14441",

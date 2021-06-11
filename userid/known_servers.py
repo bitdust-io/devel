@@ -39,7 +39,10 @@ def default_nodes():
     network_info = network_config.read_network_config_file()
     identity_servers = {}
     for identity_server in network_info['service_identity_propagate']['known_servers']:
-        identity_servers[strng.to_bin(identity_server['host'])] = (identity_server['http_port'], identity_server['tcp_port'], )
+        identity_servers[strng.to_bin(identity_server['host'])] = (
+            identity_server['http_port'],
+            identity_server.get('tcp_port', 6661),
+        )
     return identity_servers
 
 
@@ -59,7 +62,7 @@ def by_host():
 
         api.config_set(
             "services/identity-propagate/known-servers",
-            "myfirstserver.net:80:6661, secondmachine.net:8080:6662, thirdnode.gov.eu:80:16661",
+            "myfirstserver.net:80, secondmachine.net:8080, thirdnode.gov.eu:80",
         )
 
     Also check file `default_network.json` in the repository root.
@@ -89,7 +92,10 @@ def by_host():
                 id_server = id_server_str.strip().split(':')
                 id_server_host = strng.to_bin(id_server[0].strip())
                 id_server_web_port = int(id_server[1].strip())
-                id_server_tcp_port = int(id_server[2].strip())
+                if len(id_server) > 2:
+                    id_server_tcp_port = int(id_server[2].strip())
+                else:
+                    id_server_tcp_port = 6661
             except:
                 continue
             overridden_identity_servers[id_server_host] = (id_server_web_port, id_server_tcp_port, )

@@ -109,6 +109,7 @@ from userid import my_id
 
 CRITICAL_PUSH_MESSAGE_FAILS = 2
 MAX_BUFFERED_MESSAGES = 10
+MAX_CONNECT_LOOKUP_ATTEMPTS = 7
 
 _ActiveGroupMembers = {}
 _ActiveGroupMembersByIDURL = {}
@@ -308,6 +309,7 @@ class GroupMember(automat.Automat):
         self.active_queue_id = None
         self.targets = []
         self.current_target = None
+        self.connect_lookup_attempts = 0
         self.dead_broker_id = None
         self.hired_brokers = {}
         self.connected_brokers = {}
@@ -1171,9 +1173,9 @@ class GroupMember(automat.Automat):
             return
         if top_broker_pos == 0:
             if self.missing_brokers:
-                lg.warn('top broker is found, but there are missing brokers in %r' % self)
+                lg.warn('top broker is found, but there are missing brokers in DHT for %r' % self)
             else:
-                lg.info('all good, did not found any missing brokers in %r' % self)
+                lg.info('all good, did not found any missing brokers in DHT for %r' % self)
             self._do_lookup_connect_brokers(
                 hiring_positions=list(self.missing_brokers),
                 available_brokers=brokers_to_be_connected,
@@ -1217,6 +1219,7 @@ class GroupMember(automat.Automat):
         for broker_pos, _ in available_brokers:
             self.connecting_brokers.add(broker_pos)
         self.targets = []
+        self.connect_lookup_attempts = 0
         for broker_pos, broker_idurl in available_brokers:
             self.targets.append({
                 'action': 'connect',
@@ -1233,9 +1236,10 @@ class GroupMember(automat.Automat):
 
     def _do_connect_hire_next_broker(self):
         if _Debug:
-            lg.args(_DebugLevel, targets=self.targets)
+            lg.args(_DebugLevel, targets=self.targets, attempts=self.connect_lookup_attempts)
         if self.targets:
             self.current_target = self.targets.pop(0)
+            self.connect_lookup_attempts += 1
             if self.current_target:
                 if self.current_target['action'] == 'connect':
                     self._do_request_service_one_broker(self.current_target['broker_idurl'], self.current_target['broker_pos'])
@@ -1314,11 +1318,13 @@ class GroupMember(automat.Automat):
             preferred_brokers = id_url.to_bin_list(preferred_brokers)
         if preferred_brokers:
             preferred_brokers = [x for x in preferred_brokers if x not in exclude_brokers]
+        if _Debug:
+            lg.args(_DebugLevel, exclude_brokers=exclude_brokers, preferred_brokers=preferred_brokers)
         if preferred_brokers:
             preferred_broker_idurl = id_url.field(preferred_brokers[0])
             if _Debug:
                 lg.args(_DebugLevel, preferred_broker_idurl=preferred_broker_idurl)
-            if preferred_broker_idurl:
+            if preferred_broker_idurl and id_url.is_not_in(preferred_broker_idurl, exclude_brokers, as_field=False):
                 result = p2p_service_seeker.connect_known_node(
                     remote_idurl=preferred_broker_idurl,
                     service_name='service_message_broker',
@@ -1329,7 +1335,7 @@ class GroupMember(automat.Automat):
                 result.addCallback(self._on_broker_hired, broker_pos)
                 if _Debug:
                     result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='group_member._do_lookup_one_broker')
-                result.addErrback(self._on_broker_lookup_failed, broker_pos)
+                result.addErrback(self._on_broker_connect_failed, broker_pos)
                 return result
         result = p2p_service_seeker.connect_random_node(
             lookup_method=lookup.random_message_broker,
@@ -1398,9 +1404,10 @@ class GroupMember(automat.Automat):
 
     def _do_cleanup_targets(self):
         if _Debug:
-            lg.args(_DebugLevel, targets=len(self.targets), current_target=self.current_target)
+            lg.args(_DebugLevel, targets=len(self.targets), current_target=self.current_target, attempts=self.connect_lookup_attempts)
         self.current_target = None
         self.targets.clear()
+        self.connect_lookup_attempts = 0
         self.connected_brokers.clear()
         self.connecting_brokers.clear()
         self.hired_brokers.clear()
@@ -1489,33 +1496,42 @@ class GroupMember(automat.Automat):
 
     def _on_broker_lookup_failed(self, err, broker_pos):
         if _Debug:
-            lg.args(_DebugLevel, err=err, broker_pos=broker_pos, current_target=self.current_target)
+            lg.args(_DebugLevel, current_target=self.current_target)
+        lg.err('was not able to hire broker at position %d : %r' % (broker_pos, err, ))
         if not self.current_target:
             lg.warn('current target for %r is empty' % self)
             return
         if self.current_target['broker_pos'] != broker_pos or self.current_target['action'] != 'hire':
             lg.warn('current target for %r is different, skip out-dated broker hire response' % self)
             return
-        if isinstance(err, Failure) and isinstance(err.value, tuple):
-            request_result, resp_args, resp_kwargs = err.value
-            resp_payload = strng.to_text(resp_args[0].Payload).strip()
-            lg.warn('request to broker at position %d failed: %r' % (broker_pos, resp_payload, ))
-            if resp_payload.startswith('position mismatch'):
-                _, _, expected_position = resp_payload.rpartition(' ')
-                try:
-                    expected_position = int(expected_position)
-                except:
-                    lg.exc()
-                    expected_position = None
-                if expected_position is not None:
-                    if expected_position != broker_pos:
-                        self.automat('broker-position-mismatch')
-                        return
-        self.current_target = None
+        if isinstance(err, Failure):
+            resp_args = None
+            try:
+                request_result, resp_args, resp_kwargs = err.value.args
+            except:
+                lg.exc()
+            if resp_args:
+                resp_payload = strng.to_text(resp_args[0].Payload).strip()
+                lg.warn('lookup request to broker at position %d failed: %r' % (broker_pos, resp_payload, ))
+                if resp_payload.startswith('position mismatch'):
+                    _, _, expected_position = resp_payload.rpartition(' ')
+                    try:
+                        expected_position = int(expected_position)
+                    except:
+                        lg.exc()
+                        expected_position = None
+                    if expected_position is not None:
+                        if expected_position != broker_pos:
+                            lg.warn('detected broker position mismatch from lookup request: %r != %r' % (expected_position, broker_pos, ))
+                            self.automat('broker-position-mismatch')
+                            return
         self.automat('one-broker-lookup-failed', broker_pos)
         self.hired_brokers[broker_pos] = None
         if self.connecting_brokers is not None:
             self.connecting_brokers.discard(broker_pos)
+        if self.connect_lookup_attempts < MAX_CONNECT_LOOKUP_ATTEMPTS:
+            self.targets.append(self.current_target)
+        self.current_target = None
         self._do_connect_hire_next_broker()
 
     def _on_broker_connect_failed(self, err, broker_pos):
@@ -1530,7 +1546,7 @@ class GroupMember(automat.Automat):
         if isinstance(err, Failure):
             resp_args = None
             try:
-                request_result, resp_args, resp_kwargs = err.value
+                request_result, resp_args, resp_kwargs = err.value.args
             except:
                 lg.exc()
             if resp_args:
@@ -1545,6 +1561,7 @@ class GroupMember(automat.Automat):
                         expected_position = None
                     if expected_position is not None:
                         if expected_position != broker_pos:
+                            lg.warn('detected broker position mismatch from connect request: %r != %r' % (expected_position, broker_pos, ))
                             self.automat('broker-position-mismatch')
                             return
         self.current_target = None

@@ -52,7 +52,6 @@ _DebugLevel = 8
 
 #------------------------------------------------------------------------------
 
-import os
 import sys
 
 try:
@@ -66,8 +65,6 @@ from twisted.internet.defer import DeferredList, Deferred
 
 from logs import lg
 
-from system import bpio
-
 from lib import nameurl
 from lib import net_misc
 from lib import strng
@@ -76,16 +73,11 @@ from lib import packetid
 from contacts import contactsdb
 from contacts import identitycache
 
-from userid import known_servers
 from userid import my_id
 from userid import id_url
 
 from p2p import commands
 from p2p import p2p_stats
-
-from main import settings
-
-from system import tmpfile
 
 from crypt import signed
 
@@ -261,29 +253,22 @@ def FetchCustomers():
 def SendServers():
     """
     My identity file can be stored in different locations, see the "sources" field.
-
     So I can use different identity servers to store more secure and reliable. This
-    method will send my identity file to all my identity servers via
-    transport_tcp.
+    method will send my identity file to all my identity servers with HTTP POST method.
     """
-    from transport.tcp import tcp_node
-    _, sendfilename = tmpfile.make("propagate", close_fd=True)
     LocalIdentity = my_id.getLocalIdentity()
-    bpio.WriteTextFile(sendfilename, LocalIdentity.serialize(as_text=True))
+    payload = LocalIdentity.serialize(as_text=False)
     dlist = []
     for idurl in LocalIdentity.getSources(as_originals=True):
-        protocol, host, port, filename = nameurl.UrlParse(idurl)
-        # TODO: rebuild identity-server logic to be able to send my identity via HTTP POST instead of TCP and
-        # get rid of second TCP port at all 
-        webport, tcpport = known_servers.by_host().get(host, (
-            # by default use "expected" port numbers
-            settings.IdentityWebPort(), settings.IdentityServerPort()))
-        normalized_address = net_misc.normalize_address((host, int(tcpport), ))
-        dlist.append(tcp_node.send(
-            sendfilename, normalized_address, 'Identity', keep_alive=False,
+        _, host, webport, filename = nameurl.UrlParse(idurl)
+        url = net_misc.pack_address((host, webport, ), proto='http')
+        dlist.append(net_misc.http_post_data(
+            url=url,
+            data=payload,
+            connectTimeout=15,
         ))
         if _Debug:
-            lg.args(_DebugLevel, normalized_address=normalized_address, filename=filename)
+            lg.args(_DebugLevel, url=url, filename=filename, size=len(payload))
     dl = DeferredList(dlist, consumeErrors=True)
     return dl
 

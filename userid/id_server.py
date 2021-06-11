@@ -387,7 +387,17 @@ class IdServerFactory(ServerFactory):
 
 class WebMainPage(resource.Resource):
 
-    def render(self, request):
+    def render_POST(self, request):
+        inp = BytesIO(request.content.read())
+        fin, fpath = tmpfile.make('idsrv', extension='.xml')
+        inp_data = inp.read()
+        inp.close()
+        os.write(fin, inp_data)
+        os.close(fin)
+        A('incoming-identity-file', fpath)
+        return ''
+
+    def render_GET(self, request):
         src = '''<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
 <html>
 <head>

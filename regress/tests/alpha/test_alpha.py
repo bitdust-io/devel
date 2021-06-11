@@ -677,23 +677,19 @@ def scenario9():
 
     # preparation before switching of the ID server
     kw.config_set_v1('proxy-rotated', 'services/identity-propagate/automatic-rotate-enabled', 'true')
-    kw.config_set_v1('proxy-rotated', 'services/identity-propagate/known-servers',
-                     'id-a:8084:6661,id-b:8084:6661,id-c:8084:6661')
+    kw.config_set_v1('proxy-rotated', 'services/identity-propagate/known-servers', 'id-a:8084,id-b:8084,id-c:8084')
     kw.config_set_v1('proxy-rotated', 'services/identity-propagate/preferred-servers', '')
 
     kw.config_set_v1('customer-rotated', 'services/identity-propagate/automatic-rotate-enabled', 'true')
-    kw.config_set_v1('customer-rotated', 'services/identity-propagate/known-servers',
-                     'id-a:8084:6661,id-b:8084:6661,id-c:8084:6661')
+    kw.config_set_v1('customer-rotated', 'services/identity-propagate/known-servers', 'id-a:8084,id-b:8084,id-c:8084')
     kw.config_set_v1('customer-rotated', 'services/identity-propagate/preferred-servers', '')
 
     kw.config_set_v1('supplier-rotated', 'services/identity-propagate/automatic-rotate-enabled', 'true')
-    kw.config_set_v1('supplier-rotated', 'services/identity-propagate/known-servers',
-                     'id-a:8084:6661,id-b:8084:6661,id-c:8084:6661')
+    kw.config_set_v1('supplier-rotated', 'services/identity-propagate/known-servers', 'id-a:8084,id-b:8084,id-c:8084')
     kw.config_set_v1('supplier-rotated', 'services/identity-propagate/preferred-servers', '')
 
     kw.config_set_v1('broker-rotated', 'services/identity-propagate/automatic-rotate-enabled', 'true')
-    kw.config_set_v1('broker-rotated', 'services/identity-propagate/known-servers',
-                     'id-a:8084:6661,id-b:8084:6661,id-c:8084:6661')
+    kw.config_set_v1('broker-rotated', 'services/identity-propagate/known-servers', 'id-a:8084,id-b:8084,id-c:8084')
     kw.config_set_v1('broker-rotated', 'services/identity-propagate/preferred-servers', '')
 
     kw.config_set_v1('customer-3', 'services/employer/candidates', '')

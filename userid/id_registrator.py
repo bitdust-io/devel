@@ -36,7 +36,7 @@ ping them and register your identity.
 
 But you can decide which ID servers you prefer and modify your "known" ID servers:
 
-    bitdust set services/identity-propagate/known-servers first-server.com:80:6661,second-host.net:8080:6661
+    bitdust set services/identity-propagate/known-servers first-server.com:80,second-host.net:8080
 
 
 Your global IDURL is formed based on your nickname and DNS name (or IP address) of the first ID server.
@@ -48,12 +48,12 @@ This process will be automated and network identification will become much more 
 To be able to test locally you can start your own local ID server:
 
     bitdust set services/identity-server/host localhost
-    ~/.bitdust/venv/bin/python userid/id_server.py 8080 6661
+    ~/.bitdust/venv/bin/python userid/id_server.py 8080
 
 
 Modify your "known" ID servers:
 
-    bitdust set services/identity-propagate/known-servers localhost:8080:6661
+    bitdust set services/identity-propagate/known-servers localhost:8080
 
 
 Modify your settings to use only one ID server:
@@ -433,8 +433,7 @@ class IdRegistrator(automat.Automat):
             if webport == 80:
                 webport = ''
             server_url = nameurl.UrlMake('http', strng.to_text(host), webport, '')
-            lg.out(4, '               connecting to %s   known tcp port is %d' % (
-                server_url, tcpport, ))
+            lg.out(4, '               connecting to %s' % server_url)
             d = net_misc.getPageTwisted(server_url, timeout=7)
             d.addCallback(_cb, host)
             d.addErrback(_eb, host)
@@ -625,9 +624,6 @@ class IdRegistrator(automat.Automat):
         lg.out(4, '    my key is ready')
         ident = my_id.buildDefaultIdentity(
             name=login, ip=externalIP, idurls=self.free_idurls)
-        # my_id.rebuildLocalIdentity(
-        #     identity_object=ident, revision_up=True, save_identity=False)
-        # localIP = bpio.ReadTextFile(settings.LocalIPFilename())
         my_identity_xmlsrc = ident.serialize(as_text=True)
         newfilename = settings.LocalIdentityFilename() + '.new'
         bpio.WriteTextFile(newfilename, my_identity_xmlsrc)
@@ -644,20 +640,19 @@ class IdRegistrator(automat.Automat):
         """
         if _Debug:
             lg.out(_DebugLevel, 'id_registrator._send_new_identity')
-        from transport.tcp import tcp_node
-        sendfilename = settings.LocalIdentityFilename() + '.new'
         dlist = []
+        payload = self.new_identity.serialize(as_text=False)
         for idurl in self.new_identity.getSources(as_originals=True):
             self.free_idurls.remove(strng.to_bin(idurl))
-            _, host, _, _ = nameurl.UrlParse(idurl)
-            _, tcpport = known_servers.by_host().get(
-                host, (settings.IdentityWebPort(), settings.IdentityServerPort()))
-            srvhost = net_misc.pack_address((host, tcpport, ))
-            if _Debug:
-                lg.out(_DebugLevel, '    sending to %r via TCP' % srvhost)
-            dlist.append(tcp_node.send(
-                sendfilename, srvhost, 'Identity', keep_alive=False,
+            _, host, webport, filename = nameurl.UrlParse(idurl)
+            url = net_misc.pack_address((host, webport, ), proto='http')
+            dlist.append(net_misc.http_post_data(
+                url=url,
+                data=payload,
+                connectTimeout=15,
             ))
+            if _Debug:
+                lg.args(_DebugLevel, url=url, filename=filename, size=len(payload))
         return DeferredList(dlist, fireOnOneCallback=True)
 
 #------------------------------------------------------------------------------

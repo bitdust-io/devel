@@ -389,30 +389,30 @@ def cmd_identity(opts, args, overDict, running, executablePath):
     my_id.init()
 
     def _do_cmd():
-        if args[0] == 'idurl':
+        if args[0] == 'idurl' and len(args) <= 1:
             if my_id.isLocalIdentityReady():
                 print_text(my_id.getLocalID())
             else:
                 print_text('local identity is not valid or not exist')
             return 0
-    
+
         if args[0] in ['globid', 'globalid', 'gid', 'glid', ] or (args[0] == 'id' and len(args) <= 1):
             if my_id.isLocalIdentityReady():
                 print_text(my_id.getGlobalID())
             else:
                 print_text('local identity is not valid or not exist')
             return 0
-    
+
         if len(args) == 1 or args[1].lower() in ['info', '?', 'show', 'print', ]:
             if my_id.isLocalIdentityReady():
                 print_text(my_id.getLocalIdentity().serialize(as_text=True))
             else:
                 print_text('local identity is not valid or not exist')
             return 0
-    
+
         from twisted.internet import reactor  # @UnresolvedImport
-    
-        if args[1] in ['server', 'srv', ]:
+
+        if args[1] in ['server', 'srv', ] and args[0]:
             def _run_stand_alone_id_server():
                 from logs import lg
                 from userid import id_server
@@ -423,7 +423,7 @@ def cmd_identity(opts, args, overDict, running, executablePath):
                     id_server.A, 'init', (settings.getIdServerWebPort(), settings.getIdServerTCPPort()))
                 reactor.callLater(0, id_server.A, 'start')  # @UndefinedVariable
                 reactor.run()  # @UndefinedVariable
-    
+
             if len(args) <= 2:
                 if not running:
                     _run_stand_alone_id_server()
@@ -443,7 +443,7 @@ def cmd_identity(opts, args, overDict, running, executablePath):
                 tpl = jsontemplate.Template(templ.TPL_RAW)
                 return call_jsonrpc_method_template_and_stop('service_start', tpl, 'service_identity_server')
             return 2
-    
+
         def _register():
             if len(args) <= 2:
                 return 2
@@ -457,7 +457,6 @@ def cmd_identity(opts, args, overDict, running, executablePath):
             from automats import automat
             from main import initializer
             from lib import misc
-            from logs import lg
             if not misc.ValidUserName(args[2]):
                 print_text('invalid user name')
                 return 0
@@ -472,7 +471,7 @@ def cmd_identity(opts, args, overDict, running, executablePath):
             else:
                 print_text('identity creation failed, please try again later')
             return 0
-    
+
         def _recover():
             from system import bpio
             from lib import nameurl
@@ -511,7 +510,7 @@ def cmd_identity(opts, args, overDict, running, executablePath):
             else:
                 print_text('identity recovery FAILED')
             return 0
-    
+
         if args[1].lower() in ['create', 'new', 'register', 'generate', ]:
             if my_id.isLocalIdentityReady():
                 print_text('local identity [%s] already exist\n' % my_id.getIDName())
@@ -520,7 +519,7 @@ def cmd_identity(opts, args, overDict, running, executablePath):
                 print_text('BitDust is running at the moment, need to stop the software first\n')
                 return 0
             return _register()
-    
+
         if len(args) >= 2 and args[1].lower() in ['bk', 'backup', 'save', ]:
             from interface import api
             key_id = 'master'
@@ -548,13 +547,13 @@ def cmd_identity(opts, args, overDict, running, executablePath):
                     key_json['result']['creator'], filenameto))
                 return 0
             return 2
-    
+
         if args[1].lower() in ['restore', 'recover', 'read', 'load', ]:
             if running:
                 print_text('BitDust is running at the moment, need to stop the software first\n')
                 return 0
             return _recover()
-    
+
         if args[1].lower() in ['delete', 'remove', 'erase', 'del', 'rm', 'kill']:
             if running:
                 print_text('BitDust is running at the moment, need to stop the software first\n')

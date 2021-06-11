@@ -74,8 +74,6 @@ from lib import serialization
 from crypt import signed
 from crypt import my_keys
 
-from main import settings
-
 from transport import gateway
 
 #------------------------------------------------------------------------------
@@ -227,6 +225,7 @@ def SendAckNoRequest(remoteID, packetid, response='', wide=False, callbacks={}):
         lg.out(_DebugLevel, "p2p_service.SendAckNoRequest packetID=%s to %s  with %d bytes" % (
             result.PacketID, result.RemoteID, len(response)))
     gateway.outbox(result, wide=wide, callbacks=callbacks)
+    return result
 
 #------------------------------------------------------------------------------
 
@@ -273,7 +272,6 @@ def SendFailNoRequest(remoteID, packetID, response=''):
     return result
 
 #------------------------------------------------------------------------------
-
 
 def Identity(newpacket, send_ack=True):
     """

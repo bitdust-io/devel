@@ -129,7 +129,6 @@ def my_host(normalize=False):
 
 #------------------------------------------------------------------------------
 
-
 def receive(options):
     global _MyIDURL
     global _MyHost

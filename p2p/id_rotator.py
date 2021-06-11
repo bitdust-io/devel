@@ -88,7 +88,6 @@ from main import events
 
 from userid import identity
 from userid import known_servers
-from userid import id_url
 from userid import my_id
 
 #------------------------------------------------------------------------------
@@ -258,7 +257,12 @@ class IdRotator(automat.Automat):
             try:
                 for srv in strng.to_text(config.conf().getData('services/identity-propagate/known-servers')).split(','):
                     if srv.strip():
-                        host, web_port, tcp_port = srv.strip().split(':')
+                        parts = srv.strip().split(':')
+                        if len(parts) == 2:
+                            host, web_port = parts
+                            tcp_port = settings.IdentityServerPort()
+                        else:
+                            host, web_port, tcp_port = parts
                         self.preferred_servers[host] = (int(web_port), int(tcp_port), )
             except:
                 lg.exc()
@@ -599,27 +603,28 @@ class IdRotator(automat.Automat):
         """
         Send my updated identity to the identity servers to register it.
         """
-        from transport.tcp import tcp_node
-        sendfilename = settings.LocalIdentityFilename()
         my_sources = my_id.getLocalIdentity().getSources(as_originals=True)
+        payload = my_id.getLocalIdentity().serialize(as_text=False)
         dlist = []
         if _Debug:
             lg.out(_DebugLevel, 'id_rotator._do_send_my_identity my_sources=%r' % my_sources)
         for idurl_bin in my_sources:
-            _, host, _, _ = nameurl.UrlParse(idurl_bin)
-            tcpport = None
+            _, host, _webport, filename = nameurl.UrlParse(idurl_bin)
+            webport = None
             if host in self.preferred_servers:
-                tcpport = int(self.preferred_servers[host][1])
-            if not tcpport and host in self.known_servers:
-                tcpport = int(self.known_servers[host][1])
-            if not tcpport:
-                tcpport = settings.IdentityServerPort()
-            srvhost = net_misc.pack_address((host, tcpport, ))
-            if _Debug:
-                lg.out(_DebugLevel, '    sending to %r via TCP' % srvhost)
-            dlist.append(tcp_node.send(
-                sendfilename, srvhost, 'Identity', keep_alive=False,
+                webport = int(self.preferred_servers[host][0])
+            if not webport and host in self.known_servers:
+                webport = int(self.known_servers[host][0])
+            if not webport:
+                webport = _webport
+            url = net_misc.pack_address((host, webport, ), proto='http')
+            dlist.append(net_misc.http_post_data(
+                url=url,
+                data=payload,
+                connectTimeout=15,
             ))
+            if _Debug:
+                lg.args(_DebugLevel, url=url, filename=filename, size=len(payload))
         return DeferredList(dlist, fireOnOneCallback=True)
 
     def _do_verify_my_sources(self):

@@ -52,48 +52,39 @@
     "known_servers": [
       {
         "host": "p2p-id.ru",
-        "http_port": 80,
-        "tcp_port": 6661
+        "http_port": 80
       },
       {
         "host": "p2p-alice.ai",
-        "http_port": 80,
-        "tcp_port": 6661
+        "http_port": 80
       },
       {
         "host": "bitdust.ai",
-        "http_port": 80,
-        "tcp_port": 6661
+        "http_port": 80
       },
       {
         "host": "bitrex.ai",
-        "http_port": 80,
-        "tcp_port": 6661
+        "http_port": 80
       },
       {
         "host": "root-node.ai",
-        "http_port": 80,
-        "tcp_port": 6661
+        "http_port": 80
       },
       {
         "host": "bahamas.ai",
-        "http_port": 80,
-        "tcp_port": 6661
+        "http_port": 80
       },
       {
         "host": "peer2peer.ai",
-        "http_port": 80,
-        "tcp_port": 6661
+        "http_port": 80
       },
       {
         "host": "webapp.ai",
-        "http_port": 80,
-        "tcp_port": 6661
+        "http_port": 80
       },
       {
         "host": "seed.bitdust.io",
-        "http_port": 80,
-        "tcp_port": 6661
+        "http_port": 80
       }
     ],
     "whitelisted_servers": []

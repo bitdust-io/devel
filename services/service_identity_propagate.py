@@ -66,7 +66,10 @@ class IdentityPropagateService(LocalService):
                     id_server = id_server_str.strip().split(':')
                     id_server_host = id_server[0].strip()
                     id_server_http_port = int(id_server[1].strip())
-                    id_server_tcp_port = int(id_server[2].strip())
+                    if len(id_server) > 2:
+                        id_server_tcp_port = int(id_server[2].strip())
+                    else:
+                        id_server_tcp_port = 6661
                 except:
                     continue
                 known_identity_servers.append({
