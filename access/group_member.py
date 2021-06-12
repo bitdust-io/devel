@@ -618,6 +618,7 @@ class GroupMember(automat.Automat):
         elif event == 'brokers-read':
             self._do_lookup_connect_brokers(hiring_positions=[], available_brokers=list(kwargs['known_brokers'].items()))
         else:
+            groups.clear_brokers(self.group_creator_id)
             self._do_connect_lookup_rotate_brokers(existing_brokers=kwargs['dht_brokers'])
 
     def doCleanRequests(self, *args, **kwargs):
@@ -1238,7 +1239,15 @@ class GroupMember(automat.Automat):
         if _Debug:
             lg.args(_DebugLevel, targets=self.targets, attempts=self.connect_lookup_attempts)
         if self.targets:
-            self.current_target = self.targets.pop(0)
+            new_target = None
+            for target in self.targets:
+                if new_target is None:
+                    new_target = target
+                if new_target['broker_pos'] >= target['broker_pos']:
+                    new_target = target
+            self.current_target = new_target
+            self.targets.remove(new_target)
+            # self.current_target = self.targets.pop(0)
             self.connect_lookup_attempts += 1
             if self.current_target:
                 if self.current_target['action'] == 'connect':
