@@ -474,10 +474,10 @@ class QueueKeeper(automat.Automat):
             ack_timeout=15,
             force_handshake=True,
         )
-        result.addCallback(self._on_other_broker_response)
+        result.addCallback(self._on_other_broker_response, desired_position=self.new_possible_position)
         if _Debug:
             result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='queue_keeper.doVerifyOtherBroker')
-        result.addErrback(self._on_other_broker_failed)
+        result.addErrback(self._on_other_broker_failed, desired_position=self.new_possible_position)
 
     def doReconnect(self, *args, **kwargs):
         """
@@ -652,15 +652,15 @@ class QueueKeeper(automat.Automat):
             self.dht_read_use_cache = False
             reactor.callLater(0, self.automat, 'connect')  # @UndefinedVariable
 
-    def _on_other_broker_response(self, idurl):
+    def _on_other_broker_response(self, idurl, desired_position):
         if _Debug:
-            lg.args(_DebugLevel, idurl=idurl)
+            lg.args(_DebugLevel, idurl=idurl, desired_position=desired_position)
         if idurl:
-            self.automat('other-broker-connected')
+            self.automat('other-broker-connected', desired_position=desired_position)
         else:
-            self.automat('other-broker-disconnected')
+            self.automat('other-broker-disconnected', desired_position=desired_position)
 
-    def _on_other_broker_failed(self, err):
+    def _on_other_broker_failed(self, err, desired_position):
         if _Debug:
-            lg.args(_DebugLevel, err=err)
-        self.automat('other-broker-disconnected')
+            lg.args(_DebugLevel, err=err, desired_position=desired_position)
+        self.automat('other-broker-disconnected', desired_position=desired_position)

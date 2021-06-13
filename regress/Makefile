@@ -187,4 +187,4 @@ test_log: prepare run_all_log
 test: prepare run_all report
 
 shell:
-	docker-compose --file tests/$(test)/docker-compose.yml exec $(node) bash
+	docker-compose --file tests/alpha/docker-compose.yml exec $(node) bash

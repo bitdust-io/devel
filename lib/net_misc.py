@@ -33,10 +33,10 @@ Some network routines
 #------------------------------------------------------------------------------
 
 from __future__ import absolute_import
+import six
 import six.moves.urllib.request, six.moves.urllib.parse, six.moves.urllib.error  # @UnresolvedImport
 import six.moves.urllib.request, six.moves.urllib.error, six.moves.urllib.parse  # @UnresolvedImport
 import six.moves.urllib.parse  # @UnresolvedImport
-import six
 from io import open
 
 #------------------------------------------------------------------------------
@@ -49,8 +49,6 @@ import random
 import platform
 import mimetypes
 import subprocess
-# fun mountain from
-# python imports :-)
 
 #------------------------------------------------------------------------------
 
@@ -61,7 +59,6 @@ except:
 
 from twisted.internet.defer import Deferred, DeferredList, succeed, fail
 from twisted.internet import protocol
-# from twisted.internet.utils import getProcessOutput
 from twisted.web import iweb
 from twisted.web import client
 from twisted.web import http_headers
@@ -162,28 +159,34 @@ def normalize_address(host_port):
     if isinstance(host_port, six.string_types):
         host_port = host_port.split(':')
         host_port = (host_port[0], int(host_port[1]), )
+    if isinstance(host_port[0], six.binary_type):
+        host_port = (host_port[0].decode('utf-8'), int(host_port[1]), )
     if isinstance(host_port[0], six.text_type):
         host_port = (host_port[0].encode('utf-8'), int(host_port[1]), )
     return host_port
 
 
-def pack_address(host_port):
+def pack_address(host_port, proto=None):
     """
     Same as `normalize_address()`, but always return address as byte string: b"123.45.67.89:8080"
     """
     if not host_port:
+        if proto:
+            return strng.to_bin(proto) + b'://'
         return host_port
     norm = normalize_address(host_port)
+    if proto:
+        return strng.to_bin(proto) + b'://' + norm[0] + b':' + str(norm[1]).encode()
     return norm[0] + b':' + str(norm[1]).encode()
 
 
-def pack_address_text(host_port):
+def pack_address_text(host_port, proto=None):
     """
     Same as `pack_address()`, but returns text string or None.
     """
     if not host_port:
         return None
-    return strng.to_text(pack_address(host_port))
+    return strng.to_text(pack_address(host_port, proto=proto))
 
 #------------------------------------------------------------------------------
 
@@ -523,7 +526,7 @@ def getPageTwisted(url, timeout=10, method=b'GET'):
 #         return factory.deferred
 
     agent = Agent(reactor, connectTimeout=timeout)
-    
+
     d = agent.request(
         method=method,
         uri=url,
@@ -743,16 +746,16 @@ def uploadHTTP(url, files, data, progress=None, receiverDeferred=None):
 
     http://marianoiglesias.com.ar/python/file-uploading-with-multi-part-encoding-using-twisted/
     """
-    
+
     class StringReceiver(protocol.Protocol):
         buffer = ""
-    
+
         def __init__(self, deferred=None):
             self._deferred = deferred
-    
+
         def dataReceived(self, data):
             self.buffer += data
-    
+
         def connectionLost(self, reason):
             if self._deferred and reason.check(client.ResponseDone):
                 self._deferred.callback(self.buffer)
@@ -764,7 +767,7 @@ def uploadHTTP(url, files, data, progress=None, receiverDeferred=None):
     class MultiPartProducer:
 
         CHUNK_SIZE = 2 ** 8
-    
+
         def __init__(self, files={}, data={}, callback=None, deferred=None):
             self._files = files
             self._file_lengths = {}
@@ -773,7 +776,7 @@ def uploadHTTP(url, files, data, progress=None, receiverDeferred=None):
             self._deferred = deferred
             self.boundary = self._boundary()
             self.length = self._length()
-    
+
         def startProducing(self, consumer):
             self._consumer = consumer
             self._current_deferred = Deferred()
@@ -802,21 +805,21 @@ def uploadHTTP(url, files, data, progress=None, receiverDeferred=None):
             else:
                 return succeed(None)
             return self._current_deferred
-    
+
         def resumeProducing(self):
             self._paused = False
             result = self._produce()
             if result:
                 return result
-    
+
         def pauseProducing(self):
             self._paused = True
-    
+
         def stopProducing(self):
             self._finish(True)
             if self._deferred and self._sent < self.length:
                 self._deferred.errback(Exception("Consumer asked to stop production of request body (%d sent out of %d)" % (self._sent, self.length)))
-    
+
         def _produce(self):
             if self._paused:
                 return
@@ -846,7 +849,7 @@ def uploadHTTP(url, files, data, progress=None, receiverDeferred=None):
                 self._send_to_consumer("--%s--\r\n" % self.boundary)
                 self._finish()
                 return succeed(None)
-    
+
         def _finish(self, forced=False):
             if hasattr(self, "_current_file_handle") and self._current_file_handle:
                 self._current_file_handle.close()
@@ -855,13 +858,13 @@ def uploadHTTP(url, files, data, progress=None, receiverDeferred=None):
                 self._current_deferred = None
             if not forced and self._deferred:
                 self._deferred.callback(self._sent)
-    
+
         def _send_to_consumer(self, block):
             self._consumer.write(block)
             self._sent += len(block)
             if self._callback:
                 self._callback(self._sent, self.length)
-    
+
         def _length(self):
             self._build_chunk_headers()
             length = 0
@@ -878,7 +881,7 @@ def uploadHTTP(url, files, data, progress=None, receiverDeferred=None):
             length += len(self.boundary)
             length += 6
             return length
-    
+
         def _build_chunk_headers(self):
             if hasattr(self, "_chunk_headers") and self._chunk_headers:
                 return
@@ -887,7 +890,7 @@ def uploadHTTP(url, files, data, progress=None, receiverDeferred=None):
                 self._chunk_headers[field] = self._headers(field, True)
             for field in self._data:
                 self._chunk_headers[field] = self._headers(field)
-    
+
         def _headers(self, name, is_file=False):
             value = self._files[name] if is_file else self._data[name]
             _boundary = self.boundary.encode("utf-8") if isinstance(self.boundary, six.text_type) else six.moves.urllib.parse.quote_plus(self.boundary)
@@ -909,7 +912,7 @@ def uploadHTTP(url, files, data, progress=None, receiverDeferred=None):
             headers.append("")
             headers.append("")
             return "\r\n".join(headers)
-    
+
         def _boundary(self):
             boundary = None
             try:
@@ -921,11 +924,11 @@ def uploadHTTP(url, files, data, progress=None, receiverDeferred=None):
                 bits = random.getrandbits(160)
                 boundary = sha.new(str(bits).encode()).hexdigest()
             return boundary
-    
+
         def _file_type(self, field):
             typ = mimetypes.guess_type(self._files[field])[0]
             return typ.encode("utf-8") if isinstance(typ, six.text_type) else str(typ)
-    
+
         def _file_size(self, field):
             size = 0
             try:
@@ -947,9 +950,34 @@ def uploadHTTP(url, files, data, progress=None, receiverDeferred=None):
     headers.addRawHeader("Content-Type", "multipart/form-data; boundary=%s" % myProducer.boundary)
 
     agent = client.Agent(reactor)
-    request = agent.request("POST", url, headers, myProducer)
+    request = agent.request(b"POST", url, headers, myProducer)
     request.addCallback(lambda response: response.deliverBody(myReceiver))
     return request
+
+#------------------------------------------------------------------------------
+
+@implementer(iweb.IBodyProducer)
+class BytesProducer(object):
+    def __init__(self, body):
+        self.body = body
+        self.length = len(body)
+
+    def startProducing(self, consumer):
+        consumer.write(self.body)
+        return succeed(None)
+
+    def pauseProducing(self):
+        pass
+
+    def stopProducing(self):
+        pass
+
+
+def http_post_data(url, data, connectTimeout=15):
+    agent = Agent(reactor, connectTimeout=connectTimeout)
+    body = BytesProducer(data)
+    requested = agent.request(b"POST", url, Headers({"User-Agent": ["BitDust HTTP client", ], }), body)
+    return requested
 
 #------------------------------------------------------------------------------
 

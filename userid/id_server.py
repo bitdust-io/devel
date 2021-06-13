@@ -75,7 +75,6 @@ from lib import net_misc
 
 from main import settings
 
-from userid import id_url
 from userid import identity
 from userid import known_servers
 
@@ -243,20 +242,17 @@ class IdServer(automat.Automat):
         if os.path.getsize(inputfilename) > 50000:
             lg.warn("input file too big - ignoring ")
             tmpfile.erase('idsrv', inputfilename, 'input file too big')
-            # os.remove(inputfilename)
             return
         newxml = bpio.ReadTextFile(inputfilename)
         if len(newxml.strip()) < 500:
             lg.warn("input file too small - ignoring ")
             tmpfile.erase('idsrv', inputfilename, 'input file too small')
-            # os.remove(inputfilename)
             return
         try:
             newidentity = identity.identity(xmlsrc=newxml)
         except:
             lg.warn("input file is wrong - ignoring ")
             tmpfile.erase('idsrv', inputfilename, 'input file is wrong')
-            # os.remove(inputfilename)
             return
         tmpfile.erase('idsrv', inputfilename, 'id received')
         if not newidentity.isCorrect():
@@ -292,9 +288,8 @@ class IdServer(automat.Automat):
                 lg.warn("identity name " + filename)
                 return
         localfilename = os.path.join(settings.IdentityServerDir(), filename)
-    #    lg.out(8,"id_server.SaveIdentity with filename " + localfilename)
         oldxml = ''
-        # need to make sure id was not already used by different key - which would mean someone trying to steal identity
+        # need to make sure id was not already used by different key - which would mean someone is trying to steal identity
         if os.path.exists(localfilename):
             lg.out(6, "id_server._save_identity was already an identity with this name " + localfilename)
             oldxml = bpio.ReadTextFile(localfilename)
@@ -313,7 +308,7 @@ class IdServer(automat.Automat):
 class IdServerProtocol(basic.Int32StringReceiver):
 
     def __init__(self):
-        self.fpath = None     # string with path/filename
+        self.fpath = None       # string with path/filename
         self.fin = None         # integer file descriptor like os.open() returns
         self.received = 0
 
@@ -329,7 +324,6 @@ class IdServerProtocol(basic.Int32StringReceiver):
     def connectionMade(self):
         """
         """
-        # lg.out(8, 'id_server.connectionMade from ' + str(self.transport.getPeer()))
 
     def stringReceived(self, data):
         try:
@@ -338,19 +332,17 @@ class IdServerProtocol(basic.Int32StringReceiver):
             payload = data[2:]
         except:
             self.disconnect()
-            # self.transport.loseConnection()
             lg.exc()
             lg.warn('incorrect data from %s\n' % str(self.transport.getPeer()))
             return
+        if command == b'a':
+            lg.warn('ignored incoming "abort" packet from %s' % str(self.transport.getPeer()))
+            return
         if command == b'h':
-            # lg.out(6, 'id_server.stringReceived HELLO received from %s' % payload)
-            # self.sendString(strng.to_bin(
-            #     '%swid-server:%s' % (version, strng.to_text(A().hostname))))
             self.sendString(version + b'wid-server:' + strng.to_bin(A().hostname))
             return
         if command != b'd':
             self.disconnect()
-            # self.transport.loseConnection()
             lg.warn('not a "data" packet from %s : %r' % (str(self.transport.getPeer()), data))
             return
         inp = BytesIO(payload)
@@ -360,7 +352,6 @@ class IdServerProtocol(basic.Int32StringReceiver):
         except:
             inp.close()
             self.disconnect()
-            # self.transport.loseConnection()
             lg.exc()
             lg.warn('wrong data from %s' % str(self.transport.getPeer()))
             return
@@ -370,16 +361,12 @@ class IdServerProtocol(basic.Int32StringReceiver):
         inp.close()
         os.write(self.fin, inp_data)
         self.received += len(inp_data)
-        # self.transport.loseConnection()
         self.sendString(version + b'o' + struct.pack('i', file_id))
-        # self.sendString(strng.to_bin('%so%s' % (version, struct.pack('i', file_id))))
-        # lg.out(6, 'id_server.stringReceived  %d bytes received from %s' % (len(data), str(self.transport.getPeer())))
         if self.received == file_size:
             os.close(self.fin)
             A('incoming-identity-file', self.fpath)
             self.fin = None
             self.fpath = None
-            # self.disconnect()
 
     def connectionLost(self, reason):
         """
@@ -400,7 +387,17 @@ class IdServerFactory(ServerFactory):
 
 class WebMainPage(resource.Resource):
 
-    def render(self, request):
+    def render_POST(self, request):
+        inp = BytesIO(request.content.read())
+        fin, fpath = tmpfile.make('idsrv', extension='.xml')
+        inp_data = inp.read()
+        inp.close()
+        os.write(fin, inp_data)
+        os.close(fin)
+        A('incoming-identity-file', fpath)
+        return ''
+
+    def render_GET(self, request):
         src = '''<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
 <html>
 <head>

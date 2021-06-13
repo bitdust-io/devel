@@ -114,7 +114,7 @@ def read_customer_suppliers(customer_idurl, as_fields=True, use_cache=True):
                 return ret
             another_customer_idurl_bin = rotated_idurls.pop(0)
             lg.warn('found another rotated idurl %r and re-try reading customer suppliers' % another_customer_idurl_bin)
-            d = dht_records.get_suppliers(another_customer_idurl_bin, return_details=True, use_cache=use_cache)
+            d = dht_records.get_suppliers(another_customer_idurl_bin, return_details=True, use_cache=False)
             d.addCallback(_do_verify, another_customer_idurl_bin)
             d.addErrback(_on_error)
             return ret

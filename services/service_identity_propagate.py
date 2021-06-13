@@ -66,7 +66,10 @@ class IdentityPropagateService(LocalService):
                     id_server = id_server_str.strip().split(':')
                     id_server_host = id_server[0].strip()
                     id_server_http_port = int(id_server[1].strip())
-                    id_server_tcp_port = int(id_server[2].strip())
+                    if len(id_server) > 2:
+                        id_server_tcp_port = int(id_server[2].strip())
+                    else:
+                        id_server_tcp_port = 6661
                 except:
                     continue
                 known_identity_servers.append({
@@ -91,6 +94,7 @@ class IdentityPropagateService(LocalService):
         if my_id._LocalIdentity is None:
             lg.warn('Loading local identity failed - need to create an identity first')
             return False
+        from main import events
         from contacts import identitycache
         from userid import known_servers
         from p2p import propagate
@@ -100,13 +104,16 @@ class IdentityPropagateService(LocalService):
         propagate.init()
         conf().addConfigNotifier('services/identity-propagate/known-servers', self._on_known_servers_changed)
         lg.info('known ID servers are : %r' % known_servers.by_host())
+        events.add_subscriber(self._on_local_identity_modified, 'local-identity-modified')
         return d
 
     def stop(self):
         from main.config import conf
+        from main import events
         from p2p import propagate
         from contacts import contactsdb
         from contacts import identitycache
+        events.remove_subscriber(self._on_local_identity_modified, 'local-identity-modified')
         conf().removeConfigNotifier('services/identity-propagate/known-servers')
         propagate.shutdown()
         contactsdb.shutdown()
@@ -116,3 +123,7 @@ class IdentityPropagateService(LocalService):
     def _on_known_servers_changed(self, path, value, oldvalue, result):
         from userid import known_servers
         known_servers._KnownServers = None
+
+    def _on_local_identity_modified(self, evt):
+        from p2p import propagate
+        propagate.update()

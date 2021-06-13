@@ -217,10 +217,10 @@ def add_supplier(idurl, position=None, customer_idurl=None):
         return len(_SuppliersList[customer_idurl]) - 1
     current_suppliers = _SuppliersList[customer_idurl]
     if position >= len(current_suppliers):
-        empty_supplies = [id_url.field(b''), ] * (1 + position - len(current_suppliers))
-        current_suppliers.extend(empty_supplies)
+        empty_suppliers = [id_url.field(b''), ] * (1 + position - len(current_suppliers))
+        current_suppliers.extend(empty_suppliers)
         if _Debug:
-            lg.out(_DebugLevel, 'contactsdb.add_supplier   %d empty suppliers added for customer %r' % (len(empty_supplies), customer_idurl))
+            lg.out(_DebugLevel, 'contactsdb.add_supplier   %d empty suppliers added for customer %r' % (len(empty_suppliers), customer_idurl))
     if current_suppliers[position] and current_suppliers[position] != idurl:
         lg.info('replacing known supplier "%s" by "%s" at position %d for customer %s' % (
             current_suppliers[position], idurl, position, customer_idurl, ))

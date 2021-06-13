@@ -371,7 +371,7 @@ def on_lookup_result(event, result_defer, *args, **kwargs):
     if event == 'node-connected':
         result_defer.callback(args[0])
     else:
-        result_defer.errback(Exception((event, args, kwargs, )))
+        result_defer.errback(Exception(event, args, kwargs))
 
 #------------------------------------------------------------------------------
 

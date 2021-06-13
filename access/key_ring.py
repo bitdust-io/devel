@@ -227,6 +227,8 @@ def share_key(key_id, trusted_idurl, include_private=False, include_signature=Fa
     Make sure remote user is identified and connected.
     Returns deferred, callback will be fired with response Ack() packet argument.
     """
+    if _Debug:
+        lg.args(_DebugLevel, key_id=key_id, trusted_idurl=trusted_idurl)
     result = Deferred()
     d = online_status.ping(
         idurl=trusted_idurl,

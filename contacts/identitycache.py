@@ -496,8 +496,6 @@ def immediatelyCaching(idurl, timeout=10, try_other_sources=True):
         global _CachingTasks
         idurl = id_url.to_original(idurl)
         result = _CachingTasks.pop(idurl, None)
-        if _Debug:
-            lg.args(_DebugLevel, idurl=idurl, err=err, result=result)
 
         if not try_other_sources:
             p2p_stats.count_identity_cache(idurl, 0)
@@ -508,20 +506,21 @@ def immediatelyCaching(idurl, timeout=10, try_other_sources=True):
                 lg.warn('caching task for %s was not found' % idurl)
             return None
 
-        latest_idurl, latest_rev = id_url.get_latest_revision(idurl)
+        latest_idurl, _ = id_url.get_latest_revision(idurl)
         latest_ident = None
         sources = []
         if latest_idurl:
             latest_ident = identitydb.get_ident(latest_idurl)
         if latest_ident:
-            sources = latest_ident.getSources(as_fields=False)
+            sources = list(latest_ident.getSources(as_originals=True))
+        if _Debug:
+            lg.args(_DebugLevel, idurl=idurl, latest_idurl=latest_idurl, sources=sources)
         if sources:
             if idurl in sources:
-                sources = sources.remove(idurl)
+                sources.remove(idurl)
 
         if sources:
-            lg.warn('[cache failed] %s : %s  but will try %d more sources' % (
-                idurl, err.getErrorMessage(), len(sources), ))
+            lg.warn('[cache failed] %s : %s  but will try %d more sources' % (idurl, err.getErrorMessage(), len(sources), ))
             _next_source(err, sources, 0, result)
             return result
 

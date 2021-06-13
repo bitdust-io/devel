@@ -677,23 +677,19 @@ def scenario9():
 
     # preparation before switching of the ID server
     kw.config_set_v1('proxy-rotated', 'services/identity-propagate/automatic-rotate-enabled', 'true')
-    kw.config_set_v1('proxy-rotated', 'services/identity-propagate/known-servers',
-                     'id-a:8084:6661,id-b:8084:6661,id-c:8084:6661')
+    kw.config_set_v1('proxy-rotated', 'services/identity-propagate/known-servers', 'id-a:8084,id-b:8084,id-c:8084')
     kw.config_set_v1('proxy-rotated', 'services/identity-propagate/preferred-servers', '')
 
     kw.config_set_v1('customer-rotated', 'services/identity-propagate/automatic-rotate-enabled', 'true')
-    kw.config_set_v1('customer-rotated', 'services/identity-propagate/known-servers',
-                     'id-a:8084:6661,id-b:8084:6661,id-c:8084:6661')
+    kw.config_set_v1('customer-rotated', 'services/identity-propagate/known-servers', 'id-a:8084,id-b:8084,id-c:8084')
     kw.config_set_v1('customer-rotated', 'services/identity-propagate/preferred-servers', '')
 
     kw.config_set_v1('supplier-rotated', 'services/identity-propagate/automatic-rotate-enabled', 'true')
-    kw.config_set_v1('supplier-rotated', 'services/identity-propagate/known-servers',
-                     'id-a:8084:6661,id-b:8084:6661,id-c:8084:6661')
+    kw.config_set_v1('supplier-rotated', 'services/identity-propagate/known-servers', 'id-a:8084,id-b:8084,id-c:8084')
     kw.config_set_v1('supplier-rotated', 'services/identity-propagate/preferred-servers', '')
 
     kw.config_set_v1('broker-rotated', 'services/identity-propagate/automatic-rotate-enabled', 'true')
-    kw.config_set_v1('broker-rotated', 'services/identity-propagate/known-servers',
-                     'id-a:8084:6661,id-b:8084:6661,id-c:8084:6661')
+    kw.config_set_v1('broker-rotated', 'services/identity-propagate/known-servers', 'id-a:8084,id-b:8084,id-c:8084')
     kw.config_set_v1('broker-rotated', 'services/identity-propagate/preferred-servers', '')
 
     kw.config_set_v1('customer-3', 'services/employer/candidates', '')
@@ -705,6 +701,7 @@ def scenario9():
                      'http://id-a:8084/broker-1.xml,http://id-b:8084/broker-2.xml,http://id-a:8084/broker-3.xml,http://id-b:8084/broker-4.xml')
 
     # put identity server offline
+    print('\nabout to stop "id-dead" now\n')
     stop_daemon('id-dead')
 
     # test proxy-rotated new IDURL
@@ -781,6 +778,12 @@ def scenario9():
 
     # make sure event "my-identity-rotate-complete" is triggered on rotated nodes
     kw.wait_event(ROTATED_NODES, 'my-identity-rotate-complete')
+
+    # to make sure other nodes noticed the fact that identity was rotated for customer-rotated, broker-rotated and supplier-rotated
+    kw.user_ping_v1('customer-2', 'customer-rotated@id-dead_8084')
+    kw.user_ping_v1('customer-2', 'broker-rotated@id-dead_8084')
+    kw.user_ping_v1('customer-3', 'supplier-rotated@id-dead_8084')
+    kw.user_ping_v1('customer-4', 'broker-rotated@id-dead_8084')
 
     # make sure event "identity-url-changed" is triggered on other "affected" nodes
     kw.wait_event(['customer-2', ], 'identity-url-changed', expected_count=2)  # customer-rotated and broker-rotated
