@@ -39,6 +39,7 @@ EVENTS:
     * :red:`timer-10sec`
     * :red:`timer-15sec`
     * :red:`timer-2sec`
+    * :red:`timer-30sec`
     * :red:`user-identity-cached`
 """
 
@@ -94,9 +95,10 @@ class SharedAccessDonor(automat.Automat):
     """
 
     timers = {
-        'timer-2sec': (2.0, ['PUB_KEY']),
         'timer-10sec': (10.0, ['CACHE']),
-        'timer-15sec': (15.0, ['PUB_KEY', 'PING', 'PRIV_KEY', 'AUDIT', 'LIST_FILES']),
+        'timer-15sec': (15.0, ['PUB_KEY', 'PING', 'AUDIT', 'LIST_FILES']),
+        'timer-2sec': (2.0, ['PUB_KEY']),
+        'timer-30sec': (30.0, ['PRIV_KEY']),
     }
 
     def __init__(self, debug_level=0, log_events=False, publish_events=False, **kwargs):
@@ -201,7 +203,7 @@ class SharedAccessDonor(automat.Automat):
             if event == 'priv-key-ok':
                 self.state = 'LIST_FILES'
                 self.doSendMyListFiles(*args, **kwargs)
-            elif event == 'fail' or event == 'timer-15sec':
+            elif event == 'fail' or event == 'timer-30sec':
                 self.state = 'CLOSED'
                 self.doReportFailed(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)

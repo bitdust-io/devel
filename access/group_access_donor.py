@@ -119,7 +119,7 @@ class GroupAccessDonor(automat.Automat):
                 self.doAuditUserMasterKey(*args, **kwargs)
         #---AUDIT---
         elif self.state == 'AUDIT':
-            if event == 'fail' or event == 'timer-15sec':
+            if event == 'fail' or event == 'timer-30sec':
                 self.state = 'FAILED'
                 self.doReportFailed(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
