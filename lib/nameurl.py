@@ -85,7 +85,6 @@ def UrlParse(url):
     if not base:
         base = strng.to_bin(o.path).lstrip(b' /')
         filename = b''
-
     if base.find(b'/') < 0:
         if base.find(b':') < 0:
             host = base
@@ -98,10 +97,8 @@ def UrlParse(url):
             port = b''
         else:
             host, port = host.split(b':', 1)
-
         if not filename:
             filename = tail
-
     return (
         strng.to_text(proto).strip(),
         strng.to_text(host).strip(),
