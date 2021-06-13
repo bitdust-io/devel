@@ -832,7 +832,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
         return api.group_share(
             group_key_id=data['group_key_id'],
             trusted_user_id=data.get('trusted_user_id') or data.get('trusted_global_id') or data.get('trusted_idurl') or data.get('trusted_id'),
-            timeout=data.get('timeout', 30),
+            timeout=data.get('timeout', 45),
             publish_events=bool(data.get('publish_events', '0') in ['1', 'true', ]),
         )
 

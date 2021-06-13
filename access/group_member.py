@@ -1247,7 +1247,6 @@ class GroupMember(automat.Automat):
                     new_target = target
             self.current_target = new_target
             self.targets.remove(new_target)
-            # self.current_target = self.targets.pop(0)
             self.connect_lookup_attempts += 1
             if self.current_target:
                 if self.current_target['action'] == 'connect':
@@ -1448,7 +1447,6 @@ class GroupMember(automat.Automat):
             self.automat('brokers-not-found', dht_brokers=[])
             return
         self.latest_dht_brokers = brokers_info_list
-        # self.dht_read_use_cache = True
         if groups.get_archive_folder_path(self.group_key_id) is None:
             dht_archive_folder_path = None
             for broker_info in brokers_info_list:
@@ -1516,7 +1514,7 @@ class GroupMember(automat.Automat):
         if isinstance(err, Failure):
             resp_args = None
             try:
-                request_result, resp_args, resp_kwargs = err.value.args
+                _, resp_args, _ = err.value.args
             except:
                 lg.exc()
             if resp_args:
@@ -1555,7 +1553,7 @@ class GroupMember(automat.Automat):
         if isinstance(err, Failure):
             resp_args = None
             try:
-                request_result, resp_args, resp_kwargs = err.value.args
+                _, resp_args, _ = err.value.args
             except:
                 lg.exc()
             if resp_args:

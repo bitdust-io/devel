@@ -168,7 +168,7 @@ def supplier_switch_v1(customer: str, supplier_idurl: str, position: int, valida
         time.sleep(delay)
     assert False, 'failed to switch supplier at position %r to %r after %d retries' % ( position, supplier_idurl, count, )
     return None
-        
+
 
 def share_create_v1(customer: str, key_size=1024):
     response = request_post(customer, 'share/create/v1', json={'key_size': key_size, }, timeout=20)
@@ -242,11 +242,12 @@ def group_reconnect_v1(customer: str, group_key_id, timeout=120):
     return response.json()
 
 
-def group_share_v1(customer: str, group_key_id, trusted_id, attempts=1):
+def group_share_v1(customer: str, group_key_id, trusted_id, attempts=1, timeout=60):
     response = request_put(customer, 'group/share/v1', json={
         'group_key_id': group_key_id,
         'trusted_id': trusted_id,
-    }, timeout=60, attempts=attempts)
+        'timeout': timeout,
+    }, timeout=timeout+1, attempts=attempts)
     assert response.status_code == 200
     print('group/share/v1 [%s] group_key_id=%r trusted_id=%r : %s\n' % (customer, group_key_id, trusted_id, pprint.pformat(response.json())))
     assert response.json()['status'] == 'OK', response.json()

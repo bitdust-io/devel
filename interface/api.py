@@ -935,7 +935,7 @@ def key_erase(key_id):
     return OK(message='private key %r erased successfully' % key_id)
 
 
-def key_share(key_id, trusted_user_id, include_private=False, include_signature=False, timeout=10):
+def key_share(key_id, trusted_user_id, include_private=False, include_signature=False, timeout=30):
     """
     Connects to remote user and transfer given public or private key to that node.
     This way you can share access to files/groups/resources with other users in the network.
@@ -2235,7 +2235,7 @@ def share_delete(key_id):
     return OK(this_share.to_json(), message='share %r deleted' % key_id, )
 
 
-def share_grant(key_id, trusted_user_id, timeout=30, publish_events=True):
+def share_grant(key_id, trusted_user_id, timeout=45, publish_events=True):
     """
     Provide access to given share identified by `key_id` to another trusted user.
 
@@ -2682,7 +2682,7 @@ def group_reconnect(group_key_id, use_dht_cache=False):
     return ret
 
 
-def group_share(group_key_id, trusted_user_id, timeout=30, publish_events=False):
+def group_share(group_key_id, trusted_user_id, timeout=45, publish_events=False):
     """
     Provide access to given group identified by `group_key_id` to another trusted user.
 

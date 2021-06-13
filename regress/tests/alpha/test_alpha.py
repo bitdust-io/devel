@@ -305,6 +305,7 @@ def scenario4():
         json={
             'trusted_global_id': 'customer-2@id-b_8084',
             'key_id': customer_1_share_id_cat,
+            'timeout': 60,
         },
         timeout=30,
     )
