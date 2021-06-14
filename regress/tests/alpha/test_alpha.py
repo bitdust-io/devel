@@ -497,6 +497,7 @@ def scenario8():
     assert customer_1_group_info_inactive['label'] == 'ArchivedGroupABC'
     assert customer_1_group_info_inactive['last_sequence_id'] == -1
 
+    # first customer joins the group - brokers are hired and connected
     kw.group_join_v1('customer-1', customer_1_group_key_id)
 
     kw.wait_packets_finished(PROXY_IDS + CUSTOMERS_IDS + BROKERS_IDS)
@@ -522,6 +523,8 @@ def scenario8():
     assert 'customer-1@id-a_8084' in customer_1_broker_producers
 
     assert len(kw.message_conversation_v1('customer-2')['result']) == 4
+
+    kw.file_list_all_v1('customer-2', expected_reliable=100, reliable_shares=True, attempts=20)
 
     # share group key from customer-1 to customer-2
     kw.group_share_v1('customer-1', customer_1_group_key_id, 'customer-2@id-b_8084')
@@ -1657,6 +1660,10 @@ def scenario18():
 
     # clean preferred brokers on customer-4 so he can select another node except the top broker-1
     kw.config_set_v1('customer-4', 'services/private-groups/preferred-brokers',
+                     'http://id-b:8084/broker-2.xml,http://id-a:8084/broker-3.xml,http://id-b:8084/broker-4.xml')
+
+    # clean preferred brokers on customer-2 - to not mess up trying to hire wrong broker-1
+    kw.config_set_v1('customer-2', 'services/private-groups/preferred-brokers',
                      'http://id-b:8084/broker-2.xml,http://id-a:8084/broker-3.xml,http://id-b:8084/broker-4.xml')
 
     # verify active broker for customer-4

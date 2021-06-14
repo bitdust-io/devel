@@ -415,7 +415,7 @@ class QueueKeeper(automat.Automat):
         """
         Action method.
         """
-        desired_position = kwargs.get('desired_position', 0)
+        desired_position = int(kwargs.get('desired_position', 0))
         archive_folder_path = self.requested_archive_folder_path
         if archive_folder_path is None:
             archive_folder_path = self.known_archive_folder_path
@@ -423,8 +423,8 @@ class QueueKeeper(automat.Automat):
         if prev_revision is None:
             prev_revision = 0
         if _Debug:
-            lg.args(_DebugLevel, prev_revision=prev_revision, desired_position=desired_position,
-                    broker_idurl=self.broker_idurl, archive_folder_path=archive_folder_path)
+            lg.args(_DebugLevel, c=self.customer_idurl, p=desired_position, b=self.broker_idurl,
+                    a=archive_folder_path, r=prev_revision+1, latest_dht_records=self.latest_dht_records)
         self._do_dht_write(
             desired_position=desired_position,
             archive_folder_path=archive_folder_path,
@@ -600,7 +600,7 @@ class QueueKeeper(automat.Automat):
 
     def _on_write_customer_message_broker(self, nodes, desired_broker_position, archive_folder_path, revision):
         if _Debug:
-            lg.args(_DebugLevel, nodes=nodes, desired_broker_position=desired_broker_position)
+            lg.args(_DebugLevel, nodes=type(nodes), pos=desired_broker_position, rev=revision)
         if nodes:
             self.requested_archive_folder_path = None
             self.automat('dht-write-success', desired_position=desired_broker_position)

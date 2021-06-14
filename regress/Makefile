@@ -115,7 +115,8 @@ _one_post_report:
 	@/bin/bash build_report.sh ${TEST_NAME} > /dev/null;
 
 _one_up_test_coverage_down:
-	@$(MAKE) --no-print-directory --output-sync=line _one_prepare && $(MAKE) --no-print-directory --output-sync=line _one_up && $(MAKE) --no-print-directory --output-sync=none _one_test_rerun && $(MAKE) --no-print-directory --output-sync=line _one_coverage && $(MAKE) --no-print-directory --output-sync=line _one_down
+	# @$(MAKE) --no-print-directory --output-sync=line _one_prepare && $(MAKE) --no-print-directory --output-sync=line _one_up && $(MAKE) --no-print-directory --output-sync=none _one_test_rerun && $(MAKE) --no-print-directory --output-sync=line _one_coverage && $(MAKE) --no-print-directory --output-sync=line _one_down
+	@$(MAKE) --no-print-directory --output-sync=line _one_prepare && $(MAKE) --no-print-directory --output-sync=line _one_up && $(MAKE) --no-print-directory --output-sync=none _one_test && $(MAKE) --no-print-directory --output-sync=line _one_coverage && $(MAKE) --no-print-directory --output-sync=line _one_down
 
 _one_up_test_log_down:
 	@$(MAKE) --no-print-directory --output-sync=line _one_prepare && $(MAKE) --no-print-directory --output-sync=line _one_up && $(MAKE) --no-print-directory --output-sync=none _one_test || $(MAKE) --no-print-directory --output-sync=line _one_coverage && $(MAKE) --no-print-directory --output-sync=line _one_log && $(MAKE) --no-print-directory --output-sync=line _one_down

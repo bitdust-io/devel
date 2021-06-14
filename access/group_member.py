@@ -1627,4 +1627,4 @@ class GroupMember(automat.Automat):
         if _Debug:
             lg.args(_DebugLevel, changed=changed, this=repr(self))
         if changed:
-            self.automat('brokers-changed', action=d['action'], connected_brokers=d['connected_brokers'])
+            reactor.callLater(0.01, self.automat, 'brokers-changed', action=d['action'], connected_brokers=d['connected_brokers'])  # @UndefinedVariable

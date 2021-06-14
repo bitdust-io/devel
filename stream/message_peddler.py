@@ -400,7 +400,7 @@ def on_consumer_notify(message_info):
         },
         recipient_global_id=my_keys.make_key_id(alias='master', creator_glob_id=consumer_id),
         packet_id=packet_id,
-        message_ack_timeout=25,
+        message_ack_timeout=config.conf().getInt('services/message-broker/message-ack-timeout'),
         skip_handshake=True,
         fire_callbacks=False,
     )
@@ -1033,6 +1033,7 @@ class MessagePeddler(automat.Automat):
         Action method.
         """
         self.archive_chunk_size = config.conf().getInt('services/message-broker/archive-chunk-size')
+        self.send_message_ack_timeout = config.conf().getInt('services/message-broker/message-ack-timeout')
         self.archive_in_progress = False
         events.add_subscriber(self._on_identity_url_changed, 'identity-url-changed')
         message.consume_messages(
@@ -1401,7 +1402,7 @@ class MessagePeddler(automat.Automat):
             },
             recipient_global_id=my_keys.make_key_id(alias='master', creator_glob_id=consumer_id),
             packet_id=packetid.MakeQueueMessagePacketID(queue_id, packetid.UniqueID()),
-            message_ack_timeout=25,
+            message_ack_timeout=self.send_message_ack_timeout,
             skip_handshake=True,
             fire_callbacks=False,
         )
@@ -1508,7 +1509,7 @@ class MessagePeddler(automat.Automat):
                 },
                 recipient_global_id=my_keys.make_key_id(alias='master', creator_idurl=other_broker_idurl),
                 packet_id='qreplica_%s_%s' % (message_in.queue_id, packetid.UniqueID()),
-                message_ack_timeout=25,
+                message_ack_timeout=self.send_message_ack_timeout,
                 skip_handshake=False,
                 fire_callbacks=False,
             )

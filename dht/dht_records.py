@@ -249,6 +249,8 @@ def get_message_broker(customer_idurl, position=0, return_details=True, use_cach
 
 
 def set_message_broker(customer_idurl, broker_idurl, position=0, archive_folder_path=None, revision=None, expire=60*60):
+    if _Debug:
+        lg.args(_DebugLevel, customer=customer_idurl, pos=position, broker=broker_idurl, rev=revision)
     return dht_service.set_valid_data(
         key=dht_service.make_key(
             key='%s%d' % (strng.to_text(customer_idurl), position),

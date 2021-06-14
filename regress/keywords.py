@@ -204,14 +204,18 @@ def group_info_v1(customer: str, group_key_id, wait_state=None, validate_retries
     count = 0
     while True:
         if count >= validate_retries:
+            print('group/info/v1 [%s] attempt %d : %s\n' % (customer, count, pprint.pformat(response.json())))
             break
         response = request_get(customer, 'group/info/v1?group_key_id=%s' % group_key_id, timeout=20)
         assert response.status_code == 200
-        print('group/info/v1 [%s] attempt %d : %s\n' % (customer, count, pprint.pformat(response.json())))
         assert response.json()['status'] == 'OK', response.json()
+        # print('group/info/v1 [%s] attempt %d : %s\n' % (customer, count, pprint.pformat(response.json())))
+        print('  group/info/v1 [%s] attempt %d : state=%s' % (customer, count, response.json()['result']['state'], ))
         if response.json()['result']['state'] == wait_state:
+            print('group/info/v1 [%s] : %s\n' % (customer, pprint.pformat(response.json())))
             return response.json()
         if stop_state and response.json()['result']['state'] == stop_state:
+            print('group/info/v1 [%s] : %s\n' % (customer, pprint.pformat(response.json())))
             return response.json()
         count += 1
         time.sleep(delay)
@@ -498,7 +502,7 @@ def message_send_v1(node, recipient, data, timeout=30, expect_consumed=True):
 
 
 def message_send_group_v1(node, group_key_id, data, timeout=120):
-    print('message/send/group/v1 [%s] data=%r' % (node, data, ))
+    print('message/send/group/v1 [%s] group_key_id=%r data=%r' % (node, group_key_id, data, ))
     response = request_post(node, 'message/send/group/v1',
         json={
             'group_key_id': group_key_id,
@@ -633,6 +637,8 @@ def packet_list_v1(node, wait_all_finish=False, attempts=20, delay=5, verbose=Fa
             if r.get('packet_id', '').count('idle_ping:'):
                 continue
             if r.get('command') == 'Retrieve' and r.get('direction') == 'outgoing' and r.get('label', '').count('-rotated'):
+                continue
+            if r.get('command') == 'Data' and r.get('direction') == 'outgoing' and r.get('label', '').count('-rotated'):
                 continue
             found_packet = True
         if not found_packet or not wait_all_finish:
