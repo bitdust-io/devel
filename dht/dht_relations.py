@@ -301,12 +301,9 @@ def read_customer_message_brokers(customer_idurl, positions=[0, ], return_detail
         if _Debug:
             lg.args(_DebugLevel, all_results=len(all_results))
         final_result = []
-        all_brokers = []
         for one_success, one_result in all_results:
             if one_success and one_result['broker_idurl']:
-                if id_url.is_not_in(one_result['broker_idurl'], all_brokers, as_field=False):
-                    all_brokers.append(one_result['broker_idurl'])
-                    final_result.append(one_result)
+                final_result.append(one_result)
         result.callback(final_result)
         return None
 
