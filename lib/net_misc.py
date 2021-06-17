@@ -147,7 +147,7 @@ def ConnectionFailed(param=None, proto=None, info=None):
 
 #------------------------------------------------------------------------------
 
-def normalize_address(host_port):
+def normalize_address(host_port, default_port=80):
     """
     Input argument `host` can be string: "123.45.67.89:8080" or tuple: (b"123.45.67.89", 8080)
     Method always return tuple and make sure host is a binary string and port is an integer.
@@ -159,6 +159,8 @@ def normalize_address(host_port):
     if isinstance(host_port, six.string_types):
         host_port = host_port.split(':')
         host_port = (host_port[0], int(host_port[1]), )
+    if not host_port[1]:
+        host_port = (host_port[0], default_port, )
     if isinstance(host_port[0], six.binary_type):
         host_port = (host_port[0].decode('utf-8'), int(host_port[1]), )
     if isinstance(host_port[0], six.text_type):
@@ -166,7 +168,7 @@ def normalize_address(host_port):
     return host_port
 
 
-def pack_address(host_port, proto=None):
+def pack_address(host_port, proto=None, default_port=80):
     """
     Same as `normalize_address()`, but always return address as byte string: b"123.45.67.89:8080"
     """
@@ -174,19 +176,19 @@ def pack_address(host_port, proto=None):
         if proto:
             return strng.to_bin(proto) + b'://'
         return host_port
-    norm = normalize_address(host_port)
+    norm = normalize_address(host_port, default_port=default_port)
     if proto:
         return strng.to_bin(proto) + b'://' + norm[0] + b':' + str(norm[1]).encode()
     return norm[0] + b':' + str(norm[1]).encode()
 
 
-def pack_address_text(host_port, proto=None):
+def pack_address_text(host_port, proto=None, default_port=80):
     """
     Same as `pack_address()`, but returns text string or None.
     """
     if not host_port:
         return None
-    return strng.to_text(pack_address(host_port, proto=proto))
+    return strng.to_text(pack_address(host_port, proto=proto, default_port=default_port))
 
 #------------------------------------------------------------------------------
 

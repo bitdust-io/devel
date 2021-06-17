@@ -346,7 +346,7 @@ def on_incoming_message(request, info, status, error_message):
     except:
         lg.exc()
     if _Debug:
-        lg.args(_DebugLevel, msg=json_message, handled=handled)
+        lg.args(_DebugLevel, msg_len=len(decrypted_message), handled=handled)
     if handled:
         return True
     if config.conf().getBool('services/private-messages/acknowledge-unread-messages-enabled'):

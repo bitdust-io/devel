@@ -804,8 +804,8 @@ def Key(request, info):
     """
     if _Debug:
         lg.out(_DebugLevel, 'p2p_service.Key %d bytes in [%s]' % (len(request.Payload), request.PacketID))
-        lg.out(_DebugLevel, '  from remoteID=%s  ownerID=%s  creatorID=%s  sender_idurl=%s' % (
-            request.RemoteID, request.OwnerID, request.CreatorID, info.sender_idurl))
+        lg.out(_DebugLevel, '  from senderID=%s to remoteID=%s  ownerID=%s  creatorID=%s  ' % (
+            info.sender_idurl, request.RemoteID, request.OwnerID, request.CreatorID, ))
 
 
 def SendKey(remote_idurl, encrypted_key_data, packet_id=None, wide=False, callbacks={}, timeout=20, ):

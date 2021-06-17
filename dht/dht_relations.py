@@ -36,7 +36,7 @@ from __future__ import absolute_import
 #------------------------------------------------------------------------------
 
 _Debug = True
-_DebugLevel = 8
+_DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
@@ -235,7 +235,7 @@ def read_customer_message_brokers(customer_idurl, positions=[0, ], return_detail
 
     def _do_verify(dht_value, position, broker_result):
         if _Debug:
-            lg.args(_DebugLevel, position=position, dht_value=dht_value)
+            lg.args(_DebugLevel, c=customer_idurl, p=position, dht_value=type(dht_value))
         ret = {
             'timestamp': None,
             'revision': 0,
@@ -262,6 +262,8 @@ def read_customer_message_brokers(customer_idurl, positions=[0, ], return_detail
             lg.exc()
             broker_result.callback(ret)
             return ret
+        if _Debug:
+            lg.args(_DebugLevel, c=_customer_idurl, p=position, b=_broker_idurl, a=_archive_folder_path, r=_revision)
         if as_fields:
             if _customer_idurl != customer_idurl:
                 lg.err('wrong customer idurl %r in message broker DHT record for %r at position %d' % (
@@ -299,12 +301,9 @@ def read_customer_message_brokers(customer_idurl, positions=[0, ], return_detail
         if _Debug:
             lg.args(_DebugLevel, all_results=len(all_results))
         final_result = []
-        all_brokers = []
         for one_success, one_result in all_results:
             if one_success and one_result['broker_idurl']:
-                if id_url.is_not_in(one_result['broker_idurl'], all_brokers, as_field=False):
-                    all_brokers.append(one_result['broker_idurl'])
-                    final_result.append(one_result)
+                final_result.append(one_result)
         result.callback(final_result)
         return None
 

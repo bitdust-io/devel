@@ -95,7 +95,6 @@ from userid import id_url
 
 from main import settings
 from main import config
-from main import events
 
 from transport import callback
 
@@ -732,7 +731,7 @@ class PacketOut(automat.Automat):
         Action method.
         """
         ok = False
-        proto, host, filename, transfer_id = args[0]
+        proto, host, _, transfer_id = args[0]
         for i in range(len(self.items)):
             if self.items[i].proto == proto:  # and self.items[i].host == host:
                 self.items[i].transfer_id = transfer_id
@@ -1036,7 +1035,7 @@ class PacketOut(automat.Automat):
         # try to send to his local IP first, not external
         if tcp_contact and localIP:
             if gateway.is_installed('tcp') and gateway.can_send(proto):
-                proto, host, port, fn = nameurl.UrlParse(tcp_contact)
+                proto, host, port, _ = nameurl.UrlParse(tcp_contact)
                 if port:
                     host = localIP + ':' + str(port)
                 proto = strng.to_text(proto)
@@ -1050,7 +1049,7 @@ class PacketOut(automat.Automat):
                     return
         # tcp is the best proto - if it is working - this is the best case!!!
         if tcp_contact and 'tcp' in working_protos:
-            proto, host, port, fn = nameurl.UrlParse(tcp_contact)
+            proto, host, port, _ = nameurl.UrlParse(tcp_contact)
             if host.strip() and gateway.is_installed(proto) and gateway.can_send(proto):
                 if port:
                     host = host + ':' + str(port)
@@ -1106,7 +1105,7 @@ class PacketOut(automat.Automat):
                     return
         # finally use the first proto we supported if we can not find the best preferable method
         for contactmethod in self.remote_identity.getContacts():
-            proto, host, port, fn = nameurl.UrlParse(contactmethod)
+            proto, host, port, _ = nameurl.UrlParse(contactmethod)
             if port:
                 host = host + ':' + str(port)
             # if method exist but empty - don't use it
@@ -1144,7 +1143,7 @@ class PacketOut(automat.Automat):
                             size, strng.to_text(i.proto), strng.to_text(i.host), i.transfer_id, status), log_name='packet', showtime=True)
                     break
         elif len(packet_args) == 6:
-            proto, host, filename, size, descr, err_msg = packet_args
+            proto, host, _, size, _, err_msg = packet_args
             for i in self.items:
                 if i.proto == proto and i.host == host:
                     self.items.remove(i)
