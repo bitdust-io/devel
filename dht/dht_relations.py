@@ -234,8 +234,6 @@ def read_customer_message_brokers(customer_idurl, positions=[0, ], return_detail
         return None
 
     def _do_verify(dht_value, position, broker_result):
-        if _Debug:
-            lg.args(_DebugLevel, c=customer_idurl, p=position, dht_value=type(dht_value))
         ret = {
             'timestamp': None,
             'revision': 0,
@@ -245,6 +243,8 @@ def read_customer_message_brokers(customer_idurl, positions=[0, ], return_detail
             'archive_folder_path': None,
         }
         if not dht_value or not isinstance(dht_value, dict):
+            if _Debug:
+                lg.args(_DebugLevel, c=customer_idurl, p=position, dht_value=type(dht_value))
             broker_result.callback(ret)
             return ret
         try:
