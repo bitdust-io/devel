@@ -229,13 +229,11 @@ def read_customer_message_brokers(customer_idurl, positions=[0, ], return_detail
         one_broker_task = identitycache.GetLatest(dht_record['broker_idurl'])
         one_broker_task.addCallback(lambda xmlsrc: broker_result.callback(dht_record))
         one_broker_task.addErrback(_on_borker_identity_cache_failed, position, broker_result)
-        if _Debug:
-            lg.args(_DebugLevel, position=position, broker_idurl=dht_record['broker_idurl'], task=one_broker_task)
+        # if _Debug:
+        #     lg.args(_DebugLevel, position=position, broker_idurl=dht_record['broker_idurl'])
         return None
 
     def _do_verify(dht_value, position, broker_result):
-        if _Debug:
-            lg.args(_DebugLevel, c=customer_idurl, p=position, dht_value=type(dht_value))
         ret = {
             'timestamp': None,
             'revision': 0,
@@ -245,6 +243,8 @@ def read_customer_message_brokers(customer_idurl, positions=[0, ], return_detail
             'archive_folder_path': None,
         }
         if not dht_value or not isinstance(dht_value, dict):
+            if _Debug:
+                lg.args(_DebugLevel, c=customer_idurl, p=position, dht_value=type(dht_value))
             broker_result.callback(ret)
             return ret
         try:
