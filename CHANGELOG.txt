@@ -1,6 +1,25 @@
 Change Log
 ==========
 
+
+2021-06-18 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* fix in dht_relations.read_customer_message_brokers()
+* added new services/message-broker/message-ack-timeout config option
+* fixes in shared_access_donor() and group_access_donor()
+* bug fix in p2p.propagate
+* small updates in api methods
+* inreased PK transfer timout in group_access_donor() and shared_access_donor()
+* fixing issue with message brokers lookup order in group_member()
+* switching IdServer input traffic to HTTP POST protocol
+* bug fix in id_server()
+* fixed IDURL bug in identitycache.py
+* bug fix in queue_keeper()
+* fixing network reconnection in proxy transport
+* updated some regression test keywords
+
+
+
 2021-05-30 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * added option "services/keys-storage/reset-unreliable-backup-copies"
