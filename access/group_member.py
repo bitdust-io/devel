@@ -1157,6 +1157,10 @@ class GroupMember(automat.Automat):
                     self.missing_brokers.add(broker_pos)
                     lg.warn('for %r broker %r is marked "dead" at position %d' % (self.group_key_id, self.dead_broker_id, broker_pos, ))
                     continue
+            if id_url.is_in(broker_idurl, known_brokers):
+                self.missing_brokers.add(broker_pos)
+                lg.warn('broker %r at position %r in DHT is duplicated and marked as invalid' % (broker_idurl, broker_pos, ))
+                continue
             known_brokers[broker_pos] = broker_idurl
             brokers_to_be_connected.append((broker_pos, broker_idurl, ))
             if _Debug:
@@ -1193,8 +1197,12 @@ class GroupMember(automat.Automat):
             if known_pos < groups.REQUIRED_BROKERS_COUNT:
                 self.rotated_brokers[pos] = known_brokers[known_pos]
             if self.rotated_brokers[pos]:
-                brokers_to_be_connected.append((pos, self.rotated_brokers[pos], ))
-                exclude_from_lookup.add(id_url.to_bin(self.rotated_brokers[pos]))
+                if not id_url.is_in(self.rotated_brokers[pos], [i[1] for i in brokers_to_be_connected]):
+                    brokers_to_be_connected.append((pos, self.rotated_brokers[pos], ))
+                    exclude_from_lookup.add(id_url.to_bin(self.rotated_brokers[pos]))
+                else:
+                    self.missing_brokers.add(pos)
+                    lg.warn('after rotation broker at position %r in DHT is duplicated and marked as invalid' % pos)
             else:
                 self.missing_brokers.add(pos)
         if _Debug:
