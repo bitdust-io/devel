@@ -179,12 +179,15 @@ class BroadcastingService(LocalService):
         from twisted.internet import reactor  # @UnresolvedImport
         from broadcast import broadcaster_node
         if self.starting_deferred:
-            if newstate in ['BROADCASTING', 'OFFLINE', ]:
+            if newstate in ['BROADCASTING', ] and newstate != oldstate:
                 self.starting_deferred.callback(newstate)
                 self.starting_deferred = None
-        if newstate == 'OFFLINE' and oldstate != 'AT_STARTUP':
-            reactor.callLater(60, broadcaster_node.A, 'reconnect')  # @UndefinedVariable
-            lg.out(8, 'service_broadcasting._on_broadcaster_node_switched will try to reconnect again after 1 minute')
+            elif newstate in ['OFFLINE', ] and newstate != oldstate:
+                self.starting_deferred.errback(Exception(newstate))
+                self.starting_deferred = None
+#         if newstate == 'OFFLINE' and oldstate != 'AT_STARTUP':
+#             reactor.callLater(60, broadcaster_node.A, 'reconnect')  # @UndefinedVariable
+#             lg.out(8, 'service_broadcasting._on_broadcaster_node_switched will try to reconnect again after 1 minute')
 
 
 #     def cancel(self, json_payload, request, info):

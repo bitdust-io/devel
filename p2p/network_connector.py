@@ -71,7 +71,7 @@ from six.moves import range
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -127,8 +127,8 @@ def A(event=None, *args, **kwargs):
         _NetworkConnector = NetworkConnector(
             name='network_connector',
             state='AT_STARTUP',
-            log_events=_DebugLevel,
-            log_transitions=_DebugLevel,
+            log_events=_Debug,
+            log_transitions=_Debug,
             publish_events=False,
         )
     if event is not None:
@@ -161,7 +161,6 @@ class NetworkConnector(automat.Automat):
     }
 
     def init(self):
-        self.log_transitions = _Debug
         self.last_upnp_time = 0
         self.last_reconnect_time = 0
         self.last_internet_state = 'disconnected'

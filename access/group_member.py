@@ -1527,7 +1527,7 @@ class GroupMember(automat.Automat):
             except:
                 lg.exc()
             if resp_args:
-                resp_payload = strng.to_text(resp_args[0].Payload).strip()
+                resp_payload = strng.to_text(resp_args[0].outpacket.Payload).strip()
                 lg.warn('lookup request to broker at position %d failed: %r' % (broker_pos, resp_payload, ))
                 if resp_payload.startswith('position mismatch'):
                     _, _, expected_position = resp_payload.rpartition(' ')
@@ -1570,7 +1570,7 @@ class GroupMember(automat.Automat):
             except:
                 lg.exc()
             if resp_args:
-                resp_payload = strng.to_text(resp_args[0].Payload).strip()
+                resp_payload = strng.to_text(resp_args[0].outpacket.Payload).strip()
                 lg.warn('request to broker at position %d failed: %r' % (broker_pos, resp_payload, ))
                 if resp_payload.startswith('position mismatch'):
                     _, _, expected_position = resp_payload.rpartition(' ')

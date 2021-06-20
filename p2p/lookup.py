@@ -456,8 +456,7 @@ class DiscoveryTask(object):
         self.result_defer = None
 
     def _report_fails(self, err):
-        if _Debug:
-            lg.out(_DebugLevel, 'lookup.lookup.DiscoveryTask[%r]._report_fails %r' % (self.id, err))
+        lg.err('DHT lookup %r failed: %r' % (self.id, err, ))
         if self.result_defer:
             self.result_defer.errback(err)
         self.result_defer = None

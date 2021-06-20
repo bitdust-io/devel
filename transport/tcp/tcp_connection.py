@@ -111,9 +111,14 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         address = self.getAddress()
         name = 'tcp_connection[%s]' % strng.to_text(net_misc.pack_address(address))
         automat.Automat.__init__(
-            self, name, 'AT_STARTUP',
-            debug_level=_DebugLevel, log_events=_Debug, publish_events=False)
-        self.log_transitions = _Debug
+            self,
+            name=name,
+            state='AT_STARTUP',
+            debug_level=_DebugLevel,
+            log_events=_Debug,
+            log_transitions=_Debug,
+            publish_events=False,
+        )
         self.automat('connection-made')
 
     def connectionLost(self, reason):

@@ -212,14 +212,14 @@ class ProxyTransportService(LocalService):
     def _on_transport_state_changed(self, transport, oldstate, newstate):
         from logs import lg
         from p2p import p2p_connector
+        lg.info('%s -> %s in %r  starting_deferred=%r' % (oldstate, newstate, transport, bool(self.starting_deferred)))
         if self.starting_deferred:
-            lg.info('%s -> %s in %r' % (oldstate, newstate, transport, ))
-            if newstate == 'LISTENING' and oldstate != 'LISTENING':
-                self.starting_deferred.callback(newstate)
+            if newstate == 'LISTENING' and oldstate != newstate:
+                self.starting_deferred.callback(True)
                 self.starting_deferred = None
                 p2p_connector.A('check-synchronize')
-            if newstate == 'OFFLINE' and oldstate in ['STARTING', 'STOPPING', ]:
-                self.starting_deferred.callback(newstate)
+            if newstate == 'OFFLINE' and oldstate != newstate and oldstate not in ['INIT', ]:
+                self.starting_deferred.errback(Exception(newstate))
                 self.starting_deferred = None
                 p2p_connector.A('check-synchronize')
 

@@ -80,10 +80,12 @@ from twisted.internet.defer import Deferred, fail  #@UnresolvedImport
 
 #------------------------------------------------------------------------------
 
-_Debug = True
-_DebugLevel = 10
+_Debug = False
+_DebugLevel = 14
 
-_LogEvents = True
+#------------------------------------------------------------------------------
+
+_LogEvents = False
 _LogFile = None  # : This is to have a separated Log file for state machines logs
 _LogFilename = None
 _LogsCount = 0  # : If not zero - it will print time since that value, not system time
