@@ -73,6 +73,11 @@ import sys
 
 #------------------------------------------------------------------------------
 
+_Debug = True
+_DebugLevel = 4
+
+#------------------------------------------------------------------------------
+
 try:
     from twisted.internet import reactor  # @UnresolvedImport
 except:
@@ -83,7 +88,6 @@ except:
 from logs import lg
 
 from automats import automat
-from automats import global_state
 
 from system import bpio
 
@@ -112,18 +116,24 @@ def IsExist():
 
 #------------------------------------------------------------------------------
 
-
 def A(event=None, *args, **kwargs):
     """
     Access method to interact with the state machine.
     """
     global _Installer
     if _Installer is None:
-        _Installer = Installer('installer', 'AT_STARTUP', 2, True)
+        _Installer = Installer(
+            name='installer',
+            state='AT_STARTUP',
+            debug_level=_DebugLevel,
+            log_events=_Debug,
+            log_transitions=_DebugLevel,
+        )
     if event is not None:
         _Installer.automat(event, *args, **kwargs)
     return _Installer
 
+#------------------------------------------------------------------------------
 
 class Installer(automat.Automat):
     """

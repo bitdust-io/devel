@@ -515,7 +515,7 @@ def connect_network(node, verbose=False):
         print(f'network/connected/v1 [{node}] : OK\n')
 
 
-async def connect_network_async(node, loop, attempts=30, delay=1, timeout=10, verbose=False):
+async def connect_network_async(node, loop, attempts=30, delay=1, timeout=20, verbose=False):
     async with aiohttp.ClientSession(loop=loop, connector=ssl_connection(node)) as client:
         response = await client.get(tunnel_url(node, 'network/connected/v1?wait_timeout=1', verbose=verbose), timeout=timeout)
         response_json = await response.json()
@@ -814,8 +814,8 @@ async def start_supplier_async(node, identity_name, loop, join_network=True, dht
     # await get_client_certificate_async(node, loop)
     await health_check_async(node, loop)
     if join_network:
-        await create_identity_async(node, identity_name, loop)
-        await connect_network_async(node, loop)
+        await create_identity_async(node, identity_name, loop, verbose=True)
+        await connect_network_async(node, loop, verbose=True)
         await service_started_async(node, 'service_supplier', loop)
         await packet_list_async(node, loop)
     print(f'STARTED SUPPLIER [{node}]')
