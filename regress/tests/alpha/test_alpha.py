@@ -35,7 +35,7 @@ SCENARIO 6: users are able to use DHT network to store data
 
 SCENARIO 7: customer-1 upload and download file encrypted with his master key
 
-SCENARIO 8: customer-3 receive all archived messages
+SCENARIO 8: customer-3 receive all archived messages from message broker
 
 SCENARIO 9: ID server id-dead is dead and few nodes has rotated identities
 
@@ -140,7 +140,7 @@ def test_alpha():
     #--- SCENARIO 11 end: customer-2 talk to customer-rotated
     scenario11_end(old_customer_rotated_info, new_customer_rotated_info, old_customer_2_info)
 
-    #--- SCENARIO 8: customer-3 receive all archived messages
+    #--- SCENARIO 8: customer-3 receive all archived messages from message broker
     scenario8()
 
     #--- SCENARIO 18: customer-2 send message to the group but active broker-1 is offline
@@ -475,7 +475,7 @@ def scenario7():
 def scenario8():
     global group_customers_1_2_3_messages
     set_active_scenario('SCENARIO 8')
-    print('\n\n============\n[SCENARIO 8] customer-3 receive all archived messages')
+    print('\n\n============\n[SCENARIO 8] customer-3 receive all archived messages from message broker')
 
     kw.wait_service_state(CUSTOMERS_IDS, 'service_shared_data', 'ON')
     kw.wait_service_state(CUSTOMERS_IDS, 'service_private_groups', 'ON')
@@ -517,10 +517,13 @@ def scenario8():
 
     customer_1_broker_consumers = kw.queue_consumer_list_v1(customer_1_active_broker_name, extract_ids=True)
     customer_1_broker_producers = kw.queue_producer_list_v1(customer_1_active_broker_name, extract_ids=True)
+    customer_1_broker_keepers = kw.queue_keeper_list_v1(customer_1_active_broker_name, extract_ids=True)
     assert len(customer_1_broker_consumers) >= 1
     assert len(customer_1_broker_producers) >= 1
+    assert len(customer_1_broker_keepers) >= 1
     assert 'customer-1@id-a_8084' in customer_1_broker_consumers
     assert 'customer-1@id-a_8084' in customer_1_broker_producers
+    assert 'customer-1@id-a_8084' in customer_1_broker_keepers
 
     assert len(kw.message_conversation_v1('customer-2')['result']) == 4
 
@@ -540,12 +543,16 @@ def scenario8():
 
     customer_1_broker_consumers = kw.queue_consumer_list_v1(customer_1_active_broker_name, extract_ids=True)
     customer_1_broker_producers = kw.queue_producer_list_v1(customer_1_active_broker_name, extract_ids=True)
+    customer_1_broker_keepers = kw.queue_keeper_list_v1(customer_1_active_broker_name, extract_ids=True)
     assert len(customer_1_broker_consumers) >= 2
     assert len(customer_1_broker_producers) >= 2
+    assert len(customer_1_broker_keepers) >= 2
     assert 'customer-1@id-a_8084' in customer_1_broker_consumers
     assert 'customer-1@id-a_8084' in customer_1_broker_producers
+    assert 'customer-1@id-a_8084' in customer_1_broker_keepers
     assert 'customer-2@id-b_8084' in customer_1_broker_consumers
     assert 'customer-2@id-b_8084' in customer_1_broker_producers
+    assert 'customer-2@id-b_8084' in customer_1_broker_keepers
 
     assert len(kw.message_history_v1('customer-1', customer_1_group_key_id, message_type='group_message')['result']) == 0
     assert len(kw.message_history_v1('customer-2', customer_1_group_key_id, message_type='group_message')['result']) == 0
@@ -584,6 +591,13 @@ def scenario8():
 
     customer_1_broker_consumers = kw.queue_consumer_list_v1(customer_1_active_broker_name, extract_ids=True)
     customer_1_broker_producers = kw.queue_producer_list_v1(customer_1_active_broker_name, extract_ids=True)
+    customer_1_broker_keepers = kw.queue_keeper_list_v1(customer_1_active_broker_name, extract_ids=True)
+    assert 'customer-1@id-a_8084' in customer_1_broker_consumers
+    assert 'customer-1@id-a_8084' in customer_1_broker_producers
+    assert 'customer-1@id-a_8084' not in customer_1_broker_keepers
+    assert 'customer-2@id-b_8084' in customer_1_broker_consumers
+    assert 'customer-2@id-b_8084' in customer_1_broker_producers
+    assert 'customer-2@id-b_8084' not in customer_1_broker_keepers
 
     customer_1_group_info_offline = kw.group_info_v1('customer-1', customer_1_group_key_id)['result']
     assert customer_1_group_info_offline['state'] == 'OFFLINE'
@@ -611,6 +625,10 @@ def scenario8():
 
     customer_1_broker_consumers = kw.queue_consumer_list_v1(customer_1_active_broker_name, extract_ids=True)
     customer_1_broker_producers = kw.queue_producer_list_v1(customer_1_active_broker_name, extract_ids=True)
+    customer_1_broker_keepers = kw.queue_keeper_list_v1(customer_1_active_broker_name, extract_ids=True)
+    assert 'customer-3@id-a_8084' in customer_1_broker_consumers
+    assert 'customer-3@id-a_8084' in customer_1_broker_producers
+    assert 'customer-3@id-a_8084' in customer_1_broker_keepers
 
     # customer-3 must also see all message that was sent to the group when he was not present yet
     assert kw.group_info_v1('customer-3', customer_1_group_key_id)['result']['last_sequence_id'] == 10
@@ -996,8 +1014,10 @@ def scenario12_begin():
 
     customer_4_broker_consumers = kw.queue_consumer_list_v1(customer_4_active_broker_name, extract_ids=True)
     customer_4_broker_producers = kw.queue_producer_list_v1(customer_4_active_broker_name, extract_ids=True)
+    customer_4_broker_keepers = kw.queue_keeper_list_v1(customer_4_active_broker_name, extract_ids=True)
     assert 'customer-4@id-b_8084' in customer_4_broker_consumers
     assert 'customer-4@id-b_8084' in customer_4_broker_producers
+    assert 'customer-4@id-b_8084' in customer_4_broker_keepers
 
     # share group key from customer-4 to customer-2
     kw.group_share_v1('customer-4', customer_4_group_key_id, 'customer-2@id-b_8084')
@@ -1011,10 +1031,13 @@ def scenario12_begin():
 
     customer_4_broker_consumers = kw.queue_consumer_list_v1(customer_4_active_broker_name, extract_ids=True)
     customer_4_broker_producers = kw.queue_producer_list_v1(customer_4_active_broker_name, extract_ids=True)
+    customer_4_broker_keepers = kw.queue_keeper_list_v1(customer_4_active_broker_name, extract_ids=True)
     assert 'customer-4@id-b_8084' in customer_4_broker_consumers
     assert 'customer-4@id-b_8084' in customer_4_broker_producers
+    assert 'customer-4@id-b_8084' in customer_4_broker_keepers
     assert 'customer-2@id-b_8084' in customer_4_broker_consumers
     assert 'customer-2@id-b_8084' in customer_4_broker_producers
+    assert 'customer-2@id-b_8084' in customer_4_broker_keepers
 
     assert len(kw.message_history_v1('customer-4', customer_4_group_key_id, message_type='group_message')['result']) == 0
     assert len(kw.message_history_v1('customer-2', customer_4_group_key_id, message_type='group_message')['result']) == 0
@@ -1138,18 +1161,24 @@ def scenario12_end(old_customer_4_info):
     # verify new broker accepted customer-2
     customer_2_rotated_broker_consumers = kw.queue_consumer_list_v1(customer_2_rotated_broker_name, extract_ids=True)
     customer_2_rotated_broker_producers = kw.queue_producer_list_v1(customer_2_rotated_broker_name, extract_ids=True)
+    customer_2_rotated_broker_keepers = kw.queue_keeper_list_v1(customer_2_rotated_broker_name, extract_ids=True)
     assert 'customer-2@id-b_8084' in customer_2_rotated_broker_consumers
     assert 'customer-2@id-b_8084' in customer_2_rotated_broker_producers
+    assert 'customer-2@id-b_8084' in customer_2_rotated_broker_keepers
     assert 'customer-4@id-b_8084' in customer_2_rotated_broker_consumers
     assert 'customer-4@id-b_8084' in customer_2_rotated_broker_producers
+    assert 'customer-4@id-b_8084' in customer_2_rotated_broker_keepers
 
     # verify new broker accepted customer-4
     customer_4_rotated_broker_consumers = kw.queue_consumer_list_v1(customer_4_rotated_broker_name, extract_ids=True)
     customer_4_rotated_broker_producers = kw.queue_producer_list_v1(customer_4_rotated_broker_name, extract_ids=True)
+    customer_4_rotated_broker_keepers = kw.queue_keeper_list_v1(customer_4_rotated_broker_name, extract_ids=True)
     assert 'customer-2@id-b_8084' in customer_4_rotated_broker_consumers
     assert 'customer-2@id-b_8084' in customer_4_rotated_broker_producers
+    assert 'customer-2@id-b_8084' in customer_4_rotated_broker_keepers
     assert 'customer-4@id-b_8084' in customer_4_rotated_broker_consumers
     assert 'customer-4@id-b_8084' in customer_4_rotated_broker_producers
+    assert 'customer-4@id-b_8084' in customer_4_rotated_broker_keepers
 
     # send one message to the group after brokers rotated from customer-4
     group_customers_2_4_messages.append(kw.verify_message_sent_received(
@@ -1196,10 +1225,13 @@ def scenario12_end(old_customer_4_info):
 
     customer_4_broker_consumers = kw.queue_consumer_list_v1(customer_4_old_broker_name, extract_ids=True)
     customer_4_broker_producers = kw.queue_producer_list_v1(customer_4_old_broker_name, extract_ids=True)
+    customer_4_broker_keepers = kw.queue_keeper_list_v1(customer_4_old_broker_name, extract_ids=True)
     assert 'customer-4@id-b_8084' not in customer_4_broker_consumers
     assert 'customer-4@id-b_8084' not in customer_4_broker_producers
+    assert 'customer-4@id-b_8084' not in customer_4_broker_keepers
     assert 'customer-2@id-b_8084' not in customer_4_broker_consumers
     assert 'customer-2@id-b_8084' not in customer_4_broker_producers
+    assert 'customer-2@id-b_8084' not in customer_4_broker_keepers
 
     customer_4_group_info_offline = kw.group_info_v1('customer-4', customer_4_group_key_id)['result']
     assert customer_4_group_info_offline['state'] == 'OFFLINE'

@@ -158,7 +158,7 @@ def start(AckHandler=None, wide=False, refresh_cache=False, include_all=True, in
     if _Debug:
         lg.args(_DebugLevel, wide=wide, refresh_cache=refresh_cache, include_all=include_all, include_enabled=include_enabled)
     return propagate(
-        selected_contacts=contactsdb.contacts_remote(include_all=include_all, include_enabled=include_enabled),
+        selected_contacts=list(filter(None, contactsdb.contacts_remote(include_all=include_all, include_enabled=include_enabled))),
         AckHandler=AckHandler,
         wide=wide,
         refresh_cache=refresh_cache,

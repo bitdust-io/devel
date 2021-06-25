@@ -793,6 +793,15 @@ def queue_producer_list_v1(node, extract_ids=False):
         return response.json()
     return [f['producer_id'] for f in response.json()['result']]
 
+def queue_keeper_list_v1(node, extract_ids=False):
+    response = request_get(node, 'queue/keeper/list/v1', timeout=20)
+    assert response.status_code == 200
+    print('queue/keeper/list/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
+    assert response.json()['status'] == 'OK', response.json()
+    if not extract_ids:
+        return response.json()
+    return [f['customer_id'] for f in response.json()['result']]
+
 #------------------------------------------------------------------------------
 
 def wait_packets_finished(nodes, verbose=False):

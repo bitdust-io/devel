@@ -307,7 +307,7 @@ class P2PConnector(automat.Automat):
         """
         Condition method.
         """
-        return len(contactsdb.contacts_remote()) > 0
+        return len(list(filter(None, contactsdb.contacts_remote()))) > 0
 
     def doInit(self, *args, **kwargs):
         version_number = bpio.ReadTextFile(settings.VersionNumberFile()).strip()

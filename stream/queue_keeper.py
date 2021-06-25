@@ -239,7 +239,7 @@ class QueueKeeper(automat.Automat):
             'position': self.known_position,
             'brokers': self.known_brokers,
             'archive_folder_path': self.known_archive_folder_path,
-            'connected_queues': self.connected_queues,
+            'connected_queues': list(self.connected_queues),
         })
         return j
 
@@ -436,7 +436,7 @@ class QueueKeeper(automat.Automat):
         if prev_revision is None:
             prev_revision = 0
         if _Debug:
-            lg.args(_DebugLevel, c=self.customer_idurl, p=desired_position, b=self.broker_idurl,
+            lg.args(_DebugLevel, c=self.customer_id, p=desired_position, b=self.broker_id,
                     a=archive_folder_path, r=prev_revision+1, latest_dht_records=self.latest_dht_records)
         self._do_dht_write(
             desired_position=desired_position,
@@ -529,7 +529,9 @@ class QueueKeeper(automat.Automat):
         self.refresh_task = None
         _QueueKeepers.pop(self.customer_idurl)
         self.customer_idurl = None
+        self.customer_id = None
         self.broker_idurl = None
+        self.broker_id = None
         self.known_position = -1
         self.new_possible_position = None
         self.registered_callbacks = None
@@ -546,7 +548,7 @@ class QueueKeeper(automat.Automat):
         self.known_brokers.clear()
         self.latest_dht_records.clear()
         if not dht_brokers_info_list:
-            lg.warn('no brokers found in DHT records for customer %r' % self.customer_idurl)
+            lg.warn('no brokers found in DHT records for customer %r' % self.customer_id)
             self.dht_read_use_cache = False
             self.automat('my-record-not-exist', desired_position=my_position)
             return
@@ -637,7 +639,7 @@ class QueueKeeper(automat.Automat):
                 except:
                     errmsg = str(err)
         err_msg = strng.to_text(errmsg)
-        lg.err('failed to write new broker info for %s : %s' % (self.customer_idurl, err_msg))
+        lg.err('failed to write new broker info for %s : %s' % (self.customer_id, err_msg))
         if err_msg.count('current revision is'):
             try:
                 current_revision = re.search("current revision is (\d+)", err_msg).group(1)
