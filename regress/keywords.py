@@ -641,6 +641,8 @@ def packet_list_v1(node, wait_all_finish=False, attempts=20, delay=5, verbose=Fa
                 continue
             if r.get('command') == 'Data' and r.get('direction') == 'outgoing' and r.get('label', '').count('-rotated'):
                 continue
+            if r.get('command') == 'Identity' and r.get('direction') == 'outgoing' and r.get('label', '').count('-rotated'):
+                continue
             found_packet = True
         if not found_packet or not wait_all_finish:
             break
