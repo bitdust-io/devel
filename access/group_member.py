@@ -1513,12 +1513,11 @@ class GroupMember(automat.Automat):
     def _on_broker_lookup_failed(self, err, broker_pos):
         if _Debug:
             lg.args(_DebugLevel, current_target=self.current_target)
-        lg.err('was not able to hire broker at position %d : %r' % (broker_pos, err, ))
         if not self.current_target:
-            lg.warn('current target for %r is empty' % self)
+            lg.warn('current target for %r is empty, ignored lookup response: %r' % (self, err, ))
             return
         if self.current_target['broker_pos'] != broker_pos or self.current_target['action'] != 'hire':
-            lg.warn('current target for %r is different, skip out-dated broker hire response' % self)
+            lg.warn('current target for %r is different, skip out-dated broker hire lookup response: %r' % (self, err, ))
             return
         if isinstance(err, Failure):
             resp_args = None

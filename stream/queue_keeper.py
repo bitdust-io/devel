@@ -206,6 +206,7 @@ class QueueKeeper(automat.Automat):
         self.customer_idurl = customer_idurl
         self.customer_id = self.customer_idurl.to_id()
         self.broker_idurl = broker_idurl or my_id.getIDURL()
+        self.broker_id = self.broker_idurl.to_id()
         self.known_position = -1
         self.registered_callbacks = []
         self.connected_queues = set()
@@ -229,6 +230,18 @@ class QueueKeeper(automat.Automat):
 
     def __repr__(self):
         return '%s[%d](%s)' % (self.id, self.known_position, self.state)
+
+    def to_json(self):
+        j = super().to_json()
+        j.update({
+            'customer_id': self.customer_id,
+            'broker_id': self.broker_id,
+            'position': self.known_position,
+            'brokers': self.known_brokers,
+            'archive_folder_path': self.known_archive_folder_path,
+            'connected_queues': self.connected_queues,
+        })
+        return j
 
     def A(self, event, *args, **kwargs):
         """
