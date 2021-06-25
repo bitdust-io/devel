@@ -217,6 +217,8 @@ def rate_all_users():
         lg.out(_DebugLevel, 'ratings.rate_all_users')
     monthStr = time.strftime('%B')
     for idurl in contactsdb.contacts_remote(include_all=True):
+        if not idurl:
+            continue
         isalive = online_status.isOnline(idurl)
         mall, malive, tall, talive = increase_rating(idurl, isalive)
         month_percent = 100.0 * float(malive) / float(mall)

@@ -1200,6 +1200,12 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     def queue_keeper_list_v1(self, request):
         return api.queue_keepers_list()
 
+    @GET('^/qu/ped/l$')
+    @GET('^/v1/queue/peddler/list$')
+    @GET('^/queue/peddler/list/v1$')
+    def queue_peddler_list_v1(self, request):
+        return api.queue_peddlers_list()
+
     #------------------------------------------------------------------------------
 
     @GET('^/ev/l$')
