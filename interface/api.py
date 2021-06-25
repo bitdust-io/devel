@@ -1039,7 +1039,7 @@ def files_sync():
 
 def files_list(remote_path=None, key_id=None, recursive=True, all_customers=False, include_uploads=False, include_downloads=False):
     """
-    Returns list of known files registered in the catalog under given `remote_path` folder.
+    Returns list of all known files registered in the catalog under given `remote_path` folder.
     By default returns items from root of the catalog.
 
     If `key_id` is passed will only return items encrypted using that key.
@@ -2736,7 +2736,7 @@ def group_share(group_key_id, trusted_user_id, timeout=45, publish_events=False)
 
 def friends_list():
     """
-    Returns list of registered correspondents.
+    Returns list of all registered correspondents.
 
     ###### HTTP
         curl -X GET 'localhost:8180/friend/list/v1'
@@ -4360,7 +4360,7 @@ def streams_list(protocols=None):
 
 def queues_list():
     """
-    Returns list of registered streaming queues.
+    Returns list of all registered streaming queues.
 
     ###### HTTP
         curl -X GET 'localhost:8180/queue/list/v1'
@@ -4379,7 +4379,7 @@ def queues_list():
 
 def queue_consumers_list():
     """
-    Returns list of registered queue consumers.
+    Returns list of all registered queue consumers.
 
     ###### HTTP
         curl -X GET 'localhost:8180/queue/consumer/list/v1'
@@ -4400,7 +4400,7 @@ def queue_consumers_list():
 
 def queue_producers_list():
     """
-    Returns list of registered queue producers.
+    Returns list of all registered queue producers.
 
     ###### HTTP
         curl -X GET 'localhost:8180/queue/producer/list/v1'
@@ -4417,6 +4417,22 @@ def queue_producers_list():
         'state': producer_info.state,
         'produced': producer_info.produced_messages,
     } for producer_info in p2p_queue.producer().values()])
+
+
+def queue_keepers_list():
+    """
+    Returns list of all registered queue keepers.
+
+    ###### HTTP
+        curl -X GET 'localhost:8180/queue/keeper/list/v1'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "queue_keepers_list", "kwargs": {} }');
+    """
+    if not driver.is_on('service_message_broker'):
+        return ERROR('service_message_broker() is not started')
+    from stream import queue_keeper
+    return RESULT([qk.to_json() for qk in queue_keeper.queue_keepers().values()])
 
 #------------------------------------------------------------------------------
 

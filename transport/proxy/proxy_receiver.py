@@ -63,7 +63,7 @@ from io import BytesIO
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 _PacketLogFileEnabled = False
@@ -230,7 +230,7 @@ class ProxyReceiver(automat.Automat):
         )
 
     def __repr__(self):
-        return '%s[%s](%s)' % (self.id, self.router_id, self.state)
+        return '%s_%s_%s(%s)' % (self.id, self.router_id, (self.router_connection_info or {}).get('repr', '?'), self.state)
 
     def to_json(self):
         j = super().to_json()
@@ -853,6 +853,7 @@ class ProxyReceiver(automat.Automat):
         self.router_connection_info = {
             'id': active_router_sessions[0].id,
             'index': active_router_sessions[0].index,
+            'repr': repr(active_router_sessions[0]),
             'proto': info.proto,
             'host': info.host,
             'idurl': self.router_idurl,
@@ -905,7 +906,7 @@ class ProxyReceiver(automat.Automat):
         # self.automat('router-disconnected')
 
     def _on_router_session_disconnected(self, oldstate, newstate, event_string, *args, **kwargs):
-        lg.warn('router session disconnected: %s->%s because of %r' % (oldstate, newstate, event_string))
+        lg.err('router session disconnected: %s->%s because of %r' % (oldstate, newstate, event_string))
         self.automat('router-disconnected')
 
     def _on_queue_item_status_changed(self, pkt_out, status, error=''):

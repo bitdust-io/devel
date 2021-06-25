@@ -75,7 +75,6 @@ from twisted.internet.defer import DeferredList
 from logs import lg
 
 from automats import automat
-from automats import global_state
 
 from main import initializer
 from main import settings
@@ -101,7 +100,6 @@ def shutdown(x=None):
         from services import driver
         from main import control
         from main import events
-        from main import settings
         from logs import weblog
         from logs import webtraffic
         from system import tmpfile
@@ -152,15 +150,21 @@ def shutdown(x=None):
 
 #------------------------------------------------------------------------------
 
-
 def A(event=None, *args, **kwargs):
     global _Shutdowner
     if _Shutdowner is None:
-        _Shutdowner = Shutdowner('shutdowner', 'AT_STARTUP', 2, True)
+        _Shutdowner = Shutdowner(
+            name='shutdowner',
+            state='AT_STARTUP',
+            debug_level=_DebugLevel,
+            log_events=_Debug,
+            log_transitions=_Debug,
+        )
     if event is not None:
         _Shutdowner.event(event, *args, **kwargs)
     return _Shutdowner
 
+#------------------------------------------------------------------------------
 
 class Shutdowner(automat.Automat):
     """
@@ -175,7 +179,6 @@ class Shutdowner(automat.Automat):
         self.flagReactor = False
         self.shutdown_param = None
         self.enableMemoryProfile = settings.enableMemoryProfile()
-
 
     def state_changed(self, oldstate, newstate, event, *args, **kwargs):
         initializer.A('shutdowner.state', newstate)
@@ -287,8 +290,6 @@ class Shutdowner(automat.Automat):
             except:
                 if _Debug:
                     lg.out(_DebugLevel, "guppy package is not installed")
-
-    #------------------------------------------------------------------------------
 
     def _shutdown_restart(self, param=''):
         """

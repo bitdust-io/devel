@@ -52,11 +52,8 @@ from __future__ import print_function
 _Debug = False
 _DebugLevel = 10
 
-# _LogSignVerify = False
-
 #------------------------------------------------------------------------------
 
-import os
 import sys
 
 from twisted.internet import threads
@@ -83,7 +80,6 @@ from userid import my_id
 from userid import id_url
 
 #------------------------------------------------------------------------------
-
 
 class Packet(object):
     """

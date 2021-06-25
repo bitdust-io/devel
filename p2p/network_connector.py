@@ -71,7 +71,7 @@ from six.moves import range
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -127,9 +127,9 @@ def A(event=None, *args, **kwargs):
         _NetworkConnector = NetworkConnector(
             name='network_connector',
             state='AT_STARTUP',
-            log_events=_DebugLevel,
-            log_transitions=_DebugLevel,
-            publish_events=False,
+            debug_level=_DebugLevel,
+            log_events=_Debug,
+            log_transitions=_Debug,
         )
     if event is not None:
         _NetworkConnector.automat(event, *args, **kwargs)
@@ -161,7 +161,6 @@ class NetworkConnector(automat.Automat):
     }
 
     def init(self):
-        self.log_transitions = _Debug
         self.last_upnp_time = 0
         self.last_reconnect_time = 0
         self.last_internet_state = 'disconnected'
@@ -179,9 +178,9 @@ class NetworkConnector(automat.Automat):
         if oldstate != 'CONNECTED' and newstate == 'CONNECTED':
             # TODO: redesign the state machine to cover that
             if self.last_bytes_in_counter < p2p_stats.get_total_bytes_in():
-                lg.info('HELLO BITDUST WORLD !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+                lg.info('HELLO BITDUST WORLD!')
             else:
-                lg.warn('SEEMS I AM OFFLINE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+                lg.warn('SEEMS I AM OFFLINE!')
             self.last_bytes_in_counter = p2p_stats.get_total_bytes_in()
 
     def A(self, event, *args, **kwargs):

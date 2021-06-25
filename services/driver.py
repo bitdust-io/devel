@@ -38,7 +38,7 @@ from six.moves import range
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 12
 
 #------------------------------------------------------------------------------
@@ -466,7 +466,7 @@ def restart(service_name, wait_timeout=None):
         dl.append(succeed(True))
 
     if _Debug:
-        lg.out(_DebugLevel, 'driver.restart %s' % service_name)
+        lg.args(_DebugLevel, service=service_name, wait_timeout=wait_timeout, starting=bool(_StartingDeferred), stoping=bool(_StopingDeferred))
     dependencies = DeferredList(dl, fireOnOneErrback=True, consumeErrors=True)
     dependencies.addCallback(_do_stop)
     dependencies.addErrback(_on_timeout)

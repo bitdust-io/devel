@@ -1513,12 +1513,11 @@ class GroupMember(automat.Automat):
     def _on_broker_lookup_failed(self, err, broker_pos):
         if _Debug:
             lg.args(_DebugLevel, current_target=self.current_target)
-        lg.err('was not able to hire broker at position %d : %r' % (broker_pos, err, ))
         if not self.current_target:
-            lg.warn('current target for %r is empty' % self)
+            lg.warn('current target for %r is empty, ignored lookup response: %r' % (self, err, ))
             return
         if self.current_target['broker_pos'] != broker_pos or self.current_target['action'] != 'hire':
-            lg.warn('current target for %r is different, skip out-dated broker hire response' % self)
+            lg.warn('current target for %r is different, skip out-dated broker hire lookup response: %r' % (self, err, ))
             return
         if isinstance(err, Failure):
             resp_args = None
@@ -1527,7 +1526,7 @@ class GroupMember(automat.Automat):
             except:
                 lg.exc()
             if resp_args:
-                resp_payload = strng.to_text(resp_args[0].Payload).strip()
+                resp_payload = strng.to_text(resp_args[0][0].Payload).strip()
                 lg.warn('lookup request to broker at position %d failed: %r' % (broker_pos, resp_payload, ))
                 if resp_payload.startswith('position mismatch'):
                     _, _, expected_position = resp_payload.rpartition(' ')
@@ -1539,7 +1538,19 @@ class GroupMember(automat.Automat):
                     if expected_position is not None:
                         if expected_position != broker_pos:
                             lg.warn('detected broker position mismatch from lookup request: %r != %r' % (expected_position, broker_pos, ))
-                            self.automat('broker-position-mismatch')
+                            if broker_pos == 0:
+                                lg.err('top broker lookup failed: %r' % err)
+                                self.automat('top-broker-connect-failed')
+                                return
+                            self.automat('one-broker-lookup-position-mismatch', broker_pos)
+                            self.hired_brokers[broker_pos] = None
+                            if self.connecting_brokers is not None:
+                                self.connecting_brokers.discard(broker_pos)
+                            if self.connect_lookup_attempts < MAX_CONNECT_LOOKUP_ATTEMPTS:
+                                self.targets.append(self.current_target)
+                            self.current_target = None
+                            self._do_connect_hire_next_broker()
+                            # self.automat('broker-position-mismatch')
                             return
         if broker_pos == 0:
             lg.err('top broker lookup failed: %r' % err)
@@ -1570,7 +1581,7 @@ class GroupMember(automat.Automat):
             except:
                 lg.exc()
             if resp_args:
-                resp_payload = strng.to_text(resp_args[0].Payload).strip()
+                resp_payload = strng.to_text(resp_args[0][0].Payload).strip()
                 lg.warn('request to broker at position %d failed: %r' % (broker_pos, resp_payload, ))
                 if resp_payload.startswith('position mismatch'):
                     _, _, expected_position = resp_payload.rpartition(' ')
@@ -1582,7 +1593,19 @@ class GroupMember(automat.Automat):
                     if expected_position is not None:
                         if expected_position != broker_pos:
                             lg.warn('detected broker position mismatch from connect request: %r != %r' % (expected_position, broker_pos, ))
-                            self.automat('broker-position-mismatch')
+                            if broker_pos == 0:
+                                lg.err('top broker lookup failed: %r' % err)
+                                self.automat('top-broker-connect-failed')
+                                return
+                            self.automat('one-broker-connect-position-mismatch', broker_pos)
+                            self.hired_brokers[broker_pos] = None
+                            if self.connecting_brokers is not None:
+                                self.connecting_brokers.discard(broker_pos)
+                            if self.connect_lookup_attempts < MAX_CONNECT_LOOKUP_ATTEMPTS:
+                                self.targets.append(self.current_target)
+                            self.current_target = None
+                            self._do_connect_hire_next_broker()
+                            # self.automat('broker-position-mismatch')
                             return
         if broker_pos == 0:
             lg.err('top broker connection failed: %r' % err)

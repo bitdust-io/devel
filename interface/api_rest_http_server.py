@@ -1194,6 +1194,12 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     def queue_producer_list_v1(self, request):
         return api.queue_producers_list()
 
+    @GET('^/qu/k/l$')
+    @GET('^/v1/queue/keeper/list$')
+    @GET('^/queue/keeper/list/v1$')
+    def queue_keeper_list_v1(self, request):
+        return api.queue_keepers_list()
+
     #------------------------------------------------------------------------------
 
     @GET('^/ev/l$')

@@ -58,8 +58,6 @@ from userid import my_id
 #------------------------------------------------------------------------------
 
 def do_service_test(service_name, result_defer, wait_timeout):
-    if _Debug:
-        lg.args(_DebugLevel, service_name=service_name)
     try:
         svc_info = api.service_info(service_name)
         if not svc_info or 'result' not in svc_info:
@@ -76,6 +74,11 @@ def do_service_test(service_name, result_defer, wait_timeout):
             error='disconnected',
             reason='{}_info_error'.format(service_name),
         ))
+        return None
+    if _Debug:
+        lg.args(_DebugLevel, service=service_name, state=svc_state, wait_timeout=wait_timeout)
+    if svc_state == 'STARTING':
+        reactor.callLater(0.1, do_service_test, service_name, result_defer, wait_timeout)  # @UndefinedVariable
         return None
     if svc_state != 'ON':
         do_service_restart(service_name, result_defer, wait_timeout)

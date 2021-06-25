@@ -86,7 +86,7 @@ class UDPTransportService(LocalService):
 
     def installed(self):
         return False
-    # from logs import lg
+        # from logs import lg
         # try:
         #     from transport.udp import udp_interface
         # except:
@@ -95,12 +95,14 @@ class UDPTransportService(LocalService):
         # return True
 
     def _on_transport_state_changed(self, transport, oldstate, newstate):
+        from logs import lg
+        lg.info('%s -> %s in %r  starting_deferred=%r' % (oldstate, newstate, transport, bool(self.starting_deferred)))
         if self.starting_deferred:
-            if newstate == 'LISTENING':
-                self.starting_deferred.callback(newstate)
+            if newstate in ['LISTENING', ] and oldstate != newstate:
+                self.starting_deferred.callback(True)
                 self.starting_deferred = None
-            elif newstate == 'OFFLINE' and oldstate in ['STARTING', 'STOPPING', ]:
-                self.starting_deferred.callback(newstate)
+            elif newstate in ['OFFLINE', ] and oldstate != newstate and oldstate not in ['INIT', ]:
+                self.starting_deferred.errback(Exception(newstate))
                 self.starting_deferred = None
 
     def _on_enabled_disabled(self, path, value, oldvalue, result):

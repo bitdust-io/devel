@@ -86,9 +86,14 @@ class HTTPTransportService(LocalService):
         return True
 
     def _on_transport_state_changed(self, transport, oldstate, newstate):
+        from logs import lg
+        lg.info('%s -> %s in %r  starting_deferred=%r' % (oldstate, newstate, transport, bool(self.starting_deferred)))
         if self.starting_deferred:
-            if newstate in ['LISTENING', 'OFFLINE', ]:
+            if newstate in ['LISTENING', ]:
                 self.starting_deferred.callback(newstate)
+                self.starting_deferred = None
+            elif newstate in ['OFFLINE', ]:
+                self.starting_deferred.errback(Exception(newstate))
                 self.starting_deferred = None
 
     def _on_enabled_disabled(self, path, value, oldvalue, result):

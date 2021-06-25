@@ -573,10 +573,11 @@ def service_info_v1(node, service_name, expected_state, attempts=20, delay=5, ve
         assert response.status_code == 200
         assert response.json()['status'] == 'OK', response.json()
         current_state = response.json()['result']['state']
-        if verbose:
-            print(f'service/info/{service_name}/v1 [{node}] : %s' % pprint.pformat(response.json()))
         if current_state == expected_state:
+            if verbose:
+                print(f'service/info/{service_name}/v1 [{node}] : %s' % pprint.pformat(response.json()))
             break
+        print(f'  service/info/{service_name}/v1 [{node}] : %s' % current_state)
         count += 1
         if count >= attempts:
             assert False, f"service {service_name} is not {expected_state} after {attempts} attempts"
@@ -639,6 +640,8 @@ def packet_list_v1(node, wait_all_finish=False, attempts=20, delay=5, verbose=Fa
             if r.get('command') == 'Retrieve' and r.get('direction') == 'outgoing' and r.get('label', '').count('-rotated'):
                 continue
             if r.get('command') == 'Data' and r.get('direction') == 'outgoing' and r.get('label', '').count('-rotated'):
+                continue
+            if r.get('command') == 'Identity' and r.get('direction') == 'outgoing' and r.get('label', '').count('-rotated'):
                 continue
             found_packet = True
         if not found_packet or not wait_all_finish:

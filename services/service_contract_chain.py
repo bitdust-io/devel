@@ -74,6 +74,9 @@ class ContractChainService(LocalService):
 
     def _on_contract_chain_state_changed(self, oldstate, newstate, event_string, *args, **kwargs):
         if self.starting_deferred:
-            if newstate in ['CONNECTED', 'DISCONNECTED', ] and oldstate not in ['AT_STARTUP', ]:
-                self.starting_deferred.callback(newstate)
+            if newstate in ['CONNECTED', ] and oldstate not in ['AT_STARTUP', ]:
+                self.starting_deferred.callback(True)
+                self.starting_deferred = None
+            elif newstate in ['DISCONNECTED', ] and oldstate not in ['AT_STARTUP', ]:
+                self.starting_deferred.errback(Exception(newstate))
                 self.starting_deferred = None
