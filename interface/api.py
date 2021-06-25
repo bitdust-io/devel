@@ -313,6 +313,8 @@ def process_info():
             'queues': 0,
             'consumers': 0,
             'producers': 0,
+            'keepers': 0,
+            'peddlers': 0,
             'supplier_queues': 0,
         },
         'automats': {
@@ -378,6 +380,11 @@ def process_info():
         result['stream']['queues'] = len(p2p_queue.queue())
         result['stream']['consumers'] = len(p2p_queue.consumer())
         result['stream']['producers'] = len(p2p_queue.producer())
+    if driver.is_on('service_message_broker'):
+        from stream import queue_keeper
+        from stream import message_peddler
+        result['stream']['peddlers'] = len(message_peddler.streams())
+        result['stream']['keepers'] = len(queue_keeper.queue_keepers())
     if driver.is_on('service_data_motion'):
         from stream import io_throttle
         result['stream']['supplier_queues'] = len(io_throttle.throttle().ListSupplierQueues())
@@ -4433,6 +4440,30 @@ def queue_keepers_list():
         return ERROR('service_message_broker() is not started')
     from stream import queue_keeper
     return RESULT([qk.to_json() for qk in queue_keeper.queue_keepers().values()])
+
+
+def queue_peddlers_list():
+    """
+    Returns list of all registered message peddlers.
+
+    ###### HTTP
+        curl -X GET 'localhost:8180/queue/peddler/list/v1'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "queue_peddlers_list", "kwargs": {} }');
+    """
+    if not driver.is_on('service_message_broker'):
+        return ERROR('service_message_broker() is not started')
+    from stream import message_peddler
+    return RESULT([{
+        'queue_id': queue_id,
+        'active': mp['active'],
+        'consumers': list(mp['consumers'].keys()),
+        'producers': list(mp['producers'].keys()),
+        'messages': len(mp['messages']),
+        'archive': len(mp['archive']),
+        'sequence_id': mp['last_sequence_id'],
+    } for queue_id, mp in message_peddler.streams().items()])
 
 #------------------------------------------------------------------------------
 

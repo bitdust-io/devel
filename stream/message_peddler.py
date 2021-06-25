@@ -1180,7 +1180,7 @@ class MessagePeddler(automat.Automat):
                 return
         if not streams()[queue_id]['consumers'] and not streams()[queue_id]['producers']:
             # TODO: need to find a better way to keep data for offline groups
-            # currently it will lead to a resources leakage - need to clean up queues which are not in use for a long time
+            # current solution have a resource leakage - need to clean up queues which are not in use for a long time
             if False:
                 lg.info('no consumers and no producers left, closing queue %r' % queue_id)
                 stop_stream(queue_id)
