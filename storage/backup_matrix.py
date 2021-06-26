@@ -58,7 +58,7 @@ from io import BytesIO
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 8
 
 #------------------------------------------------------------------------------
@@ -681,8 +681,8 @@ def process_raw_list_files(supplier_num, list_files_text_body, customer_idurl=No
 
     inpt.close()
     if _Debug:
-        lg.out(_DebugLevel, 'backup_matrix.process_raw_list_files remote_files_changed:%s old:%d new:%d backups2remove:%d paths2remove:%d missed_backups:%d remote_files:%d' % (
-            remote_files_changed, oldfiles, newfiles, len(backups2remove), len(paths2remove), len(missed_backups), len(remote_files())))
+        lg.out(_DebugLevel, 'backup_matrix.process_raw_list_files remote_files_changed:%s old:%d new:%d backups2remove:%d paths2remove:%d missed_backups:%d remote_files:%d query_results:%d' % (
+            remote_files_changed, oldfiles, newfiles, len(backups2remove), len(paths2remove), len(missed_backups), len(remote_files()), len(query_results), ))
     if remote_files_changed and is_in_sync:
         backup_control.Save()
     for query_key in query_results:

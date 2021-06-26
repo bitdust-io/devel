@@ -295,7 +295,9 @@ class ArchiveReader(automat.Automat):
                 },
             )
             self.requested_list_files[supplier_pos] = None if outpacket else False
-        self.request_list_files_timer = reactor.callLater(10, self._on_request_list_files_timeout)  # @UndefinedVariable
+        if _Debug:
+            lg.args(_DebugLevel, requested=self.requested_list_files)
+        self.request_list_files_timer = reactor.callLater(30, self._on_request_list_files_timeout)  # @UndefinedVariable
 
     def _do_select_archive_snapshots(self):
         iterID_and_path = backup_fs.WalkByID(self.archive_folder_path, iterID=backup_fs.fsID(self.queue_owner_idurl))

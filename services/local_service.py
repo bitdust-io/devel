@@ -91,6 +91,7 @@ class LocalService(automat.Automat):
     service_name = ''
     config_path = ''
     data_dir_required = False
+    stop_when_failed = False
 
     def __init__(self):
         if not self.service_name:
@@ -391,6 +392,11 @@ class LocalService(automat.Automat):
         """
         if _Debug:
             lg.args(_DebugLevel, service=self, result='failed')
+        if self.stop_when_failed:
+            try:
+                self.stop()
+            except:
+                lg.exc()
         if self.result_deferred:
             self.result_deferred.callback('failed')
             self.result_deferred = None
