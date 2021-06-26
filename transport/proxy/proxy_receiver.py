@@ -511,6 +511,11 @@ class ProxyReceiver(automat.Automat):
                     proto=self.router_connection_info.get('proto'),
                     host=self.router_connection_info.get('host'),
                 )
+                if not active_router_sessions:
+                    active_router_sessions = gateway.find_active_session(
+                        proto=self.router_connection_info.get('proto'),
+                        idurl=self.router_idurl,
+                    )
                 if active_router_sessions:
                     active_router_session_machine = automat.by_index(active_router_sessions[0].index)
             if active_router_session_machine is not None:
@@ -839,15 +844,21 @@ class ProxyReceiver(automat.Automat):
             lg.warn('%s was not found in pending requests: %s' % (response.PacketID, self.request_service_packet_id))
         if _Debug:
             lg.out(_DebugLevel, 'proxy_receiver._on_request_service_ack : %s' % str(response.Payload))
+        if self.router_idurl != response.CreatorID:
+            lg.err('received unexpected response from another node: %r ~ %r' % (self.router_idurl, response.CreatorID, ))
+            self.automat('service-refused', (response, info))
+            return
         service_ack_info = strng.to_text(response.Payload)
         if service_ack_info.startswith('rejected'):
             self.automat('service-refused', (response, info))
             return
-        active_router_sessions = gateway.find_active_session(info.proto, info.host)
+        active_router_sessions = gateway.find_active_session(info.proto, host=info.host)
+        if not active_router_sessions:
+            active_router_sessions = gateway.find_active_session(info.proto, idurl=response.CreatorID)
         if not active_router_sessions:
             lg.err('active connection with proxy router at %s:%s was not found' % (info.proto, info.host, ))
             if _Debug:
-                lg.args(_DebugLevel, ack_packet=info, active_sessions=gateway.list_active_sessions(info.proto))
+                lg.args(_DebugLevel, router_idurl=self.router_idurl, ack_packet=info, active_sessions=gateway.list_active_sessions(info.proto))
             self.automat('service-refused', (response, info))
             return
         self.router_connection_info = {

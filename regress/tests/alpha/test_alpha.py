@@ -1138,6 +1138,11 @@ def scenario12_end(old_customer_4_info):
     customer_4_old_broker_name = old_customer_4_info['active_broker_name']
     customer_4_group2_key_id = old_customer_4_info['group2_key_id']
 
+    # verify customer-2 group state before sending a new message - it suppose to trigger broker rotation
+    customer_2_group_info_before = kw.group_info_v1('customer-2', customer_4_group_key_id, wait_state='IN_SYNC!')['result']
+    assert customer_2_group_info_before['state'] == 'IN_SYNC!'
+    assert customer_2_group_info_before['last_sequence_id'] == 4
+
     # send one message to the group after brokers rotated from customer-2
     # this suppose to trigger brokers rotation because broker-rotated is dead
     group_customers_2_4_messages.append(kw.verify_message_sent_received(
