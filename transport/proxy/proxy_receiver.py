@@ -514,7 +514,7 @@ class ProxyReceiver(automat.Automat):
                 if not active_router_sessions:
                     active_router_sessions = gateway.find_active_session(
                         proto=self.router_connection_info.get('proto'),
-                        idurl=self.router_idurl,
+                        idurl=id_url.to_bin(self.router_idurl),
                     )
                 if active_router_sessions:
                     active_router_session_machine = automat.by_index(active_router_sessions[0].index)
@@ -854,7 +854,7 @@ class ProxyReceiver(automat.Automat):
             return
         active_router_sessions = gateway.find_active_session(info.proto, host=info.host)
         if not active_router_sessions:
-            active_router_sessions = gateway.find_active_session(info.proto, idurl=response.CreatorID)
+            active_router_sessions = gateway.find_active_session(info.proto, idurl=id_url.to_bin(response.CreatorID))
         if not active_router_sessions:
             lg.err('active connection with proxy router at %s:%s was not found' % (info.proto, info.host, ))
             if _Debug:
