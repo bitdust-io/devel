@@ -191,7 +191,8 @@ def transfer_key(key_id, trusted_idurl, include_private=False, include_signature
             key_object,
             key_id=key_id,
             include_private=include_private,
-            include_signature=include_signature,
+            # include_signature=include_signature,
+            generate_signature=include_signature,
         )
     except Exception as exc:
         lg.exc()
@@ -439,6 +440,7 @@ def on_key_received(newpacket, info, status, error_message):
         if key_object.isSigned():
             if not my_keys.verify_key_info_signature(key_json):
                 raise Exception('received key signature verification failed: %r' % key_json)
+            # TODO: must also compare "signature_pubkey" with pub key of the creator of the key!
         if key_object.isPublic():
             # received key is a public key
             if my_keys.is_key_registered(key_id):
