@@ -1075,6 +1075,8 @@ class MessagePeddler(automat.Automat):
         if _Debug:
             lg.args(_DebugLevel, request_packet=request_packet)
         if not my_keys.verify_key_info_signature(group_key_info):
+            if _Debug:
+                lg.exc('group key verification failed', exc_value=Exception(group_key_info))
             p2p_service.SendFail(request_packet, 'group key verification failed')
             result_defer.callback(False)
             return
@@ -1145,6 +1147,8 @@ class MessagePeddler(automat.Automat):
             result_defer.callback(True)
             return
         if not my_keys.verify_key_info_signature(group_key_info):
+            if _Debug:
+                lg.exc('group key verification failed while stopping consumer or producer', exc_value=Exception(group_key_info))
             p2p_service.SendFail(request_packet, 'group key verification failed while stopping consumer or producer')
             result_defer.callback(False)
             return
