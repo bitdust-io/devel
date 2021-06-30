@@ -675,7 +675,7 @@ class GroupMember(automat.Automat):
         received_messages = kwargs.get('received_messages')
         result_defer = Deferred()
         result_defer.addCallback(self._on_read_archive_success, received_messages)
-        result_defer.addErrback(self._on_read_archive_failed, received_messages)
+        result_defer.addErrback(self._on_read_archive_failed, received_messages, latest_known_sequence_id)
         ar = archive_reader.ArchiveReader()
         ar.automat(
             'start',
@@ -1645,9 +1645,13 @@ class GroupMember(automat.Automat):
                 latest_known_sequence_id = received_message['sequence_id']
         self._do_process_group_messages(received_group_messages, latest_known_sequence_id)
 
-    def _on_read_archive_failed(self, err, received_messages):
-        lg.err('received %d recent messages but read archived messages failed with: %r' % (len(received_messages), err, ))
-        self.automat('queue-read-failed')
+    def _on_read_archive_failed(self, err, received_messages, latest_known_sequence_id):
+        lg.warn('received %d recent messages but read archived messages failed with: %r' % (len(received_messages), err, ))
+        # self.automat('queue-read-failed')
+        self.last_sequence_id = latest_known_sequence_id
+        groups.set_last_sequence_id(self.group_key_id, latest_known_sequence_id)
+        groups.save_group_info(self.group_key_id)
+        self.automat('queue-in-sync')
         return None
 
     def _on_group_brokers_updated(self, evt):

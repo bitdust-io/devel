@@ -90,15 +90,15 @@ class MessageBrokerService(LocalService):
         except:
             lg.warn("wrong payload: %r" % json_payload)
             return p2p_service.SendFail(newpacket, 'wrong payload')
-        if action == 'broker-verify':
-            message_peddler.A(
-                'broker-verify',
-                customer_idurl=json_payload.get('customer_idurl'),
-                desired_position=json_payload.get('desired_position'),
-                request_packet=newpacket,
-                result_defer=result,
-            )
-            return result
+#         if action == 'broker-verify':
+#             message_peddler.A(
+#                 'broker-verify',
+#                 customer_idurl=json_payload.get('customer_idurl'),
+#                 desired_position=json_payload.get('desired_position'),
+#                 request_packet=newpacket,
+#                 result_defer=result,
+#             )
+#             return result
         try:
             queue_id = json_payload['queue_id']
             consumer_id = json_payload['consumer_id']
@@ -107,13 +107,14 @@ class MessageBrokerService(LocalService):
             last_sequence_id = json_payload.get('last_sequence_id', -1)
             position = json_payload.get('position', -1)
             archive_folder_path = json_payload.get('archive_folder_path', None)
+            known_brokers = json_payload.get('known_brokers', {})
         except:
             lg.warn("wrong payload: %r" % json_payload)
             return p2p_service.SendFail(newpacket, 'wrong payload')
         # TODO: validate signature and the key
-        if action == 'queue-connect':
+        if action == 'queue-connect' or action == 'queue-follow':
             message_peddler.A(
-                'queue-connect',
+                event=action.replace('queue-', ''),
                 group_key=group_key,
                 queue_id=queue_id,
                 consumer_id=consumer_id,
@@ -121,6 +122,7 @@ class MessageBrokerService(LocalService):
                 position=position,
                 last_sequence_id=last_sequence_id,
                 archive_folder_path=archive_folder_path,
+                known_brokers=known_brokers,
                 request_packet=newpacket,
                 result_defer=result,
             )
@@ -147,7 +149,7 @@ class MessageBrokerService(LocalService):
         result = Deferred()
         if action == 'queue-disconnect':
             message_peddler.A(
-                'queue-disconnect',
+                event='disconnect',
                 group_key=group_key,
                 queue_id=queue_id,
                 consumer_id=consumer_id,
