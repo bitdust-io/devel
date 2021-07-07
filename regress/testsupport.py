@@ -823,7 +823,7 @@ async def start_supplier_async(node, identity_name, loop, join_network=True, dht
 
 async def start_message_broker_async(node, identity_name, loop, join_network=True,
                                      min_servers=1, max_servers=1, known_servers='', dht_seeds='',
-                                     preferred_servers='', health_check_interval_seconds=None, preferred_routers=''):
+                                     preferred_servers='', health_check_interval_seconds=None, preferred_routers='', preferred_brokers=''):
     print(f'NEW MESSAGE BROKER {identity_name} at [{node}]')
     cmd = ''
     cmd += 'bitdust set logs/debug-level 18;'
@@ -859,6 +859,9 @@ async def start_message_broker_async(node, identity_name, loop, join_network=Tru
     cmd += 'bitdust set services/message-broker/enabled true;'
     cmd += 'bitdust set services/message-broker/archive-chunk-size 3;'
     cmd += 'bitdust set services/message-broker/message-ack-timeout 40;'
+    # set desired message brokers
+    if preferred_brokers:
+        cmd += f'bitdust set services/message-broker/preferred-brokers "{preferred_brokers}";'
     await run_ssh_command_and_wait_async(node, cmd, loop)
     # start BitDust daemon and create new identity for supplier
     await start_daemon_async(node, loop)
@@ -1015,18 +1018,19 @@ async def start_one_customer_async(customer, loop, sleep_before_start=None):
     )
 
 
-async def start_one_message_broker_async(supplier, loop):
+async def start_one_message_broker_async(broker, loop):
     await start_message_broker_async(
-        node=supplier['name'],
-        identity_name=supplier['name'],
-        join_network=supplier.get('join_network', True),
-        dht_seeds=supplier.get('known_dht_seeds', ''),
-        min_servers=supplier.get('min_servers', 1),
-        max_servers=supplier.get('max_servers', 1),
-        known_servers=supplier.get('known_id_servers', ''),
-        preferred_servers=supplier.get('preferred_servers', ''),
-        health_check_interval_seconds=supplier.get('health_check_interval_seconds', None),
-        preferred_routers=supplier.get('preferred_routers', ''),
+        node=broker['name'],
+        identity_name=broker['name'],
+        join_network=broker.get('join_network', True),
+        dht_seeds=broker.get('known_dht_seeds', ''),
+        min_servers=broker.get('min_servers', 1),
+        max_servers=broker.get('max_servers', 1),
+        known_servers=broker.get('known_id_servers', ''),
+        preferred_servers=broker.get('preferred_servers', ''),
+        health_check_interval_seconds=broker.get('health_check_interval_seconds', None),
+        preferred_routers=broker.get('preferred_routers', ''),
+        preferred_brokers=broker.get('preferred_brokers', ''),
         loop=loop,
     )
 
@@ -1035,7 +1039,6 @@ async def start_one_message_broker_async(supplier, loop):
 
 def report_one_node(node):
     main_log = run_ssh_command_and_wait(node, 'cat /root/.bitdust/logs/main.log', verbose=False)[0].strip()
-    num_infos = main_log.count('  INFO ')
     num_warnings = main_log.count('  WARNING ')
     num_errors = main_log.count('ERROR!!!')
     num_exceptions = main_log.count('Exception:')

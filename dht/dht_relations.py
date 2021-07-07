@@ -226,7 +226,7 @@ def read_customer_message_brokers(customer_idurl, positions=[0, ], return_detail
         return None
 
     def _do_broker_identity_cache(dht_record, position, broker_result):
-        one_broker_task = identitycache.GetLatest(dht_record['broker_idurl'])
+        one_broker_task = identitycache.GetLatest(id_url.to_bin(dht_record['broker_idurl']))
         one_broker_task.addCallback(lambda xmlsrc: broker_result.callback(dht_record))
         one_broker_task.addErrback(_on_borker_identity_cache_failed, position, broker_result)
         # if _Debug:

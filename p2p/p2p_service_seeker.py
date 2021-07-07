@@ -215,6 +215,7 @@ class P2PServiceSeeker(automat.Automat):
             self.target_idurl = kwargs['remote_idurl']
         else:
             self.target_idurl = args[0][0]
+        self.target_idurl = id_url.field(self.target_idurl)
         self.target_id = global_id.idurl2glob(self.target_idurl)
 
     def doHandshake(self, *args, **kwargs):
@@ -241,6 +242,7 @@ class P2PServiceSeeker(automat.Automat):
         """
         Action method.
         """
+        self.target_idurl.refresh()
         if _Debug:
             lg.args(_DebugLevel, target_idurl=self.target_idurl, target_service=self.target_service)
         service_request_payload = self.request_service_params
@@ -330,7 +332,7 @@ class P2PServiceSeeker(automat.Automat):
             return
         if _Debug:
             lg.out(_DebugLevel, 'p2p_service_seeker._node_acked %s is connected' % response.CreatorID)
-        self.automat('service-accepted', response.CreatorID)
+        self.automat('service-accepted', (response, info, ))
 
     def _node_failed(self, response, info):
         if _Debug:
@@ -369,7 +371,7 @@ def on_lookup_result(event, result_defer, *args, **kwargs):
     if _Debug:
         lg.args(_DebugLevel, event=event, args=args, kwargs=kwargs)
     if event == 'node-connected':
-        result_defer.callback(args[0])
+        result_defer.callback(*args, **kwargs)
     else:
         result_defer.errback(Exception(event, args, kwargs))
 

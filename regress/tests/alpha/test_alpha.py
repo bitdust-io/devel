@@ -722,10 +722,10 @@ def scenario9():
     kw.config_set_v1('customer-3', 'services/employer/candidates', '')
 
     # to make sure customer-2 and customer-4 will not pick up rotated broker again
-    kw.config_set_v1('customer-2', 'services/private-groups/preferred-brokers',
-                     'http://id-a:8084/broker-1.xml,http://id-b:8084/broker-2.xml,http://id-a:8084/broker-3.xml,http://id-b:8084/broker-4.xml')
-    kw.config_set_v1('customer-4', 'services/private-groups/preferred-brokers',
-                     'http://id-a:8084/broker-1.xml,http://id-b:8084/broker-2.xml,http://id-a:8084/broker-3.xml,http://id-b:8084/broker-4.xml')
+    # kw.config_set_v1('customer-2', 'services/private-groups/preferred-brokers',
+    #                  'http://id-a:8084/broker-1.xml,http://id-b:8084/broker-2.xml,http://id-a:8084/broker-3.xml,http://id-b:8084/broker-4.xml')
+    # kw.config_set_v1('customer-4', 'services/private-groups/preferred-brokers',
+    #                  'http://id-a:8084/broker-1.xml,http://id-b:8084/broker-2.xml,http://id-a:8084/broker-3.xml,http://id-b:8084/broker-4.xml')
 
     # put identity server offline
     print('\nabout to stop "id-dead" now\n')
@@ -991,6 +991,11 @@ def scenario12_begin():
     set_active_scenario('SCENARIO 12 begin')
     print('\n\n============\n[SCENARIO 12] customer-4 chat with customer-2 via broker-rotated, but broker IDURL was rotated')
 
+    # pre-configure brokers
+    kw.config_set_v1('customer-4', 'services/private-groups/preferred-brokers', 'http://id-b:8084/broker-4.xml')
+    kw.config_set_v1('broker-4', 'services/message-broker/preferred-brokers', 'http://id-a:8084/broker-3.xml')
+    kw.config_set_v1('broker-3', 'services/message-broker/preferred-brokers', 'http://id-dead:8084/broker-rotated.xml')
+
     # create group owned by customer-4 and join
     customer_4_group_key_id = kw.group_create_v1('customer-4', label='MyGroupABC')
     kw.wait_service_state(CUSTOMERS_IDS, 'service_shared_data', 'ON')
@@ -1114,9 +1119,10 @@ def scenario12_begin():
     assert 'customer-2@id-b_8084' not in customer_4_broker_keepers
     assert customer_4_active_queue_id in kw.queue_peddler_list_v1(customer_4_active_broker_name, extract_ids=True)
 
-    # clean preferred brokers on customer-4 so he can select another broker except broker-rotated
-    kw.config_set_v1('customer-4', 'services/private-groups/preferred-brokers',
-                     'http://id-a:8084/broker-1.xml,http://id-b:8084/broker-2.xml,http://id-a:8084/broker-3.xml,http://id-b:8084/broker-4.xml')
+    # clean-up preferred brokers config
+    kw.config_set_v1('customer-4', 'services/private-groups/preferred-brokers', '')
+    kw.config_set_v1('broker-4', 'services/message-broker/preferred-brokers', '')
+    kw.config_set_v1('broker-3', 'services/message-broker/preferred-brokers', '')
 
     return {
         'group_key_id': customer_4_group_key_id,
@@ -1640,6 +1646,12 @@ def scenario18():
     set_active_scenario('SCENARIO 18')
     print('\n\n============\n[SCENARIO 18] customer-2 send message to the group but active broker-1 is offline')
 
+    # pre-configure brokers
+    kw.config_set_v1('customer-2', 'services/private-groups/preferred-brokers', 'http://id-a:8084/broker-3.xml')
+    kw.config_set_v1('customer-4', 'services/private-groups/preferred-brokers', '')
+    kw.config_set_v1('broker-3', 'services/message-broker/preferred-brokers', 'http://id-b:8084/broker-2.xml')
+    kw.config_set_v1('broker-2', 'services/message-broker/preferred-brokers', 'http://id-a:8084/broker-1.xml')
+
     # create new group by customer-2
     customer_2_groupA_key_id = kw.group_create_v1('customer-2', label='MyGroupAAA')
     kw.wait_service_state(CUSTOMERS_IDS_124, 'service_shared_data', 'ON')
@@ -1718,14 +1730,6 @@ def scenario18():
             expected_last_sequence_id={},
         )
 
-    # clean preferred brokers on customer-4 so he can select another node except the top broker-1
-    kw.config_set_v1('customer-4', 'services/private-groups/preferred-brokers',
-                     'http://id-b:8084/broker-2.xml,http://id-a:8084/broker-3.xml,http://id-b:8084/broker-4.xml')
-
-    # clean preferred brokers on customer-2 - to not mess up trying to hire wrong broker-1
-    kw.config_set_v1('customer-2', 'services/private-groups/preferred-brokers',
-                     'http://id-b:8084/broker-2.xml,http://id-a:8084/broker-3.xml,http://id-b:8084/broker-4.xml')
-
     # verify active broker for customer-4
     customer_4_groupA_info_before = kw.group_info_v1('customer-4', customer_2_groupA_key_id)['result']
     assert customer_4_groupA_info_before['state'] == 'IN_SYNC!'
@@ -1767,6 +1771,11 @@ def scenario18():
     assert customer_2_groupB_info_before['connected_brokers']['0'] == customer_4_groupB_info_before['connected_brokers']['0']
     assert customer_2_groupB_info_before['connected_brokers']['1'] == customer_4_groupB_info_before['connected_brokers']['1']
     assert customer_2_groupB_info_before['connected_brokers']['2'] == customer_4_groupB_info_before['connected_brokers']['2']
+
+    # clean-up preferred brokers config
+    kw.config_set_v1('customer-2', 'services/private-groups/preferred-brokers', '')
+    kw.config_set_v1('broker-3', 'services/message-broker/preferred-brokers', '')
+    kw.config_set_v1('broker-2', 'services/message-broker/preferred-brokers', '')
 
     # stop broker-1 node
     response = request_get('broker-1', 'process/stop/v1')

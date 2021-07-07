@@ -84,6 +84,7 @@ class MessageBrokerService(LocalService):
         from logs import lg
         from p2p import p2p_service
         from stream import message_peddler
+        from userid import id_url
         result = Deferred()
         try:
             action = json_payload['action']
@@ -100,28 +101,29 @@ class MessageBrokerService(LocalService):
 #             )
 #             return result
         try:
-            queue_id = json_payload['queue_id']
+            queue_id = json_payload.get('queue_id', None)
             consumer_id = json_payload['consumer_id']
             producer_id = json_payload['producer_id']
             group_key = json_payload['group_key']
-            last_sequence_id = json_payload.get('last_sequence_id', -1)
             position = json_payload.get('position', -1)
             archive_folder_path = json_payload.get('archive_folder_path', None)
-            known_brokers = json_payload.get('known_brokers', {})
+            last_sequence_id = json_payload.get('last_sequence_id', -1)
+            known_brokers = json_payload.get('known_brokers', {}) or {}
+            known_brokers = {int(k): id_url.field(v) for k,v in known_brokers.items()}
         except:
             lg.warn("wrong payload: %r" % json_payload)
             return p2p_service.SendFail(newpacket, 'wrong payload')
         # TODO: validate signature and the key
-        if action == 'queue-connect' or action == 'queue-follow':
+        if action == 'queue-connect' or action == 'queue-connect-follow':
             message_peddler.A(
-                event=action.replace('queue-', ''),
-                group_key=group_key,
+                event='connect' if action == 'queue-connect' else 'follow',
                 queue_id=queue_id,
                 consumer_id=consumer_id,
                 producer_id=producer_id,
+                group_key=group_key,
                 position=position,
-                last_sequence_id=last_sequence_id,
                 archive_folder_path=archive_folder_path,
+                last_sequence_id=last_sequence_id,
                 known_brokers=known_brokers,
                 request_packet=newpacket,
                 result_defer=result,
@@ -138,7 +140,7 @@ class MessageBrokerService(LocalService):
         from stream import message_peddler
         try:
             action = json_payload['action']
-            queue_id = json_payload['queue_id']
+            queue_id = json_payload.get('queue_id', None)
             consumer_id = json_payload['consumer_id']
             producer_id = json_payload['producer_id']
             group_key = json_payload['group_key']
@@ -150,10 +152,10 @@ class MessageBrokerService(LocalService):
         if action == 'queue-disconnect':
             message_peddler.A(
                 event='disconnect',
-                group_key=group_key,
                 queue_id=queue_id,
                 consumer_id=consumer_id,
                 producer_id=producer_id,
+                group_key=group_key,
                 request_packet=newpacket,
                 result_defer=result,
             )

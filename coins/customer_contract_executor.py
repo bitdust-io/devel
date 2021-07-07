@@ -319,7 +319,7 @@ class CustomerContractExecutor(automat.Automat):
         if _Debug:
             lg.out(_DebugLevel, 'customer_contract_executor._on_coins_received %s' % coins)
         if not coins:
-            self.automat('')
+            # self.automat('')
             return
 
     def _on_coins_failed(self, fails):

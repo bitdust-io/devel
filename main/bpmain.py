@@ -124,7 +124,7 @@ def init(UI='', options=None, args=None, overDict=None, executablePath=None):
 
         def _tray_control_func(cmd):
             if cmd == 'exit':
-                from . import shutdowner
+                from main import shutdowner
                 shutdowner.A('stop', 'exit')
         tray_icon.SetControlFunc(_tray_control_func)
 
@@ -201,7 +201,9 @@ def init(UI='', options=None, args=None, overDict=None, executablePath=None):
     automat.LifeBegins(lg.when_life_begins())
     automat.SetGlobalLogEvents(config.conf().getBool('logs/automat-events-enabled'))
     automat.SetGlobalLogTransitions(config.conf().getBool('logs/automat-transitions-enabled'))
-    automat.OpenLogFile(settings.AutomatsLog())
+    automat.SetExceptionsHandler(lg.exc)
+    automat.SetLogOutputHandler(lambda debug_level, message: lg.out(debug_level, message, log_name='state'))
+    # automat.OpenLogFile(settings.AutomatsLog())
 
     from main import events
     events.init()
@@ -229,7 +231,7 @@ def shutdown():
     if config.conf():
         config.conf().removeConfigNotifier('logs/debug-level')
 
-    from . import shutdowner
+    from main import shutdowner
     shutdowner.A('reactor-stopped')
 
     from main import events
@@ -255,7 +257,9 @@ def shutdown():
     if _Debug:
         lg.out(_DebugLevel, 'bpmain.shutdown finishing and closing log file, EXIT')
 
-    automat.CloseLogFile()
+    # automat.CloseLogFile()
+    automat.SetExceptionsHandler(None)
+    automat.SetLogOutputHandler(None)
 
     lg.close_log_file()
 
@@ -561,7 +565,7 @@ def usage_text():
     from command line.
     """
     try:
-        from . import help
+        from main import help
         return help.usage_text()
     except:
         return ''
@@ -572,7 +576,7 @@ def help_text():
     Same thing, calls ``p2p.help.help_text()`` to show detailed instructions.
     """
     try:
-        from . import help
+        from main import help
         return help.help_text()
     except:
         return ''
@@ -583,7 +587,7 @@ def backup_schedule_format():
     See ``p2p.help.schedule_format()`` method.
     """
     try:
-        from . import help
+        from main import help
         return help.schedule_format()
     except:
         return ''

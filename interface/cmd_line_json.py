@@ -498,9 +498,14 @@ def cmd_identity(opts, args, overDict, running, executablePath):
                 return 2
             from automats import automat
             from main import initializer
+            from main import config
             from logs import lg
             automat.LifeBegins(lg.when_life_begins())
-            automat.OpenLogFile(settings.AutomatsLog())
+            automat.SetGlobalLogEvents(config.conf().getBool('logs/automat-events-enabled'))
+            automat.SetGlobalLogTransitions(config.conf().getBool('logs/automat-transitions-enabled'))
+            automat.SetExceptionsHandler(lg.exc)
+            automat.SetLogOutputHandler(lambda debug_level, message: lg.out(debug_level, message, log_name='state'))
+            # automat.OpenLogFile(settings.AutomatsLog())
             initializer.A('run-cmd-line-recover', {'idurl': idurl, 'keysrc': txt})
             reactor.run()  # @UndefinedVariable
             automat.objects().clear()

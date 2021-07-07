@@ -33,8 +33,13 @@ and it will do the job and than remember that size. Now you have a fast
 way to get the folder size, you can ask to scan same folder again.
 """
 
-from __future__ import absolute_import
-from __future__ import print_function
+#------------------------------------------------------------------------------
+
+_Debug = False
+_DebugLevel = 12
+
+#------------------------------------------------------------------------------
+
 import os
 import sys
 
@@ -49,7 +54,7 @@ from logs import lg
 
 from lib import diskspace
 
-from . import bpio
+from system import bpio
 
 #------------------------------------------------------------------------------
 
@@ -57,7 +62,6 @@ _Jobs = {}
 _Dirs = {}
 
 #------------------------------------------------------------------------------
-
 
 def ask(dirpath, callback=None, arg=None):
     """
@@ -69,7 +73,8 @@ def ask(dirpath, callback=None, arg=None):
     """
     global _Jobs
     global _Dirs
-    lg.out(6, 'dirsize.ask %s' % dirpath)
+    if _Debug:
+        lg.out(_DebugLevel, 'dirsize.ask %s' % dirpath)
     if dirpath in _Jobs:
         return 'counting size'
     if not os.path.isdir(dirpath):
@@ -90,7 +95,8 @@ def done(size, dirpath):
     """
     global _Dirs
     global _Jobs
-    lg.out(6, 'dirsize.done %s %s' % (str(size), dirpath.decode(),))
+    if _Debug:
+        lg.out(_DebugLevel, 'dirsize.done %s %s' % (str(size), dirpath.decode(),))
     _Dirs[dirpath] = str(size)
     try:
         _, cb, arg = _Jobs.pop(dirpath, (None, None, None))

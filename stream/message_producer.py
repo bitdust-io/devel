@@ -483,13 +483,10 @@ class MessageProducer(automat.Automat):
             lg.args(_DebugLevel, err=err, broker_pos=broker_pos)
         self.automat('broker-failed')
 
-    def _on_broker_connected(self, idurl, broker_pos):
+    def _on_broker_connected(self, response_info, broker_pos, *a, **kw):
         if _Debug:
-            lg.args(_DebugLevel, idurl=idurl, broker_pos=broker_pos)
-        if idurl:
-            self.automat('broker-connected', idurl)
-        else:
-            self.automat('broker-failed')
+            lg.args(_DebugLevel, resp=response_info, broker_pos=broker_pos)
+        self.automat('broker-connected', response_info[0].CreatorID)
 
     def _do_send_message_to_broker(self, json_payload=None, packet_id=None):
         if packet_id is None:

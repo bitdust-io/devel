@@ -86,7 +86,7 @@ class GroupAccessDonor(automat.Automat):
             state="AT_STARTUP",
             debug_level=debug_level or _DebugLevel,
             log_events=log_events or _Debug,
-            log_transitions=log_transitions,
+            log_transitions=log_transitions or _Debug,
             publish_events=publish_events,
             **kwargs
         )

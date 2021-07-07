@@ -315,6 +315,8 @@ Old messages in the queue are split into blocks, encrypted and archived on the s
 {services/message-broker/message-ack-timeout} message acknowledgment timeout
 Due to network failures or slowness, peer-to-peer messages are considered undelivered without receiving confirmation of delivery within the specified number of seconds.
 
+{services/message-broker/preferred-brokers}
+
 {services/message-history/enabled} store messaging history
 All your conversations are stored in a local SQLite3 database and are quickly searchable.
 
