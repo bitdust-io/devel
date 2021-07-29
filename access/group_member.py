@@ -201,30 +201,29 @@ def restart_active_group_member(group_key_id, use_dht_cache=False):
     existing_group_member.automat('shutdown')
     existing_group_member = None
     del existing_group_member
-    new_group_member = None
+    new_group_member = []
 
     def _on_group_member_state_changed(oldstate, newstate, event_string, *args, **kwargs):
         if _Debug:
             lg.args(_DebugLevel, oldstate=oldstate, newstate=newstate, event_string=event_string)
         if newstate == 'IN_SYNC!' and oldstate != newstate:
-            new_group_member.removeStateChangedCallback(_on_group_member_state_changed)
-            result.callback(new_group_member.to_json())
-        return None
+            new_group_member[0].removeStateChangedCallback(_on_group_member_state_changed)
+            result.callback(new_group_member[0].to_json())
         if newstate == 'DISCONNECTED' and oldstate != newstate:
-            new_group_member.removeStateChangedCallback(_on_group_member_state_changed)
-            result.callback(new_group_member.to_json())
+            new_group_member[0].removeStateChangedCallback(_on_group_member_state_changed)
+            result.callback(new_group_member[0].to_json())
         return None
 
     def _do_start_new_group_member():
-        new_group_member = GroupMember(
+        new_group_member.append(GroupMember(
             group_key_id=group_key_id,
             use_dht_cache=use_dht_cache,
             publish_events=existing_publish_events,
-        )
-        new_index = new_group_member.index
-        new_group_member.automat('init')
-        new_group_member.automat('join')
-        new_group_member.addStateChangedCallback(_on_group_member_state_changed)
+        ))
+        new_index = new_group_member[0].index
+        new_group_member[0].automat('init')
+        new_group_member[0].automat('join')
+        new_group_member[0].addStateChangedCallback(_on_group_member_state_changed)
         if _Debug:
             lg.args(_DebugLevel, group_key_id=group_key_id, existing=existing_index, new=new_index)
 
@@ -852,6 +851,12 @@ class GroupMember(automat.Automat):
 
     def _do_detect_target_broker(self, available_brokers=None, dht_brokers=None):
         last_pos = groups.REQUIRED_BROKERS_COUNT - 1
+        if self.dead_broker_id:
+            if not self.active_broker_id or self.active_broker_id == self.dead_broker_id:
+                return {
+                    'broker_idurl': None,
+                    'broker_pos': last_pos,
+                }
         if available_brokers:
             if last_pos in available_brokers:
                 return {
@@ -883,7 +888,7 @@ class GroupMember(automat.Automat):
             remote_idurl=broker_idurl,
             service_name='service_message_broker',
             service_params=lambda idurl: self._do_prepare_service_request_params(idurl, broker_pos),
-            request_service_timeout=60,
+            request_service_timeout=90,
         )
         result.addCallback(self._on_broker_connected, broker_pos)
         if _Debug:
@@ -923,7 +928,7 @@ class GroupMember(automat.Automat):
                     remote_idurl=preferred_broker_idurl,
                     service_name='service_message_broker',
                     service_params=lambda idurl: self._do_prepare_service_request_params(idurl, broker_pos),
-                    request_service_timeout=60,
+                    request_service_timeout=90,
                     exclude_nodes=list(exclude_brokers),
                 )
                 result.addCallback(self._on_broker_hired, broker_pos)
@@ -935,7 +940,7 @@ class GroupMember(automat.Automat):
             lookup_method=lookup.random_message_broker,
             service_name='service_message_broker',
             service_params=lambda idurl: self._do_prepare_service_request_params(idurl, broker_pos),
-            request_service_timeout=60,
+            request_service_timeout=90,
             exclude_nodes=list(exclude_brokers),
         )
         result.addCallback(self._on_broker_hired, broker_pos)
@@ -1428,6 +1433,7 @@ class GroupMember(automat.Automat):
                     lg.exc()
         service_request_params = {
             'action': action,
+            'queue_id': None,
             'consumer_id': self.member_id,
             'producer_id': self.member_id,
             'group_key': group_key_info,
@@ -1435,6 +1441,8 @@ class GroupMember(automat.Automat):
             'last_sequence_id': self.last_sequence_id,
             'known_brokers': self.connected_brokers,
         }
+        if action == 'queue-disconnect':
+            service_request_params['queue_id'] = self.active_queue_id
         if desired_broker_position >= 0:
             service_request_params['position'] = desired_broker_position
         if _Debug:

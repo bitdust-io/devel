@@ -125,6 +125,7 @@ def existing(customer_idurl):
     """
     Returns instance of existing `queue_keeper()` or None.
     """
+    global _QueueKeepers
     customer_idurl = id_url.to_bin(customer_idurl)
     if id_url.is_empty(customer_idurl):
         return None
@@ -132,7 +133,7 @@ def existing(customer_idurl):
         lg.warn('customer idurl is not cached yet, can not start QueueKeeper()')
         return None
     customer_idurl = id_url.field(customer_idurl)
-    return A(customer_idurl)
+    return customer_idurl in _QueueKeepers
 
 
 def check_create(customer_idurl, auto_create=True):
@@ -140,6 +141,8 @@ def check_create(customer_idurl, auto_create=True):
     Creates new instance of `queue_keeper()` state machine and send "init" event to it.
     """
     customer_idurl = id_url.to_bin(customer_idurl)
+    if _Debug:
+        lg.args(_DebugLevel, customer_idurl=customer_idurl)
     if id_url.is_empty(customer_idurl):
         return None
     if not id_url.is_cached(customer_idurl):
@@ -160,16 +163,20 @@ def close(customer_idurl):
     Closes instance of queue_keeper() state machine related to given customer.
     """
     customer_idurl = strng.to_bin(customer_idurl)
+    if _Debug:
+        lg.args(_DebugLevel, customer_idurl=customer_idurl)
     if id_url.is_empty(customer_idurl):
         return False
     if not id_url.is_cached(customer_idurl):
         lg.warn('customer idurl is not cached yet, can not stop QueueKeeper()')
         return False
     customer_idurl = id_url.field(customer_idurl)
-    if customer_idurl not in queue_keepers().keys():
-        lg.warn('instance of queue_keeper() not found for given customer')
+    if not existing(customer_idurl):
+        lg.warn('instance of queue_keeper() not found for given customer %r' % customer_idurl)
         return False
-    A(customer_idurl, 'shutdown')
+    qk = queue_keepers().get(customer_idurl)
+    qk.event('shutdown')
+    del qk
     return True
 
 #------------------------------------------------------------------------------
@@ -181,7 +188,7 @@ def A(customer_idurl, event=None, *args, **kwargs):
     global _QueueKeepers
     customer_idurl = id_url.field(customer_idurl)
     if customer_idurl not in _QueueKeepers:
-        if not event:
+        if not event or event in ['shutdown', 'failed', 'rejected', ]:
             return None
         _QueueKeepers[customer_idurl] = QueueKeeper(
             customer_idurl=customer_idurl,
@@ -204,11 +211,11 @@ class QueueKeeper(automat.Automat):
         """
         Builds `queue_keeper()` state machine.
         """
-        self.customer_idurl = customer_idurl
+        self.customer_idurl = id_url.field(customer_idurl)
         self.customer_id = self.customer_idurl.to_id()
-        self.broker_idurl = broker_idurl or my_id.getIDURL()
+        self.broker_idurl = id_url.field(broker_idurl or my_id.getIDURL())
         self.broker_id = self.broker_idurl.to_id()
-        self.connected_queues = set()
+        # self.connected_queues = set()
         self.cooperated_brokers = {}
         self.known_position = -1
         self.known_archive_folder_path = None
@@ -243,7 +250,7 @@ class QueueKeeper(automat.Automat):
             'position': self.known_position,
             'brokers': self.cooperated_brokers,
             'archive_folder_path': self.known_archive_folder_path,
-            'connected_queues': list(self.connected_queues),
+            # 'connected_queues': list(self.connected_queues),
         })
         return j
 
@@ -458,6 +465,9 @@ class QueueKeeper(automat.Automat):
             lg.args(_DebugLevel, known=self.known_position, new=my_new_position)
         if my_new_position >= 0:
             self.known_position = my_new_position
+        # TODO: need to store queue keeper info locally here to be able to start up after application restart
+        # self.connected_queues
+        # self.current_connect_request
 
     def doRunBrokerNegotiator(self, *args, **kwargs):
         """
@@ -517,7 +527,7 @@ class QueueKeeper(automat.Automat):
         # if self.refresh_task.running:
         #     self.refresh_task.stop()
         # self.refresh_task = None
-        _QueueKeepers.pop(self.customer_idurl)
+        _QueueKeepers.pop(self.customer_idurl, None)
         self.customer_idurl = None
         self.customer_id = None
         self.broker_idurl = None
@@ -525,7 +535,7 @@ class QueueKeeper(automat.Automat):
         self.known_position = -1
         # self.new_possible_position = None
         # self.registered_callbacks = None
-        self.connected_queues = None
+        # self.connected_queues = None
         self.known_archive_folder_path = None
         # self.requested_archive_folder_path = None
         self.cooperated_brokers.clear()
@@ -583,7 +593,7 @@ class QueueKeeper(automat.Automat):
             archive_folder_path=archive_folder_path,
             revision=revision,
         )
-        result.addCallback(self._on_write_customer_message_broker, desired_position, archive_folder_path, revision)
+        result.addCallback(self._on_write_customer_message_broker_success, desired_position, archive_folder_path, revision)
         if _Debug:
             result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='queue_keeper.doDHTWrite')
         result.addErrback(self._on_write_customer_message_broker_failed, desired_position, archive_folder_path, revision, retry)
@@ -629,11 +639,14 @@ class QueueKeeper(automat.Automat):
     def _on_read_customer_message_brokers(self, dht_brokers_info_list):
         # self.cooperated_brokers.clear()
         self.latest_dht_records.clear()
+        self.known_archive_folder_path = None
         dht_brokers = {}
+        archive_folder_path = None
+        all_archive_folder_paths = []
         if not dht_brokers_info_list:
             lg.warn('no brokers found in DHT records for customer %r' % self.customer_id)
             # self.dht_read_use_cache = False
-            self.automat('dht-read-success', dht_brokers=dht_brokers)
+            self.automat('dht-read-success', dht_brokers=dht_brokers, archive_folder_path=archive_folder_path)
             return
         for dht_broker_info in dht_brokers_info_list:
             if not dht_broker_info:
@@ -641,10 +654,15 @@ class QueueKeeper(automat.Automat):
             dht_broker_idurl = dht_broker_info.get('broker_idurl')
             dht_broker_position = int(dht_broker_info.get('position'))
             dht_brokers[dht_broker_position] = dht_broker_idurl
+            if all_archive_folder_paths.count(dht_broker_info['archive_folder_path']) == 0:
+                all_archive_folder_paths.append(dht_broker_info['archive_folder_path'])
             self.latest_dht_records[dht_broker_position] = dht_broker_info
+        if all_archive_folder_paths:
+            archive_folder_path = all_archive_folder_paths[0]
+        self.known_archive_folder_path = archive_folder_path
         if _Debug:
-            lg.args(_DebugLevel, dht_brokers=dht_brokers)
-        self.automat('dht-read-success', dht_brokers=dht_brokers)
+            lg.args(_DebugLevel, dht_brokers=dht_brokers, archive_folder_path=archive_folder_path)
+        self.automat('dht-read-success', dht_brokers=dht_brokers, archive_folder_path=archive_folder_path)
 #         my_broker_info = None
 #         my_position_info = None
 #         for dht_broker_info in dht_brokers_info_list:
@@ -706,15 +724,15 @@ class QueueKeeper(automat.Automat):
 #         self.known_archive_folder_path = my_broker_info['archive_folder_path']
 #         self.automat('my-record-correct', broker_idurl=my_broker_info['broker_idurl'], position=my_broker_info['position'])
 
-    def _on_write_customer_message_broker(self, nodes, desired_broker_position, archive_folder_path, revision):
+    def _on_write_customer_message_broker_success(self, nodes, desired_broker_position, archive_folder_path, revision):
         if _Debug:
             lg.args(_DebugLevel, nodes=type(nodes), pos=desired_broker_position, rev=revision)
         if nodes:
             # self.requested_archive_folder_path = None
-            self.automat('dht-write-success', desired_position=desired_broker_position)
+            self.automat('dht-write-success', desired_position=desired_broker_position, archive_folder_path=archive_folder_path)
         else:
             # self.dht_read_use_cache = False
-            self.automat('dht-write-failed', desired_position=desired_broker_position)
+            self.automat('dht-write-failed', desired_position=desired_broker_position, archive_folder_path=archive_folder_path)
 
     def _on_write_customer_message_broker_failed(self, err, desired_broker_position, archive_folder_path, revision, retry):
         if _Debug:

@@ -42,16 +42,22 @@ EVENTS:
     * :red:`hire-broker-ok`
     * :red:`my-record-invalid`
     * :red:`my-record-missing`
+    * :red:`my-record-replace`
     * :red:`prev-broker-accepted`
     * :red:`prev-broker-failed`
+    * :red:`prev-broker-failed-rotate`
     * :red:`prev-broker-rejected`
     * :red:`prev-broker-timeout`
     * :red:`prev-record-busy`
+    * :red:`prev-record-busy-rotate`
     * :red:`prev-record-empty`
+    * :red:`prev-record-empty-rotate`
     * :red:`prev-record-own`
+    * :red:`prev-record-own-rotate`
     * :red:`record-busy`
     * :red:`record-empty`
     * :red:`record-own`
+    * :red:`record-replace`
     * :red:`record-rotate`
     * :red:`request-invalid`
     * :red:`top-place-busy`
@@ -177,68 +183,68 @@ class BrokerNegotiator(automat.Automat):
                 self.doVerifyMyRecord(*args, **kwargs)
         #---VERIFY---
         elif self.state == 'VERIFY':
-            if event == 'record-own':
-                self.state = 'PLACE_OWN'
-                self.doVerifyPrevRecord(*args, **kwargs)
-            elif event == 'record-empty':
+            if event == 'record-empty':
                 self.state = 'PLACE_EMPTY'
-                self.doVerifyPrevRecord(*args, **kwargs)
-            elif event == 'request-invalid' or event == 'my-record-missing' or event == 'my-record-invalid':
-                self.state = 'REJECT'
-                self.doReject(event, *args, **kwargs)
-                self.doDestroyMe(*args, **kwargs)
+                self.doVerifyPrevRecord(event, *args, **kwargs)
             elif event == 'record-rotate':
                 self.state = 'PLACE_ROTATE'
                 self.doVerifyRotatedRecord(*args, **kwargs)
             elif event == 'record-busy':
                 self.state = 'THIS_BROKER?'
-                self.doRequestThisBroker(*args, **kwargs)
+                self.doRequestThisBroker(event, *args, **kwargs)
+            elif event == 'record-own' or event == 'record-replace':
+                self.state = 'PLACE_OWN'
+                self.doVerifyPrevRecord(event, *args, **kwargs)
+            elif event == 'my-record-replace' or event == 'request-invalid' or event == 'my-record-missing' or event == 'my-record-invalid':
+                self.state = 'REJECT'
+                self.doReject(event, *args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
         #---PLACE_OWN---
         elif self.state == 'PLACE_OWN':
-            if event == 'prev-record-busy':
-                self.state = 'PREV_BROKER?'
-                self.doRequestPrevBroker(*args, **kwargs)
-            elif event == 'prev-record-own' or event == 'prev-record-empty':
+            if event == 'prev-record-own' or event == 'prev-record-empty':
                 self.state = 'NEW_BROKER!'
-                self.doHirePrevBroker(*args, **kwargs)
-            elif event == 'top-place-empty' or event == 'top-place-own':
-                self.state = 'ACCEPT'
-                self.doAccept(event, *args, **kwargs)
-                self.doDestroyMe(*args, **kwargs)
+                self.doHirePrevBroker(event, *args, **kwargs)
             elif event == 'top-place-busy':
                 self.state = 'REJECT'
                 self.doReject(event, *args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
+            elif event == 'prev-record-busy' or event == 'prev-record-own-rotate' or event == 'prev-record-busy-rotate':
+                self.state = 'PREV_BROKER?'
+                self.doRequestPrevBroker(event, *args, **kwargs)
+            elif event == 'prev-record-empty-rotate' or event == 'top-place-empty' or event == 'top-place-own':
+                self.state = 'ACCEPT'
+                self.doAccept(event, *args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
         #---PLACE_EMPTY---
         elif self.state == 'PLACE_EMPTY':
             if event == 'prev-record-empty':
                 self.state = 'NEW_BROKER!'
-                self.doHirePrevBroker(*args, **kwargs)
+                self.doHirePrevBroker(event, *args, **kwargs)
             elif event == 'top-place-busy' or event == 'prev-record-busy':
                 self.state = 'PREV_BROKER?'
-                self.doRequestPrevBroker(*args, **kwargs)
+                self.doRequestPrevBroker(event, *args, **kwargs)
             elif event == 'top-place-own' or event == 'top-place-empty':
                 self.state = 'ACCEPT'
                 self.doAccept(event, *args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
         #---PREV_BROKER?---
         elif self.state == 'PREV_BROKER?':
-            if event == 'prev-broker-accepted':
-                self.state = 'ACCEPT'
-                self.doAccept(event, *args, **kwargs)
-                self.doDestroyMe(*args, **kwargs)
-            elif event == 'prev-broker-rejected':
+            if event == 'prev-broker-rejected':
                 self.state = 'REJECT'
                 self.doReject(event, *args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
             elif event == 'prev-broker-failed' or event == 'prev-broker-timeout':
                 self.state = 'NEW_BROKER!'
-                self.doHirePrevBroker(*args, **kwargs)
+                self.doHirePrevBroker(event, *args, **kwargs)
+            elif event == 'prev-broker-accepted' or event == 'prev-broker-failed-rotate':
+                self.state = 'ACCEPT'
+                self.doAccept(event, *args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
         #---THIS_BROKER?---
         elif self.state == 'THIS_BROKER?':
             if event == 'cur-broker-failed' or event == 'cur-broker-timeout':
                 self.state = 'PLACE_EMPTY'
-                self.doVerifyPrevRecord(*args, **kwargs)
+                self.doVerifyPrevRecord(event, *args, **kwargs)
             elif event == 'cur-broker-accepted' or event == 'cur-broker-rejected':
                 self.state = 'REJECT'
                 self.doReject(event, *args, **kwargs)
@@ -257,10 +263,10 @@ class BrokerNegotiator(automat.Automat):
         elif self.state == 'PLACE_ROTATE':
             if event == 'top-place-busy':
                 self.state = 'THIS_BROKER?'
-                self.doRequestThisBroker(*args, **kwargs)
+                self.doRequestThisBroker(event, *args, **kwargs)
             elif event == 'prev-record-busy':
                 self.state = 'PREV_BROKER?'
-                self.doRequestPrevBroker(*args, **kwargs)
+                self.doRequestPrevBroker(event, *args, **kwargs)
             elif event == 'top-place-own' or event == 'top-place-empty' or event == 'prev-record-own' or event == 'prev-record-empty':
                 self.state = 'ACCEPT'
                 self.doRotateMyRecord(event, *args, **kwargs)
@@ -306,7 +312,21 @@ class BrokerNegotiator(automat.Automat):
                 lg.err('my record in DHT is not valid: %r ~ %r' % (self.dht_brokers[self.my_position], self.broker_idurl))
                 self.automat('my-record-invalid')
                 return
-            if self.desired_position != self.my_position:
+            if self.desired_position == self.my_position:
+                if self.my_position in self.requestor_known_brokers:
+                    if id_url.is_cached(self.requestor_known_brokers[self.my_position]) and id_url.field(self.requestor_known_brokers[self.my_position]) != self.broker_idurl:
+                        if self.my_position == 0:
+                            self.automat('my-record-replace')
+                        else:
+                            self.automat('record-replace')
+                        return
+                    if id_url.to_bin(self.requestor_known_brokers[self.my_position]) != self.broker_idurl.to_bin():
+                        if self.my_position == 0:
+                            self.automat('my-record-replace')
+                        else:
+                            self.automat('record-replace')
+                        return
+            else:
                 if self.desired_position == self.my_position - 1:
                     self.automat('record-rotate')
                     return
@@ -323,12 +343,27 @@ class BrokerNegotiator(automat.Automat):
             else:
                 self.automat('record-busy')
 
-    def doVerifyPrevRecord(self, *args, **kwargs):
+    def doVerifyPrevRecord(self, event, *args, **kwargs):
         """
         Action method.
         """
         if _Debug:
-            lg.args(_DebugLevel, my=self.my_position, desired=self.desired_position, dht=self.dht_brokers)
+            lg.args(_DebugLevel, e=event, my=self.my_position, desired=self.desired_position, dht=self.dht_brokers)
+        if event == 'record-replace':
+            prev_position = self.desired_position
+            if prev_position not in self.dht_brokers or not self.dht_brokers[prev_position]:
+                self.automat('prev-record-empty-rotate')
+            else:
+                if id_url.is_cached(self.dht_brokers[prev_position]) and id_url.field(self.dht_brokers[prev_position]) == self.broker_idurl:
+                    # TODO: how come ?!
+                    self.automat('prev-record-own-rotate')
+                else:
+                    if id_url.to_bin(self.dht_brokers[prev_position]) == self.broker_idurl.to_bin():
+                        # TODO: how come ?!
+                        self.automat('prev-record-own-rotate')
+                    else:
+                        self.automat('prev-record-busy-rotate')
+            return
         if self.desired_position == 0:
             if self.desired_position not in self.dht_brokers or not self.dht_brokers[self.desired_position]:
                 self.automat('top-place-empty')
@@ -388,7 +423,7 @@ class BrokerNegotiator(automat.Automat):
                 else:
                     self.automat('prev-record-busy')
 
-    def doRequestPrevBroker(self, *args, **kwargs):
+    def doRequestPrevBroker(self, event, *args, **kwargs):
         """
         Action method.
         """
@@ -399,38 +434,38 @@ class BrokerNegotiator(automat.Automat):
             target_pos = 0
         broker_idurl = id_url.field(self.dht_brokers[target_pos])
         if _Debug:
-            lg.args(_DebugLevel, my=self.my_position, desired=self.desired_position, target_pos=target_pos, broker_idurl=broker_idurl)
+            lg.args(_DebugLevel, e=event, my=self.my_position, desired=self.desired_position, target_pos=target_pos, broker_idurl=broker_idurl)
         result = p2p_service_seeker.connect_known_node(
             remote_idurl=broker_idurl,
             service_name='service_message_broker',
-            service_params=lambda idurl: self._do_prepare_service_request_params_prev_broker(idurl, target_pos),
-            request_service_timeout=15,
+            service_params=lambda idurl: self._do_prepare_service_request_params_prev_broker(idurl, target_pos, event),
+            request_service_timeout=30,
         )
-        result.addCallback(self._on_prev_broker_connected, target_pos)
+        result.addCallback(self._on_prev_broker_connected, target_pos, event)
         if _Debug:
             result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='broker_negotiator.doRequestPrevBroker')
-        result.addErrback(self._on_prev_broker_connect_failed, target_pos)
+        result.addErrback(self._on_prev_broker_connect_failed, target_pos, event)
 
-    def doRequestThisBroker(self, *args, **kwargs):
+    def doRequestThisBroker(self, event, *args, **kwargs):
         """
         Action method.
         """
         target_pos = self.desired_position
         broker_idurl = id_url.field(self.dht_brokers[target_pos])
         if _Debug:
-            lg.args(_DebugLevel, my=self.my_position, desired=self.desired_position, target_pos=target_pos, broker_idurl=broker_idurl)
+            lg.args(_DebugLevel, e=event, my=self.my_position, desired=self.desired_position, target_pos=target_pos, broker_idurl=broker_idurl)
         d = p2p_service_seeker.connect_known_node(
             remote_idurl=broker_idurl,
             service_name='service_message_broker',
             service_params=lambda idurl: self._do_prepare_service_request_params_this_broker(idurl, target_pos),
-            request_service_timeout=15,
+            request_service_timeout=30,
         )
         d.addCallback(self._on_this_broker_connected, target_pos)
         if _Debug:
             d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='broker_negotiator.doRequestThisBroker')
         d.addErrback(self._on_this_broker_connect_failed, target_pos)
 
-    def doHirePrevBroker(self, *args, **kwargs):
+    def doHirePrevBroker(self, event, *args, **kwargs):
         """
         Action method.
         """
@@ -440,6 +475,7 @@ class BrokerNegotiator(automat.Automat):
         if target_pos < 0:
             target_pos = 0
         exclude_brokers = list(id_url.to_bin_list(filter(None, self.dht_brokers.values())))
+        exclude_brokers.extend(list(id_url.to_bin_list(filter(None, self.requestor_known_brokers.values()))))
         preferred_brokers = []
         preferred_brokers_raw = config.conf().getData('services/message-broker/preferred-brokers').strip()
         if preferred_brokers_raw:
@@ -449,7 +485,7 @@ class BrokerNegotiator(automat.Automat):
         if preferred_brokers:
             preferred_brokers = [x for x in preferred_brokers if x not in exclude_brokers]
         if _Debug:
-            lg.args(_DebugLevel, my=self.my_position, desired=self.desired_position, target=target_pos, exclude=exclude_brokers, preferred=preferred_brokers)
+            lg.args(_DebugLevel, e=event, my=self.my_position, desired=self.desired_position, target=target_pos, exclude=exclude_brokers, preferred=preferred_brokers)
         if preferred_brokers:
             preferred_broker_idurl = id_url.field(preferred_brokers[0])
             if preferred_broker_idurl and id_url.is_not_in(preferred_broker_idurl, exclude_brokers, as_field=False):
@@ -457,7 +493,7 @@ class BrokerNegotiator(automat.Automat):
                     remote_idurl=preferred_broker_idurl,
                     service_name='service_message_broker',
                     service_params=lambda idurl: self._do_prepare_service_request_params_hire_broker(idurl, target_pos),
-                    request_service_timeout=15,
+                    request_service_timeout=30,
                     exclude_nodes=list(exclude_brokers),
                 )
                 result.addCallback(self._on_prev_broker_hired, target_pos)
@@ -469,7 +505,7 @@ class BrokerNegotiator(automat.Automat):
             lookup_method=lookup.random_message_broker,
             service_name='service_message_broker',
             service_params=lambda idurl: self._do_prepare_service_request_params_hire_broker(idurl, target_pos),
-            request_service_timeout=15,
+            request_service_timeout=60,
             exclude_nodes=list(exclude_brokers),
         )
         result.addCallback(self._on_prev_broker_hired, target_pos)
@@ -515,13 +551,16 @@ class BrokerNegotiator(automat.Automat):
         self.result_defer = None
         self.destroy()
 
-    def _do_prepare_service_request_params_prev_broker(self, possible_broker_idurl, desired_broker_position):
+    def _do_prepare_service_request_params_prev_broker(self, possible_broker_idurl, desired_broker_position, event):
         known_brokers = self.cooperated_brokers or {}
         known_brokers.update(self.requestor_known_brokers)
-        if self.my_position is not None and self.my_position >= 0:
-            known_brokers[self.my_position] = self.broker_idurl
+        if event in ['prev-record-own-rotate', 'prev-record-busy-rotate', ]:
+            known_brokers[self.my_position - 1] = self.broker_idurl
         else:
-            known_brokers[self.desired_position] = self.broker_idurl
+            if self.my_position is not None and self.my_position >= 0:
+                known_brokers[self.my_position] = self.broker_idurl
+            else:
+                known_brokers[self.desired_position] = self.broker_idurl
         req = {
             'action': 'queue-connect-follow',
             # 'queue_id': self.connect_request['queue_id'],
@@ -534,7 +573,7 @@ class BrokerNegotiator(automat.Automat):
             'known_brokers': known_brokers,
         }
         if _Debug:
-            lg.args(_DebugLevel, broker_idurl=possible_broker_idurl, desired=desired_broker_position, req=req)
+            lg.args(_DebugLevel, e=event, broker=possible_broker_idurl, desired=desired_broker_position, req=req)
         return req
 
     def _do_prepare_service_request_params_this_broker(self, possible_broker_idurl, desired_broker_position):
@@ -581,22 +620,25 @@ class BrokerNegotiator(automat.Automat):
             lg.args(_DebugLevel, broker_idurl=possible_broker_idurl, desired=desired_broker_position, req=req)
         return req
 
-    def _on_prev_broker_connected(self, response_info, broker_pos, *args, **kwargs):
+    def _on_prev_broker_connected(self, response_info, broker_pos, event, *args, **kwargs):
         if _Debug:
-            lg.args(_DebugLevel, resp=response_info, broker_pos=broker_pos, args=args, kwargs=kwargs)
+            lg.args(_DebugLevel, resp=response_info, pos=broker_pos, e=event, args=args, kwargs=kwargs)
         try:
             # skip leading "accepted:" marker
             cooperated_brokers = jsn.loads(strng.to_text(response_info[0].Payload)[9:])
             cooperated_brokers = {int(k): id_url.field(v) for k,v in cooperated_brokers.items()}
         except:
             lg.exc()
-            self.automat('prev-broker-failed')
+            if event in ['prev-record-own-rotate', 'prev-record-busy-rotate', ]:
+                self.automat('prev-broker-failed-rotate')
+            else:
+                self.automat('prev-broker-failed')
             return
         self.automat('prev-broker-accepted', cooperated_brokers=cooperated_brokers)
 
-    def _on_prev_broker_connect_failed(self, err, broker_pos, *args, **kwargs):
+    def _on_prev_broker_connect_failed(self, err, broker_pos, event, *args, **kwargs):
         if _Debug:
-            lg.args(_DebugLevel, err=err, broker_pos=broker_pos, args=args, kwargs=kwargs)
+            lg.args(_DebugLevel, err=err, pos=broker_pos, e=event, args=args, kwargs=kwargs)
         if isinstance(err, Failure):
             try:
                 evt, _, _ = err.value.args
@@ -606,7 +648,10 @@ class BrokerNegotiator(automat.Automat):
             if evt == 'request-failed':
                 self.automat('prev-broker-rejected')
                 return
-        self.automat('prev-broker-failed')
+        if event in ['prev-record-own-rotate', 'prev-record-busy-rotate', ]:
+            self.automat('prev-broker-failed-rotate')
+        else:
+            self.automat('prev-broker-failed')
 
     def _on_this_broker_connected(self, response_info, broker_pos, *args, **kwargs):
         if _Debug:

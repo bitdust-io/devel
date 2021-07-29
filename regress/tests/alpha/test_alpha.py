@@ -143,7 +143,7 @@ def test_alpha():
     #--- SCENARIO 8: customer-3 receive all archived messages from message broker
     scenario8()
 
-    #--- SCENARIO 18: customer-2 send message to the group but active broker-1 is offline
+    #--- SCENARIO 18: customer-2 sent message to the group but active broker-1 is offline
     scenario18()
 
     #--- SCENARIO 4: customer-1 share files to customer-2
@@ -545,9 +545,6 @@ def scenario8():
     customer_1_broker_consumers = kw.queue_consumer_list_v1(customer_1_active_broker_name, extract_ids=True)
     customer_1_broker_producers = kw.queue_producer_list_v1(customer_1_active_broker_name, extract_ids=True)
     customer_1_broker_keepers = kw.queue_keeper_list_v1(customer_1_active_broker_name, extract_ids=True)
-    assert len(customer_1_broker_consumers) >= 2
-    assert len(customer_1_broker_producers) >= 2
-    assert len(customer_1_broker_keepers) >= 2
     assert 'customer-1@id-a_8084' in customer_1_broker_consumers
     assert 'customer-1@id-a_8084' in customer_1_broker_producers
     assert 'customer-1@id-a_8084' in customer_1_broker_keepers
@@ -585,9 +582,8 @@ def scenario8():
     assert len(kw.message_conversation_v1('customer-2')['result']) == 5
     assert len(kw.message_conversation_v1('customer-3')['result']) == 0
 
-    # customers 1 and 2 leave the group
+    # customer 1 leave the group
     kw.group_leave_v1('customer-1', customer_1_group_key_id)
-    kw.group_leave_v1('customer-2', customer_1_group_key_id)
 
     kw.wait_packets_finished(PROXY_IDS + CUSTOMERS_IDS + BROKERS_IDS)
 
@@ -597,8 +593,8 @@ def scenario8():
     assert 'customer-1@id-a_8084' not in customer_1_broker_consumers
     assert 'customer-1@id-a_8084' not in customer_1_broker_producers
     assert 'customer-1@id-a_8084' in customer_1_broker_keepers
-    assert 'customer-2@id-b_8084' not in customer_1_broker_consumers
-    assert 'customer-2@id-b_8084' not in customer_1_broker_producers
+    assert 'customer-2@id-b_8084' in customer_1_broker_consumers
+    assert 'customer-2@id-b_8084' in customer_1_broker_producers
     assert 'customer-2@id-b_8084' not in customer_1_broker_keepers
     assert customer_1_active_queue_id in kw.queue_peddler_list_v1(customer_1_active_broker_name, extract_ids=True)
 
@@ -607,10 +603,7 @@ def scenario8():
     assert customer_1_group_info_offline['label'] == 'ArchivedGroupABC'
     assert customer_1_group_info_offline['last_sequence_id'] == 10
 
-    customer_2_group_info_offline = kw.group_info_v1('customer-2', customer_1_group_key_id)['result']
-    assert customer_2_group_info_offline['state'] == 'OFFLINE'
-    assert customer_2_group_info_offline['label'] == 'ArchivedGroupABC'
-    assert customer_2_group_info_offline['last_sequence_id'] == 10
+    assert kw.group_info_v1('customer-2', customer_1_group_key_id)['result']['state'] == 'IN_SYNC!'
 
     assert len(kw.message_conversation_v1('customer-1')['result']) == 2
     assert len(kw.message_conversation_v1('customer-2')['result']) == 5
@@ -640,7 +633,8 @@ def scenario8():
     assert len(kw.message_history_v1('customer-3', customer_1_group_key_id, message_type='group_message')['result']) == 11
     assert len(kw.message_conversation_v1('customer-3')['result']) == 1
 
-    # customer-3 leave the group
+    # customers 2 and 3 leave the group
+    kw.group_leave_v1('customer-2', customer_1_group_key_id)
     kw.group_leave_v1('customer-3', customer_1_group_key_id)
 
     kw.wait_packets_finished(PROXY_IDS + CUSTOMERS_IDS_124 + BROKERS_IDS)
@@ -664,8 +658,11 @@ def scenario8():
     assert len(kw.message_conversation_v1('customer-2')['result']) == 5
     assert len(kw.message_conversation_v1('customer-3')['result']) == 1
 
+    assert 'customer-1@id-a_8084' in kw.queue_keeper_list_v1(customer_1_active_broker_name, extract_ids=True)
+    assert customer_1_active_queue_id not in kw.queue_peddler_list_v1(customer_1_active_broker_name, extract_ids=True)
 
-def scenario9(): 
+
+def scenario9():
     set_active_scenario('SCENARIO 9')
     print('\n\n============\n[SCENARIO 9] ID server id-dead is dead and few nodes has rotated identities')
 
@@ -1149,6 +1146,16 @@ def scenario12_end(old_customer_4_info):
     assert customer_2_group_info_before['state'] == 'IN_SYNC!'
     assert customer_2_group_info_before['last_sequence_id'] == 4
 
+    # verify also the second group info for customer-2
+    customer_2_group2_info_before = kw.group_info_v1('customer-2', customer_4_group2_key_id, wait_state='IN_SYNC!')['result']
+    assert customer_2_group2_info_before['state'] == 'IN_SYNC!'
+
+    # same for customer-4
+    customer_4_group_info_before = kw.group_info_v1('customer-4', customer_4_group_key_id, wait_state='IN_SYNC!')['result']
+    assert customer_4_group_info_before['state'] == 'IN_SYNC!'
+    customer_4_group2_info_before = kw.group_info_v1('customer-4', customer_4_group2_key_id, wait_state='IN_SYNC!')['result']
+    assert customer_4_group2_info_before['state'] == 'IN_SYNC!'
+
     # send one message to the group after brokers rotated from customer-2
     # this suppose to trigger brokers rotation because broker-rotated is dead
     group_customers_2_4_messages.append(kw.verify_message_sent_received(
@@ -1242,14 +1249,20 @@ def scenario12_end(old_customer_4_info):
             expected_last_sequence_id={},
         ))
 
+    # verify groups info after broker IDURL rotated
+    assert kw.group_info_v1('customer-2', customer_4_group_key_id, wait_state='IN_SYNC!')['result']['state'] == 'IN_SYNC!'
+    assert kw.group_info_v1('customer-2', customer_4_group2_key_id, wait_state='IN_SYNC!')['result']['state'] == 'IN_SYNC!'
+    assert kw.group_info_v1('customer-4', customer_4_group_key_id, wait_state='IN_SYNC!')['result']['state'] == 'IN_SYNC!'
+    assert kw.group_info_v1('customer-4', customer_4_group2_key_id, wait_state='IN_SYNC!')['result']['state'] == 'IN_SYNC!'
+
     assert kw.group_info_v1('customer-4', customer_4_group_key_id)['result']['last_sequence_id'] == 11
     assert kw.group_info_v1('customer-2', customer_4_group_key_id)['result']['last_sequence_id'] == 11
     assert len(kw.message_history_v1('customer-4', customer_4_group_key_id, message_type='group_message')['result']) == 12
     assert len(kw.message_history_v1('customer-2', customer_4_group_key_id, message_type='group_message')['result']) == 12
 
+    # customer-2 and customer-4 leave from the both groups
     kw.group_leave_v1('customer-4', customer_4_group_key_id)
     kw.group_leave_v1('customer-2', customer_4_group_key_id)
-
     kw.group_leave_v1('customer-4', customer_4_group2_key_id)
     kw.group_leave_v1('customer-2', customer_4_group2_key_id)
 
@@ -1265,7 +1278,7 @@ def scenario12_end(old_customer_4_info):
     assert 'customer-2@id-b_8084' not in customer_4_broker_producers
     assert 'customer-2@id-b_8084' not in customer_4_broker_keepers
     assert customer_4_old_queue_id not in kw.queue_peddler_list_v1(customer_4_old_broker_name, extract_ids=True)
-    assert customer_4_rotated_queue_id in kw.queue_peddler_list_v1(customer_4_old_broker_name, extract_ids=True)
+    assert customer_4_rotated_queue_id not in kw.queue_peddler_list_v1(customer_4_old_broker_name, extract_ids=True)
 
     customer_4_group_info_offline = kw.group_info_v1('customer-4', customer_4_group_key_id)['result']
     assert customer_4_group_info_offline['state'] == 'OFFLINE'
@@ -1644,7 +1657,7 @@ def scenario17(old_customer_2_info):
 
 def scenario18():
     set_active_scenario('SCENARIO 18')
-    print('\n\n============\n[SCENARIO 18] customer-2 send message to the group but active broker-1 is offline')
+    print('\n\n============\n[SCENARIO 18] customer-2 sent message to the group but active broker-1 is offline')
 
     # pre-configure brokers
     kw.config_set_v1('customer-2', 'services/private-groups/preferred-brokers', 'http://id-a:8084/broker-3.xml')
@@ -1776,6 +1789,9 @@ def scenario18():
     kw.config_set_v1('customer-2', 'services/private-groups/preferred-brokers', '')
     kw.config_set_v1('broker-3', 'services/message-broker/preferred-brokers', '')
     kw.config_set_v1('broker-2', 'services/message-broker/preferred-brokers', '')
+
+    # workaround config to make sure customer-4 will pick up a new broker
+    kw.config_set_v1('customer-4', 'services/private-groups/preferred-brokers', 'http://id-b:8084/broker-4.xml')
 
     # stop broker-1 node
     response = request_get('broker-1', 'process/stop/v1')

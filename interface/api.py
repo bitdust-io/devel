@@ -2654,7 +2654,8 @@ def group_leave(group_key_id, erase_key=False):
         groups.save_group_info(group_key_id)
         return OK(message='group deactivated')
     result_json = this_group_member.to_json()
-    this_group_member.automat('leave', erase_key=erase_key)
+    result_json['state'] = 'CLOSED'
+    this_group_member.event('leave', erase_key=erase_key)
     if erase_key:
         return OK(message='group deactivated and deleted', result=result_json)
     return OK(message='group deactivated', result=result_json)

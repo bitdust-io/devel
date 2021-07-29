@@ -150,7 +150,7 @@ def register_stream(queue_id):
         'last_sequence_id': -1,
     }
     if _Debug:
-        lg.args(_DebugLevel, queue_id=queue_id, customer_idurl=customer_idurl)
+        lg.args(_DebugLevel, queue_id=queue_id, customer=customer_idurl, customer_streams=len(customers().get(customer_idurl, [])))
     return True
 
 
@@ -172,7 +172,7 @@ def unregister_stream(queue_id):
         customers().pop(customer_idurl)
     streams().pop(queue_id)
     if _Debug:
-        lg.args(_DebugLevel, queue_id=queue_id, customer_idurl=customer_idurl)
+        lg.args(_DebugLevel, queue_id=queue_id, customer=customer_idurl, customer_streams=len(customers().get(customer_idurl, [])))
     return True
 
 #------------------------------------------------------------------------------
@@ -1058,10 +1058,15 @@ class MessagePeddler(automat.Automat):
         Action method.
         """
         queues_to_be_closed = []
+        # for customer_idurl in customers():
+        #     for queue_id in customers()[customer_idurl]:
+        #         queues_to_be_closed.append(queue_id)
+        if _Debug:
+            lg.args(_DebugLevel, queues_to_be_closed=queues_to_be_closed)
         for customer_idurl in customers():
-            for queue_id in customers()[customer_idurl]:
-                queues_to_be_closed.append(queue_id)
-        self._do_close_streams(queues_to_be_closed, erase_key=False)
+            if queue_keeper.existing(customer_idurl):
+                queue_keeper.close(customer_idurl)
+        # self._do_close_streams(queues_to_be_closed, erase_key=False)
         stop_all_streams()
         p2p_queue.remove_message_processed_callback(on_message_processed)
 
@@ -1083,7 +1088,7 @@ class MessagePeddler(automat.Automat):
         except:
             lg.exc('kwargs: %r' % kwargs)
         if _Debug:
-            lg.args(_DebugLevel, request_packet=request_packet)
+            lg.args(_DebugLevel, request_packet=request_packet, p=position, a=archive_folder_path)
         if not my_keys.verify_key_info_signature(group_key_info):
             if _Debug:
                 lg.exc('group key verification failed', exc_value=Exception(group_key_info))
@@ -1149,7 +1154,9 @@ class MessagePeddler(automat.Automat):
         if _Debug:
             lg.args(_DebugLevel, queue_id=queue_id, consumer_id=consumer_id, producer_id=producer_id, request_packet=request_packet)
         if not queue_id or queue_id not in streams():
-            p2p_service.SendFail(request_packet, 'queue is not registered' % queue_id)
+            lg.warn('queue was not registered: %r' % queue_id)
+            p2p_service.SendAck(request_packet, 'accepted')
+            # p2p_service.SendFail(request_packet, 'queue is not registered')
             result_defer.callback(True)
             return
         if not my_keys.verify_key_info_signature(group_key_info):
@@ -1161,40 +1168,43 @@ class MessagePeddler(automat.Automat):
         try:
             group_key_id, _ = my_keys.read_key_info(group_key_info)
         except Exception as exc:
+            lg.exc()
             p2p_service.SendFail(request_packet, strng.to_text(exc))
             result_defer.callback(False)
             return
         group_key_alias, group_creator_idurl = my_keys.split_key_id(group_key_id)
         if not group_key_alias or not group_creator_idurl:
-            lg.warn('wrong group_key_id')
+            lg.err('wrong group_key_id: %r' % group_key_id)
             p2p_service.SendFail(request_packet, 'wrong group_key_id')
             result_defer.callback(False)
             return
         if consumer_id:
             if not stop_consumer(queue_id, consumer_id):
-                p2p_service.SendFail(request_packet, 'failed to stop consumer %r for queue %r' % (consumer_id, queue_id))
+                lg.err('failed to stop consumer %r for the queue %r' % (consumer_id, queue_id, ))
+                p2p_service.SendFail(request_packet, 'failed to stop consumer for the queue')
                 result_defer.callback(False)
                 return
             if not remove_consumer(queue_id, consumer_id):
-                p2p_service.SendFail(request_packet, 'consumer %r is not registered for queue %r' % (consumer_id, queue_id))
+                lg.err('failed to remove consumer %r for the queue %r' % (consumer_id, queue_id, ))
+                p2p_service.SendFail(request_packet, 'consumer is not registered for the queue')
                 result_defer.callback(False)
                 return
         if producer_id:
             if not stop_producer(queue_id, producer_id):
-                p2p_service.SendFail(request_packet, 'failed to stop producer %r for queue %r' % (producer_id, queue_id))
+                lg.err('failed to stop producer %r for the queue %r' % (producer_id, queue_id, ))
+                p2p_service.SendFail(request_packet, 'failed to stop producer for the queue')
                 result_defer.callback(False)
                 return
             if not remove_producer(queue_id, producer_id):
-                p2p_service.SendFail(request_packet, 'producer %r is not registered for queue %r' % (producer_id, queue_id))
+                lg.err('failed to remove producer %r for the queue %r' % (producer_id, queue_id, ))
+                p2p_service.SendFail(request_packet, 'producer is not registered for the queue')
                 result_defer.callback(False)
                 return
         if not streams()[queue_id]['consumers'] and not streams()[queue_id]['producers']:
-            # TODO: need to find a better way to keep data for offline groups
-            # current solution have a resource leakage - need to clean up queues which are not in use for a long time
-            if False:
-                lg.info('no consumers and no producers left, closing queue %r' % queue_id)
-                stop_stream(queue_id)
-                close_stream(queue_id)
+            # at least one member must be in the group to keep it alive
+            lg.info('no consumers and no producers left, closing queue %r' % queue_id)
+            stop_stream(queue_id)
+            close_stream(queue_id)
         customer_idurl = global_id.GetGlobalQueueOwnerIDURL(queue_id)
         if customer_idurl in customers():
             if len(customers()[customer_idurl]) == 0:
@@ -1390,15 +1400,15 @@ class MessagePeddler(automat.Automat):
                 streams()[queue_id]['producers'][producer_id] = producer_info
                 streams()[queue_id]['producers'][producer_id]['active'] = False
                 loaded_producers += 1
-        ret = {
-            'queues': loaded_queues,
-            'consumers': loaded_consumers,
-            'producers': loaded_producers,
-            'messages': loaded_messages,
-            'archive': loaded_archive_messages,
-        }
+        # TODO: start queue keepers here
         if _Debug:
-            lg.args(_DebugLevel, **ret)
+            lg.args(_DebugLevel,
+                q=loaded_queues,
+                c=loaded_consumers,
+                p=loaded_producers,
+                m=loaded_messages,
+                a=loaded_archive_messages,
+            )
         reactor.callLater(0, self.automat, 'queues-loaded')  # @UndefinedVariable
 
     def _do_send_past_messages(self, queue_id, consumer_id, list_messages):

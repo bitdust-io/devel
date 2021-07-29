@@ -387,6 +387,7 @@ def connect_random_node(lookup_method, service_name, service_params=None, exclud
     p2p_seeker = P2PServiceSeeker(
         name='p2p_service_seeker%d' % _P2PServiceSeekerInstaceCounter,
         state='AT_STARTUP',
+        debug_level=_DebugLevel,
         log_events=_Debug,
         log_transitions=_Debug,
         publish_events=False,
@@ -403,6 +404,8 @@ def connect_random_node(lookup_method, service_name, service_params=None, exclud
         result_callback=lambda evt, *a, **kw: on_lookup_result(evt, result, *a, **kw),
         exclude_nodes=exclude_nodes,
     )
+    if _Debug:
+        lg.args(_DebugLevel, service_name=service_name, exclude_nodes=exclude_nodes, inst=p2p_seeker)
     return result
 
 
@@ -416,6 +419,7 @@ def connect_known_node(remote_idurl, service_name, service_params=None, exclude_
     p2p_seeker = P2PServiceSeeker(
         name='p2p_service_seeker%d' % _P2PServiceSeekerInstaceCounter,
         state='AT_STARTUP',
+        debug_level=_DebugLevel,
         log_events=_Debug,
         log_transitions=_Debug,
         publish_events=False,
@@ -432,4 +436,6 @@ def connect_known_node(remote_idurl, service_name, service_params=None, exclude_
         result_callback=lambda evt, *a, **kw: on_lookup_result(evt, result, *a, **kw),
         exclude_nodes=exclude_nodes,
     )
+    if _Debug:
+        lg.args(_DebugLevel, service_name=service_name, exclude_nodes=exclude_nodes, inst=p2p_seeker)
     return result
