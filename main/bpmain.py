@@ -846,7 +846,7 @@ def main(executable_path=None, start_reactor=True):
                 # from interface import cmd_line
                 # d = cmd_line.call_xmlrpc_method('restart', ui)
                 from interface import cmd_line_json
-                d = cmd_line_json.call_jsonrpc_method('restart', ui)
+                d = cmd_line_json.call_websocket_method('restart', ui)
                 d.addCallback(done)
                 d.addErrback(failed)
                 reactor.run()  # @UndefinedVariable
@@ -934,20 +934,14 @@ def main(executable_path=None, start_reactor=True):
                 return ret
             try:
                 from twisted.internet import reactor  # @UnresolvedImport
-                # from interface.command_line import run_url_command
-                # url = '?action=exit'
-                # run_url_command(url, False).addBoth(wait_then_kill)
-                # reactor.run()
-                # bpio.shutdown()
 
                 def _stopped(x):
                     lg.out(0, 'BitDust process finished correctly\n')
                     reactor.stop()  # @UndefinedVariable
                     bpio.shutdown()
-                # from interface import cmd_line
-                # cmd_line.call_xmlrpc_method('stop').addBoth(_stopped)
+
                 from interface import cmd_line_json
-                cmd_line_json.call_jsonrpc_method('stop').addBoth(_stopped)
+                cmd_line_json.call_websocket_method('stop').addBoth(_stopped)
                 reactor.run()  # @UndefinedVariable
                 if opts.coverage:
                     cov.stop()
