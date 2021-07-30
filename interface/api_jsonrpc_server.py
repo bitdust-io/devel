@@ -82,7 +82,7 @@ def init(json_rpc_port=None):
     from system import bpio
     if not json_rpc_port:
         json_rpc_port = settings.getJsonRPCServerPort()
-    bpio.WriteTextFile(settings.LocalJsonRPCPortFilename(), str(json_rpc_port))
+    # bpio.WriteTextFile(settings.LocalJsonRPCPortFilename(), str(json_rpc_port))
     # TODO: add protection: accept connections only from local host: 127.0.0.1
     _JsonRPCServer = reactor.listenTCP(json_rpc_port, server.Site(BitDustJsonRPCServer()))  # @UndefinedVariable
     if _Debug:
