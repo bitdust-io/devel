@@ -811,19 +811,20 @@ def main(executable_path=None, start_reactor=True):
             lg.out(0, 'found main BitDust process: %s, sending "restart" command ... ' % str(appList), '')
 
             def done(x):
-                lg.out(0, 'DONE\n', '')
+                lg.out(0, 'BitDust process finished with: %r\n' % x, '')
                 from twisted.internet import reactor  # @UnresolvedImport
                 if reactor.running and not reactor._stopped:  # @UndefinedVariable
                     reactor.stop()  # @UndefinedVariable
 
             def failed(x):
+                lg.out(0, 'BitDust process was not finished correctly: %r\n' % x, '')
                 ok = str(x).count('Connection was closed cleanly') > 0
                 from twisted.internet import reactor  # @UnresolvedImport
                 if ok and reactor.running and not reactor._stopped:  # @UndefinedVariable
                     lg.out(0, 'DONE\n', '')
                     reactor.stop()  # @UndefinedVariable
                     return
-                lg.out(0, 'FAILED while killing previous process - do HARD restart\n', '')
+                lg.out(0, 'forcing previous process shutdown\n', '')
                 try:
                     kill()
                 except:
@@ -846,7 +847,7 @@ def main(executable_path=None, start_reactor=True):
                 # from interface import cmd_line
                 # d = cmd_line.call_xmlrpc_method('restart', ui)
                 from interface import cmd_line_json
-                d = cmd_line_json.call_websocket_method('restart', ui)
+                d = cmd_line_json.call_websocket_method('process_restart', websocket_timeout=5)
                 d.addCallback(done)
                 d.addErrback(failed)
                 reactor.run()  # @UndefinedVariable
@@ -936,12 +937,12 @@ def main(executable_path=None, start_reactor=True):
                 from twisted.internet import reactor  # @UnresolvedImport
 
                 def _stopped(x):
-                    lg.out(0, 'BitDust process finished correctly\n')
+                    lg.out(0, 'BitDust process finished with: %r\n' % x, '')
                     reactor.stop()  # @UndefinedVariable
                     bpio.shutdown()
 
                 from interface import cmd_line_json
-                cmd_line_json.call_websocket_method('stop').addBoth(_stopped)
+                cmd_line_json.call_websocket_method('process_stop', websocket_timeout=5).addBoth(_stopped)
                 reactor.run()  # @UndefinedVariable
                 if opts.coverage:
                     cov.stop()

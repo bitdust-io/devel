@@ -2012,7 +2012,7 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, o
         if _Debug:
             lg.out(_DebugLevel, '    "open_share" skipped, starting restore')
         _start_restore()
-    
+
     return ret
 
 

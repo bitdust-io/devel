@@ -613,7 +613,8 @@ async def stop_daemon_async(node, loop, skip_checks=False, verbose=False):
                 resp.endswith('BitDust stopped')
             ) or (
                 resp.startswith('found main BitDust process:') and
-                resp.endswith('BitDust process finished correctly')
+                resp.count('BitDust process finished with:') and
+                resp.count('OK')
             ) or (
                 resp == 'BitDust is not running at the moment'
             ) or (

@@ -189,6 +189,7 @@ def call_websocket_method(method, **kwargs):
     from twisted.internet.defer import Deferred  # @UnresolvedImport
     from lib import websock
     ret = Deferred()
+    timeout = kwargs.pop('websocket_timeout', None)
 
     def _on_result(resp):
         if _Debug:
@@ -208,21 +209,27 @@ def call_websocket_method(method, **kwargs):
     def _on_open(ws_inst):
         if _Debug:
             print('call_websocket_method._on_open', method, kwargs, ws_inst)
-        websock.ws_call(json_data={
-            'command': 'api_call',
-            'method': method,
-            'kwargs': kwargs,
-        }, cb=_on_result)
+        websock.ws_call(
+            json_data={
+                'command': 'api_call',
+                'method': method,
+                'kwargs': kwargs,
+            },
+            cb=_on_result,
+            timeout=timeout,
+        )
 
     def _on_error(err):
         if _Debug:
             print('call_websocket_method._on_error', method, kwargs, err)
         ret.errback(err)
 
-    websock.start(callbacks={
-        'on_open': _on_open,
-        'on_error': _on_error,
-    })
+    websock.start(
+        callbacks={
+            'on_open': _on_open,
+            'on_error': _on_error,
+        },
+    )
     return ret
 
 
@@ -407,19 +414,19 @@ def cmd_identity(opts, args, overDict, running, executablePath):
                     _run_stand_alone_id_server()
                     return 0
                 tpl = jsontemplate.Template(templ.TPL_SERVICE_INFO)
-                return call_websocket_method_template_and_stop('service_info', tpl, 'service_identity_server')
+                return call_websocket_method_template_and_stop('service_info', tpl, service_name='service_identity_server')
             if args[2] == 'stop':
                 if not running:
                     print_text('BitDust is not running at the moment\n')
                     return 0
                 tpl = jsontemplate.Template(templ.TPL_RAW)
-                return call_websocket_method_template_and_stop('service_stop', tpl, 'service_identity_server')
+                return call_websocket_method_template_and_stop('service_stop', tpl, service_name='service_identity_server')
             if args[2] == 'start':
                 if not running:
                     _run_stand_alone_id_server()
                     return 0
                 tpl = jsontemplate.Template(templ.TPL_RAW)
-                return call_websocket_method_template_and_stop('service_start', tpl, 'service_identity_server')
+                return call_websocket_method_template_and_stop('service_start', tpl, service_name='service_identity_server')
             return 2
 
         def _register():
@@ -574,7 +581,7 @@ def cmd_key(opts, args, overDict, running, executablePath):
         if len(args) > 3:
             key_sz = int(args[3])
         tpl = jsontemplate.Template(templ.TPL_KEY_CREATE)
-        return call_websocket_method_template_and_stop('key_create', tpl, key_id, key_sz)
+        return call_websocket_method_template_and_stop('key_create', tpl, key_alias=key_id, key_size=key_sz)
 
     if len(args) >= 2 and args[1] in ['copy', 'cp', 'bk', 'backup', 'save', ]:
         from twisted.internet import reactor  # @UnresolvedImport
@@ -659,7 +666,9 @@ def cmd_api(opts, args, overDict, executablePath):
             print_text('\n    %s(%s)' % (item, ', '.join(params.args),))
             print_text('        %s' % doc_line)
         return 0
-    return call_websocket_method_and_stop(args[1], *args[2:])
+    pairs = [i.split('=') for i in args[2:]]
+    kwargs = {k:v for k, v in pairs}
+    return call_websocket_method_and_stop(args[1], **kwargs)
 
 #------------------------------------------------------------------------------
 
@@ -674,7 +683,7 @@ def cmd_file(opts, args, overDict, executablePath):
     if len(args) < 2 or args[1] in ['list', 'ls', ]:
         remote_path = args[2] if len(args) > 2 else None
         tpl = jsontemplate.Template(templ.TPL_BACKUPS_LIST)
-        return call_websocket_method_template_and_stop('files_list', tpl, remote_path)
+        return call_websocket_method_template_and_stop('files_list', tpl, remote_path=remote_path)
 
 #     if len(args) == 2 and args[1] in ['idlist', 'ids']:
 #         tpl = jsontemplate.Template(templ.TPL_BACKUPS_LIST_IDS)
@@ -715,21 +724,21 @@ def cmd_file(opts, args, overDict, executablePath):
             local_path = args[3]
         else:
             local_path = os.path.join(os.getcwd(), os.path.basename(args[2]))
-        return call_websocket_method_template_and_stop('file_download_start', tpl, args[2], local_path)
+        return call_websocket_method_template_and_stop('file_download_start', tpl, remote_path=args[2], destination_path=local_path)
 
     if len(args) > 2 and args[1] in ['delete', 'del', 'rm', 'remove', 'erase', ]:
         tpl = jsontemplate.Template(templ.TPL_RAW)
-        return call_websocket_method_template_and_stop('file_delete', tpl, args[2])
+        return call_websocket_method_template_and_stop('file_delete', tpl, remote_path=args[2])
 
     if len(args) >= 3 and args[1] in ['cancel', 'abort', ]:
         tpl = jsontemplate.Template(templ.TPL_RAW)
         if len(args) > 3:
             if args[2] in ['download', 'down', ]:
-                return call_websocket_method_template_and_stop('file_download_stop', tpl, args[3])
+                return call_websocket_method_template_and_stop('file_download_stop', tpl, remote_path=args[3])
             elif args[2] in ['upload', 'up', ]:
-                return call_websocket_method_template_and_stop('file_upload_stop', tpl, args[3])
+                return call_websocket_method_template_and_stop('file_upload_stop', tpl, remote_path=args[3])
             return 2
-        return call_websocket_method_template_and_stop('file_upload_stop', tpl, args[2])
+        return call_websocket_method_template_and_stop('file_upload_stop', tpl, remote_path=args[2])
 
 #     if len(args) == 2:
 #         tpl = jsontemplate.Template(templ.TPL_RAW)
@@ -903,18 +912,17 @@ def cmd_set_request(opts, args, overDict):
                     result['result'][i]['value'] = val[:60].replace('\n', '') + '...'
             return result
 
-        return call_websocket_method_transform_template_and_stop('configs_list', tpl, _limit_length, sort)
+        return call_websocket_method_transform_template_and_stop('configs_list', tpl, _limit_length, sort=sort)
     path = '' if len(args) < 2 else args[1]
     path = option_name_to_path(name, path)
     if len(args) == 2:
         tpl = jsontemplate.Template(templ.TPL_OPTION_SINGLE)
-        return call_websocket_method_template_and_stop('config_get', tpl, path)
+        return call_websocket_method_template_and_stop('config_get', tpl, key=path)
     value = ' '.join(args[2:])
     tpl = jsontemplate.Template(templ.TPL_OPTION_MODIFIED)
-    return call_websocket_method_template_and_stop('config_set', tpl, path, value)
+    return call_websocket_method_template_and_stop('config_set', tpl, key=path, value=value)
 
 #------------------------------------------------------------------------------
-
 
 def cmd_suppliers(opts, args, overDict):
     if len(args) < 2 or args[1] in ['list', 'ls']:
@@ -927,15 +935,15 @@ def cmd_suppliers(opts, args, overDict):
 
     elif args[1] in ['fire', 'replace', 'rep', 'rp'] and len(args) >= 3:
         tpl = jsontemplate.Template(templ.TPL_RAW)
-        return call_websocket_method_template_and_stop('supplier_replace', tpl, args[2])
+        return call_websocket_method_template_and_stop('supplier_change', tpl, position=args[2])
 
     elif args[1] in ['hire', 'change', 'ch', ] and len(args) >= 4:
         tpl = jsontemplate.Template(templ.TPL_RAW)
-        return call_websocket_method_template_and_stop('supplier_change', tpl, args[2], args[3])
+        return call_websocket_method_template_and_stop('supplier_change', tpl, position=args[2], new_supplier_id=args[3])
+
     return 2
 
 #------------------------------------------------------------------------------
-
 
 def cmd_customers(opts, args, overDict):
     if len(args) < 2 or args[1] in ['list', 'ls']:
@@ -948,12 +956,11 @@ def cmd_customers(opts, args, overDict):
 
     elif args[1] in ['reject', 'refuse', 'remove', 'delete', 'rm', 'free', 'del', ] and len(args) >= 3:
         tpl = jsontemplate.Template(templ.TPL_RAW)
-        return call_websocket_method_template_and_stop('customer_reject', tpl, args[2])
+        return call_websocket_method_template_and_stop('customer_reject', tpl, customer_id=args[2])
 
     return 2
 
 #------------------------------------------------------------------------------
-
 
 def cmd_storage(opts, args, overDict):
     if len(args) < 2:
@@ -1017,15 +1024,15 @@ def cmd_services(opts, args, overDict):
 
     if len(args) >= 3 and args[1] in ['start', 'enable', 'on', ]:
         tpl = jsontemplate.Template(templ.TPL_RAW)
-        return call_websocket_method_template_and_stop('service_start', tpl, args[2])
+        return call_websocket_method_template_and_stop('service_start', tpl, service_name=args[2])
 
     if len(args) >= 3 and args[1] in ['stop', 'disable', 'off', ]:
         tpl = jsontemplate.Template(templ.TPL_RAW)
-        return call_websocket_method_template_and_stop('service_stop', tpl, args[2])
+        return call_websocket_method_template_and_stop('service_stop', tpl, service_name=args[2])
 
     if len(args) >= 2:
         tpl = jsontemplate.Template(templ.TPL_SERVICE_INFO)
-        return call_websocket_method_template_and_stop('service_info', tpl, args[1])
+        return call_websocket_method_template_and_stop('service_info', tpl, service_name=args[1])
 
     return 2
 
@@ -1039,16 +1046,16 @@ def cmd_message(opts, args, overDict):
     #         return call_websocket_method_template_and_stop('list_messages', tpl)
     if len(args) >= 4 and args[1] in ['send', 'to', ]:
         tpl = jsontemplate.Template(templ.TPL_RAW)
-        return call_websocket_method_template_and_stop('message_send', tpl, args[2], args[3])
+        return call_websocket_method_template_and_stop('message_send', tpl, recipient_id=args[2], data=args[3])
 
     if len(args) < 2 or args[1] in ['listen', 'read', ]:
         from chat import terminal_chat
 
         def _send_message(to, msg):
-            return call_websocket_method('message_send', to, msg)
+            return call_websocket_method('message_send', recipient_id=to, data=msg)
 
         def _search_user(inp):
-            return call_websocket_method('user_search', inp)
+            return call_websocket_method('user_search', nickname=inp)
 
         terminal_chat.init(
             do_send_message_func=_send_message,
@@ -1078,7 +1085,7 @@ def cmd_message(opts, args, overDict):
                 for msg in x['result']:
                     terminal_chat.on_incoming_message(msg)
 
-            d = call_websocket_method('message_receive', 'terminal_chat')
+            d = call_websocket_method('message_receive', consumer_callback_id='terminal_chat')
             d.addCallback(_consume)
             d.addErrback(_error)
             return x
@@ -1103,17 +1110,17 @@ def cmd_friend(opts, args, overDict):
         tpl = jsontemplate.Template(templ.TPL_FRIEND_LOOKUP_REPEATED_SECTION)
         return call_websocket_method_template_and_stop('list_correspondents', tpl)
     elif len(args) > 2 and args[1] in ['check', 'nick', 'nickname', 'test', ]:
-        return call_websocket_method_template_and_stop('find_peer_by_nickname', tpl_lookup, strng.text_type(args[2]))
+        return call_websocket_method_template_and_stop('user_search', tpl_lookup, nickname=strng.text_type(args[2]))
     elif len(args) > 2 and args[1] in ['add', 'append', ]:
         inp = strng.text_type(args[2])
         if inp.startswith('http://'):
-            return call_websocket_method_template_and_stop('add_correspondent', tpl_add, inp)
+            return call_websocket_method_template_and_stop('friend_add', tpl_add, trusted_user_id=inp)
 
         def _lookup(result):
             try:
                 if result['result'] == 'exist':
                     print_template(result, tpl_lookup)
-                    d = call_websocket_method('add_correspondent', result['idurl'])
+                    d = call_websocket_method('friend_add', trusted_user_id=result['idurl'])
                     d.addCallback(print_template_and_stop, tpl_add)
                     d.addErrback(fail_and_stop)
                     return 0
@@ -1124,7 +1131,7 @@ def cmd_friend(opts, args, overDict):
                 lg.exc()
                 return 0
 
-        d = call_websocket_method('find_peer_by_nickname', inp)
+        d = call_websocket_method('user_search', nickname=inp)
         d.addCallback(_lookup)
         d.addErrback(fail_and_stop)
         reactor.run()  # @UndefinedVariable
@@ -1258,7 +1265,7 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
 
         try:
             from twisted.internet import reactor  # @UnresolvedImport
-            call_websocket_method('restart', ui).addCallbacks(done, failed)
+            call_websocket_method('process_restart', websocket_timeout=5).addCallbacks(done, failed)
             reactor.run()  # @UndefinedVariable
         except:
             print_exception()
@@ -1300,7 +1307,7 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
             settings.shutdown()
             return 0
         print_text('found main BitDust process: %s, sending command "show" to start the GUI\n' % str(appList))
-        call_websocket_method('show')
+        # call_websocket_method('show')
         return 0
 
     #---stop---
@@ -1310,7 +1317,7 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
             print_text('found main BitDust process: %s, sending command "exit" ... ' % str(appList), '')
             try:
                 from twisted.internet import reactor  # @UnresolvedImport
-                call_websocket_method('stop').addBoth(wait_then_kill)
+                call_websocket_method('process_stop', websocket_timeout=5).addBoth(wait_then_kill)
                 reactor.run()  # @UndefinedVariable
                 return 0
             except:
@@ -1329,7 +1336,7 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
                 print_text('found child BitDust processes: %s, perform "kill process" action ... ' % str(appList), '')
                 ret = kill()
                 return ret
-                
+
             print_text('BitDust is not running at the moment')
             return 0
 
@@ -1367,7 +1374,7 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
         if len(args) < 1:
             return 2
         tpl = jsontemplate.Template(templ.TPL_RAW)
-        return call_websocket_method_template_and_stop('ping', tpl, args[1])
+        return call_websocket_method_template_and_stop('user_ping', tpl, user_id=args[1])
 
     #---config---
     elif cmd in ['set', 'get', 'conf', 'config', 'option', 'setting', ]:
