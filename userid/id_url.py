@@ -521,6 +521,19 @@ def is_some_empty(iterable_object):
     return is_in(ID_URL_FIELD(b''), iterable_object=iterable_object, as_field=True, as_bin=False)
 
 
+def is_the_same(idurl1, idurl2):
+    """
+    Compares two ID_URL_FIELD objects or binary strings taking in account if those IDURLs are already cached.
+    """
+    idurl1 = field(idurl1)
+    idurl2 = field(idurl2)
+    if not idurl1 or not idurl2:
+        return False
+    if is_cached(idurl1) and is_cached(idurl2):
+        return idurl1 == idurl2
+    return idurl1.to_bin() == idurl2.to_bin()
+
+
 def empty_count(iterable_object):
     """
     Returns number of empty idurl fields or empty strings found in given `iterable_object`.

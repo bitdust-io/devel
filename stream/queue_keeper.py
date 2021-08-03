@@ -806,7 +806,7 @@ class QueueKeeper(automat.Automat):
             except:
                 lg.exc()
                 return
-            if evt in ['request-invalid', 'my-record-missing', 'my-record-invalid', ]:
+            if evt in ['request-invalid', 'my-record-missing', 'my-top,record-missing', 'my-record-invalid', ]:
                 self.automat(evt)
                 return
             if evt.count('-failed'):

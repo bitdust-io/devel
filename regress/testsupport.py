@@ -582,24 +582,26 @@ async def packet_list_async(node, loop, wait_all_finish=True, attempts=60, delay
 
 #------------------------------------------------------------------------------
 
-def stop_daemon(node, skip_checks=False):
-    bitdust_stop = run_ssh_command_and_wait(node, 'bitdust stop', verbose=False)
-    # print('\n' + bitdust_stop[0].strip())
+def stop_daemon(node, skip_checks=False, verbose=False):
+    bitdust_stop = run_ssh_command_and_wait(node, 'bitdust stop', verbose=verbose)
+    if verbose:
+        print('\n' + bitdust_stop[0].strip())
     if not skip_checks:
+        resp = bitdust_stop[0].strip()
         assert (
             (
-                bitdust_stop[0].strip().startswith('BitDust child processes found') and
-                bitdust_stop[0].strip().endswith('BitDust stopped')
+                resp.startswith('BitDust child processes found') and
+                resp.endswith('BitDust stopped')
             ) or (
-                bitdust_stop[0].strip().startswith('found main BitDust process:') and
-                bitdust_stop[0].strip().endswith('BitDust process finished correctly')
+                resp.startswith('found main BitDust process:') and
+                resp.count('BitDust process finished with:') and
+                resp.count('OK')
             ) or (
-                bitdust_stop[0].strip() == 'BitDust is not running at the moment'
+                resp == 'BitDust is not running at the moment'
             ) or (
-                bitdust_stop[0].strip() == ''
+                resp == ''
             )
         )
-    # print(f'stop_daemon [{node}] OK\n')
 
 
 async def stop_daemon_async(node, loop, skip_checks=False, verbose=False):
@@ -860,6 +862,7 @@ async def start_message_broker_async(node, identity_name, loop, join_network=Tru
     cmd += 'bitdust set services/message-broker/enabled true;'
     cmd += 'bitdust set services/message-broker/archive-chunk-size 3;'
     cmd += 'bitdust set services/message-broker/message-ack-timeout 40;'
+    cmd += 'bitdust set services/message-broker/broker-negotiate-ack-timeout 40;'
     # set desired message brokers
     if preferred_brokers:
         cmd += f'bitdust set services/message-broker/preferred-brokers "{preferred_brokers}";'

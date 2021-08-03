@@ -726,7 +726,7 @@ def scenario9():
 
     # put identity server offline
     print('\nabout to stop "id-dead" now\n')
-    stop_daemon('id-dead')
+    stop_daemon('id-dead', verbose=True)
 
     # test proxy-rotated new IDURL
     r = None
@@ -815,7 +815,7 @@ def scenario9():
     kw.wait_event(['customer-4', ], 'identity-url-changed', expected_count=1)  # broker-rotated
 
     # disable proxy-rotated so it will not affect other scenarios
-    stop_daemon('proxy-rotated')
+    stop_daemon('proxy-rotated', verbose=True)
 
     new_proxy_info = {'idurl': new_proxy_idurl, 'sources': new_proxy_sources, 'global_id': new_proxy_global_id, }
     new_customer_info = {'idurl': new_customer_idurl, 'sources': new_customer_sources, 'global_id': new_customer_global_id, }
@@ -1291,7 +1291,7 @@ def scenario12_end(old_customer_4_info):
     assert customer_2_group_info_offline['last_sequence_id'] == 11
 
     # disable broker-rotated so it will not affect other scenarios
-    stop_daemon('broker-rotated')
+    stop_daemon('broker-rotated', verbose=True)
 
 
 def scenario13_begin():
@@ -1345,7 +1345,7 @@ def scenario13_end(old_customer_3_info):
     )
 
     # disable supplier-rotated so it will not affect other scenarios
-    stop_daemon('supplier-rotated')
+    stop_daemon('supplier-rotated', verbose=True)
 
     kw.wait_packets_finished(PROXY_IDS + CUSTOMERS_IDS + SUPPLIERS_IDS)
 

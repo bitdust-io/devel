@@ -1232,7 +1232,7 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
         ui = False
         if cmd == 'restart':
             ui = True
-        print_text('found main BitDust process: %s, sending "restart" command' % str(appList))
+        print_text('found main BitDust process: %s, executing "api.process_stop()" via WebSocket ... ' % str(appList))
 
         def done(x):
             print_text('DONE\n', '')
@@ -1241,7 +1241,7 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
                 reactor.stop()  # @UndefinedVariable
 
         def failed(x):
-            print_text('soft restart failed, trying to kill previous process to force restart')
+            print_text('soft restart failed, trying to kill running process and force the restart')
             try:
                 kill()
             except:
@@ -1306,7 +1306,7 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
             print_text(result)
             settings.shutdown()
             return 0
-        print_text('found main BitDust process: %s, sending command "show" to start the GUI\n' % str(appList))
+        # print_text('found main BitDust process: %s, sending command "show" to start the GUI\n' % str(appList))
         # call_websocket_method('show')
         return 0
 
@@ -1314,7 +1314,7 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
     elif cmd == 'stop' or cmd == 'kill' or cmd == 'shutdown':
         appList = bpio.find_main_process()
         if appList:
-            print_text('found main BitDust process: %s, sending command "exit" ... ' % str(appList), '')
+            print_text('found main BitDust process: %s, executing "api.process_stop()" via WebSocket ... ' % str(appList), '')
             try:
                 from twisted.internet import reactor  # @UnresolvedImport
                 call_websocket_method('process_stop', websocket_timeout=5).addBoth(wait_then_kill)

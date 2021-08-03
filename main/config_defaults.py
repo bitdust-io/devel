@@ -166,6 +166,7 @@ def reset(conf_obj):
     conf_obj.setDefaultValue('services/message-broker/enabled', 'false')
     conf_obj.setDefaultValue('services/message-broker/archive-chunk-size', 100)
     conf_obj.setDefaultValue('services/message-broker/message-ack-timeout', 30)
+    conf_obj.setDefaultValue('services/message-broker/broker-negotiate-ack-timeout', 30)
     conf_obj.setDefaultValue('services/message-broker/preferred-brokers', '')
 
     conf_obj.setDefaultValue('services/message-history/enabled', 'true')

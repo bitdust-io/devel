@@ -165,6 +165,7 @@ def defaults():
         'services/message-broker/enabled': TYPE_BOOLEAN,
         'services/message-broker/archive-chunk-size': TYPE_NON_ZERO_POSITIVE_INTEGER,
         'services/message-broker/message-ack-timeout': TYPE_NON_ZERO_POSITIVE_INTEGER,
+        'services/message-broker/broker-negotiate-ack-timeout': TYPE_NON_ZERO_POSITIVE_INTEGER,
         'services/message-broker/preferred-brokers': TYPE_TEXT,
         'services/message-history/enabled': TYPE_BOOLEAN,
         'services/miner/enabled': TYPE_BOOLEAN,

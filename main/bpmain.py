@@ -808,7 +808,7 @@ def main(executable_path=None, start_reactor=True):
         appList = bpio.find_main_process(pid_file_path=os.path.join(appdata, 'metadata', 'processid'))
         ui = False
         if len(appList) > 0:
-            lg.out(0, 'found main BitDust process: %s, sending "restart" command ... ' % str(appList), '')
+            lg.out(0, 'found main BitDust process: %s, executing "api.process_stop()" via WebSocket ... ' % str(appList), '')
 
             def done(x):
                 lg.out(0, 'BitDust process finished with: %r\n' % x, '')
@@ -903,8 +903,8 @@ def main(executable_path=None, start_reactor=True):
                 ret = 1
             bpio.shutdown()
             return ret
-        lg.out(0, 'found main BitDust process: %s, start the GUI\n' % str(appList))
-        ret = show()
+        # lg.out(0, 'found main BitDust process: %s, start the GUI\n' % str(appList))
+        # ret = show()
         bpio.shutdown()
         return ret
 
@@ -923,8 +923,8 @@ def main(executable_path=None, start_reactor=True):
             pid_file_path=os.path.join(appdata, 'metadata', 'processid'),
         )
         if len(appList) > 0:
-            lg.out(0, 'found main BitDust process: %r, sending command "exit" ... ' % appList, '')
             if cmd == 'kill':
+                lg.out(0, 'found main BitDust process: %r, about to kill running process ... ' % appList, '')
                 ret = kill()
                 bpio.shutdown()
                 if opts.coverage:
@@ -941,6 +941,7 @@ def main(executable_path=None, start_reactor=True):
                     reactor.stop()  # @UndefinedVariable
                     bpio.shutdown()
 
+                lg.out(0, 'found main BitDust process: %r, executing "api.process_stop()" via WebSocket ... ' % appList, '')
                 from interface import cmd_line_json
                 cmd_line_json.call_websocket_method('process_stop', websocket_timeout=5).addBoth(_stopped)
                 reactor.run()  # @UndefinedVariable
