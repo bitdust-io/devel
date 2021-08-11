@@ -40,6 +40,7 @@ _NodeTunnelPort = {}
 _NextSSHTunnelPort = 10000
 _SSLContexts = {}
 _ActiveScenario = ''
+_EngineDebugLevel = 10
 
 #------------------------------------------------------------------------------
 
@@ -633,7 +634,7 @@ def start_dht_seed(node, wait_seconds=0, dht_seeds='', attached_layers='', verbo
     if verbose:
         print(f'NEW DHT SEED (with STUN SERVER) at [{node}]')
     cmd = ''
-    cmd += 'bitdust set logs/debug-level 18;'
+    cmd += f'bitdust set logs/debug-level {_EngineDebugLevel};'
     cmd += 'bitdust set logs/api-enabled true;'
     cmd += 'bitdust set logs/automat-events-enabled true;'
     cmd += 'bitdust set logs/automat-transitions-enabled true;'
@@ -671,7 +672,7 @@ async def start_identity_server_async(node, loop, verbose=True):
     if verbose:
         print(f'NEW IDENTITY SERVER at [{node}]')
     cmd = ''
-    cmd += 'bitdust set logs/debug-level 18;'
+    cmd += f'bitdust set logs/debug-level {_EngineDebugLevel};'
     cmd += 'bitdust set logs/api-enabled true;'
     cmd += 'bitdust set logs/automat-events-enabled true;'
     cmd += 'bitdust set logs/automat-transitions-enabled true;'
@@ -700,7 +701,7 @@ async def start_identity_server_async(node, loop, verbose=True):
 async def start_stun_server_async(node, loop, dht_seeds=''):
     print(f'NEW STUN SERVER at [{node}]')
     cmd = ''
-    cmd += 'bitdust set logs/debug-level 18;'
+    cmd += f'bitdust set logs/debug-level {_EngineDebugLevel};'
     cmd += 'bitdust set logs/api-enabled true;'
     cmd += 'bitdust set logs/automat-events-enabled true;'
     cmd += 'bitdust set logs/automat-transitions-enabled true;'
@@ -734,7 +735,7 @@ async def start_proxy_server_async(node, identity_name, loop, min_servers=1, max
                                    preferred_servers='', health_check_interval_seconds=None, dht_seeds=''):
     print(f'NEW PROXY SERVER {identity_name} at [{node}]')
     cmd = ''
-    cmd += 'bitdust set logs/debug-level 18;'
+    cmd += f'bitdust set logs/debug-level {_EngineDebugLevel};'
     cmd += 'bitdust set logs/api-enabled true;'
     cmd += 'bitdust set logs/automat-events-enabled true;'
     cmd += 'bitdust set logs/automat-transitions-enabled true;'
@@ -779,7 +780,7 @@ async def start_supplier_async(node, identity_name, loop, join_network=True, dht
                                preferred_servers='', health_check_interval_seconds=None, preferred_routers=''):
     print(f'NEW SUPPLIER {identity_name} at [{node}]')
     cmd = ''
-    cmd += 'bitdust set logs/debug-level 18;'
+    cmd += f'bitdust set logs/debug-level {_EngineDebugLevel};'
     cmd += 'bitdust set logs/api-enabled true;'
     cmd += 'bitdust set logs/automat-events-enabled true;'
     cmd += 'bitdust set logs/automat-transitions-enabled true;'
@@ -829,7 +830,7 @@ async def start_message_broker_async(node, identity_name, loop, join_network=Tru
                                      preferred_servers='', health_check_interval_seconds=None, preferred_routers='', preferred_brokers=''):
     print(f'NEW MESSAGE BROKER {identity_name} at [{node}]')
     cmd = ''
-    cmd += 'bitdust set logs/debug-level 18;'
+    cmd += f'bitdust set logs/debug-level {_EngineDebugLevel};'
     cmd += 'bitdust set logs/api-enabled true;'
     cmd += 'bitdust set logs/automat-events-enabled true;'
     cmd += 'bitdust set logs/automat-transitions-enabled true;'
@@ -861,8 +862,8 @@ async def start_message_broker_async(node, identity_name, loop, join_network=Tru
     # enable message broker service
     cmd += 'bitdust set services/message-broker/enabled true;'
     cmd += 'bitdust set services/message-broker/archive-chunk-size 3;'
-    cmd += 'bitdust set services/message-broker/message-ack-timeout 40;'
-    cmd += 'bitdust set services/message-broker/broker-negotiate-ack-timeout 40;'
+    cmd += 'bitdust set services/message-broker/message-ack-timeout 15;'
+    cmd += 'bitdust set services/message-broker/broker-negotiate-ack-timeout 15;'
     # set desired message brokers
     if preferred_brokers:
         cmd += f'bitdust set services/message-broker/preferred-brokers "{preferred_brokers}";'
@@ -888,7 +889,7 @@ async def start_customer_async(node, identity_name, loop, join_network=True, num
         await asyncio.sleep(sleep_before_start)
     print('NEW CUSTOMER %r at [%s]' % (identity_name, node, ))
     cmd = ''
-    cmd += 'bitdust set logs/debug-level 18;'
+    cmd += f'bitdust set logs/debug-level {_EngineDebugLevel};'
     cmd += 'bitdust set logs/api-enabled true;'
     cmd += 'bitdust set logs/automat-events-enabled true;'
     cmd += 'bitdust set logs/automat-transitions-enabled true;'
@@ -924,8 +925,8 @@ async def start_customer_async(node, identity_name, loop, join_network=True, num
     cmd += 'bitdust set services/customer/enabled true;'
     cmd += f'bitdust set services/customer/suppliers-number "{num_suppliers}";'
     # decrease message timeout for group communications
-    cmd += 'bitdust set services/private-groups/message-ack-timeout 15;'
-    cmd += 'bitdust set services/private-groups/broker-connect-timeout 240;'
+    cmd += 'bitdust set services/private-groups/message-ack-timeout 8;'
+    cmd += 'bitdust set services/private-groups/broker-connect-timeout 180;'
     if block_size:
         cmd += f'bitdust set services/backups/block-size "{block_size}";'
     if supplier_candidates:
