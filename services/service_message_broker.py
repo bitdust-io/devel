@@ -91,15 +91,6 @@ class MessageBrokerService(LocalService):
         except:
             lg.warn("wrong payload: %r" % json_payload)
             return p2p_service.SendFail(newpacket, 'wrong payload')
-#         if action == 'broker-verify':
-#             message_peddler.A(
-#                 'broker-verify',
-#                 customer_idurl=json_payload.get('customer_idurl'),
-#                 desired_position=json_payload.get('desired_position'),
-#                 request_packet=newpacket,
-#                 result_defer=result,
-#             )
-#             return result
         try:
             queue_id = json_payload.get('queue_id', None)
             consumer_id = json_payload['consumer_id']

@@ -186,6 +186,7 @@ def defaults():
         'services/personal-messages/enabled': TYPE_BOOLEAN,
         'services/private-groups/enabled': TYPE_BOOLEAN,
         'services/private-groups/message-ack-timeout': TYPE_NON_ZERO_POSITIVE_INTEGER,
+        'services/private-groups/broker-connect-timeout': TYPE_NON_ZERO_POSITIVE_INTEGER,
         'services/private-groups/preferred-brokers': TYPE_TEXT,
         'services/private-messages/enabled': TYPE_BOOLEAN,
         'services/private-messages/acknowledge-unread-messages-enabled': TYPE_BOOLEAN,

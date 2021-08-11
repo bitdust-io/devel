@@ -1121,6 +1121,11 @@ def scenario12_begin():
     kw.config_set_v1('broker-4', 'services/message-broker/preferred-brokers', '')
     kw.config_set_v1('broker-3', 'services/message-broker/preferred-brokers', '')
 
+    assert kw.group_info_v1('customer-4', customer_4_group_key_id, wait_state='IN_SYNC!')['result']['state'] == 'IN_SYNC!'
+    assert kw.group_info_v1('customer-4', customer_4_group2_key_id, wait_state='IN_SYNC!')['result']['state'] == 'IN_SYNC!'
+
+    kw.wait_packets_finished(PROXY_IDS + CUSTOMERS_IDS + BROKERS_IDS)
+
     return {
         'group_key_id': customer_4_group_key_id,
         'active_queue_id': customer_4_active_queue_id,
@@ -1343,6 +1348,8 @@ def scenario13_end(old_customer_3_info):
         destination_path=old_customer_3_info['download_filepath'],
         verify_from_local_path=old_customer_3_info['local_filepath'],
     )
+
+    kw.wait_packets_finished(PROXY_IDS + CUSTOMERS_IDS + SUPPLIERS_IDS + BROKERS_IDS)
 
     # disable supplier-rotated so it will not affect other scenarios
     stop_daemon('supplier-rotated', verbose=True)
@@ -1807,8 +1814,8 @@ def scenario18():
         message_label='MUST_ROTATE_NOW',
         expected_results={'customer-4': True, 'customer-2': True, },
         expected_last_sequence_id={},
-        polling_timeout=150,
-        receive_timeout=151,
+        polling_timeout=180,
+        receive_timeout=181,
     )
 
     # first of all check message brokers and group state of the second group on customer-4

@@ -585,7 +585,7 @@ class OnlineStatus(automat.Automat):
         Builds `online_status()` state machine.
         """
         self.idurl = idurl
-        self.glob_id = global_id.idurl2glob(self.idurl)
+        # self.glob_id = global_id.idurl2glob(self.idurl)
         self.latest_inbox_time = None
         self.latest_check_time = None
         self.keep_alive = False
@@ -615,7 +615,7 @@ class OnlineStatus(automat.Automat):
         if newstate == 'CONNECTED':
             lg.info('remote node connected : %s' % self.idurl)
             events.send('node-connected', data=dict(
-                global_id=self.glob_id,
+                global_id=self.idurl.to_id(),
                 idurl=self.idurl,
                 old_state=oldstate,
                 new_state=newstate,
@@ -623,7 +623,7 @@ class OnlineStatus(automat.Automat):
         if newstate == 'OFFLINE' and oldstate != 'AT_STARTUP':
             lg.info('remote node disconnected : %s' % self.idurl)
             events.send('node-disconnected', data=dict(
-                global_id=self.glob_id,
+                global_id=self.idurl.to_id(),
                 idurl=self.idurl,
                 old_state=oldstate,
                 new_state=newstate,

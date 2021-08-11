@@ -670,6 +670,31 @@ def erase_stream(queue_id):
         lg.args(_DebugLevel, queue_id=queue_id, queue_dir=queue_dir, erased_files=erased_files)
     return True
 
+
+def rename_stream(old_queue_id, new_queue_id):
+    service_dir = settings.ServiceDir('service_message_broker')
+    queues_dir = os.path.join(service_dir, 'queues')
+    old_queue_dir = os.path.join(queues_dir, old_queue_id)
+    new_queue_dir = os.path.join(queues_dir, new_queue_id)
+    old_customer_idurl = global_id.GetGlobalQueueOwnerIDURL(old_queue_id)
+    new_customer_idurl = global_id.GetGlobalQueueOwnerIDURL(new_queue_id)
+    if old_customer_idurl not in customers().keys():
+        return False
+    if old_queue_id not in customers()[old_customer_idurl]:
+        return False
+    customers()[old_customer_idurl].remove(old_queue_id)
+    if not customers()[old_customer_idurl]:
+        customers().pop(old_customer_idurl)
+    streams()[new_queue_id] = streams().pop(old_queue_id)
+    if new_customer_idurl not in customers():
+        customers()[new_customer_idurl] = []
+    customers()[new_customer_idurl].append(new_queue_id)
+    if os.path.isdir(old_queue_dir):
+        bpio.move_dir_recursive(old_queue_dir, new_queue_dir)
+    if _Debug:
+        lg.args(_DebugLevel, old=old_queue_id, new=new_queue_id)
+    return True
+
 #------------------------------------------------------------------------------
 
 def add_consumer(queue_id, consumer_id, consumer_info=None):
@@ -915,7 +940,8 @@ def stop_stream(queue_id):
         stop_producer(queue_id, producer_id)
     for consumer_id in list(streams()[queue_id]['consumers'].keys()):
         stop_consumer(queue_id, consumer_id)
-    p2p_queue.close_queue(queue_id)
+    if p2p_queue.is_queue_exist(queue_id):
+        p2p_queue.close_queue(queue_id, remove_empty_consumers=True, remove_empty_producers=True)
     streams()[queue_id]['active'] = False
     p2p_queue.touch_queues()
     return True
@@ -1032,6 +1058,7 @@ class MessagePeddler(automat.Automat):
         self.send_message_ack_timeout = config.conf().getInt('services/message-broker/message-ack-timeout')
         self.archive_in_progress = False
         events.add_subscriber(self._on_identity_url_changed, 'identity-url-changed')
+        # events.add_subscriber(self._on_broker_position_changed, 'broker-position-changed')
         message.consume_messages(
             consumer_callback_id=self.name,
             callback=on_consume_queue_messages,
@@ -1058,15 +1085,11 @@ class MessagePeddler(automat.Automat):
         Action method.
         """
         queues_to_be_closed = []
-        # for customer_idurl in customers():
-        #     for queue_id in customers()[customer_idurl]:
-        #         queues_to_be_closed.append(queue_id)
         if _Debug:
             lg.args(_DebugLevel, queues_to_be_closed=queues_to_be_closed)
         for customer_idurl in customers():
             if queue_keeper.existing(customer_idurl):
                 queue_keeper.close(customer_idurl)
-        # self._do_close_streams(queues_to_be_closed, erase_key=False)
         stop_all_streams()
         p2p_queue.remove_message_processed_callback(on_message_processed)
 
@@ -1119,9 +1142,6 @@ class MessagePeddler(automat.Automat):
                     p2p_service.SendFail(request_packet, 'key register failed')
                     result_defer.callback(False)
                     return
-                # p2p_service.SendFail(request_packet, 'another public key already registered with same id')
-                # result_defer.callback(False)
-                # return
         else:
             if not my_keys.register_key(group_key_id, key_object, group_key_info.get('label', '')):
                 p2p_service.SendFail(request_packet, 'key register failed')
@@ -1154,9 +1174,8 @@ class MessagePeddler(automat.Automat):
         if _Debug:
             lg.args(_DebugLevel, queue_id=queue_id, consumer_id=consumer_id, producer_id=producer_id, request_packet=request_packet)
         if not queue_id or queue_id not in streams():
-            lg.warn('queue was not registered: %r' % queue_id)
+            lg.warn('queue was not registered already: %r' % queue_id)
             p2p_service.SendAck(request_packet, 'accepted')
-            # p2p_service.SendFail(request_packet, 'queue is not registered')
             result_defer.callback(True)
             return
         if not my_keys.verify_key_info_signature(group_key_info):
@@ -1266,39 +1285,6 @@ class MessagePeddler(automat.Automat):
         """
         Action method.
         """
-        return
-#         customer_idurl = global_id.GetGlobalQueueOwnerIDURL(kwargs['queue_id'])
-#         desired_position = kwargs['desired_position']
-#         request_packet = kwargs['request_packet']
-#         result_defer = kwargs['result_defer']
-#         qk = queue_keeper.existing(customer_idurl)
-#         if not qk:
-#             if _Debug:
-#                 lg.dbg(_DebugLevel, 'customer queue not exist: %r' % customer_idurl)
-#             p2p_service.SendFail(request_packet, 'customer queue not exist')
-#             result_defer.callback(False)
-#             return
-#         if qk.state not in ['DHT_READ', 'DHT_WRITE', 'CONNECTED', ]:
-#             if _Debug:
-#                 lg.dbg(_DebugLevel, 'customer queue not connected: %r' % qk)
-#             p2p_service.SendFail(request_packet, 'customer queue not connected')
-#             result_defer.callback(False)
-#             return
-#         if qk.known_position is not None and desired_position is not None and desired_position >= 0:
-#             if qk.known_position == desired_position:
-#                 if _Debug:
-#                     lg.dbg(_DebugLevel, 'customer queue already connected on same position %r, accepting: %r' % (qk.known_position, request_packet, ))
-#                 p2p_service.SendAck(request_packet, 'accepted')
-#                 result_defer.callback(True)
-#                 return
-#             if _Debug:
-#                 lg.dbg(_DebugLevel, 'customer queue already connected on different position %r, rejecting: %r' % (qk.known_position, request_packet, ))
-#             p2p_service.SendFail(request_packet, 'customer queue already connected on different position')
-#             result_defer.callback(False)
-#             return
-#         lg.warn('customer queue is connected, but position is yet unknown: %r' % qk)
-#         p2p_service.SendFail(request_packet, 'customer queue already connected but position is yet unknown')
-#         result_defer.callback(False)
 
     def doDestroyMe(self, *args, **kwargs):
         """
@@ -1306,6 +1292,7 @@ class MessagePeddler(automat.Automat):
         """
         global _MessagePeddler
         message.clear_consumer_callbacks(self.name)
+        # events.remove_subscriber(self._on_broker_position_changed, 'broker-position-changed')
         events.remove_subscriber(self._on_identity_url_changed, 'identity-url-changed')
         self.destroy()
         _MessagePeddler = None
@@ -1465,29 +1452,20 @@ class MessagePeddler(automat.Automat):
         if _Debug:
             lg.args(_DebugLevel, queue_id=queue_id, consumer_id=consumer_id, producer_id=producer_id,
                     position=position, archive_folder_path=archive_folder_path, known_brokers=known_brokers)
-#         qk = queue_keeper.existing(customer_idurl)
-#         if qk:
-#             if qk.state in ['DHT_READ', 'DHT_WRITE', 'CONNECTED', ]:
-#                 if qk.known_position >= 0 and position >= 0:
-#                     if qk.known_position < position:
-#                         lg.warn('SKIP request, current known position is %d but requested position is %d' % (qk.known_position, position, ))
-#                         p2p_service.SendFail(request_packet, 'position mismatch, expected position is %d' % qk.known_position)
-#                         return
-#                     if qk.known_position > position:
-#                         lg.info('about to rotate message broker, my position is %d, requested position is %d' % (qk.known_position, position, ))
-#                     else:
-#                         lg.info('connecting to existing %r on same position %d' % (qk, position, ))
-#         self._do_connect_queue_keeper(customer_idurl, request_packet, queue_id, consumer_id, producer_id,
-#                                       position, last_sequence_id, archive_folder_path, known_brokers, group_key_info, result_defer)
-#     def _do_connect_queue_keeper(self, customer_idurl, request_packet, queue_id, consumer_id, producer_id,
-#                                  position, last_sequence_id, archive_folder_path, known_brokers, group_key_info, result_defer):
-#         if _Debug:
-#             lg.args(_DebugLevel, customer_idurl=customer_idurl, queue_id=queue_id, position=position)
         queue_keeper_result = Deferred()
         if _Debug:
             queue_keeper_result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='message_peddler._do_verify_queue_keeper')
-        queue_keeper_result.addBoth(
+        queue_keeper_result.addCallback(
             self._on_queue_keeper_connect_result,
+            consumer_id=consumer_id,
+            producer_id=producer_id,
+            group_key_info=group_key_info,
+            last_sequence_id=last_sequence_id,
+            request_packet=request_packet,
+            result_defer=result_defer,
+        )
+        queue_keeper_result.addErrback(
+            self._on_queue_keeper_connect_failed,
             consumer_id=consumer_id,
             producer_id=producer_id,
             group_key_info=group_key_info,
@@ -1498,7 +1476,6 @@ class MessagePeddler(automat.Automat):
         qk = queue_keeper.check_create(customer_idurl=customer_idurl, auto_create=True)
         qk.automat(
             event='connect',
-            # queue_id=queue_id,
             consumer_id=consumer_id,
             producer_id=producer_id,
             group_key_info=group_key_info,
@@ -1613,10 +1590,36 @@ class MessagePeddler(automat.Automat):
         self.automat('archive-backup-failed')
         return None
 
-    def _on_queue_keeper_connect_result(self, cooperated_brokers, consumer_id, producer_id, group_key_info, last_sequence_id, request_packet, result_defer):
+#     def _on_broker_position_changed(self, evt):
+#         if _Debug:
+#             lg.args(_DebugLevel, **evt.data)
+#         if not evt.data['new_postion'] == 0:
+#             return
+#         if not id_url.is_the_same(my_id.getIDURL(), evt.data['broker_idurl']):
+#             return
+#         target_customer_idurl = evt.data['customer_idurl']
+#         for current_queue_id in list(streams().keys()):
+#             queue_alias, customer_id, current_broker_id = global_id.SplitGlobalQueueID(current_queue_id, split_queue_alias=True)
+#             customer_idurl = global_id.glob2idurl(customer_id)
+#             current_broker_idurl = global_id.glob2idurl(current_broker_id)
+#             if not id_url.is_the_same(customer_idurl, target_customer_idurl):
+#                 continue
+#             if id_url.is_the_same(current_broker_idurl, my_id.getIDURL()):
+#                 continue
+#             new_queue_id = global_id.MakeGlobalQueueID(
+#                 queue_alias=queue_alias,
+#                 owner_id=customer_id,
+#                 supplier_id=my_id.getIDURL().to_id(),
+#             )
+#             if new_queue_id in streams():
+#                 lg.warn('rotated queue_id %r was already registered' % new_queue_id)
+#                 continue
+#             rename_stream(current_queue_id, new_queue_id)
+
+    def _on_queue_keeper_connect_result(self, result, consumer_id, producer_id, group_key_info, last_sequence_id, request_packet, result_defer):
         if _Debug:
-            lg.args(_DebugLevel, cooperated_brokers=cooperated_brokers, consumer_id=consumer_id, producer_id=producer_id,
-                    last_sequence_id=last_sequence_id, request_packet=request_packet)
+            lg.args(_DebugLevel, consumer_id=consumer_id, producer_id=producer_id, last_sequence_id=last_sequence_id)
+        cooperated_brokers = result
         if not cooperated_brokers or isinstance(cooperated_brokers, Failure):
             lg.err('queue keeper failed to connect to the queue')
             p2p_service.SendFail(request_packet, 'failed to connect to the queue')
@@ -1628,31 +1631,74 @@ class MessagePeddler(automat.Automat):
             p2p_service.SendFail(request_packet, 'top broker is unknown')
             result_defer.callback(False)
             return None
-        queue_id = global_id.MakeGlobalQueueID(
-            queue_alias=group_key_info['alias'],
-            owner_id=global_id.idurl2glob(group_key_info['creator']),
-            supplier_id=global_id.idurl2glob(top_broker_idurl),
-        )
-        if queue_id not in streams():
-            open_stream(queue_id)
-        if not is_stream_active(queue_id):
-            start_stream(queue_id)
-        if consumer_id:
-            add_consumer(queue_id, consumer_id)
-            start_consumer(queue_id, consumer_id)
-        if producer_id:
-            add_producer(queue_id, producer_id)
-            start_producer(queue_id, producer_id)
-        cur_sequence_id = get_latest_sequence_id(queue_id)
-        if last_sequence_id > cur_sequence_id:
-            lg.info('based on request from connected group member going to update last_sequence_id: %d -> %d' % (
-                cur_sequence_id, last_sequence_id, ))
-            set_latest_sequence_id(queue_id, last_sequence_id)
+        try:
+            top_broker_id = global_id.idurl2glob(top_broker_idurl)
+            target_customer_idurl = id_url.field(group_key_info['creator'])
+            target_customer_id = target_customer_idurl.to_id()
+            target_queue_alias = group_key_info['alias']
+            target_queue_id = global_id.MakeGlobalQueueID(
+                queue_alias=target_queue_alias,
+                owner_id=target_customer_id,
+                supplier_id=top_broker_id,
+            )
+            known_customer_streams = customers().get(target_customer_idurl, [])
+            if _Debug:
+                lg.args(_DebugLevel, customer=target_customer_idurl, customer_streams=known_customer_streams)
+            # for current_queue_id in known_customer_streams:
+            for current_queue_id in list(p2p_queue.queue().keys()):
+                if current_queue_id == target_queue_id:
+                    continue
+                queue_alias, customer_id, _ = global_id.SplitGlobalQueueID(current_queue_id, split_queue_alias=True)
+                if target_queue_alias != queue_alias:
+                    continue
+                if target_customer_id != customer_id:
+                    continue
+                p2p_queue.rename_queue(current_queue_id, target_queue_id)
+                # customer_idurl = global_id.glob2idurl(customer_id)
+                # if not id_url.is_the_same(customer_idurl, target_customer_idurl):
+                #     continue
+                if current_queue_id not in streams():
+                    raise Exception('rotated queue %r was not registered' % current_queue_id)
+                if target_queue_id in streams():
+                    raise Exception('rotated queue %r was already registered' % target_queue_id)
+                rename_stream(current_queue_id, target_queue_id)
+            if target_queue_id not in streams():
+                open_stream(target_queue_id)
+            if not is_stream_active(target_queue_id):
+                start_stream(target_queue_id)
+            if consumer_id:
+                add_consumer(target_queue_id, consumer_id)
+                start_consumer(target_queue_id, consumer_id)
+            if producer_id:
+                add_producer(target_queue_id, producer_id)
+                start_producer(target_queue_id, producer_id)
+            cur_sequence_id = get_latest_sequence_id(target_queue_id)
+            if last_sequence_id > cur_sequence_id:
+                lg.info('based on request from connected group member going to update last_sequence_id: %d -> %d' % (
+                    cur_sequence_id, last_sequence_id, ))
+                set_latest_sequence_id(target_queue_id, last_sequence_id)
+        except:
+            lg.exc()
+            p2p_service.SendFail(request_packet, 'failed connecting to the queue')
+            result_defer.callback(False)
+            return None
+        if _Debug:
+            lg.args(_DebugLevel, cooperated_brokers=cooperated_brokers)
         p2p_service.SendAck(request_packet, 'accepted:%s' % jsn.dumps(cooperated_brokers, keys_to_text=True, values_to_text=True))
         result_defer.callback(True)
         return None
 
+    def _on_queue_keeper_connect_failed(self, err, consumer_id, producer_id, group_key_info, last_sequence_id, request_packet, result_defer):
+        if _Debug:
+            lg.args(_DebugLevel, err=err, consumer_id=consumer_id, producer_id=producer_id, last_sequence_id=last_sequence_id)
+        lg.err('connection to message broker was failed: %r' % err)
+        p2p_service.SendFail(request_packet, 'connection to message broker was failed')
+        result_defer.callback(False)
+        return None
+
     def _on_identity_url_changed(self, evt):
+        if _Debug:
+            lg.args(_DebugLevel, **evt.data)
         if my_id.getIDURL().to_bin() in [evt.data['new_idurl'], evt.data['old_idurl']]:
             return
         old_idurl = evt.data['old_idurl']

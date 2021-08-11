@@ -561,6 +561,7 @@ def on_identity_url_changed(evt):
     old_idurl = id_url.field(evt.data['old_idurl'])
     new_idurl = id_url.field(evt.data['new_idurl'])
     active_group_keys = list(active_groups())
+    to_be_reconnected = []
     for group_key_id in active_group_keys:
         if not group_key_id:
             continue
@@ -580,8 +581,10 @@ def on_identity_url_changed(evt):
             group_member.rotate_active_group_memeber(group_key_id, latest_group_key_id)
         gm = group_member.get_active_group_member(group_key_id)
         if gm and gm.connected_brokers and id_url.is_in(old_idurl, gm.connected_brokers.values()):
-            lg.info('connected broker %r IDURL is rotated, restarting %r' % (old_idurl, gm, ))
-            group_member.restart_active_group_member(group_key_id)
+            lg.info('connected broker %r IDURL is rotated, going to reconnect %r' % (old_idurl, gm, ))
+            to_be_reconnected.append(group_key_id)
+            # gm.automat('reconnect')
+            # group_member.restart_active_group_member(group_key_id)
     known_customers = list(known_brokers().keys())
     for customer_id in known_customers:
         latest_customer_id = global_id.idurl2glob(new_idurl)
@@ -617,4 +620,7 @@ def on_identity_url_changed(evt):
                     lg.warn('broker %r already exist' % latest_broker_id)
                     continue
                 known_brokers()[latest_customer_id][broker_pos] = latest_broker_id
-
+    for group_key_id in to_be_reconnected:
+        gm = group_member.get_active_group_member(group_key_id)
+        if gm:
+            gm.automat('reconnect')

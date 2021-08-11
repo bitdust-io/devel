@@ -279,7 +279,7 @@ class BrokerNegotiator(automat.Automat):
         self.automat('init-done')
 
     def isAlreadyCooperated(self, *args, **kwargs):
-        return self.my_position is None or self.my_position < 0
+        return self.my_position is not None and self.my_position >= 0
 
     def doVerifyDHTRecords(self, *args, **kwargs):
         """
@@ -417,7 +417,9 @@ class BrokerNegotiator(automat.Automat):
         Action method.
         """
         target_pos = self.desired_position
-        known_brokers = self.cooperated_brokers or {}
+        known_brokers = {}
+        # known_brokers.update(self.requestor_known_brokers)
+        known_brokers.update(self.cooperated_brokers or {})
         if event in ['record-busy', ]:
             # there is no cooperation done yet and current record in DHT on that position belongs to another broker
             target_pos = self.desired_position
@@ -451,21 +453,23 @@ class BrokerNegotiator(automat.Automat):
         Action method.
         """
         target_pos = self.my_position - 1
-        known_brokers = self.cooperated_brokers or {}
         broker_idurl = id_url.field(self.cooperated_brokers[target_pos])
+        known_brokers = {}
+        known_brokers.update(self.cooperated_brokers or {})
+        known_brokers.update(self.requestor_known_brokers or {})
         known_brokers[target_pos] = self.my_broker_idurl
         if _Debug:
             lg.args(_DebugLevel, my=self.my_position, target=target_pos, broker=broker_idurl, known=known_brokers)
         result = p2p_service_seeker.connect_known_node(
             remote_idurl=broker_idurl,
             service_name='service_message_broker',
-            service_params=lambda idurl: self._do_prepare_service_request_params(idurl, target_pos, known_brokers, event=None),
+            service_params=lambda idurl: self._do_prepare_service_request_params(idurl, target_pos, known_brokers, None),
             request_service_timeout=self.broker_negotiate_ack_timeout * (target_pos + 1),
         )
-        result.addCallback(self._on_rotate_broker_connected, target_pos)
+        result.addCallback(self._on_rotate_broker_connected, target_pos, None)
         if _Debug:
             result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='broker_negotiator.doRotateRequestCurBroker')
-        result.addErrback(self._on_rotate_broker_connect_failed, target_pos)
+        result.addErrback(self._on_rotate_broker_connect_failed, target_pos, None)
 
     def doRefreshDHT(self, event, *args, **kwargs):
         """
@@ -473,201 +477,14 @@ class BrokerNegotiator(automat.Automat):
         """
         # TODO: write my known record to DHT
 
-#     def doVerifyMyRecord(self, *args, **kwargs):
-#         """
-#         Action method.
-#         """
-#         if _Debug:
-#             lg.args(_DebugLevel, my=self.my_position, desired=self.desired_position, dht=self.dht_brokers, me=self.my_broker_idurl)
-#         if self.my_position is not None and self.my_position >= 0:
-#             if self.my_position not in self.dht_brokers:
-#                 self.automat('my-record-empty')
-#                 return
-#             if id_url.is_cached(self.dht_brokers[self.my_position]) and id_url.field(self.dht_brokers[self.my_position]) != self.my_broker_idurl:
-#                 lg.err('my record in DHT is not valid (idurl already cached): %r ~ %r' % (self.dht_brokers[self.my_position], self.my_broker_idurl))
-#                 self.automat('my-record-invalid')
-#                 return
-#             if id_url.to_bin(self.dht_brokers[self.my_position]) != self.my_broker_idurl.to_bin():
-#                 lg.err('my record in DHT is not valid: %r ~ %r' % (self.dht_brokers[self.my_position], self.my_broker_idurl))
-#                 self.automat('my-record-invalid')
-#                 return
-#             if self.desired_position == self.my_position:
-#                 if self.my_position in self.requestor_known_brokers:
-#                     if id_url.is_cached(self.requestor_known_brokers[self.my_position]) and id_url.field(self.requestor_known_brokers[self.my_position]) != self.my_broker_idurl:
-#                         if self.my_position == 0:
-#                             self.automat('my-record-replace')
-#                         else:
-#                             self.automat('record-replace')
-#                         return
-#                     if id_url.to_bin(self.requestor_known_brokers[self.my_position]) != self.my_broker_idurl.to_bin():
-#                         if self.my_position == 0:
-#                             self.automat('my-record-replace')
-#                         else:
-#                             self.automat('record-replace')
-#                         return
-#             else:
-#                 if self.desired_position == self.my_position - 1:
-#                     self.automat('record-rotate')
-#                     return
-#                 lg.err('desired position %d mismatch, current position is: %d' % (self.desired_position, self.my_position, ))
-#                 self.automat('request-invalid', Exception('position mismatch, current position is: %d' % self.my_position))
-#                 return
-#         if self.desired_position not in self.dht_brokers or not self.dht_brokers[self.desired_position]:
-#             self.automat('record-empty')
-#         else:
-#             if id_url.is_cached(self.dht_brokers[self.desired_position]) and id_url.field(self.dht_brokers[self.desired_position]) == self.my_broker_idurl:
-#                 self.automat('record-own')
-#             elif id_url.to_bin(self.dht_brokers[self.desired_position]) == self.my_broker_idurl.to_bin():
-#                 self.automat('record-own')
-#             else:
-#                 self.automat('record-busy')
-
-#     def doVerifyPrevRecord(self, event, *args, **kwargs):
-#         """
-#         Action method.
-#         """
-#         if _Debug:
-#             lg.args(_DebugLevel, e=event, my=self.my_position, desired=self.desired_position, dht=self.dht_brokers)
-# #         if event == 'record-replace':
-# #             prev_position = self.desired_position
-# #             if prev_position not in self.dht_brokers or not self.dht_brokers[prev_position]:
-# #                 self.automat('prev-record-empty-rotate')
-# #             else:
-# #                 if id_url.is_cached(self.dht_brokers[prev_position]) and id_url.field(self.dht_brokers[prev_position]) == self.my_broker_idurl:
-# #                     # TODO: how come ?!
-# #                     self.automat('prev-record-own-rotate')
-# #                 else:
-# #                     if id_url.to_bin(self.dht_brokers[prev_position]) == self.my_broker_idurl.to_bin():
-# #                         # TODO: how come ?!
-# #                         self.automat('prev-record-own-rotate')
-# #                     else:
-# #                         self.automat('prev-record-busy-rotate')
-# #             return
-#         if self.desired_position == 0:
-#             if self.desired_position not in self.dht_brokers or not self.dht_brokers[self.desired_position]:
-#                 self.automat('top-place-empty')
-#             else:
-#                 if id_url.is_cached(self.dht_brokers[self.desired_position]) and id_url.field(self.dht_brokers[self.desired_position]) == self.my_broker_idurl:
-#                     self.automat('top-place-own')
-#                 else:
-#                     if id_url.to_bin(self.dht_brokers[self.desired_position]) == self.my_broker_idurl.to_bin():
-#                         self.automat('top-place-own')
-#                     else:
-#                         self.automat('top-place-busy')
-#             return
-#         if self.my_position is not None and self.my_position >= 0:
-#             prev_position = self.my_position - 1
-#         else:
-#             prev_position = self.desired_position - 1
-#         if prev_position not in self.dht_brokers or not self.dht_brokers[prev_position]:
-#             self.automat('prev-record-empty')
-#         else:
-#             if id_url.is_cached(self.dht_brokers[prev_position]) and id_url.field(self.dht_brokers[prev_position]) == self.my_broker_idurl:
-#                 # TODO: how come ?!
-#                 self.automat('prev-record-own')
-#             else:
-#                 if id_url.to_bin(self.dht_brokers[prev_position]) == self.my_broker_idurl.to_bin():
-#                     # TODO: how come ?!
-#                     self.automat('prev-record-own')
-#                 else:
-#                     self.automat('prev-record-busy')
-
-#     def doVerifyRotatedRecord(self, event, *args, **kwargs):
-#         """
-#         Action method.
-#         """
-#         if _Debug:
-#             lg.args(_DebugLevel, e=event, my=self.my_position, desired=self.desired_position, dht=self.dht_brokers)
-#         if event == 'record-replace':
-#             rotated_position = self.desired_position
-#             if rotated_position not in self.dht_brokers or not self.dht_brokers[rotated_position]:
-#                 self.automat('prev-record-empty-rotate')
-#             else:
-#                 if id_url.is_cached(self.dht_brokers[rotated_position]) and id_url.field(self.dht_brokers[rotated_position]) == self.my_broker_idurl:
-#                     # TODO: how come ?!
-#                     self.automat('prev-record-own-rotate')
-#                 else:
-#                     if id_url.to_bin(self.dht_brokers[rotated_position]) == self.my_broker_idurl.to_bin():
-#                         # TODO: how come ?!
-#                         self.automat('prev-record-own-rotate')
-#                     else:
-#                         self.automat('prev-record-busy-rotate')
-#             return
-#         rotated_position = self.desired_position
-#         if rotated_position == 0:
-#             if rotated_position not in self.dht_brokers or not self.dht_brokers[rotated_position]:
-#                 self.automat('top-place-empty')
-#             else:
-#                 if id_url.is_cached(self.dht_brokers[rotated_position]) and id_url.field(self.dht_brokers[rotated_position]) == self.my_broker_idurl:
-#                     self.automat('top-place-own')
-#                 else:
-#                     if id_url.to_bin(self.dht_brokers[rotated_position]) == self.my_broker_idurl.to_bin():
-#                         self.automat('top-place-own')
-#                     else:
-#                         self.automat('top-place-busy')
-#             return
-#         if rotated_position not in self.dht_brokers or not self.dht_brokers[rotated_position]:
-#             self.automat('prev-record-empty')
-#         else:
-#             if id_url.is_cached(self.dht_brokers[rotated_position]) and id_url.field(self.dht_brokers[rotated_position]) == self.my_broker_idurl:
-#                 self.automat('prev-record-own')
-#             else:
-#                 if id_url.to_bin(self.dht_brokers[rotated_position]) == self.my_broker_idurl.to_bin():
-#                     self.automat('prev-record-own')
-#                 else:
-#                     self.automat('prev-record-busy')
-
-#     def doRequestPrevBroker(self, event, *args, **kwargs):
-#         """
-#         Action method.
-#         """
-#         target_pos = self.desired_position - 1
-#         if self.my_position is not None and self.my_position >= 0:
-#             target_pos = self.my_position - 1
-#         if target_pos < 0:
-#             target_pos = 0
-#         broker_idurl = id_url.field(self.dht_brokers[target_pos])
-#         if _Debug:
-#             lg.args(_DebugLevel, e=event, my=self.my_position, desired=self.desired_position, target_pos=target_pos, broker_idurl=broker_idurl)
-#         result = p2p_service_seeker.connect_known_node(
-#             remote_idurl=broker_idurl,
-#             service_name='service_message_broker',
-#             service_params=lambda idurl: self._do_prepare_service_request_params_prev_broker(idurl, target_pos, event),
-#             request_service_timeout=self.broker_negotiate_ack_timeout * (target_pos + 1),
-#         )
-#         result.addCallback(self._on_prev_broker_connected, target_pos, event)
-#         if _Debug:
-#             result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='broker_negotiator.doRequestPrevBroker')
-#         result.addErrback(self._on_prev_broker_connect_failed, target_pos, event)
-
-#     def doRequestThisBroker(self, event, *args, **kwargs):
-#         """
-#         Action method.
-#         """
-#         target_pos = self.desired_position
-#         broker_idurl = id_url.field(self.dht_brokers[target_pos])
-#         if _Debug:
-#             lg.args(_DebugLevel, e=event, my=self.my_position, desired=self.desired_position, target_pos=target_pos, broker_idurl=broker_idurl)
-#         d = p2p_service_seeker.connect_known_node(
-#             remote_idurl=broker_idurl,
-#             service_name='service_message_broker',
-#             service_params=lambda idurl: self._do_prepare_service_request_params_this_broker(idurl, target_pos),
-#             request_service_timeout=self.broker_negotiate_ack_timeout * (target_pos + 1),
-#         )
-#         d.addCallback(self._on_this_broker_connected, target_pos)
-#         if _Debug:
-#             d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='broker_negotiator.doRequestThisBroker')
-#         d.addErrback(self._on_this_broker_connect_failed, target_pos)
-
     def doHireNewBroker(self, event, *args, **kwargs):
         """
         Action method.
         """
+        known_brokers = {}
+        known_brokers.update(self.cooperated_brokers or {})
+        known_brokers[self.desired_position] = self.my_broker_idurl
         target_pos = self.desired_position - 1
-        if self.my_position is not None and self.my_position >= 0:
-            target_pos = self.my_position - 1
-        if target_pos < 0:
-            target_pos = 0
         exclude_brokers = list(id_url.to_bin_list(filter(None, self.dht_brokers.values())))
         exclude_brokers.extend(list(id_url.to_bin_list(filter(None, self.requestor_known_brokers.values()))))
         preferred_brokers = []
@@ -686,7 +503,7 @@ class BrokerNegotiator(automat.Automat):
                 result = p2p_service_seeker.connect_known_node(
                     remote_idurl=preferred_broker_idurl,
                     service_name='service_message_broker',
-                    service_params=lambda idurl: self._do_prepare_service_request_params(idurl, target_pos),
+                    service_params=lambda idurl: self._do_prepare_service_request_params(idurl, target_pos, known_brokers, event),
                     request_service_timeout=self.broker_negotiate_ack_timeout * (target_pos + 1),
                     exclude_nodes=list(exclude_brokers),
                 )
@@ -698,7 +515,7 @@ class BrokerNegotiator(automat.Automat):
         result = p2p_service_seeker.connect_random_node(
             lookup_method=lookup.random_message_broker,
             service_name='service_message_broker',
-            service_params=lambda idurl: self._do_prepare_service_request_params(idurl, target_pos),
+            service_params=lambda idurl: self._do_prepare_service_request_params(idurl, target_pos, known_brokers, event),
             request_service_timeout=self.broker_negotiate_ack_timeout * (target_pos + 1),
             exclude_nodes=list(exclude_brokers),
         )
@@ -723,15 +540,18 @@ class BrokerNegotiator(automat.Automat):
             self.cooperated_brokers.update(kwargs.get('cooperated_brokers', {}) or {})
             self.cooperated_brokers[self.desired_position] = self.my_broker_idurl
         elif event in ['broker-rotate-failed', 'broker-rotate-timeout', 'broker-rotate-accepted', ]:
+            self.cooperated_brokers.update(kwargs.get('cooperated_brokers', {}) or {})
             self.cooperated_brokers[self.my_position - 1] = self.my_broker_idurl
         if _Debug:
-            lg.args(_DebugLevel, e=event, cooperated_brokers=self.cooperated_brokers, )
+            lg.args(_DebugLevel, e=event, cooperated_brokers=self.cooperated_brokers)
         self.result_defer.callback(self.cooperated_brokers)
 
     def doReject(self, event, *args, **kwargs):
         """
         Action method.
         """
+        if _Debug:
+            lg.args(_DebugLevel, e=event, a=args, kw=kwargs)
         self.result_defer.errback(Exception(event, args, kwargs))
 
     def doDestroyMe(self, *args, **kwargs):
@@ -749,18 +569,8 @@ class BrokerNegotiator(automat.Automat):
         self.destroy()
 
     def _do_prepare_service_request_params(self, possible_broker_idurl, desired_broker_position, known_brokers, event):
-        # known_brokers = self.cooperated_brokers or {}
-        # known_brokers.update(self.requestor_known_brokers)
-        # if event in ['prev-record-own-rotate', 'prev-record-busy-rotate', ]:
-        #     known_brokers[self.my_position - 1] = self.my_broker_idurl
-        # else:
-        #     if self.my_position is not None and self.my_position >= 0:
-        #         known_brokers[self.my_position] = self.my_broker_idurl
-        #     else:
-        #         known_brokers[self.desired_position] = self.my_broker_idurl
         req = {
             'action': 'queue-connect-follow',
-            # 'queue_id': self.connect_request['queue_id'],
             'consumer_id': self.connect_request['consumer_id'],
             'producer_id': self.connect_request['producer_id'],
             'group_key': self.connect_request['group_key_info'],
@@ -772,50 +582,6 @@ class BrokerNegotiator(automat.Automat):
         if _Debug:
             lg.args(_DebugLevel, e=event, broker=possible_broker_idurl, desired=desired_broker_position, known=known_brokers)
         return req
-
-#     def _do_prepare_service_request_params_this_broker(self, possible_broker_idurl, desired_broker_position):
-#         known_brokers = self.cooperated_brokers or {}
-#         known_brokers.update(self.requestor_known_brokers)
-#         if self.my_position is not None and self.my_position >= 0:
-#             known_brokers[self.my_position] = self.my_broker_idurl
-#         else:
-#             known_brokers[self.desired_position] = self.my_broker_idurl
-#         req = {
-#             'action': 'queue-connect-follow',
-#             # 'queue_id': self.connect_request['queue_id'],
-#             'consumer_id': self.connect_request['consumer_id'],
-#             'producer_id': self.connect_request['producer_id'],
-#             'group_key': self.connect_request['group_key_info'],
-#             'position': desired_broker_position,
-#             'archive_folder_path': self.connect_request['archive_folder_path'],
-#             'last_sequence_id': self.connect_request['last_sequence_id'],
-#             'known_brokers': known_brokers,
-#         }
-#         if _Debug:
-#             lg.args(_DebugLevel, broker_idurl=possible_broker_idurl, desired=desired_broker_position, req=req)
-#         return req
-
-#     def _do_prepare_service_request_params_hire_broker(self, possible_broker_idurl, desired_broker_position):
-#         known_brokers = self.cooperated_brokers or {}
-#         known_brokers.update(self.requestor_known_brokers)
-#         if self.my_position is not None and self.my_position >= 0:
-#             known_brokers[self.my_position] = self.my_broker_idurl
-#         else:
-#             known_brokers[self.desired_position] = self.my_broker_idurl
-#         req = {
-#             'action': 'queue-connect-follow',
-#             # 'queue_id': self.connect_request['queue_id'],
-#             'consumer_id': self.connect_request['consumer_id'],
-#             'producer_id': self.connect_request['producer_id'],
-#             'group_key': self.connect_request['group_key_info'],
-#             'position': desired_broker_position,
-#             'archive_folder_path': self.connect_request['archive_folder_path'],
-#             'last_sequence_id': self.connect_request['last_sequence_id'],
-#             'known_brokers': known_brokers,
-#         }
-#         if _Debug:
-#             lg.args(_DebugLevel, broker_idurl=possible_broker_idurl, desired=desired_broker_position, req=req)
-#         return req
 
     def _on_cur_broker_connected(self, response_info, broker_pos, event, *args, **kwargs):
         if _Debug:
@@ -844,36 +610,6 @@ class BrokerNegotiator(automat.Automat):
                 return
         self.automat('broker-failed')
 
-#     def _on_this_broker_connected(self, response_info, broker_pos, *args, **kwargs):
-#         if _Debug:
-#             lg.args(_DebugLevel, resp=response_info, broker_pos=broker_pos, args=args, kwargs=kwargs)
-#         try:
-#             # skip leading "accepted:" marker
-#             cooperated_brokers = jsn.loads(strng.to_text(response_info[0].Payload)[9:])
-#             cooperated_brokers = {int(k): id_url.field(v) for k,v in cooperated_brokers.items()}
-#         except:
-#             lg.exc()
-#             self.automat('cur-broker-failed')
-#             return
-#         if id_url.is_in(self.my_broker_idurl, cooperated_brokers.values()):
-#             self.automat('cur-broker-rotated', cooperated_brokers=cooperated_brokers)
-#         else:
-#             self.automat('cur-broker-accepted', cooperated_brokers=cooperated_brokers)
-
-#     def _on_this_broker_connect_failed(self, err, broker_pos, *args, **kwargs):
-#         if _Debug:
-#             lg.args(_DebugLevel, err=err, broker_pos=broker_pos, args=args, kwargs=kwargs)
-#         if isinstance(err, Failure):
-#             try:
-#                 evt, _, _ = err.value.args
-#             except:
-#                 lg.exc()
-#                 return
-#             if evt == 'request-failed':
-#                 self.automat('cur-broker-rejected')
-#                 return
-#         self.automat('cur-broker-failed')
-
     def _on_new_broker_hired(self, response_info, broker_pos, *args, **kwargs):
         if _Debug:
             lg.args(_DebugLevel, resp=response_info, broker_pos=broker_pos, args=args, kwargs=kwargs)
@@ -893,8 +629,6 @@ class BrokerNegotiator(automat.Automat):
         self.automat('hire-broker-failed')
 
     def _on_rotate_broker_connected(self, response_info, broker_pos, event, *args, **kwargs):
-        if _Debug:
-            lg.args(_DebugLevel, resp=response_info, pos=broker_pos, e=event, args=args, kwargs=kwargs)
         try:
             # skip leading "accepted:" marker
             cooperated_brokers = jsn.loads(strng.to_text(response_info[0].Payload)[9:])
@@ -903,6 +637,8 @@ class BrokerNegotiator(automat.Automat):
             lg.exc()
             self.automat('broker-rotate-failed')
             return
+        if _Debug:
+            lg.args(_DebugLevel, pos=broker_pos, e=event, cooperated_brokers=cooperated_brokers)
         if id_url.is_the_same(cooperated_brokers.get(broker_pos), self.my_broker_idurl):
             self.automat('broker-rotate-accepted', cooperated_brokers=cooperated_brokers)
         else:

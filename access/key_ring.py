@@ -198,7 +198,7 @@ def transfer_key(key_id, trusted_idurl, include_private=False, include_signature
         lg.exc()
         result.errback(exc)
         return result
-    if not my_keys.verify_key_info_signature(key_json):
+    if include_signature and not my_keys.verify_key_info_signature(key_json):
         lg.err('signature verification failed after making key info: %r' % key_json)
         result.errback(Exception('signature verification failed after making key info: "%s"' % key_id))
         return result

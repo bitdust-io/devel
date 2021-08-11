@@ -374,7 +374,10 @@ Other nodes, called "message brokers", will maintain a stream of messages that y
 Allows the exchange of encrypted messages with multiple users using the same secret key through message brokers.
 
 {services/private-groups/message-ack-timeout} acknowledgment timeout
-Defines the timeout in seconds that will be used when waiting for an acknowledgment for sending an encrypted message to the broker.
+Defines a timeout in seconds for an acknowledgment after sending encrypted message to message broker.
+
+{services/private-groups/broker-connect-timeout} connect timeout
+Defines a timeout in seconds for an acknowledgment from message broker while connecting to the group.
 
 {services/private-groups/preferred-brokers}
 

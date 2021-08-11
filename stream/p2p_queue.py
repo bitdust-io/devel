@@ -222,6 +222,8 @@ def touch_queues(interested_consumers=None):
 #------------------------------------------------------------------------------
 
 def valid_queue_id(queue_id):
+    if not queue_id:
+        return False
     try:
         str(queue_id)
     except:
@@ -255,7 +257,7 @@ def open_queue(queue_id):
     return True
 
 
-def close_queue(queue_id):
+def close_queue(queue_id, remove_empty_consumers=False, remove_empty_producers=False):
     global _ActiveQueues
     if not valid_queue_id(queue_id):
         raise Exception('invalid queue id')
@@ -263,6 +265,9 @@ def close_queue(queue_id):
         raise Exception('queue not exist')
     if _Debug:
         lg.args(_DebugLevel, queue_id=queue_id)
+    for producer_id in list(producer().keys()):
+        if is_producer_connected(producer_id, queue_id):
+            disconnect_producer(producer_id, queue_id, remove_empty=remove_empty_producers)
     for message_id in list(queue(queue_id).keys()):
         if message_id not in queue(queue_id):
             continue
@@ -273,10 +278,39 @@ def close_queue(queue_id):
                 if callback_object and not callback_object.called:
                     lg.info('canceling non-finished notification in the queue %s' % queue_id)
                     callback_object.cancel()
-    for consumer_id in consumer().keys():
+    for consumer_id in list(consumer().keys()):
         if is_consumer_subscribed(consumer_id, queue_id):
-            unsubscribe_consumer(consumer_id, queue_id)
+            unsubscribe_consumer(consumer_id, queue_id, remove_empty=remove_empty_consumers)
     _ActiveQueues.pop(queue_id)
+    return True
+
+
+def rename_queue(old_queue_id, new_queue_id):
+    if old_queue_id == new_queue_id:
+        return False
+    if not valid_queue_id(old_queue_id):
+        raise Exception('invalid queue id')
+    if not valid_queue_id(new_queue_id):
+        raise Exception('invalid queue id')
+    if old_queue_id not in queue():
+        raise Exception('queue not exist')
+    if _Debug:
+        lg.args(_DebugLevel, old=old_queue_id, new=new_queue_id)
+    stored_messages = queue().pop(old_queue_id)
+    for message_id, msg_obj in stored_messages.items():
+        for consumer_id, callback_object in list(msg_obj.notifications.items()):
+            if not callback_object.called:
+                callback_object.addCallback(on_notification_succeed, consumer_id, new_queue_id, message_id)
+                callback_object.addErrback(on_notification_failed, consumer_id, new_queue_id, message_id)
+    subscribed_consumers = list_subscribed_consumers(old_queue_id)
+    connected_producers = list_connected_producers(old_queue_id)
+    queue()[new_queue_id] = stored_messages
+    for consumer_id in subscribed_consumers:
+        consumer(consumer_id).queues.remove(old_queue_id)
+        consumer(consumer_id).queues.append(new_queue_id)
+    for producer_id in connected_producers:
+        producer(producer_id).queues.remove(old_queue_id)
+        producer(producer_id).queues.append(new_queue_id)
     return True
 
 #------------------------------------------------------------------------------
@@ -345,6 +379,12 @@ def is_consumer_subscribed(consumer_id, queue_id=None):
     return True
 
 
+def list_subscribed_consumers(queue_id):
+    if not valid_queue_id(queue_id):
+        return []
+    return [c_id for c_id in consumer().keys() if queue_id in consumer(c_id).queues]
+
+
 def subscribe_consumer(consumer_id, queue_id):
     if not valid_queue_id(queue_id):
         raise Exception('invalid queue id')
@@ -406,11 +446,19 @@ def remove_producer(producer_id):
 #------------------------------------------------------------------------------
 
 def is_producer_connected(producer_id, queue_id=None):
+    if queue_id and not valid_queue_id(queue_id):
+        return False
     if not is_producer_exist(producer_id):
         return False
     if not queue_id:
         return len(producer(producer_id).queues) > 0
     return queue_id in producer(producer_id).queues
+
+
+def list_connected_producers(queue_id):
+    if not valid_queue_id(queue_id):
+        return []
+    return [p_id for p_id in producer().keys() if queue_id in producer(p_id).queues]
 
 
 def connect_producer(producer_id, queue_id):
@@ -467,7 +515,7 @@ def stop_event_publisher(producer_id, event_id):
 
 #------------------------------------------------------------------------------
 
-def start_notification(consumer_id, queue_id, message_id, callback_object):
+def start_notification(consumer_id, queue_id, message_id):
     if not valid_queue_id(queue_id):
         raise Exception('invalid queue id')
     if consumer_id not in consumer():
@@ -478,15 +526,16 @@ def start_notification(consumer_id, queue_id, message_id, callback_object):
         raise Exception('message not exist')
     if consumer_id in queue(queue_id)[message_id].notifications:
         raise Exception('notification already sent to given consumer')
-    queue(queue_id)[message_id].state = 'SENT'
+    callback_object = Deferred()
     queue(queue_id)[message_id].notifications[consumer_id] = callback_object
     consumer(consumer_id).consumed_messages += 1
     callback_object.addCallback(on_notification_succeed, consumer_id, queue_id, message_id)
     callback_object.addErrback(on_notification_failed, consumer_id, queue_id, message_id)
+    queue(queue_id)[message_id].state = 'SENT'
     if _Debug:
         lg.args(_DebugLevel, consumer_id=consumer_id, queue_id=queue_id, message_id=message_id,
                 notifications=len(queue(queue_id)[message_id].notifications))
-    return True
+    return callback_object
 
 
 def finish_notification(consumer_id, queue_id, message_id, success):
@@ -524,8 +573,7 @@ def finish_notification(consumer_id, queue_id, message_id, success):
 
 def on_notification_succeed(result, consumer_id, queue_id, message_id):
     if _Debug:
-        lg.out(_DebugLevel, 'p2p_queue.on_notification_succeed : message %s delivered to consumer %s from queue %s' % (
-            message_id, consumer_id, queue_id))
+        lg.out(_DebugLevel, 'p2p_queue.on_notification_succeed : message %r delivered to consumer %r in %r' % (message_id, consumer_id, queue_id, ))
     if is_queue_exist(queue_id):
         try:
             reactor.callLater(0, finish_notification, consumer_id, queue_id, message_id, success=True)  # @UndefinedVariable
@@ -538,7 +586,7 @@ def on_notification_succeed(result, consumer_id, queue_id, message_id):
 
 def on_notification_failed(err, consumer_id, queue_id, message_id):
     if _Debug:
-        lg.out(_DebugLevel, 'p2p_queue.on_notification_failed : FAILED message %s delivery to consumer %s from queue %s : %s' % (
+        lg.out(_DebugLevel, 'p2p_queue.on_notification_failed FAILED message %r for consumer %r in %r : %r' % (
             message_id, consumer_id, queue_id, err.getErrorMessage()))
     if is_queue_exist(queue_id):
         try:
@@ -552,10 +600,12 @@ def on_notification_failed(err, consumer_id, queue_id, message_id):
 #------------------------------------------------------------------------------
 
 def write_message(producer_id, queue_id, data, creation_time=None):
-    if not is_producer_exist(producer_id):
-        raise Exception('unknown producer')
     if not valid_queue_id(queue_id):
         raise Exception('invalid queue id')
+    if not is_producer_exist(producer_id):
+        raise Exception('unknown producer')
+    if not is_producer_connected(producer_id, queue_id):
+        raise Exception('producer was not connected to the queue')
     if len(queue(queue_id)) >= MAX_QUEUE_LENGTH:
         raise P2PQueueIsOverloaded('queue is overloaded')
     producer(producer_id).produced_messages += 1
@@ -774,8 +824,7 @@ def do_notify(callback_method, consumer_id, queue_id, message_id):
             lg.dbg(_DebugLevel, 'notification %r already started for consumer %r' % (message_id, consumer_id, ))
         # notification already sent to given consumer
         return False
-    ret = Deferred()
-    start_notification(consumer_id, queue_id, message_id, ret)
+    ret = start_notification(consumer_id, queue_id, message_id)
     if id_url.is_idurl(callback_method):
         p2p_service.SendEvent(
             remote_idurl=id_url.field(callback_method),

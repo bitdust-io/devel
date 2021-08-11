@@ -79,6 +79,8 @@ from automats import automat
 
 from lib import strng
 
+from main import events
+
 from dht import dht_relations
 
 from access import groups
@@ -215,19 +217,12 @@ class QueueKeeper(automat.Automat):
         self.customer_id = self.customer_idurl.to_id()
         self.broker_idurl = id_url.field(broker_idurl or my_id.getIDURL())
         self.broker_id = self.broker_idurl.to_id()
-        # self.connected_queues = set()
         self.cooperated_brokers = {}
         self.known_position = -1
         self.known_archive_folder_path = None
         self.current_connect_request = None
         self.pending_connect_requests = []
-        # self.refresh_task = None
         self.latest_dht_records = {}
-        # self.dht_read_use_cache = True
-        # self.registered_callbacks = []
-        # self.new_possible_position = None
-        # self.requested_archive_folder_path = None
-        # self.has_rotated = False
         self.negotiator = None
         super(QueueKeeper, self).__init__(
             name="queue_keeper_%s" % self.customer_id,
@@ -250,7 +245,6 @@ class QueueKeeper(automat.Automat):
             'position': self.known_position,
             'brokers': self.cooperated_brokers,
             'archive_folder_path': self.known_archive_folder_path,
-            # 'connected_queues': list(self.connected_queues),
         })
         return j
 
@@ -348,14 +342,12 @@ class QueueKeeper(automat.Automat):
         """
         Action method.
         """
-        # self.refresh_task = LoopingCall(self._on_queue_keeper_refresh_task)
 
     def doBuildRequest(self, *args, **kwargs):
         """
         Action method.
         """
         self.current_connect_request = {
-            # 'queue_id': kwargs['queue_id'],
             'consumer_id': kwargs['consumer_id'],
             'producer_id': kwargs['producer_id'],
             'group_key_info': kwargs['group_key_info'],
@@ -403,7 +395,6 @@ class QueueKeeper(automat.Automat):
         """
         Action method.
         """
-        # desired_position = self.known_position
         desired_position = None
         for pos, idurl in self.cooperated_brokers.items():
             if idurl and id_url.to_bin(idurl) == self.broker_idurl.to_bin():
@@ -417,8 +408,7 @@ class QueueKeeper(automat.Automat):
         if prev_revision is None:
             prev_revision = 0
         if _Debug:
-            lg.args(_DebugLevel, c=self.customer_id, p=desired_position, b=self.broker_id,
-                    a=archive_folder_path, r=prev_revision+1, latest_dht_records=self.latest_dht_records)
+            lg.args(_DebugLevel, c=self.customer_id, p=desired_position, b=self.broker_id, a=archive_folder_path, r=prev_revision+1)
         self._do_dht_write(
             desired_position=desired_position,
             archive_folder_path=archive_folder_path,
@@ -439,32 +429,40 @@ class QueueKeeper(automat.Automat):
         Action method.
         """
         self.cooperated_brokers = self.cooperated_brokers or {}
-        old = dict(self.cooperated_brokers)
         if event in ['accepted', ]:
             self.cooperated_brokers.update(kwargs.get('cooperated_brokers', {}) or {})
         if _Debug:
-            lg.args(_DebugLevel, event=event, old=old, new=kwargs.get('cooperated_brokers'))
+            lg.args(_DebugLevel, e=event, cooperated_brokers=kwargs.get('cooperated_brokers'))
 
     def doCancelCooperation(self, event, *args, **kwargs):
         """
         Action method.
         """
         if _Debug:
-            lg.args(_DebugLevel, current=self.cooperated_brokers)
+            lg.args(_DebugLevel, e=event, current=self.cooperated_brokers)
         self.cooperated_brokers.clear()
 
     def doRememberOwnPosition(self, *args, **kwargs):
         """
         Action method.
         """
+        my_current_position = self.known_position
         my_new_position = -1
         for pos, idurl in self.cooperated_brokers.items():
-            if idurl and id_url.to_bin(idurl) == self.broker_idurl.to_bin():
+            if idurl and id_url.is_the_same(idurl, self.broker_idurl):
                 my_new_position = pos
         if _Debug:
-            lg.args(_DebugLevel, known=self.known_position, new=my_new_position)
+            lg.args(_DebugLevel, known=self.known_position, new=my_new_position, cooperated_brokers=self.cooperated_brokers)
         if my_new_position >= 0:
             self.known_position = my_new_position
+#         if my_current_position != my_new_position:
+#             lg.info('my broker position changed for customer %r: %d->%d' % (self.customer_id, my_current_position, my_new_position, ))
+#             events.send('broker-position-changed', data=dict(
+#                 customer_idurl=self.customer_idurl,
+#                 broker_idurl=self.broker_idurl,
+#                 old_position=my_current_position,
+#                 new_postion=my_new_position,
+#             ))
         # TODO: need to store queue keeper info locally here to be able to start up after application restart
         # self.connected_queues
         # self.current_connect_request
@@ -496,6 +494,8 @@ class QueueKeeper(automat.Automat):
         """
         result = self.current_connect_request['result']
         self.current_connect_request = None
+        if _Debug:
+            lg.args(_DebugLevel, e=event, cooperated_brokers=self.cooperated_brokers, pos=self.known_position)
         if result:
             if not result.called:
                 if event == 'dht-write-success':
@@ -524,66 +524,17 @@ class QueueKeeper(automat.Automat):
         Remove all references to the state machine object to destroy it.
         """
         global _QueueKeepers
-        # if self.refresh_task.running:
-        #     self.refresh_task.stop()
-        # self.refresh_task = None
         _QueueKeepers.pop(self.customer_idurl, None)
         self.customer_idurl = None
         self.customer_id = None
         self.broker_idurl = None
         self.broker_id = None
         self.known_position = -1
-        # self.new_possible_position = None
-        # self.registered_callbacks = None
-        # self.connected_queues = None
         self.known_archive_folder_path = None
-        # self.requested_archive_folder_path = None
         self.cooperated_brokers.clear()
         self.latest_dht_records.clear()
         self.negotiator = None
         self.destroy()
-
-#     def isPositionDesired(self, *args, **kwargs):
-#         """
-#         Condition method.
-#         """
-#         if self.known_position is None or self.known_position == -1:
-#             return False
-#         desired_position = kwargs.get('desired_position', -1)
-#         if desired_position is None or desired_position == -1:
-#             return True
-#         return self.known_position == desired_position
-
-#     def isRotated(self, *args, **kwargs):
-#         """
-#         Condition method.
-#         """
-#         return self.has_rotated
-
-#     def doAddCallback(self, *args, **kwargs):
-#         """
-#         Action method.
-#         """
-#         cb = kwargs.get('result_callback')
-#         if cb:
-#             self.registered_callbacks.append((cb, kwargs.get('queue_id'), ))
-
-#     def doCheckRotated(self, *args, **kwargs):
-#         """
-#         Action method.
-#         """
-#         desired_position = kwargs.get('desired_position', -1)
-#         if desired_position >= 0 and self.known_position is not None and self.known_position >= 0:
-#             self.has_rotated = desired_position < self.known_position
-#             if self.has_rotated:
-#                 lg.info('found that group brokers were rotated, my position: %d -> %d' % (self.known_position, desired_position, ))
-
-#     def doSetDesiredPosition(self, *args, **kwargs):
-#         """
-#         Action method.
-#         """
-#         self.new_possible_position = kwargs.get('desired_position', -1)
-#         self.requested_archive_folder_path = kwargs.get('archive_folder_path', None)
 
     def _do_dht_write(self, desired_position, archive_folder_path, revision, retry):
         result = dht_relations.write_customer_message_broker(
@@ -598,46 +549,7 @@ class QueueKeeper(automat.Automat):
             result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='queue_keeper.doDHTWrite')
         result.addErrback(self._on_write_customer_message_broker_failed, desired_position, archive_folder_path, revision, retry)
 
-#     def doVerifyOtherBroker(self, *args, **kwargs):
-#         """
-#         Action method.
-#         """
-#         other_broker_info = kwargs['broker_info']
-#         service_request_params = {
-#             'action': 'broker-verify',
-#             'customer_idurl': self.customer_idurl,
-#             'desired_position': self.new_possible_position,
-#         }
-#         # TODO: add an extra verification for other broker using group_key_info from the "connect" event
-#         # to make sure he really possess the public key for the group - need to do "audit" of the pub. key first
-#         result = p2p_service_seeker.connect_known_node(
-#             remote_idurl=other_broker_info['broker_idurl'],
-#             service_name='service_message_broker',
-#             service_params=service_request_params,
-#             request_service_timeout=15,
-#             ping_retries=0,
-#             ack_timeout=15,
-#             force_handshake=True,
-#         )
-#         result.addCallback(self._on_other_broker_response, desired_position=self.new_possible_position)
-#         if _Debug:
-#             result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='queue_keeper.doVerifyOtherBroker')
-#         result.addErrback(self._on_other_broker_failed, desired_position=self.new_possible_position)
-
-#     def doRunCallbacks(self, event, *args, **kwargs):
-#         """
-#         Action method.
-#         """
-#         success = True if event in ['connect', 'my-record-correct', ] else False
-#         for cb, queue_id in self.registered_callbacks:
-#             if queue_id and success:
-#                 self.connected_queues.add(queue_id)
-#             if not cb.called:
-#                 cb.callback(success)
-#         self.registered_callbacks = []
-
     def _on_read_customer_message_brokers(self, dht_brokers_info_list):
-        # self.cooperated_brokers.clear()
         self.latest_dht_records.clear()
         self.known_archive_folder_path = None
         dht_brokers = {}
@@ -645,7 +557,6 @@ class QueueKeeper(automat.Automat):
         all_archive_folder_paths = []
         if not dht_brokers_info_list:
             lg.warn('no brokers found in DHT records for customer %r' % self.customer_id)
-            # self.dht_read_use_cache = False
             self.automat('dht-read-success', dht_brokers=dht_brokers, archive_folder_path=archive_folder_path)
             return
         for dht_broker_info in dht_brokers_info_list:
@@ -663,81 +574,18 @@ class QueueKeeper(automat.Automat):
         if _Debug:
             lg.args(_DebugLevel, dht_brokers=dht_brokers, archive_folder_path=archive_folder_path)
         self.automat('dht-read-success', dht_brokers=dht_brokers, archive_folder_path=archive_folder_path)
-#         my_broker_info = None
-#         my_position_info = None
-#         for dht_broker_info in dht_brokers_info_list:
-#             if not dht_broker_info:
-#                 continue
-#             dht_broker_idurl = dht_broker_info.get('broker_idurl')
-#             dht_broker_position = int(dht_broker_info.get('position'))
-#             # dht_revision = dht_broker_info.get('revision')
-#             # dht_timestamp = dht_broker_info.get('timestamp')
-#             dht_brokers[dht_broker_position] = dht_broker_idurl
-#             self.latest_dht_records[dht_broker_position] = dht_broker_info
-#             if dht_broker_position == my_position:
-#                 my_position_info = dht_broker_info
-#             if id_url.to_bin(dht_broker_idurl) == id_url.to_bin(self.broker_idurl) or (
-#                 id_url.is_cached(dht_broker_idurl) and id_url.is_cached(self.broker_idurl) and
-#                 id_url.field(self.broker_idurl) == id_url.field(dht_broker_idurl)
-#             ):
-#                 if not my_broker_info:
-#                     my_broker_info = dht_broker_info
-#                 else:
-#                     if my_broker_info['position'] == my_position:
-#                         lg.warn('my broker info already found on correct position, ignoring record: %r' % dht_broker_info)
-#                     else:
-#                         lg.warn('my broker info already found, but on different position: %d' % my_broker_info['position'])
-#                         if int(my_broker_info['position']) == int(dht_broker_position):
-#                             pass
-#                         else:
-#                             lg.warn('overwriting already populated broker record found on another position: %d' % dht_broker_position)
-#                             my_broker_info = dht_broker_info
-#         if _Debug:
-#             lg.args(_DebugLevel, my_broker_info=my_broker_info, my_position_info=my_position_info)
-#         if not my_broker_info:
-#             # self.dht_read_use_cache = False
-#             if my_position_info:
-#                 lg.warn('found another broker %r on my position %d in DHT' % (my_position_info.get('broker_idurl'), my_position, ))
-#                 self.automat('other-broker-exist', broker_info=my_position_info)
-#             else:
-#                 lg.info('broker info on position %d in DHT does not exist, going to put my info there' % my_position)
-#                 self.automat('my-record-not-exist', desired_position=my_position)
-#             return
-#         my_position_ok = int(my_broker_info['position']) == int(my_position)
-#         if not my_position_ok:
-#             lg.info('broker info on position %d in DHT does not exist or is not valid, going to put my info there' % my_position)
-#             # self.dht_read_use_cache = False
-#             self.automat('my-record-not-correct', desired_position=my_position)
-#             return
-#         my_idurl_ok = False
-#         if my_position_info:
-#             my_idurl_ok = (id_url.to_bin(my_position_info['broker_idurl']) == id_url.to_bin(my_broker_info['broker_idurl']) or (
-#                 id_url.is_cached(my_position_info['broker_idurl']) and id_url.is_cached(my_broker_info['broker_idurl']) and
-#                 id_url.field(my_broker_info['broker_idurl']) == id_url.field(my_position_info['broker_idurl'])
-#             ))
-#         if not my_idurl_ok:
-#             lg.warn('there is another broker %r on my position %d in DHT' % (my_position_info.get('broker_idurl'), my_position, ))
-#             # self.dht_read_use_cache = False
-#             self.automat('other-broker-exist', broker_info=my_position_info)
-#             return
-#         # self.dht_read_use_cache = True
-#         self.known_archive_folder_path = my_broker_info['archive_folder_path']
-#         self.automat('my-record-correct', broker_idurl=my_broker_info['broker_idurl'], position=my_broker_info['position'])
 
     def _on_write_customer_message_broker_success(self, nodes, desired_broker_position, archive_folder_path, revision):
         if _Debug:
             lg.args(_DebugLevel, nodes=type(nodes), pos=desired_broker_position, rev=revision)
         if nodes:
-            # self.requested_archive_folder_path = None
             self.automat('dht-write-success', desired_position=desired_broker_position, archive_folder_path=archive_folder_path)
         else:
-            # self.dht_read_use_cache = False
             self.automat('dht-write-failed', desired_position=desired_broker_position, archive_folder_path=archive_folder_path)
 
     def _on_write_customer_message_broker_failed(self, err, desired_broker_position, archive_folder_path, revision, retry):
         if _Debug:
             lg.args(_DebugLevel, err=err, desired_broker_position=desired_broker_position)
-        # self.dht_read_use_cache = False
         try:
             errmsg = err.value.subFailure.getErrorMessage()
         except:
@@ -769,26 +617,6 @@ class QueueKeeper(automat.Automat):
                 )
                 return
         self.automat('dht-write-failed', desired_position=desired_broker_position)
-
-#     def _on_queue_keeper_refresh_task(self):
-#         if _Debug:
-#             lg.args(_DebugLevel, state=self.state, known_position=self.known_position, connected_queues=self.connected_queues)
-#         if self.state == 'CONNECTED':
-#             # self.dht_read_use_cache = False
-#             reactor.callLater(0, self.automat, 'connect')  # @UndefinedVariable
-
-#     def _on_other_broker_response(self, idurl, desired_position):
-#         if _Debug:
-#             lg.args(_DebugLevel, idurl=idurl, desired_position=desired_position)
-#         if idurl:
-#             self.automat('other-broker-connected', desired_position=desired_position)
-#         else:
-#             self.automat('other-broker-disconnected', desired_position=desired_position)
-
-#     def _on_other_broker_failed(self, err, desired_position):
-#         if _Debug:
-#             lg.args(_DebugLevel, err=err, desired_position=desired_position)
-#         self.automat('other-broker-disconnected', desired_position=desired_position)
 
     def _on_broker_negotiator_callback(self, cooperated_brokers):
         if _Debug:

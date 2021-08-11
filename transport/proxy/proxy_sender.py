@@ -365,6 +365,9 @@ class ProxySender(automat.Automat):
             Payload=block_encrypted,
             RemoteID=router_idurl,
         )
+        if response_timeout is not None:
+            # must give some extra time for the proxy re-routing
+            response_timeout += 10.0
         routed_packet = packet_out.create(
             outpacket=outpacket,
             wide=False,

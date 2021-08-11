@@ -197,6 +197,7 @@ def reset(conf_obj):
 
     conf_obj.setDefaultValue('services/private-groups/enabled', 'true')
     conf_obj.setDefaultValue('services/private-groups/message-ack-timeout', 30)
+    conf_obj.setDefaultValue('services/private-groups/broker-connect-timeout', 120)
     conf_obj.setDefaultValue('services/private-groups/preferred-brokers', '')
 
     conf_obj.setDefaultValue('services/private-messages/enabled', 'true')

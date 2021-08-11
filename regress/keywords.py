@@ -194,7 +194,7 @@ def group_create_v1(customer: str, key_size=1024, label='', attempts=1):
     return response.json()['result']['group_key_id']
 
 
-def group_info_v1(customer: str, group_key_id, wait_state=None, validate_retries=30, delay=3, stop_state=None):
+def group_info_v1(customer: str, group_key_id, wait_state=None, validate_retries=90, delay=2, stop_state=None):
     response = request_get(customer, 'group/info/v1?group_key_id=%s' % group_key_id, timeout=20)
     assert response.status_code == 200
     print('group/info/v1 [%s] : %s\n' % (customer, pprint.pformat(response.json())))
@@ -565,7 +565,7 @@ def user_ping_v1(node, remote_node_id, timeout=95, ack_timeout=30, retries=2):
     return response.json()
 
 
-def service_info_v1(node, service_name, expected_state, attempts=20, delay=5, verbose=True):
+def service_info_v1(node, service_name, expected_state, attempts=90, delay=2, verbose=True):
     current_state = None
     count = 0
     while current_state is None or current_state != expected_state:
@@ -623,7 +623,7 @@ def event_listen_v1(node, expected_event_id, consumer_id='regression_tests_wait_
     return found
 
 
-def packet_list_v1(node, wait_all_finish=False, attempts=20, delay=5, verbose=False):
+def packet_list_v1(node, wait_all_finish=False, attempts=90, delay=2, verbose=False):
     if verbose:
         print('packet/list/v1 [%s]\n' % node)
     response = None
@@ -653,7 +653,7 @@ def packet_list_v1(node, wait_all_finish=False, attempts=20, delay=5, verbose=Fa
     return response.json()
 
 
-def transfer_list_v1(node, wait_all_finish=False, attempts=20, delay=5, verbose=False):
+def transfer_list_v1(node, wait_all_finish=False, attempts=90, delay=2, verbose=False):
     if verbose:
         print('transfer/list/v1 [%s]\n' % node)
     for _ in range(attempts):
