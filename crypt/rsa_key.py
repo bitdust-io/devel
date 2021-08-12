@@ -189,8 +189,8 @@ class RSAKey(object):
 
     def sign(self, message, as_digits=True):
         global _CryptoLog
-        if _CryptoLog is None:
-            _CryptoLog = os.environ.get('CRYPTO_LOG') == '1'
+        # if _CryptoLog is None:
+        #     _CryptoLog = os.environ.get('CRYPTO_LOG') == '1'
         if not self.keyObject:
             raise ValueError('key object is not exist')
         if not strng.is_bin(message):
@@ -198,21 +198,21 @@ class RSAKey(object):
         h = hashes.sha1(message, return_object=True)
         signature_raw = pkcs1_15.new(self.keyObject).sign(h)
         if not as_digits:
-            if _CryptoLog:
-                if _Debug:
+            if _Debug:
+                if _CryptoLog:
                     lg.args(_DebugLevel, signature_raw=signature_raw)
             return signature_raw
         signature_long = number.bytes_to_long(signature_raw)
         signature_bytes = strng.to_bin(signature_long)
-        if _CryptoLog:
-            if _Debug:
+        if _Debug:
+            if _CryptoLog:
                 lg.args(_DebugLevel, signature_bytes=signature_bytes)
         return signature_bytes
 
     def verify(self, signature, message, signature_as_digits=True):
         global _CryptoLog
-        if _CryptoLog is None:
-            _CryptoLog = os.environ.get('CRYPTO_LOG') == '1'
+        # if _CryptoLog is None:
+        #     _CryptoLog = os.environ.get('CRYPTO_LOG') == '1'
         signature_bytes = signature
         if signature_as_digits:
             signature_bytes = number.long_to_bytes(signature, blocksize=4)
@@ -228,8 +228,8 @@ class RSAKey(object):
         except (ValueError, TypeError, ):
             # do not raise any exception... just return False
             lg.exc('signature=%r message=%r' % (signature, message, ))
-        if _CryptoLog:
-            if _Debug:
+        if _Debug:
+            if _CryptoLog:
                 lg.args(_DebugLevel, result=result, signature=signature)
         return result
 

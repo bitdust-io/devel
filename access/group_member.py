@@ -67,6 +67,7 @@ _DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
+import os
 import re
 
 #------------------------------------------------------------------------------
@@ -111,9 +112,9 @@ from userid import my_id
 
 #------------------------------------------------------------------------------
 
-CRITICAL_PUSH_MESSAGE_FAILS = 2
+CRITICAL_PUSH_MESSAGE_FAILS = None
 MAX_BUFFERED_MESSAGES = 10
-MAX_CONNECT_LOOKUP_ATTEMPTS = 7
+MAX_CONNECT_LOOKUP_ATTEMPTS = 5
 
 _ActiveGroupMembers = {}
 _ActiveGroupMembersByIDURL = {}
@@ -1186,6 +1187,9 @@ class GroupMember(automat.Automat):
         return True
 
     def _do_send_message_to_broker(self, json_payload=None, outgoing_counter=None, packet_id=None):
+        global CRITICAL_PUSH_MESSAGE_FAILS
+        if CRITICAL_PUSH_MESSAGE_FAILS is None:
+            CRITICAL_PUSH_MESSAGE_FAILS = int(os.environ.get('BITDUST_CRITICAL_PUSH_MESSAGE_FAILS', 2))
         if packet_id is None:
             packet_id = packetid.UniqueID()
         if _Debug:
@@ -1213,7 +1217,7 @@ class GroupMember(automat.Automat):
             self.outgoing_messages[outgoing_counter]['attempts'] += 1
             self.outgoing_messages[outgoing_counter]['last_attempt'] = utime.get_sec1970()
             json_payload = self.outgoing_messages[outgoing_counter]['payload']
-            lg.warn('re-trying sending message to broker %r   outgoing_counter=%d attempts=%d packet_id=%s' % (
+            lg.warn('re-trying sending message to broker %r   counter=%d attempts=%d packet_id=%s' % (
                 self.active_broker_id, outgoing_counter, self.outgoing_messages[outgoing_counter]['attempts'], packet_id, ))
         raw_payload = serialization.DictToBytes(
             json_payload,

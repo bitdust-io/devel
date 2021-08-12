@@ -37,12 +37,8 @@ TODO:
 
 from __future__ import absolute_import
 from __future__ import print_function
-import six.moves.urllib.request, six.moves.urllib.parse, six.moves.urllib.error  # @UnresolvedImport
-import locale
-import textwrap
-import six.moves.cPickle  # @UnresolvedImport
+import six.moves.urllib.parse # @UnresolvedImport
 from six.moves import range  # @UnresolvedImport
-from io import open
 
 #------------------------------------------------------------------------------
 
@@ -54,8 +50,10 @@ import math
 import random
 import base64
 import string
+import locale
 import hashlib
 import tempfile
+import textwrap
 import functools
 import subprocess
 
@@ -74,15 +72,10 @@ from system import local_fs
 
 from main import settings
 
-from lib import net_misc
 from lib import packetid
 from lib import strng
 
 #------------------------------------------------------------------------------
-
-_RemoveAfterSent = True
-
-# Functions outside should use getLocalIdentity()
 
 # if we come up with more valid transports,
 # we'll need to add them here
@@ -1035,23 +1028,6 @@ def ReadRepoLocation():
         return settings.DefaultRepo(), settings.DefaultRepoURL(settings.DefaultRepo())
     return l[0], l[1]
 
-#-------------------------------------------------------------------------------
-
-def transport_control_remove_after():
-    """
-    Not used.
-    """
-    global _RemoveAfterSent
-    return _RemoveAfterSent
-
-
-def set_transport_control_remove_after(flag):
-    """
-    Not used.
-    """
-    global _RemoveAfterSent
-    _RemoveAfterSent = flag
-
 #------------------------------------------------------------------------------
 
 
@@ -1128,9 +1104,9 @@ def DoRestart(param='', detach=False, std_out='/dev/null', std_err='/dev/null'):
         cmdargs.append('1>%s' % std_out)
         cmdargs.append('2>%s' % std_err)
         cmd = '/usr/bin/nohup ' + (' '.join(cmdargs)) + ' &'
-        COVERAGE_PROCESS_START = os.environ.get('COVERAGE_PROCESS_START')
-        if COVERAGE_PROCESS_START:
-            cmd = 'COVERAGE_PROCESS_START="%s" %s' % (COVERAGE_PROCESS_START, cmd, )
+        BITDUST_COVERAGE_PROCESS_START = os.environ.get('BITDUST_COVERAGE_PROCESS_START')
+        if BITDUST_COVERAGE_PROCESS_START:
+            cmd = 'BITDUST_COVERAGE_PROCESS_START="%s" %s' % (BITDUST_COVERAGE_PROCESS_START, cmd, )
         BITDUST_LOG_USE_COLORS = os.environ.get('BITDUST_LOG_USE_COLORS')
         if BITDUST_LOG_USE_COLORS:
             cmd = 'BITDUST_LOG_USE_COLORS="%s" %s' % (BITDUST_LOG_USE_COLORS, cmd, )

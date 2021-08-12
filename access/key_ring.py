@@ -191,7 +191,6 @@ def transfer_key(key_id, trusted_idurl, include_private=False, include_signature
             key_object,
             key_id=key_id,
             include_private=include_private,
-            # include_signature=include_signature,
             generate_signature=include_signature,
         )
     except Exception as exc:

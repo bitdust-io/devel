@@ -637,8 +637,8 @@ def packet_list_v1(node, wait_all_finish=False, attempts=90, delay=2, verbose=Fa
         for r in response.json()['result']:
             if r.get('packet_id', '').count('idle_ping:'):
                 continue
-            if r.get('command') == 'CancelService' and r.get('direction') == 'outgoing':
-                continue
+            # if r.get('command') == 'CancelService' and r.get('direction') == 'outgoing':
+            #     continue
             if r.get('command') == 'Retrieve' and r.get('direction') == 'outgoing' and r.get('label', '').count('-rotated'):
                 continue
             if r.get('command') == 'Data' and r.get('direction') == 'outgoing' and r.get('label', '').count('-rotated'):
