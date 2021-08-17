@@ -170,20 +170,22 @@ def prepare():
     kw.wait_service_state(SUPPLIERS_IDS + ['supplier-rotated', ], 'service_supplier', 'ON')
     kw.wait_service_state(CUSTOMERS_IDS, 'service_customer', 'ON')
     kw.wait_service_state(CUSTOMERS_IDS, 'service_shared_data', 'ON')
+    kw.wait_service_state(CUSTOMERS_IDS, 'service_personal_messages', 'ON')
     kw.wait_service_state(CUSTOMERS_IDS, 'service_private_groups', 'ON')
+    kw.wait_service_state(CUSTOMERS_IDS, 'service_message_history', 'ON')
     kw.wait_service_state(BROKERS_IDS + ['broker-rotated', ], 'service_message_broker', 'ON')
+    kw.config_set_v1('customer-1', 'services/employer/candidates', '')
     kw.wait_packets_finished(PROXY_IDS + CUSTOMERS_IDS + BROKERS_IDS + ['broker-rotated', ] + SUPPLIERS_IDS + ['supplier-rotated', ])
-
-    customer_1_supplier_idurls = kw.supplier_list_v1('customer-1', expected_min_suppliers=2, expected_max_suppliers=2)
-    assert len(customer_1_supplier_idurls) == 2
-    if 'http://id-dead:8084/supplier-rotated.xml' in customer_1_supplier_idurls:
-        pos = customer_1_supplier_idurls.index('http://id-dead:8084/supplier-rotated.xml')
-        print('customer-1 is going to replace supplier at position %d because found supplier-rotated there' % pos)
-        response = request_post('customer-1', 'supplier/change/v1', json={'position': pos, })
-        assert response.status_code == 200
-        assert response.json()['status'] == 'OK', response.json()
-        kw.wait_service_state(['customer-1', ], 'service_shared_data', 'ON')
-        kw.wait_packets_finished(['customer-1', ])
+#     customer_1_supplier_idurls = kw.supplier_list_v1('customer-1', expected_min_suppliers=2, expected_max_suppliers=2)
+#     assert len(customer_1_supplier_idurls) == 2
+#     if 'http://id-dead:8084/supplier-rotated.xml' in customer_1_supplier_idurls:
+#         pos = customer_1_supplier_idurls.index('http://id-dead:8084/supplier-rotated.xml')
+#         print('customer-1 is going to replace supplier at position %d because found supplier-rotated there' % pos)
+#         response = request_post('customer-1', 'supplier/change/v1', json={'position': pos, })
+#         assert response.status_code == 200
+#         assert response.json()['status'] == 'OK', response.json()
+#         kw.wait_service_state(['customer-1', ], 'service_shared_data', 'ON')
+#         kw.wait_packets_finished(['customer-1', ])
 
 
 def scenario1():

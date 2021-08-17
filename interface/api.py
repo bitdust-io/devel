@@ -3407,7 +3407,7 @@ def message_send_group(group_key_id, data):
     this_group_member = group_member.get_active_group_member(group_key_id)
     if not this_group_member:
         return ERROR('group is not active')
-    if this_group_member.state not in ['IN_SYNC!', 'QUEUE?', ]:
+    if this_group_member.state not in ['IN_SYNC!', ]:
         return ERROR('group is not synchronized yet')
     if _Debug:
         lg.out(_DebugLevel, 'api.message_send_group to %r' % group_key_id)

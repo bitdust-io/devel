@@ -480,8 +480,6 @@ class GroupMember(automat.Automat):
             elif event == 'message-in':
                 self.doRecord(*args, **kwargs)
                 self.doProcess(*args, **kwargs)
-            elif event == 'push-message':
-                self.doPublishLater(*args, **kwargs)
             elif event == 'shutdown' or event == 'leave':
                 self.state = 'CLOSED'
                 self.doDeactivate(event, *args, **kwargs)
@@ -501,10 +499,7 @@ class GroupMember(automat.Automat):
                 self.doDHTReadBrokers(event, *args, **kwargs)
         #---IN_SYNC!---
         elif self.state == 'IN_SYNC!':
-            if event == 'message-in' and self.isInSync(*args, **kwargs):
-                self.doRecord(*args, **kwargs)
-                self.doProcess(*args, **kwargs)
-            elif event == 'push-message':
+            if event == 'push-message':
                 self.doPublish(*args, **kwargs)
             elif event == 'shutdown' or event == 'leave':
                 self.state = 'CLOSED'
@@ -513,15 +508,14 @@ class GroupMember(automat.Automat):
                 self.doDestroyMe(*args, **kwargs)
             elif event == 'message-pushed':
                 self.doNotifyMessageAccepted(*args, **kwargs)
-            elif event == 'message-in' and not self.isInSync(*args, **kwargs):
-                self.state = 'QUEUE?'
-                self.SyncedUp=False
-                self.doReadQueue(*args, **kwargs)
             elif event == 'reconnect' or event == 'brokers-changed' or event == 'push-message-failed' or event == 'replace-active-broker':
                 self.state = 'DHT_READ?'
                 self.SyncedUp=False
                 self.doMarkDeadBroker(event, *args, **kwargs)
                 self.doDHTReadBrokers(event, *args, **kwargs)
+            elif event == 'message-in':
+                self.doRecord(*args, **kwargs)
+                self.doProcess(*args, **kwargs)
         #---CLOSED---
         elif self.state == 'CLOSED':
             pass
@@ -923,81 +917,6 @@ class GroupMember(automat.Automat):
         result.addErrback(self._on_broker_lookup_failed, broker_pos)
         return result
 
-    #------------------------------------------------------------------------------
-
-    def _on_read_customer_message_brokers(self, brokers_info_list):
-        if _Debug:
-            lg.args(_DebugLevel, brokers=len(brokers_info_list))
-        if not brokers_info_list:
-            self.dht_read_use_cache = False
-            self.automat('brokers-not-found', dht_brokers=[])
-            return
-        self.latest_dht_brokers = brokers_info_list
-        if groups.get_archive_folder_path(self.group_key_id) is None:
-            dht_archive_folder_path = None
-            for broker_info in brokers_info_list:
-                if broker_info.get('archive_folder_path'):
-                    dht_archive_folder_path = broker_info['archive_folder_path']
-            if dht_archive_folder_path is not None:
-                groups.set_archive_folder_path(self.group_key_id, dht_archive_folder_path)
-                lg.info('recognized archive folder path for %r from dht: %r' % (self.group_key_id, dht_archive_folder_path, ))
-        self.automat('brokers-found', dht_brokers=brokers_info_list)
-
-    def _on_broker_connected(self, response_info, broker_pos, *args, **kwargs):
-        if _Debug:
-            lg.args(_DebugLevel, resp=response_info, broker_pos=broker_pos, args=args, kwargs=kwargs)
-        try:
-            # skip leading "accepted:" marker
-            cooperated_brokers = jsn.loads(strng.to_text(response_info[0].Payload)[9:])
-            cooperated_brokers = {int(k): id_url.field(v) for k,v in cooperated_brokers.items()}
-        except:
-            lg.exc()
-            self.automat('broker-connect-failed')
-            return
-        self.automat('broker-connect-ack', cooperated_brokers=cooperated_brokers)
-
-    def _on_broker_connect_failed(self, err, broker_pos, *args, **kwargs):
-        if _Debug:
-            lg.args(_DebugLevel, err=err, broker_pos=broker_pos, args=args, kwargs=kwargs)
-        self.automat('broker-connect-failed', err)
-
-    def _on_broker_hired(self, response_info, broker_pos, *args, **kwargs):
-        if _Debug:
-            lg.args(_DebugLevel, resp=response_info, broker_pos=broker_pos, args=args, kwargs=kwargs)
-        try:
-            # skip leading "accepted:" marker
-            cooperated_brokers = jsn.loads(strng.to_text(response_info[0].Payload)[9:])
-            cooperated_brokers = {int(k): id_url.field(v) for k,v in cooperated_brokers.items()}
-        except:
-            lg.exc()
-            self.automat('broker-lookup-failed')
-            return
-        self.automat('broker-lookup-ack', cooperated_brokers=cooperated_brokers)
-
-    def _on_broker_lookup_failed(self, err, broker_pos, *args, **kwargs):
-        if _Debug:
-            lg.args(_DebugLevel, err=err, broker_pos=broker_pos)
-        self.automat('broker-lookup-failed', err)
-
-    def _on_brokers_ping_result(self, ping_results, **kwargs):
-        if _Debug:
-            lg.args(_DebugLevel, ping_results=ping_results, kwargs=kwargs)
-        try:
-            all_results = [r[0] for r in ping_results]
-            top_broker_result = ping_results[0][0]
-        except:
-            lg.exc()
-            top_broker_result = False
-        if not top_broker_result:
-            self.automat('top-broker-ping-failed')
-            return
-        if True not in all_results:
-            self.automat('brokers-ping-failed')
-            return
-        self.automat('brokers-all-connected', **kwargs)
-
-    #------------------------------------------------------------------------------
-
     def _do_read_queue_messages(self, json_messages):
         if not json_messages:
             return True
@@ -1203,9 +1122,9 @@ class GroupMember(automat.Automat):
                 'payload': json_payload,
             }
         else:
-            if self.outgoing_messages[outgoing_counter]['attempts'] >= CRITICAL_PUSH_MESSAGE_FAILS:
+            if self.outgoing_messages[outgoing_counter]['attempts'] > CRITICAL_PUSH_MESSAGE_FAILS:
                 lg.err('failed sending message to broker %r after %d attempts' % (
-                    self.active_broker_id, self.outgoing_messages[outgoing_counter]['attempts'] + 1, ))
+                    self.active_broker_id, self.outgoing_messages[outgoing_counter]['attempts'], ))
                 self.outgoing_messages[outgoing_counter]['attempts'] = 0
                 self.outgoing_messages[outgoing_counter]['last_attempt'] = None
                 self.automat('push-message-failed')
@@ -1329,6 +1248,79 @@ class GroupMember(automat.Automat):
                 connected_brokers=self.connected_brokers,
             ))
 
+    #------------------------------------------------------------------------------
+
+    def _on_read_customer_message_brokers(self, brokers_info_list):
+        if _Debug:
+            lg.args(_DebugLevel, brokers=len(brokers_info_list))
+        if not brokers_info_list:
+            self.dht_read_use_cache = False
+            self.automat('brokers-not-found', dht_brokers=[])
+            return
+        self.latest_dht_brokers = brokers_info_list
+        if groups.get_archive_folder_path(self.group_key_id) is None:
+            dht_archive_folder_path = None
+            for broker_info in brokers_info_list:
+                if broker_info.get('archive_folder_path'):
+                    dht_archive_folder_path = broker_info['archive_folder_path']
+            if dht_archive_folder_path is not None:
+                groups.set_archive_folder_path(self.group_key_id, dht_archive_folder_path)
+                lg.info('recognized archive folder path for %r from dht: %r' % (self.group_key_id, dht_archive_folder_path, ))
+        self.automat('brokers-found', dht_brokers=brokers_info_list)
+
+    def _on_broker_connected(self, response_info, broker_pos, *args, **kwargs):
+        if _Debug:
+            lg.args(_DebugLevel, resp=response_info, broker_pos=broker_pos, args=args, kwargs=kwargs)
+        try:
+            # skip leading "accepted:" marker
+            cooperated_brokers = jsn.loads(strng.to_text(response_info[0].Payload)[9:])
+            cooperated_brokers = {int(k): id_url.field(v) for k,v in cooperated_brokers.items()}
+        except:
+            lg.exc()
+            self.automat('broker-connect-failed')
+            return
+        self.automat('broker-connect-ack', cooperated_brokers=cooperated_brokers)
+
+    def _on_broker_connect_failed(self, err, broker_pos, *args, **kwargs):
+        if _Debug:
+            lg.args(_DebugLevel, err=err, broker_pos=broker_pos, args=args, kwargs=kwargs)
+        self.automat('broker-connect-failed', err)
+
+    def _on_broker_hired(self, response_info, broker_pos, *args, **kwargs):
+        if _Debug:
+            lg.args(_DebugLevel, resp=response_info, broker_pos=broker_pos, args=args, kwargs=kwargs)
+        try:
+            # skip leading "accepted:" marker
+            cooperated_brokers = jsn.loads(strng.to_text(response_info[0].Payload)[9:])
+            cooperated_brokers = {int(k): id_url.field(v) for k,v in cooperated_brokers.items()}
+        except:
+            lg.exc()
+            self.automat('broker-lookup-failed')
+            return
+        self.automat('broker-lookup-ack', cooperated_brokers=cooperated_brokers)
+
+    def _on_broker_lookup_failed(self, err, broker_pos, *args, **kwargs):
+        if _Debug:
+            lg.args(_DebugLevel, err=err, broker_pos=broker_pos)
+        self.automat('broker-lookup-failed', err)
+
+    def _on_brokers_ping_result(self, ping_results, **kwargs):
+        if _Debug:
+            lg.args(_DebugLevel, ping_results=ping_results, kwargs=kwargs)
+        try:
+            all_results = [r[0] for r in ping_results]
+            top_broker_result = ping_results[0][0]
+        except:
+            lg.exc()
+            top_broker_result = False
+        if not top_broker_result:
+            self.automat('top-broker-ping-failed')
+            return
+        if True not in all_results:
+            self.automat('brokers-ping-failed')
+            return
+        self.automat('brokers-all-connected', **kwargs)
+
     def _on_message_to_broker_sent(self, response_packet, outgoing_counter, packet_id):
         if _Debug:
             lg.args(_DebugLevel, response_packet=response_packet, outgoing_counter=outgoing_counter)
@@ -1380,7 +1372,6 @@ class GroupMember(automat.Automat):
         groups.set_last_sequence_id(self.group_key_id, latest_known_sequence_id)
         groups.save_group_info(self.group_key_id)
         self.automat('queue-in-sync')
-        # self.automat('queue-read-failed')
         return None
 
     def _on_group_brokers_updated(self, evt):

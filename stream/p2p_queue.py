@@ -593,7 +593,6 @@ def on_notification_failed(err, consumer_id, queue_id, message_id):
             reactor.callLater(0, finish_notification, consumer_id, queue_id, message_id, success=False)  # @UndefinedVariable
         except:
             lg.exc()
-    # reactor.callLater(0, do_cleanup)  # @UndefinedVariable
     do_cleanup(target_queues=[queue_id, ])
     return err
 
@@ -614,7 +613,6 @@ def write_message(producer_id, queue_id, data, creation_time=None):
     queue(queue_id)[new_message.message_id].state = 'PUSHED'
     if _Debug:
         lg.out(_DebugLevel, 'p2p_queue.write_message  %r added to queue %s' % (new_message.message_id, queue_id, ))
-    # reactor.callLater(0, touch_queues)  # @UndefinedVariable
     touch_queues()
     return new_message
 
@@ -882,8 +880,6 @@ def do_consume(interested_consumers=None):
         interested_queues = set()
         for queue_id in consumer(consumer_id).queues:
             if queue_id not in queue():
-                # if _Debug:
-                #     lg.out(_DebugLevel, 'p2p_queue.do_consume consumer queue %s was not found' % queue_id)
                 continue
             if len(queue(queue_id)) == 0:
                 # no messages in the queue
@@ -894,8 +890,6 @@ def do_consume(interested_consumers=None):
             continue
         for queue_id in interested_queues:
             to_be_consumed.append((consumer_id, queue_id, ))
-    # if _Debug:
-    #     lg.args(_DebugLevel, to_be_consumed=to_be_consumed, interested_consumers=interested_consumers)
     if not to_be_consumed:
         # nothing to consume
         return False

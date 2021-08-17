@@ -418,7 +418,6 @@ class BrokerNegotiator(automat.Automat):
         """
         target_pos = self.desired_position
         known_brokers = {}
-        # known_brokers.update(self.requestor_known_brokers)
         known_brokers.update(self.cooperated_brokers or {})
         if event in ['record-busy', ]:
             # there is no cooperation done yet and current record in DHT on that position belongs to another broker
@@ -442,6 +441,7 @@ class BrokerNegotiator(automat.Automat):
             service_name='service_message_broker',
             service_params=lambda idurl: self._do_prepare_service_request_params(idurl, target_pos, known_brokers, event),
             request_service_timeout=self.broker_negotiate_ack_timeout * (target_pos + 1),
+            force_handshake=True,
         )
         result.addCallback(self._on_cur_broker_connected, target_pos, event)
         if _Debug:
@@ -465,6 +465,7 @@ class BrokerNegotiator(automat.Automat):
             service_name='service_message_broker',
             service_params=lambda idurl: self._do_prepare_service_request_params(idurl, target_pos, known_brokers, None),
             request_service_timeout=self.broker_negotiate_ack_timeout * (target_pos + 1),
+            force_handshake=True,
         )
         result.addCallback(self._on_rotate_broker_connected, target_pos, None)
         if _Debug:
@@ -506,6 +507,7 @@ class BrokerNegotiator(automat.Automat):
                     service_params=lambda idurl: self._do_prepare_service_request_params(idurl, target_pos, known_brokers, event),
                     request_service_timeout=self.broker_negotiate_ack_timeout * (target_pos + 1),
                     exclude_nodes=list(exclude_brokers),
+                    force_handshake=True,
                 )
                 result.addCallback(self._on_new_broker_hired, target_pos)
                 if _Debug:
@@ -518,6 +520,7 @@ class BrokerNegotiator(automat.Automat):
             service_params=lambda idurl: self._do_prepare_service_request_params(idurl, target_pos, known_brokers, event),
             request_service_timeout=self.broker_negotiate_ack_timeout * (target_pos + 1),
             exclude_nodes=list(exclude_brokers),
+            force_handshake=True,
         )
         result.addCallback(self._on_new_broker_hired, target_pos)
         if _Debug:

@@ -447,8 +447,6 @@ class ProxySender(automat.Automat):
         d.addErrback(self._on_cache_retry_failed, fail_info)
 
     def _do_clean_sent_packet(self, info):
-        # if _Debug:
-        #     lg.args(_DebugLevel, sent_packets=len(self.sent_packets), info=info)
         to_idurl = id_url.to_bin(info['to'])
         to_remove = []
         for _key in self.sent_packets.keys():
@@ -458,14 +456,6 @@ class ProxySender(automat.Automat):
                     lg.dbg(_DebugLevel, 'found empty outpacket : %r' % routed_packet)
                 to_remove.append(_key)
                 continue
-#             if _Debug:
-#                 lg.args(_DebugLevel,
-#                     routed_packet,
-#                     outpacket,
-#                     outpacket.Command == info['command'],
-#                     outpacket.PacketID == info['packet_id'],
-#                     outpacket.RemoteID.to_bin() == to_idurl,
-#                 )
             if outpacket.Command != info['command']:
                 continue
             if outpacket.PacketID != info['packet_id']:
@@ -475,8 +465,6 @@ class ProxySender(automat.Automat):
             to_remove.append(_key)
         for _key in to_remove:
             routed_packet, outpacket = self.sent_packets.pop(_key, (None, None, ))
-            # if _Debug:
-            #     lg.dbg(_DebugLevel, 'cleaned %r %r' % (routed_packet, outpacket, ))
 
     def _on_cache_retry_success(self, xmlsrc, fail_info):
         if _Debug:
@@ -488,14 +476,6 @@ class ProxySender(automat.Automat):
                 if _Debug:
                     lg.dbg(_DebugLevel, 'found empty outpacket : %r' % routed_packet)
                 continue
-#             if _Debug:
-#                 lg.args(_DebugLevel,
-#                     routed_packet,
-#                     outpacket,
-#                     outpacket.Command == fail_info['command'],
-#                     outpacket.PacketID == fail_info['packet_id'],
-#                     outpacket.RemoteID.to_bin() == to_idurl,
-#                 )
             if outpacket.Command != fail_info['command']:
                 continue
             if outpacket.PacketID != fail_info['packet_id']:

@@ -81,7 +81,7 @@ from twisted.internet.defer import Deferred, fail  #@UnresolvedImport
 #------------------------------------------------------------------------------
 
 _Debug = False
-_DebugLevel = 14
+_DebugLevel = 10
 
 #------------------------------------------------------------------------------
 

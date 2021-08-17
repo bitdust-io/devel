@@ -375,8 +375,6 @@ def on_lookup_result(event, result_defer, *args, **kwargs):
 
 def connect_random_node(lookup_method, service_name, service_params=None, exclude_nodes=[],
                         request_service_timeout=None, ping_retries=None, ack_timeout=None, force_handshake=False):
-    """
-    """
     global _P2PServiceSeekerInstaceCounter
     _P2PServiceSeekerInstaceCounter += 1
     result = Deferred()
@@ -407,8 +405,6 @@ def connect_random_node(lookup_method, service_name, service_params=None, exclud
 
 def connect_known_node(remote_idurl, service_name, service_params=None, exclude_nodes=[],
                        request_service_timeout=None, ping_retries=None, ack_timeout=None, force_handshake=False):
-    """
-    """
     global _P2PServiceSeekerInstaceCounter
     _P2PServiceSeekerInstaceCounter += 1
     result = Deferred()

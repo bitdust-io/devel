@@ -231,11 +231,8 @@ class ProxyRouter(automat.Automat):
         """
         global _PacketLogFileEnabled
         _PacketLogFileEnabled = config.conf().getBool('logs/packet-enabled')
-        # TODO: need to check again...
-        # looks like we do not need to load routes at all...
-        # proxy router must always start with no routes and keep them in memory
-        # when proxy router restarts all connections with other nodes will be stopped anyway
-        # self._load_routes()
+        # proxy router must always start with no routes and keep them in memory only
+        # when proxy router is restarting all connections with other nodes will be stopped anyway
         if driver.is_on('service_tcp_transport'):
             from transport.tcp import tcp_node
             self.my_hosts['tcp'] = tcp_node.my_host(normalize=True)
@@ -327,7 +324,13 @@ class ProxyRouter(automat.Automat):
         Action method.
         """
         newpacket, _ = args[0]
-        p2p_service.SendFail(newpacket, wide=True)
+        receiver_idurl = newpacket.OwnerID
+        response = 'route not exist'
+        if self.closed_routes.get(receiver_idurl.original(), 0) or self.closed_routes.get(receiver_idurl.to_bin(), 0):
+            response = 'route already closed'
+        if _Debug:
+            lg.args(_DebugLevel, response=response, incoming_packet=newpacket)
+        p2p_service.SendFail(newpacket, response=response, wide=True)
 
     def doDestroyMe(self, *args, **kwargs):
         """
@@ -1129,32 +1132,6 @@ class ProxyRouter(automat.Automat):
         receiver_proto, receiver_host = self._get_session_proto_host(receiver_idurl)
         if not receiver_proto or not receiver_host:
             return None
-#         route_info = self.routes.get(receiver_idurl.original(), None)
-#         if not route_info:
-#             route_info = self.routes.get(receiver_idurl.to_bin(), None)
-#         if not route_info or 'publickey' not in route_info:
-#             lg.warn('found proto & host in the current routes for %r but did not found public key' % receiver_idurl)
-#             return None
-#         raw_data, pkt_out = self._do_send_relay_packet(
-#             relay_cmd=commands.RelayIn(),
-#             inbox_packet=outpacket,
-#             data=outpacket.Serialize(),
-#             publickey=route_info['publickey'],
-#             receiver_idurl=receiver_idurl,
-#             receiver_proto=receiver_proto,
-#             receiver_host=receiver_host,
-#             failed_callback=lambda p_out, msg: self._on_routed_in_packet_failed(p_out, msg, outpacket, None, receiver_idurl)
-#         )
-#         if _Debug:
-#             lg.out(_DebugLevel, '<<<Route-DIRECT %s %s:%s' % (
-#                 str(outpacket), strng.to_text(receiver_proto), strng.to_text(receiver_host),))
-#             lg.out(_DebugLevel, '           sent to %s://%s with %d bytes in %s' % (
-#                 strng.to_text(receiver_proto), strng.to_text(receiver_host), len(raw_data), pkt_out))
-#         if _Debug:
-#             lg.args(_DebugLevel, state=self.state, outpacket=outpacket, wide=wide, route=route, pkt_out=pkt_out, raw=len(raw_data))
-#         del raw_data
-#         return pkt_out
-
         #--- sending "direct" packet to the node known to be one of my routes
         route = {
             'packet': outpacket,
@@ -1338,7 +1315,6 @@ class ProxyRouter(automat.Automat):
                 lg.out(_DebugLevel, 'proxy_router._remove_route %d bytes wrote' % len(newsrc))
 
 #------------------------------------------------------------------------------
-
 
 def main():
     from twisted.internet import reactor  # @UnresolvedImport
