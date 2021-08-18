@@ -45,13 +45,13 @@ from lib import diskspace
 
 from main import settings
 
-from . import bpio
+from system import bpio
 
 #------------------------------------------------------------------------------
 
 if bpio.Windows():
-    import win32api
-    import win32file
+    import win32api  # @UnresolvedImport
+    import win32file  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 

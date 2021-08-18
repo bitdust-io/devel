@@ -313,7 +313,14 @@ Other users are able to connect to your device to exchange messages and thus you
 Old messages in the queue are split into blocks, encrypted and archived on the suppliers nodes.
 
 {services/message-broker/message-ack-timeout} message acknowledgment timeout
-Due to network failures or slowness, peer-to-peer messages are considered undelivered without receiving confirmation of delivery within the specified number of seconds.
+Due to network failures or slowness, peer-to-peer messages are considered as "undelivered" without receiving a confirmation of delivery within the specified number of seconds.
+
+{services/message-broker/broker-negotiate-ack-timeout} brokers synchronization timeout
+Each queue requires three message brokers at all time (main, secondary, third) and those three must cooperate with each other periodically to stay in sync.
+This value defines a timeout for an acknowledgment from another broker.
+When one of the brokers broker is unreliable, eventually all three will be "rotated" and "dead" broker will be replaced by fresh one.
+
+{services/message-broker/preferred-brokers}
 
 {services/message-history/enabled} store messaging history
 All your conversations are stored in a local SQLite3 database and are quickly searchable.
@@ -367,7 +374,10 @@ Other nodes, called "message brokers", will maintain a stream of messages that y
 Allows the exchange of encrypted messages with multiple users using the same secret key through message brokers.
 
 {services/private-groups/message-ack-timeout} acknowledgment timeout
-Specifies the timeout that will be used to wait for an acknowledgment when sending an encrypted message to the broker.
+Defines a timeout in seconds for an acknowledgment after sending encrypted message to message broker.
+
+{services/private-groups/broker-connect-timeout} connect timeout
+Defines a timeout in seconds for an acknowledgment from message broker while connecting to the group.
 
 {services/private-groups/preferred-brokers}
 

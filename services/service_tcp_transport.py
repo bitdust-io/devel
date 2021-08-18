@@ -43,6 +43,7 @@ class TCPTransportService(LocalService):
     service_name = 'service_tcp_transport'
     config_path = 'services/tcp-transport/enabled'
     proto = 'tcp'
+    stop_when_failed = True
 
     def dependent_on(self):
         return [

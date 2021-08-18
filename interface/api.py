@@ -2012,7 +2012,7 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, o
         if _Debug:
             lg.out(_DebugLevel, '    "open_share" skipped, starting restore')
         _start_restore()
-    
+
     return ret
 
 
@@ -2654,7 +2654,8 @@ def group_leave(group_key_id, erase_key=False):
         groups.save_group_info(group_key_id)
         return OK(message='group deactivated')
     result_json = this_group_member.to_json()
-    this_group_member.automat('leave', erase_key=erase_key)
+    result_json['state'] = 'CLOSED'
+    this_group_member.event('leave', erase_key=erase_key)
     if erase_key:
         return OK(message='group deactivated and deleted', result=result_json)
     return OK(message='group deactivated', result=result_json)
@@ -3406,7 +3407,7 @@ def message_send_group(group_key_id, data):
     this_group_member = group_member.get_active_group_member(group_key_id)
     if not this_group_member:
         return ERROR('group is not active')
-    if this_group_member.state not in ['IN_SYNC!', 'QUEUE?', ]:
+    if this_group_member.state not in ['IN_SYNC!', ]:
         return ERROR('group is not synchronized yet')
     if _Debug:
         lg.out(_DebugLevel, 'api.message_send_group to %r' % group_key_id)

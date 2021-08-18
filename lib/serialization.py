@@ -28,7 +28,7 @@ from __future__ import absolute_import
 
 from lib import jsn
 from lib import strng
-    
+
 #------------------------------------------------------------------------------
 
 def DictToBytes(dct, encoding='latin1', errors='strict', keys_to_text=False, values_to_text=False, pack_types=False):

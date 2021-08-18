@@ -44,6 +44,7 @@ class ProxyTransportService(LocalService):
     config_path = 'services/proxy-transport/enabled'
     proto = 'proxy'
     transport = None
+    stop_when_failed = True
 
     def init(self):
         self.starting_deferred = None

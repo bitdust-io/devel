@@ -133,7 +133,7 @@ class SharedDataService(LocalService):
                 supplier_idurl, customer_idurl, key_id, ))
             result = key_ring.transfer_key(key_id, supplier_idurl, include_private=False, include_signature=False)
             result.addCallback(lambda r: self._on_key_transfer_success(customer_idurl, supplier_idurl, key_id))
-            result.addErrback(lambda err: lg.err('failed sending key %r : %r' % (key_id, err, )))
+            result.addErrback(lambda err: lg.err('failed sending key %r to %r : %r' % (key_id, supplier_idurl, err, )))
         else:
             lg.err('failed requesting ListFiles() with %r for customer %r from supplier %r' % (
                 key_id, customer_idurl, supplier_idurl, ))

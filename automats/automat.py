@@ -81,7 +81,7 @@ from twisted.internet.defer import Deferred, fail  #@UnresolvedImport
 #------------------------------------------------------------------------------
 
 _Debug = False
-_DebugLevel = 14
+_DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
@@ -89,6 +89,8 @@ _LogEvents = False
 _LogFile = None  # : This is to have a separated Log file for state machines logs
 _LogFilename = None
 _LogsCount = 0  # : If not zero - it will print time since that value, not system time
+_LogOutputHandler = None
+_LogExceptionsHandler = None
 _LifeBeginsTime = 0
 _GlobalLogEvents = False
 _GlobalLogTransitions = False
@@ -229,6 +231,28 @@ def SetStateChangedCallback(cb):
     """
     global _StateChangedCallback
     _StateChangedCallback = cb
+
+
+def SetLogOutputHandler(cb):
+    """
+    Set callback to be fired when a log line is about to be printed from any state machine
+    parameters are::
+
+    cb(debug_level, message)
+    """
+    global _LogOutputHandler
+    _LogOutputHandler = cb
+
+
+def SetExceptionsHandler(cb):
+    """
+    Set callback to be fired when exception is caught from any state machine
+    parameters are::
+
+    cb(msg, exc_info)
+    """
+    global _LogExceptionsHandler
+    _LogExceptionsHandler = cb
 
 
 def RedirectLogFile(stream):
@@ -486,7 +510,7 @@ class Automat(object):
         self.automat(event_string, args)
         return d
 
-    def automat(self, event_string, *args, **kwargs):
+    def automat(self, event, *args, **kwargs):
         """
         Call it like this::
 
@@ -497,12 +521,12 @@ class Automat(object):
         If ``self.fast=False`` - the ``self.A()`` method will be executed in delayed call.
         """
         if self.fast:
-            self.event(event_string, *args, **kwargs)
+            self.event(event, *args, **kwargs)
         else:
-            reactor.callLater(0, self.event, event_string, *args, **kwargs)  # @UndefinedVariable
+            reactor.callLater(0, self.event, event, *args, **kwargs)  # @UndefinedVariable
         return self
 
-    def event(self, event_string, *args, **kwargs):
+    def event(self, event, *args, **kwargs):
         """
         You can call ``event()`` directly to execute ``self.A()`` immediately,
         but preferred way is too call ``automat()`` method.
@@ -511,46 +535,42 @@ class Automat(object):
         """
         global _StateChangedCallback
         if _GlobalLogEvents or ( _LogEvents and _Debug and getattr(self, 'log_events', False)):
-            if self.log_events or not event_string.startswith('timer-'):
-                self.log(max(self.debug_level, _DebugLevel), '%s fired with event "%s"' % (repr(self), event_string, ))
+            if self.log_events or not event.startswith('timer-'):
+                self.log(max(self.debug_level, _DebugLevel), '%s fired with event "%s"' % (repr(self), event, ))
         old_state = self.state
         if self.post:
             try:
-                new_state = self.A(event_string, *args, **kwargs)
+                new_state = self.A(event, *args, **kwargs)
             except Exception as exc:
-                if _Debug:
-                    self.exc('Exception in {}:{} automat, state is {}, event="{}" : {}'.format(
-                        self.id, self.name, self.state, event_string, exc))
+                self.exc(msg='Exception in {}:{} automat, state is {}, event="{}" : {}'.format(
+                    self.id, self.name, self.state, event, exc))
                 return self
             self.state = new_state
         else:
             try:
-                self.A(event_string, *args, **kwargs)
+                self.A(event, *args, **kwargs)
             except Exception as exc:
-                if _Debug:
-                    self.exc('Exception in {}:{} automat, state is {}, event="{}" : {}'.format(
-                        self.id, self.name, self.state, event_string, exc))
+                self.exc(msg='Exception in {}:{} automat, state is {}, event="{}" : {}'.format(
+                    self.id, self.name, self.state, event, exc))
                 return self
             new_state = self.state
         if old_state != new_state:
             if _GlobalLogTransitions or ( _Debug and self.log_transitions ):
-                self.log(
-                    max(_DebugLevel, self.debug_level),
-                    '%s(%s): (%s)->(%s)' % (
-                        repr(self), event_string, old_state, new_state))
+                self.log(max(_DebugLevel, self.debug_level), '%s(%s): (%s)->(%s)' % (
+                    repr(self), event, old_state, new_state))
             self.stopTimers()
-            self.state_changed(old_state, new_state, event_string, *args, **kwargs)
+            self.state_changed(old_state, new_state, event, *args, **kwargs)
             if self.publish_events:
-                self.pushEvent(old_state, new_state, event_string)
+                self.pushEvent(old_state, new_state, event)
             self.startTimers()
             if _StateChangedCallback is not None:
                 _StateChangedCallback(self.index, self.id, self.name, new_state)
         else:
-            self.state_not_changed(self.state, event_string, *args, **kwargs)
+            self.state_not_changed(self.state, event, *args, **kwargs)
             if self.publish_events:
                 if self.publish_event_state_not_changed:
-                    self.pushEvent(old_state, new_state, event_string)
-        self.executeStateChangedCallbacks(old_state, new_state, event_string, *args, **kwargs)
+                    self.pushEvent(old_state, new_state, event)
+        self.executeStateChangedCallbacks(old_state, new_state, event, *args, **kwargs)
         return self
 
     def timerEvent(self, name, interval):
@@ -562,8 +582,8 @@ class Automat(object):
                 self.automat(name)
             else:
                 self.log(max(_DebugLevel, self.debug_level), '%s.timerEvent ERROR timer %s not found in self.timers' % (str(self), name))
-        except Exception as exc:
-            self.exc(str(exc))
+        except:
+            self.exc()
 
     def stopTimers(self):
         """
@@ -615,21 +635,31 @@ class Automat(object):
             'events': self.publish_events,
         }
 
-    def exc(self, msg='', to_logfile=False):
+    def exc(self, msg='', to_logfile=False, exc_type=None, exc_value=None, exc_traceback=None):
         """
         Print exception in stdout, optionally to log file.
         """
+        global _LogExceptionsHandler
         global _LogFile
-        e = traceback.format_exc()
+        _t = exc_type
+        _v = exc_value
+        _tb = exc_traceback
+        if exc_type is None or exc_value is None or exc_traceback is None:
+            _t, _v, _tb = sys.exc_info()
+        exc_type = _t if exc_type is None else exc_type
+        exc_value = _v if exc_value is None else exc_value
+        exc_traceback = _tb if exc_traceback is None else exc_traceback
+        e = ''
+        if exc_value is not None or exc_traceback is not None:
+            e = traceback.format_exception(etype=exc_type, value=exc_value, tb=exc_traceback)
+        else:
+            e = traceback.format_exc()
         if to_logfile and _LogFile is not None:
             if msg:
                 self.log(0, msg)
             self.log(0, e)
-        try:
-            from logs import lg
-            lg.exc(msg)
-        except:
-            pass
+        if _LogExceptionsHandler is not None:
+            _LogExceptionsHandler(msg=msg, exc_info=(exc_type, exc_value, exc_traceback, ))
 
     def log(self, level, text):
         """
@@ -641,37 +671,35 @@ class Automat(object):
         global _LogFilename
         global _LogsCount
         global _LifeBeginsTime
+        global _LogOutputHandler
         if not text.startswith(self.name):
             text = '%s(): %s' % (self.name, text, )
-        if _LogFile is not None:
-            if _LogsCount > 100000 and _LogFilename:
-                # very simple log rotation
-                _LogFile.close()
-                _LogFile = open(_LogFilename, 'w')
-                _LogsCount = 0
-            s = ' ' * level + text + '\n'
-            tm_str = time.strftime('%H:%M:%S')
-            if _LifeBeginsTime != 0:
-                dt = time.time() - _LifeBeginsTime
-                mn = dt // 60
-                sc = dt - mn * 60
-                tm_str += ('/%02d:%02d.%02d' % (mn, sc, (sc - int(sc)) * 100))
-            s = tm_str + s
-            if sys.version_info[0] == 3:
-                if not isinstance(s, str):
-                    s = s.decode('utf-8')
-            else:
-                if not isinstance(s, unicode):  # @UndefinedVariable
-                    s = s.decode('utf-8')
-            _LogFile.write(s)
-            _LogFile.flush()
-            _LogsCount += 1
+        if _LogOutputHandler is not None:
+            _LogOutputHandler(level, text)
         else:
-            try:
-                from logs import lg
-                lg.out(level, text)
-            except:
-                pass
+            if _LogFile is not None:
+                if _LogsCount > 100000 and _LogFilename:
+                    # very simple log rotation
+                    _LogFile.close()
+                    _LogFile = open(_LogFilename, 'w')
+                    _LogsCount = 0
+                s = ' ' * level + text + '\n'
+                tm_str = time.strftime('%H:%M:%S')
+                if _LifeBeginsTime != 0:
+                    dt = time.time() - _LifeBeginsTime
+                    mn = dt // 60
+                    sc = dt - mn * 60
+                    tm_str += ('/%02d:%02d.%02d' % (mn, sc, (sc - int(sc)) * 100))
+                s = tm_str + s
+                if sys.version_info[0] == 3:
+                    if not isinstance(s, str):
+                        s = s.decode('utf-8')
+                else:
+                    if not isinstance(s, unicode):  # @UndefinedVariable
+                        s = s.decode('utf-8')
+                _LogFile.write(s)
+                _LogFile.flush()
+                _LogsCount += 1
 
     def addStateChangedCallback(self, cb, oldstate=None, newstate=None, callback_id=None):
         """

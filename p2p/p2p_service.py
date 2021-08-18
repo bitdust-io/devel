@@ -48,7 +48,7 @@ from __future__ import absolute_import
 #------------------------------------------------------------------------------
 
 _Debug = True
-_DebugLevel = 8
+_DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
@@ -236,7 +236,8 @@ def Fail(newpacket):
             lg.warn('%r received from [%s] in %r' % (newpacket.Payload, newpacket.CreatorID, newpacket))
     else:
         if _Debug:
-            lg.out(_DebugLevel, "p2p_service.Fail from [%s]: %s" % (newpacket.CreatorID, newpacket.Payload))
+            lg.out(_DebugLevel, "p2p_service.Fail from %s|%s packetID=%s : %s" % (
+                newpacket.CreatorID, newpacket.OwnerID, newpacket.PacketID, newpacket.Payload))
 
 
 def SendFail(request, response='', remote_idurl=None, wide=False):

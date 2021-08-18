@@ -542,7 +542,7 @@ class DetailedConfig(CachedConfig):
     def __init__(self, configDir):
         super(DetailedConfig, self).__init__(configDir)
         try:
-            from . import config_details
+            from main import config_details
             self._load_details(config_details.raw())
         except:
             lg.exc()

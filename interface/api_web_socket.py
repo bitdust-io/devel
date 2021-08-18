@@ -257,7 +257,7 @@ def do_process_incoming_message(json_data):
                         'errors': [err_msg, ],
                     },
                 })
-                
+
             response.addCallback(_cb)
             response.addErrback(_eb)
             return True

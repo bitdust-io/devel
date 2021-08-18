@@ -495,3 +495,11 @@ def ping_customers(timeout=30):
             l.append(online_status.ping(idurl=customer_idurl, ack_timeout=timeout, channel='ping_customers', keep_alive=True))
     return DeferredList(l, consumeErrors=True)
 
+
+def ping_nodes(idurl_list, timeout=15, channel='ping_nodes', keep_alive=True):
+    from p2p import online_status
+    l = []
+    for idurl in idurl_list:
+        if idurl:
+            l.append(online_status.ping(idurl=idurl, ack_timeout=timeout, channel=channel, keep_alive=keep_alive))
+    return DeferredList(l, consumeErrors=True)

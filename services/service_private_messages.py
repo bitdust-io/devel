@@ -94,7 +94,7 @@ class PrivateMessagesService(LocalService):
                 contactsdb.remove_correspondent(idurl)
                 contactsdb.add_correspondent(new_idurl.to_bin(), alias)
                 contacts_changed = True
-                lg.info('found correspond idurl rotated : %r -> %r' % (old_idurl, new_idurl, ))
+                lg.info('found correspondent idurl was rotated : %r -> %r' % (old_idurl, new_idurl, ))
         if contacts_changed:
             contactsdb.save_correspondents()
 

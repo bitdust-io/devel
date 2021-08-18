@@ -124,7 +124,7 @@ def init(UI='', options=None, args=None, overDict=None, executablePath=None):
 
         def _tray_control_func(cmd):
             if cmd == 'exit':
-                from . import shutdowner
+                from main import shutdowner
                 shutdowner.A('stop', 'exit')
         tray_icon.SetControlFunc(_tray_control_func)
 
@@ -201,7 +201,9 @@ def init(UI='', options=None, args=None, overDict=None, executablePath=None):
     automat.LifeBegins(lg.when_life_begins())
     automat.SetGlobalLogEvents(config.conf().getBool('logs/automat-events-enabled'))
     automat.SetGlobalLogTransitions(config.conf().getBool('logs/automat-transitions-enabled'))
-    automat.OpenLogFile(settings.AutomatsLog())
+    automat.SetExceptionsHandler(lg.exc)
+    automat.SetLogOutputHandler(lambda debug_level, message: lg.out(debug_level, message, log_name='state'))
+    # automat.OpenLogFile(settings.AutomatsLog())
 
     from main import events
     events.init()
@@ -229,7 +231,7 @@ def shutdown():
     if config.conf():
         config.conf().removeConfigNotifier('logs/debug-level')
 
-    from . import shutdowner
+    from main import shutdowner
     shutdowner.A('reactor-stopped')
 
     from main import events
@@ -255,7 +257,9 @@ def shutdown():
     if _Debug:
         lg.out(_DebugLevel, 'bpmain.shutdown finishing and closing log file, EXIT')
 
-    automat.CloseLogFile()
+    # automat.CloseLogFile()
+    automat.SetExceptionsHandler(None)
+    automat.SetLogOutputHandler(None)
 
     lg.close_log_file()
 
@@ -561,7 +565,7 @@ def usage_text():
     from command line.
     """
     try:
-        from . import help
+        from main import help
         return help.usage_text()
     except:
         return ''
@@ -572,7 +576,7 @@ def help_text():
     Same thing, calls ``p2p.help.help_text()`` to show detailed instructions.
     """
     try:
-        from . import help
+        from main import help
         return help.help_text()
     except:
         return ''
@@ -583,7 +587,7 @@ def backup_schedule_format():
     See ``p2p.help.schedule_format()`` method.
     """
     try:
-        from . import help
+        from main import help
         return help.schedule_format()
     except:
         return ''
@@ -804,22 +808,23 @@ def main(executable_path=None, start_reactor=True):
         appList = bpio.find_main_process(pid_file_path=os.path.join(appdata, 'metadata', 'processid'))
         ui = False
         if len(appList) > 0:
-            lg.out(0, 'found main BitDust process: %s, sending "restart" command ... ' % str(appList), '')
+            lg.out(0, 'found main BitDust process: %s, executing "api.process_stop()" via WebSocket ... ' % str(appList), '')
 
             def done(x):
-                lg.out(0, 'DONE\n', '')
+                lg.out(0, 'BitDust process finished with: %r\n' % x, '')
                 from twisted.internet import reactor  # @UnresolvedImport
                 if reactor.running and not reactor._stopped:  # @UndefinedVariable
                     reactor.stop()  # @UndefinedVariable
 
             def failed(x):
+                lg.out(0, 'BitDust process was not finished correctly: %r\n' % x, '')
                 ok = str(x).count('Connection was closed cleanly') > 0
                 from twisted.internet import reactor  # @UnresolvedImport
                 if ok and reactor.running and not reactor._stopped:  # @UndefinedVariable
                     lg.out(0, 'DONE\n', '')
                     reactor.stop()  # @UndefinedVariable
                     return
-                lg.out(0, 'FAILED while killing previous process - do HARD restart\n', '')
+                lg.out(0, 'forcing previous process shutdown\n', '')
                 try:
                     kill()
                 except:
@@ -842,7 +847,7 @@ def main(executable_path=None, start_reactor=True):
                 # from interface import cmd_line
                 # d = cmd_line.call_xmlrpc_method('restart', ui)
                 from interface import cmd_line_json
-                d = cmd_line_json.call_jsonrpc_method('restart', ui)
+                d = cmd_line_json.call_websocket_method('process_restart', websocket_timeout=5)
                 d.addCallback(done)
                 d.addErrback(failed)
                 reactor.run()  # @UndefinedVariable
@@ -898,8 +903,8 @@ def main(executable_path=None, start_reactor=True):
                 ret = 1
             bpio.shutdown()
             return ret
-        lg.out(0, 'found main BitDust process: %s, start the GUI\n' % str(appList))
-        ret = show()
+        # lg.out(0, 'found main BitDust process: %s, start the GUI\n' % str(appList))
+        # ret = show()
         bpio.shutdown()
         return ret
 
@@ -918,8 +923,8 @@ def main(executable_path=None, start_reactor=True):
             pid_file_path=os.path.join(appdata, 'metadata', 'processid'),
         )
         if len(appList) > 0:
-            lg.out(0, 'found main BitDust process: %r, sending command "exit" ... ' % appList, '')
             if cmd == 'kill':
+                lg.out(0, 'found main BitDust process: %r, about to kill running process ... ' % appList, '')
                 ret = kill()
                 bpio.shutdown()
                 if opts.coverage:
@@ -930,20 +935,15 @@ def main(executable_path=None, start_reactor=True):
                 return ret
             try:
                 from twisted.internet import reactor  # @UnresolvedImport
-                # from interface.command_line import run_url_command
-                # url = '?action=exit'
-                # run_url_command(url, False).addBoth(wait_then_kill)
-                # reactor.run()
-                # bpio.shutdown()
 
                 def _stopped(x):
-                    lg.out(0, 'BitDust process finished correctly\n')
+                    lg.out(0, 'BitDust process finished with: %r\n' % x, '')
                     reactor.stop()  # @UndefinedVariable
                     bpio.shutdown()
-                # from interface import cmd_line
-                # cmd_line.call_xmlrpc_method('stop').addBoth(_stopped)
+
+                lg.out(0, 'found main BitDust process: %r, executing "api.process_stop()" via WebSocket ... ' % appList, '')
                 from interface import cmd_line_json
-                cmd_line_json.call_jsonrpc_method('stop').addBoth(_stopped)
+                cmd_line_json.call_websocket_method('process_stop', websocket_timeout=5).addBoth(_stopped)
                 reactor.run()  # @UndefinedVariable
                 if opts.coverage:
                     cov.stop()

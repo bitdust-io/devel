@@ -82,7 +82,7 @@ def init(json_rpc_port=None):
     from system import bpio
     if not json_rpc_port:
         json_rpc_port = settings.getJsonRPCServerPort()
-    bpio.WriteTextFile(settings.LocalJsonRPCPortFilename(), str(json_rpc_port))
+    # bpio.WriteTextFile(settings.LocalJsonRPCPortFilename(), str(json_rpc_port))
     # TODO: add protection: accept connections only from local host: 127.0.0.1
     _JsonRPCServer = reactor.listenTCP(json_rpc_port, server.Site(BitDustJsonRPCServer()))  # @UndefinedVariable
     if _Debug:
@@ -358,11 +358,11 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_user_observe(self, nickname, attempts=3):
         return api.user_observe(nickname, attempts=attempts)
 
-    def jsonrpc_nickname_get(self):
-        return api.nickname_get()
+    # def jsonrpc_nickname_get(self):
+    #     return api.nickname_get()
 
-    def jsonrpc_nickname_set(self, nickname):
-        return api.nickname_set(nickname)
+    # def jsonrpc_nickname_set(self, nickname):
+    #     return api.nickname_set(nickname)
 
     def jsonrpc_friends_list(self):
         return api.friends_list()
@@ -394,8 +394,8 @@ class BitDustJsonRPCServer(JSONRPCServer):
 #     def jsonrpc_set_my_nickname(self, nickname):
 #         return api.set_my_nickname(nickname)
 
-    def jsonrpc_broadcast_send_message(self, payload):
-        return api.broadcast_send_message(payload)
+    # def jsonrpc_broadcast_send_message(self, payload):
+    #     return api.broadcast_send_message(payload)
 
     def jsonrpc_event_send(self, event_id, json_data=None):
         return api.event_send(event_id, json_data=json_data)

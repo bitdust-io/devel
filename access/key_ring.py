@@ -191,12 +191,18 @@ def transfer_key(key_id, trusted_idurl, include_private=False, include_signature
             key_object,
             key_id=key_id,
             include_private=include_private,
-            include_signature=include_signature,
+            generate_signature=include_signature,
         )
     except Exception as exc:
         lg.exc()
         result.errback(exc)
         return result
+    if include_signature and not my_keys.verify_key_info_signature(key_json):
+        lg.err('signature verification failed after making key info: %r' % key_json)
+        result.errback(Exception('signature verification failed after making key info: "%s"' % key_id))
+        return result
+    if _Debug:
+        lg.args(_DebugLevel, key_json=key_json)
     key_data = serialization.DictToBytes(key_json, values_to_text=True)
     block = encrypted.Block(
         BackupID=key_id,
@@ -432,7 +438,8 @@ def on_key_received(newpacket, info, status, error_message):
         key_id, key_object = my_keys.read_key_info(key_json)
         if key_object.isSigned():
             if not my_keys.verify_key_info_signature(key_json):
-                raise Exception('key %s signature verification failed' % key_id)
+                raise Exception('received key signature verification failed: %r' % key_json)
+            # TODO: must also compare "signature_pubkey" with pub key of the creator of the key!
         if key_object.isPublic():
             # received key is a public key
             if my_keys.is_key_registered(key_id):

@@ -447,9 +447,6 @@ def inbox(info):
         lg.err("gateway.inbox ERROR during Unserialize data from %s://%s" % (info.proto, info.host))
         lg.err("data length=" + str(len(data)))
         lg.exc()
-#         fd, filename = tmpfile.make('other', '.bad')
-#         os.write(fd, data)
-#         os.close(fd)
         return None
     _LastInboxPacketTime = time.time()
     if _Debug:
@@ -459,9 +456,6 @@ def inbox(info):
             nameurl.GetName(CreatorID),
             nameurl.GetName(RemoteID),
             info.proto, info.host))
-    # if _Debug and lg.is_debug(_DebugLevel):
-    #     monitoring()
-    # control.request_update([('packet', newpacket.PacketID)])
     if _PacketLogFileEnabled:
         lg.out(0, '                \033[1;49;92mINBOX %s(%s) %s %s for %s\033[0m' % (
             newpacket.Command, newpacket.PacketID,
@@ -523,7 +517,6 @@ def outbox(outpacket, wide=False, callbacks={}, target=None, route=None, respons
     )
 
 #------------------------------------------------------------------------------
-
 
 def make_transfer_ID():
     """
@@ -660,11 +653,9 @@ def find_active_stream(proto, stream_id=None, transfer_id=None):
     """
     """
     if not is_ready():
-        # return fail(Exception('gateway is not ready'))
         lg.warn('gateway is not ready')
         return None
     if not is_installed(proto):
-        # return fail(Exception('transport %r not installed' % proto))
         lg.warn('transport %r not installed' % proto)
         return None
     return transport(proto).call('find_stream', stream_id=stream_id, transfer_id=transfer_id)
@@ -705,8 +696,6 @@ def cancel_outbox_file_by_transfer_id(transferID, why=None):
 
 def current_bytes_sent():
     res = {}
-    # for transfer_id, info in transfers_out().items():
-    #     res[transfer_id] = info.size
     for pkt_out in packet_out.queue():
         for item in pkt_out.items:
             if item.transfer_id:
@@ -716,8 +705,6 @@ def current_bytes_sent():
 
 def current_bytes_received():
     res = {}
-    # for transfer_id, info in transfers_in().items():
-    #     res[transfer_id] = info.size
     for pkt_in in list(packet_in.inbox_items().values()):
         res[pkt_in.transfer_id] = pkt_in.size
     return res
@@ -747,10 +734,7 @@ def shutdown_all_inbox_packets():
 
 def packets_timeout_loop():
     global _PacketsTimeOutTask
-    # lg.out(18, 'gateway.packets_timeout_loop')
-    delay = 5
-    # if _Debug:
-    #     delay = 1
+    delay = 10
     _PacketsTimeOutTask = reactor.callLater(delay, packets_timeout_loop)  # @UndefinedVariable
     for pkt_in in list(packet_in.inbox_items().values()):
         if pkt_in.is_timed_out():
@@ -762,8 +746,6 @@ def packets_timeout_loop():
             if _Debug:
                 lg.out(_DebugLevel, 'gateway.packets_timeout_loop %r is timed out: %s' % (pkt_out, pkt_out.timeout))
             pkt_out.automat('cancel', 'timeout')
-    # if _Debug and lg.is_debug(_DebugLevel):
-    #     monitoring()
 
 
 def stop_packets_timeout_loop():
@@ -812,8 +794,6 @@ def on_outbox_packet(outpacket, wide, callbacks, target=None, route=None, respon
             lg.warn('skip creating new outbox packet because found similar packet: %r' % active_packet)
             return active_packet
     pkt_out = packet_out.create(outpacket, wide, callbacks, target, route, response_timeout, keep_alive)
-    # if _Debug and lg.is_debug(_DebugLevel):
-    #     monitoring()
     control.request_update([('packet', outpacket.PacketID)])
     return pkt_out
 

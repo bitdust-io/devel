@@ -993,7 +993,7 @@ class Node(object):
             # Filter internal variables stored in the datastore
             if key == 'nodeState':
                 continue
-            
+
             now = int(time.time())
             itemData = self._dataStore.getItem(key)
             originallyPublished = itemData['originallyPublished']
@@ -1149,14 +1149,15 @@ class MultiLayerNode(Node):
         self.active_layers.add(layerID)
         if attach:
             self.attachLayer(layerID)
-        self._joinDeferreds[layerID] = self._iterativeFind(
+        d = self._iterativeFind(
             key=self.layers[layerID],
             startupShortlist=bootstrapContacts,
             layerID=layerID,
             parallel_calls=parallel_calls,
         )
-        self._joinDeferreds[layerID].addCallback(self._persistState, layerID=layerID)
-        self._joinDeferreds[layerID].addErrback(self._joinNetworkFailed, layerID=layerID)
+        d.addCallback(self._persistState, layerID=layerID)
+        d.addErrback(self._joinNetworkFailed, layerID=layerID)
+        self._joinDeferreds[layerID] = d
         if self.refreshers.get(layerID, None) and not self.refreshers[layerID].called:
             self.refreshers[layerID].cancel()
         self.refreshers[layerID] = twisted.internet.reactor.callLater(  # IGNORE:E1101  @UndefinedVariable
@@ -1176,7 +1177,7 @@ class MultiLayerNode(Node):
             self.detachLayer(layerID)
         if self.refreshers.get(layerID, None) and not self.refreshers[layerID].called:
             self.refreshers[layerID].cancel()
-        self.refreshers.pop(layerID)
+        self.refreshers.pop(layerID, None)
         return True
 
     def attachLayer(self, layerID):
@@ -1752,7 +1753,7 @@ class MultiLayerNode(Node):
 
     def _persistState(self, *args, **kwargs):
         layerID = kwargs.get('layerID', 0)
-        self._joinDeferreds.pop(layerID)
+        self._joinDeferreds.pop(layerID, None)
         closestNodes = list(self.findNode(self.layers[layerID], **kwargs))
         state = {
             'id': self.layers[layerID],
@@ -1841,7 +1842,7 @@ class MultiLayerNode(Node):
             # Filter internal variables stored in the datastore
             if key == 'nodeState':
                 continue
-            
+
             now = int(time.time())
             itemData = self._dataStores[layerID].getItem(key)
             originallyPublished = itemData['originallyPublished']

@@ -304,7 +304,8 @@
                 "preferred_routers": "http://id-a:8084/proxy-1.xml",
                 "block_size": "10 KB",
                 "num_suppliers": 2,
-                "preferred_brokers": "http://id-a:8084/broker-1.xml,http://id-b:8084/broker-2.xml,http://id-a:8084/broker-3.xml,http://id-b:8084/broker-4.xml"
+                "supplier_candidates": "http://id-a:8084/supplier-1.xml,http://id-b:8084/supplier-2.xml",
+                "preferred_brokers": ""
             }
         },
         "customer-2": {
@@ -330,7 +331,8 @@
                 "preferred_routers": "http://id-a:8084/proxy-3.xml",
                 "block_size": "10 KB",
                 "num_suppliers": 2,
-                "supplier_candidates": "http://id-a:8084/supplier-3.xml,http://id-b:8084/supplier-4.xml"
+                "supplier_candidates": "http://id-a:8084/supplier-3.xml,http://id-b:8084/supplier-4.xml",
+                "preferred_brokers": ""
             }
         },
         "customer-3": {
@@ -356,7 +358,8 @@
                 "preferred_routers": "http://id-a:8084/proxy-1.xml",
                 "block_size": "10 KB",
                 "num_suppliers": 2,
-                "supplier_candidates": "http://id-dead:8084/supplier-rotated.xml,http://id-b:8084/supplier-2.xml"
+                "supplier_candidates": "http://id-dead:8084/supplier-rotated.xml,http://id-b:8084/supplier-2.xml",
+                "preferred_brokers": ""
             }
         },
         "customer-4": {
@@ -383,7 +386,7 @@
                 "block_size": "10 KB",
                 "num_suppliers": 2,
                 "supplier_candidates": "http://id-a:8084/supplier-3.xml,http://id-b:8084/supplier-4.xml",
-                "preferred_brokers": "http://id-dead:8084/broker-rotated.xml,http://id-a:8084/broker-1.xml,http://id-b:8084/broker-2.xml,http://id-a:8084/broker-3.xml,http://id-b:8084/broker-4.xml"
+                "preferred_brokers": ""
             }
         },
         "customer-rotated": {
@@ -413,7 +416,8 @@
                 "preferred_routers": "http://id-a:8084/proxy-1.xml",
                 "block_size": "10 KB",
                 "num_suppliers": 2,
-                "supplier_candidates": "http://id-a:8084/supplier-3.xml,http://id-b:8084/supplier-4.xml"
+                "supplier_candidates": "http://id-a:8084/supplier-3.xml,http://id-b:8084/supplier-4.xml",
+                "preferred_brokers": ""
             }
         },
         "customer-restore": {
@@ -456,7 +460,8 @@
                 "join_network": true,
                 "known_id_servers": "id-a:8084",
                 "known_dht_seeds": "dht-2:14441,dht-3:14441",
-                "preferred_routers": "http://id-a:8084/proxy-1.xml"
+                "preferred_routers": "http://id-a:8084/proxy-1.xml",
+                "preferred_brokers": ""
             }
         },
         "broker-2": {
@@ -476,7 +481,8 @@
                 "join_network": true,
                 "known_id_servers": "id-b:8084",
                 "known_dht_seeds": "dht-2:14441,dht-3:14441",
-                "preferred_routers": "http://id-b:8084/proxy-2.xml"
+                "preferred_routers": "http://id-b:8084/proxy-2.xml",
+                "preferred_brokers": ""
             }
         },
         "broker-3": {
@@ -496,7 +502,8 @@
                 "join_network": true,
                 "known_id_servers": "id-a:8084",
                 "known_dht_seeds": "dht-2:14441,dht-3:14441",
-                "preferred_routers": "http://id-a:8084/proxy-1.xml"
+                "preferred_routers": "http://id-a:8084/proxy-1.xml",
+                "preferred_brokers": ""
             }
         },
         "broker-4": {
@@ -516,7 +523,8 @@
                 "join_network": true,
                 "known_id_servers": "id-b:8084",
                 "known_dht_seeds": "dht-2:14441,dht-3:14441",
-                "preferred_routers": "http://id-b:8084/proxy-2.xml"
+                "preferred_routers": "http://id-b:8084/proxy-2.xml",
+                "preferred_brokers": ""
             }
         },
         "broker-rotated": {
@@ -540,7 +548,8 @@
                 "preferred_servers": "id-dead,id-a",
                 "health_check_interval_seconds": 5,
                 "known_dht_seeds": "dht-2:14441,dht-3:14441",
-                "preferred_routers": "http://id-a:8084/proxy-1.xml"
+                "preferred_routers": "http://id-a:8084/proxy-1.xml",
+                "preferred_brokers": ""
             }
         }
     },

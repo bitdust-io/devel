@@ -40,6 +40,7 @@ _NodeTunnelPort = {}
 _NextSSHTunnelPort = 10000
 _SSLContexts = {}
 _ActiveScenario = ''
+_EngineDebugLevel = 10
 
 #------------------------------------------------------------------------------
 
@@ -317,7 +318,7 @@ def start_daemon(node, verbose=False):
     run_ssh_command_and_wait(node, 'mkdir -pv /root/.bitdust/metadata/')
     if os.environ.get('_DEBUG', '0') == '0':
         run_ssh_command_and_wait(node, "find /app/bitdust -type f -name '*.py' -exec sed -i -e 's/_Debug = True/_Debug = False/g' {} +")
-    bitdust_daemon = run_ssh_command_and_wait(node, 'BITDUST_LOG_USE_COLORS=1 COVERAGE_PROCESS_START=/app/bitdust/.coverage_config bitdust daemon')
+    bitdust_daemon = run_ssh_command_and_wait(node, 'BITDUST_CRITICAL_PUSH_MESSAGE_FAILS=0 BITDUST_LOG_USE_COLORS=1 BITDUST_COVERAGE_PROCESS_START=/app/bitdust/.coverage_config bitdust daemon')
     if verbose:
         print('\n' + bitdust_daemon[0].strip())
     assert (
@@ -331,7 +332,7 @@ async def start_daemon_async(node, loop, verbose=False):
     await run_ssh_command_and_wait_async(node, 'mkdir -pv /root/.bitdust/metadata/', loop)
     if os.environ.get('_DEBUG', '0') == '0':
         await run_ssh_command_and_wait_async(node, "find /app/bitdust -type f -name '*.py' -exec sed -i -e 's/_Debug = True/_Debug = False/g' {} +", loop)
-    bitdust_daemon = await run_ssh_command_and_wait_async(node, 'CRYPTO_LOG=0 BITDUST_LOG_USE_COLORS=1 COVERAGE_PROCESS_START=/app/bitdust/.coverage_config bitdust daemon', loop)
+    bitdust_daemon = await run_ssh_command_and_wait_async(node, 'BITDUST_CRITICAL_PUSH_MESSAGE_FAILS=0 BITDUST_LOG_USE_COLORS=1 BITDUST_COVERAGE_PROCESS_START=/app/bitdust/.coverage_config bitdust daemon', loop)
     if verbose:
         print('\n' + bitdust_daemon[0].strip())
     assert (
@@ -582,24 +583,26 @@ async def packet_list_async(node, loop, wait_all_finish=True, attempts=60, delay
 
 #------------------------------------------------------------------------------
 
-def stop_daemon(node, skip_checks=False):
-    bitdust_stop = run_ssh_command_and_wait(node, 'bitdust stop', verbose=False)
-    # print('\n' + bitdust_stop[0].strip())
+def stop_daemon(node, skip_checks=False, verbose=False):
+    bitdust_stop = run_ssh_command_and_wait(node, 'bitdust stop', verbose=verbose)
+    if verbose:
+        print('\n' + bitdust_stop[0].strip())
     if not skip_checks:
+        resp = bitdust_stop[0].strip()
         assert (
             (
-                bitdust_stop[0].strip().startswith('BitDust child processes found') and
-                bitdust_stop[0].strip().endswith('BitDust stopped')
+                resp.startswith('BitDust child processes found') and
+                resp.endswith('BitDust stopped')
             ) or (
-                bitdust_stop[0].strip().startswith('found main BitDust process:') and
-                bitdust_stop[0].strip().endswith('BitDust process finished correctly')
+                resp.startswith('found main BitDust process:') and
+                resp.count('BitDust process finished with:') and
+                resp.count('OK')
             ) or (
-                bitdust_stop[0].strip() == 'BitDust is not running at the moment'
+                resp == 'BitDust is not running at the moment'
             ) or (
-                bitdust_stop[0].strip() == ''
+                resp == ''
             )
         )
-    # print(f'stop_daemon [{node}] OK\n')
 
 
 async def stop_daemon_async(node, loop, skip_checks=False, verbose=False):
@@ -613,7 +616,8 @@ async def stop_daemon_async(node, loop, skip_checks=False, verbose=False):
                 resp.endswith('BitDust stopped')
             ) or (
                 resp.startswith('found main BitDust process:') and
-                resp.endswith('BitDust process finished correctly')
+                resp.count('BitDust process finished with:') and
+                resp.count('OK')
             ) or (
                 resp == 'BitDust is not running at the moment'
             ) or (
@@ -630,7 +634,7 @@ def start_dht_seed(node, wait_seconds=0, dht_seeds='', attached_layers='', verbo
     if verbose:
         print(f'NEW DHT SEED (with STUN SERVER) at [{node}]')
     cmd = ''
-    cmd += 'bitdust set logs/debug-level 18;'
+    cmd += f'bitdust set logs/debug-level {_EngineDebugLevel};'
     cmd += 'bitdust set logs/api-enabled true;'
     cmd += 'bitdust set logs/automat-events-enabled true;'
     cmd += 'bitdust set logs/automat-transitions-enabled true;'
@@ -668,7 +672,7 @@ async def start_identity_server_async(node, loop, verbose=True):
     if verbose:
         print(f'NEW IDENTITY SERVER at [{node}]')
     cmd = ''
-    cmd += 'bitdust set logs/debug-level 18;'
+    cmd += f'bitdust set logs/debug-level {_EngineDebugLevel};'
     cmd += 'bitdust set logs/api-enabled true;'
     cmd += 'bitdust set logs/automat-events-enabled true;'
     cmd += 'bitdust set logs/automat-transitions-enabled true;'
@@ -697,7 +701,7 @@ async def start_identity_server_async(node, loop, verbose=True):
 async def start_stun_server_async(node, loop, dht_seeds=''):
     print(f'NEW STUN SERVER at [{node}]')
     cmd = ''
-    cmd += 'bitdust set logs/debug-level 18;'
+    cmd += f'bitdust set logs/debug-level {_EngineDebugLevel};'
     cmd += 'bitdust set logs/api-enabled true;'
     cmd += 'bitdust set logs/automat-events-enabled true;'
     cmd += 'bitdust set logs/automat-transitions-enabled true;'
@@ -731,7 +735,7 @@ async def start_proxy_server_async(node, identity_name, loop, min_servers=1, max
                                    preferred_servers='', health_check_interval_seconds=None, dht_seeds=''):
     print(f'NEW PROXY SERVER {identity_name} at [{node}]')
     cmd = ''
-    cmd += 'bitdust set logs/debug-level 18;'
+    cmd += f'bitdust set logs/debug-level {_EngineDebugLevel};'
     cmd += 'bitdust set logs/api-enabled true;'
     cmd += 'bitdust set logs/automat-events-enabled true;'
     cmd += 'bitdust set logs/automat-transitions-enabled true;'
@@ -776,7 +780,7 @@ async def start_supplier_async(node, identity_name, loop, join_network=True, dht
                                preferred_servers='', health_check_interval_seconds=None, preferred_routers=''):
     print(f'NEW SUPPLIER {identity_name} at [{node}]')
     cmd = ''
-    cmd += 'bitdust set logs/debug-level 18;'
+    cmd += f'bitdust set logs/debug-level {_EngineDebugLevel};'
     cmd += 'bitdust set logs/api-enabled true;'
     cmd += 'bitdust set logs/automat-events-enabled true;'
     cmd += 'bitdust set logs/automat-transitions-enabled true;'
@@ -823,10 +827,10 @@ async def start_supplier_async(node, identity_name, loop, join_network=True, dht
 
 async def start_message_broker_async(node, identity_name, loop, join_network=True,
                                      min_servers=1, max_servers=1, known_servers='', dht_seeds='',
-                                     preferred_servers='', health_check_interval_seconds=None, preferred_routers=''):
+                                     preferred_servers='', health_check_interval_seconds=None, preferred_routers='', preferred_brokers=''):
     print(f'NEW MESSAGE BROKER {identity_name} at [{node}]')
     cmd = ''
-    cmd += 'bitdust set logs/debug-level 18;'
+    cmd += f'bitdust set logs/debug-level {_EngineDebugLevel};'
     cmd += 'bitdust set logs/api-enabled true;'
     cmd += 'bitdust set logs/automat-events-enabled true;'
     cmd += 'bitdust set logs/automat-transitions-enabled true;'
@@ -858,7 +862,11 @@ async def start_message_broker_async(node, identity_name, loop, join_network=Tru
     # enable message broker service
     cmd += 'bitdust set services/message-broker/enabled true;'
     cmd += 'bitdust set services/message-broker/archive-chunk-size 3;'
-    cmd += 'bitdust set services/message-broker/message-ack-timeout 40;'
+    cmd += 'bitdust set services/message-broker/message-ack-timeout 15;'
+    cmd += 'bitdust set services/message-broker/broker-negotiate-ack-timeout 15;'
+    # set desired message brokers
+    if preferred_brokers:
+        cmd += f'bitdust set services/message-broker/preferred-brokers "{preferred_brokers}";'
     await run_ssh_command_and_wait_async(node, cmd, loop)
     # start BitDust daemon and create new identity for supplier
     await start_daemon_async(node, loop)
@@ -881,7 +889,7 @@ async def start_customer_async(node, identity_name, loop, join_network=True, num
         await asyncio.sleep(sleep_before_start)
     print('NEW CUSTOMER %r at [%s]' % (identity_name, node, ))
     cmd = ''
-    cmd += 'bitdust set logs/debug-level 18;'
+    cmd += f'bitdust set logs/debug-level {_EngineDebugLevel};'
     cmd += 'bitdust set logs/api-enabled true;'
     cmd += 'bitdust set logs/automat-events-enabled true;'
     cmd += 'bitdust set logs/automat-transitions-enabled true;'
@@ -917,7 +925,8 @@ async def start_customer_async(node, identity_name, loop, join_network=True, num
     cmd += 'bitdust set services/customer/enabled true;'
     cmd += f'bitdust set services/customer/suppliers-number "{num_suppliers}";'
     # decrease message timeout for group communications
-    cmd += 'bitdust set services/private-groups/message-ack-timeout 15;'
+    cmd += 'bitdust set services/private-groups/message-ack-timeout 8;'
+    cmd += 'bitdust set services/private-groups/broker-connect-timeout 180;'
     if block_size:
         cmd += f'bitdust set services/backups/block-size "{block_size}";'
     if supplier_candidates:
@@ -1015,18 +1024,19 @@ async def start_one_customer_async(customer, loop, sleep_before_start=None):
     )
 
 
-async def start_one_message_broker_async(supplier, loop):
+async def start_one_message_broker_async(broker, loop):
     await start_message_broker_async(
-        node=supplier['name'],
-        identity_name=supplier['name'],
-        join_network=supplier.get('join_network', True),
-        dht_seeds=supplier.get('known_dht_seeds', ''),
-        min_servers=supplier.get('min_servers', 1),
-        max_servers=supplier.get('max_servers', 1),
-        known_servers=supplier.get('known_id_servers', ''),
-        preferred_servers=supplier.get('preferred_servers', ''),
-        health_check_interval_seconds=supplier.get('health_check_interval_seconds', None),
-        preferred_routers=supplier.get('preferred_routers', ''),
+        node=broker['name'],
+        identity_name=broker['name'],
+        join_network=broker.get('join_network', True),
+        dht_seeds=broker.get('known_dht_seeds', ''),
+        min_servers=broker.get('min_servers', 1),
+        max_servers=broker.get('max_servers', 1),
+        known_servers=broker.get('known_id_servers', ''),
+        preferred_servers=broker.get('preferred_servers', ''),
+        health_check_interval_seconds=broker.get('health_check_interval_seconds', None),
+        preferred_routers=broker.get('preferred_routers', ''),
+        preferred_brokers=broker.get('preferred_brokers', ''),
         loop=loop,
     )
 
@@ -1035,7 +1045,6 @@ async def start_one_message_broker_async(supplier, loop):
 
 def report_one_node(node):
     main_log = run_ssh_command_and_wait(node, 'cat /root/.bitdust/logs/main.log', verbose=False)[0].strip()
-    num_infos = main_log.count('  INFO ')
     num_warnings = main_log.count('  WARNING ')
     num_errors = main_log.count('ERROR!!!')
     num_exceptions = main_log.count('Exception:')

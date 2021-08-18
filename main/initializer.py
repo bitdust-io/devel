@@ -270,12 +270,12 @@ class Initializer(automat.Automat):
                 ftp_server.init()
             except:
                 lg.exc()
-        if settings.enableJsonRPCServer():
-            try:
-                from interface import api_jsonrpc_server
-                api_jsonrpc_server.init()
-            except:
-                lg.exc()
+        # if settings.enableJsonRPCServer():
+        #     try:
+        #         from interface import api_jsonrpc_server
+        #         api_jsonrpc_server.init()
+        #     except:
+        #         lg.exc()
         if settings.enableRESTHTTPServer():
             try:
                 from interface import api_rest_http_server

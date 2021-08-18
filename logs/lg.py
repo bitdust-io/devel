@@ -76,7 +76,7 @@ def fqn(o):
 
 #------------------------------------------------------------------------------
 
-def out(level, msg, nl='\n', log_name='main', showtime=False):
+def out(_DebugLevel, msg, nl='\n', log_name='main', showtime=False):
     """
     The core method, most useful thing in any Python project!
     Prints a text line to the log file or console.
@@ -103,6 +103,7 @@ def out(level, msg, nl='\n', log_name='main', showtime=False):
     global _AllLogFiles
     s = msg
     s_ = s
+    level = _DebugLevel
     if level < 0:
         level = 0
     if level % 2:
@@ -185,7 +186,8 @@ def out(level, msg, nl='\n', log_name='main', showtime=False):
     return None
 
 
-def dbg(level, message, *args, **kwargs):
+def dbg(_DebugLevel, message, *args, **kwargs):
+    level = _DebugLevel
     cod = sys._getframe().f_back.f_code
     modul = os.path.basename(cod.co_filename).replace('.py', '')
     caller = cod.co_name
@@ -195,7 +197,8 @@ def dbg(level, message, *args, **kwargs):
     return o
 
 
-def args(level, *args, **kwargs):
+def args(_DebugLevel, *args, **kwargs):
+    level = _DebugLevel
     cod = sys._getframe().f_back.f_code
     modul = os.path.basename(cod.co_filename).replace('.py', '')
     caller = cod.co_name

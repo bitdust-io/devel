@@ -43,6 +43,7 @@ EVENTS:
     * :red:`nothing-to-send`
     * :red:`register-item`
     * :red:`remote-identity-on-hand`
+    * :red:`request-failed`
     * :red:`response-timeout`
     * :red:`run`
     * :red:`unregister-item`
@@ -133,15 +134,11 @@ def increment_packets_counter():
 
 
 def queue():
-    """
-    """
     global _OutboxQueue
     return _OutboxQueue
 
 
 def create(outpacket, wide, callbacks, target=None, route=None, response_timeout=None, keep_alive=True, skip_ack=False):
-    """
-    """
     if _Debug:
         lg.out(_DebugLevel, 'packet_out.create [%s/%s/%s]:%s(%s) target=%r route=%r callbacks=%s' % (
             nameurl.GetName(outpacket.OwnerID), nameurl.GetName(outpacket.CreatorID), nameurl.GetName(outpacket.RemoteID),
@@ -152,7 +149,6 @@ def create(outpacket, wide, callbacks, target=None, route=None, response_timeout
     return p
 
 #------------------------------------------------------------------------------
-
 
 def search(proto, host, filename, remote_idurl=None):
     for p in queue():
@@ -168,7 +164,6 @@ def search(proto, host, filename, remote_idurl=None):
                             lg.out(_DebugLevel, 'packet_out.search found a packet addressed to another user: %s != %s' % (
                                 p.remote_idurl, remote_idurl))
                             lg.args(_DebugLevel, proto=proto, host=host, filename=filename, route=p.route, outpacket=p.outpacket)
-                        # TODO: to be checked later - need to make sure we identify users correctly
                         continue
                 return p, i
     if _Debug:
@@ -201,8 +196,6 @@ def search_many(proto=None,
                 ):
     results = []
     for p in queue():
-        # TODO: to be checked later - need to make sure we identify users correctly
-        # if remote_idurl and p.remote_idurl.to_bin() != remote_idurl.to_bin():
         if remote_idurl and id_url.field(p.remote_idurl).to_bin() != id_url.field(remote_idurl).to_bin():
             continue
         if filename and p.filename != filename:
@@ -261,7 +254,6 @@ def search_by_response_packet(newpacket=None, proto=None, host=None, outgoing_co
         if _Debug:
             lg.dbg(_DebugLevel, 'multiple packet IDs expecting to match for that packet: %r' % matching_packet_ids)
     for p in queue():
-        # TODO: investigate more
         if p.outpacket.PacketID.lower() not in matching_packet_ids:
             # PacketID of incoming packet not matching with that outgoing packet
             continue
@@ -274,7 +266,6 @@ def search_by_response_packet(newpacket=None, proto=None, host=None, outgoing_co
         if outgoing_command is not None and outgoing_command != p.outpacket.Command:
             # just in case if we are looking for some specific outgoing command
             continue
-        # TODO: to be checked later - need to make sure we identify users correctly
         expected_recipient = [p.outpacket.RemoteID, ]
         if id_url.is_cached(p.outpacket.RemoteID) and id_url.is_cached(p.remote_idurl):
             if p.outpacket.RemoteID != id_url.field(p.remote_idurl):
@@ -305,38 +296,17 @@ def search_by_response_packet(newpacket=None, proto=None, host=None, outgoing_co
     if len(result) == 0:
         if _Debug:
             lg.out(_DebugLevel, 'packet_out.search_by_response_packet        DID NOT FOUND pending packets in outbox queue matching incoming %r' % newpacket)
-        # if incoming_command in [commands.Ack(), commands.Fail()] and not incoming_packet_id.lower().startswith('identity:'):
-        #     lg.warn('received %s from %s://%s   but no matching outgoing packets found' % (newpacket, proto, host, ))
     return result
 
 
 def search_similar_packets(outpacket):
-    target = correct_packet_destination(outpacket)
     return search_many(
         command=outpacket.Command,
         packet_id=outpacket.PacketID,
-        remote_idurl=target,
+        remote_idurl=outpacket.RemoteID,
     )
 
 #------------------------------------------------------------------------------
-
-def correct_packet_destination(outpacket):
-    """
-    """
-    if outpacket.CreatorID.to_bin() == my_id.getLocalID().to_bin():
-        # our data will go where it should go
-        return outpacket.RemoteID
-    if outpacket.Command == commands.Data():
-        # Data belongs to remote customers and stored locally
-        # must go to CreatorID, because RemoteID pointing to this device
-        # return outpacket.CreatorID
-        # TODO: test and clean up this
-        return outpacket.RemoteID
-    lg.warn('sending a packet we did not make, and that is not Data packet')
-    return outpacket.RemoteID
-
-#------------------------------------------------------------------------------
-
 
 class WorkItem(object):
 
@@ -457,7 +427,7 @@ class PacketOut(automat.Automat):
         self.results = []
         self.response_packet = None
         self.response_info = None
-        self.timeout = None  # 300  # settings.SendTimeOut() * 3
+        self.timeout = None
         if self.response_timeout:
             self.timers['response-timeout'] = (self.response_timeout, ['RESPONSE?', ], )
 
@@ -475,9 +445,6 @@ class PacketOut(automat.Automat):
         if command not in self.callbacks.keys():
             self.callbacks[command] = []
         self.callbacks[command].append(cb)
-        # if _Debug:
-        #     lg.out(_DebugLevel, '%s : new callback for [%s] added, expecting: %r' % (
-        #         self, command, list(self.callbacks.keys())))
 
     def A(self, event, *args, **kwargs):
         #---SENDING---
@@ -597,12 +564,12 @@ class PacketOut(automat.Automat):
             elif event == 'unregister-item' or event == 'item-cancelled':
                 self.doPopItem(*args, **kwargs)
                 self.doReportItem(*args, **kwargs)
-            elif event == 'response-timeout' and not self.isDataExpected(*args, **kwargs):
+            elif ( event == 'response-timeout' or event == 'request-failed' ) and not self.isDataExpected(*args, **kwargs):
                 self.state = 'SENT'
                 self.doReportTimeOut(*args, **kwargs)
                 self.doReportDoneNoAck(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'response-timeout' and self.isDataExpected(*args, **kwargs):
+            elif ( event == 'response-timeout' or event == 'request-failed' ) and self.isDataExpected(*args, **kwargs):
                 self.state = 'FAILED'
                 self.doReportFailed(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
@@ -699,10 +666,6 @@ class PacketOut(automat.Automat):
                 self.timeout = int(self.filesize / float(settings.SendingSpeedLimit()))
             else:
                 self.timeout = 300
-#             self.timeout = min(
-#                 settings.SendTimeOut() * 3,
-#                 max(int(self.filesize/(settings.SendingSpeedLimit()/len(queue()))),
-#                     settings.SendTimeOut()))
         except:
             lg.exc()
             self.packetdata = None
@@ -733,7 +696,7 @@ class PacketOut(automat.Automat):
         ok = False
         proto, host, _, transfer_id = args[0]
         for i in range(len(self.items)):
-            if self.items[i].proto == proto:  # and self.items[i].host == host:
+            if self.items[i].proto == proto:
                 self.items[i].transfer_id = transfer_id
                 if _Debug:
                     lg.out(_DebugLevel, 'packet_out.doSetTransferID  %r:%r = %r' % (proto, host, transfer_id))
@@ -1159,5 +1122,3 @@ class PacketOut(automat.Automat):
                     break
         if not self.popped_item:
             raise Exception('failed to populate active item')
-
-#------------------------------------------------------------------------------

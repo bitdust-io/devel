@@ -56,14 +56,10 @@ try:
 except:
     sys.exit('Error initializing twisted.internet.reactor in install_wizard.py')
 
-from logs import lg
-
-from lib import misc
-from main import settings
 from main import config
 from automats import automat
 
-from . import installer
+from main import installer
 
 #------------------------------------------------------------------------------
 

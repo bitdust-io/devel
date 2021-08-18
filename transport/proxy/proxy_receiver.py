@@ -63,8 +63,8 @@ from io import BytesIO
 
 #------------------------------------------------------------------------------
 
-_Debug = True
-_DebugLevel = 10
+_Debug = False
+_DebugLevel = 12
 
 _PacketLogFileEnabled = False
 
@@ -511,6 +511,11 @@ class ProxyReceiver(automat.Automat):
                     proto=self.router_connection_info.get('proto'),
                     host=self.router_connection_info.get('host'),
                 )
+                if not active_router_sessions:
+                    active_router_sessions = gateway.find_active_session(
+                        proto=self.router_connection_info.get('proto'),
+                        idurl=id_url.to_bin(self.router_idurl),
+                    )
                 if active_router_sessions:
                     active_router_session_machine = automat.by_index(active_router_sessions[0].index)
             if active_router_session_machine is not None:
@@ -591,6 +596,7 @@ class ProxyReceiver(automat.Automat):
         Remove all references to the state machine object to destroy it.
         """
         global _PacketLogFileEnabled
+        global _ProxyReceiver
         _PacketLogFileEnabled = False
         callback.remove_queue_item_status_callback(self._on_queue_item_status_changed)
         self.possible_router_idurl = None
@@ -603,7 +609,6 @@ class ProxyReceiver(automat.Automat):
         self.router_connection_info = None
         self.traffic_in = 0
         self.destroy()
-        global _ProxyReceiver
         del _ProxyReceiver
         _ProxyReceiver = None
 
@@ -679,6 +684,7 @@ class ProxyReceiver(automat.Automat):
                 routed_packet.Command, routed_packet.PacketID, info.bytes_received,
                 global_id.UrlToGlobalID(info.sender_idurl), global_id.UrlToGlobalID(routed_packet.RemoteID),
                 info.transfer_id), log_name='packet', showtime=True)
+
         if routed_packet.Command == commands.Identity():
             if _Debug:
                 lg.out(_DebugLevel, '    found identity in relay packet %s' % routed_packet)
@@ -689,6 +695,7 @@ class ProxyReceiver(automat.Automat):
             if not identitycache.UpdateAfterChecking(idurl, routed_packet.Payload):
                 lg.warn("ERROR has non-Valid identity")
                 return
+
         if routed_packet.Command in [commands.Relay(), commands.RelayIn(), ] and routed_packet.PacketID.lower().startswith('identity:'):
             if _Debug:
                 lg.out(_DebugLevel, '    found routed identity in relay packet %s' % routed_packet)
@@ -703,10 +710,14 @@ class ProxyReceiver(automat.Automat):
                     return
             except:
                 lg.exc()
-#         if not routed_packet.Valid():
-#             lg.err('invalid packet %s from %s' % (
-#                 routed_packet, newpacket.CreatorID, ))
-#             return
+
+        if newpacket.Command == commands.RelayIn() and routed_packet.Command == commands.Fail():
+            if routed_packet.Payload == b'route not exist' or routed_packet.Payload == b'route already closed':
+                for pout in packet_out.search_by_packet_id(routed_packet.PacketID):
+                    lg.warn('received %r from %r, outgoing packet is failed: %r' % (routed_packet.Payload, newpacket.CreatorID, pout, ))
+                    pout.automat('request-failed')
+                return
+
         self.traffic_in += len(data)
         packet_in.process(routed_packet, info)
         del block
@@ -793,9 +804,6 @@ class ProxyReceiver(automat.Automat):
                 self.possible_router_idurl = id_url.field(idurl)
                 if _Debug:
                     lg.out(_DebugLevel, 'proxy_receiver._on_nodes_lookup_finished found : %r' % self.possible_router_idurl)
-                # d = propagate.PingContact(self.possible_router_idurl, timeout=5)
-                # d.addCallback(lambda resp_tuple: self.automat('found-one-node', self.possible_router_idurl))
-                # d.addErrback(lambda err: self.automat('nodes-not-found'))
                 self.automat('found-one-node', self.possible_router_idurl)
                 return
         self.automat('nodes-not-found')
@@ -810,9 +818,6 @@ class ProxyReceiver(automat.Automat):
             self.possible_router_idurl = id_url.field(random.choice(preferred_routers))
             if _Debug:
                 lg.out(_DebugLevel, 'proxy_receiver._find_random_node selected random item from preferred_routers: %r' % self.possible_router_idurl)
-            # d = propagate.PingContact(self.possible_router_idurl, timeout=5)
-            # d.addCallback(lambda resp_tuple: self.automat('found-one-node', self.possible_router_idurl))
-            # d.addErrback(lambda err: self.automat('nodes-not-found'))
             idcache_defer = identitycache.immediatelyCaching(self.possible_router_idurl)
             idcache_defer.addCallback(lambda *args: self.automat('found-one-node', self.possible_router_idurl))
             idcache_defer.addErrback(lambda err: self.automat('nodes-not-found'))
@@ -839,15 +844,21 @@ class ProxyReceiver(automat.Automat):
             lg.warn('%s was not found in pending requests: %s' % (response.PacketID, self.request_service_packet_id))
         if _Debug:
             lg.out(_DebugLevel, 'proxy_receiver._on_request_service_ack : %s' % str(response.Payload))
+        if self.router_idurl != response.CreatorID:
+            lg.err('received unexpected response from another node: %r ~ %r' % (self.router_idurl, response.CreatorID, ))
+            self.automat('service-refused', (response, info))
+            return
         service_ack_info = strng.to_text(response.Payload)
         if service_ack_info.startswith('rejected'):
             self.automat('service-refused', (response, info))
             return
-        active_router_sessions = gateway.find_active_session(info.proto, info.host)
+        active_router_sessions = gateway.find_active_session(info.proto, host=info.host)
+        if not active_router_sessions:
+            active_router_sessions = gateway.find_active_session(info.proto, idurl=id_url.to_bin(response.CreatorID))
         if not active_router_sessions:
             lg.err('active connection with proxy router at %s:%s was not found' % (info.proto, info.host, ))
             if _Debug:
-                lg.args(_DebugLevel, ack_packet=info, active_sessions=gateway.list_active_sessions(info.proto))
+                lg.args(_DebugLevel, router_idurl=self.router_idurl, ack_packet=info, active_sessions=gateway.list_active_sessions(info.proto))
             self.automat('service-refused', (response, info))
             return
         self.router_connection_info = {
@@ -928,7 +939,6 @@ class ProxyReceiver(automat.Automat):
         return True
 
 #------------------------------------------------------------------------------
-
 
 def main():
     from twisted.internet import reactor  # @UnresolvedImport

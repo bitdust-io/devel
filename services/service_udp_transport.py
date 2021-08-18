@@ -43,6 +43,7 @@ class UDPTransportService(LocalService):
     service_name = 'service_udp_transport'
     config_path = 'services/udp-transport/enabled'
     proto = 'udp'
+    stop_when_failed = True
 
     def dependent_on(self):
         return [

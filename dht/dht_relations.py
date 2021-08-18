@@ -35,7 +35,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -226,7 +226,7 @@ def read_customer_message_brokers(customer_idurl, positions=[0, ], return_detail
         return None
 
     def _do_broker_identity_cache(dht_record, position, broker_result):
-        one_broker_task = identitycache.GetLatest(dht_record['broker_idurl'])
+        one_broker_task = identitycache.GetLatest(id_url.to_bin(dht_record['broker_idurl']))
         one_broker_task.addCallback(lambda xmlsrc: broker_result.callback(dht_record))
         one_broker_task.addErrback(_on_borker_identity_cache_failed, position, broker_result)
         # if _Debug:
@@ -263,7 +263,7 @@ def read_customer_message_brokers(customer_idurl, positions=[0, ], return_detail
             broker_result.callback(ret)
             return ret
         if _Debug:
-            lg.args(_DebugLevel, c=_customer_idurl, p=position, b=_broker_idurl, a=_archive_folder_path, r=_revision)
+            lg.args(_DebugLevel, p=position, b=_broker_idurl, a=_archive_folder_path, r=_revision)
         if as_fields:
             if _customer_idurl != customer_idurl:
                 lg.err('wrong customer idurl %r in message broker DHT record for %r at position %d' % (
@@ -298,12 +298,15 @@ def read_customer_message_brokers(customer_idurl, positions=[0, ], return_detail
         return None
 
     def _do_collect_results(all_results):
-        if _Debug:
-            lg.args(_DebugLevel, all_results=len(all_results))
+        # if _Debug:
+        #     lg.args(_DebugLevel, all_results=len(all_results))
         final_result = []
         for one_success, one_result in all_results:
             if one_success and one_result['broker_idurl']:
                 final_result.append(one_result)
+        final_result.sort(key=lambda i: i.get('position'))
+        if _Debug:
+            lg.args(_DebugLevel, results=len(final_result))
         result.callback(final_result)
         return None
 

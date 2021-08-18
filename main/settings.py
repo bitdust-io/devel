@@ -980,56 +980,56 @@ def UserNameFilename():
     return os.path.join(MetaDataDir(), "username")
 
 
-def GUIOptionsFilename():
-    """
-    A small file to keep GUI config.
-
-    For example windows positions and sizes after last execution of the
-    program.
-    """
-    return os.path.join(MetaDataDir(), "guioptions")
-
-
-def UpdateSheduleFilename():
-    """
-    Under Windows software update process is made by bitstarter.exe file.
-    Obsolete.
-    """
-    return os.path.join(MetaDataDir(), "updateshedule")
+# def GUIOptionsFilename():
+#     """
+#     A small file to keep GUI config.
+# 
+#     For example windows positions and sizes after last execution of the
+#     program.
+#     """
+#     return os.path.join(MetaDataDir(), "guioptions")
 
 
-def LocalPortFilename():
-    """
-    This is a file to keep randomly generated port number for HTTP server to
-    provide a Web Access to BitDust main process.
-
-    See module ``web.webcontrol`` for more details. This is old stuff,
-    will be removed soon!
-    """
-    return os.path.join(MetaDataDir(), 'localport')
+# def UpdateSheduleFilename():
+#     """
+#     Under Windows software update process is made by bitstarter.exe file.
+#     Obsolete.
+#     """
+#     return os.path.join(MetaDataDir(), "updateshedule")
 
 
-def LocalWSGIPortFilename():
-    """
-    This is a file to keep randomly generated port number for Django WSGI
-    server.
-
-    This stuff creates a User Interface to the BitDust main process. See
-    module ``web.control`` for more details.
-    """
-    return os.path.join(MetaDataDir(), 'localwsgiport')
-
-
-def LocalXMLRPCPortFilename():
-    """
-    """
-    return os.path.join(MetaDataDir(), 'localxmlrpcport')
+# def LocalPortFilename():
+#     """
+#     This is a file to keep randomly generated port number for HTTP server to
+#     provide a Web Access to BitDust main process.
+# 
+#     See module ``web.webcontrol`` for more details. This is old stuff,
+#     will be removed soon!
+#     """
+#     return os.path.join(MetaDataDir(), 'localport')
 
 
-def LocalJsonRPCPortFilename():
-    """
-    """
-    return os.path.join(MetaDataDir(), 'localjsonrpcport')
+# def LocalWSGIPortFilename():
+#     """
+#     This is a file to keep randomly generated port number for Django WSGI
+#     server.
+# 
+#     This stuff creates a User Interface to the BitDust main process. See
+#     module ``web.control`` for more details.
+#     """
+#     return os.path.join(MetaDataDir(), 'localwsgiport')
+
+
+# def LocalXMLRPCPortFilename():
+#     """
+#     """
+#     return os.path.join(MetaDataDir(), 'localxmlrpcport')
+
+
+# def LocalJsonRPCPortFilename():
+#     """
+#     """
+#     return os.path.join(MetaDataDir(), 'localjsonrpcport')
 
 
 def BackupInfoFileNameOld():
