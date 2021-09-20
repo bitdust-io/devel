@@ -322,7 +322,9 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @GET('^/v1/process/stop$')
     @GET('^/process/stop/v1$')
     def process_stop_v1(self, request):
-        return api.process_stop()
+        return api.process_stop(
+            instant=bool(_request_arg(request, 'instant', '0') in ['1', 'true', ]),
+        )
 
     @GET('^/p/rst$')
     @GET('^/v1/process/restart$')

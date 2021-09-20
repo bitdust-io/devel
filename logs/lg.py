@@ -49,12 +49,15 @@ _GlobalDebugLevel = 0
 _LogLinesCounter = 0
 _LogsEnabled = True
 _UseColors = None
-_RedirectStdOut = False
 _NoOutput = False
-_OriginalStdOut = None
-_StdOutPrev = None
 _IsAndroid = None
 _InterceptedLogFile = None
+_RedirectStdOut = False
+_RedirectStdErr = False
+_OriginalStdOut = None
+_OriginalStdErr = None
+_StdOutPrev = None
+_StdErrPrev = None
 _LogFile = None
 _LogFileName = None
 _AllLogFiles = {}
@@ -93,6 +96,7 @@ def out(_DebugLevel, msg, nl='\n', log_name='main', showtime=False):
     global _LogFile
     global _LogFileName
     global _RedirectStdOut
+    global _RedirectStdErr
     global _ShowTime
     global _LifeBeginsTime
     global _NoOutput
@@ -167,7 +171,7 @@ def out(_DebugLevel, msg, nl='\n', log_name='main', showtime=False):
                         o = o.decode('utf-8')
                 _AllLogFiles[log_name].write(o)
                 _AllLogFiles[log_name].flush()
-        if not _RedirectStdOut and not _NoOutput:
+        if not _RedirectStdOut and not _RedirectStdErr and not _NoOutput:
             if log_name == 'main':
                 s = s + nl
                 try:
@@ -176,7 +180,7 @@ def out(_DebugLevel, msg, nl='\n', log_name='main', showtime=False):
                     try:
                         sys.stdout.write(format_exception() + '\n\n' + s)
                     except:
-                        # very bad stuff... we can't write anything to std out
+                        # very bad stuff... we can't write anything to std out?
                         pass
     if _WebStreamFunc is not None:
         _WebStreamFunc(level, s_ + nl)
@@ -227,7 +231,7 @@ def info(message, level=2):
     if _UseColors:
         output_string = '\033[0;49;92mINFO %s \033[0m\033[0;49;37min %s.%s()\033[0m' % (message, modul, caller, )
     out(level, output_string, showtime=True)
-    out(level, output_string, log_name='info', showtime=True)
+    # out(level, output_string, log_name='info', showtime=True)
     return message
 
 
@@ -242,7 +246,7 @@ def warn(message, level=2):
     if _UseColors:
         output_string = '\033[0;35mWARNING %s \033[0m\033[0;49;37min %s.%s()\033[0m' % (message, modul, caller, )
     out(level, output_string, showtime=True)
-    out(level, output_string, log_name='warn', showtime=True)
+    # out(level, output_string, log_name='warn', showtime=True)
     return message
 
 
@@ -266,7 +270,7 @@ def err(message, level=0):
     if _UseColors:
         message = '\033[1;37;41m%s\033[0m' % message
     out(level, message, showtime=True)
-    out(level, message, log_name='err', showtime=True)
+    # out(level, message, log_name='err', showtime=True)
     return message
 
 
@@ -399,7 +403,7 @@ def format_exception(maxTBlevel=100, exc_info=None):
 
 def exception_name(value):
     """
-    Some tricks to extract the correct exception name from traceback string.
+    Some tricks to extract the correct exception name from trace-back string.
     """
     try:
         if sys.version_info[0] == 3:
@@ -437,7 +441,7 @@ def set_debug_level(level):
 
 def get_debug_level():
     """
-
+    Returns currently set debug level.
     """
     global _GlobalDebugLevel
     return _GlobalDebugLevel
@@ -599,10 +603,11 @@ def close_log_file():
     _AllLogFiles.clear()
 
 
-def open_intercepted_log_file(filename):
+def open_intercepted_log_file(filename, mode='w'):
     global _InterceptedLogFile
     if not _InterceptedLogFile:
-        _InterceptedLogFile = open(os.path.abspath(filename), 'w')
+        os.makedirs(os.path.dirname(os.path.abspath(filename)), exist_ok=True)
+        _InterceptedLogFile = open(os.path.abspath(filename), mode)
     else:
         warn('intercepted log file %r already opened' % _InterceptedLogFile)
 
@@ -629,7 +634,7 @@ def log_filename():
 
 def stdout_start_redirecting():
     """
-    Replace sys.stdout with STDOUT_redirected so all output get logged.
+    Replace sys.stdout with STDOUT_redirected so all output get logged via this module.
     """
     global _RedirectStdOut
     global _StdOutPrev
@@ -649,17 +654,44 @@ def stdout_stop_redirecting():
         sys.stdout = _StdOutPrev
 
 
+def stderr_start_redirecting():
+    """
+    Replace sys.stderr with STDERR_redirected so all errors get logged via this module.
+    """
+    global _RedirectStdErr
+    global _StdErrPrev
+    _RedirectStdErr = True
+    _StdErrPrev = sys.stderr
+    sys.stderr = STDERR_redirected()
+
+
+def stderr_stop_redirecting():
+    """
+    Restore sys.stderr after ``stderr_start_redirecting``.
+    """
+    global _RedirectStdErr
+    global _StdErrPrev
+    _RedirectStdErr = False
+    if _StdErrPrev is not None:
+        sys.stderr = _StdErrPrev
+
+
 def disable_output():
     """
-    Disable any output to sys.stdout.
+    Disable any output to sys.stdout and sys.stderr
     """
     global _RedirectStdOut
+    global _RedirectStdErr
     global _StdOutPrev
+    global _StdErrPrev
     global _NoOutput
     _NoOutput = True
     _RedirectStdOut = True
+    _RedirectStdErr = True
     _StdOutPrev = sys.stdout
+    _StdErrPrev = sys.stderr
     sys.stdout = STDOUT_black_hole()
+    sys.stderr = STDERR_black_hole()
 
 
 def disable_logs():
@@ -687,7 +719,7 @@ def setup_unbuffered_stdout():
     """
     global _OriginalStdOut
     _OriginalStdOut = sys.stdout
-    sys.stdout = STDUOUT_unbuffered(sys.stdout)
+    sys.stdout = STDOUT_unbuffered(sys.stdout)
 
 
 def restore_original_stdout():
@@ -707,6 +739,32 @@ def restore_original_stdout():
         pass
 
 
+def setup_unbuffered_stderr():
+    """
+    This makes error logs to be printed without delays in Linux - unbuffered output.
+    """
+    global _OriginalStdErr
+    _OriginalStdErr = sys.stderr
+    sys.stderr = STDERR_unbuffered(sys.stdout)
+
+
+def restore_original_stderr():
+    """
+    Restore original STDERR, need to be called after
+    ``setup_unbuffered_stderr`` to get back to default state.
+    """
+    global _OriginalStdErr
+    if _OriginalStdErr is None:
+        return
+    _std_err = sys.stderr
+    sys.stderr = _OriginalStdErr
+    _OriginalStdErr = None
+    try:
+        _std_err.close()
+    except Exception as exc:
+        pass
+
+
 def set_weblog_func(webstreamfunc):
     """
     Set callback method to be called in Dprint, used to show logs in the WEB
@@ -719,7 +777,6 @@ def set_weblog_func(webstreamfunc):
 
 #------------------------------------------------------------------------------
 
-
 class STDOUT_redirected(object):
     """
     Emulate system STDOUT, useful to log any program output.
@@ -730,6 +787,22 @@ class STDOUT_redirected(object):
 
     def write(self, s):
         out(0, s.rstrip())
+
+    def flush(self): pass
+
+    def close(self): pass
+
+
+class STDERR_redirected(object):
+    """
+    Emulate system STDERR, useful to log any program error.
+    """
+    softspace = 0
+
+    def read(self): pass
+
+    def write(self, s):
+        err(s.rstrip(), level=0)
 
     def flush(self): pass
 
@@ -751,7 +824,39 @@ class STDOUT_black_hole(object):
     def close(self): pass
 
 
-class STDUOUT_unbuffered(object):
+class STDERR_black_hole(object):
+    """
+    Useful to disable any errors output to STDERR.
+    """
+    softspace = 0
+
+    def read(self): pass
+
+    def write(self, s): pass
+
+    def flush(self): pass
+
+    def close(self): pass
+
+
+class STDOUT_unbuffered(object):
+
+    def __init__(self, stream):
+        self.stream = stream
+
+    def write(self, data):
+        self.stream.write(data)
+        self.stream.flush()
+
+    def writelines(self, datas):
+        self.stream.writelines(datas)
+        self.stream.flush()
+
+    def __getattr__(self, attr):
+        return getattr(self.stream, attr)
+
+
+class STDERR_unbuffered(object):
 
     def __init__(self, stream):
         self.stream = stream

@@ -89,7 +89,6 @@ from main import settings
 from main import events
 
 from automats import automat
-from automats import global_state
 
 from services import driver
 
@@ -249,12 +248,20 @@ class Initializer(automat.Automat):
         if _Debug:
             lg.out(_DebugLevel, 'initializer.doInitLocal flagGUI=%s' % self.flagGUI)
         self._init_local()
-        reactor.callLater(0, self.automat, 'init-local-done')  # @UndefinedVariable
+        if bpio.Android():
+            self.automat('init-local-done')
+        else:
+            reactor.callWhenRunning(self.automat, 'init-local-done')  # @UndefinedVariable
 
     def doInitServices(self, *args, **kwargs):
         """
         Action method.
         """
+        if bpio.Android():
+            lg.close_intercepted_log_file()
+            lg.open_intercepted_log_file('/storage/emulated/0/.bitdust/logs/android.log', mode='a')
+            if _Debug:
+                lg.dbg(_DebugLevel, 'log file "android.log" re-opened')
         if _Debug:
             lg.out(_DebugLevel, 'initializer.doInitServices')
         driver.init()
@@ -438,6 +445,8 @@ class Initializer(automat.Automat):
             except:
                 if _Debug:
                     lg.out(_DebugLevel, "guppy package is not installed")
+        if _Debug:
+            lg.dbg(_DebugLevel, 'all local modules are initialized, ready to start the engine')
 
     def _on_software_code_updated(self, evt):
         if _Debug:

@@ -55,6 +55,9 @@ from twisted.protocols.policies import ProtocolWrapper, WrappingFactory
 from twisted.python import log
 from twisted.web.http import datetimeToString
 
+_Debug = False
+
+
 class WSException(Exception):
     """
     Something stupid happened here.
@@ -491,7 +494,8 @@ class WebSocketProtocol(ProtocolWrapper):
             elif opcode == CLOSE:
                 # The other side wants us to close. I wonder why?
                 reason, text = data
-                log.msg("Closing connection: %r (%d)" % (text, reason))
+                if _Debug:
+                    log.msg("Closing connection: %r (%d)" % (text, reason))
 
                 # Close the connection.
                 self.close()
@@ -530,7 +534,8 @@ class WebSocketProtocol(ProtocolWrapper):
 
         # Obvious but necessary.
         if not is_websocket(self.headers):
-            log.msg("Not handling non-WS request")
+            if _Debug:
+                log.msg("Not handling non-WS request")
             return False
 
         # Stash host and origin for those browsers that care about it.
@@ -554,18 +559,21 @@ class WebSocketProtocol(ProtocolWrapper):
 
             for protocol in protocols:
                 if protocol in encoders or protocol in decoders:
-                    log.msg("Using WS protocol %s!" % protocol)
+                    if _Debug:
+                        log.msg("Using WS protocol %s!" % protocol)
                     self.codec = protocol
                     break
 
-                log.msg("Couldn't handle WS protocol %s!" % protocol)
+                if _Debug:
+                    log.msg("Couldn't handle WS protocol %s!" % protocol)
 
             if not self.codec:
                 return False
 
         # Start the next phase of the handshake for HyBi-00.
         if is_hybi00(self.headers):
-            log.msg("Starting HyBi-00/Hixie-76 handshake")
+            if _Debug:
+                log.msg("Starting HyBi-00/Hixie-76 handshake")
             self.flavor = HYBI00
             self.state = CHALLENGE
 
@@ -573,22 +581,26 @@ class WebSocketProtocol(ProtocolWrapper):
         if "Sec-WebSocket-Version" in self.headers:
             version = self.headers["Sec-WebSocket-Version"]
             if version == "7":
-                log.msg("Starting HyBi-07 conversation")
+                if _Debug:
+                    log.msg("Starting HyBi-07 conversation")
                 self.sendHyBi07Preamble()
                 self.flavor = HYBI07
                 self.state = FRAMES
             elif version == "8":
-                log.msg("Starting HyBi-10 conversation")
+                if _Debug:
+                    log.msg("Starting HyBi-10 conversation")
                 self.sendHyBi07Preamble()
                 self.flavor = HYBI10
                 self.state = FRAMES
             elif version == "13":
-                log.msg("Starting RFC 6455 conversation")
+                if _Debug:
+                    log.msg("Starting RFC 6455 conversation")
                 self.sendHyBi07Preamble()
                 self.flavor = RFC6455
                 self.state = FRAMES
             else:
-                log.msg("Can't support protocol version %s!" % version)
+                if _Debug:
+                    log.msg("Can't support protocol version %s!" % version)
                 return False
 
         return True
@@ -642,7 +654,8 @@ class WebSocketProtocol(ProtocolWrapper):
                     response = complete_hybi00(self.headers, challenge)
                     self.sendHyBi00Preamble()
                     self.writeEncoded(response)
-                    log.msg("Completed HyBi-00/Hixie-76 handshake")
+                    if _Debug:
+                        log.msg("Completed HyBi-00/Hixie-76 handshake")
                     # We're all finished here; start sending frames.
                     self.state = FRAMES
 

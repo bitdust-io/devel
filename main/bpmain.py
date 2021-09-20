@@ -37,7 +37,7 @@ from __future__ import print_function
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 6
 
 #------------------------------------------------------------------------------
@@ -180,10 +180,10 @@ def init(UI='', options=None, args=None, overDict=None, executablePath=None):
     except:
         lg.exc()
 
-#    #---reactor.callLater patch---
-    if _Debug:
-        patchReactorCallLater(reactor)
-        monitorDelayedCalls(reactor)
+    #---reactor.callLater patch---
+    # if _Debug:
+    #     patchReactorCallLater(reactor)
+    #     monitorDelayedCalls(reactor)
 
     if _Debug:
         lg.out(_DebugLevel, "    python executable is: %s" % sys.executable)
@@ -265,8 +265,8 @@ def shutdown():
 
     lg.close_intercepted_log_file()
 
-    if bpio.Windows() and bpio.isFrozen():
-        lg.stdout_stop_redirecting()
+    lg.stdout_stop_redirecting()
+    lg.stderr_stop_redirecting()
 
     from main import settings
     settings.shutdown()
@@ -293,7 +293,7 @@ def run_twisted_reactor():
 def run(UI='', options=None, args=None, overDict=None, executablePath=None, start_reactor=True):
     """
     """
-    if options.cpu_profile:
+    if options and options.cpu_profile:
         import cProfile, pstats, io
         from pstats import SortKey  # @UnresolvedImport
         pr = cProfile.Profile()
@@ -307,7 +307,7 @@ def run(UI='', options=None, args=None, overDict=None, executablePath=None, star
     else:
         result = True
 
-    if options.cpu_profile:
+    if options and options.cpu_profile:
         pr.disable()
         s = io.StringIO()
         sortby = SortKey.CUMULATIVE
@@ -599,12 +599,11 @@ def copyright_text():
     """
     print('Copyright (C) 2008 Veselin Penev, https://bitdust.io')
 
-#--- THIS IS THE ENTRY POINT OF THE PROGRAM! ---------------------------------------------------------
 
-
+#--- THE ENTRY POINT
 def main(executable_path=None, start_reactor=True):
     """
-    THIS IS THE ENTRY POINT OF THE PROGRAM!
+    THE ENTRY POINT
     """
     global AppDataDir
 
@@ -671,19 +670,17 @@ def main(executable_path=None, start_reactor=True):
     if bpio.Android():
         lg.close_intercepted_log_file()
         lg.open_intercepted_log_file('/storage/emulated/0/.bitdust/logs/android.log')
+        if _Debug:
+            lg.dbg(_DebugLevel, 'log file "android.log" opened')
 
     # sys.excepthook = lg.exception_hook
 
+    from twisted.internet.defer import setDebugging
     if _Debug:
         if not bpio.isFrozen():
-            try:
-                from twisted.internet.defer import setDebugging
-                setDebugging(True)
-                # from twisted.python import log as twisted_log
-                # twisted_log.startLogging(sys.stdout)
-            except:
-                print('python-twisted is not installed !!!')
-                # lg.warn('python-twisted is not installed')
+            setDebugging(True)
+    else:
+        setDebugging(False)
 
     # ask to count time for each log line from that moment, not absolute time
     lg.life_begins()
@@ -700,27 +697,38 @@ def main(executable_path=None, start_reactor=True):
     if opts.no_logs:
         lg.disable_logs()
 
+    if opts.debug or str(opts.debug) == '0':
+        lg.set_debug_level(int(opts.debug))
+
     #---logpath---
     if opts.output:
         logpath = opts.output
     else:
         logpath = os.path.join(appdata, 'logs', 'main.log')
 
-    # need_redirecting = False
+    need_redirecting = False
 
-    # if bpio.Windows() and not bpio.isConsoled():
-    #     need_redirecting = True
+    if bpio.Windows() and not bpio.isConsoled():
+        need_redirecting = True
 
     if logpath != '':
         lg.open_log_file(logpath)
         if _Debug:
             lg.out(_DebugLevel, 'bpmain.main log file opened ' + logpath)
-        # if bpio.Windows() and bpio.isFrozen():
-        #     need_redirecting = True
+        if bpio.Windows() and bpio.isFrozen():
+            need_redirecting = True
 
-    # if need_redirecting:
-    #     lg.stdout_start_redirecting()
-    #     lg.out(2, 'bpmain.main redirecting started')
+    if bpio.Android():
+        need_redirecting = True
+
+    if opts.quite and not opts.verbose:
+        lg.disable_output()
+    else:
+        if need_redirecting:
+            lg.stdout_start_redirecting()
+            lg.stderr_start_redirecting()
+            if _Debug:
+                lg.out(_DebugLevel, 'bpmain.main redirecting started')
 
     # very basic solution to record run-time errors
     try:
@@ -728,12 +736,6 @@ def main(executable_path=None, start_reactor=True):
             os.remove(os.path.join(appdata, 'logs', 'exception.log'))
     except:
         pass
-
-    if opts.debug or str(opts.debug) == '0':
-        lg.set_debug_level(opts.debug)
-
-    # if opts.quite and not opts.verbose:
-    #     lg.disable_output()
 
     if opts.verbose:
         copyright_text()
@@ -751,8 +753,6 @@ def main(executable_path=None, start_reactor=True):
             return 0
 
         UI = ''
-        # if cmd == 'show' or cmd == 'open':
-        # UI = 'show'
         try:
             ret = run(UI, opts, args, overDict, executable_path, start_reactor)
         except:

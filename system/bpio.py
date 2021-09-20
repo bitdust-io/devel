@@ -82,6 +82,7 @@ def init():
     InstallLocale()
     if Linux() or Mac():
         lg.setup_unbuffered_stdout()
+        lg.setup_unbuffered_stderr()
 
 
 def shutdown():
@@ -90,6 +91,7 @@ def shutdown():
     will stop.
     """
     lg.restore_original_stdout()
+    lg.restore_original_stderr()
     lg.close_log_file()
     lg.close_intercepted_log_file()
     lg.disable_logs()
@@ -1120,6 +1122,8 @@ def kill_process(pid):
 
     ``pid`` - process id.
     """
+    if Android():
+        return
     ostype = platform.uname()[0]
     if ostype == "Windows":
         kill_process_win32(pid)
@@ -1250,6 +1254,8 @@ def kill_process_win32(pid):
 def find_main_process(pid_file_path=None, extra_lookups=[], check_processid_file=True):
     """
     """
+    if Android():
+        return []
     q = [
         'bitdustnode.exe',
         'BitDustNode.exe',
