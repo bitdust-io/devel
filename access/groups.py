@@ -566,7 +566,7 @@ def on_identity_url_changed(evt):
         if not group_key_id:
             continue
         group_creator_idurl = global_id.glob2idurl(group_key_id)
-        if group_creator_idurl == old_idurl:
+        if group_creator_idurl.to_bin() == old_idurl.to_bin():
             old_group_path = os.path.join(groups_dir, group_key_id)
             latest_group_key_id = my_keys.latest_key_id(group_key_id)
             latest_group_path = os.path.join(groups_dir, latest_group_key_id)

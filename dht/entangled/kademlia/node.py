@@ -1668,11 +1668,15 @@ class MultiLayerNode(Node):
 
         # Send parallel, asynchronous FIND_NODE RPCs to the shortlist of contacts
         def searchIteration():
+            if not self._routingTables or layerID not in self._routingTables:
+                if _Debug:
+                    print('[DHT NODE]    ++++++++++++++ searchIteration INTERRUPTED +++++++++++++++\n\n')
+                return
             slowNodeCount[0] = len(activeProbes)
             # Sort the discovered active nodes from closest to furthest
             activeContacts.sort(key=lambda cont: self._routingTables[layerID].distance(cont.id, key))
             if _Debug:
-                print('[DHT NODE]    ==> searchiteration %r' % activeContacts)
+                print('[DHT NODE]    ==> searchIteration %r' % activeContacts)
             # This makes sure a returning probe doesn't force calling this function by mistake
             while len(pendingIterationCalls):
                 del pendingIterationCalls[0]

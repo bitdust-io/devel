@@ -152,6 +152,8 @@ def shutdown(x=None):
 
 def A(event=None, *args, **kwargs):
     global _Shutdowner
+    if event is None:
+        return _Shutdowner
     if _Shutdowner is None:
         _Shutdowner = Shutdowner(
             name='shutdowner',

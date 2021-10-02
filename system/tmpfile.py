@@ -263,7 +263,8 @@ def erase(name, filename, why='no reason'):
         try:
             _FilesDict[name].pop(filename)
         except:
-            lg.warn('we do not know about item [%s] in sub folder %s, we tried because %s' % (filename, name, why))
+            pass
+            # lg.warn('we do not know about item [%s] in sub folder %s, we tried because %s' % (filename, name, why))
     else:
         lg.warn('we do not know sub folder: %s, we tried because %s' % (name, why))
 

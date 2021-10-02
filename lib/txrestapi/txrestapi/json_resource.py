@@ -81,25 +81,29 @@ class _DelayedJsonResource(_JsonResource):
         self._result_defer = result_defer
 
     def _cb(self, result, request):
-        twlog.msg('txrestapi callback with json result: %r' % result)
+        if _Debug:
+            twlog.msg('txrestapi callback with json result: %r' % result)
         self._setHeaders(request)
         result['execution'] = '%3.6f' % (time.time() - self._executed)
         raw = _to_json(result)
         if not request.channel:
-            twlog.err('REST API connection channel already closed')
+            if _Debug:
+                twlog.err('REST API connection channel already closed')
             return None
         request.write(raw)
         request.finish()
         return result
 
     def _eb(self, err, request):
-        twlog.err('txrestapi error : %r' % err)
+        if _Debug:
+            twlog.err('txrestapi error : %r' % err)
         self._setHeaders(request)
         execution = '%3.6f' % (time.time() - self._executed)
         err_msg = err.getErrorMessage() if isinstance(err, Failure) else str(err)
         raw = _to_json(dict(status='ERROR', execution=execution, errors=[err_msg, ]))
         if not request.channel:
-            twlog.err('REST API connection channel already closed')
+            if _Debug:
+                twlog.err('REST API connection channel already closed')
             return None
         request.write(raw)
         request.finish()

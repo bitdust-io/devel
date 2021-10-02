@@ -1,6 +1,26 @@
 Change Log
 ==========
 
+2021-08-18 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* added "request-failed" event to packet_out() automat
+* for single customer group_members() must be in sync when connected to same message brokers
+* renaming queue ID when first broker is rotated
+* added websocket_timeout argument to WebSocket cmd line client
+* disabled JSONRPC API interface
+* command line tool migrated to WebSocket API client
+* built new Twisted-based WebSocket API client
+* introduced a new algorithm for message brokers rotation
+* rebuilt queue_keeper() state machine
+* built new broker_negotiator() state machine
+* regenerating digital signature when sharing a private key to another user
+* fixes in proxy_receiver() state machine
+* some of the services to be stopped explicitly in case failed to start right away
+* added api.queue_peddlers_list() method
+* added api.queue_keepers_list() method
+* rebuilt group_member() state machine
+
+
 
 2021-06-18 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 

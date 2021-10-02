@@ -188,7 +188,7 @@ def ERROR(errors=[], message=None, status='ERROR', reason=None, details=None, **
 #------------------------------------------------------------------------------
 
 
-def process_stop():
+def process_stop(instant=False):
     """
     Stop the main process immediately.
 
@@ -201,9 +201,16 @@ def process_stop():
     if _Debug:
         lg.out(_DebugLevel, 'api.process_stop sending event "stop" to the shutdowner() machine')
     from main import shutdowner
-    reactor.callLater(0.1, shutdowner.A, 'stop', 'exit')  # @UndefinedVariable
-    # shutdowner.A('stop', 'exit')
-    return OK('stopped')
+    if not shutdowner.A():
+        return ERROR('application shutdown failed')
+    if instant:
+        # shutdowner.A('stop', 'exit')
+        reactor.callLater(0, shutdowner.A, 'stop', 'exit')  # @UndefinedVariable
+        return OK()
+    ret = Deferred()
+    reactor.callLater(0.001, ret.callback, OK(api_method='process_stop'))  # @UndefinedVariable
+    reactor.callLater(0.002, shutdowner.A, 'stop', 'exit')  # @UndefinedVariable
+    return ret
 
 
 def process_restart():
@@ -3210,7 +3217,7 @@ def message_history(recipient_id=None, sender_id=None, message_type=None, offset
 def message_conversations_list(message_types=[], offset=0, limit=100):
     """
     Returns list of all known conversations with other users.
-    Parameter `message_types` can be used to select conversations of specific types: "group_message", "private_message", "personal_message".
+    Parameter `message_types` can be used to select conversations of specific types: `group_message`, `private_message`, `personal_message`.
 
     ###### HTTP
         curl -X GET 'localhost:8180/message/conversation/v1?message_types=group_message,private_message'
@@ -3457,9 +3464,9 @@ def message_receive(consumer_callback_id, direction='incoming', message_types='p
 
     You can set parameter `direction=outgoing` to only populate messages you are sending to others - can be useful for UI clients.
 
-    Also you can use parameter `message_types` to select only specific types of messages: "private_message" or "group_message".
+    Also you can use parameter `message_types` to select only specific types of messages: `private_message`, `personal_message` or `group_message`.
 
-    This method is only make sense for HTTP interface, because using a WebSocket client will receive streamed message directly.
+    This method is only make sense for HTTP interface, because via a WebSocket it is possible to receive streamed messages instantly.
 
     ###### HTTP
         curl -X GET 'localhost:8180/message/receive/my-client-group-messages/v1?message_types=group_message'
@@ -3536,10 +3543,10 @@ def message_receive(consumer_callback_id, direction='incoming', message_types='p
 def suppliers_list(customer_id=None, verbose=False):
     """
     This method returns a list of your suppliers.
-    Those nodes stores your encrypted file or file uploaded by other users that still belongs to you.
+    Those nodes are holding each and every encrypted file created by you or file uploaded by other users that still belongs to you.
 
-    Your BitDust node also sometimes need to connect to suppliers of other users to upload or download shared data.
-    Those external suppliers lists are cached and can be selected here with `customer_id` optional parameter.
+    Your BitDust node also able to connect to suppliers employed by other users. It makes possible to upload and download a shared data.
+    Information about those external suppliers is cached and can be also accessed here with `customer_id` optional parameter.
 
     ###### HTTP
         curl -X GET 'localhost:8180/supplier/list/v1'
