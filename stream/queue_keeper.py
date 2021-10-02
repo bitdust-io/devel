@@ -224,6 +224,7 @@ class QueueKeeper(automat.Automat):
         self.pending_connect_requests = []
         self.latest_dht_records = {}
         self.negotiator = None
+        # TODO: read latest state from local data
         super(QueueKeeper, self).__init__(
             name="queue_keeper_%s" % self.customer_id,
             state="AT_STARTUP",

@@ -34,7 +34,10 @@ module:: websock
 
 import time
 import json
-import queue
+try:
+    from queue import Queue, Empty
+except:
+    from Queue import Queue, Empty  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 
@@ -77,7 +80,7 @@ def start(callbacks={}):
     _RegisteredCallbacks = callbacks or {}
     _WebSocketConnecting = True
     _WebSocketStarted = True
-    _WebSocketQueue = queue.Queue(maxsize=100)
+    _WebSocketQueue = Queue(maxsize=100)
     reactor.callInThread(websocket_thread)  # @UndefinedVariable
     reactor.callInThread(requests_thread, _WebSocketQueue)  # @UndefinedVariable
 
@@ -99,7 +102,7 @@ def stop():
             json_data, _, _, _ = ws_queue().get_nowait()
             if _Debug:
                 print('cleaned unfinished call', json_data)
-        except queue.Empty:
+        except Empty:
             break
     _WebSocketQueue.put_nowait((None, None, None, None, ))
     if ws():
@@ -331,7 +334,8 @@ def websocket_thread():
         try:
             ws().run_forever(ping_interval=10)
         except Exception as exc:
-            pass
+            if _Debug:
+                print('\n    WS Thread ERROR:', exc)
         del _WebSocketApp
         _WebSocketApp = None
         if not is_started():
