@@ -166,6 +166,14 @@ regress_clean_run_log_py27:
 	PYTHON_VERSION=2.7.15 make --no-print-directory -C regress/ prepare
 	PYTHON_VERSION=2.7.15 _DEBUG=1 make --no-print-directory -C regress/ run_all_log
 
+regress_one/%:
+	make --no-print-directory -C regress/ stop_all
+	make --no-print-directory -C regress/ clean_all
+	make --no-print-directory -C regress/ clean_coverage
+	make --no-print-directory -C regress/ clean_logs
+	PYTHON_VERSION=3.6 make --no-print-directory -C regress/ prepare
+	PYTHON_VERSION=3.6 make --no-print-directory -C regress/ TEST_NAME=$* _one_up_test_log
+
 regress_full:
 	make --no-print-directory -C regress/ stop_all
 	make --no-print-directory -C regress/ clean_all

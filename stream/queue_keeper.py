@@ -60,6 +60,7 @@ _DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
+import os
 import sys
 import re
 
@@ -70,6 +71,7 @@ except:
 
 from twisted.python.failure import Failure
 from twisted.internet.defer import Deferred
+from twisted.internet.task import LoopingCall
 
 #------------------------------------------------------------------------------
 
@@ -77,9 +79,13 @@ from logs import lg
 
 from automats import automat
 
+from system import local_fs
+
 from lib import strng
+from lib import jsn
 
 from main import events
+from main import settings
 
 from dht import dht_relations
 
@@ -96,7 +102,7 @@ _QueueKeepers = {}
 
 #------------------------------------------------------------------------------
 
-DHT_RECORD_REFRESH_INTERVAL = 3 * 60
+DHT_RECORD_REFRESH_INTERVAL = 10 * 60
 
 #------------------------------------------------------------------------------
 
@@ -181,6 +187,52 @@ def close(customer_idurl):
     del qk
     return True
 
+
+def read_state(customer_id, broker_id):
+    service_dir = settings.ServiceDir('service_message_broker')
+    keepers_dir = os.path.join(service_dir, 'keepers')
+    broker_dir = os.path.join(keepers_dir, broker_id)
+    keeper_state_file_path = os.path.join(broker_dir, customer_id)
+    json_value = None
+    if os.path.isfile(keeper_state_file_path):
+        try:
+            json_value = jsn.loads_text(local_fs.ReadTextFile(keeper_state_file_path))
+        except:
+            lg.exc()
+            return None
+    if not json_value:
+        lg.err('failed reading queue_keeper state for customer %r of broker %r' % (customer_id, broker_id, ))
+        return None
+    return json_value
+
+
+def write_state(customer_id, broker_id, json_value):
+    service_dir = settings.ServiceDir('service_message_broker')
+    keepers_dir = os.path.join(service_dir, 'keepers')
+    broker_dir = os.path.join(keepers_dir, broker_id)
+    keeper_state_file_path = os.path.join(broker_dir, customer_id)
+    if json_value is None:
+        if os.path.isfile(keeper_state_file_path):
+            try:
+                os.remove(keeper_state_file_path)
+            except:
+                lg.exc()
+        if _Debug:
+            lg.args(_DebugLevel, customer_id=customer_id, broker_id=broker_id, json_value=json_value)
+        return None
+    if not os.path.isdir(broker_dir):
+        try:
+            os.makedirs(broker_dir)
+        except:
+            lg.exc()
+            return None
+    if not local_fs.WriteTextFile(keeper_state_file_path, jsn.dumps(json_value)):
+        lg.err('failed to store queue_keeper state for customer %r of broker %r' % (customer_id, broker_id, ))
+        return None
+    if _Debug:
+        lg.args(_DebugLevel, customer_id=customer_id, broker_id=broker_id, json_value=json_value)
+    return json_value
+
 #------------------------------------------------------------------------------
 
 def A(customer_idurl, event=None, *args, **kwargs):
@@ -217,17 +269,18 @@ class QueueKeeper(automat.Automat):
         self.customer_id = self.customer_idurl.to_id()
         self.broker_idurl = id_url.field(broker_idurl or my_id.getIDURL())
         self.broker_id = self.broker_idurl.to_id()
-        self.cooperated_brokers = {}
-        self.known_position = -1
-        self.known_archive_folder_path = None
+        json_state = read_state(customer_id=self.customer_id, broker_id=self.broker_id) or {}
+        self.cooperated_brokers = json_state.get('cooperated_brokers') or {}
+        self.known_position = json_state.get('position') or -1
+        self.known_archive_folder_path = json_state.get('archive_folder_path')
         self.current_connect_request = None
         self.pending_connect_requests = []
         self.latest_dht_records = {}
-        self.negotiator = None
+        # self.negotiator = None
         # TODO: read latest state from local data
         super(QueueKeeper, self).__init__(
             name="queue_keeper_%s" % self.customer_id,
-            state="AT_STARTUP",
+            state=json_state.get('state') or 'AT_STARTUP',
             debug_level=debug_level,
             log_events=log_events,
             log_transitions=log_transitions,
@@ -248,6 +301,11 @@ class QueueKeeper(automat.Automat):
             'archive_folder_path': self.known_archive_folder_path,
         })
         return j
+
+    def state_changed(self, oldstate, newstate, event, *args, **kwargs):
+        if oldstate != newstate:
+            if newstate == 'DISCONNECTED':
+                write_state(customer_id=self.customer_id, broker_id=self.broker_id, json_value=None)
 
     def A(self, event, *args, **kwargs):
         """
@@ -343,11 +401,15 @@ class QueueKeeper(automat.Automat):
         """
         Action method.
         """
+        self.refresh_period = DHT_RECORD_REFRESH_INTERVAL
+        self.refresh_task = LoopingCall(self._on_queue_keeper_dht_refresh_task)
 
     def doBuildRequest(self, *args, **kwargs):
         """
         Action method.
         """
+        if self.refresh_task.running:
+            self.refresh_task.stop()
         self.current_connect_request = {
             'consumer_id': kwargs['consumer_id'],
             'producer_id': kwargs['producer_id'],
@@ -396,34 +458,15 @@ class QueueKeeper(automat.Automat):
         """
         Action method.
         """
-        desired_position = None
-        for pos, idurl in self.cooperated_brokers.items():
-            if idurl and id_url.to_bin(idurl) == self.broker_idurl.to_bin():
-                desired_position = pos
-        if desired_position is None:
-            raise Exception('not able to write record into DHT, new position is unknown')
-        archive_folder_path = self.current_connect_request['archive_folder_path']
-        if archive_folder_path is None:
-            archive_folder_path = self.known_archive_folder_path
-        prev_revision = self.latest_dht_records.get(desired_position, {}).get('revision', None)
-        if prev_revision is None:
-            prev_revision = 0
-        if _Debug:
-            lg.args(_DebugLevel, c=self.customer_id, p=desired_position, b=self.broker_id, a=archive_folder_path, r=prev_revision+1)
-        self._do_dht_write(
-            desired_position=desired_position,
-            archive_folder_path=archive_folder_path,
-            revision=prev_revision+1,
-            retry=True,
-        )
+        self._do_dht_push_state()
 
     def doDHTRefresh(self, *args, **kwargs):
         """
         Action method.
         """
-        # if self.refresh_task.running:
-        #     self.refresh_task.stop()
-        # self.refresh_task.start(DHT_RECORD_REFRESH_INTERVAL, now=False)
+        if self.refresh_task.running:
+            self.refresh_task.stop()
+        self.refresh_task.start(DHT_RECORD_REFRESH_INTERVAL, now=False)
 
     def doRememberCooperation(self, event, *args, **kwargs):
         """
@@ -447,7 +490,6 @@ class QueueKeeper(automat.Automat):
         """
         Action method.
         """
-        my_current_position = self.known_position
         my_new_position = -1
         for pos, idurl in self.cooperated_brokers.items():
             if idurl and id_url.is_the_same(idurl, self.broker_idurl):
@@ -456,17 +498,13 @@ class QueueKeeper(automat.Automat):
             lg.args(_DebugLevel, known=self.known_position, new=my_new_position, cooperated_brokers=self.cooperated_brokers)
         if my_new_position >= 0:
             self.known_position = my_new_position
-#         if my_current_position != my_new_position:
-#             lg.info('my broker position changed for customer %r: %d->%d' % (self.customer_id, my_current_position, my_new_position, ))
-#             events.send('broker-position-changed', data=dict(
-#                 customer_idurl=self.customer_idurl,
-#                 broker_idurl=self.broker_idurl,
-#                 old_position=my_current_position,
-#                 new_postion=my_new_position,
-#             ))
-        # TODO: need to store queue keeper info locally here to be able to start up after application restart
-        # self.connected_queues
-        # self.current_connect_request
+        # store queue keeper info locally here to be able to start up again after application restart
+        write_state(customer_id=self.customer_id, broker_id=self.broker_id, json_value={
+            'position': self.known_position,
+            'cooperated_brokers': self.cooperated_brokers,
+            'archive_folder_path': self.known_archive_folder_path,
+            'state': self.state,
+        })
 
     def doRunBrokerNegotiator(self, *args, **kwargs):
         """
@@ -477,8 +515,8 @@ class QueueKeeper(automat.Automat):
         d = Deferred()
         d.addCallback(self._on_broker_negotiator_callback)
         d.addErrback(self._on_broker_negotiator_errback)
-        self.negotiator = broker_negotiator.BrokerNegotiator()
-        self.negotiator.automat(
+        negotiator = broker_negotiator.BrokerNegotiator()
+        negotiator.automat(
             event='connect',
             my_position=self.known_position,
             cooperated_brokers=self.cooperated_brokers,
@@ -526,6 +564,9 @@ class QueueKeeper(automat.Automat):
         """
         global _QueueKeepers
         _QueueKeepers.pop(self.customer_idurl, None)
+        if self.refresh_task.running:
+            self.refresh_task.stop()
+        self.refresh_task = None
         self.customer_idurl = None
         self.customer_id = None
         self.broker_idurl = None
@@ -534,7 +575,7 @@ class QueueKeeper(automat.Automat):
         self.known_archive_folder_path = None
         self.cooperated_brokers.clear()
         self.latest_dht_records.clear()
-        self.negotiator = None
+        # self.negotiator = None
         self.destroy()
 
     def _do_dht_write(self, desired_position, archive_folder_path, revision, retry):
@@ -549,6 +590,29 @@ class QueueKeeper(automat.Automat):
         if _Debug:
             result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='queue_keeper.doDHTWrite')
         result.addErrback(self._on_write_customer_message_broker_failed, desired_position, archive_folder_path, revision, retry)
+
+    def _do_dht_push_state(self):
+        desired_position = self.known_position
+        if desired_position is None:
+            for pos, idurl in self.cooperated_brokers.items():
+                if idurl and id_url.to_bin(idurl) == self.broker_idurl.to_bin():
+                    desired_position = pos
+        if desired_position is None:
+            raise Exception('not able to write record into DHT, my position is unknown')
+        archive_folder_path = self.known_archive_folder_path
+        if self.current_connect_request:
+            archive_folder_path = self.current_connect_request['archive_folder_path']
+        prev_revision = self.latest_dht_records.get(desired_position, {}).get('revision', None)
+        if prev_revision is None:
+            prev_revision = 0
+        if _Debug:
+            lg.args(_DebugLevel, c=self.customer_id, p=desired_position, b=self.broker_id, a=archive_folder_path, r=prev_revision+1)
+        self._do_dht_write(
+            desired_position=desired_position,
+            archive_folder_path=archive_folder_path,
+            revision=prev_revision+1,
+            retry=True,
+        )
 
     def _on_read_customer_message_brokers(self, dht_brokers_info_list):
         self.latest_dht_records.clear()
@@ -622,13 +686,13 @@ class QueueKeeper(automat.Automat):
     def _on_broker_negotiator_callback(self, cooperated_brokers):
         if _Debug:
             lg.args(_DebugLevel, cooperated_brokers=cooperated_brokers)
-        self.negotiator = None
+        # self.negotiator = None
         self.automat('accepted', cooperated_brokers=cooperated_brokers)
 
     def _on_broker_negotiator_errback(self, err):
         if _Debug:
             lg.args(_DebugLevel, err=err)
-        self.negotiator = None
+        # self.negotiator = None
         if isinstance(err, Failure):
             try:
                 evt, _, _ = err.value.args
@@ -642,3 +706,6 @@ class QueueKeeper(automat.Automat):
                 self.automat('failed')
                 return
         self.automat('rejected')
+
+    def _on_queue_keeper_dht_refresh_task(self):
+        self._do_dht_push_state()

@@ -222,7 +222,9 @@ def call_websocket_method(method, **kwargs):
     def _on_error(err):
         if _Debug:
             print('call_websocket_method._on_error', method, kwargs, err)
+        websock.stop()
         ret.errback(err)
+        return None
 
     websock.start(
         callbacks={
@@ -321,12 +323,12 @@ def wait_then_kill(x):
             'bpmain.py',
         ])
         if len(appList) == 0:
-            print_text('DONE')
+            print_text('finished successfully')
             reactor.stop()  # @UndefinedVariable
             return 0
         total_count += 1
         if total_count > 10:
-            print_text('not responding, KILLING ...')
+            print_text('not responding, going to kill the running process ...')
             ret = kill()
             reactor.stop()  # @UndefinedVariable
             return ret
@@ -1314,7 +1316,7 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
     elif cmd == 'stop' or cmd == 'kill' or cmd == 'shutdown':
         appList = bpio.find_main_process()
         if appList:
-            print_text('found main BitDust process: %s, executing "api.process_stop()" via WebSocket ... ' % str(appList), '')
+            print_text('found main BitDust process: %r ... ' % appList, '')
             try:
                 from twisted.internet import reactor  # @UnresolvedImport
                 call_websocket_method('process_stop', websocket_timeout=5).addBoth(wait_then_kill)

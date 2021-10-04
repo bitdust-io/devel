@@ -808,20 +808,23 @@ def main(executable_path=None, start_reactor=True):
         appList = bpio.find_main_process(pid_file_path=os.path.join(appdata, 'metadata', 'processid'))
         ui = False
         if len(appList) > 0:
-            lg.out(0, 'found main BitDust process: %s, executing "api.process_stop()" via WebSocket ... ' % str(appList), '')
+            lg.out(0, 'found main BitDust process: %r ... ' % appList, '')
 
             def done(x):
-                lg.out(0, 'BitDust process finished with: %r\n' % x, '')
+                lg.out(0, 'finished successfully\n', '')
                 from twisted.internet import reactor  # @UnresolvedImport
                 if reactor.running and not reactor._stopped:  # @UndefinedVariable
                     reactor.stop()  # @UndefinedVariable
 
             def failed(x):
-                lg.out(0, 'BitDust process was not finished correctly: %r\n' % x, '')
+                if isinstance(x, Failure):
+                    lg.out(0, 'finished with: %r\n' % x.getErrorMessage(), '')
+                else:
+                    lg.out(0, 'finished successfully\n', '')
                 ok = str(x).count('Connection was closed cleanly') > 0
                 from twisted.internet import reactor  # @UnresolvedImport
                 if ok and reactor.running and not reactor._stopped:  # @UndefinedVariable
-                    lg.out(0, 'DONE\n', '')
+                    # lg.out(0, 'DONE\n', '')
                     reactor.stop()  # @UndefinedVariable
                     return
                 lg.out(0, 'forcing previous process shutdown\n', '')
@@ -935,13 +938,20 @@ def main(executable_path=None, start_reactor=True):
                 return ret
             try:
                 from twisted.internet import reactor  # @UnresolvedImport
+                from twisted.python.failure import Failure
 
                 def _stopped(x):
-                    lg.out(0, 'BitDust process finished with: %r\n' % x, '')
+                    if _Debug:
+                        if isinstance(x, Failure):
+                            lg.out(0, 'finished with: %r\n' % x.getErrorMessage(), '')
+                        else:
+                            lg.out(0, 'finished with: %r\n' % x, '')
+                    else:
+                        lg.out(0, 'finished successfully\n' % x, '')
                     reactor.stop()  # @UndefinedVariable
                     bpio.shutdown()
 
-                lg.out(0, 'found main BitDust process: %r, executing "api.process_stop()" via WebSocket ... ' % appList, '')
+                lg.out(0, 'found main BitDust process: %r ... ' % appList, '')
                 from interface import cmd_line_json
                 cmd_line_json.call_websocket_method('process_stop', websocket_timeout=5).addBoth(_stopped)
                 reactor.run()  # @UndefinedVariable

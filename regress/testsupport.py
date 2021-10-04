@@ -96,12 +96,14 @@ def run_ssh_command_and_wait(host, cmd, verbose=False) -> object:
 
 #------------------------------------------------------------------------------
 
-def request_get(node, url, timeout=None, attempts=3, verbose=True):
+def request_get(node, url, timeout=None, attempts=3, verbose=True, raise_error=True):
     resp = None
     err = None
     count = 0
     while True:
         if count >= attempts:
+            if not raise_error:
+                return err
             if verbose:
                 print('\nGET request failed after few attempts :  node=%r   url=%r   err=%r\n' % (node, url, err))
             assert False, 'GET request failed after few attempts :  node=%r   url=%r    err=%r' % (node, url, err)
@@ -606,27 +608,33 @@ def stop_daemon(node, skip_checks=False, verbose=False):
 
 
 async def stop_daemon_async(node, loop, skip_checks=False, verbose=False):
+    if verbose:
+        print(f'stop_daemon_async [{node}] is about to run "bitdust stop"')
     bitdust_stop = await run_ssh_command_and_wait_async(node, 'bitdust stop', loop, verbose=verbose)
-    # print('\n' + bitdust_stop[0].strip())
-    if not skip_checks:
-        resp = bitdust_stop[0].strip()
-        if not (
-            (
-                resp.startswith('BitDust child processes found') and
-                resp.endswith('BitDust stopped')
-            ) or (
-                resp.startswith('found main BitDust process:') and
-                resp.count('BitDust process finished with:') and
-                resp.count('OK')
-            ) or (
-                resp == 'BitDust is not running at the moment'
-            ) or (
-                resp == ''
-            )
-        ):
+    resp = bitdust_stop[0].strip()
+    if skip_checks:
+        if verbose:
+            print(f'stop_daemon_async [{node}] DONE\n')
+        return
+    if not (
+        (
+            resp.startswith('BitDust child processes found') and
+            resp.endswith('BitDust stopped')
+        ) or (
+            resp.startswith('found main BitDust process:') and
+            resp.count('finished')
+        ) or (
+            resp == 'BitDust is not running at the moment'
+        ) or (
+            resp == ''
+        )
+    ):
+        if verbose:
             print('process finished with unexpected response: %r' % resp)
-            assert False, resp
-    # print(f'stop_daemon [{node}] OK\n')
+        assert False, resp
+    if verbose:
+        print(f'stop_daemon_async [{node}] OK\n')
+    return
 
 #------------------------------------------------------------------------------
 

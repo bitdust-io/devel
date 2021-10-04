@@ -36,6 +36,7 @@ COPY ./conftest.py /app/
 COPY ./__init__.py /app/
 COPY ./testsupport.py /app/
 COPY ./keywords.py /app/
+COPY ./scenarios.py /app/
 COPY ./tests/ /app/tests/
 
 RUN mkdir /app/coverage/

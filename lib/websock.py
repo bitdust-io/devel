@@ -240,7 +240,7 @@ def on_message(ws_inst, message):
 
 def on_error(ws_inst, error):
     global _PendingCalls
-    if _Debug or True:
+    if _Debug:
         print('on_error', error)
     cb = registered_callbacks().get('on_error')
     if cb:
@@ -259,7 +259,8 @@ def on_request_timeout(call_id):
     global _ResponseTimeoutTasks
     if _Debug:
         print('on_request_timeout', call_id)
-    timeout_task = _ResponseTimeoutTasks.pop(call_id, None)
+    # timeout_task = 
+    _ResponseTimeoutTasks.pop(call_id, None)
     # if timeout_task:
     #     if not timeout_task.called:
     #         timeout_task.cancel()

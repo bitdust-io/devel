@@ -188,7 +188,7 @@ def ERROR(errors=[], message=None, status='ERROR', reason=None, details=None, **
 #------------------------------------------------------------------------------
 
 
-def process_stop(instant=False):
+def process_stop(instant=True):
     """
     Stop the main process immediately.
 
@@ -204,12 +204,11 @@ def process_stop(instant=False):
     if not shutdowner.A():
         return ERROR('application shutdown failed')
     if instant:
-        # shutdowner.A('stop', 'exit')
         reactor.callLater(0, shutdowner.A, 'stop', 'exit')  # @UndefinedVariable
         return OK()
     ret = Deferred()
-    reactor.callLater(0.001, ret.callback, OK(api_method='process_stop'))  # @UndefinedVariable
-    reactor.callLater(0.002, shutdowner.A, 'stop', 'exit')  # @UndefinedVariable
+    reactor.callLater(0, ret.callback, OK(api_method='process_stop'))  # @UndefinedVariable
+    reactor.callLater(0.5, shutdowner.A, 'stop', 'exit')  # @UndefinedVariable
     return ret
 
 

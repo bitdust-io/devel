@@ -917,6 +917,8 @@ def verify_file_create_upload_start(node, key_id, volume_path, filename='cat.txt
         file_list_all_v1(node, reliable_shares=reliable_shares, expected_reliable=expected_reliable)
     file_create_v1(node, remote_path)
     file_upload_start_v1(node, remote_path, local_filepath)
+    if verify_list_files:
+        file_list_all_v1(node, reliable_shares=reliable_shares, expected_reliable=expected_reliable)
     packet_list_v1(node, wait_all_finish=True)
     transfer_list_v1(node, wait_all_finish=True)
     return local_filepath, remote_path, download_filepath
@@ -930,3 +932,5 @@ def verify_file_download_start(node, remote_path, destination_path, verify_from_
         file_body_source = run_ssh_command_and_wait(node, f'cat {verify_from_local_path}')[0].strip()
         file_body_downloaded = run_ssh_command_and_wait(node, f'cat {destination_path}')[0].strip()
         assert file_body_source == file_body_downloaded
+    if verify_list_files:
+        file_list_all_v1(node, reliable_shares=reliable_shares, expected_reliable=expected_reliable)

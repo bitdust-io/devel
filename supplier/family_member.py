@@ -71,7 +71,7 @@ _ValidRequests = ['family-refresh', 'family-join', 'family-leave', ]
 
 #------------------------------------------------------------------------------
 
-DHT_RECORD_REFRESH_INTERVAL = 3 * 60
+DHT_RECORD_REFRESH_INTERVAL = 5 * 60
 
 #------------------------------------------------------------------------------
 
