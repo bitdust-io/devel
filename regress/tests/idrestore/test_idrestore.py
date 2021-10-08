@@ -33,12 +33,6 @@ from testsupport import set_active_scenario  # @UnresolvedImport
 import keywords as kw  # @UnresolvedImport
 import scenarios  # @UnresolvedImport
 
-PROXY_IDS = []
-SUPPLIERS_IDS = ['supplier-1', 'supplier-2', ]
-CUSTOMERS_IDS = ['customer-1', 'customer-2', ]
-
-ssh_cmd_verbose = True
-
 
 def test_idrestore():
     if os.environ.get('RUN_TESTS', '1') == '0':
@@ -56,11 +50,11 @@ def test_idrestore():
 
 def prepare():
     set_active_scenario('PREPARE')
-    kw.wait_suppliers_connected(CUSTOMERS_IDS, expected_min_suppliers=2, expected_max_suppliers=2)
-    kw.wait_service_state(SUPPLIERS_IDS, 'service_supplier', 'ON')
-    kw.wait_service_state(CUSTOMERS_IDS, 'service_customer', 'ON')
-    kw.wait_service_state(CUSTOMERS_IDS, 'service_shared_data', 'ON')
-    kw.wait_service_state(CUSTOMERS_IDS, 'service_personal_messages', 'ON')
-    kw.wait_service_state(CUSTOMERS_IDS, 'service_private_groups', 'ON')
-    kw.wait_service_state(CUSTOMERS_IDS, 'service_message_history', 'ON')
-    kw.wait_packets_finished(PROXY_IDS + CUSTOMERS_IDS + SUPPLIERS_IDS)
+    kw.wait_suppliers_connected(scenarios.CUSTOMERS_IDS_12, expected_min_suppliers=2, expected_max_suppliers=2)
+    kw.wait_service_state(scenarios.SUPPLIERS_IDS_12, 'service_supplier', 'ON')
+    kw.wait_service_state(scenarios.CUSTOMERS_IDS_12, 'service_customer', 'ON')
+    kw.wait_service_state(scenarios.CUSTOMERS_IDS_12, 'service_shared_data', 'ON')
+    kw.wait_service_state(scenarios.CUSTOMERS_IDS_12, 'service_personal_messages', 'ON')
+    kw.wait_service_state(scenarios.CUSTOMERS_IDS_12, 'service_private_groups', 'ON')
+    kw.wait_service_state(scenarios.CUSTOMERS_IDS_12, 'service_message_history', 'ON')
+    kw.wait_packets_finished(scenarios.PROXY_IDS + scenarios.CUSTOMERS_IDS_12 + scenarios.SUPPLIERS_IDS_12)

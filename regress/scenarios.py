@@ -82,6 +82,7 @@ SUPPLIERS_IDS_12 = ['supplier-1', 'supplier-2', ]
 CUSTOMERS_IDS = ['customer-1', 'customer-2', 'customer-3', 'customer-4', 'customer-rotated', ]
 CUSTOMERS_IDS_SHORT = ['customer-1', 'customer-3', 'customer-4', ]
 CUSTOMERS_IDS_124 = ['customer-1', 'customer-2', 'customer-4', ]
+CUSTOMERS_IDS_123 = ['customer-1', 'customer-2', 'customer-3', ]
 CUSTOMERS_IDS_12 = ['customer-1', 'customer-2', ]
 CUSTOMERS_IDS_1 = ['customer-1', ]
 BROKERS_IDS = ['broker-1', 'broker-2', 'broker-3', 'broker-4', ]
@@ -171,9 +172,8 @@ def scenario4():
     kw.supplier_list_v1('customer-1', expected_min_suppliers=2, expected_max_suppliers=2)
     kw.supplier_list_v1('customer-2', expected_min_suppliers=2, expected_max_suppliers=2)
 
-    # create shares (logic unit to upload/download/share files) on customer-1 and customer-2
+    # create share (logic unit to upload/download/share files) on customer-1
     customer_1_share_id_cat = kw.share_create_v1('customer-1')
-    customer_2_share_id_cat = kw.share_create_v1('customer-2')
 
     # create a virtual "cat.txt" file for customer-1 and upload a "garbage" bytes there
     customer_1_local_filepath_cat, customer_1_remote_path_cat, customer_1_download_filepath_cat = kw.verify_file_create_upload_start(
@@ -193,24 +193,6 @@ def scenario4():
         expected_reliable=100,
     )
 
-    # create and upload another different virtual "cat.txt" file for customer-2
-    customer_2_local_filepath_cat, customer_2_remote_path_cat, customer_2_download_filepath_cat = kw.verify_file_create_upload_start(
-        node='customer-2',
-        key_id=customer_2_share_id_cat,
-        volume_path='/customer_2',
-        filename='cat.txt',
-        randomize_bytes=100,
-        expected_reliable=100,
-    )
-    # make sure we can download the file back on customer-2
-    kw.verify_file_download_start(
-        node='customer-2',
-        remote_path=customer_2_remote_path_cat,
-        destination_path=customer_2_download_filepath_cat,
-        verify_from_local_path=customer_2_local_filepath_cat,
-        expected_reliable=100,
-    )
-
     response = request_put('customer-1', 'share/grant/v1',
         json={
             'trusted_global_id': 'customer-2@id-a_8084',
@@ -225,12 +207,38 @@ def scenario4():
     run_ssh_command_and_wait('customer-2', f'mkdir /customer_2/cat_mine/', verbose=ssh_cmd_verbose)
     run_ssh_command_and_wait('customer-2', f'mkdir /customer_2/cat_shared/', verbose=ssh_cmd_verbose)
 
-    # now try to download shared by customer-1 cat.txt file on customer-2 to another local folder
+    kw.file_sync_v1('customer-2')
+
+    # now try to download shared by customer-1 cat.txt file on customer-2 and place it in a new local folder
     kw.verify_file_download_start(
         node='customer-2',
         remote_path=customer_1_remote_path_cat,
         destination_path='/customer_2/cat_shared/cat.txt',
-        reliable_shares=True,
+        reliable_shares=False,
+        expected_reliable=100,
+    )
+
+    # create new share on customer-2
+    customer_2_share_id_cat = kw.share_create_v1('customer-2')
+
+    # create and upload another different virtual "cat.txt" file for customer-2
+    customer_2_local_filepath_cat, customer_2_remote_path_cat, customer_2_download_filepath_cat = kw.verify_file_create_upload_start(
+        node='customer-2',
+        key_id=customer_2_share_id_cat,
+        volume_path='/customer_2',
+        filename='cat.txt',
+        randomize_bytes=100,
+        reliable_shares=False,
+        expected_reliable=100,
+    )
+
+    # make sure we can download the file back on customer-2
+    kw.verify_file_download_start(
+        node='customer-2',
+        remote_path=customer_2_remote_path_cat,
+        destination_path=customer_2_download_filepath_cat,
+        verify_from_local_path=customer_2_local_filepath_cat,
+        reliable_shares=False,
         expected_reliable=100,
     )
 
@@ -240,7 +248,7 @@ def scenario4():
         remote_path=customer_2_remote_path_cat,
         destination_path='/customer_2/cat_mine/cat.txt',
         verify_from_local_path=customer_2_local_filepath_cat,
-        reliable_shares=True,
+        reliable_shares=False,
         expected_reliable=100,
     )
 
@@ -256,7 +264,7 @@ def scenario4():
         'local_filepath': customer_1_local_filepath_cat,
         'remote_path': customer_1_remote_path_cat,
         'download_filepath': customer_1_download_filepath_cat,
-    }, {
+    },{
         'share_id': customer_2_share_id_cat,
         'local_filepath': customer_2_local_filepath_cat,
         'remote_path': customer_2_remote_path_cat,
@@ -387,18 +395,18 @@ def scenario8():
     set_active_scenario('SCENARIO 8')
     print('\n\n============\n[SCENARIO 8] customer-3 receive all archived messages from message broker')
 
-    kw.wait_service_state(CUSTOMERS_IDS, 'service_shared_data', 'ON')
-    kw.wait_service_state(CUSTOMERS_IDS, 'service_private_groups', 'ON')
-    kw.wait_packets_finished(PROXY_IDS + CUSTOMERS_IDS + BROKERS_IDS)
+    kw.wait_service_state(CUSTOMERS_IDS_123, 'service_shared_data', 'ON')
+    kw.wait_service_state(CUSTOMERS_IDS_123, 'service_private_groups', 'ON')
+    kw.wait_packets_finished(PROXY_IDS + CUSTOMERS_IDS_123 + BROKERS_IDS)
 
     assert len(kw.message_conversation_v1('customer-1')['result']) == 1
 
     # create group owned by customer-1 and join
     kw.service_info_v1('customer-1', 'service_private_groups', 'ON')
     customer_1_group_key_id = kw.group_create_v1('customer-1', label='ArchivedGroupABC')
-    kw.wait_service_state(CUSTOMERS_IDS, 'service_shared_data', 'ON')
-    kw.wait_service_state(CUSTOMERS_IDS, 'service_private_groups', 'ON')
-    kw.wait_packets_finished(PROXY_IDS + CUSTOMERS_IDS + BROKERS_IDS)
+    kw.wait_service_state(CUSTOMERS_IDS_123, 'service_shared_data', 'ON')
+    kw.wait_service_state(CUSTOMERS_IDS_123, 'service_private_groups', 'ON')
+    kw.wait_packets_finished(PROXY_IDS + CUSTOMERS_IDS_123 + BROKERS_IDS)
 
     assert len(kw.message_conversation_v1('customer-1')['result']) == 2
 
@@ -410,7 +418,7 @@ def scenario8():
     # first customer joins the group - brokers are hired and connected
     kw.group_join_v1('customer-1', customer_1_group_key_id)
 
-    kw.wait_packets_finished(PROXY_IDS + CUSTOMERS_IDS + BROKERS_IDS)
+    kw.wait_packets_finished(PROXY_IDS + CUSTOMERS_IDS_123 + BROKERS_IDS)
 
     customer_1_group_info_active = kw.group_info_v1('customer-1', customer_1_group_key_id)['result']
     assert customer_1_group_info_active['state'] == 'IN_SYNC!'
@@ -448,7 +456,7 @@ def scenario8():
     # second member join the group
     kw.group_join_v1('customer-2', customer_1_group_key_id)
 
-    kw.wait_packets_finished(PROXY_IDS + CUSTOMERS_IDS + BROKERS_IDS)
+    kw.wait_packets_finished(PROXY_IDS + CUSTOMERS_IDS_123 + BROKERS_IDS)
 
     assert kw.group_info_v1('customer-2', customer_1_group_key_id)['result']['last_sequence_id'] == -1
 
@@ -495,7 +503,7 @@ def scenario8():
     # customer 1 leave the group
     kw.group_leave_v1('customer-1', customer_1_group_key_id)
 
-    kw.wait_packets_finished(PROXY_IDS + CUSTOMERS_IDS + BROKERS_IDS)
+    kw.wait_packets_finished(PROXY_IDS + CUSTOMERS_IDS_123 + BROKERS_IDS)
 
     customer_1_broker_consumers = kw.queue_consumer_list_v1(customer_1_active_broker_name, extract_ids=True)
     customer_1_broker_producers = kw.queue_producer_list_v1(customer_1_active_broker_name, extract_ids=True)
@@ -527,7 +535,7 @@ def scenario8():
     # customer-3 join the group, other group members are offline
     kw.group_join_v1('customer-3', customer_1_group_key_id)
 
-    kw.wait_packets_finished(PROXY_IDS + CUSTOMERS_IDS + BROKERS_IDS + SUPPLIERS_IDS)
+    kw.wait_packets_finished(PROXY_IDS + CUSTOMERS_IDS_123 + BROKERS_IDS + SUPPLIERS_IDS_12)
 
     customer_1_broker_consumers = kw.queue_consumer_list_v1(customer_1_active_broker_name, extract_ids=True)
     customer_1_broker_producers = kw.queue_producer_list_v1(customer_1_active_broker_name, extract_ids=True)
@@ -547,7 +555,7 @@ def scenario8():
     kw.group_leave_v1('customer-2', customer_1_group_key_id)
     kw.group_leave_v1('customer-3', customer_1_group_key_id)
 
-    kw.wait_packets_finished(PROXY_IDS + CUSTOMERS_IDS + BROKERS_IDS)
+    kw.wait_packets_finished(PROXY_IDS + CUSTOMERS_IDS_123 + BROKERS_IDS)
 
     customer_1_group_info_offline = kw.group_info_v1('customer-1', customer_1_group_key_id)['result']
     assert customer_1_group_info_offline['state'] == 'OFFLINE'
