@@ -244,3 +244,11 @@ link:
 
 health_id_servers:
 	@./scripts/ping_id_servers
+
+no_debug:
+	@if [ "$(OSTYPE)" = "darwin" ]; then\
+		find . -type f -name "*.py" -exec sed -i '' -e 's/_Debug = True/_Debug = False/g' {} +;\
+	else\
+		find . -type f -name "*.py" -exec sed -i -e 's/_Debug = True/_Debug = False/g' {} +;\
+	fi;
+	@echo 'all ".py" local files were updated with "_Debug = False"'

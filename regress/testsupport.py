@@ -502,25 +502,25 @@ async def create_identity_async(node, identity_name, event_loop, verbose=False):
         print(f'identity/create/v1 [{node}] with name {identity_name} : OK\n')
 
 
-def connect_network(node, verbose=False):
+def connect_network(node, delay=5, verbose=False):
     count = 0
-    response = request_get(node, 'network/connected/v1?wait_timeout=1', verbose=verbose)
+    response = request_get(node, f'network/connected/v1?wait_timeout={delay}', verbose=verbose)
     assert response.json()['status'] == 'ERROR'
     while True:
         if count > 60:
             assert False, f'node {node} failed to connect to the network after many retries'
-        response = request_get(node, 'network/connected/v1?wait_timeout=5', verbose=verbose)
+        response = request_get(node, f'network/connected/v1?wait_timeout={delay}', verbose=verbose)
         if response.json()['status'] == 'OK':
             break
         count += 1
-        time.sleep(1)
+        time.sleep(delay)
     if verbose:
         print(f'network/connected/v1 [{node}] : OK\n')
 
 
-async def connect_network_async(node, loop, attempts=30, delay=1, timeout=20, verbose=False):
+async def connect_network_async(node, loop, attempts=30, delay=5, timeout=20, verbose=False):
     async with aiohttp.ClientSession(loop=loop, connector=ssl_connection(node)) as client:
-        response = await client.get(tunnel_url(node, 'network/connected/v1?wait_timeout=1', verbose=verbose), timeout=timeout)
+        response = await client.get(tunnel_url(node, f'network/connected/v1?wait_timeout={delay}', verbose=verbose), timeout=timeout)
         response_json = await response.json()
         if verbose:
             print(f'\nnetwork/connected/v1 [{node}] : %s' % pprint.pformat(response_json))
@@ -530,7 +530,7 @@ async def connect_network_async(node, loop, attempts=30, delay=1, timeout=20, ve
         counter = 0
         for i in range(attempts):
             counter += 1
-            response = await client.get(tunnel_url(node, 'network/connected/v1?wait_timeout=1', verbose=verbose), timeout=timeout)
+            response = await client.get(tunnel_url(node, f'network/connected/v1?wait_timeout={delay}', verbose=verbose), timeout=timeout)
             response_json = await response.json()
             if verbose:
                 print(f'\nnetwork/connected/v1 [{node}] : %s' % pprint.pformat(response_json))
@@ -539,7 +539,7 @@ async def connect_network_async(node, loop, attempts=30, delay=1, timeout=20, ve
                     print(f"network/connected/v1 {node}: got status OK\n")
                 break
             if verbose:
-                print(f"connect network attempt {counter} at {node}: sleep 1 sec\n")
+                print(f"connect network attempt {counter} at {node}: sleep {delay} sec\n")
             await asyncio.sleep(delay)
         else:
             if verbose:
