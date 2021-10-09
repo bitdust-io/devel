@@ -818,7 +818,7 @@ def main(executable_path=None, start_reactor=True):
 
             def failed(x):
                 if isinstance(x, Failure):
-                    lg.out(0, 'finished with: %r\n' % x.getErrorMessage(), '')
+                    lg.out(0, 'finished with: %s\n' % x.getErrorMessage(), '')
                 else:
                     lg.out(0, 'finished successfully\n', '')
                 ok = str(x).count('Connection was closed cleanly') > 0
@@ -943,9 +943,9 @@ def main(executable_path=None, start_reactor=True):
                 def _stopped(x):
                     if _Debug:
                         if isinstance(x, Failure):
-                            lg.out(0, 'finished with: %r\n' % x.getErrorMessage(), '')
+                            lg.out(0, 'finished with: %s\n' % x.getErrorMessage(), '')
                         else:
-                            lg.out(0, 'finished with: %r\n' % x, '')
+                            lg.out(0, 'finished with: %s\n' % x, '')
                     else:
                         lg.out(0, 'finished successfully\n' % x, '')
                     reactor.stop()  # @UndefinedVariable

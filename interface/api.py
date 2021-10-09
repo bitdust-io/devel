@@ -2817,7 +2817,7 @@ def friend_add(trusted_user_id, alias='', share_person_key=True):
     ret = Deferred()
 
     def _add(idurl, result_defer):
-        if idurl == my_id.getIDURL():
+        if idurl == my_id.getLocalID():
             result_defer.callback(ERROR('can not add my own identity as a new friend', api_method='friend_add'))
             return
         added = False
@@ -3268,11 +3268,11 @@ def message_conversations_list(message_types=[], offset=0, limit=100):
             conv_key_id = None
             conv_label = None
             user_idurl = None
-            if (id_url.is_cached(idurl1) and idurl1 == my_id.getIDURL()) or usr1.split('@')[0] == my_id.getIDName():
+            if (id_url.is_cached(idurl1) and idurl1 == my_id.getLocalID()) or usr1.split('@')[0] == my_id.getIDName():
                 user_idurl = idurl2
                 conv_key_id = global_id.UrlToGlobalID(idurl2, include_key=True)
                 conv_label = conv_key_id.replace('master$', '').split('@')[0]
-            if (id_url.is_cached(idurl2) and idurl2 == my_id.getIDURL()) or usr2.split('@')[0] == my_id.getIDName():
+            if (id_url.is_cached(idurl2) and idurl2 == my_id.getLocalID()) or usr2.split('@')[0] == my_id.getIDName():
                 user_idurl = idurl1
                 conv_key_id = global_id.UrlToGlobalID(idurl1, include_key=True)
                 conv_label = conv_key_id.replace('master$', '').split('@')[0]

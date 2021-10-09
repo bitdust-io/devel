@@ -643,7 +643,6 @@ def scenario9():
     #                  'http://id-a:8084/broker-1.xml,http://id-b:8084/broker-2.xml,http://id-a:8084/broker-3.xml,http://id-b:8084/broker-4.xml')
 
     # put identity server offline
-    print('\nabout to stop "id-dead" now\n')
     stop_daemon('id-dead', verbose=True)
 
     # test proxy-rotated new IDURL
@@ -1510,18 +1509,16 @@ def scenario17(old_customer_2_info):
     # before start the restore make sure all files actually are delivered to suppliers
     kw.file_sync_v1('customer-1')
     kw.file_sync_v1('customer-2')
-    kw.file_list_all_v1('customer-2', expected_reliable=100, reliable_shares=True, attempts=20)
+    kw.file_list_all_v1('customer-2', expected_reliable=100, reliable_shares=False, attempts=20)
 
     kw.wait_service_state(CUSTOMERS_IDS_12, 'service_shared_data', 'ON')
     kw.wait_packets_finished(PROXY_IDS + SUPPLIERS_IDS_12 + CUSTOMERS_IDS_12)
 
     # stop customer-2 node
-    response = request_get('customer-2', 'process/stop/v1', attempts=0, timeout=2, raise_error=False)
-    print('\nprocess/stop/v1 [customer-2] : %s\n' % response)
-    # assert response.json()['status'] == 'OK', response.json()
+    stop_daemon('customer-2', verbose=True)
 
-    kw.wait_service_state(CUSTOMERS_IDS_12, 'service_shared_data', 'ON')
-    kw.wait_packets_finished(PROXY_IDS + SUPPLIERS_IDS_12 + CUSTOMERS_IDS_12)
+    kw.wait_service_state(CUSTOMERS_IDS_1, 'service_shared_data', 'ON')
+    kw.wait_packets_finished(PROXY_IDS + SUPPLIERS_IDS_12 + CUSTOMERS_IDS_1)
 
     # recover key on customer-restore container and join network
     for _ in range(5):
@@ -1539,42 +1536,44 @@ def scenario17(old_customer_2_info):
         assert False, 'customer-restore was not able to recover identity after few attempts'
 
     kw.service_info_v1('customer-restore', 'service_customer', 'ON')
+    kw.service_info_v1('customer-restore', 'service_keys_storage', 'ON')
+    kw.service_info_v1('customer-restore', 'service_my_data', 'ON')
     kw.service_info_v1('customer-restore', 'service_shared_data', 'ON', attempts=20)
 
     kw.supplier_list_v1('customer-restore', expected_min_suppliers=2, expected_max_suppliers=2)
 
     kw.supplier_list_dht_v1(
-        customer_id='customer-2@id-b_8084',
-        observers_ids=['customer-restore@id-a_8084', 'supplier-1@id-a_8084', ],
+        customer_id='customer-2@id-a_8084',
+        observers_ids=['customer-restore@id-a_8084', ],
         expected_ecc_map='ecc/2x2',
         expected_suppliers_number=2,
     )
 
     kw.supplier_list_dht_v1(
-        customer_id='customer-2@id-b_8084',
-        observers_ids=['supplier-1@id-a_8084', 'customer-restore@id-a_8084', ],
+        customer_id='customer-2@id-a_8084',
+        observers_ids=['supplier-1@id-a_8084', ],
         expected_ecc_map='ecc/2x2',
         expected_suppliers_number=2,
     )
 
     kw.supplier_list_dht_v1(
-        customer_id='customer-2@id-b_8084',
-        observers_ids=['supplier-1@id-a_8084', 'customer-restore@id-a_8084', ],
+        customer_id='customer-2@id-a_8084',
+        observers_ids=['supplier-2@id-a_8084', ],
         expected_ecc_map='ecc/2x2',
         expected_suppliers_number=2,
     )
 
     # TODO:
-    # test my keys also recovered
+    # test my keys are also recovered
     # test my message history also recovered
-    kw.file_list_all_v1('customer-restore', expected_reliable=50, reliable_shares=False, attempts=20)
+    kw.file_list_all_v1('customer-restore', expected_reliable=100, reliable_shares=False, attempts=20)
 
     # try to recover stored file again
     kw.verify_file_download_start(
         node='customer-restore',
         remote_path=old_customer_2_info['remote_path'],
         destination_path=old_customer_2_info['download_filepath'],
-        expected_reliable=50,
+        expected_reliable=100,
         reliable_shares=False,
     )
 

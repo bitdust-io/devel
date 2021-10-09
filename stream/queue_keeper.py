@@ -267,7 +267,7 @@ class QueueKeeper(automat.Automat):
         """
         self.customer_idurl = id_url.field(customer_idurl)
         self.customer_id = self.customer_idurl.to_id()
-        self.broker_idurl = id_url.field(broker_idurl or my_id.getIDURL())
+        self.broker_idurl = id_url.field(broker_idurl or my_id.getLocalID())
         self.broker_id = self.broker_idurl.to_id()
         json_state = read_state(customer_id=self.customer_id, broker_id=self.broker_id) or {}
         self.cooperated_brokers = json_state.get('cooperated_brokers') or {}

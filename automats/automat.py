@@ -706,7 +706,7 @@ class Automat(object):
         You can add a callback function to be executed when state machine
         reaches particular condition, it will be called with such arguments:
 
-            cb(oldstate, newstate, event_string, args)
+            cb(oldstate, newstate, event_string, *args, **kwargs)
 
         For example, method_B() will be called when machine_A become "ONLINE":
 

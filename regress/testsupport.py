@@ -587,8 +587,6 @@ async def packet_list_async(node, loop, wait_all_finish=True, attempts=60, delay
 
 def stop_daemon(node, skip_checks=False, verbose=False):
     bitdust_stop = run_ssh_command_and_wait(node, 'bitdust stop', verbose=verbose)
-    if verbose:
-        print('\n' + bitdust_stop[0].strip())
     if not skip_checks:
         resp = bitdust_stop[0].strip()
         assert (
@@ -597,8 +595,7 @@ def stop_daemon(node, skip_checks=False, verbose=False):
                 resp.endswith('BitDust stopped')
             ) or (
                 resp.startswith('found main BitDust process:') and
-                resp.count('BitDust process finished with:') and
-                resp.count('OK')
+                resp.count('finished')
             ) or (
                 resp == 'BitDust is not running at the moment'
             ) or (

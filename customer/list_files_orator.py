@@ -34,7 +34,7 @@
     <img src="https://bitdust.io/automats/list_files_orator/list_files_orator.png" style="max-width:100%;">
     </a>
 
-This simple state machine requests a list of files stored on remote machines.
+This simple state machine requests a list of files stored on remote nodes.
 
 Before that, it scans the local backup folder and prepare an index of existing data pieces.
 
@@ -52,7 +52,6 @@ EVENTS:
 #------------------------------------------------------------------------------
 
 from __future__ import absolute_import
-from twisted.internet.defer import maybeDeferred
 
 #------------------------------------------------------------------------------
 
@@ -62,6 +61,10 @@ _DebugLevel = 8
 #------------------------------------------------------------------------------
 
 import time
+
+#------------------------------------------------------------------------------
+
+from twisted.internet.defer import maybeDeferred, Deferred
 
 #------------------------------------------------------------------------------
 
@@ -86,20 +89,45 @@ from userid import id_url
 #------------------------------------------------------------------------------
 
 _ListFilesOrator = None
-_RequestedListFilesPacketIDs = set()
-_ReceivedListFilesCounter = 0
 
 #------------------------------------------------------------------------------
 
-def is_synchronized():
+def is_synchronized(customer_idurl=None):
     if not A():
         return False
+    customer_idurl = customer_idurl or my_id.getLocalID()
     if A().state == 'SAW_FILES':
-        return True
+        if A().last_time_saw_files.get(customer_idurl, -1) > 0:
+            return True
+        return False
     if A().state in ['LOCAL_FILES', 'REMOTE_FILES', ]:
-        if A().last_time_saw_files > 0 and time.time() - A().last_time_saw_files < 20:
+        if A().target_customer_idurl != customer_idurl:
+            return A().last_time_saw_files.get(customer_idurl, -1) > 0
+        lt_saw_files = A().last_time_saw_files.get(customer_idurl, -1)
+        if lt_saw_files > 0 and time.time() - lt_saw_files < 20:
             return True
     return False
+
+
+def synchronize_files(customer_idurl=None):
+    ret = Deferred()
+    if not A():
+        ret.errback(Exception('not initialized'))
+        return ret
+    customer_idurl = customer_idurl or my_id.getLocalID()
+    if A().state in ['SAW_FILES', 'NO_FILES', ]:
+        A('need-files', customer_idurl=customer_idurl, result_defer=ret)
+        return ret
+
+    def _on_list_files_orator_state_changed(oldstate, newstate, event_string, *args, **kwargs):
+        if _Debug:
+            lg.args(_DebugLevel, oldstate=oldstate, newstate=newstate, event=event_string)
+        if newstate != oldstate and newstate in ['SAW_FILES', 'NO_FILES', ]:
+            A().removeStateChangedCallback(_on_list_files_orator_state_changed)
+            A('need-files', customer_idurl=customer_idurl, result_defer=ret)
+
+    A().addStateChangedCallback(_on_list_files_orator_state_changed)
+    return ret
 
 #------------------------------------------------------------------------------
 
@@ -147,31 +175,43 @@ class ListFilesOrator(automat.Automat):
     }
 
     def init(self):
-        self.last_time_saw_files = -1
+        self.target_customer_idurl = None
+        self.result_defer = None
+        self.critical_suppliers_number = 0
+        self.last_time_saw_files = {}
         self.ping_required = True
+        self.received_lf_counter = 0
+        self.requested_lf_packet_ids = set()
         events.add_subscriber(self._on_my_identity_rotated, 'my-identity-rotated')
         events.add_subscriber(self._on_supplier_connected, 'supplier-connected')
 
     def shutdown(self):
+        self.result_defer = None
+        self.received_lf_counter = 0
+        self.last_time_saw_files.clear()
+        self.requested_lf_packet_ids.clear()
         events.remove_subscriber(self._on_supplier_connected, 'supplier-connected')
         events.remove_subscriber(self._on_my_identity_rotated, 'my-identity-rotated')
 
     def state_changed(self, oldstate, newstate, event, *args, **kwargs):
-        if driver.is_on('service_backups'):
-            # TODO: rebuild using "list-files-orator-state-changed" event
-            from storage import backup_monitor
-            backup_monitor.A('list_files_orator.state', newstate)
+        if self.target_customer_idurl is None or self.target_customer_idurl == my_id.getLocalID():
+            if driver.is_on('service_backups'):
+                # TODO: rebuild using "list-files-orator-state-changed" event
+                from storage import backup_monitor
+                backup_monitor.A('list_files_orator.state', newstate)
         if newstate == 'SAW_FILES':
-            if A().last_time_saw_files > 0 and time.time() - A().last_time_saw_files < 20:
-                if _Debug:
-                    lg.dbg(_DebugLevel, 'already saw files %r seconds ago' % (time.time() - A().last_time_saw_files))
-            else:
-                if _Debug:
-                    lg.dbg(_DebugLevel, 'saw files just now, raising "my-list-files-refreshed" event')
-                events.send('my-list-files-refreshed', data={})
-            self.last_time_saw_files = time.time()
+            lt_saw_files = self.last_time_saw_files.get(self.target_customer_idurl, -1)
+            if lt_saw_files <= 0 or time.time() - lt_saw_files < 20:
+                events.send('my-list-files-refreshed', data={'customer_idurl': self.target_customer_idurl, })
+            self.last_time_saw_files[self.target_customer_idurl] = time.time()
         if newstate == 'NO_FILES':
-            self.last_time_saw_files = -1
+            self.last_time_saw_files[self.target_customer_idurl] = -1
+        if newstate in ['SAW_FILES', 'NO_FILES', ]:
+            self.target_customer_idurl = None
+            if self.result_defer:
+                if not self.result_defer.called:
+                    self.result_defer.callback(self.state)
+                self.result_defer = None
 
     def A(self, event, *args, **kwargs):
         #---NO_FILES---
@@ -204,16 +244,16 @@ class ListFilesOrator(automat.Automat):
         return None
 
     def isAllListFilesReceived(self, *args, **kwargs):
-        global _RequestedListFilesPacketIDs
-        lg.out(6, 'list_files_orator.isAllListFilesReceived need %d more' % len(_RequestedListFilesPacketIDs))
-        return len(_RequestedListFilesPacketIDs) == 0
+        if _Debug:
+            lg.out(_DebugLevel, 'list_files_orator.isAllListFilesReceived need %d more' % len(self.requested_lf_packet_ids))
+        return len(self.requested_lf_packet_ids) == 0
 
     def isSomeConnecting(self, *args, **kwargs):
         """
         Condition method.
         """
         from customer import supplier_connector
-        for one_supplier_connector in supplier_connector.connectors().values():
+        for one_supplier_connector in supplier_connector.connectors(customer_idurl=self.target_customer_idurl).values():
             if one_supplier_connector.state not in ['CONNECTED', 'DISCONNECTED', 'NO_SERVICE', ]:
                 return True
         return False
@@ -222,14 +262,15 @@ class ListFilesOrator(automat.Automat):
         """
         Condition method.
         """
-        global _ReceivedListFilesCounter
-        lg.out(6, 'list_files_orator.isSomeListFilesReceived %d list files was received' % _ReceivedListFilesCounter)
-        from raid import eccmap
-        critical_suppliers_number = eccmap.GetCorrectableErrors(eccmap.Current().suppliers_number)
-        return _ReceivedListFilesCounter >= critical_suppliers_number
+        if _Debug:
+            lg.out(_DebugLevel, 'list_files_orator.isEnoughListFilesReceived %d list files received' % self.received_lf_counter)
+        return self.received_lf_counter >= self.critical_suppliers_number
 
     def doReadLocalFiles(self, *args, **kwargs):
         from storage import backup_matrix
+        self.target_customer_idurl = kwargs.get('customer_idurl') or my_id.getLocalID()
+        self.result_defer = kwargs.get('result_defer')
+        self.critical_suppliers_number = 0
         maybeDeferred(backup_matrix.ReadLocalFiles).addBoth(
             lambda x: self.automat('local-files-done'))
 
@@ -239,7 +280,7 @@ class ListFilesOrator(automat.Automat):
         """
         if self.ping_required:
             self.ping_required = False
-            propagate.ping_suppliers().addBoth(self._do_request)
+            propagate.ping_suppliers(customer_idurl=self.target_customer_idurl).addBoth(self._do_request)
         else:
             self._do_request()
 
@@ -252,29 +293,36 @@ class ListFilesOrator(automat.Automat):
             lg.out(_DebugLevel, 'list_files_orator.doRequestFilesOneSupplier from %s' % supplier_idurl)
         outpacket = p2p_service.SendListFiles(
             target_supplier=supplier_idurl,
+            customer_idurl=self.target_customer_idurl,
             timeout=30,
         )
         if outpacket:
-            _RequestedListFilesPacketIDs.add(outpacket.PacketID)
+            self.requested_lf_packet_ids.add(outpacket.PacketID)
         else:
             lg.err('failed sending ListFiles() to %r' % supplier_idurl)
 
     def _do_request(self, x=None):
-        global _ReceivedListFilesCounter
-        global _RequestedListFilesPacketIDs
-        _ReceivedListFilesCounter = 0
-        _RequestedListFilesPacketIDs.clear()
-        for idurl in contactsdb.suppliers():
+        from raid import eccmap
+        self.received_lf_counter = 0
+        self.requested_lf_packet_ids.clear()
+        known_suppliers = contactsdb.suppliers(customer_idurl=self.target_customer_idurl)
+        try:
+            self.critical_suppliers_number = eccmap.GetCorrectableErrors(len(known_suppliers))
+        except:
+            lg.exc()
+            self.critical_suppliers_number = int(float(len(known_suppliers)) * 0.75)
+        for idurl in known_suppliers:
             if idurl:
                 if online_status.isOnline(idurl):
                     if _Debug:
                         lg.out(_DebugLevel, 'list_files_orator._do_request  ListFiles() from my supplier %s' % idurl)
                     outpacket = p2p_service.SendListFiles(
                         target_supplier=idurl,
+                        customer_idurl=self.target_customer_idurl,
                         timeout=30,
                     )
                     if outpacket:
-                        _RequestedListFilesPacketIDs.add(outpacket.PacketID)
+                        self.requested_lf_packet_ids.add(outpacket.PacketID)
                     else:
                         lg.err('failed sending ListFiles() to %r' % idurl)
                 else:
@@ -282,9 +330,14 @@ class ListFilesOrator(automat.Automat):
 
     def _on_my_identity_rotated(self, evt):
         self.ping_required = True
+        if _Debug:
+            lg.dbg(_DebugLevel, 'updating ping_required=True')
 
     def _on_supplier_connected(self, evt):
-        if id_url.field(evt.data['customer_idurl']) == my_id.getLocalID():
+        if id_url.field(evt.data['customer_idurl']) == self.target_customer_idurl:
+            if _Debug:
+                lg.dbg(_DebugLevel, 'for customer %r single supplier %r was connected' % (
+                    self.target_customer_idurl, evt.data['supplier_idurl']))
             self.automat('supplier-connected', evt.data['supplier_idurl'])
 
 #------------------------------------------------------------------------------
@@ -294,9 +347,11 @@ def IncomingListFiles(newpacket):
     Called from ``p2p.backup_control`` to pass incoming "ListFiles" packet
     here.
     """
-    global _RequestedListFilesPacketIDs
-    global _ReceivedListFilesCounter
-    if newpacket.PacketID in _RequestedListFilesPacketIDs:
-        _ReceivedListFilesCounter += 1
-        _RequestedListFilesPacketIDs.discard(newpacket.PacketID)
+    if not A():
+        return
+    if newpacket.PacketID in A().requested_lf_packet_ids:
+        A().received_lf_counter += 1
+        A().requested_lf_packet_ids.discard(newpacket.PacketID)
         A('inbox-files', newpacket)
+    else:
+        lg.warn('received and ignored %r, currently target customer is %r' % (newpacket, A().target_customer_idurl, ))

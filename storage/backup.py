@@ -154,7 +154,7 @@ class backup(automat.Automat):
                  ecc_map=None,
                  creatorIDURL=None,):
         self.backupID = backupID
-        self.creatorIDURL = creatorIDURL or my_id.getIDURL()
+        self.creatorIDURL = creatorIDURL or my_id.getLocalID()
         _parts = packetid.SplitBackupID(self.backupID)
         self.customerGlobalID = _parts[0]
         self.pathID = _parts[1]
