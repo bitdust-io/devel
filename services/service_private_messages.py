@@ -75,6 +75,14 @@ class PrivateMessagesService(LocalService):
         message.shutdown()
         return True
 
+    def on_suspend(self, *args, **kwargs):
+        return True
+
+    def on_resume(self, *args, **kwargs):
+        from chat import nickname_holder
+        nickname_holder.A('set')
+        return True
+
     def _on_inbox_packet_received(self, newpacket, info, status, error_message):
         from p2p import commands
         from stream import message

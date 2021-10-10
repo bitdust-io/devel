@@ -189,12 +189,10 @@ def init(UI='', options=None, args=None, overDict=None, executablePath=None):
         lg.out(_DebugLevel, "    python executable is: %s" % sys.executable)
         lg.out(_DebugLevel, "    python version is:\n%s" % sys.version)
         lg.out(_DebugLevel, "    python sys.path is:\n                %s" % ('\n                '.join(sys.path)))
-        lg.out(_DebugLevel, "bpmain.init UI=[%s]" % UI)
-        if lg.is_debug(12):
-            lg.out(_DebugLevel, '\n' + bpio.osinfofull())
+        lg.out(_DebugLevel, '\n' + bpio.osinfofull())
 
     if _Debug:
-        lg.out(_DebugLevel, 'bpmain.init going to import automats')
+        lg.out(_DebugLevel, 'bpmain.init going to initialize state machines')
 
     #---START!---
     from automats import automat

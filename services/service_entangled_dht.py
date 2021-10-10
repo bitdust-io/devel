@@ -121,6 +121,16 @@ class EntangledDHTService(LocalService):
         dht_service.shutdown()
         return True
 
+    def on_suspend(self, *args, **kwargs):
+        from dht import dht_service
+        dht_service.disconnect()
+        return True
+
+    def on_resume(self, *args, **kwargs):
+        from dht import dht_service
+        dht_service.reconnect()
+        return True
+
     def health_check(self):
         return True
 

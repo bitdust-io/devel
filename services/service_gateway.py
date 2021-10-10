@@ -64,27 +64,27 @@ class GatewayService(LocalService):
         from transport import packet_out
         from transport import packet_in
         from transport import gateway
-        # from transport import callback
-        # from transport import bandwidth
         packet_out.init()
         packet_in.init()
         gateway.init()
-        # bandwidth.init()
-        # callback.insert_inbox_callback(0, bandwidth.INfile)
-        # callback.add_finish_file_sending_callback(bandwidth.OUTfile)
         return True
 
     def stop(self):
         from transport import packet_out
         from transport import packet_in
         from transport import gateway
-        # from transport import callback
-        # from transport import bandwidth
-        # callback.remove_inbox_callback(bandwidth.INfile)
-        # callback.remove_finish_file_sending_callback(bandwidth.OUTfile)
-        d = gateway.stop()
-        # bandwidth.shutdown()
+        gateway.stop()
         gateway.shutdown()
         packet_out.shutdown()
         packet_in.shutdown()
-        return d
+        return True
+
+    def on_suspend(self, *args, **kwargs):
+        from transport import gateway
+        return gateway.stop()
+
+    def on_resume(self, *args, **kwargs):
+        from transport import gateway
+        if kwargs.get('cold_start') is True:
+            return gateway.cold_start()
+        return gateway.start()

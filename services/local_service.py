@@ -72,10 +72,7 @@ from logs import lg
 
 from automats import automat
 
-from services.driver import services
-from services.driver import on_service_callback
-from services.driver import RequireSubclass
-from services.driver import ServiceAlreadyExist
+from services import driver
 
 #------------------------------------------------------------------------------
 
@@ -87,6 +84,7 @@ class LocalService(automat.Automat):
     """
 
     fast = False
+    suspended = False
 
     service_name = ''
     config_path = ''
@@ -95,9 +93,9 @@ class LocalService(automat.Automat):
 
     def __init__(self):
         if not self.service_name:
-            raise RequireSubclass()
-        if self.service_name in list(services().keys()):
-            raise ServiceAlreadyExist(self.service_name)
+            raise driver.RequireSubclass()
+        if self.service_name in list(driver.services().keys()):
+            raise driver.ServiceAlreadyExist(self.service_name)
         self.result_deferred = None
         if self.data_dir_required:
             my_data_dir_path = self.data_dir_path()
@@ -119,19 +117,41 @@ class LocalService(automat.Automat):
         return config.conf().getBool(self.config_path)
 
     def start(self):
-        raise RequireSubclass()
+        raise driver.RequireSubclass()
 
     def stop(self):
-        raise RequireSubclass()
+        raise driver.RequireSubclass()
+
+    def suspend(self, *args, **kwargs):
+        if self.suspended:
+            raise driver.ServiceAlreadySuspended()
+        ret = self.on_suspend(*args, **kwargs)
+        if ret is not None:
+            self.suspended = True
+        return ret
+
+    def resume(self, *args, **kwargs):
+        if not self.suspended:
+            raise driver.ServiceWasNotSuspended()
+        ret = self.on_resume(*args, **kwargs)
+        if ret is not None:
+            self.suspended = False
+        return ret
 
     def request(self, json_payload, newpacket, info):
-        raise RequireSubclass()
+        raise driver.RequireSubclass()
 
     def cancel(self, json_payload, newpacket, info):
-        raise RequireSubclass()
+        raise driver.RequireSubclass()
+
+    def on_suspend(self, *args, **kwargs):
+        return True
+
+    def on_resume(self, *args, **kwargs):
+        return True
 
     def health_check(self):
-        raise RequireSubclass()
+        raise driver.RequireSubclass()
 
     def network_configuration(self):
         return None
@@ -270,7 +290,7 @@ class LocalService(automat.Automat):
         """
         Condition method.
         """
-        for svc in services().values():
+        for svc in driver.services().values():
             if self.service_name in svc.dependent_on():
                 if svc.state != 'OFF' and svc.state != 'DEPENDS_OFF' and svc.state != 'NOT_INSTALLED':
                     if _Debug:
@@ -287,7 +307,7 @@ class LocalService(automat.Automat):
             return
         depends_results = []
         for depend_name in self.dependent_on():
-            depend_service = services().get(depend_name, None)
+            depend_service = driver.services().get(depend_name, None)
             if depend_service is None:
                 depends_results.append((depend_name, 'not found'))
                 continue
@@ -299,6 +319,7 @@ class LocalService(automat.Automat):
             return
         if _Debug:
             lg.out(_DebugLevel, '[%s] STARTING' % self.service_name)
+        self.suspended = False
         try:
             result = self.start()
         except Exception as exc:
@@ -321,6 +342,7 @@ class LocalService(automat.Automat):
         """
         if _Debug:
             lg.out(_DebugLevel, '[%s] STOPPING' % self.service_name)
+        self.suspended = False
         try:
             result = self.stop()
         except:
@@ -344,7 +366,7 @@ class LocalService(automat.Automat):
         Action method.
         """
         count = 0
-        for svc in services().values():
+        for svc in driver.services().values():
             if self.service_name in svc.dependent_on():
                 if _Debug:
                     lg.out(_DebugLevel, '%r sends "stop" to %r' % (self, svc))
@@ -362,7 +384,7 @@ class LocalService(automat.Automat):
         if self.result_deferred:
             self.result_deferred.callback('started')
             self.result_deferred = None
-        on_service_callback('started', self.service_name)
+        driver.on_service_callback('started', self.service_name)
 
     def doNotifyStopped(self, *args, **kwargs):
         """
@@ -373,7 +395,7 @@ class LocalService(automat.Automat):
         if self.result_deferred:
             self.result_deferred.callback('stopped')
             self.result_deferred = None
-        on_service_callback('stopped', self.service_name)
+        driver.on_service_callback('stopped', self.service_name)
 
     def doNotifyNotInstalled(self, *args, **kwargs):
         """
@@ -384,7 +406,7 @@ class LocalService(automat.Automat):
         if self.result_deferred:
             self.result_deferred.callback('not_installed')
             self.result_deferred = None
-        on_service_callback('not_installed', self.service_name)
+        driver.on_service_callback('not_installed', self.service_name)
 
     def doNotifyFailed(self, *args, **kwargs):
         """
@@ -400,7 +422,7 @@ class LocalService(automat.Automat):
         if self.result_deferred:
             self.result_deferred.callback('failed')
             self.result_deferred = None
-        on_service_callback('failed', self.service_name)
+        driver.on_service_callback('failed', self.service_name)
 
     def doNotifyDependsOff(self, *args, **kwargs):
         """
@@ -411,7 +433,7 @@ class LocalService(automat.Automat):
         if self.result_deferred:
             self.result_deferred.callback('depends_off')
             self.result_deferred = None
-        on_service_callback('depends_off', self.service_name)
+        driver.on_service_callback('depends_off', self.service_name)
 
     def doDestroyMe(self, *args, **kwargs):
         """

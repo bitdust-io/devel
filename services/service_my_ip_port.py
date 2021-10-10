@@ -67,6 +67,16 @@ class MyIPPortService(LocalService):
         stun_client.A('shutdown')
         return True
 
+    def on_suspend(self, *args, **kwargs):
+        return True
+
+    def on_resume(self, *args, **kwargs):
+        from stun import stun_client
+        if not stun_client.A() or stun_client.A().state in ['STOPPED', ]:
+            stun_client.A().dropMyExternalAddress()
+            stun_client.A('start')
+        return True
+
     def _do_stun(self):
         from stun import stun_client
         stun_client.A().dropMyExternalAddress()

@@ -71,8 +71,8 @@ from six.moves import range
 
 #------------------------------------------------------------------------------
 
-_Debug = False
-_DebugLevel = 10
+_Debug = True
+_DebugLevel = 8
 
 #------------------------------------------------------------------------------
 
@@ -157,8 +157,16 @@ class NetworkConnector(automat.Automat):
 
     timers = {
         'timer-1hour': (3600, ['DISCONNECTED']),
-        'timer-5sec': (5.0, ['DISCONNECTED', 'CONNECTED']),
+        'timer-5sec': (30.0, ['DISCONNECTED', 'CONNECTED']),
     }
+
+    managed_services = [
+        'service_udp_datagrams',
+        'service_service_entangled_dht',
+        'service_ip_port_responder',
+        'service_my_ip_port',
+        'service_private_messages',
+    ]
 
     def init(self):
         self.last_upnp_time = 0
@@ -311,15 +319,15 @@ class NetworkConnector(automat.Automat):
         #     miss += 1
         # if miss >= 2:
         #     return True
-        return True  # testing
-        return False
+        # return False ... still testing that approach
+        return True
 
     def isNetworkActive(self, *args, **kwargs):
-        return len(*args, **kwargs) > 0
+        return len(args[0]) > 0
 
     def isCurrentInterfaceActive(self, *args, **kwargs):
-        # I am not sure about external IP,
-        # because if you have a white IP it should be the same with your local IP
+        # TODO: not sure about external IP
+        # because if you have a white IP it should be the same as your local IP
         return (strng.to_bin(misc.readLocalIP()) in args[0]) or (strng.to_bin(misc.readExternalIP()) in args[0])
 
     def isTimePassed(self, *args, **kwargs):
@@ -371,52 +379,25 @@ class NetworkConnector(automat.Automat):
         return True
 
     def doSetUp(self, *args, **kwargs):
-        if _Debug:
-            lg.out(_DebugLevel, 'network_connector.doSetUp')
-        if driver.is_on('service_udp_datagrams'):
-            from lib import udp
-            udp_port = settings.getUDPPort()
-            if not udp.proto(udp_port):
-                try:
-                    udp.listen(udp_port)
-                except:
-                    lg.exc()
-        if driver.is_on('service_service_entangled_dht'):
-            from dht import dht_service
-            dht_service.reconnect()
-        if driver.is_on('service_ip_port_responder'):
-            from stun import stun_server
-            udp_port = int(settings.getUDPPort())
-            stun_server.A('start', udp_port)
-        if driver.is_on('service_my_ip_port'):
-            from stun import stun_client
-            if not stun_client.A() or stun_client.A().state in ['STOPPED', ]: 
-                stun_client.A().dropMyExternalAddress()
-                stun_client.A('start')
-        if driver.is_on('service_private_messages'):
-            from chat import nickname_holder
-            nickname_holder.A('set')
+        for svc_name in self.managed_services:
+            if driver.is_on(svc_name):
+                if driver.is_suspended(svc_name):
+                    if not driver.resume(svc_name):
+                        lg.err('resuming network service %r failed' % svc_name)
+                    else:
+                        lg.info('network service resumed: %r' % svc_name)
         self.automat('network-up')
 
     def doSetDown(self, *args, **kwargs):
         """
         """
-        if _Debug:
-            lg.out(_DebugLevel, 'network_connector.doSetDown')
-        if driver.is_on('service_gateway'):
-            from transport import gateway
-            gateway.stop()
-        if driver.is_on('service_ip_port_responder'):
-            from stun import stun_server
-            stun_server.A('stop')
-        if driver.is_on('service_service_entangled_dht'):
-            from dht import dht_service
-            dht_service.disconnect()
-        if driver.is_on('service_udp_datagrams'):
-            from lib import udp
-            udp_port = settings.getUDPPort()
-            if udp.proto(udp_port):
-                udp.close(udp_port)
+        for svc_name in ['service_gateway', ] + list(self.managed_services).reverse():
+            if driver.is_on(svc_name):
+                if not driver.is_suspended(svc_name):
+                    if not driver.suspend(svc_name):
+                        lg.err('suspending network service %r failed' % svc_name)
+                    else:
+                        lg.info('network service suspended: %r' % svc_name)
         self.automat('network-down')
 
     def doUPNP(self, *args, **kwargs):
@@ -434,9 +415,6 @@ class NetworkConnector(automat.Automat):
             lambda x: self.automat('internet-failed', 'disconnected'))
 
     def doCheckNetworkInterfaces(self, *args, **kwargs):
-        # lg.out(4, 'network_connector.doCheckNetworkInterfaces')
-        # TODO
-        # self.automat('got-network-info', [])
         start_time = time.time()
         if bpio.Linux():
             def _call():
@@ -445,6 +423,8 @@ class NetworkConnector(automat.Automat):
             def _done(result, start_time):
                 if _Debug:
                     lg.out(_DebugLevel, 'network_connector.doCheckNetworkInterfaces DONE: %s in %d seconds' % (str(result), time.time() - start_time))
+                if not result:
+                    lg.err('no network interfaces found')
                 self.automat('got-network-info', result)
             d = threads.deferToThread(_call)
             d.addBoth(_done, start_time)
@@ -452,6 +432,8 @@ class NetworkConnector(automat.Automat):
             ips = net_misc.getNetworkInterfaces()
             if _Debug:
                 lg.out(_DebugLevel, 'network_connector.doCheckNetworkInterfaces DONE: %s in %d seconds' % (str(ips), time.time() - start_time))
+            if not ips:
+                lg.err('no network interfaces found')
             self.automat('got-network-info', ips)
 
     def doRememberTime(self, *args, **kwargs):
@@ -464,8 +446,10 @@ class NetworkConnector(automat.Automat):
         if not driver.is_on('service_gateway'):
             self.automat('gateway-is-not-started')
             return
-        from transport import gateway
-        restarted_transports = gateway.start()
+        if not driver.is_suspended('service_gateway'):
+            self.automat('all-network-transports-ready')
+            return
+        restarted_transports = driver.resume('service_gateway')
         if len(restarted_transports) == 0:
             self.automat('all-network-transports-ready')
 
@@ -476,8 +460,10 @@ class NetworkConnector(automat.Automat):
         if not driver.is_on('service_gateway'):
             self.automat('gateway-is-not-started')
             return
-        from transport import gateway
-        restarted_transports = gateway.cold_start()
+        if not driver.is_suspended('service_gateway'):
+            self.automat('all-network-transports-ready')
+            return
+        restarted_transports = driver.resume('service_gateway', cold_start=True)
         if len(restarted_transports) == 0:
             self.automat('all-network-transports-ready')
 

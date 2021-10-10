@@ -25,17 +25,17 @@ SCENARIO 1: user can search another user by nickname
 
 SCENARIO 2: user is able to detect external IP
 
-SCENARIO 3: customer-1 is able to send private message to customer-2
+SCENARIO 3: customer-1 is able to send private message to customer-2 [brokers]
 
-SCENARIO 4: customer-1 share files to customer-2
+SCENARIO 4: customer-1 share files to customer-2 [idrestore] [suppliers5]
 
 SCENARIO 5: users are able to use proxy nodes to route the traffic
 
 SCENARIO 6: users are able to use DHT network to store data
 
-SCENARIO 7: customer-1 upload and download file encrypted with his master key
+SCENARIO 7: customer-1 upload and download file encrypted with his master key [suppliers5]
 
-SCENARIO 8: customer-3 receive all archived messages from message broker
+SCENARIO 8: customer-3 receive all archived messages from message broker [brokers]
 
 SCENARIO 9: ID server id-dead is dead and few nodes has rotated identities
 
@@ -47,18 +47,18 @@ SCENARIO 12: customer-4 chat with customer-2 via broker-rotated, but his IDURL w
 
 SCENARIO 13: one of the suppliers of customer-3 has IDURL rotated
 
-SCENARIO 14: customer-1 replace supplier at position 0 by random node
+SCENARIO 14: customer-1 replace supplier at position 0 by random node [suppliers5]
 
-SCENARIO 15: customer-1 switch supplier at position 1 to specific node
+SCENARIO 15: customer-1 switch supplier at position 1 to specific node [suppliers5]
 
-SCENARIO 16: customer-4 increase and decrease suppliers amount
+SCENARIO 16: customer-4 increase and decrease suppliers amount [suppliers5]
 
-SCENARIO 17: customer-restore recover identity from customer-1
+SCENARIO 17: customer-restore recover identity from customer-1 [idrestore]
 
 
 TODO:
 
-SCENARIO 18: customer-4 able to upload/download files when one supplier is down
+SCENARIO 18: customer-4 able to upload/download files when one supplier is down [suppliers5]
 
 
 """
