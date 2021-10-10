@@ -25,7 +25,7 @@ ARG PYTHON_VERSION
 FROM python:${PYTHON_VERSION}
 
 RUN apt-get update && apt-get install -y \
-    curl openssh-server mosh nano \
+    curl openssh-server mosh nano iproute2 \
  && rm -rf /var/lib/apt/lists/* \
  && pip install virtualenv
 
