@@ -42,6 +42,7 @@ class UDPDatagramsService(LocalService):
 
     service_name = 'service_udp_datagrams'
     config_path = 'services/udp-datagrams/enabled'
+    start_suspended = True
 
     def dependent_on(self):
         return [

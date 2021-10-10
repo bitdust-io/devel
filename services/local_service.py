@@ -90,6 +90,7 @@ class LocalService(automat.Automat):
     config_path = ''
     data_dir_required = False
     stop_when_failed = False
+    start_suspended = False
 
     def __init__(self):
         if not self.service_name:
@@ -319,7 +320,7 @@ class LocalService(automat.Automat):
             return
         if _Debug:
             lg.out(_DebugLevel, '[%s] STARTING' % self.service_name)
-        self.suspended = False
+        self.suspended = bool(self.start_suspended)
         try:
             result = self.start()
         except Exception as exc:

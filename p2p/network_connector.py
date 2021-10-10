@@ -93,8 +93,6 @@ from logs import lg
 from automats import automat
 from automats import global_state
 
-from system import bpio
-
 from lib import net_misc
 from lib import misc
 from lib import strng
@@ -323,12 +321,20 @@ class NetworkConnector(automat.Automat):
         return True
 
     def isNetworkActive(self, *args, **kwargs):
-        return len(args[0]) > 0
+        ips = args[0]
+        if _Debug:
+            lg.args(_DebugLevel, ips=ips)
+        return len(ips) > 0
 
     def isCurrentInterfaceActive(self, *args, **kwargs):
         # TODO: not sure about external IP
         # because if you have a white IP it should be the same as your local IP
-        return (strng.to_bin(misc.readLocalIP()) in args[0]) or (strng.to_bin(misc.readExternalIP()) in args[0])
+        loc = strng.to_bin(misc.readLocalIP())
+        ext = strng.to_bin(misc.readExternalIP())
+        ips = args[0]
+        if _Debug:
+            lg.args(_DebugLevel, local=loc, external=ext)
+        return (loc in ips) or (ext in ips)
 
     def isTimePassed(self, *args, **kwargs):
         return time.time() - self.last_reconnect_time < 15
@@ -386,6 +392,10 @@ class NetworkConnector(automat.Automat):
                         lg.err('resuming network service %r failed' % svc_name)
                     else:
                         lg.info('network service resumed: %r' % svc_name)
+                else:
+                    lg.warn('network service %r was not suspended' % svc_name)
+            else:
+                lg.warn('network service %r was not ON' % svc_name)
         self.automat('network-up')
 
     def doSetDown(self, *args, **kwargs):
@@ -398,6 +408,10 @@ class NetworkConnector(automat.Automat):
                         lg.err('suspending network service %r failed' % svc_name)
                     else:
                         lg.info('network service suspended: %r' % svc_name)
+                else:
+                    lg.warn('network service %r already suspended' % svc_name)
+            else:
+                lg.warn('network service %r was not ON' % svc_name)
         self.automat('network-down')
 
     def doUPNP(self, *args, **kwargs):
@@ -416,25 +430,25 @@ class NetworkConnector(automat.Automat):
 
     def doCheckNetworkInterfaces(self, *args, **kwargs):
         start_time = time.time()
-        if bpio.Linux():
-            def _call():
-                return net_misc.getNetworkInterfaces()
-
-            def _done(result, start_time):
-                if _Debug:
-                    lg.out(_DebugLevel, 'network_connector.doCheckNetworkInterfaces DONE: %s in %d seconds' % (str(result), time.time() - start_time))
-                if not result:
-                    lg.err('no network interfaces found')
-                self.automat('got-network-info', result)
-            d = threads.deferToThread(_call)
-            d.addBoth(_done, start_time)
-        else:
-            ips = net_misc.getNetworkInterfaces()
-            if _Debug:
-                lg.out(_DebugLevel, 'network_connector.doCheckNetworkInterfaces DONE: %s in %d seconds' % (str(ips), time.time() - start_time))
-            if not ips:
-                lg.err('no network interfaces found')
-            self.automat('got-network-info', ips)
+#         if bpio.Linux():
+#             def _call():
+#                 return net_misc.getNetworkInterfaces()
+# 
+#             def _done(result, start_time):
+#                 if _Debug:
+#                     lg.out(_DebugLevel, 'network_connector.doCheckNetworkInterfaces DONE: %s in %d seconds' % (str(result), time.time() - start_time))
+#                 if not result:
+#                     lg.err('no network interfaces found')
+#                 self.automat('got-network-info', result)
+#             d = threads.deferToThread(_call)
+#             d.addBoth(_done, start_time)
+#         else:
+        ips = net_misc.getNetworkInterfaces()
+        if _Debug:
+            lg.args(_DebugLevel, result=ips, tm=(time.time() - start_time))
+        if not ips:
+            lg.err('no network interfaces found')
+        self.automat('got-network-info', ips)
 
     def doRememberTime(self, *args, **kwargs):
         self.last_reconnect_time = time.time()

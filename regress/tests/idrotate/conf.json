@@ -204,7 +204,7 @@
                 "preferred_routers": "http://id-a:8084/proxy-1.xml",
                 "block_size": "10 KB",
                 "num_suppliers": 2,
-                "supplier_candidates": "http://id-a:8084/supplier-1.xml,http://id-b:8084/supplier-2.xml",
+                "supplier_candidates": "http://id-dead:8084/supplier-rotated.xml,http://id-b:8084/supplier-2.xml",
                 "preferred_brokers": ""
             }
         },

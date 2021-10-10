@@ -42,6 +42,7 @@ class GatewayService(LocalService):
 
     service_name = 'service_gateway'
     config_path = 'services/gateway/enabled'
+    start_suspended = True
 
     def dependent_on(self):
         return [

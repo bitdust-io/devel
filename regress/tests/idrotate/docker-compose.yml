@@ -58,21 +58,12 @@ services:
     links:
       - dht-1
 
-  dht-3:
-    image: bitdust/app
-    ports:
-      - "10013:22"
-    links:
-      - dht-1
-      - dht-2
-
   stun-1:
     image: bitdust/app
     ports:
       - "10021:22"
     links:
       - dht-2
-      - dht-3
 
   proxy-1:
     image: bitdust/app
@@ -80,7 +71,6 @@ services:
       - "10031:22"
     links:
       - dht-2
-      - dht-3
       - stun-1
       - id-a
       - id-b
@@ -93,20 +83,6 @@ services:
       - "10032:22"
     links:
       - dht-2
-      - dht-3
-      - stun-1
-      - id-a
-      - id-b
-      - id-c
-      - id-dead
-
-  proxy-3:
-    image: bitdust/app
-    ports:
-      - "10033:22"
-    links:
-      - dht-2
-      - dht-3
       - stun-1
       - id-a
       - id-b
@@ -119,7 +95,6 @@ services:
       - "10034:22"
     links:
       - dht-2
-      - dht-3
       - stun-1
       - id-a
       - id-b
@@ -132,7 +107,6 @@ services:
       - "10041:22"
     links:
       - dht-2
-      - dht-3
       - stun-1
       - id-a
       - id-b
@@ -145,46 +119,6 @@ services:
       - "10042:22"
     links:
       - dht-2
-      - dht-3
-      - stun-1
-      - id-a
-      - id-b
-      - id-c
-      - id-dead
-
-  supplier-3:
-    image: bitdust/app
-    ports:
-      - "10043:22"
-    links:
-      - dht-2
-      - dht-3
-      - stun-1
-      - id-a
-      - id-b
-      - id-c
-      - id-dead
-
-  supplier-4:
-    image: bitdust/app
-    ports:
-      - "10044:22"
-    links:
-      - dht-2
-      - dht-3
-      - stun-1
-      - id-a
-      - id-b
-      - id-c
-      - id-dead
-
-  supplier-5:
-    image: bitdust/app
-    ports:
-      - "10045:22"
-    links:
-      - dht-2
-      - dht-3
       - stun-1
       - id-a
       - id-b
@@ -197,7 +131,6 @@ services:
       - "10046:22"
     links:
       - dht-2
-      - dht-3
       - stun-1
       - id-a
       - id-b
@@ -212,52 +145,6 @@ services:
       - customer_1:/customer_1
     links:
       - dht-2
-      - dht-3
-      - stun-1
-      - id-a
-      - id-b
-      - id-c
-      - id-dead
-
-  customer-2:
-    image: bitdust/app
-    ports:
-      - "10052:22"
-    volumes:
-      - customer_2:/customer_2
-    links:
-      - dht-2
-      - dht-3
-      - stun-1
-      - id-a
-      - id-b
-      - id-c
-      - id-dead
-
-  customer-3:
-    image: bitdust/app
-    ports:
-      - "10053:22"
-    volumes:
-      - customer_3:/customer_3
-    links:
-      - dht-2
-      - dht-3
-      - stun-1
-      - id-a
-      - id-b
-      - id-c
-      - id-dead
-
-  customer-4:
-    image: bitdust/app
-    ports:
-      - "10054:22"
-    volumes:
-      - customer_4:/customer_4
-    links:
-      - dht-2
-      - dht-3
       - stun-1
       - id-a
       - id-b
@@ -272,22 +159,6 @@ services:
       - customer_rotated:/customer_rotated
     links:
       - dht-2
-      - dht-3
-      - stun-1
-      - id-a
-      - id-b
-      - id-c
-      - id-dead
-
-  customer-restore:
-    image: bitdust/app
-    ports:
-      - "10056:22"
-    volumes:
-      - customer_restore:/customer_restore
-    links:
-      - dht-2
-      - dht-3
       - stun-1
       - id-a
       - id-b
@@ -300,7 +171,6 @@ services:
       - "10061:22"
     links:
       - dht-2
-      - dht-3
       - stun-1
       - id-a
       - id-b
@@ -313,7 +183,6 @@ services:
       - "10062:22"
     links:
       - dht-2
-      - dht-3
       - stun-1
       - id-a
       - id-b
@@ -326,7 +195,6 @@ services:
       - "10063:22"
     links:
       - dht-2
-      - dht-3
       - stun-1
       - id-a
       - id-b
@@ -339,7 +207,6 @@ services:
       - "10064:22"
     links:
       - dht-2
-      - dht-3
       - stun-1
       - id-a
       - id-b
@@ -352,7 +219,6 @@ services:
       - "10065:22"
     links:
       - dht-2
-      - dht-3
       - stun-1
       - id-a
       - id-b
@@ -375,24 +241,15 @@ services:
       - id-dead
       - dht-1
       - dht-2
-      - dht-3
       - stun-1
       - proxy-1
       - proxy-2
-      - proxy-3
       - proxy-rotated
       - supplier-1
       - supplier-2
-      - supplier-3
-      - supplier-4
-      - supplier-5
       - supplier-rotated
       - customer-1
-      - customer-2
-      - customer-3
-      - customer-4
       - customer-rotated
-      - customer-restore
       - broker-1
       - broker-2
       - broker-3
@@ -401,19 +258,11 @@ services:
 
     volumes:
       - customer_1:/customer_1
-      - customer_2:/customer_2
-      - customer_3:/customer_3
-      - customer_4:/customer_4
       - customer_rotated:/customer_rotated
-      - customer_restore:/customer_restore
 
 
 
 volumes:
   customer_1:
-  customer_2:
-  customer_3:
-  customer_4:
   customer_rotated:
-  customer_restore:
 

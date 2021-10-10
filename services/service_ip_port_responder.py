@@ -42,6 +42,7 @@ class IPPortResponderService(LocalService):
 
     service_name = 'service_ip_port_responder'
     config_path = 'services/ip-port-responder/enabled'
+    start_suspended = True
 
     def dependent_on(self):
         return [

@@ -42,6 +42,7 @@ class EntangledDHTService(LocalService):
 
     service_name = 'service_entangled_dht'
     config_path = 'services/entangled-dht/enabled'
+    start_suspended = True
 
     def dependent_on(self):
         return [

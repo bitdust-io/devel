@@ -42,6 +42,7 @@ class MyIPPortService(LocalService):
 
     service_name = 'service_my_ip_port'
     config_path = 'services/my-ip-port/enabled'
+    start_suspended = True
 
     def init(self):
         self._my_address = None

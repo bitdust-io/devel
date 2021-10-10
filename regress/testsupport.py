@@ -823,8 +823,8 @@ async def start_supplier_async(node, identity_name, loop, join_network=True, dht
     # await get_client_certificate_async(node, loop)
     await health_check_async(node, loop)
     if join_network:
-        await create_identity_async(node, identity_name, loop, verbose=True)
-        await connect_network_async(node, loop, verbose=True)
+        await create_identity_async(node, identity_name, loop, verbose=False)
+        await connect_network_async(node, loop, verbose=False)
         await service_started_async(node, 'service_supplier', loop)
         await packet_list_async(node, loop)
     print(f'STARTED SUPPLIER [{node}]')
