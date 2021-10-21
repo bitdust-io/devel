@@ -40,7 +40,7 @@ _NodeTunnelPort = {}
 _NextSSHTunnelPort = 10000
 _SSLContexts = {}
 _ActiveScenario = ''
-_EngineDebugLevel = 10
+_EngineDebugLevel = 12
 
 #------------------------------------------------------------------------------
 
@@ -96,7 +96,7 @@ def run_ssh_command_and_wait(host, cmd, verbose=False) -> object:
 
 #------------------------------------------------------------------------------
 
-def request_get(node, url, timeout=None, attempts=3, verbose=True, raise_error=True):
+def request_get(node, url, timeout=None, attempts=1, verbose=True, raise_error=True):
     resp = None
     err = None
     count = 0
@@ -326,7 +326,7 @@ def start_daemon(node, verbose=False):
     assert (
         bitdust_daemon[0].strip().startswith('main BitDust process already started') or
         bitdust_daemon[0].strip().startswith('new BitDust process will be started in daemon mode')
-    )
+    ), bitdust_daemon[0].strip()
     if verbose:
         print(f'\nstart_daemon [{node}] OK\n')
 
@@ -340,7 +340,7 @@ async def start_daemon_async(node, loop, verbose=False):
     assert (
         bitdust_daemon[0].strip().startswith('main BitDust process already started') or
         bitdust_daemon[0].strip().startswith('new BitDust process will be started in daemon mode')
-    )
+    ), bitdust_daemon[0].strip()
     if verbose:
         print(f'\nstart_daemon_async [{node}] OK\n')
 
@@ -867,8 +867,8 @@ async def start_message_broker_async(node, identity_name, loop, join_network=Tru
     # enable message broker service
     cmd += 'bitdust set services/message-broker/enabled true;'
     cmd += 'bitdust set services/message-broker/archive-chunk-size 3;'
-    cmd += 'bitdust set services/message-broker/message-ack-timeout 15;'
-    cmd += 'bitdust set services/message-broker/broker-negotiate-ack-timeout 15;'
+    cmd += 'bitdust set services/message-broker/message-ack-timeout 30;'
+    cmd += 'bitdust set services/message-broker/broker-negotiate-ack-timeout 20;'
     # set desired message brokers
     if preferred_brokers:
         cmd += f'bitdust set services/message-broker/preferred-brokers "{preferred_brokers}";'

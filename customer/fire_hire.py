@@ -679,7 +679,7 @@ class FireHire(automat.Automat):
             lg.warn('did not found position for new supplier to be hired on')
         if new_idurl in current_suppliers:
             raise Exception('%s is already supplier' % new_idurl)
-        if family_position is None:
+        if family_position is None or family_position == -1:
             lg.warn('unknown family_position from supplier results, will pick first empty spot')
             position = -1
             old_idurl = None
@@ -789,12 +789,10 @@ class FireHire(automat.Automat):
             sc = supplier_connector.by_idurl(supplier_idurl)
             if sc:
                 sc.set_callback('fire_hire', self._on_supplier_connector_state_changed)
-                sc.automat(
-                    'disconnect',
-                    ecc_map=eccmap.Current().name,
-                )
+                sc.automat('disconnect', ecc_map=eccmap.Current().name)
             else:
                 lg.warn('supplier_connector must exist, but not found %s' % supplier_idurl)
+                self.dismiss_results.append(supplier_idurl)
             online_status.remove_online_status_listener_callback(
                 idurl=supplier_idurl,
                 callback_method=self._on_supplier_online_status_state_changed,
@@ -875,7 +873,7 @@ class FireHire(automat.Automat):
         from customer import supplier_connector
         idurl = id_url.field(idurl)
         if _Debug:
-            lg.out(_DebugLevel, 'fire_hire._on_supplier_connector_state_changed %s to %s, own state is %s' % (
+            lg.out(_DebugLevel, 'fire_hire._on_supplier_connector_state_changed %s to %s, own state is %s ' % (
                 idurl, newstate, self.state))
         if supplier_connector.by_idurl(idurl):
             supplier_connector.by_idurl(idurl).remove_callback('fire_hire', self._on_supplier_connector_state_changed)
@@ -885,7 +883,7 @@ class FireHire(automat.Automat):
             else:
                 lg.warn('did not found %r in connect_list' % idurl)
         elif self.state == 'FIRE_MANY':
-            if idurl in self.dismiss_results:
+            if idurl not in self.dismiss_results:
                 self.dismiss_results.append(idurl)
             else:
                 lg.warn('did not found %r in dismiss_results' % idurl)

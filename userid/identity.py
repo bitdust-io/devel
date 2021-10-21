@@ -255,6 +255,9 @@ class identity(object):
         if not xmlsrc and not filename:
             self.default()
 
+    def __repr__(self, *args, **kwargs):
+        return object.__repr__(self, *args, **kwargs) + '[%s]' % self.makehash(hexdigest=True)
+
     def clear_data(self):
         """
         Erase all fields data, clear identity.
@@ -334,7 +337,7 @@ class identity(object):
             return False
         return True
 
-    def makehash(self):
+    def makehash(self, hexdigest=False):
         """
         http://docs.python.org/lib/module-urlparse.html Note that certificates
         and signatures are not part of what is hashed. PREPRO Thinking of
@@ -355,7 +358,7 @@ class identity(object):
         hsh += sep + self.version
         hsh += sep + self.revision
         # lg.out(12, "identity.makehash: %r" % hsh)
-        hashcode = key.Hash(hsh)
+        hashcode = key.Hash(hsh, hexdigest=hexdigest)
         return hashcode
 
     def sign(self):

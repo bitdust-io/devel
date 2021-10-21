@@ -912,7 +912,7 @@ def key_label(key_id, label):
         return ERROR('key %r is not valid' % key_id)
     if not my_keys.is_key_registered(key_id):
         return ERROR('key %r not exist' % key_id)
-    if key_id == 'master' or key_id == my_id.getGlobalID(key_alias='master') or key_id == my_id.getGlobalID():
+    if key_id == 'master' or key_id == my_id.getGlobalID(key_alias='master') or key_id == my_id.getID():
         return ERROR('master key label can not be changed')
     if _Debug:
         lg.out(_DebugLevel, 'api.key_label id=%s, label=%r' % (key_id, key_label))
@@ -2198,7 +2198,7 @@ def share_create(owner_id=None, key_size=None, label=''):
     from crypt import my_keys
     from userid import my_id
     if not owner_id:
-        owner_id = my_id.getGlobalID()
+        owner_id = my_id.getID()
     key_id = None
     while True:
         random_sample = os.urandom(24)
@@ -2483,7 +2483,7 @@ def group_create(creator_id=None, key_size=None, label='', timeout=20):
     from access import groups
     from userid import my_id
     if not creator_id:
-        creator_id = my_id.getGlobalID()
+        creator_id = my_id.getID()
     if not key_size:
         key_size = settings.getPrivateKeySize()
     group_key_id = groups.create_new_group(creator_id=creator_id, label=label, key_size=key_size)
@@ -2545,6 +2545,43 @@ def group_info(group_key_id):
     response['state'] = 'CLEANED'
     lg.warn('did not found stored group info for %r, but group key exist' % group_key_id)
     return OK(response)
+
+
+def group_info_dht(group_creator_id):
+    """
+    Read and return list of message brokers stored in the corresponding DHT records for given user.
+
+    ###### HTTP
+        curl -X GET 'localhost:8180/group/info/dht/v1?group_creator_id=alice@server-a.com'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "group_info_dht", "kwargs": {"group_creator_id": "alice@server-a.com"} }');
+    """
+    if not driver.is_on('service_entangled_dht'):
+        return ERROR('service_entangled_dht() is not started')
+    from dht import dht_relations
+    from access import groups
+    from userid import global_id
+    from userid import id_url
+    from userid import my_id
+    customer_idurl = None
+    if not group_creator_id:
+        customer_idurl = my_id.getID()
+    else:
+        customer_idurl = strng.to_bin(group_creator_id)
+        if global_id.IsValidGlobalUser(group_creator_id):
+            customer_idurl = global_id.GlobalUserToIDURL(group_creator_id, as_field=False)
+    customer_idurl = id_url.field(customer_idurl)
+    ret = Deferred()
+    d = dht_relations.read_customer_message_brokers(
+        customer_idurl=customer_idurl,
+        positions=list(range(groups.REQUIRED_BROKERS_COUNT)),
+        as_fields=False,
+        use_cache=False,
+    )
+    d.addCallback(lambda result: ret.callback(RESULT(result, api_method='group_info_dht')))
+    d.addErrback(lambda err: ret.callback(ERROR(err)))
+    return ret
 
 
 def group_join(group_key_id, publish_events=False, use_dht_cache=True, wait_result=True):
@@ -2744,7 +2781,6 @@ def group_share(group_key_id, trusted_user_id, timeout=45, publish_events=False)
     group_access_donor_machine = group_access_donor.GroupAccessDonor(log_events=True, publish_events=publish_events)
     group_access_donor_machine.automat('init', trusted_idurl=remote_idurl, group_key_id=group_key_id, result_defer=d)
     return ret
-
 
 #------------------------------------------------------------------------------
 
@@ -3700,7 +3736,7 @@ def suppliers_ping():
     return OK(message='sent requests to all suppliers')
 
 
-def suppliers_dht_lookup(customer_id=None):
+def suppliers_list_dht(customer_id=None):
     """
     Scans DHT network for key-value pairs related to given customer and returns a list its suppliers.
 
@@ -3708,7 +3744,7 @@ def suppliers_dht_lookup(customer_id=None):
         curl -X GET 'localhost:8180/supplier/list/dht/v1?customer_id=alice@server-a.com'
 
     ###### WebSocket
-        websocket.send('{"command": "api_call", "method": "suppliers_dht_lookup", "kwargs": {"customer_id": "alice@server-a.com"} }');
+        websocket.send('{"command": "api_call", "method": "suppliers_list_dht", "kwargs": {"customer_id": "alice@server-a.com"} }');
     """
     if not driver.is_on('service_entangled_dht'):
         return ERROR('service_entangled_dht() is not started')
@@ -3726,7 +3762,7 @@ def suppliers_dht_lookup(customer_id=None):
     customer_idurl = id_url.field(customer_idurl)
     ret = Deferred()
     d = dht_relations.read_customer_suppliers(customer_idurl, as_fields=False, use_cache=False)
-    d.addCallback(lambda result: ret.callback(RESULT(result, api_method='suppliers_dht_lookup')))
+    d.addCallback(lambda result: ret.callback(RESULT(result, api_method='suppliers_list_dht')))
     d.addErrback(lambda err: ret.callback(ERROR(err)))
     return ret
 
@@ -4660,7 +4696,7 @@ def network_status(suppliers=False, customers=False, cache=False, tcp=False, udp
             r['network_connector_state'] = network_connector_machine.state
     if my_id.isLocalIdentityReady():
         r['idurl'] = my_id.getLocalID()
-        r['global_id'] = my_id.getGlobalID()
+        r['global_id'] = my_id.getID()
         r['identity_sources'] = my_id.getLocalIdentity().getSources(as_originals=True)
         r['identity_contacts'] = my_id.getLocalIdentity().getContacts()
         r['identity_revision'] = my_id.getLocalIdentity().getRevisionValue()

@@ -102,8 +102,6 @@ from lib import misc
 
 from main import settings
 
-from services import driver
-
 from contacts import contactsdb
 
 from storage import backup_matrix

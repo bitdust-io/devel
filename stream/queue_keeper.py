@@ -200,9 +200,6 @@ def read_state(customer_id, broker_id):
         except:
             lg.exc()
             return None
-    if not json_value:
-        lg.err('failed reading queue_keeper state for customer %r of broker %r' % (customer_id, broker_id, ))
-        return None
     return json_value
 
 
@@ -227,7 +224,8 @@ def write_state(customer_id, broker_id, json_value):
             lg.exc()
             return None
     if not local_fs.WriteTextFile(keeper_state_file_path, jsn.dumps(json_value)):
-        lg.err('failed to store queue_keeper state for customer %r of broker %r' % (customer_id, broker_id, ))
+        lg.err('failed writing queue_keeper state for customer %r of broker %r to %r' % (
+            customer_id, broker_id, keeper_state_file_path, ))
         return None
     if _Debug:
         lg.args(_DebugLevel, customer_id=customer_id, broker_id=broker_id, json_value=json_value)
@@ -593,11 +591,11 @@ class QueueKeeper(automat.Automat):
 
     def _do_dht_push_state(self):
         desired_position = self.known_position
-        if desired_position is None:
+        if desired_position is None or desired_position == -1:
             for pos, idurl in self.cooperated_brokers.items():
                 if idurl and id_url.to_bin(idurl) == self.broker_idurl.to_bin():
                     desired_position = pos
-        if desired_position is None:
+        if desired_position is None or desired_position == -1:
             raise Exception('not able to write record into DHT, my position is unknown')
         archive_folder_path = self.known_archive_folder_path
         if self.current_connect_request:

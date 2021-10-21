@@ -364,7 +364,7 @@ def cmd_deploy(opts, args, overDict):
 
 def cmd_reconnect(opts, args, overDict):
     tpl = jsontemplate.Template(templ.TPL_RAW)
-    return call_websocket_method_template_and_stop('reconnect', tpl)
+    return call_websocket_method_template_and_stop('network_reconnect', tpl)
 
 #------------------------------------------------------------------------------
 

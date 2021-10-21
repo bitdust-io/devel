@@ -401,7 +401,7 @@ class NetworkConnector(automat.Automat):
     def doSetDown(self, *args, **kwargs):
         """
         """
-        for svc_name in ['service_gateway', ] + list(self.managed_services).reverse():
+        for svc_name in ['service_gateway', ] + list(reversed(self.managed_services)):
             if driver.is_on(svc_name):
                 if not driver.is_suspended(svc_name):
                     if not driver.suspend(svc_name):

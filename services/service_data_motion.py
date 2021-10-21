@@ -57,7 +57,7 @@ class DataMotionService(LocalService):
         from main import events
         events.remove_subscriber(self._on_my_suppliers_yet_not_hired, 'my-suppliers-yet-not-hired')
         events.remove_subscriber(self._on_my_suppliers_all_hired, 'my-suppliers-all-hired')
-    
+
     def start(self):
         from logs import lg
         from customer import fire_hire
@@ -72,6 +72,7 @@ class DataMotionService(LocalService):
         data_sender.A('init')
         data_receiver.A('init')
         events.add_subscriber(self._on_identity_url_changed, 'identity-url-changed')
+        events.add_subscriber(self._on_supplier_modified, 'supplier-modified')
         return True
 
     def stop(self):
@@ -79,6 +80,7 @@ class DataMotionService(LocalService):
         from stream import io_throttle
         from stream import data_sender
         from stream import data_receiver
+        events.remove_subscriber(self._on_supplier_modified, 'supplier-modified')
         events.remove_subscriber(self._on_identity_url_changed, 'identity-url-changed')
         data_receiver.A('shutdown')
         data_sender.SetShutdownFlag()
@@ -94,8 +96,10 @@ class DataMotionService(LocalService):
         from services import driver
         if driver.is_enabled('service_data_motion'):
             if not driver.is_started('service_data_motion'):
-                lg.info('all my suppliers are hired, starting service_data_motion()')
-                driver.start_single('service_data_motion')
+                from customer import fire_hire
+                if fire_hire.IsAllHired():
+                    lg.info('all my suppliers are hired, starting service_data_motion()')
+                    driver.start_single('service_data_motion')
 
     def _on_my_suppliers_yet_not_hired(self, evt):
         from logs import lg
@@ -119,3 +123,7 @@ class DataMotionService(LocalService):
                 supplier_queue.customerIDURL.refresh()
                 lg.info('found customer idurl rotated in io_throttle %r supplier queue: %r -> %r' % (
                     supplier_idurl, evt.data['old_idurl'], evt.data['new_idurl'], ))
+
+    def _on_supplier_modified(self, evt):
+        from stream import data_sender
+        data_sender.A('restart')

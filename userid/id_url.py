@@ -76,6 +76,7 @@ _IdentityHistoryDir = None
 _KnownUsers = {}
 _KnownIDURLs = {}
 _MergedIDURLs = {}
+_KnownSources = {}
 _Ready = False
 
 #------------------------------------------------------------------------------
@@ -87,6 +88,7 @@ def init():
     global _KnownUsers
     global _KnownIDURLs
     global _MergedIDURLs
+    global _KnownSources
     global _Ready
     from userid import identity
     if _Debug:
@@ -110,6 +112,7 @@ def init():
             one_user_identity_files.append(one_ident_number)
         if _Debug:
             lg.out(_DebugLevel, 'id_url.init   found %d historical records in %r' % (len(one_user_identity_files), one_user_dir_path, ))
+        one_user_identity_files.sort()
         for one_ident_file in one_user_identity_files:
             one_ident_path = os.path.join(one_user_dir_path, strng.to_text(one_ident_file))
             try:
@@ -153,6 +156,13 @@ def init():
                     if _Debug:
                         lg.out(_DebugLevel, '        revision %d merged with other %d known items' % (
                             one_revision, len(_MergedIDURLs[one_pub_key])))
+                if one_pub_key not in _KnownSources:
+                    _KnownSources[one_pub_key] = []
+                for one_source in known_id_obj.getSources(self, as_originals=True):
+                    if one_source not in _KnownSources[one_pub_key]:
+                        _KnownSources[one_pub_key].append(one_source)
+                        if _Debug:
+                            lg.out(_DebugLevel, '    new source %r added for %r' % (one_source, one_pub_key[-10:], ))
     _Ready = True
 
 
@@ -164,11 +174,40 @@ def shutdown():
     global _KnownUsers
     global _Ready
     global _MergedIDURLs
+    global _KnownSources
     _IdentityHistoryDir = None
-    _KnownUsers = {}
-    _KnownIDURLs = {}
-    _MergedIDURLs = {}
+    _KnownUsers.clear()
+    _KnownIDURLs.clear()
+    _MergedIDURLs.clear()
+    _KnownSources.clear()
     _Ready = False
+
+#------------------------------------------------------------------------------
+
+def known():
+    global _KnownIDURLs
+    return _KnownIDURLs
+
+
+def merged(pub_key=None):
+    global _MergedIDURLs
+    if pub_key is None:
+        return _MergedIDURLs
+    return _MergedIDURLs.get(pub_key, {})
+
+
+def users(pub_key=None):
+    global _KnownUsers
+    if pub_key is None:
+        return _KnownUsers
+    return _KnownUsers.get(pub_key, None)
+
+
+def sources(pub_key=None):
+    global _KnownSources
+    if pub_key is None:
+        return _KnownSources
+    return _KnownSources.get(pub_key, [])
 
 #------------------------------------------------------------------------------
 
@@ -188,6 +227,7 @@ def identity_cached(new_id_obj):
     global _KnownUsers
     global _KnownIDURLs
     global _MergedIDURLs
+    global _KnownSources
     from userid import identity
     pub_key = new_id_obj.getPublicKey()
     user_name = new_id_obj.getIDName()
@@ -285,6 +325,13 @@ def identity_cached(new_id_obj):
             if _Debug:
                 lg.out(_DebugLevel, 'id_url.identity_cached added new revision %d for user %r, total revisions %d: %r -> %r' % (
                     new_revision, user_name, len(_MergedIDURLs[pub_key]), prev_idurl, new_idurl))
+    if pub_key not in _KnownSources:
+        _KnownSources[pub_key] = []
+    for one_source in new_sources:
+        if one_source not in _KnownSources[pub_key]:
+            _KnownSources[pub_key].append(one_source)
+            if _Debug:
+                lg.out(_DebugLevel, 'id_url.identity_cached added new source %r for user %r' % (one_source, user_name, ))
     if _Debug:
         lg.args(_DebugLevel, is_identity_rotated=is_identity_rotated, latest_id_obj=bool(latest_id_obj))
     if is_identity_rotated and latest_id_obj is not None:
@@ -498,8 +545,9 @@ def is_cached(idurl):
     else:
         idurl = strng.to_bin(idurl)
     cached = idurl in _KnownIDURLs
-    if _Debug:
-        lg.args(_DebugLevel, idurl=idurl, cached=cached)
+    if not cached:
+        if _Debug:
+            lg.args(_DebugLevel, idurl=idurl, cached=cached)
     return cached
 
 
@@ -561,7 +609,7 @@ def get_latest_revision(idurl):
         return latest_idurl, latest_rev
     pub_key = _KnownIDURLs[idurl_bin]
     if pub_key not in _MergedIDURLs:
-        lg.warn('idurl %r does not have any known revisions' % idurl_bin)
+        lg.warn('idurl %r is known but has no known revisions yet' % idurl_bin)
         return latest_idurl, latest_rev
     for rev, another_idurl in _MergedIDURLs[pub_key].items():
         if rev >= latest_rev:
@@ -579,10 +627,14 @@ def list_known_idurls(idurl, num_revisions=5, include_revisions=False):
     global _KnownIDURLs
     idurl_bin = to_bin(idurl)
     if not idurl_bin:
+        if _Debug:
+            lg.args(_DebugLevel, idurl=idurl, ret=[idurl_bin, ])
         if include_revisions:
             return [(idurl_bin, -1, ), ]
         return [idurl_bin, ]
     if idurl_bin not in _KnownIDURLs:
+        if _Debug:
+            lg.args(_DebugLevel, idurl=idurl, ret=[idurl_bin, ])
         if include_revisions:
             return [(idurl_bin, -1, ), ]
         return [idurl_bin, ]
@@ -604,6 +656,8 @@ def list_known_idurls(idurl, num_revisions=5, include_revisions=False):
                 results.append(another_idurl)
         if len(results) >= num_revisions:
             break
+    if _Debug:
+        lg.args(_DebugLevel, idurl=idurl, ret=results)
     return results
 
 
@@ -626,7 +680,7 @@ def idurl_to_id(idurl_text):
 #------------------------------------------------------------------------------
 
 class ID_URL_FIELD(object):
-    
+
     def __init__(self, idurl):
         self.current = b''
         self.current_as_string = ''
@@ -822,7 +876,7 @@ class ID_URL_FIELD(object):
 
     def is_latest(self):
         if _Debug:
-            lg.args(_DebugLevel, current=self.current, latest=self.latest)
+            lg.args(_DebugLevel * 2, current=self.current, latest=self.latest)
         return self.latest and self.current == self.latest
 
     def to_id(self):

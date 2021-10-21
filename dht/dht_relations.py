@@ -341,6 +341,8 @@ def read_customer_message_brokers(customer_idurl, positions=[0, ], return_detail
 
 
 def write_customer_message_broker(customer_idurl, broker_idurl, position=0, archive_folder_path=None, revision=None):
+    if _Debug:
+        lg.args(_DebugLevel, c=customer_idurl, b=broker_idurl, p=position, af=archive_folder_path, r=revision)
     customer_idurl = id_url.field(customer_idurl)
     broker_idurl = id_url.field(broker_idurl)
     return dht_records.set_message_broker(

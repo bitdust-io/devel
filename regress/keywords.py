@@ -21,6 +21,7 @@
 # Please contact us if you have any questions at bitdust.io@gmail.com
 
 import os
+import re
 import sys
 import time
 import requests
@@ -194,32 +195,56 @@ def group_create_v1(customer: str, key_size=1024, label='', attempts=1):
     return response.json()['result']['group_key_id']
 
 
-def group_info_v1(customer: str, group_key_id, wait_state=None, validate_retries=90, delay=2, stop_state=None):
-    response = request_get(customer, 'group/info/v1?group_key_id=%s' % group_key_id, timeout=20)
+def group_info_v1(node: str, group_key_id, wait_state=None, validate_retries=90, delay=2, stop_state=None):
+    response = request_get(node, 'group/info/v1?group_key_id=%s' % group_key_id, timeout=20)
     assert response.status_code == 200
-    print('group/info/v1 [%s] : %s\n' % (customer, pprint.pformat(response.json())))
+    print('group/info/v1 [%s] : %s\n' % (node, pprint.pformat(response.json())))
     assert response.json()['status'] == 'OK', response.json()
     if wait_state is None:
         return response.json()
     count = 0
     while True:
         if count >= validate_retries:
-            print('group/info/v1 [%s] attempt %d : %s\n' % (customer, count, pprint.pformat(response.json())))
+            print('group/info/v1 [%s] attempt %d : %s\n' % (node, count, pprint.pformat(response.json())))
             break
-        response = request_get(customer, 'group/info/v1?group_key_id=%s' % group_key_id, timeout=20)
+        response = request_get(node, 'group/info/v1?group_key_id=%s' % group_key_id, timeout=20)
         assert response.status_code == 200
         assert response.json()['status'] == 'OK', response.json()
-        # print('group/info/v1 [%s] attempt %d : %s\n' % (customer, count, pprint.pformat(response.json())))
-        print('  group/info/v1 [%s] attempt %d : state=%s' % (customer, count, response.json()['result']['state'], ))
+        # print('group/info/v1 [%s] attempt %d : %s\n' % (node, count, pprint.pformat(response.json())))
+        print('  group/info/v1 [%s] attempt %d : state=%s' % (node, count, response.json()['result']['state'], ))
         if response.json()['result']['state'] == wait_state:
-            print('group/info/v1 [%s] : %s\n' % (customer, pprint.pformat(response.json())))
+            print('group/info/v1 [%s] : %s\n' % (node, pprint.pformat(response.json())))
             return response.json()
         if stop_state and response.json()['result']['state'] == stop_state:
-            print('group/info/v1 [%s] : %s\n' % (customer, pprint.pformat(response.json())))
+            print('group/info/v1 [%s] : %s\n' % (node, pprint.pformat(response.json())))
             return response.json()
         count += 1
         time.sleep(delay)
     assert False, 'state %r was not detected for %r after %d retries' % (wait_state, group_key_id, count, )
+
+
+def group_info_dht_v1(node: str, customer_id, timeout=20, wait_records=None, retries=10, delay=3):
+    response = request_get(node, 'group/info/dht/v1?group_creator_id=%s' % customer_id, timeout=timeout)
+    assert response.status_code == 200
+    print('group/info/dht/v1 [%s] : %s\n' % (node, pprint.pformat(response.json())))
+    assert response.json()['status'] == 'OK', response.json()
+    if wait_records is None:
+        return response.json()
+    count = 0
+    while True:
+        if count >= retries:
+            print('group/info/dht/v1 [%s] attempt %d : %s\n' % (node, count, pprint.pformat(response.json())))
+            break
+        print('retrying group/info/dht/v1?group_creator_id=%s' % customer_id)
+        response = request_get(node, 'group/info/dht/v1?group_creator_id=%s' % customer_id, timeout=timeout)
+        assert response.status_code == 200
+        assert response.json()['status'] == 'OK', response.json()
+        if len(response.json()['result']) == wait_records:
+            print('group/info/dht/v1 [%s] : %s\n' % (node, pprint.pformat(response.json())))
+            return response.json()
+        count += 1
+        time.sleep(delay)
+    assert False, 'exactly %d dht records not detected for %r after %d retries' % (wait_records, customer_id, count, )
 
 
 def group_join_v1(customer: str, group_key_id, attempts=1, timeout=120):
@@ -846,6 +871,26 @@ def wait_event(nodes, event, expected_count=1, attempts=10, delay=5, verbose=Fal
         for _ in range(attempts):
             event_log = run_ssh_command_and_wait(node, 'cat /root/.bitdust/logs/event.log', verbose=verbose)[0].strip()
             if event_log.count(event) == expected_count:
+                break
+            time.sleep(delay)
+            sys.stdout.write('.')
+        else:
+            assert False, f'event "{event}" did not occurred {expected_count} times on [{node}] after many attempts'
+        sys.stdout.write('.')
+    print('')
+
+def wait_specific_event(nodes, event, match_regex, expected_count=1, attempts=20, delay=5, verbose=False):
+    print('wait event "%s" with "%s" to occur %d times on %d nodes' % (event, match_regex, expected_count, len(nodes), ))
+    for node in nodes:
+        for _ in range(attempts):
+            event_log = run_ssh_command_and_wait(node, 'cat /root/.bitdust/logs/event.log', verbose=verbose)[0].strip()
+            captured = False
+            for ln in event_log.split('\n'):
+                if ln.count(event):
+                    if re.match(match_regex, ln):
+                        captured = True
+                        break
+            if captured:
                 break
             time.sleep(delay)
             sys.stdout.write('.')

@@ -64,7 +64,7 @@ try:
 except:
     sys.exit('Error initializing twisted.internet.reactor in keys_synchronizer.py')
 
-from twisted.internet.defer import Deferred
+from twisted.internet.defer import Deferred, DeferredList
 from twisted.python.failure import Failure
 
 #------------------------------------------------------------------------------
@@ -960,16 +960,36 @@ def stop_all_streams():
 
 
 def ping_all_streams():
-    target_nodes = set()
-    for queue_id, one_stream in streams().items():
-        if one_stream['active']:
-            for consumer_id in list(streams()[queue_id]['consumers'].keys()):
-                target_nodes.add(global_id.glob2idurl(consumer_id))
-            for producer_id in list(streams()[queue_id]['producers'].keys()):
-                target_nodes.add(global_id.glob2idurl(producer_id))
+    target_nodes = list(set(list_customers() + list_consumers_producers()))
     if _Debug:
-        lg.args(_DebugLevel, target_nodes=len(target_nodes), )
+        lg.args(_DebugLevel, target_nodes=target_nodes)
     propagate.propagate(selected_contacts=target_nodes, wide=True, refresh_cache=True)
+
+
+def list_customers():
+    ret = list(customers().keys())
+    if _Debug:
+        lg.args(_DebugLevel, r=ret)
+    return ret
+
+
+def list_consumers_producers(include_consumers=True, include_producers=True):
+    result = set()
+    for queue_id in streams().keys():
+        if include_consumers:
+            for consumer_id in streams()[queue_id]['consumers']:
+                consumer_idurl = global_id.glob2idurl(consumer_id)
+                if consumer_idurl not in result:
+                    result.add(consumer_idurl)
+        if include_producers:
+            for producer_id in streams()[queue_id]['producers']:
+                producer_idurl = global_id.glob2idurl(producer_id)
+                if producer_idurl not in result:
+                    result.add(producer_idurl)
+    ret = list(result)
+    if _Debug:
+        lg.args(_DebugLevel, r=ret)
+    return ret
 
 #------------------------------------------------------------------------------
 
@@ -1147,19 +1167,24 @@ class MessagePeddler(automat.Automat):
                 p2p_service.SendFail(request_packet, 'key register failed')
                 result_defer.callback(False)
                 return
-        if id_url.is_cached(group_creator_idurl):
-            self._do_verify_queue_keeper(
-                group_creator_idurl, request_packet, queue_id, consumer_id, producer_id,
-                position, last_sequence_id, archive_folder_path, known_brokers, group_key_info, result_defer)
-            return
-        caching_story = identitycache.immediatelyCaching(group_creator_idurl)
-        caching_story.addCallback(lambda _: self._do_verify_queue_keeper(
+        consumer_idurl = global_id.glob2idurl(consumer_id)
+        producer_idurl = global_id.glob2idurl(producer_id)
+        caching_list = []
+        if not id_url.is_cached(group_creator_idurl):
+            caching_list.append(identitycache.immediatelyCaching(group_creator_idurl))
+        if not id_url.is_cached(consumer_idurl):
+            caching_list.append(identitycache.immediatelyCaching(consumer_idurl))
+        if not id_url.is_cached(producer_idurl):
+            caching_list.append(identitycache.immediatelyCaching(producer_idurl))
+        dl = DeferredList(caching_list)
+        dl.addCallback(lambda _: self._do_verify_queue_keeper(
             group_creator_idurl, request_packet, queue_id, consumer_id, producer_id,
-            position, last_sequence_id, archive_folder_path, known_brokers, group_key_info, result_defer))
+            position, last_sequence_id, archive_folder_path, known_brokers, group_key_info, result_defer,
+        ))
         if _Debug:
             # TODO: need to cleanup registered key in case request was rejected or ID cache failed
-            caching_story.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='message_peddler.doStartJoinQueue')
-        caching_story.addErrback(self._on_group_creator_idurl_cache_failed, request_packet, result_defer)
+            dl.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='message_peddler.doStartJoinQueue')
+        dl.addErrback(self._on_group_creator_idurl_cache_failed, request_packet, result_defer)
 
     def doLeaveQueueStopKeeper(self, *args, **kwargs):
         """
@@ -1410,7 +1435,9 @@ class MessagePeddler(automat.Automat):
             },
             recipient_global_id=my_keys.make_key_id(alias='master', creator_glob_id=consumer_id),
             packet_id=packetid.MakeQueueMessagePacketID(queue_id, packetid.UniqueID()),
-            message_ack_timeout=self.send_message_ack_timeout,
+            # message_ack_timeout=self.send_message_ack_timeout,
+            message_ack_timeout=None,
+            ping_timeout=self.send_message_ack_timeout,
             skip_handshake=True,
             fire_callbacks=False,
         )
@@ -1739,7 +1766,7 @@ class MessagePeddler(automat.Automat):
     def _on_group_creator_idurl_cache_failed(self, err, request_packet, result_defer):
         if _Debug:
             lg.args(_DebugLevel, err=err, request_packet=request_packet)
-        p2p_service.SendFail(request_packet, 'group creator idurl cache failed')
+        p2p_service.SendFail(request_packet, 'group creator, consumer or producer idurl cache failed')
         result_defer.callback(False)
         return None
 

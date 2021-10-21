@@ -34,13 +34,9 @@ SCENARIO 13: one of the suppliers of customer-1 has IDURL rotated
 """
 
 import os
-import shutil
 import pytest
-import time
-import base64
-import threading
 
-from testsupport import stop_daemon, run_ssh_command_and_wait, request_get, request_post, request_put, set_active_scenario  # @UnresolvedImport
+from testsupport import set_active_scenario  # @UnresolvedImport
 
 import keywords as kw  # @UnresolvedImport
 import scenarios
@@ -65,8 +61,7 @@ def test_idrotate():
     old_customer_1_info_s11 = scenarios.scenario11_begin()
 
     #--- SCENARIO 9: ID server id-dead is dead
-    old_proxy_rotated_info, old_customer_rotated_info, old_rotated_supplier_info, old_broker_rotated_info, old_customer_rotated_keys, \
-    new_proxy_rotated_info, new_customer_rotated_info, new_rotated_supplier_info, new_broker_rotated_info = scenarios.scenario9()
+    _, old_customer_rotated_info, _, _, old_customer_rotated_keys, _, new_customer_rotated_info, _, _ = scenarios.scenario9()
 
     #--- SCENARIO 10 end: customer-rotated IDURL was rotated
     scenarios.scenario10_end(old_customer_rotated_info, old_customer_rotated_file_info, old_customer_rotated_keys, new_customer_rotated_info)

@@ -794,6 +794,14 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     def group_info_v1(self, request):
         return api.group_info(group_key_id=_request_arg(request, 'group_key_id'))
 
+    @GET('^/gr/dht$')
+    @GET('^/v1/group/info/dht$')
+    @GET('^/group/info/dht/v1$')
+    def group_info_dht_v1(self, request):
+        return api.group_info_dht(
+            group_creator_id=_request_arg(request, 'group_creator_id') or _request_arg(request, 'group_creator_idurl') or _request_arg(request, 'id'),
+        )
+
     @POST('^/gr/j$')
     @POST('^/v1/group/join$')
     @POST('^/group/join/v1$')
@@ -1050,8 +1058,8 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @GET('^/su/dht$')
     @GET('^/v1/supplier/list/dht$')
     @GET('^/supplier/list/dht/v1$')
-    def supplier_dht_list_v1(self, request):
-        return api.suppliers_dht_lookup(
+    def suppliers_list_dht(self, request):
+        return api.suppliers_list_dht(
             customer_id=_request_arg(request, 'customer_id') or _request_arg(request, 'customer_idurl') or _request_arg(request, 'id'),
         )
 
