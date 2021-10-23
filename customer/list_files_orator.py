@@ -309,7 +309,7 @@ class ListFilesOrator(automat.Automat):
         try:
             self.critical_suppliers_number = eccmap.GetCorrectableErrors(len(known_suppliers))
         except:
-            lg.exc()
+            lg.warn('number of known suppliers for customer %r is not standard' % self.target_customer_idurl)
             self.critical_suppliers_number = int(float(len(known_suppliers)) * 0.75)
         for idurl in known_suppliers:
             if idurl:
