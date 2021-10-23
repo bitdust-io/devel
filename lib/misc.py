@@ -1104,12 +1104,13 @@ def DoRestart(param='', detach=False, std_out='/dev/null', std_err='/dev/null'):
         cmdargs.append('1>%s' % std_out)
         cmdargs.append('2>%s' % std_err)
         cmd = '/usr/bin/nohup ' + (' '.join(cmdargs)) + ' &'
-        BITDUST_COVERAGE_PROCESS_START = os.environ.get('BITDUST_COVERAGE_PROCESS_START')
+        BITDUST_COVERAGE_PROCESS_START = os.environ.get('COVERAGE_PROCESS_START')
         if BITDUST_COVERAGE_PROCESS_START:
-            cmd = 'BITDUST_COVERAGE_PROCESS_START="%s" %s' % (BITDUST_COVERAGE_PROCESS_START, cmd, )
+            cmd = 'COVERAGE_PROCESS_START="%s" %s' % (BITDUST_COVERAGE_PROCESS_START, cmd, )
         BITDUST_LOG_USE_COLORS = os.environ.get('BITDUST_LOG_USE_COLORS')
         if BITDUST_LOG_USE_COLORS:
             cmd = 'BITDUST_LOG_USE_COLORS="%s" %s' % (BITDUST_LOG_USE_COLORS, cmd, )
+        lg.out(2, "misc.DoRestart cmd: [%s]" % cmd)
         return os.system(cmd)
     lg.out(2, "misc.DoRestart cmdargs=" + str(cmdargs))
     return os.execvpe(pypyth, cmdargs, os.environ)

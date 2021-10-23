@@ -320,7 +320,7 @@ def start_daemon(node, verbose=False):
     run_ssh_command_and_wait(node, 'mkdir -pv /root/.bitdust/metadata/')
     if os.environ.get('_DEBUG', '0') == '0':
         run_ssh_command_and_wait(node, "find /app/bitdust -type f -name '*.py' -exec sed -i -e 's/_Debug = True/_Debug = False/g' {} +")
-    bitdust_daemon = run_ssh_command_and_wait(node, 'BITDUST_CRITICAL_PUSH_MESSAGE_FAILS=0 BITDUST_LOG_USE_COLORS=1 BITDUST_COVERAGE_PROCESS_START=/app/bitdust/.coverage_config bitdust daemon')
+    bitdust_daemon = run_ssh_command_and_wait(node, 'BITDUST_CRITICAL_PUSH_MESSAGE_FAILS=0 BITDUST_LOG_USE_COLORS=1 COVERAGE_PROCESS_START=/app/bitdust/.coverage_config bitdust daemon')
     if verbose:
         print('\n' + bitdust_daemon[0].strip())
     assert (
@@ -334,7 +334,7 @@ async def start_daemon_async(node, loop, verbose=False):
     await run_ssh_command_and_wait_async(node, 'mkdir -pv /root/.bitdust/metadata/', loop)
     if os.environ.get('_DEBUG', '0') == '0':
         await run_ssh_command_and_wait_async(node, "find /app/bitdust -type f -name '*.py' -exec sed -i -e 's/_Debug = True/_Debug = False/g' {} +", loop)
-    bitdust_daemon = await run_ssh_command_and_wait_async(node, 'BITDUST_CRITICAL_PUSH_MESSAGE_FAILS=0 BITDUST_LOG_USE_COLORS=1 BITDUST_COVERAGE_PROCESS_START=/app/bitdust/.coverage_config bitdust daemon', loop)
+    bitdust_daemon = await run_ssh_command_and_wait_async(node, 'BITDUST_CRITICAL_PUSH_MESSAGE_FAILS=0 BITDUST_LOG_USE_COLORS=1 COVERAGE_PROCESS_START=/app/bitdust/.coverage_config bitdust daemon', loop)
     if verbose:
         print('\n' + bitdust_daemon[0].strip())
     assert (
@@ -1149,15 +1149,16 @@ async def clean_one_customer_async(node, event_loop, verbose=False):
     await run_ssh_command_and_wait_async(node, 'rm -rf /%s/*' % node, event_loop, verbose=verbose)
 
 
-async def collect_coverage_one_node_async(node, event_loop, wait_before=3):
+async def collect_coverage_one_node_async(node, event_loop, wait_before=3, verbose=False):
     if wait_before:
         # make sure all coverage files are written before collecting them
         await asyncio.sleep(wait_before)
-    await run_ssh_command_and_wait_async('localhost', ['mkdir', '-p', '/app/coverage/%s' % node, ], event_loop)
+    await run_ssh_command_and_wait_async('localhost', ['mkdir', '-p', '/app/coverage/%s' % node, ], event_loop, verbose=verbose)
     await run_ssh_command_and_wait_async(
         'localhost',
         ['scp', '-o', 'StrictHostKeyChecking=no', '-P', '22', 'root@%s:/tmp/.coverage.*' % node, '/app/coverage/%s/.' % node, ],
         event_loop,
+        verbose=verbose,
     )
 
 #------------------------------------------------------------------------------

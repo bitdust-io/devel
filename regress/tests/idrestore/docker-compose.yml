@@ -29,31 +29,31 @@ services:
   id-a:
     image: bitdust/app
     ports:
-      - "10001:22"
+      - "10201:22"
 
   dht-1:
     image: bitdust/app
     ports:
-      - "10011:22"
+      - "10211:22"
 
   dht-2:
     image: bitdust/app
     ports:
-      - "10012:22"
+      - "10212:22"
     links:
       - dht-1
 
   stun-1:
     image: bitdust/app
     ports:
-      - "10021:22"
+      - "10221:22"
     links:
       - dht-2
 
   proxy-1:
     image: bitdust/app
     ports:
-      - "10031:22"
+      - "10231:22"
     links:
       - dht-2
       - stun-1
@@ -62,7 +62,7 @@ services:
   supplier-1:
     image: bitdust/app
     ports:
-      - "10041:22"
+      - "10241:22"
     links:
       - dht-2
       - stun-1
@@ -71,7 +71,7 @@ services:
   supplier-2:
     image: bitdust/app
     ports:
-      - "10042:22"
+      - "10242:22"
     links:
       - dht-2
       - stun-1
@@ -80,7 +80,7 @@ services:
   customer-1:
     image: bitdust/app
     ports:
-      - "10051:22"
+      - "10251:22"
     volumes:
       - customer_1:/customer_1
     links:
@@ -91,7 +91,7 @@ services:
   customer-2:
     image: bitdust/app
     ports:
-      - "10052:22"
+      - "10252:22"
     volumes:
       - customer_2:/customer_2
     links:
@@ -102,7 +102,7 @@ services:
   customer-restore:
     image: bitdust/app
     ports:
-      - "10056:22"
+      - "10256:22"
     volumes:
       - customer_restore:/customer_restore
     links:

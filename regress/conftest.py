@@ -229,7 +229,7 @@ def collect_coverage_all_nodes(event_loop, verbose=False):
     if verbose:
         print('\nCollecting coverage from all nodes')
     event_loop.run_until_complete(asyncio.gather(*[
-        tsup.collect_coverage_one_node_async(node, event_loop=event_loop) for node in ALL_NODES
+        tsup.collect_coverage_one_node_async(node, event_loop=event_loop, verbose=verbose) for node in ALL_NODES
     ]))
     if verbose:
         print('\n\nAll coverage files received in  %5.3f seconds\n' % (time.time() - _begin))
@@ -252,7 +252,7 @@ def global_wrapper(event_loop):
 
     time.sleep(PAUSE_BEFORE)
 
-    verbose = True
+    verbose = False
 
     _begin = time.time()
 
@@ -281,7 +281,7 @@ def global_wrapper(event_loop):
     # TODO: use ENV variables to control stop / coverage / report / cleanup
 
     # log_network_info_all_nodes(event_loop)
-    stop_all_nodes(event_loop, verbose=False)
+    stop_all_nodes(event_loop, verbose=verbose)
     collect_coverage_all_nodes(event_loop, verbose=verbose)
     report_all_nodes(event_loop)
 

@@ -56,6 +56,8 @@ RUN chmod +x /bin/bitdust
 
 RUN /root/.bitdust/venv/bin/pip install "coverage<5" coverage-enable-subprocess
 
+RUN echo 'import coverage; coverage.process_startup();' > /app/bitdust/sitecustomize.py
+
 ADD ./regress/ssh /app/ssh
 
 EXPOSE 22

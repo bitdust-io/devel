@@ -29,46 +29,46 @@ services:
   id-a:
     image: bitdust/app
     ports:
-      - "10001:22"
+      - "10301:22"
 
   id-b:
     image: bitdust/app
     ports:
-      - "10002:22"
+      - "10302:22"
 
   id-c:
     image: bitdust/app
     ports:
-      - "10003:22"
+      - "10303:22"
 
   id-dead:
     image: bitdust/app
     ports:
-      - "10004:22"
+      - "10304:22"
 
   dht-1:
     image: bitdust/app
     ports:
-      - "10011:22"
+      - "10311:22"
 
   dht-2:
     image: bitdust/app
     ports:
-      - "10012:22"
+      - "10312:22"
     links:
       - dht-1
 
   stun-1:
     image: bitdust/app
     ports:
-      - "10021:22"
+      - "10321:22"
     links:
       - dht-2
 
   proxy-1:
     image: bitdust/app
     ports:
-      - "10031:22"
+      - "10331:22"
     links:
       - dht-2
       - stun-1
@@ -80,7 +80,7 @@ services:
   proxy-2:
     image: bitdust/app
     ports:
-      - "10032:22"
+      - "10332:22"
     links:
       - dht-2
       - stun-1
@@ -92,7 +92,7 @@ services:
   proxy-rotated:
     image: bitdust/app
     ports:
-      - "10034:22"
+      - "10334:22"
     links:
       - dht-2
       - stun-1
@@ -104,7 +104,7 @@ services:
   supplier-1:
     image: bitdust/app
     ports:
-      - "10041:22"
+      - "10341:22"
     links:
       - dht-2
       - stun-1
@@ -116,7 +116,7 @@ services:
   supplier-2:
     image: bitdust/app
     ports:
-      - "10042:22"
+      - "10342:22"
     links:
       - dht-2
       - stun-1
@@ -128,7 +128,7 @@ services:
   supplier-rotated:
     image: bitdust/app
     ports:
-      - "10046:22"
+      - "10346:22"
     links:
       - dht-2
       - stun-1
@@ -140,7 +140,7 @@ services:
   customer-1:
     image: bitdust/app
     ports:
-      - "10051:22"
+      - "10351:22"
     volumes:
       - customer_1:/customer_1
     links:
@@ -154,7 +154,7 @@ services:
   customer-rotated:
     image: bitdust/app
     ports:
-      - "10055:22"
+      - "10355:22"
     volumes:
       - customer_rotated:/customer_rotated
     links:
@@ -168,7 +168,7 @@ services:
   broker-1:
     image: bitdust/app
     ports:
-      - "10061:22"
+      - "10361:22"
     links:
       - dht-2
       - stun-1
@@ -180,7 +180,7 @@ services:
   broker-2:
     image: bitdust/app
     ports:
-      - "10062:22"
+      - "10362:22"
     links:
       - dht-2
       - stun-1
@@ -192,7 +192,7 @@ services:
   broker-3:
     image: bitdust/app
     ports:
-      - "10063:22"
+      - "10363:22"
     links:
       - dht-2
       - stun-1
@@ -204,7 +204,7 @@ services:
   broker-4:
     image: bitdust/app
     ports:
-      - "10064:22"
+      - "10364:22"
     links:
       - dht-2
       - stun-1
@@ -216,7 +216,7 @@ services:
   broker-rotated:
     image: bitdust/app
     ports:
-      - "10065:22"
+      - "10365:22"
     links:
       - dht-2
       - stun-1
