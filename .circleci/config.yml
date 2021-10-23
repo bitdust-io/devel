@@ -23,8 +23,11 @@ jobs:
           ls -la ./latest.zip
           scp -o StrictHostKeyChecking=no ./latest.zip tester@p2p-alice.ai:.
           cat /home/circleci/.ssh/known_hosts
-          echo "archived file latest.zip uploaded to the test machine"
-          ssh -o StrictHostKeyChecking=no tester@p2p-alice.ai "rm -rf bitdust/; mkdir bitdust/; mv latest.zip bitdust/; cd bitdust/; unzip -o -q latest.zip; rm latest.zip; make test_unit; cd ..; rm -rf bitdust/"
+          echo "archived file latest.zip uploaded to the intermediate machine"
+          ssh -o StrictHostKeyChecking=no tester@p2p-alice.ai 'scp ./latest.zip librenode0:.'
+          echo "archived file latest.zip uploaded to the testing machine"
+          ssh -o StrictHostKeyChecking=no -t tester@p2p-alice.ai 'ssh librenode0 "rm -rf ~/.bitdust/venv/; rm -rf bitdust.ci/; mkdir bitdust.ci/; mv latest.zip bitdust.ci/; cd bitdust.ci/; unzip -o -q latest.zip; rm latest.zip; make regress_stop; make regress_clean; make test_unit && make regress_test && make regress_report > ../test_report.txt && make regress_stop && make regress_clean && cd .. && rm -rf bitdust.ci/ && cat test_report.txt;"'
+          echo "OK!!!"
 
 workflows:
   my-custom-workflow:
