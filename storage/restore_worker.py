@@ -154,7 +154,7 @@ class RestoreWorker(automat.Automat):
         """
         Builds `restore_worker()` state machine.
         """
-        self.creator_id = my_id.getIDURL()
+        self.creator_id = my_id.getLocalID()
         self.backup_id = BackupID
         _parts = packetid.SplitBackupID(self.backup_id)
         self.customer_id = _parts[0]
@@ -355,7 +355,7 @@ class RestoreWorker(automat.Automat):
         self._do_block_rebuilding()
         self.known_suppliers = [_f for _f in contactsdb.suppliers(customer_idurl=self.customer_idurl) if _f]
         if not self.EccMap:
-            if self.customer_idurl == my_id.getIDURL():
+            if self.customer_idurl == my_id.getLocalID():
                 self.EccMap = eccmap.Current()
                 lg.info('ECC map %r set from local for my own suppliers' % self.EccMap)
         if not self.EccMap:

@@ -357,7 +357,7 @@ def process_line_file(line, current_key_alias=None, customer_idurl=None, is_in_s
             if is_in_sync:
                 # so we have some modifications in the index - it is not empty!
                 # index_synchronizer() did the job - so we have up to date index on hands
-                if customer_idurl == my_id.getIDURL():
+                if customer_idurl == my_id.getLocalID():
                     # now we are sure that this file is old and must be removed from remote supplier
                     paths2remove.add(
                         packetid.MakeBackupID(
@@ -402,7 +402,7 @@ def process_line_dir(line, current_key_alias=None, customer_idurl=None, is_in_sy
                 modified = True
     if not backup_fs.ExistsID(pth, iterID=backup_fs.fsID(customer_idurl)):
         if is_in_sync:
-            if customer_idurl == my_id.getIDURL():
+            if customer_idurl == my_id.getLocalID():
                 paths2remove.add(
                     packetid.MakeBackupID(
                         customer=global_id.UrlToGlobalID(customer_idurl),
@@ -467,7 +467,7 @@ def process_line_version(line, supplier_num, current_key_alias=None, customer_id
     if item is None:
         # this path is not found in the index at all
         if is_in_sync:
-            if customer_idurl == my_id.getIDURL():
+            if customer_idurl == my_id.getLocalID():
                 found_backups.add(backupID)
                 backups2remove.add(backupID)
                 paths2remove.add(
@@ -507,7 +507,7 @@ def process_line_version(line, supplier_num, current_key_alias=None, customer_id
                     lg.warn('skip auto create version %r for path %r because key %r not registered' % (versionName, remotePath, authorized_key_id, ))
     if not item.has_version(versionName):
         if is_in_sync:
-            if customer_idurl == my_id.getIDURL():
+            if customer_idurl == my_id.getLocalID():
                 backups2remove.add(backupID)
                 if _Debug:
                     lg.out(_DebugLevel, '        VERSION "%s" to be removed, version is not found in the index' % backupID)

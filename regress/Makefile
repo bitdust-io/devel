@@ -23,7 +23,7 @@
 
 # This Makefile requires the following commands to be available:
 # * virtualenv
-# * python2.7 or python3
+# * python3
 # * docker
 # * docker-compose
 
@@ -115,17 +115,19 @@ _one_post_report:
 	@/bin/bash build_report.sh ${TEST_NAME} > /dev/null;
 
 _one_up_test_coverage_down:
-	# @$(MAKE) --no-print-directory --output-sync=line _one_prepare && $(MAKE) --no-print-directory --output-sync=line _one_up && $(MAKE) --no-print-directory --output-sync=none _one_test_rerun && $(MAKE) --no-print-directory --output-sync=line _one_coverage && $(MAKE) --no-print-directory --output-sync=line _one_down
 	@$(MAKE) --no-print-directory --output-sync=line _one_prepare && $(MAKE) --no-print-directory --output-sync=line _one_up && $(MAKE) --no-print-directory --output-sync=none _one_test && $(MAKE) --no-print-directory --output-sync=line _one_coverage && $(MAKE) --no-print-directory --output-sync=line _one_down
 
 _one_up_test_log_down:
-	@$(MAKE) --no-print-directory --output-sync=line _one_prepare && $(MAKE) --no-print-directory --output-sync=line _one_up && $(MAKE) --no-print-directory --output-sync=none _one_test || $(MAKE) --no-print-directory --output-sync=line _one_coverage && $(MAKE) --no-print-directory --output-sync=line _one_log && $(MAKE) --no-print-directory --output-sync=line _one_down
+	@$(MAKE) --no-print-directory --output-sync=line _one_prepare && $(MAKE) --no-print-directory --output-sync=line _one_up && $(MAKE) --no-print-directory --output-sync=none _one_test && $(MAKE) --no-print-directory --output-sync=line _one_coverage && $(MAKE) --no-print-directory --output-sync=line _one_log && $(MAKE) --no-print-directory --output-sync=line _one_down
 
 _one_up_test_log_down_parallel:
 	@$(MAKE) --no-print-directory --output-sync=none _one_prepare && $(MAKE) --no-print-directory --output-sync=none _one_up && $(MAKE) --no-print-directory --output-sync=none _one_test_rerun_1 && $(MAKE) --no-print-directory --output-sync=recurse _one_coverage && $(MAKE) --no-print-directory --output-sync=recurse _one_log && $(MAKE) --no-print-directory --output-sync=recurse _one_down
 
 _one_up_test_log:
 	@$(MAKE) --no-print-directory --output-sync=line _one_prepare && $(MAKE) --no-print-directory --output-sync=line _one_up && ( $(MAKE) --no-print-directory --output-sync=none _one_test || echo "TEST FAILED!!!" ) && $(MAKE) --no-print-directory --output-sync=line _one_log
+
+_one_up_test_coverage_log:
+	@$(MAKE) --no-print-directory --output-sync=line _one_prepare && $(MAKE) --no-print-directory --output-sync=line _one_up && ( $(MAKE) --no-print-directory --output-sync=none _one_test || echo "TEST FAILED!!!" ) && $(MAKE) --no-print-directory --output-sync=line _one_coverage && $(MAKE) --no-print-directory --output-sync=line _one_log
 
 up/%:
 	@$(MAKE) --no-print-directory TEST_NAME=$* _one_up
@@ -144,6 +146,7 @@ log/%:
 
 run/%:
 	@$(MAKE) --no-print-directory --output-sync=line TEST_NAME=$* _one_up_test_coverage_down
+	@echo ''; echo '';
 
 run_log/%:
 	@$(MAKE) --no-print-directory --output-sync=line TEST_NAME=$* _DEBUG=1 _one_up_test_log_down
@@ -188,4 +191,4 @@ test_log: prepare run_all_log
 test: prepare run_all report
 
 shell:
-	docker-compose --file tests/alpha/docker-compose.yml exec $(node) bash
+	docker-compose --file tests/$(test)/docker-compose.yml exec $(node) bash

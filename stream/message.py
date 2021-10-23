@@ -399,7 +399,7 @@ def do_send_message(json_data, recipient_global_id, packet_id, message_ack_timeo
         encoding='utf-8',
     )
     if _Debug:
-        lg.out(_DebugLevel, "message.do_send_message to %s with %d bytes message timeout=%s" % (
+        lg.out(_DebugLevel, "message.do_send_message to %s with %d bytes message ack_timeout=%s" % (
             recipient_global_id, len(message_body), message_ack_timeout))
     try:
         private_message_object = PrivateMessage(recipient=recipient_global_id)
@@ -410,11 +410,9 @@ def do_send_message(json_data, recipient_global_id, packet_id, message_ack_timeo
     payload = private_message_object.serialize()
     if _Debug:
         lg.out(_DebugLevel, "        payload is %d bytes, remote idurl is %s" % (len(payload), remote_idurl))
-    result, outpacket = p2p_service.SendMessage(
-        remote_idurl=remote_idurl,
-        packet_id=packet_id,
-        payload=payload,
-        callbacks={
+    callbacks = {}
+    if message_ack_timeout:
+        callbacks = {
             commands.Ack(): lambda response, info: on_message_delivered(
                 remote_idurl, json_data, recipient_global_id, packet_id, response, info, result_defer, ),
             commands.Fail(): lambda response, info: on_message_failed(
@@ -423,7 +421,12 @@ def do_send_message(json_data, recipient_global_id, packet_id, message_ack_timeo
             None: lambda pkt_out: on_message_failed(
                 remote_idurl, json_data, recipient_global_id, packet_id, None, None,
                 result_defer=result_defer, error='timeout', ),
-        },
+        }
+    result, outpacket = p2p_service.SendMessage(
+        remote_idurl=remote_idurl,
+        packet_id=packet_id,
+        payload=payload,
+        callbacks=callbacks,
         response_timeout=message_ack_timeout,
     )
     if fire_callbacks:

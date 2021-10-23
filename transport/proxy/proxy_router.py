@@ -1126,7 +1126,7 @@ class ProxyRouter(automat.Automat):
             return None
         if route:
             return None
-        if outpacket.CreatorID != my_id.getIDURL():
+        if outpacket.CreatorID != my_id.getLocalID():
             return None
         receiver_idurl = outpacket.RemoteID
         receiver_proto, receiver_host = self._get_session_proto_host(receiver_idurl)
@@ -1163,7 +1163,7 @@ class ProxyRouter(automat.Automat):
 
 
     def _on_file_sending_filter(self, remote_idurl, proto, host, filename, description, pkt_out):
-        if id_url.to_bin(remote_idurl) == my_id.getIDURL().to_bin():
+        if id_url.to_bin(remote_idurl) == my_id.getLocalID().to_bin():
             # somehow outgoing file is addressed to my self - do not filter it, but give a warning
             lg.warn('outgoing file addressed to my self: %r' % pkt_out)
             return None

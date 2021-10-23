@@ -242,7 +242,7 @@ class KeysSynchronizer(automat.Automat):
         if list_files_orator.A().state in ['SAW_FILES', 'NO_FILES', ]:
             self.automat('run')
         else:
-            reactor.callLater(5, self.automat, 'sync')  # @UndefinedVariable
+            reactor.callLater(1, self.automat, 'sync')  # @UndefinedVariable
 
     def doPrepare(self, *args, **kwargs):
         """

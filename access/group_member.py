@@ -305,7 +305,7 @@ class GroupMember(automat.Automat):
         """
         Builds `group_member()` state machine.
         """
-        self.member_idurl = member_idurl or my_id.getIDURL()
+        self.member_idurl = member_idurl or my_id.getLocalID()
         self.member_id = self.member_idurl.to_id()
         self.group_key_id = group_key_id
         self.group_glob_id = global_id.ParseGlobalID(self.group_key_id)

@@ -235,7 +235,7 @@ class SupplierFinder(automat.Automat):
         from customer import fire_hire
         from raid import eccmap
         position = self.family_position
-        if position is None:
+        if position is None or position == -1:
             lg.warn('position for new supplier is unknown, will "guess"')
             current_suppliers = list(contactsdb.suppliers())
             for i in range(len(current_suppliers)):

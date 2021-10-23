@@ -465,8 +465,8 @@ def SendListFiles(target_supplier, customer_idurl=None, key_id=None, query_items
         query_items = ['*', ]
     Payload = serialization.DictToBytes({'items': query_items, })
     if _Debug:
-        lg.out(_DebugLevel, "p2p_service.SendListFiles %r to %s with query : %r" % (
-            PacketID, nameurl.GetName(RemoteID), query_items, ))
+        lg.out(_DebugLevel, "p2p_service.SendListFiles %r to %r of customer %r with query : %r" % (
+            PacketID, nameurl.GetName(RemoteID), nameurl.GetName(customer_idurl), query_items, ))
     result = signed.Packet(
         Command=commands.ListFiles(),
         OwnerID=MyID,
@@ -485,9 +485,9 @@ def Files(request, info):
     A directory list came in from some supplier or another customer.
     """
     if _Debug:
-        lg.out(_DebugLevel, 'p2p_service.Files %d bytes in [%s]' % (len(request.Payload), request.PacketID))
-        lg.out(_DebugLevel, '  from remoteID=%s  ownerID=%s  creatorID=%s' % (
-            request.RemoteID, request.OwnerID, request.CreatorID))
+        lg.out(_DebugLevel, 'p2p_service.Files %d bytes in [%s] from %s by %s|%s' % (
+            len(request.Payload), request.PacketID, nameurl.GetName(request.RemoteID),
+            nameurl.GetName(request.OwnerID), nameurl.GetName(request.CreatorID), ))
 
 
 def SendFiles(idurl, raw_list_files_info, packet_id, callbacks={}, timeout=10, ):

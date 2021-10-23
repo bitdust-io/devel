@@ -427,6 +427,7 @@ class SupplierConnector(automat.Automat):
             idurl=self.supplier_idurl,
             channel='supplier_connector',
             keep_alive=True,
+            ping_retries=3,
         )
         d.addCallback(lambda ok: self._do_request_supplier_service(
             ecc_map=ecc_map,

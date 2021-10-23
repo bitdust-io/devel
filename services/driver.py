@@ -83,8 +83,6 @@ _StopingDeferred = None
 
 
 def services():
-    """
-    """
     global _Services
     return _Services
 
@@ -130,6 +128,13 @@ def is_enabled(name):
     if svc is None:
         return False
     return svc.enabled()
+
+
+def is_suspended(name):
+    svc = services().get(name, None)
+    if svc is None:
+        return False
+    return svc.suspended
 
 
 def is_exist(name):
@@ -386,6 +391,25 @@ def stop(services_list=[]):
     return _StopingDeferred
 
 
+def suspend(service_name, *args, **kwargs):
+    svc = services().get(service_name, None)
+    if not svc:
+        return None
+    if svc.state == 'ON':
+        return svc.suspend(*args, **kwargs)
+    return None
+
+
+def resume(service_name, *args, **kwargs):
+    svc = services().get(service_name, None)
+    if not svc:
+        return None
+    if svc.state == 'ON':
+        return svc.resume(*args, **kwargs)
+    return None
+
+#------------------------------------------------------------------------------
+
 def restart(service_name, wait_timeout=None):
     """
     """
@@ -472,6 +496,7 @@ def restart(service_name, wait_timeout=None):
     dependencies.addErrback(_on_timeout)
     return restart_result
 
+#------------------------------------------------------------------------------
 
 def start_single(service_name):
     result = Deferred()
@@ -740,6 +765,14 @@ class RequireSubclass(Exception):
 
 
 class ServiceNotFound(Exception):
+    pass
+
+
+class ServiceAlreadySuspended(Exception):
+    pass
+
+
+class ServiceWasNotSuspended(Exception):
     pass
 
 #------------------------------------------------------------------------------

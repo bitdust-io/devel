@@ -23,7 +23,7 @@
 
 # This Makefile requires the following commands to be available:
 # * virtualenv
-# * python2.7 or python3
+# * python3
 # * docker
 # * docker-compose
 
@@ -34,7 +34,7 @@ DOCKER_COMPOSE=$(shell which docker-compose)
 VENV=${HOME}/.bitdust/venv
 PIP=${VENV}/bin/pip
 PIP_NEW=${VENV}/bin/pip
-# REGRESSION_PY_VER=3.6
+REGRESSION_PY_VER=3.6
 # VENV_PYTHON_VERSION=python3.6
 CMD_FROM_VENV:=". ${VENV}/bin/activate; which"
 TOX=$(shell "$(CMD_FROM_VENV)" "tox")
@@ -117,12 +117,17 @@ test_regress:
 
 regress_stop:
 	PYTHON_VERSION=$(REGRESSION_PY_VER) make --no-print-directory -C regress/ stop_all
+	make --no-print-directory -C regress/ clean_all
 
 regress_test:
 	PYTHON_VERSION=$(REGRESSION_PY_VER) make --no-print-directory -C regress/ test
 
 regress_test_log:
 	PYTHON_VERSION=$(REGRESSION_PY_VER) make --no-print-directory -C regress/ test_log
+
+regress_clean:
+	make --no-print-directory -C regress/ clean_coverage
+	make --no-print-directory -C regress/ clean_logs
 
 regress_prepare:
 	PYTHON_VERSION=$(REGRESSION_PY_VER) make --no-print-directory -C regress/ prepare
@@ -165,6 +170,14 @@ regress_clean_run_log_py27:
 	make --no-print-directory -C regress/ clean_all
 	PYTHON_VERSION=2.7.15 make --no-print-directory -C regress/ prepare
 	PYTHON_VERSION=2.7.15 _DEBUG=1 make --no-print-directory -C regress/ run_all_log
+
+regress_one/%:
+	make --no-print-directory -C regress/ stop_all
+	make --no-print-directory -C regress/ clean_all
+	# make --no-print-directory -C regress/ clean_coverage
+	# make --no-print-directory -C regress/ clean_logs
+	PYTHON_VERSION=3.6 make --no-print-directory -C regress/ prepare
+	PYTHON_VERSION=3.6 make --no-print-directory -C regress/ TEST_NAME=$* _one_up_test_coverage_log
 
 regress_full:
 	make --no-print-directory -C regress/ stop_all
@@ -236,3 +249,11 @@ link:
 
 health_id_servers:
 	@./scripts/ping_id_servers
+
+no_debug:
+	@if [ "$(OSTYPE)" = "darwin" ]; then\
+		find . -type f -name "*.py" -exec sed -i '' -e 's/_Debug = True/_Debug = False/g' {} +;\
+	else\
+		find . -type f -name "*.py" -exec sed -i -e 's/_Debug = True/_Debug = False/g' {} +;\
+	fi;
+	@echo 'all ".py" local files were updated with "_Debug = False"'

@@ -126,42 +126,56 @@ def stop_all_nodes(event_loop, verbose=False):
     if verbose:
         print('\nstop all nodes\n')
 
+    if verbose:
+        print('customers: %r' % ALL_ROLES.get('customer', []))
     event_loop.run_until_complete(asyncio.gather(*[
-        tsup.stop_daemon_async(customer['name'], event_loop, verbose=verbose) for customer in ALL_ROLES.get('customer', [])
+        tsup.stop_daemon_async(customer['name'], event_loop, skip_checks=True, verbose=verbose) for customer in ALL_ROLES.get('customer', [])
     ]))
     if verbose:
         print(f'ALL CUSTOMERS STOPPED\n')
 
+    if verbose:
+        print('message-brokers: %r' % ALL_ROLES.get('message-broker', []))
     event_loop.run_until_complete(asyncio.gather(*[
         tsup.stop_daemon_async(message_broker['name'], event_loop, verbose=verbose) for message_broker in ALL_ROLES.get('message-broker', [])
     ]))
     if verbose:
         print(f'ALL MESSAGE BROKERS STOPPED\n')
 
+    if verbose:
+        print('suppliers: %r' % ALL_ROLES.get('supplier', []))
     event_loop.run_until_complete(asyncio.gather(*[
         tsup.stop_daemon_async(supplier['name'], event_loop, verbose=verbose) for supplier in ALL_ROLES.get('supplier', [])
     ]))
     if verbose:
         print(f'ALL SUPPLIERS STOPPED\n')
 
+    if verbose:
+        print('proxy-servers: %r' % ALL_ROLES.get('proxy-server', []))
     event_loop.run_until_complete(asyncio.gather(*[
         tsup.stop_daemon_async(proxy_server['name'], event_loop, verbose=verbose) for proxy_server in ALL_ROLES.get('proxy-server', [])
     ]))
     if verbose:
         print(f'ALL PROXY SERVERS STOPPED\n')
 
+    if verbose:
+        print('stun-servers: %r' % ALL_ROLES.get('stun-server', []))
     event_loop.run_until_complete(asyncio.gather(*[
         tsup.stop_daemon_async(stunsrv['name'], event_loop, verbose=verbose) for stunsrv in ALL_ROLES.get('stun-server', [])
     ]))
     if verbose:
         print(f'ALL STUN SERVERS STOPPED\n')
 
+    if verbose:
+        print('identity-servers: %r' % ALL_ROLES.get('identity-server', []))
     event_loop.run_until_complete(asyncio.gather(*[
         tsup.stop_daemon_async(idsrv['name'], event_loop, verbose=verbose) for idsrv in ALL_ROLES.get('identity-server', [])
     ]))
     if verbose:
         print(f'ALL ID SERVERS STOPPED\n')
 
+    if verbose:
+        print('dht-seeds: %r' % ALL_ROLES.get('dht-seed', []))
     event_loop.run_until_complete(asyncio.gather(*[
         tsup.stop_daemon_async(dhtseed['name'], event_loop, verbose=verbose) for dhtseed in ALL_ROLES.get('dht-seed', [])
     ]))
@@ -210,13 +224,15 @@ def report_all_nodes(event_loop):
     assert not failed, 'found some critical errors'
 
 
-def collect_coverage_all_nodes(event_loop):
+def collect_coverage_all_nodes(event_loop, verbose=False):
     _begin = time.time()
-    print('\nCollecting coverage from all nodes')
+    if verbose:
+        print('\nCollecting coverage from all nodes')
     event_loop.run_until_complete(asyncio.gather(*[
-        tsup.collect_coverage_one_node_async(node, event_loop=event_loop) for node in ALL_NODES
+        tsup.collect_coverage_one_node_async(node, event_loop=event_loop, verbose=verbose) for node in ALL_NODES
     ]))
-    print('\n\nAll coverage files received in  %5.3f seconds\n' % (time.time() - _begin))
+    if verbose:
+        print('\n\nAll coverage files received in  %5.3f seconds\n' % (time.time() - _begin))
 
 #------------------------------------------------------------------------------
 
@@ -236,7 +252,7 @@ def global_wrapper(event_loop):
 
     time.sleep(PAUSE_BEFORE)
 
-    verbose = True
+    verbose = False
 
     _begin = time.time()
 
@@ -244,7 +260,7 @@ def global_wrapper(event_loop):
         open_all_tunnels(event_loop)
 
     if os.environ.get('STOP_NODES', '0') == '1':
-        stop_all_nodes(event_loop, verbose=verbose)
+        stop_all_nodes(event_loop, verbose=False)
 
     if os.environ.get('CLEAN_NODES', '0') == '1':
         clean_all_nodes(event_loop, skip_checks=True, verbose=verbose)
@@ -265,8 +281,8 @@ def global_wrapper(event_loop):
     # TODO: use ENV variables to control stop / coverage / report / cleanup
 
     # log_network_info_all_nodes(event_loop)
-    stop_all_nodes(event_loop)
-    collect_coverage_all_nodes(event_loop)
+    stop_all_nodes(event_loop, verbose=verbose)
+    collect_coverage_all_nodes(event_loop, verbose=verbose)
     report_all_nodes(event_loop)
 
     # clean_all_nodes()

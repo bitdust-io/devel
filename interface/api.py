@@ -188,7 +188,7 @@ def ERROR(errors=[], message=None, status='ERROR', reason=None, details=None, **
 #------------------------------------------------------------------------------
 
 
-def process_stop(instant=False):
+def process_stop(instant=True):
     """
     Stop the main process immediately.
 
@@ -204,12 +204,11 @@ def process_stop(instant=False):
     if not shutdowner.A():
         return ERROR('application shutdown failed')
     if instant:
-        # shutdowner.A('stop', 'exit')
         reactor.callLater(0, shutdowner.A, 'stop', 'exit')  # @UndefinedVariable
         return OK()
     ret = Deferred()
-    reactor.callLater(0.001, ret.callback, OK(api_method='process_stop'))  # @UndefinedVariable
-    reactor.callLater(0.002, shutdowner.A, 'stop', 'exit')  # @UndefinedVariable
+    reactor.callLater(0, ret.callback, OK(api_method='process_stop'))  # @UndefinedVariable
+    reactor.callLater(0.5, shutdowner.A, 'stop', 'exit')  # @UndefinedVariable
     return ret
 
 
@@ -913,7 +912,7 @@ def key_label(key_id, label):
         return ERROR('key %r is not valid' % key_id)
     if not my_keys.is_key_registered(key_id):
         return ERROR('key %r not exist' % key_id)
-    if key_id == 'master' or key_id == my_id.getGlobalID(key_alias='master') or key_id == my_id.getGlobalID():
+    if key_id == 'master' or key_id == my_id.getGlobalID(key_alias='master') or key_id == my_id.getID():
         return ERROR('master key label can not be changed')
     if _Debug:
         lg.out(_DebugLevel, 'api.key_label id=%s, label=%r' % (key_id, key_label))
@@ -2199,7 +2198,7 @@ def share_create(owner_id=None, key_size=None, label=''):
     from crypt import my_keys
     from userid import my_id
     if not owner_id:
-        owner_id = my_id.getGlobalID()
+        owner_id = my_id.getID()
     key_id = None
     while True:
         random_sample = os.urandom(24)
@@ -2484,7 +2483,7 @@ def group_create(creator_id=None, key_size=None, label='', timeout=20):
     from access import groups
     from userid import my_id
     if not creator_id:
-        creator_id = my_id.getGlobalID()
+        creator_id = my_id.getID()
     if not key_size:
         key_size = settings.getPrivateKeySize()
     group_key_id = groups.create_new_group(creator_id=creator_id, label=label, key_size=key_size)
@@ -2546,6 +2545,43 @@ def group_info(group_key_id):
     response['state'] = 'CLEANED'
     lg.warn('did not found stored group info for %r, but group key exist' % group_key_id)
     return OK(response)
+
+
+def group_info_dht(group_creator_id):
+    """
+    Read and return list of message brokers stored in the corresponding DHT records for given user.
+
+    ###### HTTP
+        curl -X GET 'localhost:8180/group/info/dht/v1?group_creator_id=alice@server-a.com'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "group_info_dht", "kwargs": {"group_creator_id": "alice@server-a.com"} }');
+    """
+    if not driver.is_on('service_entangled_dht'):
+        return ERROR('service_entangled_dht() is not started')
+    from dht import dht_relations
+    from access import groups
+    from userid import global_id
+    from userid import id_url
+    from userid import my_id
+    customer_idurl = None
+    if not group_creator_id:
+        customer_idurl = my_id.getID()
+    else:
+        customer_idurl = strng.to_bin(group_creator_id)
+        if global_id.IsValidGlobalUser(group_creator_id):
+            customer_idurl = global_id.GlobalUserToIDURL(group_creator_id, as_field=False)
+    customer_idurl = id_url.field(customer_idurl)
+    ret = Deferred()
+    d = dht_relations.read_customer_message_brokers(
+        customer_idurl=customer_idurl,
+        positions=list(range(groups.REQUIRED_BROKERS_COUNT)),
+        as_fields=False,
+        use_cache=False,
+    )
+    d.addCallback(lambda result: ret.callback(RESULT(result, api_method='group_info_dht')))
+    d.addErrback(lambda err: ret.callback(ERROR(err)))
+    return ret
 
 
 def group_join(group_key_id, publish_events=False, use_dht_cache=True, wait_result=True):
@@ -2746,7 +2782,6 @@ def group_share(group_key_id, trusted_user_id, timeout=45, publish_events=False)
     group_access_donor_machine.automat('init', trusted_idurl=remote_idurl, group_key_id=group_key_id, result_defer=d)
     return ret
 
-
 #------------------------------------------------------------------------------
 
 def friends_list():
@@ -2818,7 +2853,7 @@ def friend_add(trusted_user_id, alias='', share_person_key=True):
     ret = Deferred()
 
     def _add(idurl, result_defer):
-        if idurl == my_id.getIDURL():
+        if idurl == my_id.getLocalID():
             result_defer.callback(ERROR('can not add my own identity as a new friend', api_method='friend_add'))
             return
         added = False
@@ -3269,11 +3304,11 @@ def message_conversations_list(message_types=[], offset=0, limit=100):
             conv_key_id = None
             conv_label = None
             user_idurl = None
-            if (id_url.is_cached(idurl1) and idurl1 == my_id.getIDURL()) or usr1.split('@')[0] == my_id.getIDName():
+            if (id_url.is_cached(idurl1) and idurl1 == my_id.getLocalID()) or usr1.split('@')[0] == my_id.getIDName():
                 user_idurl = idurl2
                 conv_key_id = global_id.UrlToGlobalID(idurl2, include_key=True)
                 conv_label = conv_key_id.replace('master$', '').split('@')[0]
-            if (id_url.is_cached(idurl2) and idurl2 == my_id.getIDURL()) or usr2.split('@')[0] == my_id.getIDName():
+            if (id_url.is_cached(idurl2) and idurl2 == my_id.getLocalID()) or usr2.split('@')[0] == my_id.getIDName():
                 user_idurl = idurl1
                 conv_key_id = global_id.UrlToGlobalID(idurl1, include_key=True)
                 conv_label = conv_key_id.replace('master$', '').split('@')[0]
@@ -3701,7 +3736,7 @@ def suppliers_ping():
     return OK(message='sent requests to all suppliers')
 
 
-def suppliers_dht_lookup(customer_id=None):
+def suppliers_list_dht(customer_id=None):
     """
     Scans DHT network for key-value pairs related to given customer and returns a list its suppliers.
 
@@ -3709,7 +3744,7 @@ def suppliers_dht_lookup(customer_id=None):
         curl -X GET 'localhost:8180/supplier/list/dht/v1?customer_id=alice@server-a.com'
 
     ###### WebSocket
-        websocket.send('{"command": "api_call", "method": "suppliers_dht_lookup", "kwargs": {"customer_id": "alice@server-a.com"} }');
+        websocket.send('{"command": "api_call", "method": "suppliers_list_dht", "kwargs": {"customer_id": "alice@server-a.com"} }');
     """
     if not driver.is_on('service_entangled_dht'):
         return ERROR('service_entangled_dht() is not started')
@@ -3727,7 +3762,7 @@ def suppliers_dht_lookup(customer_id=None):
     customer_idurl = id_url.field(customer_idurl)
     ret = Deferred()
     d = dht_relations.read_customer_suppliers(customer_idurl, as_fields=False, use_cache=False)
-    d.addCallback(lambda result: ret.callback(RESULT(result, api_method='suppliers_dht_lookup')))
+    d.addCallback(lambda result: ret.callback(RESULT(result, api_method='suppliers_list_dht')))
     d.addErrback(lambda err: ret.callback(ERROR(err)))
     return ret
 
@@ -4661,7 +4696,7 @@ def network_status(suppliers=False, customers=False, cache=False, tcp=False, udp
             r['network_connector_state'] = network_connector_machine.state
     if my_id.isLocalIdentityReady():
         r['idurl'] = my_id.getLocalID()
-        r['global_id'] = my_id.getGlobalID()
+        r['global_id'] = my_id.getID()
         r['identity_sources'] = my_id.getLocalIdentity().getSources(as_originals=True)
         r['identity_contacts'] = my_id.getLocalIdentity().getContacts()
         r['identity_revision'] = my_id.getLocalIdentity().getRevisionValue()

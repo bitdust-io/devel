@@ -111,9 +111,10 @@ def shutdown(x=None):
         from interface import api_rest_http_server
         from interface import api_web_socket
         from interface import ftp_server
-        from userid import my_id
         from contacts import identitydb
         from crypt import my_keys
+        from userid import id_url
+        from userid import my_id
         my_keys.shutdown()
         my_id.shutdown()
         identitydb.shutdown()
@@ -138,11 +139,19 @@ def shutdown(x=None):
         except:
             lg.exc()
         survived_automats = list(automat.objects().values())
-        lg.warn('found %d survived automats, sending "shutdown" event to them all' % len(survived_automats))
-        for a in survived_automats:
-            if a.name != 'shutdowner':
-                a.event('shutdown')
+        if survived_automats:
+            lg.warn('found %d survived state machines, sending "shutdown" event to them all' % len(survived_automats))
+            for a in survived_automats:
+                if a.name != 'shutdowner':
+                    a.event('shutdown')
+        survived_automats = list(automat.objects().values())
+        if survived_automats:
+            lg.warn('still found %d survived state machines, executing "destroy()" method to them all' % len(survived_automats))
+            for a in survived_automats:
+                if a.name != 'shutdowner':
+                    a.destroy()
         settings.shutdown()
+        id_url.shutdown()
     except:
         lg.exc()
     # TODO: rework all shutdown() methods to return deferred objects

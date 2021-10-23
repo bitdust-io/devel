@@ -1460,7 +1460,7 @@ def ExtractVersions(pathID, item_info, path_exist=None, customer_id=None):
         })
         versions.append(backup_info_dict)
     item_time = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(item_time)) if item_time else ''
-    return (item_size, item_time, versions)
+    return item_size, item_time, versions
 
 #------------------------------------------------------------------------------
 
@@ -1686,7 +1686,7 @@ def ListChildsByPath(path, recursive=False, iter=None, iterID=None):
 
     def visitor(item_type, item_name, item_path_id, item_info, num_childs):
         item_id = (pathID + '/' + item_path_id).strip('/')
-        (item_size, item_time, versions) = ExtractVersions(item_id, item_info, path_exist)  # , customer_id)
+        item_size, item_time, versions = ExtractVersions(item_id, item_info, path_exist)
         i = {
             'type': item_type,
             'name': item_info.name(),

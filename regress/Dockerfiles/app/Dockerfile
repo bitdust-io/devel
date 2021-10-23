@@ -25,7 +25,7 @@ ARG PYTHON_VERSION
 FROM python:${PYTHON_VERSION}
 
 RUN apt-get update && apt-get install -y \
-    curl openssh-server mosh nano \
+    curl openssh-server mosh nano iproute2 \
  && rm -rf /var/lib/apt/lists/* \
  && pip install virtualenv
 
@@ -55,6 +55,8 @@ RUN echo '#!/bin/sh\n /root/.bitdust/venv/bin/python /app/bitdust/bitdust.py "$@
 RUN chmod +x /bin/bitdust
 
 RUN /root/.bitdust/venv/bin/pip install "coverage<5" coverage-enable-subprocess
+
+RUN echo 'import coverage; coverage.process_startup();' > /app/bitdust/sitecustomize.py
 
 ADD ./regress/ssh /app/ssh
 

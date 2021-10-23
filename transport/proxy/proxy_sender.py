@@ -335,7 +335,7 @@ class ProxySender(automat.Automat):
             return None
         # see proxy_router.ProxyRouter : doForwardOutboxPacket() for receiving part
         json_payload = {
-            'f': my_id.getIDURL().to_bin(),      # from
+            'f': my_id.getLocalID().to_bin(),      # from
             't': outpacket.RemoteID.to_bin(),    # to
             'p': raw_data,                       # payload
             'w': wide,                           # wide
@@ -347,7 +347,7 @@ class ProxySender(automat.Automat):
             raise ValueError('receiver idurl was not set')
         raw_bytes = serialization.DictToBytes(json_payload)
         block = encrypted.Block(
-            CreatorID=my_id.getIDURL(),
+            CreatorID=my_id.getLocalID(),
             BackupID='routed outgoing data',
             BlockNumber=0,
             SessionKey=key.NewSessionKey(session_key_type=key.SessionKeyType()),
@@ -360,7 +360,7 @@ class ProxySender(automat.Automat):
         newpacket = signed.Packet(
             Command=commands.RelayOut(),
             OwnerID=outpacket.OwnerID,
-            CreatorID=my_id.getIDURL(),
+            CreatorID=my_id.getLocalID(),
             PacketID=outpacket.PacketID,
             Payload=block_encrypted,
             RemoteID=router_idurl,
@@ -519,7 +519,7 @@ class ProxySender(automat.Automat):
             if _Debug:
                 lg.out(_DebugLevel, 'proxy_sender._on_first_outbox_packet SKIP sending %r because proxy_receiver() not exist' % outpacket)
             return None
-        if outpacket.Command == commands.Identity() and outpacket.CreatorID == my_id.getIDURL():
+        if outpacket.Command == commands.Identity() and outpacket.CreatorID == my_id.getLocalID():
             if proxy_receiver.GetPossibleRouterIDURL() and proxy_receiver.GetPossibleRouterIDURL().to_bin() == outpacket.RemoteID.to_bin():
                 if network_connector.A().state == 'DISCONNECTED':
                     if _Debug:

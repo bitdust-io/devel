@@ -507,11 +507,11 @@ def udp_dht_stun(udp_port=None, dht_port=None, result_defer=None):
 
     dht_port = dht_port or settings.getDHTPort()
     udp_port = udp_port or settings.getUDPPort()
+    if udp_port:
+        udp.listen(udp_port)
     if dht_port:
         dht_service.init(dht_port)
     d = dht_service.connect()
-    if udp_port:
-        udp.listen(udp_port)
 
     def _cb(cod, typ, ip, details):
         # A('shutdown')
@@ -565,7 +565,7 @@ def http_stun(result_defer=None):
             if _Debug:
                 lg.out(_DebugLevel, 'stun_client.http_stun   FAILED : unknown client host from response')
             if result_defer:
-                result_defer.callback(ret)      
+                result_defer.callback(ret)
             return None
         ret = {
             'result': 'stun-success',
@@ -617,7 +617,6 @@ def safe_stun(udp_port=None, dht_port=None, result_defer=None):
     first_result.addCallback(_check_response)
     first_result.addErrback(_fallback)
     udp_dht_stun(udp_port, dht_port, result_defer=first_result)
-
     return result
 
 

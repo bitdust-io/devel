@@ -42,6 +42,7 @@ class PrivateMessagesService(LocalService):
 
     service_name = 'service_private_messages'
     config_path = 'services/private-messages/enabled'
+    start_suspended = True
 
     def dependent_on(self):
         return [
@@ -73,6 +74,14 @@ class PrivateMessagesService(LocalService):
         callback.remove_inbox_callback(self._on_inbox_packet_received)
         nickname_holder.Destroy()
         message.shutdown()
+        return True
+
+    def on_suspend(self, *args, **kwargs):
+        return True
+
+    def on_resume(self, *args, **kwargs):
+        from chat import nickname_holder
+        nickname_holder.A('set')
         return True
 
     def _on_inbox_packet_received(self, newpacket, info, status, error_message):

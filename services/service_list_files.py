@@ -81,7 +81,8 @@ class ListFilesService(LocalService):
                 lg.info('all my suppliers are hired, starting service_list_files()')
                 driver.start_single('service_list_files')
             from customer import list_files_orator
-            list_files_orator.A('need-files')
+            if list_files_orator.A():
+                list_files_orator.synchronize_files()
 
     def _on_my_suppliers_yet_not_hired(self, evt):
         from logs import lg

@@ -494,7 +494,8 @@ def immediatelyCaching(idurl, timeout=10, try_other_sources=True):
 
     def _fail(err, idurl):
         global _CachingTasks
-        idurl = id_url.to_original(idurl)
+        if _Debug:
+            lg.out(_DebugLevel, 'identitycache.immediatelyCaching._fail for %r with %r' % (idurl, err, ))
         result = _CachingTasks.pop(idurl, None)
 
         if not try_other_sources:
@@ -506,18 +507,25 @@ def immediatelyCaching(idurl, timeout=10, try_other_sources=True):
                 lg.warn('caching task for %s was not found' % idurl)
             return None
 
-        latest_idurl, _ = id_url.get_latest_revision(idurl)
-        latest_ident = None
         sources = []
+        latest_ident = None
+        latest_idurl, _ = id_url.get_latest_revision(idurl)
+        if not latest_idurl:
+            latest_idurl = idurl
         if latest_idurl:
             latest_ident = identitydb.get_ident(latest_idurl)
         if latest_ident:
-            sources = list(latest_ident.getSources(as_originals=True))
+            sources.extend(list(latest_ident.getSources(as_originals=True)))
+        if not sources:
+            pub_key = id_url.known().get(latest_idurl)
+            if pub_key:
+                known_sources = id_url.sources(pub_key)
+                for another_idurl in reversed(known_sources):
+                    if another_idurl != latest_idurl and another_idurl != idurl:
+                        if another_idurl not in sources:
+                            sources.append(another_idurl)
         if _Debug:
-            lg.args(_DebugLevel, idurl=idurl, latest_idurl=latest_idurl, sources=sources)
-        if sources:
-            if idurl in sources:
-                sources.remove(idurl)
+            lg.args(_DebugLevel, latest_idurl=latest_idurl, latest_ident=latest_ident, sources=sources)
 
         if sources:
             lg.warn('[cache failed] %s : %s  but will try %d more sources' % (idurl, err.getErrorMessage(), len(sources), ))
@@ -526,6 +534,8 @@ def immediatelyCaching(idurl, timeout=10, try_other_sources=True):
 
         p2p_stats.count_identity_cache(idurl, 0)
         lg.warn('[cache failed] and also no other sources found %s : %s' % (idurl, err.getErrorMessage(), ))
+        if _Debug:
+            lg.args(_DebugLevel, known=list(id_url.known().keys()))
         if result:
             if not result.called:
                 result.errback(err)
@@ -535,7 +545,6 @@ def immediatelyCaching(idurl, timeout=10, try_other_sources=True):
             lg.warn('caching task for %s was not found' % idurl)
         return None
 
-    idurl = id_url.to_original(idurl)
     _CachingTasks[idurl] = Deferred()
     _CachingTasks[idurl].addErrback(on_caching_task_failed, idurl)
     d = net_misc.getPageTwisted(idurl, timeout)

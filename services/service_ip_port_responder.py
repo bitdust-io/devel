@@ -42,6 +42,7 @@ class IPPortResponderService(LocalService):
 
     service_name = 'service_ip_port_responder'
     config_path = 'services/ip-port-responder/enabled'
+    start_suspended = True
 
     def dependent_on(self):
         return [
@@ -65,4 +66,16 @@ class IPPortResponderService(LocalService):
         from stun import stun_server
         stun_server.A('stop')
         stun_server.Destroy()
+        return True
+
+    def on_suspend(self, *args, **kwargs):
+        from stun import stun_server
+        stun_server.A('stop')
+        return True
+
+    def on_resume(self, *args, **kwargs):
+        from stun import stun_server
+        from main import settings
+        udp_port = int(settings.getUDPPort())
+        stun_server.A('start', udp_port)
         return True
