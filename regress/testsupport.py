@@ -320,7 +320,7 @@ def start_daemon(node, verbose=False):
     run_ssh_command_and_wait(node, 'mkdir -pv /root/.bitdust/metadata/')
     if os.environ.get('_DEBUG', '0') == '0':
         run_ssh_command_and_wait(node, "find /app/bitdust -type f -name '*.py' -exec sed -i -e 's/_Debug = True/_Debug = False/g' {} +")
-    bitdust_daemon = run_ssh_command_and_wait(node, 'BITDUST_CRITICAL_PUSH_MESSAGE_FAILS=0 BITDUST_LOG_USE_COLORS=1 COVERAGE_PROCESS_START=/app/bitdust/.coverage_config bitdust daemon')
+    bitdust_daemon = run_ssh_command_and_wait(node, 'BITDUST_CRITICAL_PUSH_MESSAGE_FAILS=1 BITDUST_LOG_USE_COLORS=1 COVERAGE_PROCESS_START=/app/bitdust/.coverage_config bitdust daemon')
     if verbose:
         print('\n' + bitdust_daemon[0].strip())
     assert (
@@ -334,7 +334,7 @@ async def start_daemon_async(node, loop, verbose=False):
     await run_ssh_command_and_wait_async(node, 'mkdir -pv /root/.bitdust/metadata/', loop)
     if os.environ.get('_DEBUG', '0') == '0':
         await run_ssh_command_and_wait_async(node, "find /app/bitdust -type f -name '*.py' -exec sed -i -e 's/_Debug = True/_Debug = False/g' {} +", loop)
-    bitdust_daemon = await run_ssh_command_and_wait_async(node, 'BITDUST_CRITICAL_PUSH_MESSAGE_FAILS=0 BITDUST_LOG_USE_COLORS=1 COVERAGE_PROCESS_START=/app/bitdust/.coverage_config bitdust daemon', loop)
+    bitdust_daemon = await run_ssh_command_and_wait_async(node, 'BITDUST_CRITICAL_PUSH_MESSAGE_FAILS=1 BITDUST_LOG_USE_COLORS=1 COVERAGE_PROCESS_START=/app/bitdust/.coverage_config bitdust daemon', loop)
     if verbose:
         print('\n' + bitdust_daemon[0].strip())
     assert (
@@ -813,6 +813,8 @@ async def start_supplier_async(node, identity_name, loop, join_network=True, dht
     # set desired Proxy router
     if preferred_routers:
         cmd += f'bitdust set services/proxy-transport/preferred-routers "{preferred_routers}";'
+    else:
+        cmd += 'bitdust set services/proxy-transport/enabled false;'
     # enable supplier service
     cmd += 'bitdust set services/supplier/enabled true;'
     # disable message broker service
@@ -864,6 +866,8 @@ async def start_message_broker_async(node, identity_name, loop, join_network=Tru
     # set desired Proxy router
     if preferred_routers:
         cmd += f'bitdust set services/proxy-transport/preferred-routers "{preferred_routers}";'
+    else:
+        cmd += 'bitdust set services/proxy-transport/enabled false;'
     # enable message broker service
     cmd += 'bitdust set services/message-broker/enabled true;'
     cmd += 'bitdust set services/message-broker/archive-chunk-size 3;'
@@ -923,6 +927,8 @@ async def start_customer_async(node, identity_name, loop, join_network=True, num
     # set desired Proxy router
     if preferred_routers:
         cmd += f'bitdust set services/proxy-transport/preferred-routers "{preferred_routers}";'
+    else:
+        cmd += 'bitdust set services/proxy-transport/enabled false;'
     # set desired message brokers
     if preferred_brokers:
         cmd += f'bitdust set services/private-groups/preferred-brokers "{preferred_brokers}";'

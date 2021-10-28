@@ -158,7 +158,7 @@ def init():
                             one_revision, len(_MergedIDURLs[one_pub_key])))
                 if one_pub_key not in _KnownSources:
                     _KnownSources[one_pub_key] = []
-                for one_source in known_id_obj.getSources(self, as_originals=True):
+                for one_source in known_id_obj.getSources(as_originals=True):
                     if one_source not in _KnownSources[one_pub_key]:
                         _KnownSources[one_pub_key].append(one_source)
                         if _Debug:

@@ -31,11 +31,6 @@ services:
     ports:
       - "10101:22"
 
-  id-b:
-    image: bitdust/app
-    ports:
-      - "10102:22"
-
   dht-1:
     image: bitdust/app
     ports:
@@ -55,26 +50,6 @@ services:
     links:
       - dht-2
 
-  proxy-1:
-    image: bitdust/app
-    ports:
-      - "10131:22"
-    links:
-      - dht-2
-      - stun-1
-      - id-a
-      - id-b
-
-  proxy-2:
-    image: bitdust/app
-    ports:
-      - "10132:22"
-    links:
-      - dht-2
-      - stun-1
-      - id-a
-      - id-b
-
   supplier-1:
     image: bitdust/app
     ports:
@@ -83,7 +58,6 @@ services:
       - dht-2
       - stun-1
       - id-a
-      - id-b
 
   supplier-2:
     image: bitdust/app
@@ -93,7 +67,6 @@ services:
       - dht-2
       - stun-1
       - id-a
-      - id-b
 
   customer-1:
     image: bitdust/app
@@ -105,7 +78,6 @@ services:
       - dht-2
       - stun-1
       - id-a
-      - id-b
 
   customer-2:
     image: bitdust/app
@@ -117,7 +89,6 @@ services:
       - dht-2
       - stun-1
       - id-a
-      - id-b
 
   customer-3:
     image: bitdust/app
@@ -129,7 +100,6 @@ services:
       - dht-2
       - stun-1
       - id-a
-      - id-b
 
   broker-1:
     image: bitdust/app
@@ -139,7 +109,6 @@ services:
       - dht-2
       - stun-1
       - id-a
-      - id-b
 
   broker-2:
     image: bitdust/app
@@ -149,7 +118,6 @@ services:
       - dht-2
       - stun-1
       - id-a
-      - id-b
 
   broker-3:
     image: bitdust/app
@@ -159,7 +127,6 @@ services:
       - dht-2
       - stun-1
       - id-a
-      - id-b
 
   broker-4:
     image: bitdust/app
@@ -169,7 +136,6 @@ services:
       - dht-2
       - stun-1
       - id-a
-      - id-b
 
 
 
@@ -182,12 +148,9 @@ services:
     tty: true
     links:
       - id-a
-      - id-b
       - dht-1
       - dht-2
       - stun-1
-      - proxy-1
-      - proxy-2
       - supplier-1
       - supplier-2
       - customer-1
