@@ -120,7 +120,7 @@ regress_stop:
 	make --no-print-directory -C regress/ clean_all
 
 regress_test:
-	PYTHON_VERSION=$(REGRESSION_PY_VER) make --no-print-directory -C regress/ test
+	PYTHON_VERSION=$(REGRESSION_PY_VER) make --no-print-directory -C regress/ VERBOSE=0 test
 
 regress_test_log:
 	PYTHON_VERSION=$(REGRESSION_PY_VER) make --no-print-directory -C regress/ test_log
@@ -177,15 +177,7 @@ regress_one/%:
 	# make --no-print-directory -C regress/ clean_coverage
 	# make --no-print-directory -C regress/ clean_logs
 	PYTHON_VERSION=3.6 make --no-print-directory -C regress/ prepare
-	PYTHON_VERSION=3.6 make --no-print-directory -C regress/ TEST_NAME=$* _one_up_test_coverage_log
-
-regress_full:
-	make --no-print-directory -C regress/ stop_all
-	make --no-print-directory -C regress/ clean_all
-	make --no-print-directory -C regress/ clean_coverage
-	make --no-print-directory -C regress/ clean_logs
-	PYTHON_VERSION=3.6 make --no-print-directory -C regress/ prepare
-	PYTHON_VERSION=3.6 make --no-print-directory -C regress/ TEST_NAME=alpha _one_up_test_log
+	PYTHON_VERSION=3.6 make --no-print-directory -C regress/ VERBOSE=2 TEST_NAME=$* _one_up_test_coverage_log
 
 
 

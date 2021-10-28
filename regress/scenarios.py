@@ -70,6 +70,7 @@ import base64
 import threading
 
 from testsupport import stop_daemon, run_ssh_command_and_wait, request_get, request_post, request_put, set_active_scenario  # @UnresolvedImport
+from testsupport import dbg, info, warn
 
 import keywords as kw  # @UnresolvedImport
 
@@ -100,7 +101,7 @@ ssh_cmd_verbose = True
 
 def scenario1():
     set_active_scenario('SCENARIO 1')
-    print('\n\n============\n[SCENARIO 1] users are able to search each other by nickname')
+    info('\n\n============\n[SCENARIO 1] users are able to search each other by nickname')
 
     response = request_get('customer-1', f'user/search/customer-2/v1', timeout=30)
     assert response.json()['status'] == 'OK', response.json()
@@ -117,20 +118,32 @@ def scenario1():
     assert response.json()['result'][0]['result'] == 'exist'
 
 
+
 def scenario2():
     set_active_scenario('SCENARIO 2')
-    print('\n\n============\n[SCENARIO 2] customer-1 is doing network stun')
+    info('\n\n============\n[SCENARIO 2] customer-1 is doing network stun')
 
     response = request_get('customer-1', 'network/stun/v1')
     assert response.status_code == 200
-    print('\n\n%r' % response.json())
+    dbg('\n\n%r' % response.json())
     assert response.json()['status'] == 'OK', response.json()
     assert response.json()['result']['result'] == 'stun-success'
+    ip_customer_1 = response.json()['result']['ip']
+
+    response = request_get('customer-2', 'network/stun/v1')
+    assert response.status_code == 200
+    dbg('\n\n%r' % response.json())
+    assert response.json()['status'] == 'OK', response.json()
+    assert response.json()['result']['result'] == 'stun-success'
+    ip_customer_2 = response.json()['result']['ip']
+
+    assert ip_customer_1 != ip_customer_2
+
 
 
 def scenario3():
     set_active_scenario('SCENARIO 3')
-    print('\n\n============\n[SCENARIO 3] customer-1 sending a private message to customer-2')
+    info('\n\n============\n[SCENARIO 3] customer-1 sending a private message to customer-2')
 
     kw.service_info_v1('customer-1', 'service_private_messages', 'ON')
     kw.service_info_v1('customer-2', 'service_private_messages', 'ON')
@@ -165,7 +178,7 @@ def scenario3():
 
 def scenario4():
     set_active_scenario('SCENARIO 4')
-    print('\n\n============\n[SCENARIO 4] customer-1 share files to customer-2')
+    info('\n\n============\n[SCENARIO 4] customer-1 share files to customer-2')
 
     kw.service_info_v1('customer-1', 'service_shared_data', 'ON')
     kw.service_info_v1('customer-2', 'service_shared_data', 'ON')
@@ -275,7 +288,7 @@ def scenario4():
 
 def scenario5():
     set_active_scenario('SCENARIO 5')
-    print('\n\n============\n[SCENARIO 5] users are able to connect to each other via proxy routers')
+    info('\n\n============\n[SCENARIO 5] users are able to connect to each other via proxy routers')
 
     kw.user_ping_v1('proxy-1', 'proxy-2@id-b_8084')
     kw.user_ping_v1('proxy-2', 'proxy-1@id-a_8084')
@@ -294,7 +307,7 @@ def scenario5():
 
 def scenario6():
     set_active_scenario('SCENARIO 6')
-    print('\n\n============\n[SCENARIO 6] users are able to use DHT network to store data')
+    info('\n\n============\n[SCENARIO 6] users are able to use DHT network to store data')
 
     # DHT value not exist customer-1
     kw.dht_value_get_v1(
@@ -324,14 +337,14 @@ def scenario6():
         key='test_key_2_customer_1',
         expected_data=['test_data_2_customer_1', ],
     )
-    # DHT write value customer-2 and read value customer-3
+    # DHT write value customer-2 and read value customer-1
     kw.dht_value_set_v1(
         node='customer-2',
         key='test_key_1_customer_2',
         new_data='test_data_1_customer_2',
     )
     kw.dht_value_get_v1(
-        node='customer-3',
+        node='customer-1',
         key='test_key_1_customer_2',
         expected_data=['test_data_1_customer_2', ],
     )
@@ -342,7 +355,7 @@ def scenario6():
         new_data='test_data_1_supplier_1',
     )
     # time.sleep(2)
-    for node in ['customer-1', 'customer-2', 'customer-3', ]:
+    for node in ['customer-1', 'customer-2', ]:
         kw.dht_value_get_v1(
             node=node,
             key='test_key_1_supplier_1',
@@ -356,17 +369,17 @@ def scenario6():
             new_data=f'test_data_2_shared_%s' % (node.replace('-', '_')),
         )
         # time.sleep(2)
-    for node in ['customer-1', 'customer-2', 'customer-3', ]:
+    for node in ['customer-1', 'customer-2', ]:
         kw.dht_value_get_v1(
             node=node,
             key='test_key_2_shared',
-            expected_data=['test_data_2_shared_supplier_1', 'test_data_2_shared_supplier_2', 'test_data_2_shared_supplier_3'],
+            expected_data=['test_data_2_shared_supplier_1', 'test_data_2_shared_supplier_2', ],
         )
 
 
 def scenario7():
     set_active_scenario('SCENARIO 7')
-    print('\n\n============\n[SCENARIO 7] customer-1 upload and download file encrypted with his master key')
+    info('\n\n============\n[SCENARIO 7] customer-1 upload and download file encrypted with his master key')
 
     # create and upload file for customer-1
     kw.service_info_v1('customer-1', 'service_shared_data', 'ON')
@@ -394,7 +407,7 @@ def scenario7():
 def scenario8():
     global group_customers_1_2_3_messages
     set_active_scenario('SCENARIO 8')
-    print('\n\n============\n[SCENARIO 8] customer-3 receive all archived messages from message broker')
+    info('\n\n============\n[SCENARIO 8] customer-3 receive all archived messages from message broker')
 
     kw.wait_service_state(CUSTOMERS_IDS_123, 'service_shared_data', 'ON')
     kw.wait_service_state(CUSTOMERS_IDS_123, 'service_private_groups', 'ON')
@@ -583,7 +596,7 @@ def scenario8():
 
 def scenario9():
     set_active_scenario('SCENARIO 9')
-    print('\n\n============\n[SCENARIO 9] ID server id-dead is dead and few nodes has rotated identities')
+    info('\n\n============\n[SCENARIO 9] ID server id-dead is dead and few nodes has rotated identities')
 
     # remember old IDURL of the rotated nodes
     r = kw.identity_get_v1('proxy-rotated')
@@ -749,7 +762,7 @@ def scenario9():
 
 def scenario10_begin():
     set_active_scenario('SCENARIO 10 begin')
-    print('\n\n============\n[SCENARIO 10] customer-rotated IDURL was rotated but he can still download his files')
+    info('\n\n============\n[SCENARIO 10] customer-rotated IDURL was rotated but he can still download his files')
 
     # create new share and upload one file on customer-rotated
     kw.service_info_v1('customer-rotated', 'service_shared_data', 'ON')
@@ -780,7 +793,7 @@ def scenario10_begin():
 
 def scenario10_end(old_customer_rotated_info, old_customer_rotated_file_info, old_customer_rotated_keys, new_customer_rotated_info):
     set_active_scenario('SCENARIO 10 end')
-    print('\n\n============\n[SCENARIO 10] customer-rotated IDURL was rotated but he can still download his files')
+    info('\n\n============\n[SCENARIO 10] customer-rotated IDURL was rotated but he can still download his files')
 
     old_customer_global_id = old_customer_rotated_info['global_id']
     old_share_id_customer_rotated = old_customer_rotated_file_info['share_id']
@@ -834,7 +847,7 @@ def scenario10_end(old_customer_rotated_info, old_customer_rotated_file_info, ol
 
 def scenario11_begin():
     set_active_scenario('SCENARIO 11 begin')
-    print('\n\n============\n[SCENARIO 11] customer-1 and customer-rotated are friends and talk to each other after IDURL rotated')
+    info('\n\n============\n[SCENARIO 11] customer-1 and customer-rotated are friends and talk to each other after IDURL rotated')
 
     # make customer-rotated and customer-1 friends to each other
     kw.friend_add_v1('customer-rotated', 'http://id-a:8084/customer-1.xml', 'Alice')
@@ -871,7 +884,7 @@ def scenario11_begin():
 
 def scenario11_end(old_customer_rotated_info, new_customer_rotated_info, old_customer_1_info):
     set_active_scenario('SCENARIO 11 end')
-    print('\n\n============\n[SCENARIO 11] customer-1 and customer-rotated are friends and talk to each other after IDURL rotated')
+    info('\n\n============\n[SCENARIO 11] customer-1 and customer-rotated are friends and talk to each other after IDURL rotated')
 
     # test customer-2 can still chat with customer-rotated
     kw.service_info_v1('customer-1', 'service_private_messages', 'ON')
@@ -909,7 +922,7 @@ def scenario11_end(old_customer_rotated_info, new_customer_rotated_info, old_cus
 def scenario12_begin():
     global group_customers_1_rotated_messages
     set_active_scenario('SCENARIO 12 begin')
-    print('\n\n============\n[SCENARIO 12] customer-1 chat with customer-rotated via broker-rotated, but broker IDURL was rotated')
+    info('\n\n============\n[SCENARIO 12] customer-1 chat with customer-rotated via broker-rotated, but broker IDURL was rotated')
 
     # pre-configure brokers
     kw.config_set_v1('customer-1', 'services/private-groups/preferred-brokers', 'http://id-b:8084/broker-4.xml')
@@ -1086,7 +1099,7 @@ def scenario12_begin():
 def scenario12_end(old_customer_1_info):
     global group_customers_1_rotated_messages
     set_active_scenario('SCENARIO 12 end')
-    print('\n\n============\n[SCENARIO 12] customer-1 chat with customer-rotated via broker-rotated, but broker IDURL was rotated')
+    info('\n\n============\n[SCENARIO 12] customer-1 chat with customer-rotated via broker-rotated, but broker IDURL was rotated')
 
     customer_1_group_key_id = old_customer_1_info['group_key_id']
     customer_1_old_queue_id = old_customer_1_info['active_queue_id']
@@ -1250,7 +1263,7 @@ def scenario12_end(old_customer_1_info):
 
 def scenario13_begin():
     set_active_scenario('SCENARIO 13 begin')
-    print('\n\n============\n[SCENARIO 13] one of the suppliers of customer-1 has IDURL rotated')
+    info('\n\n============\n[SCENARIO 13] one of the suppliers of customer-1 has IDURL rotated')
 
     # make sure supplier-rotated was hired by customer-1
     old_customer_1_suppliers_idurls = kw.supplier_list_v1('customer-1', expected_min_suppliers=2, expected_max_suppliers=2)
@@ -1283,7 +1296,7 @@ def scenario13_begin():
 
 def scenario13_end(old_customer_1_info):
     set_active_scenario('SCENARIO 13 end')
-    print('\n\n============\n[SCENARIO 13] one of the suppliers of customer-1 has IDURL rotated')
+    info('\n\n============\n[SCENARIO 13] one of the suppliers of customer-1 has IDURL rotated')
 
     # erase previous file on customer-1 and prepare to download it again
     kw.service_info_v1('customer-1', 'service_shared_data', 'ON')
@@ -1315,7 +1328,7 @@ def scenario13_end(old_customer_1_info):
 
 def scenario14(old_customer_1_info, customer_1_shared_file_info):
     set_active_scenario('SCENARIO 14')
-    print('\n\n============\n[SCENARIO 14] customer-1 replace supplier at position 0')
+    info('\n\n============\n[SCENARIO 14] customer-1 replace supplier at position 0')
 
     kw.wait_packets_finished(PROXY_IDS + CUSTOMERS_IDS_12 + SUPPLIERS_IDS)
 
@@ -1387,7 +1400,7 @@ def scenario14(old_customer_1_info, customer_1_shared_file_info):
 
 def scenario15(old_customer_1_info, customer_1_shared_file_info):
     set_active_scenario('SCENARIO 15')
-    print('\n\n============\n[SCENARIO 15] customer-1 switch supplier at position 1 to specific node')
+    info('\n\n============\n[SCENARIO 15] customer-1 switch supplier at position 1 to specific node')
 
     customer_1_supplier_idurls_before = kw.supplier_list_v1('customer-1', expected_min_suppliers=2, expected_max_suppliers=2)
     assert len(customer_1_supplier_idurls_before) == 2
@@ -1443,7 +1456,7 @@ def scenario15(old_customer_1_info, customer_1_shared_file_info):
 
 def scenario16():
     set_active_scenario('SCENARIO 16')
-    print('\n\n============\n[SCENARIO 16] customer-1 increase and decrease suppliers amount')
+    info('\n\n============\n[SCENARIO 16] customer-1 increase and decrease suppliers amount')
 
     customer_1_supplier_idurls_before = kw.supplier_list_v1('customer-1', expected_min_suppliers=2, expected_max_suppliers=2)
     assert len(customer_1_supplier_idurls_before) == 2
@@ -1526,7 +1539,7 @@ def scenario16():
 
 def scenario17(old_customer_2_info):
     set_active_scenario('SCENARIO 17')
-    print('\n\n============\n[SCENARIO 17] customer-2 went offline and customer-restore recover identity from customer-2')
+    info('\n\n============\n[SCENARIO 17] customer-2 went offline and customer-restore recover identity from customer-2')
 
     # backup customer-2 private key
     backup_file_directory_c2 = '/customer_2/identity.backup'
@@ -1538,7 +1551,7 @@ def scenario17(old_customer_2_info):
             'destination_filepath': backup_file_directory_c2,
         },
     )
-    print('\nidentity/backup/v1 [customer-2] : %s\n' % response.json())
+    dbg('\nidentity/backup/v1 [customer-2] : %s\n' % response.json())
     assert response.json()['status'] == 'OK', response.json()
 
     # copy private key from one container to another
@@ -1567,7 +1580,7 @@ def scenario17(old_customer_2_info):
                 'join_network': '1',
             },
         )
-        print('\n\nidentity/recover/v1 : %s\n' % response.json())
+        dbg('\n\nidentity/recover/v1 : %s\n' % response.json())
         if response.json()['status'] == 'OK':
             break
         time.sleep(1)
@@ -1619,7 +1632,7 @@ def scenario17(old_customer_2_info):
 
 def scenario18():
     set_active_scenario('SCENARIO 18')
-    print('\n\n============\n[SCENARIO 18] customer-2 sent message to the group but active broker-1 is offline')
+    info('\n\n============\n[SCENARIO 18] customer-2 sent message to the group but active broker-1 is offline')
 
     # pre-configure brokers
     kw.config_set_v1('customer-2', 'services/private-groups/preferred-brokers', 'http://id-a:8084/broker-3.xml')
@@ -1756,7 +1769,7 @@ def scenario18():
 
     # stop broker-1 node
     response = request_get('broker-1', 'process/stop/v1')
-    print('\nprocess/stop/v1 [broker-1] : %s\n' % response.json())
+    dbg('\nprocess/stop/v1 [broker-1] : %s\n' % response.json())
     assert response.json()['status'] == 'OK', response.json()
 
     # send again a message to the second group from customer-4
