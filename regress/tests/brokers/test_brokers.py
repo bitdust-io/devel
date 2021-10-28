@@ -60,4 +60,4 @@ def prepare():
     kw.wait_service_state(scenarios.CUSTOMERS_IDS_123, 'service_private_groups', 'ON')
     kw.wait_service_state(scenarios.CUSTOMERS_IDS_123, 'service_message_history', 'ON')
     kw.wait_service_state(scenarios.BROKERS_IDS, 'service_message_broker', 'ON')
-    kw.wait_packets_finished(scenarios.PROXY_IDS + scenarios.CUSTOMERS_IDS_123 + scenarios.BROKERS_IDS + scenarios.SUPPLIERS_IDS_12)
+    kw.wait_packets_finished(scenarios.CUSTOMERS_IDS_123 + scenarios.BROKERS_IDS + scenarios.SUPPLIERS_IDS_12)
