@@ -23,13 +23,7 @@
 """
 SCENARIO 9: ID server id-dead is dead and few nodes has rotated identities
 
-SCENARIO 10: customer-rotated IDURL was rotated but he can still download his files
-
-SCENARIO 11: customer-1 and customer-rotated are friends and talk to each other after IDURL rotated
-
-SCENARIO 12: customer-4 chat with customer-2 via broker-rotated, but his IDURL was rotated
-
-SCENARIO 13: one of the suppliers of customer-1 has IDURL rotated
+SCENARIO 12: customer-1 chat with customer-2 via broker-rotated, but his IDURL was rotated
 
 """
 

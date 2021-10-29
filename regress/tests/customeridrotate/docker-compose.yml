@@ -29,82 +29,46 @@ services:
   id-a:
     image: bitdust/app
     ports:
-      - "10301:22"
+      - "10801:22"
 
   id-b:
     image: bitdust/app
     ports:
-      - "10302:22"
+      - "10802:22"
 
   id-c:
     image: bitdust/app
     ports:
-      - "10303:22"
+      - "10803:22"
 
   id-dead:
     image: bitdust/app
     ports:
-      - "10304:22"
+      - "10804:22"
 
   dht-1:
     image: bitdust/app
     ports:
-      - "10311:22"
+      - "10811:22"
 
   dht-2:
     image: bitdust/app
     ports:
-      - "10312:22"
+      - "10812:22"
     links:
       - dht-1
 
   stun-1:
     image: bitdust/app
     ports:
-      - "10321:22"
+      - "10821:22"
     links:
       - dht-2
-
-  proxy-1:
-    image: bitdust/app
-    ports:
-      - "10331:22"
-    links:
-      - dht-2
-      - stun-1
-      - id-a
-      - id-b
-      - id-c
-      - id-dead
-
-  proxy-2:
-    image: bitdust/app
-    ports:
-      - "10332:22"
-    links:
-      - dht-2
-      - stun-1
-      - id-a
-      - id-b
-      - id-c
-      - id-dead
-
-  proxy-rotated:
-    image: bitdust/app
-    ports:
-      - "10334:22"
-    links:
-      - dht-2
-      - stun-1
-      - id-a
-      - id-b
-      - id-c
-      - id-dead
 
   supplier-1:
     image: bitdust/app
     ports:
-      - "10341:22"
+      - "10841:22"
     links:
       - dht-2
       - stun-1
@@ -116,19 +80,7 @@ services:
   supplier-2:
     image: bitdust/app
     ports:
-      - "10342:22"
-    links:
-      - dht-2
-      - stun-1
-      - id-a
-      - id-b
-      - id-c
-      - id-dead
-
-  supplier-rotated:
-    image: bitdust/app
-    ports:
-      - "10346:22"
+      - "10842:22"
     links:
       - dht-2
       - stun-1
@@ -140,7 +92,7 @@ services:
   customer-1:
     image: bitdust/app
     ports:
-      - "10351:22"
+      - "10851:22"
     volumes:
       - customer_1:/customer_1
     links:
@@ -154,69 +106,9 @@ services:
   customer-rotated:
     image: bitdust/app
     ports:
-      - "10355:22"
+      - "10855:22"
     volumes:
       - customer_rotated:/customer_rotated
-    links:
-      - dht-2
-      - stun-1
-      - id-a
-      - id-b
-      - id-c
-      - id-dead
-
-  broker-1:
-    image: bitdust/app
-    ports:
-      - "10361:22"
-    links:
-      - dht-2
-      - stun-1
-      - id-a
-      - id-b
-      - id-c
-      - id-dead
-
-  broker-2:
-    image: bitdust/app
-    ports:
-      - "10362:22"
-    links:
-      - dht-2
-      - stun-1
-      - id-a
-      - id-b
-      - id-c
-      - id-dead
-
-  broker-3:
-    image: bitdust/app
-    ports:
-      - "10363:22"
-    links:
-      - dht-2
-      - stun-1
-      - id-a
-      - id-b
-      - id-c
-      - id-dead
-
-  broker-4:
-    image: bitdust/app
-    ports:
-      - "10364:22"
-    links:
-      - dht-2
-      - stun-1
-      - id-a
-      - id-b
-      - id-c
-      - id-dead
-
-  broker-rotated:
-    image: bitdust/app
-    ports:
-      - "10365:22"
     links:
       - dht-2
       - stun-1
@@ -242,19 +134,10 @@ services:
       - dht-1
       - dht-2
       - stun-1
-      - proxy-1
-      - proxy-2
-      - proxy-rotated
       - supplier-1
       - supplier-2
-      - supplier-rotated
       - customer-1
       - customer-rotated
-      - broker-1
-      - broker-2
-      - broker-3
-      - broker-4
-      - broker-rotated
 
     volumes:
       - customer_1:/customer_1

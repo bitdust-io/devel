@@ -43,7 +43,7 @@ SCENARIO 10: customer-rotated IDURL was rotated but he can still download his fi
 
 SCENARIO 11: customer-2 and customer-rotated are friends and talk to each other after IDURL rotated
 
-SCENARIO 12: customer-4 chat with customer-2 via broker-rotated, but his IDURL was rotated
+SCENARIO 12: customer-1 chat with customer-2 via broker-rotated, but his IDURL was rotated
 
 SCENARIO 13: one of the suppliers of customer-3 has IDURL rotated
 
@@ -906,8 +906,8 @@ def scenario11_begin():
     kw.service_info_v1('customer-1', 'service_private_messages', 'ON')
     kw.service_info_v1('customer-rotated', 'service_private_messages', 'ON')
 
-    assert len(kw.message_conversation_v1('customer-rotated')['result']) == 2
-    assert len(kw.message_conversation_v1('customer-1')['result']) == 2
+    assert len(kw.message_conversation_v1('customer-rotated')['result']) == 0
+    assert len(kw.message_conversation_v1('customer-1')['result']) == 0
     assert len(kw.message_history_v1('customer-rotated', 'master$customer-1@id-a_8084', message_type='private_message')['result']) == 0
     assert len(kw.message_history_v1('customer-1', 'master$customer-rotated@id-dead_8084', message_type='private_message')['result']) == 0
 
@@ -919,8 +919,8 @@ def scenario11_begin():
     t.start()
     kw.message_receive_v1('customer-rotated', expected_data=random_message, timeout=31, polling_timeout=30)
 
-    assert len(kw.message_conversation_v1('customer-rotated')['result']) == 3
-    assert len(kw.message_conversation_v1('customer-1')['result']) == 3
+    assert len(kw.message_conversation_v1('customer-rotated')['result']) == 1
+    assert len(kw.message_conversation_v1('customer-1')['result']) == 1
     assert len(kw.message_history_v1('customer-rotated', 'master$customer-1@id-a_8084', message_type='private_message')['result']) == 1
     assert len(kw.message_history_v1('customer-1', 'master$customer-rotated@id-dead_8084', message_type='private_message')['result']) == 1
 
@@ -937,8 +937,8 @@ def scenario11_end(old_customer_rotated_info, new_customer_rotated_info, old_cus
     kw.service_info_v1('customer-1', 'service_private_messages', 'ON')
     kw.service_info_v1('customer-rotated', 'service_private_messages', 'ON')
 
-    assert len(kw.message_conversation_v1('customer-rotated')['result']) == 3
-    assert len(kw.message_conversation_v1('customer-1')['result']) == 3
+    assert len(kw.message_conversation_v1('customer-rotated')['result']) == 1
+    assert len(kw.message_conversation_v1('customer-1')['result']) == 1
     assert len(kw.message_history_v1('customer-rotated', 'master$customer-1@id-a_8084', message_type='private_message')['result']) == 1
     assert len(kw.message_history_v1('customer-1', 'master$customer-rotated@id-dead_8084', message_type='private_message')['result']) == 1
     assert len(kw.message_history_v1('customer-1', 'master$customer-rotated@id-a_8084', message_type='private_message')['result']) == 1
@@ -952,8 +952,8 @@ def scenario11_end(old_customer_rotated_info, new_customer_rotated_info, old_cus
     kw.message_receive_v1('customer-rotated', expected_data=random_message, timeout=16, polling_timeout=15)
     kw.wait_packets_finished(['customer-1', 'customer-rotated', ])
 
-    assert len(kw.message_conversation_v1('customer-rotated')['result']) == 3
-    assert len(kw.message_conversation_v1('customer-1')['result']) == 3
+    assert len(kw.message_conversation_v1('customer-rotated')['result']) == 1
+    assert len(kw.message_conversation_v1('customer-1')['result']) == 1
     assert len(kw.message_history_v1('customer-rotated', 'master$customer-1@id-a_8084', message_type='private_message')['result']) == 2
     assert len(kw.message_history_v1('customer-1', 'master$%s' % new_customer_rotated_info['global_id'], message_type='private_message')['result']) == 2
     assert len(kw.message_history_v1('customer-1', 'master$customer-rotated@id-dead_8084', message_type='private_message')['result']) == 2
@@ -1357,7 +1357,7 @@ def scenario13_end(old_customer_1_info):
         destination_path=old_customer_1_info['download_filepath'],
         verify_from_local_path=old_customer_1_info['local_filepath'],
     )
-    kw.wait_packets_finished(CUSTOMERS_IDS_1 + SUPPLIERS_IDS_12)
+    kw.wait_packets_finished(CUSTOMERS_IDS_1 + SUPPLIERS_IDS_12 + ['supplier-rotated', ])
 
     # disable supplier-rotated so it will not affect other scenarios
     stop_daemon('supplier-rotated', verbose=True)
