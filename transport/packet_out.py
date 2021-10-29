@@ -597,6 +597,10 @@ class PacketOut(automat.Automat):
         if self.skip_ack:
             return False
         if commands.IsReplyExpected(self.outpacket.Command):
+            if not self.response_timeout and self.outpacket.Command == commands.Message():
+                # an exception for sending back a Message() packet with list of archived messages
+                # TODO: more elegant solution to be found
+                return False
             return True
         return len(self.callbacks.get(commands.Ack(), [])) + len(self.callbacks.get(commands.Fail(), [])) > 0
 

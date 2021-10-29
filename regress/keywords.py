@@ -603,7 +603,8 @@ def service_info_v1(node, service_name, expected_state, attempts=90, delay=2, ve
             if verbose:
                 dbg(f'service/info/{service_name}/v1 [{node}] : %s' % pprint.pformat(response.json()))
             break
-        dbg(f'  service/info/{service_name}/v1 [{node}] : %s' % current_state)
+        if verbose:
+            dbg(f'  service/info/{service_name}/v1 [{node}] : %s' % current_state)
         count += 1
         if count >= attempts:
             assert False, f"service {service_name} is not {expected_state} after {attempts} attempts"

@@ -186,7 +186,7 @@ class NetworkConnector(automat.Automat):
             if self.last_bytes_in_counter < p2p_stats.get_total_bytes_in():
                 lg.info('HELLO BITDUST WORLD!')
             else:
-                lg.warn('SEEMS I AM OFFLINE!')
+                lg.warn('no incoming traffic detected yet, potentially a signal that my node is offline')
             self.last_bytes_in_counter = p2p_stats.get_total_bytes_in()
 
     def A(self, event, *args, **kwargs):
