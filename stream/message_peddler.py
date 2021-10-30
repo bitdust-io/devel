@@ -273,7 +273,6 @@ def on_consume_queue_messages(json_messages):
                     lg.warn('skipped incoming queue_message_replica, producer %r is not active in queue %r' % (producer_id, my_queue_id, ))
                     p2p_service.SendFailNoRequest(from_idurl, packet_id, 'producer is not active')
                     continue
-            if msg_type == 'queue_message_replica':
                 # incoming message replica from another message_peddler() to store locally in case brokers needs to be rotated
                 do_store_message_replica(from_idurl, packet_id, my_queue_id, producer_id, payload, created)
                 continue
@@ -1514,8 +1513,6 @@ class MessagePeddler(automat.Automat):
         )
 
     def _do_replicate_message(self, message_in, known_brokers={}):
-        if _Debug:
-            lg.args(_DebugLevel, message_in=message_in, known_brokers=known_brokers)
         replicate_attempts = 0
         for other_broker_pos in range(groups.REQUIRED_BROKERS_COUNT):
             other_broker_idurl = known_brokers.get(other_broker_pos)
@@ -1526,7 +1523,7 @@ class MessagePeddler(automat.Automat):
             d = message.send_message(
                 json_data={
                     'msg_type': 'queue_message_replica',
-                    'action': 'read',
+                    'action': 'produce',
                     'created': message_in.created,
                     'message_id': message_in.message_id,
                     'producer_id': message_in.producer_id,
@@ -1547,6 +1544,9 @@ class MessagePeddler(automat.Automat):
             replicate_attempts += 1
         if replicate_attempts == 0:
             lg.err('message was not replicated: %r' % message_in)
+        else:
+            if _Debug:
+                lg.args(_DebugLevel, message_in=message_in, replicas=replicate_attempts, known_brokers=known_brokers)
 
     def _do_build_archive_data(self, queue_id, archive_info):
         list_messages = read_messages(queue_id, sequence_id_list=archive_info['sequence_id_list'])
