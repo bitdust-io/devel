@@ -45,12 +45,10 @@ These are the valid values for the command field of a packet:
 
 #------------------------------------------------------------------------------
 
-P2PCommandAcks = {}
-
-RelayCommands = set()
+P2PCommandAcks = None
+RelayCommands = None
 
 #------------------------------------------------------------------------------
-
 
 def init():
     """
@@ -58,6 +56,8 @@ def init():
     """
     global P2PCommandAcks
     global RelayCommands
+    P2PCommandAcks = {}
+    RelayCommands = set()
     # No Ack for Ack
     P2PCommandAcks[Ack()] = []
     # No Ack for Fail
@@ -76,7 +76,7 @@ def init():
     P2PCommandAcks[DeleteFile()] = [Ack(), Fail(), ]
     # Ack with Ack (maybe should be Files)
     P2PCommandAcks[DeleteBackup()] = [Ack(), Fail(), ]
-    # Ack with Ack or Fail
+    # Ack with Ack or Fail, but also Message() packet may have no ack when sending back archived messages
     P2PCommandAcks[Message()] = [Ack(), Fail(), ]
     # Ack with Ack or Fail
     P2PCommandAcks[Receipt()] = [Ack(), Fail(), ]
@@ -100,13 +100,14 @@ def init():
     # pre-define a set of commands for filtering out routed traffic
     RelayCommands = set([RelayIn(), RelayOut(), RelayAck(), RelayFail(), Relay(), ])
 
+#------------------------------------------------------------------------------
 
 def IsCommand(com):
     """
     Check to see if ``com`` is a valid command.
     """
     global P2PCommandAcks
-    if len(P2PCommandAcks) == 0:
+    if P2PCommandAcks is None:
         init()
     return com in P2PCommandAcks
 
@@ -115,7 +116,7 @@ def IsCommandAck(com, ack):
     """
     """
     global P2PCommandAcks
-    if len(P2PCommandAcks) == 0:
+    if P2PCommandAcks is None:
         init()
     return ack in P2PCommandAcks.get(com, [])
 
@@ -123,21 +124,27 @@ def IsCommandAck(com, ack):
 def IsAckExpected(com):
     """
     """
-    expected = P2PCommandAcks.get(com, [])
-    return Ack() in expected
+    global P2PCommandAcks
+    if P2PCommandAcks is None:
+        init()
+    return Ack() in P2PCommandAcks.get(com, [])
 
 
 def IsReplyExpected(com):
     """
     """
-    expected = P2PCommandAcks.get(com, [])
-    return len(expected) > 0
+    global P2PCommandAcks
+    if P2PCommandAcks is None:
+        init()
+    return len(P2PCommandAcks.get(com, [])) > 0
 
 
 def IsRelay(com):
     """
     """
     global RelayCommands
+    if RelayCommands is None:
+        init()
     return com in RelayCommands
 
 #------------------------------------------------------------------------------

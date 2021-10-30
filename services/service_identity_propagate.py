@@ -105,6 +105,7 @@ class IdentityPropagateService(LocalService):
         conf().addConfigNotifier('services/identity-propagate/known-servers', self._on_known_servers_changed)
         lg.info('known ID servers are : %r' % known_servers.by_host())
         events.add_subscriber(self._on_local_identity_modified, 'local-identity-modified')
+        events.add_subscriber(self._on_my_identity_rotated, 'my-identity-rotated')
         return d
 
     def stop(self):
@@ -113,6 +114,7 @@ class IdentityPropagateService(LocalService):
         from p2p import propagate
         from contacts import contactsdb
         from contacts import identitycache
+        events.remove_subscriber(self._on_my_identity_rotated, 'my-identity-rotated')
         events.remove_subscriber(self._on_local_identity_modified, 'local-identity-modified')
         conf().removeConfigNotifier('services/identity-propagate/known-servers')
         propagate.shutdown()
@@ -127,3 +129,11 @@ class IdentityPropagateService(LocalService):
     def _on_local_identity_modified(self, evt):
         from p2p import propagate
         propagate.update()
+
+    def _on_my_identity_rotated(self, evt):
+        from logs import lg
+        from p2p import propagate
+        from contacts import contactsdb
+        known_remote_contacts = set(contactsdb.contacts_remote(include_all=True))
+        lg.warn('added %d known contacts to propagate startup list to be sent later' % len(known_remote_contacts))
+        propagate.startup_list().update(known_remote_contacts)

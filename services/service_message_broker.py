@@ -186,6 +186,6 @@ class MessageBrokerService(LocalService):
 
     def _on_my_identity_url_changed(self, evt):
         from stream import message_peddler
-        message_peddler.ping_all_streams()
+        # message_peddler.ping_all_streams()
         message_peddler.A('stop')
         message_peddler.close_all_streams()

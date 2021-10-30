@@ -90,6 +90,7 @@ from dht import dht_records
 
 _SlowSendIsWorking = False
 _PropagateCounter = 0
+_StartupPropagateList = set()
 
 #------------------------------------------------------------------------------
 
@@ -108,6 +109,11 @@ def shutdown():
     """
     if _Debug:
         lg.out(_DebugLevel, "propagate.shutdown")
+
+
+def startup_list():
+    global _StartupPropagateList
+    return _StartupPropagateList
 
 #------------------------------------------------------------------------------
 

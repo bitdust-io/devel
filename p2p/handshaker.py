@@ -100,25 +100,28 @@ def ping(idurl,
     if not remote_idurl:
         raise Exception('empty idurl provided')
     result = Deferred()
+    pending_results = []
     if remote_idurl in _RunningHandshakers:
         if cancel_running:
             running_info = _RunningHandshakers.pop(remote_idurl)
             inst = running_info.pop('instance')
+            pending_results = running_info.pop('results')
             if inst:
                 inst.automat('cancel')
-            for result_defer in running_info.pop('results'):
-                result_defer.errback(Exception('handshake process was cancelled'))
+            # for result_defer in :
+            #     result_defer.errback(Exception('handshake process was cancelled'))
         else:
             _RunningHandshakers[remote_idurl]['results'].append(result)
             if _Debug:
                 lg.args(_DebugLevel, already_opened=True, idurl=remote_idurl, channel=channel, skip_outbox=skip_outbox, )
             return result
+    pending_results += [result, ]
     _RunningHandshakers[remote_idurl] = {
         'instance': None,
-        'results': [result, ],
+        'results': pending_results,
     }
     if _Debug:
-        lg.args(_DebugLevel, already_opened=False, idurl=remote_idurl, channel=channel, skip_outbox=skip_outbox, )
+        lg.args(_DebugLevel, already_opened=False, idurl=remote_idurl, channel=channel, skip_outbox=skip_outbox, pending_results=len(pending_results), )
     h = Handshaker(
         remote_idurl=remote_idurl,
         ack_timeout=ack_timeout,
@@ -375,9 +378,11 @@ class Handshaker(automat.Automat):
         global _RunningHandshakers
         lg.warn('failed to cache remote identity %r after %d attempts' % (
             self.remote_idurl, self.cache_attempts, ))
-        for result_defer in _RunningHandshakers[self.remote_idurl]['results']:
-            result_defer.errback(Exception('failed to cache remote identity %r after %d attempts' % (
-                self.remote_idurl, self.cache_attempts, )))
+        if self.remote_idurl in _RunningHandshakers:
+            for result_defer in _RunningHandshakers[self.remote_idurl]['results']:
+                if not result_defer.called:
+                    result_defer.errback(Exception('failed to cache remote identity %r after %d attempts' % (
+                        self.remote_idurl, self.cache_attempts, )))
 
     def doReportFailed(self, *args, **kwargs):
         """
@@ -388,8 +393,10 @@ class Handshaker(automat.Automat):
         info = kwargs.get('info')
         if response and info:
             lg.warn('handshake failed because received Fail() from remote user %r : %r' % (response, info, ))
-            for result_defer in _RunningHandshakers[self.remote_idurl]['results']:
-                result_defer.errback(Exception('handshake failed because received Fail() packet from remote user'))
+            if self.remote_idurl in _RunningHandshakers:
+                for result_defer in _RunningHandshakers[self.remote_idurl]['results']:
+                    if not result_defer.called:
+                        result_defer.errback(Exception('handshake failed because received Fail() packet from remote user'))
             return
         status = kwargs.get('status')
         error = kwargs.get('error')
@@ -397,8 +404,10 @@ class Handshaker(automat.Automat):
             lg.warn('handshake failed, my Identity() packet was not sent to remote user %r : %r' % (status, error, ))
         else:
             lg.err('handshake failed with status %r, my Identity() packet was not sent to remote user: %r' % (status, error, ))
-        for result_defer in _RunningHandshakers[self.remote_idurl]['results']:
-            result_defer.errback(Exception('handshake failed, my Identity() packet was not sent to remote user'))
+        if self.remote_idurl in _RunningHandshakers:
+            for result_defer in _RunningHandshakers[self.remote_idurl]['results']:
+                if not result_defer.called:
+                    result_defer.errback(Exception('handshake failed, request packet was not sent to remote node'))
 
     def doReportTimeOut(self, *args, **kwargs):
         """
@@ -406,9 +415,11 @@ class Handshaker(automat.Automat):
         """
         global _RunningHandshakers
         lg.warn('remote node %r did not respond after %d ping attempts' % (self.remote_global_id, self.ping_attempts, ))
-        for result_defer in _RunningHandshakers[self.remote_idurl]['results']:
-            result_defer.errback(Exception('remote node %s did not respond after %d ping attempt(s)' % (
-                self.remote_global_id, self.ping_attempts, )))
+        if self.remote_idurl in _RunningHandshakers:
+            for result_defer in _RunningHandshakers[self.remote_idurl]['results']:
+                if not result_defer.called:
+                    result_defer.errback(Exception('remote node %s did not respond after %d ping attempt(s)' % (
+                        self.remote_global_id, self.ping_attempts, )))
 
     def doReportSuccess(self, *args, **kwargs):
         """
@@ -420,8 +431,10 @@ class Handshaker(automat.Automat):
         if _Debug:
             lg.args(_DebugLevel, channel=self.channel, idurl=self.remote_idurl,
                     response=response, info=info)
-        for result_defer in _RunningHandshakers[self.remote_idurl]['results']:
-            result_defer.callback((response, info, ))
+        if self.remote_idurl in _RunningHandshakers:
+            for result_defer in _RunningHandshakers[self.remote_idurl]['results']:
+                if not result_defer.called:
+                    result_defer.callback((response, info, ))
 
     def doDestroyMe(self, *args, **kwargs):
         """
@@ -433,7 +446,7 @@ class Handshaker(automat.Automat):
             _RunningHandshakers[self.remote_idurl]['results'] = []
             _RunningHandshakers.pop(self.remote_idurl)
         else:
-            lg.warn('did not found my registered opened instance')
+            lg.warn('did not found registered Handshaker() instance for %r' % self.remote_idurl)
         self.remote_idurl = None
         self.ack_timeout = None
         self.cache_timeout = None

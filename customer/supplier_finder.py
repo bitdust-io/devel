@@ -273,9 +273,10 @@ class SupplierFinder(automat.Automat):
         Action method.
         """
         from customer import supplier_connector
-        sc = supplier_connector.by_idurl(self.target_idurl)
-        if sc:
-            sc.remove_callback('supplier_finder', self._supplier_connector_state)
+        if id_url.is_cached(self.target_idurl):
+            sc = supplier_connector.by_idurl(self.target_idurl)
+            if sc:
+                sc.remove_callback('supplier_finder', self._supplier_connector_state)
         self.target_idurl = None
 
     def doRememberUser(self, *args, **kwargs):

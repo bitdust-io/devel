@@ -89,7 +89,7 @@ _one_clean_test:
 _one_test:
 	@echo "TEST ${TEST_NAME} DEBUG=${_DEBUG}";
 	@mkdir -p logs;
-	@docker-compose --file tests/${TEST_NAME}/docker-compose.yml exec -T tester sh -c "TEST_NAME=${TEST_NAME} _DEBUG=${_DEBUG} python -u -m pytest /app/tests/${TEST_NAME}/ -v -s" 2> logs/container.${TEST_NAME}.stderr || (echo "test ${TEST_NAME} FAILED !!!" && echo "FAIL" > logs/container.${TEST_NAME}.fail && exit 1)
+	@docker-compose --file tests/${TEST_NAME}/docker-compose.yml exec -T tester sh -c "TEST_NAME=${TEST_NAME} _DEBUG=${_DEBUG} VERBOSE=${VERBOSE} python -u -m pytest /app/tests/${TEST_NAME}/ -v -s" 2> logs/container.${TEST_NAME}.stderr || (echo "test ${TEST_NAME} FAILED !!!" && echo "FAIL" > logs/container.${TEST_NAME}.fail && exit 1)
 
 _one_test_rerun:
 	@echo "TEST with 1 re-run ${TEST_NAME} DEBUG=${_DEBUG} PAUSE_BEFORE=${_PAUSE_BEFORE}";

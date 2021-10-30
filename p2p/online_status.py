@@ -698,9 +698,11 @@ class OnlineStatus(automat.Automat):
         """
         Condition method.
         """
+        if handshaker.is_running(self.idurl.to_bin()):
+            return True
         if not self.latest_inbox_time:
             return False
-        return utime.get_sec1970() - self.latest_inbox_time > 20
+        return utime.get_sec1970() - self.latest_inbox_time > 60
 
     def doInit(self, *args, **kwargs):
         """
@@ -731,6 +733,7 @@ class OnlineStatus(automat.Automat):
                 ack_timeout=ack_timeout,
                 ping_retries=ping_retries,
                 channel=channel or 'ping',
+                cancel_running=True,
             )
         elif event == 'handshake':
             d = handshaker.ping(
@@ -739,6 +742,7 @@ class OnlineStatus(automat.Automat):
                 ping_retries=ping_retries,
                 force_cache=True,
                 channel=channel or 'handshake',
+                cancel_running=True,
             )
         elif event == 'offline-ping':
             if self.keep_alive:
