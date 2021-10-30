@@ -131,6 +131,9 @@ class IdentityPropagateService(LocalService):
         propagate.update()
 
     def _on_my_identity_rotated(self, evt):
+        from logs import lg
         from p2p import propagate
         from contacts import contactsdb
-        propagate.startup_list().update(contactsdb.contacts_remote(include_all=True))
+        known_remote_contacts = set(contactsdb.contacts_remote(include_all=True))
+        lg.warn('added %d known contacts to propagate startup list to be sent later' % len(known_remote_contacts))
+        propagate.startup_list().update(known_remote_contacts)

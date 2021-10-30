@@ -43,7 +43,7 @@ SCENARIO 10: customer-rotated IDURL was rotated but he can still download his fi
 
 SCENARIO 11: customer-2 and customer-rotated are friends and talk to each other after IDURL rotated
 
-SCENARIO 12: customer-1 chat with customer-2 via broker-rotated, but his IDURL was rotated
+SCENARIO 12: customer-1 group chat with customer-2, but broker-rotated IDURL was rotated
 
 SCENARIO 13: one of the suppliers of customer-3 has IDURL rotated
 
@@ -969,7 +969,7 @@ def scenario11_end(old_customer_rotated_info, new_customer_rotated_info, old_cus
 def scenario12_begin():
     global group_customers_1_rotated_messages
     set_active_scenario('SCENARIO 12 begin')
-    info('\n\n============\n[SCENARIO 12] customer-1 chat with customer-2 via broker-rotated, but broker IDURL was rotated')
+    info('\n\n============\n[SCENARIO 12] customer-1 group chat with customer-2, but broker-rotated IDURL was rotated')
 
     # pre-configure brokers
     kw.config_set_v1('customer-1', 'services/private-groups/preferred-brokers', 'http://id-b:8084/broker-4.xml')
@@ -1148,7 +1148,7 @@ def scenario12_begin():
 def scenario12_end(old_customer_1_info):
     global group_customers_1_rotated_messages
     set_active_scenario('SCENARIO 12 end')
-    info('\n\n============\n[SCENARIO 12] customer-1 chat with customer-2 via broker-rotated, but broker IDURL was rotated')
+    info('\n\n============\n[SCENARIO 12] customer-1 group chat with customer-2, but broker-rotated IDURL was rotated')
 
     customer_1_group_key_id = old_customer_1_info['group_key_id']
     customer_1_old_queue_id = old_customer_1_info['active_queue_id']
@@ -1893,3 +1893,48 @@ def scenario18():
     assert customer_2_groupB_info_after['connected_brokers']['0'] == customer_4_groupB_info_after['connected_brokers']['0']
     assert customer_2_groupB_info_after['connected_brokers']['1'] == customer_4_groupB_info_after['connected_brokers']['1']
     assert customer_2_groupB_info_after['connected_brokers']['2'] == customer_4_groupB_info_after['connected_brokers']['2']
+
+
+
+def scenario19():
+    set_active_scenario('SCENARIO 19')
+    info('\n\n============\n[SCENARIO 19] ID server id-dead is dead and broker-rotated has rotated identity')
+
+    r = kw.identity_get_v1('broker-rotated')
+    old_broker_idurl = r['result']['idurl']
+    old_broker_sources = r['result']['sources']
+    old_broker_global_id = r['result']['global_id']
+    old_broker_info = {'idurl': old_broker_idurl, 'sources': old_broker_sources, 'global_id': old_broker_global_id, }
+
+    kw.config_set_v1('broker-rotated', 'services/identity-propagate/automatic-rotate-enabled', 'true')
+    kw.config_set_v1('broker-rotated', 'services/identity-propagate/known-servers', 'id-a:8084,id-b:8084,id-c:8084')
+    kw.config_set_v1('broker-rotated', 'services/identity-propagate/preferred-servers', '')
+
+    # put identity server offline
+    stop_daemon('id-dead', verbose=True)
+
+    # test broker-rotated new IDURL
+    for _ in range(20):
+        r = kw.identity_get_v1('broker-rotated')
+        new_idurl = r['result']['idurl']
+        if new_idurl != old_broker_info['idurl']:
+            break
+        time.sleep(5)
+    else:
+        assert False, 'broker-rotated automatic identity rotate did not happen after many attempts'
+    new_broker_sources = r['result']['sources']
+    new_broker_global_id = r['result']['global_id']
+    new_broker_idurl = r['result']['idurl']
+    assert new_broker_sources != old_broker_info['sources']
+    assert new_broker_global_id != old_broker_info['global_id']
+    assert new_broker_idurl != old_broker_info['idurl']
+
+    # make sure event "my-identity-rotate-complete" is triggered on rotated nodes
+    kw.wait_event(['broker-rotated', ], 'my-identity-rotate-complete')
+
+    kw.wait_specific_event(['customer-1', ], 'identity-url-changed', '^.*?%s.*?$' % 'broker-rotated')
+    kw.wait_specific_event(['broker-3', 'broker-4', 'broker-rotated', ], 'identity-url-changed', '^.*?%s.*?$' % 'broker-rotated')
+
+    new_broker_info = {'idurl': new_broker_idurl, 'sources': new_broker_sources, 'global_id': new_broker_global_id, }
+
+    return old_broker_info, new_broker_info

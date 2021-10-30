@@ -702,7 +702,7 @@ class OnlineStatus(automat.Automat):
             return True
         if not self.latest_inbox_time:
             return False
-        return utime.get_sec1970() - self.latest_inbox_time > 2 * 60
+        return utime.get_sec1970() - self.latest_inbox_time > 60
 
     def doInit(self, *args, **kwargs):
         """

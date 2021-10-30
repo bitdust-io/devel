@@ -21,9 +21,9 @@
 # Please contact us if you have any questions at bitdust.io@gmail.com
 
 """
-SCENARIO 9: ID server id-dead is dead and few nodes has rotated identities
+SCENARIO 19: ID server id-dead is dead and broker-rotated has rotated identity
 
-SCENARIO 12: customer-1 chat with customer-2 via broker-rotated, but his IDURL was rotated
+SCENARIO 12: customer-1 group chat with customer-2, but broker-rotated IDURL was rotated
 
 """
 
@@ -42,13 +42,13 @@ def test_brokeridrotate():
 
     prepare()
 
-    #--- SCENARIO 12 begin: customer-1 group chat with customer-2 but broker IDURL rotated
+    #--- SCENARIO 12 begin: customer-1 group chat with customer-2, but broker-rotated IDURL was rotated
     old_customer_1_info_s12 = scenarios.scenario12_begin()
 
-    #--- SCENARIO 9: ID server id-dead is dead
-    scenarios.scenario9(target_nodes=['broker-rotated', ])
+    #--- SCENARIO 19: ID server id-dead is dead
+    scenarios.scenario19()
 
-    #--- SCENARIO 12 end: customer-1 group chat with customer-2 but broker IDURL rotated
+    #--- SCENARIO 12 end: customer-1 group chat with customer-2, but broker-rotated IDURL was rotated
     scenarios.scenario12_end(old_customer_1_info_s12)
 
 #------------------------------------------------------------------------------

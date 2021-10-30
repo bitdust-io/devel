@@ -162,9 +162,6 @@ def start(AckHandler=None, wide=False, refresh_cache=False, include_all=True, in
     Call ``propagate()`` for all known contacts or only for those which are related to enabled/active services.
     """
     selected_contacts = list(filter(None, contactsdb.contacts_remote(include_all=include_all, include_enabled=include_enabled)))
-    if startup_list():
-        selected_contacts = list(set(selected_contacts) + startup_list())
-        startup_list().clear()
     if _Debug:
         lg.args(_DebugLevel, wide=wide, refresh_cache=refresh_cache, all=include_all, enabled=include_enabled, selected=len(selected_contacts))
     return propagate(

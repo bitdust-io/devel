@@ -83,8 +83,21 @@ class NetworkService(LocalService):
         from logs import lg
         from services import driver
         if driver.is_enabled('service_gateway'):
-            lg.info('my identity sources were rotated, need to restart service_gateway()')
-            driver.restart('service_gateway')
+            lg.warn('my identity sources were rotated, need to restart service_gateway()')
+            if driver.is_enabled('service_identity_propagate'):
+                from p2p import propagate
+                from contacts import contactsdb
+                selected_contacts = set(filter(None, contactsdb.contacts_remote(include_all=True)))
+                if propagate.startup_list():
+                    selected_contacts.update(propagate.startup_list())
+                    propagate.startup_list().clear()
+                propagate.propagate(
+                    selected_contacts=selected_contacts,
+                    wide=True,
+                    refresh_cache=True,
+                ).addBoth(lambda err: driver.restart('service_gateway'))
+            else:
+                driver.restart('service_gateway')
         else:
             lg.warn('my identity sources were rotated, but service_gateway() is disabled')
         return None

@@ -233,18 +233,18 @@ def group_info_dht_v1(node: str, customer_id, timeout=20, wait_records=None, ret
         return response.json()
     count = 0
     while True:
+        if len(response.json()['result']) == wait_records:
+            dbg('group/info/dht/v1 [%s] : %s\n' % (node, pprint.pformat(response.json())))
+            return response.json()
         if count >= retries:
             dbg('group/info/dht/v1 [%s] attempt %d : %s\n' % (node, count, pprint.pformat(response.json())))
             break
+        count += 1
+        time.sleep(delay)
         dbg('retrying group/info/dht/v1?group_creator_id=%s' % customer_id)
         response = request_get(node, 'group/info/dht/v1?group_creator_id=%s' % customer_id, timeout=timeout)
         assert response.status_code == 200
         assert response.json()['status'] == 'OK', response.json()
-        if len(response.json()['result']) == wait_records:
-            dbg('group/info/dht/v1 [%s] : %s\n' % (node, pprint.pformat(response.json())))
-            return response.json()
-        count += 1
-        time.sleep(delay)
     assert False, 'exactly %d dht records not detected for %r after %d retries' % (wait_records, customer_id, count, )
 
 
