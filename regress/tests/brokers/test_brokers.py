@@ -48,6 +48,9 @@ def test_brokers():
     #--- SCENARIO 8: customer-3 receive all archived messages from message broker
     scenarios.scenario8()
 
+    #--- SCENARIO 18: customer-2 sent message to the group but active broker-1 is offline
+    scenarios.scenario18()
+
 #------------------------------------------------------------------------------
 
 def prepare():

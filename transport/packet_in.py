@@ -68,7 +68,6 @@ from logs import lg
 
 from main import settings
 from main import config
-from main import events
 
 from automats import automat
 

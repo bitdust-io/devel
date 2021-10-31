@@ -921,6 +921,8 @@ def SendMessage(remote_idurl, packet_id=None, payload=None, wide=True, callbacks
     """
     if packet_id is None:
         packet_id = packetid.UniqueID()
+    if _Debug:
+        lg.out(_DebugLevel, "p2p_service.SendMessage to %s with packet_id=%s" % (nameurl.GetName(remote_idurl), packet_id, ))
     outpacket = signed.Packet(
         Command=commands.Message(),
         OwnerID=my_id.getLocalID(),

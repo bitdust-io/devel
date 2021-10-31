@@ -35,7 +35,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -421,6 +421,9 @@ def do_send_message(json_data, recipient_global_id, packet_id, message_ack_timeo
             None: lambda pkt_out: on_message_failed(
                 remote_idurl, json_data, recipient_global_id, packet_id, None, None,
                 result_defer=result_defer, error='timeout', ),
+            'failed': lambda pkt_out, errmsg: on_message_failed(
+                remote_idurl, json_data, recipient_global_id, packet_id, None, None,
+                result_defer=result_defer, error=errmsg, ),
         }
     result, outpacket = p2p_service.SendMessage(
         remote_idurl=remote_idurl,
