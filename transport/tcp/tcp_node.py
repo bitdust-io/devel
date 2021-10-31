@@ -361,6 +361,8 @@ def cancel_outbox_file(host, filename):
     """
     """
     host = net_misc.normalize_address(host)
+    if _Debug:
+        lg.args(_DebugLevel, host=host, filename=filename)
     from transport.tcp import tcp_interface
     for connections in opened_connections().values():
         for connection in connections:
