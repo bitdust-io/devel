@@ -120,7 +120,7 @@ regress_stop:
 	make --no-print-directory -C regress/ clean_all
 
 regress_test:
-	PYTHON_VERSION=$(REGRESSION_PY_VER) make --no-print-directory -C regress/ VERBOSE=1 test
+	PYTHON_VERSION=$(REGRESSION_PY_VER) make --no-print-directory -C regress/ VERBOSE=2 test
 
 regress_test_log:
 	PYTHON_VERSION=$(REGRESSION_PY_VER) make --no-print-directory -C regress/ test_log
