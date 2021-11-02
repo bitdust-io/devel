@@ -186,7 +186,7 @@ prepare: build_app build_tester
 
 report: coverage_combine coverage_report check_parallel_results
 
-test_log: prepare run_all_log
+test_log: prepare run_all_log report
 
 test: prepare run_all report
 
