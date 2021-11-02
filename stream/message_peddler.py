@@ -959,11 +959,12 @@ def stop_all_streams():
 
 
 def ping_all_streams():
-    target_nodes = list(set(list_customers() + list_consumers_producers()))
+    target_nodes = list(set(list_customers() + list_consumers_producers() + list_known_brokers()))
     if _Debug:
         lg.args(_DebugLevel, target_nodes=target_nodes)
     propagate.propagate(selected_contacts=target_nodes, wide=True, refresh_cache=True)
 
+#------------------------------------------------------------------------------
 
 def list_customers():
     ret = list(customers().keys())
@@ -985,6 +986,17 @@ def list_consumers_producers(include_consumers=True, include_producers=True):
                 producer_idurl = global_id.glob2idurl(producer_id)
                 if producer_idurl not in result:
                     result.add(producer_idurl)
+    ret = list(result)
+    if _Debug:
+        lg.args(_DebugLevel, r=ret)
+    return ret
+
+
+def list_known_brokers():
+    result = set()
+    for inst in queue_keeper.queue_keepers().values():
+        for broker_idurl in inst.cooperated_brokers.values():
+            result.add(id_url.field(broker_idurl))
     ret = list(result)
     if _Debug:
         lg.args(_DebugLevel, r=ret)

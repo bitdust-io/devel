@@ -359,6 +359,7 @@ def contacts(include_all=False, include_enabled=True):
             from stream import message_peddler
             result.update(set(message_peddler.list_customers()))
             result.update(set(message_peddler.list_consumers_producers(include_consumers=True, include_producers=True)))
+            result.update(set(message_peddler.list_known_brokers()))
     return list(result)
 
 
