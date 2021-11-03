@@ -740,12 +740,13 @@ def identity_rotate():
     ret = Deferred()
     d = id_rotator.run(force=True)
 
-    def _cb(result):
+    def _cb(result, rotated):
         if not result:
             ret.callback(ERROR(result, api_method='identity_rotate'))
             return None
         r = my_id.getLocalIdentity().serialize_json()
         r['old_sources'] = old_sources
+        r['rotated'] = rotated
         ret.callback(OK(r, api_method='identity_rotate'))
         return None
 

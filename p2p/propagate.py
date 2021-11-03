@@ -47,8 +47,8 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = True
-_DebugLevel = 8
+_Debug = False
+_DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
@@ -118,7 +118,7 @@ def startup_list():
 #------------------------------------------------------------------------------
 
 
-def propagate(selected_contacts, AckHandler=None, wide=False, refresh_cache=False):
+def propagate(selected_contacts, ack_handler=None, wide=False, refresh_cache=False, wait_packets=False, response_timeout=10):
     """
     Run the "propagate" process.
 
@@ -127,18 +127,27 @@ def propagate(selected_contacts, AckHandler=None, wide=False, refresh_cache=Fals
     """
     if _Debug:
         lg.out(_DebugLevel, "propagate.propagate to %d contacts" % len(selected_contacts))
-    d = Deferred()
+    result = Deferred()
 
     def contacts_fetched(x):
         if _Debug:
             lg.out(_DebugLevel, "propagate.contacts_fetched with %d identities, sending my identity to %d remote nodes" % (
                 len(x), len(selected_contacts)))
-        SendToIDs(selected_contacts, ack_handler=AckHandler, wide=wide)
-        d.callback(list(selected_contacts))
+        res = SendToIDs(
+            idlist=selected_contacts,
+            ack_handler=ack_handler,
+            wide=wide,
+            wait_packets=wait_packets,
+            response_timeout=response_timeout,
+        )
+        if wait_packets:
+            res.addBoth(lambda x: result.callback(x))
+        else:
+            result.callback(list(selected_contacts))
         return None
 
     fetch(list_ids=selected_contacts, refresh_cache=refresh_cache).addBoth(contacts_fetched)
-    return d
+    return result
 
 
 def fetch(list_ids, refresh_cache=False):
@@ -157,37 +166,53 @@ def fetch(list_ids, refresh_cache=False):
     return DeferredList(dl, consumeErrors=True)
 
 
-def start(AckHandler=None, wide=False, refresh_cache=False, include_all=True, include_enabled=True):
+def start(ack_handler=None, wide=False, refresh_cache=False, include_all=True, include_enabled=True, include_startup=False, wait_packets=False, response_timeout=10):
     """
     Call ``propagate()`` for all known contacts or only for those which are related to enabled/active services.
     """
-    selected_contacts = list(filter(None, contactsdb.contacts_remote(include_all=include_all, include_enabled=include_enabled)))
+    selected_contacts = set(filter(None, contactsdb.contacts_remote(include_all=include_all, include_enabled=include_enabled)))
+    if include_startup:
+        lg.warn('going to propagate my identity also to %d nodes from startup list' % len(startup_list()))
+        selected_contacts.update(startup_list())
+        startup_list().clear()
     if _Debug:
         lg.args(_DebugLevel, wide=wide, refresh_cache=refresh_cache, all=include_all, enabled=include_enabled, selected=len(selected_contacts))
     return propagate(
-        selected_contacts=selected_contacts,
-        AckHandler=AckHandler,
+        selected_contacts=list(selected_contacts),
+        ack_handler=ack_handler,
         wide=wide,
         refresh_cache=refresh_cache,
+        wait_packets=wait_packets,
+        response_timeout=response_timeout,
     )
 
 
-def suppliers(AckHandler=None, wide=False, customer_idurl=None):
+def suppliers(ack_handler=None, wide=False, customer_idurl=None, wait_packets=False):
     """
     Call ``propagate()`` for all suppliers.
     """
     if _Debug:
         lg.out(_DebugLevel, 'propagate.suppliers')
-    return propagate(contactsdb.suppliers(customer_idurl=customer_idurl), AckHandler, wide)
+    return propagate(
+        selected_contacts=contactsdb.suppliers(customer_idurl=customer_idurl),
+        ack_handler=ack_handler,
+        wide=wide,
+        wait_packets=wait_packets,
+    )
 
 
-def customers(AckHandler=None, wide=False):
+def customers(ack_handler=None, wide=False, wait_packets=False):
     """
     Call ``propagate()`` for all known customers.
     """
     if _Debug:
         lg.out(_DebugLevel, 'propagate.customers')
-    return propagate(contactsdb.customers(), AckHandler, wide)
+    return propagate(
+        selected_contacts=contactsdb.customers(),
+        ack_handler=ack_handler,
+        wide=wide,
+        wait_packets=wait_packets,
+    )
 
 
 def single(idurl, ack_handler=None, wide=False, fail_handler=None):
@@ -422,7 +447,7 @@ def SendToID(idurl, Payload=None, wide=False, ack_handler=None, timeout_handler=
     return result
 
 
-def SendToIDs(idlist, wide=False, ack_handler=None, timeout_handler=None, response_timeout=20):
+def SendToIDs(idlist, wide=False, ack_handler=None, timeout_handler=None, response_timeout=20, wait_packets=False):
     """
     Same, but send to many IDs and also check previous packets to not re-send.
     """
@@ -446,6 +471,7 @@ def SendToIDs(idlist, wide=False, ack_handler=None, timeout_handler=None, respon
                     inqueue[pkt_out.remote_idurl] = 0
                 inqueue[pkt_out.remote_idurl] += 1
                 found_previous_packets += 1
+    wait_list = []
     for contact in idlist:
         if not contact:
             continue
@@ -467,19 +493,29 @@ def SendToIDs(idlist, wide=False, ack_handler=None, timeout_handler=None, respon
         )
         _PropagateCounter += 1
         if _Debug:
-            lg.out(_DebugLevel, "        sending [Identity] to %s" % nameurl.GetName(contact))
-        gateway.outbox(p, wide, response_timeout=response_timeout, callbacks={
+            lg.out(_DebugLevel, "        sending %r to %s" % (p, nameurl.GetName(contact), ))
+        res = gateway.outbox(p, wide, response_timeout=response_timeout, callbacks={
             commands.Ack(): ack_handler,
             commands.Fail(): ack_handler,
             None: timeout_handler,
         })
+        if not res:
+            lg.warn('my Identity() was not sent to %r' % contact)
+            continue
         if wide:
             # this is a ping packet - need to clear old info
             p2p_stats.ErasePeerProtosStates(contact)
             p2p_stats.EraseMyProtosStates(contact)
         alreadysent.add(contact)
         totalsent += 1
+        if wait_packets and res:
+            if isinstance(res, Deferred):
+                wait_list.append(res)
+            else:
+                wait_list.append(res.finished_deferred)
     del alreadysent
+    if wait_packets:
+        return DeferredList(wait_list)
     return totalsent
 
 #------------------------------------------------------------------------------
