@@ -25,6 +25,7 @@ SCENARIO 3: customer-1 is able to send private message to customer-2
 
 SCENARIO 8: customer-3 receive all archived messages from message broker
 
+SCENARIO 18: customer-2 sent message to the group but active broker-1 is offline
 
 """
 
@@ -50,6 +51,12 @@ def test_brokers():
 
     #--- SCENARIO 18: customer-2 sent message to the group but active broker-1 is offline
     scenarios.scenario18()
+
+    #--- SCENARIO 21: broker-1 was stopped and started again but disconnected from previous streams
+    scenarios.scenario21()
+
+    #--- SCENARIO 20: customer-3 stopped and started again but still connected to the group
+    scenarios.scenario20()
 
 #------------------------------------------------------------------------------
 
