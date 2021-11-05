@@ -421,11 +421,10 @@ class BackupRebuilder(automat.Automat):
         if len(self.workingBlocksQueue) == 0:
             self.automat('rebuilding-finished')
             return
-        # let's rebuild the backup blocks in reverse order, take last blocks first ...
-        # in such way we can propagate how big is the whole backup as soon as possible!
-        # remote machine can multiply [file size] * [block number]
-        # and calculate the whole size to be received ... smart!
-        # ... remote supplier should not use last file to calculate
+        # rebuild the backup blocks in reverse order, take last blocks first
+        # in such way we can propagate information about how big is the whole backup as soon as possible!
+        # remote machine can use simple formula [total size] = [file size] * [block number]
+        # and calculate the whole size to be received
         self.blockIndex = len(self.workingBlocksQueue) - 1
         reactor.callLater(0, self._start_one_block)  # @UndefinedVariable
 
@@ -433,8 +432,8 @@ class BackupRebuilder(automat.Automat):
         """
         Action method.
         """
-        # TODO: make sure to not kill workers for backup jobs....
-        raid_worker.A('shutdown')
+        lg.warn('aborting raid worker for rebuilding %s' % self.currentBackupID)
+        raid_worker.cancel_task('rebuild', self.currentBackupID)
 
     def doClearStoppedFlag(self, *args, **kwargs):
         """
