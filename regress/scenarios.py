@@ -1179,7 +1179,7 @@ def scenario12_end(old_customer_1_info):
         customer_1_group_key_id,
         producer_id='customer-2',
         consumers_ids=['customer-1', 'customer-2', ],
-        message_label='G_to_be_rotated',
+        message_label='G_active_queue_id_to_be_changed',
         expected_results={'customer-1': True, 'customer-2': True, },
         expected_last_sequence_id={'customer-1': 5, 'customer-2': 5, },
         polling_timeout=120,

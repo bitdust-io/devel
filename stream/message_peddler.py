@@ -186,6 +186,7 @@ def on_consume_queue_messages(json_messages):
     if not A().state == 'READY':
         lg.warn('message_peddler() is not ready yet')
         return False
+    handled = False
     for json_message in json_messages:
         try:
             msg_type = json_message.get('type', '')
@@ -246,6 +247,7 @@ def on_consume_queue_messages(json_messages):
                 lg.args(_DebugLevel, event='queue-read', queue_id=queue_id, consumer_id=consumer_id, consumer_last_sequence_id=consumer_last_sequence_id)
             A('queue-read', queue_id=queue_id, consumer_id=consumer_id, consumer_last_sequence_id=consumer_last_sequence_id)
             p2p_service.SendAckNoRequest(from_idurl, packet_id)
+            handled = True
             continue
         if msg_action == 'produce':
             try:
@@ -275,6 +277,7 @@ def on_consume_queue_messages(json_messages):
                     continue
                 # incoming message replica from another message_peddler() to store locally in case brokers needs to be rotated
                 do_store_message_replica(from_idurl, packet_id, my_queue_id, producer_id, payload, created)
+                handled = True
                 continue
             try:
                 known_brokers = {int(k): id_url.field(v) for k, v in msg_data['brokers'].items()}
@@ -286,11 +289,15 @@ def on_consume_queue_messages(json_messages):
             if not do_push_message(from_idurl, packet_id, queue_id, producer_id, payload, created, known_brokers):
                 continue
             pushed += 1
+            handled = True
             continue
         raise Exception('unexpected message "action": %r' % msg_action)
     if received > pushed:
         lg.warn('some of the received messages was not pushed to the queue %r' % queue_id)
-    return True
+    if not handled:
+        if _Debug:
+            lg.dbg(_DebugLevel, 'queue messages was not handled: %r' % json_messages)
+    return handled
 
 
 def do_push_message(from_idurl, packet_id, queue_id, producer_id, payload, created, known_brokers):
@@ -959,11 +966,12 @@ def stop_all_streams():
 
 
 def ping_all_streams():
-    target_nodes = list(set(list_customers() + list_consumers_producers()))
+    target_nodes = list(set(list_customers() + list_consumers_producers() + list_known_brokers()))
     if _Debug:
         lg.args(_DebugLevel, target_nodes=target_nodes)
     propagate.propagate(selected_contacts=target_nodes, wide=True, refresh_cache=True)
 
+#------------------------------------------------------------------------------
 
 def list_customers():
     ret = list(customers().keys())
@@ -985,6 +993,17 @@ def list_consumers_producers(include_consumers=True, include_producers=True):
                 producer_idurl = global_id.glob2idurl(producer_id)
                 if producer_idurl not in result:
                     result.add(producer_idurl)
+    ret = list(result)
+    if _Debug:
+        lg.args(_DebugLevel, r=ret)
+    return ret
+
+
+def list_known_brokers():
+    result = set()
+    for inst in queue_keeper.queue_keepers().values():
+        for broker_idurl in inst.cooperated_brokers.values():
+            result.add(id_url.field(broker_idurl))
     ret = list(result)
     if _Debug:
         lg.args(_DebugLevel, r=ret)

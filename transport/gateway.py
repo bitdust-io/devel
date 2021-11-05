@@ -791,7 +791,7 @@ def on_outbox_packet(outpacket, wide, callbacks, target=None, route=None, respon
             if callbacks:
                 for command, cb in callbacks.items():
                     active_packet.set_callback(command, cb)
-            lg.warn('skip creating new outbox packet because found similar packet: %r' % active_packet)
+            lg.warn('skip creating new outbox packet because found similar pending packet: %r' % active_packet)
             return active_packet
     pkt_out = packet_out.create(outpacket, wide, callbacks, target, route, response_timeout, keep_alive)
     control.request_update([('packet', outpacket.PacketID)])

@@ -587,8 +587,6 @@ class BrokerNegotiator(automat.Automat):
         return req
 
     def _on_cur_broker_connected(self, response_info, broker_pos, event, *args, **kwargs):
-        if _Debug:
-            lg.args(_DebugLevel, resp=response_info, pos=broker_pos, e=event, args=args, kwargs=kwargs)
         try:
             # skip leading "accepted:" marker
             cooperated_brokers = jsn.loads(strng.to_text(response_info[0].Payload)[9:])
@@ -597,7 +595,16 @@ class BrokerNegotiator(automat.Automat):
             lg.exc()
             self.automat('broker-failed')
             return
-        self.automat('broker-accepted', cooperated_brokers=cooperated_brokers)
+        if _Debug:
+            lg.args(_DebugLevel, cooperated=cooperated_brokers, pos=broker_pos, e=event, args=args, kwargs=kwargs)
+        my_idurl_cooperated = False
+        for cooperated_broker_idurl in cooperated_brokers.values():
+            if id_url.is_the_same(cooperated_broker_idurl, self.my_broker_idurl):
+                my_idurl_cooperated = True
+        if my_idurl_cooperated:
+            self.automat('broker-accepted', cooperated_brokers=cooperated_brokers)
+        else:
+            self.automat('broker-rejected')
 
     def _on_cur_broker_connect_failed(self, err, broker_pos, event, *args, **kwargs):
         if _Debug:
@@ -614,8 +621,6 @@ class BrokerNegotiator(automat.Automat):
         self.automat('broker-failed')
 
     def _on_new_broker_hired(self, response_info, broker_pos, *args, **kwargs):
-        if _Debug:
-            lg.args(_DebugLevel, resp=response_info, broker_pos=broker_pos, args=args, kwargs=kwargs)
         try:
             # skip leading "accepted:" marker
             cooperated_brokers = jsn.loads(strng.to_text(response_info[0].Payload)[9:])
@@ -624,7 +629,17 @@ class BrokerNegotiator(automat.Automat):
             lg.exc()
             self.automat('hire-broker-failed')
             return
-        self.automat('hire-broker-ok', cooperated_brokers=cooperated_brokers)
+        if _Debug:
+            lg.args(_DebugLevel, cooperated=cooperated_brokers, broker_pos=broker_pos, args=args, kwargs=kwargs)
+        my_idurl_cooperated = False
+        for cooperated_broker_idurl in cooperated_brokers.values():
+            if id_url.is_the_same(cooperated_broker_idurl, self.my_broker_idurl):
+                my_idurl_cooperated = True
+        if my_idurl_cooperated:
+            self.automat('hire-broker-ok', cooperated_brokers=cooperated_brokers)
+        else:
+            lg.warn('new broker is not cooperative, my idurl is not found in the cooperation')
+            self.automat('hire-broker-failed')
 
     def _on_new_broker_lookup_failed(self, err, broker_pos, *args, **kwargs):
         if _Debug:
@@ -641,7 +656,7 @@ class BrokerNegotiator(automat.Automat):
             self.automat('broker-rotate-failed')
             return
         if _Debug:
-            lg.args(_DebugLevel, pos=broker_pos, e=event, cooperated_brokers=cooperated_brokers)
+            lg.args(_DebugLevel, cooperated=cooperated_brokers, pos=broker_pos, e=event)
         if id_url.is_the_same(cooperated_brokers.get(broker_pos), self.my_broker_idurl):
             self.automat('broker-rotate-accepted', cooperated_brokers=cooperated_brokers)
         else:

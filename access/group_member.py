@@ -1113,6 +1113,7 @@ class GroupMember(automat.Automat):
             packet_id = packetid.UniqueID()
         if _Debug:
             lg.args(_DebugLevel, json_payload=json_payload, outgoing_counter=outgoing_counter, packet_id=packet_id)
+        require_handshake = False
         if outgoing_counter is None:
             self.outgoing_counter += 1
             outgoing_counter = self.outgoing_counter
@@ -1136,6 +1137,8 @@ class GroupMember(automat.Automat):
             self.outgoing_messages[outgoing_counter]['attempts'] += 1
             self.outgoing_messages[outgoing_counter]['last_attempt'] = utime.get_sec1970()
             json_payload = self.outgoing_messages[outgoing_counter]['payload']
+            if self.outgoing_messages[outgoing_counter]['attempts'] >= 1:
+                require_handshake = True
             lg.warn('re-trying sending message to broker %r   counter=%d attempts=%d packet_id=%s' % (
                 self.active_broker_id, outgoing_counter, self.outgoing_messages[outgoing_counter]['attempts'], packet_id, ))
         raw_payload = serialization.DictToBytes(
@@ -1168,6 +1171,7 @@ class GroupMember(automat.Automat):
             message_ack_timeout=config.conf().getInt('services/private-groups/message-ack-timeout'),
             skip_handshake=True,
             fire_callbacks=False,
+            require_handshake=require_handshake,
         )
         if _Debug:
             d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='group_member._do_send_message_to_broker')

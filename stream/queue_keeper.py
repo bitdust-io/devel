@@ -84,7 +84,6 @@ from system import local_fs
 from lib import strng
 from lib import jsn
 
-from main import events
 from main import settings
 
 from dht import dht_relations

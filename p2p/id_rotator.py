@@ -483,11 +483,11 @@ class IdRotator(automat.Automat):
         if not self.result_defer:
             return
         if event == 'ping-done':
-            self.result_defer.callback(self._is_healthy(args[0]))
+            self.result_defer.callback((self._is_healthy(args[0]), False))
         elif event == 'my-id-exist':
-            self.result_defer.callback(True)
-            if self.rotated:
-                events.send('my-identity-rotate-complete', data=dict())
+            self.result_defer.callback((True, self.rotated, ))
+            # if self.rotated:
+            #     events.send('my-identity-rotate-complete', data=dict())
 
     def doReportFailed(self, event, *args, **kwargs):
         """

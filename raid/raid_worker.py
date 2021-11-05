@@ -87,9 +87,6 @@ from automats import automat
 
 from system import bpio
 
-from main import settings
-from main import config
-
 from raid import read
 from raid import make
 from raid import rebuild
@@ -148,13 +145,6 @@ def cancel_task(cmd, first_parameter):
                 lg.warn('failed removing pending task %d, %s' % (t_id, first_parameter))
             found = True
             break
-#    for i in xrange(len(A().tasks)):
-#        t_id, t_cmd, t_params = A().tasks[i]
-#        if cmd == t_cmd and first_parameter == t_params[0]:
-#            lg.out(10, 'raid_worker.cancel_task found pending task %d, canceling' % t_id)
-#            A().tasks.pop(i)
-#            found = True
-#            break
     for task_id, task_data in A().activetasks.items():
         t_proc, t_cmd, t_params = task_data
         if cmd == t_cmd and first_parameter == t_params[0]:
