@@ -61,6 +61,11 @@ SCENARIO 19: ID server id-dead is dead and broker-rotated has rotated identity
 
 SCENARIO 20: customer-3 stopped and started again but still connected to the group
 
+SCENARIO 21: broker-1 was stopped and started again but disconnected from previous streams
+
+SCENARIO 22: broker-2 was restarted quickly but still is connected to the stream
+
+
 
 TODO:
 
@@ -97,6 +102,7 @@ CUSTOMERS_IDS_12 = ['customer-1', 'customer-2', ]
 CUSTOMERS_IDS_1 = ['customer-1', ]
 BROKERS_IDS = ['broker-1', 'broker-2', 'broker-3', 'broker-4', ]
 BROKERS_IDS_123 = ['broker-1', 'broker-2', 'broker-3', ]
+BROKERS_IDS_134 = ['broker-1', 'broker-3', 'broker-4', ]
 ROTATED_NODES = ['supplier-rotated', 'customer-rotated', 'broker-rotated', 'proxy-rotated', ]
 
 #------------------------------------------------------------------------------
@@ -1825,14 +1831,20 @@ def scenario18():
 
     # verify broker-1 details before it goes offline
     broker_1_consumers = kw.queue_consumer_list_v1('broker-1', extract_ids=True)
-    broker1_producers = kw.queue_producer_list_v1('broker-1', extract_ids=True)
-    broker1_keepers = kw.queue_keeper_list_v1('broker-1', extract_ids=True)
+    broker_1_producers = kw.queue_producer_list_v1('broker-1', extract_ids=True)
+    broker_1_keepers = kw.queue_keeper_list_v1('broker-1', extract_ids=True)
+    broker_2_keepers = kw.queue_keeper_list_v1('broker-2', extract_ids=True)
+    broker_3_keepers = kw.queue_keeper_list_v1('broker-3', extract_ids=True)
     assert 'customer-1@id-a_8084' in broker_1_consumers
-    assert 'customer-1@id-a_8084' in broker1_producers
-    assert 'customer-1@id-a_8084' in broker1_keepers
+    assert 'customer-1@id-a_8084' in broker_1_producers
     assert 'customer-2@id-a_8084' in broker_1_consumers
-    assert 'customer-2@id-a_8084' in broker1_producers
-    assert 'customer-2@id-a_8084' in broker1_keepers
+    assert 'customer-2@id-a_8084' in broker_1_producers
+    assert 'customer-1@id-a_8084' in broker_1_keepers
+    assert 'customer-1@id-a_8084' in broker_2_keepers
+    assert 'customer-1@id-a_8084' in broker_3_keepers
+    assert 'customer-2@id-a_8084' in broker_1_keepers
+    assert 'customer-2@id-a_8084' in broker_2_keepers
+    assert 'customer-2@id-a_8084' in broker_3_keepers
     assert customer_1_active_queueA_id in kw.queue_peddler_list_v1('broker-1', extract_ids=True)
     assert customer_2_active_queueB_id in kw.queue_peddler_list_v1('broker-1', extract_ids=True)
 
@@ -2018,7 +2030,7 @@ def scenario20():
     # stop customer-3 node
     kw.wait_packets_finished(CUSTOMERS_IDS_123 + BROKERS_IDS)
     stop_daemon('customer-3', verbose=True)
-    kw.wait_packets_finished(CUSTOMERS_IDS_123 + BROKERS_IDS)
+    kw.wait_packets_finished(CUSTOMERS_IDS_12 + BROKERS_IDS)
 
     # start customer-3 node again
     start_daemon('customer-3', skip_initialize=True, verbose=True)
@@ -2027,7 +2039,7 @@ def scenario20():
     kw.wait_service_state(['customer-3', ], 'service_shared_data', 'ON')
     kw.wait_service_state(['customer-3', ], 'service_private_groups', 'ON')
 
-    customer_2_groupA_info_after = kw.group_info_v1('customer-3', customer_2_groupA_key_id)['result']
+    customer_2_groupA_info_after = kw.group_info_v1('customer-3', customer_2_groupA_key_id, wait_state='IN_SYNC!')['result']
     assert customer_2_groupA_info_after['state'] == 'IN_SYNC!'
 
     # sending a message again to the group from customer-2 and customer-3 must receive it
@@ -2036,7 +2048,7 @@ def scenario20():
             customer_2_groupA_key_id,
             producer_id='customer-2',
             consumers_ids=['customer-3', 'customer-2', ],
-            message_label='R%d' % (i + 1),
+            message_label='T%d' % (i + 1),
             expected_results={'customer-3': True, 'customer-2': True, },
             expected_last_sequence_id={},
         )
@@ -2046,16 +2058,130 @@ def scenario20():
 def scenario21():
     set_active_scenario('SCENARIO 21')
     info('\n\n============\n[SCENARIO 21] broker-1 was stopped and started again but disconnected from previous streams')
+
+    # start broker-1 node again
     start_daemon('broker-1', skip_initialize=True, verbose=True)
     health_check('broker-1', verbose=True)
 
+    kw.wait_packets_finished(CUSTOMERS_IDS_123 + BROKERS_IDS)
     kw.wait_service_state(['broker-1', ], 'service_message_broker', 'ON')
 
+    counter = 0
+    while True:
+        if counter >= 20:
+            raise Exception('some of queue keepers on broker-1 are still pending after many attempts')
+        broker_1_keepers = kw.queue_keeper_list_v1('broker-1', extract_ids=False)
+        some_pending = False
+        for st in [qk['state'] for qk in broker_1_keepers['result']]:
+            if st not in ['DISCONNECTED', 'CONNECTED', ]:
+                some_pending = True
+                break
+        if not some_pending:
+            break
+        counter += 1
+        time.sleep(2)
+
     # verify broker-1 details after it is running again
-    broker_1_consumers = kw.queue_consumer_list_v1('broker-1', extract_ids=True)
-    broker1_producers = kw.queue_producer_list_v1('broker-1', extract_ids=True)
-    broker1_keepers = kw.queue_keeper_list_v1('broker-1', extract_ids=True)
-    assert len(broker_1_consumers) == 0
-    assert len(broker1_producers) == 0
-    assert len(broker1_keepers) == 0
+    assert len(kw.queue_consumer_list_v1('broker-1', extract_ids=True)) == 0
+    assert len(kw.queue_producer_list_v1('broker-1', extract_ids=True)) == 0
+    assert len(kw.queue_keeper_list_v1('broker-1', extract_ids=True)) == 0
     assert len(kw.queue_peddler_list_v1('broker-1', extract_ids=True)) == 0
+
+
+
+def scenario22():
+    set_active_scenario('SCENARIO 22')
+    info('\n\n============\n[SCENARIO 22] customer-1 group chat with customer-2 but broker-2 was restarted quickly')
+
+    # pre-configure brokers
+    kw.config_set_v1('customer-2', 'services/private-groups/preferred-brokers', 'http://id-a:8084/broker-4.xml')
+    kw.config_set_v1('broker-4', 'services/message-broker/preferred-brokers', 'http://id-a:8084/broker-3.xml')
+    kw.config_set_v1('broker-3', 'services/message-broker/preferred-brokers', 'http://id-a:8084/broker-2.xml')
+
+    # create new group by customer-2
+    customer_2_groupA_key_id = kw.group_create_v1('customer-2', label='MyGroupAAA')
+    kw.wait_service_state(CUSTOMERS_IDS_123, 'service_shared_data', 'ON')
+    kw.wait_service_state(CUSTOMERS_IDS_123, 'service_private_groups', 'ON')
+    kw.wait_packets_finished(CUSTOMERS_IDS_123 + BROKERS_IDS)
+
+    # customer-2 join the group
+    kw.group_join_v1('customer-2', customer_2_groupA_key_id)
+    kw.wait_packets_finished(CUSTOMERS_IDS_123 + BROKERS_IDS)
+
+    # share group key from customer-2 to customer-1
+    kw.group_share_v1('customer-2', customer_2_groupA_key_id, 'customer-1@id-a_8084')
+
+    # customer-1 also join the group
+    kw.group_join_v1('customer-1', customer_2_groupA_key_id)
+    kw.wait_packets_finished(CUSTOMERS_IDS_123 + BROKERS_IDS)
+
+    # clean-up preferred brokers config
+    kw.config_set_v1('customer-2', 'services/private-groups/preferred-brokers', '')
+    kw.config_set_v1('broker-3', 'services/message-broker/preferred-brokers', '')
+    kw.config_set_v1('broker-2', 'services/message-broker/preferred-brokers', '')
+
+    # sending few messages to the group from customer-2
+    for i in range(1):
+        kw.verify_message_sent_received(
+            customer_2_groupA_key_id,
+            producer_id='customer-2',
+            consumers_ids=['customer-1', 'customer-2', ],
+            message_label='U%d' % (i + 1),
+            expected_results={'customer-1': True, 'customer-2': True, },
+            expected_last_sequence_id={},
+        )
+
+    # verify broker-2 details before it goes offline
+    broker_2_consumers = kw.queue_consumer_list_v1('broker-2', extract_ids=True)
+    broker_2_producers = kw.queue_producer_list_v1('broker-2', extract_ids=True)
+    broker_2_keepers = kw.queue_keeper_list_v1('broker-2', extract_ids=True)
+    broker_3_keepers = kw.queue_keeper_list_v1('broker-3', extract_ids=True)
+    broker_4_keepers = kw.queue_keeper_list_v1('broker-4', extract_ids=True)
+    assert 'customer-1@id-a_8084' in broker_2_consumers
+    assert 'customer-1@id-a_8084' in broker_2_producers
+    assert 'customer-2@id-a_8084' in broker_2_consumers
+    assert 'customer-2@id-a_8084' in broker_2_producers
+    assert 'customer-2@id-a_8084' in broker_2_keepers
+    assert 'customer-2@id-a_8084' in broker_3_keepers
+    assert 'customer-2@id-a_8084' in broker_4_keepers
+
+    # stop broker-2 node
+    kw.wait_packets_finished(CUSTOMERS_IDS_123 + BROKERS_IDS)
+    stop_daemon('broker-2', verbose=True)
+    kw.wait_packets_finished(CUSTOMERS_IDS_123 + BROKERS_IDS_134)
+
+    # start broker-2 node again
+    start_daemon('broker-2', skip_initialize=True, verbose=True)
+    health_check('broker-2', verbose=True)
+
+    kw.wait_packets_finished(CUSTOMERS_IDS_123 + BROKERS_IDS)
+    kw.wait_service_state(['broker-2', ], 'service_message_broker', 'ON')
+
+    counter = 0
+    while True:
+        if counter >= 20:
+            raise Exception('some of queue keepers on broker-2 are still pending after many attempts')
+        broker_2_keepers = kw.queue_keeper_list_v1('broker-2', extract_ids=False)
+        some_pending = False
+        for st in [qk['state'] for qk in broker_2_keepers['result']]:
+            if st not in ['DISCONNECTED', 'CONNECTED', ]:
+                some_pending = True
+                break
+        if not some_pending:
+            break
+        counter += 1
+        time.sleep(2)
+
+    # verify broker-2 details after it is running again
+    broker_2_consumers = kw.queue_consumer_list_v1('broker-2', extract_ids=True)
+    broker_2_producers = kw.queue_producer_list_v1('broker-2', extract_ids=True)
+    broker_2_keepers = kw.queue_keeper_list_v1('broker-2', extract_ids=True)
+    broker_3_keepers = kw.queue_keeper_list_v1('broker-3', extract_ids=True)
+    broker_4_keepers = kw.queue_keeper_list_v1('broker-4', extract_ids=True)
+    assert 'customer-1@id-a_8084' in broker_2_consumers
+    assert 'customer-1@id-a_8084' in broker_2_producers
+    assert 'customer-2@id-a_8084' in broker_2_consumers
+    assert 'customer-2@id-a_8084' in broker_2_producers
+    assert 'customer-2@id-a_8084' in broker_2_keepers
+    assert 'customer-2@id-a_8084' in broker_3_keepers
+    assert 'customer-2@id-a_8084' in broker_4_keepers

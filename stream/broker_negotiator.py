@@ -122,7 +122,7 @@ class BrokerNegotiator(automat.Automat):
         self.queue_id = None
         self.archive_folder_path = None
         self.requestor_known_brokers = None
-        self.group_key_info = None
+        self.connect_request = None
         super(BrokerNegotiator, self).__init__(
             name="broker_negotiator",
             state="AT_STARTUP",
