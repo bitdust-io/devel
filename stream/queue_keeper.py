@@ -185,10 +185,10 @@ def close(customer_idurl):
         lg.warn('customer idurl is not cached yet, can not stop QueueKeeper()')
         return False
     customer_idurl = id_url.field(customer_idurl)
-    if not existing(customer_idurl):
+    qk = queue_keepers().get(customer_idurl)
+    if not qk:
         lg.warn('instance of queue_keeper() not found for given customer %r' % customer_idurl)
         return False
-    qk = queue_keepers().get(customer_idurl)
     qk.event('shutdown')
     del qk
     return True
@@ -359,6 +359,11 @@ class QueueKeeper(automat.Automat):
                 self.doPushRequest(*args, **kwargs)
             elif ( event == 'rejected' and not self.InSync ) or event == 'failed' or event == 'my-record-missing' or event == 'my-record-invalid':
                 self.state = 'DISCONNECTED'
+                self.doCancelCooperation(event, *args, **kwargs)
+                self.doEraseState(*args, **kwargs)
+                self.InSync=False
+                self.doNotify(event, *args, **kwargs)
+                self.doPullRequests(*args, **kwargs)
             elif event == 'request-invalid' or ( event == 'rejected' and self.InSync ) or event == 'accepted':
                 self.state = 'DHT_WRITE'
                 self.doRememberCooperation(event, *args, **kwargs)
@@ -418,7 +423,7 @@ class QueueKeeper(automat.Automat):
         """
         json_state = read_state(customer_id=self.customer_id, broker_id=self.broker_id) or {}
         self.cooperated_brokers = {int(k): id_url.field(v) for k,v in (json_state.get('cooperated_brokers') or {}).items()}
-        self.known_position = json_state.get('position') or -1
+        self.known_position = json_state.get('position', -1)
         self.known_archive_folder_path = json_state.get('archive_folder_path')
 
     def doEraseState(self, *args, **kwargs):
@@ -559,7 +564,7 @@ class QueueKeeper(automat.Automat):
         if _Debug:
             lg.args(_DebugLevel, req=self.current_connect_request['request'], my_pos=self.known_position, dht_brokers=kwargs['dht_brokers'])
         if self.current_connect_request['request'] == 'verify':
-            self._do_request_verify_cooperated_brokers()
+            self._do_verify_cooperated_brokers()
             return
         d = Deferred()
         d.addCallback(self._on_broker_negotiator_callback)
@@ -688,7 +693,7 @@ class QueueKeeper(automat.Automat):
             retry=True,
         )
 
-    def _do_request_verify_cooperated_brokers(self):
+    def _do_verify_cooperated_brokers(self):
         other_brokers = list(self.cooperated_brokers.values())
         if self.broker_idurl in other_brokers:
             other_brokers.remove(self.broker_idurl)
@@ -708,11 +713,11 @@ class QueueKeeper(automat.Automat):
             service_name='service_message_broker',
             service_params=service_params,
             request_service_timeout=config.conf().getInt('services/message-broker/broker-negotiate-ack-timeout'),
-            force_handshake=True,
+            force_handshake=False,
         )
         result.addCallback(self._on_broker_verify_result)
         if _Debug:
-            result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='queue_keeper._do_request_verify_cooperated_brokers')
+            result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='queue_keeper._do_verify_cooperated_brokers')
         result.addErrback(self._on_broker_verify_failed)
 
     def _on_read_customer_message_brokers(self, dht_brokers_info_list):

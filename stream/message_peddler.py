@@ -1004,7 +1004,8 @@ def list_known_brokers():
     result = set()
     for inst in queue_keeper.queue_keepers().values():
         for broker_idurl in inst.cooperated_brokers.values():
-            result.add(id_url.field(broker_idurl))
+            if not id_url.is_the_same(my_id.getIDURL(), broker_idurl):
+                result.add(id_url.field(broker_idurl))
     ret = list(result)
     if _Debug:
         lg.args(_DebugLevel, r=ret)
@@ -1452,7 +1453,8 @@ class MessagePeddler(automat.Automat):
                     customer_idurl=customer_idurl,
                 )
                 qk = queue_keeper.check_create(customer_idurl=customer_idurl, auto_create=True, event='skip-init')
-                qk.automat(
+                # a small delay to avoid starting too many activities at once
+                reactor.callLater((self.total_streams + 1) * 1.0, qk.automat,  # @UndefinedVariable
                     event='restore',
                     desired_position=json_value['position'],
                     archive_folder_path=json_value['archive_folder_path'],
@@ -1843,6 +1845,7 @@ class MessagePeddler(automat.Automat):
                 loaded_producers += 1
         if _Debug:
             lg.args(_DebugLevel,
+                result=result,
                 customer=customer_idurl,
                 q=loaded_queues,
                 c=loaded_consumers,
@@ -1860,6 +1863,7 @@ class MessagePeddler(automat.Automat):
         self.loaded_streams += 1
         if _Debug:
             lg.args(_DebugLevel, err=err, customer_idurl=customer_idurl, l=self.loaded_streams, t=self.total_streams)
+        queue_keeper.close(customer_idurl)
         if self.loaded_streams >= self.total_streams:
             reactor.callLater(0, self.automat, 'queues-loaded')  # @UndefinedVariable
 

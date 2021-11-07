@@ -457,5 +457,3 @@ class Handshaker(automat.Automat):
         self.channel = None
         self.channel_counter = None
         self.destroy()
-
-
