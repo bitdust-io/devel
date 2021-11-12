@@ -98,6 +98,7 @@ from access import groups
 from stream import broker_negotiator
 
 from userid import id_url
+from userid import global_id
 from userid import my_id
 
 #------------------------------------------------------------------------------
@@ -207,7 +208,28 @@ def read_state(customer_id, broker_id):
         except:
             lg.exc()
             return None
-    return json_value
+        if _Debug:
+            lg.args(_DebugLevel, customer_id=customer_id, broker_id=broker_id, json_value=json_value)
+        return json_value
+    broker_idurl = global_id.glob2idurl(broker_id)
+    if id_url.is_cached(broker_idurl):
+        for one_broker_id in os.listdir(keepers_dir):
+            one_broker_idurl = global_id.glob2idurl(one_broker_id)
+            if id_url.is_cached(one_broker_idurl):
+                if one_broker_idurl == broker_idurl:
+                    broker_dir = os.path.join(keepers_dir, one_broker_id)
+                    keeper_state_file_path = os.path.join(broker_dir, customer_id)
+                    json_value = None
+                    if os.path.isfile(keeper_state_file_path):
+                        try:
+                            json_value = jsn.loads_text(local_fs.ReadTextFile(keeper_state_file_path))
+                        except:
+                            lg.exc()
+                            return None
+                        if _Debug:
+                            lg.args(_DebugLevel, customer_id=customer_id, broker_id=one_broker_id, json_value=json_value)
+                        return json_value
+    return None
 
 
 def write_state(customer_id, broker_id, json_value):
@@ -421,10 +443,10 @@ class QueueKeeper(automat.Automat):
         """
         Action method.
         """
-        json_state = read_state(customer_id=self.customer_id, broker_id=self.broker_id) or {}
-        self.cooperated_brokers = {int(k): id_url.field(v) for k,v in (json_state.get('cooperated_brokers') or {}).items()}
-        self.known_position = json_state.get('position', -1)
-        self.known_archive_folder_path = json_state.get('archive_folder_path')
+        json_value = read_state(customer_id=self.customer_id, broker_id=self.broker_id) or {}
+        self.cooperated_brokers = {int(k): id_url.field(v) for k,v in (json_value.get('cooperated_brokers') or {}).items()}
+        self.known_position = json_value.get('position', -1)
+        self.known_archive_folder_path = json_value.get('archive_folder_path')
 
     def doEraseState(self, *args, **kwargs):
         """
@@ -697,6 +719,9 @@ class QueueKeeper(automat.Automat):
         other_brokers = list(self.cooperated_brokers.values())
         if self.broker_idurl in other_brokers:
             other_brokers.remove(self.broker_idurl)
+        if not other_brokers:
+            self.automat('failed')
+            return
         other_broker_idurl = other_brokers[0]
         service_params = {
             'action': 'broker-verify',

@@ -38,7 +38,6 @@ EVENTS:
     * :red:`message-pushed`
     * :red:`queue-read`
     * :red:`queues-loaded`
-    * :red:`rotate`
     * :red:`start`
     * :red:`stop`
 """
@@ -1068,6 +1067,12 @@ class MessagePeddler(automat.Automat):
             if event == 'queues-loaded':
                 self.state = 'READY'
                 self.doRunQueues(*args, **kwargs)
+                self.doPullMessages(*args, **kwargs)
+                self.doPullRequests(*args, **kwargs)
+            elif event == 'message-pushed':
+                self.doPushMessage(*args, **kwargs)
+            elif event == 'connect' or event == 'follow':
+                self.doPushRequest(event, *args, **kwargs)
         #---READY---
         elif self.state == 'READY':
             if event == 'stop':
@@ -1078,8 +1083,6 @@ class MessagePeddler(automat.Automat):
                 self.doConsumeMessages(*args, **kwargs)
             elif event == 'message-pushed':
                 self.doProcessMessage(*args, **kwargs)
-            elif event == 'rotate':
-                self.doStopAffectedQueues(*args, **kwargs)
             elif event == 'disconnect':
                 self.doLeaveQueueStopKeeper(*args, **kwargs)
             elif event == 'connect' or event == 'follow':
@@ -1095,6 +1098,8 @@ class MessagePeddler(automat.Automat):
         """
         Action method.
         """
+        self.pending_requests = []
+        self.pending_messages = []
         self.archive_chunk_size = config.conf().getInt('services/message-broker/archive-chunk-size')
         self.send_message_ack_timeout = config.conf().getInt('services/message-broker/message-ack-timeout')
         self.archive_in_progress = False
@@ -1282,11 +1287,11 @@ class MessagePeddler(automat.Automat):
         p2p_service.SendAck(request_packet, 'accepted')
         result_defer.callback(True)
 
-    def doStopAffectedQueues(self, *args, **kwargs):
-        """
-        Action method.
-        """
-        # TODO: check and probably clean up that method
+#     def doStopAffectedQueues(self, *args, **kwargs):
+#         """
+#         Action method.
+#         """
+#         # TODO: check and probably clean up that method
 #         customer_idurl = kwargs['customer_idurl']
 #         request_packet = kwargs['request_packet']
 #         queue_id = kwargs['queue_id']
@@ -1303,6 +1308,37 @@ class MessagePeddler(automat.Automat):
 #         lg.info('for customer %r all affected streams are closed, starting new queue keeper' % customer_idurl)
 #         self._do_connect_queue_keeper(customer_idurl, request_packet, queue_id, consumer_id, producer_id,
 #                                     position, last_sequence_id, archive_folder_path, result_defer)
+    def doPushMessage(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        self.pending_messages.append((args, kwargs, ))
+
+    def doPushRequest(self, event, *args, **kwargs):
+        """
+        Action method.
+        """
+        self.pending_requests.append((event, args, kwargs, ))
+
+    def doPullMessages(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        if _Debug:
+            lg.args(_DebugLevel, pending_messages=len(self.pending_messages))
+        while self.pending_messages:
+            a, kw = self.pending_messages.pop(0)
+            self.event('message-pushed', *a, **kw)
+
+    def doPullRequests(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        if _Debug:
+            lg.args(_DebugLevel, pending_requests=len(self.pending_requests))
+        while self.pending_requests:
+            e, a, kw = self.pending_requests.pop(0)
+            self.event(e, *a, **kw)
 
     def doConsumeMessages(self, *args, **kwargs):
         """
