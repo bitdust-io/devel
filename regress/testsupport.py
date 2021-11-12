@@ -339,10 +339,11 @@ def tunnel_url(node, endpoint, verbose=True):
 
 #------------------------------------------------------------------------------
 
-def start_daemon(node, verbose=False):
-    run_ssh_command_and_wait(node, 'mkdir -pv /root/.bitdust/metadata/')
-    if os.environ.get('_DEBUG', '0') == '0':
-        run_ssh_command_and_wait(node, "find /app/bitdust -type f -name '*.py' -exec sed -i -e 's/_Debug = True/_Debug = False/g' {} +")
+def start_daemon(node, skip_initialize=False, verbose=False):
+    if not skip_initialize:
+        run_ssh_command_and_wait(node, 'mkdir -pv /root/.bitdust/metadata/')
+        if os.environ.get('_DEBUG', '0') == '0':
+            run_ssh_command_and_wait(node, "find /app/bitdust -type f -name '*.py' -exec sed -i -e 's/_Debug = True/_Debug = False/g' {} +")
     bitdust_daemon = run_ssh_command_and_wait(node, 'BITDUST_CRITICAL_PUSH_MESSAGE_FAILS=1 BITDUST_LOG_USE_COLORS=1 COVERAGE_PROCESS_START=/app/bitdust/.coverage_config bitdust daemon')
     if verbose:
         dbg('\n' + bitdust_daemon[0].strip())

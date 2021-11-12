@@ -45,7 +45,7 @@ def test_brokeridrotate():
     #--- SCENARIO 12 begin: customer-1 group chat with customer-2, but broker-rotated IDURL was rotated
     old_customer_1_info_s12 = scenarios.scenario12_begin()
 
-    #--- SCENARIO 19: ID server id-dead is dead
+    #--- SCENARIO 19: ID server id-dead is dead and broker-rotated has rotated identity
     scenarios.scenario19()
 
     #--- SCENARIO 12 end: customer-1 group chat with customer-2, but broker-rotated IDURL was rotated

@@ -123,7 +123,7 @@ regress_test:
 	PYTHON_VERSION=$(REGRESSION_PY_VER) make --no-print-directory -C regress/ VERBOSE=1 test
 
 regress_test_log:
-	PYTHON_VERSION=$(REGRESSION_PY_VER) make --no-print-directory -C regress/ VERBOSE=2 test_log
+	PYTHON_VERSION=$(REGRESSION_PY_VER) make --no-print-directory -C regress/ VERBOSE=3 test_log
 
 regress_clean:
 	make --no-print-directory -C regress/ clean_coverage

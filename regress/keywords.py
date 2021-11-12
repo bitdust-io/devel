@@ -844,27 +844,24 @@ def queue_peddler_list_v1(node, extract_ids=False):
 #------------------------------------------------------------------------------
 
 def wait_packets_finished(nodes, verbose=False):
-    info('wait %d nodes to stop sending packets' % len(nodes))
+    dbg('wait %d nodes to stop sending packets' % len(nodes))
     for node in nodes:
         packet_list_v1(node, wait_all_finish=True, verbose=verbose)
-        sys.stdout.write('.')
-    info('')
+    dbg('')
 
 
 def wait_service_state(nodes, service_name, state, verbose=False):
-    info('wait service %r state to become %r on %d nodes' % (service_name, state, len(nodes), ))
+    dbg('wait service %r state to become %r on %d nodes' % (service_name, state, len(nodes), ))
     for node in nodes:
         service_info_v1(node, service_name, state, verbose=verbose)
-        sys.stdout.write('.')
-    info('')
+    dbg('')
 
 
 def wait_suppliers_connected(nodes, expected_min_suppliers=2, expected_max_suppliers=2, verbose=False):
-    info('wait min %d and max %d suppliers to be connected on %d nodes' % (expected_min_suppliers, expected_max_suppliers, len(nodes), ))
+    dbg('wait min %d and max %d suppliers to be connected on %d nodes' % (expected_min_suppliers, expected_max_suppliers, len(nodes), ))
     for node in nodes:
         supplier_list_v1(node, expected_min_suppliers=expected_min_suppliers, expected_max_suppliers=expected_max_suppliers, verbose=verbose)
-        sys.stdout.write('.')
-    info('')
+    dbg('')
 
 
 def wait_event(nodes, event, expected_count=1, attempts=10, delay=5, verbose=False):
@@ -875,10 +872,8 @@ def wait_event(nodes, event, expected_count=1, attempts=10, delay=5, verbose=Fal
             if event_log.count(event) == expected_count:
                 break
             time.sleep(delay)
-            sys.stdout.write('.')
         else:
             assert False, f'event "{event}" did not occurred {expected_count} times on [{node}] after many attempts'
-        sys.stdout.write('.')
     dbg('')
 
 def wait_specific_event(nodes, event, match_regex, expected_count=1, attempts=20, delay=5, verbose=False):
@@ -895,10 +890,8 @@ def wait_specific_event(nodes, event, match_regex, expected_count=1, attempts=20
             if captured:
                 break
             time.sleep(delay)
-            sys.stdout.write('.')
         else:
             assert False, f'event "{event}" did not occurred {expected_count} times on [{node}] after many attempts'
-        sys.stdout.write('.')
     dbg('')
 
 #------------------------------------------------------------------------------

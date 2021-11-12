@@ -91,21 +91,21 @@ class MessageBrokerService(LocalService):
         except:
             lg.warn("wrong payload: %r" % json_payload)
             return p2p_service.SendFail(newpacket, 'wrong payload')
-        try:
-            queue_id = json_payload.get('queue_id', None)
-            consumer_id = json_payload['consumer_id']
-            producer_id = json_payload['producer_id']
-            group_key = json_payload['group_key']
-            position = json_payload.get('position', -1)
-            archive_folder_path = json_payload.get('archive_folder_path', None)
-            last_sequence_id = json_payload.get('last_sequence_id', -1)
-            known_brokers = json_payload.get('known_brokers', {}) or {}
-            known_brokers = {int(k): id_url.field(v) for k,v in known_brokers.items()}
-        except:
-            lg.warn("wrong payload: %r" % json_payload)
-            return p2p_service.SendFail(newpacket, 'wrong payload')
         # TODO: validate signature and the key
         if action == 'queue-connect' or action == 'queue-connect-follow':
+            try:
+                queue_id = json_payload.get('queue_id')
+                consumer_id = json_payload.get('consumer_id')
+                producer_id = json_payload.get('producer_id')
+                group_key = json_payload.get('group_key')
+                position = json_payload.get('position', -1)
+                archive_folder_path = json_payload.get('archive_folder_path', None)
+                last_sequence_id = json_payload.get('last_sequence_id', -1)
+                known_brokers = json_payload.get('known_brokers', {}) or {}
+                known_brokers = {int(k): id_url.field(v) for k,v in known_brokers.items()}
+            except:
+                lg.warn("wrong payload: %r" % json_payload)
+                return p2p_service.SendFail(newpacket, 'wrong payload')
             message_peddler.A(
                 event='connect' if action == 'queue-connect' else 'follow',
                 queue_id=queue_id,
@@ -115,6 +115,26 @@ class MessageBrokerService(LocalService):
                 position=position,
                 archive_folder_path=archive_folder_path,
                 last_sequence_id=last_sequence_id,
+                known_brokers=known_brokers,
+                request_packet=newpacket,
+                result_defer=result,
+            )
+        elif action == 'broker-verify':
+            try:
+                customer_id = json_payload['customer_id']
+                broker_id = json_payload['broker_id']
+                position = json_payload['position']
+                archive_folder_path = json_payload['archive_folder_path']
+                known_brokers = {int(k): id_url.field(v) for k,v in json_payload['known_brokers'].items()}
+            except:
+                lg.warn("wrong payload: %r" % json_payload)
+                return p2p_service.SendFail(newpacket, 'wrong payload')
+            message_peddler.A(
+                event='broker-reconnect',
+                customer_id=customer_id,
+                broker_id=broker_id,
+                position=position,
+                archive_folder_path=archive_folder_path,
                 known_brokers=known_brokers,
                 request_packet=newpacket,
                 result_defer=result,

@@ -46,6 +46,7 @@ EVENTS:
     * :red:`my-record-missing`
     * :red:`rejected`
     * :red:`request-invalid`
+    * :red:`restore`
     * :red:`shutdown`
 """
 
@@ -81,18 +82,23 @@ from automats import automat
 
 from system import local_fs
 
+from lib import utime
 from lib import strng
 from lib import jsn
 
 from main import settings
+from main import config
 
 from dht import dht_relations
+
+from p2p import p2p_service_seeker
 
 from access import groups
 
 from stream import broker_negotiator
 
 from userid import id_url
+from userid import global_id
 from userid import my_id
 
 #------------------------------------------------------------------------------
@@ -142,8 +148,9 @@ def existing(customer_idurl):
     customer_idurl = id_url.field(customer_idurl)
     return customer_idurl in _QueueKeepers
 
+#------------------------------------------------------------------------------
 
-def check_create(customer_idurl, auto_create=True):
+def check_create(customer_idurl, auto_create=True, event='init'):
     """
     Creates new instance of `queue_keeper()` state machine and send "init" event to it.
     """
@@ -159,9 +166,10 @@ def check_create(customer_idurl, auto_create=True):
     if customer_idurl not in list(queue_keepers().keys()):
         if not auto_create:
             return None
-        A(customer_idurl, 'init')
-        if _Debug:
-            lg.out(_DebugLevel, 'queue_keeper.check_create instance for customer %r was not found, made a new instance' % customer_idurl)
+        if event:
+            A(customer_idurl, event)
+            if _Debug:
+                lg.out(_DebugLevel, 'queue_keeper.check_create instance for customer %r was not found, made a new instance' % customer_idurl)
     return A(customer_idurl)
 
 
@@ -178,14 +186,15 @@ def close(customer_idurl):
         lg.warn('customer idurl is not cached yet, can not stop QueueKeeper()')
         return False
     customer_idurl = id_url.field(customer_idurl)
-    if not existing(customer_idurl):
+    qk = queue_keepers().get(customer_idurl)
+    if not qk:
         lg.warn('instance of queue_keeper() not found for given customer %r' % customer_idurl)
         return False
-    qk = queue_keepers().get(customer_idurl)
     qk.event('shutdown')
     del qk
     return True
 
+#------------------------------------------------------------------------------
 
 def read_state(customer_id, broker_id):
     service_dir = settings.ServiceDir('service_message_broker')
@@ -199,7 +208,28 @@ def read_state(customer_id, broker_id):
         except:
             lg.exc()
             return None
-    return json_value
+        if _Debug:
+            lg.args(_DebugLevel, customer_id=customer_id, broker_id=broker_id, json_value=json_value)
+        return json_value
+    broker_idurl = global_id.glob2idurl(broker_id)
+    if id_url.is_cached(broker_idurl):
+        for one_broker_id in os.listdir(keepers_dir):
+            one_broker_idurl = global_id.glob2idurl(one_broker_id)
+            if id_url.is_cached(one_broker_idurl):
+                if one_broker_idurl == broker_idurl:
+                    broker_dir = os.path.join(keepers_dir, one_broker_id)
+                    keeper_state_file_path = os.path.join(broker_dir, customer_id)
+                    json_value = None
+                    if os.path.isfile(keeper_state_file_path):
+                        try:
+                            json_value = jsn.loads_text(local_fs.ReadTextFile(keeper_state_file_path))
+                        except:
+                            lg.exc()
+                            return None
+                        if _Debug:
+                            lg.args(_DebugLevel, customer_id=customer_id, broker_id=one_broker_id, json_value=json_value)
+                        return json_value
+    return None
 
 
 def write_state(customer_id, broker_id, json_value):
@@ -214,7 +244,7 @@ def write_state(customer_id, broker_id, json_value):
             except:
                 lg.exc()
         if _Debug:
-            lg.args(_DebugLevel, customer_id=customer_id, broker_id=broker_id, json_value=json_value)
+            lg.args(_DebugLevel, customer_id=customer_id, broker_id=broker_id)
         return None
     if not os.path.isdir(broker_dir):
         try:
@@ -266,18 +296,16 @@ class QueueKeeper(automat.Automat):
         self.customer_id = self.customer_idurl.to_id()
         self.broker_idurl = id_url.field(broker_idurl or my_id.getLocalID())
         self.broker_id = self.broker_idurl.to_id()
-        json_state = read_state(customer_id=self.customer_id, broker_id=self.broker_id) or {}
-        self.cooperated_brokers = json_state.get('cooperated_brokers') or {}
-        self.known_position = json_state.get('position') or -1
-        self.known_archive_folder_path = json_state.get('archive_folder_path')
+        self.cooperated_brokers = {}
+        self.known_position = -1
+        self.known_archive_folder_path = None
         self.current_connect_request = None
         self.pending_connect_requests = []
         self.latest_dht_records = {}
-        # self.negotiator = None
-        # TODO: read latest state from local data
+        self.InSync = False
         super(QueueKeeper, self).__init__(
             name="queue_keeper_%s" % self.customer_id,
-            state=json_state.get('state') or 'AT_STARTUP',
+            state='AT_STARTUP',
             debug_level=debug_level,
             log_events=log_events,
             log_transitions=log_transitions,
@@ -299,11 +327,6 @@ class QueueKeeper(automat.Automat):
         })
         return j
 
-    def state_changed(self, oldstate, newstate, event, *args, **kwargs):
-        if oldstate != newstate:
-            if newstate == 'DISCONNECTED':
-                write_state(customer_id=self.customer_id, broker_id=self.broker_id, json_value=None)
-
     def A(self, event, *args, **kwargs):
         """
         The state machine code, generated using `visio2python <http://bitdust.io/visio2python/>`_ tool.
@@ -313,7 +336,15 @@ class QueueKeeper(automat.Automat):
             if event == 'init':
                 self.state = 'DISCONNECTED'
                 self.InSync=False
+                self.doEraseState(*args, **kwargs)
                 self.doInit(*args, **kwargs)
+            elif event == 'restore':
+                self.state = 'DHT_READ'
+                self.InSync=False
+                self.doInit(*args, **kwargs)
+                self.doReadState(*args, **kwargs)
+                self.doBuildVerifyRequest(*args, **kwargs)
+                self.doDHTRead(*args, **kwargs)
         #---DISCONNECTED---
         elif self.state == 'DISCONNECTED':
             if event == 'shutdown':
@@ -321,7 +352,7 @@ class QueueKeeper(automat.Automat):
                 self.doDestroyMe(*args, **kwargs)
             elif event == 'connect':
                 self.state = 'DHT_READ'
-                self.doBuildRequest(*args, **kwargs)
+                self.doBuildConnectRequest(*args, **kwargs)
                 self.doDHTRead(*args, **kwargs)
         #---DHT_READ---
         elif self.state == 'DHT_READ':
@@ -350,6 +381,11 @@ class QueueKeeper(automat.Automat):
                 self.doPushRequest(*args, **kwargs)
             elif ( event == 'rejected' and not self.InSync ) or event == 'failed' or event == 'my-record-missing' or event == 'my-record-invalid':
                 self.state = 'DISCONNECTED'
+                self.doCancelCooperation(event, *args, **kwargs)
+                self.doEraseState(*args, **kwargs)
+                self.InSync=False
+                self.doNotify(event, *args, **kwargs)
+                self.doPullRequests(*args, **kwargs)
             elif event == 'request-invalid' or ( event == 'rejected' and self.InSync ) or event == 'accepted':
                 self.state = 'DHT_WRITE'
                 self.doRememberCooperation(event, *args, **kwargs)
@@ -366,6 +402,7 @@ class QueueKeeper(automat.Automat):
             elif event == 'dht-write-failed':
                 self.state = 'DISCONNECTED'
                 self.InSync=False
+                self.doEraseState(*args, **kwargs)
                 self.doCancelCooperation(event, *args, **kwargs)
                 self.doNotify(event, *args, **kwargs)
                 self.doPullRequests(*args, **kwargs)
@@ -376,6 +413,7 @@ class QueueKeeper(automat.Automat):
                 self.doDHTRefresh(*args, **kwargs)
                 self.doRememberOwnPosition(*args, **kwargs)
                 self.InSync=True
+                self.doWriteState(*args, **kwargs)
                 self.doNotify(event, *args, **kwargs)
                 self.doPullRequests(*args, **kwargs)
         #---CONNECTED---
@@ -387,7 +425,7 @@ class QueueKeeper(automat.Automat):
                 self.doProc(*args, **kwargs)
             elif event == 'connect':
                 self.state = 'DHT_READ'
-                self.doBuildRequest(*args, **kwargs)
+                self.doBuildConnectRequest(*args, **kwargs)
                 self.doDHTRead(*args, **kwargs)
         #---CLOSED---
         elif self.state == 'CLOSED':
@@ -401,13 +439,45 @@ class QueueKeeper(automat.Automat):
         self.refresh_period = DHT_RECORD_REFRESH_INTERVAL
         self.refresh_task = LoopingCall(self._on_queue_keeper_dht_refresh_task)
 
-    def doBuildRequest(self, *args, **kwargs):
+    def doReadState(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        json_value = read_state(customer_id=self.customer_id, broker_id=self.broker_id) or {}
+        self.cooperated_brokers = {int(k): id_url.field(v) for k,v in (json_value.get('cooperated_brokers') or {}).items()}
+        self.known_position = json_value.get('position', -1)
+        self.known_archive_folder_path = json_value.get('archive_folder_path')
+
+    def doEraseState(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        write_state(customer_id=self.customer_id, broker_id=self.broker_id, json_value=None)
+        self.cooperated_brokers = {}
+        self.known_position = -1
+        self.known_archive_folder_path = None
+
+    def doWriteState(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        # store queue keeper info locally here to be able to start up again after application restart
+        write_state(customer_id=self.customer_id, broker_id=self.broker_id, json_value={
+            'state': self.state,
+            'position': self.known_position,
+            'cooperated_brokers': self.cooperated_brokers,
+            'archive_folder_path': self.known_archive_folder_path,
+            'time': utime.get_sec1970(),
+        })
+
+    def doBuildConnectRequest(self, *args, **kwargs):
         """
         Action method.
         """
         if self.refresh_task.running:
             self.refresh_task.stop()
         self.current_connect_request = {
+            'request': 'connect',
             'consumer_id': kwargs['consumer_id'],
             'producer_id': kwargs['producer_id'],
             'group_key_info': kwargs['group_key_info'],
@@ -416,6 +486,19 @@ class QueueKeeper(automat.Automat):
             'last_sequence_id': kwargs['last_sequence_id'],
             'known_brokers': kwargs['known_brokers'],
             'use_dht_cache': kwargs['use_dht_cache'],
+            'result': kwargs['result_callback'],
+        }
+
+    def doBuildVerifyRequest(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        self.current_connect_request = {
+            'request': 'verify',
+            'desired_position': self.known_position,
+            'archive_folder_path': self.known_archive_folder_path,
+            'known_brokers': self.cooperated_brokers,
+            'use_dht_cache': False,
             'result': kwargs['result_callback'],
         }
 
@@ -439,7 +522,7 @@ class QueueKeeper(automat.Automat):
         """
         Action method.
         """
-        use_cache = self.current_connect_request['use_dht_cache']
+        use_cache = (self.current_connect_request or {}).get('use_dht_cache', False)
         result = dht_relations.read_customer_message_brokers(
             customer_idurl=self.customer_idurl,
             positions=list(range(groups.REQUIRED_BROKERS_COUNT)),
@@ -495,20 +578,16 @@ class QueueKeeper(automat.Automat):
             lg.args(_DebugLevel, known=self.known_position, new=my_new_position, cooperated_brokers=self.cooperated_brokers)
         if my_new_position >= 0:
             self.known_position = my_new_position
-        # store queue keeper info locally here to be able to start up again after application restart
-        write_state(customer_id=self.customer_id, broker_id=self.broker_id, json_value={
-            'position': self.known_position,
-            'cooperated_brokers': self.cooperated_brokers,
-            'archive_folder_path': self.known_archive_folder_path,
-            'state': self.state,
-        })
 
     def doRunBrokerNegotiator(self, *args, **kwargs):
         """
         Action method.
         """
         if _Debug:
-            lg.args(_DebugLevel, my_position=self.known_position, dht_brokers=kwargs['dht_brokers'])
+            lg.args(_DebugLevel, req=self.current_connect_request['request'], my_pos=self.known_position, dht_brokers=kwargs['dht_brokers'])
+        if self.current_connect_request['request'] == 'verify':
+            self._do_verify_cooperated_brokers()
+            return
         d = Deferred()
         d.addCallback(self._on_broker_negotiator_callback)
         d.addErrback(self._on_broker_negotiator_errback)
@@ -572,8 +651,31 @@ class QueueKeeper(automat.Automat):
         self.known_archive_folder_path = None
         self.cooperated_brokers.clear()
         self.latest_dht_records.clear()
-        # self.negotiator = None
         self.destroy()
+
+    #------------------------------------------------------------------------------
+
+    def verify_broker(self, broker_idurl, position, known_brokers, archive_folder_path):
+        if not self.InSync or self.state != 'CONNECTED':
+            lg.warn('not able to verify another broker because %r is not in sync' % self)
+            return None
+        if self.cooperated_brokers:
+            if id_url.is_not_in(broker_idurl, self.cooperated_brokers.values()):
+                return 'unknown broker'
+            if position not in self.cooperated_brokers.keys():
+                return 'unknown position'
+            if not id_url.is_the_same(self.cooperated_brokers[position], broker_idurl):
+                return 'position mismatch'
+            if len(self.cooperated_brokers) != len(known_brokers):
+                return 'brokers count mismatch'
+            for i, b_idurl in self.cooperated_brokers.items():
+                if not id_url.is_the_same(known_brokers[i], b_idurl):
+                    return 'broker mismatch'
+        if self.known_archive_folder_path and archive_folder_path != self.known_archive_folder_path:
+            return 'archive folder path mismatch'
+        return None
+
+    #------------------------------------------------------------------------------
 
     def _do_dht_write(self, desired_position, archive_folder_path, revision, retry):
         result = dht_relations.write_customer_message_broker(
@@ -589,10 +691,12 @@ class QueueKeeper(automat.Automat):
         result.addErrback(self._on_write_customer_message_broker_failed, desired_position, archive_folder_path, revision, retry)
 
     def _do_dht_push_state(self):
+        if _Debug:
+            lg.args(_DebugLevel, known_position=self.known_position, cooperated_brokers=self.cooperated_brokers)
         desired_position = self.known_position
         if desired_position is None or desired_position == -1:
             for pos, idurl in self.cooperated_brokers.items():
-                if idurl and id_url.to_bin(idurl) == self.broker_idurl.to_bin():
+                if idurl and id_url.is_the_same(idurl, self.broker_idurl):
                     desired_position = pos
         if desired_position is None or desired_position == -1:
             raise Exception('not able to write record into DHT, my position is unknown')
@@ -610,6 +714,36 @@ class QueueKeeper(automat.Automat):
             revision=prev_revision+1,
             retry=True,
         )
+
+    def _do_verify_cooperated_brokers(self):
+        other_brokers = list(self.cooperated_brokers.values())
+        if self.broker_idurl in other_brokers:
+            other_brokers.remove(self.broker_idurl)
+        if not other_brokers:
+            self.automat('failed')
+            return
+        other_broker_idurl = other_brokers[0]
+        service_params = {
+            'action': 'broker-verify',
+            'customer_id': self.customer_id,
+            'broker_id': self.broker_id,
+            'position': self.known_position,
+            'archive_folder_path': self.known_archive_folder_path,
+            'known_brokers': self.cooperated_brokers,
+        }
+        if _Debug:
+            lg.args(_DebugLevel, target=other_broker_idurl, service_params=service_params)
+        result = p2p_service_seeker.connect_known_node(
+            remote_idurl=other_broker_idurl,
+            service_name='service_message_broker',
+            service_params=service_params,
+            request_service_timeout=config.conf().getInt('services/message-broker/broker-negotiate-ack-timeout'),
+            force_handshake=False,
+        )
+        result.addCallback(self._on_broker_verify_result)
+        if _Debug:
+            result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='queue_keeper._do_verify_cooperated_brokers')
+        result.addErrback(self._on_broker_verify_failed)
 
     def _on_read_customer_message_brokers(self, dht_brokers_info_list):
         self.latest_dht_records.clear()
@@ -683,13 +817,11 @@ class QueueKeeper(automat.Automat):
     def _on_broker_negotiator_callback(self, cooperated_brokers):
         if _Debug:
             lg.args(_DebugLevel, cooperated_brokers=cooperated_brokers)
-        # self.negotiator = None
         self.automat('accepted', cooperated_brokers=cooperated_brokers)
 
     def _on_broker_negotiator_errback(self, err):
         if _Debug:
             lg.args(_DebugLevel, err=err)
-        # self.negotiator = None
         if isinstance(err, Failure):
             try:
                 evt, _, _ = err.value.args
@@ -706,3 +838,13 @@ class QueueKeeper(automat.Automat):
 
     def _on_queue_keeper_dht_refresh_task(self):
         self._do_dht_push_state()
+
+    def _on_broker_verify_result(self, ret):
+        if _Debug:
+            lg.args(_DebugLevel, ret=ret)
+        self.automat('accepted', cooperated_brokers=self.cooperated_brokers)
+
+    def _on_broker_verify_failed(self, err):
+        if _Debug:
+            lg.args(_DebugLevel, err=err)
+        self.automat('failed')
