@@ -3,6 +3,7 @@ Change Log
 
 2021-11-12 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
+* solved issue in api.process()
 * improvements in p2p.propagate and id_rotator()
 * bug fixes related to raid_worker()
 * message_peddler() auto-start queue_keepers() on startup
