@@ -41,6 +41,7 @@ RUN echo "export VISIBLE=now" >> /etc/profile
 ENV COVERAGE_PROCESS_START=/app/bitdust/.coverage_config
 
 ENV BITDUST_LOG_USE_COLORS=0
+ENV BITDUST_IN_DOCKER=1
 
 WORKDIR /app
 

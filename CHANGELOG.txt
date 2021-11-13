@@ -1,6 +1,37 @@
 Change Log
 ==========
 
+2021-11-12 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* improvements in p2p.propagate and id_rotator()
+* bug fixes related to raid_worker()
+* message_peddler() auto-start queue_keepers() on startup
+* fix in stream.message
+* added few more regression tests
+* IDURL fix in p2p/propagate.py
+* bug fixes in message_peddler()
+* bug fixes in supplier_finder()
+* bug fixes in group_member()
+* improvement in broker_negotiator()
+* adding verbosity level control to regression tests
+* critical bug fix in userid.id_url
+* enabling regression testing via ssh tunnel in CircleCI
+* solved code coverage issues in the regression tests
+* multiple IDURL fixes
+* added start_suspended to local_service()
+* added driver.suspend() and driver.resume() methods
+* rework in network_connector() state machine
+* solved a low-level issue in regression app Dockerfile
+* added "no_debug" make target
+* some rework in list_files_orator() automat
+* added .circleci/config.yml
+* refactoring regression tests
+* disabled regression tests on travis ci
+* python2 fix in lib.websock
+* logging changes
+
+
+
 2021-08-18 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * added "request-failed" event to packet_out() automat
