@@ -253,7 +253,7 @@ def open_queue(queue_id):
     if _Debug:
         lg.args(_DebugLevel, queue_id=queue_id)
     _ActiveQueues[queue_id] = OrderedDict()
-    lg.info('new queue opened %s' % queue_id)
+    lg.info('new queue opened: %s' % queue_id)
     return True
 
 
@@ -282,6 +282,7 @@ def close_queue(queue_id, remove_empty_consumers=False, remove_empty_producers=F
         if is_consumer_subscribed(consumer_id, queue_id):
             unsubscribe_consumer(consumer_id, queue_id, remove_empty=remove_empty_consumers)
     _ActiveQueues.pop(queue_id)
+    lg.info('existing queue closed: %s' % queue_id)
     return True
 
 
@@ -311,6 +312,7 @@ def rename_queue(old_queue_id, new_queue_id):
     for producer_id in connected_producers:
         producer(producer_id).queues.remove(old_queue_id)
         producer(producer_id).queues.append(new_queue_id)
+    lg.info('existing queue renamed: %s -> %s' % (old_queue_id, new_queue_id, ))
     return True
 
 #------------------------------------------------------------------------------

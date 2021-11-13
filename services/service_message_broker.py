@@ -209,3 +209,4 @@ class MessageBrokerService(LocalService):
         # message_peddler.ping_all_streams()
         message_peddler.A('stop')
         message_peddler.close_all_streams()
+        message_peddler.check_rotate_queues()

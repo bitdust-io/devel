@@ -613,8 +613,34 @@ def close_all_streams():
     queues_dir = os.path.join(service_dir, 'queues')
     list_queues = os.listdir(queues_dir)
     for queue_id in list_queues:
-        close_stream(queue_id)
+        close_stream(queue_id, erase_data=False)
     return True
+
+
+def check_rotate_queues():
+    service_dir = settings.ServiceDir('service_message_broker')
+    queues_dir = os.path.join(service_dir, 'queues')
+    if not os.path.isdir(queues_dir):
+        bpio._dirs_make(queues_dir)
+    rotated = 0
+    known_queueus = os.listdir(queues_dir)
+    for queue_id in known_queueus:
+        queue_info = global_id.ParseGlobalQueueID(queue_id)
+        this_broker_idurl = global_id.glob2idurl(queue_info['supplier_id'])
+        if id_url.is_cached(this_broker_idurl) and not this_broker_idurl.is_latest():
+            latest_queue_id = global_id.MakeGlobalQueueID(queue_info['queue_alias'], queue_info['owner_id'], this_broker_idurl.to_id())
+            if latest_queue_id != queue_id:
+                latest_queue_path = os.path.join(queues_dir, latest_queue_id)
+                old_queue_path = os.path.join(queues_dir, queue_id)
+                if not os.path.isfile(latest_queue_path):
+                    os.rename(old_queue_path, latest_queue_path)
+                    rotated += 1
+                    lg.info('detected and processed queue rotate : %r -> %r' % (queue_id, latest_queue_id, ))
+                else:
+                    bpio._dir_remove(old_queue_path)
+                    lg.warn('found an old queue %r and deleted' % old_queue_path)
+    if _Debug:
+        lg.args(_DebugLevel, rotated=rotated)
 
 #------------------------------------------------------------------------------
 
@@ -629,7 +655,7 @@ def open_stream(queue_id):
     return True
 
 
-def close_stream(queue_id):
+def close_stream(queue_id, erase_data=True):
     if _Debug:
         lg.args(_DebugLevel, queue_id=queue_id)
     if queue_id not in streams():
@@ -637,7 +663,8 @@ def close_stream(queue_id):
         return False
     if streams()[queue_id]['active']:
         stop_stream(queue_id)
-    erase_stream(queue_id)
+    if erase_data:
+        erase_stream(queue_id)
     unregister_stream(queue_id)
     return True
 
@@ -1275,7 +1302,7 @@ class MessagePeddler(automat.Automat):
             # at least one member must be in the group to keep it alive
             lg.info('no consumers and no producers left, closing queue %r' % queue_id)
             stop_stream(queue_id)
-            close_stream(queue_id)
+            close_stream(queue_id, erase_data=True)
         customer_idurl = global_id.GetGlobalQueueOwnerIDURL(queue_id)
         if customer_idurl in customers():
             if len(customers()[customer_idurl]) == 0:
@@ -1445,8 +1472,9 @@ class MessagePeddler(automat.Automat):
         return d
 
     def _do_load_streams(self, *args):
-        self.total_streams = 0
-        self.loaded_streams = 0
+        check_rotate_queues()
+        self.total_keepers = 0
+        self.loaded_keepers = 0
         service_dir = settings.ServiceDir('service_message_broker')
         keepers_dir = os.path.join(service_dir, 'keepers')
         if not os.path.isdir(keepers_dir):
@@ -1490,7 +1518,7 @@ class MessagePeddler(automat.Automat):
                 )
                 qk = queue_keeper.check_create(customer_idurl=customer_idurl, auto_create=True, event='skip-init')
                 # a small delay to avoid starting too many activities at once
-                reactor.callLater((self.total_streams + 1) * 1.0, qk.automat,  # @UndefinedVariable
+                reactor.callLater((self.total_keepers + 1) * 1.0, qk.automat,  # @UndefinedVariable
                     event='restore',
                     desired_position=json_value['position'],
                     archive_folder_path=json_value['archive_folder_path'],
@@ -1498,11 +1526,11 @@ class MessagePeddler(automat.Automat):
                     use_dht_cache=False,
                     result_callback=queue_keeper_result,
                 )
-                self.total_streams += 1
-        if self.total_streams == 0:
+                self.total_keepers += 1
+        if self.total_keepers == 0:
             reactor.callLater(0, self.automat, 'queues-loaded')  # @UndefinedVariable
         if _Debug:
-            lg.args(_DebugLevel, total_streams=self.total_streams)
+            lg.args(_DebugLevel, total_keepers=self.total_keepers)
 
     def _do_send_past_messages(self, queue_id, consumer_id, list_messages):
         latest_sequence_id = get_latest_sequence_id(queue_id)
@@ -1543,7 +1571,7 @@ class MessagePeddler(automat.Automat):
                         if not remove_producer(queue_id, producer_id):
                             lg.warn('producer %r is not registered for queue %r' % (producer_id, queue_id, ))
             stop_stream(queue_id)
-            close_stream(queue_id)
+            close_stream(queue_id, erase_data=False)
             customer_idurl = global_id.GetGlobalQueueOwnerIDURL(queue_id)
             if customer_idurl in customers():
                 if len(customers()[customer_idurl]) == 0:
@@ -1805,17 +1833,21 @@ class MessagePeddler(automat.Automat):
         return None
 
     def _on_queue_keeper_restore_result(self, result, customer_idurl):
-        self.loaded_streams += 1
+        self.loaded_keepers += 1
         loaded_queues = 0
         loaded_consumers = 0
         loaded_producers = 0
         loaded_messages = 0
         loaded_archive_messages = 0
+        to_be_started = set()
         service_dir = settings.ServiceDir('service_message_broker')
         queues_dir = os.path.join(service_dir, 'queues')
         if not os.path.isdir(queues_dir):
             bpio._dirs_make(queues_dir)
-        for queue_id in os.listdir(queues_dir):
+        known_queues = os.listdir(queues_dir)
+        if _Debug:
+            lg.args(_DebugLevel, customer=customer_idurl, result=result, current=len(streams()), known=len(known_queues))
+        for queue_id in known_queues:
             queue_info = global_id.ParseGlobalQueueID(queue_id)
             this_customer_idurl = global_id.glob2idurl(queue_info['owner_id'])
             if this_customer_idurl != customer_idurl:
@@ -1825,7 +1857,6 @@ class MessagePeddler(automat.Automat):
             consumers_dir = os.path.join(queue_dir, 'consumers')
             producers_dir = os.path.join(queue_dir, 'producers')
             if queue_id not in streams():
-                queue_info = global_id.ParseGlobalQueueID(queue_id)
                 customer_idurl = global_id.glob2idurl(queue_info['owner_id'])
                 if not id_url.is_cached(customer_idurl):
                     lg.err('customer %r IDURL still is not cached, not able to load stream %r' % (
@@ -1836,7 +1867,10 @@ class MessagePeddler(automat.Automat):
                 except:
                     lg.exc()
                     continue
+                to_be_started.add(queue_id)
                 loaded_queues += 1
+            else:
+                to_be_started.add(queue_id)
             last_sequence_id = -1
             all_stored_queue_messages = []
             if os.path.isdir(messages_dir):
@@ -1867,6 +1901,7 @@ class MessagePeddler(automat.Automat):
                     continue
                 streams()[queue_id]['consumers'][consumer_id] = consumer_info
                 streams()[queue_id]['consumers'][consumer_id]['active'] = False
+                start_consumer(queue_id, consumer_id)
                 loaded_consumers += 1
             for producer_id in (os.listdir(producers_dir) if os.path.isdir(producers_dir) else []):
                 if producer_id in streams()[queue_id]['producers']:
@@ -1879,28 +1914,30 @@ class MessagePeddler(automat.Automat):
                 streams()[queue_id]['producers'][producer_id] = producer_info
                 streams()[queue_id]['producers'][producer_id]['active'] = False
                 loaded_producers += 1
+        for queue_id in to_be_started:
+            if not is_stream_active(queue_id):
+                start_stream(queue_id)
         if _Debug:
             lg.args(_DebugLevel,
-                result=result,
-                customer=customer_idurl,
                 q=loaded_queues,
                 c=loaded_consumers,
                 p=loaded_producers,
                 m=loaded_messages,
                 a=loaded_archive_messages,
-                l=self.loaded_streams,
-                t=self.total_streams,
+                s=len(to_be_started),
+                l=self.loaded_keepers,
+                t=self.total_keepers,
             )
-        if self.loaded_streams >= self.total_streams:
+        if self.loaded_keepers >= self.total_keepers:
             reactor.callLater(0, self.automat, 'queues-loaded')  # @UndefinedVariable
 
     def _on_queue_keeper_restore_failed(self, err, customer_idurl):
         lg.err('was not able to restore queue keeper state: %r' % err)
-        self.loaded_streams += 1
+        self.loaded_keepers += 1
         if _Debug:
-            lg.args(_DebugLevel, err=err, customer_idurl=customer_idurl, l=self.loaded_streams, t=self.total_streams)
+            lg.args(_DebugLevel, err=err, customer_idurl=customer_idurl, l=self.loaded_keepers, t=self.total_keepers)
         queue_keeper.close(customer_idurl)
-        if self.loaded_streams >= self.total_streams:
+        if self.loaded_keepers >= self.total_keepers:
             reactor.callLater(0, self.automat, 'queues-loaded')  # @UndefinedVariable
 
     def _on_identity_url_changed(self, evt):

@@ -452,7 +452,8 @@ def immediatelyCaching(idurl, timeout=10, try_other_sources=True):
         if UpdateAfterChecking(idurl, src):
             if result:
                 result.callback(src)
-            lg.out(_DebugLevel, '[cached] %s' % idurl)
+            if _Debug:
+                lg.out(_DebugLevel, '[cached] %s' % idurl)
             p2p_stats.count_identity_cache(idurl, len(src))
             _LastTimeCached[idurl] = time.time()
         else:
