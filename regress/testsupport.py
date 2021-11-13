@@ -65,6 +65,10 @@ def warn(msg):
     if _Verbose >= 1:
         print(msg)
 
+
+def msg(msg):
+    print(msg)
+
 #------------------------------------------------------------------------------
 
 def set_active_scenario(scenario):

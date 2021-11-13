@@ -431,14 +431,7 @@ def kill():
     total_count = 0
     found = False
     while True:
-        appList = bpio.find_process([
-            'regexp:^.*python.*bitdust.py.*?$',
-            'regexp:^.*Python.*bitdust.py.*?$',
-            'bitdustnode.exe',
-            'BitDustNode.exe',
-            'BitDustConsole.exe',
-            'bpmain.py',
-        ])
+        appList = bpio.lookup_main_process()
         if len(appList) > 0:
             found = True
         for pid in appList:
@@ -473,14 +466,7 @@ def wait_then_kill(x):
     from system import bpio
     total_count = 0
     while True:
-        appList = bpio.find_process([
-            'regexp:^.*python.*bitdust.py.*?$',
-            'regexp:^.*Python.*bitdust.py.*?$',
-            'bitdustnode.exe',
-            'BitDustNode.exe',
-            'BitDustConsole.exe',
-            'bpmain.py',
-        ])
+        appList = bpio.lookup_main_process()
         if len(appList) == 0:
             lg.out(0, 'DONE')
             reactor.stop()  # @UndefinedVariable
@@ -951,7 +937,7 @@ def main(executable_path=None, start_reactor=True):
 
                 lg.out(0, 'found main BitDust process: %r ... ' % appList, '')
                 from interface import cmd_line_json
-                cmd_line_json.call_websocket_method('process_stop', websocket_timeout=5).addBoth(_stopped)
+                cmd_line_json.call_websocket_method('process_stop', websocket_timeout=2).addBoth(_stopped)
                 reactor.run()  # @UndefinedVariable
                 if opts.coverage:
                     cov.stop()
@@ -973,8 +959,6 @@ def main(executable_path=None, start_reactor=True):
             appListAllChilds = bpio.find_main_process(
                 check_processid_file=False,
                 extra_lookups=[
-                    'regexp:^.*python.*bitdust.py.*?$',
-                    'regexp:^.*Python.*bitdust.py.*?$',
                 ],
             )
             if len(appListAllChilds) > 0:

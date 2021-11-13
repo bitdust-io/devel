@@ -15,19 +15,21 @@ jobs:
             - "a5:22:3f:fe:a2:66:38:e0:9b:c9:84:7f:2c:14:44:94"
             - "5e:4c:f9:93:14:d7:de:ae:d6:c6:6e:68:f9:4d:62:1c"
       - checkout
-      - run: |
-          ls -la /home/circleci/.ssh/
-          cat /home/circleci/.ssh/config
-          cat /home/circleci/.ssh/known_hosts
-          git archive -o latest.zip HEAD
-          ls -la ./latest.zip
-          scp -o StrictHostKeyChecking=no ./latest.zip tester@p2p-alice.ai:.
-          cat /home/circleci/.ssh/known_hosts
-          echo "archived file latest.zip uploaded to the intermediate machine"
-          ssh -o StrictHostKeyChecking=no tester@p2p-alice.ai 'scp ./latest.zip librenode0:.'
-          echo "archived file latest.zip uploaded to the testing machine"
-          ssh -o StrictHostKeyChecking=no -t tester@p2p-alice.ai 'ssh librenode0 "rm -rf ~/.bitdust/venv/; rm -rf bitdust.ci/; mkdir bitdust.ci/; mv latest.zip bitdust.ci/; cd bitdust.ci/; unzip -o -q latest.zip; rm latest.zip; make regress_stop; make regress_clean; make test_unit && make regress_test && make regress_stop && make regress_clean;"'
-          echo "OK!!!"
+      - run:
+          no_output_timeout: 30m
+          command: |
+            ls -la /home/circleci/.ssh/
+            cat /home/circleci/.ssh/config
+            cat /home/circleci/.ssh/known_hosts
+            git archive -o latest.zip HEAD
+            ls -la ./latest.zip
+            scp -o StrictHostKeyChecking=no ./latest.zip tester@p2p-alice.ai:.
+            cat /home/circleci/.ssh/known_hosts
+            echo "archived file latest.zip uploaded to the intermediate machine"
+            ssh -o StrictHostKeyChecking=no tester@p2p-alice.ai 'scp ./latest.zip librenode0:.'
+            echo "archived file latest.zip uploaded to the testing machine"
+            ssh -o StrictHostKeyChecking=no -t tester@p2p-alice.ai 'ssh librenode0 "rm -rf ~/.bitdust/venv/; rm -rf bitdust.ci/; mkdir bitdust.ci/; mv latest.zip bitdust.ci/; cd bitdust.ci/; unzip -o -q latest.zip; rm latest.zip; make regress_stop; make regress_clean; make test_unit && make regress_test && make regress_stop && make regress_clean;"'
+            echo "OK!!!"
 
 workflows:
   my-custom-workflow:
