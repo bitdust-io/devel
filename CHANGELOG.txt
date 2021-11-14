@@ -3,6 +3,7 @@ Change Log
 
 2021-11-12 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
+* solved issue in api.process()
 * improvements in p2p.propagate and id_rotator()
 * bug fixes related to raid_worker()
 * message_peddler() auto-start queue_keepers() on startup
@@ -22,12 +23,11 @@ Change Log
 * added driver.suspend() and driver.resume() methods
 * rework in network_connector() state machine
 * solved a low-level issue in regression app Dockerfile
-* added "no_debug" make target
+* added "no_debug" Makefile target
 * some rework in list_files_orator() automat
-* added .circleci/config.yml
+* added .circleci/config.yml and disabled regression tests on travis ci
 * refactoring regression tests
-* disabled regression tests on travis ci
-* python2 fix in lib.websock
+* bug fix in lib.websock
 * logging changes
 
 
