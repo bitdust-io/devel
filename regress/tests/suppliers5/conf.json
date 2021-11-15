@@ -31,9 +31,23 @@
                 "known_dht_seeds": "dht-1:14441"
             }
         },
+        "dht-3": {
+            "links": [
+                "dht-1",
+                "dht-2"
+            ],
+            "ports": "10013:22",
+            "node": {
+                "role": "dht-seed",
+                "name": "dht-3",
+                "attached_layers": "2,3,7",
+                "known_dht_seeds": "dht-1:14441,dht-2:14441"
+            }
+        },
         "stun-1": {
             "links": [
-                "dht-2"
+                "dht-2",
+                "dht-3"
             ],
             "ports": "10021:22",
             "node": {
@@ -45,6 +59,7 @@
         "proxy-1": {
             "links": [
                 "dht-2",
+                "dht-3",
                 "stun-1",
                 "id-a"
             ],
@@ -60,6 +75,7 @@
         "supplier-1": {
             "links": [
                 "dht-2",
+                "dht-3",
                 "stun-1",
                 "id-a"
             ],
@@ -76,6 +92,7 @@
         "supplier-2": {
             "links": [
                 "dht-2",
+                "dht-3",
                 "stun-1",
                 "id-a"
             ],
@@ -92,6 +109,7 @@
         "supplier-3": {
             "links": [
                 "dht-2",
+                "dht-3",
                 "stun-1",
                 "id-a"
             ],
@@ -108,6 +126,7 @@
         "supplier-4": {
             "links": [
                 "dht-2",
+                "dht-3",
                 "stun-1",
                 "id-a"
             ],
@@ -124,6 +143,7 @@
         "supplier-5": {
             "links": [
                 "dht-2",
+                "dht-3",
                 "stun-1",
                 "id-a"
             ],
@@ -140,6 +160,7 @@
         "customer-1": {
             "links": [
                 "dht-2",
+                "dht-3",
                 "stun-1",
                 "id-a"
             ],
@@ -163,6 +184,7 @@
         "customer-2": {
             "links": [
                 "dht-2",
+                "dht-3",
                 "stun-1",
                 "id-a"
             ],
@@ -192,6 +214,7 @@
         "id-a",
         "dht-1",
         "dht-2",
+        "dht-3",
         "stun-1",
         "proxy-1",
         "supplier-1",

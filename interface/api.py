@@ -1588,7 +1588,7 @@ def file_upload_start(local_path, remote_path, wait_result=False, wait_finish=Fa
 
     You can use `wait_result=True` to block the response from that method until uploading finishes or fails (makes no sense for large uploads).
 
-    Parameter `open_share` can be useful if you uploading data into a "shared" virtual path using another key that shared to you.
+    Parameter `open_share` can be useful if you uploading data into a "shared" virtual path.
 
     ###### HTTP
         curl -X POST 'localhost:8180/file/upload/start/v1' -d '{"remote_path": "abcd1234$alice@server-a.com:cars/fiat.jpeg", "local_path": "/tmp/fiat.jpeg"}'
@@ -2174,7 +2174,7 @@ def share_create(owner_id=None, key_size=None, label=''):
     """
     Creates a new "share" - virtual location where you or other users can upload/download files.
 
-    This method generates a new RSA private key that will be used to encrypt and decrypt files belongs to that share.
+    This method generates a new RSA private key that will be used to encrypt and decrypt files stored inside that share.
 
     By default you are the owner of the new share and uploaded files will be stored by your suppliers.
     You can also use `owner_id` parameter if you wish to set another owner for that new share location.

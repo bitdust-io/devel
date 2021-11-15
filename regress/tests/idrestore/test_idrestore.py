@@ -23,7 +23,6 @@
 """
 SCENARIO 17: customer-restore recover identity from customer-2
 
-
 """
 
 import os

@@ -964,9 +964,14 @@ async def start_customer_async(node, identity_name, loop, join_network=True, num
     cmd += 'bitdust set services/private-groups/broker-connect-timeout 180;'
     if block_size:
         cmd += f'bitdust set services/backups/block-size "{block_size}";'
+    # do not store backup copies locally
+    cmd += 'bitdust set services/backups/keep-local-copies-enabled false;'
+    cmd += 'bitdust set services/backups/wait-suppliers-enabled false;'
     if supplier_candidates:
         cmd += f'bitdust set services/employer/candidates "{supplier_candidates}";'
+    # do not replace dead suppliers automatically
     cmd += 'bitdust set services/employer/replace-critically-offline-enabled false;'
+
     await run_ssh_command_and_wait_async(node, cmd, loop)
     # start BitDust daemon and create new identity for supplier
     await start_daemon_async(node, loop)

@@ -27,7 +27,6 @@ SCENARIO 2: user is able to detect external IP
 
 SCENARIO 6: users are able to use DHT network to store data
 
-
 """
 
 import os
