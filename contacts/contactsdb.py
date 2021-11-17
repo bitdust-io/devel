@@ -374,10 +374,8 @@ def contacts_remote(include_all=False, include_enabled=True):
     """
     Return ID's list of all known peers.
     """
-    allcontactslist = id_url.to_bin_list(contacts(include_all=include_all, include_enabled=include_enabled))
-    if my_id.getLocalID().to_bin() in allcontactslist:
-        allcontactslist.remove(my_id.getLocalID().to_bin())
-    return id_url.fields_list(allcontactslist)
+    l = id_url.to_bin_list(contacts(include_all=include_all, include_enabled=include_enabled))
+    return [i for i in id_url.fields_list(l) if not id_url.is_the_same(i, my_id.getIDURL())]
 
 #------------------------------------------------------------------------------
 

@@ -30,7 +30,7 @@ import json
 #------------------------------------------------------------------------------
 
 import testsupport as tsup  # @UnresolvedImport
-from testsupport import dbg, info, warn
+from testsupport import info, warn
 
 #------------------------------------------------------------------------------
 

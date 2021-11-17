@@ -114,9 +114,6 @@ from lib import strng
 
 from contacts import contactsdb
 
-from userid import my_id
-from userid import global_id
-
 from crypt import encrypted
 
 from p2p import online_status
@@ -129,6 +126,10 @@ from raid import raid_worker
 from raid import eccmap
 
 from services import driver
+
+from userid import global_id
+from userid import id_url
+from userid import my_id
 
 #------------------------------------------------------------------------------
 
@@ -745,6 +746,16 @@ class RestoreWorker(automat.Automat):
             packet_id = getattr(NewPacketOrPacketID, 'PacketID', None)
         if not packet_id:
             raise Exception('packet ID is unknown from %r' % NewPacketOrPacketID)
+        if packet_id not in self.block_requests:
+            resp = global_id.ParseGlobalID(packet_id)
+            for req_packet_id in self.block_requests:
+                req = global_id.ParseGlobalID(req_packet_id)
+                if resp['version'] == req['version'] and resp['path'] == req['path']:
+                    if resp['key_alias'] == req['key_alias'] and resp['user'] == req['user']:
+                        if id_url.is_the_same(resp['idurl'], req['idurl']):
+                            packet_id = req_packet_id
+                            lg.warn('found matching packet request %r for rotated idurl %r' % (packet_id, resp['idurl'], ))
+                            break
         if packet_id not in self.block_requests:
             if _Debug:
                 lg.args(_DebugLevel, block_requests=self.block_requests)
