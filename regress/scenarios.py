@@ -65,11 +65,12 @@ SCENARIO 21: broker-1 was stopped and started again but disconnected from previo
 
 SCENARIO 22: broker-2 was restarted quickly but still is connected to the stream
 
+SCENARIO 23: customer-1 able to upload/download files when one supplier is down
 
 
 TODO:
 
-SCENARIO: customer-4 able to upload/download files when one supplier is down
+SCENARIO 24: customer-2 able to upload files into shared location created by customer-1
 
 
 """
@@ -208,6 +209,9 @@ def scenario4():
     # create share (logic unit to upload/download/share files) on customer-1
     customer_1_share_id_cat = kw.share_create_v1('customer-1')
 
+    # make sure shared location is activated
+    kw.share_open_v1('customer-1', customer_1_share_id_cat)
+
     # create a virtual "cat.txt" file for customer-1 and upload a "garbage" bytes there
     customer_1_local_filepath_cat, customer_1_remote_path_cat, customer_1_download_filepath_cat = kw.verify_file_create_upload_start(
         node='customer-1',
@@ -240,6 +244,13 @@ def scenario4():
     run_ssh_command_and_wait('customer-2', f'mkdir /customer_2/cat_mine/', verbose=ssh_cmd_verbose)
     run_ssh_command_and_wait('customer-2', f'mkdir /customer_2/cat_shared/', verbose=ssh_cmd_verbose)
 
+    # make sure private key for shared location was delivered from customer-1 to customer-2
+    customer_2_keys = [k['key_id'] for k in kw.key_list_v1('customer-2')['result']]
+    assert customer_1_share_id_cat in customer_2_keys
+
+    # make sure shared location is activated on customer-2 node
+    kw.share_open_v1('customer-2', customer_1_share_id_cat)
+
     kw.file_sync_v1('customer-2')
 
     # now try to download shared by customer-1 cat.txt file on customer-2 and place it in a new local folder
@@ -251,8 +262,11 @@ def scenario4():
         expected_reliable=100,
     )
 
-    # create new share on customer-2
+    # vice versa: create new share on customer-2
     customer_2_share_id_cat = kw.share_create_v1('customer-2')
+
+    # make sure shared location is activated
+    kw.share_open_v1('customer-2', customer_2_share_id_cat)
 
     # create and upload another different virtual "cat.txt" file for customer-2
     customer_2_local_filepath_cat, customer_2_remote_path_cat, customer_2_download_filepath_cat = kw.verify_file_create_upload_start(
@@ -297,7 +311,7 @@ def scenario4():
         'local_filepath': customer_1_local_filepath_cat,
         'remote_path': customer_1_remote_path_cat,
         'download_filepath': customer_1_download_filepath_cat,
-    },{
+    }, {
         'share_id': customer_2_share_id_cat,
         'local_filepath': customer_2_local_filepath_cat,
         'remote_path': customer_2_remote_path_cat,
@@ -713,7 +727,6 @@ def scenario9(target_nodes):
         kw.config_set_v1('customer-1', 'services/employer/candidates', '')
 
     # put identity server offline
-    # stop_daemon('id-dead', verbose=True)
     request_get('id-dead', 'process/stop/v1', verbose=True, raise_error=False)
 
     if 'proxy-rotated' in target_nodes:
@@ -822,7 +835,6 @@ def scenario9(target_nodes):
 
     if 'proxy-rotated' in target_nodes:
         # disable proxy-rotated so it will not affect other scenarios
-        # stop_daemon('proxy-rotated', verbose=True)
         request_get('proxy-rotated', 'process/stop/v1', verbose=True, raise_error=False)
 
     if 'proxy-rotated' in target_nodes:
@@ -855,9 +867,15 @@ def scenario10_begin():
     set_active_scenario('SCENARIO 10 begin')
     msg('\n\n============\n[SCENARIO 10] customer-rotated IDURL was rotated but he can still download his files')
 
-    # create new share and upload one file on customer-rotated
     kw.service_info_v1('customer-rotated', 'service_shared_data', 'ON')
+
+    # create new share
     old_share_id_customer_rotated = kw.share_create_v1('customer-rotated')
+
+    # make sure shared location is activated
+    kw.share_open_v1('customer-rotated', old_share_id_customer_rotated)
+
+    # upload one file on customer-rotated
     customer_rotated_local_filepath, customer_rotated_remote_path, customer_rotated_download_filepath = kw.verify_file_create_upload_start(
         node='customer-rotated',
         key_id=old_share_id_customer_rotated,
@@ -1368,9 +1386,16 @@ def scenario13_begin():
     # make sure supplier-rotated was hired by customer-1
     old_customer_1_suppliers_idurls = kw.supplier_list_v1('customer-1', expected_min_suppliers=2, expected_max_suppliers=2)
     assert 'http://id-dead:8084/supplier-rotated.xml' in old_customer_1_suppliers_idurls
-    # create share and upload some files for customer-1
+
     kw.service_info_v1('customer-1', 'service_shared_data', 'ON')
+
+    # create a share
     old_share_id_customer_1 = kw.share_create_v1('customer-1')
+
+    # make sure shared location is activated
+    kw.share_open_v1('customer-1', old_share_id_customer_1)
+
+    # upload some files for customer-1
     customer_1_local_filepath, customer_1_remote_path, customer_1_download_filepath = kw.verify_file_create_upload_start(
         node='customer-1',
         key_id=old_share_id_customer_1,
@@ -1414,7 +1439,6 @@ def scenario13_end(old_customer_1_info):
     kw.wait_packets_finished(CUSTOMERS_IDS_1 + SUPPLIERS_IDS_12 + ['supplier-rotated', ])
 
     # disable supplier-rotated so it will not affect other scenarios
-    # stop_daemon('supplier-rotated', verbose=True)
     request_get('supplier-rotated', 'process/stop/v1', verbose=True, raise_error=False)
     kw.wait_packets_finished(CUSTOMERS_IDS_1 + SUPPLIERS_IDS_12)
 
@@ -1459,7 +1483,6 @@ def scenario14(old_customer_1_info, customer_1_shared_file_info):
         'http://id-a:8084/supplier-5.xml',
     ])
     possible_suppliers.discard(customer_1_supplier_idurls_before[0])
-    # kw.config_set_v1('customer-1', 'services/employer/candidates', ','.join(possible_suppliers))
 
     response = request_post('customer-1', 'supplier/change/v1', json={'position': '0'})
     assert response.status_code == 200
@@ -1677,7 +1700,6 @@ def scenario17(old_customer_2_info):
     kw.wait_packets_finished(PROXY_IDS + SUPPLIERS_IDS_12 + CUSTOMERS_IDS_12)
 
     # stop customer-2 node
-    # stop_daemon('customer-2', verbose=True)
     request_get('customer-2', 'process/stop/v1', verbose=True, raise_error=False)
 
     kw.wait_service_state(CUSTOMERS_IDS_1, 'service_shared_data', 'ON')
@@ -1903,7 +1925,6 @@ def scenario18():
     kw.config_set_v1('customer-1', 'services/private-groups/preferred-brokers', 'http://id-a:8084/broker-4.xml')
 
     # stop broker-1 node
-    # stop_daemon('broker-1', verbose=True)
     request_get('broker-1', 'process/stop/v1', verbose=True, raise_error=False)
 
     # send again a message to the second group from customer-1
@@ -1999,7 +2020,6 @@ def scenario19():
     kw.config_set_v1('broker-rotated', 'services/identity-propagate/preferred-servers', '')
 
     # put identity server offline
-    # stop_daemon('id-dead', verbose=True)
     request_get('id-dead', 'process/stop/v1', verbose=True, raise_error=False)
 
     # test broker-rotated new IDURL
@@ -2079,7 +2099,6 @@ def scenario20():
 
     # stop customer-3 node
     kw.wait_packets_finished(CUSTOMERS_IDS_123 + BROKERS_IDS)
-    # stop_daemon('customer-3', verbose=True)
     request_get('customer-3', 'process/stop/v1', verbose=True, raise_error=False)
     kw.wait_packets_finished(CUSTOMERS_IDS_12 + BROKERS_IDS)
 
@@ -2195,7 +2214,6 @@ def scenario22():
 
     # stop active broker node
     kw.wait_packets_finished(CUSTOMERS_IDS_123 + BROKERS_IDS)
-    # stop_daemon(active_broker_name, verbose=True)
     request_get(active_broker_name, 'process/stop/v1', verbose=True, raise_error=False)
     kw.wait_packets_finished(CUSTOMERS_IDS_123)
 
@@ -2231,3 +2249,67 @@ def scenario22():
     assert 'customer-2@id-a_8084' in broker_producers
     assert 'customer-1@id-a_8084' in broker_keepers
     msg('\n[SCENARIO 22] : PASS\n\n')
+
+
+
+def scenario23(customer_1_file_info, customer_1_shared_file_info):
+    set_active_scenario('SCENARIO 23')
+    msg('\n\n============\n[SCENARIO 23] customer-1 able to upload/download files when one supplier is down')
+
+    customer_1_suppliers = kw.supplier_list_v1('customer-1', expected_min_suppliers=2, expected_max_suppliers=2, extract_suppliers=True)
+    assert len(customer_1_suppliers) == 2
+
+    first_supplier_name = customer_1_suppliers[0].replace('http://id-a:8084/', '').replace('http://id-b:8084/', '').replace('.xml', '')
+    other_suppliers = list(SUPPLIERS_IDS)
+    other_suppliers.remove(first_supplier_name)
+
+    # stop supplier node
+    kw.wait_packets_finished(CUSTOMERS_IDS_12 + SUPPLIERS_IDS)
+    request_get(first_supplier_name, 'process/stop/v1', verbose=True, raise_error=False)
+    kw.wait_packets_finished(CUSTOMERS_IDS_12 + other_suppliers)
+
+    # make sure we can still download the file back on customer-1
+    kw.verify_file_download_start(
+        node='customer-1',
+        remote_path=customer_1_file_info['remote_path'],
+        destination_path=customer_1_file_info['download_filepath'],
+        verify_from_local_path=customer_1_file_info['local_filepath'],
+    )
+
+    # make sure we can still download the shared file on customer-1
+    kw.verify_file_download_start(
+        node='customer-1',
+        remote_path=customer_1_shared_file_info['remote_path'],
+        destination_path=customer_1_shared_file_info['download_filepath'],
+        verify_from_local_path=customer_1_shared_file_info['local_filepath'],
+        expected_reliable=50,
+    )
+
+    # make sure we also able to download shared file on customer-2
+    kw.verify_file_download_start(
+        node='customer-2',
+        remote_path=customer_1_shared_file_info['remote_path'],
+        destination_path='/customer_2/cat_shared/cat_again.txt',
+        reliable_shares=False,
+        expected_reliable=50,
+    )
+
+    # start supplier node again
+    start_daemon(first_supplier_name, skip_initialize=True, verbose=True)
+    health_check(first_supplier_name, verbose=True)
+
+    kw.wait_packets_finished(CUSTOMERS_IDS_12 + SUPPLIERS_IDS)
+    kw.wait_service_state([first_supplier_name, ], 'service_supplier', 'ON')
+
+    kw.supplier_list_v1('customer-1', expected_min_suppliers=2, expected_max_suppliers=2)
+
+    # make sure files are stored most reliable way again for customer-1
+    kw.verify_file_download_start(
+        node='customer-1',
+        remote_path=customer_1_shared_file_info['remote_path'],
+        destination_path=customer_1_shared_file_info['download_filepath'],
+        verify_from_local_path=customer_1_shared_file_info['local_filepath'],
+        expected_reliable=50,
+    )
+
+    msg('\n[SCENARIO 23] : PASS\n\n')

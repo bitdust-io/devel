@@ -171,7 +171,7 @@ def start(ack_handler=None, wide=False, refresh_cache=False, include_all=True, i
     Call ``propagate()`` for all known contacts or only for those which are related to enabled/active services.
     """
     selected_contacts = set(filter(None, contactsdb.contacts_remote(include_all=include_all, include_enabled=include_enabled)))
-    if include_startup:
+    if include_startup and startup_list():
         lg.warn('going to propagate my identity also to %d nodes from startup list' % len(startup_list()))
         selected_contacts.update(startup_list())
         startup_list().clear()

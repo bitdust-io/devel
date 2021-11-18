@@ -31,17 +31,12 @@ SCENARIO 15: customer-1 switch supplier at position 1 to specific node
 
 SCENARIO 16: customer-1 increase and decrease suppliers amount
 
-TODO:
-SCENARIO 18: customer-1 able to upload/download files when one supplier is down
+SCENARIO 23: customer-1 able to upload/download files when one supplier is down
 
 """
 
 import os
-import shutil
 import pytest
-import time
-import base64
-import threading
 
 from testsupport import set_active_scenario  # @UnresolvedImport
 
@@ -61,6 +56,9 @@ def test_suppliers5():
     #--- SCENARIO 4: customer-1 share files to customer-2
     customer_1_shared_file_info, _ = scenarios.scenario4()
 
+    #--- SCENARIO 23: customer-1 able to upload/download files when one supplier is down
+    scenarios.scenario23(customer_1_file_info, customer_1_shared_file_info)
+
     #--- SCENARIO 14: customer-1 replace supplier at position 0 by random node
     scenarios.scenario14(customer_1_file_info, customer_1_shared_file_info)
 
@@ -69,6 +67,7 @@ def test_suppliers5():
 
     #--- SCENARIO 16: customer-1 increase and decrease suppliers amount
     scenarios.scenario16()
+
 
 
 #------------------------------------------------------------------------------

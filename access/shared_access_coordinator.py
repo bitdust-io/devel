@@ -509,8 +509,9 @@ class SharedAccessCoordinator(automat.Automat):
 
     def _on_list_files_failed(self, response, info, customer_idurl, supplier_idurl, key_id):
         if strng.to_text(response.Payload) == 'key not registered':
-            lg.warn('supplier %r of customer %r do not possess public key %r yet, sending it now' % (
-                supplier_idurl, customer_idurl, key_id, ))
+            if _Debug:
+                lg.dbg(_DebugLevel, 'supplier %r of customer %r do not possess public key %r yet, sending it now' % (
+                    supplier_idurl, customer_idurl, key_id, ))
             result = key_ring.transfer_key(key_id, supplier_idurl, include_private=False, include_signature=False)
             result.addCallback(lambda r: self._on_key_transfer_success(customer_idurl, supplier_idurl, key_id))
             result.addErrback(lambda err: lg.err('failed sending key %r : %r' % (key_id, err, )))

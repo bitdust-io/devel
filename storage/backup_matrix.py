@@ -534,7 +534,7 @@ def process_line_version(line, supplier_num, current_key_alias=None, customer_id
     if backupID not in remote_files():
         remote_files()[backupID] = {}
         if _Debug:
-            lg.out(_DebugLevel, '            new remote entry for %s created in the memory' % backupID)
+            lg.out(_DebugLevel, '            new remote entry for %s created in memory' % backupID)
     # +1 because range(2) give us [0,1] but we want [0,1,2]
     for blockNum in range(maxBlockNum + 1):
         if blockNum not in remote_files()[backupID]:
@@ -830,7 +830,7 @@ def RemoteFileReport(backupID, blockNum, supplierNum, dataORparity, result):
         return
     if backupID not in remote_files():
         remote_files()[backupID] = {}
-        lg.info('new remote entry for %s created in the memory' % backupID)
+        lg.info('new remote entry for %s created in memory' % backupID)
     if blockNum not in remote_files()[backupID]:
         remote_files()[backupID][blockNum] = {
             'D': [0] * contactsdb.num_suppliers(customer_idurl=customer_idurl),
@@ -940,7 +940,7 @@ def LocalBlockReport(backupID, blockNumber, result):
                 local_files()[backupID] = {}
                 repaint_flag = True
                 if _Debug:
-                    lg.out(_DebugLevel, '    new local entry for %s created in the memory' % backupID)
+                    lg.out(_DebugLevel, '    new local entry for %s created in memory' % backupID)
             if blockNum not in local_files()[backupID]:
                 local_files()[backupID][blockNum] = {
                     'D': [0, ] * num_suppliers,
