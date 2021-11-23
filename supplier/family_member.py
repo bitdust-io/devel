@@ -605,7 +605,10 @@ class FamilyMember(automat.Automat):
 
     def _do_create_revision_from_another_supplier(self, another_revision, another_suppliers, another_ecc_map):
         local_customer_meta_info = contactsdb.get_customer_meta_info(self.customer_idurl)
-        possible_position = int(local_customer_meta_info.get('position', -1))
+        try:
+            possible_position = int(local_customer_meta_info.get('position', -1))
+        except:
+            possible_position = -1
         if possible_position >= 0:
             try:
                 another_suppliers[possible_position] = my_id.getLocalID().to_bin()

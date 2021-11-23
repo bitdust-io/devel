@@ -365,9 +365,11 @@ class ProxyRouter(automat.Automat):
         connection_info = route_info.get('connection_info') or {}
         active_user_session_machine = None
         if (info is not None and not connection_info) or not connection_info.get('index'):
-            active_user_sessions = gateway.find_active_session(info.proto, idurl=sender_idurl.original())
-            if not active_user_sessions:
-                active_user_sessions = gateway.find_active_session(info.proto, idurl=sender_idurl.to_bin())
+            active_user_sessions = []
+            if info:
+                active_user_sessions = gateway.find_active_session(info.proto, idurl=sender_idurl.original())
+                if not active_user_sessions:
+                    active_user_sessions = gateway.find_active_session(info.proto, idurl=sender_idurl.to_bin())
             if not active_user_sessions:
                 lg.warn('route with %s found but no active sessions found with %s://%s' % (sender_idurl, info.proto, info.host, ))
                 return None, None

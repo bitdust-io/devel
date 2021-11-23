@@ -256,6 +256,9 @@ def start_group_members():
     for group_key_id, group_info in groups.active_groups().items():
         if not group_key_id:
             continue
+        if not my_keys.is_key_registered(group_key_id):
+            lg.err('can not start GroupMember because key %r is not registered' % group_key_id)
+            continue
         if group_key_id.startswith('person'):
             # TODO: temporarily disabled
             continue
@@ -339,6 +342,8 @@ class GroupMember(automat.Automat):
         return '%s[%s](%s)' % (self.id, ''.join(connected_brokers_short), self.state)
 
     def update_group_key_id(self, new_group_key_id):
+        if _Debug:
+            lg.args(_DebugLevel, old=self.group_key_id, new=new_group_key_id)
         self.group_key_id = new_group_key_id
         self.group_glob_id = global_id.ParseGlobalID(self.group_key_id)
         self.group_queue_alias = self.group_glob_id['key_alias']
@@ -1183,18 +1188,19 @@ class GroupMember(automat.Automat):
             lg.args(_DebugLevel, possible_broker_idurl=possible_broker_idurl, desired_broker_position=desired_broker_position, action=action,
                     owner_id=self.group_creator_id, )
         group_key_info = {}
-        if self.group_key_id:
-            if my_keys.is_key_registered(self.group_key_id):
-                try:
-                    group_key_info = my_keys.get_key_info(
-                        key_id=self.group_key_id,
-                        include_private=False,
-                        include_signature=True,
-                        generate_signature=True,
-                        include_label=False,
-                    )
-                except:
-                    lg.exc()
+        if my_keys.is_key_registered(self.group_key_id):
+            try:
+                group_key_info = my_keys.get_key_info(
+                    key_id=self.group_key_id,
+                    include_private=False,
+                    include_signature=True,
+                    generate_signature=True,
+                    include_label=False,
+                )
+            except:
+                lg.exc()
+        else:
+            lg.warn('group key %r is not registered' % self.group_key_id)
         service_request_params = {
             'action': action,
             'queue_id': None,
