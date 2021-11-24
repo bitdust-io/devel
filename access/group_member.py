@@ -105,6 +105,7 @@ from stream import message
 from storage import archive_reader
 
 from access import groups
+from access import key_ring
 
 from userid import global_id
 from userid import id_url
@@ -1188,19 +1189,26 @@ class GroupMember(automat.Automat):
             lg.args(_DebugLevel, possible_broker_idurl=possible_broker_idurl, desired_broker_position=desired_broker_position, action=action,
                     owner_id=self.group_creator_id, )
         group_key_info = {}
-        if my_keys.is_key_registered(self.group_key_id):
-            try:
-                group_key_info = my_keys.get_key_info(
-                    key_id=self.group_key_id,
-                    include_private=False,
-                    include_signature=True,
-                    generate_signature=True,
-                    include_label=False,
-                )
-            except:
-                lg.exc()
-        else:
-            lg.warn('group key %r is not registered' % self.group_key_id)
+        if not my_keys.is_key_registered(self.group_key_id):
+            lg.warn('group key %r was not registered, checking all registered keys' % self.group_key_id)
+            key_ring.check_rename_my_keys()
+        if not my_keys.is_key_registered(self.group_key_id):
+            lg.err('closing group_member %r because key %r is not registered' % (self, self.group_key_id, ))
+            lg.exc('group key %r is not registered' % self.group_key_id)
+            self.automat('shutdown')
+            return
+        try:
+            group_key_info = my_keys.get_key_info(
+                key_id=self.group_key_id,
+                include_private=False,
+                include_signature=True,
+                generate_signature=True,
+                include_label=False,
+            )
+        except:
+            lg.exc()
+            self.automat('shutdown')
+            return
         service_request_params = {
             'action': action,
             'queue_id': None,

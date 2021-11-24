@@ -563,6 +563,8 @@ def check_rename_my_keys():
                 idurl=owner_idurl.to_bin(),
                 key_alias=key_glob_id['key_alias'],
             )
+    if _Debug:
+        lg.args(_DebugLevel, keys_to_be_renamed=len(keys_to_be_renamed))
     for current_key_id, new_key_id in keys_to_be_renamed.items():
         my_keys.rename_key(current_key_id, new_key_id)
 
