@@ -277,11 +277,6 @@ class DataSender(automat.Automat):
                             if _Debug:
                                 lg.out(_DebugLevel + 6, 'data_sender.doScanAndQueue     skip sending, queue is busy for %r' % supplier_idurl)
                             continue
-                        # customerGlobalID, pathID = packetid.SplitPacketID(packetID)
-                        # tranByID = gate.transfers_out_by_idurl().get(supplier_idurl, [])
-                        # if len(tranByID) > 3:
-                        #     log.write(u'transfers by %s: %d\n' % (supplier_idurl, len(tranByID)))
-                        #     continue
                         customerGlobalID, pathID = packetid.SplitPacketID(packetID)
                         filename = os.path.join(
                             settings.getLocalBackupsDir(),

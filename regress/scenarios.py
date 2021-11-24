@@ -1508,6 +1508,10 @@ def scenario14(old_customer_1_info, customer_1_shared_file_info):
 
     kw.wait_packets_finished(SUPPLIERS_IDS + CUSTOMERS_IDS_12)
 
+    kw.file_sync_v1('customer-1')
+
+    kw.wait_packets_finished(SUPPLIERS_IDS + CUSTOMERS_IDS_12)
+
     # make sure we can still download the file back on customer-1
     kw.verify_file_download_start(
         node='customer-1',
@@ -1563,6 +1567,10 @@ def scenario15(old_customer_1_info, customer_1_shared_file_info):
             break
         count += 1
         time.sleep(3)
+
+    kw.wait_packets_finished(SUPPLIERS_IDS + CUSTOMERS_IDS_12)
+
+    kw.file_sync_v1('customer-1')
 
     kw.wait_packets_finished(SUPPLIERS_IDS + CUSTOMERS_IDS_12)
 
