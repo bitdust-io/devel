@@ -418,7 +418,7 @@ class ProxySender(automat.Automat):
             if p.outpacket.Command == fail_info['command']:
                 if id_url.to_bin(to_idurl) == p.outpacket.RemoteID.to_bin():
                     if p.outpacket.CreatorID.to_bin() == id_url.to_bin(from_idurl) or p.outpacket.OwnerID.to_bin() == id_url.to_bin(from_idurl):
-                        lg.warn('about to cancel %r because sending via proxy transport failed' % p)
+                        lg.warn('about to cancel %r because sending via proxy transport is failed' % p)
                         p.automat('cancel')
 
     def _do_retry_one_time(self, fail_info):

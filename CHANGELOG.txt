@@ -1,6 +1,27 @@
 Change Log
 ==========
 
+
+2021-11-18 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* bug fix in contacts/contactsdb.py
+* bug fix in restore_worker()
+* updated some regression tests
+
+
+
+2021-11-15 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* fix in message_peddler()
+* solved issue in api.process()
+* IDURL fix in queue_keeper()
+* bug fixes related to raid_worker()
+* some improvements in p2p.propagate and id_rotator()
+* IDURL fix in group_member()
+* improvement in broker_negotiator()
+
+
+
 2021-11-12 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * solved issue in api.process()

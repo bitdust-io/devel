@@ -224,11 +224,11 @@ class KeysStorageService(LocalService):
         return None
 
     def _on_identity_url_changed(self, evt):
-        from userid import id_url
-        from userid import my_id
-        if id_url.field(evt.data['new_idurl']) == my_id.getLocalID():
-            # do not take any actions here if my own identity was rotated
-            return None
+        # from userid import id_url
+        # from userid import my_id
+        # if id_url.field(evt.data['new_idurl']) == my_id.getLocalID():
+        #     # do not take any actions here if my own identity was rotated
+        #     return None
         from access import key_ring
         from storage import backup_control
         key_ring.check_rename_my_keys()

@@ -2603,7 +2603,7 @@ def group_join(group_key_id, publish_events=False, use_dht_cache=True, wait_resu
     from crypt import my_keys
     from userid import id_url
     if not my_keys.is_key_registered(group_key_id):
-        return ERROR('unknown group key')
+        return ERROR('group key is not registered')
     ret = Deferred()
     started_group_members = []
     existing_group_members = []

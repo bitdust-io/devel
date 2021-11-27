@@ -108,8 +108,6 @@ def ping(idurl,
             pending_results = running_info.pop('results')
             if inst:
                 inst.automat('cancel')
-            # for result_defer in :
-            #     result_defer.errback(Exception('handshake process was cancelled'))
         else:
             _RunningHandshakers[remote_idurl]['results'].append(result)
             if _Debug:

@@ -51,7 +51,7 @@ from __future__ import absolute_import
 #------------------------------------------------------------------------------
 
 _Debug = False
-_DebugLevel = 12
+_DebugLevel = 10
 
 _PacketLogFileEnabled = False
 

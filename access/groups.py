@@ -566,28 +566,31 @@ def on_identity_url_changed(evt):
         if not group_key_id:
             continue
         group_creator_idurl = global_id.glob2idurl(group_key_id)
-        if group_creator_idurl.to_bin() == old_idurl.to_bin():
+        if id_url.is_the_same(group_creator_idurl, old_idurl):
             old_group_path = os.path.join(groups_dir, group_key_id)
             latest_group_key_id = my_keys.latest_key_id(group_key_id)
             latest_group_path = os.path.join(groups_dir, latest_group_key_id)
-            lg.info('going to rename rotated group key: %r -> %r' % (group_key_id, latest_group_key_id, ))
+            lg.info('going to rename rotated group file: %r -> %r' % (old_group_path, latest_group_path, ))
             if os.path.isfile(old_group_path):
                 try:
                     os.rename(old_group_path, latest_group_path)
                 except:
                     lg.exc()
                     continue
+            else:
+                lg.warn('key file %r was not found, key was not renamed' % old_group_path)
             active_groups()[latest_group_key_id] = active_groups().pop(group_key_id)
             group_member.rotate_active_group_memeber(group_key_id, latest_group_key_id)
         gm = group_member.get_active_group_member(group_key_id)
         if gm and gm.connected_brokers and id_url.is_in(old_idurl, gm.connected_brokers.values()):
             lg.info('connected broker %r IDURL is rotated, going to reconnect %r' % (old_idurl, gm, ))
-            to_be_reconnected.append(group_key_id)
+            if group_key_id not in to_be_reconnected:
+                to_be_reconnected.append(group_key_id)
     known_customers = list(known_brokers().keys())
     for customer_id in known_customers:
         latest_customer_id = global_id.idurl2glob(new_idurl)
         customer_idurl = global_id.glob2idurl(customer_id)
-        if customer_idurl == old_idurl:
+        if id_url.is_the_same(customer_idurl, old_idurl):
             latest_customer_dir = os.path.join(brokers_dir, latest_customer_id)
             lg.info('going to rename rotated customer id: %r -> %r' % (customer_id, latest_customer_id, ))
             old_customer_dir = os.path.join(brokers_dir, customer_id)

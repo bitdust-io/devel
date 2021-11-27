@@ -59,7 +59,7 @@ from six.moves import range
 #------------------------------------------------------------------------------
 
 _Debug = False
-_DebugLevel = 12
+_DebugLevel = 10
 
 _PacketLogFileEnabled = False
 
@@ -888,18 +888,29 @@ class PacketOut(automat.Automat):
             msg = str(args[0])
         else:
             msg = 'cancelled'
-        self.final_result = 'cancelled'
-        if _PacketLogFileEnabled:
-            lg.out(0, '\033[0;49;97mOUT CANCELED %s(%s) with %s bytes from %s to %s TID:%r : %s\033[0m' % (
-                self.outpacket.Command, self.outpacket.PacketID, self.filesize or '?',
-                global_id.UrlToGlobalID(self.outpacket.CreatorID), global_id.UrlToGlobalID(self.remote_idurl),
-                [i.transfer_id for i in self.results], msg), log_name='packet', showtime=True)
-        callback.run_queue_item_status_callbacks(self, 'cancelled', msg)
-        for cb in self.callbacks.pop('cancelled', []):
-            cb(self, msg)
-        if not self.finished_deferred.called:
-            self.finished_deferred.callback(self)
-            self.finished_deferred = None
+        self.final_result = msg
+        if self.final_result == 'timeout':
+            if _PacketLogFileEnabled:
+                lg.out(0, '\033[0;49;97mOUT CANCELED %s(%s) after TIMEOUT with %s bytes from %s to %s TID:%r\033[0m' % (
+                    self.outpacket.Command, self.outpacket.PacketID, self.filesize or '?',
+                    global_id.UrlToGlobalID(self.outpacket.CreatorID), global_id.UrlToGlobalID(self.remote_idurl),
+                    [i.transfer_id for i in self.results]), log_name='packet', showtime=True)
+            for cb in self.callbacks.pop(None, []):
+                cb(self)
+            for cb in self.callbacks.pop('timeout', []):
+                cb(self, 'timeout')
+        else:
+            if _PacketLogFileEnabled:
+                lg.out(0, '\033[0;49;97mOUT CANCELED %s(%s) with %s bytes from %s to %s TID:%r : %s\033[0m' % (
+                    self.outpacket.Command, self.outpacket.PacketID, self.filesize or '?',
+                    global_id.UrlToGlobalID(self.outpacket.CreatorID), global_id.UrlToGlobalID(self.remote_idurl),
+                    [i.transfer_id for i in self.results], msg), log_name='packet', showtime=True)
+            callback.run_queue_item_status_callbacks(self, 'cancelled', msg)
+            for cb in self.callbacks.pop('cancelled', []):
+                cb(self, msg)
+            if not self.finished_deferred.called:
+                self.finished_deferred.callback(self)
+                self.finished_deferred = None
 
     def doErrMsg(self, event, *args, **kwargs):
         """

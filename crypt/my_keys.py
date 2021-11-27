@@ -600,7 +600,6 @@ def rename_key(current_key_id, new_key_id, keys_folder=None):
             save=False,
         )
     save_key(new_key_id, keys_folder=keys_folder)
-
     gc.collect()
     if _Debug:
         lg.out(_DebugLevel, 'my_keys.rename_key   key %s renamed to %s' % (current_key_id, new_key_id, ))
