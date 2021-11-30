@@ -1493,18 +1493,31 @@ def scenario14(old_customer_1_info, customer_1_shared_file_info):
     kw.service_info_v1('customer-1', 'service_shared_data', 'ON')
 
     # make sure supplier was replaced
-    count = 0
+    attempts = 1
     while True:
-        if count > 20:
+        success = False
+        count = 0
+        while True:
+            if count > 20:
+                break
+            customer_1_supplier_idurls_after = kw.supplier_list_v1('customer-1', expected_min_suppliers=2, expected_max_suppliers=2, verbose=False)
+            assert len(customer_1_supplier_idurls_after) == 2
+            assert customer_1_supplier_idurls_after[1] == customer_1_supplier_idurls_after[1]
+            if customer_1_supplier_idurls_before[0] != customer_1_supplier_idurls_after[0]:
+                success = True
+                break
+            count += 1
+            time.sleep(3)
+        if success:
+            break
+        if attempts > 5:
             assert False, 'supplier was not replaced after many attempts'
-            break
-        customer_1_supplier_idurls_after = kw.supplier_list_v1('customer-1', expected_min_suppliers=2, expected_max_suppliers=2, verbose=False)
-        assert len(customer_1_supplier_idurls_after) == 2
-        assert customer_1_supplier_idurls_after[1] == customer_1_supplier_idurls_after[1]
-        if customer_1_supplier_idurls_before[0] != customer_1_supplier_idurls_after[0]:
-            break
-        count += 1
-        time.sleep(3)
+        attempts += 1
+        response = request_post('customer-1', 'supplier/change/v1', json={'position': '0'})
+        assert response.status_code == 200
+        assert response.json()['status'] == 'OK', response.json()
+        kw.wait_packets_finished(PROXY_IDS + SUPPLIERS_IDS + CUSTOMERS_IDS_12)
+        kw.service_info_v1('customer-1', 'service_shared_data', 'ON')
 
     kw.wait_packets_finished(SUPPLIERS_IDS + CUSTOMERS_IDS_12)
 
