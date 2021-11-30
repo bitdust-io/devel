@@ -125,8 +125,8 @@ class SupplierService(LocalService):
         try:
             bytes_for_customer = int(json_payload['needed_bytes'])
         except:
-            lg.warn("wrong payload" % newpacket.Payload)
-            return p2p_service.SendFail(newpacket, 'wrong payload')
+            lg.exc()
+            return p2p_service.SendFail(newpacket, 'invalid payload')
         try:
             customer_public_key = json_payload['customer_public_key']
             customer_public_key_id = customer_public_key['key_id']

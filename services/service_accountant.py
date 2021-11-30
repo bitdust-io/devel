@@ -84,7 +84,7 @@ class AccountantService(LocalService):
             mode = json_payload['action']
         except:
             lg.exc()
-            return p2p_service.SendFail(newpacket, "invalid json payload")
+            return p2p_service.SendFail(newpacket, "invalid payload")
         if mode != 'join' and mode != 'write' and mode != 'read':
             lg.out(8, "service_accountant.request DENIED, wrong mode provided : %s" % mode)
             return p2p_service.SendFail(newpacket, "invalid request")
