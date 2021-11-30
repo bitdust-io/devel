@@ -633,7 +633,11 @@ def check_rotate_queues():
                 latest_queue_path = os.path.join(queues_dir, latest_queue_id)
                 old_queue_path = os.path.join(queues_dir, queue_id)
                 if not os.path.isfile(latest_queue_path):
-                    os.rename(old_queue_path, latest_queue_path)
+                    bpio.move_dir_recursive(old_queue_path, latest_queue_path)
+                    try:
+                        bpio._dir_remove(old_queue_path)
+                    except:
+                        pass
                     rotated += 1
                     lg.info('detected and processed queue rotate : %r -> %r' % (queue_id, latest_queue_id, ))
                 else:
@@ -883,7 +887,7 @@ def start_consumer(queue_id, consumer_id):
         p2p_queue.subscribe_consumer(consumer_id, queue_id)
     streams()[queue_id]['consumers'][consumer_id]['active'] = True
     save_consumer(queue_id, consumer_id)
-    lg.info('consumer %r started in the queue %r' % (consumer_id, queue_id, ))
+    lg.info('consumer %s started in the queue %s' % (consumer_id, queue_id, ))
     return True
 
 
@@ -900,7 +904,7 @@ def stop_consumer(queue_id, consumer_id):
         p2p_queue.unsubscribe_consumer(consumer_id, queue_id, remove_empty=True)
     streams()[queue_id]['consumers'][consumer_id]['active'] = False
     save_consumer(queue_id, consumer_id)
-    lg.info('consumer %r stopped in the queue %r' % (consumer_id, queue_id, ))
+    lg.info('consumer %s stopped in the queue %s' % (consumer_id, queue_id, ))
     return True
 
 #------------------------------------------------------------------------------
@@ -926,7 +930,7 @@ def start_producer(queue_id, producer_id):
         p2p_queue.connect_producer(producer_id, queue_id)
     streams()[queue_id]['producers'][producer_id]['active'] = True
     save_producer(queue_id, producer_id)
-    lg.info('producer %r started in the queue %r' % (producer_id, queue_id, ))
+    lg.info('producer %s started in the queue %s' % (producer_id, queue_id, ))
     return True
 
 
@@ -941,7 +945,7 @@ def stop_producer(queue_id, producer_id):
         p2p_queue.disconnect_producer(producer_id, queue_id, remove_empty=True)
     streams()[queue_id]['producers'][producer_id]['active'] = False
     save_producer(queue_id, producer_id)
-    lg.info('producer %r stopped in the queue %r' % (producer_id, queue_id, ))
+    lg.info('producer %s stopped in the queue %s' % (producer_id, queue_id, ))
     return True
 
 #------------------------------------------------------------------------------
@@ -1175,7 +1179,7 @@ class MessagePeddler(automat.Automat):
             consumer_id = kwargs['consumer_id']
             producer_id = kwargs['producer_id']
             group_key_info = kwargs['group_key']
-            position = kwargs.get('position', -1)
+            position = int(kwargs.get('position', -1))
             archive_folder_path = kwargs['archive_folder_path']
             last_sequence_id = kwargs['last_sequence_id']
             known_brokers = kwargs['known_brokers']
@@ -1314,27 +1318,6 @@ class MessagePeddler(automat.Automat):
         p2p_service.SendAck(request_packet, 'accepted')
         result_defer.callback(True)
 
-#     def doStopAffectedQueues(self, *args, **kwargs):
-#         """
-#         Action method.
-#         """
-#         # TODO: check and probably clean up that method
-#         customer_idurl = kwargs['customer_idurl']
-#         request_packet = kwargs['request_packet']
-#         queue_id = kwargs['queue_id']
-#         consumer_id = kwargs['consumer_id']
-#         producer_id = kwargs['producer_id']
-#         position = kwargs['position']
-#         last_sequence_id = kwargs['last_sequence_id']
-#         archive_folder_path = kwargs['archive_folder_path']
-#         result_defer = kwargs['result_defer']
-#         affected_queues = customers().get(customer_idurl, [])
-#         if _Debug:
-#             lg.args(_DebugLevel, affected_queues=affected_queues)
-#         self._do_close_streams(affected_queues, erase_key=False)
-#         lg.info('for customer %r all affected streams are closed, starting new queue keeper' % customer_idurl)
-#         self._do_connect_queue_keeper(customer_idurl, request_packet, queue_id, consumer_id, producer_id,
-#                                     position, last_sequence_id, archive_folder_path, result_defer)
     def doPushMessage(self, *args, **kwargs):
         """
         Action method.
@@ -1780,7 +1763,6 @@ class MessagePeddler(automat.Automat):
             known_customer_streams = customers().get(target_customer_idurl, [])
             if _Debug:
                 lg.args(_DebugLevel, customer=target_customer_idurl, customer_streams=known_customer_streams)
-            # for current_queue_id in known_customer_streams:
             for current_queue_id in list(p2p_queue.queue().keys()):
                 if current_queue_id == target_queue_id:
                     continue
@@ -1851,6 +1833,10 @@ class MessagePeddler(automat.Automat):
             queue_info = global_id.ParseGlobalQueueID(queue_id)
             this_customer_idurl = global_id.glob2idurl(queue_info['owner_id'])
             if this_customer_idurl != customer_idurl:
+                continue
+            this_broker_idurl = global_id.glob2idurl(queue_info['supplier_id'])
+            if not this_broker_idurl.is_latest():
+                lg.err('found unclean rotated queue_id: %r' % queue_id)
                 continue
             queue_dir = os.path.join(queues_dir, queue_id)
             messages_dir = os.path.join(queue_dir, 'messages')

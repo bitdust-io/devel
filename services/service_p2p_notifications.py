@@ -65,7 +65,8 @@ class P2PNotificationsService(LocalService):
     def stop(self):
         from transport import callback
         from stream import p2p_queue
-        self.reconnect_task.stop()
+        if self.reconnect_task and self.reconnect_task.running:
+            self.reconnect_task.stop()
         self.reconnect_task = None
         callback.remove_inbox_callback(self._on_inbox_packet_received)
         p2p_queue.shutdown()
@@ -79,8 +80,8 @@ class P2PNotificationsService(LocalService):
         try:
             service_requests_list = json_payload['items']
         except:
-            lg.warn("invalid json payload")
-            return p2p_service.SendFail(newpacket, 'invalid json payload')
+            lg.exc()
+            return p2p_service.SendFail(newpacket, 'invalid payload')
         service_responses_list = []
         for r_json in service_requests_list:
             resp = r_json.copy()

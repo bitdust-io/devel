@@ -587,7 +587,10 @@ class FamilyMember(automat.Automat):
 
     def _do_create_possible_revision(self, latest_revision):
         local_customer_meta_info = contactsdb.get_customer_meta_info(self.customer_idurl)
-        possible_position = int(local_customer_meta_info.get('position', -1))
+        try:
+            possible_position = int(local_customer_meta_info.get('position', -1))
+        except:
+            possible_position = -1
         possible_suppliers = id_url.to_bin_list(local_customer_meta_info.get('family_snapshot') or [])
         if possible_position >= 0 and my_id.getLocalID().to_bin() not in possible_suppliers:
             if len(possible_suppliers) > possible_position:

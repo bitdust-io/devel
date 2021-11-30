@@ -445,7 +445,10 @@ class QueueKeeper(automat.Automat):
         """
         json_value = read_state(customer_id=self.customer_id, broker_id=self.broker_id) or {}
         self.cooperated_brokers = {int(k): id_url.field(v) for k,v in (json_value.get('cooperated_brokers') or {}).items()}
-        self.known_position = json_value.get('position', -1)
+        try:
+            self.known_position = int(json_value.get('position', -1))
+        except:
+            self.known_position = -1
         self.known_archive_folder_path = json_value.get('archive_folder_path')
 
     def doEraseState(self, *args, **kwargs):

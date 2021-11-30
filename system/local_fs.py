@@ -76,7 +76,7 @@ def WriteBinaryFile(filename, data):
             os.remove(filename)
         os.rename(tmpfilename, filename)
     except:
-        lg.exc()
+        lg.exc('file write failed: %r' % filename)
         try:
             # make sure file gets closed
             f.close()
@@ -133,7 +133,7 @@ def ReadBinaryFile(filename, decode_encoding=None):
         infile.close()
         return data
     except:
-        lg.exc()
+        lg.exc('file read failed: %r' % filename)
         return b''
 
 #------------------------------------------------------------------------------
@@ -165,7 +165,7 @@ def WriteTextFile(filepath, data):
     try:
         os.rename(temp_path, filepath)
     except:
-        lg.exc()
+        lg.exc('file write failed: %r' % filepath)
         return False
     return True
 
@@ -187,7 +187,7 @@ def ReadTextFile(filename):
         infile.close()
         return strng.to_text(data)
     except:
-        lg.exc()
+        lg.exc('file read failed: %r' % filename)
     return u''
 
 #------------------------------------------------------------------------------

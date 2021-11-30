@@ -89,8 +89,8 @@ class MessageBrokerService(LocalService):
         try:
             action = json_payload['action']
         except:
-            lg.warn("wrong payload: %r" % json_payload)
-            return p2p_service.SendFail(newpacket, 'wrong payload')
+            lg.exc()
+            return p2p_service.SendFail(newpacket, 'invalid payload')
         # TODO: validate signature and the key
         if action == 'queue-connect' or action == 'queue-connect-follow':
             try:
@@ -98,7 +98,7 @@ class MessageBrokerService(LocalService):
                 consumer_id = json_payload.get('consumer_id')
                 producer_id = json_payload.get('producer_id')
                 group_key = json_payload.get('group_key')
-                position = json_payload.get('position', -1)
+                position = int(json_payload.get('position', -1))
                 archive_folder_path = json_payload.get('archive_folder_path', None)
                 last_sequence_id = json_payload.get('last_sequence_id', -1)
                 known_brokers = json_payload.get('known_brokers', {}) or {}
