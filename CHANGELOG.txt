@@ -1,6 +1,13 @@
 Change Log
 ==========
 
+2021-12-01 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* IDURL fix in message_peddler()
+* group_member() must always have access to the correct registered private key
+* bug fix in packet_out()
+
+
 
 2021-11-18 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
