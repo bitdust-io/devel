@@ -540,6 +540,23 @@ def monitorDelayedCalls(r):
         lg.out(_DebugLevel, '\nslowest calls:\n%s' % stats)
     r.callLater(30, monitorDelayedCalls, r)
 
+#------------------------------------------------------------------------------
+
+class TwistedUnhandledErrorsObserver:
+
+    def __init__(self, level):
+        self.level = level
+
+    def __call__(self, event_dict):
+        if event_dict.get('log_level') == self.level:
+            if 'log_failure' in event_dict:
+                f = event_dict['log_failure']
+                from logs import lg
+                lg.exc(
+                    msg=f'Unhandled error in Deferred:\n{event_dict.get("debugInfo", "")}',
+                    exc_info=(f.type, f.value, f.getTracebackObject(), ),
+                )
+
 #-------------------------------------------------------------------------------
 
 
@@ -647,7 +664,7 @@ def main(executable_path=None, start_reactor=True):
 
     from logs import lg
 
-    # init IO module, update locale
+    #---init IO module
     from system import bpio
     bpio.init()
 
@@ -659,15 +676,24 @@ def main(executable_path=None, start_reactor=True):
 
     # sys.excepthook = lg.exception_hook
 
+    #---init logging
     from twisted.internet.defer import setDebugging
     if _Debug:
-        if not bpio.isFrozen():
+        if bpio.isFrozen():
+            setDebugging(False)
+        else:
             setDebugging(True)
     else:
         setDebugging(False)
 
-    # ask to count time for each log line from that moment, not absolute time
+    from twisted.logger import globalLogPublisher, LogLevel
+    tw_log_observer = TwistedUnhandledErrorsObserver(level=LogLevel.critical)
+    globalLogPublisher.addObserver(tw_log_observer)
+
+    #---life begins!
+    # ask logger to count time for each log line from that moment, not absolute time
     lg.life_begins()
+
     # try to read debug level value at the early stage - no problem if fail here
     try:
         if cmd == '' or cmd == 'start' or cmd == 'go' or cmd == 'show' or cmd == 'open':

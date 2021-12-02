@@ -58,7 +58,7 @@ from six.moves import range
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 _PacketLogFileEnabled = False
@@ -71,7 +71,7 @@ import time
 #------------------------------------------------------------------------------
 
 from twisted.internet import reactor  # @UnresolvedImport
-from twisted.internet.defer import Deferred
+from twisted.internet.defer import Deferred, CancelledError
 
 #------------------------------------------------------------------------------
 
@@ -320,6 +320,8 @@ def search_similar_packets(outpacket):
 def on_outgoing_packet_failed(result, *a, **kw):
     if _Debug:
         lg.args(_DebugLevel, result=result, args=a, kwargs=kw)
+    if result.type == CancelledError:
+        return None
     return result
 
 #------------------------------------------------------------------------------

@@ -516,7 +516,7 @@ def SendToIDs(idlist, wide=False, ack_handler=None, timeout_handler=None, respon
     del alreadysent
     if not wait_packets:
         return totalsent
-    return DeferredList(wait_list)
+    return DeferredList(wait_list, consumeErrors=True)
 
 #------------------------------------------------------------------------------
 

@@ -604,7 +604,7 @@ def on_notification_failed(err, consumer_id, queue_id, message_id):
         lg.warn('failed notification %r was not finished for consumer %r in %r' % (message_id, consumer_id, queue_id, ))
     # TODO: add a counter and execute cleanup less frequently
     do_cleanup(target_queues=[queue_id, ])
-    return err
+    return None
 
 #------------------------------------------------------------------------------
 
