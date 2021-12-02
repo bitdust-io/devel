@@ -511,12 +511,12 @@ def SendToIDs(idlist, wide=False, ack_handler=None, timeout_handler=None, respon
         if wait_packets and res:
             if isinstance(res, Deferred):
                 wait_list.append(res)
-            else:
+            elif res.finished_deferred and isinstance(res.finished_deferred, Deferred):
                 wait_list.append(res.finished_deferred)
     del alreadysent
-    if wait_packets:
-        return DeferredList(wait_list)
-    return totalsent
+    if not wait_packets:
+        return totalsent
+    return DeferredList(wait_list)
 
 #------------------------------------------------------------------------------
 

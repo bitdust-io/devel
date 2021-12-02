@@ -317,6 +317,13 @@ def search_similar_packets(outpacket):
 
 #------------------------------------------------------------------------------
 
+def on_outgoing_packet_failed(result, *a, **kw):
+    if _Debug:
+        lg.args(_DebugLevel, result=result, args=a, kwargs=kw)
+    return result
+
+#------------------------------------------------------------------------------
+
 class WorkItem(object):
 
     def __init__(self, proto, host, size=0):
@@ -361,6 +368,7 @@ class PacketOut(automat.Automat):
         self.callbacks = {}
         self.caching_deferred = None
         self.finished_deferred = Deferred()
+        self.finished_deferred.addErrback(on_outgoing_packet_failed)
         self.final_result = None
         self.description = self.outpacket.Command + '[' + self.outpacket.PacketID + ']'
         self.remote_idurl = id_url.field(target) if target else None
