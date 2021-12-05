@@ -226,5 +226,5 @@ class P2PHookupsService(LocalService):
         if driver.is_on('service_entangled_dht'):
             from dht import dht_service
             from userid import my_id
-            if my_id.getLocalID():
-                dht_service.set_node_data('idurl', my_id.getLocalID().to_text())
+            if my_id.getIDURL():
+                dht_service.set_node_data('idurl', my_id.getIDURL().to_text())

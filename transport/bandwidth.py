@@ -334,7 +334,7 @@ def INfile(newpacket, pkt_in, status, error_message):
     if not id_url.is_cached(newpacket.OwnerID):
         return False
     packet_from = newpacket.OwnerID
-    if packet_from == my_id.getLocalID() and newpacket.Command == commands.Data():
+    if packet_from == my_id.getIDURL() and newpacket.Command == commands.Data():
         # someone giving our data back
         packet_from = newpacket.RemoteID
     if pkt_in.size:

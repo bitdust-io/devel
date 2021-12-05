@@ -89,7 +89,7 @@ def storage_contract_open(customer_idurl, duration, amount, price=1.0, trustee=N
             "amount": amount,
             "duration": duration,
             "customer": customer_idurl,
-            "supplier": my_id.getLocalID(),
+            "supplier": my_id.getIDURL(),
             "trustee": trustee,
             "started": utime.utcnow_to_sec1970(),
             "price": price,
@@ -131,7 +131,7 @@ def add_signature(coin_json, role):
     """
     _coin = coin_json.copy()
     _coin[role] = {
-        'idurl': my_id.getLocalID().to_bin(),
+        'idurl': my_id.getIDURL().to_bin(),
         'pubkey': key.MyPublicKey(),
     }
     coin_hash = get_coin_hash(_coin)
@@ -164,7 +164,7 @@ def set_prev_hash(coin_json, prev_hash):
 
 # def signed_coin(coin_json):
 #     scoin = {
-#         "creator": my_id.getLocalID(),
+#         "creator": my_id.getIDURL(),
 #         "pubkey": key.MyPublicKey(),
 #     }
 #     scoin.update(coin_json)

@@ -245,8 +245,8 @@ def search_by_response_packet(newpacket=None, proto=None, host=None, outgoing_co
             outgoing_command, incoming_command, incoming_packet_id, proto, host, ))
     matching_packet_ids = []
     matching_packet_ids.append(incoming_packet_id.lower())
-    if incoming_command and incoming_command in [commands.Data(), commands.Retrieve(), ] and id_url.is_cached(incoming_owner_idurl) and incoming_owner_idurl == my_id.getLocalID():
-        my_rotated_idurls = id_url.list_known_idurls(my_id.getLocalID(), num_revisions=10, include_revisions=False)
+    if incoming_command and incoming_command in [commands.Data(), commands.Retrieve(), ] and id_url.is_cached(incoming_owner_idurl) and incoming_owner_idurl == my_id.getIDURL():
+        my_rotated_idurls = id_url.list_known_idurls(my_id.getIDURL(), num_revisions=10, include_revisions=False)
         # TODO: my_rotated_idurls can be cached for optimization
         for another_idurl in my_rotated_idurls:
             another_packet_id = global_id.SubstitutePacketID(incoming_packet_id, idurl=another_idurl).lower()
@@ -280,17 +280,17 @@ def search_by_response_packet(newpacket=None, proto=None, host=None, outgoing_co
                     # outgoing packet was addressed to another node, so that means we need to expect response from another node also
                     expected_recipient.append(id_url.field(p.remote_idurl))
         matched = False
-        if incoming_owner_idurl in expected_recipient and id_url.is_the_same(my_id.getLocalID(), incoming_remote_idurl):
+        if incoming_owner_idurl in expected_recipient and id_url.is_the_same(my_id.getIDURL(), incoming_remote_idurl):
             if _Debug:
                 lg.out(_DebugLevel, 'packet_out.search_by_response_packet    matched with incoming owner: %s' % expected_recipient)
             matched = True
         if not matched:
-            if incoming_creator_idurl in expected_recipient and id_url.is_the_same(my_id.getLocalID(), incoming_remote_idurl):
+            if incoming_creator_idurl in expected_recipient and id_url.is_the_same(my_id.getIDURL(), incoming_remote_idurl):
                 if _Debug:
                     lg.out(_DebugLevel, 'packet_out.search_by_response_packet    matched with incoming creator: %s' % expected_recipient)
                 matched = True
         if not matched:
-            if incoming_remote_idurl in expected_recipient and id_url.is_the_same(my_id.getLocalID(), incoming_owner_idurl) and incoming_command == commands.Data():
+            if incoming_remote_idurl in expected_recipient and id_url.is_the_same(my_id.getIDURL(), incoming_owner_idurl) and incoming_command == commands.Data():
                 if _Debug:
                     lg.out(_DebugLevel, 'packet_out.search_by_response_packet    matched my own incoming Data with incoming remote: %s' % expected_recipient)
                 matched = True

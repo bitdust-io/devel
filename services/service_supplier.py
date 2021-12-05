@@ -346,8 +346,8 @@ class SupplierService(LocalService):
         from dht import dht_records
         from userid import my_id
         lg.info('connected to DHT layer for suppliers: %r' % ok)
-        if my_id.getLocalID():
-            dht_service.set_node_data('idurl', my_id.getLocalID().to_text(), layer_id=dht_records.LAYER_SUPPLIERS)
+        if my_id.getIDURL():
+            dht_service.set_node_data('idurl', my_id.getIDURL().to_text(), layer_id=dht_records.LAYER_SUPPLIERS)
         return ok
 
     def _on_dht_layer_connected(self, evt):

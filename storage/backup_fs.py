@@ -151,7 +151,7 @@ def fs(customer_idurl=None):
     """
     global _FileSystemIndexByName
     if customer_idurl is None:
-        customer_idurl = my_id.getLocalID()
+        customer_idurl = my_id.getIDURL()
     customer_idurl = id_url.field(customer_idurl)
     if customer_idurl not in _FileSystemIndexByName:
         _FileSystemIndexByName[customer_idurl] = {}
@@ -164,7 +164,7 @@ def fsID(customer_idurl=None):
     """
     global _FileSystemIndexByID
     if customer_idurl is None:
-        customer_idurl = my_id.getLocalID()
+        customer_idurl = my_id.getIDURL()
     customer_idurl = id_url.field(customer_idurl)
     if customer_idurl not in _FileSystemIndexByID:
         _FileSystemIndexByID[customer_idurl] = {}
@@ -1862,7 +1862,7 @@ def Scan(basedir=None, customer_idurl=None):
     files.
     """
     if customer_idurl is None:
-        customer_idurl = my_id.getLocalID()
+        customer_idurl = my_id.getIDURL()
     if basedir is None:
         basedir = settings.getLocalBackupsDir()
     iterID = fsID(customer_idurl)
@@ -1888,7 +1888,7 @@ def ScanID(pathID, basedir=None, customer_idurl=None):
     Same as `Scan`, but check only single item in the index.
     """
     if customer_idurl is None:
-        customer_idurl = my_id.getLocalID()
+        customer_idurl = my_id.getIDURL()
     if basedir is None:
         basedir = settings.getLocalBackupsDir()
     iter_and_path = WalkByID(pathID, iterID=fs(customer_idurl))

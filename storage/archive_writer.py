@@ -347,7 +347,7 @@ class ArchiveWriter(automat.Automat):
                 p2p_service.SendData(
                     raw_data=packet_payload,
                     ownerID=self.queue_owner_idurl,
-                    creatorID=my_id.getLocalID(),
+                    creatorID=my_id.getIDURL(),
                     remoteID=supplier_idurl,
                     packetID=packet_id,
                     callbacks={

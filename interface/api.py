@@ -871,7 +871,7 @@ def key_create(key_alias, key_size=None, label='', include_private=False):
     from userid import my_id
     key_alias = strng.to_text(key_alias)
     key_alias = key_alias.strip().lower()
-    key_id = my_keys.make_key_id(key_alias, creator_idurl=my_id.getLocalID())
+    key_id = my_keys.make_key_id(key_alias, creator_idurl=my_id.getIDURL())
     if not my_keys.is_valid_key_id(key_id):
         return ERROR('key %r is not valid' % key_id)
     if my_keys.is_key_registered(key_id):
@@ -1895,7 +1895,7 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, o
         return ERROR('downloading task for %r already scheduled' % backupID)
     customerGlobalID, pathID_target, version = packetid.SplitBackupID(backupID)
     if not customerGlobalID:
-        customerGlobalID = global_id.UrlToGlobalID(my_id.getLocalID())
+        customerGlobalID = global_id.UrlToGlobalID(my_id.getIDURL())
     knownPath = backup_fs.ToPath(pathID_target, iterID=backup_fs.fsID(global_id.GlobalUserToIDURL(customerGlobalID)))
     if not knownPath:
         return ERROR('location %r not found in the catalog' % knownPath)
@@ -2048,7 +2048,7 @@ def file_download_stop(remote_path):
     if packetid.Valid(glob_path['path']):
         customerGlobalID, pathID, version = packetid.SplitBackupID(remote_path)
         if not customerGlobalID:
-            customerGlobalID = global_id.UrlToGlobalID(my_id.getLocalID())
+            customerGlobalID = global_id.UrlToGlobalID(my_id.getIDURL())
         item = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(glob_path['customer']))
         if not item:
             return ERROR('path %r not found in the catalog' % remote_path)
@@ -2135,9 +2135,9 @@ def shares_list(only_active=False, include_mine=True, include_granted=True):
         for key_id in shared_access_coordinator.list_active_shares():
             _glob_id = global_id.ParseGlobalID(key_id)
             to_be_listed = False
-            if include_mine and _glob_id['idurl'] == my_id.getLocalID():
+            if include_mine and _glob_id['idurl'] == my_id.getIDURL():
                 to_be_listed = True
-            if include_granted and _glob_id['idurl'] != my_id.getLocalID():
+            if include_granted and _glob_id['idurl'] != my_id.getIDURL():
                 to_be_listed = True
             if not to_be_listed:
                 continue
@@ -2152,9 +2152,9 @@ def shares_list(only_active=False, include_mine=True, include_granted=True):
             continue
         key_alias, creator_idurl = my_keys.split_key_id(key_id)
         to_be_listed = False
-        if include_mine and creator_idurl == my_id.getLocalID():
+        if include_mine and creator_idurl == my_id.getIDURL():
             to_be_listed = True
-        if include_granted and creator_idurl != my_id.getLocalID():
+        if include_granted and creator_idurl != my_id.getIDURL():
             to_be_listed = True
         if not to_be_listed:
             continue
@@ -2407,9 +2407,9 @@ def groups_list(only_active=False, include_mine=True, include_granted=True):
         for group_key_id in group_member.list_active_group_members():
             _glob_id = global_id.ParseGlobalID(group_key_id)
             to_be_listed = False
-            if include_mine and _glob_id['idurl'] == my_id.getLocalID():
+            if include_mine and _glob_id['idurl'] == my_id.getIDURL():
                 to_be_listed = True
-            if include_granted and _glob_id['idurl'] != my_id.getLocalID():
+            if include_granted and _glob_id['idurl'] != my_id.getIDURL():
                 to_be_listed = True
             if not to_be_listed:
                 continue
@@ -2424,9 +2424,9 @@ def groups_list(only_active=False, include_mine=True, include_granted=True):
             continue
         group_key_alias, group_creator_idurl = my_keys.split_key_id(group_key_id)
         to_be_listed = False
-        if include_mine and group_creator_idurl == my_id.getLocalID():
+        if include_mine and group_creator_idurl == my_id.getIDURL():
             to_be_listed = True
-        if include_granted and group_creator_idurl != my_id.getLocalID():
+        if include_granted and group_creator_idurl != my_id.getIDURL():
             to_be_listed = True
         if not to_be_listed:
             continue
@@ -2854,7 +2854,7 @@ def friend_add(trusted_user_id, alias='', share_person_key=True):
     ret = Deferred()
 
     def _add(idurl, result_defer):
-        if idurl == my_id.getLocalID():
+        if idurl == my_id.getIDURL():
             result_defer.callback(ERROR('can not add my own identity as a new friend', api_method='friend_add'))
             return
         added = False
@@ -3180,7 +3180,7 @@ def user_observe(nickname, attempts=3):
 #                 'success': result,
 #                 'nickname': key,
 #                 'global_id': my_id.getGlobalID(),
-#                 'idurl': my_id.getLocalID(),
+#                 'idurl': my_id.getIDURL(),
 #             },
 #             api_method='nickname_set',
 #         ))
@@ -3305,11 +3305,11 @@ def message_conversations_list(message_types=[], offset=0, limit=100):
             conv_key_id = None
             conv_label = None
             user_idurl = None
-            if (id_url.is_cached(idurl1) and idurl1 == my_id.getLocalID()) or usr1.split('@')[0] == my_id.getIDName():
+            if (id_url.is_cached(idurl1) and idurl1 == my_id.getIDURL()) or usr1.split('@')[0] == my_id.getIDName():
                 user_idurl = idurl2
                 conv_key_id = global_id.UrlToGlobalID(idurl2, include_key=True)
                 conv_label = conv_key_id.replace('master$', '').split('@')[0]
-            if (id_url.is_cached(idurl2) and idurl2 == my_id.getLocalID()) or usr2.split('@')[0] == my_id.getIDName():
+            if (id_url.is_cached(idurl2) and idurl2 == my_id.getIDURL()) or usr2.split('@')[0] == my_id.getIDName():
                 user_idurl = idurl1
                 conv_key_id = global_id.UrlToGlobalID(idurl1, include_key=True)
                 conv_label = conv_key_id.replace('master$', '').split('@')[0]
@@ -3602,7 +3602,7 @@ def suppliers_list(customer_id=None, verbose=False):
     from storage import backup_matrix
     customer_idurl = strng.to_bin(customer_id)
     if not customer_idurl:
-        customer_idurl = my_id.getLocalID().to_bin()
+        customer_idurl = my_id.getIDURL().to_bin()
     else:
         if global_id.IsValidGlobalUser(customer_id):
             customer_idurl = global_id.GlobalUserToIDURL(customer_id, as_field=False)
@@ -3673,7 +3673,7 @@ def supplier_change(position=None, supplier_id=None, new_supplier_id=None):
     from contacts import contactsdb
     from userid import my_id
     from userid import global_id
-    customer_idurl = my_id.getLocalID()
+    customer_idurl = my_id.getIDURL()
     supplier_idurl = None
     if position is not None:
         supplier_idurl = contactsdb.supplier(int(position), customer_idurl=customer_idurl)
@@ -3755,7 +3755,7 @@ def suppliers_list_dht(customer_id=None):
     from userid import global_id
     customer_idurl = None
     if not customer_id:
-        customer_idurl = my_id.getLocalID().to_bin()
+        customer_idurl = my_id.getIDURL().to_bin()
     else:
         customer_idurl = strng.to_bin(customer_id)
         if global_id.IsValidGlobalUser(customer_id):
@@ -4696,7 +4696,7 @@ def network_status(suppliers=False, customers=False, cache=False, tcp=False, udp
         if network_connector_machine:
             r['network_connector_state'] = network_connector_machine.state
     if my_id.isLocalIdentityReady():
-        r['idurl'] = my_id.getLocalID()
+        r['idurl'] = my_id.getIDURL()
         r['global_id'] = my_id.getID()
         r['identity_sources'] = my_id.getLocalIdentity().getSources(as_originals=True)
         r['identity_contacts'] = my_id.getLocalIdentity().getContacts()

@@ -1483,7 +1483,7 @@ class MessagePeddler(automat.Automat):
                     continue
                 if len(json_value['cooperated_brokers']) != groups.REQUIRED_BROKERS_COUNT:
                     continue
-                if id_url.is_not_in(my_id.getLocalID(), json_value['cooperated_brokers'].values(), as_field=False):
+                if id_url.is_not_in(my_id.getIDURL(), json_value['cooperated_brokers'].values(), as_field=False):
                     lg.warn('did not found my own idurl in the stored cooperated brokers list')
                     continue
                 if utime.get_sec1970() - json_value['time'] > 60*60*2:
@@ -1611,7 +1611,7 @@ class MessagePeddler(automat.Automat):
             other_broker_idurl = known_brokers.get(other_broker_pos)
             if not other_broker_idurl:
                 continue
-            if id_url.to_bin(other_broker_idurl) == my_id.getLocalID().to_bin():
+            if id_url.to_bin(other_broker_idurl) == my_id.getIDURL().to_bin():
                 continue
             d = message.send_message(
                 json_data={
@@ -1714,7 +1714,7 @@ class MessagePeddler(automat.Automat):
 #             lg.args(_DebugLevel, **evt.data)
 #         if not evt.data['new_postion'] == 0:
 #             return
-#         if not id_url.is_the_same(my_id.getLocalID(), evt.data['broker_idurl']):
+#         if not id_url.is_the_same(my_id.getIDURL(), evt.data['broker_idurl']):
 #             return
 #         target_customer_idurl = evt.data['customer_idurl']
 #         for current_queue_id in list(streams().keys()):
@@ -1723,12 +1723,12 @@ class MessagePeddler(automat.Automat):
 #             current_broker_idurl = global_id.glob2idurl(current_broker_id)
 #             if not id_url.is_the_same(customer_idurl, target_customer_idurl):
 #                 continue
-#             if id_url.is_the_same(current_broker_idurl, my_id.getLocalID()):
+#             if id_url.is_the_same(current_broker_idurl, my_id.getIDURL()):
 #                 continue
 #             new_queue_id = global_id.MakeGlobalQueueID(
 #                 queue_alias=queue_alias,
 #                 owner_id=customer_id,
-#                 supplier_id=my_id.getLocalID().to_id(),
+#                 supplier_id=my_id.getIDURL().to_id(),
 #             )
 #             if new_queue_id in streams():
 #                 lg.warn('rotated queue_id %r was already registered' % new_queue_id)
@@ -1929,7 +1929,7 @@ class MessagePeddler(automat.Automat):
     def _on_identity_url_changed(self, evt):
         if _Debug:
             lg.args(_DebugLevel, **evt.data)
-        if my_id.getLocalID().to_bin() in [evt.data['new_idurl'], evt.data['old_idurl']]:
+        if my_id.getIDURL().to_bin() in [evt.data['new_idurl'], evt.data['old_idurl']]:
             return
         old_idurl = evt.data['old_idurl']
         new_id = global_id.idurl2glob(evt.data['new_idurl'])

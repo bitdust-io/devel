@@ -145,7 +145,7 @@ def read_customer_suppliers(customer_idurl, as_fields=True, use_cache=True):
         return _do_identity_cache(ret)
 
     def _do_save_customer_suppliers(id_cached_result, ret):
-        if my_id.getLocalID() != id_url.field(ret['customer_idurl']):
+        if my_id.getIDURL() != id_url.field(ret['customer_idurl']):
             contactsdb.set_suppliers(ret['suppliers'], customer_idurl=ret['customer_idurl'])
             contactsdb.save_suppliers(customer_idurl=ret['customer_idurl'])
             if ret.get('ecc_map'):
@@ -188,7 +188,7 @@ def read_customer_suppliers(customer_idurl, as_fields=True, use_cache=True):
 def write_customer_suppliers(customer_idurl, suppliers_list, ecc_map=None, revision=None, publisher_idurl=None, ):
     customer_idurl = id_url.field(customer_idurl)
     publisher_idurl = id_url.field(publisher_idurl)
-    if customer_idurl == my_id.getLocalID():
+    if customer_idurl == my_id.getIDURL():
         lg.warn('skip writing my own suppliers list which suppose to be written to DHT')
     else:
         contactsdb.set_suppliers(suppliers_list, customer_idurl=customer_idurl)

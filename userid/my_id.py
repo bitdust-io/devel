@@ -170,18 +170,6 @@ def getLocalIdentity():
     return _LocalIdentity
 
 
-def getLocalID():
-    """
-    Returns my IDURL as a field.
-    """
-    global _LocalIDURL
-    if _LocalIDURL is None:
-        localIdent = getLocalIdentity()
-        if localIdent:
-            _LocalIDURL = localIdent.getIDURL()
-    return _LocalIDURL
-
-
 def getIDName():
     """
     Returns my account name, this is a filename part of IDURL without '.xml'.
@@ -204,7 +192,7 @@ def getGlobalID(key_alias=None):
     if key_alias == 'master' and _LocalID is not None:
         return strng.to_text('{}${}'.format(key_alias, _LocalID))
     from userid import global_id
-    glob_id = global_id.UrlToGlobalID(getLocalID())
+    glob_id = global_id.UrlToGlobalID(getIDURL())
     if not glob_id:
         return glob_id
     if key_alias:
@@ -216,7 +204,12 @@ def getIDURL():
     """
     Returns my IDURL as a field.
     """
-    return getLocalID()
+    global _LocalIDURL
+    if _LocalIDURL is None:
+        localIdent = getLocalIdentity()
+        if localIdent:
+            _LocalIDURL = localIdent.getIDURL()
+    return _LocalIDURL
 
 
 def getID():

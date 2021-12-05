@@ -466,7 +466,7 @@ class CoinsMiner(automat.Automat):
         return coin_json
 
     def _start(self, coin_json):
-        coin_json['miner']['idurl'] = my_id.getLocalID().to_bin()
+        coin_json['miner']['idurl'] = my_id.getIDURL().to_bin()
         # "prev" field must already be there
         prev_hash = coin_json['miner']['prev']
         difficulty = self._get_hash_difficulty(prev_hash, self.simplification)

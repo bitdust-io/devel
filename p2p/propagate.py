@@ -117,7 +117,6 @@ def startup_list():
 
 #------------------------------------------------------------------------------
 
-
 def propagate(selected_contacts, ack_handler=None, wide=False, refresh_cache=False, wait_packets=False, response_timeout=10):
     """
     Run the "propagate" process.
@@ -150,7 +149,7 @@ def propagate(selected_contacts, ack_handler=None, wide=False, refresh_cache=Fal
     return result
 
 
-def fetch(list_ids, refresh_cache=False):
+def fetch(list_ids, refresh_cache=False, timeout=10, try_other_sources=True):
     """
     Request a list of identity files.
     """
@@ -162,7 +161,11 @@ def fetch(list_ids, refresh_cache=False):
             continue
         if identitycache.FromCache(url) and not refresh_cache:
             continue
-        dl.append(identitycache.immediatelyCaching(id_url.to_original(url)))
+        dl.append(identitycache.immediatelyCaching(
+            idurl=id_url.to_original(url),
+            timeout=timeout,
+            try_other_sources=try_other_sources,
+        ))
     return DeferredList(dl, consumeErrors=True)
 
 
@@ -428,8 +431,8 @@ def SendToID(idurl, Payload=None, wide=False, ack_handler=None, timeout_handler=
         thePayload = strng.to_bin(my_id.getLocalIdentity().serialize())
     p = signed.Packet(
         Command=commands.Identity(),
-        OwnerID=my_id.getLocalID(),
-        CreatorID=my_id.getLocalID(),
+        OwnerID=my_id.getIDURL(),
+        CreatorID=my_id.getIDURL(),
         PacketID=('propagate:%d:%s' % (_PropagateCounter, packetid.UniqueID())),
         Payload=thePayload,
         RemoteID=idurl,
@@ -485,8 +488,8 @@ def SendToIDs(idlist, wide=False, ack_handler=None, timeout_handler=None, respon
             continue
         p = signed.Packet(
             Command=commands.Identity(),
-            OwnerID=my_id.getLocalID(),
-            CreatorID=my_id.getLocalID(),
+            OwnerID=my_id.getIDURL(),
+            CreatorID=my_id.getIDURL(),
             PacketID=('propagate:%d:%s' % (_PropagateCounter, packetid.UniqueID())),
             Payload=Payload,
             RemoteID=contact,

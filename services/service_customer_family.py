@@ -64,7 +64,7 @@ class CustomerFamilyService(LocalService):
                 continue
             if not id_url.is_cached(customer_idurl):
                 continue
-            if customer_idurl == my_id.getLocalID():
+            if customer_idurl == my_id.getIDURL():
                 lg.warn('skipping my own identity')
                 continue
             fm = family_member.by_customer_idurl(customer_idurl)
@@ -73,7 +73,7 @@ class CustomerFamilyService(LocalService):
             fm.automat('init')
             local_customer_meta_info = contactsdb.get_customer_meta_info(customer_idurl)
             reactor.callLater(0, fm.automat, 'family-join', {  # @UndefinedVariable
-                'supplier_idurl': my_id.getLocalID().to_bin(),
+                'supplier_idurl': my_id.getIDURL().to_bin(),
                 'ecc_map': local_customer_meta_info.get('ecc_map'),
                 'position': local_customer_meta_info.get('position', -1),
                 'family_snapshot': id_url.to_bin_list(local_customer_meta_info.get('family_snapshot')),
@@ -110,7 +110,7 @@ class CustomerFamilyService(LocalService):
         else:
             lg.warn('family_member() instance already exists, but new customer just accepted %s' % customer_idurl)
         reactor.callLater(0, fm.automat, 'family-join', {  # @UndefinedVariable
-            'supplier_idurl': my_id.getLocalID().to_bin(),
+            'supplier_idurl': my_id.getIDURL().to_bin(),
             'ecc_map': evt.data.get('ecc_map'),
             'position': evt.data.get('position', -1),
             'family_snapshot': id_url.to_bin_list(evt.data.get('family_snapshot')),
@@ -123,7 +123,7 @@ class CustomerFamilyService(LocalService):
         from userid import id_url
         from userid import my_id
         customer_idurl = evt.data['idurl']
-        if customer_idurl == my_id.getLocalID():
+        if customer_idurl == my_id.getIDURL():
             lg.warn('skipping my own identity')
             return
         if evt.data.get('position') is None:
@@ -134,7 +134,7 @@ class CustomerFamilyService(LocalService):
             lg.err('family_member() instance was not found for existing customer %s' % customer_idurl)
             return
         reactor.callLater(0, fm.automat, 'family-join', {  # @UndefinedVariable
-            'supplier_idurl': my_id.getLocalID().to_bin(),
+            'supplier_idurl': my_id.getIDURL().to_bin(),
             'ecc_map': evt.data.get('ecc_map'),
             'position': evt.data.get('position'),
             'family_snapshot': id_url.to_bin_list(evt.data.get('family_snapshot')),
@@ -146,7 +146,7 @@ class CustomerFamilyService(LocalService):
         from supplier import family_member
         from userid import my_id
         customer_idurl = evt.data['idurl']
-        if customer_idurl == my_id.getLocalID():
+        if customer_idurl == my_id.getIDURL():
             lg.warn('skipping my own identity')
             return
         fm = family_member.by_customer_idurl(customer_idurl)
@@ -154,7 +154,7 @@ class CustomerFamilyService(LocalService):
             lg.err('family_member() instance not found for existing customer %s' % customer_idurl)
             return
         reactor.callLater(0, fm.automat, 'family-leave', {  # @UndefinedVariable
-            'supplier_idurl': my_id.getLocalID().to_bin(),
+            'supplier_idurl': my_id.getIDURL().to_bin(),
             'ecc_map': evt.data.get('ecc_map'),
         })
 
@@ -186,7 +186,7 @@ class CustomerFamilyService(LocalService):
             except:
                 lg.exc()
                 return False
-            if customer_idurl.to_bin() == my_id.getLocalID().to_bin():
+            if customer_idurl.to_bin() == my_id.getIDURL().to_bin():
                 lg.warn('received contacts for my own customer family')
                 return False
             if not id_url.is_cached(customer_idurl):
@@ -217,7 +217,7 @@ class CustomerFamilyService(LocalService):
             except:
                 lg.exc()
                 return False
-            if customer_idurl.to_bin() == my_id.getLocalID().to_bin():
+            if customer_idurl.to_bin() == my_id.getIDURL().to_bin():
                 lg.warn('received contacts for my own customer family')
                 return False
             fm = family_member.by_customer_idurl(customer_idurl)

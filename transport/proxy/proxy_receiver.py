@@ -420,8 +420,8 @@ class ProxyReceiver(automat.Automat):
         """
         newpacket = signed.Packet(
             commands.CancelService(),
-            my_id.getLocalID(),
-            my_id.getLocalID(),
+            my_id.getIDURL(),
+            my_id.getIDURL(),
             packetid.UniqueID(),
             serialization.DictToBytes({'name': 'service_proxy_server', }),
             self.router_idurl,
@@ -739,8 +739,8 @@ class ProxyReceiver(automat.Automat):
                 identity_obj.contacts, identity_obj.getSources(as_originals=True)))
         newpacket = signed.Packet(
             Command=commands.Identity(),
-            OwnerID=my_id.getLocalID(),
-            CreatorID=my_id.getLocalID(),
+            OwnerID=my_id.getIDURL(),
+            CreatorID=my_id.getIDURL(),
             PacketID=('proxy_receiver:%s' % packetid.UniqueID()),
             Payload=identity_obj.serialize(),
             RemoteID=self.router_idurl,
@@ -775,8 +775,8 @@ class ProxyReceiver(automat.Automat):
         }
         newpacket = signed.Packet(
             commands.RequestService(),
-            my_id.getLocalID(),
-            my_id.getLocalID(),
+            my_id.getIDURL(),
+            my_id.getIDURL(),
             packetid.UniqueID(),
             serialization.DictToBytes(service_info, values_to_text=True),
             self.router_idurl,
@@ -892,7 +892,7 @@ class ProxyReceiver(automat.Automat):
     def _on_inbox_packet_received(self, newpacket, info, status, error_message):
         if newpacket.Command == commands.Identity() and \
                 newpacket.CreatorID == self.router_idurl and \
-                newpacket.RemoteID == my_id.getLocalID():
+                newpacket.RemoteID == my_id.getIDURL():
             self.automat('router-id-received', (newpacket, info))
             self.latest_packet_received = time.time()
             return True

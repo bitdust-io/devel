@@ -380,7 +380,7 @@ def cmd_identity(opts, args, overDict, running, executablePath):
     def _do_cmd():
         if args[0] == 'idurl' and len(args) <= 1:
             if my_id.isLocalIdentityReady():
-                print_text(my_id.getLocalID())
+                print_text(my_id.getIDURL())
             else:
                 print_text('local identity is not valid or not exist')
             return 0

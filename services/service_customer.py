@@ -60,10 +60,10 @@ class CustomerService(LocalService):
         from userid import my_id
         from main import events
         for _, supplier_idurl in enumerate(contactsdb.suppliers()):
-            if supplier_idurl and not supplier_connector.by_idurl(supplier_idurl, customer_idurl=my_id.getLocalID()):
+            if supplier_idurl and not supplier_connector.by_idurl(supplier_idurl, customer_idurl=my_id.getIDURL()):
                 supplier_connector.create(
                     supplier_idurl=supplier_idurl,
-                    customer_idurl=my_id.getLocalID(),
+                    customer_idurl=my_id.getIDURL(),
                 )
         events.add_subscriber(self._on_my_keys_synchronized, 'my-keys-synchronized')
         events.add_subscriber(self._on_identity_url_changed, 'identity-url-changed')
@@ -77,7 +77,7 @@ class CustomerService(LocalService):
         from main import events
         events.remove_subscriber(self._on_identity_url_changed, 'identity-url-changed')
         events.remove_subscriber(self._on_my_keys_synchronized, 'my-keys-synchronized')
-        for sc in supplier_connector.connectors(my_id.getLocalID()).values():
+        for sc in supplier_connector.connectors(my_id.getIDURL()).values():
             reactor.callLater(0, sc.automat, 'shutdown')  # @UndefinedVariable
         # TODO: disconnect other suppliers
         return True
@@ -85,7 +85,7 @@ class CustomerService(LocalService):
     def health_check(self):
         from customer import supplier_connector
         from userid import my_id
-        for sc in supplier_connector.connectors(my_id.getLocalID()).values():
+        for sc in supplier_connector.connectors(my_id.getIDURL()).values():
             # at least one supplier must be online to consider my customer service to be healthy
             if sc.state in ['CONNECTED', ]:
                 return True

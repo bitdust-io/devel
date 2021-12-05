@@ -513,9 +513,9 @@ class BackupRebuilder(automat.Automat):
                                 if not os.path.exists(filename):
                                     if io_throttle.QueueRequestFile(
                                             self._file_received,
-                                            my_id.getLocalID(),
+                                            my_id.getIDURL(),
                                             PacketID,
-                                            my_id.getLocalID(),
+                                            my_id.getIDURL(),
                                             supplierID):
                                         requests_count += 1
                     else:
@@ -543,9 +543,9 @@ class BackupRebuilder(automat.Automat):
                                 if not os.path.exists(filename):
                                     if io_throttle.QueueRequestFile(
                                         self._file_received,
-                                        my_id.getLocalID(),
+                                        my_id.getIDURL(),
                                         PacketID,
-                                        my_id.getLocalID(),
+                                        my_id.getIDURL(),
                                         supplierID,
                                     ):
                                         requests_count += 1

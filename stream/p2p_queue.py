@@ -679,7 +679,7 @@ def push_signed_message(producer_id, queue_id, data, creation_time=None):
         signed_data = signed.Packet(
             Command=commands.Event(),
             OwnerID=producer_id,
-            CreatorID=my_id.getLocalID(),
+            CreatorID=my_id.getIDURL(),
             PacketID=packetid.UniqueID(),
             Payload=serialization.DictToBytes(data, keys_to_text=True),
             RemoteID=queue_id,

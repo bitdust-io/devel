@@ -230,7 +230,7 @@ class PrivateMessage(object):
         if not encrypt_session_func:
             glob_id = global_id.ParseGlobalID(self.recipient)
             if glob_id['key_alias'] == 'master':
-                if glob_id['idurl'] == my_id.getLocalID():
+                if glob_id['idurl'] == my_id.getIDURL():
                     lg.warn('making encrypted message addressed to me ?')
                     encrypt_session_func = lambda inp: my_keys.encrypt('master', inp)
                 else:
@@ -241,7 +241,7 @@ class PrivateMessage(object):
                         lg.dbg(_DebugLevel, 'with remote identity public key %r' % glob_id['idurl'])
                     encrypt_session_func = remote_identity.encrypt
             else:
-                own_key = global_id.MakeGlobalID(idurl=my_id.getLocalID(), key_alias=glob_id['key_alias'])
+                own_key = global_id.MakeGlobalID(idurl=my_id.getIDURL(), key_alias=glob_id['key_alias'])
                 if my_keys.is_key_registered(own_key):
                     if _Debug:
                         lg.dbg(_DebugLevel, 'with registered key (found by alias) %r' % own_key)
@@ -262,7 +262,7 @@ class PrivateMessage(object):
                 decrypt_session_func = lambda inp: my_keys.decrypt(self.recipient, inp)
         if not decrypt_session_func:
             glob_id = global_id.ParseGlobalID(self.recipient)
-            if glob_id['idurl'] == my_id.getLocalID():
+            if glob_id['idurl'] == my_id.getIDURL():
                 if glob_id['key_alias'] == 'master':
                     if _Debug:
                         lg.dbg(_DebugLevel, 'decrypt with my master key %r' % self.recipient)

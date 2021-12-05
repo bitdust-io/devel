@@ -386,8 +386,8 @@ def CustomerIDURL(backupID, as_field=True):
     if not user:
         from userid import my_id
         if as_field:
-            return my_id.getLocalID()
-        return my_id.getLocalID().to_bin()
+            return my_id.getIDURL()
+        return my_id.getIDURL().to_bin()
     from userid import global_id
     return global_id.GlobalUserToIDURL(user, as_field=as_field)
 

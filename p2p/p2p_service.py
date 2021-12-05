@@ -94,7 +94,7 @@ def shutdown():
 def inbox(newpacket, info, status, error_message):
     """
     """
-    if newpacket.CreatorID != my_id.getLocalID() and newpacket.RemoteID != my_id.getLocalID():
+    if newpacket.CreatorID != my_id.getIDURL() and newpacket.RemoteID != my_id.getIDURL():
         # packet is NOT for us, skip
         return False
 
@@ -199,8 +199,8 @@ def SendAck(packettoack, response='', wide=False, callbacks={}, remote_idurl=Non
         remote_idurl = packettoack.OwnerID
     result = signed.Packet(
         Command=commands.Ack(),
-        OwnerID=my_id.getLocalID(),
-        CreatorID=my_id.getLocalID(),
+        OwnerID=my_id.getIDURL(),
+        CreatorID=my_id.getIDURL(),
         PacketID=packettoack.PacketID,
         Payload=response,
         RemoteID=remote_idurl,
@@ -215,8 +215,8 @@ def SendAck(packettoack, response='', wide=False, callbacks={}, remote_idurl=Non
 def SendAckNoRequest(remoteID, packetid, response='', wide=False, callbacks={}):
     result = signed.Packet(
         Command=commands.Ack(),
-        OwnerID=my_id.getLocalID(),
-        CreatorID=my_id.getLocalID(),
+        OwnerID=my_id.getIDURL(),
+        CreatorID=my_id.getIDURL(),
         PacketID=packetid,
         Payload=response,
         RemoteID=remoteID,
@@ -245,8 +245,8 @@ def SendFail(request, response='', remote_idurl=None, wide=False):
         remote_idurl = request.OwnerID
     result = signed.Packet(
         Command=commands.Fail(),
-        OwnerID=my_id.getLocalID(),
-        CreatorID=my_id.getLocalID(),
+        OwnerID=my_id.getIDURL(),
+        CreatorID=my_id.getIDURL(),
         PacketID=request.PacketID,  # This is needed to identify Fail on remote side
         Payload=response,
         RemoteID=remote_idurl,
@@ -261,8 +261,8 @@ def SendFail(request, response='', remote_idurl=None, wide=False):
 def SendFailNoRequest(remoteID, packetID, response=''):
     result = signed.Packet(
         Command=commands.Fail(),
-        OwnerID=my_id.getLocalID(),
-        CreatorID=my_id.getLocalID(),
+        OwnerID=my_id.getIDURL(),
+        CreatorID=my_id.getIDURL(),
         PacketID=packetID,
         Payload=response,
         RemoteID=remoteID,
@@ -335,8 +335,8 @@ def SendIdentity(remote_idurl, wide=False, timeout=10, callbacks={}):
             nameurl.GetName(remote_idurl), wide, packet_id, ))
     result = signed.Packet(
         Command=commands.Identity(),
-        OwnerID=my_id.getLocalID(),
-        CreatorID=my_id.getLocalID(),
+        OwnerID=my_id.getIDURL(),
+        CreatorID=my_id.getIDURL(),
         PacketID=packet_id,
         Payload=my_id.getLocalIdentity().serialize(),
         RemoteID=remote_idurl,
@@ -375,8 +375,8 @@ def SendRequestService(remote_idurl, service_name, json_payload={}, wide=False, 
             service_name, remote_idurl, len(service_info_raw), packet_id, timeout, ))
     result = signed.Packet(
         Command=commands.RequestService(),
-        OwnerID=my_id.getLocalID(),
-        CreatorID=my_id.getLocalID(),
+        OwnerID=my_id.getIDURL(),
+        CreatorID=my_id.getIDURL(),
         PacketID=packet_id,
         Payload=service_info_raw,
         RemoteID=remote_idurl,
@@ -409,8 +409,8 @@ def SendCancelService(remote_idurl, service_name, json_payload={}, wide=False, c
             service_name, remote_idurl, len(service_info_raw)))
     result = signed.Packet(
         Command=commands.CancelService(),
-        OwnerID=my_id.getLocalID(),
-        CreatorID=my_id.getLocalID(),
+        OwnerID=my_id.getIDURL(),
+        CreatorID=my_id.getIDURL(),
         PacketID=packetid.UniqueID(),
         Payload=service_info_raw,
         RemoteID=remote_idurl,
@@ -439,7 +439,7 @@ def SendListFiles(target_supplier, customer_idurl=None, key_id=None, query_items
     This is used as a request method from your supplier : if you send him a ListFiles() packet
     he will reply you with a list of stored files in a Files() packet.
     """
-    MyID = my_id.getLocalID()
+    MyID = my_id.getIDURL()
     if not customer_idurl:
         customer_idurl = MyID
     if not str(target_supplier).isdigit():
@@ -497,7 +497,7 @@ def SendFiles(idurl, raw_list_files_info, packet_id, callbacks={}, timeout=10, )
     This will not send any personal data : only file names, ids, versions, etc.
     So pass list of files in encrypted form in the `payload` or leave it empty.
     """
-    MyID = my_id.getLocalID()
+    MyID = my_id.getIDURL()
     if _Debug:
         lg.out(_DebugLevel, 'p2p_service.SendFiles %d bytes in packetID=%s' % (len(raw_list_files_info), packet_id))
         lg.out(_DebugLevel, '  to remoteID=%s' % idurl)
@@ -591,7 +591,7 @@ def DeleteFile(request):
 def SendDeleteFile(SupplierID, pathID):
     if _Debug:
         lg.out(_DebugLevel, "p2p_service.SendDeleteFile SupplierID=%s PathID=%s" % (SupplierID, pathID))
-    MyID = my_id.getLocalID()
+    MyID = my_id.getIDURL()
     PacketID = pathID
     RemoteID = SupplierID
     result = signed.Packet(
@@ -609,7 +609,7 @@ def SendDeleteFile(SupplierID, pathID):
 def SendDeleteListPaths(SupplierID, ListPathIDs):
     if _Debug:
         lg.out(_DebugLevel, "p2p_service.SendDeleteListPaths SupplierID=%s PathIDs: %s" % (SupplierID, ListPathIDs))
-    MyID = my_id.getLocalID()
+    MyID = my_id.getIDURL()
     PacketID = packetid.UniqueID()
     RemoteID = SupplierID
     Payload = '\n'.join(ListPathIDs)
@@ -640,7 +640,7 @@ def DeleteBackup(request):
 def SendDeleteBackup(SupplierID, BackupID):
     if _Debug:
         lg.out(_DebugLevel, "p2p_service.SendDeleteBackup SupplierID=%s  BackupID=%s" % (SupplierID, BackupID))
-    MyID = my_id.getLocalID()
+    MyID = my_id.getIDURL()
     PacketID = packetid.RemotePath(BackupID)
     RemoteID = SupplierID
     result = signed.Packet(
@@ -658,7 +658,7 @@ def SendDeleteBackup(SupplierID, BackupID):
 def SendDeleteListBackups(SupplierID, ListBackupIDs):
     if _Debug:
         lg.out(_DebugLevel, "p2p_service.SendDeleteListBackups SupplierID=%s BackupIDs: %s" % (SupplierID, ListBackupIDs))
-    MyID = my_id.getLocalID()
+    MyID = my_id.getIDURL()
     PacketID = packetid.UniqueID()
     RemoteID = SupplierID
     Payload = '\n'.join(ListBackupIDs)
@@ -768,8 +768,8 @@ def SendCoin(remote_idurl, coins, packet_id=None, wide=False, callbacks={}):
         packet_id = packetid.UniqueID()
     outpacket = signed.Packet(
         Command=commands.Coin(),
-        OwnerID=my_id.getLocalID(),
-        CreatorID=my_id.getLocalID(),
+        OwnerID=my_id.getIDURL(),
+        CreatorID=my_id.getIDURL(),
         PacketID=packet_id,
         Payload=serialization.DictToBytes(coins, keys_to_text=True),
         RemoteID=remote_idurl,
@@ -789,8 +789,8 @@ def SendRetrieveCoin(remote_idurl, query, wide=False, callbacks={}):
         lg.out(_DebugLevel, "p2p_service.SendRetrieveCoin to %s" % remote_idurl)
     outpacket = signed.Packet(
         Command=commands.RetrieveCoin(),
-        OwnerID=my_id.getLocalID(),
-        CreatorID=my_id.getLocalID(),
+        OwnerID=my_id.getIDURL(),
+        CreatorID=my_id.getIDURL(),
         PacketID=packetid.UniqueID(),
         Payload=serialization.DictToBytes(query),
         RemoteID=remote_idurl,
@@ -817,8 +817,8 @@ def SendKey(remote_idurl, encrypted_key_data, packet_id=None, wide=False, callba
             packet_id, remote_idurl, len(encrypted_key_data)))
     outpacket = signed.Packet(
         Command=commands.Key(),
-        OwnerID=my_id.getLocalID(),
-        CreatorID=my_id.getLocalID(),
+        OwnerID=my_id.getIDURL(),
+        CreatorID=my_id.getIDURL(),
         PacketID=packet_id,
         Payload=encrypted_key_data,
         RemoteID=remote_idurl,
@@ -844,8 +844,8 @@ def SendAuditKey(remote_idurl, encrypted_payload, packet_id=None, timeout=10, wi
         packet_id = packetid.UniqueID()
     outpacket = signed.Packet(
         Command=commands.AuditKey(),
-        OwnerID=my_id.getLocalID(),
-        CreatorID=my_id.getLocalID(),
+        OwnerID=my_id.getIDURL(),
+        CreatorID=my_id.getIDURL(),
         PacketID=packet_id,
         Payload=encrypted_payload,
         RemoteID=remote_idurl,
@@ -896,8 +896,8 @@ def SendEvent(remote_idurl, event_id, payload=None,
             remote_idurl, len(e_json_src)))
     outpacket = signed.Packet(
         Command=commands.Event(),
-        OwnerID=my_id.getLocalID(),
-        CreatorID=my_id.getLocalID(),
+        OwnerID=my_id.getIDURL(),
+        CreatorID=my_id.getIDURL(),
         PacketID=packet_id,
         Payload=e_json_src,
         RemoteID=remote_idurl,
@@ -925,8 +925,8 @@ def SendMessage(remote_idurl, packet_id=None, payload=None, wide=True, callbacks
         lg.out(_DebugLevel, "p2p_service.SendMessage to %s with packet_id=%s" % (nameurl.GetName(remote_idurl), packet_id, ))
     outpacket = signed.Packet(
         Command=commands.Message(),
-        OwnerID=my_id.getLocalID(),
-        CreatorID=my_id.getLocalID(),
+        OwnerID=my_id.getIDURL(),
+        CreatorID=my_id.getIDURL(),
         PacketID=packet_id,
         Payload=payload,
         RemoteID=remote_idurl,
@@ -948,7 +948,7 @@ def Contacts(request, info):
 def SendContacts(remote_idurl, json_payload={}, wide=False, callbacks={}):
     """
     """
-    MyID = my_id.getLocalID()
+    MyID = my_id.getIDURL()
     if _Debug:
         lg.out(_DebugLevel, "p2p_service.SendContacts to %s" % nameurl.GetName(remote_idurl))
     PacketID = packetid.UniqueID()

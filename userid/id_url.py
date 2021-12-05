@@ -357,7 +357,7 @@ def identity_cached(new_id_obj):
                 ))
             from userid import my_id
             if my_id.isLocalIdentityReady():
-                if my_id.getLocalID() == new_id_obj.getIDURL():
+                if my_id.getIDURL() == new_id_obj.getIDURL():
                     events.send('my-identity-rotated', data=dict(
                         old_idurls=latest_id_obj.getSources(as_originals=True),
                         new_idurls=new_id_obj.getSources(as_originals=True),

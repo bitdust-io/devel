@@ -150,7 +150,7 @@ class ProxyTransportService(LocalService):
             lg.warn('"my-original-identity" config has not valid value')
             self._reset_my_original_identity()
             return
-        if orig_ident.getIDURL() != my_id.getLocalID():
+        if orig_ident.getIDURL() != my_id.getIDURL():
             lg.warn('"my-original-identity" source is not equal to local identity source')
             self._reset_my_original_identity()
             return
@@ -194,8 +194,8 @@ class ProxyTransportService(LocalService):
         from transport import gateway
         from userid import my_id
         lg.info('connected to DHT layer for proxy routers: %r' % ok)
-        if my_id.getLocalID():
-            dht_service.set_node_data('idurl', my_id.getLocalID().to_text(), layer_id=dht_records.LAYER_PROXY_ROUTERS)
+        if my_id.getIDURL():
+            dht_service.set_node_data('idurl', my_id.getIDURL().to_text(), layer_id=dht_records.LAYER_PROXY_ROUTERS)
         if self.transport:
             if self.starting_deferred and not self.starting_deferred.called:
                 self.transport.automat('init', (gateway.listener(), self._on_transport_state_changed))

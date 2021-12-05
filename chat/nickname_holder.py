@@ -212,7 +212,7 @@ class NicknameHolder(automat.Automat):
         """
         Condition method.
         """
-        return id_url.to_bin(args[0]) == my_id.getLocalID().to_bin()
+        return id_url.to_bin(args[0]) == my_id.getIDURL().to_bin()
 
     def doSetNickname(self, *args, **kwargs):
         """
@@ -264,7 +264,7 @@ class NicknameHolder(automat.Automat):
         """
         Action method.
         """
-        d = dht_records.set_nickname(self.key, my_id.getLocalID())
+        d = dht_records.set_nickname(self.key, my_id.getIDURL())
         d.addCallback(self._dht_write_result)
         d.addErrback(lambda err: self.automat('dht-write-failed', err))
 

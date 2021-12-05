@@ -108,7 +108,7 @@ class PrivateGroupsService(LocalService):
                 if not key_id.startswith('group_'):
                     continue
                 _glob_id = global_id.ParseGlobalID(key_id)
-                if _glob_id['idurl'] == my_id.getLocalID():
+                if _glob_id['idurl'] == my_id.getIDURL():
                     # only send public keys of my own groups
                     my_keys_to_be_republished.append(key_id)
             for group_key_id in my_keys_to_be_republished:

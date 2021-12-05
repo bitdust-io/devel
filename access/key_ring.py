@@ -755,7 +755,7 @@ def on_files_received(newpacket, info):
         return False
     trusted_customer_idurl = list_files_global_id['idurl']
     incoming_key_id = list_files_global_id['key_id']
-    if trusted_customer_idurl == my_id.getLocalID():
+    if trusted_customer_idurl == my_id.getIDURL():
         if _Debug:
             lg.dbg(_DebugLevel, 'ignore %s packet which seems to came from my own supplier' % newpacket)
         # only process list Files() from other customers who granted me access to their files

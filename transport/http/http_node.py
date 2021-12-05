@@ -282,11 +282,11 @@ class Receiver(object):
 
         if net_misc.proxy_is_on():
             f = TransportHTTPProxyClientFactory(url, method='POST', headers={
-                'User-Agent': 'BitDust transport_http', 'idurl': my_id.getLocalID(), } )
+                'User-Agent': 'BitDust transport_http', 'idurl': my_id.getIDURL(), } )
             conn = reactor.connectTCP(net_misc.get_proxy_host(), int(net_misc.get_proxy_port()), f)
         else:
             f = TransportHTTPClientFactory(url, method='POST', headers={
-                'User-Agent': 'BitDust transport_http', 'idurl': my_id.getLocalID(), } )
+                'User-Agent': 'BitDust transport_http', 'idurl': my_id.getIDURL(), } )
             conn = reactor.connectTCP(host, int(port), f)
 
         f.deferred.addCallback(self.on_ping_success, idurl, host, port, conn)
@@ -375,7 +375,7 @@ def do_update_contacts():
 
     for idurl in contactsdb.contacts(include_all=True):
         lg.out(10, 'http_node.update_contacts want ' + idurl)
-        if idurl == my_id.getLocalID():
+        if idurl == my_id.getIDURL():
             continue
         latest_identity = identitycache.GetLatest(idurl)
         if isinstance(latest_identity, Deferred):

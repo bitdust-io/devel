@@ -104,7 +104,7 @@ class EmployerService(LocalService):
         if driver.is_on('service_entangled_dht'):
             from dht import dht_relations
             from userid import my_id
-            d = dht_relations.read_customer_suppliers(my_id.getLocalID(), use_cache=use_cache)
+            d = dht_relations.read_customer_suppliers(my_id.getIDURL(), use_cache=use_cache)
             d.addCallback(self._on_my_dht_relations_discovered)
             d.addErrback(self._on_my_dht_relations_failed)
         else:
@@ -140,7 +140,7 @@ class EmployerService(LocalService):
             json_payload={
                 'space': 'family_member',
                 'type': 'supplier_position',
-                'customer_idurl': my_id.getLocalID(),
+                'customer_idurl': my_id.getIDURL(),
                 'customer_ecc_map': eccmap.Current().name,
                 'supplier_idurl': supplier_idurl,
                 'supplier_position': supplier_position,
