@@ -468,7 +468,7 @@ class FireHire(automat.Automat):
             if sc is None:
                 sc = supplier_connector.create(
                     supplier_idurl=supplier_idurl,
-                    customer_idurl=my_id.getLocalID(),
+                    customer_idurl=my_id.getIDURL(),
                 )
             else:
                 sc.needed_bytes = None
@@ -700,7 +700,7 @@ class FireHire(automat.Automat):
             new_idurl,
             'connected',
             time.strftime('%d-%m-%Y %H:%M:%S'),
-            my_id.getLocalID(),
+            my_id.getIDURL(),
         )
         from main import control
         control.on_suppliers_changed(current_suppliers)
@@ -760,7 +760,7 @@ class FireHire(automat.Automat):
                 supplier_idurl,
                 'disconnected',
                 time.strftime('%d-%m-%Y %H:%M:%S'),
-                my_id.getLocalID(),
+                my_id.getIDURL(),
             )
         current_suppliers = current_suppliers[:desired_suppliers]
         contactsdb.update_suppliers(current_suppliers)

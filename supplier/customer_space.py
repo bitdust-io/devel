@@ -231,7 +231,7 @@ def make_valid_filename(customerIDURL, glob_path):
 #------------------------------------------------------------------------------
 
 def on_data(newpacket):
-    if id_url.to_bin(newpacket.OwnerID) == my_id.getLocalID().to_bin():
+    if id_url.to_bin(newpacket.OwnerID) == my_id.getIDURL().to_bin():
         # this Data belong to us, SKIP
         return False
 #     if not contactsdb.is_customer(newpacket.OwnerID):
@@ -366,14 +366,14 @@ def on_retrieve(newpacket):
     if stored_packet.Command != commands.Data():
         lg.warn('sending back packet which is not a Data')
     # here Data() packet is sent back as it is...
-    # that means outpacket.RemoteID=my_id.getLocalID() - it was addressed to that node and stored as it is
+    # that means outpacket.RemoteID=my_id.getIDURL() - it was addressed to that node and stored as it is
     # need to take that in account every time you receive Data() packet
     # it can be not a new Data(), but the old data returning back as a response to Retreive() packet
     # let's create a new Data() packet which will be addressed directly to recipient and "wrap" stored data inside it
     routed_packet = signed.Packet(
         Command=commands.Data(),
         OwnerID=stored_packet.OwnerID,
-        CreatorID=my_id.getLocalID(),
+        CreatorID=my_id.getIDURL(),
         PacketID=stored_packet.PacketID,
         Payload=stored_packet.Serialize(),
         RemoteID=recipient_idurl,

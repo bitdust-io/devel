@@ -156,8 +156,8 @@ class Test(TestCase):
             data1 = os.urandom(payload_size)
             p1 = signed.Packet(
                 'Data',
-                my_id.getLocalID(),
-                my_id.getLocalID(),
+                my_id.getIDURL(),
+                my_id.getIDURL(),
                 'SomeID',
                 data1,
                 self.bob_ident.getIDURL(),

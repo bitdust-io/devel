@@ -95,7 +95,7 @@ _ListFilesOrator = None
 def is_synchronized(customer_idurl=None):
     if not A():
         return False
-    customer_idurl = customer_idurl or my_id.getLocalID()
+    customer_idurl = customer_idurl or my_id.getIDURL()
     if A().state == 'SAW_FILES':
         if A().last_time_saw_files.get(customer_idurl, -1) > 0:
             return True
@@ -114,7 +114,7 @@ def synchronize_files(customer_idurl=None):
     if not A():
         ret.errback(Exception('not initialized'))
         return ret
-    customer_idurl = customer_idurl or my_id.getLocalID()
+    customer_idurl = customer_idurl or my_id.getIDURL()
     if A().state in ['SAW_FILES', 'NO_FILES', ]:
         A('need-files', customer_idurl=customer_idurl, result_defer=ret)
         return ret
@@ -194,7 +194,7 @@ class ListFilesOrator(automat.Automat):
         events.remove_subscriber(self._on_my_identity_rotated, 'my-identity-rotated')
 
     def state_changed(self, oldstate, newstate, event, *args, **kwargs):
-        if self.target_customer_idurl is None or self.target_customer_idurl == my_id.getLocalID():
+        if self.target_customer_idurl is None or self.target_customer_idurl == my_id.getIDURL():
             if driver.is_on('service_backups'):
                 # TODO: rebuild using "list-files-orator-state-changed" event
                 from storage import backup_monitor
@@ -268,7 +268,7 @@ class ListFilesOrator(automat.Automat):
 
     def doReadLocalFiles(self, *args, **kwargs):
         from storage import backup_matrix
-        self.target_customer_idurl = kwargs.get('customer_idurl') or my_id.getLocalID()
+        self.target_customer_idurl = kwargs.get('customer_idurl') or my_id.getIDURL()
         self.result_defer = kwargs.get('result_defer')
         self.critical_suppliers_number = 0
         maybeDeferred(backup_matrix.ReadLocalFiles).addBoth(

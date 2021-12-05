@@ -362,7 +362,7 @@ class IdRestorer(automat.Automat):
             lg.warn('skip reading my suppliers from DHT, currently known %d suppliers already' % known_suppliers)
             self.automat('suppliers-read-ok')
             return
-        d = dht_relations.read_customer_suppliers(my_id.getLocalID(), use_cache=False)
+        d = dht_relations.read_customer_suppliers(my_id.getIDURL(), use_cache=False)
         d.addCallback(self._on_my_dht_relations_discovered)
         d.addErrback(self._on_my_dht_relations_failed)
 

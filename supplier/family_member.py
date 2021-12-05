@@ -130,7 +130,7 @@ class FamilyMember(automat.Automat):
         Builds `family_member()` state machine.
         """
         self.customer_idurl = id_url.field(customer_idurl)
-        self.supplier_idurl = my_id.getLocalID().to_bin()
+        self.supplier_idurl = my_id.getIDURL().to_bin()
         super(FamilyMember, self).__init__(
             name="family_%s_member_%s" % (
                 nameurl.GetName(self.customer_idurl),
@@ -289,7 +289,7 @@ class FamilyMember(automat.Automat):
         if not dht_info_valid:
             return False
         if self.current_request and self.current_request['command'] == 'family-leave':
-            if my_id.getLocalID().to_bin() not in dht_info_valid['suppliers']:
+            if my_id.getIDURL().to_bin() not in dht_info_valid['suppliers']:
                 return True
         my_info_valid = self._do_validate_my_info(self.my_info)
         if not my_info_valid:
@@ -298,13 +298,13 @@ class FamilyMember(automat.Automat):
         if latest_revision == 0:
             return False
         try:
-            my_position = my_info_valid['suppliers'].index(my_id.getLocalID().to_bin())
+            my_position = my_info_valid['suppliers'].index(my_id.getIDURL().to_bin())
         except:
             my_position = -1
         if my_position < 0:
             return False
         try:
-            existing_position = dht_info_valid['suppliers'].index(my_id.getLocalID().to_bin())
+            existing_position = dht_info_valid['suppliers'].index(my_id.getIDURL().to_bin())
         except:
             existing_position = -1
         return existing_position > 0 and my_position > 0 and existing_position == my_position
@@ -385,7 +385,7 @@ class FamilyMember(automat.Automat):
         for supplier_idurl in self.transaction['suppliers']:
             if not supplier_idurl:
                 continue
-            if supplier_idurl == my_id.getLocalID().to_bin():
+            if supplier_idurl == my_id.getIDURL().to_bin():
                 continue
             outpacket = p2p_service.SendContacts(
                 remote_idurl=supplier_idurl,
@@ -576,7 +576,7 @@ class FamilyMember(automat.Automat):
     def _do_create_first_revision(self, request):
         merged_info = {
             'revision': 0,
-            'publisher_idurl': my_id.getLocalID(),  # I will be a publisher of the first revision
+            'publisher_idurl': my_id.getIDURL(),  # I will be a publisher of the first revision
             'suppliers': id_url.to_bin_list(request.get('family_snapshot') or []),
             'ecc_map': request.get('ecc_map'),
             'customer_idurl': self.customer_idurl,
@@ -592,12 +592,12 @@ class FamilyMember(automat.Automat):
         except:
             possible_position = -1
         possible_suppliers = id_url.to_bin_list(local_customer_meta_info.get('family_snapshot') or [])
-        if possible_position >= 0 and my_id.getLocalID().to_bin() not in possible_suppliers:
+        if possible_position >= 0 and my_id.getIDURL().to_bin() not in possible_suppliers:
             if len(possible_suppliers) > possible_position:
-                possible_suppliers[possible_position] = my_id.getLocalID().to_bin()
+                possible_suppliers[possible_position] = my_id.getIDURL().to_bin()
         my_info = {
             'revision': latest_revision,
-            'publisher_idurl': my_id.getLocalID(),  # I will be a publisher of that revision
+            'publisher_idurl': my_id.getIDURL(),  # I will be a publisher of that revision
             'suppliers': possible_suppliers,
             'ecc_map': local_customer_meta_info.get('ecc_map'),
             'customer_idurl': self.customer_idurl,
@@ -614,7 +614,7 @@ class FamilyMember(automat.Automat):
             possible_position = -1
         if possible_position >= 0:
             try:
-                another_suppliers[possible_position] = my_id.getLocalID().to_bin()
+                another_suppliers[possible_position] = my_id.getIDURL().to_bin()
             except:
                 lg.exc()
             contactsdb.add_customer_meta_info(self.customer_idurl, {
@@ -624,7 +624,7 @@ class FamilyMember(automat.Automat):
             })
         return {
             'revision': int(another_revision),
-            'publisher_idurl': my_id.getLocalID(),  # I will be a publisher of that revision
+            'publisher_idurl': my_id.getIDURL(),  # I will be a publisher of that revision
             'suppliers': id_url.to_bin_list(another_suppliers),
             'ecc_map': another_ecc_map,
             'customer_idurl': self.customer_idurl,
@@ -700,7 +700,7 @@ class FamilyMember(automat.Automat):
         if self.customer_idurl.to_original() != possible_transaction['customer_idurl'].to_original():
             possible_transaction['customer_idurl'] = self.customer_idurl
             possible_transaction['revision'] += 1
-            possible_transaction['publisher_idurl'] = my_id.getLocalID()
+            possible_transaction['publisher_idurl'] = my_id.getIDURL()
             lg.info('incremented family revision after customer %r identity rotated: %r' % (
                 self.customer_idurl, possible_transaction['revision'], ))
             return possible_transaction
@@ -715,7 +715,7 @@ class FamilyMember(automat.Automat):
                             lg.out(_DebugLevel, 'family_member._do_increment_revision did not found any changes, skip transaction')
                         return None
         possible_transaction['revision'] += 1
-        possible_transaction['publisher_idurl'] = my_id.getLocalID()
+        possible_transaction['publisher_idurl'] = my_id.getIDURL()
         return possible_transaction
 
     def _do_process_family_join_request(self, merged_info, current_request):
@@ -860,7 +860,7 @@ class FamilyMember(automat.Automat):
             return self.my_info.copy()
 
         try:
-            my_position = self.my_info['suppliers'].index(my_id.getLocalID().to_bin())
+            my_position = self.my_info['suppliers'].index(my_id.getIDURL().to_bin())
         except:
             my_position = -1
         if my_position < 0:
@@ -882,7 +882,7 @@ class FamilyMember(automat.Automat):
                 merged_info['suppliers'] = merged_info['suppliers'][:my_expected_suppliers_count]
 
         try:
-            existing_position = merged_info['suppliers'].index(my_id.getLocalID().to_bin())
+            existing_position = merged_info['suppliers'].index(my_id.getIDURL().to_bin())
         except ValueError:
             existing_position = -1
         if existing_position < 0:
@@ -891,15 +891,15 @@ class FamilyMember(automat.Automat):
                 # also build solution to validate that change was approved by customer
                 lg.warn('overwriting another supplier %s with my IDURL at position %d in family of customer %s' % (
                     merged_info['suppliers'][my_position], my_position, self.customer_idurl, ))
-            merged_info['suppliers'][my_position] = my_id.getLocalID().to_bin()
+            merged_info['suppliers'][my_position] = my_id.getIDURL().to_bin()
             if _Debug:
                 lg.out(_DebugLevel, '    placed supplier %s at known position %d in the family of customer %s' % (
-                    my_id.getLocalID(), my_position, self.customer_idurl))
+                    my_id.getIDURL(), my_position, self.customer_idurl))
             existing_position = my_position
 
         if existing_position != my_position:
             merged_info['suppliers'][existing_position] = b''
-            merged_info['suppliers'][my_position] = my_id.getLocalID().to_bin()
+            merged_info['suppliers'][my_position] = my_id.getIDURL().to_bin()
             if _Debug:
                 lg.out(_DebugLevel, '    found my IDURL on %d position and will move it on %d position in the family of customer %s' % (
                 existing_position, my_position, self.customer_idurl))
@@ -1017,14 +1017,14 @@ class FamilyMember(automat.Automat):
             lg.info('another supplier have more fresh revision, update my info and raise "family-refresh" event')
             self.automat('family-refresh')
             return p2p_service.SendAck(incoming_packet)
-        if my_id.getLocalID().to_bin() not in another_suppliers_list:
+        if my_id.getIDURL().to_bin() not in another_suppliers_list:
             if _Debug:
                 lg.args(_DebugLevel, another_suppliers_list=another_suppliers_list, customer_idurl=self.customer_idurl)
             lg.warn('another supplier is trying to remove my IDURL from the family of customer %s' % self.customer_idurl)
             return p2p_service.SendFail(incoming_packet, response=serialization.DictToBytes(self.my_info))
-        my_position_in_transaction = another_suppliers_list.index(my_id.getLocalID().to_bin())
+        my_position_in_transaction = another_suppliers_list.index(my_id.getIDURL().to_bin())
         try:
-            my_known_position = self.my_info['suppliers'].index(my_id.getLocalID().to_bin())
+            my_known_position = self.my_info['suppliers'].index(my_id.getIDURL().to_bin())
         except:
             my_known_position = -1
         if my_known_position < 0:
@@ -1052,7 +1052,7 @@ class FamilyMember(automat.Automat):
         except:
             lg.exc()
             return None
-        if supplier_idurl != my_id.getLocalID().to_bin():
+        if supplier_idurl != my_id.getIDURL().to_bin():
             return p2p_service.SendFail(incoming_packet, 'contacts packet with supplier position not addressed to me')
         try:
             _existing_position = self.my_info['suppliers'].index(supplier_idurl)

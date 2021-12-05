@@ -197,7 +197,7 @@ def make_key_id(alias, creator_idurl=None, creator_glob_id=None):
         #     key_alias=alias,
         # )
     if creator_idurl is None:
-        creator_idurl = my_id.getLocalID()
+        creator_idurl = my_id.getIDURL()
     return global_id.MakeGlobalID(
         idurl=creator_idurl,
         key_alias=alias,
@@ -814,7 +814,7 @@ def make_master_key_info(include_private=False):
         'key_id': my_id.getGlobalID(key_alias='master'),
         'alias': 'master',
         'label': my_id.getGlobalID(key_alias='master'),
-        'creator': my_id.getLocalID(),
+        'creator': my_id.getIDURL(),
         'is_public': key.MyPrivateKeyObject().isPublic(),
         # 'fingerprint': str(key.MyPrivateKeyObject().fingerprint()),
         # 'type': str(key.MyPrivateKeyObject().type()),

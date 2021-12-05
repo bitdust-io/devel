@@ -899,7 +899,7 @@ def on_register_file_sending(proto, host, receiver_idurl, filename, size=0, desc
     """
     if _Debug:
         lg.out(_DebugLevel, 'gateway.on_register_file_sending %s %s to %r' % (filename, description, receiver_idurl))
-#     if id_url.field(receiver_idurl).to_bin() == my_id.getLocalID().to_bin():
+#     if id_url.field(receiver_idurl).to_bin() == my_id.getIDURL().to_bin():
 #         pkt_out, work_item = packet_out.search(proto, host, filename)
 #     else:
 #         pkt_out, work_item = packet_out.search(proto, host, filename, remote_idurl=receiver_idurl)
@@ -1179,7 +1179,7 @@ def main():
         globals()['num_out'] = 0
 
         def _s():
-            p = signed.Packet(commands.Data(), my_id.getLocalID(), my_id.getLocalID(), my_id.getLocalID(), bpio.ReadBinaryFile(args[1]), args[0])
+            p = signed.Packet(commands.Data(), my_id.getIDURL(), my_id.getIDURL(), my_id.getIDURL(), bpio.ReadBinaryFile(args[1]), args[0])
             outbox(p, wide=True)
             lg.out(2, 'OUTBOX %d : %r' % (globals()['num_out'], p))
             globals()['num_out'] += 1

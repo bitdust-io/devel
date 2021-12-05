@@ -253,29 +253,57 @@ def rotate_active_group_memeber(old_group_key_id, new_group_key_id):
 #------------------------------------------------------------------------------
 
 def start_group_members():
-    started = 0
-    for group_key_id, group_info in groups.active_groups().items():
+
+    def _start():
+        started = 0
+        for group_key_id, group_info in groups.active_groups().items():
+            if not group_key_id:
+                continue
+            if not my_keys.is_key_registered(group_key_id):
+                lg.err('can not start GroupMember because key %r is not registered' % group_key_id)
+                continue
+            if group_key_id.startswith('person'):
+                # TODO: temporarily disabled
+                continue
+            if not group_info['active']:
+                continue
+            if not id_url.is_cached(global_id.glob2idurl(group_key_id, as_field=False)):
+                continue
+            existing_group_member = get_active_group_member(group_key_id)
+            if not existing_group_member:
+                existing_group_member = GroupMember(group_key_id)
+                existing_group_member.automat('init')
+            if existing_group_member.state in ['DHT_READ?', 'BROKERS?', 'QUEUE?', 'IN_SYNC!', ]:
+                continue
+            existing_group_member.automat('join')
+            started += 1
+
+    def _on_cached(result):
+        if _Debug:
+            lg.args(_DebugLevel, result=result)
+        # a small delay to make sure received idurls were refreshed and rotated locally
+        reactor.callLater(.5, _start)  # @UndefinedVariable
+        return None
+
+    idurls_to_be_updated = []
+    for group_key_id, _ in groups.active_groups().items():
         if not group_key_id:
             continue
         if not my_keys.is_key_registered(group_key_id):
-            lg.err('can not start GroupMember because key %r is not registered' % group_key_id)
             continue
         if group_key_id.startswith('person'):
             # TODO: temporarily disabled
             continue
-        if not group_info['active']:
+        creator_idurl = global_id.glob2idurl(group_key_id)
+        if id_url.is_the_same(creator_idurl, my_id.getIDURL()):
             continue
-        if not id_url.is_cached(global_id.glob2idurl(group_key_id, as_field=False)):
-            continue
-        existing_group_member = get_active_group_member(group_key_id)
-        if not existing_group_member:
-            existing_group_member = GroupMember(group_key_id)
-            existing_group_member.automat('init')
-        if existing_group_member.state in ['DHT_READ?', 'BROKERS?', 'QUEUE?', 'IN_SYNC!', ]:
-            continue
-        existing_group_member.automat('join')
-        started += 1
-    return started
+        idurls_to_be_updated.append(creator_idurl)
+
+    if _Debug:
+        lg.args(_DebugLevel, active_groups=len(groups.active_groups()), idurls_to_be_updated=len(idurls_to_be_updated))
+    d = propagate.fetch(idurls_to_be_updated, refresh_cache=True)
+    d.addBoth(_on_cached)
+    return True
 
 
 def shutdown_group_members():
@@ -309,7 +337,7 @@ class GroupMember(automat.Automat):
         """
         Builds `group_member()` state machine.
         """
-        self.member_idurl = member_idurl or my_id.getLocalID()
+        self.member_idurl = member_idurl or my_id.getIDURL()
         self.member_id = self.member_idurl.to_id()
         self.group_key_id = group_key_id
         self.group_glob_id = global_id.ParseGlobalID(self.group_key_id)

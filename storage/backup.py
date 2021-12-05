@@ -154,7 +154,7 @@ class backup(automat.Automat):
                  ecc_map=None,
                  creatorIDURL=None,):
         self.backupID = backupID
-        self.creatorIDURL = creatorIDURL or my_id.getLocalID()
+        self.creatorIDURL = creatorIDURL or my_id.getIDURL()
         _parts = packetid.SplitBackupID(self.backupID)
         self.customerGlobalID = _parts[0]
         self.pathID = _parts[1]
@@ -600,8 +600,8 @@ def main():
             payld = bpio.ReadBinaryFile(filepath)
             newpacket = signed.Packet(
                 'Data',
-                my_id.getLocalID(),
-                my_id.getLocalID(),
+                my_id.getIDURL(),
+                my_id.getIDURL(),
                 filename,
                 payld,
                 'http://megafaq.ru/cvps1010.xml')

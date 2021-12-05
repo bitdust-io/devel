@@ -105,7 +105,7 @@ def connectors(customer_idurl=None, as_dict=False):
     if as_dict:
         return _SuppliersConnectors
     if customer_idurl is None:
-        customer_idurl = my_id.getLocalID()
+        customer_idurl = my_id.getIDURL()
     customer_idurl = id_url.field(customer_idurl)
     if customer_idurl not in _SuppliersConnectors:
         _SuppliersConnectors[customer_idurl] = {}
@@ -117,7 +117,7 @@ def create(supplier_idurl, customer_idurl=None, needed_bytes=None,
     """
     """
     if customer_idurl is None:
-        customer_idurl = my_id.getLocalID()
+        customer_idurl = my_id.getIDURL()
     customer_idurl = id_url.field(customer_idurl)
     supplier_idurl = id_url.field(supplier_idurl)
     assert supplier_idurl not in connectors(customer_idurl)
@@ -136,7 +136,7 @@ def is_supplier(supplier_idurl, customer_idurl=None):
     """
     global _SuppliersConnectors
     if customer_idurl is None:
-        customer_idurl = my_id.getLocalID()
+        customer_idurl = my_id.getIDURL()
     if not id_url.is_cached(customer_idurl):
         return False
     if not id_url.is_cached(supplier_idurl):
@@ -154,7 +154,7 @@ def by_idurl(supplier_idurl, customer_idurl=None):
     """
     """
     if customer_idurl is None:
-        customer_idurl = my_id.getLocalID()
+        customer_idurl = my_id.getIDURL()
     customer_idurl = id_url.field(customer_idurl)
     supplier_idurl = id_url.field(supplier_idurl)
     return connectors(customer_idurl).get(supplier_idurl, None)
@@ -284,7 +284,7 @@ class SupplierConnector(automat.Automat):
         if self.needed_bytes is None:
             total_bytes_needed = diskspace.GetBytesFromString(settings.getNeededString(), 0)
             num_suppliers = -1
-            if self.customer_idurl == my_id.getLocalID():
+            if self.customer_idurl == my_id.getIDURL():
                 num_suppliers = settings.getSuppliersNumberDesired()
             else:
                 known_ecc_map = contactsdb.get_customer_meta_info(self.customer_idurl).get('ecc_map')
@@ -481,7 +481,7 @@ class SupplierConnector(automat.Automat):
                 'scope': 'consumer',
                 'action': 'add_callback',
                 'consumer_id': strng.to_text(my_id.getGlobalID()),
-                'method': strng.to_text(my_id.getLocalID()),
+                'method': strng.to_text(my_id.getIDURL()),
             }, {
                 'scope': 'consumer',
                 'action': 'subscribe',
@@ -522,7 +522,7 @@ class SupplierConnector(automat.Automat):
                 'scope': 'consumer',
                 'action': 'remove_callback',
                 'consumer_id': strng.to_text(my_id.getGlobalID()),
-                'method': strng.to_text(my_id.getLocalID()),
+                'method': strng.to_text(my_id.getIDURL()),
             }, {
                 'scope': 'consumer',
                 'action': 'stop',

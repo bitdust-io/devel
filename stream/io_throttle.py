@@ -270,7 +270,7 @@ class SupplierQueue:
     def __init__(self, supplierIdentity, creatorID, customerIDURL=None):
         self.customerIDURL = customerIDURL
         if self.customerIDURL is None:
-            self.customerIDURL = my_id.getLocalID()
+            self.customerIDURL = my_id.getIDURL()
         self.creatorID = creatorID
         self.remoteID = supplierIdentity
         self.remoteName = nameurl.GetName(self.remoteID)
@@ -765,7 +765,7 @@ class IOThrottle:
     """
 
     def __init__(self):
-        self.creatorID = my_id.getLocalID()
+        self.creatorID = my_id.getIDURL()
         self.supplierQueues = {}
         self.paintFunc = None
 

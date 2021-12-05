@@ -124,7 +124,7 @@ class Block(object):
         ):
         self.CreatorID = CreatorID
         if not self.CreatorID:
-            self.CreatorID = my_id.getLocalID()
+            self.CreatorID = my_id.getIDURL()
         if not isinstance(self.CreatorID, id_url.ID_URL_FIELD):
             self.CreatorID = id_url.field(self.CreatorID)
         self.BackupID = strng.to_text(BackupID)

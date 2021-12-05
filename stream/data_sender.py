@@ -212,7 +212,7 @@ class DataSender(automat.Automat):
         if _Debug:
             lg.out(_DebugLevel, 'data_sender.doScanAndQueue    with %d known customers' % len(contactsdb.known_customers()))
         for customer_idurl in contactsdb.known_customers():
-            if customer_idurl != my_id.getLocalID():
+            if customer_idurl != my_id.getIDURL():
                 # TODO: check that later
                 if _Debug:
                     lg.out(_DebugLevel + 6, 'data_sender.doScanAndQueue  skip sending to another customer: %r' % customer_idurl)
@@ -291,7 +291,7 @@ class DataSender(automat.Automat):
                             filename,
                             packetID,
                             supplier_idurl,
-                            my_id.getLocalID(),
+                            my_id.getIDURL(),
                             self._packetAcked,
                             self._packetFailed,
                         ):

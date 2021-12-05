@@ -357,7 +357,7 @@ def process_line_file(line, current_key_alias=None, customer_idurl=None, is_in_s
             if is_in_sync:
                 # so we have some modifications in the index - it is not empty!
                 # index_synchronizer() did the job - so we have up to date index on hands
-                if customer_idurl == my_id.getLocalID():
+                if customer_idurl == my_id.getIDURL():
                     # now we are sure that this file is old and must be removed from remote supplier
                     paths2remove.add(
                         packetid.MakeBackupID(
@@ -402,7 +402,7 @@ def process_line_dir(line, current_key_alias=None, customer_idurl=None, is_in_sy
                 modified = True
     if not backup_fs.ExistsID(pth, iterID=backup_fs.fsID(customer_idurl)):
         if is_in_sync:
-            if customer_idurl == my_id.getLocalID():
+            if customer_idurl == my_id.getIDURL():
                 paths2remove.add(
                     packetid.MakeBackupID(
                         customer=global_id.UrlToGlobalID(customer_idurl),
@@ -467,7 +467,7 @@ def process_line_version(line, supplier_num, current_key_alias=None, customer_id
     if item is None:
         # this path is not found in the index at all
         if is_in_sync:
-            if customer_idurl == my_id.getLocalID():
+            if customer_idurl == my_id.getIDURL():
                 found_backups.add(backupID)
                 backups2remove.add(backupID)
                 paths2remove.add(
@@ -507,7 +507,7 @@ def process_line_version(line, supplier_num, current_key_alias=None, customer_id
                     lg.warn('skip auto create version %r for path %r because key %r not registered' % (versionName, remotePath, authorized_key_id, ))
     if not item.has_version(versionName):
         if is_in_sync:
-            if customer_idurl == my_id.getLocalID():
+            if customer_idurl == my_id.getIDURL():
                 backups2remove.add(backupID)
                 if _Debug:
                     lg.out(_DebugLevel, '        VERSION "%s" to be removed, version is not found in the index' % backupID)
@@ -592,7 +592,7 @@ def process_raw_list_files(supplier_num, list_files_text_body, customer_idurl=No
     global _ListFilesQueryCallbacks
     from storage import backup_control
     if not customer_idurl:
-        customer_idurl = my_id.getLocalID()
+        customer_idurl = my_id.getIDURL()
     if is_in_sync is None:
         if driver.is_on('service_backup_db'):
             from storage import index_synchronizer
@@ -700,7 +700,7 @@ def SaveLatestRawListFiles(supplier_idurl, raw_data, customer_idurl=None):
     Save a ListFiles packet from given supplier on local HDD.
     """
     if not customer_idurl:
-        customer_idurl = my_id.getLocalID()
+        customer_idurl = my_id.getIDURL()
     if _Debug:
         lg.out(_DebugLevel, 'backup_matrix.SaveLatestRawListFiles, %s, customer_idurl=%s' % (supplier_idurl, customer_idurl))
     supplierPath = settings.SupplierPath(supplier_idurl, customer_idurl)
@@ -719,7 +719,7 @@ def ReadLatestRawListFiles(customer_idurl=None):
     whole "remote" matrix.
     """
     if not customer_idurl:
-        customer_idurl = my_id.getLocalID()
+        customer_idurl = my_id.getIDURL()
     if _Debug:
         lg.out(_DebugLevel, 'backup_matrix.ReadLatestRawListFiles  customer_idurl=%r' % customer_idurl)
     for idurl in contactsdb.suppliers(customer_idurl=customer_idurl):
@@ -1246,7 +1246,7 @@ def ClearSupplierRemoteInfo(supplierNum, customer_idurl=None):
     supplier.
     """
     if not customer_idurl:
-        customer_idurl = my_id.getLocalID()
+        customer_idurl = my_id.getIDURL()
     files = 0
     for backupID in remote_files().keys():
         _customer_idurl = packetid.CustomerIDURL(backupID)

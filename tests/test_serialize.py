@@ -119,8 +119,8 @@ class Test(TestCase):
         data1 = os.urandom(1024)
         p1 = signed.Packet(
             'Data',
-            my_id.getLocalID(),
-            my_id.getLocalID(),
+            my_id.getIDURL(),
+            my_id.getIDURL(),
             'SomeID',
             data1,
             'RemoteID:abc',
@@ -139,7 +139,7 @@ class Test(TestCase):
         key.InitMyKey()
         data1 = os.urandom(1024)
         b1 = encrypted.Block(
-            CreatorID=my_id.getLocalID(),
+            CreatorID=my_id.getIDURL(),
             BackupID='BackupABC',
             BlockNumber=123,
             SessionKey=key.NewSessionKey(session_key_type=key.SessionKeyType()),

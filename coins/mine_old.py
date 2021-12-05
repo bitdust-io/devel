@@ -110,7 +110,7 @@ def work_with_known_difficulty(coin_json,
                                stop_marker=None,
                                prev_hash=''):
     coin_json['miner'] = {
-        'idurl': my_id.getLocalID().to_bin(),
+        'idurl': my_id.getIDURL().to_bin(),
     }
     # data_dump = json.dumps(data)
     data_dump = coins_io.coin_to_string(coin_json)

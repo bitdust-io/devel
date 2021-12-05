@@ -336,8 +336,8 @@ class Handshaker(automat.Automat):
             packet_id = '%s:%d:%s' % (self.channel, self.ping_attempts, packetid.UniqueID())
         ping_packet = signed.Packet(
             Command=commands.Identity(),
-            OwnerID=my_id.getLocalID(),
-            CreatorID=my_id.getLocalID(),
+            OwnerID=my_id.getIDURL(),
+            CreatorID=my_id.getIDURL(),
             PacketID=packet_id,
             Payload=strng.to_bin(identity_object.serialize()),
             RemoteID=self.remote_idurl,

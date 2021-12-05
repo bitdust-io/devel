@@ -326,7 +326,7 @@ class SharedAccessDonor(automat.Automat):
             lg.out(_DebugLevel, 'shared_access_donor.doSendMyListFiles prepared list of files for %s :\n%s' % (
                 self.remote_idurl, raw_list_files))
         block = encrypted.Block(
-            CreatorID=my_id.getLocalID(),
+            CreatorID=my_id.getIDURL(),
             BackupID=self.key_id,
             Data=raw_list_files,
             SessionKey=key.NewSessionKey(session_key_type=key.SessionKeyType()),

@@ -232,7 +232,7 @@ class NetworkTransport(automat.Automat):
         """
         Action method.
         """
-        options = {'idurl': my_id.getLocalID(), }
+        options = {'idurl': my_id.getIDURL(), }
         id_contact = ''
         default_host = ''
         if self.proto == 'tcp':
@@ -242,7 +242,7 @@ class NetworkTransport(automat.Automat):
             options['tcp_port'] = settings.getTCPPort()
         elif self.proto == 'udp':
             if not id_contact:
-                default_host = strng.to_bin(nameurl.GetName(my_id.getLocalID())) + b'@' + strng.to_bin(platform.node())
+                default_host = strng.to_bin(nameurl.GetName(my_id.getIDURL())) + b'@' + strng.to_bin(platform.node())
             options['host'] = id_contact or default_host
             options['dht_port'] = settings.getDHTPort()
             options['udp_port'] = settings.getUDPPort()

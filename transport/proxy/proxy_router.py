@@ -738,7 +738,7 @@ class ProxyRouter(automat.Automat):
             self._do_send_fail_packet(newpacket, info, wide, response_timeout, keep_alive, sender_idurl, receiver_idurl, 'signature invalid')
             return
         #--- packet addressed to me
-        if receiver_idurl.to_bin() == my_id.getLocalID().to_bin():
+        if receiver_idurl.to_bin() == my_id.getIDURL().to_bin():
             if _Debug:
                 lg.out(_DebugLevel, '        proxy_router() passing by INCOMING packet %r from %s to me' % (
                     routed_packet, sender_idurl))
@@ -838,7 +838,7 @@ class ProxyRouter(automat.Automat):
         if _Debug:
             lg.args(_DebugLevel, relay_cmd=relay_cmd, inbox_packet=inbox_packet, receiver_idurl=receiver_idurl, receiver_proto=receiver_proto, receiver_host=receiver_host)
         block = encrypted.Block(
-            CreatorID=my_id.getLocalID(),
+            CreatorID=my_id.getIDURL(),
             BackupID='routed incoming data',
             BlockNumber=0,
             SessionKey=key.NewSessionKey(session_key_type=key.SessionKeyType()),
@@ -851,7 +851,7 @@ class ProxyRouter(automat.Automat):
         routed_packet = signed.Packet(
             Command=relay_cmd,
             OwnerID=inbox_packet.OwnerID,
-            CreatorID=my_id.getLocalID(),
+            CreatorID=my_id.getIDURL(),
             PacketID=inbox_packet.PacketID,
             Payload=raw_data,
             RemoteID=receiver_idurl,
@@ -1024,7 +1024,7 @@ class ProxyRouter(automat.Automat):
             for k, v in self.routes.items():
                 lg.out(_DebugLevel * 2, '        route with %r :  address=%s  contacts=%s' % (k, v.get('address'), v.get('contacts'), ))
         # first filter all traffic addressed to me
-        if newpacket.RemoteID == my_id.getLocalID():
+        if newpacket.RemoteID == my_id.getIDURL():
             # check command type, filter Routed traffic first
             if newpacket.Command in [commands.Relay(), commands.RelayOut(), ]:
                 # look like this is a routed packet from node behind my proxy addressed to someone else
@@ -1128,7 +1128,7 @@ class ProxyRouter(automat.Automat):
             return None
         if route:
             return None
-        if outpacket.CreatorID != my_id.getLocalID():
+        if outpacket.CreatorID != my_id.getIDURL():
             return None
         receiver_idurl = outpacket.RemoteID
         receiver_proto, receiver_host = self._get_session_proto_host(receiver_idurl)
@@ -1165,7 +1165,7 @@ class ProxyRouter(automat.Automat):
 
 
     def _on_file_sending_filter(self, remote_idurl, proto, host, filename, description, pkt_out):
-        if id_url.to_bin(remote_idurl) == my_id.getLocalID().to_bin():
+        if id_url.to_bin(remote_idurl) == my_id.getIDURL().to_bin():
             # somehow outgoing file is addressed to my self - do not filter it, but give a warning
             lg.warn('outgoing file addressed to my self: %r' % pkt_out)
             return None

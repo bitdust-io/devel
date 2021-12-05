@@ -111,7 +111,7 @@ def packet_for_broadcaster(broadcaster_idurl, json_data):
         json_data['broadcaster'] = broadcaster_idurl
     return signed.Packet(commands.Broadcast(),
                          json_data['owner'],
-                         my_id.getLocalID(),
+                         my_id.getIDURL(),
                          json_data['id'],
                          json.dumps(json_data),
                          broadcaster_idurl,)
@@ -119,10 +119,10 @@ def packet_for_broadcaster(broadcaster_idurl, json_data):
 
 def packet_for_listener(listener_idurl, json_data):
     # if 'broadcaster' not in json_data:
-    json_data['broadcaster'] = my_id.getLocalID()
+    json_data['broadcaster'] = my_id.getIDURL()
     return signed.Packet(commands.Broadcast(),
                          json_data['owner'],
-                         my_id.getLocalID(),
+                         my_id.getIDURL(),
                          json_data['id'],
                          json.dumps(json_data),
                          listener_idurl,)
@@ -133,7 +133,7 @@ def packet_for_listener(listener_idurl, json_data):
 def send_broadcast_message(payload):
     from broadcast import broadcaster_node
     from broadcast import broadcast_listener
-    msg = prepare_broadcast_message(my_id.getLocalID(), payload)
+    msg = prepare_broadcast_message(my_id.getIDURL(), payload)
     if broadcaster_node.A():
         broadcaster_node.A('new-outbound-message', (msg, None))
     elif broadcast_listener.A():
@@ -156,7 +156,7 @@ def on_incoming_broadcast_message(json_msg):
 
 def _test():
     from coins import mine
-    print(prepare_broadcast_message(my_id.getLocalID(), {'test': 'okidoki'}))
+    print(prepare_broadcast_message(my_id.getIDURL(), {'test': 'okidoki'}))
 
 #------------------------------------------------------------------------------
 

@@ -86,8 +86,8 @@ def main():
     driver.enabled_services().add('service_gateway')
     driver.enabled_services().add('service_network')
     driver.start()
-    # options = { 'idurl': my_id.getLocalID(),}
-    # options['host'] = nameurl.GetName(my_id.getLocalID())+'@'+'somehost.org'
+    # options = { 'idurl': my_id.getIDURL(),}
+    # options['host'] = nameurl.GetName(my_id.getIDURL())+'@'+'somehost.org'
     # options['dht_port'] = int(settings.getDHTPort())
     # options['udp_port'] = int(settings.getUDPPort())
     # udp.listen(int(settings.getUDPPort()))
@@ -141,8 +141,8 @@ def main():
 #                 for idurl in sys.argv[2:]:
 #                     print '_send', udp_stream.streams().keys()
 #                     p = signed.Packet(commands.Data(),
-#                                       my_id.getLocalID(),
-#                                       my_id.getLocalID(),
+#                                       my_id.getIDURL(),
+#                                       my_id.getIDURL(),
 #                                       'packet%d' % c,
 #                                       bpio.ReadBinaryFile(sys.argv[1]),
 #                                       idurl)

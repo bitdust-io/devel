@@ -274,7 +274,7 @@ class SupplierContractExecutor(automat.Automat):
         """
         contract_chain_node.get_coins_by_chain(
             chain='supplier_customer',
-            provider_idurl=my_id.getLocalID(),
+            provider_idurl=my_id.getIDURL(),
             consumer_idurl=self.customer_idurl,
         ).addCallbacks(
             self._on_query_result,

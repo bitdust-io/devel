@@ -209,7 +209,7 @@ def process(newpacket, info):
         d.addErrback(lambda err: lg.err('RemoteID is unknown, failed caching remote %s identity: %s' % (newpacket.RemoteID, str(err))))
         return d
     if newpacket.Command == commands.Identity():
-        if newpacket.RemoteID != my_id.getLocalID():
+        if newpacket.RemoteID != my_id.getIDURL():
             if _Debug:
                 lg.out(_DebugLevel, '    incoming Identity is routed to another user')
             if not p2p_service.Identity(newpacket, send_ack=False):

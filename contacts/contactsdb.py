@@ -126,7 +126,7 @@ def suppliers(customer_idurl=None):
     """
     global _SuppliersList
     if not customer_idurl:
-        customer_idurl = my_id.getLocalID()
+        customer_idurl = my_id.getIDURL()
     customer_idurl = id_url.field(customer_idurl)
     if customer_idurl not in _SuppliersList:
         _SuppliersList[customer_idurl] = []
@@ -139,7 +139,7 @@ def supplier(index, customer_idurl=None):
     Return supplier ID on given position or empty string.
     """
     if not customer_idurl:
-        customer_idurl = my_id.getLocalID()
+        customer_idurl = my_id.getIDURL()
     customer_idurl = id_url.field(customer_idurl)
     num = int(index)
     if num >= 0 and num < len(suppliers(customer_idurl=customer_idurl)):
@@ -167,7 +167,7 @@ def set_suppliers(idlist, customer_idurl=None):
     """
     global _SuppliersList
     if not customer_idurl:
-        customer_idurl = my_id.getLocalID()
+        customer_idurl = my_id.getIDURL()
     customer_idurl = id_url.field(customer_idurl)
     if customer_idurl not in _SuppliersList:
         _SuppliersList[customer_idurl] = []
@@ -203,7 +203,7 @@ def add_supplier(idurl, position=None, customer_idurl=None):
     """
     global _SuppliersList
     if not customer_idurl:
-        customer_idurl = my_id.getLocalID()
+        customer_idurl = my_id.getIDURL()
     customer_idurl = id_url.field(customer_idurl)
     if customer_idurl not in _SuppliersList:
         _SuppliersList[customer_idurl] = []
@@ -236,7 +236,7 @@ def erase_supplier(idurl=None, position=None, customer_idurl=None):
     """
     global _SuppliersList
     if not customer_idurl:
-        customer_idurl = my_id.getLocalID()
+        customer_idurl = my_id.getIDURL()
     customer_idurl = id_url.field(customer_idurl)
     if customer_idurl not in _SuppliersList:
         return False
@@ -264,7 +264,7 @@ def clear_suppliers(customer_idurl=None):
     """
     global _SuppliersList
     if not customer_idurl:
-        customer_idurl = my_id.getLocalID()
+        customer_idurl = my_id.getIDURL()
     customer_idurl = id_url.field(customer_idurl)
     _SuppliersList.pop(customer_idurl)
     lg.info('erased suppliers list from memory for customer %r' % customer_idurl)
@@ -584,7 +584,7 @@ def save_suppliers(path=None, customer_idurl=None):
     Write current suppliers list on the disk, ``path`` is a file path to save.
     """
     if not customer_idurl:
-        customer_idurl = my_id.getLocalID()
+        customer_idurl = my_id.getIDURL()
     customer_idurl = id_url.field(customer_idurl)
     customer_id = global_id.UrlToGlobalID(customer_idurl)
     if path is None:
@@ -636,7 +636,7 @@ def load_suppliers(path=None, customer_idurl=None, all_customers=False):
                 lg.out(_DebugLevel, '    loaded %d known suppliers for customer %r' % (len(lst), one_customer_idurl))
         return True
     if not customer_idurl:
-        customer_idurl = my_id.getLocalID()
+        customer_idurl = my_id.getIDURL()
     customer_idurl = id_url.field(customer_idurl)
     if path is None:
         path = os.path.join(settings.SuppliersDir(), global_id.UrlToGlobalID(customer_idurl), 'supplierids')
@@ -831,7 +831,7 @@ def get_contact_identity(idurl):
     if idurl is None:
         return None
     idurl = id_url.field(idurl)
-    if idurl.to_bin() == my_id.getLocalID().to_bin():
+    if idurl.to_bin() == my_id.getIDURL().to_bin():
         return my_id.getLocalIdentity()
 #     if is_supplier(idurl):
 #         return identitycache.FromCache(idurl)
@@ -1013,7 +1013,7 @@ def add_supplier_meta_info(supplier_idurl, info, customer_idurl=None):
     """
     global _SuppliersMetaInfo
     if not customer_idurl:
-        customer_idurl = my_id.getLocalID()
+        customer_idurl = my_id.getIDURL()
     customer_idurl = id_url.field(customer_idurl)
     supplier_idurl = id_url.field(supplier_idurl)
     if customer_idurl not in _SuppliersMetaInfo:
@@ -1031,7 +1031,7 @@ def remove_supplier_meta_info(supplier_idurl, customer_idurl=None):
     """
     global _SuppliersMetaInfo
     if not customer_idurl:
-        customer_idurl = my_id.getLocalID()
+        customer_idurl = my_id.getIDURL()
     customer_idurl = id_url.field(customer_idurl)
     supplier_idurl = id_url.field(supplier_idurl)
     if customer_idurl not in _SuppliersMetaInfo:
@@ -1049,7 +1049,7 @@ def get_supplier_meta_info(supplier_idurl, customer_idurl=None):
     """
     global _SuppliersMetaInfo
     if not customer_idurl:
-        customer_idurl = my_id.getLocalID()
+        customer_idurl = my_id.getIDURL()
     if not id_url.is_cached(customer_idurl) or not id_url.is_cached(supplier_idurl):
         return {}
     customer_idurl = id_url.field(customer_idurl)
