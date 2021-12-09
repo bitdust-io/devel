@@ -442,6 +442,7 @@ class BrokerNegotiator(automat.Automat):
             service_params=lambda idurl: self._do_prepare_service_request_params(idurl, target_pos, known_brokers, event),
             request_service_timeout=self.broker_negotiate_ack_timeout * (target_pos + 1),
             force_handshake=True,
+            attempts=1,
         )
         result.addCallback(self._on_cur_broker_connected, target_pos, event)
         if _Debug:
@@ -466,6 +467,7 @@ class BrokerNegotiator(automat.Automat):
             service_params=lambda idurl: self._do_prepare_service_request_params(idurl, target_pos, known_brokers, None),
             request_service_timeout=self.broker_negotiate_ack_timeout * (target_pos + 1),
             force_handshake=True,
+            attempts=1,
         )
         result.addCallback(self._on_rotate_broker_connected, target_pos, None)
         if _Debug:
@@ -508,6 +510,7 @@ class BrokerNegotiator(automat.Automat):
                     request_service_timeout=self.broker_negotiate_ack_timeout * (target_pos + 1),
                     exclude_nodes=list(exclude_brokers),
                     force_handshake=True,
+                    attempts=1,
                 )
                 result.addCallback(self._on_new_broker_hired, target_pos)
                 if _Debug:
@@ -520,6 +523,7 @@ class BrokerNegotiator(automat.Automat):
             service_params=lambda idurl: self._do_prepare_service_request_params(idurl, target_pos, known_brokers, event),
             request_service_timeout=self.broker_negotiate_ack_timeout * (target_pos + 1),
             exclude_nodes=list(exclude_brokers),
+            attempts=1,
             force_handshake=True,
         )
         result.addCallback(self._on_new_broker_hired, target_pos)

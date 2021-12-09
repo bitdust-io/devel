@@ -509,6 +509,8 @@ class QueueKeeper(automat.Automat):
         """
         Action method.
         """
+        if _Debug:
+            lg.args(_DebugLevel, pending=len(self.pending_connect_requests), **kwargs)
         self.pending_connect_requests.append(dict(**kwargs))
 
     def doPullRequests(self, *args, **kwargs):
@@ -675,6 +677,7 @@ class QueueKeeper(automat.Automat):
                 if not id_url.is_the_same(known_brokers[i], b_idurl):
                     return 'broker mismatch'
         if self.known_archive_folder_path and archive_folder_path != self.known_archive_folder_path:
+            lg.warn('known archive_folder_path %r is different than requested %r' % (self.known_archive_folder_path, archive_folder_path, ))
             return 'archive folder path mismatch'
         return None
 
@@ -742,6 +745,7 @@ class QueueKeeper(automat.Automat):
             service_params=service_params,
             request_service_timeout=config.conf().getInt('services/message-broker/broker-negotiate-ack-timeout'),
             force_handshake=False,
+            attempts=1,
         )
         result.addCallback(self._on_broker_verify_result)
         if _Debug:

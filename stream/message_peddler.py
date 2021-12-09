@@ -1412,9 +1412,8 @@ class MessagePeddler(automat.Automat):
             p2p_service.SendFail(request_packet, str(exc))
             result_defer.callback(False)
             return
-        if _Debug:
-            lg.args(_DebugLevel, err=err, p=position, b=broker_idurl, a=archive_folder_path)
         if err:
+            lg.warn('cooperation verification failed with: %r' % err)
             p2p_service.SendFail(request_packet, err)
             result_defer.callback(False)
             return

@@ -193,10 +193,13 @@ class P2PConnector(automat.Automat):
     }
 
     def init(self):
+        self.is_reconnecting = False
         self.health_check_task = None
         self.log_transitions = _Debug
 
     def state_changed(self, oldstate, newstate, event, *args, **kwargs):
+        if oldstate != newstate and oldstate == 'MY_IDENTITY':
+            self.is_reconnecting = False
         if newstate == 'INCOMMING?' and event != 'instant':
             self.automat('instant')
         if newstate == 'CONNECTED':
@@ -223,21 +226,21 @@ class P2PConnector(automat.Automat):
         elif self.state == 'NETWORK?':
             if ( event == 'network_connector.state' and args[0] == 'CONNECTED' ):
                 self.state = 'MY_IDENTITY'
-                self.doUpdateMyIdentity(*args, **kwargs)
+                self.doUpdateMyIdentity(event, *args, **kwargs)
             elif ( event == 'network_connector.state' and args[0] == 'DISCONNECTED' ):
                 self.state = 'DISCONNECTED'
         #---INCOMMING?---
         elif self.state == 'INCOMMING?':
             if event == 'inbox-packet' and not self.isUsingBestProto(*args, **kwargs):
                 self.state = 'MY_IDENTITY'
-                self.doUpdateMyIdentity(*args, **kwargs)
+                self.doUpdateMyIdentity(event, *args, **kwargs)
                 self.doPopBestProto(*args, **kwargs)
             elif event == 'timer-20sec' or ( event == 'network_connector.state' and args[0] == 'DISCONNECTED' ):
                 self.state = 'DISCONNECTED'
                 self.doInitRatings(*args, **kwargs)
             elif event == 'check-synchronize' or ( event == 'network_connector.state' and args[0] == 'CONNECTED' ):
                 self.state = 'MY_IDENTITY'
-                self.doUpdateMyIdentity(*args, **kwargs)
+                self.doUpdateMyIdentity(event, *args, **kwargs)
             elif ( event == 'instant' and not self.isAnyPeersKnown(*args, **kwargs) ) or ( event == 'inbox-packet' and self.isUsingBestProto(*args, **kwargs) ):
                 self.state = 'CONNECTED'
                 self.doInitRatings(*args, **kwargs)
@@ -250,7 +253,7 @@ class P2PConnector(automat.Automat):
                 self.state = 'DISCONNECTED'
             elif event == 'check-synchronize' or ( event == 'network_connector.state' and args[0] == 'CONNECTED' ):
                 self.state = 'MY_IDENTITY'
-                self.doUpdateMyIdentity(*args, **kwargs)
+                self.doUpdateMyIdentity(event, *args, **kwargs)
             elif ( event == 'network_connector.state' and args[0] not in [ 'CONNECTED' , 'DISCONNECTED' ] ):
                 self.state = 'NETWORK?'
         #---DISCONNECTED---
@@ -259,7 +262,7 @@ class P2PConnector(automat.Automat):
                 self.doSendMyIdentity(*args, **kwargs)
             elif event == 'inbox-packet' or event == 'check-synchronize' or ( ( event == 'network_connector.state' and args[0] == 'CONNECTED' ) ):
                 self.state = 'MY_IDENTITY'
-                self.doUpdateMyIdentity(*args, **kwargs)
+                self.doUpdateMyIdentity(event, *args, **kwargs)
             elif ( event == 'network_connector.state' and args[0] not in [ 'CONNECTED', 'DISCONNECTED', ] ):
                 self.state = 'NETWORK?'
         #---MY_IDENTITY---
@@ -271,10 +274,10 @@ class P2PConnector(automat.Automat):
             elif event == 'my-id-updated' and not self.isMyContactsChanged(*args, **kwargs) and ( self.NeedPropagate or self.isMyIdentityChanged(*args, **kwargs) ):
                 self.state = 'PROPAGATE'
                 self.doCheckRotatePropagateMyIdentity(*args, **kwargs)
-            elif event == 'my-id-updated' and not ( self.NeedPropagate or self.isMyIdentityChanged(*args, **kwargs) ) and ( network_connector.A().state != 'CONNECTED' ):
-                self.state = 'DISCONNECTED'
-            elif event == 'my-id-updated' and not ( self.NeedPropagate or self.isMyIdentityChanged(*args, **kwargs) ) and ( network_connector.A().state == 'CONNECTED' ):
+            elif event == 'my-id-updated' and not ( self.NeedPropagate or self.isMyIdentityChanged(*args, **kwargs) ) and ( network_connector.A().state is 'CONNECTED' ):
                 self.state = 'CONNECTED'
+            elif event == 'my-id-updated' and not ( self.NeedPropagate or self.isMyIdentityChanged(*args, **kwargs) ) and ( network_connector.A().state is not 'CONNECTED' ):
+                self.state = 'DISCONNECTED'
         #---PROPAGATE---
         elif self.state == 'PROPAGATE':
             if event == 'my-id-propagated':
@@ -283,7 +286,7 @@ class P2PConnector(automat.Automat):
                 self.doRestartFireHire(*args, **kwargs)
             elif ( ( event == 'network_connector.state' and args[0] == 'CONNECTED' ) ) or event == 'check-synchronize':
                 self.state = 'MY_IDENTITY'
-                self.doUpdateMyIdentity(*args, **kwargs)
+                self.doUpdateMyIdentity(event, *args, **kwargs)
         return None
 
     def isUsingBestProto(self, *args, **kwargs):
@@ -302,6 +305,8 @@ class P2PConnector(automat.Automat):
         """
         Condition method.
         """
+        if self.is_reconnecting:
+            return True
         return args[0][0]
 
     def isAnyPeersKnown(self, *args, **kwargs):
@@ -322,9 +327,11 @@ class P2PConnector(automat.Automat):
         """
         propagate.single(args[0], wide=True)
 
-    def doUpdateMyIdentity(self, *args, **kwargs):
+    def doUpdateMyIdentity(self, event, *args, **kwargs):
         if _Debug:
-            lg.out(_DebugLevel - 6, 'p2p_connector.doUpdateMyIdentity')
+            lg.out(_DebugLevel - 6, 'p2p_connector.doUpdateMyIdentity event=%r' % event)
+        if event == 'check-synchronize':
+            self.is_reconnecting = True
         self._update_my_identity()
 
     def doCheckRotatePropagateMyIdentity(self, *args, **kwargs):

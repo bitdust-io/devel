@@ -418,6 +418,7 @@ class MessageProducer(automat.Automat):
             remote_idurl=top_broker_idurl,
             service_name='service_message_broker',
             service_params=lambda idurl: self._do_prepare_service_request_params(idurl, top_broker_pos),
+            attempts=1,
         )
         result.addCallback(self._on_broker_connected, top_broker_pos)
         if _Debug:

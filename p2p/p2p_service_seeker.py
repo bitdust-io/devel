@@ -136,22 +136,22 @@ class P2PServiceSeeker(automat.Automat):
                 self.doSelectOneUser(*args, **kwargs)
                 self.Attempts+=1
                 self.doHandshake(*args, **kwargs)
-            elif event == 'users-not-found' and self.Attempts<5:
-                self.Attempts+=1
-                self.doLookupRandomNode(*args, **kwargs)
-            elif event == 'users-not-found' and self.Attempts>=5:
+            elif event == 'users-not-found' and not self.isRetries(*args, **kwargs):
                 self.state = 'FAILED'
                 self.doNotifyLookupFailed(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
+            elif event == 'users-not-found' and self.isRetries(*args, **kwargs):
+                self.Attempts+=1
+                self.doLookupRandomNode(*args, **kwargs)
         #---HANDSHAKE?---
         elif self.state == 'HANDSHAKE?':
             if event == 'shook-hands':
                 self.state = 'SERVICE?'
                 self.doSendRequestService(*args, **kwargs)
-            elif event == 'fail' and self.Attempts<5 and self.RandomLookup:
+            elif event == 'fail' and self.isRetries(*args, **kwargs) and self.RandomLookup:
                 self.state = 'RANDOM_USER?'
                 self.doLookupRandomNode(*args, **kwargs)
-            elif ( self.Attempts>=5 or not self.RandomLookup ) and event == 'fail':
+            elif ( not self.isRetries(*args, **kwargs) or not self.RandomLookup ) and event == 'fail':
                 self.state = 'FAILED'
                 self.doNotifyHandshakeFailed(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
@@ -161,11 +161,11 @@ class P2PServiceSeeker(automat.Automat):
                 self.state = 'SUCCESS'
                 self.doNotifyServiceAccepted(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-            elif ( event == 'request-timeout' or event == 'fail' or event == 'service-denied' ) and ( not self.RandomLookup or ( self.Attempts>=5 and self.RandomLookup ) ):
+            elif ( event == 'request-timeout' or event == 'fail' or event == 'service-denied' ) and ( not self.RandomLookup or ( not self.isRetries(*args, **kwargs) and self.RandomLookup ) ):
                 self.state = 'FAILED'
                 self.doNotifyServiceRequestFailed(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-            elif ( event == 'request-timeout' or event == 'fail' or event == 'service-denied' ) and self.Attempts<5 and self.RandomLookup:
+            elif ( event == 'request-timeout' or event == 'fail' or event == 'service-denied' ) and self.isRetries(*args, **kwargs) and self.RandomLookup:
                 self.state = 'RANDOM_USER?'
                 self.doLookupRandomNode(*args, **kwargs)
         #---SUCCESS---
@@ -175,6 +175,12 @@ class P2PServiceSeeker(automat.Automat):
         elif self.state == 'FAILED':
             pass
         return None
+
+    def isRetries(self, *args, **kwargs):
+        """
+        Condition method.
+        """
+        return self.Attempts < self.retries
 
     def doInit(self, *args, **kwargs):
         """
@@ -189,6 +195,7 @@ class P2PServiceSeeker(automat.Automat):
         self.force_handshake = kwargs.get('force_handshake', False)
         self.result_callback = kwargs.get('result_callback', None)
         self.exclude_nodes = id_url.to_bin_list(kwargs.get('exclude_nodes', []))
+        self.retries = kwargs.get('attempts', 5)
 
     def doLookupRandomNode(self, *args, **kwargs):
         """
@@ -373,7 +380,7 @@ def on_lookup_result(event, result_defer, *args, **kwargs):
 
 #------------------------------------------------------------------------------
 
-def connect_random_node(lookup_method, service_name, service_params=None, exclude_nodes=[],
+def connect_random_node(lookup_method, service_name, service_params=None, exclude_nodes=[], attempts=5,
                         request_service_timeout=None, ping_retries=None, ack_timeout=None, force_handshake=False):
     global _P2PServiceSeekerInstaceCounter
     _P2PServiceSeekerInstaceCounter += 1
@@ -393,6 +400,7 @@ def connect_random_node(lookup_method, service_name, service_params=None, exclud
         request_service_params=service_params,
         request_service_timeout=request_service_timeout,
         ping_retries=ping_retries,
+        attempts=attempts,
         ack_timeout=ack_timeout,
         force_handshake=force_handshake,
         result_callback=lambda evt, *a, **kw: on_lookup_result(evt, result, *a, **kw),
@@ -403,7 +411,7 @@ def connect_random_node(lookup_method, service_name, service_params=None, exclud
     return result
 
 
-def connect_known_node(remote_idurl, service_name, service_params=None, exclude_nodes=[],
+def connect_known_node(remote_idurl, service_name, service_params=None, exclude_nodes=[], attempts=2,
                        request_service_timeout=None, ping_retries=None, ack_timeout=None, force_handshake=False):
     global _P2PServiceSeekerInstaceCounter
     _P2PServiceSeekerInstaceCounter += 1
@@ -423,6 +431,7 @@ def connect_known_node(remote_idurl, service_name, service_params=None, exclude_
         request_service_params=service_params,
         request_service_timeout=request_service_timeout,
         ping_retries=ping_retries,
+        attempts=attempts,
         ack_timeout=ack_timeout,
         force_handshake=force_handshake,
         result_callback=lambda evt, *a, **kw: on_lookup_result(evt, result, *a, **kw),

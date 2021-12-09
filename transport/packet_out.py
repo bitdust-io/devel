@@ -58,7 +58,7 @@ from six.moves import range
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 10
 
 _PacketLogFileEnabled = False
@@ -846,7 +846,6 @@ class PacketOut(automat.Automat):
             cb(self, 'finished')
         if not self.finished_deferred.called:
             self.finished_deferred.callback(self)
-            self.finished_deferred = None
 
     def doReportDoneNoAck(self, *args, **kwargs):
         """
@@ -866,7 +865,6 @@ class PacketOut(automat.Automat):
             cb(self, 'finished')
         if not self.finished_deferred.called:
             self.finished_deferred.callback(self)
-            self.finished_deferred = None
 
     def doReportFailed(self, *args, **kwargs):
         """
@@ -887,7 +885,6 @@ class PacketOut(automat.Automat):
             cb(self, msg)
         if not self.finished_deferred.called:
             self.finished_deferred.callback(self)
-            self.finished_deferred = None
 
     def doReportCancelled(self, *args, **kwargs):
         """
@@ -920,7 +917,6 @@ class PacketOut(automat.Automat):
                 cb(self, msg)
             if not self.finished_deferred.called:
                 self.finished_deferred.callback(self)
-                self.finished_deferred = None
 
     def doErrMsg(self, event, *args, **kwargs):
         """
@@ -948,7 +944,6 @@ class PacketOut(automat.Automat):
         self.callbacks.clear()
         if self.finished_deferred and not self.finished_deferred.called:
             self.finished_deferred.cancel()
-        self.finished_deferred = None
         self.destroy()
 
     def _on_remote_identity_cached(self, xmlsrc):
