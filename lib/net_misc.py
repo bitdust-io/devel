@@ -57,7 +57,7 @@ try:
 except:
     sys.exit('Error initializing twisted.internet.reactor in net_misc.py')
 
-from twisted.internet.defer import Deferred, DeferredList, succeed, fail
+from twisted.internet.defer import Deferred, DeferredList, succeed, fail, CancelledError
 from twisted.internet import protocol
 from twisted.web import iweb
 from twisted.web import client
@@ -445,13 +445,13 @@ def downloadSSL(url, fileOrName, progress_func, certificates_filenames):
     from OpenSSL import SSL  # @UnresolvedImport
 
     class MyClientContextFactory(ssl.ClientContextFactory):
-    
+
         def __init__(self, certificates_filenames):
             self.certificates_filenames = list(certificates_filenames)
-    
+
         def verify(self, connection, x509, errnum, errdepth, ok):
             return ok
-    
+
         def getContext(self):
             ctx = ssl.ClientContextFactory.getContext(self)
             for cert in self.certificates_filenames:
@@ -488,6 +488,12 @@ def downloadSSL(url, fileOrName, progress_func, certificates_filenames):
 #         self.path = url
 
 
+def readBodyFailed(result):
+    if result.type == CancelledError:
+        return None
+    return result
+
+
 def readResponse(response):
 #     print('Response version:', response.version)
 #     print('Response code:', response.code)
@@ -498,6 +504,7 @@ def readResponse(response):
         return fail(Exception('Bad response from the server: [%d] %s' % (
             response.code, response.phrase.strip(),)))
     d = readBody(response)
+    d.addErrback(readBodyFailed)
     return d
 
 

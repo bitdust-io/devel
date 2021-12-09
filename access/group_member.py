@@ -280,7 +280,7 @@ def start_group_members():
 
     def _on_cached(result):
         if _Debug:
-            lg.args(_DebugLevel, result=result)
+            lg.args(_DebugLevel, result=type(result))
         # a small delay to make sure received idurls were refreshed and rotated locally
         reactor.callLater(.5, _start)  # @UndefinedVariable
         return None
@@ -834,7 +834,7 @@ class GroupMember(automat.Automat):
         self.member_idurl = None
         self.member_id = None
         self.member_sender_id = None
-        self.group_key_id = None
+        # self.group_key_id = None
         self.group_glob_id = None
         self.group_queue_alias = None
         self.group_creator_id = None
@@ -893,6 +893,7 @@ class GroupMember(automat.Automat):
             service_name='service_message_broker',
             service_params=lambda idurl: self._do_prepare_service_request_params(idurl, broker_pos),
             request_service_timeout=config.conf().getInt('services/private-groups/broker-connect-timeout', 120),
+            attempts=1,
         )
         result.addCallback(self._on_broker_connected, broker_pos)
         if _Debug:
@@ -932,6 +933,7 @@ class GroupMember(automat.Automat):
                     service_params=lambda idurl: self._do_prepare_service_request_params(idurl, broker_pos),
                     request_service_timeout=config.conf().getInt('services/private-groups/broker-connect-timeout', 120),
                     exclude_nodes=list(exclude_brokers),
+                    attempts=1,
                 )
                 result.addCallback(self._on_broker_hired, broker_pos)
                 if _Debug:
@@ -944,6 +946,7 @@ class GroupMember(automat.Automat):
             service_params=lambda idurl: self._do_prepare_service_request_params(idurl, broker_pos),
             request_service_timeout=config.conf().getInt('services/private-groups/broker-connect-timeout', 120),
             exclude_nodes=list(exclude_brokers),
+            attempts=2,
         )
         result.addCallback(self._on_broker_hired, broker_pos)
         if _Debug:
