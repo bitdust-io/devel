@@ -71,7 +71,13 @@ _DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
+import sys
 import time
+
+try:
+    from twisted.internet import reactor  # @UnresolvedImport
+except:
+    sys.exit('Error initializing twisted.internet.reactor in p2p_connector.py')
 
 from twisted.internet.task import LoopingCall  #@UnresolvedImport
 
@@ -164,7 +170,13 @@ def A(event=None, *args, **kwargs):
     if event is None:
         return _P2PConnector
     if _P2PConnector is None:
-        _P2PConnector = P2PConnector('p2p_connector', 'AT_STARTUP', _DebugLevel)
+        _P2PConnector = P2PConnector(
+            name='p2p_connector',
+            state='AT_STARTUP',
+            debug_level=_DebugLevel,
+            log_events=False,
+            log_transitions=_Debug,
+        )
     if event is not None:
         _P2PConnector.automat(event, *args, **kwargs)
     return _P2PConnector
@@ -183,8 +195,6 @@ def Destroy():
 
 
 class P2PConnector(automat.Automat):
-    """
-    """
 
     fast = False
 
@@ -195,7 +205,6 @@ class P2PConnector(automat.Automat):
     def init(self):
         self.is_reconnecting = False
         self.health_check_task = None
-        self.log_transitions = _Debug
 
     def state_changed(self, oldstate, newstate, event, *args, **kwargs):
         if oldstate != newstate and oldstate == 'MY_IDENTITY':
@@ -535,6 +544,7 @@ class P2PConnector(automat.Automat):
             if _Debug:
                 d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='_check_rotate_propagate_my_identity._do_propagate')
             d.addErrback(_on_propagate_failed)
+            d.addTimeout(30, clock=reactor)
 
         def _on_propagate_failed(err):
             lg.err('failed propagate my identity: %r' % err)
