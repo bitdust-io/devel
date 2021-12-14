@@ -105,8 +105,6 @@ def init():
 
 
 def shutdown():
-    """
-    """
     if _Debug:
         lg.out(_DebugLevel, "propagate.shutdown")
 
