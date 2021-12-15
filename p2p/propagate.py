@@ -47,7 +47,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -105,8 +105,6 @@ def init():
 
 
 def shutdown():
-    """
-    """
     if _Debug:
         lg.out(_DebugLevel, "propagate.shutdown")
 
@@ -129,9 +127,6 @@ def propagate(selected_contacts, ack_handler=None, wide=False, refresh_cache=Fal
     result = Deferred()
 
     def contacts_fetched(x):
-        if _Debug:
-            lg.out(_DebugLevel, "propagate.contacts_fetched with %d identities, sending my identity to %d remote nodes" % (
-                len(x), len(selected_contacts)))
         res = SendToIDs(
             idlist=selected_contacts,
             ack_handler=ack_handler,
@@ -139,11 +134,18 @@ def propagate(selected_contacts, ack_handler=None, wide=False, refresh_cache=Fal
             wait_packets=wait_packets,
             response_timeout=response_timeout,
         )
+        if _Debug:
+            lg.out(_DebugLevel, "propagate.contacts_fetched with %d identities, sending my identity to %d remote nodes: %r" % (
+                len(x), len(selected_contacts), res, ))
         if wait_packets:
-            res.addBoth(lambda x: result.callback(x))
-        else:
-            result.callback(list(selected_contacts))
-        return None
+            if not res:
+                result.callback([])
+                return result
+            res.addCallback(result.callback)
+            res.addErrback(result.errback)
+            return result
+        result.callback(list(selected_contacts))
+        return result
 
     fetch(list_ids=selected_contacts, refresh_cache=refresh_cache).addBoth(contacts_fetched)
     return result

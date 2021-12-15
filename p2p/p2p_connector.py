@@ -66,7 +66,7 @@ from six.moves import range
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -521,78 +521,84 @@ class P2PConnector(automat.Automat):
             lg.out(4, '    identity HAS %sBEEN CHANGED' % ('' if identity_changed else 'NOT '))
         self.automat('my-id-updated', (contacts_changed, identity_changed))
 
+    def _do_propagate(self, result, rotated):
+        if _Debug:
+            lg.out(_DebugLevel, 'p2p_connector._do_propagate rotated=%r result=%r' % (rotated, result, ))
+        if driver.is_on('service_entangled_dht'):
+            from dht import dht_service
+            dht_service.set_node_data('idurl', my_id.getIDURL().to_text())
+        d = propagate.start(
+            wide=True,
+            refresh_cache=True,
+            include_all=True,
+            include_startup=rotated,
+            wait_packets=True,
+        )
+        d.addCallback(lambda x: self.automat('my-id-propagated'))
+        if rotated:
+            d.addBoth(lambda x: events.send('my-identity-rotate-complete', data=dict()))
+        if _Debug:
+            d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='_check_rotate_propagate_my_identity._do_propagate')
+        d.addErrback(self._on_propagate_failed)
+        d.addTimeout(30, clock=reactor)
+        return result
+
+    def _on_propagate_failed(self, err):
+        lg.err('failed propagate my identity: %r' % err)
+        self.automat('my-id-propagated')
+        return err
+
+    def _on_update_failed(self, err):
+        lg.err('failed to update my identity: %r' % err)
+        self.automat('my-id-propagated')
+        return err
+
+    def _do_update(self, ret):
+        if _Debug:
+            lg.out(_DebugLevel, 'p2p_connector._do_update  ret=%r' % repr(ret))
+        result, rotated = ret
+        if not result:
+            lg.err('failed to rotate identity sources, skip propagating my identity')
+            self.automat('my-id-propagated')
+            return None
+        d = propagate.update()
+        d.addCallback(self._do_propagate, rotated)
+        if _Debug:
+            d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='_check_rotate_propagate_my_identity._do_update')
+        d.addErrback(self._on_update_failed)
+        return ret
+
+    def _do_rotate(self, ret):
+        if _Debug:
+            lg.out(_DebugLevel, 'p2p_connector._do_rotate  ret=%r' % repr(ret))
+        check_result, rotated = ret
+        if check_result:
+            lg.info('identity sources are healthy, send my identity now')
+            self._do_update((True, False, ))
+            return None
+        lg.err('identity sources are not healthy, will execute identity rotate flow now')
+        from p2p import id_rotator
+        d = id_rotator.run()
+        d.addCallback(self._do_update)
+        if _Debug:
+            d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='_check_rotate_propagate_my_identity._do_rotate')
+        d.addErrback(lambda _: self._do_update((False, False, )))
+        return ret
+
+    def _do_check(self, ret):
+        if _Debug:
+            lg.out(_DebugLevel, 'p2p_connector._do_check ret=%r' % repr(ret))
+        from p2p import id_rotator
+        d = id_rotator.check()
+        d.addCallback(self._do_rotate)
+        if _Debug:
+            d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='_check_rotate_propagate_my_identity._do_check')
+        d.addErrback(lambda _: self._do_rotate((False, False, )))
+        return ret
+
     def _check_rotate_propagate_my_identity(self):
         # TODO: rebuild that method into another state machine
-        from p2p import id_rotator
-
-        def _do_propagate(result, rotated):
-            if _Debug:
-                lg.out(_DebugLevel, 'p2p_connector._do_propagate rotated=%r result=%r' % (rotated, result, ))
-            if driver.is_on('service_entangled_dht'):
-                from dht import dht_service
-                dht_service.set_node_data('idurl', my_id.getIDURL().to_text())
-            d = propagate.start(
-                wide=True,
-                refresh_cache=True,
-                include_all=True,
-                include_startup=rotated,
-                wait_packets=True,
-            )
-            d.addCallback(lambda x: self.automat('my-id-propagated'))
-            if rotated:
-                d.addBoth(lambda x: events.send('my-identity-rotate-complete', data=dict()))
-            if _Debug:
-                d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='_check_rotate_propagate_my_identity._do_propagate')
-            d.addErrback(_on_propagate_failed)
-            d.addTimeout(30, clock=reactor)
-
-        def _on_propagate_failed(err):
-            lg.err('failed propagate my identity: %r' % err)
-            self.automat('my-id-propagated')
-
-        def _on_update_failed(err):
-            lg.err('failed to update my identity: %r' % err)
-            self.automat('my-id-propagated')
-
-        def _do_update(ret):
-            result, rotated = ret
-            if _Debug:
-                lg.out(_DebugLevel, 'p2p_connector._do_update  result=%r rotated=%r' % (result, rotated, ))
-            if not result:
-                lg.err('failed to rotate identity sources, skip propagating my identity')
-                self.automat('my-id-propagated')
-                return None
-            d = propagate.update()
-            d.addCallback(_do_propagate, rotated)
-            if _Debug:
-                d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='_check_rotate_propagate_my_identity._do_update')
-            d.addErrback(_on_update_failed)
-
-        def _do_rotate(ret):
-            check_result, rotated = ret
-            if _Debug:
-                lg.out(_DebugLevel, 'p2p_connector._do_rotate  result=%r rotated=%r' % (check_result, rotated, ))
-            if check_result:
-                lg.info('identity sources are healthy, send my identity now')
-                _do_update((True, False, ))
-                return None
-            lg.err('identity sources are not healthy, will execute identity rotate flow now')
-            d = id_rotator.run()
-            d.addCallback(_do_update)
-            if _Debug:
-                d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='_check_rotate_propagate_my_identity._do_rotate')
-            d.addErrback(lambda _: _do_update((False, False, )))
-
-        def _do_check(x):
-            if _Debug:
-                lg.out(_DebugLevel, 'p2p_connector._do_check')
-            d = id_rotator.check()
-            d.addCallback(_do_rotate)
-            if _Debug:
-                d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='_check_rotate_propagate_my_identity._do_check')
-            d.addErrback(lambda _: _do_rotate((False, False, )))
-
-        _do_check(None)
+        self._do_check(None)
 
     def _do_id_server_health_check(self):
         my_idurl = my_id.getLocalIdentity().getIDURL(as_original=True)

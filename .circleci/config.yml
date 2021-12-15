@@ -11,9 +11,7 @@ jobs:
     steps:
       - add_ssh_keys:
           fingerprints:
-            - "63:39:d9:e7:7e:0e:d6:5f:3c:d9:c7:0e:11:ae:8b:db"
             - "a5:22:3f:fe:a2:66:38:e0:9b:c9:84:7f:2c:14:44:94"
-            - "5e:4c:f9:93:14:d7:de:ae:d6:c6:6e:68:f9:4d:62:1c"
       - checkout
       - run:
           no_output_timeout: 30m
@@ -26,10 +24,10 @@ jobs:
             scp -o StrictHostKeyChecking=no ./latest.zip tester@p2p-alice.ai:.
             cat /home/circleci/.ssh/known_hosts
             echo "archived file latest.zip uploaded to the intermediate machine"
-            ssh -o StrictHostKeyChecking=no tester@p2p-alice.ai 'scp ./latest.zip librenode0:.'
+            ssh -o StrictHostKeyChecking=no tester@p2p-alice.ai 'scp ./latest.zip ubumac0:.'
             echo "archived file latest.zip uploaded to the testing machine"
-            ssh -o StrictHostKeyChecking=no -t tester@p2p-alice.ai 'ssh librenode0 "rm -rf ~/.bitdust/venv/; rm -rf bitdust.ci/; mkdir bitdust.ci/; mv latest.zip bitdust.ci/; cd bitdust.ci/; unzip -o -q latest.zip; rm latest.zip; make regress_stop; make regress_clean; make test_unit && make regress_test && make regress_stop && make regress_clean;"'
-            echo "OK!!!"
+            ssh -o StrictHostKeyChecking=no -t tester@p2p-alice.ai 'ssh ubumac0 "rm -rf ~/.bitdust/venv/; rm -rf bitdust.ci/; mkdir bitdust.ci/; mv latest.zip bitdust.ci/; cd bitdust.ci/; unzip -o -q latest.zip; rm latest.zip; make regress_stop; make regress_clean; make test_unit && make regress_test && make regress_stop && make regress_clean;"'
+            echo "OK!"
 
 workflows:
   my-custom-workflow:
