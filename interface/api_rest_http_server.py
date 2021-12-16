@@ -211,7 +211,10 @@ def _request_data(request, mandatory_keys=[], default_value={}):
     """
     Simplify extracting input parameters from request body.
     """
-    input_request_data = request.content.getvalue()
+    try:
+        input_request_data = request.content.getvalue()
+    except:
+        input_request_data = request.content.read()
     if not input_request_data:
         if mandatory_keys:
             raise Exception('mandatory json input missed: %s' % mandatory_keys)

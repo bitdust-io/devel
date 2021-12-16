@@ -540,7 +540,7 @@ class P2PConnector(automat.Automat):
         if _Debug:
             d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='_check_rotate_propagate_my_identity._do_propagate')
         d.addErrback(self._on_propagate_failed)
-        d.addTimeout(30, clock=reactor)
+        # d.addTimeout(30, clock=reactor)
         return result
 
     def _on_propagate_failed(self, err):

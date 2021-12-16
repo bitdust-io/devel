@@ -271,12 +271,12 @@ class Initializer(automat.Automat):
     def doInitInterfaces(self, *args, **kwargs):
         if _Debug:
             lg.out(_DebugLevel, 'initializer.doInitInterfaces')
-        if settings.enableFTPServer():
-            try:
-                from interface import ftp_server
-                ftp_server.init()
-            except:
-                lg.exc()
+        # if settings.enableFTPServer():
+        #     try:
+        #         from interface import ftp_server
+        #         ftp_server.init()
+        #     except:
+        #         lg.exc()
         # if settings.enableJsonRPCServer():
         #     try:
         #         from interface import api_jsonrpc_server

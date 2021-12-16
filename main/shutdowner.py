@@ -110,7 +110,7 @@ def shutdown(x=None):
         # from interface import api_jsonrpc_server
         from interface import api_rest_http_server
         from interface import api_web_socket
-        from interface import ftp_server
+        # from interface import ftp_server
         from contacts import identitydb
         from crypt import my_keys
         from userid import id_url
@@ -118,7 +118,7 @@ def shutdown(x=None):
         my_keys.shutdown()
         my_id.shutdown()
         identitydb.shutdown()
-        ftp_server.shutdown()
+        # ftp_server.shutdown()
         # api_jsonrpc_server.shutdown()
         api_rest_http_server.shutdown()
         api_web_socket.shutdown()

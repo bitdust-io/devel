@@ -155,8 +155,11 @@ def out(_DebugLevel, msg, nl='\n', log_name='main', showtime=False):
                 else:
                     if not isinstance(o, unicode):  # @UndefinedVariable
                         o = o.decode('utf-8')
-                _LogFile.write(o)
-                _LogFile.flush()
+                try:
+                    _LogFile.write(o)
+                    _LogFile.flush()
+                except:
+                    pass
         else:
             if _LogFileName:
                 if log_name not in _AllLogFiles:
@@ -171,8 +174,11 @@ def out(_DebugLevel, msg, nl='\n', log_name='main', showtime=False):
                 else:
                     if not isinstance(o, unicode):  # @UndefinedVariable
                         o = o.decode('utf-8')
-                _AllLogFiles[log_name].write(o)
-                _AllLogFiles[log_name].flush()
+                try:
+                    _AllLogFiles[log_name].write(o)
+                    _AllLogFiles[log_name].flush()
+                except:
+                    pass
         if not _RedirectStdOut and not _RedirectStdErr and not _NoOutput:
             if log_name == 'main':
                 s = s + nl

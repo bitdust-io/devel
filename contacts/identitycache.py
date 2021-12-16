@@ -39,7 +39,7 @@ from __future__ import print_function
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -47,7 +47,7 @@ _DebugLevel = 10
 import sys
 import time
 
-from twisted.internet.defer import Deferred, DeferredList
+from twisted.internet.defer import Deferred, DeferredList, CancelledError
 
 #------------------------------------------------------------------------------
 
@@ -87,6 +87,12 @@ def init():
 def shutdown():
     if _Debug:
         lg.out(_DebugLevel, 'identitycache.shutdown')
+
+#------------------------------------------------------------------------------
+
+def caching():
+    global _CachingTasks
+    return _CachingTasks
 
 #------------------------------------------------------------------------------
 
@@ -421,6 +427,8 @@ def last_time_cached(idurl):
 
 def on_caching_task_failed(err, idurl):
     lg.warn('failed caching %s : %r' % (idurl, err))
+    if err.type == CancelledError:
+        return None
     return err
 
 
@@ -428,25 +436,15 @@ def immediatelyCaching(idurl, timeout=10, try_other_sources=True):
     """
     A smart method to cache some identity and get results in callbacks.
     """
-    global _CachingTasks
     global _LastTimeCached
     idurl = id_url.to_original(idurl)
     if not idurl:
         raise Exception('can not cache, idurl is empty')
 
-    if idurl in _CachingTasks and not _CachingTasks[idurl].called:
-        if _Debug:
-            lg.out(_DebugLevel, 'identitycache.immediatelyCaching already have a task for %r' % idurl)
-        return _CachingTasks[idurl]
-
-    if _Debug:
-        lg.out(_DebugLevel, 'identitycache.immediatelyCaching started new task for %r' % idurl)
-
     def _success(src, idurl):
-        global _CachingTasks
         global _LastTimeCached
         idurl = id_url.to_original(idurl)
-        result = _CachingTasks.pop(idurl, None)
+        result = caching().pop(idurl, None)
         if not result:
             lg.warn('caching task for %s was not found' % idurl)
         if UpdateAfterChecking(idurl, src):
@@ -463,12 +461,12 @@ def immediatelyCaching(idurl, timeout=10, try_other_sources=True):
             p2p_stats.count_identity_cache(idurl, 0)
         return src
 
-    def _next_source(err, sources, pos, ret):
+    def _next_source(resp, sources, pos, ret):
         if pos >= len(sources):
             lg.warn('[cache failed] %r from %d sources' % (idurl, len(sources)))
             if ret:
                 ret.errback(Exception('cache failed from %d sources' % len(sources)))
-            return None
+            return resp
 
         next_idurl = sources[pos]
         next_idurl = id_url.to_original(next_idurl)
@@ -476,33 +474,39 @@ def immediatelyCaching(idurl, timeout=10, try_other_sources=True):
         if _Debug:
             lg.out(_DebugLevel, 'identitycache.immediatelyCaching._next_source  %r from %r : %r' % (pos, sources, next_idurl, ))
 
-        if next_idurl in _CachingTasks:
+        if next_idurl in caching():
             if _Debug:
                 lg.out(_DebugLevel, 'identitycache.immediatelyCaching already have next task for %r' % next_idurl)
-            d = _CachingTasks[next_idurl]
+            if not caching()[idurl].called:
+                d = caching()[next_idurl]
+            else:
+                new_d = Deferred()
+                new_d.addErrback(on_caching_task_failed, next_idurl)
+                caching()[next_idurl] = new_d
+                d = net_misc.getPageTwisted(next_idurl, timeout)
         else:
             if _Debug:
                 lg.out(_DebugLevel, 'identitycache.immediatelyCaching will try another source of %r : %r' % (idurl, next_idurl))
-            _CachingTasks[next_idurl] = Deferred()
-            _CachingTasks[next_idurl].addErrback(on_caching_task_failed, next_idurl)
+            new_d = Deferred()
+            new_d.addErrback(on_caching_task_failed, next_idurl)
+            caching()[next_idurl] = new_d
             d = net_misc.getPageTwisted(next_idurl, timeout)
 
         d.addCallback(_success, next_idurl)
         if ret:
             d.addCallback(ret.callback)
         d.addErrback(_next_source, sources, pos+1, ret)
-        return None
+        return resp
 
     def _fail(err, idurl):
-        global _CachingTasks
         if _Debug:
             lg.out(_DebugLevel, 'identitycache.immediatelyCaching._fail for %r with %r' % (idurl, err, ))
-        result = _CachingTasks.pop(idurl, None)
+        result = caching().pop(idurl, None)
 
         if not try_other_sources:
             p2p_stats.count_identity_cache(idurl, 0)
             lg.warn('[cache failed] %s : %s' % (idurl, err.getErrorMessage(), ))
-            if result:
+            if result and not result.called:
                 result.errback(err)
             else:
                 lg.warn('caching task for %s was not found' % idurl)
@@ -546,12 +550,27 @@ def immediatelyCaching(idurl, timeout=10, try_other_sources=True):
             lg.warn('caching task for %s was not found' % idurl)
         return None
 
-    _CachingTasks[idurl] = Deferred()
-    _CachingTasks[idurl].addErrback(on_caching_task_failed, idurl)
-    d = net_misc.getPageTwisted(idurl, timeout)
-    d.addCallback(_success, idurl)
-    d.addErrback(_fail, idurl)
-    return _CachingTasks[idurl]
+    def _start_one(idurl):
+        new_d = Deferred()
+        new_d.addErrback(on_caching_task_failed, idurl)
+        caching()[idurl] = new_d
+        d = net_misc.getPageTwisted(idurl, timeout)
+        d.addCallback(_success, idurl)
+        d.addErrback(_fail, idurl)
+        return new_d
+
+    if idurl in caching():
+        if _Debug:
+            lg.out(_DebugLevel, 'identitycache.immediatelyCaching already have a task for %r' % idurl)
+        if not caching()[idurl].called:
+            return caching()[idurl]
+        lg.warn('similar caching task just finished recently for %r' % idurl)
+        return _start_one(idurl)
+
+    if _Debug:
+        lg.out(_DebugLevel, 'identitycache.immediatelyCaching started new task for %r' % idurl)
+
+    return _start_one(idurl)
 
 #------------------------------------------------------------------------------
 
