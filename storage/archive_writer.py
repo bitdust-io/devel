@@ -63,7 +63,6 @@ from system import bpio
 
 from lib import packetid
 from lib import misc
-from lib import strng
 
 from main import settings
 
@@ -200,7 +199,7 @@ class ArchiveWriter(automat.Automat):
             backup_id=kwargs['backup_id'],
             block_num=kwargs['block_num'],
         )
-        
+
     def doPullPacket(self, event, *args, **kwargs):
         """
         Action method.

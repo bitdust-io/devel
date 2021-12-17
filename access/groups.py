@@ -254,7 +254,7 @@ def set_group_info(group_key_id, group_info=None):
     return True
 
 
-def create_new_group(label, creator_id=None, key_size=4096, group_alias=None, with_group_info=True):
+def create_new_group(label, creator_id=None, key_size=2048, group_alias=None, with_group_info=True):
     if _Debug:
         lg.args(_DebugLevel, label=label, creator_id=creator_id, key_size=key_size, group_alias=group_alias)
     group_key_id = generate_group_key(creator_id=creator_id, label=label, key_size=key_size, group_alias=group_alias)
@@ -280,7 +280,7 @@ def send_group_pub_key_to_suppliers(group_key_id):
             if _Debug:
                 d.addCallback(lg.cb, debug=_Debug, debug_level=_DebugLevel, method='groups.write_group_key_to_suppliers')
                 d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='groups.write_group_key_to_suppliers')
-            # TODO: build some kind of retry mechanism - if some supplier did not received the key
+            # TODO: build some kind of retry mechanism - in case of a particular supplier did not receive the key
             # it must be some process with each supplier that first verifies a list of my public keys supplier currently possess
             # and then transfer the missing keys or send a note to erase "unused" keys to be able to cleanup old keys
             l.append(d)

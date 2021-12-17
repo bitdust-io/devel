@@ -60,6 +60,7 @@ from logs import lg
 from automats import automat
 
 from lib import strng
+from lib import packetid
 
 from p2p import commands
 from p2p import p2p_service
@@ -246,8 +247,9 @@ class P2PServiceSeeker(automat.Automat):
         Action method.
         """
         self.target_idurl.refresh()
+        packet_id = packetid.UniqueID()
         if _Debug:
-            lg.args(_DebugLevel, target_idurl=self.target_idurl, target_service=self.target_service)
+            lg.args(_DebugLevel, idurl=self.target_idurl, service=self.target_service, packet_id=packet_id)
         service_request_payload = self.request_service_params
         if callable(service_request_payload):
             service_request_payload = service_request_payload(self.target_idurl)
@@ -260,7 +262,8 @@ class P2PServiceSeeker(automat.Automat):
                 commands.Ack(): self._node_acked,
                 commands.Fail(): self._node_failed,
                 None: self._node_timed_out,
-            }
+            },
+            packet_id=packet_id,
         )
         self.requested_packet_id = out_packet.PacketID
 

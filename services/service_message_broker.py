@@ -124,7 +124,7 @@ class MessageBrokerService(LocalService):
                 customer_id = json_payload['customer_id']
                 broker_id = json_payload['broker_id']
                 position = json_payload['position']
-                archive_folder_path = json_payload['archive_folder_path']
+                known_streams = json_payload['streams']
                 known_brokers = {int(k): id_url.field(v) for k,v in json_payload['known_brokers'].items()}
             except:
                 lg.warn("wrong payload: %r" % json_payload)
@@ -134,7 +134,7 @@ class MessageBrokerService(LocalService):
                 customer_id=customer_id,
                 broker_id=broker_id,
                 position=position,
-                archive_folder_path=archive_folder_path,
+                known_streams=known_streams,
                 known_brokers=known_brokers,
                 request_packet=newpacket,
                 result_defer=result,

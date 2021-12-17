@@ -120,7 +120,6 @@ class BrokerNegotiator(automat.Automat):
         self.customer_idurl = None
         self.customer_id = None
         self.queue_id = None
-        self.archive_folder_path = None
         self.requestor_known_brokers = None
         self.connect_request = None
         super(BrokerNegotiator, self).__init__(
@@ -544,10 +543,14 @@ class BrokerNegotiator(automat.Automat):
         elif event in ['top-record-own', 'top-record-empty', ]:
             self.cooperated_brokers[self.desired_position] = self.my_broker_idurl
         elif event in ['broker-accepted', 'hire-broker-ok', ]:
-            self.cooperated_brokers.update(kwargs.get('cooperated_brokers', {}) or {})
+            accepted_brokers = kwargs.get('cooperated_brokers', {}) or {}
+            archive_folder_path = accepted_brokers.pop('archive_folder_path', None)
+            self.cooperated_brokers.update(accepted_brokers)
             self.cooperated_brokers[self.desired_position] = self.my_broker_idurl
         elif event in ['broker-rotate-failed', 'broker-rotate-timeout', 'broker-rotate-accepted', ]:
-            self.cooperated_brokers.update(kwargs.get('cooperated_brokers', {}) or {})
+            accepted_brokers = kwargs.get('cooperated_brokers', {}) or {}
+            archive_folder_path = accepted_brokers.pop('archive_folder_path', None)
+            self.cooperated_brokers.update(accepted_brokers)
             self.cooperated_brokers[self.my_position - 1] = self.my_broker_idurl
         if _Debug:
             lg.args(_DebugLevel, e=event, cooperated_brokers=self.cooperated_brokers)
@@ -594,6 +597,7 @@ class BrokerNegotiator(automat.Automat):
         try:
             # skip leading "accepted:" marker
             cooperated_brokers = jsn.loads(strng.to_text(response_info[0].Payload)[9:])
+            archive_folder_path = cooperated_brokers.pop('archive_folder_path', None)
             cooperated_brokers = {int(k): id_url.field(v) for k,v in cooperated_brokers.items()}
         except:
             lg.exc()
@@ -628,6 +632,7 @@ class BrokerNegotiator(automat.Automat):
         try:
             # skip leading "accepted:" marker
             cooperated_brokers = jsn.loads(strng.to_text(response_info[0].Payload)[9:])
+            archive_folder_path = cooperated_brokers.pop('archive_folder_path', None)
             cooperated_brokers = {int(k): id_url.field(v) for k,v in cooperated_brokers.items()}
         except:
             lg.exc()
@@ -654,6 +659,7 @@ class BrokerNegotiator(automat.Automat):
         try:
             # skip leading "accepted:" marker
             cooperated_brokers = jsn.loads(strng.to_text(response_info[0].Payload)[9:])
+            archive_folder_path = cooperated_brokers.pop('archive_folder_path', None)
             cooperated_brokers = {int(k): id_url.field(v) for k,v in cooperated_brokers.items()}
         except:
             lg.exc()

@@ -399,9 +399,9 @@ class Handshaker(automat.Automat):
         status = kwargs.get('status')
         error = kwargs.get('error')
         if status == 'cancelled':
-            lg.warn('handshake failed, my Identity() packet was not sent to remote user %r : %r' % (status, error, ))
+            lg.warn('handshake was cancelled, my Identity() packet was not sent to %r : %r' % (self.remote_idurl, error, ))
         else:
-            lg.err('handshake failed with status %r, my Identity() packet was not sent to remote user: %r' % (status, error, ))
+            lg.err('handshake failed with status %r, my Identity() packet was not sent to remote user %r : %r' % (status, self.remote_idurl, error, ))
         if self.remote_idurl in _RunningHandshakers:
             for result_defer in _RunningHandshakers[self.remote_idurl]['results']:
                 if not result_defer.called:

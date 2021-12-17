@@ -649,15 +649,16 @@ class GroupMember(automat.Automat):
         Action method.
         """
         cooperated_brokers = kwargs.get('cooperated_brokers') or {}
+        archive_folder_path = kwargs.get('archive_folder_path')
         if _Debug:
-            lg.args(_DebugLevel, cooperated_brokers=cooperated_brokers)
+            lg.args(_DebugLevel, cooperated=cooperated_brokers, archive_folder_path=archive_folder_path)
         idurl_list = [cooperated_brokers.get(i) for i in range(groups.REQUIRED_BROKERS_COUNT)]
         propagate.ping_nodes(
             idurl_list=idurl_list,
             timeout=15,
             channel='ping_broker',
             keep_alive=False,
-        ).addBoth(self._on_brokers_ping_result, cooperated_brokers=cooperated_brokers)
+        ).addBoth(self._on_brokers_ping_result, cooperated_brokers=cooperated_brokers, archive_folder_path=archive_folder_path)
 
     def doRememberBrokers(self, *args, **kwargs):
         """
@@ -834,7 +835,6 @@ class GroupMember(automat.Automat):
         self.member_idurl = None
         self.member_id = None
         self.member_sender_id = None
-        # self.group_key_id = None
         self.group_glob_id = None
         self.group_queue_alias = None
         self.group_creator_id = None
@@ -1217,8 +1217,7 @@ class GroupMember(automat.Automat):
 
     def _do_prepare_service_request_params(self, possible_broker_idurl, desired_broker_position=-1, action='queue-connect'):
         if _Debug:
-            lg.args(_DebugLevel, possible_broker_idurl=possible_broker_idurl, desired_broker_position=desired_broker_position, action=action,
-                    owner_id=self.group_creator_id, )
+            lg.args(_DebugLevel, broker=possible_broker_idurl, pos=desired_broker_position, action=action, owner=self.group_creator_id, )
         group_key_info = {}
         if not my_keys.is_key_registered(self.group_key_id):
             lg.warn('group key %r was not registered, checking all registered keys' % self.group_key_id)
@@ -1264,6 +1263,7 @@ class GroupMember(automat.Automat):
             lg.args(_DebugLevel, args=args, kwargs=kwargs)
         cooperated_brokers = kwargs.get('cooperated_brokers') or {}
         current_connected_brokers = dict(self.connected_brokers or {})
+        archive_folder_path = kwargs.get('archive_folder_path')
         brokers_changed = False
         self.active_broker_id = None
         self.active_queue_id = None
@@ -1289,6 +1289,17 @@ class GroupMember(automat.Automat):
                 brokers_changed = True
         if self.active_broker_id is None:
             raise Exception('active broker was not connected')
+        if archive_folder_path:
+            current_path = groups.get_archive_folder_path(self.group_key_id)
+            if current_path and current_path != archive_folder_path:
+                lg.warn('for %r overwriting existing archive_folder_path %r with new value %r' % (
+                    self.group_key_id, current_path, archive_folder_path, ))
+            else:
+                if not current_path:
+                    lg.info('recognized archive folder path for %r from broker response: %r' % (
+                        self.group_key_id, archive_folder_path, ))
+            groups.set_archive_folder_path(self.group_key_id, archive_folder_path)
+        groups.save_group_info(self.group_key_id)
         if brokers_changed:
             events.send('group-brokers-updated', data=dict(
                 group_creator_id=self.group_creator_id,
@@ -1307,14 +1318,6 @@ class GroupMember(automat.Automat):
             self.automat('brokers-not-found', dht_brokers=[])
             return
         self.latest_dht_brokers = brokers_info_list
-        if groups.get_archive_folder_path(self.group_key_id) is None:
-            dht_archive_folder_path = None
-            for broker_info in brokers_info_list:
-                if broker_info.get('archive_folder_path'):
-                    dht_archive_folder_path = broker_info['archive_folder_path']
-            if dht_archive_folder_path is not None:
-                groups.set_archive_folder_path(self.group_key_id, dht_archive_folder_path)
-                lg.info('recognized archive folder path for %r from dht: %r' % (self.group_key_id, dht_archive_folder_path, ))
         self.automat('brokers-found', dht_brokers=brokers_info_list)
 
     def _on_broker_connected(self, response_info, broker_pos, *args, **kwargs):
@@ -1323,12 +1326,13 @@ class GroupMember(automat.Automat):
         try:
             # skip leading "accepted:" marker
             cooperated_brokers = jsn.loads(strng.to_text(response_info[0].Payload)[9:])
+            archive_folder_path = strng.to_text(cooperated_brokers.pop('archive_folder_path', None))
             cooperated_brokers = {int(k): id_url.field(v) for k,v in cooperated_brokers.items()}
         except:
             lg.exc()
             self.automat('broker-connect-failed')
             return
-        self.automat('broker-connect-ack', cooperated_brokers=cooperated_brokers)
+        self.automat('broker-connect-ack', cooperated_brokers=cooperated_brokers, archive_folder_path=archive_folder_path)
 
     def _on_broker_connect_failed(self, err, broker_pos, *args, **kwargs):
         if _Debug:
@@ -1341,12 +1345,13 @@ class GroupMember(automat.Automat):
         try:
             # skip leading "accepted:" marker
             cooperated_brokers = jsn.loads(strng.to_text(response_info[0].Payload)[9:])
+            archive_folder_path = strng.to_text(cooperated_brokers.pop('archive_folder_path', None))
             cooperated_brokers = {int(k): id_url.field(v) for k,v in cooperated_brokers.items()}
         except:
             lg.exc()
             self.automat('broker-lookup-failed')
             return
-        self.automat('broker-lookup-ack', cooperated_brokers=cooperated_brokers)
+        self.automat('broker-lookup-ack', cooperated_brokers=cooperated_brokers, archive_folder_path=archive_folder_path)
 
     def _on_broker_lookup_failed(self, err, broker_pos, *args, **kwargs):
         if _Debug:
