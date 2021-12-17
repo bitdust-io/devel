@@ -58,6 +58,7 @@ except:
     sys.exit('Error initializing twisted.internet.reactor in net_misc.py')
 
 from twisted.internet.defer import Deferred, DeferredList, succeed, fail, CancelledError
+from twisted.python.failure import Failure
 from twisted.internet import protocol
 from twisted.web import iweb
 from twisted.web import client
@@ -143,6 +144,8 @@ def ConnectionFailed(param=None, proto=None, info=None):
     global _ConnectionFailedCallbackFunc
     if _ConnectionFailedCallbackFunc is not None:
         _ConnectionFailedCallbackFunc(proto, info, param)
+    if param and isinstance(param, Failure) and param.type == CancelledError:
+        return None
     return param
 
 #------------------------------------------------------------------------------
@@ -545,10 +548,10 @@ def getPageTwisted(url, timeout=10, method=b'GET'):
 #     if timeout:
 #         timeout_call = reactor.callLater(timeout, getPageTwistedTimeout, d)
 #         d.addBoth(getPageTwistedCancelTimeout, timeout_call)
-    d.addCallback(ConnectionDone, 'http', 'getPageTwisted %r' % url)
-    d.addErrback(ConnectionFailed, 'http', 'getPageTwisted %r' % url)
     d.addCallback(readResponse)
     d.addTimeout(timeout=timeout, clock=reactor)
+    d.addCallback(ConnectionDone, 'http', 'getPageTwisted %r' % url)
+    d.addErrback(ConnectionFailed, 'http', 'getPageTwisted %r' % url)
     return d
 
 #------------------------------------------------------------------------------

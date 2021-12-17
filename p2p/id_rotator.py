@@ -70,7 +70,7 @@ if __name__ == '__main__':
 
 import random
 
-from twisted.internet.defer import Deferred, DeferredList  # @UnresolvedImport
+from twisted.internet.defer import Deferred, DeferredList, CancelledError  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 
@@ -84,7 +84,6 @@ from lib import strng
 
 from main import config
 from main import settings
-from main import events
 
 from userid import identity
 from userid import known_servers
@@ -467,12 +466,14 @@ class IdRotator(automat.Automat):
         def _eb(err):
             lg.err(err)
             self.automat('my-id-not-exist', err)
-            return None
+            if err.type == CancelledError:
+                return None
+            return err
 
         dl = []
         for idurl in my_id.getLocalIdentity().getSources(as_originals=True):
             dl.append(net_misc.getPageTwisted(idurl, timeout=10))
-        d = DeferredList(dl)
+        d = DeferredList(dl, consumeErrors=True)
         d.addCallback(_cb)
         d.addErrback(_eb)
 

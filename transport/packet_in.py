@@ -459,8 +459,8 @@ class PacketIn(automat.Automat):
         Action method.
         """
         d = identitycache.immediatelyCaching(self.sender_idurl)
-        d.addCallback(self._remote_identity_cached, *args, **kwargs)
-        d.addErrback(lambda err: self.automat('failed', *args, **kwargs))
+        d.addCallback(self._on_remote_identity_cached, *args, **kwargs)
+        d.addErrback(self._on_remote_identity_cache_failed, *args, **kwargs)
 
     def doReadAndUnserialize(self, *args, **kwargs):
         """
@@ -545,9 +545,15 @@ class PacketIn(automat.Automat):
         inbox_items().pop(self.transfer_id)
         self.destroy()
 
-    def _remote_identity_cached(self, xmlsrc, *args, **kwargs):
+    def _on_remote_identity_cached(self, xmlsrc, *args, **kwargs):
         sender_identity = contactsdb.get_contact_identity(self.sender_idurl)
         if sender_identity is None:
             self.automat('failed')
         else:
             self.automat('remote-id-cached', *args, **kwargs)
+
+    def _on_remote_identity_cache_failed(self, err, *args, **kwargs):
+        if _Debug:
+            lg.args(_DebugLevel, e=err)
+        self.automat('failed')
+        return err
