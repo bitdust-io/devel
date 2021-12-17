@@ -47,6 +47,7 @@ _DebugLevel = 10
 import sys
 import time
 
+from twisted.internet import reactor  # @UnresolvedImport
 from twisted.internet.defer import Deferred, DeferredList, CancelledError
 
 #------------------------------------------------------------------------------
@@ -93,6 +94,16 @@ def shutdown():
 def caching():
     global _CachingTasks
     return _CachingTasks
+
+
+def add_callback(idurl):
+    idurl = id_url.to_original(idurl)
+    defer_obj = Deferred()
+    defer_obj.addErrback(on_caching_task_failed, idurl)
+    if idurl not in caching():
+        caching()[idurl] = []
+    caching()[idurl].append(defer_obj)
+    return defer_obj
 
 #------------------------------------------------------------------------------
 
@@ -436,7 +447,6 @@ def immediatelyCaching(idurl, timeout=10, try_other_sources=True):
     """
     A smart method to cache some identity and get results in callbacks.
     """
-    global _LastTimeCached
     idurl = id_url.to_original(idurl)
     if not idurl:
         raise Exception('can not cache, idurl is empty')
@@ -444,72 +454,71 @@ def immediatelyCaching(idurl, timeout=10, try_other_sources=True):
     def _success(src, idurl):
         global _LastTimeCached
         idurl = id_url.to_original(idurl)
-        result = caching().pop(idurl, None)
-        if not result:
-            lg.warn('caching task for %s was not found' % idurl)
+        defer_results = caching().pop(idurl, [])
+        if _Debug:
+            lg.args(_DebugLevel, src=type(src), idurl=idurl, defer_results=len(defer_results))
         if UpdateAfterChecking(idurl, src):
-            if result:
-                result.callback(src)
+            for result in defer_results:
+                if result and not result.called:
+                    reactor.callLater(0, result.callback, src)  # @UndefinedVariable
             if _Debug:
                 lg.out(_DebugLevel, '[cached] %s' % idurl)
             p2p_stats.count_identity_cache(idurl, len(src))
             _LastTimeCached[idurl] = time.time()
         else:
-            if result:
-                result.errback(Exception(src))
+            for result in defer_results:
+                if result and not result.called:
+                    reactor.callLater(0, result.errback, Exception(src))  # @UndefinedVariable
             lg.warn('[cache error] %s is not valid' % idurl)
             p2p_stats.count_identity_cache(idurl, 0)
+            _LastTimeCached.pop(idurl, None)
+        defer_results = []
+        del defer_results
         return src
 
-    def _next_source(resp, sources, pos, ret):
+    def _next_source(resp, idurl, sources, pos):
+        global _LastTimeCached
+        if _Debug:
+            lg.args(_DebugLevel, resp=resp, idurl=idurl, pos=pos, sources=len(sources))
+
         if pos >= len(sources):
-            lg.warn('[cache failed] %r from %d sources' % (idurl, len(sources)))
-            if ret:
-                ret.errback(Exception('cache failed from %d sources' % len(sources)))
-            return resp
+            lg.warn('[cache failed] %r and also %d other sources' % (idurl, len(sources)))
+            defer_results = caching().pop(idurl, [])
+            for result in defer_results:
+                if result and not result.called:
+                    reactor.callLater(0, result.errback, Exception('cache failed from multiple sources'))  # @UndefinedVariable
+            p2p_stats.count_identity_cache(idurl, 0)
+            _LastTimeCached.pop(idurl, None)
+            defer_results = []
+            del defer_results
+            return None
 
         next_idurl = sources[pos]
         next_idurl = id_url.to_original(next_idurl)
-
         if _Debug:
-            lg.out(_DebugLevel, 'identitycache.immediatelyCaching._next_source  %r from %r : %r' % (pos, sources, next_idurl, ))
+            lg.args(_DebugLevel, next_idurl=next_idurl)
 
-        if next_idurl in caching():
-            if _Debug:
-                lg.out(_DebugLevel, 'identitycache.immediatelyCaching already have next task for %r' % next_idurl)
-            if not caching()[idurl].called:
-                d = caching()[next_idurl]
-            else:
-                new_d = Deferred()
-                new_d.addErrback(on_caching_task_failed, next_idurl)
-                caching()[next_idurl] = new_d
-                d = net_misc.getPageTwisted(next_idurl, timeout)
-        else:
-            if _Debug:
-                lg.out(_DebugLevel, 'identitycache.immediatelyCaching will try another source of %r : %r' % (idurl, next_idurl))
-            new_d = Deferred()
-            new_d.addErrback(on_caching_task_failed, next_idurl)
-            caching()[next_idurl] = new_d
-            d = net_misc.getPageTwisted(next_idurl, timeout)
-
-        d.addCallback(_success, next_idurl)
-        if ret:
-            d.addCallback(ret.callback)
-        d.addErrback(_next_source, sources, pos+1, ret)
-        return resp
+        d = net_misc.getPageTwisted(url=next_idurl, timeout=timeout)
+        d.addCallback(_success, idurl)
+        d.addErrback(_next_source, idurl, sources, pos+1)
+        return None
 
     def _fail(err, idurl):
+        global _LastTimeCached
+        idurl = id_url.to_original(idurl)
         if _Debug:
-            lg.out(_DebugLevel, 'identitycache.immediatelyCaching._fail for %r with %r' % (idurl, err, ))
-        result = caching().pop(idurl, None)
+            lg.args(_DebugLevel, err=err, idurl=idurl)
 
         if not try_other_sources:
             p2p_stats.count_identity_cache(idurl, 0)
+            _LastTimeCached.pop(idurl, None)
             lg.warn('[cache failed] %s : %s' % (idurl, err.getErrorMessage(), ))
-            if result and not result.called:
-                result.errback(err)
-            else:
-                lg.warn('caching task for %s was not found' % idurl)
+            defer_results = caching().pop(idurl, [])
+            for result in defer_results:
+                if result and not result.called:
+                    reactor.callLater(0, result.errback, err)  # @UndefinedVariable
+            defer_results = []
+            del defer_results
             return None
 
         sources = []
@@ -529,47 +538,47 @@ def immediatelyCaching(idurl, timeout=10, try_other_sources=True):
                     if another_idurl != latest_idurl and another_idurl != idurl:
                         if another_idurl not in sources:
                             sources.append(another_idurl)
+        if idurl in sources:
+            sources.remove(idurl)
+
         if _Debug:
-            lg.args(_DebugLevel, latest_idurl=latest_idurl, latest_ident=latest_ident, sources=sources)
+            lg.args(_DebugLevel, idurl=idurl, latest_idurl=latest_idurl, latest_ident=latest_ident, sources=sources)
 
         if sources:
             lg.warn('[cache failed] %s : %s  but will try %d more sources' % (idurl, err.getErrorMessage(), len(sources), ))
-            _next_source(err, sources, 0, result)
-            return result
+            _next_source(None, idurl, sources, 0)
+            return None
 
         p2p_stats.count_identity_cache(idurl, 0)
+        _LastTimeCached.pop(idurl, None)
         lg.warn('[cache failed] and also no other sources found %s : %s' % (idurl, err.getErrorMessage(), ))
+        defer_results = caching().pop(idurl, [])
         if _Debug:
-            lg.args(_DebugLevel, known=list(id_url.known().keys()))
-        if result:
-            if not result.called:
-                result.errback(err)
-            else:
-                lg.warn('caching task result for %s already called' % idurl)
-        else:
-            lg.warn('caching task for %s was not found' % idurl)
+            lg.args(_DebugLevel, known=len(id_url.known().keys()), defer_results=len(defer_results))
+        for result in defer_results:
+            if result and not result.called:
+                reactor.callLater(0, result.errback, err)  # @UndefinedVariable
+        defer_results = []
+        del defer_results
         return None
 
     def _start_one(idurl):
-        new_d = Deferred()
-        new_d.addErrback(on_caching_task_failed, idurl)
-        caching()[idurl] = new_d
+        if _Debug:
+            lg.args(_DebugLevel, idurl=idurl)
+        defer_obj = add_callback(idurl)
         d = net_misc.getPageTwisted(idurl, timeout)
         d.addCallback(_success, idurl)
         d.addErrback(_fail, idurl)
-        return new_d
+        return defer_obj
 
     if idurl in caching():
         if _Debug:
-            lg.out(_DebugLevel, 'identitycache.immediatelyCaching already have a task for %r' % idurl)
-        if not caching()[idurl].called:
-            return caching()[idurl]
-        lg.warn('similar caching task just finished recently for %r' % idurl)
-        return _start_one(idurl)
+            lg.out(_DebugLevel, 'identitycache.immediatelyCaching already has tasks for %r' % idurl)
+        defer_obj = add_callback(idurl)
+        return defer_obj
 
     if _Debug:
         lg.out(_DebugLevel, 'identitycache.immediatelyCaching started new task for %r' % idurl)
-
     return _start_one(idurl)
 
 #------------------------------------------------------------------------------
