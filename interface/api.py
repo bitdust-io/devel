@@ -2487,7 +2487,7 @@ def group_create(creator_id=None, key_size=None, label='', timeout=20):
         creator_id = my_id.getID()
     if not key_size:
         key_size = settings.getPrivateKeySize()
-    group_key_id = groups.create_new_group(creator_id=creator_id, label=label, key_size=key_size)
+    group_key_id = groups.create_new_group(creator_id=creator_id, label=label, key_size=key_size, with_group_info=True)
     if not group_key_id:
         return ERROR('failed to create new group')
     key_info = my_keys.get_key_info(group_key_id, include_private=False, include_signature=False, generate_signature=False)

@@ -232,7 +232,7 @@ def on_consume_queue_messages(json_messages):
                 p2p_service.SendFailNoRequest(from_idurl, packet_id, 'queue is not active')
                 continue
         if msg_action == 'consume':
-            # request from queue_member() to catch up unread messages from the queue
+            # request from group_member() to catch up unread messages from the queue
             consumer_id = msg_data.get('consumer_id')
             if consumer_id not in streams()[queue_id]['consumers']:
                 lg.warn('skipped incoming "queue-read" request, consumer %r is not registered for queue %r' % (consumer_id, queue_id, ))
@@ -284,7 +284,7 @@ def on_consume_queue_messages(json_messages):
             except:
                 lg.exc()
                 continue
-            # incoming message from queue_member() to push new message to the queue and deliver to all other group members
+            # incoming message from group_member() to push new message to the queue and deliver to all other group members
             received += 1
             if not do_push_message(from_idurl, packet_id, queue_id, producer_id, payload, created, known_brokers):
                 continue
@@ -1135,7 +1135,6 @@ class MessagePeddler(automat.Automat):
         self.send_message_ack_timeout = config.conf().getInt('services/message-broker/message-ack-timeout')
         self.archive_in_progress = False
         events.add_subscriber(self._on_identity_url_changed, 'identity-url-changed')
-        # events.add_subscriber(self._on_broker_position_changed, 'broker-position-changed')
         message.consume_messages(
             consumer_callback_id=self.name,
             callback=on_consume_queue_messages,
@@ -1382,7 +1381,7 @@ class MessagePeddler(automat.Automat):
             customer_id = kwargs['customer_id']
             broker_id = kwargs['broker_id']
             position = kwargs['position']
-            archive_folder_path = kwargs['archive_folder_path']
+            known_streams = kwargs['known_streams']
             known_brokers = kwargs['known_brokers']
             request_packet = kwargs['request_packet']
             result_defer = kwargs['result_defer']
@@ -1406,7 +1405,7 @@ class MessagePeddler(automat.Automat):
             result_defer.callback(False)
             return
         try:
-            err = qk.verify_broker(broker_idurl, position, known_brokers, archive_folder_path)
+            err = qk.verify_broker(broker_idurl, position, known_brokers, known_streams)
         except Exception as exc:
             lg.exc()
             p2p_service.SendFail(request_packet, str(exc))
@@ -1426,7 +1425,6 @@ class MessagePeddler(automat.Automat):
         """
         global _MessagePeddler
         message.clear_consumer_callbacks(self.name)
-        # events.remove_subscriber(self._on_broker_position_changed, 'broker-position-changed')
         events.remove_subscriber(self._on_identity_url_changed, 'identity-url-changed')
         self.destroy()
         _MessagePeddler = None
@@ -1473,7 +1471,7 @@ class MessagePeddler(automat.Automat):
                     int(json_value['position'])
                     len(json_value['cooperated_brokers'])
                     json_value['cooperated_brokers'] = {int(k): id_url.field(v) for k,v in json_value['cooperated_brokers'].items()}
-                    json_value['archive_folder_path']
+                    json_value['streams']
                     json_value['time']
                 except:
                     lg.exc()
@@ -1503,7 +1501,6 @@ class MessagePeddler(automat.Automat):
                 reactor.callLater((self.total_keepers + 1) * 1.0, qk.automat,  # @UndefinedVariable
                     event='restore',
                     desired_position=json_value['position'],
-                    archive_folder_path=json_value['archive_folder_path'],
                     known_brokers=json_value['cooperated_brokers'],
                     use_dht_cache=False,
                     result_callback=queue_keeper_result,
@@ -1666,7 +1663,9 @@ class MessagePeddler(automat.Automat):
         if not qk:
             lg.err('queue_keeper() for %r was not found' % queue_id)
             return
-        if qk.known_archive_folder_path is None:
+        queue_alias, _, _ = global_id.SplitGlobalQueueID(queue_id)
+        known_archive_folder_path = qk.known_streams.get(queue_alias)
+        if not known_archive_folder_path:
             lg.err('archive folder path is unknown for %r' % queue_id)
             return
         self.archive_in_progress = True
@@ -1683,10 +1682,11 @@ class MessagePeddler(automat.Automat):
                 'archive_id': archive_id,
                 'sequence_id_list': archive_snapshot_sequence_id_list,
             },
-            archive_folder_path=qk.known_archive_folder_path,
+            archive_folder_path=known_archive_folder_path,
             result_defer=archive_result,
         )
-        lg.info('started archive backup with %d messages, archive_id=%s' % (len(archive_snapshot_sequence_id_list), archive_id, ))
+        lg.info('started archive backup with %d messages, archive_id=%s, archive_folder_path=%s' % (
+            len(archive_snapshot_sequence_id_list), archive_id, known_archive_folder_path, ))
 
     def _on_archive_backup_done(self, archive_info, queue_id):
         if _Debug:
@@ -1708,47 +1708,22 @@ class MessagePeddler(automat.Automat):
         self.automat('archive-backup-failed')
         return None
 
-#     def _on_broker_position_changed(self, evt):
-#         if _Debug:
-#             lg.args(_DebugLevel, **evt.data)
-#         if not evt.data['new_postion'] == 0:
-#             return
-#         if not id_url.is_the_same(my_id.getIDURL(), evt.data['broker_idurl']):
-#             return
-#         target_customer_idurl = evt.data['customer_idurl']
-#         for current_queue_id in list(streams().keys()):
-#             queue_alias, customer_id, current_broker_id = global_id.SplitGlobalQueueID(current_queue_id, split_queue_alias=True)
-#             customer_idurl = global_id.glob2idurl(customer_id)
-#             current_broker_idurl = global_id.glob2idurl(current_broker_id)
-#             if not id_url.is_the_same(customer_idurl, target_customer_idurl):
-#                 continue
-#             if id_url.is_the_same(current_broker_idurl, my_id.getIDURL()):
-#                 continue
-#             new_queue_id = global_id.MakeGlobalQueueID(
-#                 queue_alias=queue_alias,
-#                 owner_id=customer_id,
-#                 supplier_id=my_id.getIDURL().to_id(),
-#             )
-#             if new_queue_id in streams():
-#                 lg.warn('rotated queue_id %r was already registered' % new_queue_id)
-#                 continue
-#             rename_stream(current_queue_id, new_queue_id)
-
     def _on_queue_keeper_connect_result(self, result, consumer_id, producer_id, group_key_info, last_sequence_id, request_packet, result_defer):
         if _Debug:
             lg.args(_DebugLevel, consumer_id=consumer_id, producer_id=producer_id, last_sequence_id=last_sequence_id)
-        cooperated_brokers = result
-        if not cooperated_brokers or isinstance(cooperated_brokers, Failure):
+        if not result or isinstance(result, Failure):
             lg.err('queue keeper failed to connect to the queue')
             p2p_service.SendFail(request_packet, 'failed to connect to the queue')
             result_defer.callback(False)
             return None
+        cooperated_brokers = dict(result)
         top_broker_idurl = cooperated_brokers.get(0) or None
         if not top_broker_idurl:
             lg.err('connection failed because top broker is unknown')
             p2p_service.SendFail(request_packet, 'top broker is unknown')
             result_defer.callback(False)
             return None
+        archive_folder_path = None
         try:
             top_broker_id = global_id.idurl2glob(top_broker_idurl)
             target_customer_idurl = id_url.field(group_key_info['creator'])
@@ -1771,9 +1746,6 @@ class MessagePeddler(automat.Automat):
                 if target_customer_id != customer_id:
                     continue
                 p2p_queue.rename_queue(current_queue_id, target_queue_id)
-                # customer_idurl = global_id.glob2idurl(customer_id)
-                # if not id_url.is_the_same(customer_idurl, target_customer_idurl):
-                #     continue
                 if current_queue_id not in streams():
                     raise Exception('rotated queue %r was not registered' % current_queue_id)
                 if target_queue_id in streams():
@@ -1790,6 +1762,11 @@ class MessagePeddler(automat.Automat):
                 add_producer(target_queue_id, producer_id)
                 start_producer(target_queue_id, producer_id)
             cur_sequence_id = get_latest_sequence_id(target_queue_id)
+            try:
+                archive_folder_path = queue_keeper.queue_keepers()[target_customer_idurl].known_streams.get(target_queue_alias)
+            except:
+                lg.exc()
+                raise Exception('failed reading archive folder path from queue keeper')
             if last_sequence_id > cur_sequence_id:
                 lg.info('based on request from connected group member going to update last_sequence_id: %d -> %d' % (
                     cur_sequence_id, last_sequence_id, ))
@@ -1800,8 +1777,11 @@ class MessagePeddler(automat.Automat):
             result_defer.callback(False)
             return None
         if _Debug:
-            lg.args(_DebugLevel, cooperated_brokers=cooperated_brokers)
-        p2p_service.SendAck(request_packet, 'accepted:%s' % jsn.dumps(cooperated_brokers, keys_to_text=True, values_to_text=True))
+            lg.args(_DebugLevel, cooperated_brokers=cooperated_brokers, archive_folder_path=archive_folder_path)
+        p = {}
+        p.update(cooperated_brokers)
+        p['archive_folder_path'] = archive_folder_path
+        p2p_service.SendAck(request_packet, 'accepted:%s' % jsn.dumps(p, keys_to_text=True, values_to_text=True))
         result_defer.callback(True)
         return None
 

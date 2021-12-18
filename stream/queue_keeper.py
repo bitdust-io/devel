@@ -298,7 +298,7 @@ class QueueKeeper(automat.Automat):
         self.broker_id = self.broker_idurl.to_id()
         self.cooperated_brokers = {}
         self.known_position = -1
-        self.known_archive_folder_path = None
+        self.known_streams = {}
         self.current_connect_request = None
         self.pending_connect_requests = []
         self.latest_dht_records = {}
@@ -323,7 +323,7 @@ class QueueKeeper(automat.Automat):
             'broker_id': self.broker_id,
             'position': self.known_position,
             'brokers': self.cooperated_brokers,
-            'archive_folder_path': self.known_archive_folder_path,
+            'streams': self.known_streams,
         })
         return j
 
@@ -449,7 +449,7 @@ class QueueKeeper(automat.Automat):
             self.known_position = int(json_value.get('position', -1))
         except:
             self.known_position = -1
-        self.known_archive_folder_path = json_value.get('archive_folder_path')
+        self.known_streams = json_value.get('streams', {}) or {}
 
     def doEraseState(self, *args, **kwargs):
         """
@@ -458,7 +458,7 @@ class QueueKeeper(automat.Automat):
         write_state(customer_id=self.customer_id, broker_id=self.broker_id, json_value=None)
         self.cooperated_brokers = {}
         self.known_position = -1
-        self.known_archive_folder_path = None
+        self.known_streams = {}
 
     def doWriteState(self, *args, **kwargs):
         """
@@ -469,7 +469,7 @@ class QueueKeeper(automat.Automat):
             'state': self.state,
             'position': self.known_position,
             'cooperated_brokers': self.cooperated_brokers,
-            'archive_folder_path': self.known_archive_folder_path,
+            'streams': self.known_streams,
             'time': utime.get_sec1970(),
         })
 
@@ -499,7 +499,7 @@ class QueueKeeper(automat.Automat):
         self.current_connect_request = {
             'request': 'verify',
             'desired_position': self.known_position,
-            'archive_folder_path': self.known_archive_folder_path,
+            'streams': self.known_streams,
             'known_brokers': self.cooperated_brokers,
             'use_dht_cache': False,
             'result': kwargs['result_callback'],
@@ -558,10 +558,13 @@ class QueueKeeper(automat.Automat):
         Action method.
         """
         self.cooperated_brokers = self.cooperated_brokers or {}
+        archive_folder_path = None
         if event in ['accepted', ]:
-            self.cooperated_brokers.update(kwargs.get('cooperated_brokers', {}) or {})
+            accepted_brokers = kwargs.get('cooperated_brokers', {}) or {}
+            archive_folder_path = accepted_brokers.pop('archive_folder_path', None)
+            self.cooperated_brokers.update(accepted_brokers)
         if _Debug:
-            lg.args(_DebugLevel, e=event, cooperated_brokers=kwargs.get('cooperated_brokers'))
+            lg.args(_DebugLevel, e=event, cooperated=kwargs.get('cooperated_brokers'), af_path=archive_folder_path)
 
     def doCancelCooperation(self, event, *args, **kwargs):
         """
@@ -579,10 +582,16 @@ class QueueKeeper(automat.Automat):
         for pos, idurl in self.cooperated_brokers.items():
             if idurl and id_url.is_the_same(idurl, self.broker_idurl):
                 my_new_position = pos
+        archive_folder_path = kwargs.get('archive_folder_path')
         if _Debug:
-            lg.args(_DebugLevel, known=self.known_position, new=my_new_position, cooperated_brokers=self.cooperated_brokers)
+            lg.args(_DebugLevel, known=self.known_position, new=my_new_position, cooperated=self.cooperated_brokers, af_path=archive_folder_path)
         if my_new_position >= 0:
             self.known_position = my_new_position
+        if self.current_connect_request and self.current_connect_request.get('request') == 'connect' and archive_folder_path:
+            try:
+                self.known_streams[self.current_connect_request['group_key_info']['alias']] = archive_folder_path
+            except:
+                lg.exc(str(self.current_connect_request))
 
     def doRunBrokerNegotiator(self, *args, **kwargs):
         """
@@ -653,14 +662,14 @@ class QueueKeeper(automat.Automat):
         self.broker_idurl = None
         self.broker_id = None
         self.known_position = -1
-        self.known_archive_folder_path = None
+        self.known_streams.clear()
         self.cooperated_brokers.clear()
         self.latest_dht_records.clear()
         self.destroy()
 
     #------------------------------------------------------------------------------
 
-    def verify_broker(self, broker_idurl, position, known_brokers, archive_folder_path):
+    def verify_broker(self, broker_idurl, position, known_brokers, known_streams):
         if not self.InSync or self.state != 'CONNECTED':
             lg.warn('not able to verify another broker because %r is not in sync' % self)
             return None
@@ -676,9 +685,11 @@ class QueueKeeper(automat.Automat):
             for i, b_idurl in self.cooperated_brokers.items():
                 if not id_url.is_the_same(known_brokers[i], b_idurl):
                     return 'broker mismatch'
-        if self.known_archive_folder_path and archive_folder_path != self.known_archive_folder_path:
-            lg.warn('known archive_folder_path %r is different than requested %r' % (self.known_archive_folder_path, archive_folder_path, ))
-            return 'archive folder path mismatch'
+        if self.known_streams and known_streams:
+            for my_queue_alias, my_archive_folder_path in self.known_streams.items():
+                for other_queue_alias, other_archive_folder_path in self.known_streams.items():
+                    # TODO: verify streams
+                    pass
         return None
 
     #------------------------------------------------------------------------------
@@ -688,7 +699,6 @@ class QueueKeeper(automat.Automat):
             customer_idurl=self.customer_idurl,
             broker_idurl=self.broker_idurl,
             position=desired_position,
-            archive_folder_path=archive_folder_path,
             revision=revision,
         )
         result.addCallback(self._on_write_customer_message_broker_success, desired_position, archive_folder_path, revision)
@@ -706,14 +716,14 @@ class QueueKeeper(automat.Automat):
                     desired_position = pos
         if desired_position is None or desired_position == -1:
             raise Exception('not able to write record into DHT, my position is unknown')
-        archive_folder_path = self.known_archive_folder_path
-        if self.current_connect_request:
+        archive_folder_path = None
+        if self.current_connect_request and self.current_connect_request.get('archive_folder_path'):
             archive_folder_path = self.current_connect_request['archive_folder_path']
         prev_revision = self.latest_dht_records.get(desired_position, {}).get('revision', None)
         if prev_revision is None:
             prev_revision = 0
         if _Debug:
-            lg.args(_DebugLevel, c=self.customer_id, p=desired_position, b=self.broker_id, a=archive_folder_path, r=prev_revision+1)
+            lg.args(_DebugLevel, c=self.customer_id, p=desired_position, b=self.broker_id, r=prev_revision+1)
         self._do_dht_write(
             desired_position=desired_position,
             archive_folder_path=archive_folder_path,
@@ -734,7 +744,7 @@ class QueueKeeper(automat.Automat):
             'customer_id': self.customer_id,
             'broker_id': self.broker_id,
             'position': self.known_position,
-            'archive_folder_path': self.known_archive_folder_path,
+            'streams': self.known_streams,
             'known_brokers': self.cooperated_brokers,
         }
         if _Debug:
@@ -754,13 +764,10 @@ class QueueKeeper(automat.Automat):
 
     def _on_read_customer_message_brokers(self, dht_brokers_info_list):
         self.latest_dht_records.clear()
-        self.known_archive_folder_path = None
         dht_brokers = {}
-        archive_folder_path = None
-        all_archive_folder_paths = []
         if not dht_brokers_info_list:
             lg.warn('no brokers found in DHT records for customer %r' % self.customer_id)
-            self.automat('dht-read-success', dht_brokers=dht_brokers, archive_folder_path=archive_folder_path)
+            self.automat('dht-read-success', dht_brokers=dht_brokers)
             return
         for dht_broker_info in dht_brokers_info_list:
             if not dht_broker_info:
@@ -768,19 +775,14 @@ class QueueKeeper(automat.Automat):
             dht_broker_idurl = dht_broker_info.get('broker_idurl')
             dht_broker_position = int(dht_broker_info.get('position'))
             dht_brokers[dht_broker_position] = dht_broker_idurl
-            if all_archive_folder_paths.count(dht_broker_info['archive_folder_path']) == 0:
-                all_archive_folder_paths.append(dht_broker_info['archive_folder_path'])
             self.latest_dht_records[dht_broker_position] = dht_broker_info
-        if all_archive_folder_paths:
-            archive_folder_path = all_archive_folder_paths[0]
-        self.known_archive_folder_path = archive_folder_path
         if _Debug:
-            lg.args(_DebugLevel, dht_brokers=dht_brokers, archive_folder_path=archive_folder_path)
-        self.automat('dht-read-success', dht_brokers=dht_brokers, archive_folder_path=archive_folder_path)
+            lg.args(_DebugLevel, dht_brokers=dht_brokers)
+        self.automat('dht-read-success', dht_brokers=dht_brokers)
 
     def _on_write_customer_message_broker_success(self, nodes, desired_broker_position, archive_folder_path, revision):
         if _Debug:
-            lg.args(_DebugLevel, nodes=type(nodes), pos=desired_broker_position, rev=revision)
+            lg.args(_DebugLevel, nodes=type(nodes), pos=desired_broker_position, af_path=archive_folder_path, rev=revision)
         if nodes:
             self.automat('dht-write-success', desired_position=desired_broker_position, archive_folder_path=archive_folder_path)
         else:

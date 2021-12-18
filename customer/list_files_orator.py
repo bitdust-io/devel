@@ -354,4 +354,5 @@ def IncomingListFiles(newpacket):
         A().requested_lf_packet_ids.discard(newpacket.PacketID)
         A('inbox-files', newpacket)
     else:
-        lg.warn('received and ignored %r, currently target customer is %r' % (newpacket, A().target_customer_idurl, ))
+        if _Debug:
+            lg.dbg(_DebugLevel, 'received and ignored %r, currently target customer is %r' % (newpacket, A().target_customer_idurl, ))
