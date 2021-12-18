@@ -481,7 +481,8 @@ def process_line_version(line, supplier_num, current_key_alias=None, customer_id
                 if _Debug:
                     lg.out(_DebugLevel, '        VERSION "%s" to be remove, path not found in the index' % backupID)
             else:
-                lg.warn('found unknown stored data from another customer: %r' % backupID)
+                if _Debug:
+                    lg.out(_DebugLevel, '        found unknown stored data from another customer: %r' % backupID)
         else:
             if _Debug:
                 lg.out(_DebugLevel, '        VERSION "%s" skip removing, index not in sync' % backupID)
@@ -512,7 +513,8 @@ def process_line_version(line, supplier_num, current_key_alias=None, customer_id
                 if _Debug:
                     lg.out(_DebugLevel, '        VERSION "%s" to be removed, version is not found in the index' % backupID)
             else:
-                lg.warn('found unknown version from another customer: %r' % backupID)
+                if _Debug:
+                    lg.out(_DebugLevel, '        found unknown version from another customer: %r' % backupID)
         else:
             if _Debug:
                 lg.out(_DebugLevel, '        VERSION "%s" skip removing, index not in sync' % backupID)
