@@ -316,7 +316,7 @@ class Handshaker(automat.Automat):
         self.cache_attempts += 1
         idcache_defer = identitycache.immediatelyCaching(idurl=strng.to_text(self.remote_idurl), timeout=self.cache_timeout)
         idcache_defer.addCallback(lambda src: self.automat('remote-identity-cached', src))
-        idcache_defer.addErrback(lambda err: self.automat('remote-identity-failed', err))
+        idcache_defer.addErrback(lambda err: self.automat('remote-identity-failed', err) and None)
 
     def doSendMyIdentity(self, *args, **kwargs):
         """

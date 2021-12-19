@@ -350,8 +350,8 @@ class SharedAccessCoordinator(automat.Automat):
         Action method.
         """
         # TODO : put in a separate state in the state machine
-        self.result_defer = kwargs.get('result_defer', None) 
-        identitycache.immediatelyCaching(self.customer_idurl)
+        self.result_defer = kwargs.get('result_defer', None)
+        identitycache.immediatelyCaching(self.customer_idurl, ignore_errors=True)
 
     def doDHTLookupSuppliers(self, *args, **kwargs):
         """
@@ -379,7 +379,7 @@ class SharedAccessCoordinator(automat.Automat):
             else:
                 d = identitycache.immediatelyCaching(supplier_idurl)
                 d.addCallback(lambda *a: self._do_connect_with_supplier(supplier_idurl))
-                d.addErrback(lambda err: lg.warn('failed caching supplier %r identity: %r' % (supplier_idurl, str(err), )))
+                d.addErrback(lambda err: lg.warn('failed caching supplier %r identity: %r' % (supplier_idurl, str(err), )) and None)
 
     def doRequestSupplierFiles(self, *args, **kwargs):
         """

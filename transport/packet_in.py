@@ -206,7 +206,7 @@ def process(newpacket, info):
     if not id_url.is_cached(newpacket.RemoteID):
         d = identitycache.immediatelyCaching(newpacket.RemoteID)
         d.addCallback(lambda _: process(newpacket, info))
-        d.addErrback(lambda err: lg.err('RemoteID is unknown, failed caching remote %s identity: %s' % (newpacket.RemoteID, str(err))))
+        d.addErrback(lambda err: lg.err('incoming remote ID is unknown, failed caching remote %s identity: %s' % (newpacket.RemoteID, str(err))) and None)
         return d
     if newpacket.Command == commands.Identity():
         if newpacket.RemoteID != my_id.getIDURL():
@@ -231,7 +231,7 @@ def process(newpacket, info):
             lg.out(_DebugLevel, '    will cache remote identity %s before processing incoming packet %s' % (newpacket.CreatorID, newpacket))
         d = identitycache.immediatelyCaching(newpacket.CreatorID)
         d.addCallback(lambda _: handle(newpacket, info))
-        d.addErrback(lambda err: lg.err('failed caching remote %s identity: %s' % (newpacket.CreatorID, str(err))))
+        d.addErrback(lambda err: lg.err('failed caching remote %s identity: %s' % (newpacket.CreatorID, str(err))) and None)
         return d
     return handle(newpacket, info)
 
@@ -517,7 +517,7 @@ class PacketIn(automat.Automat):
             status = 'failed'
             bytes_received = 0
         p2p_stats.count_inbox(self.sender_idurl, self.proto, status, bytes_received)
-        lg.out(18, 'packet_in.doReportFailed WARNING %s with %s' % (self.transfer_id, status))
+        lg.warn('incoming packet failed %s with %s' % (self.transfer_id, status, ))
         if _PacketLogFileEnabled:
             lg.out(0, '                \033[0;49;31mIN FAILED with status "%s" from %s://%s TID:%s\033[0m' % (
                 status, self.proto, self.host, self.transfer_id), log_name='packet', showtime=True)
@@ -533,7 +533,7 @@ class PacketIn(automat.Automat):
             status = 'failed'
             bytes_received = 0
             msg = 'unknown reason'
-        lg.out(18, 'packet_in.doReportCacheFailed WARNING : %s' % self.sender_idurl)
+        lg.warn('cache failed : %s' % self.sender_idurl)
         if _PacketLogFileEnabled:
             lg.out(0, '                \033[0;49;31mIN CACHE FAILED with "%s" for %s TID:%s\033[0m' % (
                 msg, self.sender_idurl, self.transfer_id), log_name='packet', showtime=True)
@@ -553,7 +553,6 @@ class PacketIn(automat.Automat):
             self.automat('remote-id-cached', *args, **kwargs)
 
     def _on_remote_identity_cache_failed(self, err, *args, **kwargs):
-        if _Debug:
-            lg.args(_DebugLevel, e=err)
+        lg.warn('%s : %s' % (repr(self), str(err)))
         self.automat('failed')
-        return err
+        return None

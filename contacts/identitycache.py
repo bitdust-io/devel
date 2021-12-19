@@ -96,10 +96,10 @@ def caching():
     return _CachingTasks
 
 
-def add_callback(idurl):
+def add_callback(idurl, ignore_errors=False):
     idurl = id_url.to_original(idurl)
     defer_obj = Deferred()
-    defer_obj.addErrback(on_caching_task_failed, idurl)
+    defer_obj.addErrback(on_caching_task_failed, idurl, ignore_errors)
     if idurl not in caching():
         caching()[idurl] = []
     caching()[idurl].append(defer_obj)
@@ -219,7 +219,7 @@ def GetLatest(idurl):
     else:
         d = immediatelyCaching(idurl)
         d.addCallback(lambda _: result.callback(FromCache(idurl)))
-        d.addErrback(lambda err: result.errback(err))
+        d.addErrback(lambda err: result.errback(err) and None)
     return result
 
 
@@ -436,14 +436,16 @@ def last_time_cached(idurl):
     return _LastTimeCached.get(idurl, None)
 
 
-def on_caching_task_failed(err, idurl):
+def on_caching_task_failed(err, idurl, ignore_errors):
     lg.warn('failed caching %s : %r' % (idurl, err))
+    if ignore_errors:
+        return None
     if err.type == CancelledError:
         return None
     return err
 
 
-def immediatelyCaching(idurl, timeout=10, try_other_sources=True):
+def immediatelyCaching(idurl, timeout=10, try_other_sources=True, ignore_errors=False):
     """
     A smart method to cache some identity and get results in callbacks.
     """
@@ -562,10 +564,10 @@ def immediatelyCaching(idurl, timeout=10, try_other_sources=True):
         del defer_results
         return None
 
-    def _start_one(idurl):
+    def _start_one(idurl, ignore_errors):
         if _Debug:
             lg.args(_DebugLevel, idurl=idurl)
-        defer_obj = add_callback(idurl)
+        defer_obj = add_callback(idurl, ignore_errors=ignore_errors)
         d = net_misc.getPageTwisted(idurl, timeout)
         d.addCallback(_success, idurl)
         d.addErrback(_fail, idurl)
@@ -574,12 +576,12 @@ def immediatelyCaching(idurl, timeout=10, try_other_sources=True):
     if idurl in caching():
         if _Debug:
             lg.out(_DebugLevel, 'identitycache.immediatelyCaching already has tasks for %r' % idurl)
-        defer_obj = add_callback(idurl)
+        defer_obj = add_callback(idurl, ignore_errors=ignore_errors)
         return defer_obj
 
     if _Debug:
         lg.out(_DebugLevel, 'identitycache.immediatelyCaching started new task for %r' % idurl)
-    return _start_one(idurl)
+    return _start_one(idurl, ignore_errors=ignore_errors)
 
 #------------------------------------------------------------------------------
 

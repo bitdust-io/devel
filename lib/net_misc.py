@@ -497,7 +497,7 @@ def readBodyFailed(result):
     return result
 
 
-def readResponse(response):
+def readResponse(response, timeout):
 #     print('Response version:', response.version)
 #     print('Response code:', response.code)
 #     print('Response phrase:', response.phrase)
@@ -508,6 +508,7 @@ def readResponse(response):
             response.code, response.phrase.strip(),)))
     d = readBody(response)
     d.addErrback(readBodyFailed)
+    d.addTimeout(timeout=timeout, clock=reactor)
     return d
 
 
@@ -548,8 +549,8 @@ def getPageTwisted(url, timeout=10, method=b'GET'):
 #     if timeout:
 #         timeout_call = reactor.callLater(timeout, getPageTwistedTimeout, d)
 #         d.addBoth(getPageTwistedCancelTimeout, timeout_call)
-    d.addCallback(readResponse)
-    d.addTimeout(timeout=timeout, clock=reactor)
+    d.addCallback(readResponse, timeout)
+    # d.addTimeout(timeout=timeout, clock=reactor)
     d.addCallback(ConnectionDone, 'http', 'getPageTwisted %r' % url)
     d.addErrback(ConnectionFailed, 'http', 'getPageTwisted %r' % url)
     return d

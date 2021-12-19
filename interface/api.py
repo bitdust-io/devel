@@ -2658,7 +2658,7 @@ def group_join(group_key_id, publish_events=False, use_dht_cache=True, wait_resu
     def _do_cache_creator_idurl():
         from contacts import identitycache
         d = identitycache.immediatelyCaching(creator_idurl)
-        d.addErrback(lambda *args: ret.callback(ERROR('failed caching group creator identity')))
+        d.addErrback(lambda *args: ret.callback(ERROR('failed caching group creator identity')) and None)
         d.addCallback(lambda *args: _do_start_group_member())
 
     if id_url.is_cached(creator_idurl):
@@ -2896,7 +2896,7 @@ def friend_add(trusted_user_id, alias='', share_person_key=True):
         return ret
 
     d = identitycache.immediatelyCaching(idurl)
-    d.addErrback(lambda *args: ret.callback(ERROR('failed caching user identity')))
+    d.addErrback(lambda *args: ret.callback(ERROR('failed caching user identity')) and None)
     d.addCallback(lambda *args: _add(idurl, ret))
     return ret
 
@@ -2941,7 +2941,7 @@ def friend_remove(user_id):
 
     ret = Deferred()
     d = identitycache.immediatelyCaching(idurl)
-    d.addErrback(lambda *args: ret.callback(ERROR('failed caching user identity', api_method='friend_remove')))
+    d.addErrback(lambda *args: ret.callback(ERROR('failed caching user identity', api_method='friend_remove')) and None)
     d.addCallback(lambda *args: ret.callback(_remove()))
     return ret
 

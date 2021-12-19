@@ -820,7 +820,7 @@ class ProxyReceiver(automat.Automat):
                 lg.out(_DebugLevel, 'proxy_receiver._find_random_node selected random item from preferred_routers: %r' % self.possible_router_idurl)
             idcache_defer = identitycache.immediatelyCaching(self.possible_router_idurl)
             idcache_defer.addCallback(lambda *args: self.automat('found-one-node', self.possible_router_idurl))
-            idcache_defer.addErrback(lambda err: self.automat('nodes-not-found'))
+            idcache_defer.addErrback(lambda err: self.automat('nodes-not-found') and None)
             return
         if _Debug:
             lg.out(_DebugLevel, 'proxy_receiver._find_random_node will start DHT lookup')

@@ -237,7 +237,7 @@ class SharedAccessDonor(automat.Automat):
         """
         self.caching_deferred = identitycache.immediatelyCaching(self.remote_idurl)
         self.caching_deferred.addCallback(self._on_remote_identity_cached)
-        self.caching_deferred.addErrback(lambda err: self.automat('fail', err))
+        self.caching_deferred.addErrback(lambda err: self.automat('fail', err) and None)
 
     def doSendMyIdentityToUser(self, *args, **kwargs):
         """
