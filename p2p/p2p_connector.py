@@ -633,4 +633,4 @@ class P2PConnector(automat.Automat):
 
         d = identitycache.immediatelyCaching(my_idurl, try_other_sources=False)
         d.addCallback(_verify)
-        d.addErrback(lambda _: _verify())
+        d.addErrback(lambda _: _verify() and None)

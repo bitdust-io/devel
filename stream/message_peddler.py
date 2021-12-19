@@ -1233,7 +1233,7 @@ class MessagePeddler(automat.Automat):
             caching_list.append(identitycache.immediatelyCaching(consumer_idurl))
         if not id_url.is_cached(producer_idurl):
             caching_list.append(identitycache.immediatelyCaching(producer_idurl))
-        dl = DeferredList(caching_list)
+        dl = DeferredList(caching_list, consumeErrors=True)
         dl.addCallback(lambda _: self._do_verify_queue_keeper(
             group_creator_idurl, request_packet, queue_id, consumer_id, producer_id,
             position, last_sequence_id, archive_folder_path, known_brokers, group_key_info, result_defer,
@@ -1471,7 +1471,6 @@ class MessagePeddler(automat.Automat):
                     int(json_value['position'])
                     len(json_value['cooperated_brokers'])
                     json_value['cooperated_brokers'] = {int(k): id_url.field(v) for k,v in json_value['cooperated_brokers'].items()}
-                    json_value['streams']
                     json_value['time']
                 except:
                     lg.exc()

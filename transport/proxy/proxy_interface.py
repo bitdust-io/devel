@@ -224,7 +224,7 @@ class GateInterface():
                 return True
         d = identitycache.immediatelyCaching(proxy_receiver.GetRouterIDURL())
         d.addCallback(lambda src: _finish_verification(result))
-        d.addErrback(lambda err: result.callback(False))
+        d.addErrback(lambda err: result.callback(False) and None)
         return result
 
     def list_sessions(self):

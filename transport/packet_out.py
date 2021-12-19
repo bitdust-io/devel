@@ -955,9 +955,9 @@ class PacketOut(automat.Automat):
         return xmlsrc
 
     def _on_remote_identity_cache_failed(self, err):
+        lg.warn('%s : %s' % (repr(self), str(err)))
         if self.outpacket:
             reactor.callLater(0, self.automat, 'failed')  # @UndefinedVariable
-            lg.warn('%s : %s' % (self.remote_idurl, str(err)))
         return None
 
     def _push(self):
