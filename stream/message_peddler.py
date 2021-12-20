@@ -1787,8 +1787,20 @@ class MessagePeddler(automat.Automat):
     def _on_queue_keeper_connect_failed(self, err, consumer_id, producer_id, group_key_info, last_sequence_id, request_packet, result_defer):
         if _Debug:
             lg.args(_DebugLevel, err=err, consumer_id=consumer_id, producer_id=producer_id, last_sequence_id=last_sequence_id)
-        lg.err('connection to message broker was failed: %r' % err)
-        p2p_service.SendFail(request_packet, 'connection to message broker was failed')
+        if isinstance(err, Failure):
+            try:
+                evt, args, kwargs = err.value.args
+            except:
+                lg.exc()
+                return None
+            if _Debug:
+                lg.args(_DebugLevel, event=evt, args=args, kwargs=kwargs)
+            if evt in ['dht-mismatch', 'cooperation-mismatch', ]:
+                p2p_service.SendFail(request_packet, 'mismatch:%s' % jsn.dumps(kwargs, keys_to_text=True, values_to_text=True))
+                result_defer.callback(False)
+                return None
+        lg.err('connection to message broker failed: %r' % err)
+        p2p_service.SendFail(request_packet, 'connection to message broker failed')
         result_defer.callback(False)
         return None
 

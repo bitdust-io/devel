@@ -35,6 +35,7 @@ EVENTS:
     * :red:`brokers-all-connected`
     * :red:`brokers-changed`
     * :red:`brokers-found`
+    * :red:`brokers-mismatch`
     * :red:`brokers-not-found`
     * :red:`brokers-ping-failed`
     * :red:`brokers-read`
@@ -74,6 +75,7 @@ import re
 
 from twisted.internet import reactor  # @UnresolvedImport
 from twisted.internet.defer import Deferred
+from twisted.python.failure import Failure
 
 #------------------------------------------------------------------------------
 
@@ -504,6 +506,8 @@ class GroupMember(automat.Automat):
                 self.doPingBrokers(*args, **kwargs)
             elif event == 'top-broker-ping-failed' or event == 'brokers-ping-failed' or event == 'broker-lookup-failed' or event == 'broker-connect-failed':
                 self.state = 'DISCONNECTED'
+            elif event == 'brokers-mismatch':
+                self.doConnectSingleBroker(event, *args, **kwargs)
         #---QUEUE?---
         elif self.state == 'QUEUE?':
             if event == 'queue-read-failed':
@@ -562,13 +566,6 @@ class GroupMember(automat.Automat):
         if self.dead_broker_id and self.dead_broker_id == self.active_broker_id:
             return True
         return None in args[0]
-
-    def isInSync(self, *args, **kwargs):
-        """
-        Condition method.
-        """
-        # TODO: ...
-        return True
 
     def isActive(self, *args, **kwargs):
         """
@@ -639,6 +636,14 @@ class GroupMember(automat.Automat):
             target_broker = self._do_detect_target_broker(available_brokers=kwargs['connected_brokers'])
         elif event == 'brokers-read':
             target_broker = self._do_detect_target_broker(available_brokers=kwargs['known_brokers'])
+        elif event == 'brokers-mismatch':
+            groups.clear_brokers(self.group_creator_id)
+            if 'dht_brokers' in kwargs:
+                target_broker = self._do_detect_target_broker(available_brokers=kwargs['dht_brokers'])
+            elif 'cooperated_brokers' in kwargs:
+                target_broker = self._do_detect_target_broker(available_brokers=kwargs['cooperated_brokers'])
+            else:
+                target_broker = self._do_detect_target_broker()
         else:
             groups.clear_brokers(self.group_creator_id)
             target_broker = self._do_detect_target_broker(dht_brokers=kwargs['dht_brokers'])
@@ -735,12 +740,6 @@ class GroupMember(automat.Automat):
             outgoing_counter=None,
             packet_id=None,
         )
-
-    def doPublishLater(self, *args, **kwargs):
-        """
-        Action method.
-        """
-        # TODO: ...
 
     def doPushPendingMessages(self, *args, **kwargs):
         """
@@ -1337,6 +1336,22 @@ class GroupMember(automat.Automat):
     def _on_broker_connect_failed(self, err, broker_pos, *args, **kwargs):
         if _Debug:
             lg.args(_DebugLevel, err=err, broker_pos=broker_pos, args=args, kwargs=kwargs)
+        if isinstance(err, Failure):
+            if _Debug:
+                lg.args(_DebugLevel, args=err.value.args)
+            mismatch_info = {}
+            try:
+                evt, a, kw = err.value.args
+                resp_payload = strng.to_text(a[0][0].Payload)
+                if resp_payload.startswith('mismatch:'):
+                    mismatch_info = jsn.loads(resp_payload[9:])
+            except:
+                lg.exc()
+                self.automat('broker-connect-failed', err)
+                return
+            if mismatch_info:
+                self.automat('brokers-mismatch', **mismatch_info)
+                return
         self.automat('broker-connect-failed', err)
 
     def _on_broker_hired(self, response_info, broker_pos, *args, **kwargs):
@@ -1356,6 +1371,22 @@ class GroupMember(automat.Automat):
     def _on_broker_lookup_failed(self, err, broker_pos, *args, **kwargs):
         if _Debug:
             lg.args(_DebugLevel, err=err, broker_pos=broker_pos)
+        if isinstance(err, Failure):
+            if _Debug:
+                lg.args(_DebugLevel, args=err.value.args)
+            mismatch_info = {}
+            try:
+                evt, a, kw = err.value.args
+                resp_payload = strng.to_text(a[0][0].Payload)
+                if resp_payload.startswith('mismatch:'):
+                    mismatch_info = jsn.loads(resp_payload[9:])
+            except:
+                lg.exc()
+                self.automat('broker-lookup-failed', err)
+                return
+            if mismatch_info:
+                self.automat('brokers-mismatch', **mismatch_info)
+                return
         self.automat('broker-lookup-failed', err)
 
     def _on_brokers_ping_result(self, ping_results, **kwargs):

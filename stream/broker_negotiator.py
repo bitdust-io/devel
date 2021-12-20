@@ -34,9 +34,11 @@ BitDust broker_negotiator() Automat
 
 EVENTS:
     * :red:`broker-accepted`
+    * :red:`broker-denied`
     * :red:`broker-failed`
     * :red:`broker-rejected`
     * :red:`broker-rotate-accepted`
+    * :red:`broker-rotate-denied`
     * :red:`broker-rotate-failed`
     * :red:`broker-rotate-rejected`
     * :red:`broker-rotate-timeout`
@@ -57,6 +59,7 @@ EVENTS:
     * :red:`my-top-record-empty-replace`
     * :red:`my-top-record-own`
     * :red:`my-top-record-own-replace`
+    * :red:`new-broker-rejected`
     * :red:`prev-record-busy`
     * :red:`prev-record-empty`
     * :red:`prev-record-own`
@@ -220,37 +223,37 @@ class BrokerNegotiator(automat.Automat):
                 self.doDestroyMe(*args, **kwargs)
         #---CURRENT?---
         elif self.state == 'CURRENT?':
-            if event == 'broker-rejected':
-                self.state = 'REJECT'
-                self.doReject(event, *args, **kwargs)
-                self.doDestroyMe(*args, **kwargs)
-            elif event == 'broker-accepted':
+            if event == 'broker-accepted':
                 self.state = 'ACCEPT'
                 self.doAccept(event, *args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
             elif event == 'broker-failed' or event == 'broker-timeout':
                 self.state = 'NEW?'
                 self.doHireNewBroker(event, *args, **kwargs)
+            elif event == 'broker-rejected' or event == 'broker-denied':
+                self.state = 'REJECT'
+                self.doReject(event, *args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
         #---NEW?---
         elif self.state == 'NEW?':
             if event == 'hire-broker-ok':
                 self.state = 'ACCEPT'
                 self.doAccept(event, *args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'hire-broker-failed':
+            elif event == 'new-broker-rejected' or event == 'hire-broker-failed':
                 self.state = 'REJECT'
                 self.doReject(event, *args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
         #---ROTATE?---
         elif self.state == 'ROTATE?':
-            if event == 'broker-rotate-rejected':
+            if event == 'broker-rotate-failed' or event == 'broker-rotate-timeout' or event == 'broker-rotate-accepted':
+                self.state = 'ACCEPT'
+                self.doAccept(event, *args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
+            elif event == 'broker-rotate-rejected' or event == 'broker-rotate-denied':
                 self.state = 'REJECT'
                 self.doReject(event, *args, **kwargs)
                 self.doRefreshDHT(event, *args, **kwargs)
-                self.doDestroyMe(*args, **kwargs)
-            elif event == 'broker-rotate-failed' or event == 'broker-rotate-timeout' or event == 'broker-rotate-accepted':
-                self.state = 'ACCEPT'
-                self.doAccept(event, *args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
         #---ACCEPT---
         elif self.state == 'ACCEPT':
@@ -298,7 +301,7 @@ class BrokerNegotiator(automat.Automat):
                 else:
                     if id_url.is_the_same(self.dht_brokers[prev_position], self.my_broker_idurl):
                         # found my DHT record on a previous position - request was done on another position
-                        self.automat('prev-record-own')
+                        self.automat('prev-record-own', dht_brokers=self.dht_brokers)
                     else:
                         # found another broker on the previous position in DHT
                         self.automat('prev-record-busy')
@@ -315,7 +318,7 @@ class BrokerNegotiator(automat.Automat):
                 else:
                     if id_url.is_the_same(self.dht_brokers[prev_position], self.my_broker_idurl):
                         # found my DHT record on a previous position - this is wrong!
-                        self.automat('prev-record-own')
+                        self.automat('prev-record-own', dht_brokers=self.dht_brokers)
                     else:
                         # found another broker on the previous position in DHT
                         self.automat('prev-record-busy')
@@ -323,7 +326,7 @@ class BrokerNegotiator(automat.Automat):
             return
         # desired position is occupied by another broker in DHT records
         if self.desired_position == 0:
-            self.automat('top-record-busy')
+            self.automat('top-record-busy', dht_brokers=self.dht_brokers)
         else:
             self.automat('record-busy')
 
@@ -419,12 +422,12 @@ class BrokerNegotiator(automat.Automat):
         known_brokers = {}
         known_brokers.update(self.cooperated_brokers or {})
         if event in ['record-busy', ]:
-            # there is no cooperation done yet and current record in DHT on that position belongs to another broker
+            # there is no cooperation done yet but current record in DHT on that position belongs to another broker
             target_pos = self.desired_position
             broker_idurl = id_url.field(self.dht_brokers[target_pos])
             known_brokers[self.desired_position] = self.my_broker_idurl
         elif event in ['prev-record-busy', ]:
-            # there is no cooperation done yet and found another broker on the previous position in DHT
+            # there is no cooperation done yet but found another broker on the previous position in DHT
             target_pos = self.desired_position - 1
             broker_idurl = id_url.field(self.dht_brokers[target_pos])
             known_brokers[self.desired_position] = self.my_broker_idurl
@@ -443,7 +446,7 @@ class BrokerNegotiator(automat.Automat):
             force_handshake=True,
             attempts=1,
         )
-        result.addCallback(self._on_cur_broker_connected, target_pos, event)
+        result.addCallback(self._on_cur_broker_connected, target_pos, self.my_position, self.desired_position, event)
         if _Debug:
             result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='broker_negotiator.doRequestCurBroker')
         result.addErrback(self._on_cur_broker_connect_failed, target_pos, event)
@@ -511,7 +514,7 @@ class BrokerNegotiator(automat.Automat):
                     force_handshake=True,
                     attempts=1,
                 )
-                result.addCallback(self._on_new_broker_hired, target_pos)
+                result.addCallback(self._on_new_broker_hired, target_pos, self.my_position, self.desired_position)
                 if _Debug:
                     result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='broker_negotiator.doHirePrevBroker')
                 result.addErrback(self._on_new_broker_lookup_failed, target_pos)
@@ -525,7 +528,7 @@ class BrokerNegotiator(automat.Automat):
             attempts=1,
             force_handshake=True,
         )
-        result.addCallback(self._on_new_broker_hired, target_pos)
+        result.addCallback(self._on_new_broker_hired, target_pos, self.my_position, self.desired_position)
         if _Debug:
             result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='broker_negotiator.doHirePrevBroker')
         result.addErrback(self._on_new_broker_lookup_failed, target_pos)
@@ -544,12 +547,12 @@ class BrokerNegotiator(automat.Automat):
             self.cooperated_brokers[self.desired_position] = self.my_broker_idurl
         elif event in ['broker-accepted', 'hire-broker-ok', ]:
             accepted_brokers = kwargs.get('cooperated_brokers', {}) or {}
-            archive_folder_path = accepted_brokers.pop('archive_folder_path', None)
+            accepted_brokers.pop('archive_folder_path', None)
             self.cooperated_brokers.update(accepted_brokers)
             self.cooperated_brokers[self.desired_position] = self.my_broker_idurl
         elif event in ['broker-rotate-failed', 'broker-rotate-timeout', 'broker-rotate-accepted', ]:
             accepted_brokers = kwargs.get('cooperated_brokers', {}) or {}
-            archive_folder_path = accepted_brokers.pop('archive_folder_path', None)
+            accepted_brokers.pop('archive_folder_path', None)
             self.cooperated_brokers.update(accepted_brokers)
             self.cooperated_brokers[self.my_position - 1] = self.my_broker_idurl
         if _Debug:
@@ -593,62 +596,67 @@ class BrokerNegotiator(automat.Automat):
             lg.args(_DebugLevel, e=event, broker=possible_broker_idurl, desired=desired_broker_position, known=known_brokers)
         return req
 
-    def _on_cur_broker_connected(self, response_info, broker_pos, event, *args, **kwargs):
+    def _on_cur_broker_connected(self, response_info, broker_pos, my_pos, desired_pos, event, *args, **kwargs):
         try:
             # skip leading "accepted:" marker
             cooperated_brokers = jsn.loads(strng.to_text(response_info[0].Payload)[9:])
-            archive_folder_path = cooperated_brokers.pop('archive_folder_path', None)
+            cooperated_brokers.pop('archive_folder_path', None)
             cooperated_brokers = {int(k): id_url.field(v) for k,v in cooperated_brokers.items()}
         except:
             lg.exc()
             self.automat('broker-failed')
             return
         if _Debug:
-            lg.args(_DebugLevel, cooperated=cooperated_brokers, pos=broker_pos, e=event, args=args, kwargs=kwargs)
-        my_idurl_cooperated = False
-        for cooperated_broker_idurl in cooperated_brokers.values():
-            if id_url.is_the_same(cooperated_broker_idurl, self.my_broker_idurl):
-                my_idurl_cooperated = True
-        if my_idurl_cooperated:
-            self.automat('broker-accepted', cooperated_brokers=cooperated_brokers)
-        else:
-            self.automat('broker-rejected')
+            lg.args(_DebugLevel, cooperated=cooperated_brokers, target=broker_pos, my=my_pos, desired=desired_pos, e=event, args=args, kwargs=kwargs)
+        if my_pos >= 0:
+            if id_url.is_the_same(cooperated_brokers.get(my_pos), self.my_broker_idurl):
+                self.automat('broker-accepted', cooperated_brokers=cooperated_brokers)
+                return
+        if desired_pos >= 0:
+            if id_url.is_the_same(cooperated_brokers.get(desired_pos), self.my_broker_idurl):
+                self.automat('broker-accepted', cooperated_brokers=cooperated_brokers)
+                return
+        self.automat('broker-rejected', cooperated_brokers=cooperated_brokers)
 
     def _on_cur_broker_connect_failed(self, err, broker_pos, event, *args, **kwargs):
         if _Debug:
             lg.args(_DebugLevel, err=err, pos=broker_pos, e=event, args=args, kwargs=kwargs)
         if isinstance(err, Failure):
             try:
-                evt, _, _ = err.value.args
+                evt, _, kw = err.value.args
             except:
                 lg.exc()
                 return
+            if _Debug:
+                lg.args(_DebugLevel, evt=evt, kw=kw)
             if evt == 'request-failed':
-                self.automat('broker-rejected')
-                return
+                if kw.get('reason') == 'service-denied':
+                    self.automat('broker-denied')
+                    return
         self.automat('broker-failed')
 
-    def _on_new_broker_hired(self, response_info, broker_pos, *args, **kwargs):
+    def _on_new_broker_hired(self, response_info, broker_pos, my_pos, desired_pos, *args, **kwargs):
         try:
             # skip leading "accepted:" marker
             cooperated_brokers = jsn.loads(strng.to_text(response_info[0].Payload)[9:])
-            archive_folder_path = cooperated_brokers.pop('archive_folder_path', None)
+            cooperated_brokers.pop('archive_folder_path', None)
             cooperated_brokers = {int(k): id_url.field(v) for k,v in cooperated_brokers.items()}
         except:
             lg.exc()
             self.automat('hire-broker-failed')
             return
         if _Debug:
-            lg.args(_DebugLevel, cooperated=cooperated_brokers, broker_pos=broker_pos, args=args, kwargs=kwargs)
-        my_idurl_cooperated = False
-        for cooperated_broker_idurl in cooperated_brokers.values():
-            if id_url.is_the_same(cooperated_broker_idurl, self.my_broker_idurl):
-                my_idurl_cooperated = True
-        if my_idurl_cooperated:
-            self.automat('hire-broker-ok', cooperated_brokers=cooperated_brokers)
-        else:
-            lg.warn('new broker is not cooperative, my idurl is not found in the cooperation')
-            self.automat('hire-broker-failed')
+            lg.args(_DebugLevel, cooperated=cooperated_brokers, target=broker_pos, my=my_pos, desired=desired_pos, args=args, kwargs=kwargs)
+        if my_pos >= 0:
+            if id_url.is_the_same(cooperated_brokers.get(my_pos), self.my_broker_idurl):
+                self.automat('hire-broker-ok', cooperated_brokers=cooperated_brokers)
+                return
+        if desired_pos >=0:
+            if id_url.is_the_same(cooperated_brokers.get(desired_pos), self.my_broker_idurl):
+                self.automat('hire-broker-ok', cooperated_brokers=cooperated_brokers)
+                return
+        lg.warn('new broker is not cooperative, my idurl is not found in the cooperation on the right place')
+        self.automat('new-broker-rejected', cooperated_brokers=cooperated_brokers)
 
     def _on_new_broker_lookup_failed(self, err, broker_pos, *args, **kwargs):
         if _Debug:
@@ -659,7 +667,7 @@ class BrokerNegotiator(automat.Automat):
         try:
             # skip leading "accepted:" marker
             cooperated_brokers = jsn.loads(strng.to_text(response_info[0].Payload)[9:])
-            archive_folder_path = cooperated_brokers.pop('archive_folder_path', None)
+            cooperated_brokers.pop('archive_folder_path', None)
             cooperated_brokers = {int(k): id_url.field(v) for k,v in cooperated_brokers.items()}
         except:
             lg.exc()
@@ -669,19 +677,22 @@ class BrokerNegotiator(automat.Automat):
             lg.args(_DebugLevel, cooperated=cooperated_brokers, pos=broker_pos, e=event)
         if id_url.is_the_same(cooperated_brokers.get(broker_pos), self.my_broker_idurl):
             self.automat('broker-rotate-accepted', cooperated_brokers=cooperated_brokers)
-        else:
-            self.automat('broker-rotate-rejected')
+            return
+        self.automat('broker-rotate-rejected', cooperated_brokers=cooperated_brokers)
 
     def _on_rotate_broker_connect_failed(self, err, broker_pos, event, *args, **kwargs):
         if _Debug:
             lg.args(_DebugLevel, err=err, pos=broker_pos, e=event, args=args, kwargs=kwargs)
         if isinstance(err, Failure):
             try:
-                evt, _, _ = err.value.args
+                evt, _, kw = err.value.args
             except:
                 lg.exc()
                 return
+            if _Debug:
+                lg.args(_DebugLevel, evt=evt, kw=kw)
             if evt == 'request-failed':
-                self.automat('broker-rotate-rejected')
-                return
+                if kw.get('reason') == 'service-denied':
+                    self.automat('broker-rotate-denied')
+                    return
         self.automat('broker-rotate-failed')

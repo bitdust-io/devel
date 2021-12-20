@@ -35,6 +35,8 @@ BitDust queue_keeper() Automat
 EVENTS:
     * :red:`accepted`
     * :red:`connect`
+    * :red:`cooperation-mismatch`
+    * :red:`dht-mismatch`
     * :red:`dht-read-failed`
     * :red:`dht-read-success`
     * :red:`dht-write-failed`
@@ -42,8 +44,6 @@ EVENTS:
     * :red:`failed`
     * :red:`init`
     * :red:`msg-in`
-    * :red:`my-record-invalid`
-    * :red:`my-record-missing`
     * :red:`rejected`
     * :red:`request-invalid`
     * :red:`restore`
@@ -379,17 +379,17 @@ class QueueKeeper(automat.Automat):
                 self.doDestroyMe(*args, **kwargs)
             elif event == 'connect':
                 self.doPushRequest(*args, **kwargs)
-            elif ( event == 'rejected' and not self.InSync ) or event == 'failed' or event == 'my-record-missing' or event == 'my-record-invalid':
+            elif event == 'request-invalid' or ( event == 'rejected' and self.InSync ) or event == 'accepted':
+                self.state = 'DHT_WRITE'
+                self.doRememberCooperation(event, *args, **kwargs)
+                self.doDHTWrite(event, *args, **kwargs)
+            elif ( event == 'rejected' and not self.InSync ) or event == 'failed' or event == 'dht-mismatch' or event == 'cooperation-mismatch':
                 self.state = 'DISCONNECTED'
                 self.doCancelCooperation(event, *args, **kwargs)
                 self.doEraseState(*args, **kwargs)
                 self.InSync=False
                 self.doNotify(event, *args, **kwargs)
                 self.doPullRequests(*args, **kwargs)
-            elif event == 'request-invalid' or ( event == 'rejected' and self.InSync ) or event == 'accepted':
-                self.state = 'DHT_WRITE'
-                self.doRememberCooperation(event, *args, **kwargs)
-                self.doDHTWrite(event, *args, **kwargs)
         #---DHT_WRITE---
         elif self.state == 'DHT_WRITE':
             if event == 'shutdown':
@@ -829,21 +829,31 @@ class QueueKeeper(automat.Automat):
         self.automat('accepted', cooperated_brokers=cooperated_brokers)
 
     def _on_broker_negotiator_errback(self, err):
-        if _Debug:
-            lg.args(_DebugLevel, err=err)
         if isinstance(err, Failure):
             try:
-                evt, _, _ = err.value.args
+                evt, args, kwargs = err.value.args
             except:
                 lg.exc()
-                return
-            if evt in ['request-invalid', 'my-record-missing', 'my-top,record-missing', 'my-record-invalid', ]:
+                return None
+            if _Debug:
+                lg.args(_DebugLevel, event=evt, args=args, kwargs=kwargs)
+            if evt == 'request-invalid':
                 self.automat(evt)
-                return
+                return None
+            if evt in ['top-record-busy', 'prev-record-own',]:
+                self.automat('dht-mismatch', **kwargs)
+                return None
+            if evt in ['broker-rejected', 'new-broker-rejected', 'broker-rotate-rejected', ]:
+                self.automat('cooperation-mismatch', **kwargs)
+                return None
             if evt.count('-failed'):
                 self.automat('failed')
-                return
+                return None
+        else:
+            if _Debug:
+                lg.args(_DebugLevel, err=err)
         self.automat('rejected')
+        return None
 
     def _on_queue_keeper_dht_refresh_task(self):
         self._do_dht_push_state()
