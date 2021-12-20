@@ -46,6 +46,7 @@ EVENTS:
     * :red:`msg-in`
     * :red:`rejected`
     * :red:`request-invalid`
+    * :red:`request-rejected`
     * :red:`restore`
     * :red:`shutdown`
 """
@@ -365,11 +366,14 @@ class QueueKeeper(automat.Automat):
                 self.doProc(*args, **kwargs)
             elif event == 'connect':
                 self.doPushRequest(*args, **kwargs)
-            elif event == 'dht-read-failed' or event == 'request-invalid':
-                self.state = 'DISCONNECTED'
             elif event == 'dht-read-success':
                 self.state = 'COOPERATE?'
                 self.doRunBrokerNegotiator(*args, **kwargs)
+            elif event == 'dht-read-failed':
+                self.state = 'DISCONNECTED'
+                self.InSync=False
+                self.doNotify(event, *args, **kwargs)
+                self.doPullRequests(*args, **kwargs)
         #---COOPERATE?---
         elif self.state == 'COOPERATE?':
             if event == 'shutdown':
@@ -408,7 +412,7 @@ class QueueKeeper(automat.Automat):
                 self.doPullRequests(*args, **kwargs)
             elif event == 'connect':
                 self.doPushRequest(*args, **kwargs)
-            elif event == 'dht-write-success':
+            elif event == 'request-rejected' or event == 'dht-write-success':
                 self.state = 'CONNECTED'
                 self.doDHTRefresh(*args, **kwargs)
                 self.doRememberOwnPosition(*args, **kwargs)
@@ -509,9 +513,9 @@ class QueueKeeper(automat.Automat):
         """
         Action method.
         """
+        self.pending_connect_requests.append(dict(**kwargs))
         if _Debug:
             lg.args(_DebugLevel, pending=len(self.pending_connect_requests), **kwargs)
-        self.pending_connect_requests.append(dict(**kwargs))
 
     def doPullRequests(self, *args, **kwargs):
         """
@@ -520,7 +524,7 @@ class QueueKeeper(automat.Automat):
         if self.pending_connect_requests:
             req = self.pending_connect_requests.pop(0)
             if _Debug:
-                lg.args(_DebugLevel, **req)
+                lg.args(_DebugLevel, more_pending=len(self.pending_connect_requests), **req)
             reactor.callLater(0, self.automat, 'connect', **req)  # @UndefinedVariable
 
     def doDHTRead(self, *args, **kwargs):
@@ -543,7 +547,7 @@ class QueueKeeper(automat.Automat):
         """
         Action method.
         """
-        self._do_dht_push_state()
+        self._do_dht_push_state(event=event, **kwargs)
 
     def doDHTRefresh(self, *args, **kwargs):
         """
@@ -602,20 +606,24 @@ class QueueKeeper(automat.Automat):
         if self.current_connect_request['request'] == 'verify':
             self._do_verify_cooperated_brokers()
             return
-        d = Deferred()
-        d.addCallback(self._on_broker_negotiator_callback)
-        d.addErrback(self._on_broker_negotiator_errback)
-        negotiator = broker_negotiator.BrokerNegotiator()
-        negotiator.automat(
-            event='connect',
-            my_position=self.known_position,
-            cooperated_brokers=self.cooperated_brokers,
-            dht_brokers=kwargs['dht_brokers'],
-            customer_idurl=self.customer_idurl,
-            broker_idurl=self.broker_idurl,
-            connect_request=self.current_connect_request,
-            result=d,
-        )
+
+        def _run_broker_negotiator(d, **kw):
+            negotiator = broker_negotiator.BrokerNegotiator()
+            negotiator.automat(
+                event='connect',
+                my_position=self.known_position,
+                cooperated_brokers=self.cooperated_brokers,
+                dht_brokers=kw['dht_brokers'],
+                customer_idurl=self.customer_idurl,
+                broker_idurl=self.broker_idurl,
+                connect_request=self.current_connect_request,
+                result=d,
+            )
+
+        ret = Deferred()
+        ret.addCallback(self._on_broker_negotiator_callback)
+        ret.addErrback(self._on_broker_negotiator_errback)
+        reactor.callLater(0, _run_broker_negotiator, ret, **kwargs)  # @UndefinedVariable
 
     def doNotify(self, event, *args, **kwargs):
         """
@@ -694,21 +702,21 @@ class QueueKeeper(automat.Automat):
 
     #------------------------------------------------------------------------------
 
-    def _do_dht_write(self, desired_position, archive_folder_path, revision, retry):
+    def _do_dht_write(self, desired_position, archive_folder_path, revision, retry, event=None, **kwargs):
         result = dht_relations.write_customer_message_broker(
             customer_idurl=self.customer_idurl,
             broker_idurl=self.broker_idurl,
             position=desired_position,
             revision=revision,
         )
-        result.addCallback(self._on_write_customer_message_broker_success, desired_position, archive_folder_path, revision)
+        result.addCallback(self._on_write_customer_message_broker_success, desired_position, archive_folder_path, revision, event, **kwargs)
         if _Debug:
             result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='queue_keeper.doDHTWrite')
-        result.addErrback(self._on_write_customer_message_broker_failed, desired_position, archive_folder_path, revision, retry)
+        result.addErrback(self._on_write_customer_message_broker_failed, desired_position, archive_folder_path, revision, retry, event, **kwargs)
 
-    def _do_dht_push_state(self):
+    def _do_dht_push_state(self, event=None, **kwargs):
         if _Debug:
-            lg.args(_DebugLevel, known_position=self.known_position, cooperated_brokers=self.cooperated_brokers)
+            lg.args(_DebugLevel, known_position=self.known_position, cooperated_brokers=self.cooperated_brokers, e=event, kw=kwargs)
         desired_position = self.known_position
         if desired_position is None or desired_position == -1:
             for pos, idurl in self.cooperated_brokers.items():
@@ -729,6 +737,8 @@ class QueueKeeper(automat.Automat):
             archive_folder_path=archive_folder_path,
             revision=prev_revision+1,
             retry=True,
+            event=event,
+            **kwargs,
         )
 
     def _do_verify_cooperated_brokers(self):
@@ -780,17 +790,20 @@ class QueueKeeper(automat.Automat):
             lg.args(_DebugLevel, dht_brokers=dht_brokers)
         self.automat('dht-read-success', dht_brokers=dht_brokers)
 
-    def _on_write_customer_message_broker_success(self, nodes, desired_broker_position, archive_folder_path, revision):
+    def _on_write_customer_message_broker_success(self, nodes, desired_broker_position, archive_folder_path, revision, event, **kwargs):
         if _Debug:
             lg.args(_DebugLevel, nodes=type(nodes), pos=desired_broker_position, af_path=archive_folder_path, rev=revision)
         if nodes:
-            self.automat('dht-write-success', desired_position=desired_broker_position, archive_folder_path=archive_folder_path)
+            if event == 'request-invalid':
+                self.automat('request-rejected', desired_position=desired_broker_position, archive_folder_path=archive_folder_path, **kwargs)
+            else:
+                self.automat('dht-write-success', desired_position=desired_broker_position, archive_folder_path=archive_folder_path)
         else:
             self.automat('dht-write-failed', desired_position=desired_broker_position, archive_folder_path=archive_folder_path)
 
-    def _on_write_customer_message_broker_failed(self, err, desired_broker_position, archive_folder_path, revision, retry):
+    def _on_write_customer_message_broker_failed(self, err, desired_broker_position, archive_folder_path, revision, retry, event, **kwargs):
         if _Debug:
-            lg.args(_DebugLevel, err=err, desired_broker_position=desired_broker_position)
+            lg.args(_DebugLevel, err=err, desired_broker_position=desired_broker_position, e=event, kw=kwargs)
         try:
             errmsg = err.value.subFailure.getErrorMessage()
         except:
@@ -819,9 +832,14 @@ class QueueKeeper(automat.Automat):
                     archive_folder_path=archive_folder_path,
                     revision=current_revision,
                     retry=False,
+                    event=event,
+                    **kwargs,
                 )
                 return
-        self.automat('dht-write-failed', desired_position=desired_broker_position)
+        if event == 'request-invalid':
+            self.automat('request-rejected', desired_position=desired_broker_position, archive_folder_path=archive_folder_path, **kwargs)
+        else:
+            self.automat('dht-write-failed', desired_position=desired_broker_position)
 
     def _on_broker_negotiator_callback(self, cooperated_brokers):
         if _Debug:
@@ -838,12 +856,12 @@ class QueueKeeper(automat.Automat):
             if _Debug:
                 lg.args(_DebugLevel, event=evt, args=args, kwargs=kwargs)
             if evt == 'request-invalid':
-                self.automat(evt)
+                self.automat('request-invalid', *args, **kwargs)
                 return None
             if evt in ['top-record-busy', 'prev-record-own',]:
                 self.automat('dht-mismatch', **kwargs)
                 return None
-            if evt in ['broker-rejected', 'new-broker-rejected', 'broker-rotate-rejected', ]:
+            if evt in ['broker-rejected', 'new-broker-rejected', 'broker-rotate-denied', ]:
                 self.automat('cooperation-mismatch', **kwargs)
                 return None
             if evt.count('-failed'):
@@ -852,7 +870,7 @@ class QueueKeeper(automat.Automat):
         else:
             if _Debug:
                 lg.args(_DebugLevel, err=err)
-        self.automat('rejected')
+        self.automat('rejected', *args, **kwargs)
         return None
 
     def _on_queue_keeper_dht_refresh_task(self):

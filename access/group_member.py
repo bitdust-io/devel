@@ -358,6 +358,7 @@ class GroupMember(automat.Automat):
         self.dht_read_use_cache = use_dht_cache
         self.buffered_messages = {}
         self.recorded_messages = []
+        self.group_brokers_updated = False
         super(GroupMember, self).__init__(
             name="group_member_%s$%s" % (self.group_queue_alias[:10], self.group_creator_id),
             state="AT_STARTUP",
@@ -610,6 +611,14 @@ class GroupMember(automat.Automat):
                 lg.args(_DebugLevel, e=event, known_brokers=known_brokers)
             self.automat('brokers-read', known_brokers=known_brokers)
             return
+        if event == 'reconnect':
+            cooperated_brokers = kwargs.get('cooperated_brokers')
+            if cooperated_brokers:
+                if _Debug:
+                    lg.args(_DebugLevel, e=event, cooperated_brokers=cooperated_brokers)
+                self.dht_read_use_cache = True
+                self.automat('brokers-read', known_brokers=cooperated_brokers)
+                return
         if event in ['reconnect', 'push-message-failed', 'replace-active-broker', 'broker-position-mismatch', 'top-broker-connect-failed', ]:
             self.dht_read_use_cache = False
         if _Debug:
@@ -762,6 +771,7 @@ class GroupMember(automat.Automat):
         """
         Action method.
         """
+        self.group_brokers_updated = False
         if event == 'top-broker-failed':
             self.dead_broker_id = None
             if self.latest_dht_brokers is not None:
@@ -788,17 +798,27 @@ class GroupMember(automat.Automat):
         Action method.
         """
         self.dht_read_use_cache = True
+        if self.group_brokers_updated:
+            events.send('group-brokers-updated', data=dict(
+                group_creator_id=self.group_creator_id,
+                group_key_id=self.group_key_id,
+                member_id=self.member_id,
+                connected_brokers=self.connected_brokers,
+            ))
+            self.group_brokers_updated = False
 
     def doDisconnected(self, *args, **kwargs):
         """
         Action method.
         """
+        self.group_brokers_updated = False
         self.dht_read_use_cache = False
 
     def doDeactivate(self, event, *args, **kwargs):
         """
         Action method.
         """
+        self.group_brokers_updated = False
         if event == 'leave':
             groups.set_group_active(self.group_key_id, False)
             groups.save_group_info(self.group_key_id)
@@ -847,6 +867,7 @@ class GroupMember(automat.Automat):
         self.outgoing_counter = None
         self.buffered_messages = None
         self.recorded_messages = None
+        self.group_brokers_updated = None
 
     #------------------------------------------------------------------------------
 
@@ -961,8 +982,8 @@ class GroupMember(automat.Automat):
         latest_known_sequence_id = -1
         received_group_messages = []
         packets_to_ack = {}
+        cooperated_brokers = {}
         to_be_reconnected = False
-        to_be_rotated = False
         found_group_ids = set()
         found_broker_ids = set()
         for json_message in json_messages:
@@ -1044,6 +1065,11 @@ class GroupMember(automat.Automat):
             lg.warn('active broker is %r but incoming message received from another broker %r in %r' % (
                 self.active_broker_id, list(found_broker_ids), self, ))
         packets_to_ack.clear()
+        if to_be_reconnected:
+            cooperated_brokers = json_message.get('cooperated_brokers', {}) or {}
+            cooperated_brokers = {int(k): id_url.field(v) for k,v in cooperated_brokers.items()}
+            if _Debug:
+                lg.args(_DebugLevel, cooperated_brokers=cooperated_brokers)
         if not received_group_messages:
             if self.group_key_id not in found_group_ids:
                 if _Debug:
@@ -1053,28 +1079,18 @@ class GroupMember(automat.Automat):
                 lg.warn('found queue latest sequence %d is behind of my current position %d' % (latest_known_sequence_id, self.last_sequence_id, ))
                 self.automat('queue-in-sync')
                 if to_be_reconnected:
-                    if to_be_rotated:
-                        if _Debug:
-                            lg.dbg(_DebugLevel, 'going to reconnect and replace active broker %r' % self)
-                        reactor.callLater(0.01, self.automat, 'replace-active-broker', self.active_broker_id)  # @UndefinedVariable
-                    else:
-                        if _Debug:
-                            lg.dbg(_DebugLevel, 'going to reconnect %r' % self)
-                        reactor.callLater(0.01, self.automat, 'reconnect')  # @UndefinedVariable
+                    if _Debug:
+                        lg.dbg(_DebugLevel, 'going to reconnect %r' % self)
+                    reactor.callLater(0.01, self.automat, 'reconnect', cooperated_brokers=cooperated_brokers)  # @UndefinedVariable
                 return True
             if latest_known_sequence_id > self.last_sequence_id:
                 lg.warn('nothing received, but found queue latest sequence %d is ahead of my current position %d, need to read messages from archive' % (
                     latest_known_sequence_id, self.last_sequence_id, ))
                 self.automat('queue-is-ahead', latest_known_sequence_id=latest_known_sequence_id, received_messages=received_group_messages, )
                 if to_be_reconnected:
-                    if to_be_rotated:
-                        if _Debug:
-                            lg.dbg(_DebugLevel, 'going to reconnect and replace active broker %r' % self)
-                        reactor.callLater(0.01, self.automat, 'replace-active-broker', self.active_broker_id)  # @UndefinedVariable
-                    else:
-                        if _Debug:
-                            lg.dbg(_DebugLevel, 'going to reconnect %r' % self)
-                        reactor.callLater(0.01, self.automat, 'reconnect')  # @UndefinedVariable
+                    if _Debug:
+                        lg.dbg(_DebugLevel, 'going to reconnect %r' % self)
+                    reactor.callLater(0.01, self.automat, 'reconnect', cooperated_brokers=cooperated_brokers)  # @UndefinedVariable
                 return True
             self.last_sequence_id = latest_known_sequence_id
             groups.set_last_sequence_id(self.group_key_id, latest_known_sequence_id)
@@ -1083,26 +1099,16 @@ class GroupMember(automat.Automat):
                 lg.dbg(_DebugLevel, 'no new messages, queue in sync, latest_known_sequence_id=%d' % latest_known_sequence_id)
             self.automat('queue-in-sync')
             if to_be_reconnected:
-                if to_be_rotated:
-                    if _Debug:
-                        lg.dbg(_DebugLevel, 'going to reconnect and replace active broker %r' % self)
-                    reactor.callLater(0.01, self.automat, 'replace-active-broker', self.active_broker_id)  # @UndefinedVariable
-                else:
-                    if _Debug:
-                        lg.dbg(_DebugLevel, 'going to reconnect %r' % self)
-                    reactor.callLater(0.01, self.automat, 'reconnect')  # @UndefinedVariable
+                if _Debug:
+                    lg.dbg(_DebugLevel, 'going to reconnect %r' % self)
+                reactor.callLater(0.01, self.automat, 'reconnect', cooperated_brokers=cooperated_brokers)  # @UndefinedVariable
             return True
         received_group_messages.sort(key=lambda m: m['sequence_id'])
         ret = self._do_process_group_messages(received_group_messages, latest_known_sequence_id)
         if to_be_reconnected:
-            if to_be_rotated:
-                if _Debug:
-                    lg.dbg(_DebugLevel, 'going to reconnect and replace active broker %r' % self)
-                self.automat('replace-active-broker', self.active_broker_id)
-            else:
-                if _Debug:
-                    lg.dbg(_DebugLevel, 'going to reconnect %r' % self)
-                self.automat('reconnect')
+            if _Debug:
+                lg.dbg(_DebugLevel, 'going to reconnect %r' % self)
+            self.automat('reconnect', cooperated_brokers=cooperated_brokers)
         return ret
 
     def _do_process_group_messages(self, received_group_messages, latest_known_sequence_id):
@@ -1300,12 +1306,7 @@ class GroupMember(automat.Automat):
             groups.set_archive_folder_path(self.group_key_id, archive_folder_path)
         groups.save_group_info(self.group_key_id)
         if brokers_changed:
-            events.send('group-brokers-updated', data=dict(
-                group_creator_id=self.group_creator_id,
-                group_key_id=self.group_key_id,
-                member_id=self.member_id,
-                connected_brokers=self.connected_brokers,
-            ))
+            self.group_brokers_updated = True
 
     #------------------------------------------------------------------------------
 
@@ -1342,9 +1343,14 @@ class GroupMember(automat.Automat):
             mismatch_info = {}
             try:
                 evt, a, kw = err.value.args
-                resp_payload = strng.to_text(a[0][0].Payload)
-                if resp_payload.startswith('mismatch:'):
-                    mismatch_info = jsn.loads(resp_payload[9:])
+                if a and a[0]:
+                    resp_payload = strng.to_text(a[0][0].Payload)
+                    if resp_payload.startswith('mismatch:'):
+                        mismatch_info = jsn.loads(resp_payload[9:])
+                        if 'dht_brokers' in mismatch_info:
+                            mismatch_info['dht_brokers'] = {int(k): id_url.field(v) for k,v in mismatch_info['dht_brokers'].items()}
+                        if 'cooperated_brokers' in mismatch_info:
+                            mismatch_info['cooperated_brokers'] = {int(k): id_url.field(v) for k,v in mismatch_info['cooperated_brokers'].items()}
             except:
                 lg.exc()
                 self.automat('broker-connect-failed', err)
@@ -1377,9 +1383,14 @@ class GroupMember(automat.Automat):
             mismatch_info = {}
             try:
                 evt, a, kw = err.value.args
-                resp_payload = strng.to_text(a[0][0].Payload)
-                if resp_payload.startswith('mismatch:'):
-                    mismatch_info = jsn.loads(resp_payload[9:])
+                if a and a[0]:
+                    resp_payload = strng.to_text(a[0][0].Payload)
+                    if resp_payload.startswith('mismatch:'):
+                        mismatch_info = jsn.loads(resp_payload[9:])
+                        if 'dht_brokers' in mismatch_info:
+                            mismatch_info['dht_brokers'] = {int(k): id_url.field(v) for k,v in mismatch_info['dht_brokers'].items()}
+                        if 'cooperated_brokers' in mismatch_info:
+                            mismatch_info['cooperated_brokers'] = {int(k): id_url.field(v) for k,v in mismatch_info['cooperated_brokers'].items()}
             except:
                 lg.exc()
                 self.automat('broker-lookup-failed', err)

@@ -82,6 +82,12 @@ _DebugLevel = 10
 #------------------------------------------------------------------------------
 
 import re
+import sys
+
+try:
+    from twisted.internet import reactor  # @UnresolvedImport
+except:
+    sys.exit('Error initializing twisted.internet.reactor in broker_negotiator.py')
 
 from twisted.python.failure import Failure
 
@@ -340,7 +346,7 @@ class BrokerNegotiator(automat.Automat):
         if self.desired_position != self.my_position:
             # but the request was done to a wrong position
             lg.warn('requester desired position %d mismatch, my current position is: %d' % (self.desired_position, self.my_position, ))
-            self.automat('request-invalid', Exception('position mismatch, current position is: %d' % self.my_position))
+            self.automat('request-invalid', Exception('position mismatch, current position is: %d' % self.my_position), cooperated_brokers=self.cooperated_brokers)
             return
         if not self.cooperated_brokers.get(self.my_position):
             # there is no broker present in the cooperation for my position
@@ -557,7 +563,7 @@ class BrokerNegotiator(automat.Automat):
             self.cooperated_brokers[self.my_position - 1] = self.my_broker_idurl
         if _Debug:
             lg.args(_DebugLevel, e=event, cooperated_brokers=self.cooperated_brokers)
-        self.result_defer.callback(self.cooperated_brokers)
+        reactor.callLater(0, self.result_defer.callback, self.cooperated_brokers)  # @UndefinedVariable
 
     def doReject(self, event, *args, **kwargs):
         """
@@ -565,7 +571,7 @@ class BrokerNegotiator(automat.Automat):
         """
         if _Debug:
             lg.args(_DebugLevel, e=event, a=args, kw=kwargs)
-        self.result_defer.errback(Exception(event, args, kwargs))
+        reactor.callLater(0, self.result_defer.errback, Exception(event, args, kwargs))  # @UndefinedVariable
 
     def doDestroyMe(self, *args, **kwargs):
         """
@@ -693,6 +699,6 @@ class BrokerNegotiator(automat.Automat):
                 lg.args(_DebugLevel, evt=evt, kw=kw)
             if evt == 'request-failed':
                 if kw.get('reason') == 'service-denied':
-                    self.automat('broker-rotate-denied')
+                    self.automat('broker-rotate-denied', **kw)
                     return
         self.automat('broker-rotate-failed')
