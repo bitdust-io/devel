@@ -40,10 +40,10 @@ def test_idrestore():
     prepare()
 
     #--- SCENARIO 4: customer-1 share files to customer-2
-    _, customer_2_shared_file_info = scenarios.scenario4()
+    customer_1_shared_file_info, customer_2_shared_file_info = scenarios.scenario4()
 
     #--- SCENARIO 17: customer-2 went offline and customer-restore recover identity from customer-2
-    scenarios.scenario17(customer_2_shared_file_info)
+    scenarios.scenario17(customer_1_shared_file_info, customer_2_shared_file_info)
 
 #------------------------------------------------------------------------------
 

@@ -125,6 +125,9 @@ regress_test:
 regress_test_log:
 	PYTHON_VERSION=$(REGRESSION_PY_VER) make --no-print-directory -C regress/ VERBOSE=3 test_log
 
+regress_test_parallel:
+	PYTHON_VERSION=$(REGRESSION_PY_VER) make --no-print-directory -C regress/ VERBOSE=1 test_parallel
+
 regress_clean:
 	make --no-print-directory -C regress/ clean_coverage
 	make --no-print-directory -C regress/ clean_logs

@@ -190,5 +190,7 @@ test_log: prepare run_all_log report
 
 test: prepare run_all report
 
+test_parallel: prepare run_parallel report
+
 shell:
 	docker-compose --file tests/$(test)/docker-compose.yml exec $(node) bash

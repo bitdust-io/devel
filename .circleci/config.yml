@@ -26,7 +26,7 @@ jobs:
             echo "archived file latest.zip uploaded to the intermediate machine"
             ssh -o StrictHostKeyChecking=no tester@p2p-alice.ai 'scp ./latest.zip ubumac0:.'
             echo "archived file latest.zip uploaded to the testing machine"
-            ssh -o StrictHostKeyChecking=no -t tester@p2p-alice.ai 'ssh ubumac0 "rm -rf ~/.bitdust/venv/; rm -rf bitdust.ci/; mkdir bitdust.ci/; mv latest.zip bitdust.ci/; cd bitdust.ci/; unzip -o -q latest.zip; rm latest.zip; make regress_stop; make regress_clean; make test_unit && make regress_test && make regress_stop && make regress_clean;"'
+            ssh -o StrictHostKeyChecking=no -t tester@p2p-alice.ai 'ssh ubumac0 "rm -rf ~/.bitdust/venv/; rm -rf bitdust.ci/; mkdir bitdust.ci/; mv latest.zip bitdust.ci/; cd bitdust.ci/; unzip -o -q latest.zip; rm latest.zip; make regress_stop; make regress_clean; make test_unit && make regress_test_parallel && make regress_stop && make regress_clean;"'
             echo "OK!"
 
 workflows:
