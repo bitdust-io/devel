@@ -385,9 +385,15 @@ def on_consumer_notify(message_info):
     sequence_id = payload['sequence_id']
     last_sequence_id = get_latest_sequence_id(queue_id)
     producer_id = payload['producer_id']
+    group_key_id = global_id.GetGlobalQueueKeyID(queue_id)
+    _, group_creator_idurl = my_keys.split_key_id(group_key_id)
+    qk = queue_keeper.check_create(customer_idurl=group_creator_idurl, auto_create=False)
+    if not qk:
+        lg.exc(exc_value=Exception('not possible to notify consumer %r because queue keeper for %r do not exist' % (consumer_id, group_creator_idurl, )))
+        return True
     if _Debug:
-        lg.args(_DebugLevel, producer_id=producer_id, consumer_id=consumer_id, queue_id=queue_id,
-                sequence_id=sequence_id, last_sequence_id=last_sequence_id)
+        lg.args(_DebugLevel, p=producer_id, c=consumer_id, q=queue_id,
+                s=sequence_id, l=last_sequence_id, qk=qk, b=qk.cooperated_brokers)
     ret = message.send_message(
         json_data={
             'msg_type': 'queue_message',
@@ -400,6 +406,7 @@ def on_consumer_notify(message_info):
                 'payload': payload['payload'],
             }, ],
             'last_sequence_id': last_sequence_id,
+            'cooperated_brokers': qk.cooperated_brokers,
         },
         recipient_global_id=my_keys.make_key_id(alias='master', creator_glob_id=consumer_id),
         packet_id=packet_id,
@@ -1234,7 +1241,7 @@ class MessagePeddler(automat.Automat):
         if not id_url.is_cached(producer_idurl):
             caching_list.append(identitycache.immediatelyCaching(producer_idurl))
         dl = DeferredList(caching_list, consumeErrors=True)
-        dl.addCallback(lambda _: self._do_verify_queue_keeper(
+        dl.addCallback(lambda _: self._do_check_create_queue_keeper(
             group_creator_idurl, request_packet, queue_id, consumer_id, producer_id,
             position, last_sequence_id, archive_folder_path, known_brokers, group_key_info, result_defer,
         ))
@@ -1560,14 +1567,14 @@ class MessagePeddler(automat.Automat):
                         lg.info('clean up group key %r' % group_key_id)
                         my_keys.erase_key(group_key_id)
 
-    def _do_verify_queue_keeper(self, customer_idurl, request_packet, queue_id, consumer_id, producer_id,
-                                position, last_sequence_id, archive_folder_path, known_brokers, group_key_info, result_defer):
+    def _do_check_create_queue_keeper(self, customer_idurl, request_packet, queue_id, consumer_id, producer_id,
+                                      position, last_sequence_id, archive_folder_path, known_brokers, group_key_info, result_defer):
         if _Debug:
             lg.args(_DebugLevel, queue_id=queue_id, consumer_id=consumer_id, producer_id=producer_id,
                     position=position, archive_folder_path=archive_folder_path, known_brokers=known_brokers)
         queue_keeper_result = Deferred()
         if _Debug:
-            queue_keeper_result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='message_peddler._do_verify_queue_keeper')
+            queue_keeper_result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='message_peddler._do_check_create_queue_keeper')
         queue_keeper_result.addCallback(
             self._on_queue_keeper_connect_result,
             consumer_id=consumer_id,
@@ -1709,7 +1716,7 @@ class MessagePeddler(automat.Automat):
 
     def _on_queue_keeper_connect_result(self, result, consumer_id, producer_id, group_key_info, last_sequence_id, request_packet, result_defer):
         if _Debug:
-            lg.args(_DebugLevel, consumer_id=consumer_id, producer_id=producer_id, last_sequence_id=last_sequence_id)
+            lg.args(_DebugLevel, consumer_id=consumer_id, producer_id=producer_id, last_sequence_id=last_sequence_id, request_packet_id=request_packet.PacketID)
         if not result or isinstance(result, Failure):
             lg.err('queue keeper failed to connect to the queue')
             p2p_service.SendFail(request_packet, 'failed to connect to the queue')
@@ -1786,9 +1793,21 @@ class MessagePeddler(automat.Automat):
 
     def _on_queue_keeper_connect_failed(self, err, consumer_id, producer_id, group_key_info, last_sequence_id, request_packet, result_defer):
         if _Debug:
-            lg.args(_DebugLevel, err=err, consumer_id=consumer_id, producer_id=producer_id, last_sequence_id=last_sequence_id)
-        lg.err('connection to message broker was failed: %r' % err)
-        p2p_service.SendFail(request_packet, 'connection to message broker was failed')
+            lg.args(_DebugLevel, err=err, consumer_id=consumer_id, producer_id=producer_id, last_sequence_id=last_sequence_id, request_packet_id=request_packet.PacketID)
+        if isinstance(err, Failure):
+            try:
+                evt, args, kwargs = err.value.args
+            except:
+                lg.exc()
+                return None
+            if _Debug:
+                lg.args(_DebugLevel, event=evt, args=args, kwargs=kwargs)
+            if evt in ['dht-mismatch', 'cooperation-mismatch', 'request-rejected', ]:
+                p2p_service.SendFail(request_packet, 'mismatch:%s' % jsn.dumps(kwargs, keys_to_text=True, values_to_text=True))
+                result_defer.callback(False)
+                return None
+        lg.err('connection to message broker failed: %r' % err)
+        p2p_service.SendFail(request_packet, 'connection to message broker failed')
         result_defer.callback(False)
         return None
 

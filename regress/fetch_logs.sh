@@ -8,7 +8,7 @@ mkdir logs/$test_name
 allnodesfile="allnodes"
 rm -rf $allnodesfile
 
-echo "$test_name" | python -c "import json,sys; tst=sys.stdin.read().strip(); containers=json.loads(open('tests/%s/conf.json' % tst).read())['containers'].keys(); open('allnodes', 'w').write(' '.join(containers));"
+echo "$test_name" | python3 -c "import json,sys; tst=sys.stdin.read().strip(); containers=json.loads(open('tests/%s/conf.json' % tst).read())['containers'].keys(); open('allnodes', 'w').write(' '.join(containers));"
 
 nodes=`cat $allnodesfile`
 

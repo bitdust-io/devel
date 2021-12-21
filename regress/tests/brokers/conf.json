@@ -31,20 +31,35 @@
                 "known_dht_seeds": "dht-1:14441"
             }
         },
+        "dht-3": {
+            "links": [
+                "dht-1",
+                "dht-2"
+            ],
+            "ports": "10013:22",
+            "node": {
+                "role": "dht-seed",
+                "name": "dht-3",
+                "attached_layers": "2,3,7",
+                "known_dht_seeds": "dht-1:14441,dht-2:14441"
+            }
+        },
         "stun-1": {
             "links": [
-                "dht-2"
+                "dht-2",
+                "dht-3"
             ],
             "ports": "10021:22",
             "node": {
                 "role": "stun-server",
                 "name": "stun-1",
-                "known_dht_seeds": "dht-2:14441"
+                "known_dht_seeds": "dht-2:14441,dht-3:14441"
             }
         },
         "supplier-1": {
             "links": [
                 "dht-2",
+                "dht-3",
                 "stun-1",
                 "id-a"
             ],
@@ -54,13 +69,14 @@
                 "name": "supplier-1",
                 "join_network": true,
                 "known_id_servers": "id-a:8084",
-                "known_dht_seeds": "dht-2:14441",
+                "known_dht_seeds": "dht-2:14441,dht-3:14441",
                 "preferred_routers": ""
             }
         },
         "supplier-2": {
             "links": [
                 "dht-2",
+                "dht-3",
                 "stun-1",
                 "id-a"
             ],
@@ -70,13 +86,14 @@
                 "name": "supplier-2",
                 "join_network": true,
                 "known_id_servers": "id-a:8084",
-                "known_dht_seeds": "dht-2:14441",
+                "known_dht_seeds": "dht-2:14441,dht-3:14441",
                 "preferred_routers": ""
             }
         },
         "customer-1": {
             "links": [
                 "dht-2",
+                "dht-3",
                 "stun-1",
                 "id-a"
             ],
@@ -88,7 +105,7 @@
                 "role": "customer",
                 "name": "customer-1",
                 "join_network": true,
-                "known_dht_seeds": "dht-2:14441",
+                "known_dht_seeds": "dht-2:14441,dht-3:14441",
                 "known_id_servers": "id-a:8084",
                 "preferred_routers": "",
                 "block_size": "10 KB",
@@ -100,6 +117,7 @@
         "customer-2": {
             "links": [
                 "dht-2",
+                "dht-3",
                 "stun-1",
                 "id-a"
             ],
@@ -111,7 +129,7 @@
                 "role": "customer",
                 "name": "customer-2",
                 "join_network": true,
-                "known_dht_seeds": "dht-2:14441",
+                "known_dht_seeds": "dht-2:14441,dht-3:14441",
                 "known_id_servers": "id-a:8084",
                 "preferred_routers": "",
                 "block_size": "10 KB",
@@ -123,6 +141,7 @@
         "customer-3": {
             "links": [
                 "dht-2",
+                "dht-3",
                 "stun-1",
                 "id-a"
             ],
@@ -134,7 +153,7 @@
                 "role": "customer",
                 "name": "customer-3",
                 "join_network": true,
-                "known_dht_seeds": "dht-2:14441",
+                "known_dht_seeds": "dht-2:14441,dht-3:14441",
                 "known_id_servers": "id-a:8084",
                 "preferred_routers": "",
                 "block_size": "10 KB",
@@ -146,6 +165,7 @@
         "broker-1": {
             "links": [
                 "dht-2",
+                "dht-3",
                 "stun-1",
                 "id-a"
             ],
@@ -155,7 +175,7 @@
                 "name": "broker-1",
                 "join_network": true,
                 "known_id_servers": "id-a:8084",
-                "known_dht_seeds": "dht-2:14441",
+                "known_dht_seeds": "dht-2:14441,dht-3:14441",
                 "preferred_routers": "",
                 "preferred_brokers": ""
             }
@@ -163,6 +183,7 @@
         "broker-2": {
             "links": [
                 "dht-2",
+                "dht-3",
                 "stun-1",
                 "id-a"
             ],
@@ -172,7 +193,7 @@
                 "name": "broker-2",
                 "join_network": true,
                 "known_id_servers": "id-a:8084",
-                "known_dht_seeds": "dht-2:14441",
+                "known_dht_seeds": "dht-2:14441,dht-3:14441",
                 "preferred_routers": "",
                 "preferred_brokers": ""
             }
@@ -180,6 +201,7 @@
         "broker-3": {
             "links": [
                 "dht-2",
+                "dht-3",
                 "stun-1",
                 "id-a"
             ],
@@ -189,7 +211,7 @@
                 "name": "broker-3",
                 "join_network": true,
                 "known_id_servers": "id-a:8084",
-                "known_dht_seeds": "dht-2:14441",
+                "known_dht_seeds": "dht-2:14441,dht-3:14441",
                 "preferred_routers": "",
                 "preferred_brokers": ""
             }
@@ -197,6 +219,7 @@
         "broker-4": {
             "links": [
                 "dht-2",
+                "dht-3",
                 "stun-1",
                 "id-a"
             ],
@@ -206,7 +229,7 @@
                 "name": "broker-4",
                 "join_network": true,
                 "known_id_servers": "id-a:8084",
-                "known_dht_seeds": "dht-2:14441",
+                "known_dht_seeds": "dht-2:14441,dht-3:14441",
                 "preferred_routers": "",
                 "preferred_brokers": ""
             }
@@ -221,6 +244,7 @@
         "id-a",
         "dht-1",
         "dht-2",
+        "dht-3",
         "stun-1",
         "supplier-1",
         "supplier-2",

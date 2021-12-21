@@ -1691,7 +1691,7 @@ def scenario16():
 
 
 
-def scenario17(old_customer_2_info):
+def scenario17(old_customer_1_info, old_customer_2_info):
     set_active_scenario('SCENARIO 17')
     msg('\n\n============\n[SCENARIO 17] customer-2 went offline and customer-restore recover identity from customer-2')
 
@@ -1715,7 +1715,19 @@ def scenario17(old_customer_2_info):
     # before start the restore make sure all files actually are delivered to suppliers
     kw.file_sync_v1('customer-1')
     kw.file_sync_v1('customer-2')
-    kw.file_list_all_v1('customer-2', expected_reliable=100, reliable_shares=False, attempts=20)
+    kw.file_list_all_v1('customer-2', expected_reliable=100, reliable_shares=True, attempts=20)
+
+    kw.wait_service_state(CUSTOMERS_IDS_12, 'service_shared_data', 'ON')
+    kw.wait_packets_finished(PROXY_IDS + SUPPLIERS_IDS_12 + CUSTOMERS_IDS_12)
+
+    # now try to download again shared by customer-1 cat.txt file on customer-2
+    kw.verify_file_download_start(
+        node='customer-2',
+        remote_path=old_customer_1_info['remote_path'],
+        destination_path='/customer_2/cat_shared/cat_again.txt',
+        reliable_shares=False,
+        expected_reliable=100,
+    )
 
     kw.wait_service_state(CUSTOMERS_IDS_12, 'service_shared_data', 'ON')
     kw.wait_packets_finished(PROXY_IDS + SUPPLIERS_IDS_12 + CUSTOMERS_IDS_12)
