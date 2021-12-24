@@ -59,13 +59,12 @@ except:
 
 from twisted.internet.defer import Deferred, DeferredList, succeed, fail, CancelledError
 from twisted.python.failure import Failure
+from twisted.python import log as twisted_log
 from twisted.internet import protocol
 from twisted.web import iweb
 from twisted.web import client
 from twisted.web import http_headers
-from twisted.web.client import downloadPage
-from twisted.web.client import HTTPDownloader
-from twisted.web.client import Agent, readBody
+from twisted.web.client import downloadPage, HTTPDownloader, Agent, _ReadBodyProtocol
 from twisted.web.http_headers import Headers
 
 from zope.interface import implementer
@@ -464,7 +463,7 @@ def downloadSSL(url, fileOrName, progress_func, certificates_filenames):
                     pass
             ctx.set_verify(SSL.VERIFY_PEER | SSL.VERIFY_FAIL_IF_NO_PEER_CERT, self.verify)
             return ctx
-    
+
     scheme, host, port, path = parse_url(url)
     if not isinstance(certificates_filenames, list):
         certificates_filenames = [certificates_filenames, ]
@@ -475,7 +474,7 @@ def downloadSSL(url, fileOrName, progress_func, certificates_filenames):
             break
     if not cert_found:
         return fail(Exception('no one ssl certificate found'))
-    
+
     factory = HTTPDownloader(url, fileOrName, agent=_UserAgentString)
     contextFactory = MyClientContextFactory(certificates_filenames)
     reactor.connectSSL(host, port, factory, contextFactory)  # @UndefinedVariable
@@ -489,6 +488,24 @@ def downloadSSL(url, fileOrName, progress_func, certificates_filenames):
 #     def setURL(self, url):
 #         client.HTTPClientFactory.setURL(self, url)
 #         self.path = url
+
+
+def readBody(response):
+
+    def cancel(deferred):
+        abort = getAbort()
+        if abort is not None:
+            abort()
+
+    d = Deferred(cancel)
+    d.addErrback(twisted_log.err)
+    protocol = _ReadBodyProtocol(response.code, response.phrase, d)
+
+    def getAbort():
+        return getattr(protocol.transport, 'abortConnection', None)
+
+    response.deliverBody(protocol)
+    return d
 
 
 def readBodyFailed(result):
@@ -507,8 +524,8 @@ def readResponse(response, timeout):
         return fail(Exception('Bad response from the server: [%d] %s' % (
             response.code, response.phrase.strip(),)))
     d = readBody(response)
-    d.addErrback(readBodyFailed)
     d.addTimeout(timeout=timeout, clock=reactor)
+    d.addErrback(readBodyFailed)
     return d
 
 
