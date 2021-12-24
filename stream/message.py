@@ -375,8 +375,8 @@ def on_message_delivered(idurl, json_data, recipient_global_id, packet_id, respo
 def on_message_failed(idurl, json_data, recipient_global_id, packet_id, response, info, result_defer=None, error=None):
     global _LastUserPingTime
     idurl = id_url.to_bin(idurl)
-    lg.err('message %s failed sending to %s in %s / %s because %r' % (
-        packet_id, recipient_global_id, response, info, error, ))
+    lg.err('message %s failed sending to %s in %s because : %r' % (
+        packet_id, recipient_global_id, response, error, ))
     if idurl in _LastUserPingTime:
         _LastUserPingTime[idurl] = 0
     if result_defer and not result_defer.called:

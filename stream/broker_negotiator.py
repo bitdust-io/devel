@@ -667,6 +667,18 @@ class BrokerNegotiator(automat.Automat):
     def _on_new_broker_lookup_failed(self, err, broker_pos, *args, **kwargs):
         if _Debug:
             lg.args(_DebugLevel, err=err, broker_pos=broker_pos)
+        if isinstance(err, Failure):
+            try:
+                evt, _, kw = err.value.args
+            except:
+                lg.exc()
+                return
+            if _Debug:
+                lg.args(_DebugLevel, evt=evt, kw=kw)
+            if evt == 'request-failed':
+                if kw.get('reason') == 'service-denied':
+                    self.automat('new-broker-rejected', **kw)
+                    return
         self.automat('hire-broker-failed')
 
     def _on_rotate_broker_connected(self, response_info, broker_pos, event, *args, **kwargs):

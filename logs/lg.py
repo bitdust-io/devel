@@ -271,7 +271,7 @@ def err(message, level=0):
     if not isinstance(message, six.text_type):  # @UndefinedVariable
         message = str(message)
     if not message.count(funcname):
-        message = ' in %s() : "%s"' % (funcname, message)
+        message = ' %s in %s()' % (message, funcname)
     if not message.count('ERROR'):
         message = 'ERROR ' + message
     message = '%s%s   ' % ((' ' * (level + 11)), message)
