@@ -1,6 +1,25 @@
 Change Log
 ==========
 
+2021-12-24 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* fix in lib/net_misc.py
+* run regression tests in parallel
+* fix issues between broker_negotiator() and queue_keeper()
+* fix issues between message_broker() and group_member()
+* few fixes in identitycache.immediatelyCaching()
+* archive_folder_path to be stored separately by brokers for each queue
+* capturing "Unhandled error in Deferred" errors
+* updated .circleci/config.yml
+* changes in identity propagate
+* bug fix in p2p_connector()
+* added "attempts" input parameter to p2p_service_seeker()
+* IDURL fix in group_member()
+* bug fix in p2p/propagate.py
+* bug fix in packet_out()
+
+
+
 2021-12-01 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * IDURL fix in message_peddler()
