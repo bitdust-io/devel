@@ -79,7 +79,7 @@ _one_up:
 
 _one_down:
 	@echo "DOWN ${TEST_NAME}";
-	@docker-compose --file tests/${TEST_NAME}/docker-compose.yml down -v -t 1  # 1> /dev/null 2> /dev/null
+	@docker-compose --file tests/${TEST_NAME}/docker-compose.yml down --remove-orphans -v -t 1 || echo "DOWN ${TEST_NAME} failed but ignored"   # 1> /dev/null 2> /dev/null
 
 _one_clean_test:
 	@echo "DOCKER COMPOSE EXEC ${TEST_NAME} DEBUG=${_DEBUG} PAUSE_BEFORE=${_PAUSE_BEFORE}";
