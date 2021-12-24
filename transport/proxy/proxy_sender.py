@@ -418,7 +418,8 @@ class ProxySender(automat.Automat):
             if p.outpacket.Command == fail_info['command']:
                 if id_url.to_bin(to_idurl) == p.outpacket.RemoteID.to_bin():
                     if p.outpacket.CreatorID.to_bin() == id_url.to_bin(from_idurl) or p.outpacket.OwnerID.to_bin() == id_url.to_bin(from_idurl):
-                        lg.warn('about to cancel %r because sending via proxy transport is failed' % p)
+                        if _Debug:
+                            lg.dbg(_DebugLevel, 'about to cancel %r because sending via proxy transport is failed' % p)
                         p.automat('cancel')
 
     def _do_retry_one_time(self, fail_info):
@@ -429,13 +430,15 @@ class ProxySender(automat.Automat):
         if _Debug:
             lg.args(_DebugLevel, key=_key, retries=current_retries)
         if fail_info.get('error') != 'route already closed':
-            lg.err('failed sending routed packet : %r' % fail_info)
+            if _Debug:
+                lg.dbg(_DebugLevel, 'failed sending routed packet : %r' % fail_info)
             self._do_clean_sent_packet(fail_info)
             self._do_cancel_outbox_packets(fail_info)
             self.packets_retries.pop(_key, None)
             return
         if current_retries >= 1:
-            lg.err('failed sending routed packet after few attempts : %r' % fail_info)
+            if _Debug:
+                lg.dbg(_DebugLevel, 'failed sending routed packet after few attempts : %r' % fail_info)
             self.automat('retry-failed', fail_info)
             self._do_clean_sent_packet(fail_info)
             self._do_cancel_outbox_packets(fail_info)

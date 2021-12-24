@@ -425,8 +425,6 @@ class IndexSynchronizer(automat.Automat):
             packetsToCancel = packet_out.search_by_packet_id(packet_id)
             for pkt_out in packetsToCancel:
                 if pkt_out.outpacket.Command == commands.Data():
-                    lg.warn('sending "cancel" to %s addressed to %s from index_synchronizer' % (
-                        pkt_out, pkt_out.remote_idurl, ))
                     pkt_out.automat('cancel')
 
     def doCancelRequests(self, *args, **kwargs):

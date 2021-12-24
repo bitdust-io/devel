@@ -437,7 +437,8 @@ def last_time_cached(idurl):
 
 
 def on_caching_task_failed(err, idurl, ignore_errors):
-    lg.warn('failed caching %s : %r' % (idurl, err))
+    if _Debug:
+        lg.args(_DebugLevel, idurl=idurl, err=err)
     if ignore_errors:
         return None
     if err.type == CancelledError:
