@@ -210,6 +210,18 @@ def on_service_restarted(resp, service_name, result_defer, wait_timeout):
         do_p2p_connector_test(result_defer)
     return resp
 
+
+def on_service_proxy_transport_check_healthy(healthy, wait_timeout):
+    if _Debug:
+        lg.args(_DebugLevel, healthy=healthy)
+    if healthy is True:
+        return None
+    lg.err('service_proxy_transport is not healthy, going to restart it now')
+    d = Deferred()
+    d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='network_service.on_service_proxy_transport_check_healthy', ignore=True)
+    do_service_restart('service_proxy_transport', d, wait_timeout=wait_timeout)
+    return None
+
 #------------------------------------------------------------------------------
 
 def connected(wait_timeout=5):
@@ -238,6 +250,9 @@ def connected(wait_timeout=5):
                         wait_timeout_defer.addTimeout(wait_timeout, clock=reactor)
                         return ret
                 else:
+                    d = driver.is_healthy('service_proxy_transport')
+                    d.addCallback(on_service_proxy_transport_check_healthy, wait_timeout=wait_timeout)
+                    d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='network_service.connected', ignore=True)
                     lg.warn('disconnected, reason is proxy_receiver() not started yet')
                     ret.callback(dict(
                         error='disconnected',

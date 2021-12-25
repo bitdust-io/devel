@@ -147,8 +147,14 @@ def is_healthy(service_name):
     if svc is None:
         result.errback(Exception('service %s not found' % service_name))
         return result
+    if not svc.installed():
+        result.errback(Exception('service %s is not installed' % service_name))
+        return result
     if not svc.enabled():
         result.errback(Exception('service %s is disabled' % service_name))
+        return result
+    if not is_started(service_name):
+        result.errback(Exception('service %s is not started' % service_name))
         return result
     service_health = svc.health_check()
     if isinstance(service_health, Deferred):

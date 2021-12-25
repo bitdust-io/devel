@@ -383,7 +383,7 @@ class ProxyReceiver(automat.Automat):
         """
         Action method.
         """
-        self._find_random_node()
+        self._find_random_node(attempts=5)
 
     def doSendMyIdentity(self, *args, **kwargs):
         """
@@ -793,7 +793,7 @@ class ProxyReceiver(automat.Automat):
         )
         self.request_service_packet_id.append(newpacket.PacketID)
 
-    def _on_nodes_lookup_finished(self, idurls):
+    def _on_nodes_lookup_finished(self, idurls, attempts):
         if _Debug:
             lg.out(_DebugLevel, 'proxy_receiver._on_nodes_lookup_finished : %r' % idurls)
         for idurl in idurls:
@@ -806,9 +806,12 @@ class ProxyReceiver(automat.Automat):
                     lg.out(_DebugLevel, 'proxy_receiver._on_nodes_lookup_finished found : %r' % self.possible_router_idurl)
                 self.automat('found-one-node', self.possible_router_idurl)
                 return
-        self.automat('nodes-not-found')
+        if attempts > 0:
+            self._find_random_node(attempts-1)
+        else:
+            self.automat('nodes-not-found')
 
-    def _find_random_node(self):
+    def _find_random_node(self, attempts):
         preferred_routers = []
         preferred_routers_raw = config.conf().getData('services/proxy-transport/preferred-routers').strip()
         if preferred_routers_raw:
@@ -826,7 +829,7 @@ class ProxyReceiver(automat.Automat):
             lg.out(_DebugLevel, 'proxy_receiver._find_random_node will start DHT lookup')
         tsk = lookup.random_proxy_router()
         if tsk:
-            tsk.result_defer.addCallback(self._on_nodes_lookup_finished)
+            tsk.result_defer.addCallback(self._on_nodes_lookup_finished, attempts=attempts)
             tsk.result_defer.addErrback(lambda err: self.automat('nodes-not-found'))
         else:
             self.automat('nodes-not-found')
