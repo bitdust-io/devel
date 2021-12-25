@@ -96,6 +96,8 @@ from crypt import my_keys
 
 from dht import dht_relations
 
+from contacts import identitycache
+
 from p2p import commands
 from p2p import p2p_service
 from p2p import lookup
@@ -109,6 +111,7 @@ from storage import archive_reader
 from access import groups
 from access import key_ring
 
+from userid import identity
 from userid import global_id
 from userid import id_url
 from userid import my_id
@@ -1345,6 +1348,13 @@ class GroupMember(automat.Automat):
                 evt, a, kw = err.value.args
                 if a and a[0]:
                     resp_payload = strng.to_text(a[0][0].Payload)
+                    if resp_payload.startswith('identity:'):
+                        xml_src = resp_payload[9:]
+                        new_ident = identity.identity(xmlsrc=xml_src)
+                        if new_ident.isCorrect() and new_ident.Valid():
+                            if identitycache.UpdateAfterChecking(new_ident.getIDURL(), xml_src):
+                                reactor.callLater(0.2, self.automat, 'brokers-mismatch')  # @UndefinedVariable
+                                return
                     if resp_payload.startswith('mismatch:'):
                         mismatch_info = jsn.loads(resp_payload[9:])
                         if 'dht_brokers' in mismatch_info:
@@ -1356,8 +1366,10 @@ class GroupMember(automat.Automat):
                 self.automat('broker-connect-failed', err)
                 return
             if mismatch_info:
+                lg.warn('broker request mismatch at position %d: %r' % (broker_pos, mismatch_info, ))
                 self.automat('brokers-mismatch', **mismatch_info)
                 return
+        lg.err('failed connecting to broker at position %d : %r' % (broker_pos, err, ))
         self.automat('broker-connect-failed', err)
 
     def _on_broker_hired(self, response_info, broker_pos, *args, **kwargs):

@@ -1215,6 +1215,18 @@ class MessagePeddler(automat.Automat):
             p2p_service.SendFail(request_packet, 'invalid group_key_id')
             result_defer.callback(False)
             return
+        if not group_creator_idurl.is_latest():
+            lg.warn('group creator idurl was rotated, consumer must refresh own identity cache: %r ~ %r' % (
+                group_creator_idurl.to_original(), group_creator_idurl.to_bin(), ))
+            known_ident = identitycache.get_one(group_creator_idurl)
+            if not known_ident:
+                lg.err('unknown group creator identity: %r' % group_creator_idurl)
+                p2p_service.SendFail(request_packet, 'unknown group creator identity')
+                result_defer.callback(False)
+                return
+            p2p_service.SendFail(request_packet, 'identity:%s' %  known_ident.serialize(as_text=True))
+            result_defer.callback(False)
+            return
         if my_keys.is_key_registered(group_key_id):
             if my_keys.is_key_private(group_key_id):
                 p2p_service.SendFail(request_packet, 'private key already registered')
@@ -1570,7 +1582,7 @@ class MessagePeddler(automat.Automat):
     def _do_check_create_queue_keeper(self, customer_idurl, request_packet, queue_id, consumer_id, producer_id,
                                       position, last_sequence_id, archive_folder_path, known_brokers, group_key_info, result_defer):
         if _Debug:
-            lg.args(_DebugLevel, queue_id=queue_id, consumer_id=consumer_id, producer_id=producer_id,
+            lg.args(_DebugLevel, customer=customer_idurl, queue_id=queue_id, consumer_id=consumer_id, producer_id=producer_id,
                     position=position, archive_folder_path=archive_folder_path, known_brokers=known_brokers)
         queue_keeper_result = Deferred()
         if _Debug:

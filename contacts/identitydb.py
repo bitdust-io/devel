@@ -366,6 +366,11 @@ def update(idurl, xml_src):
         lg.exc()
         return False
 
+    new_idurl = newid.getIDURL(as_original=True)
+    if idurl != new_idurl:
+        lg.err('not possible to store new identity, original IDURL is not matching: %r ~ %r' % (idurl, new_idurl, ))
+        return False
+
     filename = os.path.join(settings.IdentityCacheDir(), nameurl.UrlFilename(idurl))
     if os.path.exists(filename):
         oldidentityxml = bpio.ReadTextFile(filename)
