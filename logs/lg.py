@@ -304,9 +304,12 @@ def errback(err, *args, **kwargs):
     _debug = kwargs.pop('debug', 0)
     _debug_level = kwargs.pop('debug_level', 0)
     _method = kwargs.pop('method', 'unknown')
+    _ignore = kwargs.pop('ignore', False)
     if _debug and is_debug(_debug_level):
         dbg(_debug_level, 'Deferred.errback() from "%s" method with %r : args=%r  kwargs=%r' % (
             repr(err).replace('\n', ''), _method, args, kwargs, ))
+    if _ignore:
+        return None
     return err
 
 

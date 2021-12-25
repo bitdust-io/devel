@@ -106,6 +106,20 @@ class ProxyTransportService(LocalService):
             return False
         return True
 
+    def health_check(self):
+        from services import driver
+        all_deps_are_ok = True
+        for dep_name in self.dependent_on():
+            if not driver.is_enabled(dep_name):
+                all_deps_are_ok = False
+                break
+            if not driver.is_on(dep_name):
+                all_deps_are_ok = False
+                break
+        if not all_deps_are_ok:
+            return False
+        return self.state == 'ON'
+
     def _available_transports(self):
         from main import settings
         atransports = []
