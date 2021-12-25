@@ -204,7 +204,7 @@ def make_key_id(alias, creator_idurl=None, creator_glob_id=None):
     )
 
 
-def split_key_id(key_id):
+def split_key_id(key_id, as_field=True):
     """
     Return "alias" and "creator" IDURL of that key as a tuple object.
     For example from input string:
@@ -218,7 +218,9 @@ def split_key_id(key_id):
     parts = global_id.ParseGlobalID(key_id)
     if not parts['key_alias'] or not parts['idurl']:
         return None, None
-    return parts['key_alias'], id_url.field(parts['idurl'])
+    if as_field:
+        return parts['key_alias'], id_url.field(parts['idurl'])
+    return parts['key_alias'], strng.to_bin(parts['idurl'])
 
 
 def is_valid_key_id(global_key_id):

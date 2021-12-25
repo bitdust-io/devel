@@ -187,9 +187,12 @@ def call_websocket_method(method, **kwargs):
     Method allows to communicate with an existing BitDust process via WebSocket API interface.
     """
     from twisted.internet.defer import Deferred  # @UnresolvedImport
+    from twisted.internet import reactor  # @UnresolvedImport
     from lib import websock
     ret = Deferred()
     timeout = kwargs.pop('websocket_timeout', None)
+    if timeout:
+        ret.addTimeout(timeout=(timeout+1), clock=reactor)
 
     def _on_result(resp):
         if _Debug:

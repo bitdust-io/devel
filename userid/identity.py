@@ -545,7 +545,7 @@ class identity(object):
         signature = doc.createElement('signature')
         signature.appendChild(doc.createTextNode(strng.to_text(self.signature)))
         root.appendChild(signature)
-        
+
         xmlsrc = doc.toprettyxml(indent="  ", newl="\n", encoding="utf-8")
         return xmlsrc, root, doc
 

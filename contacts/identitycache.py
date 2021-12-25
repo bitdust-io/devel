@@ -298,6 +298,7 @@ def RemapContactAddress(address):
 
 def OverrideIdentity(idurl, xml_src):
     """
+    Used by proxy router to remember the original identity of the routing node.
     """
     global _OverriddenIdentities
     idurl = id_url.field(idurl)
