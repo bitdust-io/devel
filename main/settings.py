@@ -113,8 +113,6 @@ def shutdown():
     """
     global _InitDone
     _InitDone = False
-    if _Debug:
-        lg.out(_DebugLevel, 'settings.shutdown data location was %r' % deploy.current_base_dir())
     deploy.set_base_dir(None)
     config.shutdown()
 
@@ -211,15 +209,6 @@ Below is a set of global constants.
 #------------------------------------------------------------------------------
 #--- LOGS --------------------------------------------------------------------
 #------------------------------------------------------------------------------
-
-
-def MainLogFilename():
-    """
-    A prefix for file names to store main process logs.
-    """
-    # return os.path.join(LogsDir(), 'bitdust')
-    return os.path.join(LogsDir(), 'stdout.log')
-
 
 def UpdateLogFilename():
     """

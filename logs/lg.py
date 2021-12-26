@@ -585,7 +585,7 @@ def open_log_file(filename, append_mode=False):
     global _LogFile
     global _LogFileName
     if _LogFile:
-        return
+        return None
     try:
         if not os.path.isdir(os.path.dirname(os.path.abspath(filename))):
             os.makedirs(os.path.dirname(os.path.abspath(filename)))
@@ -597,6 +597,7 @@ def open_log_file(filename, append_mode=False):
     except:
         _LogFile = None
         _LogFileName = None
+    return _LogFile
 
 
 def close_log_file():

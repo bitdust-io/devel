@@ -714,8 +714,8 @@ def main(executable_path=None, start_reactor=True):
     logpath = None
     if opts.output:
         logpath = opts.output
-    # else:
-    #     logpath = os.path.join(appdata, 'logs', 'main.log')
+    else:
+        logpath = os.path.join(appdata, 'logs', 'stdout.log')
 
     need_redirecting = False
 

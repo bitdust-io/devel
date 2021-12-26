@@ -177,7 +177,7 @@ regress_one/%:
 	# make --no-print-directory -C regress/ clean_coverage
 	# make --no-print-directory -C regress/ clean_logs
 	PYTHON_VERSION=3.6 make --no-print-directory -C regress/ prepare
-	PYTHON_VERSION=3.6 make --no-print-directory -C regress/ VERBOSE=${VERBOSE} TEST_NAME=$* _one_up_test_coverage_log
+	PYTHON_VERSION=3.6 make --no-print-directory -C regress/ VERBOSE=3 TEST_NAME=$* _one_up_test_coverage_log
 
 
 
