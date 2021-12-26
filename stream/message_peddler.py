@@ -212,6 +212,17 @@ def on_consume_queue_messages(json_messages):
             continue
         if msg_type == 'queue_message':
             if queue_id not in streams():
+                group_creator_idurl = global_id.GetGlobalQueueOwnerIDURL(queue_id)
+                if not group_creator_idurl.is_latest():
+                    lg.warn('group creator idurl was rotated, consumer must refresh own identity cache: %r ~ %r' % (
+                        group_creator_idurl.to_original(), group_creator_idurl.to_bin(), ))
+                    known_ident = identitycache.get_one(group_creator_idurl)
+                    if not known_ident:
+                        lg.err('unknown group creator identity: %r' % group_creator_idurl)
+                        p2p_service.SendFailNoRequest(from_idurl, packet_id, 'unknown group creator identity')
+                        continue
+                    p2p_service.SendFailNoRequest(from_idurl, packet_id, 'identity:%s' %  known_ident.serialize(as_text=True))
+                    continue
                 lg.warn('skipped incoming queue_message, queue %r is not registered' % queue_id)
                 p2p_service.SendFailNoRequest(from_idurl, packet_id, 'queue ID not registered')
                 continue

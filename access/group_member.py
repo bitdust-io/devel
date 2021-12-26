@@ -707,7 +707,7 @@ class GroupMember(automat.Automat):
         )
         if _Debug:
             result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='group_member.doReadQueue')
-        result.addErrback(lambda err: self.automat('queue-read-failed', err))
+        result.addErrback(self._on_read_queue_failed)
 
     def doReadArchive(self, *args, **kwargs):
         """
@@ -1428,6 +1428,27 @@ class GroupMember(automat.Automat):
             self.automat('brokers-ping-failed')
             return
         self.automat('brokers-all-connected', **kwargs)
+
+    def _on_read_queue_failed(self, err):
+        if _Debug:
+            lg.args(_DebugLevel, err=err)
+        if isinstance(err, Failure):
+            if _Debug:
+                lg.args(_DebugLevel, args=err.value.args)
+            try:
+                evt, a, kw = err.value.args
+                if a and a[0]:
+                    resp_payload = strng.to_text(a[0][0].Payload)
+                    if resp_payload.startswith('identity:'):
+                        xml_src = resp_payload[9:]
+                        new_ident = identity.identity(xmlsrc=xml_src)
+                        if new_ident.isCorrect() and new_ident.Valid():
+                            if identitycache.UpdateAfterChecking(new_ident.getIDURL(), xml_src):
+                                reactor.callLater(0.5, self.automat, 'reconnect')  # @UndefinedVariable
+                                return
+            except:
+                lg.exc()
+        self.automat('queue-read-failed', err)
 
     def _on_message_to_broker_sent(self, response_packet, outgoing_counter, packet_id):
         if _Debug:
