@@ -1436,16 +1436,16 @@ class GroupMember(automat.Automat):
             if _Debug:
                 lg.args(_DebugLevel, args=err.value.args)
             try:
-                evt, a, kw = err.value.args
-                if a and a[0]:
-                    resp_payload = strng.to_text(a[0][0].Payload)
-                    if resp_payload.startswith('identity:'):
-                        xml_src = resp_payload[9:]
-                        new_ident = identity.identity(xmlsrc=xml_src)
-                        if new_ident.isCorrect() and new_ident.Valid():
-                            if identitycache.UpdateAfterChecking(new_ident.getIDURL(), xml_src):
-                                reactor.callLater(0.5, self.automat, 'reconnect')  # @UndefinedVariable
-                                return
+                resp_payload = strng.to_text(err.value.args[0].Payload)
+                if _Debug:
+                    lg.dbg(_DebugLevel, resp_payload)
+                if resp_payload.startswith('identity:'):
+                    xml_src = resp_payload[9:]
+                    new_ident = identity.identity(xmlsrc=xml_src)
+                    if new_ident.isCorrect() and new_ident.Valid():
+                        if identitycache.UpdateAfterChecking(new_ident.getIDURL(), xml_src):
+                            reactor.callLater(0.5, self.automat, 'reconnect')  # @UndefinedVariable
+                            return
             except:
                 lg.exc()
         self.automat('queue-read-failed', err)
