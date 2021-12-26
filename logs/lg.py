@@ -82,7 +82,7 @@ def fqn(o):
 
 #------------------------------------------------------------------------------
 
-def out(_DebugLevel, msg, nl='\n', log_name='main', showtime=False):
+def out(_DebugLevel, msg, nl='\n', log_name='stdout', showtime=False):
     """
     Prints a text line to the log file or console.
 
@@ -146,7 +146,7 @@ def out(_DebugLevel, msg, nl='\n', log_name='main', showtime=False):
     if not _LogsEnabled:
         return
     if is_debug(level):
-        if log_name == 'main':
+        if log_name == 'stdout':
             if _LogFile is not None:
                 o = s + nl
                 if sys.version_info[0] == 3:
@@ -180,7 +180,7 @@ def out(_DebugLevel, msg, nl='\n', log_name='main', showtime=False):
                 except:
                     pass
         if not _RedirectStdOut and not _RedirectStdErr and not _NoOutput:
-            if log_name == 'main':
+            if log_name == 'stdout':
                 s = s + nl
                 try:
                     sys.stdout.write(s)

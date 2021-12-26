@@ -218,7 +218,7 @@ def MainLogFilename():
     A prefix for file names to store main process logs.
     """
     # return os.path.join(LogsDir(), 'bitdust')
-    return os.path.join(LogsDir(), 'main.log')
+    return os.path.join(LogsDir(), 'stdout.log')
 
 
 def UpdateLogFilename():

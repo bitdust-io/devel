@@ -1084,7 +1084,7 @@ async def start_one_message_broker_async(broker, loop):
 #------------------------------------------------------------------------------
 
 def report_one_node(node):
-    main_log = run_ssh_command_and_wait(node, 'cat /root/.bitdust/logs/main.log', verbose=False)[0].strip()
+    main_log = run_ssh_command_and_wait(node, 'cat /root/.bitdust/logs/stdout.log', verbose=False)[0].strip()
     num_warnings = main_log.count('  WARNING ')
     num_errors = main_log.count('ERROR!!!')
     num_exceptions = main_log.count('Exception:')
@@ -1111,7 +1111,7 @@ def report_one_node(node):
 
 
 async def report_one_node_async(node, event_loop):
-    main_log = await run_ssh_command_and_wait_async(node, 'cat /root/.bitdust/logs/main.log', event_loop)
+    main_log = await run_ssh_command_and_wait_async(node, 'cat /root/.bitdust/logs/stdout.log', event_loop)
     main_log = main_log[0].strip()
     num_warnings = main_log.count('WARNING')
     num_errors = main_log.count('ERROR!!!')
