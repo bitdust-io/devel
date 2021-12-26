@@ -1229,7 +1229,7 @@ class MessagePeddler(automat.Automat):
         if not group_creator_idurl.is_latest():
             lg.warn('group creator idurl was rotated, consumer must refresh own identity cache: %r ~ %r' % (
                 group_creator_idurl.to_original(), group_creator_idurl.to_bin(), ))
-            known_ident = identitycache.get_one(group_creator_idurl)
+            known_ident = identitycache.get_one(group_creator_idurl.to_bin())
             if not known_ident:
                 lg.err('unknown group creator identity: %r' % group_creator_idurl)
                 p2p_service.SendFail(request_packet, 'unknown group creator identity')
