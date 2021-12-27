@@ -209,12 +209,24 @@ def do_process_incoming_message(json_data):
         call_id = json_data.get('call_id', None)
 
         if not method:
-            lg.warn('no api method provided in the call')
-            return False
+            lg.warn('api method name was not provided')
+            return push({
+                    'type': 'api_call',
+                    'payload': {
+                        'call_id': call_id,
+                        'errors': ['api method name was not provided', ],
+                    },
+                })
 
         if method not in _AllAPIMethods:
-            lg.warn('wrong api method called: %r' % method)
-            return False
+            lg.warn('invalid api method name: %r' % method)
+            return push({
+                    'type': 'api_call',
+                    'payload': {
+                        'call_id': call_id,
+                        'errors': ['invalid api method name', ],
+                    },
+                })
 
         if _Debug:
             lg.out(_DebugLevel, '*** %s  API WS IN  %s(%r)' % (
@@ -228,7 +240,7 @@ def do_process_incoming_message(json_data):
         try:
             response = func(**kwargs)
         except Exception as err:
-            lg.exc()
+            lg.err(f'{method}({kwargs}) : {err}')
             return push({
                     'type': 'api_call',
                     'payload': {

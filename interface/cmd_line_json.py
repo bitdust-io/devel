@@ -210,6 +210,18 @@ def call_websocket_method(method, **kwargs):
             if not ret.called:
                 ret.errback(resp)
             return None
+        if 'payload' not in resp:
+            if not ret.called:
+                ret.errback(Exception('received an empty response'))
+            return None
+        if not isinstance(resp['payload'], dict):
+            if not ret.called:
+                ret.errback(Exception('unexpected response received: %r' % resp['payload']))
+            return None
+        if 'errors' in resp['payload']:
+            if not ret.called:
+                ret.errback(Exception(', '.join(resp['payload']['errors'])))
+            return None
         try:
             payload_response = resp['payload']['response']
         except Exception as exc:
@@ -649,11 +661,12 @@ def cmd_api(opts, args, overDict, executablePath):
             from interface import api
         except:
             print_text('failed to import "interface.api" module')
-            return 2
+            return 1
         for item in dir(api):
             if item.startswith('_'):
                 continue
-            if item in ['Deferred', 'ERROR', 'OK', 'RESULT', 'driver', 'lg',
+            if item in ['ERROR', 'OK', 'RESULT', 'driver', 'lg',
+                        'absolute_import', 'Failure', 'Deferred',
                         'os', 'time', 'on_api_result_prepared', 'succeed', 'sys',
                         'strng', 'map', 'jsn', 'json', 'gc', ]:
                 continue
@@ -673,8 +686,12 @@ def cmd_api(opts, args, overDict, executablePath):
             print_text('\n    %s(%s)' % (item, ', '.join(params.args),))
             print_text('        %s' % doc_line)
         return 0
-    pairs = [i.split('=') for i in args[2:]]
-    kwargs = {k:v for k, v in pairs}
+    try:
+        pairs = [i.split('=') for i in args[2:]]
+        kwargs = {k:v for k, v in pairs}
+    except Exception as e:
+        print_text('failed reading input arguments: %s\n' % e)
+        return 1
     return call_websocket_method_and_stop(args[1], **kwargs)
 
 #------------------------------------------------------------------------------

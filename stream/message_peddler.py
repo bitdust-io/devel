@@ -216,9 +216,9 @@ def on_consume_queue_messages(json_messages):
                 if not group_creator_idurl.is_latest():
                     lg.warn('group creator idurl was rotated, consumer must refresh own identity cache: %r ~ %r' % (
                         group_creator_idurl.to_original(), group_creator_idurl.to_bin(), ))
-                    known_ident = identitycache.get_one(group_creator_idurl)
+                    known_ident = identitycache.get_one(group_creator_idurl.to_bin())
                     if not known_ident:
-                        lg.err('unknown group creator identity: %r' % group_creator_idurl)
+                        lg.err('unknown group creator identity: %r' % group_creator_idurl.to_bin())
                         p2p_service.SendFailNoRequest(from_idurl, packet_id, 'unknown group creator identity')
                         continue
                     p2p_service.SendFailNoRequest(from_idurl, packet_id, 'identity:%s' %  known_ident.serialize(as_text=True))
@@ -743,7 +743,10 @@ def rename_stream(old_queue_id, new_queue_id):
     streams()[new_queue_id] = streams().pop(old_queue_id)
     if new_customer_idurl not in customers():
         customers()[new_customer_idurl] = []
-    customers()[new_customer_idurl].append(new_queue_id)
+    if new_queue_id not in customers()[new_customer_idurl]:
+        customers()[new_customer_idurl].append(new_queue_id)
+    if os.path.isdir(new_queue_dir):
+        bpio.rmdir_recursive(new_queue_dir, ignore_errors=True)
     if os.path.isdir(old_queue_dir):
         bpio.move_dir_recursive(old_queue_dir, new_queue_dir)
     if _Debug:
@@ -1778,7 +1781,7 @@ class MessagePeddler(automat.Automat):
                 if current_queue_id not in streams():
                     raise Exception('rotated queue %r was not registered' % current_queue_id)
                 if target_queue_id in streams():
-                    raise Exception('rotated queue %r was already registered' % target_queue_id)
+                    lg.warn('rotated queue %r was already registered' % target_queue_id)
                 rename_stream(current_queue_id, target_queue_id)
             if target_queue_id not in streams():
                 open_stream(target_queue_id)

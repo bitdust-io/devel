@@ -61,7 +61,7 @@ This option enables logging of all events that are submitted to state machines, 
 By enabling this option, you can also monitor the life cycle of each state machine running in the main process, see `~/.bitdust/logs/automats.log` file.
 
 {logs/debug-level} debug level
-Higher values of `debug-level` option will produce more log messages in the console output, see `~/.bitdust/logs/main.log` file.
+Higher values of `debug-level` option will produce more log messages in the console output, see `~/.bitdust/logs/stdout.log` file.
 
 {logs/packet-enabled} log network packets
 This option enables logging of all incoming & outgoing peer-to-peer packets - very helpful when analyzing/debugging network communications, see `~/.bitdust/logs/packet.log` file.

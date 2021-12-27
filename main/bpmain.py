@@ -711,17 +711,18 @@ def main(executable_path=None, start_reactor=True):
         lg.set_debug_level(int(opts.debug))
 
     #---logpath---
+    logpath = None
     if opts.output:
         logpath = opts.output
     else:
-        logpath = os.path.join(appdata, 'logs', 'main.log')
+        logpath = os.path.join(appdata, 'logs', 'stdout.log')
 
     need_redirecting = False
 
     if bpio.Windows() and not bpio.isConsoled():
         need_redirecting = True
 
-    if logpath != '':
+    if logpath:
         lg.open_log_file(logpath)
         if _Debug:
             lg.out(_DebugLevel, 'bpmain.main log file opened ' + logpath)
