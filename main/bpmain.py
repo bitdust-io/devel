@@ -37,7 +37,7 @@ from __future__ import print_function
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 6
 
 #------------------------------------------------------------------------------
@@ -668,11 +668,13 @@ def main(executable_path=None, start_reactor=True):
     from system import bpio
     bpio.init()
 
+    appList = bpio.find_main_process(pid_file_path=os.path.join(appdata, 'metadata', 'processid'))
+
     if bpio.Android():
         lg.close_intercepted_log_file()
         lg.open_intercepted_log_file('/storage/emulated/0/.bitdust/logs/android.log')
         if _Debug:
-            lg.dbg(_DebugLevel, 'log file "android.log" opened')
+            lg.out(_DebugLevel, 'log file "android.log" opened')
 
     # sys.excepthook = lg.exception_hook
 
@@ -723,7 +725,8 @@ def main(executable_path=None, start_reactor=True):
         need_redirecting = True
 
     if logpath:
-        lg.open_log_file(logpath)
+        if not appList:
+            lg.open_log_file(logpath)
         if _Debug:
             lg.out(_DebugLevel, 'bpmain.main log file opened ' + logpath)
         if bpio.Windows() and bpio.isFrozen():
@@ -741,23 +744,12 @@ def main(executable_path=None, start_reactor=True):
             if _Debug:
                 lg.out(_DebugLevel, 'bpmain.main redirecting started')
 
-    # very basic solution to record run-time errors
-    try:
-        if os.path.isfile(os.path.join(appdata, 'logs', 'exception.log')):
-            os.remove(os.path.join(appdata, 'logs', 'exception.log'))
-    except:
-        pass
-
-    if opts.verbose:
-        copyright_text()
-
     if _Debug:
         lg.out(_DebugLevel, 'bpmain.main started ' + time.asctime())
         lg.out(_DebugLevel, 'bpmain.main args=%s' % str(args))
 
     #---start---
     if cmd == '' or cmd == 'start' or cmd == 'go':
-        appList = bpio.find_main_process(pid_file_path=os.path.join(appdata, 'metadata', 'processid'))
         if appList:
             lg.out(0, 'BitDust already started, found another process: %s\n' % str(appList))
             bpio.shutdown()

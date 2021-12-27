@@ -193,8 +193,8 @@ def out(_DebugLevel, msg, nl='\n', log_name='stdout', showtime=False):
     if _WebStreamFunc is not None:
         _WebStreamFunc(level, s_ + nl)
     _LogLinesCounter += 1
-    if _LogLinesCounter % 10000 == 0:
-        out(10, '[%s]' % time.asctime())
+    # if _LogLinesCounter % 10000 == 0:
+    #     out(10, '[%s]' % time.asctime())
     return None
 
 

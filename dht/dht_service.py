@@ -1431,7 +1431,6 @@ def parseCommandLine():
     oparser.set_default('join_layer', '')
     oparser.add_option("-w", "--wait", dest="delayed", type="int", help="wait N seconds before join the network")
     oparser.set_default('delayed', 0)
-    
     (options, args) = oparser.parse_args()
     return options, args
 
