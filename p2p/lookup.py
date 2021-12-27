@@ -36,7 +36,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 12
 
 #------------------------------------------------------------------------------
@@ -71,7 +71,6 @@ _DiscoveredIDURLsList = {}
 _LookupTasks = []
 _LatestLookupID = 0
 _CurrentLookupTask = None
-# _NextLookupTask = None
 _LookupMethod = None  # method to get a list of random nodes
 _ObserveMethod = None  # method to get IDURL from given node
 _ProcessMethod = None  # method to do some stuff with discovered IDURL

@@ -66,7 +66,7 @@ from six.moves import range
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -528,7 +528,7 @@ class P2PConnector(automat.Automat):
             from dht import dht_service
             dht_service.set_node_data('idurl', my_id.getIDURL().to_text())
         else:
-            lg.warn('DHT node local store was not updated with my latest IDURL, service_entangled_dht was not ON')
+            lg.warn('DHT node local store was not updated with my latest IDURL, service_entangled_dht was OFF')
         d = propagate.start(
             wide=True,
             refresh_cache=True,

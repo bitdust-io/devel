@@ -120,5 +120,8 @@ class ProxyServerService(LocalService):
         return 
 
     def _on_dht_layer_connected(self, evt):
+        from dht import dht_records
         if evt.data['layer_id'] == 0:
             self._do_connect_proxy_routers_dht_layer()
+        elif evt.data['layer_id'] == dht_records.LAYER_PROXY_ROUTERS:
+            self._on_dht_proxy_routers_layer_connected(True)
