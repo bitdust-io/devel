@@ -1066,8 +1066,7 @@ def get_node_data(key, layer_id=0):
 
 def set_node_data(key, value, layer_id=0):
     if not node():
-        if _Debug:
-            lg.out(_DebugLevel, 'dht_service.set_node_data local node is not ready')
+        lg.warn('DHT node is not ready yet, not able to store key %r locally')
         return False
     count('set_node_data')
     if layer_id not in node().data:
