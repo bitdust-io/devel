@@ -527,6 +527,8 @@ class P2PConnector(automat.Automat):
         if driver.is_on('service_entangled_dht'):
             from dht import dht_service
             dht_service.set_node_data('idurl', my_id.getIDURL().to_text())
+        else:
+            lg.warn('DHT node local store was not updated with my latest IDURL, service_entangled_dht was OFF')
         d = propagate.start(
             wide=True,
             refresh_cache=True,

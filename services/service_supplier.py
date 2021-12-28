@@ -351,5 +351,8 @@ class SupplierService(LocalService):
         return ok
 
     def _on_dht_layer_connected(self, evt):
+        from dht import dht_records
         if evt.data['layer_id'] == 0:
             self._do_connect_suppliers_dht_layer()
+        elif evt.data['layer_id'] == dht_records.LAYER_SUPPLIERS:
+            self._on_suppliers_dht_layer_connected(True)

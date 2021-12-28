@@ -34,7 +34,7 @@ from __future__ import print_function
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -220,7 +220,7 @@ def connect(seed_nodes=[], layer_id=0, attach=False):
             lg.out(_DebugLevel, 'dht_service.connect SKIP, already joining layer %d' % layer_id)
         if joinDeferred.called:
             lg.warn('joinDeferred already called')
-            result.callback(True)
+            reactor.callLater(0, result.callback, True)  # @UndefinedVariable
         else:
             joinDeferred.addBoth(lambda x: result.callback(True))
         return result
@@ -229,7 +229,7 @@ def connect(seed_nodes=[], layer_id=0, attach=False):
         node().refreshers[layer_id].reset(0)
         if _Debug:
             lg.out(_DebugLevel, 'dht_service.connect SKIP seems like DHT already active, RESET current refresher task')
-        result.callback(True)
+        reactor.callLater(0, result.callback, True)  # @UndefinedVariable
         return result
 
     if not node().listener:
@@ -245,7 +245,7 @@ def connect(seed_nodes=[], layer_id=0, attach=False):
     if not seed_nodes:
         if _Debug:
             lg.out(_DebugLevel, 'dht_service.connect  SKIP : no seed nodes provided')
-        result.callback(True)
+        reactor.callLater(0, result.callback, True)  # @UndefinedVariable
         events.send('dht-layer-connected', data=dict(layer_id=layer_id, ))
         return result
 
@@ -271,7 +271,7 @@ def connect(seed_nodes=[], layer_id=0, attach=False):
             lg.out(_DebugLevel, 'for layer %d found DHT nodes: %s' % (_layer_id, live_contacts))
             lg.out(_DebugLevel, 'resolved SEED nodes: %r' % resolved_seed_nodes)
             lg.out(_DebugLevel, 'DHT node is active, ID%d=[%s]' % (_layer_id, node().layers[_layer_id]))
-        result.callback(ok)
+        reactor.callLater(0, result.callback, ok)  # @UndefinedVariable
         return live_contacts
 
     def _on_join_failed(x):
@@ -1066,8 +1066,7 @@ def get_node_data(key, layer_id=0):
 
 def set_node_data(key, value, layer_id=0):
     if not node():
-        if _Debug:
-            lg.out(_DebugLevel, 'dht_service.set_node_data local node is not ready')
+        lg.warn('DHT node is not ready yet, not able to store key %r for layer_id=%d locally' % (key, layer_id, ))
         return False
     count('set_node_data')
     if layer_id not in node().data:
