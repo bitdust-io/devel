@@ -85,7 +85,6 @@ _DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
-_LogEvents = False
 _LogFile = None  # : This is to have a separated Log file for state machines logs
 _LogFilename = None
 _LogsCount = 0  # : If not zero - it will print time since that value, not system time
@@ -374,9 +373,9 @@ class Automat(object):
             self,
             name,
             state,
-            debug_level=_DebugLevel * 2,
-            log_events=False,
-            log_transitions=False,
+            debug_level=_DebugLevel,
+            log_events=_Debug,
+            log_transitions=_Debug,
             publish_events=False,
             publish_event_state_not_changed=False,
             publish_fast=True,
@@ -397,8 +396,8 @@ class Automat(object):
         self.publish_events = publish_events
         self.publish_event_state_not_changed = publish_event_state_not_changed
         self.publish_fast = publish_fast
-        if _GlobalLogTransitions or ( _Debug and self.log_transitions ):
-            self.log(max(_DebugLevel, self.debug_level), 'CREATED AUTOMAT with index %d, total running %d' % (
+        if _GlobalLogTransitions or self.log_transitions:
+            self.log(self.debug_level, 'CREATED AUTOMAT with index %d, total running %d' % (
                 self.index, len(objects())))
 
     def __del__(self):
@@ -406,18 +405,19 @@ class Automat(object):
         Calls state changed callback and removes state machine from the index.
         """
         global _StateChangedCallback
+        global _GlobalLogTransitions
         if self is None:
-            self.log(_DebugLevel, 'Some crazy stuff happens?')
+            self.log(self.debug_level, 'Some crazy stuff happens?')
             return
         automatid = self.id
         name = self.name
         index = self.index
         if _StateChangedCallback is not None:
             _StateChangedCallback(index, automatid, name, '')
-        debug_level = max(_DebugLevel or 0, self.debug_level or 0)
+        debug_level = self.debug_level or 0
         if erase_index:
             erase_index(automatid)
-        if _GlobalLogTransitions or ( _Debug and self.log_transitions ):
+        if _GlobalLogTransitions or self.log_transitions:
             if self.log:
                 self.log(debug_level, 'DESTROYED AUTOMAT with index %d, total running %d' % (
                     index, len(objects())))
@@ -534,9 +534,9 @@ class Automat(object):
         Use ``fast = True`` flag to skip call to reactor.callLater(0, self.event, ...).
         """
         global _StateChangedCallback
-        if _GlobalLogEvents or ( _LogEvents and _Debug and getattr(self, 'log_events', False)):
+        if _GlobalLogEvents or self.log_events:
             if self.log_events or not event.startswith('timer-'):
-                self.log(max(self.debug_level, _DebugLevel), '%s fired with event "%s"' % (repr(self), event, ))
+                self.log(self.debug_level, '%s fired with event "%s"' % (repr(self), event, ))
         old_state = self.state
         if self.post:
             try:
@@ -555,9 +555,8 @@ class Automat(object):
                 return self
             new_state = self.state
         if old_state != new_state:
-            if _GlobalLogTransitions or ( _Debug and self.log_transitions ):
-                self.log(max(_DebugLevel, self.debug_level), '%s(%s): (%s)->(%s)' % (
-                    repr(self), event, old_state, new_state))
+            if _GlobalLogTransitions or self.log_transitions:
+                self.log(self.debug_level, '%s(%s): (%s)->(%s)' % (repr(self), event, old_state, new_state, ))
             self.stopTimers()
             self.state_changed(old_state, new_state, event, *args, **kwargs)
             if self.publish_events:
@@ -581,7 +580,8 @@ class Automat(object):
             if name in self.timers and self.state in self.timers[name][1]:
                 self.automat(name)
             else:
-                self.log(max(_DebugLevel, self.debug_level), '%s.timerEvent ERROR timer %s not found in self.timers' % (str(self), name))
+                if _GlobalLogEvents or self.log_events:
+                    self.log(self.debug_level, '%s.timerEvent ERROR timer %s not found in self.timers' % (str(self), name))
         except:
             self.exc()
 
@@ -773,7 +773,7 @@ class Automat(object):
                 catched = True
             if catched:
                 for cb_tupl in cb_list:
-                    cb_id, cb = cb_tupl
+                    _, cb = cb_tupl
                     cb(oldstate, newstate, event_string, *args, **kwargs)
         self._callbacks_before_die.clear()
 

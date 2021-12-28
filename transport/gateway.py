@@ -145,7 +145,8 @@ def init():
     global _PacketLogFileEnabled
     if _Debug:
         lg.out(4, 'gateway.init')
-    open_transport_log(settings.TransportLog())
+    if _Debug:
+        open_transport_log(settings.TransportLog())
     if _LocalListener:
         lg.warn('local listener already exist')
     else:
@@ -168,7 +169,8 @@ def shutdown():
         _LocalListener = None
     else:
         lg.warn('local listener not exist')
-    close_transport_log()
+    if _Debug:
+        close_transport_log()
     _PacketLogFileEnabled = False
 
 #------------------------------------------------------------------------------
@@ -765,13 +767,14 @@ def monitoring():
     list_pkt_out = []
     for pkt_out in packet_out.queue():
         list_pkt_out.append(pkt_out.label)
-    if transport_log() and list_pkt_out and list_pkt_in:
-        dt = time.time() - lg.when_life_begins()
-        mn = dt // 60
-        sc = dt - mn * 60
-        transport_log().write(u'%02d:%02d    in: %s   out: %s\n' % (
-            mn, sc, list_pkt_in, list_pkt_out))
-        transport_log().flush()
+    if _Debug:
+        if transport_log() and list_pkt_out and list_pkt_in:
+            dt = time.time() - lg.when_life_begins()
+            mn = dt // 60
+            sc = dt - mn * 60
+            transport_log().write(u'%02d:%02d    in: %s   out: %s\n' % (
+                mn, sc, list_pkt_in, list_pkt_out))
+            transport_log().flush()
 
 #------------------------------------------------------------------------------
 

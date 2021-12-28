@@ -394,10 +394,10 @@ class GroupMember(automat.Automat):
             'group_key_id': self.group_key_id,
             'alias': self.group_glob_id['key_alias'],
             'label': my_keys.get_label(self.group_key_id),
-            'creator': self.group_creator_idurl,
+            'creator': self.group_creator_id,
             'active_broker_id': self.active_broker_id,
             'active_queue_id': self.active_queue_id,
-            'connected_brokers': self.connected_brokers,
+            'connected_brokers': {p: id_url.idurl_to_id(b) for p, b in self.connected_brokers.items()},
             'last_sequence_id': self.last_sequence_id,
             'archive_folder_path': groups.get_archive_folder_path(self.group_key_id),
         })
