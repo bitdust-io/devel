@@ -66,8 +66,6 @@ def labels():
 
 def defaults():
     return {
-        'interface/api/json-rpc-enabled': TYPE_BOOLEAN,
-        'interface/api/json-rpc-port': TYPE_PORT_NUMBER,
         'interface/api/rest-http-enabled': TYPE_BOOLEAN,
         'interface/api/rest-http-port': TYPE_PORT_NUMBER,
         'interface/api/web-socket-enabled': TYPE_BOOLEAN,

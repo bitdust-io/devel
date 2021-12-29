@@ -191,8 +191,8 @@ class SharedAccessCoordinator(automat.Automat):
             'key_id': self.key_id,
             'alias': self.glob_id['key_alias'],
             'label': my_keys.get_label(self.key_id),
-            'creator': self.customer_idurl,
-            'suppliers': self.known_suppliers_list,
+            'creator': self.customer_idurl.to_id(),
+            'suppliers': [id_url.idurl_to_id(s) for s in self.known_suppliers_list],
             'ecc_map': self.known_ecc_map,
         })
         return j
@@ -367,7 +367,7 @@ class SharedAccessCoordinator(automat.Automat):
         Action method.
         """
         try:
-            self.known_suppliers_list = [_f for _f in args[0]['suppliers'] if _f]
+            self.known_suppliers_list = [s for s in args[0]['suppliers'] if s]
         except:
             lg.exc()
             return

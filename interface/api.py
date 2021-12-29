@@ -2162,7 +2162,7 @@ def shares_list(only_active=False, include_mine=True, include_granted=True):
             'key_id': key_id,
             'alias': key_alias,
             'label': my_keys.get_label(key_id),
-            'creator': creator_idurl,
+            'creator': creator_idurl.to_id(),
             'state': None,
             'suppliers': [],
             'ecc_map': None,

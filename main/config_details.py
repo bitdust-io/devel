@@ -32,13 +32,11 @@ module:: config_details
 
 
 def raw():
-    # in case option does not have any description it will be marked as "internal"
-    # "internal" options should not be displayed in the UI, but still can be manipulated via API or command line
+    """
+    In case option does not have any description here it will be marked as "internal".
+    The "internal" options are not displayed in the UI, but still can be manipulated via API or command line.
+    """
     return """
-{interface/api/json-rpc-enabled}
-
-{interface/api/json-rpc-port}
-
 {interface/api/rest-http-enabled}
 
 {interface/api/rest-http-port}

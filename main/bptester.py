@@ -42,6 +42,10 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
+_Debug = False
+
+#------------------------------------------------------------------------------
+
 import os
 import sys
 import time
@@ -127,14 +131,17 @@ def SpaceTime():
     Check if he use more space than we gave him and if packets is too
     old.
     """
-    printlog('SpaceTime %r' % time.strftime("%a, %d %b %Y %H:%M:%S +0000"))
+    if _Debug:
+        printlog('SpaceTime %r' % time.strftime("%a, %d %b %Y %H:%M:%S +0000"))
     space, _ = accounting.read_customers_quotas()
     if space is None:
-        printlog('SpaceTime ERROR customers quotas file can not be read or it is empty, skip')
+        if _Debug:
+            printlog('SpaceTime ERROR customers quotas file can not be read or it is empty, skip')
         return False
     customers_dir = settings.getCustomersFilesDir()
     if not os.path.exists(customers_dir):
-        printlog('SpaceTime ERROR customers folder not exist: %r' % customers_dir)
+        if _Debug:
+            printlog('SpaceTime ERROR customers folder not exist: %r' % customers_dir)
         return False
     remove_list = {}
     used_space = accounting.read_customers_usage()
@@ -182,9 +189,11 @@ def SpaceTime():
                     continue
                 try:
                     os.remove(path)
-                    printlog('SpaceTime %r file removed (cur:%s, max: %s)' % (path, str(currentV), str(maxspaceV)))
+                    if _Debug:
+                        printlog('SpaceTime %r file removed (cur:%s, max: %s)' % (path, str(currentV), str(maxspaceV)))
                 except:
-                    printlog('SpaceTime ERROR removing %r' % path)
+                    if _Debug:
+                        printlog('SpaceTime ERROR removing %r' % path)
                 # time.sleep(0.01)
 
         used_space[idurl.to_bin()] = str(currentV)
@@ -196,8 +205,9 @@ def SpaceTime():
             latest_customer_idurl_bin = id_url.field(customer_idurl_bin).to_bin()
             if latest_customer_idurl_bin != customer_idurl_bin:
                 used_space[latest_customer_idurl_bin] = used_space.pop(customer_idurl_bin)
-                printlog('found customer idurl rotated in customer usage dictionary : %r -> %r' % (
-                    latest_customer_idurl_bin, customer_idurl_bin, ))
+                if _Debug:
+                    printlog('found customer idurl rotated in customer usage dictionary : %r -> %r' % (
+                        latest_customer_idurl_bin, customer_idurl_bin, ))
 
     for path in remove_list.keys():
         if not os.path.exists(path):
@@ -205,9 +215,11 @@ def SpaceTime():
         if os.path.isdir(path):
             try:
                 bpio._dir_remove(path)
-                printlog('SpaceTime %r dir removed (%s)' % (path, remove_list[path]))
+                if _Debug:
+                    printlog('SpaceTime %r dir removed (%s)' % (path, remove_list[path]))
             except:
-                printlog('SpaceTime ERROR removing %r' % path)
+                if _Debug:
+                    printlog('SpaceTime ERROR removing %r' % path)
             continue
         try:
             if not os.access(path, os.W_OK):
@@ -216,9 +228,11 @@ def SpaceTime():
             pass
         try:
             os.remove(path)
-            printlog('SpaceTime %r file removed (%s)' % (path, remove_list[path]))
+            if _Debug:
+                printlog('SpaceTime %r file removed (%s)' % (path, remove_list[path]))
         except:
-            printlog('SpaceTime ERROR removing %r' % path)
+            if _Debug:
+                printlog('SpaceTime ERROR removing %r' % path)
     del remove_list
 
     accounting.update_customers_usage(used_space)
@@ -233,11 +247,13 @@ def UpdateCustomers():
     """
     space, _ = accounting.read_customers_quotas()
     if space is None:
-        printlog('UpdateCustomers ERROR space file can not be read')
+        if _Debug:
+            printlog('UpdateCustomers ERROR space file can not be read')
         return False
     customers_dir = settings.getCustomersFilesDir()
     if not os.path.exists(customers_dir):
-        printlog('UpdateCustomers ERROR customers folder not exist')
+        if _Debug:
+            printlog('UpdateCustomers ERROR customers folder not exist')
         return False
 
     remove_list = {}
@@ -262,9 +278,11 @@ def UpdateCustomers():
         if os.path.isdir(path):
             try:
                 bpio._dir_remove(path)
-                printlog('UpdateCustomers %r folder removed (%s)' % (path, remove_list[path], ))
+                if _Debug:
+                    printlog('UpdateCustomers %r folder removed (%s)' % (path, remove_list[path], ))
             except:
-                printlog('UpdateCustomers ERROR removing %r' % path)
+                if _Debug:
+                    printlog('UpdateCustomers ERROR removing %r' % path)
             continue
         try:
             if not os.access(path, os.W_OK):
@@ -273,11 +291,13 @@ def UpdateCustomers():
             pass
         try:
             os.remove(path)
-            printlog('UpdateCustomers %r file removed (%s)' % (path, remove_list[path], ))
+            if _Debug:
+                printlog('UpdateCustomers %r file removed (%s)' % (path, remove_list[path], ))
         except:
-            printlog('UpdateCustomers ERROR removing %r' % path)
-    printlog('UpdateCustomers %r' % time.strftime("%a, %d %b %Y %H:%M:%S +0000"))
-    
+            if _Debug:
+                printlog('UpdateCustomers ERROR removing %r' % path)
+    if _Debug:
+        printlog('UpdateCustomers %r' % time.strftime("%a, %d %b %Y %H:%M:%S +0000"))
     return True
 
 #------------------------------------------------------------------------------
@@ -287,7 +307,8 @@ def Validate():
     """
     Check all packets to be valid.
     """
-    printlog('Validate %r' % time.strftime("%a, %d %b %Y %H:%M:%S +0000"))
+    if _Debug:
+        printlog('Validate %r' % time.strftime("%a, %d %b %Y %H:%M:%S +0000"))
     customers_dir = settings.getCustomersFilesDir()
     if not os.path.exists(customers_dir):
         return False
@@ -308,17 +329,21 @@ def Validate():
                 if not packetsrc:
                     try:
                         os.remove(path)  # if is is no good it is of no use to anyone
-                        printlog('Validate %r removed (empty file)' % path)
+                        if _Debug:
+                            printlog('Validate %r removed (empty file)' % path)
                     except:
-                        printlog('Validate ERROR removing %r' % path)
+                        if _Debug:
+                            printlog('Validate ERROR removing %r' % path)
                         return False
                 p = signed.Unserialize(packetsrc)
                 if p is None:
                     try:
                         os.remove(path)  # if is is no good it is of no use to anyone
-                        printlog('Validate %r removed (unserialize error)' % path)
+                        if _Debug:
+                            printlog('Validate %r removed (unserialize error)' % path)
                     except:
-                        printlog('Validate ERROR removing %r')
+                        if _Debug:
+                            printlog('Validate ERROR removing %r')
                         return False
                 result = p.Valid()
                 packetsrc = ''
@@ -326,9 +351,11 @@ def Validate():
                 if not result:
                     try:
                         os.remove(path)  # if is is no good it is of no use to anyone
-                        printlog('Validate %r removed (invalid packet)' % path)
+                        if _Debug:
+                            printlog('Validate %r removed (invalid packet)' % path)
                     except:
-                        printlog('Validate ERROR removing %r' % path)
+                        if _Debug:
+                            printlog('Validate ERROR removing %r' % path)
                         return False
                 time.sleep(0.1)
                 return False
@@ -359,7 +386,8 @@ def main():
     }
     cmd = commands.get(sys.argv[1], None)
     if not cmd:
-        printlog('ERROR wrong command: %r' % sys.argv)
+        if _Debug:
+            printlog('ERROR wrong command: %r' % sys.argv)
         return
     cmd()
     settings.shutdown()

@@ -58,6 +58,10 @@ from io import open
 
 #------------------------------------------------------------------------------
 
+_Debug = False
+
+#------------------------------------------------------------------------------
+
 import os
 import sys
 import platform
@@ -169,7 +173,8 @@ def printexc():
     """
     Write exception info to the log file.
     """
-    printlog('\n' + traceback.format_exc() + '\n')
+    if _Debug:
+        printlog('\n' + traceback.format_exc() + '\n')
 
 #------------------------------------------------------------------------------
 
@@ -236,8 +241,9 @@ def writetar(sourcepath, arcname=None, subdirs=True, compression='none', encodin
     Create a tar archive from given ``sourcepath`` location.
     """
     global _ExcludeFunction
-    printlog('WRITE: %s arcname=%s, subdirs=%s, compression=%s, encoding=%s\n' % (
-        sourcepath, arcname, subdirs, compression, encoding))
+    if _Debug:
+        printlog('WRITE: %s arcname=%s, subdirs=%s, compression=%s, encoding=%s\n' % (
+            sourcepath, arcname, subdirs, compression, encoding))
     if not fileobj:
         fileobj = sys.stdout
     mode = 'w|'
@@ -277,8 +283,9 @@ def readtar(archivepath, outputdir, encoding=None):
     Extract tar file from ``archivepath`` location into local ``outputdir``
     folder.
     """
-    printlog('READ: %s to %s, encoding=%s\n' % (
-        archivepath, outputdir, encoding))
+    if _Debug:
+        printlog('READ: %s to %s, encoding=%s\n' % (
+            archivepath, outputdir, encoding))
     mode = 'r:*'
     tar = tarfile.open(archivepath, mode, encoding=encoding)
     tar.extractall(outputdir)
@@ -311,8 +318,9 @@ def main():
             sys.stdout = sys.stdout.buffer
 
     if len(sys.argv) < 4:
-        printlog('tar_file.py extract <archive path> <output dir>\n')
-        printlog('tar_file.py <subdirs / nosubdirs> <"none" / "bz2" / "gz"> <folder/file path> [archive filename]\n')
+        if _Debug:
+            printlog('tar_file.py extract <archive path> <output dir>\n')
+            printlog('tar_file.py <subdirs / nosubdirs> <"none" / "bz2" / "gz"> <folder/file path> [archive filename]\n')
         return 2
 
     try:
