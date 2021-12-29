@@ -267,6 +267,7 @@ class KeysSynchronizer(automat.Automat):
                 else:
                     stored_key_id = i['path'].replace('.private', '').replace('.keys/', '')
                     is_private = True
+                stored_key_id = my_keys.latest_key_id(stored_key_id)
                 is_reliable = False
                 for v in i['versions']:
                     try:
@@ -373,8 +374,7 @@ class KeysSynchronizer(automat.Automat):
         """
         keys_deleted = []
         for key_id, is_private in self.stored_keys.items():
-            latest_key_id = my_keys.latest_key_id(key_id)
-            if key_id not in my_keys.known_keys() and latest_key_id not in my_keys.known_keys():
+            if not my_keys.is_key_registered(key_id):
                 self.keys_to_erase[key_id] = is_private
         for key_id, is_private in self.keys_to_erase.items():
             res = key_ring.do_delete_key(key_id, is_private)

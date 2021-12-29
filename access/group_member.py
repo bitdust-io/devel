@@ -1227,9 +1227,9 @@ class GroupMember(automat.Automat):
         if _Debug:
             lg.args(_DebugLevel, broker=possible_broker_idurl, pos=desired_broker_position, action=action, owner=self.group_creator_id, )
         group_key_info = {}
-        if not my_keys.is_key_registered(self.group_key_id):
-            lg.warn('group key %r was not registered, checking all registered keys' % self.group_key_id)
-            key_ring.check_rename_my_keys()
+        # if not my_keys.is_key_registered(self.group_key_id):
+        #     lg.warn('group key %r was not registered, checking all registered keys' % self.group_key_id)
+        #     my_keys.check_rename_my_keys(prefix=self.group_key_id.split('@')[0])
         if not my_keys.is_key_registered(self.group_key_id):
             lg.err('closing group_member %r because key %r is not registered' % (self, self.group_key_id, ))
             lg.exc('group key %r is not registered' % self.group_key_id)

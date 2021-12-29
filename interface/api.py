@@ -917,6 +917,7 @@ def key_label(key_id, label):
         return ERROR('master key label can not be changed')
     if _Debug:
         lg.out(_DebugLevel, 'api.key_label id=%s, label=%r' % (key_id, key_label))
+    key_id = my_keys.latest_key_id(key_id)
     my_keys.key_obj(key_id).label = label
     if not my_keys.save_key(key_id):
         return ERROR('key %r store failed' % key_id)
@@ -2519,6 +2520,7 @@ def group_info(group_key_id):
     group_key_id = strng.to_text(group_key_id)
     if not group_key_id.startswith('group_'):
         return ERROR('invalid group id')
+    group_key_id = my_keys.latest_key_id(group_key_id)
     response = {
         'group_key_id': group_key_id,
         'state': None,
@@ -2602,6 +2604,7 @@ def group_join(group_key_id, publish_events=False, use_dht_cache=True, wait_resu
         return ERROR('invalid group id')
     from crypt import my_keys
     from userid import id_url
+    group_key_id = my_keys.latest_key_id(group_key_id)
     if not my_keys.is_key_registered(group_key_id):
         return ERROR('group key is not registered')
     ret = Deferred()
@@ -2686,6 +2689,7 @@ def group_leave(group_key_id, erase_key=False):
     group_key_id = strng.to_text(group_key_id)
     if not group_key_id.startswith('group_'):
         return ERROR('invalid group id')
+    group_key_id = my_keys.latest_key_id(group_key_id)
     if not my_keys.is_key_registered(group_key_id):
         return ERROR('unknown group key')
     this_group_member = group_member.get_active_group_member(group_key_id)
@@ -2723,6 +2727,7 @@ def group_reconnect(group_key_id, use_dht_cache=False):
     group_key_id = strng.to_text(group_key_id)
     if not group_key_id.startswith('group_'):
         return ERROR('invalid group id')
+    group_key_id = my_keys.latest_key_id(group_key_id)
     if not my_keys.is_key_registered(group_key_id):
         return ERROR('unknown group key')
     ret = Deferred()
@@ -3442,6 +3447,7 @@ def message_send_group(group_key_id, data):
     from access import group_member
     if not group_key_id.startswith('group_'):
         return ERROR('invalid group id')
+    group_key_id = my_keys.latest_key_id(group_key_id)
     glob_id = global_id.ParseGlobalID(group_key_id)
     if not glob_id['idurl']:
         return ERROR('wrong group id')

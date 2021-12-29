@@ -94,7 +94,7 @@ def init():
     """
     if _Debug:
         lg.out(_DebugLevel, 'key_ring.init')
-    check_rename_my_keys()
+    my_keys.check_rename_my_keys()
 
 
 def shutdown():
@@ -169,6 +169,7 @@ def transfer_key(key_id, trusted_idurl, include_private=False, include_signature
     """
     if _Debug:
         lg.out(_DebugLevel, 'key_ring.transfer_key  %s -> %s' % (key_id, trusted_idurl))
+    key_id = my_keys.latest_key_id(key_id)
     if not result:
         result = Deferred()
     recipient_id_obj = identitycache.FromCache(trusted_idurl)
@@ -235,6 +236,7 @@ def share_key(key_id, trusted_idurl, include_private=False, include_signature=Fa
     """
     if _Debug:
         lg.args(_DebugLevel, key_id=key_id, trusted_idurl=trusted_idurl)
+    key_id = my_keys.latest_key_id(key_id)
     result = Deferred()
     d = online_status.ping(
         idurl=trusted_idurl,
@@ -287,6 +289,7 @@ def audit_public_key(key_id, untrusted_idurl, timeout=10):
     """
     if _Debug:
         lg.out(_DebugLevel, 'key_ring.audit_public_key   testing %s from %s' % (key_id, untrusted_idurl))
+    key_id = my_keys.latest_key_id(key_id)
     result = Deferred()
     recipient_id_obj = identitycache.FromCache(untrusted_idurl)
     if not recipient_id_obj:
@@ -366,6 +369,7 @@ def audit_private_key(key_id, untrusted_idurl, timeout=10):
     """
     if _Debug:
         lg.out(_DebugLevel, 'key_ring.audit_private_key   testing %s from %s' % (key_id, untrusted_idurl))
+    key_id = my_keys.latest_key_id(key_id)
     result = Deferred()
     recipient_id_obj = identitycache.FromCache(untrusted_idurl)
     if not recipient_id_obj:
@@ -433,7 +437,7 @@ def on_key_received(newpacket, info, status, error_message):
     try:
         key_data = block.Data()
         key_json = serialization.BytesToDict(key_data, keys_to_text=True, values_to_text=True)
-        key_id = strng.to_text(key_json['key_id'])
+        # key_id = strng.to_text(key_json['key_id'])
         key_label = strng.to_text(key_json.get('label', ''))
         key_id, key_object = my_keys.read_key_info(key_json)
         if key_object.isSigned():
@@ -515,7 +519,7 @@ def on_audit_key_received(newpacket, info, status, error_message):
     try:
         raw_payload = block.Data()
         json_payload = serialization.BytesToDict(raw_payload, keys_to_text=True, values_to_text=True)
-        key_id = json_payload['key_id']
+        key_id = my_keys.latest_key_id(json_payload['key_id'])
         json_payload['audit']
         public_sample = base64.b64decode(json_payload['audit']['public_sample'])
         private_sample = base64.b64decode(json_payload['audit']['private_sample'])
@@ -549,32 +553,12 @@ def on_audit_key_received(newpacket, info, status, error_message):
 
 #------------------------------------------------------------------------------
 
-def check_rename_my_keys():
-    """
-    Make sure all my keys have correct names according to known latest identities I have cached.
-    For every key checks corresponding IDURL info and decides to rename it if key owner's identity was rotated.
-    """
-    keys_to_be_renamed = {}
-    for key_id in list(my_keys.known_keys().keys()):
-        key_glob_id = global_id.ParseGlobalID(key_id)
-        owner_idurl = key_glob_id['idurl']
-        if not owner_idurl.is_latest():
-            keys_to_be_renamed[key_id] = global_id.MakeGlobalID(
-                idurl=owner_idurl.to_bin(),
-                key_alias=key_glob_id['key_alias'],
-            )
-    if _Debug:
-        lg.args(_DebugLevel, keys_to_be_renamed=len(keys_to_be_renamed))
-    for current_key_id, new_key_id in keys_to_be_renamed.items():
-        my_keys.rename_key(current_key_id, new_key_id)
-
-#------------------------------------------------------------------------------
-
 def do_backup_key(key_id, keys_folder=None):
     """
     Send given key to my suppliers to store it remotely.
     This will make a regular backup copy of that key file - encrypted with my master key.
     """
+    key_id = my_keys.latest_key_id(key_id)
     if _Debug:
         lg.out(_DebugLevel, 'key_ring.do_backup_key     key_id=%r' % key_id)
     if key_id == my_id.getGlobalID(key_alias='master') or key_id == 'master':
@@ -672,6 +656,7 @@ def do_restore_key(key_id, is_private, keys_folder=None, wait_result=False):
     """
     if _Debug:
         lg.out(_DebugLevel, 'key_ring.do_restore_key     key_id=%r    is_private=%r' % (key_id, is_private, ))
+    key_id = my_keys.latest_key_id(key_id)
     if my_keys.is_key_registered(key_id):
         lg.err('local key already exist: "%s"' % key_id)
         if wait_result:
