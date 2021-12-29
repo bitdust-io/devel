@@ -107,7 +107,6 @@ def shutdown(x=None):
         from raid import eccmap
         from lib import net_misc
         from updates import git_proc
-        # from interface import api_jsonrpc_server
         from interface import api_rest_http_server
         from interface import api_web_socket
         # from interface import ftp_server
@@ -119,7 +118,6 @@ def shutdown(x=None):
         my_id.shutdown()
         identitydb.shutdown()
         # ftp_server.shutdown()
-        # api_jsonrpc_server.shutdown()
         api_rest_http_server.shutdown()
         api_web_socket.shutdown()
         driver.shutdown()

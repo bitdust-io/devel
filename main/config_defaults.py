@@ -43,9 +43,6 @@ def reset(conf_obj):
     from lib import diskspace
     from main import settings
 
-    conf_obj.setDefaultValue('interface/api/json-rpc-enabled', 'true')
-    conf_obj.setDefaultValue('interface/api/json-rpc-port', settings.DefaultJsonRPCPort())
-
     conf_obj.setDefaultValue('interface/api/rest-http-enabled', 'true')
     conf_obj.setDefaultValue('interface/api/rest-http-port', settings.DefaultRESTHTTPPort())
 
