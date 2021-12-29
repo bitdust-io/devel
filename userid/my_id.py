@@ -492,7 +492,8 @@ def buildDefaultIdentity(name='', ip='', idurls=[], revision=0):
         ip = misc.readExternalIP()
     if not name:
         name = ip.replace('.', '-') + '_' + time.strftime('%M%S')
-    lg.args(4, name=name, ip=ip, idurls=idurls)
+    if _Debug:
+        lg.args(_DebugLevel, name=name, ip=ip, idurls=idurls)
     # this is my IDURL address
     # you can have many IDURL locations for same identity
     # just need to keep all them synchronized

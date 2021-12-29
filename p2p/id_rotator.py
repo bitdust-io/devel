@@ -391,21 +391,21 @@ class IdRotator(automat.Automat):
         current_sources = my_id.getLocalIdentity().getSources(as_originals=True)
         current_contacts = list(my_id.getLocalIdentity().getContacts())
         new_sources = []
-        new_idurl = args[0]
+        new_idurl = strng.to_bin(args[0])
         if _Debug:
             lg.args(_DebugLevel, current_sources=current_sources, alive_idurls=self.alive_idurls, new_idurl=new_idurl, )
         # first get rid of "dead" sources
         for current_idurl in current_sources:
             if current_idurl not in self.alive_idurls:
                 continue
-            if current_idurl in new_sources:
+            if strng.to_bin(current_idurl) in new_sources:
                 continue
-            new_sources.append(current_idurl)
+            new_sources.append(strng.to_bin(current_idurl))
         if self.force and len(new_sources) == len(current_sources):
             # do not increase number of identity sources, only rotate them
             new_sources.pop(0)
         # and add new "good" source to the end of the list
-        if new_idurl and new_idurl not in new_sources: 
+        if new_idurl and new_idurl not in new_sources:
             new_sources.append(new_idurl)
         if _Debug:
             lg.args(_DebugLevel, new_sources=new_sources, min_servers=min_servers, max_servers=max_servers)
@@ -419,13 +419,17 @@ class IdRotator(automat.Automat):
             if additional_sources:
                 lg.warn('additional sources to be used: %r' % additional_sources)
                 new_sources.extend(additional_sources)
-        if len(new_sources) < min_servers:
+        unique_sources = []
+        for idurl_bin in new_sources:
+            if strng.to_bin(idurl_bin) not in unique_sources:
+                unique_sources.append(strng.to_bin(idurl_bin))
+        if len(unique_sources) < min_servers:
             lg.warn('not enough identity sources, need to rotate again')
             self.automat('need-more-sources')
             return
         contacts_changed = False
         id_changed = my_id.rebuildLocalIdentity(
-            new_sources=new_sources,
+            new_sources=unique_sources,
             new_revision=self.new_revision,
         )
         new_contacts = my_id.getLocalIdentity().getContacts()
