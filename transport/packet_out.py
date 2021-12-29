@@ -915,6 +915,8 @@ class PacketOut(automat.Automat):
             callback.run_queue_item_status_callbacks(self, 'cancelled', msg)
             for cb in self.callbacks.pop('cancelled', []):
                 cb(self, msg)
+            for cb in self.callbacks.pop(None, []):
+                cb(self)
             if not self.finished_deferred.called:
                 self.finished_deferred.callback(self)
 
