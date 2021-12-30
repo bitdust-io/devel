@@ -100,6 +100,7 @@ def init():
         lg.info('created new folder %r' % _IdentityHistoryDir)
     else:
         lg.info('using existing folder %r' % _IdentityHistoryDir)
+    for_cleanup = []
     for one_user_dir in os.listdir(_IdentityHistoryDir):
         one_user_dir_path = os.path.join(_IdentityHistoryDir, one_user_dir)
         one_user_identity_files = []
@@ -126,6 +127,7 @@ def init():
                         one_user_dir, one_ident_path))
             except:
                 lg.exc()
+                for_cleanup.append(one_ident_path)
                 continue
             one_pub_key = known_id_obj.getPublicKey()
             one_revision = known_id_obj.getRevisionValue()
@@ -163,6 +165,12 @@ def init():
                         _KnownSources[one_pub_key].append(one_source)
                         if _Debug:
                             lg.out(_DebugLevel, '    new source %r added for %r' % (one_source, one_pub_key[-10:], ))
+    for one_ident_file in for_cleanup:
+        if os.path.isfile(one_ident_path):
+            try:
+                os.remove(one_ident_path)
+            except:
+                lg.exc()
     _Ready = True
 
 
@@ -236,6 +244,7 @@ def identity_cached(new_id_obj):
     is_identity_rotated = False
     latest_id_obj = None
     latest_sources = []
+    for_cleanup = []
     if pub_key not in _KnownUsers:
         user_path = tempfile.mkdtemp(prefix=user_name+'@', dir=_IdentityHistoryDir)
         _KnownUsers[pub_key] = user_path
@@ -258,15 +267,18 @@ def identity_cached(new_id_obj):
             xmlsrc = local_fs.ReadBinaryFile(identity_file_path)
             one_id_obj = identity.identity(xmlsrc=xmlsrc)
             if not one_id_obj.isCorrect():
-                lg.err('identity history for user %r is broken, identity in the file %r is not correct' % (user_name, identity_file_path))
+                lg.warn('identity history for user %r is broken, identity in the file %r is not correct' % (user_name, identity_file_path))
+                for_cleanup.append(identity_file_path)
                 continue
             if not one_id_obj.Valid():
-                lg.err('identity history for user %r is broken, identity in the file %r is not valid' % (user_name, identity_file_path))
+                lg.warn('identity history for user %r is broken, identity in the file %r is not valid' % (user_name, identity_file_path))
+                for_cleanup.append(identity_file_path)
                 continue
             if not latest_pub_key:
                 latest_pub_key = one_id_obj.getPublicKey()
             if latest_pub_key != one_id_obj.getPublicKey():
                 lg.err('identity history for user %r is broken, public key not matching in the file %r' % (user_name, identity_file_path))
+                for_cleanup.append(identity_file_path)
                 continue
             known_revisions.add(one_id_obj.getRevisionValue())
             if one_id_obj.getRevisionValue() > latest_revision:
@@ -376,6 +388,12 @@ def identity_cached(new_id_obj):
     else:
         if _Debug:
             lg.out(_DebugLevel, 'id_url.identity_cached revision %d for %r' % (new_revision, new_sources[0]))
+    for identity_file_path in for_cleanup:
+        if os.path.isfile(identity_file_path):
+            try:
+                os.remove(identity_file_path)
+            except:
+                lg.exc()
     return True
 
 #------------------------------------------------------------------------------
