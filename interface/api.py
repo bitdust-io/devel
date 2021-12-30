@@ -917,6 +917,7 @@ def key_label(key_id, label):
         return ERROR('master key label can not be changed')
     if _Debug:
         lg.out(_DebugLevel, 'api.key_label id=%s, label=%r' % (key_id, key_label))
+    key_id = my_keys.latest_key_id(key_id)
     my_keys.key_obj(key_id).label = label
     if not my_keys.save_key(key_id):
         return ERROR('key %r store failed' % key_id)
@@ -2519,6 +2520,7 @@ def group_info(group_key_id):
     group_key_id = strng.to_text(group_key_id)
     if not group_key_id.startswith('group_'):
         return ERROR('invalid group id')
+    group_key_id = my_keys.latest_key_id(group_key_id)
     response = {
         'group_key_id': group_key_id,
         'state': None,
@@ -2602,6 +2604,7 @@ def group_join(group_key_id, publish_events=False, use_dht_cache=True, wait_resu
         return ERROR('invalid group id')
     from crypt import my_keys
     from userid import id_url
+    group_key_id = my_keys.latest_key_id(group_key_id)
     if not my_keys.is_key_registered(group_key_id):
         return ERROR('group key is not registered')
     ret = Deferred()
@@ -2686,6 +2689,7 @@ def group_leave(group_key_id, erase_key=False):
     group_key_id = strng.to_text(group_key_id)
     if not group_key_id.startswith('group_'):
         return ERROR('invalid group id')
+    group_key_id = my_keys.latest_key_id(group_key_id)
     if not my_keys.is_key_registered(group_key_id):
         return ERROR('unknown group key')
     this_group_member = group_member.get_active_group_member(group_key_id)
@@ -2723,6 +2727,7 @@ def group_reconnect(group_key_id, use_dht_cache=False):
     group_key_id = strng.to_text(group_key_id)
     if not group_key_id.startswith('group_'):
         return ERROR('invalid group id')
+    group_key_id = my_keys.latest_key_id(group_key_id)
     if not my_keys.is_key_registered(group_key_id):
         return ERROR('unknown group key')
     ret = Deferred()
@@ -3201,53 +3206,56 @@ def message_history(recipient_id=None, sender_id=None, message_type=None, offset
     ###### WebSocket
         websocket.send('{"command": "api_call", "method": "message_history", "kwargs": {"recipient_id" : "group_95d0fedc46308e2254477fcb96364af9$alice@server-a.com", "message_type": "group_message"} }');
     """
-    if not driver.is_on('service_message_history'):
-        return ERROR('service_message_history() is not started')
-    from chat import message_database
-    from userid import my_id, global_id
-    from crypt import my_keys
-    if not recipient_id and not sender_id:
-        return ERROR('recipient_id or sender_id is required')
-    if recipient_id:
-        if not recipient_id.count('@'):
-            from contacts import contactsdb
-            recipient_idurl = contactsdb.find_correspondent_by_nickname(recipient_id)
-            if not recipient_idurl:
-                return ERROR('recipient was not found')
-            recipient_id = global_id.UrlToGlobalID(recipient_idurl)
-        recipient_glob_id = global_id.ParseGlobalID(recipient_id)
-        if not recipient_glob_id['idurl']:
-            return ERROR('wrong recipient_id')
-        recipient_id = global_id.MakeGlobalID(**recipient_glob_id)
-        if not my_keys.is_valid_key_id(recipient_id):
-            return ERROR('invalid recipient_id: %s' % recipient_id)
-    bidirectional = False
-    if message_type in [None, 'private_message', ]:
-        bidirectional = True
-        if sender_id is None:
-            sender_id = my_id.getGlobalID(key_alias='master')
-    if sender_id:
-        sender_local_key_id = my_keys.get_local_key_id(sender_id)
-        if sender_local_key_id is None:
-            lg.warn('sender %r local key id was not registered' % sender_id)
-            return RESULT([])
-    if recipient_id:
-        recipient_local_key_id = my_keys.get_local_key_id(recipient_id)
-        if recipient_local_key_id is None:
-            lg.warn('recipient %r local key id was not registered' % recipient_id)
-            return RESULT([])
-    messages = [{'doc': m, } for m in message_database.query_messages(
-        sender_id=sender_id,
-        recipient_id=recipient_id,
-        bidirectional=bidirectional,
-        message_types=[message_type, ] if message_type else [],
-        offset=offset,
-        limit=limit,
-    )]
-    if _Debug:
-        lg.out(_DebugLevel, 'api.message_history with recipient_id=%s sender_id=%s message_type=%s found %d messages' % (
-            recipient_id, sender_id, message_type, len(messages), ))
-    return RESULT(messages)
+    try:
+        if not driver.is_on('service_message_history'):
+            return ERROR('service_message_history() is not started')
+        from chat import message_database
+        from userid import my_id, global_id
+        from crypt import my_keys
+        if not recipient_id and not sender_id:
+            return ERROR('recipient_id or sender_id is required')
+        if recipient_id:
+            if not recipient_id.count('@'):
+                from contacts import contactsdb
+                recipient_idurl = contactsdb.find_correspondent_by_nickname(recipient_id)
+                if not recipient_idurl:
+                    return ERROR('recipient was not found')
+                recipient_id = global_id.UrlToGlobalID(recipient_idurl)
+            recipient_glob_id = global_id.ParseGlobalID(recipient_id)
+            if not recipient_glob_id['idurl']:
+                return ERROR('wrong recipient_id')
+            recipient_id = global_id.MakeGlobalID(**recipient_glob_id)
+            if not my_keys.is_valid_key_id(recipient_id):
+                return ERROR('invalid recipient_id: %s' % recipient_id)
+        bidirectional = False
+        if message_type in [None, 'private_message', ]:
+            bidirectional = True
+            if sender_id is None:
+                sender_id = my_id.getGlobalID(key_alias='master')
+        if sender_id:
+            sender_local_key_id = my_keys.get_local_key_id(sender_id)
+            if sender_local_key_id is None:
+                return RESULT([])
+        if recipient_id:
+            recipient_local_key_id = my_keys.get_local_key_id(recipient_id)
+            if recipient_local_key_id is None:
+                lg.warn('recipient %r local key id was not registered' % recipient_id)
+                return RESULT([])
+        messages = [{'doc': m, } for m in message_database.query_messages(
+            sender_id=sender_id,
+            recipient_id=recipient_id,
+            bidirectional=bidirectional,
+            message_types=[message_type, ] if message_type else [],
+            offset=offset,
+            limit=limit,
+        )]
+        if _Debug:
+            lg.out(_DebugLevel, 'api.message_history with recipient_id=%s sender_id=%s message_type=%s found %d messages' % (
+                recipient_id, sender_id, message_type, len(messages), ))
+        return RESULT(messages)
+    except Exception as e:
+        lg.exc()
+        return ERROR(str(e))
 
 
 def message_conversations_list(message_types=[], offset=0, limit=100):
@@ -3442,6 +3450,7 @@ def message_send_group(group_key_id, data):
     from access import group_member
     if not group_key_id.startswith('group_'):
         return ERROR('invalid group id')
+    group_key_id = my_keys.latest_key_id(group_key_id)
     glob_id = global_id.ParseGlobalID(group_key_id)
     if not glob_id['idurl']:
         return ERROR('wrong group id')
@@ -3970,15 +3979,8 @@ def services_list(with_configs=False):
         websocket.send('{"command": "api_call", "method": "services_list", "kwargs": {"with_configs": 1} }');
     """
     result = []
-    for name, svc in sorted(list(driver.services().items()), key=lambda i: i[0]):
-        svc_info = {
-            'index': svc.index,
-            'name': name,
-            'state': svc.state,
-            'enabled': svc.enabled(),
-            'installed': svc.installed(),
-            'depends': svc.dependent_on()
-        }
+    for svc in sorted(list(driver.services().values()), key=lambda i: i[0]):
+        svc_info = svc.to_json()
         if with_configs:
             svc_configs = []
             for child in config.conf().listEntries(svc.config_path.replace('/enabled', '')):
@@ -4000,21 +4002,10 @@ def service_info(service_name):
     ###### WebSocket
         websocket.send('{"command": "api_call", "method": "service_info", "kwargs": {"service_name": "service_private_groups"} }');
     """
-    svc = driver.services().get(service_name, None)
-    if svc is None:
-        service_name = 'service_' + service_name.replace('-', '_')
-        svc = driver.services().get(service_name, None)
-    if svc is None:
-        return ERROR('service %r not found' % service_name)
-    return OK({
-        'index': svc.index,
-        'name': svc.service_name,
-        'state': svc.state,
-        'enabled': svc.enabled(),
-        'installed': svc.installed(),
-        'config_path': svc.config_path,
-        'depends': svc.dependent_on(),
-    })
+    svc_info = driver.info(service_name)
+    if svc_info is None:
+        return ERROR('service not found')
+    return OK(svc_info)
 
 
 def service_start(service_name):

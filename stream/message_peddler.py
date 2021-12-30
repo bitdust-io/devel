@@ -1223,6 +1223,7 @@ class MessagePeddler(automat.Automat):
             p2p_service.SendFail(request_packet, 'failed reading key info')
             result_defer.callback(False)
             return
+        group_key_id = my_keys.latest_key_id(group_key_id)
         group_key_alias, group_creator_idurl = my_keys.split_key_id(group_key_id)
         if not group_key_alias or not group_creator_idurl:
             lg.warn('wrong group_key_id: %r' % group_key_id)
@@ -1589,6 +1590,7 @@ class MessagePeddler(automat.Automat):
                     lg.info('no streams left for %r, clean up queue_keeper()' % customer_idurl)
                     queue_keeper.close(customer_idurl)
                     group_key_id = global_id.GetGlobalQueueKeyID(queue_id)
+                    group_key_id = my_keys.latest_key_id(group_key_id)
                     if erase_key and my_keys.is_key_registered(group_key_id):
                         lg.info('clean up group key %r' % group_key_id)
                         my_keys.erase_key(group_key_id)

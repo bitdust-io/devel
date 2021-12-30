@@ -89,6 +89,7 @@ def register_customer_key(customer_public_key_id, customer_public_key):
     if not customer_public_key_id or not customer_public_key:
         lg.warn('customer public key was not provided in the request')
         return False
+    customer_public_key_id = my_keys.latest_key_id(customer_public_key_id)
     if my_keys.is_key_registered(customer_public_key_id):
         known_customer_public_key = my_keys.get_public_key_raw(customer_public_key_id)
         if known_customer_public_key == customer_public_key:
@@ -118,7 +119,7 @@ def verify_packet_ownership(newpacket, raise_exception=False):
     owner_id = owner_idurl.to_id()
     creator_id = creator_idurl.to_id()
     packet_key_alias, packet_owner_id, _ = packetid.SplitKeyOwnerData(newpacket.PacketID)
-    packet_key_id = my_keys.make_key_id(packet_key_alias, creator_idurl, creator_glob_id=packet_owner_id)
+    packet_key_id = my_keys.latest_key_id(my_keys.make_key_id(packet_key_alias, creator_idurl, creator_glob_id=packet_owner_id))
     if _Debug:
         lg.args(_DebugLevel, owner_id=owner_id, creator_id=creator_id, packet_id=newpacket.PacketID,
                 key_id_registered=my_keys.is_key_registered(packet_key_id))
@@ -539,7 +540,7 @@ def on_delete_backup(newpacket):
 #------------------------------------------------------------------------------
 
 def on_customer_accepted(evt):
-    customer_idurl = evt.data.get('idurl')
+    customer_idurl = id_url.field(evt.data.get('idurl'))
     if not customer_idurl:
         lg.warn('unknown customer idurl in event data payload')
         return False

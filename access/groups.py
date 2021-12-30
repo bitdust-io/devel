@@ -192,7 +192,7 @@ def generate_group_key(creator_id=None, label=None, key_size=4096, group_alias=N
     if group_alias:
         group_key_id = my_keys.make_key_id(alias=group_alias, creator_glob_id=creator_id)
         if my_keys.is_key_registered(group_key_id):
-            return group_key_id
+            return my_keys.latest_key_id(group_key_id)
     else:
         while True:
             random_sample = os.urandom(24)

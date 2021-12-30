@@ -457,6 +457,8 @@ def SendListFiles(target_supplier, customer_idurl=None, key_id=None, query_items
         # probably require more work to build more reliable solution without using my master key at all
         # when my identity rotated supplier first needs to receive my new identity and then sending ListFiles()
         key_id = my_id.getGlobalID(key_alias='master')
+    else:
+        key_id = my_keys.latest_key_id(key_id)
     if not my_keys.is_key_registered(key_id) or not my_keys.is_key_private(key_id):
         lg.warn('key %r not exist or public, my "master" key to be used with ListFiles() packet' % key_id)
         key_id = my_id.getGlobalID(key_alias='master')

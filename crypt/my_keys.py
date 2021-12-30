@@ -111,7 +111,13 @@ def key_obj(key_id=None):
     if not key_id:
         return known_keys()
     if key_id not in known_keys():
-        raise Exception('key not found')
+        new_key_id = latest_key_id(key_id)
+        if new_key_id == key_id:
+            raise Exception('key %r is not registered' % key_id)
+        if new_key_id not in known_keys():
+            raise Exception('key %r is not registered' % new_key_id)
+        rename_key(key_id, new_key_id)
+        key_id = new_key_id
     if known_keys()[key_id] is None:
         if not load_key(key_id):
             raise Exception('key load failed: %s' % key_id)
@@ -120,6 +126,8 @@ def key_obj(key_id=None):
 
 def known_keys():
     """
+    Returns dictionary with all registered keys by global identifiers.
+    Item value can be None which means the key needs to be loaded first from local file.
     """
     global _KnownKeys
     return _KnownKeys
@@ -127,6 +135,7 @@ def known_keys():
 
 def local_keys():
     """
+    Stores local identifiers of the registered keys.
     """
     global _LocalKeysRegistry
     return _LocalKeysRegistry
@@ -134,6 +143,7 @@ def local_keys():
 
 def local_keys_index():
     """
+    Keeps an index of public key part and local key identifier.
     """
     global _LocalKeysIndex
     return _LocalKeysIndex
@@ -151,6 +161,13 @@ def is_key_registered(key_id, include_master=True):
             return True
         if key_id == my_id.getGlobalID(key_alias='master'):
             return True
+    if key_id in known_keys():
+        return True
+    new_key_id = latest_key_id(key_id)
+    if new_key_id in known_keys():
+        rename_key(key_id, new_key_id)
+        return True
+    check_rename_my_keys(prefix=new_key_id.split('@')[0])
     return key_id in known_keys()
 
 
@@ -192,10 +209,6 @@ def make_key_id(alias, creator_idurl=None, creator_glob_id=None):
         alias = 'master'
     if creator_glob_id is not None:
         return '{}${}'.format(alias, creator_glob_id)
-        # return global_id.MakeGlobalID(
-        #     customer=creator_glob_id,
-        #     key_alias=alias,
-        # )
     if creator_idurl is None:
         creator_idurl = my_id.getIDURL()
     return global_id.MakeGlobalID(
@@ -359,7 +372,7 @@ def load_key(key_id, keys_folder=None):
     """
     global _LatestLocalKeyID
     if not is_valid_key_id(key_id):
-        lg.warn('key_id is not valid: %r' % key_id)
+        lg.warn('key is not valid: %r' % key_id)
         return False
     key_dict = read_key_file(key_id, keys_folder=keys_folder)
     try:
@@ -370,7 +383,7 @@ def load_key(key_id, keys_folder=None):
         return False
     if not key_object.isPublic():
         if not validate_key(key_object):
-            lg.warn('validation failed for %r' % key_id)
+            lg.warn('validation failed for: %r' % key_id)
             return False
     known_keys()[key_id] = key_object
     if key_dict.get('need_to_convert'):
@@ -454,8 +467,9 @@ def generate_key(key_id, label='', key_size=4096, keys_folder=None):
     """
     """
     global _LatestLocalKeyID
-    if key_id in known_keys():
-        lg.warn('key %r already exists' % key_id)
+    key_id = latest_key_id(key_id)
+    if is_key_registered(key_id):
+        lg.warn('key %r already registered' % key_id)
         return None
     if not label:
         label = 'key%s' % utime.make_timestamp() 
@@ -481,8 +495,9 @@ def register_key(key_id, key_object_or_string, label='', keys_folder=None):
     """
     """
     global _LatestLocalKeyID
-    if key_id in known_keys():
-        lg.warn('key %s already exists' % key_id)
+    key_id = latest_key_id(key_id)
+    if is_key_registered(key_id):
+        lg.warn('key %s already registered' % key_id)
         return None
     if not keys_folder:
         keys_folder = settings.KeyStoreDir()
@@ -526,8 +541,9 @@ def register_key(key_id, key_object_or_string, label='', keys_folder=None):
 def erase_key(key_id, keys_folder=None):
     """
     """
-    if key_id not in known_keys():
-        lg.warn('key %s is not found' % key_id)
+    key_id = latest_key_id(key_id)
+    if not is_key_registered(key_id):
+        lg.warn('key %s is not registered' % key_id)
         return False
     if not keys_folder:
         keys_folder = settings.KeyStoreDir()
@@ -611,7 +627,7 @@ def rename_key(current_key_id, new_key_id, keys_folder=None):
 
 def sign_key(key_id, keys_folder=None, ignore_shared_keys=False, save=True):
     key_id = latest_key_id(strng.to_text(key_id))
-    if key_id not in known_keys():
+    if not is_key_registered(key_id):
         lg.warn('key %s is not found' % key_id)
         return False
     if not keys_folder:
@@ -646,8 +662,8 @@ def sign(key_id, inp):
     Returns byte string.
     """
     key_id = latest_key_id(key_id)
-    if key_id not in known_keys():
-        raise Exception('key %s is unknown' % key_id)
+    if not is_key_registered(key_id):
+        raise Exception('key %s is not registered' % key_id)
     if known_keys()[key_id] is None:
         if not load_key(key_id):
             raise Exception('key load failed: %s' % key_id)
@@ -667,8 +683,8 @@ def verify(key_id, hashcode, signature):
     Return True if signature is correct, otherwise False.
     """
     key_id = latest_key_id(key_id)
-    if key_id not in known_keys():
-        raise Exception('key %s is unknown' % key_id)
+    if not is_key_registered(key_id):
+        raise Exception('key %s is not registered' % key_id)
     if known_keys()[key_id] is None:
         if not load_key(key_id):
             raise Exception('key load failed: %s' % key_id)
@@ -691,7 +707,6 @@ def encrypt(key_id, inp):
         if _Debug:
             lg.out(_DebugLevel, 'my_keys.encrypt  payload of %d bytes using my "master" key alias' % len(inp))
         return key.EncryptLocalPublicKey(inp)
-    key_id = latest_key_id(key_id)
     if key_id == my_id.getGlobalID():  # user@host.org
         if _Debug:
             lg.out(_DebugLevel, 'my_keys.encrypt  payload of %d bytes using my "master" key, short format' % len(inp))
@@ -700,8 +715,9 @@ def encrypt(key_id, inp):
         if _Debug:
             lg.out(_DebugLevel, 'my_keys.encrypt  payload of %d bytes using my "master" key, full format' % len(inp))
         return key.EncryptLocalPublicKey(inp)
-    if key_id not in known_keys():
-        raise Exception('key %s is unknown' % key_id)
+    key_id = latest_key_id(key_id)
+    if not is_key_registered(key_id):
+        raise Exception('key %s is not registered' % key_id)
     if known_keys()[key_id] is None:
         if not load_key(key_id):
             raise Exception('key load failed: %s' % key_id)
@@ -725,7 +741,6 @@ def decrypt(key_id, inp):
         if _Debug:
             lg.out(_DebugLevel, 'my_keys.decrypt  payload of %d bytes using my "master" key alias' % len(inp))
         return key.DecryptLocalPrivateKey(inp)
-    key_id = latest_key_id(key_id)
     if key_id == my_id.getGlobalID(key_alias='master'):  # master$user@host.org
         if _Debug:
             lg.out(_DebugLevel, 'my_keys.decrypt  payload of %d bytes using my "master" key, full format' % len(inp))
@@ -734,8 +749,9 @@ def decrypt(key_id, inp):
         if _Debug:
             lg.out(_DebugLevel, 'my_keys.decrypt  payload of %d bytes using my "master" key, short format' % len(inp))
         return key.DecryptLocalPrivateKey(inp)
-    if key_id not in known_keys():
-        raise Exception('key %s is unknown' % key_id)
+    key_id = latest_key_id(key_id)
+    if not is_key_registered(key_id):
+        raise Exception('key %s is not registered' % key_id)
     if known_keys()[key_id] is None:
         if not load_key(key_id):
             raise Exception('key load failed: %s' % key_id)
@@ -751,8 +767,8 @@ def serialize_key(key_id):
     """
     """
     key_id = latest_key_id(key_id)
-    if key_id not in known_keys():
-        raise Exception('key %s is unknown' % key_id)
+    if not is_key_registered(key_id):
+        raise Exception('key %s is not registered' % key_id)
     if known_keys()[key_id] is None:
         if not load_key(key_id):
             raise Exception('key load failed: %s' % key_id)
@@ -789,17 +805,21 @@ def get_label(key_id):
     """
     Returns known label for given key.
     """
-    key_id = latest_key_id(strng.to_text(key_id))
-    if key_id not in known_keys():
+    key_id = strng.to_text(key_id)
+    if not is_key_registered(key_id):
         return None
     return key_obj(key_id).label
 
 
 def get_local_key_id(key_id):
-    key_id = latest_key_id(strng.to_text(key_id))
-    if key_id not in known_keys():
-        if key_id == my_id.getGlobalID('master'):
-            return 0
+    key_id = strng.to_text(key_id)
+    if key_id == 'master':
+        return 0
+    if key_id == my_id.getGlobalID():
+        return 0
+    if key_id == my_id.getGlobalID(key_alias='master'):
+        return 0
+    if not is_key_registered(key_id, include_master=False):
         return None
     return key_obj(key_id).local_key_id
 
@@ -879,19 +899,20 @@ def get_key_info(key_id, include_private=False, include_signature=False, generat
     """
     Returns dictionary with full key info or raise an Exception.
     """
-    key_id = latest_key_id(strng.to_text(key_id))
+    key_id = strng.to_text(key_id)
     if key_id == 'master' or key_id == my_id.getGlobalID(key_alias='master') or key_id == my_id.getGlobalID():
         return make_master_key_info(include_private=include_private)
+    key_id = latest_key_id(key_id)
     key_alias, creator_idurl = split_key_id(key_id)
     if not key_alias or not creator_idurl:
         raise Exception('incorrect key_id format: %s' % key_id)
-    if key_id not in known_keys():
+    if not is_key_registered(key_id):
         key_id = make_key_id(
             alias=key_alias,
             creator_idurl=creator_idurl,
         )
-    if key_id not in known_keys():
-        raise Exception('key %s is unknown' % key_id)
+    if not is_key_registered(key_id):
+        raise Exception('key %s is not registered' % key_id)
     if known_keys()[key_id] is None:
         if not load_key(key_id):
             raise Exception('key load failed: %s' % key_id)
@@ -955,6 +976,30 @@ def verify_key_info_signature(key_info):
     signature_bin = strng.to_bin(key_info['signature'])
     result = key.VerifySignature(key_info['signature_pubkey'], hash_bin, signature_bin)
     return result
+
+#------------------------------------------------------------------------------
+
+def check_rename_my_keys(prefix=None):
+    """
+    Make sure all my keys have correct names according to known latest identities I have cached.
+    For every key checks corresponding IDURL info and decides to rename it if key owner's identity was rotated.
+    """
+    keys_to_be_renamed = {}
+    for key_id in list(known_keys().keys()):
+        if prefix:
+            if not key_id.startswith(prefix):
+                continue
+        key_glob_id = global_id.ParseGlobalID(key_id)
+        owner_idurl = key_glob_id['idurl']
+        if not owner_idurl.is_latest():
+            keys_to_be_renamed[key_id] = global_id.MakeGlobalID(
+                idurl=owner_idurl.to_bin(),
+                key_alias=key_glob_id['key_alias'],
+            )
+    if _Debug:
+        lg.args(_DebugLevel, keys_to_be_renamed=len(keys_to_be_renamed))
+    for current_key_id, new_key_id in keys_to_be_renamed.items():
+        rename_key(current_key_id, new_key_id)
 
 #------------------------------------------------------------------------------
 
