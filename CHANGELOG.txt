@@ -1,6 +1,24 @@
 Change Log
 ==========
 
+2021-12-31 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* improvements related to logging
+* make sure identity sources are never duplicated
+* changed api.share_*() methods response format
+* changed api.group_info() response format
+* cleaned up unused api jsonrpc_server code
+* added retries for dht lookup in proxy_receiver()
+* IDURL fixes for my keys
+* IDURL bug fixes in group_member() and message_peddler()
+* minor fix in packet_out() related to automatic network reconnection process
+* bug fix in few network services related to DHT layers connection process
+* fixes in websocket command line interface
+* bug fix in broker_negotiator()
+* bug fix in api.services_list()
+
+
+
 2021-12-24 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * fix in lib/net_misc.py
