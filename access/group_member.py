@@ -104,12 +104,13 @@ from p2p import lookup
 from p2p import propagate
 from p2p import p2p_service_seeker
 
+from transport import packet_out
+
 from stream import message
 
 from storage import archive_reader
 
 from access import groups
-from access import key_ring
 
 from userid import identity
 from userid import global_id
@@ -1347,7 +1348,10 @@ class GroupMember(automat.Automat):
             try:
                 evt, a, kw = err.value.args
                 if a and a[0]:
-                    resp_payload = strng.to_text(a[0][0].Payload)
+                    if isinstance(a[0], packet_out.PacketOut):
+                        resp_payload = strng.to_text(a[0].Payload)
+                    else:
+                        resp_payload = strng.to_text(a[0][0].Payload)
                     if resp_payload.startswith('identity:'):
                         xml_src = resp_payload[9:]
                         new_ident = identity.identity(xmlsrc=xml_src)
@@ -1396,7 +1400,10 @@ class GroupMember(automat.Automat):
             try:
                 evt, a, kw = err.value.args
                 if a and a[0]:
-                    resp_payload = strng.to_text(a[0][0].Payload)
+                    if isinstance(a[0], packet_out.PacketOut):
+                        resp_payload = strng.to_text(a[0].Payload)
+                    else:
+                        resp_payload = strng.to_text(a[0][0].Payload)
                     if resp_payload.startswith('mismatch:'):
                         mismatch_info = jsn.loads(resp_payload[9:])
                         if 'dht_brokers' in mismatch_info:

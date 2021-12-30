@@ -105,6 +105,17 @@ class LocalService(automat.Automat):
         automat.Automat.__init__(self, name=self.service_name, state='OFF',
                                  debug_level=_DebugLevel, log_events=_Debug, log_transitions=_Debug, )
 
+    def to_json(self):
+        return {
+            'index': self.index,
+            'name': self.service_name,
+            'state': self.state,
+            'enabled': self.enabled(),
+            'installed': self.installed(),
+            'config_path': self.config_path,
+            'depends': self.dependent_on(),
+        }
+
     #------------------------------------------------------------------------------
 
     def dependent_on(self):

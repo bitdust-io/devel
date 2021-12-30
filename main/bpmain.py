@@ -53,6 +53,14 @@ AppDataDir = ''
 
 #-------------------------------------------------------------------------------
 
+def print_text(msg, nl='\n'):
+    """
+    Send some text output to the console.
+    """
+    sys.stdout.write(msg + nl)
+    sys.stdout.flush()
+
+#-------------------------------------------------------------------------------
 
 def show():
     """
@@ -146,6 +154,7 @@ def init(UI='', options=None, args=None, overDict=None, executablePath=None):
     except:
         lg.exc()
         sys.exit('Error initializing reactor in bpmain.py\n')
+        return
 
 #     #---logfile----
 #     if (lg.logs_enabled() and lg.log_file()) and not bpio.Android():
@@ -426,7 +435,6 @@ def kill():
     """
     Kill all running BitDust processes (except current).
     """
-    from logs import lg
     from system import bpio
     total_count = 0
     found = False
@@ -435,17 +443,17 @@ def kill():
         if len(appList) > 0:
             found = True
         for pid in appList:
-            lg.out(0, 'trying to stop pid %d' % pid)
+            print_text('trying to kill process %d' % pid)
             bpio.kill_process(pid)
         if len(appList) == 0:
             if found:
-                lg.out(0, 'BitDust stopped\n')
+                print_text('BitDust stopped\n', nl='')
             else:
-                lg.out(0, 'BitDust was not started\n')
+                print_text('BitDust was not started\n', nl='')
             return 0
         total_count += 1
         if total_count > 10:
-            lg.out(0, 'some BitDust process found, but can not stop it\n')
+            print_text('some BitDust process found, but can not be stoped\n', nl='')
             return 1
         time.sleep(1)
 
@@ -468,12 +476,12 @@ def wait_then_kill(x):
     while True:
         appList = bpio.lookup_main_process()
         if len(appList) == 0:
-            lg.out(0, 'DONE')
+            print_text('DONE')
             reactor.stop()  # @UndefinedVariable
             return 0
         total_count += 1
         if total_count > 10:
-            lg.out(0, 'not responding, KILLING ...')
+            print_text('not responding, killing the process now ...')
             ret = kill()
             reactor.stop()  # @UndefinedVariable
             return ret
@@ -632,8 +640,8 @@ def main(executable_path=None, start_reactor=True):
         try:
             from system import deploy
         except:
-            print('ERROR! can not import working code.  Python Path:')
-            print('\n'.join(sys.path))
+            print_text('ERROR! can not import working code.  Python Path:')
+            print_text('\n'.join(sys.path))
             return 1
 
     #---install---
@@ -673,8 +681,6 @@ def main(executable_path=None, start_reactor=True):
     if bpio.Android():
         lg.close_intercepted_log_file()
         lg.open_intercepted_log_file('/storage/emulated/0/.bitdust/logs/android.log')
-        if _Debug:
-            lg.out(_DebugLevel, 'log file "android.log" opened')
 
     # sys.excepthook = lg.exception_hook
 
@@ -726,9 +732,8 @@ def main(executable_path=None, start_reactor=True):
 
     if logpath:
         if not appList:
-            lg.open_log_file(logpath)
-        if _Debug:
-            lg.out(_DebugLevel, 'bpmain.main log file opened ' + logpath)
+            if cmd not in ['detach', 'daemon', 'stop', 'kill', 'shutdown', 'restart', 'reboot', 'reconnect', 'show', 'open', ]:
+                lg.open_log_file(logpath)
         if bpio.Windows() and bpio.isFrozen():
             need_redirecting = True
 
@@ -741,17 +746,11 @@ def main(executable_path=None, start_reactor=True):
         if need_redirecting:
             lg.stdout_start_redirecting()
             lg.stderr_start_redirecting()
-            if _Debug:
-                lg.out(_DebugLevel, 'bpmain.main redirecting started')
-
-    if _Debug:
-        lg.out(_DebugLevel, 'bpmain.main started ' + time.asctime())
-        lg.out(_DebugLevel, 'bpmain.main args=%s' % str(args))
 
     #---start---
     if cmd == '' or cmd == 'start' or cmd == 'go':
         if appList:
-            lg.out(0, 'BitDust already started, found another process: %s\n' % str(appList))
+            print_text('BitDust already started, found another process: %s\n' % str(appList), nl='')
             bpio.shutdown()
             return 0
 
@@ -775,7 +774,7 @@ def main(executable_path=None, start_reactor=True):
     elif cmd == 'detach' or cmd == 'daemon':
         appList = bpio.find_main_process(pid_file_path=os.path.join(appdata, 'metadata', 'processid'))
         if len(appList) > 0:
-            lg.out(0, 'main BitDust process already started: %s\n' % str(appList))
+            print_text('main BitDust process already started: %s\n' % str(appList), nl='')
             bpio.shutdown()
             if opts.coverage:
                 cov.stop()
@@ -784,7 +783,7 @@ def main(executable_path=None, start_reactor=True):
                     cov.report(file=open(opts.coverage_report, 'w'))
             return 0
         from lib import misc
-        lg.out(0, 'new BitDust process will be started in daemon mode\n')
+        print_text('new BitDust process will be started in daemon mode\n', nl='')
         bpio.shutdown()
         result = misc.DoRestart(
             detach=True,
@@ -811,26 +810,26 @@ def main(executable_path=None, start_reactor=True):
         appList = bpio.find_main_process(pid_file_path=os.path.join(appdata, 'metadata', 'processid'))
         ui = False
         if len(appList) > 0:
-            lg.out(0, 'found main BitDust process: %r ... ' % appList, '')
+            print_text('found main BitDust process: %r ... ' % appList, nl='')
 
             def done(x):
-                lg.out(0, 'finished successfully\n', '')
+                print_text('finished successfully\n', nl='')
                 from twisted.internet import reactor  # @UnresolvedImport
                 if reactor.running and not reactor._stopped:  # @UndefinedVariable
                     reactor.stop()  # @UndefinedVariable
 
             def failed(x):
                 if isinstance(x, Failure):
-                    lg.out(0, 'finished with: %s\n' % x.getErrorMessage(), '')
+                    print_text('finished with: %s\n' % x.getErrorMessage(), nl='')
                 else:
-                    lg.out(0, 'finished successfully\n', '')
+                    print_text('finished successfully\n', nl='')
                 ok = str(x).count('Connection was closed cleanly') > 0
                 from twisted.internet import reactor  # @UnresolvedImport
                 if ok and reactor.running and not reactor._stopped:  # @UndefinedVariable
-                    # lg.out(0, 'DONE\n', '')
+                    # print_text('DONE\n', '')
                     reactor.stop()  # @UndefinedVariable
                     return
-                lg.out(0, 'forcing previous process shutdown\n', '')
+                print_text('forcing previous process shutdown\n', nl='')
                 try:
                     kill()
                 except:
@@ -893,11 +892,11 @@ def main(executable_path=None, start_reactor=True):
     #---show---
     elif cmd == 'show' or cmd == 'open':
         if not bpio.isGUIpossible():
-            lg.out(0, 'BitDust GUI is turned OFF\n')
+            print_text('BitDust GUI is turned OFF\n', nl='')
             bpio.shutdown()
             return 0
         if bpio.Linux() and not bpio.X11_is_running():
-            lg.out(0, 'this operating system not supported X11 interface\n')
+            print_text('this operating system not supporting X11 interface\n', nl='')
             bpio.shutdown()
             return 0
         appList = bpio.find_main_process(pid_file_path=os.path.join(appdata, 'metadata', 'processid'))
@@ -909,7 +908,7 @@ def main(executable_path=None, start_reactor=True):
                 ret = 1
             bpio.shutdown()
             return ret
-        # lg.out(0, 'found main BitDust process: %s, start the GUI\n' % str(appList))
+        # print_text('found main BitDust process: %s, start the GUI\n' % str(appList))
         # ret = show()
         bpio.shutdown()
         return ret
@@ -930,7 +929,7 @@ def main(executable_path=None, start_reactor=True):
         )
         if len(appList) > 0:
             if cmd == 'kill':
-                lg.out(0, 'found main BitDust process: %r, about to kill running process ... ' % appList, '')
+                print_text('found main BitDust process: %s, about to kill running process ... ' % appList, nl='')
                 ret = kill()
                 bpio.shutdown()
                 if opts.coverage:
@@ -946,15 +945,15 @@ def main(executable_path=None, start_reactor=True):
                 def _stopped(x):
                     if _Debug:
                         if isinstance(x, Failure):
-                            lg.out(0, 'finished with: %s\n' % x.getErrorMessage(), '')
+                            print_text('finished with: %s\n' % x.getErrorMessage(), nl='')
                         else:
-                            lg.out(0, 'finished with: %s\n' % x, '')
+                            print_text('finished with: %s\n' % x, nl='')
                     else:
-                        lg.out(0, 'finished successfully\n' % x, '')
+                        print_text('finished successfully\n' % x, nl='')
                     reactor.stop()  # @UndefinedVariable
                     bpio.shutdown()
 
-                lg.out(0, 'found main BitDust process: %r ... ' % appList, '')
+                print_text('found main BitDust process: %s ... ' % appList, nl='')
                 from interface import cmd_line_json
                 cmd_line_json.call_websocket_method('process_stop', websocket_timeout=2).addBoth(_stopped)
                 reactor.run()  # @UndefinedVariable
@@ -981,7 +980,7 @@ def main(executable_path=None, start_reactor=True):
                 ],
             )
             if len(appListAllChilds) > 0:
-                lg.out(0, 'BitDust child processes found: %r, performing "kill process" actions ...\n' % appListAllChilds, '')
+                print_text('BitDust child processes found: %s, performing "kill process" action ...\n' % appListAllChilds, nl='')
                 ret = kill()
                 if opts.coverage:
                     cov.stop()
@@ -990,7 +989,7 @@ def main(executable_path=None, start_reactor=True):
                         cov.report(file=open(opts.coverage_report, 'w'))
                 return ret
 
-            lg.out(0, 'BitDust is not running at the moment\n')
+            print_text('BitDust is not running at the moment\n', nl='')
             bpio.shutdown()
             if opts.coverage:
                 cov.stop()

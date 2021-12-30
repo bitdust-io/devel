@@ -110,9 +110,14 @@ def key_obj(key_id=None):
     """
     if not key_id:
         return known_keys()
-    key_id = latest_key_id(key_id)
-    if not is_key_registered(key_id):
-        raise Exception('key %r is not registered' % key_id)
+    if key_id not in known_keys():
+        new_key_id = latest_key_id(key_id)
+        if new_key_id == key_id:
+            raise Exception('key %r is not registered' % key_id)
+        if new_key_id not in known_keys():
+            raise Exception('key %r is not registered' % new_key_id)
+        rename_key(key_id, new_key_id)
+        key_id = new_key_id
     if known_keys()[key_id] is None:
         if not load_key(key_id):
             raise Exception('key load failed: %s' % key_id)
@@ -121,6 +126,8 @@ def key_obj(key_id=None):
 
 def known_keys():
     """
+    Returns dictionary with all registered keys by global identifiers.
+    Item value can be None which means the key needs to be loaded first from local file.
     """
     global _KnownKeys
     return _KnownKeys
@@ -128,6 +135,7 @@ def known_keys():
 
 def local_keys():
     """
+    Stores local identifiers of the registered keys.
     """
     global _LocalKeysRegistry
     return _LocalKeysRegistry
@@ -135,6 +143,7 @@ def local_keys():
 
 def local_keys_index():
     """
+    Keeps an index of public key part and local key identifier.
     """
     global _LocalKeysIndex
     return _LocalKeysIndex
@@ -154,10 +163,11 @@ def is_key_registered(key_id, include_master=True):
             return True
     if key_id in known_keys():
         return True
-    _latest_key_id = latest_key_id(key_id)
-    if _latest_key_id in known_keys():
+    new_key_id = latest_key_id(key_id)
+    if new_key_id in known_keys():
+        rename_key(key_id, new_key_id)
         return True
-    check_rename_my_keys(prefix=_latest_key_id.split('@')[0])
+    check_rename_my_keys(prefix=new_key_id.split('@')[0])
     return key_id in known_keys()
 
 
@@ -795,17 +805,21 @@ def get_label(key_id):
     """
     Returns known label for given key.
     """
-    key_id = latest_key_id(strng.to_text(key_id))
+    key_id = strng.to_text(key_id)
     if not is_key_registered(key_id):
         return None
     return key_obj(key_id).label
 
 
 def get_local_key_id(key_id):
-    key_id = latest_key_id(strng.to_text(key_id))
-    if not is_key_registered(key_id):
-        if key_id == my_id.getGlobalID('master'):
-            return 0
+    key_id = strng.to_text(key_id)
+    if key_id == 'master':
+        return 0
+    if key_id == my_id.getGlobalID():
+        return 0
+    if key_id == my_id.getGlobalID(key_alias='master'):
+        return 0
+    if not is_key_registered(key_id, include_master=False):
         return None
     return key_obj(key_id).local_key_id
 
