@@ -3975,7 +3975,7 @@ def services_list(with_configs=False):
         websocket.send('{"command": "api_call", "method": "services_list", "kwargs": {"with_configs": 1} }');
     """
     result = []
-    for svc in sorted(list(driver.services().values()), key=lambda i: i[0]):
+    for _, svc in sorted(list(driver.services().items()), key=lambda i: i[0]):
         svc_info = svc.to_json()
         if with_configs:
             svc_configs = []
