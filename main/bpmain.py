@@ -1002,13 +1002,16 @@ def main(executable_path=None, start_reactor=True):
     from interface import cmd_line_json as cmdln
     ret = cmdln.run(opts, args, pars, overDict, executable_path)
     if ret == 2:
-        print(usage_text())
+        print_text(usage_text())
     bpio.shutdown()
+
+    #---coverage report---
     if opts.coverage:
         cov.stop()
         cov.save()
         if opts.coverage_report:
             cov.report(file=open(opts.coverage_report, 'w'))
+
     return ret
 
 #------------------------------------------------------------------------------

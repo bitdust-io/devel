@@ -106,15 +106,15 @@ class LocalService(automat.Automat):
                                  debug_level=_DebugLevel, log_events=_Debug, log_transitions=_Debug, )
 
     def to_json(self):
-        return {
-            'index': self.index,
+        j = super().to_json()
+        j.update({
             'name': self.service_name,
-            'state': self.state,
             'enabled': self.enabled(),
             'installed': self.installed(),
             'config_path': self.config_path,
             'depends': self.dependent_on(),
-        }
+        })
+        return j
 
     #------------------------------------------------------------------------------
 

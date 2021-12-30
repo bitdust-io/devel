@@ -355,12 +355,12 @@ def update(idurl, xml_src):
         return False
 
     if not newid.isCorrect():
-        lg.err("incorrect identity : %r" % idurl)
+        lg.warn("incorrect identity : %r" % idurl)
         return False
 
     try:
         if not newid.Valid():
-            lg.err("identity not valid : %r" % idurl)
+            lg.warn("identity not valid : %r" % idurl)
             return False
     except:
         lg.exc()
