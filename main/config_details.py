@@ -37,6 +37,8 @@ def raw():
     The "internal" options are not displayed in the UI, but still can be manipulated via API or command line.
     """
     return """
+{interface/api/auth-secret-enabled}
+
 {interface/api/rest-http-enabled}
 
 {interface/api/rest-http-port}

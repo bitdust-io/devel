@@ -84,6 +84,9 @@ except:
 from logs import lg
 
 from system import bpio
+from system import local_fs
+
+from crypt import cipher
 
 from main import settings
 from main import events
@@ -277,6 +280,12 @@ class Initializer(automat.Automat):
         #         ftp_server.init()
         #     except:
         #         lg.exc()
+        if settings.enableAPIAuthSecret():
+            current_secret = local_fs.ReadTextFile(settings.APISecretFile())
+            if not current_secret:
+                new_secret = cipher.generate_secret_text(10)
+                local_fs.WriteTextFile(settings.APISecretFile(), new_secret)
+                lg.info('generated new API auth secret text and stored in %r' % settings.APISecretFile())
         if settings.enableRESTHTTPServer():
             try:
                 from interface import api_rest_http_server

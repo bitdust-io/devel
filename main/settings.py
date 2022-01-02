@@ -1515,6 +1515,14 @@ def enableIdServer(enable=None):
     config.conf().setData('services/identity-server/enabled', str(enable))
 
 
+def enableAPIAuthSecret(enable=None):
+    """
+    """
+    if enable is None:
+        return config.conf().getBool('interface/api/auth-secret-enabled')
+    config.conf().setData('interface/api/auth-secret-enabled', str(enable))
+
+
 def enableRESTHTTPServer(enable=None):
     """
     """

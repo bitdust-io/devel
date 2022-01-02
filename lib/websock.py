@@ -335,13 +335,16 @@ def websocket_thread():
         try:
             ws().run_forever(ping_interval=10)
         except Exception as exc:
+            _WebSocketApp = None
             if _Debug:
                 print('\n    WS Thread ERROR:', exc)
-        del _WebSocketApp
-        _WebSocketApp = None
+            time.sleep(1)
+        if _WebSocketApp:
+            del _WebSocketApp
+            _WebSocketApp = None
         if not is_started():
             break
-        time.sleep(3)
+        time.sleep(1)
     _WebSocketApp = None
 
 #------------------------------------------------------------------------------

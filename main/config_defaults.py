@@ -43,6 +43,8 @@ def reset(conf_obj):
     from lib import diskspace
     from main import settings
 
+    conf_obj.setDefaultValue('interface/api/auth-secret-enabled', 'true')
+
     conf_obj.setDefaultValue('interface/api/rest-http-enabled', 'true')
     conf_obj.setDefaultValue('interface/api/rest-http-port', settings.DefaultRESTHTTPPort())
 
