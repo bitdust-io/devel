@@ -358,6 +358,7 @@ def start_daemon(node, skip_initialize=False, verbose=False):
     if verbose:
         dbg(f'\nstart_daemon [{node}] OK\n')
 
+
 async def start_daemon_async(node, loop, verbose=False):
     await run_ssh_command_and_wait_async(node, 'mkdir -pv /root/.bitdust/metadata/', loop)
     if os.environ.get('_DEBUG', '0') == '0':
@@ -666,6 +667,7 @@ async def stop_daemon_async(node, loop, skip_checks=False, verbose=False):
 def start_dht_seed(node, wait_seconds=0, dht_seeds='', attached_layers='', verbose=False):
     info(f'NEW DHT SEED (with STUN SERVER) at [{node}]')
     cmd = ''
+    cmd += 'bitdust set interface/api/auth-secret-enabled false;'
     cmd += f'bitdust set logs/debug-level {_EngineDebugLevel};'
     cmd += 'bitdust set logs/api-enabled true;'
     cmd += 'bitdust set logs/automat-events-enabled true;'
@@ -702,6 +704,7 @@ def start_dht_seed(node, wait_seconds=0, dht_seeds='', attached_layers='', verbo
 async def start_identity_server_async(node, loop, verbose=True):
     info(f'NEW IDENTITY SERVER at [{node}]')
     cmd = ''
+    cmd += 'bitdust set interface/api/auth-secret-enabled false;'
     cmd += f'bitdust set logs/debug-level {_EngineDebugLevel};'
     cmd += 'bitdust set logs/api-enabled true;'
     cmd += 'bitdust set logs/automat-events-enabled true;'
@@ -730,6 +733,7 @@ async def start_identity_server_async(node, loop, verbose=True):
 async def start_stun_server_async(node, loop, dht_seeds=''):
     info(f'NEW STUN SERVER at [{node}]')
     cmd = ''
+    cmd += 'bitdust set interface/api/auth-secret-enabled false;'
     cmd += f'bitdust set logs/debug-level {_EngineDebugLevel};'
     cmd += 'bitdust set logs/api-enabled true;'
     cmd += 'bitdust set logs/automat-events-enabled true;'
@@ -764,6 +768,7 @@ async def start_proxy_server_async(node, identity_name, loop, min_servers=1, max
                                    preferred_servers='', health_check_interval_seconds=None, dht_seeds=''):
     info(f'NEW PROXY SERVER {identity_name} at [{node}]')
     cmd = ''
+    cmd += 'bitdust set interface/api/auth-secret-enabled false;'
     cmd += f'bitdust set logs/debug-level {_EngineDebugLevel};'
     cmd += 'bitdust set logs/api-enabled true;'
     cmd += 'bitdust set logs/automat-events-enabled true;'
@@ -809,6 +814,7 @@ async def start_supplier_async(node, identity_name, loop, join_network=True, dht
                                preferred_servers='', health_check_interval_seconds=None, preferred_routers=''):
     info(f'NEW SUPPLIER {identity_name} at [{node}]')
     cmd = ''
+    cmd += 'bitdust set interface/api/auth-secret-enabled false;'
     cmd += f'bitdust set logs/debug-level {_EngineDebugLevel};'
     cmd += 'bitdust set logs/api-enabled true;'
     cmd += 'bitdust set logs/automat-events-enabled true;'
@@ -861,6 +867,7 @@ async def start_message_broker_async(node, identity_name, loop, join_network=Tru
                                      preferred_servers='', health_check_interval_seconds=None, preferred_routers='', preferred_brokers=''):
     info(f'NEW MESSAGE BROKER {identity_name} at [{node}]')
     cmd = ''
+    cmd += 'bitdust set interface/api/auth-secret-enabled false;'
     cmd += f'bitdust set logs/debug-level {_EngineDebugLevel};'
     cmd += 'bitdust set logs/api-enabled true;'
     cmd += 'bitdust set logs/automat-events-enabled true;'
@@ -922,6 +929,7 @@ async def start_customer_async(node, identity_name, loop, join_network=True, num
         await asyncio.sleep(sleep_before_start)
     info('NEW CUSTOMER %r at [%s]' % (identity_name, node, ))
     cmd = ''
+    cmd += 'bitdust set interface/api/auth-secret-enabled false;'
     cmd += f'bitdust set logs/debug-level {_EngineDebugLevel};'
     cmd += 'bitdust set logs/api-enabled true;'
     cmd += 'bitdust set logs/automat-events-enabled true;'
