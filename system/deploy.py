@@ -200,7 +200,7 @@ def init_base_dir(base_dir=None):
         if not os.path.exists(_BaseDirPath):
             os.makedirs(_BaseDirPath)
         return _BaseDirPath
-    
+
     # seems we found needed files in a path1 - lets use this as a base dir
     return _BaseDirPath
 
