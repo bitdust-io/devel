@@ -84,6 +84,9 @@ except:
 from logs import lg
 
 from system import bpio
+from system import local_fs
+
+from crypt import cipher
 
 from main import settings
 from main import events
@@ -259,7 +262,7 @@ class Initializer(automat.Automat):
         """
         if bpio.Android():
             lg.close_intercepted_log_file()
-            lg.open_intercepted_log_file('/storage/emulated/0/.bitdust/logs/android.log', mode='a')
+            lg.open_intercepted_log_file('/storage/emulated/0/Android/data/org.bitdust_io.bitdust1/files/Documents/.bitdust/logs/android.log', mode='a')
             if _Debug:
                 lg.dbg(_DebugLevel, 'log file "android.log" re-opened')
         if _Debug:
@@ -277,6 +280,12 @@ class Initializer(automat.Automat):
         #         ftp_server.init()
         #     except:
         #         lg.exc()
+        if settings.enableAPIAuthSecret():
+            current_secret = local_fs.ReadTextFile(settings.APISecretFile())
+            if not current_secret:
+                new_secret = cipher.generate_secret_text(10)
+                local_fs.WriteTextFile(settings.APISecretFile(), new_secret)
+                lg.info('generated new API auth secret text and stored in %r' % settings.APISecretFile())
         if settings.enableRESTHTTPServer():
             try:
                 from interface import api_rest_http_server

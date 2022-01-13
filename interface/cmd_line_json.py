@@ -189,6 +189,7 @@ def call_websocket_method(method, **kwargs):
     from twisted.internet.defer import Deferred  # @UnresolvedImport
     from twisted.internet import reactor  # @UnresolvedImport
     from lib import websock
+    from system import deploy
     ret = Deferred()
     timeout = kwargs.pop('websocket_timeout', None)
     if timeout:
@@ -262,6 +263,7 @@ def call_websocket_method(method, **kwargs):
             'on_open': _on_open,
             'on_error': _on_error,
         },
+        api_secret_filepath=os.path.join(deploy.current_base_dir(), 'metadata', 'apisecret'),
     )
     return ret
 

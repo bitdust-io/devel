@@ -123,3 +123,7 @@ def make_key(cipher_type='AES'):
     elif cipher_type == 'DES3':
         return get_random_bytes(DES3.block_size)
     raise Exception('unsupported cipher type')
+
+
+def generate_secret_text(size):
+    return base64.b32encode(get_random_bytes(size)).decode()

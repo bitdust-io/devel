@@ -680,7 +680,7 @@ def main(executable_path=None, start_reactor=True):
 
     if bpio.Android():
         lg.close_intercepted_log_file()
-        lg.open_intercepted_log_file('/storage/emulated/0/.bitdust/logs/android.log')
+        lg.open_intercepted_log_file('/storage/emulated/0/Android/data/org.bitdust_io.bitdust1/files/Documents/.bitdust/logs/android.log')
 
     # sys.excepthook = lg.exception_hook
 
@@ -949,7 +949,7 @@ def main(executable_path=None, start_reactor=True):
                         else:
                             print_text('finished with: %s\n' % x, nl='')
                     else:
-                        print_text('finished successfully\n' % x, nl='')
+                        print_text('finished successfully\n', nl='')
                     reactor.stop()  # @UndefinedVariable
                     bpio.shutdown()
 

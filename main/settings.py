@@ -683,7 +683,7 @@ def DefaultRestoreDir():
     Default location to place restored files and folders.
     """
     if sys.executable == 'android_python' or ('ANDROID_ARGUMENT' in os.environ):
-        return '/storage/emulated/0'
+        return '/storage/emulated/0/Android/data/org.bitdust_io.bitdust1/files/Downloads'
     return os.path.expanduser('~')
 
 
@@ -1513,6 +1513,14 @@ def enableIdServer(enable=None):
     if enable is None:
         return config.conf().getBool('services/identity-server/enabled')
     config.conf().setData('services/identity-server/enabled', str(enable))
+
+
+def enableAPIAuthSecret(enable=None):
+    """
+    """
+    if enable is None:
+        return config.conf().getBool('interface/api/auth-secret-enabled')
+    config.conf().setData('interface/api/auth-secret-enabled', str(enable))
 
 
 def enableRESTHTTPServer(enable=None):
