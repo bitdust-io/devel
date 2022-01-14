@@ -187,6 +187,46 @@ def ERROR(errors=[], message=None, status='ERROR', reason=None, details=None, **
 
 #------------------------------------------------------------------------------
 
+def enable_model_listener(model_name, request_all=False):
+    """
+    When using WebSocket API interface you can get advantage of real-time data streaming and receive additional information when certain things
+    are changing in the engine. Any updates to those instances will be automatically populated to the WebSocket connection.
+
+    For each model this method suppose to be called only once to switch on the live streaming for that data type.
+
+    When `request_all=True` the engine will immediately populate one time all of the data objects of given type to the WebSocket.
+    This way client will be able to catch and store everything on the front-side and after that use only live streaming to receive the updates for given data model.
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "enable_model_listener", "kwargs": {"model_name": "key"} }');
+    """
+    from main import listeners
+    from interface import api_web_socket
+    listeners.add_listener(api_web_socket.on_model_changed, model_name)
+    if not request_all:
+        return OK()
+    if model_name == 'service':
+        driver.populate_all_services()
+    elif model_name == 'key':
+        if driver.is_on('service_keys_registry'):
+            from crypt import my_keys
+            my_keys.populate_all_keys()
+    return OK()
+
+
+def disable_model_listener(model_name):
+    """
+    Stop live streaming of all updates regarding given data type to the WebSocket connection.
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "disable_model_listener", "kwargs": {"model_name": "key"} }');
+    """
+    from main import listeners
+    from interface import api_web_socket
+    listeners.remove_listener(api_web_socket.on_model_changed, model_name)
+    return OK()
+
+#------------------------------------------------------------------------------
 
 def process_stop(instant=True):
     """
@@ -828,8 +868,8 @@ def keys_list(sort=False, include_private=False):
     from crypt import my_keys
     r = []
     for key_id, key_object in my_keys.known_keys().items():
-        if not key_object:
-            key_object = my_keys.key_obj(key_id)
+        # if not key_object:
+        #     key_object = my_keys.key_obj(key_id)
         key_alias, creator_idurl = my_keys.split_key_id(key_id)
         if not key_alias or not creator_idurl:
             lg.warn('incorrect key_id: %s' % key_id)
@@ -4517,7 +4557,7 @@ def event_send(event_id, data=None):
     Method will generate and inject a new event inside the main process.
 
     This method is provided for testing and development purposes.
-    
+
     ###### HTTP
         curl -X POST 'localhost:8180/event/send/client-event-abc/v1' -d '{"data": {"some_key": "some_value"}}'
 

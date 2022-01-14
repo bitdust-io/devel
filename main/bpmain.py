@@ -215,6 +215,9 @@ def init(UI='', options=None, args=None, overDict=None, executablePath=None):
     from main import events
     events.init()
 
+    from main import listeners
+    listeners.init()
+
     from main import initializer
     IA = initializer.A()
     if _Debug:
@@ -240,6 +243,9 @@ def shutdown():
 
     from main import shutdowner
     shutdowner.A('reactor-stopped')
+
+    from main import listeners
+    listeners.shutdown()
 
     from main import events
     events.shutdown()

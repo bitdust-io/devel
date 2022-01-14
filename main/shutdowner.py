@@ -100,6 +100,7 @@ def shutdown(x=None):
         from services import driver
         from main import control
         from main import events
+        from main import listeners
         from logs import weblog
         from logs import webtraffic
         from system import tmpfile
@@ -125,6 +126,7 @@ def shutdown(x=None):
         run_upnpc.shutdown()
         net_misc.shutdown()
         git_proc.shutdown()
+        listeners.shutdown()
         events.shutdown()
         tmpfile.shutdown()
         control.shutdown()
