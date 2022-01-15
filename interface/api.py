@@ -211,14 +211,20 @@ def enable_model_listener(model_name, request_all=False):
         if driver.is_on('service_keys_registry'):
             from crypt import my_keys
             my_keys.populate_all_keys()
+        else:
+            listeners.populate_later('key')
     elif model_name == 'conversation':
         if driver.is_on('service_message_history'):
             from chat import message_database
             message_database.populate_conversations()
+        else:
+            listeners.populate_later('conversation')
     elif model_name == 'message':
         if driver.is_on('service_message_history'):
             from chat import message_database
             message_database.populate_messages()
+        else:
+            listeners.populate_later('message')
     return OK()
 
 

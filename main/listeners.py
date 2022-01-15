@@ -56,6 +56,7 @@ from lib import utime
 #------------------------------------------------------------------------------
 
 _Listeners = {}
+_ModelsToBePopulated = []
 
 #------------------------------------------------------------------------------
 
@@ -172,3 +173,16 @@ def push_snapshot(model_name, snap_id=None, data=None, created=None, fast=False)
     else:
         reactor.callLater(0, dispatch_snapshot, snap)  # @UndefinedVariable
     return snap
+
+#------------------------------------------------------------------------------
+
+def populate_later(model_name=None):
+    global _ModelsToBePopulated
+    if model_name is not None:
+        if model_name not in _ModelsToBePopulated:
+            _ModelsToBePopulated.append(model_name)
+    return _ModelsToBePopulated
+
+
+def is_populate_requered(model_name):
+    return model_name in _ModelsToBePopulated

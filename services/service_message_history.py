@@ -53,11 +53,18 @@ class MessageHistoryService(LocalService):
         from chat import message_database
         from chat import message_keeper
         from main import events
+        from main import listeners
         message_database.init()
         message_keeper.init()
         events.add_subscriber(self.on_key_registered, 'key-registered')
         events.add_subscriber(self.on_key_renamed, 'key-renamed')
         events.add_subscriber(self.on_key_generated, 'key-generated')
+        if listeners.is_populate_requered('conversation'):
+            listeners.populate_later().remove('conversation')
+            message_database.populate_conversations()
+        if listeners.is_populate_requered('message'):
+            listeners.populate_later().remove('message')
+            message_database.populate_messages()
         return True
 
     def stop(self):
