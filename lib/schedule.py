@@ -45,7 +45,6 @@ if __name__ == '__main__':
 
 from logs import lg
 
-from system import bpio
 from lib import misc
 from lib import maths
 
@@ -69,9 +68,7 @@ all_labels = {
 
 
 class Schedule:
-    """
-    
-    """
+
     types = all_types
     labels = all_labels
 

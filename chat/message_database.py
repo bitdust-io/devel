@@ -207,7 +207,7 @@ def get_conversation_id(sender_local_key_id, recipient_local_key_id, payload_typ
 
 #------------------------------------------------------------------------------
 
-def build_json_message(data, message_id, message_time=None, sender=None, recipient=None, message_type=None, direction=None):
+def build_json_message(data, message_id, message_time=None, sender=None, recipient=None, message_type=None, direction=None, conversation_id=None):
     if not sender:
         sender = my_id.getGlobalID(key_alias='master')
     if not recipient:
@@ -233,37 +233,110 @@ def build_json_message(data, message_id, message_time=None, sender=None, recipie
             'glob_id': recipient,
         },
         'direction': direction,
+        'conversation_id': conversation_id,
     }
     return new_json
 
+
+def build_json_conversation(**record):
+    conv = {
+        'key_id': '',
+        'label': '',
+        'state': 'OFFLINE',
+        'index': None,
+        'id': None,
+        'name': None,
+        'repr': None,
+        'events': None,
+    }
+    conv.update(record)
+    if conv['type'] == 'private_message':
+        local_key_id1, _, local_key_id2 = conv['conversation_id'].partition('&')
+        try:
+            local_key_id1 = int(local_key_id1)
+            local_key_id2 = int(local_key_id2)
+        except:
+            lg.exc()
+            return None
+        usr1 = my_keys.get_local_key(local_key_id1)
+        usr2 = my_keys.get_local_key(local_key_id2)
+        if not usr1 or not usr2:
+            # lg.warn('%r %r : not found sender or recipient key_id for %r' % (usr1, usr2, conv, ))
+            return None
+        usr1 = usr1.replace('master$', '')
+        usr2 = usr2.replace('master$', '')
+        idurl1 = global_id.glob2idurl(usr1, as_field=True)
+        idurl2 = global_id.glob2idurl(usr2, as_field=True)
+        conv_key_id = None
+        conv_label = None
+        user_idurl = None
+        if (id_url.is_cached(idurl1) and idurl1 == my_id.getIDURL()) or usr1.split('@')[0] == my_id.getIDName():
+            user_idurl = idurl2
+            conv_key_id = global_id.UrlToGlobalID(idurl2, include_key=True)
+            conv_label = conv_key_id.replace('master$', '').split('@')[0]
+        if (id_url.is_cached(idurl2) and idurl2 == my_id.getIDURL()) or usr2.split('@')[0] == my_id.getIDName():
+            user_idurl = idurl1
+            conv_key_id = global_id.UrlToGlobalID(idurl1, include_key=True)
+            conv_label = conv_key_id.replace('master$', '').split('@')[0]
+        if conv_key_id:
+            conv['key_id'] = conv_key_id
+        if conv_label:
+            conv['label'] = conv_label
+        else:
+            conv['label'] = conv_key_id
+        if user_idurl:
+            on_st = online_status.getInstance(user_idurl, autocreate=False)
+            if on_st:
+                conv.update(on_st.to_json())
+    elif conv['type'] == 'group_message' or conv['type'] == 'personal_message':
+        local_key_id, _, _ = conv['conversation_id'].partition('&')
+        try:
+            local_key_id = int(local_key_id)
+        except:
+            lg.exc()
+            return None
+        key_id = my_keys.get_local_key(local_key_id)
+        if not key_id:
+            # lg.warn('key_id was not found for %r' % conv)
+            return None
+        conv['key_id'] = key_id
+        conv['label'] = my_keys.get_label(key_id) or key_id
+        gm = group_member.get_active_group_member(key_id)
+        if gm:
+            conv.update(gm.to_json())
+    return conv
+
 #------------------------------------------------------------------------------
 
-def insert_message(message_json):
+def insert_message(data, message_id, message_time=None, sender=None, recipient=None, message_type=None, direction=None):
     """
     Writes JSON message to the message database.
     """
-    try:
-        sender_glob_id = message_json['sender']['glob_id']
-        recipient_glob_id = message_json['recipient']['glob_id']
-        direction = message_json['direction']
-        payload_type = MESSAGE_TYPES.get(message_json['payload']['msg_type'], 1)
-        payload_time = message_json['payload']['time']
-        payload_message_id = message_json['payload']['message_id']
-        payload_body =  message_json['payload']['data']
-    except:
-        lg.exc()
-        return False
+    payload_time = message_time or utime.utcnow_to_sec1970()
+    payload_message_id = strng.to_text(message_id)
+    payload_type = MESSAGE_TYPES.get(message_type, 1)
+    if not sender:
+        sender = my_id.getGlobalID(key_alias='master')
+    if not recipient:
+        recipient = my_id.getGlobalID(key_alias='master')
+    if direction is None:
+        if message_type in ['private_message', None, ]:
+            direction = 'out' if sender == my_id.getGlobalID(key_alias='master') else 'in'
+        else:
+            direction = 'in'
+    else:
+        direction = direction.replace('incoming', 'in').replace('outgoing', 'out')
     if _Debug:
-        lg.args(_DebugLevel, sender=sender_glob_id, recipient=recipient_glob_id, typ=payload_type, message_id=payload_message_id)
-    recipient_local_key_id = my_keys.get_local_key_id(recipient_glob_id)
+        lg.args(_DebugLevel, sender=sender, recipient=recipient, typ=payload_type, dir=direction, message_id=payload_message_id)
+    recipient_local_key_id = my_keys.get_local_key_id(recipient)
     if payload_type in [3, 4, ]:
         sender_local_key_id = recipient_local_key_id
     else:
-        sender_local_key_id = my_keys.get_local_key_id(sender_glob_id)
+        sender_local_key_id = my_keys.get_local_key_id(sender)
     if sender_local_key_id is None or recipient_local_key_id is None:
         lg.err('failed to store message because local_key_id is not found, sender=%r recipient=%r' % (
             sender_local_key_id, recipient_local_key_id, ))
-        return False
+        return None
     cur().execute('''INSERT INTO history (
             sender_local_key_id,
             sender_id,
@@ -276,28 +349,30 @@ def insert_message(message_json):
             payload_body
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''', (
         sender_local_key_id,
-        sender_glob_id,
+        sender,
         recipient_local_key_id,
-        recipient_glob_id,
+        recipient,
         0 if direction == 'in' else 1,
         payload_type,
         payload_time,
         payload_message_id,
-        payload_body,
+        data,
     ))
     db().commit()
     conversation_id = update_conversation(sender_local_key_id, recipient_local_key_id, payload_type, payload_time, payload_message_id)
     snap_id = '{}/{}'.format(conversation_id, payload_message_id)
-    listeners.push_snapshot(model_name='message', snap_id=snap_id, data=build_json_message(
-        sender=sender_glob_id,
-        recipient=recipient_glob_id,
+    message_json = build_json_message(
+        sender=sender,
+        recipient=recipient,
         direction=direction,
+        conversation_id=conversation_id,
         message_type=MESSAGE_TYPE_CODES.get(int(payload_type), 'private_message'),
         message_time=payload_time,
         message_id=payload_message_id,
-        data=json.loads(payload_body),
-    ))
-    return True
+        data=data,
+    )
+    listeners.push_snapshot(model_name='message', snap_id=snap_id, created=payload_time, data=message_json)
+    return message_json
 
 
 def update_conversation(sender_local_key_id, recipient_local_key_id, payload_type, payload_time, payload_message_id):
@@ -319,7 +394,7 @@ def update_conversation(sender_local_key_id, recipient_local_key_id, payload_typ
     cur().execute(sql, params)
     db().commit()
     if not found_conversation:
-        listeners.push_snapshot(model_name='conversation', snap_id=conversation_id, data=record_to_json(
+        listeners.push_snapshot(model_name='conversation', snap_id=conversation_id, data=build_json_conversation(
             conversation_id=conversation_id,
             type=MESSAGE_TYPE_CODES.get(int(payload_type), 'private_message'),
             started=payload_time,
@@ -330,8 +405,6 @@ def update_conversation(sender_local_key_id, recipient_local_key_id, payload_typ
 
 
 def query_messages(sender_id=None, recipient_id=None, bidirectional=True, order_by_time=True, message_types=[], offset=None, limit=None, raw_results=False):
-    """
-    """
     sql = 'SELECT * FROM history'
     q = ''
     params = []
@@ -388,7 +461,7 @@ def query_messages(sender_id=None, recipient_id=None, bidirectional=True, order_
         if recipient_local_key_id not in local_key_ids:
             local_key_ids[recipient_local_key_id] = my_keys.get_local_key(recipient_local_key_id)
         if not local_key_ids.get(sender_local_key_id) or not local_key_ids.get(recipient_local_key_id):
-            lg.warn('unknown sender or recipient local key_id')
+            # lg.warn('unknown sender or recipient local key_id')
             continue
         if raw_results:
             if order_by_time:
@@ -400,6 +473,7 @@ def query_messages(sender_id=None, recipient_id=None, bidirectional=True, order_
             sender=sender_id_recorded,
             recipient=recipient_id_recorded,
             direction='in' if row[4] == 0 else 'out',
+            conversation_id=get_conversation_id(sender_local_key_id, recipient_local_key_id, int(row[5])),
             message_type=MESSAGE_TYPE_CODES.get(int(row[5]), 'private_message'),
             message_time=row[6],
             message_id=row[7],
@@ -582,75 +656,6 @@ def check_create_rename_key(new_public_key, new_key_id, new_local_key_id):
 
 #------------------------------------------------------------------------------
 
-def record_to_json(**record):
-    conv = {
-        'key_id': '',
-        'label': '',
-        'state': 'OFFLINE',
-        'index': None,
-        'id': None,
-        'name': None,
-        'repr': None,
-        'events': None,
-    }
-    conv.update(record)
-    if conv['type'] == 'private_message':
-        local_key_id1, _, local_key_id2 = conv['conversation_id'].partition('&')
-        try:
-            local_key_id1 = int(local_key_id1)
-            local_key_id2 = int(local_key_id2)
-        except:
-            lg.exc()
-            return None
-        usr1 = my_keys.get_local_key(local_key_id1)
-        usr2 = my_keys.get_local_key(local_key_id2)
-        if not usr1 or not usr2:
-            # lg.warn('%r %r : not found sender or recipient key_id for %r' % (usr1, usr2, conv, ))
-            return None
-        usr1 = usr1.replace('master$', '')
-        usr2 = usr2.replace('master$', '')
-        idurl1 = global_id.glob2idurl(usr1, as_field=True)
-        idurl2 = global_id.glob2idurl(usr2, as_field=True)
-        conv_key_id = None
-        conv_label = None
-        user_idurl = None
-        if (id_url.is_cached(idurl1) and idurl1 == my_id.getIDURL()) or usr1.split('@')[0] == my_id.getIDName():
-            user_idurl = idurl2
-            conv_key_id = global_id.UrlToGlobalID(idurl2, include_key=True)
-            conv_label = conv_key_id.replace('master$', '').split('@')[0]
-        if (id_url.is_cached(idurl2) and idurl2 == my_id.getIDURL()) or usr2.split('@')[0] == my_id.getIDName():
-            user_idurl = idurl1
-            conv_key_id = global_id.UrlToGlobalID(idurl1, include_key=True)
-            conv_label = conv_key_id.replace('master$', '').split('@')[0]
-        if conv_key_id:
-            conv['key_id'] = conv_key_id
-        if conv_label:
-            conv['label'] = conv_label
-        else:
-            conv['label'] = conv_key_id
-        if user_idurl:
-            on_st = online_status.getInstance(user_idurl, autocreate=False)
-            if on_st:
-                conv.update(on_st.to_json())
-    elif conv['type'] == 'group_message' or conv['type'] == 'personal_message':
-        local_key_id, _, _ = conv['conversation_id'].partition('&')
-        try:
-            local_key_id = int(local_key_id)
-        except:
-            lg.exc()
-            return None
-        key_id = my_keys.get_local_key(local_key_id)
-        if not key_id:
-            # lg.warn('key_id was not found for %r' % conv)
-            return None
-        conv['key_id'] = key_id
-        conv['label'] = my_keys.get_label(key_id) or key_id
-        gm = group_member.get_active_group_member(key_id)
-        if gm:
-            conv.update(gm.to_json())
-    return conv
-
-
 def fetch_conversations(order_by_time=True, message_types=[], offset=None, limit=None):
     conversations = []
     for conv_record in list(list_conversations(
@@ -659,7 +664,7 @@ def fetch_conversations(order_by_time=True, message_types=[], offset=None, limit
         offset=offset,
         limit=limit,
     )):
-        conv = record_to_json(**conv_record)
+        conv = build_json_conversation(**conv_record)
         if conv:
             if conv['key_id']:
                 conversations.append(conv)
@@ -678,7 +683,7 @@ def populate_conversations(message_types=[], offset=0, limit=100, order_by_time=
         listeners.push_snapshot(model_name='conversation', snap_id=conv['conversation_id'], data=conv)
 
 
-def populate_messages(recipient_id=None, sender_id=None, message_type=None, offset=0, limit=100):
+def populate_messages(recipient_id=None, sender_id=None, message_types=[], offset=0, limit=100):
     if recipient_id:
         if not recipient_id.count('@'):
             from contacts import contactsdb
@@ -695,11 +700,6 @@ def populate_messages(recipient_id=None, sender_id=None, message_type=None, offs
         if not my_keys.is_valid_key_id(recipient_id):
             lg.err('invalid recipient_id: %s' % recipient_id)
             return
-    bidirectional = False
-    if message_type in [None, 'private_message', ]:
-        bidirectional = True
-        if sender_id is None:
-            sender_id = my_id.getGlobalID(key_alias='master')
     if sender_id:
         sender_local_key_id = my_keys.get_local_key_id(sender_id)
         if sender_local_key_id is None:
@@ -712,20 +712,21 @@ def populate_messages(recipient_id=None, sender_id=None, message_type=None, offs
     for row in query_messages(
         sender_id=sender_id,
         recipient_id=recipient_id,
-        bidirectional=bidirectional,
-        message_types=[message_type, ] if message_type else [],
+        bidirectional=False,
+        message_types=message_types,
         offset=offset,
         limit=limit,
         raw_results=True,
     ):
-        conversation_id = get_conversation_id(row[0], row[2], row[5])
+        conversation_id = get_conversation_id(row[0], row[2], int(row[5]))
         if conversation_id is None:
             continue
         snap_id = '{}/{}'.format(conversation_id, row[7])
-        listeners.push_snapshot(model_name='message', snap_id=snap_id, data=build_json_message(
+        listeners.push_snapshot(model_name='message', snap_id=snap_id, created=row[6], data=build_json_message(
             sender=row[1],
             recipient=row[3],
             direction='in' if row[4] == 0 else 'out',
+            conversation_id=conversation_id,
             message_type=MESSAGE_TYPE_CODES.get(int(row[5]), 'private_message'),
             message_time=row[6],
             message_id=row[7],

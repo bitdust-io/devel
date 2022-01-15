@@ -85,16 +85,12 @@ _LocalKeysIndex = {}
 #------------------------------------------------------------------------------
 
 def init():
-    """
-    """
     if _Debug:
         lg.out(_DebugLevel, 'my_keys.init')
     scan_local_keys()
 
 
 def shutdown():
-    """
-    """
     global _LatestLocalKeyID
     if _Debug:
         lg.out(_DebugLevel, 'my_keys.shutdown')
@@ -173,8 +169,6 @@ def is_key_registered(key_id, include_master=True):
 
 
 def is_key_private(key_id, include_master=True):
-    """
-    """
     if not is_key_registered(key_id):
         return False
     if include_master:
@@ -238,8 +232,6 @@ def split_key_id(key_id, as_field=True):
 
 
 def is_valid_key_id(global_key_id):
-    """
-    """
     parts = global_id.ParseGlobalID(global_key_id)
     if not parts['key_alias']:
         lg.warn('no key_alias found in the input')
@@ -283,8 +275,6 @@ def get_creator_idurl(key_id, as_field=True):
 #------------------------------------------------------------------------------
 
 def scan_local_keys(keys_folder=None):
-    """
-    """
     global _LatestLocalKeyID
     if not keys_folder:
         keys_folder = settings.KeyStoreDir()
@@ -337,8 +327,6 @@ def scan_local_keys(keys_folder=None):
 
 
 def read_key_file(key_id, keys_folder=None):
-    """
-    """
     if not keys_folder:
         keys_folder = settings.KeyStoreDir()
     key_filepath = os.path.join(keys_folder, '%s.private' % key_id)
@@ -369,8 +357,6 @@ def read_key_file(key_id, keys_folder=None):
 
 
 def load_key(key_id, keys_folder=None):
-    """
-    """
     global _LatestLocalKeyID
     if not is_valid_key_id(key_id):
         lg.warn('key is not valid: %r' % key_id)
@@ -416,8 +402,6 @@ def load_key(key_id, keys_folder=None):
 
 
 def save_key(key_id, keys_folder=None):
-    """
-    """
     key_object = known_keys()[key_id]
     if key_object is None:
         lg.warn('can not save key %s because it is not loaded yet' % key_id)
@@ -445,8 +429,6 @@ def save_key(key_id, keys_folder=None):
 
 
 def save_keys_local(keys_folder=None):
-    """
-    """
     if not keys_folder:
         keys_folder = settings.KeyStoreDir()
     if _Debug:
@@ -461,8 +443,6 @@ def save_keys_local(keys_folder=None):
 
 
 def save_latest_local_key_id(keys_folder=None):
-    """
-    """
     global _LatestLocalKeyID
     if not keys_folder:
         keys_folder = settings.KeyStoreDir()
@@ -475,8 +455,6 @@ def save_latest_local_key_id(keys_folder=None):
 #------------------------------------------------------------------------------
 
 def generate_key(key_id, label='', key_size=4096, keys_folder=None):
-    """
-    """
     global _LatestLocalKeyID
     key_id = latest_key_id(key_id)
     if is_key_registered(key_id):
@@ -512,8 +490,6 @@ def generate_key(key_id, label='', key_size=4096, keys_folder=None):
 
 
 def register_key(key_id, key_object_or_string, label='', keys_folder=None):
-    """
-    """
     global _LatestLocalKeyID
     key_id = latest_key_id(key_id)
     if is_key_registered(key_id):
@@ -568,8 +544,6 @@ def register_key(key_id, key_object_or_string, label='', keys_folder=None):
 
 
 def erase_key(key_id, keys_folder=None):
-    """
-    """
     key_id = latest_key_id(key_id)
     if not is_key_registered(key_id):
         lg.warn('key %s is not registered' % key_id)
@@ -594,7 +568,7 @@ def erase_key(key_id, keys_folder=None):
     if _Debug:
         lg.out(_DebugLevel, '    key %s removed, file %s deleted' % (key_id, key_filepath))
     events.send('key-erased', data=dict(key_id=key_id, is_private=is_private))
-    listeners.push_snapshot('key', snap_id=key_id, data=make_key_info(
+    listeners.push_snapshot('key', snap_id=key_id, deleted=True, data=make_key_info(
         key_object=None,
         key_id=key_id,
         event='key-erased',
@@ -607,8 +581,6 @@ def erase_key(key_id, keys_folder=None):
 
 
 def validate_key(key_object):
-    """
-    """
     sample_data = strng.to_bin(base64.b64encode(os.urandom(256)))
     sample_hash_base = hashes.sha1(sample_data, hexdigest=True)
     sample_signature = key_object.sign(sample_hash_base)
@@ -624,8 +596,6 @@ def validate_key(key_object):
 
 
 def rename_key(current_key_id, new_key_id, keys_folder=None):
-    """
-    """
     if not keys_folder:
         keys_folder = settings.KeyStoreDir()
     if current_key_id not in known_keys():
@@ -811,8 +781,6 @@ def decrypt(key_id, inp):
 #------------------------------------------------------------------------------
 
 def serialize_key(key_id):
-    """
-    """
     key_id = latest_key_id(key_id)
     if not is_key_registered(key_id):
         raise Exception('key %s is not registered' % key_id)
@@ -824,8 +792,6 @@ def serialize_key(key_id):
 
 
 def unserialize_key_to_object(raw_string):
-    """
-    """
     try:
         key_object = rsa_key.RSAKey()
         key_object.fromString(raw_string)

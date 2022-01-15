@@ -80,22 +80,26 @@ def shutdown():
 
 class Snapshot(object):
 
-    def __init__(self, model_name, snap_id=None, data=None, created=None):
+    def __init__(self, model_name, snap_id=None, data=None, created=None, deleted=False):
         self.model_name = model_name
         self.snap_id = snap_id
         self.data = data
         self.created = created or utime.get_sec1970()
+        self.deleted = deleted
 
     def __repr__(self):
         return '<{}:{}>'.format(self.model_name, self.snap_id)
 
     def to_json(self):
-        return {
+        j = {
             'name': self.model_name,
             'id': self.snap_id,
             'data': self.data,
             'created': self.created,
         }
+        if self.deleted:
+            j['deleted'] = utime.get_sec1970()
+        return j
 
 #------------------------------------------------------------------------------
 
@@ -166,8 +170,8 @@ def dispatch_snapshot(snap):
     return handled
 
 
-def push_snapshot(model_name, snap_id=None, data=None, created=None, fast=False):
-    snap = Snapshot(model_name, snap_id=snap_id, data=data, created=created)
+def push_snapshot(model_name, snap_id=None, data=None, created=None, deleted=False, fast=False):
+    snap = Snapshot(model_name, snap_id=snap_id, data=data, created=created, deleted=deleted)
     if fast:
         dispatch_snapshot(snap)
     else:
