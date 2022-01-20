@@ -69,6 +69,7 @@ from system import bpio
 
 from main import config
 from main import events
+from main import listeners
 
 #------------------------------------------------------------------------------
 
@@ -663,10 +664,23 @@ def get_attached_dht_layers(services_list=[]):
 
 #------------------------------------------------------------------------------
 
+def populate_all_services():
+    services_list = reversed(boot_up_order())
+    for name in services_list:
+        svc = services().get(name, None)
+        if not svc:
+            continue
+        svc_data = svc.to_json()
+        svc_data['event'] = None
+        listeners.push_snapshot(
+            model_name='service',
+            snap_id=name,
+            data=svc_data,
+        )
+
+#------------------------------------------------------------------------------
 
 def on_service_callback(result, service_name):
-    """
-    """
     if _Debug:
         lg.out(_DebugLevel, 'driver.on_service_callback %s : [%s]' % (service_name, result))
     svc = services().get(service_name, None)
@@ -712,6 +726,13 @@ def on_service_callback(result, service_name):
             if not depend_service:
                 raise ServiceNotFound(depend_name)
             depend_service.automat('depend-service-stopped')
+    svc_data = svc.to_json()
+    svc_data['event'] = result
+    listeners.push_snapshot(
+        model_name='service',
+        snap_id=service_name,
+        data=svc_data,
+    )
     return result
 
 

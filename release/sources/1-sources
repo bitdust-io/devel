@@ -1,8 +1,5 @@
 #!/bin/sh
 
-cd ~/bitdust/release/sources
-
-
 echo '[ run "python setup.py sdist" ]'
 rm -rf bitdust.tar.gz
 cd workspace

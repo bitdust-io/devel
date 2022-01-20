@@ -313,6 +313,13 @@ def on_online_status_changed(status_info):
         'payload': status_info,
     })
 
+
+def on_model_changed(snapshot_object):
+    return push({
+        'type': 'model',
+        'payload': snapshot_object.to_json(),
+    })
+
 #------------------------------------------------------------------------------
 
 def push(json_data):

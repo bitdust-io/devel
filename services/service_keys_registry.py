@@ -50,10 +50,15 @@ class KeysRegistryService(LocalService):
 
     def start(self):
         from transport import callback
+        from main import listeners
+        from crypt import my_keys
         from access import key_ring
         key_ring.init()
         callback.add_outbox_callback(self._on_outbox_packet_sent)
         callback.append_inbox_callback(self._on_inbox_packet_received)
+        if listeners.is_populate_requered('key'):
+            listeners.populate_later().remove('key')
+            my_keys.populate_all_keys()
         return True
 
     def stop(self):

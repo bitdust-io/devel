@@ -1,6 +1,5 @@
 #!/bin/bash
 
-cd ~/bitdust/release/sources
 
 echo "[ prepare workspace folder ]"
 rm -rf workspace
@@ -21,8 +20,25 @@ perl -i -pe $regexp workspace/setup.py
 
 echo "[ remove some files ]"
 cd workspace/bitdust
-rm -v commit.bat
-rm -v commit.sh
+rm -rfv .dockerignore
+rm -rfv .editorconfig
+rm -rfv .gitignore
+rm -rfv .circleci
+rm -rfv Dockerfile
+rm -rfv history
+rm -rfv Makefile
+rm -rfv networks.json
+rm -rfv .travis.yml
+rm -rfv MANIFEST.in
+rm -rfv setup.py
+rm -rfv setup_gen.py
+rm -rfv setup.cfg
+rm -rfv commit.sh
+rm -rfv devops/
+rm -rfv regress/
+rm -rfv tests/dht/
+rm -rfv tests/experiments/
+rm -rfv scripts/
 rm -rf screenshots/*
 rm -vrf screenshots
 rm -rf release/*
@@ -36,9 +52,8 @@ rm -fr web/html/*
 
 echo "[ move some files to the top level ]"
 mv -v *.txt ..
+mv -v *.md ..
 
 cd ..
 cd ..
 echo "[ sources done ]"
-
-

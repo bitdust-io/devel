@@ -187,6 +187,60 @@ def ERROR(errors=[], message=None, status='ERROR', reason=None, details=None, **
 
 #------------------------------------------------------------------------------
 
+def enable_model_listener(model_name, request_all=False):
+    """
+    When using WebSocket API interface you can get advantage of real-time data streaming and receive additional information when certain things
+    are changing in the engine. Any updates to those instances will be automatically populated to the WebSocket connection.
+
+    For each model this method suppose to be called only once to switch on the live streaming for that data type.
+
+    When `request_all=True` the engine will immediately populate one time all of the data objects of given type to the WebSocket.
+    This way client will be able to catch and store everything on the front-side and after that use only live streaming to receive the updates for given data model.
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "enable_model_listener", "kwargs": {"model_name": "key"} }');
+    """
+    from main import listeners
+    from interface import api_web_socket
+    listeners.add_listener(api_web_socket.on_model_changed, model_name)
+    if not request_all:
+        return OK()
+    if model_name == 'service':
+        driver.populate_all_services()
+    elif model_name == 'key':
+        if driver.is_on('service_keys_registry'):
+            from crypt import my_keys
+            my_keys.populate_all_keys()
+        else:
+            listeners.populate_later('key')
+    elif model_name == 'conversation':
+        if driver.is_on('service_message_history'):
+            from chat import message_database
+            message_database.populate_conversations()
+        else:
+            listeners.populate_later('conversation')
+    elif model_name == 'message':
+        if driver.is_on('service_message_history'):
+            from chat import message_database
+            message_database.populate_messages()
+        else:
+            listeners.populate_later('message')
+    return OK()
+
+
+def disable_model_listener(model_name):
+    """
+    Stop live streaming of all updates regarding given data type to the WebSocket connection.
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "disable_model_listener", "kwargs": {"model_name": "key"} }');
+    """
+    from main import listeners
+    from interface import api_web_socket
+    listeners.remove_listener(api_web_socket.on_model_changed, model_name)
+    return OK()
+
+#------------------------------------------------------------------------------
 
 def process_stop(instant=True):
     """
@@ -828,8 +882,8 @@ def keys_list(sort=False, include_private=False):
     from crypt import my_keys
     r = []
     for key_id, key_object in my_keys.known_keys().items():
-        if not key_object:
-            key_object = my_keys.key_obj(key_id)
+        # if not key_object:
+        #     key_object = my_keys.key_obj(key_id)
         key_alias, creator_idurl = my_keys.split_key_id(key_id)
         if not key_alias or not creator_idurl:
             lg.warn('incorrect key_id: %s' % key_id)
@@ -3268,85 +3322,12 @@ def message_conversations_list(message_types=[], offset=0, limit=100):
     if not driver.is_on('service_message_history'):
         return ERROR('service_message_history() is not started')
     from chat import message_database
-    from crypt import my_keys
-    from p2p import online_status
-    from access import group_member
-    from userid import global_id
-    from userid import id_url
-    from userid import my_id
-    conversations = []
-    for conv in list(message_database.list_conversations(
+    conversations = message_database.fetch_conversations(
         order_by_time=True,
         message_types=message_types,
         offset=offset,
         limit=limit,
-    )):
-        conv['key_id'] = ''
-        conv['label'] = ''
-        conv['state'] = 'OFFLINE'
-        conv['index'] = None
-        conv['id'] = None
-        conv['name'] = None
-        conv['repr'] = None
-        conv['events'] = None
-        if conv['type'] == 'private_message':
-            local_key_id1, _, local_key_id2 = conv['conversation_id'].partition('&')
-            try:
-                local_key_id1 = int(local_key_id1)
-                local_key_id2 = int(local_key_id2)
-            except:
-                lg.exc()
-                continue
-            usr1 = my_keys.get_local_key(local_key_id1)
-            usr2 = my_keys.get_local_key(local_key_id2)
-            if not usr1 or not usr2:
-                # lg.warn('%r %r : not found sender or recipient key_id for %r' % (usr1, usr2, conv, ))
-                continue
-            usr1 = usr1.replace('master$', '')
-            usr2 = usr2.replace('master$', '')
-            idurl1 = global_id.glob2idurl(usr1, as_field=True)
-            idurl2 = global_id.glob2idurl(usr2, as_field=True)
-            conv_key_id = None
-            conv_label = None
-            user_idurl = None
-            if (id_url.is_cached(idurl1) and idurl1 == my_id.getIDURL()) or usr1.split('@')[0] == my_id.getIDName():
-                user_idurl = idurl2
-                conv_key_id = global_id.UrlToGlobalID(idurl2, include_key=True)
-                conv_label = conv_key_id.replace('master$', '').split('@')[0]
-            if (id_url.is_cached(idurl2) and idurl2 == my_id.getIDURL()) or usr2.split('@')[0] == my_id.getIDName():
-                user_idurl = idurl1
-                conv_key_id = global_id.UrlToGlobalID(idurl1, include_key=True)
-                conv_label = conv_key_id.replace('master$', '').split('@')[0]
-            if conv_key_id:
-                conv['key_id'] = conv_key_id
-            if conv_label:
-                conv['label'] = conv_label
-            else:
-                conv['label'] = conv_key_id
-            if user_idurl:
-                on_st = online_status.getInstance(user_idurl, autocreate=False)
-                if on_st:
-                    conv.update(on_st.to_json())
-        elif conv['type'] == 'group_message' or conv['type'] == 'personal_message':
-            local_key_id, _, _ = conv['conversation_id'].partition('&')
-            try:
-                local_key_id = int(local_key_id)
-            except:
-                lg.exc()
-                continue
-            key_id = my_keys.get_local_key(local_key_id)
-            if not key_id:
-                # lg.warn('key_id was not found for %r' % conv)
-                continue
-            conv['key_id'] = key_id
-            conv['label'] = my_keys.get_label(key_id) or key_id
-            gm = group_member.get_active_group_member(key_id)
-            if gm:
-                conv.update(gm.to_json())
-        if conv['key_id']:
-            conversations.append(conv)
-        else:
-            lg.warn('unknown key_id for %r' % conv)
+    )
     if _Debug:
         lg.out(_DebugLevel, 'api.message_conversations with message_types=%s found %d conversations' % (
             message_types, len(conversations), ))
@@ -4517,7 +4498,7 @@ def event_send(event_id, data=None):
     Method will generate and inject a new event inside the main process.
 
     This method is provided for testing and development purposes.
-    
+
     ###### HTTP
         curl -X POST 'localhost:8180/event/send/client-event-abc/v1' -d '{"data": {"some_key": "some_value"}}'
 

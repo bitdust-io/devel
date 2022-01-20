@@ -75,8 +75,6 @@ def shutdown():
 #------------------------------------------------------------------------------
 
 def on_consume_user_messages(json_messages):
-    """
-    """
     for json_message in json_messages:
         try:
             msg_type = json_message.get('type', '')
@@ -101,8 +99,6 @@ def on_consume_user_messages(json_messages):
 #------------------------------------------------------------------------------
 
 def cache_message(data, message_id, sender_id, recipient_id, message_type=None, direction=None):
-    """
-    """
     if _Debug:
         lg.args(_DebugLevel, message_id=message_id, sender_id=sender_id, recipient_id=recipient_id, message_type=message_type)
     if message_type == 'private_message':
@@ -137,10 +133,7 @@ def cache_message(data, message_id, sender_id, recipient_id, message_type=None, 
 #------------------------------------------------------------------------------
 
 def store_message(data, message_id, sender_id, recipient_id, message_type=None, direction=None):
-    if _Debug:
-        lg.out(_DebugLevel, 'message_keeper.store_message [%s]:%s from %r to %r' % (
-            message_type, message_id, sender_id, recipient_id, ))
-    message_json = message_database.build_json_message(
+    message_json = message_database.insert_message(
         data=data,
         message_id=message_id,
         sender=sender_id,
@@ -148,6 +141,11 @@ def store_message(data, message_id, sender_id, recipient_id, message_type=None, 
         message_type=message_type,
         direction=direction,
     )
-    message_database.insert_message(message_json)
+    if not message_json:
+        lg.warn('message %r was not stored' % message_id)
+        return message_json
     api_web_socket.on_stream_message(message_json)
-    return True
+    if _Debug:
+        lg.out(_DebugLevel, 'message_keeper.store_message [%s]:%s from %r to %r' % (
+            message_type, message_id, sender_id, recipient_id, ))
+    return message_json
