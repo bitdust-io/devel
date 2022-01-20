@@ -249,3 +249,6 @@ no_debug:
 		find . -type f -name "*.py" -exec sed -i -e 's/_Debug = True/_Debug = False/g' {} +;\
 	fi;
 	@echo 'all ".py" local files were updated with "_Debug = False"'
+
+pypi_build_publish:
+	@sh -c "cd release/; ./VERSION-UP.sh; cd sources/; ./build; ./dist; #./publish;"
