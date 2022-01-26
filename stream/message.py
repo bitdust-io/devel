@@ -443,7 +443,7 @@ def do_send_message(json_data, recipient_global_id, packet_id, message_ack_timeo
 
 
 def send_message(json_data, recipient_global_id, packet_id=None,
-                 message_ack_timeout=None, ping_timeout=20, ping_retries=0,
+                 message_ack_timeout=None, ping_timeout=15, ping_retries=0,
                  skip_handshake=False, fire_callbacks=True, require_handshake=False):
     """
     Send command.Message() packet to remote peer. Returns Deferred object.

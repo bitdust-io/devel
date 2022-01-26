@@ -3006,7 +3006,7 @@ def friend_remove(user_id):
 
 #------------------------------------------------------------------------------
 
-def user_ping(user_id, timeout=15, retries=2):
+def user_ping(user_id, timeout=15, retries=1):
     """
     Sends `Identity` packet to remote peer and wait for an `Ack` packet to check connection status.
 
@@ -3334,7 +3334,7 @@ def message_conversations_list(message_types=[], offset=0, limit=100):
     return RESULT(conversations)
 
 
-def message_send(recipient_id, data, ping_timeout=30, message_ack_timeout=15):
+def message_send(recipient_id, data, ping_timeout=15, message_ack_timeout=15):
     """
     Sends a private message to remote peer, `recipient_id` is a string with a nickname, global_id or IDURL of the remote user.
 

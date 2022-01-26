@@ -525,7 +525,7 @@ def SendToIDs(idlist, wide=False, ack_handler=None, timeout_handler=None, respon
 
 #------------------------------------------------------------------------------
 
-def ping_suppliers(customer_idurl=None, timeout=30):
+def ping_suppliers(customer_idurl=None, timeout=20):
     from p2p import online_status
     l = []
     for supplier_idurl in contactsdb.suppliers(customer_idurl=customer_idurl):
@@ -534,7 +534,7 @@ def ping_suppliers(customer_idurl=None, timeout=30):
     return DeferredList(l, consumeErrors=True)
 
 
-def ping_customers(timeout=30):
+def ping_customers(timeout=20):
     from p2p import online_status
     l = []
     for customer_idurl in contactsdb.customers():
