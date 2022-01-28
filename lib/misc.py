@@ -1055,9 +1055,6 @@ def DoRestart(param='', detach=False, std_out='/dev/null', std_err='/dev/null'):
             # lg.out(2, "misc.DoRestart cmdargs="+str(cmdargs))
             return os.spawnve(os.P_DETACH, starter_filepath, cmdargs, os.environ)  # @UndefinedVariable
 
-        lg.out(2, "misc.DoRestart under Windows param=%s" % param)
-        lg.out(2, "misc.DoRestart sys.executable=" + sys.executable)
-        lg.out(2, "misc.DoRestart sys.argv=" + str(sys.argv))
         pypath = sys.executable
         cmdargs = [sys.executable, ]
         cmdargs.append(sys.argv[0])
@@ -1073,14 +1070,9 @@ def DoRestart(param='', detach=False, std_out='/dev/null', std_err='/dev/null'):
         if detach:
             from system import child_process
             cmdargs = [strng.to_text(a) for a in cmdargs]
-            lg.out(0, 'run : %r' % cmdargs)
             return child_process.detach(cmdargs)
-        lg.out(2, "misc.DoRestart cmdargs=" + str(cmdargs))
         return os.execvpe(pypath, cmdargs, os.environ)
 
-    lg.out(2, "misc.DoRestart under Linux param=%s" % param)
-    lg.out(2, "misc.DoRestart sys.executable=" + sys.executable)
-    lg.out(2, "misc.DoRestart sys.argv=" + str(sys.argv))
     pypyth = sys.executable
     cmdargs = [sys.executable, ]
     if sys.argv[0] == '/usr/share/bitdust/bitdust.py':
@@ -1097,7 +1089,6 @@ def DoRestart(param='', detach=False, std_out='/dev/null', std_err='/dev/null'):
         cmdargs.remove('daemon')
     pid = os.fork()
     if pid != 0:
-        lg.out(2, "misc.DoRestart os.fork returned: " + str(pid))
         return None
     if detach:
         cmdargs[1] = os.path.abspath(cmdargs[1])
@@ -1110,9 +1101,7 @@ def DoRestart(param='', detach=False, std_out='/dev/null', std_err='/dev/null'):
         BITDUST_LOG_USE_COLORS = os.environ.get('BITDUST_LOG_USE_COLORS')
         if BITDUST_LOG_USE_COLORS:
             cmd = 'BITDUST_LOG_USE_COLORS="%s" %s' % (BITDUST_LOG_USE_COLORS, cmd, )
-        lg.out(2, "misc.DoRestart cmd: [%s]" % cmd)
         return os.system(cmd)
-    lg.out(2, "misc.DoRestart cmdargs=" + str(cmdargs))
     return os.execvpe(pypyth, cmdargs, os.environ)
 
 
