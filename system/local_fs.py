@@ -121,6 +121,8 @@ def ReadBinaryFile(filename, decode_encoding=None):
     - some read error happens
     - file is really empty
     """
+    if not filename:
+        return b''
     if not os.path.isfile(filename):
         return b''
     if not os.access(filename, os.R_OK):
@@ -174,6 +176,8 @@ def ReadTextFile(filename):
     """
     Read text file and return its content.
     """
+    if not filename:
+        return u''
     global _PlatformInfo
     if _PlatformInfo is None:
         _PlatformInfo = platform.uname()
