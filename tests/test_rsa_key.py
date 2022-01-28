@@ -7,11 +7,11 @@ from crypt import cipher
 class Test(TestCase):
 
     def test_generate_sign_verify(self):
-        return
         msg = b'1234567890ABCDEFGH'
         k1 = rsa_key.RSAKey()
         k1.generate(1024)
         sig = k1.sign(msg)
+        assert k1.verify(sig, msg, signature_as_digits=True)
         k2 = rsa_key.RSAKey()
         k2.fromString(k1.toPublicString())
         assert k2.verify(sig, msg) is True
