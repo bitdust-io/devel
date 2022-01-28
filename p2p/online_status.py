@@ -219,7 +219,7 @@ def ping(idurl, channel=None, ack_timeout=15, ping_retries=0, keep_alive=False):
     return result
 
 
-def handshake(idurl, channel=None, ack_timeout=20, ping_retries=2, keep_alive=False):
+def handshake(idurl, channel=None, ack_timeout=15, ping_retries=2, keep_alive=False):
     """
     Immediately doing handshake with remote node by fetching remote identity file and then
     sending my own Identity() to remote peer and wait for an Ack() packet.
@@ -724,7 +724,7 @@ class OnlineStatus(automat.Automat):
         Action method.
         """
         channel = kwargs.get('channel', None)
-        ack_timeout = kwargs.get('ack_timeout', 30)
+        ack_timeout = kwargs.get('ack_timeout', 15)
         ping_retries = kwargs.get('ping_retries', 2)
         original_idurl = kwargs.get('original_idurl', self.idurl.to_bin())
         d = None

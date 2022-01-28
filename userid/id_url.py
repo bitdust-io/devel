@@ -125,8 +125,8 @@ def init():
                 if not known_id_obj.Valid():
                     raise Exception('identity history in %r is broken, identity is not valid: %r' % (
                         one_user_dir, one_ident_path))
-            except:
-                lg.exc()
+            except Exception as exc:
+                lg.warn(str(exc))
                 for_cleanup.append(one_ident_path)
                 continue
             one_pub_key = known_id_obj.getPublicKey()
@@ -165,8 +165,9 @@ def init():
                         _KnownSources[one_pub_key].append(one_source)
                         if _Debug:
                             lg.out(_DebugLevel, '    new source %r added for %r' % (one_source, one_pub_key[-10:], ))
-    for one_ident_file in for_cleanup:
+    for one_ident_path in for_cleanup:
         if os.path.isfile(one_ident_path):
+            lg.warn('about to erase broken historical identity file: %r' % one_ident_path)
             try:
                 os.remove(one_ident_path)
             except:
@@ -257,7 +258,7 @@ def identity_cached(new_id_obj):
         user_path = _KnownUsers[pub_key]
         user_identity_files = sorted(map(int, os.listdir(user_path)))
         if len(user_identity_files) == 0:
-            raise Exception('identity history for user %r is broken, public key is known, but no identity files found' % user_name)
+            lg.warn('identity history for user %r is broken, public key is known, but no identity files found' % user_name)
         latest_identity_file_path = ''
         latest_pub_key = None
         latest_revision = -1
@@ -285,30 +286,31 @@ def identity_cached(new_id_obj):
                 latest_revision = one_id_obj.getRevisionValue()
                 latest_identity_file_path = identity_file_path
         xmlsrc = local_fs.ReadBinaryFile(latest_identity_file_path)
-        latest_id_obj = identity.identity(xmlsrc=xmlsrc)
-        if latest_id_obj.getPublicKey() != new_id_obj.getPublicKey():
-            raise Exception('identity history for user %r is broken, public key not matching' % user_name)
-        if latest_id_obj.getIDName() != new_id_obj.getIDName():
-            lg.warn('found another user name in identity history for user %r : %r' % (user_name, latest_id_obj.getIDName()))
-        if new_id_obj.getRevisionValue() in known_revisions:
-            if _Debug:
-                lg.out(_DebugLevel, 'id_url.identity_cached revision %d already known for user %r' % (new_id_obj.getRevisionValue(), user_name))
-        else:
-            latest_sources = latest_id_obj.getSources(as_originals=True)
-            new_sources = new_id_obj.getSources(as_originals=True)
-            if latest_sources == new_sources:
-                local_fs.WriteBinaryFile(latest_identity_file_path, new_id_obj.serialize())
+        if xmlsrc:
+            latest_id_obj = identity.identity(xmlsrc=xmlsrc)
+            if latest_id_obj.getPublicKey() != new_id_obj.getPublicKey():
+                raise Exception('identity history for user %r is broken, public key not matching' % user_name)
+            if latest_id_obj.getIDName() != new_id_obj.getIDName():
+                lg.warn('found another user name in identity history for user %r : %r' % (user_name, latest_id_obj.getIDName()))
+            if new_id_obj.getRevisionValue() in known_revisions:
                 if _Debug:
-                    lg.out(_DebugLevel, 'id_url.identity_cached latest identity sources for user %r did not changed, updated file %r' % (
-                        user_name, latest_identity_file_path))
+                    lg.out(_DebugLevel, 'id_url.identity_cached revision %d already known for user %r' % (new_id_obj.getRevisionValue(), user_name))
             else:
-                next_identity_file = user_identity_files[-1] + 1
-                next_identity_file_path = os.path.join(user_path, strng.to_text(next_identity_file))
-                local_fs.WriteBinaryFile(next_identity_file_path, new_id_obj.serialize())
-                is_identity_rotated = True
-                if _Debug:
-                    lg.out(_DebugLevel, 'id_url.identity_cached identity sources for user %r changed, wrote new item in the history: %r' % (
-                        user_name, next_identity_file_path))
+                latest_sources = latest_id_obj.getSources(as_originals=True)
+                new_sources = new_id_obj.getSources(as_originals=True)
+                if latest_sources == new_sources:
+                    local_fs.WriteBinaryFile(latest_identity_file_path, new_id_obj.serialize())
+                    if _Debug:
+                        lg.out(_DebugLevel, 'id_url.identity_cached latest identity sources for user %r did not changed, updated file %r' % (
+                            user_name, latest_identity_file_path))
+                else:
+                    next_identity_file = user_identity_files[-1] + 1
+                    next_identity_file_path = os.path.join(user_path, strng.to_text(next_identity_file))
+                    local_fs.WriteBinaryFile(next_identity_file_path, new_id_obj.serialize())
+                    is_identity_rotated = True
+                    if _Debug:
+                        lg.out(_DebugLevel, 'id_url.identity_cached identity sources for user %r changed, wrote new item in the history: %r' % (
+                            user_name, next_identity_file_path))
     new_revision = new_id_obj.getRevisionValue()
     new_sources = new_id_obj.getSources(as_originals=True)
     for new_idurl in reversed(new_sources):

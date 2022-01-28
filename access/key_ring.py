@@ -228,7 +228,7 @@ def transfer_key(key_id, trusted_idurl, include_private=False, include_signature
     return result
 
 
-def share_key(key_id, trusted_idurl, include_private=False, include_signature=False, timeout=20):
+def share_key(key_id, trusted_idurl, include_private=False, include_signature=False, timeout=15):
     """
     Method to be used to send given key to one trusted user.
     Make sure remote user is identified and connected.

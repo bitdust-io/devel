@@ -406,6 +406,7 @@ class Automat(object):
         """
         global _StateChangedCallback
         global _GlobalLogTransitions
+        global _LogFile
         if self is None:
             self.log(self.debug_level, 'Some crazy stuff happens?')
             return
@@ -418,7 +419,7 @@ class Automat(object):
         if erase_index:
             erase_index(automatid)
         if _GlobalLogTransitions or self.log_transitions:
-            if self.log:
+            if _LogFile:
                 self.log(debug_level, 'DESTROYED AUTOMAT with index %d, total running %d' % (
                     index, len(objects())))
 
@@ -697,8 +698,11 @@ class Automat(object):
                 else:
                     if not isinstance(s, unicode):  # @UndefinedVariable
                         s = s.decode('utf-8')
-                _LogFile.write(s)
-                _LogFile.flush()
+                try:
+                    _LogFile.write(s)
+                    _LogFile.flush()
+                except:
+                    pass
                 _LogsCount += 1
 
     def addStateChangedCallback(self, cb, oldstate=None, newstate=None, callback_id=None):

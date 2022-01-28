@@ -130,10 +130,10 @@ setup(
     },
 
     install_requires=[
-        'Twisted>=20.3.0',
-        'zope.interface>=5.2.0',
-        'cryptography>=3.4.4',
-        'pycryptodomex>=3.10.1',
+        'Twisted==20.3.0',
+        'zope.interface',
+        'cryptography',
+        'pycryptodomex',
         'service_identity',
         'pyparsing',
         'appdirs',
@@ -141,6 +141,11 @@ setup(
         'cffi',
         'six',
         'virtualenv',
+    ],
+
+    scripts=[
+        'scripts/bitdust',
+        'scripts/bitdust_worker',
     ],
 
 )
