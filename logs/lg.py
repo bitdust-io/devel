@@ -328,9 +328,9 @@ def exception(level, maxTBlevel, exc_info, message=None):
             m = '\033[1;31m%s\033[0m' % m
         out(level, m, showtime=True)
     if exc_info is None:
-        _, value, trbk = sys.exc_info()
+        exc_type, value, trbk = sys.exc_info()
     else:
-        _, value, trbk = exc_info
+        exc_type, value, trbk = exc_info
     excArgs = ''
     if value:
         try:
@@ -341,7 +341,7 @@ def exception(level, maxTBlevel, exc_info, message=None):
         excTb = traceback.format_tb(trbk, maxTBlevel)
     else:
         excTb = []
-    exc_name = exception_name(value)
+    exc_name = exception_name(value, exc_type, excTb)
     s = 'Exception: <' + exc_name + '>'
     if _UseColors:
         out(level, '\033[1;31m%s\033[0m' % (s.strip()), showtime=True)
@@ -398,15 +398,15 @@ def format_exception(maxTBlevel=100, exc_info=None):
     Return string with detailed info about last exception.
     """
     if exc_info is None:
-        _, value, trbk = sys.exc_info()
+        exc_type, value, trbk = sys.exc_info()
     else:
-        _, value, trbk = exc_info
+        exc_type, value, trbk = exc_info
     try:
         excArgs = value.__dict__["args"]
     except KeyError:
         excArgs = ''
     excTb = traceback.format_tb(trbk, maxTBlevel)
-    tbstring = 'Exception: <' + exception_name(value) + '>\n'
+    tbstring = 'Exception: <' + exception_name(value, exc_type, excTb) + '>\n'
     if excArgs:
         tbstring += '  args:' + excArgs + '\n'
     for s in excTb:
@@ -414,7 +414,7 @@ def format_exception(maxTBlevel=100, exc_info=None):
     return tbstring
 
 
-def exception_name(value):
+def exception_name(value, e_type, tr_back):
     """
     Some tricks to extract the correct exception name from trace-back string.
     """
@@ -434,6 +434,11 @@ def exception_name(value):
                     excStr = value.message
                 except:
                     excStr = type(value).__name__
+    if not excStr:
+        if tr_back:
+            excStr = tr_back[-1].strip()
+    if not excStr:
+        excStr = str(e_type)
     return excStr
 
 
