@@ -1184,8 +1184,8 @@ def cmd_dhtseed(opts, args, overDict):
         result = misc.DoRestart(
             param='dhtseed',
             detach=True,
-            std_out=os.path.join(appdata, 'logs', 'stdout.log'),
-            std_err=os.path.join(appdata, 'logs', 'stderr.log'),
+            # std_out=os.path.join(appdata, 'logs', 'stdout.log'),
+            # std_err=os.path.join(appdata, 'logs', 'stderr.log'),
         )
         try:
             result = result.pid
@@ -1239,8 +1239,8 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
         print_text('run and detach main BitDust process')
         result = misc.DoRestart(
             detach=True,
-            std_out=os.path.join(appdata, 'logs', 'stdout.log'),
-            std_err=os.path.join(appdata, 'logs', 'stderr.log'),
+            # std_out=os.path.join(appdata, 'logs', 'stdout.log'),
+            # std_err=os.path.join(appdata, 'logs', 'stderr.log'),
         )
         try:
             result = result.pid
@@ -1283,8 +1283,8 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
                 misc.DoRestart,
                 param='show' if ui else '',
                 detach=True,
-                std_out=os.path.join(appdata, 'logs', 'stdout.log'),
-                std_err=os.path.join(appdata, 'logs', 'stderr.log'),
+                # std_out=os.path.join(appdata, 'logs', 'stdout.log'),
+                # std_err=os.path.join(appdata, 'logs', 'stderr.log'),
             )
             reactor.stop()  # @UndefinedVariable
             settings.shutdown()
@@ -1322,8 +1322,8 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
             result = misc.DoRestart(
                 'show',
                 detach=True,
-                std_out=os.path.join(appdata, 'logs', 'stdout.log'),
-                std_err=os.path.join(appdata, 'logs', 'stderr.log'),
+                # std_out=os.path.join(appdata, 'logs', 'stdout.log'),
+                # std_err=os.path.join(appdata, 'logs', 'stderr.log'),
             )
             try:
                 result = result.pid
