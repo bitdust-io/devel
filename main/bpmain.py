@@ -729,6 +729,10 @@ def main(executable_path=None, start_reactor=True):
     if opts.output:
         logpath = opts.output
     else:
+        try:
+            os.makedirs(os.path.join(appdata, 'logs'), exist_ok=True)
+        except:
+            pass
         logpath = os.path.join(appdata, 'logs', 'stdout.log')
 
     need_redirecting = False
@@ -790,11 +794,10 @@ def main(executable_path=None, start_reactor=True):
             return 0
         from lib import misc
         print_text('new BitDust process will be started in daemon mode\n', nl='')
-        bpio.shutdown()
         result = misc.DoRestart(
             detach=True,
-            std_out=os.path.join(appdata, 'logs', 'stdout.log'),
-            std_err=os.path.join(appdata, 'logs', 'stderr.log'),
+            # std_out=os.path.join(appdata, 'logs', 'stdout.log'),
+            # std_err=os.path.join(appdata, 'logs', 'stderr.log'),
         )
         if result is not None:
             try:
@@ -804,6 +807,7 @@ def main(executable_path=None, start_reactor=True):
                     result = result.pid
                 except:
                     pass
+        bpio.shutdown()
         if opts.coverage:
             cov.stop()
             cov.save()
@@ -847,8 +851,8 @@ def main(executable_path=None, start_reactor=True):
                     misc.DoRestart,
                     param='show' if ui else '',
                     detach=True,
-                    std_out=os.path.join(appdata, 'logs', 'stdout.log'),
-                    std_err=os.path.join(appdata, 'logs', 'stderr.log'),
+                    # std_out=os.path.join(appdata, 'logs', 'stdout.log'),
+                    # std_err=os.path.join(appdata, 'logs', 'stderr.log'),
                 )
                 reactor.stop()  # @UndefinedVariable
             try:

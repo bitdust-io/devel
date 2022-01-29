@@ -314,15 +314,15 @@ class Shutdowner(automat.Automat):
             from lib import misc
             from system import bpio
             settings.init()
-            appdata = settings.BaseDir()
+            # appdata = settings.BaseDir()
             detach = False
             if bpio.Windows():
                 detach = True
             misc.DoRestart(
                 param,
                 detach=detach,
-                std_out=os.path.join(appdata, 'logs', 'stdout.log'),
-                std_err=os.path.join(appdata, 'logs', 'stderr.log'),
+                # std_out=os.path.join(appdata, 'logs', 'stdout.log'),
+                # std_err=os.path.join(appdata, 'logs', 'stderr.log'),
             )
             settings.shutdown()
 
