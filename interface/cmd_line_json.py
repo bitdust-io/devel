@@ -688,9 +688,13 @@ def cmd_api(opts, args, overDict, executablePath):
             print_text('\n    %s(%s)' % (item, ', '.join(params.args),))
             print_text('        %s' % doc_line)
         return 0
+    def _clean_value(v):
+        if isinstance(v, str) and v in ['true', 'True', ]:
+            return True
+        return v
     try:
         pairs = [i.split('=') for i in args[2:]]
-        kwargs = {k:v for k, v in pairs}
+        kwargs = {k:_clean_value(v) for k, v in pairs}
     except Exception as e:
         print_text('failed reading input arguments: %s\n' % e)
         return 1
@@ -1317,7 +1321,7 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
             from lib import misc
             from main import settings
             settings.init()
-            appdata = settings.BaseDir()
+            # appdata = settings.BaseDir()
             print_text('run and detach main BitDust process')
             result = misc.DoRestart(
                 'show',
