@@ -61,6 +61,7 @@ if __name__ == '__main__':
 from logs import lg
 
 from lib import net_misc
+from lib import nameurl
 from lib import strng
 
 from userid import identity
@@ -289,7 +290,6 @@ def RemapContactAddress(address):
     if idurl is not None and HasLocalIP(idurl):
         newaddress = (GetLocalIP(idurl), address[1])
         if _Debug:
-            from lib import nameurl
             lg.out(_DebugLevel, 'identitycache.RemapContactAddress for %s [%s] -> [%s]' % (
                 nameurl.GetName(idurl), str(address), str(newaddress)))
         return newaddress

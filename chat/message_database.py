@@ -731,7 +731,6 @@ def populate_messages(recipient_id=None, sender_id=None, message_types=[], offse
             message_time=row[6],
             message_id=row[7],
             data=json.loads(row[8]),
-
         ))
 
 #------------------------------------------------------------------------------

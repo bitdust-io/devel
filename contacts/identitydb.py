@@ -96,10 +96,12 @@ def init():
 
     Check to exist and create a folder to keep all cached identities.
     """
-    lg.out(4, "identitydb.init")
+    if _Debug:
+        lg.out(_DebugLevel, "identitydb.init")
     id_cache_dir = settings.IdentityCacheDir()
     if not os.path.exists(id_cache_dir):
-        lg.out(8, 'identitydb.init create folder %r' % id_cache_dir)
+        if _Debug:
+            lg.out(_DebugLevel, 'identitydb.init create folder %r' % id_cache_dir)
         bpio._dir_make(id_cache_dir)
     # make sure to read and cache all known identities at startup
     for id_filename in os.listdir(id_cache_dir):
@@ -108,10 +110,8 @@ def init():
 
 
 def shutdown():
-    """
-    
-    """
-    lg.out(4, "identitydb.shutdown")
+    if _Debug:
+        lg.out(_DebugLevel, "identitydb.shutdown")
 
 #------------------------------------------------------------------------------
 
@@ -126,7 +126,8 @@ def clear(exclude_list=None):
     global _IdentityCache
     global _IdentityCacheIDs
     global _IdentityCacheModifiedTime
-    lg.out(4, "identitydb.clear")
+    if _Debug:
+        lg.out(_DebugLevel, "identitydb.clear")
     _IdentityCache.clear()
     _IdentityCacheIDs.clear()
     _IdentityCacheModifiedTime.clear()
@@ -264,6 +265,8 @@ def idremove(idurl):
             except:
                 pass
     fire_cache_updated_callbacks(single_item=(identid, None, None))
+    if _Debug:
+        lg.args(_DebugLevel, idurl=idurl)
     return idobj
 
 
@@ -377,7 +380,6 @@ def update(idurl, xml_src):
         oldidentity = identity.identity(xmlsrc=oldidentityxml)
 
         if oldidentity.publickey != newid.publickey:
-            # TODO: SECURITY   add some kind of black list to be able to block certain IP's if they DDoS me?
             if _Debug:
                 lg.args(_DebugLevel, old=oldidentity.publickey, new=newid.publickey)
             lg.exc(exc_value=Exception("received public key from %s does not match with already cached identity" % idurl))
@@ -389,11 +391,9 @@ def update(idurl, xml_src):
         else:
             idset(idurl, newid)
             return True
-
     # public keys are matching so we can update it
     bpio.WriteTextFile(filename, xml_src)
     idset(idurl, newid)
-
     return True
 
 
