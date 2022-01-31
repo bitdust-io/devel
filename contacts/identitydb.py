@@ -62,7 +62,6 @@ from userid import id_url
 # indexed with urls and contains identity objects
 _IdentityCache = {}
 _IdentityCacheIDs = {}
-_IdentityCachePubKeys = {}
 _IdentityCacheCounter = 0
 _IdentityCacheModifiedTime = {}
 _Contact2IDURL = {}
@@ -125,13 +124,11 @@ def clear(exclude_list=None):
     global _IPPort2IDURL
     global _IDURL2Contacts
     global _IdentityCache
-    global _IdentityCachePubKeys
     global _IdentityCacheIDs
     global _IdentityCacheModifiedTime
     if _Debug:
         lg.out(_DebugLevel, "identitydb.clear")
     _IdentityCache.clear()
-    _IdentityCachePubKeys.clear()
     _IdentityCacheIDs.clear()
     _IdentityCacheModifiedTime.clear()
     _Contact2IDURL.clear()
@@ -191,31 +188,14 @@ def idset(idurl, id_obj):
     global _IDURL2Contacts
     global _IPPort2IDURL
     global _IdentityCache
-    global _IdentityCachePubKeys
     global _IdentityCacheIDs
     global _IdentityCacheCounter
     global _IdentityCacheModifiedTime
     idurl = id_url.to_original(idurl)
-
-    old_idurl = _IdentityCachePubKeys.get(id_obj.getPublicKey())
-    if old_idurl and old_idurl != idurl:
-        old_ident = idget(old_idurl)
-        if old_ident:
-            if old_ident.getRevisionValue() > id_obj.getRevisionValue():
-                lg.warn('new identity has lower revision number: %r' % old_idurl)
-                return
-            lg.warn('going to replace old identity in the cache %r' % old_idurl)
-            idremove(old_idurl)
-            try:
-                os.remove(os.path.join(settings.IdentityCacheDir(), nameurl.UrlFilename(old_idurl)))
-            except:
-                lg.exc()
-
     if not has_idurl(idurl):
         if _Debug:
             lg.out(_DebugLevel, 'identitydb.idset new identity: %r' % idurl)
     _IdentityCache[idurl] = id_obj
-    _IdentityCachePubKeys[id_obj.getPublicKey()] = idurl
     _IdentityCacheModifiedTime[idurl] = time.time()
     identid = _IdentityCacheIDs.get(idurl, None)
     if identid is None:
@@ -265,7 +245,6 @@ def idremove(idurl):
     Not remove local file.
     """
     global _IdentityCache
-    global _IdentityCachePubKeys
     global _IdentityCacheIDs
     global _IdentityCacheModifiedTime
     global _Contact2IDURL
@@ -274,7 +253,6 @@ def idremove(idurl):
     idurl = id_url.to_original(idurl)
     idobj = _IdentityCache.pop(idurl, None)
     identid = _IdentityCacheIDs.pop(idurl, None)
-    _IdentityCachePubKeys.pop(idobj.getPublicKey(), None)
     _IdentityCacheModifiedTime.pop(idurl, None)
     _IDURL2Contacts.pop(idurl, None)
     if idobj is not None:
@@ -372,7 +350,6 @@ def update(idurl, xml_src):
     PREPRO need to check that date or version is after old one so not
     vulnerable to replay attacks.
     """
-    global _IdentityCachePubKeys
     idurl = id_url.to_original(idurl)
     try:
         newid = identity.identity(xmlsrc=xml_src)
@@ -397,27 +374,12 @@ def update(idurl, xml_src):
         lg.warn('original IDURL is not matching, updated: %r -> %r' % (idurl, new_idurl, ))
         idurl = new_idurl
 
-    old_idurl = _IdentityCachePubKeys.get(newid.getPublicKey())
-    if old_idurl and old_idurl != idurl:
-        old_ident = idget(old_idurl)
-        if old_ident:
-            if old_ident.getRevisionValue() > newid.getRevisionValue():
-                lg.err('new identity has lower revision number: %r' % old_idurl)
-                return False
-            lg.warn('going to replace old identity in the cache %r' % old_idurl)
-            idremove(old_idurl)
-            try:
-                os.remove(os.path.join(settings.IdentityCacheDir(), nameurl.UrlFilename(old_idurl)))
-            except:
-                lg.exc()
-
     filename = os.path.join(settings.IdentityCacheDir(), nameurl.UrlFilename(idurl))
     if os.path.exists(filename):
         oldidentityxml = bpio.ReadTextFile(filename)
         oldidentity = identity.identity(xmlsrc=oldidentityxml)
 
         if oldidentity.publickey != newid.publickey:
-            # TODO: SECURITY   add some kind of black list to be able to block certain IP's if they DDoS me?
             if _Debug:
                 lg.args(_DebugLevel, old=oldidentity.publickey, new=newid.publickey)
             lg.exc(exc_value=Exception("received public key from %s does not match with already cached identity" % idurl))
@@ -429,11 +391,9 @@ def update(idurl, xml_src):
         else:
             idset(idurl, newid)
             return True
-
     # public keys are matching so we can update it
     bpio.WriteTextFile(filename, xml_src)
     idset(idurl, newid)
-
     return True
 
 
