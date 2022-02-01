@@ -213,7 +213,7 @@ def process(newpacket, info):
             if _Debug:
                 lg.out(_DebugLevel, '    incoming Identity is routed to another user')
             if not p2p_service.Identity(newpacket, send_ack=False):
-                lg.warn('non-valid identity received')
+                lg.warn('received identity was not processed')
                 return None
             # remote peer sending a valid identity to another peer routed via my machine
             # need to handle that packet - it should be processed by proxy_server
@@ -224,7 +224,7 @@ def process(newpacket, info):
         # so we check that his Identity is valid and save it into cache
         # than we check the packet to be valid too.
         if not p2p_service.Identity(newpacket):
-            lg.warn('non-valid identity received')
+            lg.warn('received identity was not processed')
             return None
     if not identitycache.HasKey(newpacket.CreatorID):
         if _Debug:

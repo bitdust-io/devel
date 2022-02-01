@@ -82,8 +82,6 @@ _Ready = False
 #------------------------------------------------------------------------------
 
 def init():
-    """
-    """
     global _IdentityHistoryDir
     global _KnownUsers
     global _KnownIDURLs
@@ -176,8 +174,6 @@ def init():
 
 
 def shutdown():
-    """
-    """
     global _IdentityHistoryDir
     global _KnownIDURLs
     global _KnownUsers
@@ -386,7 +382,7 @@ def identity_cached(new_id_obj):
                             new_revision=new_revision,
                         ))
         else:
-            lg.warn('cached out-dated revision %d for %r' % (new_revision, new_sources[0]))
+            lg.warn('cached out-dated revision %d for %r, most recent revision is %d' % (new_revision, new_sources[0], latest_revision, ))
     else:
         if _Debug:
             lg.out(_DebugLevel, 'id_url.identity_cached revision %d for %r' % (new_revision, new_sources[0]))
@@ -636,6 +632,42 @@ def get_latest_revision(idurl):
             latest_idurl = another_idurl
             latest_rev = rev
     return latest_idurl, latest_rev
+
+
+def get_latest_ident(pub_key):
+    global _KnownUsers
+    from userid import identity
+    user_path = _KnownUsers.get(pub_key)
+    if not user_path:
+        return None
+    user_identity_files = sorted(map(int, os.listdir(user_path)))
+    if len(user_identity_files) == 0:
+        lg.warn('identity history is broken, public key is known, but no identity files found')
+    latest_revision = -1
+    latest_ident = None
+    known_revisions = set()
+    for_cleanup = []
+    for id_file in user_identity_files:
+        identity_file_path = os.path.join(user_path, strng.to_text(id_file))
+        xmlsrc = local_fs.ReadBinaryFile(identity_file_path)
+        one_id_obj = identity.identity(xmlsrc=xmlsrc)
+        if not one_id_obj.isCorrect():
+            lg.warn('identity history is broken, identity in the file %r is not correct' % identity_file_path)
+            for_cleanup.append(identity_file_path)
+            continue
+        if not one_id_obj.Valid():
+            lg.warn('identity history is broken, identity in the file %r is not valid' % identity_file_path)
+            for_cleanup.append(identity_file_path)
+            continue
+        if pub_key != one_id_obj.getPublicKey():
+            lg.err('identity history is broken, public key not matching in the file %r' % identity_file_path)
+            for_cleanup.append(identity_file_path)
+            continue
+        known_revisions.add(one_id_obj.getRevisionValue())
+        if one_id_obj.getRevisionValue() > latest_revision:
+            latest_revision = one_id_obj.getRevisionValue()
+            latest_ident = one_id_obj
+    return latest_ident
 
 
 def list_known_idurls(idurl, num_revisions=5, include_revisions=False):
