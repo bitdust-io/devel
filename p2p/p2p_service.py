@@ -58,12 +58,11 @@ from twisted.internet import reactor  # @UnresolvedImport
 
 from logs import lg
 
-from userid import my_id
-from userid import identity
-
 from contacts import contactsdb
 
 from contacts import identitycache
+
+from main import events
 
 from p2p import commands
 
@@ -75,6 +74,11 @@ from crypt import signed
 from crypt import my_keys
 
 from transport import gateway
+from transport import packet_out
+
+from userid import identity
+from userid import id_url
+from userid import my_id
 
 #------------------------------------------------------------------------------
 
@@ -298,16 +302,30 @@ def Identity(newpacket, send_ack=True):
         # If not valid do nothing
         lg.warn("not Valid packet from %s" % idurl)
         return False
-    # TODO: after receiving full list of identity sources we can call ALL OF THEM or those which are not cached yet.
-    # this way we can be sure that even if first source (server holding your public key) is not responding
-    # other sources still can give you required user info: public key, contacts, etc..
-    # TODO: we can also consolidate few "idurl" sources for every public key - basically identify user by public key
-    # something like:
-    # for source in identitycache.FromCache(idurl).getSources(as_originals=True):
-    #     if source not in identitycache.FromCache(idurl):
-    #         d = identitycache.immediatelyCaching(source)
-    #         d.addCallback(lambda xml_src: identitycache.UpdateAfterChecking(idurl, xml_src))
-    #         d.addErrback(lambda err: lg.warn('caching filed: %s' % err))
+    if my_id.isLocalIdentityReady():
+        if newidentity.getPublicKey() == my_id.getLocalIdentity().getPublicKey():
+            if newidentity.getRevisionValue() > my_id.getLocalIdentity().getRevisionValue():
+                lg.warn('received my own identity from another user, but with higher revision number')
+                reactor.callLater(0, my_id.rebuildLocalIdentity, new_revision=newidentity.getRevisionValue() + 1)  # @UndefinedVariable
+                return False
+    latest_identity = id_url.get_latest_ident(newidentity.getPublicKey())
+    if latest_identity:
+        if latest_identity.getRevisionValue() > newidentity.getRevisionValue():
+            # check if received identity is the most recent revision number we every saw for that remote user
+            # in case we saw same identity with higher revision number need to reply with Fail packet and notify user
+            # this may happen after identity restore - the user starts counting revision number from 0
+            # but other nodes already store previous copies, user just need to jump to the most recent revision number
+            lg.warn('received new identity with out-dated revision number from %r' % idurl)
+            ident_packet = signed.Packet(
+                Command=commands.Identity(),
+                OwnerID=latest_identity.getIDURL(),
+                CreatorID=latest_identity.getIDURL(),
+                PacketID='identity:%s' % packetid.UniqueID(),
+                Payload=latest_identity.serialize(),
+                RemoteID=idurl,
+            )
+            reactor.callLater(0, packet_out.create, outpacket=ident_packet, wide=True, callbacks={}, keep_alive=False)  # @UndefinedVariable
+            return False
     if not send_ack:
         if _Debug:
             lg.out(_DebugLevel, "p2p_service.Identity %s  idurl=%s  remoteID=%r  skip sending Ack()" % (
