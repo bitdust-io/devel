@@ -297,11 +297,6 @@ def Identity(newpacket, send_ack=True):
     if not identitycache.UpdateAfterChecking(idurl, newxml):
         lg.warn("ERROR has non-Valid identity")
         return False
-    # Now that we have ID we can check packet
-    if not newpacket.Valid():
-        # If not valid do nothing
-        lg.warn("not Valid packet from %s" % idurl)
-        return False
     if my_id.isLocalIdentityReady():
         if newidentity.getPublicKey() == my_id.getLocalIdentity().getPublicKey():
             if newidentity.getRevisionValue() > my_id.getLocalIdentity().getRevisionValue():
@@ -326,6 +321,11 @@ def Identity(newpacket, send_ack=True):
             )
             reactor.callLater(0, packet_out.create, outpacket=ident_packet, wide=True, callbacks={}, keep_alive=False)  # @UndefinedVariable
             return False
+    # Now that we have ID we can check packet
+    if not newpacket.Valid():
+        # If not valid do nothing
+        lg.warn("not Valid packet from %s" % idurl)
+        return False
     if not send_ack:
         if _Debug:
             lg.out(_DebugLevel, "p2p_service.Identity %s  idurl=%s  remoteID=%r  skip sending Ack()" % (
