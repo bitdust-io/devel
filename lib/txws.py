@@ -41,6 +41,7 @@ from __future__ import division
 
 __version__ = "0.7.1"
 
+import sys
 import six
 
 import array
@@ -56,6 +57,11 @@ from twisted.python import log
 from twisted.web.http import datetimeToString
 
 _Debug = False
+
+
+array_tostring = lambda x: x.tostring()
+if sys.version_info[1] >= 2:
+    array_tostring = lambda x: x.tobytes()
 
 
 class WSException(Exception):
@@ -231,7 +237,7 @@ def mask(buf, key):
     buf = array.array("B", buf)
     for i in range(len(buf)):
         buf[i] ^= key[i % 4]
-    return buf.tostring()
+    return array_tostring(buf)
 
 def make_hybi07_frame(buf, opcode=0x1):
     """

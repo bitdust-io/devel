@@ -586,7 +586,7 @@ def rebuildLocalIdentity(identity_object=None, skip_transports=[], new_sources=N
     lid.sign()
     new_xmlsrc = lid.serialize()
     changed = False
-    if new_xmlsrc != current_identity_xmlsrc or revision_up:
+    if new_xmlsrc != current_identity_xmlsrc or revision_up or new_revision:
         if not new_revision:
             new_revision = lid.getRevisionValue() + 1
         try:
