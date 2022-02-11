@@ -164,6 +164,15 @@ def get_info(idurl):
         return None
     return _RunningHandshakers.get(remote_idurl)
 
+
+def cancel_all():
+    global _RunningHandshakers
+    for remote_idurl in list(_RunningHandshakers.keys()):
+        h = (_RunningHandshakers.get(remote_idurl, {}) or {}).get('instance')
+        if h:
+            h.event('cancel')
+
+
 #------------------------------------------------------------------------------
 
 def on_identity_packet_outbox_status(pkt_out, status, error):

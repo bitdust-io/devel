@@ -130,7 +130,8 @@ def init():
     """
     global _OfflineCheckTask
     global _ShutdownFlag
-    lg.out(4, 'online_status.init')
+    if _Debug:
+        lg.out(_DebugLevel, 'online_status.init')
     _ShutdownFlag = False
     callback.insert_inbox_callback(1, Inbox)  # try to not overwrite top callback in the list, but stay on top
     callback.add_queue_item_status_callback(OutboxStatus)
@@ -145,7 +146,9 @@ def shutdown():
     global _OfflineCheckTask
     global _ShutdownFlag
     global _OnlineStatusDict
-    lg.out(4, 'online_status.shutdown')
+    if _Debug:
+        lg.out(_DebugLevel, 'online_status.shutdown')
+    handshaker.cancel_all()
     _OfflineCheckTask.stop()
     del _OfflineCheckTask
     _OfflineCheckTask = None
