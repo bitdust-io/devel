@@ -57,6 +57,7 @@ from system import bpio
 from system import local_fs
 
 from main import settings
+from main import listeners
 
 from services import driver
 
@@ -412,14 +413,6 @@ def set_correspondents(idlist):
     _CorrespondentsList = [(id_url.field(idurl_name[0]).to_bin(), idurl_name[1]) for idurl_name in idlist]
 
 
-def clear_correspondents():
-    """
-    Remove all correspondents without notification.
-    """
-    global _CorrespondentsList
-    _CorrespondentsList = []
-
-
 def add_correspondent(idurl, nickname=''):
     """
     Add correspondent, execute notification callback and return its position in
@@ -432,6 +425,10 @@ def add_correspondent(idurl, nickname=''):
     _CorrespondentsList.append((idurl.to_bin(), nickname, ))
     if _CorrespondentsChangedCallback is not None:
         _CorrespondentsChangedCallback(curlist, _CorrespondentsList)
+    listeners.push_snapshot('correspondent', snap_id=idurl.to_bin(), data=dict(
+        idurl=idurl.to_bin(),
+        nickname=nickname,
+    ))
     return len(curlist)
 
 
@@ -449,20 +446,20 @@ def remove_correspondent(idurl):
             _CorrespondentsList.remove(tupl)
             if _CorrespondentsChangedCallback is not None:
                 _CorrespondentsChangedCallback(curlist, _CorrespondentsList)
+            listeners.push_snapshot('correspondent', snap_id=idurl.to_bin(), deleted=True, data=dict(
+                idurl=idurl.to_bin(),
+                nickname=tupl[1],
+            ))
             return True
     return False
 
 
-def update_correspondents(idslist):
-    """
-    Set correspondents ID's list, input items are tuples: (idurl, nickname, ).
-    """
-    global _CorrespondentsChangedCallback
-    oldcorrespondents = list(correspondents())
-    idslist = list(filter(lambda i: id_url.is_cached(i[0]), idslist))
-    set_correspondents(idslist)
-    if _CorrespondentsChangedCallback is not None:
-        _CorrespondentsChangedCallback(oldcorrespondents, correspondents())
+def populate_all_correspondents():
+    for corr in correspondents():
+        listeners.push_snapshot('correspondent', snap_id=corr[0], data=dict(
+            idurl=corr[0],
+            nickname=corr[1],
+        ))
 
 #-------------------------------------------------------------------------------
 
@@ -820,6 +817,9 @@ def load_contacts():
     if _CorrespondentsChangedCallback is not None:
         _CorrespondentsChangedCallback([], correspondents())
     AddContactsChangedCallback(on_contacts_changed)
+    if listeners.is_populate_requered('correspondent'):
+        listeners.populate_later().remove('correspondent')
+        populate_all_correspondents()
 
 #------------------------------------------------------------------------------
 

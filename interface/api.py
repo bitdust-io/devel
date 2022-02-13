@@ -225,6 +225,12 @@ def enable_model_listener(model_name, request_all=False):
             message_database.populate_messages()
         else:
             listeners.populate_later('message')
+    elif model_name == 'correspondent':
+        if driver.is_on('service_identity_propagate'):
+            from contacts import contactsdb
+            contactsdb.populate_all_correspondents()
+        else:
+            listeners.populate_later('correspondent')
     return OK()
 
 
