@@ -30,7 +30,7 @@ import base64
 import threading
 
 from testsupport import request_get, request_post, request_put, request_delete, run_ssh_command_and_wait  # @UnresolvedImport
-from testsupport import info, dbg, warn
+from testsupport import info, dbg, warn  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 
@@ -615,7 +615,7 @@ def service_info_v1(node, service_name, expected_state, attempts=90, delay=2, ve
 
 
 def service_start_v1(node, service_name, timeout=10):
-    response = request_post(node, 'service/start/%s/v1' % service_name, json={}, timeout=timeout)
+    response = request_post(node, f'service/start/{service_name}/v1', json={}, timeout=timeout)
     assert response.status_code == 200
     dbg('service/start/%s/v1 [%s]: %s\n' % (service_name, node, pprint.pformat(response.json()), ))
     assert response.json()['status'] == 'OK', response.json()
@@ -623,9 +623,17 @@ def service_start_v1(node, service_name, timeout=10):
 
 
 def service_stop_v1(node, service_name, timeout=10):
-    response = request_post(node, 'service/stop/%s/v1' % service_name, json={}, timeout=timeout)
+    response = request_post(node, f'service/stop/{service_name}/v1', json={}, timeout=timeout)
     assert response.status_code == 200
     dbg('service/stop/%s/v1 [%s]: %s\n' % (service_name, node, pprint.pformat(response.json()), ))
+    assert response.json()['status'] == 'OK', response.json()
+    return response.json()
+
+
+def service_health_v1(node, service_name, timeout=30):
+    response = request_get(node, f'service/health/{service_name}/v1', timeout=timeout)
+    assert response.status_code == 200
+    dbg('service/health/%s/v1 [%s]: %s\n' % (service_name, node, pprint.pformat(response.json()), ))
     assert response.json()['status'] == 'OK', response.json()
     return response.json()
 

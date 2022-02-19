@@ -121,7 +121,7 @@ def is_started(name):
     svc = services().get(name, None)
     if svc is None:
         return False
-    return svc.state != 'ON' and svc.state != 'OFF' and svc.state != 'NOT_INSTALLED' and svc.state != 'DEPENDS_OFF'
+    return svc.state == 'ON' or svc.state == 'STOPPING' or svc.state == 'STARTING' or svc.state == 'INFLUENCE'
 
 
 def is_enabled(name):
