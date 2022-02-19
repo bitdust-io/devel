@@ -169,6 +169,7 @@ def dispatch_snapshot(snap):
             handled += 1
     return handled
 
+#------------------------------------------------------------------------------
 
 def push_snapshot(model_name, snap_id=None, data=None, created=None, deleted=False, fast=False):
     snap = Snapshot(model_name, snap_id=snap_id, data=data, created=created, deleted=deleted)

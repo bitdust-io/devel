@@ -1018,7 +1018,7 @@ def check_rename_my_keys(prefix=None):
 
 #------------------------------------------------------------------------------
 
-def populate_all_keys():
+def populate_keys():
     for key_id, key_object in known_keys().items():
         listeners.push_snapshot('key', snap_id=key_id, data=make_key_info(
             key_object=key_object,

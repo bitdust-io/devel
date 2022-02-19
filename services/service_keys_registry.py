@@ -58,7 +58,7 @@ class KeysRegistryService(LocalService):
         callback.append_inbox_callback(self._on_inbox_packet_received)
         if listeners.is_populate_requered('key'):
             listeners.populate_later().remove('key')
-            my_keys.populate_all_keys()
+            my_keys.populate_keys()
         return True
 
     def stop(self):

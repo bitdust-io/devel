@@ -664,7 +664,7 @@ def get_attached_dht_layers(services_list=[]):
 
 #------------------------------------------------------------------------------
 
-def populate_all_services():
+def populate_services():
     services_list = reversed(boot_up_order())
     for name in services_list:
         svc = services().get(name, None)

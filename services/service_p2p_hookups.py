@@ -59,6 +59,7 @@ class P2PHookupsService(LocalService):
         from twisted.internet.defer import Deferred
         from transport import callback
         from main import events
+        from main import listeners
         from p2p import online_status
         from p2p import p2p_service
         from p2p import p2p_connector
@@ -77,6 +78,9 @@ class P2PHookupsService(LocalService):
         callback.append_inbox_callback(p2p_service.inbox)
         events.add_subscriber(self._on_identity_url_changed, 'identity-url-changed')
         events.add_subscriber(self._on_my_identity_url_changed, 'my-identity-url-changed')
+        if listeners.is_populate_requered('online_status'):
+            listeners.populate_later().remove('online_status')
+            online_status.populate_online_statuses()
         return True
 
     def stop(self):
