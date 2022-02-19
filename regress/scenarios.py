@@ -1758,6 +1758,8 @@ def scenario17(old_customer_1_info, old_customer_2_info):
     kw.service_info_v1('customer-restore', 'service_my_data', 'ON')
     kw.service_info_v1('customer-restore', 'service_shared_data', 'ON', attempts=20)
 
+    kw.service_health_v1('customer-restore', 'service_keys_storage')
+
     kw.supplier_list_v1('customer-restore', expected_min_suppliers=2, expected_max_suppliers=2)
 
     kw.supplier_list_dht_v1(

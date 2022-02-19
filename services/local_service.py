@@ -163,7 +163,7 @@ class LocalService(automat.Automat):
         return True
 
     def health_check(self):
-        raise driver.RequireSubclass()
+        return True
 
     def network_configuration(self):
         return None

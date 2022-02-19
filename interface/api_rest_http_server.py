@@ -1147,6 +1147,12 @@ class BitDustRESTHTTPServer(JsonAPIResource):
             wait_timeout=_request_data(request).get('wait_timeout', 10),
         )
 
+    @GET('^/svc/h/(?P<service_name>[^/]+)/$')
+    @GET('^/v1/service/health/(?P<service_name>[^/]+)$')
+    @GET('^/service/health/(?P<service_name>[^/]+)/v1$')
+    def service_health_v1(self, request, service_name):
+        return api.service_health(service_name)
+
     #------------------------------------------------------------------------------
 
     @GET('^/pkt/l$')

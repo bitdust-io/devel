@@ -221,7 +221,7 @@ def enable_model_listener(model_name, request_all=False):
             listeners.populate_later('conversation')
     elif model_name == 'message':
         if driver.is_on('service_message_history'):
-            from chat import message_database
+            from chat import message_database  # @Reimport
             message_database.populate_messages()
         else:
             listeners.populate_later('message')
@@ -4097,6 +4097,25 @@ def service_restart(service_name, wait_timeout=10):
     d = driver.restart(service_name, wait_timeout=wait_timeout)
     d.addCallback(lambda resp: ret.callback(OK(resp, api_method='service_restart')))
     d.addErrback(lambda err: ret.callback(ERROR(err, api_method='service_restart')))
+    return ret
+
+
+def service_health(service_name):
+    """
+    Method will execute "health check" procedure of the given service - each service defines its own way to verify that.
+
+    ###### HTTP
+        curl -X POST 'localhost:8180/service/health/service_message_history/v1'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "service_health", "kwargs": {"service_name": "service_message_history"} }');
+    """
+    if _Debug:
+        lg.out(_DebugLevel, 'api.service_health : %s' % service_name)
+    ret = Deferred()
+    d = driver.is_healthy(service_name)
+    d.addCallback(lambda resp: ret.callback(RESULT(resp, api_method='service_health')))
+    d.addErrback(lambda err: ret.callback(ERROR(err, api_method='service_health')))
     return ret
 
 #------------------------------------------------------------------------------

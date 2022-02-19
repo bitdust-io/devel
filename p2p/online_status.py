@@ -605,8 +605,12 @@ class OnlineStatus(automat.Automat):
 
     def to_json(self):
         j = super().to_json()
+        glob_id = global_id.ParseIDURL(self.idurl)
         j.update({
             'idurl': self.idurl.to_bin(),
+            'global_id': glob_id['customer'],
+            'idhost': glob_id['idhost'],
+            'username': glob_id['user'],
         })
         return j
 
