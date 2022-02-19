@@ -454,7 +454,7 @@ def remove_correspondent(idurl):
     return False
 
 
-def populate_all_correspondents():
+def populate_correspondents():
     for corr in correspondents():
         listeners.push_snapshot('correspondent', snap_id=corr[0], data=dict(
             idurl=corr[0],
@@ -819,7 +819,7 @@ def load_contacts():
     AddContactsChangedCallback(on_contacts_changed)
     if listeners.is_populate_requered('correspondent'):
         listeners.populate_later().remove('correspondent')
-        populate_all_correspondents()
+        populate_correspondents()
 
 #------------------------------------------------------------------------------
 

@@ -74,13 +74,6 @@ _DebugLevel = 14
 
 #------------------------------------------------------------------------------
 
-import sys
-
-try:
-    from twisted.internet import reactor  # @UnresolvedImport
-except:
-    sys.exit('Error initializing twisted.internet.reactor in online_status.py')
-
 from twisted.internet.task import LoopingCall
 from twisted.internet.defer import Deferred
 
@@ -96,6 +89,7 @@ from lib import utime
 from contacts import contactsdb
 
 from main import events
+from main import listeners
 
 from p2p import ratings
 from p2p import commands
@@ -453,7 +447,13 @@ def remove_online_status_listener_callback(idurl, callback_method=None, callback
     online_status_instance = getInstance(idurl)
     if not online_status_instance:
         return False
-    return online_status_instance.removeStateChangedCallback(cb=callback_method, callback_id=callback_id) > 0    
+    return online_status_instance.removeStateChangedCallback(cb=callback_method, callback_id=callback_id) > 0
+
+#------------------------------------------------------------------------------
+
+def populate_online_statuses():
+    for online_s in online_statuses().values():
+        listeners.push_snapshot('online_status', snap_id=online_s.idurl.to_bin(), data=online_s.to_json())
 
 #------------------------------------------------------------------------------
 
@@ -589,7 +589,6 @@ class OnlineStatus(automat.Automat):
         Builds `online_status()` state machine.
         """
         self.idurl = idurl
-        # self.glob_id = global_id.idurl2glob(self.idurl)
         self.latest_inbox_time = None
         self.latest_check_time = None
         self.keep_alive = False
@@ -603,6 +602,13 @@ class OnlineStatus(automat.Automat):
         )
         if _Debug:
             lg.out(_DebugLevel + 2, 'online_status.ContactStatus %s %s %s' % (name, state, idurl))
+
+    def to_json(self):
+        j = super().to_json()
+        j.update({
+            'idurl': self.idurl.to_bin(),
+        })
+        return j
 
     def init(self):
         """
@@ -624,6 +630,7 @@ class OnlineStatus(automat.Automat):
                 old_state=oldstate,
                 new_state=newstate,
             ))
+            listeners.push_snapshot('online_status', snap_id=self.idurl.to_bin(), data=self.to_json())
         if newstate == 'OFFLINE' and oldstate != 'AT_STARTUP':
             lg.info('remote node disconnected : %s' % self.idurl)
             events.send('node-disconnected', data=dict(
@@ -632,6 +639,9 @@ class OnlineStatus(automat.Automat):
                 old_state=oldstate,
                 new_state=newstate,
             ))
+            listeners.push_snapshot('online_status', snap_id=self.idurl.to_bin(), data=self.to_json())
+        if newstate == 'PING?' and oldstate != 'AT_STARTUP':
+            listeners.push_snapshot('online_status', snap_id=self.idurl.to_bin(), data=self.to_json())
 
     def A(self, event, *args, **kwargs):
         """
@@ -815,20 +825,11 @@ class OnlineStatus(automat.Automat):
             err_msg = repr(err)
         if _Debug:
             lg.args(_DebugLevel, idurl=self.idurl, err=err_msg, keep_alive=self.keep_alive, handshake_callbacks=len(self.handshake_callbacks))
-        # running_handshake = handshaker.get_info(self.idurl.to_original())
-        # if not running_handshake:
-        #     running_handshake = handshaker.get_info(self.idurl.to_bin())
         for cb in self.handshake_callbacks:
             if isinstance(cb, Deferred):
                 if not cb.called:
-                    # if running_handshake:
-                    #     running_handshake['results'].append(cb)
-                    # else:
                     cb.errback(err)
             else:
-                # if running_handshake:
-                #     running_handshake['results'].append(lambda ret: cb(ret))
-                # else:
                 cb(err)
         self.handshake_callbacks = []
 

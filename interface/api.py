@@ -206,11 +206,11 @@ def enable_model_listener(model_name, request_all=False):
     if not request_all:
         return OK()
     if model_name == 'service':
-        driver.populate_all_services()
+        driver.populate_services()
     elif model_name == 'key':
         if driver.is_on('service_keys_registry'):
             from crypt import my_keys
-            my_keys.populate_all_keys()
+            my_keys.populate_keys()
         else:
             listeners.populate_later('key')
     elif model_name == 'conversation':
@@ -228,9 +228,15 @@ def enable_model_listener(model_name, request_all=False):
     elif model_name == 'correspondent':
         if driver.is_on('service_identity_propagate'):
             from contacts import contactsdb
-            contactsdb.populate_all_correspondents()
+            contactsdb.populate_correspondents()
         else:
             listeners.populate_later('correspondent')
+    elif model_name == 'online_status':
+        if driver.is_on('service_p2p_hookups'):
+            from p2p import online_status
+            online_status.populate_online_statuses()
+        else:
+            listeners.populate_later('online_status')
     return OK()
 
 
