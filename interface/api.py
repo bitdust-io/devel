@@ -2881,7 +2881,6 @@ def friends_list():
             'alias': alias,
             'contact_status': contact_status,
             'contact_state': contact_state,
-            'index': None,
         }
         if driver.is_on('service_identity_propagate'):
             from p2p import online_status
