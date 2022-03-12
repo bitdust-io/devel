@@ -154,8 +154,8 @@ def find_active_message_producers(group_creator_idurl):
 def start_message_producers():
     started = 0
     for key_id in my_keys.known_keys().keys():
-        if not key_id.startswith('person$'):
-            continue
+        # if not key_id.startswith('person$'):
+        #     continue
         group_key_id = key_id
         existing_message_producer = get_active_message_producer(group_key_id)
         if not existing_message_producer:

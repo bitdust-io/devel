@@ -237,6 +237,12 @@ def enable_model_listener(model_name, request_all=False):
             online_status.populate_online_statuses()
         else:
             listeners.populate_later('online_status')
+    elif model_name == 'private_file':
+        if driver.is_on('service_my_data'):
+            from storage import backup_fs
+            backup_fs.populate_private_files()
+        else:
+            listeners.populate_later('private_file')
     return OK()
 
 
@@ -1273,7 +1279,7 @@ def files_list(remote_path=None, key_id=None, recursive=True, all_customers=Fals
                         'eccmap': '' if not d.EccMap else d.EccMap.name,
                     })
             r['downloads'] = downloads
-        result.append(r)        
+        result.append(r)
     if _Debug:
         lg.out(_DebugLevel, '    %d items returned' % len(result))
     return RESULT(result, extra_fields={
@@ -1457,8 +1463,11 @@ def file_create(remote_path, as_folder=False, exist_ok=False, force_path_id=None
     from storage import backup_control
     from system import bpio
     from main import control
-    from userid import global_id
+    from main import listeners
     from crypt import my_keys
+    from userid import id_url
+    from userid import global_id
+    from userid import my_id
     parts = global_id.NormalizeGlobalID(global_id.ParseGlobalID(remote_path))
     if not parts['path']:
         return ERROR('invalid "remote_path" format')
@@ -1467,6 +1476,7 @@ def file_create(remote_path, as_folder=False, exist_ok=False, force_path_id=None
     pathID = backup_fs.ToID(path, iter=backup_fs.fs(customer_idurl))
     keyID = my_keys.make_key_id(alias=parts['key_alias'], creator_glob_id=parts['customer'])
     keyAlias = parts['key_alias']
+    itemInfo = None
     if _Debug:
         lg.args(_DebugLevel, remote_path=remote_path, as_folder=as_folder, path_id=pathID, customer_idurl=customer_idurl, force_path_id=force_path_id)
     if pathID is not None:
@@ -1485,7 +1495,7 @@ def file_create(remote_path, as_folder=False, exist_ok=False, force_path_id=None
             }, message='remote path %r already exist in catalog: %r' % (('folder' if as_folder else 'file'), fullGlobID), )
         return ERROR('remote path %r already exist in catalog: %r' % (path, pathID))
     if as_folder:
-        newPathID, _, _ = backup_fs.AddDir(
+        newPathID, itemInfo, _, _ = backup_fs.AddDir(
             path,
             read_stats=False,
             iter=backup_fs.fs(customer_idurl),
@@ -1498,7 +1508,7 @@ def file_create(remote_path, as_folder=False, exist_ok=False, force_path_id=None
         if not backup_fs.IsDir(parent_path, iter=backup_fs.fs(customer_idurl)):
             if backup_fs.IsFile(parent_path, iter=backup_fs.fs(customer_idurl)):
                 return ERROR('remote path can not be assigned, file already exist: %r' % parent_path)
-            parentPathID, _, _ = backup_fs.AddDir(
+            parentPathID, _, _, _ = backup_fs.AddDir(
                 parent_path,
                 read_stats=False,
                 iter=backup_fs.fs(customer_idurl),
@@ -1515,7 +1525,7 @@ def file_create(remote_path, as_folder=False, exist_ok=False, force_path_id=None
         if not id_iter_iterID:
             return ERROR('remote path can not be assigned, parent folder not found: %r' % parent_path)
         parentPathID = id_iter_iterID[0]
-        newPathID, _, _ = backup_fs.PutItem(
+        newPathID, itemInfo, _, _ = backup_fs.PutItem(
             name=os.path.basename(path),
             parent_path_id=parentPathID,
             as_folder=as_folder,
@@ -1529,6 +1539,15 @@ def file_create(remote_path, as_folder=False, exist_ok=False, force_path_id=None
     control.request_update([('pathID', newPathID), ])
     full_glob_id = global_id.MakeGlobalID(customer=parts['customer'], path=newPathID, key_alias=keyAlias)
     full_remote_path = global_id.MakeGlobalID(customer=parts['customer'], path=parts['path'], key_alias=keyAlias)
+    if id_url.is_the_same(customer_idurl, my_id.getIDURL()):
+        listeners.push_snapshot('private_file', snap_id=full_glob_id, data=dict(
+            global_id=full_glob_id,
+            remote_path=full_remote_path,
+            size=max(0, itemInfo.size),
+            type=backup_fs.TYPES.get(itemInfo.type, '').lower(),
+            customer=parts['customer'],
+            versions=[],
+        ))
     if _Debug:
         lg.out(_DebugLevel, 'api.file_create : %r' % full_glob_id)
     return OK({
@@ -1562,9 +1581,12 @@ def file_delete(remote_path):
     from storage import backup_monitor
     from main import settings
     from main import control
+    from main import listeners
     from lib import packetid
     from system import bpio
     from userid import global_id
+    from userid import id_url
+    from userid import my_id
     parts = global_id.NormalizeGlobalID(global_id.ParseGlobalID(remote_path))
     if not parts['idurl'] or not parts['path']:
         return ERROR('invalid "remote_path" format')
@@ -1574,6 +1596,7 @@ def file_delete(remote_path):
         return ERROR('remote path %r was not found' % parts['path'])
     if not packetid.Valid(pathID):
         return ERROR('invalid item found: %r' % pathID)
+    itemInfo = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(parts['idurl']))
     pathIDfull = packetid.MakeBackupID(parts['customer'], pathID)
     keyAlias = parts['key_alias'] or 'master'
     full_glob_id = global_id.MakeGlobalID(customer=parts['customer'], path=pathID, key_alias=keyAlias)
@@ -1588,6 +1611,15 @@ def file_delete(remote_path):
     backup_control.Save()
     backup_monitor.A('restart')
     control.request_update([('pathID', pathIDfull), ])
+    if id_url.is_the_same(parts['idurl'], my_id.getIDURL()):
+        listeners.push_snapshot('private_file', snap_id=full_glob_id, deleted=True, data=dict(
+            global_id=full_glob_id,
+            remote_path=full_remote_path,
+            size=0 if not itemInfo else itemInfo.size,
+            type='file' if not itemInfo else backup_fs.TYPES.get(itemInfo.type, '').lower(),
+            customer=parts['customer'],
+            versions=[],
+        ))
     if _Debug:
         lg.out(_DebugLevel, 'api.file_delete %s' % parts)
     return OK({

@@ -59,7 +59,7 @@ def prepare():
     kw.wait_service_state(scenarios.SUPPLIERS_IDS_12 + ['supplier-rotated', ], 'service_supplier', 'ON')
     kw.wait_service_state(scenarios.CUSTOMERS_IDS_1, 'service_customer', 'ON')
     kw.wait_service_state(scenarios.CUSTOMERS_IDS_1, 'service_shared_data', 'ON')
-    kw.wait_service_state(scenarios.CUSTOMERS_IDS_1, 'service_personal_messages', 'ON')
+    # kw.wait_service_state(scenarios.CUSTOMERS_IDS_1, 'service_personal_messages', 'ON')
     kw.wait_service_state(scenarios.CUSTOMERS_IDS_1, 'service_private_groups', 'ON')
     kw.wait_service_state(scenarios.CUSTOMERS_IDS_1, 'service_message_history', 'ON')
     kw.wait_packets_finished(scenarios.CUSTOMERS_IDS_1 + scenarios.SUPPLIERS_IDS_12 + ['supplier-rotated', ])

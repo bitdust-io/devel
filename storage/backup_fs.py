@@ -91,11 +91,14 @@ from logs import lg
 from system import bpio
 
 from main import settings
+from main import listeners
 
 from lib import misc
 from lib import packetid
 
 from crypt import my_keys
+
+from interface import api
 
 from userid import my_id
 from userid import global_id
@@ -552,24 +555,12 @@ def AddFile(path, read_stats=False, iter=None, iterID=None, key_id=None):
     iter[ii.name()] = id
     iterID[id] = ii
     # finally make a complete backup id - this a relative path to the backed up file
-    return resultID, iter, iterID
+    return resultID, ii, iter, iterID
 
 
 def AddDir(path, read_stats=False, iter=None, iterID=None, key_id=None, force_path_id=None):
     """
-    Add directory to the index, but do not read folder content.
-
-        >>> import backup_fs
-        >>> backup_fs.AddDir('C:/Program Files/Adobe/')
-        ('0/0/0', {0: 0}, {'i': <DIR Adobe -1>})
-        >>> backup_fs.AddDir('C:/Program Files/Google/')
-        ('0/0/1', {0: 1}, {'i': <DIR Google -1>})
-        >>> backup_fs.AddDir('E:/games/')
-        ('1/0', {0: 0}, {'i': <DIR games -1>})
-        >>> backup_fs.fs()
-        {u'c:': {0: 0, u'Program Files': {0: 0, u'Google': {0: 1}, u'Adobe': {0: 0}}}, u'e:': {0: 1, u'games': {0: 0}}}
-
-    Parameter ``path`` must be in "portable" form.
+    Add specific local directory to the index, but do not read content of the folder.
     """
     parts = bpio.remotePath(path).split('/')
     force_path_id_parts = []
@@ -581,6 +572,7 @@ def AddDir(path, read_stats=False, iter=None, iterID=None, key_id=None, force_pa
         iterID = fsID()
     resultID = ''
     parentKeyID = None
+    ii = None
     for i in range(len(parts)):
         name = parts[i]
         if not name:
@@ -613,36 +605,13 @@ def AddDir(path, read_stats=False, iter=None, iterID=None, key_id=None, force_pa
             if iterID[INFO_KEY].type != DIR:
                 lg.warn('not a dir: %s' % iterID[INFO_KEY])
             iterID[INFO_KEY].type = DIR
-    return resultID.lstrip('/'), iter, iterID
+    return resultID.lstrip('/'), ii, iter, iterID
 
 
 def AddLocalPath(localpath, read_stats=False, iter=None, iterID=None, key_id=None):
     """
-    Operate like ``AddDir()`` but also recursively reads the entire folder and
-    put all items in the index. Parameter ``localpath`` can be a file or folder
-    path in "portable" form.
-
-        >>> import backup_fs
-        >>> i = backup_fs.AddLocalPath('C:/Program Files/7-Zip/')
-        >>> import pprint
-        >>> pprint.pprint(backup_fs.fs())
-        {u'c:': {0: 0,
-                 u'Program Files': {0: 0,
-                                    u'7-Zip': {0: 0,
-                                               u'7-zip.chm': 0,
-                                               u'7-zip.dll': 1,
-                                               u'7z.dll': 2,
-                                               u'7z.exe': 3,
-                                               u'7z.sfx': 4,
-                                               u'7zCon.sfx': 5,
-                                               u'7zFM.exe': 6,
-                                               u'7zG.exe': 7,
-                                               u'7zip_pad.xml': 8,
-                                               u'Lang': {0: 10,
-                                                         u'en.ttt': 0,
-                                                         u'ru.txt': 1},
-                                               u'Uninstall.exe': 11,
-                                               u'descript.ion': 9}}}}
+    Operates like ``AddDir()`` but also recursively reads the entire folder and
+    put all items in the index. Parameter ``localpath`` can be a file or folder path.
     """
     def recursive_read_dir(local_path, path_id, iter, iterID):
         c = 0
@@ -678,12 +647,12 @@ def AddLocalPath(localpath, read_stats=False, iter=None, iterID=None, key_id=Non
 
     localpath = bpio.portablePath(localpath)
     if bpio.pathIsDir(localpath):
-        path_id, iter, iterID = AddDir(
+        path_id, itemInfo, iter, iterID = AddDir(
             localpath, read_stats=read_stats, iter=iter, iterID=iterID, key_id=key_id)
         num = recursive_read_dir(localpath, path_id, iter, iterID)
         return path_id, iter, iterID, num
     else:
-        path_id, iter, iterID = AddFile(
+        path_id, itemInfo, iter, iterID = AddFile(
             localpath, read_stats=read_stats, iter=iter, iterID=iterID, keyID=key_id)
         return path_id, iter, iterID, 1
     return None, None, None, 0
@@ -692,8 +661,8 @@ def AddLocalPath(localpath, read_stats=False, iter=None, iterID=None, key_id=Non
 def PutItem(name, parent_path_id, as_folder=False, iter=None, iterID=None, key_id=None):
     """
     Acts like AddFile() but do not follow the directory structure. This just
-    "bind" some local path (file or dir) to one item in the catalog - by default as a top level item.
-    The name of new item will be equal to the local path.
+    "bind" some local path (file or folder) to one single item in the catalog - by default as a top level item.
+    The name of new item will be equal to the local filename.
     """
     remote_path = bpio.remotePath(name)
     if iter is None:
@@ -707,10 +676,9 @@ def PutItem(name, parent_path_id, as_folder=False, iter=None, iterID=None, key_i
     ii = FSItemInfo(name=remote_path, path_id=resultID, typ=typ, key_id=key_id)
     iter[ii.name()] = newItemID
     iterID[newItemID] = ii
-    return resultID, iter, iterID
+    return resultID, ii, iter, iterID
 
 #------------------------------------------------------------------------------
-
 
 def SetFile(item, iter=None, iterID=None):
     """
@@ -2076,6 +2044,26 @@ def Unserialize(raw_data, iter=None, iterID=None, from_json=False, decoding='utf
 
 #------------------------------------------------------------------------------
 
+def populate_private_files():
+    ret = api.files_list(remote_path='')
+    if ret['status'] != 'OK':
+        return
+    lst = ret['result']
+    for itm in lst:
+        if itm['path'] == 'index':
+            continue
+        listeners.push_snapshot('private_file', snap_id=itm['global_id'], data=dict(
+            global_id=itm['global_id'],
+            remote_path=itm['remote_path'],
+            size=itm['size'],
+            type=itm['type'],
+            customer=itm['customer'],
+            versions=[dict(
+                backup_id=v['backup_id'],
+            ) for v in itm['versions']],
+        ))
+
+#------------------------------------------------------------------------------
 
 def _test():
     """
@@ -2097,8 +2085,7 @@ def _test():
     # print count
     Scan()
     Calculate()
-    
-    
+
     # pprint.pprint(fs())
     # print
     # pprint.pprint(fsID())
