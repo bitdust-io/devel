@@ -138,6 +138,7 @@ def get_update_items():
 
 
 def request_update(items=None):
+    return
     global _UpdateFlag
     global _UpdateItems
     if _Debug:

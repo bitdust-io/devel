@@ -989,7 +989,7 @@ async def start_customer_async(node, identity_name, loop, join_network=True, num
         await create_identity_async(node, identity_name, loop)
         await connect_network_async(node, loop)
         await service_started_async(node, 'service_shared_data', loop)
-        await service_started_async(node, 'service_personal_messages', loop)
+        # await service_started_async(node, 'service_personal_messages', loop)
         await service_started_async(node, 'service_message_history', loop)
         await packet_list_async(node, loop)
     info(f'STARTED CUSTOMER [{node}]')

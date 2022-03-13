@@ -63,14 +63,19 @@ class MyDataService(LocalService):
     def start(self):
         from twisted.internet.defer import Deferred
         from logs import lg
+        from main import listeners
         from storage import keys_synchronizer
         from storage import index_synchronizer
+        from storage import backup_fs
         self.starting_deferred = Deferred()
         self.starting_deferred.addErrback(lambda err: lg.warn('service %r was not started: %r' % (
             self.service_name, err.getErrorMessage() if err else 'unknown reason')))
         if keys_synchronizer.is_synchronized() and index_synchronizer.is_synchronized():
             if not self.starting_deferred.called:
                 self.starting_deferred.callback(True)
+            if listeners.is_populate_requered('private_file'):
+                listeners.populate_later().remove('private_file')
+                backup_fs.populate_private_files()
         else:
             lg.warn('can not start service_my_data right now, keys_synchronizer.is_synchronized=%r index_synchronizer.is_synchronized=%r' % (
                 keys_synchronizer.is_synchronized(), index_synchronizer.is_synchronized()))
@@ -84,11 +89,16 @@ class MyDataService(LocalService):
 
     def _on_my_storage_ready(self, evt):
         from logs import lg
+        from main import listeners
         from services import driver
+        from storage import backup_fs
         if self.starting_deferred:
             if not self.starting_deferred.called:
                 self.starting_deferred.callback(True)
             self.starting_deferred = None
+            if listeners.is_populate_requered('private_file'):
+                listeners.populate_later().remove('private_file')
+                backup_fs.populate_private_files()
         if driver.is_enabled('service_my_data'):
             if not driver.is_started('service_my_data'):
                 lg.info('my storage is ready, starting service_my_data()')

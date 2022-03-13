@@ -70,7 +70,6 @@ from userid import global_id
 
 #------------------------------------------------------------------------------
 
-
 def process(json_request):
     lg.out(12, 'filemanager_api.process %s' % json_request)
     if not driver.is_on('service_my_data'):
@@ -261,10 +260,10 @@ def _upload(params):
     pathID = backup_fs.ToID(localPath)
     if pathID is None:
         if bpio.pathIsDir(localPath):
-            pathID, iter, iterID = backup_fs.AddDir(localPath, read_stats=True)
+            pathID, itemInfo, iter, iterID = backup_fs.AddDir(localPath, read_stats=True)
             result.append('new folder was added: %s' % localPath)
         else:
-            pathID, iter, iterID = backup_fs.AddFile(localPath, read_stats=True)
+            pathID, itemInfo, iter, iterID = backup_fs.AddFile(localPath, read_stats=True)
             result.append('new file was added: %s' % localPath)
     pathID = global_id.CanonicalID(pathID)
     backup_control.StartSingle(pathID=pathID, localPath=localPath)

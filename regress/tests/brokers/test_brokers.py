@@ -75,7 +75,7 @@ def prepare():
     kw.wait_service_state(scenarios.SUPPLIERS_IDS_12, 'service_supplier', 'ON')
     kw.wait_service_state(scenarios.CUSTOMERS_IDS_123, 'service_customer', 'ON')
     kw.wait_service_state(scenarios.CUSTOMERS_IDS_123, 'service_shared_data', 'ON')
-    kw.wait_service_state(scenarios.CUSTOMERS_IDS_123, 'service_personal_messages', 'ON')
+    # kw.wait_service_state(scenarios.CUSTOMERS_IDS_123, 'service_personal_messages', 'ON')
     kw.wait_service_state(scenarios.CUSTOMERS_IDS_123, 'service_private_groups', 'ON')
     kw.wait_service_state(scenarios.CUSTOMERS_IDS_123, 'service_message_history', 'ON')
     kw.wait_service_state(scenarios.BROKERS_IDS, 'service_message_broker', 'ON')
