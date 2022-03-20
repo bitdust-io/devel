@@ -213,6 +213,7 @@ def run(args):
     status = 1
     on_windows = platform.uname()[0] == "Windows"
     on_mac = platform.uname()[0] == "Darwin"
+    on_linux = platform.uname()[0] == "Linux"
     source_dir = get_executable_location()
     init_base_dir()
     base_dir = current_base_dir()
@@ -251,6 +252,11 @@ def run(args):
     status = os.system(make_venv_cmd)
     if on_mac and status != 0:
         make_venv_cmd = 'virtualenv -p {} {}'.format(current_python, venv_path)
+        status = os.system(make_venv_cmd)
+    if on_linux and status != 0:
+        make_venv_cmd = "{} -m pip install virtualenv".format(current_python)
+        status = os.system(make_venv_cmd)
+        make_venv_cmd = "{} -m virtualenv --clear --always-copy {}".format(current_python, venv_path)
         status = os.system(make_venv_cmd)
 
     if status != 0:
