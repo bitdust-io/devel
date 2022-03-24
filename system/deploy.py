@@ -254,7 +254,7 @@ def run(args):
         make_venv_cmd = 'virtualenv -p {} {}'.format(current_python, venv_path)
         status = os.system(make_venv_cmd)
     if on_linux and status != 0:
-        make_venv_cmd = "{} -m pip install virtualenv".format(current_python)
+        make_venv_cmd = "{} -m pip install -q virtualenv".format(current_python)
         status = os.system(make_venv_cmd)
         make_venv_cmd = "{} -m virtualenv --clear --always-copy {}".format(current_python, venv_path)
         status = os.system(make_venv_cmd)
@@ -284,13 +284,13 @@ def run(args):
 
     requirements_txt = os.path.join(source_dir, 'requirements.txt')
     print_text('\n***** Installing BitDust requirements from "%s"' % (requirements_txt))
-    requirements_cmd = '{} install -r "{}"'.format(pip_bin, requirements_txt)
+    requirements_cmd = '{} install -q -r "{}"'.format(pip_bin, requirements_txt)
     if on_windows:
         venv_python_path = os.path.join(base_dir, 'venv', 'Scripts', 'python.exe')
-        requirements_cmd = '{} -m pip install -r "{}"'.format(venv_python_path, requirements_txt)
+        requirements_cmd = '{} -m pip install -q -r "{}"'.format(venv_python_path, requirements_txt)
     if on_mac:
         venv_python_path = os.path.join(base_dir, 'venv', 'bin', 'python')
-        requirements_cmd = '{} -m pip install -r "{}"'.format(venv_python_path, requirements_txt)
+        requirements_cmd = '{} -m pip install -q -r "{}"'.format(venv_python_path, requirements_txt)
 
     print_text('\n***** Executing "{}"'.format(requirements_cmd))
     status = os.system(requirements_cmd)
