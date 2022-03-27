@@ -292,8 +292,8 @@ class DataSender(automat.Automat):
                             packetID,
                             supplier_idurl,
                             my_id.getIDURL(),
-                            self._packetAcked,
-                            self._packetFailed,
+                            lambda packet, ownerID, packetID: self._packetAcked(packet, ownerID, packetID, item),
+                            lambda remoteID, packetID, why: self._packetFailed(remoteID, packetID, why, item),
                         ):
                             progress += 1
                             if _Debug:
@@ -400,11 +400,11 @@ class DataSender(automat.Automat):
         del _DataSender
         _DataSender = None
 
-    def _packetAcked(self, packet, ownerID, packetID):
+    def _packetAcked(self, packet, ownerID, packetID, itemInfo):
         from storage import backup_matrix
         backupID, blockNum, supplierNum, dataORparity = packetid.BidBnSnDp(packetID)
         backup_matrix.RemoteFileReport(
-            backupID, blockNum, supplierNum, dataORparity, True)
+            backupID, blockNum, supplierNum, dataORparity, True, itemInfo)
         if ownerID not in self.statistic:
             self.statistic[ownerID] = {
                 'acked': 0,
@@ -416,10 +416,10 @@ class DataSender(automat.Automat):
         self.statistic[ownerID]['latest'] = self.statistic[ownerID]['latest'][-STAT_KEEP_LATEST_RESULTS_COUNT:]
         self.automat('block-acked', (ownerID, packetID))
 
-    def _packetFailed(self, remoteID, packetID, why):
+    def _packetFailed(self, remoteID, packetID, why, itemInfo):
         from storage import backup_matrix
         backupID, blockNum, supplierNum, dataORparity = packetid.BidBnSnDp(packetID)
-        backup_matrix.RemoteFileReport(backupID, blockNum, supplierNum, dataORparity, False)
+        backup_matrix.RemoteFileReport(backupID, blockNum, supplierNum, dataORparity, False, itemInfo)
         if remoteID not in self.statistic:
             self.statistic[remoteID] = {
                 'acked': 0,

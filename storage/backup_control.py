@@ -187,9 +187,7 @@ def WriteIndex(filepath=None, encoding='utf-8'):
     if filepath is None:
         filepath = settings.BackupIndexFilePath()
     json_data = {}
-    # json_data = backup_fs.Serialize(to_json=True, encoding=encoding)
     for customer_idurl in backup_fs.known_customers():
-        # customer_id = global_id.UrlToGlobalID(customer_idurl)
         customer_id = customer_idurl.to_id()
         json_data[customer_id] = backup_fs.Serialize(
             iterID=backup_fs.fsID(customer_idurl),

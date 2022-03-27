@@ -57,6 +57,7 @@ class BackupsService(LocalService):
         from main.config import conf
         from main import control
         from main import events
+        from main import listeners
         from transport import callback
         from p2p import p2p_connector
         backup_fs.init()
@@ -77,6 +78,9 @@ class BackupsService(LocalService):
         callback.append_inbox_callback(self._on_inbox_packet_received)
         events.add_subscriber(self._on_my_identity_rotated, 'my-identity-rotated')
         events.add_subscriber(self._on_key_erased, 'key-erased')
+        if listeners.is_populate_requered('remote_version'):
+            listeners.populate_later().remove('remote_version')
+            backup_matrix.populate_remote_versions()
         return True
 
     def stop(self):
