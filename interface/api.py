@@ -243,6 +243,12 @@ def enable_model_listener(model_name, request_all=False):
             backup_fs.populate_private_files()
         else:
             listeners.populate_later('private_file')
+    elif model_name == 'remote_version':
+        if driver.is_on('service_backups'):
+            from storage import backup_matrix
+            backup_matrix.populate_remote_versions()
+        else:
+            listeners.populate_later('remote_version')
     return OK()
 
 
@@ -1354,7 +1360,7 @@ def file_info(remote_path, include_uploads=True, include_downloads=True):
     item = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(customer_idurl))
     if not item:
         return ERROR('item %r not found in the catalog' % pathID)
-    (item_size, item_time, versions) = backup_fs.ExtractVersions(pathID, item)  # , customer_id=norm_path['customer'])
+    (item_size, item_time, versions) = backup_fs.ExtractVersions(pathID, item)
     glob_path_item = norm_path.copy()
     glob_path_item['path'] = pathID
     key_alias = 'master'
@@ -1544,7 +1550,7 @@ def file_create(remote_path, as_folder=False, exist_ok=False, force_path_id=None
             global_id=full_glob_id,
             remote_path=full_remote_path,
             size=max(0, itemInfo.size),
-            type=backup_fs.TYPES.get(itemInfo.type, '').lower(),
+            type=backup_fs.TYPES.get(itemInfo.type, 'unknown').lower(),
             customer=parts['customer'],
             versions=[],
         ))
@@ -1616,7 +1622,7 @@ def file_delete(remote_path):
             global_id=full_glob_id,
             remote_path=full_remote_path,
             size=0 if not itemInfo else itemInfo.size,
-            type='file' if not itemInfo else backup_fs.TYPES.get(itemInfo.type, '').lower(),
+            type='file' if not itemInfo else backup_fs.TYPES.get(itemInfo.type, 'unknown').lower(),
             customer=parts['customer'],
             versions=[],
         ))

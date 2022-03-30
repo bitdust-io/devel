@@ -371,7 +371,7 @@ def insert_message(data, message_id, message_time=None, sender=None, recipient=N
         message_id=payload_message_id,
         data=data,
     )
-    listeners.push_snapshot(model_name='message', snap_id=snap_id, created=payload_time, data=message_json)
+    listeners.push_snapshot('message', snap_id=snap_id, created=payload_time, data=message_json)
     return message_json
 
 
@@ -394,7 +394,7 @@ def update_conversation(sender_local_key_id, recipient_local_key_id, payload_typ
     cur().execute(sql, params)
     db().commit()
     if not found_conversation:
-        listeners.push_snapshot(model_name='conversation', snap_id=conversation_id, data=build_json_conversation(
+        listeners.push_snapshot('conversation', snap_id=conversation_id, data=build_json_conversation(
             conversation_id=conversation_id,
             type=MESSAGE_TYPE_CODES.get(int(payload_type), 'private_message'),
             started=payload_time,
@@ -680,7 +680,7 @@ def populate_conversations(message_types=[], offset=0, limit=100, order_by_time=
         offset=offset,
         limit=limit,
     ):
-        listeners.push_snapshot(model_name='conversation', snap_id=conv['conversation_id'], data=conv)
+        listeners.push_snapshot('conversation', snap_id=conv['conversation_id'], data=conv)
 
 
 def populate_messages(recipient_id=None, sender_id=None, message_types=[], offset=0, limit=100):
@@ -722,7 +722,7 @@ def populate_messages(recipient_id=None, sender_id=None, message_types=[], offse
         if conversation_id is None:
             continue
         snap_id = '{}/{}'.format(conversation_id, row[7])
-        listeners.push_snapshot(model_name='message', snap_id=snap_id, created=row[6], data=build_json_message(
+        listeners.push_snapshot('message', snap_id=snap_id, created=row[6], data=build_json_message(
             sender=row[1],
             recipient=row[3],
             direction='in' if row[4] == 0 else 'out',

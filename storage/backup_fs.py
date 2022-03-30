@@ -1303,30 +1303,6 @@ def TraverseChildsByID(callback, iterID=None):
 
 
 def IterateIDs(iterID=None):
-    """
-    You can iterate all index using that method:
-
-        >>> for pathID, localPath, itemInfo in p2p.backup_fs.IterateIDs():
-        ...     print pathID, localPath, itemInfo
-        ...
-        0 c: <PARENT c: -1>
-        0/0 c:/Program Files <PARENT Program Files -1>
-        0/0/0 c:/Program Files/7-Zip <DIR 7-Zip -1>
-        0/0/0/0 c:/Program Files/7-Zip/7-zip.chm <FILE 7-zip.chm -1>
-        0/0/0/1 c:/Program Files/7-Zip/7-zip.dll <FILE 7-zip.dll -1>
-        0/0/0/2 c:/Program Files/7-Zip/7z.dll <FILE 7z.dll -1>
-        0/0/0/3 c:/Program Files/7-Zip/7z.exe <FILE 7z.exe -1>
-        0/0/0/4 c:/Program Files/7-Zip/7z.sfx <FILE 7z.sfx -1>
-        0/0/0/5 c:/Program Files/7-Zip/7zCon.sfx <FILE 7zCon.sfx -1>
-        0/0/0/6 c:/Program Files/7-Zip/7zFM.exe <FILE 7zFM.exe -1>
-        0/0/0/7 c:/Program Files/7-Zip/7zG.exe <FILE 7zG.exe -1>
-        0/0/0/9 c:/Program Files/7-Zip/descript.ion <FILE descript.ion -1>
-        0/0/0/10 c:/Program Files/7-Zip/Lang <DIR Lang -1>
-        0/0/0/10/0 c:/Program Files/7-Zip/Lang/en.ttt <FILE en.ttt -1>
-        0/0/0/10/1 c:/Program Files/7-Zip/Lang/ru.txt <FILE ru.txt -1>
-        0/0/0/11 c:/Program Files/7-Zip/Uninstall.exe <FILE Uninstall.exe -1>
-        0/0/0/8 c:/Program Files/7-Zip/7zip_pad.xml <FILE 7zip_pad.xml -1>
-    """
     if iterID is None:
         iterID = fsID()
 
@@ -1396,6 +1372,7 @@ def GetBackupStatusInfo(backupID, item_info, item_name, parent_path_existed=None
             return ret
     return ret
 
+
 def ExtractVersions(pathID, item_info, path_exist=None, customer_id=None):
     if not customer_id:
         customer_id = item_info.key_id or my_id.getGlobalID(key_alias='master')
@@ -1407,7 +1384,7 @@ def ExtractVersions(pathID, item_info, path_exist=None, customer_id=None):
         version_time = misc.TimeFromBackupID(version)
         if version_time and version_time > item_time:
             item_time = version_time
-        version_maxblocknum = version_info[0]
+        # version_maxblocknum = version_info[0]
         version_size = version_info[1]
         if version_size > 0:
             item_size += version_size

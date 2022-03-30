@@ -82,6 +82,7 @@ from lib import misc
 from lib import strng
 
 from main import settings
+from main import listeners
 
 from contacts import contactsdb
 
@@ -816,12 +817,12 @@ def ReadLocalFiles():
 #------------------------------------------------------------------------------
 
 
-def RemoteFileReport(backupID, blockNum, supplierNum, dataORparity, result):
+def RemoteFileReport(backupID, blockNum, supplierNum, dataORparity, result, itemInfo):
     """
     Writes info for a single piece of data into "remote" matrix.
 
     May be called when you got an Ack packet from remote supplier after
-    you sent him some Data packet .
+    you sent him some Data packet.
     """
     blockNum = int(blockNum)
     supplierNum = int(supplierNum)
@@ -845,11 +846,22 @@ def RemoteFileReport(backupID, blockNum, supplierNum, dataORparity, result):
         remote_files()[backupID][blockNum]['P'][supplierNum] = flag
     else:
         lg.warn('incorrect backup ID: %s' % backupID)
-    # if we know only 5 blocks stored on remote machine
-    # but we have backed up 6th block - remember this
-    remote_max_block_numbers()[backupID] = max(remote_max_block_numbers().get(backupID, -1), blockNum)
-    # mark to repaint this backup in gui
+    # if we know only N blocks stored on remote machine
+    # but we uploaded N+1 block - remember that
+    maxBlockNum = max(remote_max_block_numbers().get(backupID, -1), blockNum)
+    remote_max_block_numbers()[backupID] = maxBlockNum
     RepaintBackup(backupID)
+    full_remote_path = global_id.MakeGlobalID(path=itemInfo.name(), key_id=itemInfo.key_id)
+    full_remote_path_id = global_id.MakeGlobalID(path=itemInfo.path_id, key_id=itemInfo.key_id)
+    listeners.push_snapshot('remote_version', snap_id=backupID, data=dict(
+        backup_id=backupID,
+        max_block=maxBlockNum,
+        remote_path=full_remote_path,
+        global_id=full_remote_path_id,
+        type=itemInfo.type,
+        size=itemInfo.size,
+        key_id=itemInfo.key_id,
+    ))
 
 
 def LocalFileReport(packetID=None, backupID=None, blockNum=None, supplierNum=None, dataORparity=None):
@@ -1681,6 +1693,25 @@ def remove_list_files_query_callback(customer_idurl, query_path, callback_method
 
 #------------------------------------------------------------------------------
 
+def populate_remote_versions():
+    for backupID in GetBackupIDs(remote=True, local=False, sorted_ids=False):
+        customer_idurl = packetid.CustomerIDURL(backupID)
+        _, pathID, _ = packetid.SplitBackupID(backupID, normalize_key_alias=True)
+        itemInfo = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(customer_idurl=customer_idurl))
+        if itemInfo:
+            full_remote_path = global_id.MakeGlobalID(path=itemInfo.name(), key_id=itemInfo.key_id)
+            full_remote_path_id = global_id.MakeGlobalID(path=itemInfo.path_id, key_id=itemInfo.key_id)
+            listeners.push_snapshot('remote_version', snap_id=backupID, data=dict(
+                backup_id=backupID,
+                max_block=remote_max_block_numbers().get(backupID, -1),
+                remote_path=full_remote_path,
+                global_id=full_remote_path_id,
+                type=backup_fs.TYPES.get(itemInfo.type, 'UNKNOWN').lower(),
+                size=itemInfo.size,
+                key_id=itemInfo.key_id,
+            ))
+
+#------------------------------------------------------------------------------
 
 if __name__ == "__main__":
     init()
