@@ -1444,9 +1444,8 @@ def file_info(remote_path, include_uploads=True, include_downloads=True):
         r['downloads'] = downloads
     if _Debug:
         lg.out(_DebugLevel, 'api.file_info : %r' % pathID)
-    return RESULT([r, ], extra_fields={
-        'revision': backup_control.revision(),
-    })
+    r['revision'] = backup_control.revision()
+    return OK(r)
 
 
 def file_create(remote_path, as_folder=False, exist_ok=False, force_path_id=None):
