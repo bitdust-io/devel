@@ -159,6 +159,7 @@ class SharedDataService(LocalService):
 
     def _do_open_known_shares(self):
         from crypt import my_keys
+        from main import listeners
         from access import shared_access_coordinator
         from storage import backup_fs
         known_offline_shares = []
@@ -170,7 +171,7 @@ class SharedDataService(LocalService):
                 continue
             known_offline_shares.append(key_id)
         to_be_opened = []
-        for pathID, localPath, itemInfo in backup_fs.IterateIDs():
+        for _, _, itemInfo in backup_fs.IterateIDs():
             if not itemInfo.key_id:
                 continue
             if itemInfo.key_id in to_be_opened:
@@ -181,3 +182,6 @@ class SharedDataService(LocalService):
         for key_id in to_be_opened:
             active_share = shared_access_coordinator.SharedAccessCoordinator(key_id, log_events=True, publish_events=False, )
             active_share.automat('restart')
+            if listeners.is_populate_requered('shared_file'):
+                listeners.populate_later().remove('shared_file')
+                backup_fs.populate_shared_files(key_id=key_id)

@@ -2040,6 +2040,37 @@ def populate_private_files():
             ) for v in itm['versions']],
         ))
 
+
+def populate_shared_files(key_id=None):
+    lst = []
+    if key_id:
+        ret = api.files_list(key_id=key_id)
+        if ret['status'] != 'OK':
+            return
+        lst = ret['result']
+    else:
+        ret = api.shares_list()
+        if ret['status'] != 'OK':
+            return
+        for one_share in ret['result']:
+            ret = api.files_list(key_id=one_share['key_id'])
+            if ret['status'] != 'OK':
+                return
+            lst.extend(ret['result'])
+    for itm in lst:
+        if itm['path'] == 'index':
+            continue
+        listeners.push_snapshot('shared_file', snap_id=itm['global_id'], data=dict(
+            global_id=itm['global_id'],
+            remote_path=itm['remote_path'],
+            size=itm['size'],
+            type=itm['type'],
+            customer=itm['customer'],
+            versions=[dict(
+                backup_id=v['backup_id'],
+            ) for v in itm['versions']],
+        ))
+
 #------------------------------------------------------------------------------
 
 def _test():
