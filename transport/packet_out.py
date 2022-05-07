@@ -669,6 +669,7 @@ class PacketOut(automat.Automat):
         self.caching_deferred = identitycache.immediatelyCaching(self.remote_idurl)
         self.caching_deferred.addCallback(self._on_remote_identity_cached)
         self.caching_deferred.addErrback(self._on_remote_identity_cache_failed)
+        self.caching_deferred.addTimeout(60, clock=reactor)
 
     def doSerializeAndWrite(self, *args, **kwargs):
         """
