@@ -851,17 +851,22 @@ def RemoteFileReport(backupID, blockNum, supplierNum, dataORparity, result, item
     maxBlockNum = max(remote_max_block_numbers().get(backupID, -1), blockNum)
     remote_max_block_numbers()[backupID] = maxBlockNum
     RepaintBackup(backupID)
-    full_remote_path = global_id.MakeGlobalID(path=itemInfo.name(), key_id=itemInfo.key_id)
-    full_remote_path_id = global_id.MakeGlobalID(path=itemInfo.path_id, key_id=itemInfo.key_id)
+    full_remote_path = global_id.MakeGlobalID(path=itemInfo['name'], key_id=itemInfo['key_id'])
+    full_remote_path_id = global_id.MakeGlobalID(path=itemInfo['path_id'], key_id=itemInfo['key_id'])
+    _, percent, _, weakPercent = GetBackupRemoteStats(backupID)
     listeners.push_snapshot('remote_version', snap_id=backupID, data=dict(
         backup_id=backupID,
         max_block=maxBlockNum,
         remote_path=full_remote_path,
         global_id=full_remote_path_id,
-        type=itemInfo.type,
-        size=itemInfo.size,
-        key_id=itemInfo.key_id,
+        type=itemInfo['type'],
+        size=itemInfo['size'],
+        key_id=itemInfo['key_id'],
+        delivered=misc.percent2string(percent),
+        reliable=misc.percent2string(weakPercent),
     ))
+    if _Debug:
+        lg.args(_DebugLevel, i=itemInfo['name'], b=backupID, s=supplierNum, n=blockNum, r=result)
 
 
 def LocalFileReport(packetID=None, backupID=None, blockNum=None, supplierNum=None, dataORparity=None):
@@ -1131,8 +1136,8 @@ def ScanBlocksToSend(backupID, limit_per_supplier=None):
     for supplierNum in range(len(supplierActiveArray)):
         bySupplier[supplierNum] = set()
     if backupID not in remote_files():
-        if _Debug:
-            lg.out(_DebugLevel, 'backup_matrix.ScanBlocksToSend  backupID %r not found in remote files' % backupID)
+        # if _Debug:
+        #     lg.out(_DebugLevel, 'backup_matrix.ScanBlocksToSend  backupID %r not found in remote files' % backupID)
         for blockNum in range(localMaxBlockNum + 1):
             localData = GetLocalDataArray(backupID, blockNum)
             localParity = GetLocalParityArray(backupID, blockNum)
@@ -1149,8 +1154,8 @@ def ScanBlocksToSend(backupID, limit_per_supplier=None):
                     if len(bySupplier[supplierNum]) > limit_per_supplier:
                         break
     else:
-        if _Debug:
-            lg.out(_DebugLevel, 'backup_matrix.ScanBlocksToSend  backupID %r was found in remote files' % backupID)
+        # if _Debug:
+        #     lg.out(_DebugLevel, 'backup_matrix.ScanBlocksToSend  backupID %r was found in remote files' % backupID)
         for blockNum in range(localMaxBlockNum + 1):
             remoteData = GetRemoteDataArray(backupID, blockNum)
             remoteParity = GetRemoteParityArray(backupID, blockNum)
@@ -1701,6 +1706,7 @@ def populate_remote_versions():
         if itemInfo:
             full_remote_path = global_id.MakeGlobalID(path=itemInfo.name(), key_id=itemInfo.key_id)
             full_remote_path_id = global_id.MakeGlobalID(path=itemInfo.path_id, key_id=itemInfo.key_id)
+            _, percent, _, weakPercent = GetBackupRemoteStats(backupID)
             listeners.push_snapshot('remote_version', snap_id=backupID, data=dict(
                 backup_id=backupID,
                 max_block=remote_max_block_numbers().get(backupID, -1),
@@ -1709,6 +1715,8 @@ def populate_remote_versions():
                 type=backup_fs.TYPES.get(itemInfo.type, 'UNKNOWN').lower(),
                 size=itemInfo.size,
                 key_id=itemInfo.key_id,
+                delivered=misc.percent2string(percent),
+                reliable=misc.percent2string(weakPercent),
             ))
 
 #------------------------------------------------------------------------------

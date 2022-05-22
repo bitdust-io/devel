@@ -264,7 +264,7 @@ class BackupMonitor(automat.Automat):
         """
         Action method.
         """
-        lg.out(2, "backup_monitor.doDeleteAllBackups")
+        lg.warn('about to erase all backups')
         # cancel all tasks and jobs
         backup_control.DeleteAllTasks()
         backup_control.AbortAllRunningBackups()
@@ -289,10 +289,11 @@ class BackupMonitor(automat.Automat):
         changedSupplierNums = backup_matrix.SuppliersChangedNumbers(self.current_suppliers)
         # notify io_throttle that we do not neeed already this suppliers
         for supplierNum in changedSupplierNums:
-            lg.out(2, "backup_monitor.doUpdateSuppliers supplier %d changed: [%s]->[%s]" % (
-                supplierNum,
-                nameurl.GetName(self.current_suppliers[supplierNum]),
-                nameurl.GetName(contactsdb.suppliers()[supplierNum]),))
+            if _Debug:
+                lg.out(_DebugLevel, "backup_monitor.doUpdateSuppliers supplier %d changed: [%s]->[%s]" % (
+                    supplierNum,
+                    nameurl.GetName(self.current_suppliers[supplierNum]),
+                    nameurl.GetName(contactsdb.suppliers()[supplierNum]),))
             suplier_idurl = self.current_suppliers[supplierNum]
             io_throttle.DeleteSuppliers([suplier_idurl, ])
             # erase (set to 0) remote info for this guys
@@ -305,7 +306,8 @@ class BackupMonitor(automat.Automat):
         if backup_control.HasRunningBackup():
             # if some backups are running right now no need to rebuild something - too much use of CPU
             backup_rebuilder.RemoveAllBackupsToWork()
-            lg.out(6, 'backup_monitor.doPrepareListBackups skip all rebuilds')
+            if _Debug:
+                lg.out(_DebugLevel, 'backup_monitor.doPrepareListBackups skip all rebuilds')
             self.automat('list-backups-done')
             return
         # take remote and local backups and get union from it
@@ -318,8 +320,8 @@ class BackupMonitor(automat.Automat):
         allBackupIDs = misc.sorted_backup_ids(list(allBackupIDs), True)
         # add backups to the queue
         backup_rebuilder.AddBackupsToWork(allBackupIDs)
-        lg.out(6, 'backup_monitor.doPrepareListBackups %d items:' % len(allBackupIDs))
-        lg.out(6, '    %s' % allBackupIDs)
+        if _Debug:
+            lg.out(_DebugLevel, 'backup_monitor.doPrepareListBackups %d items:' % len(allBackupIDs))
         self.automat('list-backups-done', allBackupIDs)
 
     def doCleanUpBackups(self, *args, **kwargs):

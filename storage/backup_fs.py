@@ -272,6 +272,16 @@ class FSItemInfo():
     def __repr__(self):
         return '<%s %s %d %s>' % (TYPES[self.type], misc.unicode_to_str_safe(self.name()), self.size, self.key_id)
 
+    def to_json(self):
+        return {
+            'name': self.unicodename,
+            'path_id': self.path_id,
+            'type': self.type,
+            'size': self.size,
+            'key_id': self.key_id,
+            'versions': self.versions,
+        }
+
     def filename(self):
         return os.path.basename(self.unicodename)
 
