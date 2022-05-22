@@ -272,6 +272,16 @@ class FSItemInfo():
     def __repr__(self):
         return '<%s %s %d %s>' % (TYPES[self.type], misc.unicode_to_str_safe(self.name()), self.size, self.key_id)
 
+    def to_json(self):
+        return {
+            'name': self.unicodename,
+            'path_id': self.path_id,
+            'type': self.type,
+            'size': self.size,
+            'key_id': self.key_id,
+            'versions': self.versions,
+        }
+
     def filename(self):
         return os.path.basename(self.unicodename)
 
@@ -2030,6 +2040,37 @@ def populate_private_files():
         if itm['path'] == 'index':
             continue
         listeners.push_snapshot('private_file', snap_id=itm['global_id'], data=dict(
+            global_id=itm['global_id'],
+            remote_path=itm['remote_path'],
+            size=itm['size'],
+            type=itm['type'],
+            customer=itm['customer'],
+            versions=[dict(
+                backup_id=v['backup_id'],
+            ) for v in itm['versions']],
+        ))
+
+
+def populate_shared_files(key_id=None):
+    lst = []
+    if key_id:
+        ret = api.files_list(key_id=key_id)
+        if ret['status'] != 'OK':
+            return
+        lst = ret['result']
+    else:
+        ret = api.shares_list()
+        if ret['status'] != 'OK':
+            return
+        for one_share in ret['result']:
+            ret = api.files_list(key_id=one_share['key_id'])
+            if ret['status'] != 'OK':
+                return
+            lst.extend(ret['result'])
+    for itm in lst:
+        if itm['path'] == 'index':
+            continue
+        listeners.push_snapshot('shared_file', snap_id=itm['global_id'], data=dict(
             global_id=itm['global_id'],
             remote_path=itm['remote_path'],
             size=itm['size'],

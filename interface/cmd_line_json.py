@@ -49,6 +49,7 @@ import sys
 
 from lib import jsontemplate
 from lib import strng
+from lib import jsn
 
 from interface import cmd_line_json_templates as templ
 
@@ -147,8 +148,7 @@ def print_and_stop(result):
     Print text to console and stop the reactor.
     """
     from twisted.internet import reactor  # @UnresolvedImport
-    import pprint
-    pprint.pprint(result, indent=2, )
+    sys.stdout.write(jsn.dumps(result, indent=2, keys_to_text=True, values_to_text=True, ensure_ascii=True) + '\n')
     reactor.stop()  # @UndefinedVariable
 
 

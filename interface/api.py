@@ -243,6 +243,12 @@ def enable_model_listener(model_name, request_all=False):
             backup_fs.populate_private_files()
         else:
             listeners.populate_later('private_file')
+    elif model_name == 'shared_file':
+        if driver.is_on('service_shared_data'):
+            from storage import backup_fs  # @Reimport
+            backup_fs.populate_shared_files()
+        else:
+            listeners.populate_later('shared_file')
     elif model_name == 'remote_version':
         if driver.is_on('service_backups'):
             from storage import backup_matrix
@@ -1444,9 +1450,8 @@ def file_info(remote_path, include_uploads=True, include_downloads=True):
         r['downloads'] = downloads
     if _Debug:
         lg.out(_DebugLevel, 'api.file_info : %r' % pathID)
-    return RESULT([r, ], extra_fields={
-        'revision': backup_control.revision(),
-    })
+    r['revision'] = backup_control.revision()
+    return OK(r)
 
 
 def file_create(remote_path, as_folder=False, exist_ok=False, force_path_id=None):
@@ -1554,6 +1559,15 @@ def file_create(remote_path, as_folder=False, exist_ok=False, force_path_id=None
             customer=parts['customer'],
             versions=[],
         ))
+    else:
+        listeners.push_snapshot('shared_file', snap_id=full_glob_id, data=dict(
+            global_id=full_glob_id,
+            remote_path=full_remote_path,
+            size=max(0, itemInfo.size),
+            type=backup_fs.TYPES.get(itemInfo.type, 'unknown').lower(),
+            customer=parts['customer'],
+            versions=[],
+        ))
     if _Debug:
         lg.out(_DebugLevel, 'api.file_create : %r' % full_glob_id)
     return OK({
@@ -1619,6 +1633,15 @@ def file_delete(remote_path):
     control.request_update([('pathID', pathIDfull), ])
     if id_url.is_the_same(parts['idurl'], my_id.getIDURL()):
         listeners.push_snapshot('private_file', snap_id=full_glob_id, deleted=True, data=dict(
+            global_id=full_glob_id,
+            remote_path=full_remote_path,
+            size=0 if not itemInfo else itemInfo.size,
+            type='file' if not itemInfo else backup_fs.TYPES.get(itemInfo.type, 'unknown').lower(),
+            customer=parts['customer'],
+            versions=[],
+        ))
+    else:
+        listeners.push_snapshot('shared_file', snap_id=full_glob_id, deleted=True, data=dict(
             global_id=full_glob_id,
             remote_path=full_remote_path,
             size=0 if not itemInfo else itemInfo.size,

@@ -59,7 +59,7 @@ from __future__ import absolute_import
 #------------------------------------------------------------------------------
 
 _Debug = False
-_DebugLevel = 16
+_DebugLevel = 12
 
 #------------------------------------------------------------------------------
 
@@ -209,8 +209,8 @@ class DataSender(automat.Automat):
         from storage import backup_fs
         backup_matrix.ReadLocalFiles()
         progress = 0
-        if _Debug:
-            lg.out(_DebugLevel, 'data_sender.doScanAndQueue    with %d known customers' % len(contactsdb.known_customers()))
+        # if _Debug:
+        #     lg.out(_DebugLevel, 'data_sender.doScanAndQueue    with %d known customers' % len(contactsdb.known_customers()))
         for customer_idurl in contactsdb.known_customers():
             if customer_idurl != my_id.getIDURL():
                 # TODO: check that later
@@ -242,67 +242,69 @@ class DataSender(automat.Automat):
                     continue
                 packetsBySupplier = backup_matrix.ScanBlocksToSend(backupID, limit_per_supplier=None)
                 total_for_customer = sum([len(v) for v in packetsBySupplier.values()])
-                if _Debug:
-                    lg.out(_DebugLevel, 'data_sender.doScanAndQueue    to be delivered for customer %r : %d' % (customer_idurl, total_for_customer))
-                for supplierNum in packetsBySupplier.keys():
-                    # supplier_idurl = contactsdb.supplier(supplierNum, customer_idurl=customer_idurl)
-                    if supplierNum >= 0 and supplierNum < len(known_suppliers):
-                        supplier_idurl = known_suppliers[supplierNum]
-                    else:
-                        supplier_idurl = None
-                    if not supplier_idurl:
-                        lg.warn('skip sending, unknown supplier_idurl supplierNum=%s for %s, customer_idurl=%r' % (
-                            supplierNum, backupID, customer_idurl))
-                        continue
-                    for packetID in packetsBySupplier[supplierNum]:
-                        backupID_, _, supplierNum_, _ = packetid.BidBnSnDp(packetID)
-                        if backupID_ != backupID:
-                            lg.warn('skip sending, unexpected backupID supplierNum=%s for %s, customer_idurl=%r' % (
-                                packetID, backupID, customer_idurl))
-                            continue
-                        if supplierNum_ != supplierNum:
-                            lg.warn('skip sending, unexpected supplierNum %s for %s, customer_idurl=%r' % (
-                                packetID, backupID, customer_idurl))
-                            continue
-                        if io_throttle.HasPacketInSendQueue(supplier_idurl, packetID):
-                            if _Debug:
-                                lg.out(_DebugLevel, 'data_sender.doScanAndQueue    %s already in sending queue for %r' % (packetID, supplier_idurl))
-                            continue
-                        latest_progress = self.statistic.get(supplier_idurl, {}).get('latest', '')
-                        if len(latest_progress) >= 3 and latest_progress.endswith('---'):
-                            if _Debug:
-                                lg.out(_DebugLevel + 6, 'data_sender.doScanAndQueue     skip sending to supplier %r because multiple packets already failed' % supplier_idurl)
-                            continue
-                        if not io_throttle.OkToSend(supplier_idurl):
-                            if _Debug:
-                                lg.out(_DebugLevel + 6, 'data_sender.doScanAndQueue     skip sending, queue is busy for %r' % supplier_idurl)
-                            continue
-                        customerGlobalID, pathID = packetid.SplitPacketID(packetID)
-                        filename = os.path.join(
-                            settings.getLocalBackupsDir(),
-                            customerGlobalID,
-                            pathID,
-                        )
-                        if not os.path.isfile(filename):
-                            if _Debug:
-                                lg.out(_DebugLevel, 'data_sender.doScanAndQueue     %s is not a file' % filename)
-                            continue
-                        if io_throttle.QueueSendFile(
-                            filename,
-                            packetID,
-                            supplier_idurl,
-                            my_id.getIDURL(),
-                            lambda packet, ownerID, packetID: self._packetAcked(packet, ownerID, packetID, item),
-                            lambda remoteID, packetID, why: self._packetFailed(remoteID, packetID, why, item),
-                        ):
-                            progress += 1
-                            if _Debug:
-                                lg.out(_DebugLevel, 'data_sender.doScanAndQueue   put %s in the queue  progress=%d' % (packetID, progress, ))
+                if total_for_customer:
+                    if _Debug:
+                        lg.out(_DebugLevel, 'data_sender.doScanAndQueue    sending %r for customer %r with %d pieces' % (item.name(), customer_idurl, total_for_customer))
+                    for supplierNum in packetsBySupplier.keys():
+                        # supplier_idurl = contactsdb.supplier(supplierNum, customer_idurl=customer_idurl)
+                        if supplierNum >= 0 and supplierNum < len(known_suppliers):
+                            supplier_idurl = known_suppliers[supplierNum]
                         else:
-                            if _Debug:
-                                lg.out(_DebugLevel, 'data_sender.doScanAndQueue    io_throttle.QueueSendFile FAILED %s' % packetID)
+                            supplier_idurl = None
+                        if not supplier_idurl:
+                            lg.warn('skip sending, unknown supplier_idurl supplierNum=%s for %s, customer_idurl=%r' % (
+                                supplierNum, backupID, customer_idurl))
+                            continue
+                        for packetID in packetsBySupplier[supplierNum]:
+                            backupID_, _, supplierNum_, _ = packetid.BidBnSnDp(packetID)
+                            if backupID_ != backupID:
+                                lg.warn('skip sending, unexpected backupID supplierNum=%s for %s, customer_idurl=%r' % (
+                                    packetID, backupID, customer_idurl))
+                                continue
+                            if supplierNum_ != supplierNum:
+                                lg.warn('skip sending, unexpected supplierNum %s for %s, customer_idurl=%r' % (
+                                    packetID, backupID, customer_idurl))
+                                continue
+                            if io_throttle.HasPacketInSendQueue(supplier_idurl, packetID):
+                                if _Debug:
+                                    lg.out(_DebugLevel, 'data_sender.doScanAndQueue    %s already in sending queue for %r' % (packetID, supplier_idurl))
+                                continue
+                            latest_progress = self.statistic.get(supplier_idurl, {}).get('latest', '')
+                            if len(latest_progress) >= 3 and latest_progress.endswith('---'):
+                                if _Debug:
+                                    lg.out(_DebugLevel + 6, 'data_sender.doScanAndQueue     skip sending to supplier %r because multiple packets already failed' % supplier_idurl)
+                                continue
+                            if not io_throttle.OkToSend(supplier_idurl):
+                                if _Debug:
+                                    lg.out(_DebugLevel + 6, 'data_sender.doScanAndQueue     skip sending, queue is busy for %r' % supplier_idurl)
+                                continue
+                            customerGlobalID, pathID = packetid.SplitPacketID(packetID)
+                            filename = os.path.join(
+                                settings.getLocalBackupsDir(),
+                                customerGlobalID,
+                                pathID,
+                            )
+                            if not os.path.isfile(filename):
+                                if _Debug:
+                                    lg.out(_DebugLevel, 'data_sender.doScanAndQueue     %s is not a file' % filename)
+                                continue
+                            itemInfo = item.to_json()
+                            if io_throttle.QueueSendFile(
+                                filename,
+                                packetID,
+                                supplier_idurl,
+                                my_id.getIDURL(),
+                                lambda packet, ownerID, packetID: self._packetAcked(packet, ownerID, packetID, itemInfo),
+                                lambda remoteID, packetID, why: self._packetFailed(remoteID, packetID, why, itemInfo),
+                            ):
+                                progress += 1
+                                if _Debug:
+                                    lg.out(_DebugLevel, 'data_sender.doScanAndQueue   for %r put %s in the queue  progress=%d' % (item.name(), packetID, progress, ))
+                            else:
+                                if _Debug:
+                                    lg.out(_DebugLevel, 'data_sender.doScanAndQueue    io_throttle.QueueSendFile FAILED %s' % packetID)
         if _Debug:
-            lg.out(_DebugLevel, 'data_sender.doScanAndQueue progress=%s' % progress)
+            lg.out(_DebugLevel, 'data_sender.doScanAndQueue    progress=%s' % progress)
         self.automat('scan-done', progress)
 
 #     def doPrintStats(self, *args, **kwargs):
@@ -401,10 +403,11 @@ class DataSender(automat.Automat):
         _DataSender = None
 
     def _packetAcked(self, packet, ownerID, packetID, itemInfo):
+        if _Debug:
+            lg.args(_DebugLevel, pid=packetID, i=itemInfo)
         from storage import backup_matrix
         backupID, blockNum, supplierNum, dataORparity = packetid.BidBnSnDp(packetID)
-        backup_matrix.RemoteFileReport(
-            backupID, blockNum, supplierNum, dataORparity, True, itemInfo)
+        backup_matrix.RemoteFileReport(backupID, blockNum, supplierNum, dataORparity, True, itemInfo)
         if ownerID not in self.statistic:
             self.statistic[ownerID] = {
                 'acked': 0,
@@ -417,6 +420,8 @@ class DataSender(automat.Automat):
         self.automat('block-acked', (ownerID, packetID))
 
     def _packetFailed(self, remoteID, packetID, why, itemInfo):
+        if _Debug:
+            lg.args(_DebugLevel, pid=packetID, i=itemInfo)
         from storage import backup_matrix
         backupID, blockNum, supplierNum, dataORparity = packetid.BidBnSnDp(packetID)
         backup_matrix.RemoteFileReport(backupID, blockNum, supplierNum, dataORparity, False, itemInfo)
