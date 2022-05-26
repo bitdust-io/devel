@@ -36,8 +36,8 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = False
-_DebugLevel = 8
+_Debug = True
+_DebugLevel = 12
 
 _APILogFileEnabled = None
 
@@ -1550,7 +1550,7 @@ def file_create(remote_path, as_folder=False, exist_ok=False, force_path_id=None
     control.request_update([('pathID', newPathID), ])
     full_glob_id = global_id.MakeGlobalID(customer=parts['customer'], path=newPathID, key_alias=keyAlias)
     full_remote_path = global_id.MakeGlobalID(customer=parts['customer'], path=parts['path'], key_alias=keyAlias)
-    if id_url.is_the_same(customer_idurl, my_id.getIDURL()):
+    if id_url.is_the_same(customer_idurl, my_id.getIDURL()) and keyAlias == 'master':
         listeners.push_snapshot('private_file', snap_id=full_glob_id, data=dict(
             global_id=full_glob_id,
             remote_path=full_remote_path,
