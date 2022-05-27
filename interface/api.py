@@ -1631,7 +1631,7 @@ def file_delete(remote_path):
     backup_control.Save()
     backup_monitor.A('restart')
     control.request_update([('pathID', pathIDfull), ])
-    if id_url.is_the_same(parts['idurl'], my_id.getIDURL()):
+    if id_url.is_the_same(parts['idurl'], my_id.getIDURL()) and keyAlias == 'master':
         listeners.push_snapshot('private_file', snap_id=full_glob_id, deleted=True, data=dict(
             global_id=full_glob_id,
             remote_path=full_remote_path,
