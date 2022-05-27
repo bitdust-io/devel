@@ -2032,7 +2032,7 @@ def Unserialize(raw_data, iter=None, iterID=None, from_json=False, decoding='utf
 #------------------------------------------------------------------------------
 
 def populate_private_files():
-    ret = api.files_list(remote_path='')
+    ret = api.files_list(remote_path='', key_id=my_id.getGlobalID(key_alias='master'))
     if ret['status'] != 'OK':
         return
     lst = ret['result']
@@ -2054,7 +2054,7 @@ def populate_private_files():
 def populate_shared_files(key_id=None):
     lst = []
     if key_id:
-        ret = api.files_list(key_id=key_id)
+        ret = api.files_list(remote_path='', key_id=key_id)
         if ret['status'] != 'OK':
             return
         lst = ret['result']
@@ -2063,7 +2063,7 @@ def populate_shared_files(key_id=None):
         if ret['status'] != 'OK':
             return
         for one_share in ret['result']:
-            ret = api.files_list(key_id=one_share['key_id'])
+            ret = api.files_list(remote_path='', key_id=one_share['key_id'])
             if ret['status'] != 'OK':
                 return
             lst.extend(ret['result'])

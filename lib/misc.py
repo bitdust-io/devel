@@ -704,8 +704,7 @@ def percent2string(percent, precis=3):
     A tool to make a string (with % at the end) from given float, ``precis`` is
     precision to round the number.
     """
-    s = float2str(round(percent, precis),
-                  mask=("%%3.%df" % (precis + 2)))
+    s = float2str(round(percent, precis), mask=("%%3.%df" % (precis + 2)))
     return s + '%'
 
 

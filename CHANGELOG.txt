@@ -1,6 +1,46 @@
 Change Log
 ==========
 
+2022-05-22 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* populate more information in API streaming for private/shared files
+* added api streaming of shared files
+* use jsn.dumps() instead of pprint.pprint() in the interface/cmd_line_json.py
+* fallback fix in packet_out() state machine
+* small change in api.file_info() method
+
+
+
+2022-04-06 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* added api streaming of remote files versions
+* added API streaming of private files
+* added api.service_health() method
+* added API steaming of online statuses
+* added API streaming of correspondents
+* bug fixes in lib/txws.py, p2p/p2p_service.py and system/deploy.py
+* IDURL fix in p2p_service related to identity revision number
+* bug fix in group_member()
+* IDURL bug fix in identitydb
+* bug fixing cmd line "daemon" command
+* bug fix in userid/id_url.py
+* adjusted ack timeouts in few places
+
+
+
+2022-01-22 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* bug fix related to pycryptodomex version bump
+* updated scripts for setuptools distribution
+* make possible to delete model data via websocket api streams
+* make possible to populate model data once service is started
+* added API streaming for messages and conversations
+* added main/listeners.py and implemented real-time api updates with streaming via WebSocket
+* home folder on Android is /storage/emulated/0/Android/data/org.bitdust_io.bitdust1/files/Documents/.bitdust
+* enabled protection of API websocket and HTTP REST interfaces with secret token
+
+
+
 2021-12-31 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * improvements related to logging
