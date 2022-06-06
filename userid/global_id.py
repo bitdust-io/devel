@@ -277,6 +277,9 @@ def NormalizeGlobalID(inp, detect_version=False, as_field=True):
         g = ParseGlobalID(inp, detect_version=detect_version)
     if not g['idurl']:
         g['idurl'] = my_id.getIDURL().to_bin()
+    if as_field:
+        from userid import id_url
+        g['idurl'] = id_url.field(g['idurl'])
     if not g['customer']:
         g['customer'] = UrlToGlobalID(g['idurl'])
     if not g['user']:
@@ -288,9 +291,6 @@ def NormalizeGlobalID(inp, detect_version=False, as_field=True):
         g['idhost'] = nameurl.GetHost(g['idurl'])
     if not g['key_id']:
         g['key_id'] = MakeGlobalKeyID(g['key_alias'], g['customer'])
-    if as_field:
-        from userid import id_url
-        g['idurl'] = id_url.field(g['idurl'])
     return g
 
 

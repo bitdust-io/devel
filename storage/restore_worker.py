@@ -157,8 +157,8 @@ class RestoreWorker(automat.Automat):
         """
         self.creator_id = my_id.getIDURL()
         self.backup_id = BackupID
-        _parts = packetid.SplitBackupID(self.backup_id)
-        self.customer_id = _parts[0]
+        _parts = packetid.SplitBackupIDFull(self.backup_id)
+        self.customer_id = _parts[1]
         self.customer_idurl = global_id.GlobalUserToIDURL(self.customer_id)
         self.known_suppliers = []
         self.path_id = _parts[1]

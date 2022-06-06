@@ -169,14 +169,15 @@ class SharedAccessCoordinator(automat.Automat):
         Use this method if you need to call Automat.__init__() in a special way.
         """
         self.key_id = key_id
-        self.glob_id = global_id.ParseGlobalID(self.key_id)
+        self.glob_id = global_id.NormalizeGlobalID(self.key_id)
+        self.key_alias = self.glob_id['key_alias']
         self.customer_idurl = self.glob_id['idurl']
         self.known_suppliers_list = []
         self.known_ecc_map = None
         self.dht_lookup_use_cache = True
         self.outgoing_list_files_packets_ids = []
         super(SharedAccessCoordinator, self).__init__(
-            name="%s$%s" % (self.glob_id['key_alias'][:10], self.glob_id['customer']),
+            name="%s$%s" % (self.key_alias[:10], self.glob_id['customer']),
             state='AT_STARTUP',
             debug_level=debug_level,
             log_events=log_events,
@@ -189,7 +190,7 @@ class SharedAccessCoordinator(automat.Automat):
         j = super().to_json()
         j.update({
             'key_id': self.key_id,
-            'alias': self.glob_id['key_alias'],
+            'alias': self.key_alias,
             'label': my_keys.get_label(self.key_id),
             'creator': self.customer_idurl.to_id(),
             'suppliers': [id_url.idurl_to_id(s) for s in self.known_suppliers_list],
@@ -343,7 +344,7 @@ class SharedAccessCoordinator(automat.Automat):
         """
         Condition method.
         """
-        return backup_fs.HasChilds('', iter=backup_fs.fs(self.customer_idurl))
+        return backup_fs.HasChilds('', iter=backup_fs.fs(self.customer_idurl, self.key_alias))
 
     def doInit(self, *args, **kwargs):
         """

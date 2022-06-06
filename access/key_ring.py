@@ -734,7 +734,7 @@ def do_delete_key(key_id, is_private):
 #------------------------------------------------------------------------------
 
 def on_files_received(newpacket, info):
-    list_files_global_id = global_id.ParseGlobalID(newpacket.PacketID)
+    list_files_global_id = global_id.NormalizeGlobalID(newpacket.PacketID)
     if not list_files_global_id['idurl']:
         lg.warn('invalid PacketID: %s' % newpacket.PacketID)
         return False
@@ -778,8 +778,7 @@ def on_files_received(newpacket, info):
             return False
         count = backup_fs.Unserialize(
             raw_data=json_data,
-            iter=backup_fs.fs(trusted_customer_idurl),
-            iterID=backup_fs.fsID(trusted_customer_idurl),
+            customer_idurl=trusted_customer_idurl,
             from_json=True,
         )
         p2p_service.SendAck(newpacket)

@@ -300,7 +300,7 @@ class ArchiveReader(automat.Automat):
         self.request_list_files_timer = reactor.callLater(30, self._on_request_list_files_timeout)  # @UndefinedVariable
 
     def _do_select_archive_snapshots(self):
-        iterID_and_path = backup_fs.WalkByID(self.archive_folder_path, iterID=backup_fs.fsID(self.queue_owner_idurl))
+        iterID_and_path = backup_fs.WalkByID(self.archive_folder_path, iterID=backup_fs.fsID(self.queue_owner_idurl, self.queue_alias))
         if iterID_and_path is None:
             lg.err('did not found archive folder in the catalog: %r' % self.archive_folder_path)
             self.automat('restore-failed')

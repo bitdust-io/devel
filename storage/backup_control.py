@@ -190,7 +190,7 @@ def WriteIndex(filepath=None, encoding='utf-8'):
     for customer_idurl in backup_fs.known_customers():
         customer_id = customer_idurl.to_id()
         json_data[customer_id] = backup_fs.Serialize(
-            iterID=backup_fs.fsID(customer_idurl),
+            customer_idurl=customer_idurl,
             to_json=True,
             encoding=encoding,
         )
@@ -246,8 +246,7 @@ def ReadIndex(text_data, encoding='utf-8'):
             try:
                 count = backup_fs.Unserialize(
                     json_data[customer_id],
-                    iter=backup_fs.fs(customer_idurl),
-                    iterID=backup_fs.fsID(customer_idurl),
+                    customer_idurl=customer_idurl,
                     from_json=True,
                     decoding=encoding,
                 )
@@ -276,7 +275,7 @@ def Load(filepath=None):
         WriteIndex(filepath)
     src = bpio.ReadTextFile(filepath)
     if not src:
-        lg.out(2, 'backup_control.Load ERROR reading file %s' % filepath)
+        lg.err('failed reading file %s' % filepath)
         return False
     inpt = StringIO(src)
     try:
@@ -408,7 +407,7 @@ def IncomingSupplierBackupIndex(newpacket):
     """
     b = encrypted.Unserialize(newpacket.Payload)
     if b is None:
-        lg.out(2, 'backup_control.IncomingSupplierBackupIndex ERROR reading data from %s' % newpacket.RemoteID)
+        lg.err('failed reading data from %s' % newpacket.RemoteID)
         return None
     try:
         session_key = key.DecryptLocalPrivateKey(b.EncryptedSessionKey)
@@ -420,7 +419,6 @@ def IncomingSupplierBackupIndex(newpacket):
         else:
             supplier_revision = -1
     except:
-        lg.out(2, 'backup_control.IncomingSupplierBackupIndex ERROR reading data from %s' % newpacket.RemoteID)
         lg.exc()
         try:
             inpt.close()
@@ -456,7 +454,7 @@ def DeleteAllBackups():
     Remove all backup IDs from index data base, see ``DeleteBackup()`` method.
     """
     # prepare a list of all known backup IDs
-    all_ids = set(backup_fs.ListAllBackupIDs())
+    all_ids = set(backup_fs.ListAllBackupIDs(customer_idurl=my_id.getIDURL()))
     all_ids.update(backup_matrix.GetBackupIDs(remote=True, local=True))
     if _Debug:
         lg.out(_DebugLevel, 'backup_control.DeleteAllBackups %d ID\'s to kill' % len(all_ids))
@@ -492,11 +490,13 @@ def DeleteBackup(backupID, removeLocalFilesToo=True, saveDB=True, calculate=True
     # if the user deletes a backup, make sure we remove any work we're doing on it
     # abort backup if it just started and is running at the moment
     if AbortRunningBackup(backupID):
-        lg.out(8, 'backup_control.DeleteBackup %s is in process, stopping' % backupID)
+        if _Debug:
+            lg.out(_DebugLevel, 'backup_control.DeleteBackup %s is in process, stopping' % backupID)
         return True
     from stream import io_throttle
     from storage import backup_rebuilder
-    lg.out(8, 'backup_control.DeleteBackup ' + backupID)
+    if _Debug:
+        lg.out(_DebugLevel, 'backup_control.DeleteBackup ' + backupID)
     # if we requested for files for this backup - we do not need it anymore
     io_throttle.DeleteBackupRequests(backupID)
     io_throttle.DeleteBackupSendings(backupID)
@@ -536,16 +536,19 @@ def DeletePathBackups(pathID, removeLocalFilesToo=True, saveDB=True, calculate=T
     pathID = global_id.CanonicalID(pathID)
     # get the working item
     customer, remotePath = packetid.SplitPacketID(pathID)
+    key_alias = packetid.KeyAlias(customer)
     customer_idurl = global_id.GlobalUserToIDURL(customer)
-    item = backup_fs.GetByID(remotePath, iterID=backup_fs.fsID(customer_idurl))
+    item = backup_fs.GetByID(remotePath, iterID=backup_fs.fsID(customer_idurl, key_alias))
     if item is None:
         return False
-    lg.out(8, 'backup_control.DeletePathBackups ' + pathID)
+    if _Debug:
+        lg.out(_DebugLevel, 'backup_control.DeletePathBackups ' + pathID)
     # this is a list of all known backups of this path
     versions = item.list_versions()
     for version in versions:
         backupID = packetid.MakeBackupID(customer, remotePath, version)
-        lg.out(8, '        removing %s' % backupID)
+        if _Debug:
+            lg.out(_DebugLevel, '        removing %s' % backupID)
         # abort backup if it just started and is running at the moment
         AbortRunningBackup(backupID)
         # if we requested for files for this backup - we do not need it anymore
@@ -683,7 +686,7 @@ class Task():
         """
         Runs a new ``Job`` from that ``Task``.
         """
-        iter_and_path = backup_fs.WalkByID(self.remotePath, iterID=backup_fs.fsID(self.customerIDURL))
+        iter_and_path = backup_fs.WalkByID(self.remotePath, iterID=backup_fs.fsID(self.customerIDURL, self.keyAlias))
         if iter_and_path is None:
             if _Debug:
                 lg.out(_DebugLevel, 'backup_control.Task.run ERROR %s not found in the index' % self.remotePath)
@@ -876,7 +879,8 @@ def OnFoundFolderSize(pth, sz, arg):
         pathID, version = arg
         customerGlobID, pathID = packetid.SplitPacketID(pathID)
         customerIDURL = global_id.GlobalUserToIDURL(customerGlobID)
-        item = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(customerIDURL))
+        keyAlias = packetid.KeyAlias(customerGlobID)
+        item = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(customerIDURL, keyAlias))
         if item:
             item.set_size(sz)
             backup_fs.Calculate()
@@ -902,12 +906,12 @@ def OnJobDone(backupID, result):
     # from customer import io_throttle
     lg.info('job done [%s] with result "%s", %d more tasks' % (backupID, result, len(tasks())))
     jobs().pop(backupID)
-    customerGlobalID, remotePath, version = packetid.SplitBackupID(backupID)
+    keyAlias, customerGlobalID, remotePath, version = packetid.SplitBackupIDFull(backupID)
     customer_idurl = global_id.GlobalUserToIDURL(customerGlobalID)
     if result == 'done':
         maxBackupsNum = settings.getBackupsMaxCopies()
         if maxBackupsNum:
-            item = backup_fs.GetByID(remotePath, iterID=backup_fs.fsID(customer_idurl))
+            item = backup_fs.GetByID(remotePath, iterID=backup_fs.fsID(customer_idurl, keyAlias))
             if item:
                 versions = item.list_versions(sorted=True, reverse=True)
                 if len(versions) > maxBackupsNum:
@@ -1069,7 +1073,8 @@ def StartRecursive(pathID, keyID=None):
     backup_fs.TraverseByID(visitor)
     reactor.callLater(0, RunTask)  # @UndefinedVariable
     reactor.callLater(0, backup_monitor.A, 'restart')  # @UndefinedVariable
-    lg.out(6, 'backup_control.StartRecursive %s  :  %d tasks started' % (pathID, len(startedtasks)))
+    if _Debug:
+        lg.out(_DebugLevel, 'backup_control.StartRecursive %s  :  %d tasks started' % (pathID, len(startedtasks)))
     return startedtasks
 
 #------------------------------------------------------------------------------

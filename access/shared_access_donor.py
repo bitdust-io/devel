@@ -317,10 +317,10 @@ class SharedAccessDonor(automat.Automat):
         Action method.
         """
         json_list_files = backup_fs.Serialize(
+            customer_idurl=global_id.glob2idurl(self.key_id),
             to_json=True,
             filter_cb=lambda path_id, path, info: True if strng.to_text(info.key_id) == strng.to_text(self.key_id) else False,
         )
-        # raw_list_files = json.dumps(json_list_files, indent=2, encoding='utf-8')
         raw_list_files = serialization.DictToBytes(json_list_files, keys_to_text=True, values_to_text=True, encoding='utf-8')
         if _Debug:
             lg.out(_DebugLevel, 'shared_access_donor.doSendMyListFiles prepared list of files for %s :\n%s' % (

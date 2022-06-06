@@ -1170,6 +1170,7 @@ def files_list(remote_path=None, key_id=None, recursive=True, all_customers=Fals
     norm_path = global_id.NormalizeGlobalID(glob_path.copy())
     remotePath = bpio.remotePath(norm_path['path'])
     customer_idurl = norm_path['idurl']
+    key_alias = 'master' if not key_id else key_id.split('$')[0]
     if not all_customers and customer_idurl not in backup_fs.known_customers():
         return ERROR('customer %r not found' % customer_idurl)
     if all_customers:
@@ -1178,8 +1179,8 @@ def files_list(remote_path=None, key_id=None, recursive=True, all_customers=Fals
             look = backup_fs.ListChildsByPath(
                 path=remotePath,
                 recursive=recursive,
-                iter=backup_fs.fs(customer_idurl),
-                iterID=backup_fs.fsID(customer_idurl),
+                iter=backup_fs.fs(customer_idurl, key_alias),
+                iterID=backup_fs.fsID(customer_idurl, key_alias),
             )
             if isinstance(look, list):
                 lookup.extend(look)
@@ -1189,8 +1190,8 @@ def files_list(remote_path=None, key_id=None, recursive=True, all_customers=Fals
         lookup = backup_fs.ListChildsByPath(
             path=remotePath,
             recursive=recursive,
-            iter=backup_fs.fs(customer_idurl),
-            iterID=backup_fs.fsID(customer_idurl),
+            iter=backup_fs.fs(customer_idurl, key_alias),
+            iterID=backup_fs.fsID(customer_idurl, key_alias),
         )
     if not isinstance(lookup, list):
         return ERROR(lookup)
@@ -1204,17 +1205,17 @@ def files_list(remote_path=None, key_id=None, recursive=True, all_customers=Fals
         if glob_path['key_alias'] and i['item']['k']:
             if i['item']['k'] != my_keys.make_key_id(alias=glob_path['key_alias'], creator_glob_id=glob_path['customer']):
                 continue
-        key_alias = 'master'
+        k_alias = 'master'
         if i['item']['k']:
             real_key_id = i['item']['k']
-            key_alias, real_idurl = my_keys.split_key_id(real_key_id)
+            k_alias, real_idurl = my_keys.split_key_id(real_key_id)
             real_customer_id = global_id.UrlToGlobalID(real_idurl)
         else:
-            real_key_id = my_keys.make_key_id(alias='master', creator_idurl=customer_idurl)
+            real_key_id = my_keys.make_key_id(alias=k_alias, creator_idurl=customer_idurl)
             real_idurl = customer_idurl
             real_customer_id = global_id.UrlToGlobalID(customer_idurl)
-        full_glob_id = global_id.MakeGlobalID(path=i['path_id'], customer=real_customer_id, key_alias=key_alias, )
-        full_remote_path = global_id.MakeGlobalID(path=i['path'], customer=real_customer_id, key_alias=key_alias, )
+        full_glob_id = global_id.MakeGlobalID(path=i['path_id'], customer=real_customer_id, key_alias=k_alias, )
+        full_remote_path = global_id.MakeGlobalID(path=i['path'], customer=real_customer_id, key_alias=k_alias, )
         r = {
             'remote_path': full_remote_path,
             'global_id': full_glob_id,
@@ -1228,7 +1229,7 @@ def files_list(remote_path=None, key_id=None, recursive=True, all_customers=Fals
             'local_size': i['item']['s'],
             'latest': i['latest'],
             'key_id': real_key_id,
-            'key_alias': key_alias,
+            'key_alias': k_alias,
             'childs': i['childs'],
             'versions': i['versions'],
             'uploads': {
@@ -1322,10 +1323,10 @@ def file_exists(remote_path):
     customer_idurl = norm_path['idurl']
     if customer_idurl not in backup_fs.known_customers():
         return OK({'exist': False, 'path_id': None, }, message='customer %r not found' % customer_idurl, )
-    pathID = backup_fs.ToID(remotePath, iter=backup_fs.fs(customer_idurl))
+    pathID = backup_fs.ToID(remotePath, iter=backup_fs.fs(customer_idurl, norm_path['key_alias']))
     if not pathID:
         return OK({'exist': False, 'path_id': None, }, message='path %r not found in the catalog' % remotePath, )
-    item = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(customer_idurl))
+    item = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(customer_idurl, norm_path['key_alias']))
     if not item:
         return OK({'exist': False, 'path_id': None, }, message='item %r not found in the catalog' % pathID, )
     return OK({'exist': True, 'path_id': pathID, }, )
@@ -1360,21 +1361,23 @@ def file_info(remote_path, include_uploads=True, include_downloads=True):
     customer_idurl = norm_path['idurl']
     if customer_idurl not in backup_fs.known_customers():
         return ERROR('customer %r not found' % customer_idurl)
-    pathID = backup_fs.ToID(remotePath, iter=backup_fs.fs(customer_idurl))
+    pathID = backup_fs.ToID(remotePath, iter=backup_fs.fs(customer_idurl, norm_path['key_alias']))
     if not pathID:
         return ERROR('path %r not found in the catalog' % remotePath)
-    item = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(customer_idurl))
+    item = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(customer_idurl, norm_path['key_alias']))
     if not item:
         return ERROR('item %r not found in the catalog' % pathID)
     (item_size, item_time, versions) = backup_fs.ExtractVersions(pathID, item)
     glob_path_item = norm_path.copy()
     glob_path_item['path'] = pathID
-    key_alias = 'master'
+    key_alias = norm_path['key_alias']
     if item.key_id:
-        key_alias = packetid.KeyAlias(item.key_id)
+        key_alias = item.key_id.split('$')[0]
     r = {
         'remote_path': global_id.MakeGlobalID(
-            path=norm_path['path'], customer=norm_path['customer'], key_alias=key_alias,),
+            path=norm_path['path'],
+            customer=norm_path['customer'],
+            key_alias=key_alias, ),
         'global_id': global_id.MakeGlobalID(
             path=pathID,
             customer=norm_path['customer'],
@@ -1484,16 +1487,22 @@ def file_create(remote_path, as_folder=False, exist_ok=False, force_path_id=None
         return ERROR('invalid "remote_path" format')
     path = bpio.remotePath(parts['path'])
     customer_idurl = parts['idurl']
-    pathID = backup_fs.ToID(path, iter=backup_fs.fs(customer_idurl))
     keyID = my_keys.make_key_id(alias=parts['key_alias'], creator_glob_id=parts['customer'])
-    keyAlias = parts['key_alias']
+    key_alias = parts['key_alias']
+    pathID = backup_fs.ToID(path, iter=backup_fs.fs(customer_idurl, key_alias))
     itemInfo = None
     if _Debug:
         lg.args(_DebugLevel, remote_path=remote_path, as_folder=as_folder, path_id=pathID, customer_idurl=customer_idurl, force_path_id=force_path_id)
     if pathID is not None:
+        existingItemInfo = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(customer_idurl, key_alias))
+        if not existingItemInfo:
+            return ERROR('failed reading already existing item from catalog: %r' % pathID)
+        if existingItemInfo.key_id != keyID:
+            return ERROR('another item with same remote path but different key already exist in catalog')
+    if pathID is not None:
         if exist_ok:
-            fullRemotePath = global_id.MakeGlobalID(customer=parts['customer'], path=parts['path'], key_alias=keyAlias)
-            fullGlobID = global_id.MakeGlobalID(customer=parts['customer'], path=pathID, key_alias=keyAlias)
+            fullRemotePath = global_id.MakeGlobalID(customer=parts['customer'], path=parts['path'], key_alias=key_alias)
+            fullGlobID = global_id.MakeGlobalID(customer=parts['customer'], path=pathID, key_alias=key_alias)
             return OK({
                 'path_id': pathID,
                 'key_id': keyID,
@@ -1509,29 +1518,29 @@ def file_create(remote_path, as_folder=False, exist_ok=False, force_path_id=None
         newPathID, itemInfo, _, _ = backup_fs.AddDir(
             path,
             read_stats=False,
-            iter=backup_fs.fs(customer_idurl),
-            iterID=backup_fs.fsID(customer_idurl),
+            iter=backup_fs.fs(customer_idurl, key_alias),
+            iterID=backup_fs.fsID(customer_idurl, key_alias),
             key_id=keyID,
             force_path_id=force_path_id,
         )
     else:
         parent_path = os.path.dirname(path)
-        if not backup_fs.IsDir(parent_path, iter=backup_fs.fs(customer_idurl)):
-            if backup_fs.IsFile(parent_path, iter=backup_fs.fs(customer_idurl)):
+        if not backup_fs.IsDir(parent_path, iter=backup_fs.fs(customer_idurl, key_alias)):
+            if backup_fs.IsFile(parent_path, iter=backup_fs.fs(customer_idurl, key_alias)):
                 return ERROR('remote path can not be assigned, file already exist: %r' % parent_path)
             parentPathID, _, _, _ = backup_fs.AddDir(
                 parent_path,
                 read_stats=False,
-                iter=backup_fs.fs(customer_idurl),
-                iterID=backup_fs.fsID(customer_idurl),
+                iter=backup_fs.fs(customer_idurl, key_alias),
+                iterID=backup_fs.fsID(customer_idurl, key_alias),
                 key_id=keyID,
             )
             if _Debug:
                 lg.out(_DebugLevel, 'api.file_create parent folder %r was created at %r' % (parent_path, parentPathID))
         id_iter_iterID = backup_fs.GetIteratorsByPath(
             parent_path,
-            iter=backup_fs.fs(customer_idurl),
-            iterID=backup_fs.fsID(customer_idurl),
+            iter=backup_fs.fs(customer_idurl, key_alias),
+            iterID=backup_fs.fsID(customer_idurl, key_alias),
         )
         if not id_iter_iterID:
             return ERROR('remote path can not be assigned, parent folder not found: %r' % parent_path)
@@ -1548,9 +1557,9 @@ def file_create(remote_path, as_folder=False, exist_ok=False, force_path_id=None
             return ERROR('remote path can not be assigned, failed to create a new item: %r' % path)
     backup_control.Save()
     control.request_update([('pathID', newPathID), ])
-    full_glob_id = global_id.MakeGlobalID(customer=parts['customer'], path=newPathID, key_alias=keyAlias)
-    full_remote_path = global_id.MakeGlobalID(customer=parts['customer'], path=parts['path'], key_alias=keyAlias)
-    if id_url.is_the_same(customer_idurl, my_id.getIDURL()) and keyAlias == 'master':
+    full_glob_id = global_id.MakeGlobalID(customer=parts['customer'], path=newPathID, key_alias=key_alias)
+    full_remote_path = global_id.MakeGlobalID(customer=parts['customer'], path=parts['path'], key_alias=key_alias)
+    if id_url.is_the_same(customer_idurl, my_id.getIDURL()) and key_alias == 'master':
         listeners.push_snapshot('private_file', snap_id=full_glob_id, data=dict(
             global_id=full_glob_id,
             remote_path=full_remote_path,
@@ -1611,27 +1620,28 @@ def file_delete(remote_path):
     if not parts['idurl'] or not parts['path']:
         return ERROR('invalid "remote_path" format')
     path = bpio.remotePath(parts['path'])
-    pathID = backup_fs.ToID(path, iter=backup_fs.fs(parts['idurl']))
+    customer_idurl = parts['idurl']
+    key_alias = parts['key_alias']
+    pathID = backup_fs.ToID(path, iter=backup_fs.fs(customer_idurl, key_alias))
     if not pathID:
         return ERROR('remote path %r was not found' % parts['path'])
     if not packetid.Valid(pathID):
         return ERROR('invalid item found: %r' % pathID)
-    itemInfo = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(parts['idurl']))
+    itemInfo = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(customer_idurl, key_alias))
     pathIDfull = packetid.MakeBackupID(parts['customer'], pathID)
-    keyAlias = parts['key_alias'] or 'master'
-    full_glob_id = global_id.MakeGlobalID(customer=parts['customer'], path=pathID, key_alias=keyAlias)
-    full_remote_path = global_id.MakeGlobalID(customer=parts['customer'], path=parts['path'], key_alias=keyAlias)
+    full_glob_id = global_id.MakeGlobalID(customer=parts['customer'], path=pathID, key_alias=key_alias)
+    full_remote_path = global_id.MakeGlobalID(customer=parts['customer'], path=parts['path'], key_alias=key_alias)
     result = backup_control.DeletePathBackups(pathID=pathIDfull, saveDB=False, calculate=False)
     if not result:
         return ERROR('remote item %r was not found' % pathIDfull)
     backup_fs.DeleteLocalDir(settings.getLocalBackupsDir(), pathIDfull)
-    backup_fs.DeleteByID(pathID, iter=backup_fs.fs(parts['idurl']), iterID=backup_fs.fsID(parts['idurl']))
+    backup_fs.DeleteByID(pathID, iter=backup_fs.fs(customer_idurl, key_alias), iterID=backup_fs.fsID(customer_idurl, key_alias))
     backup_fs.Scan()
     backup_fs.Calculate()
     backup_control.Save()
     backup_monitor.A('restart')
     control.request_update([('pathID', pathIDfull), ])
-    if id_url.is_the_same(parts['idurl'], my_id.getIDURL()) and keyAlias == 'master':
+    if id_url.is_the_same(parts['idurl'], my_id.getIDURL()) and key_alias == 'master':
         listeners.push_snapshot('private_file', snap_id=full_glob_id, deleted=True, data=dict(
             global_id=full_glob_id,
             remote_path=full_remote_path,
@@ -1741,19 +1751,21 @@ def file_upload_start(local_path, remote_path, wait_result=False, wait_finish=Fa
     parts = global_id.NormalizeGlobalID(remote_path)
     if not parts['idurl'] or not parts['path']:
         return ERROR('invalid "remote_path" format')
-    if parts['key_alias'] == 'master':
+    customer_idurl = parts['idurl']
+    key_alias = parts['key_alias']
+    if key_alias == 'master':
         is_hidden_item = parts['path'].startswith('.')
         if not is_hidden_item:
             if not driver.is_on('service_my_data'):
                 return ERROR('service_my_data() is not started')
     path = bpio.remotePath(parts['path'])
-    pathID = backup_fs.ToID(path, iter=backup_fs.fs(parts['idurl']))
+    pathID = backup_fs.ToID(path, iter=backup_fs.fs(customer_idurl, key_alias))
     if not pathID:
         return ERROR('path %r not registered yet' % remote_path)
-    keyID = my_keys.make_key_id(alias=parts['key_alias'], creator_glob_id=parts['customer'])
-    customerID = global_id.MakeGlobalID(customer=parts['customer'], key_alias=parts['key_alias'])
+    keyID = my_keys.make_key_id(alias=key_alias, creator_glob_id=parts['customer'])
+    customerID = global_id.MakeGlobalID(customer=parts['customer'], key_alias=key_alias)
     pathIDfull = packetid.MakeBackupID(customerID, pathID)
-    if open_share and parts['key_alias'] != 'master':
+    if open_share and key_alias != 'master':
         if not driver.is_on('service_shared_data'):
             return ERROR('service_shared_data() is not started')
         from access import shared_access_coordinator
@@ -1883,7 +1895,9 @@ def file_upload_stop(remote_path):
     if not parts['idurl'] or not parts['path']:
         return ERROR('invalid "remote_path" format')
     remotePath = bpio.remotePath(parts['path'])
-    pathID = backup_fs.ToID(remotePath, iter=backup_fs.fs(parts['idurl']))
+    customer_idurl = parts['idurl']
+    key_alias = parts['key_alias']
+    pathID = backup_fs.ToID(remotePath, iter=backup_fs.fs(customer_idurl, key_alias))
     if not pathID:
         return ERROR('remote path %r not found' % parts['path'])
     if not packetid.Valid(pathID):
@@ -1975,6 +1989,8 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, o
     from userid import global_id
     from crypt import my_keys
     glob_path = global_id.NormalizeGlobalID(global_id.ParseGlobalID(remote_path))
+    customer_idurl = glob_path['idurl']
+    key_alias = glob_path['key_alias']
     if glob_path['key_alias'] == 'master':
         is_hidden_item = glob_path['path'].startswith('.')
         if not is_hidden_item:
@@ -1987,24 +2003,23 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, o
         _, pathID, version = packetid.SplitBackupID(remote_path)
         if not pathID and version:
             pathID, version = version, ''
-        item = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(glob_path['customer']))
+        item = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(customer_idurl, key_alias))
         if not item:
             return ERROR('path %r not found in the catalog' % remote_path)
         if not version:
             version = item.get_latest_version()
         if not version:
             return ERROR('not found any remote versions for %r' % remote_path)
-        key_alias = 'master'
         if item.key_id:
             key_alias = packetid.KeyAlias(item.key_id)
         customerGlobalID = global_id.MakeGlobalID(customer=glob_path['customer'], key_alias=key_alias)
         backupID = packetid.MakeBackupID(customerGlobalID, pathID, version)
     else:
         remotePath = bpio.remotePath(glob_path['path'])
-        knownPathID = backup_fs.ToID(remotePath, iter=backup_fs.fs(glob_path['idurl']))
+        knownPathID = backup_fs.ToID(remotePath, iter=backup_fs.fs(customer_idurl, key_alias))
         if not knownPathID:
             return ERROR('path %r not found in the catalog' % remotePath)
-        item = backup_fs.GetByID(knownPathID, iterID=backup_fs.fsID(glob_path['idurl']))
+        item = backup_fs.GetByID(knownPathID, iterID=backup_fs.fsID(customer_idurl, key_alias))
         if not item:
             return ERROR('item %r not found in the catalog' % knownPathID)
         version = glob_path['version']
@@ -2012,7 +2027,6 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, o
             version = item.get_latest_version()
         if not version:
             return ERROR('not found any remote versions for %r' % remote_path)
-        key_alias = 'master'
         if item.key_id:
             key_alias = packetid.KeyAlias(item.key_id)
         customerGlobalID = global_id.MakeGlobalID(customer=glob_path['customer'], key_alias=key_alias)
@@ -2021,19 +2035,22 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, o
         return ERROR('download not possible, uploading %r is in process' % backupID)
     if restore_monitor.IsWorking(backupID):
         return ERROR('downloading task for %r already scheduled' % backupID)
-    customerGlobalID, pathID_target, version = packetid.SplitBackupID(backupID)
+    keyAlias, customerGlobalID, pathID_target, version = packetid.SplitBackupIDFull(backupID)
     if not customerGlobalID:
         customerGlobalID = global_id.UrlToGlobalID(my_id.getIDURL())
-    knownPath = backup_fs.ToPath(pathID_target, iterID=backup_fs.fsID(global_id.GlobalUserToIDURL(customerGlobalID)))
+    knownPath = backup_fs.ToPath(pathID_target, iterID=backup_fs.fsID(
+        customer_idurl=global_id.GlobalUserToIDURL(customerGlobalID),
+        key_alias=keyAlias,
+    ))
     if not knownPath:
         return ERROR('location %r not found in the catalog' % knownPath)
     if not destination_path:
         destination_path = settings.getRestoreDir()
     if not destination_path:
         destination_path = settings.DefaultRestoreDir()
-    key_id = my_keys.make_key_id(alias=glob_path['key_alias'], creator_glob_id=glob_path['customer'])
+    key_id = my_keys.make_key_id(alias=keyAlias, creator_glob_id=customerGlobalID)
     ret = Deferred()
-        
+
     def _on_result(backupID, result):
         if result == 'restore done':
             ret.callback(OK(
@@ -2172,12 +2189,14 @@ def file_download_stop(remote_path):
     from userid import my_id
     from userid import global_id
     glob_path = global_id.NormalizeGlobalID(global_id.ParseGlobalID(remote_path))
+    customer_idurl = glob_path['idurl']
+    key_alias = glob_path['key_alias']
     backupIDs = []
     if packetid.Valid(glob_path['path']):
         customerGlobalID, pathID, version = packetid.SplitBackupID(remote_path)
         if not customerGlobalID:
             customerGlobalID = global_id.UrlToGlobalID(my_id.getIDURL())
-        item = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(glob_path['customer']))
+        item = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(customer_idurl, key_alias))
         if not item:
             return ERROR('path %r not found in the catalog' % remote_path)
         versions = []
@@ -2186,14 +2205,13 @@ def file_download_stop(remote_path):
         if not versions:
             versions.extend(item.get_versions())
         for version in versions:
-            backupIDs.append(packetid.MakeBackupID(customerGlobalID, pathID, version,
-                                                   key_alias=glob_path['key_alias']))
+            backupIDs.append(packetid.MakeBackupID(customerGlobalID, pathID, version, key_alias=key_alias))
     else:
         remotePath = bpio.remotePath(glob_path['path'])
-        knownPathID = backup_fs.ToID(remotePath, iter=backup_fs.fs(glob_path['idurl']))
+        knownPathID = backup_fs.ToID(remotePath, iter=backup_fs.fs(customer_idurl, key_alias))
         if not knownPathID:
             return ERROR('path %r not found in the catalog' % remotePath)
-        item = backup_fs.GetByID(knownPathID, iterID=backup_fs.fsID(glob_path['idurl']))
+        item = backup_fs.GetByID(knownPathID, iterID=backup_fs.fsID(customer_idurl, key_alias))
         if not item:
             return ERROR('item %r not found in the catalog' % knownPathID)
         versions = []
@@ -2202,8 +2220,7 @@ def file_download_stop(remote_path):
         if not versions:
             versions.extend(item.get_versions())
         for version in versions:
-            backupIDs.append(packetid.MakeBackupID(glob_path['customer'], knownPathID, version,
-                                                   key_alias=glob_path['key_alias']))
+            backupIDs.append(packetid.MakeBackupID(glob_path['customer'], knownPathID, version, key_alias=key_alias))
     if not backupIDs:
         return ERROR('not found any remote versions for %r' % remote_path)
     r = []

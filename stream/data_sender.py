@@ -230,8 +230,8 @@ class DataSender(automat.Automat):
                 this_customer_idurl = packetid.CustomerIDURL(backupID)
                 if this_customer_idurl != customer_idurl:
                     continue
-                customerGlobalID, pathID, _ = packetid.SplitBackupID(backupID, normalize_key_alias=True)
-                item = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(customer_idurl=customer_idurl))
+                keyAlias, customerGlobalID, pathID, _ = packetid.SplitBackupIDFull(backupID, normalize_key_alias=True)
+                item = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(customer_idurl, keyAlias))
                 if not item:
                     if _Debug:
                         lg.out(_DebugLevel, 'data_sender.doScanAndQueue    skip sending backup %r path not exist in catalog' % backupID)

@@ -319,7 +319,7 @@ def process_line_file(line, current_key_alias=None, customer_idurl=None, is_in_s
         pth = line
         filesz = -1
     if auto_create:
-        if not backup_fs.IsFileID(pth, iterID=backup_fs.fsID(customer_idurl)):
+        if not backup_fs.IsFileID(pth, iterID=backup_fs.fsID(customer_idurl, current_key_alias)):
             if _Debug:
                 lg.out(_DebugLevel, '        AUTO CREATE FILE "%s" in the index' % pth)
             if pth.strip('/') not in [settings.BackupIndexFileName(), ]:
@@ -330,13 +330,9 @@ def process_line_file(line, current_key_alias=None, customer_idurl=None, is_in_s
                     key_id=global_id.MakeGlobalID(idurl=customer_idurl, key_alias=current_key_alias) if current_key_alias else None,
                 )
                 item.size = filesz
-                backup_fs.SetFile(
-                    item,
-                    iter=backup_fs.fs(customer_idurl),
-                    iterID=backup_fs.fsID(customer_idurl),
-                )
+                backup_fs.SetFile(item, customer_idurl=customer_idurl)
                 modified = True
-    if not backup_fs.IsFileID(pth, iterID=backup_fs.fsID(customer_idurl)):
+    if not backup_fs.IsFileID(pth, iterID=backup_fs.fsID(customer_idurl, current_key_alias)):
         # remote supplier have some file - but we don't have it in the index
         if pth.strip('/') in [settings.BackupIndexFileName(), ]:
             # this is the index file saved on remote supplier
@@ -348,11 +344,7 @@ def process_line_file(line, current_key_alias=None, customer_idurl=None, is_in_s
                 # key_id=global_id.MakeGlobalID(idurl=customer_idurl, key_alias=current_key_alias),
             )
             item.size = filesz
-            backup_fs.SetFile(
-                item,
-                iter=backup_fs.fs(customer_idurl),
-                iterID=backup_fs.fsID(customer_idurl),
-            )
+            backup_fs.SetFile(item, customer_idurl=customer_idurl)
             modified = True
         else:
             if is_in_sync:
@@ -385,7 +377,7 @@ def process_line_dir(line, current_key_alias=None, customer_idurl=None, is_in_sy
     except:
         pth = line
     if auto_create:
-        if not backup_fs.ExistsID(pth, iterID=backup_fs.fsID(customer_idurl)):
+        if not backup_fs.ExistsID(pth, iterID=backup_fs.fsID(customer_idurl, current_key_alias)):
             if _Debug:
                 lg.out(_DebugLevel, '        AUTO CREATE DIR "%s" in the index' % pth)
             if pth.strip('/') not in [settings.BackupIndexFileName(), ]: 
@@ -395,13 +387,9 @@ def process_line_dir(line, current_key_alias=None, customer_idurl=None, is_in_sy
                     typ=backup_fs.DIR,
                     key_id=global_id.MakeGlobalID(idurl=customer_idurl, key_alias=current_key_alias) if current_key_alias else None,
                 )
-                backup_fs.SetDir(
-                    item,
-                    iter=backup_fs.fs(customer_idurl),
-                    iterID=backup_fs.fsID(customer_idurl),
-                )
+                backup_fs.SetDir(item, customer_idurl=customer_idurl)
                 modified = True
-    if not backup_fs.ExistsID(pth, iterID=backup_fs.fsID(customer_idurl)):
+    if not backup_fs.ExistsID(pth, iterID=backup_fs.fsID(customer_idurl, current_key_alias)):
         if is_in_sync:
             if customer_idurl == my_id.getIDURL():
                 paths2remove.add(
@@ -456,7 +444,7 @@ def process_line_version(line, supplier_num, current_key_alias=None, customer_id
         if _Debug:
             lg.out(_DebugLevel, '        VERSION "%s" to be removed, different supplier number' % backupID)
         return modified, backups2remove, paths2remove, found_backups, newfiles
-    iter_path = backup_fs.WalkByID(remotePath, iterID=backup_fs.fsID(customer_idurl))
+    iter_path = backup_fs.WalkByID(remotePath, iterID=backup_fs.fsID(customer_idurl, current_key_alias))
     item = None
     if iter_path:
         item = iter_path[0]
@@ -798,19 +786,6 @@ def ReadLocalFiles():
 
     if _Debug:
         lg.out(_DebugLevel, 'backup_matrix.ReadLocalFiles %d files indexed' % _counter[0])
-        try:
-            if sys.version_info >= (2, 6):
-                import lib.getsizeof
-                localSZ = lib.getsizeof.total_size(local_files())
-                remoteSZ = lib.getsizeof.total_size(remote_files())
-                indexByName = lib.getsizeof.total_size(backup_fs.fs())
-                indexByID = lib.getsizeof.total_size(backup_fs.fsID())
-                lg.out(_DebugLevel, '    all local info uses %d bytes in the memory' % localSZ)
-                lg.out(_DebugLevel, '    all remote info uses %d bytes in the memory' % remoteSZ)
-                lg.out(_DebugLevel, '    index by name takes %d bytes in the memory' % indexByName)
-                lg.out(_DebugLevel, '    index by ID takes %d bytes in the memory' % indexByID)
-        except:
-            lg.exc()
     if _LocalFilesNotifyCallback is not None:
         _LocalFilesNotifyCallback()
 
@@ -1701,8 +1676,8 @@ def remove_list_files_query_callback(customer_idurl, query_path, callback_method
 def populate_remote_versions():
     for backupID in GetBackupIDs(remote=True, local=False, sorted_ids=False):
         customer_idurl = packetid.CustomerIDURL(backupID)
-        _, pathID, _ = packetid.SplitBackupID(backupID, normalize_key_alias=True)
-        itemInfo = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(customer_idurl=customer_idurl))
+        keyAlias, _, pathID, _ = packetid.SplitBackupID(backupID)
+        itemInfo = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(customer_idurl, keyAlias))
         if itemInfo:
             full_remote_path = global_id.MakeGlobalID(path=itemInfo.name(), key_id=itemInfo.key_id)
             full_remote_path_id = global_id.MakeGlobalID(path=itemInfo.path_id, key_id=itemInfo.key_id)

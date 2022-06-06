@@ -35,7 +35,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 12
 
 #------------------------------------------------------------------------------
@@ -167,6 +167,8 @@ def dispatch_snapshot(snap):
                 lg.exc()
                 continue
             handled += 1
+    if _Debug:
+        lg.args(_DebugLevel, handled=handled, snap=snap)
     return handled
 
 #------------------------------------------------------------------------------
