@@ -363,7 +363,7 @@ class PacketOut(automat.Automat):
         if self.outpacket.PacketID.count('&'):
             packet_label = self.outpacket.PacketID.replace(':', '').replace('/', '').replace('_', '').replace('&', '')
         else:
-            packet_label = global_id.ParseGlobalID(self.outpacket.PacketID)['path']
+            packet_label = global_id.NormalizeGlobalID(self.outpacket.PacketID)['path']
             if not packet_label:
                 packet_label = self.outpacket.PacketID.replace(':', '').replace('/', '').replace('_', '')
         self.wide = wide

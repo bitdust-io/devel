@@ -120,14 +120,14 @@ class Test(TestCase):
         my_id.forgetLocalIdentity()
         settings.shutdown()
         os.remove('/tmp/_some_priv_key')
-        bpio.rmdir_recursive('/tmp/.bitdust_tmp')
-        bpio.rmdir_recursive('/tmp/_some_folder')
+        # bpio.rmdir_recursive('/tmp/.bitdust_tmp')
+        # bpio.rmdir_recursive('/tmp/_some_folder')
         os.remove('/tmp/random_file')
 
     def test_backup_restore(self):
         test_ecc_map = 'ecc/2x2'
         test_done = Deferred()
-        backupID = 'alice@127.0.0.1_8084:1/F1234'
+        backupID = 'master$alice@127.0.0.1_8084:1/F1234'
         outputLocation = '/tmp/'
         with open('/tmp/_some_folder/random_file', 'wb') as fout:
             fout.write(os.urandom(10))
@@ -159,7 +159,7 @@ class Test(TestCase):
 
         def _bk_done(bid, result):
             assert result == 'done'
-    
+
         def _bk_closed(job):
             if False:
                 os.remove('/tmp/.bitdust_tmp/backups/master$alice@127.0.0.1_8084/1/F1234/0-1-Data')

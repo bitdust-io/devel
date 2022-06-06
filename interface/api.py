@@ -1055,7 +1055,7 @@ def key_share(key_id, trusted_user_id, include_private=False, include_signature=
         return ERROR('error reading input parameters')
     if not driver.is_on('service_keys_registry'):
         return ERROR('service_keys_registry() is not started')
-    glob_id = global_id.ParseGlobalID(full_key_id)
+    glob_id = global_id.NormalizeGlobalID(full_key_id)
     if glob_id['key_alias'] == 'master':
         return ERROR('"master" key can not be shared')
     if not glob_id['key_alias'] or not glob_id['idurl']:
@@ -1091,7 +1091,7 @@ def key_audit(key_id, untrusted_user_id, is_private=False, timeout=10):
         return ERROR('error reading input parameters')
     if not driver.is_on('service_keys_registry'):
         return ERROR('service_keys_registry() is not started')
-    glob_id = global_id.ParseGlobalID(full_key_id)
+    glob_id = global_id.NormalizeGlobalID(full_key_id)
     if not glob_id['key_alias'] or not glob_id['idurl']:
         return ERROR('incorrect key_id format')
     if global_id.IsValidGlobalUser(untrusted_user_id):
@@ -1166,11 +1166,10 @@ def files_list(remote_path=None, key_id=None, recursive=True, all_customers=Fals
     from userid import global_id
     from crypt import my_keys
     result = []
-    glob_path = global_id.ParseGlobalID(remote_path)
-    norm_path = global_id.NormalizeGlobalID(glob_path.copy())
+    norm_path = global_id.NormalizeGlobalID(remote_path)
     remotePath = bpio.remotePath(norm_path['path'])
     customer_idurl = norm_path['idurl']
-    key_alias = 'master' if not key_id else key_id.split('$')[0]
+    key_alias = norm_path['key_alias'] if not key_id else key_id.split('$')[0]
     if not all_customers and customer_idurl not in backup_fs.known_customers():
         return ERROR('customer %r not found' % customer_idurl)
     if all_customers:
@@ -1202,8 +1201,8 @@ def files_list(remote_path=None, key_id=None, recursive=True, all_customers=Fals
             continue
         if key_id is not None and key_id != i['item']['k']:
             continue
-        if glob_path['key_alias'] and i['item']['k']:
-            if i['item']['k'] != my_keys.make_key_id(alias=glob_path['key_alias'], creator_glob_id=glob_path['customer']):
+        if norm_path['key_alias'] and i['item']['k']:
+            if i['item']['k'] != my_keys.make_key_id(alias=norm_path['key_alias'], creator_glob_id=norm_path['customer']):
                 continue
         k_alias = 'master'
         if i['item']['k']:
@@ -1317,8 +1316,7 @@ def file_exists(remote_path):
     from storage import backup_fs
     from system import bpio
     from userid import global_id
-    glob_path = global_id.ParseGlobalID(remote_path)
-    norm_path = global_id.NormalizeGlobalID(glob_path.copy())
+    norm_path = global_id.NormalizeGlobalID(remote_path)
     remotePath = bpio.remotePath(norm_path['path'])
     customer_idurl = norm_path['idurl']
     if customer_idurl not in backup_fs.known_customers():
@@ -1352,11 +1350,9 @@ def file_info(remote_path, include_uploads=True, include_downloads=True):
             remote_path, include_uploads, include_downloads))
     from storage import backup_fs
     from lib import misc
-    from lib import packetid
     from system import bpio
     from userid import global_id
-    glob_path = global_id.ParseGlobalID(remote_path)
-    norm_path = global_id.NormalizeGlobalID(glob_path.copy())
+    norm_path = global_id.NormalizeGlobalID(remote_path)
     remotePath = bpio.remotePath(norm_path['path'])
     customer_idurl = norm_path['idurl']
     if customer_idurl not in backup_fs.known_customers():
@@ -1482,7 +1478,7 @@ def file_create(remote_path, as_folder=False, exist_ok=False, force_path_id=None
     from userid import id_url
     from userid import global_id
     from userid import my_id
-    parts = global_id.NormalizeGlobalID(global_id.ParseGlobalID(remote_path))
+    parts = global_id.NormalizeGlobalID(remote_path)
     if not parts['path']:
         return ERROR('invalid "remote_path" format')
     path = bpio.remotePath(parts['path'])
@@ -1616,7 +1612,7 @@ def file_delete(remote_path):
     from userid import global_id
     from userid import id_url
     from userid import my_id
-    parts = global_id.NormalizeGlobalID(global_id.ParseGlobalID(remote_path))
+    parts = global_id.NormalizeGlobalID(remote_path)
     if not parts['idurl'] or not parts['path']:
         return ERROR('invalid "remote_path" format')
     path = bpio.remotePath(parts['path'])
@@ -1891,7 +1887,7 @@ def file_upload_stop(remote_path):
     from system import bpio
     from userid import global_id
     from lib import packetid
-    parts = global_id.NormalizeGlobalID(global_id.ParseGlobalID(remote_path))
+    parts = global_id.NormalizeGlobalID(remote_path)
     if not parts['idurl'] or not parts['path']:
         return ERROR('invalid "remote_path" format')
     remotePath = bpio.remotePath(parts['path'])
@@ -1988,7 +1984,7 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, o
     from userid import my_id
     from userid import global_id
     from crypt import my_keys
-    glob_path = global_id.NormalizeGlobalID(global_id.ParseGlobalID(remote_path))
+    glob_path = global_id.NormalizeGlobalID(remote_path)
     customer_idurl = glob_path['idurl']
     key_alias = glob_path['key_alias']
     if glob_path['key_alias'] == 'master':
@@ -2188,7 +2184,7 @@ def file_download_stop(remote_path):
     from lib import packetid
     from userid import my_id
     from userid import global_id
-    glob_path = global_id.NormalizeGlobalID(global_id.ParseGlobalID(remote_path))
+    glob_path = global_id.NormalizeGlobalID(remote_path)
     customer_idurl = glob_path['idurl']
     key_alias = glob_path['key_alias']
     backupIDs = []
@@ -2278,7 +2274,7 @@ def shares_list(only_active=False, include_mine=True, include_granted=True):
     results = []
     if only_active:
         for key_id in shared_access_coordinator.list_active_shares():
-            _glob_id = global_id.ParseGlobalID(key_id)
+            _glob_id = global_id.NormalizeGlobalID(key_id)
             to_be_listed = False
             if include_mine and _glob_id['idurl'] == my_id.getIDURL():
                 to_be_listed = True
@@ -2418,7 +2414,7 @@ def share_grant(key_id, trusted_user_id, timeout=45, publish_events=True):
     trusted_user_id = strng.to_text(trusted_user_id)
     remote_idurl = None
     if trusted_user_id.count('@'):
-        glob_id = global_id.ParseGlobalID(trusted_user_id)
+        glob_id = global_id.NormalizeGlobalID(trusted_user_id)
         remote_idurl = glob_id['idurl']
     else:
         remote_idurl = id_url.field(trusted_user_id)
@@ -2550,7 +2546,7 @@ def groups_list(only_active=False, include_mine=True, include_granted=True):
     results = []
     if only_active:
         for group_key_id in group_member.list_active_group_members():
-            _glob_id = global_id.ParseGlobalID(group_key_id)
+            _glob_id = global_id.NormalizeGlobalID(group_key_id)
             to_be_listed = False
             if include_mine and _glob_id['idurl'] == my_id.getIDURL():
                 to_be_listed = True
@@ -2905,7 +2901,7 @@ def group_share(group_key_id, trusted_user_id, timeout=45, publish_events=False)
     trusted_user_id = strng.to_text(trusted_user_id)
     remote_idurl = None
     if trusted_user_id.count('@'):
-        glob_id = global_id.ParseGlobalID(trusted_user_id)
+        glob_id = global_id.NormalizeGlobalID(trusted_user_id)
         remote_idurl = glob_id['idurl']
     else:
         remote_idurl = id_url.field(trusted_user_id)
@@ -3363,7 +3359,7 @@ def message_history(recipient_id=None, sender_id=None, message_type=None, offset
             if not recipient_idurl:
                 return ERROR('recipient was not found')
             recipient_id = global_id.UrlToGlobalID(recipient_idurl)
-        recipient_glob_id = global_id.ParseGlobalID(recipient_id)
+        recipient_glob_id = global_id.NormalizeGlobalID(recipient_id)
         if not recipient_glob_id['idurl']:
             return ERROR('wrong recipient_id')
         recipient_id = global_id.MakeGlobalID(**recipient_glob_id)
@@ -3456,7 +3452,7 @@ def message_send(recipient_id, data, ping_timeout=15, message_ack_timeout=15):
         if not recipient_idurl:
             return ERROR('recipient not found')
         recipient_id = global_id.glob2idurl(recipient_idurl, as_field=False)
-    glob_id = global_id.ParseGlobalID(recipient_id)
+    glob_id = global_id.NormalizeGlobalID(recipient_id)
     if not glob_id['idurl']:
         return ERROR('wrong recipient')
     target_glob_id = global_id.MakeGlobalID(**glob_id)
@@ -3517,7 +3513,7 @@ def message_send_group(group_key_id, data):
     if not group_key_id.startswith('group_'):
         return ERROR('invalid group id')
     group_key_id = my_keys.latest_key_id(group_key_id)
-    glob_id = global_id.ParseGlobalID(group_key_id)
+    glob_id = global_id.NormalizeGlobalID(group_key_id)
     if not glob_id['idurl']:
         return ERROR('wrong group id')
     if not my_keys.is_key_registered(group_key_id):

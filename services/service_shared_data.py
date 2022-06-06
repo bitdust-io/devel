@@ -84,7 +84,7 @@ class SharedDataService(LocalService):
             for key_id in my_keys.known_keys():
                 if not key_id.startswith('share_'):
                     continue
-                _glob_id = global_id.ParseGlobalID(key_id)
+                _glob_id = global_id.NormalizeGlobalID(key_id)
                 if _glob_id['idurl'].to_bin() == my_id.getIDURL().to_bin():
                     # only send public keys of my own shares
                     my_keys_to_be_republished.append(key_id)

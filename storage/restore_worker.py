@@ -157,8 +157,8 @@ class RestoreWorker(automat.Automat):
         """
         self.creator_id = my_id.getIDURL()
         self.backup_id = BackupID
-        _parts = packetid.SplitBackupIDFull(self.backup_id)
-        self.customer_id = _parts[1]
+        _parts = packetid.SplitBackupID(self.backup_id)
+        self.customer_id = _parts[0]
         self.customer_idurl = global_id.GlobalUserToIDURL(self.customer_id)
         self.known_suppliers = []
         self.path_id = _parts[1]
@@ -442,6 +442,7 @@ class RestoreWorker(automat.Automat):
         filename = args[0]
         blockbits = bpio.ReadBinaryFile(filename)
         if not blockbits:
+            lg.warn('empty file %r' % filename)
             self.automat('block-failed')
             return
         try:
@@ -451,13 +452,14 @@ class RestoreWorker(automat.Automat):
             blockdata = blockbits[splitindex + 1:splitindex + 1 + datalength]     # remove padding from raidmake/ECC
             newblock = encrypted.Unserialize(blockdata, decrypt_key=self.key_id)  # convert to object
         except:
-            self.automat('block-failed')
             if _Debug:
                 lg.exc('bad block: %r' % blockbits)
             else:
                 lg.exc()
+            self.automat('block-failed')
             return
         if not newblock:
+            lg.warn('block read/unserialize failed from %d bytes of data' % len(blockbits))
             self.automat('block-failed')
             return
         self.automat('block-restored', (newblock, filename, ))
@@ -475,7 +477,7 @@ class RestoreWorker(automat.Automat):
         if not args or not args[0]:
             raise Exception('no input found')
         NewPacket, PacketID = args[0]
-        glob_path = global_id.ParseGlobalID(PacketID, detect_version=True)
+        glob_path = global_id.NormalizeGlobalID(PacketID, detect_version=True)
         packetID = global_id.CanonicalID(PacketID)
         customer_id, _, _, _, SupplierNumber, dataORparity = packetid.SplitFull(packetID)
         if dataORparity == 'Data':
@@ -747,9 +749,9 @@ class RestoreWorker(automat.Automat):
         if not packet_id:
             raise Exception('packet ID is unknown from %r' % NewPacketOrPacketID)
         if packet_id not in self.block_requests:
-            resp = global_id.ParseGlobalID(packet_id)
+            resp = global_id.NormalizeGlobalID(packet_id)
             for req_packet_id in self.block_requests:
-                req = global_id.ParseGlobalID(req_packet_id)
+                req = global_id.NormalizeGlobalID(req_packet_id)
                 if resp['version'] == req['version'] and resp['path'] == req['path']:
                     if resp['key_alias'] == req['key_alias'] and resp['user'] == req['user']:
                         if id_url.is_the_same(resp['idurl'], req['idurl']):

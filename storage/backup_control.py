@@ -313,7 +313,7 @@ def Save(filepath=None):
 #------------------------------------------------------------------------------
 
 def on_files_received(newpacket, info):
-    list_files_global_id = global_id.ParseGlobalID(newpacket.PacketID)
+    list_files_global_id = global_id.NormalizeGlobalID(newpacket.PacketID)
     if not list_files_global_id['idurl']:
         lg.warn('invalid PacketID: %s' % newpacket.PacketID)
         return False
@@ -654,7 +654,7 @@ class Task():
         ))
 
     def set_path_id(self, pathID):
-        parts = global_id.ParseGlobalID(pathID)
+        parts = global_id.NormalizeGlobalID(pathID)
         self.pathID = pathID  # source path to backup
         self.customerGlobID = parts['customer']
         self.customerIDURL = parts['idurl']
