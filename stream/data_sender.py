@@ -215,7 +215,7 @@ class DataSender(automat.Automat):
             if customer_idurl != my_id.getIDURL():
                 # TODO: check that later
                 if _Debug:
-                    lg.out(_DebugLevel + 6, 'data_sender.doScanAndQueue  skip sending to another customer: %r' % customer_idurl)
+                    lg.out(_DebugLevel + 2, 'data_sender.doScanAndQueue  skip sending to another customer: %r' % customer_idurl)
                 continue
             known_suppliers = contactsdb.suppliers(customer_idurl)
             if not known_suppliers or id_url.is_some_empty(known_suppliers):
@@ -231,14 +231,16 @@ class DataSender(automat.Automat):
                 if this_customer_idurl != customer_idurl:
                     continue
                 customerGlobalID, pathID, _ = packetid.SplitBackupID(backupID, normalize_key_alias=True)
-                item = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(customer_idurl=customer_idurl))
+                keyAlias = packetid.KeyAlias(customerGlobalID)
+                item = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(customer_idurl, keyAlias))
                 if not item:
                     if _Debug:
                         lg.out(_DebugLevel, 'data_sender.doScanAndQueue    skip sending backup %r path not exist in catalog' % backupID)
                     continue
                 if item.key_id and customerGlobalID and customerGlobalID != item.key_id:
                     if _Debug:
-                        lg.out(_DebugLevel, 'data_sender.doScanAndQueue    skip sending backup %r key is different in the catalog' % backupID)
+                        lg.out(_DebugLevel, 'data_sender.doScanAndQueue    skip sending backup %r key is different in the catalog: %r ~ %r' % (
+                            backupID, customerGlobalID, item.key_id, ))
                     continue
                 packetsBySupplier = backup_matrix.ScanBlocksToSend(backupID, limit_per_supplier=None)
                 total_for_customer = sum([len(v) for v in packetsBySupplier.values()])
@@ -272,11 +274,11 @@ class DataSender(automat.Automat):
                             latest_progress = self.statistic.get(supplier_idurl, {}).get('latest', '')
                             if len(latest_progress) >= 3 and latest_progress.endswith('---'):
                                 if _Debug:
-                                    lg.out(_DebugLevel + 6, 'data_sender.doScanAndQueue     skip sending to supplier %r because multiple packets already failed' % supplier_idurl)
+                                    lg.out(_DebugLevel + 2, 'data_sender.doScanAndQueue     skip sending to supplier %r because multiple packets already failed' % supplier_idurl)
                                 continue
                             if not io_throttle.OkToSend(supplier_idurl):
                                 if _Debug:
-                                    lg.out(_DebugLevel + 6, 'data_sender.doScanAndQueue     skip sending, queue is busy for %r' % supplier_idurl)
+                                    lg.out(_DebugLevel + 2, 'data_sender.doScanAndQueue     skip sending, queue is busy for %r' % supplier_idurl)
                                 continue
                             customerGlobalID, pathID = packetid.SplitPacketID(packetID)
                             filename = os.path.join(

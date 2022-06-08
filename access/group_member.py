@@ -346,7 +346,7 @@ class GroupMember(automat.Automat):
         self.member_idurl = member_idurl or my_id.getIDURL()
         self.member_id = self.member_idurl.to_id()
         self.group_key_id = group_key_id
-        self.group_glob_id = global_id.ParseGlobalID(self.group_key_id)
+        self.group_glob_id = global_id.NormalizeGlobalID(self.group_key_id)
         self.group_queue_alias = self.group_glob_id['key_alias']
         self.group_creator_id = self.group_glob_id['customer']
         self.group_creator_idurl = self.group_glob_id['idurl']
@@ -381,7 +381,7 @@ class GroupMember(automat.Automat):
         if _Debug:
             lg.args(_DebugLevel, old=self.group_key_id, new=new_group_key_id)
         self.group_key_id = new_group_key_id
-        self.group_glob_id = global_id.ParseGlobalID(self.group_key_id)
+        self.group_glob_id = global_id.NormalizeGlobalID(self.group_key_id)
         self.group_queue_alias = self.group_glob_id['key_alias']
         self.group_creator_id = self.group_glob_id['customer']
         self.group_creator_idurl = self.group_glob_id['idurl']

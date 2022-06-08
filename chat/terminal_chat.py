@@ -167,7 +167,7 @@ class SimpleTerminalChat(object):
         if message.startswith('!add '):
             idurl = message[5:]
             if global_id.IsValidGlobalUser(idurl):
-                gid = global_id.ParseGlobalID(idurl)
+                gid = global_id.NormalizeGlobalID(idurl)
                 idurl = gid['idurl']
             if idurl.strip() and idurl not in self.users:
                 self.users.append(idurl)

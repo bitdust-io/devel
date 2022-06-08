@@ -228,7 +228,7 @@ class PrivateMessage(object):
                     lg.dbg(_DebugLevel, 'with registered key %r' % self.recipient)
                 encrypt_session_func = lambda inp: my_keys.encrypt(self.recipient, inp)
         if not encrypt_session_func:
-            glob_id = global_id.ParseGlobalID(self.recipient)
+            glob_id = global_id.NormalizeGlobalID(self.recipient)
             if glob_id['key_alias'] == 'master':
                 if glob_id['idurl'] == my_id.getIDURL():
                     lg.warn('making encrypted message addressed to me ?')
@@ -261,7 +261,7 @@ class PrivateMessage(object):
                     lg.dbg(_DebugLevel, 'decrypt with registered key %r' % self.recipient)
                 decrypt_session_func = lambda inp: my_keys.decrypt(self.recipient, inp)
         if not decrypt_session_func:
-            glob_id = global_id.ParseGlobalID(self.recipient)
+            glob_id = global_id.NormalizeGlobalID(self.recipient)
             if glob_id['idurl'] == my_id.getIDURL():
                 if glob_id['key_alias'] == 'master':
                     if _Debug:

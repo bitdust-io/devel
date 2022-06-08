@@ -117,7 +117,7 @@ class FileUp(automat.Automat):
             lg.exc()
             self.fileSize = 0
         self.packetID = global_id.CanonicalID(packetID)
-        parts = global_id.ParseGlobalID(packetID)
+        parts = global_id.NormalizeGlobalID(packetID)
         self.customerID = parts['customer']
         self.remotePath = parts['path']
         self.customerIDURL = parts['idurl']

@@ -66,7 +66,7 @@ def send(customer_idurl, packet_id, format_type, key_id, remote_idurl, query_ite
     if not query_items:
         query_items = ['*', ]
     key_id = my_keys.latest_key_id(key_id)
-    parts = global_id.ParseGlobalID(key_id)
+    parts = global_id.NormalizeGlobalID(key_id)
     if parts['key_alias'] == 'master' and parts['idurl'] != my_id.getIDURL():
         # lg.warn('incoming ListFiles() request with customer "master" key: %r' % key_id)
         if not my_keys.is_key_registered(key_id) and identitycache.HasKey(parts['idurl']):
@@ -127,7 +127,7 @@ def process_query_item(query_path, key_alias, ownerdir):
             key_alias_dir = os.path.join(ownerdir, one_key_alias)
             ret += TreeSummary(key_alias_dir, key_alias=one_key_alias)
         if _Debug:
-            lg.args(_DebugLevel, query_path=query_path, result_bytes=len(ret))
+            lg.args(_DebugLevel, ownerdir=ownerdir, query_path=query_path, result_bytes=len(ret))
         return ret
     # TODO: more validations to be added
     clean_path = query_path.replace('.', '').replace('~', '').replace(':', '').replace('\\', '/').lstrip('/')
@@ -140,7 +140,7 @@ def process_query_item(query_path, key_alias, ownerdir):
     if os.path.isdir(local_path):
         ret += TreeSummary(local_path, key_alias=key_alias)
     if _Debug:
-        lg.args(_DebugLevel, query_path=query_path, local_path=local_path, result_bytes=len(ret))
+        lg.args(_DebugLevel, ownerdir=ownerdir, query_path=query_path, local_path=local_path, result_bytes=len(ret))
     return ret
 
 #------------------------------------------------------------------------------

@@ -570,7 +570,7 @@ class SupplierQueue:
             lg.args(_DebugLevel, newpacket=newpacket, result=result, queue=len(self.fileRequestQueue), remoteName=self.remoteName)
         packetID = global_id.CanonicalID(newpacket.PacketID)
         if (packetID not in self.fileRequestQueue) or (packetID not in self.fileRequestDict):
-            latest_idurl = global_id.ParseGlobalID(packetID, as_field=True)['idurl'].latest
+            latest_idurl = global_id.NormalizeGlobalID(packetID, as_field=True)['idurl'].latest
             another_packetID = global_id.SubstitutePacketID(packetID, idurl=latest_idurl)
             if (another_packetID in self.fileRequestQueue) and (another_packetID in self.fileRequestDict):
                 packetID = another_packetID

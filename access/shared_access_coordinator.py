@@ -64,9 +64,6 @@ from main import events
 
 from dht import dht_relations
 
-from userid import global_id
-from userid import id_url
-
 from p2p import commands
 from p2p import p2p_service
 
@@ -81,6 +78,10 @@ from access import key_ring
 from storage import backup_fs
 
 from customer import supplier_connector
+
+from userid import global_id
+from userid import id_url
+from userid import my_id
 
 #------------------------------------------------------------------------------
 
@@ -169,14 +170,15 @@ class SharedAccessCoordinator(automat.Automat):
         Use this method if you need to call Automat.__init__() in a special way.
         """
         self.key_id = key_id
-        self.glob_id = global_id.ParseGlobalID(self.key_id)
+        self.glob_id = global_id.NormalizeGlobalID(self.key_id)
+        self.key_alias = self.glob_id['key_alias']
         self.customer_idurl = self.glob_id['idurl']
         self.known_suppliers_list = []
         self.known_ecc_map = None
         self.dht_lookup_use_cache = True
         self.outgoing_list_files_packets_ids = []
         super(SharedAccessCoordinator, self).__init__(
-            name="%s$%s" % (self.glob_id['key_alias'][:10], self.glob_id['customer']),
+            name="%s$%s" % (self.key_alias[:10], self.glob_id['customer']),
             state='AT_STARTUP',
             debug_level=debug_level,
             log_events=log_events,
@@ -189,7 +191,7 @@ class SharedAccessCoordinator(automat.Automat):
         j = super().to_json()
         j.update({
             'key_id': self.key_id,
-            'alias': self.glob_id['key_alias'],
+            'alias': self.key_alias,
             'label': my_keys.get_label(self.key_id),
             'creator': self.customer_idurl.to_id(),
             'suppliers': [id_url.idurl_to_id(s) for s in self.known_suppliers_list],
@@ -337,13 +339,25 @@ class SharedAccessCoordinator(automat.Automat):
             sc = supplier_connector.by_idurl(supplier_idurl, customer_idurl=self.customer_idurl)
             if sc is not None and sc.state == 'CONNECTED':
                 return True
+        if _Debug:
+            lg.dbg(_DebugLevel, 'no suppliers connected yet, known list has %d suppliers for %r' % (
+                len(self.known_suppliers_list), self.known_ecc_map, ))
         return False
 
     def isAnyFilesShared(self, *args, **kwargs):
         """
         Condition method.
         """
-        return backup_fs.HasChilds('', iter=backup_fs.fs(self.customer_idurl))
+        if id_url.is_the_same(self.customer_idurl, my_id.getIDURL()):
+            if _Debug:
+                lg.args(_DebugLevel, c=self.customer_idurl, key_alias=self.key_alias, ret='my own share')
+            # no need to wait for incoming list files
+            # TODO: check what is going to happen when new file is uploaded to the share by another user (not creator of the share)
+            return True
+        ret = backup_fs.HasChilds('', iter=backup_fs.fs(self.customer_idurl, self.key_alias))
+        if _Debug:
+            lg.args(_DebugLevel, customer=self.customer_idurl, key_alias=self.key_alias, ret=ret)
+        return ret
 
     def doInit(self, *args, **kwargs):
         """
@@ -373,6 +387,8 @@ class SharedAccessCoordinator(automat.Automat):
             return
         self.outgoing_list_files_packets_ids = []
         self.known_ecc_map = args[0].get('ecc_map')
+        if _Debug:
+            lg.args(_DebugLevel, known_ecc_map=self.known_ecc_map, known_suppliers_list=self.known_suppliers_list)
         for supplier_idurl in self.known_suppliers_list:
             if id_url.is_cached(supplier_idurl):
                 self._do_connect_with_supplier(supplier_idurl)
@@ -385,18 +401,7 @@ class SharedAccessCoordinator(automat.Automat):
         """
         Action method.
         """
-        supplier_idurl = args[0]
-        pkt_out = p2p_service.SendListFiles(
-            target_supplier=supplier_idurl,
-            customer_idurl=self.customer_idurl,
-            key_id=self.key_id,
-            callbacks={
-                commands.Files(): lambda r, i: self._on_list_files_response(r, i, self.customer_idurl, supplier_idurl, self.key_id),
-                commands.Fail(): lambda r, i: self._on_list_files_failed(r, i, self.customer_idurl, supplier_idurl, self.key_id),
-            },
-            timeout=20,
-        )
-        self.outgoing_list_files_packets_ids.append(pkt_out.PacketID)
+        self._do_request_supplier_list_files(args[0], self.customer_idurl, self.key_id)
 
     def doProcessCustomerListFiles(self, *args, **kwargs):
         """
@@ -407,20 +412,7 @@ class SharedAccessCoordinator(automat.Automat):
         """
         Action method.
         """
-        connected_count = 0
-        for supplier_idurl in self.known_suppliers_list:
-            if not id_url.is_cached(supplier_idurl):
-                continue
-            sc = supplier_connector.by_idurl(supplier_idurl, customer_idurl=self.customer_idurl)
-            if sc is None or sc.state != 'CONNECTED':
-                continue
-            connected_count += 1
-        critical_suppliers_number = 1
-        if self.known_ecc_map:
-            from raid import eccmap
-            critical_suppliers_number = eccmap.GetCorrectableErrors(eccmap.GetEccMapSuppliersNumber(self.known_ecc_map))
-        if connected_count >= critical_suppliers_number:
-            self.automat('all-suppliers-connected')
+        self._do_check_supplier_connectors()
 
     def doCheckReconnectSuppliers(self, *args, **kwargs):
         """
@@ -454,6 +446,8 @@ class SharedAccessCoordinator(automat.Automat):
             cb = self.connected_callbacks.get(cb_id)
             if cb:
                 cb(cb_id, True)
+        if _Debug:
+            lg.args(_DebugLevel, key_id=self.key_id, ecc_map=self.known_ecc_map)
 
     def doReportDisconnected(self, *args, **kwargs):
         """
@@ -473,6 +467,8 @@ class SharedAccessCoordinator(automat.Automat):
             if cb_id in self.connected_callbacks:
                 cb = self.connected_callbacks[cb_id]
                 cb(cb_id, False)
+        if _Debug:
+            lg.args(_DebugLevel, key_id=self.key_id, ecc_map=self.known_ecc_map)
 
     def doDestroyMe(self, *args, **kwargs):
         """
@@ -481,6 +477,57 @@ class SharedAccessCoordinator(automat.Automat):
         self.outgoing_list_files_packets_ids = []
         self.result_defer = None
         self.destroy()
+
+    def _do_connect_with_supplier(self, supplier_idurl):
+        if _Debug:
+            lg.args(_DebugLevel, supplier_idurl=supplier_idurl, customer_idurl=self.customer_idurl)
+        sc = supplier_connector.by_idurl(supplier_idurl, customer_idurl=self.customer_idurl)
+        if sc is None:
+            sc = supplier_connector.create(
+                supplier_idurl=supplier_idurl,
+                customer_idurl=self.customer_idurl,
+                needed_bytes=0,  # we only want to read the data at the moment - requesting 0 bytes from the supplier
+                key_id=self.key_id,
+                queue_subscribe=False,
+            )
+        if sc.state in ['CONNECTED', 'QUEUE?', ]:
+            self.automat('supplier-connected', supplier_idurl)
+        else:
+            sc.set_callback('shared_access_coordinator', self._on_supplier_connector_state_changed)
+            sc.automat('connect')
+
+    def _do_request_supplier_list_files(self, supplier_idurl, customer_idurl, key_id):
+        pkt_out = p2p_service.SendListFiles(
+            target_supplier=supplier_idurl,
+            customer_idurl=customer_idurl,
+            key_id=key_id,
+            callbacks={
+                commands.Files(): lambda r, i: self._on_list_files_response(r, i, customer_idurl, supplier_idurl, key_id),
+                commands.Fail(): lambda r, i: self._on_list_files_failed(r, i, customer_idurl, supplier_idurl, key_id),
+            },
+            timeout=20,
+        )
+        self.outgoing_list_files_packets_ids.append(pkt_out.PacketID)
+        if _Debug:
+            lg.args(_DebugLevel, supplier=supplier_idurl, pid=pkt_out.PacketID, outgoing=len(self.outgoing_list_files_packets_ids), )
+
+    def _do_check_supplier_connectors(self):
+        connected_count = 0
+        for supplier_idurl in self.known_suppliers_list:
+            if not id_url.is_cached(supplier_idurl):
+                continue
+            sc = supplier_connector.by_idurl(supplier_idurl, customer_idurl=self.customer_idurl)
+            if sc is None or sc.state != 'CONNECTED':
+                continue
+            connected_count += 1
+        critical_suppliers_number = 1
+        if self.known_ecc_map:
+            from raid import eccmap
+            critical_suppliers_number = eccmap.GetCorrectableErrors(eccmap.GetEccMapSuppliersNumber(self.known_ecc_map))
+        if _Debug:
+            lg.args(_DebugLevel, connected_count=connected_count, critical_suppliers_number=critical_suppliers_number)
+        if connected_count >= critical_suppliers_number:
+            self.automat('all-suppliers-connected')
 
     def _on_read_customer_suppliers(self, dht_value):
         if _Debug:
@@ -523,27 +570,4 @@ class SharedAccessCoordinator(automat.Automat):
     def _on_key_transfer_success(self, customer_idurl, supplier_idurl, key_id):
         if _Debug:
             lg.out(_DebugLevel, 'shared_access_coordinator._on_key_transfer_success public key %r shared to supplier %r of customer %r, now will send ListFiles() again' % (key_id, supplier_idurl, customer_idurl))
-        p2p_service.SendListFiles(
-            target_supplier=supplier_idurl,
-            customer_idurl=customer_idurl,
-            key_id=key_id,
-            timeout=30,
-        )
-
-    def _do_connect_with_supplier(self, supplier_idurl):
-        if _Debug:
-            lg.args(_DebugLevel, supplier_idurl=supplier_idurl, customer_idurl=self.customer_idurl)
-        sc = supplier_connector.by_idurl(supplier_idurl, customer_idurl=self.customer_idurl)
-        if sc is None:
-            sc = supplier_connector.create(
-                supplier_idurl=supplier_idurl,
-                customer_idurl=self.customer_idurl,
-                needed_bytes=0,  # we only want to read the data at the moment - requesting 0 bytes from the supplier
-                key_id=self.key_id,
-                queue_subscribe=False,
-            )
-        if sc.state in ['CONNECTED', 'QUEUE?', ]:
-            self.automat('supplier-connected', supplier_idurl)
-        else:
-            sc.set_callback('shared_access_coordinator', self._on_supplier_connector_state_changed)
-            sc.automat('connect')
+        self._do_request_supplier_list_files(supplier_idurl, customer_idurl, key_id)

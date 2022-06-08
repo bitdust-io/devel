@@ -313,7 +313,7 @@ class BackupMonitor(automat.Automat):
         # take remote and local backups and get union from it
         allBackupIDs = set(list(backup_matrix.local_files().keys()) + list(backup_matrix.remote_files().keys()))
         # take only backups from data base
-        allBackupIDs.intersection_update(backup_fs.ListAllBackupIDs())
+        allBackupIDs.intersection_update(backup_fs.ListAllBackupIDs(customer_idurl=my_id.getIDURL()))
         # remove running backups
         allBackupIDs.difference_update(backup_control.ListRunningBackups())
         # sort it in reverse order - newer backups should be repaired first

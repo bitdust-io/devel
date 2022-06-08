@@ -91,14 +91,14 @@ from system import tmpfile
 from contacts import contactsdb
 from contacts import identitycache
 
-from userid import my_id
-from userid import global_id
-from userid import id_url
-
 from main import settings
 from main import config
 
 from transport import callback
+
+from userid import global_id
+from userid import id_url
+from userid import my_id
 
 #------------------------------------------------------------------------------
 

@@ -62,8 +62,6 @@ from contacts import contactsdb
 
 from contacts import identitycache
 
-from main import events
-
 from p2p import commands
 
 from lib import packetid

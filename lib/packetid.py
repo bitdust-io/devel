@@ -242,6 +242,25 @@ def SplitBackupID(backupID, normalize_key_alias=True):
     return customerGlobalID, pathID, versionName
 
 
+def SplitBackupIDFull(backupID, normalize_key_alias=True):
+    """
+    This takes a backup ID string and split by 4 parts:
+
+        packetid.SplitBackupID('share_1234$alice@idhost.org:0/0/1/0/F20131120053803PM')
+        ('share_1234', 'alice@idhost.org', '0/0/1/0', 'F20131120053803PM')
+    """
+    try:
+        pathID, _, versionName = backupID.rpartition('/')
+        customerGlobalID, _, pathID = pathID.rpartition(':')
+        keyAlias, _, customerGlobalID = customerGlobalID.partition('$')
+    except:
+        return None, None, None, None
+    if normalize_key_alias:
+        if not keyAlias:
+            keyAlias = 'master'
+    return keyAlias, customerGlobalID, pathID, versionName
+
+
 def SplitPacketID(packetID, normalize_key_alias=True):
     """
     This takes a full packet ID string and split by 2 parts:
@@ -369,12 +388,12 @@ def KeyAlias(inp, normalize_key_alias=True):
     customerGlobalID = inp
     if ':' in inp:
         try:
-            customerGlobalID, _, _ = inp.rpartition(':')
+            customerGlobalID, _, _ = inp.partition(':')
         except:
             return None
     if '$' not in customerGlobalID and normalize_key_alias:
         customerGlobalID = 'master$' + customerGlobalID
-    keyAlias, _, _ = customerGlobalID.rpartition('$')
+    keyAlias, _, _ = customerGlobalID.partition('$')
     return str(keyAlias)
 
 
