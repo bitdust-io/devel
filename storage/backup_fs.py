@@ -157,10 +157,14 @@ def fs(customer_idurl=None, key_alias='master'):
     customer_idurl = id_url.field(customer_idurl)
     if customer_idurl not in _FileSystemIndexByName:
         _FileSystemIndexByName[customer_idurl] = {}
+        if _Debug:
+            lg.dbg(_DebugLevel, 'new customer registered : %r' % customer_idurl)
     if key_alias is None:
         return _FileSystemIndexByName[customer_idurl]
     if key_alias not in _FileSystemIndexByName[customer_idurl]:
         _FileSystemIndexByName[customer_idurl][key_alias] = {}
+        if _Debug:
+            lg.dbg(_DebugLevel, 'new key alias registered for customer %r : %r' % (customer_idurl, key_alias, ))
     return _FileSystemIndexByName[customer_idurl][key_alias]
 
 
@@ -174,17 +178,19 @@ def fsID(customer_idurl=None, key_alias='master'):
     customer_idurl = id_url.field(customer_idurl)
     if customer_idurl not in _FileSystemIndexByID:
         _FileSystemIndexByID[customer_idurl] = {}
+        if _Debug:
+            lg.dbg(_DebugLevel, 'new customer registered : %r' % customer_idurl)
     if key_alias is None:
         return _FileSystemIndexByID[customer_idurl]
     if key_alias not in _FileSystemIndexByID[customer_idurl]:
         _FileSystemIndexByID[customer_idurl][key_alias] = {}
+        if _Debug:
+            lg.dbg(_DebugLevel, 'new key alias registered for customer %r : %r' % (customer_idurl, key_alias, ))
     return _FileSystemIndexByID[customer_idurl][key_alias]
 
 #------------------------------------------------------------------------------
 
 def known_customers():
-    """
-    """
     global _FileSystemIndexByID
     return list(_FileSystemIndexByID.keys())
 

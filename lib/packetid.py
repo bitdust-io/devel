@@ -388,12 +388,12 @@ def KeyAlias(inp, normalize_key_alias=True):
     customerGlobalID = inp
     if ':' in inp:
         try:
-            customerGlobalID, _, _ = inp.rpartition(':')
+            customerGlobalID, _, _ = inp.partition(':')
         except:
             return None
     if '$' not in customerGlobalID and normalize_key_alias:
         customerGlobalID = 'master$' + customerGlobalID
-    keyAlias, _, _ = customerGlobalID.rpartition('$')
+    keyAlias, _, _ = customerGlobalID.partition('$')
     return str(keyAlias)
 
 

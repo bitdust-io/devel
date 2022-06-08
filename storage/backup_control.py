@@ -313,11 +313,11 @@ def Save(filepath=None):
 #------------------------------------------------------------------------------
 
 def on_files_received(newpacket, info):
-    list_files_global_id = global_id.NormalizeGlobalID(newpacket.PacketID)
+    list_files_global_id = global_id.ParseGlobalID(newpacket.PacketID)
     if not list_files_global_id['idurl']:
         lg.warn('invalid PacketID: %s' % newpacket.PacketID)
         return False
-    if list_files_global_id['idurl'] != my_id.getIDURL():
+    if not id_url.is_the_same(list_files_global_id['idurl'], my_id.getIDURL()):
         # ignore Files() if this is another customer
         if _Debug:
             lg.dbg(_DebugLevel, 'ignore incoming %r which is owned by another customer' % newpacket)

@@ -9,8 +9,9 @@ from main import settings
 
 from crypt import key
 
-from userid import my_id
+from storage import backup_fs
 
+from userid import my_id
 
 
 _some_priv_key = """-----BEGIN RSA PRIVATE KEY-----
@@ -82,25 +83,72 @@ class Test(TestCase):
         fout.close()
         self.assertTrue(key.LoadMyKey(keyfilename='/tmp/_some_priv_key'))
         self.assertTrue(my_id.loadLocalIdentity())
+        backup_fs.init()
 
     def tearDown(self):
+        backup_fs.shutdown()
         key.ForgetMyKey()
         my_id.forgetLocalIdentity()
         settings.shutdown()
         os.remove('/tmp/_some_priv_key')
         bpio.rmdir_recursive('/tmp/.bitdust_tmp')
 
-    def test_identity_valid(self):
-        from userid import identity
-        some_identity = identity.identity(xmlsrc=_some_identity_xml)
-        self.assertTrue(some_identity.isCorrect())
-        self.assertTrue(some_identity.Valid())
-        self.assertEqual(some_identity.getIDURL().to_bin(), b'http://127.0.0.1:8084/alice.xml')
-        self.assertEqual(some_identity.getIDURL().to_id(), 'alice@127.0.0.1_8084')
+    def test_file_create(self):
+        path = 'cat.jpeg'
+        parent_path = os.path.dirname(path)
+        customer_idurl = 'http://127.0.0.1:8084/alice.xml'
+        key_alias = 'master'
+        id_iter_iterID = backup_fs.GetIteratorsByPath(
+            parent_path,
+            iter=backup_fs.fs(customer_idurl, key_alias),
+            iterID=backup_fs.fsID(customer_idurl, key_alias),
+        )
+        newPathID, itemInfo, _, _ = backup_fs.PutItem(
+            name=os.path.basename(path),
+            parent_path_id=id_iter_iterID[0],
+            as_folder=False,
+            iter=id_iter_iterID[1],
+            iterID=id_iter_iterID[2],
+            key_id=None,
+        )
+        self.assertEqual(newPathID, itemInfo.path_id)
+        self.assertEqual(itemInfo.name(), 'cat.jpeg')
+        self.assertEqual(itemInfo.key_alias(), 'master')
+        self.assertEqual(backup_fs.fs(customer_idurl, key_alias), {'cat.jpeg': int(newPathID), })
+        self.assertEqual(backup_fs.fsID(customer_idurl, key_alias)[int(newPathID)].name(), 'cat.jpeg')
 
-    def test_identity_not_valid(self):
-        from userid import identity
-        _broken_identity_xml = _some_identity_xml.replace('alice', 'bob')
-        broken_identity = identity.identity(xmlsrc=_broken_identity_xml)
-        self.assertTrue(broken_identity.isCorrect())
-        self.assertFalse(broken_identity.Valid())
+    def test_file_create_with_key_alias(self):
+        key_id = 'share_abcd$alice@127.0.0.1_8084'
+        key_alias = key_id.split('$')[0]
+        customer_idurl = 'http://127.0.0.1:8084/alice.xml'
+        path = 'animals/dog.png'
+        parent_path = os.path.dirname(path)
+        parentPathID, _, _, _ = backup_fs.AddDir(
+            parent_path,
+            read_stats=False,
+            iter=backup_fs.fs(customer_idurl, key_alias),
+            iterID=backup_fs.fsID(customer_idurl, key_alias),
+            key_id=key_id,
+        )
+        id_iter_iterID = backup_fs.GetIteratorsByPath(
+            parent_path,
+            iter=backup_fs.fs(customer_idurl, key_alias),
+            iterID=backup_fs.fsID(customer_idurl, key_alias),
+        )
+        newPathID, itemInfo, _, _ = backup_fs.PutItem(
+            name=os.path.basename(path),
+            parent_path_id=parentPathID,
+            as_folder=False,
+            iter=id_iter_iterID[1],
+            iterID=id_iter_iterID[2],
+            key_id=key_id,
+        )
+        self.assertEqual(newPathID, itemInfo.path_id)
+        self.assertEqual(itemInfo.name(), 'dog.png')
+        self.assertEqual(itemInfo.key_alias(), 'share_abcd')
+        p1, p2 = newPathID.split('/')
+        self.assertEqual(backup_fs.fs(customer_idurl, key_alias), {'animals': {0: int(p1), 'dog.png': int(p2)}})
+        self.assertEqual(backup_fs.fsID(customer_idurl, key_alias)[int(p1)]['i'].name(), 'animals')
+        self.assertEqual(backup_fs.fsID(customer_idurl, key_alias)[int(p1)]['i'].key_id, key_id)
+        self.assertEqual(backup_fs.fsID(customer_idurl, key_alias)[int(p1)][int(p2)].name(), 'dog.png')
+        self.assertEqual(backup_fs.fsID(customer_idurl, key_alias)[int(p1)][int(p2)].key_id, key_id)

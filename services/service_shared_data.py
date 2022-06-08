@@ -113,7 +113,7 @@ class SharedDataService(LocalService):
                         target_supplier=supplier_idurl,
                         customer_idurl=cur_share.customer_idurl,
                         key_id=cur_share.key_id,
-                        timeout=30,
+                        timeout=20,
                         callbacks={
                             commands.Files(): lambda r, i: self._on_list_files_response(r, i, cur_share.customer_idurl, supplier_idurl, cur_share.key_id),
                             commands.Fail(): lambda r, i: self._on_list_files_failed(r, i, cur_share.customer_idurl, supplier_idurl, cur_share.key_id),
@@ -141,6 +141,7 @@ class SharedDataService(LocalService):
 
     def _on_key_transfer_success(self, customer_idurl, supplier_idurl, key_id):
         from logs import lg
+        from p2p import commands
         from p2p import p2p_service
         lg.info('public key %r shared to supplier %r of customer %r, now will send ListFiles()' % (key_id, supplier_idurl, customer_idurl))
         p2p_service.SendListFiles(
@@ -148,6 +149,10 @@ class SharedDataService(LocalService):
             customer_idurl=customer_idurl,
             key_id=key_id,
             timeout=30,
+            callbacks={
+                commands.Files(): lambda r, i: self._on_list_files_response(r, i, customer_idurl, supplier_idurl, key_id),
+                commands.Fail(): lambda r, i: self._on_list_files_failed(r, i, customer_idurl, supplier_idurl, key_id),
+            }
         )
 
     def _on_inbox_packet_received(self, newpacket, info, status, error_message):

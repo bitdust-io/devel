@@ -120,8 +120,8 @@ class Test(TestCase):
         my_id.forgetLocalIdentity()
         settings.shutdown()
         os.remove('/tmp/_some_priv_key')
-        # bpio.rmdir_recursive('/tmp/.bitdust_tmp')
-        # bpio.rmdir_recursive('/tmp/_some_folder')
+        bpio.rmdir_recursive('/tmp/.bitdust_tmp')
+        bpio.rmdir_recursive('/tmp/_some_folder')
         os.remove('/tmp/random_file')
 
     def test_backup_restore(self):

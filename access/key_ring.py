@@ -734,7 +734,7 @@ def do_delete_key(key_id, is_private):
 #------------------------------------------------------------------------------
 
 def on_files_received(newpacket, info):
-    list_files_global_id = global_id.NormalizeGlobalID(newpacket.PacketID)
+    list_files_global_id = global_id.ParseGlobalID(newpacket.PacketID)
     if not list_files_global_id['idurl']:
         lg.warn('invalid PacketID: %s' % newpacket.PacketID)
         return False

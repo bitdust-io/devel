@@ -1055,7 +1055,7 @@ def key_share(key_id, trusted_user_id, include_private=False, include_signature=
         return ERROR('error reading input parameters')
     if not driver.is_on('service_keys_registry'):
         return ERROR('service_keys_registry() is not started')
-    glob_id = global_id.NormalizeGlobalID(full_key_id)
+    glob_id = global_id.ParseGlobalID(full_key_id)
     if glob_id['key_alias'] == 'master':
         return ERROR('"master" key can not be shared')
     if not glob_id['key_alias'] or not glob_id['idurl']:
@@ -1091,7 +1091,7 @@ def key_audit(key_id, untrusted_user_id, is_private=False, timeout=10):
         return ERROR('error reading input parameters')
     if not driver.is_on('service_keys_registry'):
         return ERROR('service_keys_registry() is not started')
-    glob_id = global_id.NormalizeGlobalID(full_key_id)
+    glob_id = global_id.ParseGlobalID(full_key_id)
     if not glob_id['key_alias'] or not glob_id['idurl']:
         return ERROR('incorrect key_id format')
     if global_id.IsValidGlobalUser(untrusted_user_id):
@@ -2274,7 +2274,7 @@ def shares_list(only_active=False, include_mine=True, include_granted=True):
     results = []
     if only_active:
         for key_id in shared_access_coordinator.list_active_shares():
-            _glob_id = global_id.NormalizeGlobalID(key_id)
+            _glob_id = global_id.ParseGlobalID(key_id)
             to_be_listed = False
             if include_mine and _glob_id['idurl'] == my_id.getIDURL():
                 to_be_listed = True
@@ -2414,7 +2414,7 @@ def share_grant(key_id, trusted_user_id, timeout=45, publish_events=True):
     trusted_user_id = strng.to_text(trusted_user_id)
     remote_idurl = None
     if trusted_user_id.count('@'):
-        glob_id = global_id.NormalizeGlobalID(trusted_user_id)
+        glob_id = global_id.ParseGlobalID(trusted_user_id)
         remote_idurl = glob_id['idurl']
     else:
         remote_idurl = id_url.field(trusted_user_id)
@@ -2546,7 +2546,7 @@ def groups_list(only_active=False, include_mine=True, include_granted=True):
     results = []
     if only_active:
         for group_key_id in group_member.list_active_group_members():
-            _glob_id = global_id.NormalizeGlobalID(group_key_id)
+            _glob_id = global_id.ParseGlobalID(group_key_id)
             to_be_listed = False
             if include_mine and _glob_id['idurl'] == my_id.getIDURL():
                 to_be_listed = True
@@ -2901,7 +2901,7 @@ def group_share(group_key_id, trusted_user_id, timeout=45, publish_events=False)
     trusted_user_id = strng.to_text(trusted_user_id)
     remote_idurl = None
     if trusted_user_id.count('@'):
-        glob_id = global_id.NormalizeGlobalID(trusted_user_id)
+        glob_id = global_id.ParseGlobalID(trusted_user_id)
         remote_idurl = glob_id['idurl']
     else:
         remote_idurl = id_url.field(trusted_user_id)
@@ -3359,7 +3359,7 @@ def message_history(recipient_id=None, sender_id=None, message_type=None, offset
             if not recipient_idurl:
                 return ERROR('recipient was not found')
             recipient_id = global_id.UrlToGlobalID(recipient_idurl)
-        recipient_glob_id = global_id.NormalizeGlobalID(recipient_id)
+        recipient_glob_id = global_id.ParseGlobalID(recipient_id)
         if not recipient_glob_id['idurl']:
             return ERROR('wrong recipient_id')
         recipient_id = global_id.MakeGlobalID(**recipient_glob_id)
@@ -3452,7 +3452,7 @@ def message_send(recipient_id, data, ping_timeout=15, message_ack_timeout=15):
         if not recipient_idurl:
             return ERROR('recipient not found')
         recipient_id = global_id.glob2idurl(recipient_idurl, as_field=False)
-    glob_id = global_id.NormalizeGlobalID(recipient_id)
+    glob_id = global_id.ParseGlobalID(recipient_id)
     if not glob_id['idurl']:
         return ERROR('wrong recipient')
     target_glob_id = global_id.MakeGlobalID(**glob_id)
@@ -3513,7 +3513,7 @@ def message_send_group(group_key_id, data):
     if not group_key_id.startswith('group_'):
         return ERROR('invalid group id')
     group_key_id = my_keys.latest_key_id(group_key_id)
-    glob_id = global_id.NormalizeGlobalID(group_key_id)
+    glob_id = global_id.ParseGlobalID(group_key_id)
     if not glob_id['idurl']:
         return ERROR('wrong group id')
     if not my_keys.is_key_registered(group_key_id):

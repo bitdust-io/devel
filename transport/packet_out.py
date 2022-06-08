@@ -91,14 +91,14 @@ from system import tmpfile
 from contacts import contactsdb
 from contacts import identitycache
 
-from userid import my_id
-from userid import global_id
-from userid import id_url
-
 from main import settings
 from main import config
 
 from transport import callback
+
+from userid import global_id
+from userid import id_url
+from userid import my_id
 
 #------------------------------------------------------------------------------
 
@@ -363,7 +363,7 @@ class PacketOut(automat.Automat):
         if self.outpacket.PacketID.count('&'):
             packet_label = self.outpacket.PacketID.replace(':', '').replace('/', '').replace('_', '').replace('&', '')
         else:
-            packet_label = global_id.NormalizeGlobalID(self.outpacket.PacketID)['path']
+            packet_label = global_id.ParseGlobalID(self.outpacket.PacketID)['path']
             if not packet_label:
                 packet_label = self.outpacket.PacketID.replace(':', '').replace('/', '').replace('_', '')
         self.wide = wide
