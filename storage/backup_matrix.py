@@ -1676,7 +1676,7 @@ def remove_list_files_query_callback(customer_idurl, query_path, callback_method
 def populate_remote_versions():
     for backupID in GetBackupIDs(remote=True, local=False, sorted_ids=False):
         customer_idurl = packetid.CustomerIDURL(backupID)
-        keyAlias, _, pathID, _ = packetid.SplitBackupID(backupID)
+        keyAlias, _, pathID, _ = packetid.SplitBackupIDFull(backupID)
         itemInfo = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(customer_idurl, keyAlias))
         if itemInfo:
             full_remote_path = global_id.MakeGlobalID(path=itemInfo.name(), key_id=itemInfo.key_id)
