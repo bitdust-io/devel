@@ -1877,13 +1877,14 @@ def _test():
     src = bpio.ReadTextFile(filepath)
     inpt = StringIO(src)
     inpt.readline()
-    # count = Unserialize(inpt)
     json_data = json.loads(inpt.read())
-    customer_id = 'test01@bitrex.ai'
-    customer_idurl = global_id.GlobalUserToIDURL(customer_id)
-    count = Unserialize(json_data[customer_id], from_json=True, iter=fs(customer_idurl))
     inpt.close()
-    # print count
+    for customer_id in json_data.keys():
+        count = Unserialize(json_data[customer_id], from_json=True)
+    # customer_id = 'test01@bitrex.ai'
+    # customer_idurl = global_id.GlobalUserToIDURL(customer_id)
+    # count = Unserialize(json_data[customer_id], from_json=True, iter=fs(customer_idurl))
+        print(customer_id, count)
     Scan()
     Calculate()
 
@@ -1901,14 +1902,20 @@ def _test():
 #     print IsFile('dir2/fff')
 
     print('------------')
-    pprint.pprint(fs())
-    print()
-    pprint.pprint(fsID())
+    pprint.pprint(fs(key_alias='share_f17b49966dfe85320ac5e7d579d0047c'))
+    pprint.pprint(ListChildsByPath(
+        path='',
+        recursive=True,
+        iter=fs(key_alias='share_f17b49966dfe85320ac5e7d579d0047c'),
+        iterID=fsID(key_alias='share_f17b49966dfe85320ac5e7d579d0047c'),
+    ))
+    # print()
+    # pprint.pprint(fsID())
     print('------------')
 
     # print(HasChilds('', iter=fs(customer_idurl)))
-    pprint.pprint([i[1] for i in ListAllBackupIDsFull()])
-    pprint.pprint([i[1] for i in ListAllBackupIDsFull(iterID=WalkByID('0')[0])])
+    # pprint.pprint([i[1] for i in ListAllBackupIDsFull()])
+    # pprint.pprint([i[1] for i in ListAllBackupIDsFull(iterID=WalkByID('0')[0])])
 
     settings.shutdown()
 

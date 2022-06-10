@@ -1156,9 +1156,6 @@ def files_list(remote_path=None, key_id=None, recursive=True, all_customers=Fals
     """
     if not driver.is_on('service_backup_db'):
         return ERROR('service_backup_db() is not started')
-    if _Debug:
-        lg.out(_DebugLevel, 'api.files_list remote_path=%s key_id=%s recursive=%s all_customers=%s include_uploads=%s include_downloads=%s' % (
-            remote_path, key_id, recursive, all_customers, include_uploads, include_downloads, ))
     from storage import backup_fs
     from storage import backup_control
     from system import bpio
@@ -1166,10 +1163,19 @@ def files_list(remote_path=None, key_id=None, recursive=True, all_customers=Fals
     from userid import global_id
     from crypt import my_keys
     result = []
-    norm_path = global_id.NormalizeGlobalID(remote_path)
+    if remote_path:
+        norm_path = global_id.NormalizeGlobalID(remote_path)
+    else:
+        if key_id:
+            norm_path = global_id.NormalizeGlobalID(key_id)
+        else:
+            norm_path = global_id.NormalizeGlobalID(None)
     remotePath = bpio.remotePath(norm_path['path'])
     customer_idurl = norm_path['idurl']
     key_alias = norm_path['key_alias'] if not key_id else key_id.split('$')[0]
+    if _Debug:
+        lg.out(_DebugLevel, 'api.files_list remote_path=%s key_id=%s key_alias=%s recursive=%s all_customers=%s include_uploads=%s include_downloads=%s' % (
+            remote_path, key_id, key_alias, recursive, all_customers, include_uploads, include_downloads, ))
     if not all_customers and customer_idurl not in backup_fs.known_customers():
         return ERROR('customer %r not found' % customer_idurl)
     if all_customers:
@@ -1194,14 +1200,14 @@ def files_list(remote_path=None, key_id=None, recursive=True, all_customers=Fals
         )
     if not isinstance(lookup, list):
         return ERROR(lookup)
+    if _Debug:
+        lg.out(_DebugLevel, '    lookup with %d items' % len(lookup))
     for i in lookup:
-        # if not i['item']['k']:
-        #     i['item']['k'] = my_id.getGlobalID(key_alias='master')
         if i['path_id'] == 'index':
             continue
         if key_id is not None and key_id != i['item']['k']:
             continue
-        if norm_path['key_alias'] and i['item']['k']:
+        if key_id is None and norm_path['key_alias'] and i['item']['k']:
             if i['item']['k'] != my_keys.make_key_id(alias=norm_path['key_alias'], creator_glob_id=norm_path['customer']):
                 continue
         k_alias = 'master'
@@ -1489,12 +1495,12 @@ def file_create(remote_path, as_folder=False, exist_ok=False, force_path_id=None
     itemInfo = None
     if _Debug:
         lg.args(_DebugLevel, remote_path=remote_path, as_folder=as_folder, path_id=pathID, customer_idurl=customer_idurl, force_path_id=force_path_id)
-    if pathID is not None:
-        existingItemInfo = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(customer_idurl, key_alias))
-        if not existingItemInfo:
-            return ERROR('failed reading already existing item from catalog: %r' % pathID)
-        if existingItemInfo.key_id != keyID:
-            return ERROR('another item with same remote path but different key already exist in catalog')
+#     if pathID is not None:
+#         existingItemInfo = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(customer_idurl, key_alias))
+#         if not existingItemInfo:
+#             return ERROR('failed reading already existing item from catalog: %r' % pathID)
+#         if existingItemInfo.key_id != keyID:
+#             return ERROR('another item with same remote path but different key already exist in catalog')
     if pathID is not None:
         if exist_ok:
             fullRemotePath = global_id.MakeGlobalID(customer=parts['customer'], path=parts['path'], key_alias=key_alias)
@@ -2387,6 +2393,7 @@ def share_delete(key_id):
         return ERROR('share %r is not opened' % key_id)
     this_share.automat('shutdown')
     my_keys.erase_key(key_id)
+    # TODO: cleanup backup_fs as well
     return OK(this_share.to_json(), message='share %r deleted' % key_id, )
 
 

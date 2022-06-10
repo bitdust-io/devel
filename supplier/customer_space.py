@@ -144,7 +144,8 @@ def verify_packet_ownership(newpacket, raise_exception=False):
                     if _Debug:
                         lg.dbg(_DebugLevel, 'OK, scenario 3: another authorized user is sending data to customer to be stored on the supplier')
                     return creator_idurl
-        lg.err('non-authorized user is trying to store data on the supplier')
+        if _Debug:
+            lg.dbg(_DebugLevel, 'non-authorized user is trying to store data on the supplier')
         return None
     if newpacket.Command in [commands.DeleteFile(), commands.DeleteBackup(), ]:
         if owner_idurl == creator_idurl:
@@ -251,7 +252,8 @@ def on_data(newpacket):
         return False
     authorized_idurl = verify_packet_ownership(newpacket)
     if authorized_idurl is None:
-        lg.err("ownership verification failed for %r" % newpacket)
+        if _Debug:
+            lg.dbg(_DebugLevel, "ownership verification failed for %r" % newpacket)
         # p2p_service.SendFail(newpacket, 'ownership verification failed')
         return False
     filename = make_valid_filename(newpacket.OwnerID, glob_path)
