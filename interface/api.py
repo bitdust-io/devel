@@ -1489,12 +1489,12 @@ def file_create(remote_path, as_folder=False, exist_ok=False, force_path_id=None
     itemInfo = None
     if _Debug:
         lg.args(_DebugLevel, remote_path=remote_path, as_folder=as_folder, path_id=pathID, customer_idurl=customer_idurl, force_path_id=force_path_id)
-    if pathID is not None:
-        existingItemInfo = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(customer_idurl, key_alias))
-        if not existingItemInfo:
-            return ERROR('failed reading already existing item from catalog: %r' % pathID)
-        if existingItemInfo.key_id != keyID:
-            return ERROR('another item with same remote path but different key already exist in catalog')
+#     if pathID is not None:
+#         existingItemInfo = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(customer_idurl, key_alias))
+#         if not existingItemInfo:
+#             return ERROR('failed reading already existing item from catalog: %r' % pathID)
+#         if existingItemInfo.key_id != keyID:
+#             return ERROR('another item with same remote path but different key already exist in catalog')
     if pathID is not None:
         if exist_ok:
             fullRemotePath = global_id.MakeGlobalID(customer=parts['customer'], path=parts['path'], key_alias=key_alias)
