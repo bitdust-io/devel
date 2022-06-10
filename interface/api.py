@@ -2393,6 +2393,7 @@ def share_delete(key_id):
         return ERROR('share %r is not opened' % key_id)
     this_share.automat('shutdown')
     my_keys.erase_key(key_id)
+    # TODO: cleanup backup_fs as well
     return OK(this_share.to_json(), message='share %r deleted' % key_id, )
 
 
