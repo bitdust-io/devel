@@ -1301,7 +1301,7 @@ def files_list(remote_path=None, key_id=None, recursive=True, all_customers=Fals
     if _Debug:
         lg.out(_DebugLevel, '    %d items returned' % len(result))
     return RESULT(result, extra_fields={
-        'revision': backup_control.revision(),
+        'revision': backup_fs.revision(),
     })
 
 
@@ -1355,6 +1355,7 @@ def file_info(remote_path, include_uploads=True, include_downloads=True):
         lg.out(_DebugLevel, 'api.file_info remote_path=%s include_uploads=%s include_downloads=%s' % (
             remote_path, include_uploads, include_downloads))
     from storage import backup_fs
+    from storage import backup_control
     from lib import misc
     from system import bpio
     from userid import global_id
@@ -1399,7 +1400,6 @@ def file_info(remote_path, include_uploads=True, include_downloads=True):
         'downloads': [],
     }
     if include_uploads:
-        from storage import backup_control
         backup_control.tasks()
         running = []
         for backupID in backup_control.FindRunningBackup(pathID=pathID):
@@ -1455,7 +1455,7 @@ def file_info(remote_path, include_uploads=True, include_downloads=True):
         r['downloads'] = downloads
     if _Debug:
         lg.out(_DebugLevel, 'api.file_info : %r' % pathID)
-    r['revision'] = backup_control.revision()
+    r['revision'] = backup_fs.revision()
     return OK(r)
 
 
@@ -1478,7 +1478,7 @@ def file_create(remote_path, as_folder=False, exist_ok=False, force_path_id=None
     from storage import backup_fs
     from storage import backup_control
     from system import bpio
-    from main import control
+    # from main import control
     from main import listeners
     from crypt import my_keys
     from userid import id_url
@@ -1557,8 +1557,8 @@ def file_create(remote_path, as_folder=False, exist_ok=False, force_path_id=None
         )
         if not newPathID:
             return ERROR('remote path can not be assigned, failed to create a new item: %r' % path)
-    backup_control.Save()
-    control.request_update([('pathID', newPathID), ])
+    backup_control.Save(customer_idurl, key_alias)
+    # control.request_update([('pathID', newPathID), ])
     full_glob_id = global_id.MakeGlobalID(customer=parts['customer'], path=newPathID, key_alias=key_alias)
     full_remote_path = global_id.MakeGlobalID(customer=parts['customer'], path=parts['path'], key_alias=key_alias)
     if id_url.is_the_same(customer_idurl, my_id.getIDURL()) and key_alias == 'master':
@@ -1638,11 +1638,11 @@ def file_delete(remote_path):
         return ERROR('remote item %r was not found' % pathIDfull)
     backup_fs.DeleteLocalDir(settings.getLocalBackupsDir(), pathIDfull)
     backup_fs.DeleteByID(pathID, iter=backup_fs.fs(customer_idurl, key_alias), iterID=backup_fs.fsID(customer_idurl, key_alias))
-    backup_fs.Scan()
-    backup_fs.Calculate()
-    backup_control.Save()
+    backup_fs.Scan(customer_idurl=customer_idurl, key_alias=key_alias)
+    backup_fs.Calculate(iterID=backup_fs.fsID(customer_idurl, key_alias))
+    backup_control.Save(customer_idurl, key_alias)
     backup_monitor.A('restart')
-    control.request_update([('pathID', pathIDfull), ])
+    # control.request_update([('pathID', pathIDfull), ])
     if id_url.is_the_same(parts['idurl'], my_id.getIDURL()) and key_alias == 'master':
         listeners.push_snapshot('private_file', snap_id=full_glob_id, deleted=True, data=dict(
             global_id=full_glob_id,
@@ -1720,15 +1720,13 @@ def files_uploads(include_running=True, include_pending=True):
     return RESULT(r)
 
 
-def file_upload_start(local_path, remote_path, wait_result=False, wait_finish=False, open_share=False, publish_events=False):
+def file_upload_start(local_path, remote_path, wait_result=False, publish_events=False):
     """
     Starts a new file or folder (including all sub-folders and files) upload from `local_path` on your disk drive
     to the virtual location `remote_path` in the catalog. New "version" of the data will be created for given catalog item
     and uploading task started.
 
     You can use `wait_result=True` to block the response from that method until uploading finishes or fails (makes no sense for large uploads).
-
-    Parameter `open_share` can be useful if you uploading data into a "shared" virtual path.
 
     ###### HTTP
         curl -X POST 'localhost:8180/file/upload/start/v1' -d '{"remote_path": "abcd1234$alice@server-a.com:cars/fiat.jpeg", "local_path": "/tmp/fiat.jpeg"}'
@@ -1739,13 +1737,13 @@ def file_upload_start(local_path, remote_path, wait_result=False, wait_finish=Fa
     if not driver.is_on('service_backups'):
         return ERROR('service_backups() is not started')
     if _Debug:
-        lg.out(_DebugLevel, 'api.file_upload_start local_path=%s remote_path=%s wait_result=%s open_share=%s' % (
-            local_path, remote_path, wait_result, open_share, ))
+        lg.out(_DebugLevel, 'api.file_upload_start local_path=%s remote_path=%s wait_result=%s' % (
+            local_path, remote_path, wait_result, ))
     from system import bpio
     from storage import backup_fs
     from storage import backup_control
     from lib import packetid
-    from main import control
+    # from main import control
     from userid import global_id
     from crypt import my_keys
     if not bpio.pathExist(local_path):
@@ -1763,23 +1761,28 @@ def file_upload_start(local_path, remote_path, wait_result=False, wait_finish=Fa
     path = bpio.remotePath(parts['path'])
     pathID = backup_fs.ToID(path, iter=backup_fs.fs(customer_idurl, key_alias))
     if not pathID:
-        return ERROR('path %r not registered yet' % remote_path)
+        return ERROR('path %r is not registered yet' % remote_path)
     keyID = my_keys.make_key_id(alias=key_alias, creator_glob_id=parts['customer'])
-    customerID = global_id.MakeGlobalID(customer=parts['customer'], key_alias=key_alias)
-    pathIDfull = packetid.MakeBackupID(customerID, pathID)
-    if open_share and key_alias != 'master':
+    # customerID = global_id.MakeGlobalID(customer=parts['customer'], key_alias=key_alias)
+    pathIDfull = packetid.MakeBackupID(keyID, pathID)
+    if key_alias != 'master':
         if not driver.is_on('service_shared_data'):
             return ERROR('service_shared_data() is not started')
-        from access import shared_access_coordinator
-        active_share = shared_access_coordinator.get_active_share(keyID)
-        if not active_share:
-            active_share = shared_access_coordinator.SharedAccessCoordinator(
-                key_id=keyID,
-                log_events=True,
-                publish_events=publish_events,
-            )
-        if active_share.state != 'CONNECTED':
+
+    def _restart_active_share(result):
+        if _Debug:
+            lg.args(_DebugLevel, result=result, key_id=keyID, path=path, pathID=pathID)
+        if key_alias != 'master':
+            from access import shared_access_coordinator
+            active_share = shared_access_coordinator.get_active_share(keyID)
+            if not active_share:
+                active_share = shared_access_coordinator.SharedAccessCoordinator(
+                    key_id=keyID,
+                    publish_events=publish_events,
+                )
             active_share.automat('restart')
+        return result
+
     if wait_result:
         task_created_defer = Deferred()
         tsk = backup_control.StartSingle(
@@ -1787,82 +1790,46 @@ def file_upload_start(local_path, remote_path, wait_result=False, wait_finish=Fa
             localPath=local_path,
             keyID=keyID,
         )
-        if not wait_finish:
-            tsk.result_defer.addCallback(
-                lambda result: task_created_defer.callback(OK({
-                    'remote_path': remote_path,
-                    'version': result[0],
-                    'key_id': tsk.keyID,
-                    'source_path': local_path,
-                    'path_id': pathID,
-                },
-                message='item %r uploaded, local path is: %r' % (remote_path, local_path),
-                api_method='file_upload_start',
-            )))
-            tsk.result_defer.addErrback(
-                lambda result: task_created_defer.callback(ERROR('upload task %d for %r failed: %r' % (
-                    tsk.number, tsk.pathID, result[1],
-                ),
-                api_method='file_upload_start',
-            )))
-            backup_fs.Calculate()
-            backup_control.Save()
-            control.request_update([('pathID', pathIDfull), ])
-            if _Debug:
-                lg.out(_DebugLevel, 'api.file_upload_start %s with %s, wait_result=True' % (remote_path, pathIDfull))
-            return task_created_defer
-
-        task_finished_defer = Deferred()
-
-        def _job_done(result):
-            if _Debug:
-                lg.args(_DebugLevel, key_id=keyID, result=result)
-            if result == 'done':
-                task_finished_defer.callback(
-                    lambda result: task_created_defer.callback(OK({
-                        'remote_path': remote_path,
-                        'version': result[0],
-                        'key_id': tsk.keyID,
-                        'source_path': local_path,
-                        'path_id': pathID,
-                    },
-                    message='item %r uploaded, local path is: %r' % (remote_path, local_path),
-                    api_method='file_upload_start',
-                )))
-            else:
-                task_finished_defer.errback(Exception('failed to upload key %r, backup is %r' % (keyID, result)))
-            return None
-
-        def _task_started(resp):
-            if _Debug:
-                lg.args(_DebugLevel, key_id=keyID, upload_response_status=resp['status'])
-            if resp['status'] != 'OK':
-                task_finished_defer.errback(Exception('failed to upload key %r, task was not started: %r' % (pathIDfull, resp)))
-                return None
-            backupObj = backup_control.jobs().get(resp['version'])
-            if not backupObj:
-                task_finished_defer.errback(Exception('failed to upload key %r, task %r failed to start' % (pathIDfull, resp['version'])))
-                return None
-            backupObj.resultDefer.addCallback(_job_done)
-            backupObj.resultDefer.addErrback(task_finished_defer.errback)
-            return None
-
-        return task_finished_defer
+        if key_alias != 'master':
+            tsk.result_defer.addCallback(_restart_active_share)
+        tsk.result_defer.addCallback(
+            lambda result: task_created_defer.callback(OK({
+                'remote_path': remote_path,
+                'version': result[0],
+                'key_id': tsk.keyID,
+                'source_path': local_path,
+                'path_id': pathID,
+            },
+            message='item %r uploaded, local path is: %r' % (remote_path, local_path),
+            api_method='file_upload_start',
+        )))
+        tsk.result_defer.addErrback(
+            lambda result: task_created_defer.callback(ERROR('upload task %d for %r failed: %r' % (
+                tsk.number, tsk.pathID, result[1],
+            ),
+            api_method='file_upload_start',
+        )))
+        backup_fs.Calculate(iterID=backup_fs.fsID(customer_idurl, key_alias))
+        backup_control.Save(customer_idurl, key_alias)
+        # control.request_update([('pathID', pathIDfull), ])
+        if _Debug:
+            lg.out(_DebugLevel, 'api.file_upload_start %s with %s, wait_result=True' % (remote_path, pathIDfull, ))
+        return task_created_defer
 
     tsk = backup_control.StartSingle(
         pathID=pathIDfull,
         localPath=local_path,
         keyID=keyID,
     )
-    # tsk.result_defer.addCallback(lambda result: lg.dbg(
-    #     'callback from api.file_upload_start.task(%s) done with %s' % (result[0], result[1], )))
+    if key_alias != 'master':
+        tsk.result_defer.addCallback(_restart_active_share)
     tsk.result_defer.addErrback(lambda result: lg.err(
         'errback from api.file_upload_start.task(%s) failed with %s' % (result[0], result[1], )))
-    backup_fs.Calculate()
-    backup_control.Save()
-    control.request_update([('pathID', pathIDfull), ])
+    backup_fs.Calculate(iterID=backup_fs.fsID(customer_idurl, key_alias))
+    backup_control.Save(customer_idurl, key_alias)
+    # control.request_update([('pathID', pathIDfull), ])
     if _Debug:
-        lg.out(_DebugLevel, 'api.file_upload_start %s with %s' % (remote_path, pathIDfull))
+        lg.out(_DebugLevel, 'api.file_upload_start %s with %s' % (remote_path, pathIDfull, ))
     return OK(
         {
             'remote_path': remote_path,
@@ -1870,7 +1837,7 @@ def file_upload_start(local_path, remote_path, wait_result=False, wait_finish=Fa
             'source_path': local_path,
             'path_id': pathID,
         },
-        message='uploading %r started, local path is: %r' % (remote_path, local_path),
+        message='uploading %r started, local path is: %r' % (remote_path, local_path, ),
     )
 
 
@@ -1952,7 +1919,7 @@ def files_downloads():
     } for r in restore_monitor.GetWorkingObjects()])
 
 
-def file_download_start(remote_path, destination_path=None, wait_result=False, open_share=True, publish_events=False):
+def file_download_start(remote_path, destination_path=None, wait_result=False, publish_events=False):
     """
     Download data from remote suppliers to your local machine.
 
@@ -1978,12 +1945,12 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, o
     if not driver.is_on('service_restores'):
         return ERROR('service_restores() is not started')
     if _Debug:
-        lg.out(_DebugLevel, 'api.file_download_start remote_path=%s destination_path=%s wait_result=%s open_share=%s' % (
-            remote_path, destination_path, wait_result, open_share, ))
+        lg.out(_DebugLevel, 'api.file_download_start remote_path=%s destination_path=%s wait_result=%s' % (
+            remote_path, destination_path, wait_result, ))
     from storage import backup_fs
     from storage import backup_control
     from storage import restore_monitor
-    from main import control
+    # from main import control
     from system import bpio
     from lib import packetid
     from main import settings
@@ -2088,10 +2055,10 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, o
                 backupID, destination_path, wait_result))
         if wait_result:
             restore_monitor.Start(backupID, destination_path, keyID=key_id, callback=_on_result)
-            control.request_update([('pathID', knownPath), ])
+            # control.request_update([('pathID', knownPath), ])
             return ret
         restore_monitor.Start(backupID, destination_path, keyID=key_id, )
-        control.request_update([('pathID', knownPath), ])
+        # control.request_update([('pathID', knownPath), ])
         ret.callback(OK(
             {
                 'downloaded': False,
@@ -2160,11 +2127,9 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, o
             _start_restore()
         return True
 
-    if open_share and key_alias != 'master':
+    if key_alias != 'master':
         _open_share()
     else:
-        if _Debug:
-            lg.out(_DebugLevel, '    "open_share" skipped, starting restore')
         _start_restore()
 
     return ret

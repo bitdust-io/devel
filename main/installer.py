@@ -302,9 +302,9 @@ class Installer(automat.Automat):
         """
 
     def doUpdate(self, *args, **kwargs):
-        # lg.out(4, 'installer.doUpdate')
-        from main import control
-        control.request_update([{'state': self.state}, ])
+        # from main import control
+        # control.request_update([{'state': self.state}, ])
+        pass
 
     def doClearOutput(self, *args, **kwargs):
         # lg.out(4, 'installer.doClearOutput')

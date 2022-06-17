@@ -343,7 +343,7 @@ def file_create_v1(node, remote_path):
 
 
 def file_upload_start_v1(customer: str, remote_path: str, local_path: str,
-                         open_share=True, wait_result=True,
+                         wait_result=True,
                          wait_finish_attempts=20, delay=5,
                          wait_job_finish=True,
                          wait_packets_finish=True,
@@ -354,7 +354,6 @@ def file_upload_start_v1(customer: str, remote_path: str, local_path: str,
             'remote_path': remote_path,
             'local_path': local_path,
             'wait_result': '1' if wait_result else '0',
-            'open_share': '1' if open_share else '0',
         },
         timeout=30,
     )
@@ -381,7 +380,7 @@ def file_upload_start_v1(customer: str, remote_path: str, local_path: str,
 
 
 def file_download_start_v1(customer: str, remote_path: str, destination: str,
-                           open_share=True, wait_result=True,
+                           wait_result=True,
                            download_attempts=1, wait_finish_attempts=20, delay=5,
                            wait_tasks_finish=True):
     for _ in range(download_attempts):
@@ -390,7 +389,6 @@ def file_download_start_v1(customer: str, remote_path: str, destination: str,
                 'remote_path': remote_path,
                 'destination_folder': destination,
                 'wait_result': '1' if wait_result else '0',
-                'open_share': '1' if open_share else '0',
             },
             timeout=30,
         )

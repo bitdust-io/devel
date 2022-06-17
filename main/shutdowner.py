@@ -98,7 +98,7 @@ def shutdown(x=None):
     dl = []
     try:
         from services import driver
-        from main import control
+        # from main import control
         from main import events
         from main import listeners
         from logs import weblog
@@ -129,7 +129,7 @@ def shutdown(x=None):
         listeners.shutdown()
         events.shutdown()
         tmpfile.shutdown()
-        control.shutdown()
+        # control.shutdown()
         try:
             weblog.shutdown()
         except:

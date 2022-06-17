@@ -131,10 +131,10 @@ class KeysStorageService(LocalService):
         When key was renamed (after identity rotate) make sure to store the latest copy and remove older one. 
         """
         from logs import lg
-        from storage import backup_control
+        from storage import backup_fs
         from storage import index_synchronizer
         from twisted.internet.defer import Deferred
-        is_in_sync = index_synchronizer.is_synchronized() and backup_control.revision() > 0
+        is_in_sync = index_synchronizer.is_synchronized() and backup_fs.revision() > 0
         if is_in_sync:
             result = Deferred()
             result.addCallback(self._on_keys_synchronized)

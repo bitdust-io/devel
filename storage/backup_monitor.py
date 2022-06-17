@@ -387,8 +387,8 @@ class BackupMonitor(automat.Automat):
             backup_fs.Scan()
             backup_fs.Calculate()
             backup_control.Save()
-            from main import control
-            control.request_update()
+            # from main import control
+            # control.request_update()
         collected = gc.collect()
         if self.backups_progress_last_iteration > 0:
             if _Debug:

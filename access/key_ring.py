@@ -611,8 +611,6 @@ def do_backup_key(key_id, keys_folder=None):
         local_path=local_key_filepath,
         remote_path=global_key_path,
         wait_result=True,
-        wait_finish=False,
-        open_share=False,
     )
     backup_result = Deferred()
 
@@ -674,7 +672,6 @@ def do_restore_key(key_id, is_private, keys_folder=None, wait_result=False):
         remote_path=global_key_path,
         destination_path=keys_folder,
         wait_result=True,
-        open_share=False,
     )
     if not isinstance(ret, Deferred):
         lg.err('failed to download key "%s": %s' % (key_id, ret))
@@ -770,29 +767,31 @@ def on_files_received(newpacket, info):
         return False
     if block.CreatorID == trusted_customer_idurl:
         # this is a trusted guy sending some shared files to me
-        try:
-            json_data = serialization.BytesToDict(raw_files, keys_to_text=True, encoding='utf-8')
-            json_data['items']
-        except:
-            lg.exc()
-            return False
-        count = backup_fs.Unserialize(
-            raw_data=json_data,
-            customer_idurl=trusted_customer_idurl,
-            from_json=True,
-        )
-        p2p_service.SendAck(newpacket)
-        if count == 0:
-            lg.warn('no files were imported during file sharing')
-        else:
-            backup_control.Save()
-            lg.info('imported %d shared files from %s, key_id=%s' % (
-                count, trusted_customer_idurl, incoming_key_id, ))
-        events.send('shared-list-files-received', data=dict(
-            customer_idurl=trusted_customer_idurl,
-            new_items=count,
-        ))
-        return True
+        return False
+#         try:
+#             json_data = serialization.BytesToDict(raw_files, keys_to_text=True, encoding='utf-8')
+#         except:
+#             lg.exc()
+#             return False
+#         count, updated_keys = backup_fs.Unserialize(
+#             json_data=json_data,
+#             customer_idurl=trusted_customer_idurl,
+#         )
+#         p2p_service.SendAck(newpacket)
+#         if not updated_keys:
+#             lg.warn('no files were imported during file sharing')
+#         else:
+#             for key_alias in updated_keys:
+#                 backup_fs.SaveIndex(trusted_customer_idurl, key_alias)
+#             # backup_control.Save()
+#             lg.info('imported %d shared files from %s, key_id=%s' % (
+#                 count, trusted_customer_idurl, incoming_key_id, ))
+#         events.send('shared-list-files-received', data=dict(
+#             customer_idurl=trusted_customer_idurl,
+#             new_items=count,
+#         ))
+#         return True
+
     # otherwise this must be an external supplier sending us a files he stores for trusted customer
     external_supplier_idurl = block.CreatorID
     try:

@@ -65,7 +65,7 @@ from io import StringIO
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -95,8 +95,11 @@ from main import listeners
 
 from lib import misc
 from lib import packetid
+from lib import jsn
 
 from crypt import my_keys
+
+from contacts import identitycache
 
 from interface import api
 
@@ -120,6 +123,7 @@ TYPES = {
 
 _FileSystemIndexByName = {}
 _FileSystemIndexByID = {}
+_RevisionNumber = {}
 _ItemsCount = 0
 _FilesCount = 0
 _DirsCount = 0
@@ -135,6 +139,7 @@ def init():
     """
     if _Debug:
         lg.out(_DebugLevel, 'backup_fs.init')
+    LoadAllIndexes()
 
 
 def shutdown():
@@ -190,6 +195,55 @@ def fsID(customer_idurl=None, key_alias='master'):
 
 #------------------------------------------------------------------------------
 
+def revision(customer_idurl=None, key_alias='master'):
+    """
+    Mutator method to access current software revision number.
+    """
+    global _RevisionNumber
+    if customer_idurl is None:
+        customer_idurl = my_id.getIDURL()
+    customer_idurl = id_url.field(customer_idurl)
+    if customer_idurl not in _RevisionNumber:
+        _RevisionNumber[customer_idurl] = {}
+        if _Debug:
+            lg.dbg(_DebugLevel, 'new customer registered : %r' % customer_idurl)
+    if key_alias not in _RevisionNumber[customer_idurl]:
+        _RevisionNumber[customer_idurl][key_alias] = 0
+        if _Debug:
+            lg.dbg(_DebugLevel, 'new key alias registered for customer %r : %r' % (customer_idurl, key_alias, ))
+    return _RevisionNumber[customer_idurl][key_alias]
+
+
+def commit(new_revision_number=None, customer_idurl=None, key_alias='master'):
+    """
+    Need to be called after any changes in the index database.
+
+    This increase revision number by 1 or set ``new_revision_number``.
+    """
+    global _RevisionNumber
+    if customer_idurl is None:
+        customer_idurl = my_id.getIDURL()
+    customer_idurl = id_url.field(customer_idurl)
+    if customer_idurl not in _RevisionNumber:
+        _RevisionNumber[customer_idurl] = {}
+        if _Debug:
+            lg.dbg(_DebugLevel, 'new customer registered : %r' % customer_idurl)
+    if key_alias not in _RevisionNumber[customer_idurl]:
+        _RevisionNumber[customer_idurl][key_alias] = 0
+        if _Debug:
+            lg.dbg(_DebugLevel, 'new key alias registered for customer %r : %r' % (customer_idurl, key_alias, ))
+    old_v = _RevisionNumber[customer_idurl][key_alias]
+    if new_revision_number is not None:
+        _RevisionNumber[customer_idurl][key_alias] = new_revision_number
+    else:
+        _RevisionNumber[customer_idurl][key_alias] += 1
+    new_v = _RevisionNumber[customer_idurl][key_alias]
+    if _Debug:
+        lg.args(_DebugLevel, old=old_v, new=new_v, c=customer_idurl, k=key_alias)
+    return old_v, new_v
+
+#------------------------------------------------------------------------------
+
 def known_customers():
     global _FileSystemIndexByID
     return list(_FileSystemIndexByID.keys())
@@ -202,6 +256,7 @@ def known_keys_aliases(customer_idurl):
     customer_idurl = id_url.field(customer_idurl)
     return list(_FileSystemIndexByID.get(customer_idurl, {}).keys())
 
+#------------------------------------------------------------------------------
 
 def counter():
     """
@@ -1720,7 +1775,6 @@ def Calculate(iterID=None):
 
 #------------------------------------------------------------------------------
 
-
 def Clear(customer_idurl=None, key_alias=None):
     """
     Erase all items in the index.
@@ -1728,47 +1782,62 @@ def Clear(customer_idurl=None, key_alias=None):
     fs(customer_idurl=customer_idurl, key_alias=key_alias).clear()
     fsID(customer_idurl=customer_idurl, key_alias=key_alias).clear()
 
+#------------------------------------------------------------------------------
 
-def Serialize(customer_idurl=None, to_json=False, encoding='utf-8', filter_cb=None):
+def Serialize(customer_idurl, key_alias=None, encoding='utf-8', filter_cb=None):
     """
     Use this to write index to the local file.
     """
     cnt = [0]
-    if to_json:
-        result = {'items': [], }
-    else:
-        result = StringIO()
+    result = {}
 
-    def cb(path_id, path, info):
+    def cb(path_id, path, info, k_alias):
         if filter_cb is not None:
             if not filter_cb(path_id, path, info):
                 return
-        if to_json:
-            result['items'].append(info.serialize(encoding=encoding, to_json=True))
-        else:
-            result.write(info.serialize(encoding=encoding, to_json=False))
+        result[k_alias]['items'].append(info.serialize(encoding=encoding, to_json=True))
         cnt[0] += 1
 
-    for key_alias in known_keys_aliases(customer_idurl):
-        TraverseByID(cb, iterID=fsID(customer_idurl, key_alias))
-    if to_json:
-        src = result
+    key_aliases = []
+    if key_alias:
+        key_aliases.append(key_alias)
     else:
-        src = result.getvalue()
-        result.close()
+        key_aliases.extend(known_keys_aliases(customer_idurl))
+    for k_alias in key_aliases:
+        if k_alias not in result:
+            result[k_alias] = {}
+        if 'items' not in result[k_alias]:
+            result[k_alias]['items'] = []
+        TraverseByID(
+            callback=lambda path_id, path, info: cb(path_id, path, info, k_alias),
+            iterID=fsID(customer_idurl, k_alias),
+        )
     if _Debug:
-        lg.out(_DebugLevel, 'backup_fs.Serialize done with %d indexed files' % cnt[0])
-    return src
+        lg.out(_DebugLevel, 'backup_fs.Serialize done with %d indexed files of %d aliases for %r' % (
+            cnt[0], len(key_aliases), customer_idurl, ))
+    return result
 
 
-def Unserialize(raw_data, customer_idurl=None, from_json=False, decoding='utf-8'):
+def Unserialize(json_data, customer_idurl=None, new_revision=None, decoding='utf-8'):
     """
     Read index from ``StringIO`` object.
     """
-    count = 0
-    if from_json:
-        json_data = raw_data
-        for json_item in json_data['items']:
+    if customer_idurl is None:
+        customer_idurl = my_id.getIDURL()
+    customer_idurl = id_url.field(customer_idurl)
+    total_count = 0
+    updated_keys = []
+    for key_alias in json_data.keys():
+        if new_revision is not None:
+            cur_revision = revision(customer_idurl, key_alias)
+            if cur_revision >= new_revision:
+                if _Debug:
+                    lg.dbg(_DebugLevel, 'ignore items for %r with alias %r because current revision is up to date: %d>=%d' % (
+                        customer_idurl, key_alias, cur_revision, new_revision, ))
+                continue
+        Clear(customer_idurl, key_alias)
+        count = 0
+        for json_item in json_data[key_alias]['items']:
             item = FSItemInfo()
             item.unserialize(json_item, decoding=decoding, from_json=True)
             if item.type == FILE:
@@ -1783,34 +1852,123 @@ def Unserialize(raw_data, customer_idurl=None, from_json=False, decoding='utf-8'
                 count += 1
             else:
                 raise ValueError('Incorrect entry type')
-
-    else:
-        inpt = StringIO(raw_data)
-        while True:
-            src = inpt.readline() + inpt.readline()  # 2 times because we take 2 lines for every item
-            if src.strip() == '':
-                break
-            item = FSItemInfo()
-            item.unserialize(src, decoding=decoding, from_json=False)
-            if item.type == FILE:
-                if not SetFile(item, customer_idurl=customer_idurl):
-                    inpt.close()
-                    lg.warn('Can not put FILE item into the tree: %s' % str(item))
-                    raise ValueError('Can not put FILE item into the tree: %s' % str(item))
-                count += 1
-            elif item.type == DIR:
-                if not SetDir(item, customer_idurl=customer_idurl):
-                    inpt.close()
-                    lg.warn('Can not put DIR item into the tree: %s' % str(item))
-                    raise ValueError('Can not put DIR item into the tree: %s' % str(item))
-                count += 1
-            else:
-                inpt.close()
-                raise ValueError('Incorrect entry type')
-        inpt.close()
+        total_count += count
+        if count:
+            old_rev = None
+            new_rev = None
+            if new_revision is not None:
+                old_rev, new_rev = commit(
+                    new_revision_number=new_revision,
+                    customer_idurl=customer_idurl,
+                    key_alias=key_alias,
+                )
+            Scan(
+                customer_idurl=customer_idurl,
+                key_alias=key_alias,
+            )
+            updated_keys.append(key_alias)
+            if _Debug:
+                lg.args(_DebugLevel, count=count, customer=customer_idurl, k=key_alias, old_rev=old_rev, new_rev=new_rev)
     if _Debug:
-        lg.out(_DebugLevel, 'backup_fs.Unserialize done with %d indexed files' % count)
+        lg.out(_DebugLevel, 'backup_fs.Unserialize done with %d updated items, loaded data for %d keys' % (total_count, len(updated_keys), ))
+    return total_count, updated_keys
+
+#------------------------------------------------------------------------------
+
+def SaveIndex(customer_idurl=None, key_alias='master', encoding='utf-8'):
+    if customer_idurl is None:
+        customer_idurl = my_id.getIDURL()
+    customer_idurl = id_url.field(customer_idurl)
+    customer_id = customer_idurl.to_id()
+    index_dir_path = os.path.join(settings.ServiceDir('service_backups'), 'index')
+    if not os.path.isdir(index_dir_path):
+        os.makedirs(index_dir_path)
+    index_file_path = os.path.join(index_dir_path, '%s$%s'.format(key_alias, customer_id, ))
+    json_data = {}
+    json_data[customer_id] = Serialize(
+        customer_idurl=customer_idurl,
+        key_alias=key_alias,
+        encoding=encoding,
+    )
+    rev = revision(customer_idurl, key_alias)
+    src = '%d\n' % rev
+    src += jsn.dumps(
+        json_data,
+        indent=1,
+        separators=(',', ':'),
+        encoding=encoding,
+    )
+    if _Debug:
+        lg.args(_DebugLevel, rev=rev, c=customer_id, k=key_alias, sz=len(src), path=index_file_path)
+    return bpio.WriteTextFile(index_file_path, src)
+
+
+def ReadIndex(text_data, new_revision=None, encoding='utf-8'):
+    total_count = 0
+    updated_customers_keys = []
+    try:
+        json_data = jsn.loads(
+            text_data,
+            encoding=encoding,
+        )
+    except:
+        lg.exc()
+        json_data = text_data
+    if _Debug:
+        lg.args(_DebugLevel, json_data=json_data)
+    for customer_id in json_data.keys():
+        customer_idurl = global_id.GlobalUserToIDURL(customer_id)
+        if not id_url.is_cached(customer_idurl):
+            lg.warn('identity %r is not yet cached, skip reading related catalog items' % customer_idurl)
+            identitycache.immediatelyCaching(customer_idurl, try_other_sources=False, ignore_errors=True)
+            continue
+        try:
+            count, updated_keys = Unserialize(
+                json_data[customer_id],
+                customer_idurl=customer_idurl,
+                new_revision=new_revision,
+                decoding=encoding,
+            )
+        except:
+            lg.exc()
+            continue
+        total_count += count
+        if updated_keys:
+            for key_alias in updated_keys:
+                Calculate(iterID=fsID(customer_idurl, key_alias))
+                updated_customers_keys.append((customer_idurl, key_alias, ))
+    if _Debug:
+        lg.out(_DebugLevel, 'backup_fs.ReadIndex %d items loaded for %d keys' % (total_count, len(updated_customers_keys), ))
+    return total_count, updated_customers_keys
+
+
+def LoadIndex(index_file_path):
+    src = bpio.ReadTextFile(index_file_path)
+    if not src:
+        lg.err('failed reading file %s' % index_file_path)
+        return False
+    inpt = StringIO(src)
+    try:
+        new_revision = int(inpt.readline().rstrip('\n'))
+    except:
+        lg.exc()
+        return False
+    raw_data = inpt.read()
+    inpt.close()
+    count, _ = ReadIndex(raw_data, new_revision=new_revision)
+    if not count:
+        lg.warn('catalog index reading failed')
+        return False
     return count
+
+
+def LoadAllIndexes():
+    index_dir_path = os.path.join(settings.ServiceDir('service_backups'), 'index')
+    if not os.path.isdir(index_dir_path):
+        os.makedirs(index_dir_path)
+    for index_filename in os.listdir(index_dir_path):
+        index_file_path = os.path.join(index_dir_path, index_filename)
+        LoadIndex(index_file_path)
 
 #------------------------------------------------------------------------------
 
@@ -1880,7 +2038,7 @@ def _test():
     json_data = json.loads(inpt.read())
     inpt.close()
     for customer_id in json_data.keys():
-        count = Unserialize(json_data[customer_id], from_json=True)
+        count = Unserialize(json_data[customer_id])
     # customer_id = 'test01@bitrex.ai'
     # customer_idurl = global_id.GlobalUserToIDURL(customer_id)
     # count = Unserialize(json_data[customer_id], from_json=True, iter=fs(customer_idurl))

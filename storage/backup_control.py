@@ -76,7 +76,7 @@ from lib import jsn
 
 from main import settings
 from main import events
-from main import control
+# from main import control
 
 from raid import eccmap
 
@@ -109,7 +109,6 @@ MAXIMUM_JOBS_STARTED = 1  # let's do only one backup at once for now
 _Jobs = {}   # here are already started backups ( by backupID )
 _Tasks = []  # here are tasks to start backups in the future ( pathID )
 _LastTaskNumber = 0
-_RevisionNumber = 0
 _LoadingFlag = False
 _TaskStartedCallbacks = {}
 _TaskFinishedCallbacks = {}
@@ -132,27 +131,6 @@ def tasks():
     global _Tasks
     return _Tasks
 
-
-def revision():
-    """
-    Mutator method to access current software revision number.
-    """
-    global _RevisionNumber
-    return _RevisionNumber
-
-
-def commit(new_revision_number=None):
-    """
-    Need to be called after any changes in the index database.
-
-    This increase revision number by 1 or set ``new_revision_number``.
-    """
-    global _RevisionNumber
-    if new_revision_number:
-        _RevisionNumber = new_revision_number
-    else:
-        _RevisionNumber += 1
-
 #------------------------------------------------------------------------------
 
 
@@ -164,7 +142,6 @@ def init():
     """
     if _Debug:
         lg.out(_DebugLevel, 'backup_control.init')
-    Load()
 
 
 def shutdown():
@@ -176,135 +153,22 @@ def shutdown():
 
 #------------------------------------------------------------------------------
 
-
-def WriteIndex(filepath=None, encoding='utf-8'):
+def Save(customer_idurl=None, key_alias='master', increase_revision=True):
     """
-    Write index data base to the local file .bitdust/metadata/index.
+    Save index data base to local file and notify "index_synchronizer()" state machine.
     """
     global _LoadingFlag
     if _LoadingFlag:
-        return
-    if filepath is None:
-        filepath = settings.BackupIndexFilePath()
-    json_data = {}
-    for customer_idurl in backup_fs.known_customers():
-        customer_id = customer_idurl.to_id()
-        json_data[customer_id] = backup_fs.Serialize(
+        return False
+    if customer_idurl is None:
+        customer_idurl = my_id.getIDURL()
+    customer_idurl = id_url.field(customer_idurl)
+    if increase_revision:
+        backup_fs.commit(
             customer_idurl=customer_idurl,
-            to_json=True,
-            encoding=encoding,
+            key_alias=key_alias,
         )
-    src = '%d\n' % revision()
-    src += jsn.dumps(
-        json_data,
-        indent=1,
-        separators=(',', ':'),
-        encoding=encoding,
-    )
-    if _Debug:
-        lg.args(_DebugLevel, size=len(src), filepath=filepath)
-    return bpio.WriteTextFile(filepath, src)
-
-
-def ReadIndex(text_data, encoding='utf-8'):
-    """
-    Read index data base, ``input`` is a ``StringIO.StringIO`` object which
-    keeps the data.
-
-    This is a simple text format, see ``p2p.backup_fs.Serialize()``
-    method. The first line keeps revision number.
-    """
-    global _LoadingFlag
-    if _LoadingFlag:
-        return False
-    _LoadingFlag = True
-    backup_fs.Clear()
-    count = 0
-    try:
-        json_data = jsn.loads(
-            text_data,
-            encoding=encoding,
-        )
-    except:
-        lg.exc()
-        json_data = text_data
-    if _Debug:
-        lg.args(_DebugLevel, json_data=json_data)
-    for customer_id in json_data.keys():
-        if customer_id == 'items':
-            try:
-                count = backup_fs.Unserialize(json_data, from_json=True, decoding=encoding)
-            except:
-                lg.exc()
-                return False
-        else:
-            customer_idurl = global_id.GlobalUserToIDURL(customer_id)
-            if not id_url.is_cached(customer_idurl):
-                lg.warn('identity %r is not yet cached, skip reading related catalog items' % customer_idurl)
-                identitycache.immediatelyCaching(customer_idurl, try_other_sources=False, ignore_errors=True)
-                continue
-            try:
-                count = backup_fs.Unserialize(
-                    json_data[customer_id],
-                    customer_idurl=customer_idurl,
-                    from_json=True,
-                    decoding=encoding,
-                )
-            except:
-                lg.exc()
-                return False
-    if _Debug:
-        lg.out(_DebugLevel, 'backup_control.ReadIndex %d items loaded' % count)
-    # local_site.update_backup_fs(backup_fs.ListAllBackupIDsSQL())
-    # commit(new_revision)
-    _LoadingFlag = False
-    return True
-
-
-def Load(filepath=None):
-    """
-    This load the data from local file and call ``ReadIndex()`` method.
-    """
-    global _LoadingFlag
-    if _LoadingFlag:
-        return False
-    if filepath is None:
-        filepath = settings.BackupIndexFilePath()
-    if not os.path.isfile(filepath):
-        lg.warn('file %s not exist' % filepath)
-        WriteIndex(filepath)
-    src = bpio.ReadTextFile(filepath)
-    if not src:
-        lg.err('failed reading file %s' % filepath)
-        return False
-    inpt = StringIO(src)
-    try:
-        known_revision = int(inpt.readline().rstrip('\n'))
-    except:
-        lg.exc()
-        return False
-    raw_data = inpt.read()
-    inpt.close()
-    ret = ReadIndex(raw_data)
-    if ret:
-        commit(known_revision)
-        backup_fs.Scan()
-        backup_fs.Calculate()
-    else:
-        lg.warn('catalog index reading failed')
-    return ret
-
-
-def Save(filepath=None):
-    """
-    Save index data base to local file ( call ``WriteIndex()`` ) and notify
-    "index_synchronizer()" state machine.
-    """
-    global _LoadingFlag
-    if _LoadingFlag:
-        return False
-    commit()
-    WriteIndex(filepath)
+    backup_fs.SaveIndex(customer_idurl, key_alias)
     if driver.is_on('service_backup_db'):
         # TODO: switch to event
         from storage import index_synchronizer
@@ -417,7 +281,8 @@ def IncomingSupplierBackupIndex(newpacket):
         if supplier_revision:
             supplier_revision = int(supplier_revision)
         else:
-            supplier_revision = -1
+            supplier_revision = None
+        text_data = inpt.read()
     except:
         lg.exc()
         try:
@@ -425,23 +290,23 @@ def IncomingSupplierBackupIndex(newpacket):
         except:
             pass
         return None
-    if revision() > supplier_revision:
-        inpt.close()
-        if _Debug:
-            lg.out(_DebugLevel, 'backup_control.IncomingSupplierBackupIndex SKIP, supplier %s revision=%d, local revision=%d' % (
-                newpacket.RemoteID, supplier_revision, revision(), ))
-        return supplier_revision
-    text_data = inpt.read()
     inpt.close()
-    if ReadIndex(text_data):
-        commit(supplier_revision)
-        backup_fs.Scan()
-        backup_fs.Calculate()
-        WriteIndex()
-        control.request_update()
-        if _Debug:
-            lg.out(_DebugLevel, 'backup_control.IncomingSupplierBackupIndex updated to revision %d from %s' % (
-                revision(), newpacket.RemoteID))
+#     if supplier_revision >= 0 and backup_fs.revision() > supplier_revision:
+#         if _Debug:
+#             lg.out(_DebugLevel, 'backup_control.IncomingSupplierBackupIndex SKIP, supplier %s revision=%d, local revision=%d' % (
+#                 newpacket.RemoteID, supplier_revision, backup_fs.revision(), ))
+#         return supplier_revision
+    count, updated_customers_keys = backup_fs.ReadIndex(text_data, new_revision=supplier_revision)
+    if updated_customers_keys:
+        # backup_fs.commit(supplier_revision)
+        # backup_fs.Scan()
+        # backup_fs.Calculate()
+        for customer_idurl, key_alias in updated_customers_keys:
+            backup_fs.SaveIndex(customer_idurl, key_alias)
+            # control.request_update()
+            if _Debug:
+                lg.out(_DebugLevel, 'backup_control.IncomingSupplierBackupIndex updated to revision %d from %s' % (
+                    backup_fs.revision(customer_idurl, key_alias), newpacket.RemoteID))
     else:
         lg.warn('failed to read catalog index from supplier')
     return supplier_revision
@@ -468,7 +333,7 @@ def DeleteAllBackups():
     # save the index
     Save()
     # refresh the GUI
-    control.request_update()
+    # control.request_update()
 
 
 def DeleteBackup(backupID, removeLocalFilesToo=True, saveDB=True, calculate=True):
@@ -522,7 +387,7 @@ def DeleteBackup(backupID, removeLocalFilesToo=True, saveDB=True, calculate=True
     # in some cases we want to save the DB later
     if saveDB:
         Save()
-        control.request_update([('backupID', backupID), ])
+        # control.request_update([('backupID', backupID), ])
     return True
 
 
@@ -576,7 +441,7 @@ def DeletePathBackups(pathID, removeLocalFilesToo=True, saveDB=True, calculate=T
     # save the index if needed
     if saveDB:
         Save()
-        control.request_update()
+        # control.request_update()
     return True
 
 #------------------------------------------------------------------------------
@@ -765,8 +630,13 @@ class Task():
             sz = os.path.getsize(self.localPath)
             jobs()[self.backupID].totalSize = sz
             itemInfo.set_size(sz)
-            backup_fs.Calculate()
-            Save()
+            backup_fs.Calculate(iterID=backup_fs.fsID(self.customerIDURL, self.keyAlias))
+            backup_fs.SaveIndex(customer_idurl=self.customerIDURL, key_alias=self.keyAlias)
+            if self.keyAlias == 'master':
+                if driver.is_on('service_backup_db'):
+                    # TODO: switch to event
+                    from storage import index_synchronizer
+                    index_synchronizer.A('push')
         jobs()[self.backupID].automat('start')
         reactor.callLater(0, FireTaskStartedCallbacks, self.pathID, dataID)  # @UndefinedVariable
         if _Debug:
@@ -928,9 +798,9 @@ def OnJobDone(backupID, result):
         backup_fs.ScanID(remotePath)
         backup_fs.Calculate()
         Save()
-        control.request_update([('pathID', remotePath), ])
+        # control.request_update([('pathID', remotePath), ])
         # TODO: check used space, if we have over use - stop all tasks immediately
-        backup_matrix.RepaintBackup(backupID)
+        # backup_matrix.RepaintBackup(backupID)
     elif result == 'abort':
         DeleteBackup(backupID)
     if len(tasks()) == 0:

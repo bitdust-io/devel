@@ -55,7 +55,7 @@ class BackupsService(LocalService):
         from storage import backup_matrix
         from storage import backup_monitor
         from main.config import conf
-        from main import control
+        # from main import control
         from main import events
         from main import listeners
         from transport import callback
@@ -63,8 +63,8 @@ class BackupsService(LocalService):
         backup_fs.init()
         backup_control.init()
         backup_matrix.init()
-        backup_matrix.SetBackupStatusNotifyCallback(control.on_backup_stats)
-        backup_matrix.SetLocalFilesNotifyCallback(control.on_read_local_files)
+        # backup_matrix.SetBackupStatusNotifyCallback(control.on_backup_stats)
+        # backup_matrix.SetLocalFilesNotifyCallback(control.on_read_local_files)
         backup_monitor.A('init')
         backup_monitor.A('restart')
         conf().addConfigNotifier('services/backups/keep-local-copies-enabled',

@@ -797,7 +797,7 @@ def on_outbox_packet(outpacket, wide, callbacks, target=None, route=None, respon
             lg.warn('skip creating new outbox packet because found similar pending packet: %r' % active_packet)
             return active_packet
     pkt_out = packet_out.create(outpacket, wide, callbacks, target, route, response_timeout, keep_alive)
-    control.request_update([('packet', outpacket.PacketID)])
+    # control.request_update([('packet', outpacket.PacketID)])
     return pkt_out
 
 
@@ -917,7 +917,7 @@ def on_register_file_sending(proto, host, receiver_idurl, filename, size=0, desc
             pkt_out.description, transfer_id, os.path.basename(filename), proto,
             nameurl.GetName(receiver_idurl), host))
     pkt_out.automat('register-item', (proto, host, filename, transfer_id))
-    control.request_update([('stream', transfer_id)])
+    # control.request_update([('stream', transfer_id)])
     return transfer_id
 
 
@@ -935,7 +935,7 @@ def on_unregister_file_sending(transfer_id, status, bytes_sent, error_message=No
             lg.out(_DebugLevel, '        %s is not found' % str(transfer_id))
         return False
     pkt_out.automat('unregister-item', (transfer_id, status, bytes_sent, error_message))
-    control.request_update([('stream', transfer_id)])
+    # control.request_update([('stream', transfer_id)])
     if status == 'finished':
         if _Debug:
             lg.out(_DebugLevel, '>>> OUT >>> %s (%d) [%s://%s] %s with %d bytes' % (
@@ -957,8 +957,8 @@ def on_cancelled_file_sending(proto, host, filename, size, description='', error
                 proto, host, os.path.basename(filename)))
         return True
     pkt_out.automat('item-cancelled', (proto, host, filename, size, description, error_message, ))
-    if pkt_out.outpacket:
-        control.request_update([('packet', pkt_out.outpacket.PacketID)])
+    # if pkt_out.outpacket:
+    #     control.request_update([('packet', pkt_out.outpacket.PacketID)])
     if _Debug:
         lg.out(_DebugLevel, '>>> OUT >>>  {%s} CANCELLED via [%s] to %s : %s' % (
             os.path.basename(filename), proto, host, error_message, ))
@@ -981,7 +981,7 @@ def on_register_file_receiving(proto, host, sender_idurl, filename, size=0):
             nameurl.GetName(sender_idurl), host))
     incoming_packet = packet_in.create(transfer_id)
     incoming_packet.event('register-item', (proto, host, sender_idurl, filename, size))
-    control.request_update([('stream', transfer_id)])
+    # control.request_update([('stream', transfer_id)])
     return transfer_id
 
 
@@ -1001,7 +1001,7 @@ def on_unregister_file_receiving(transfer_id, status, bytes_received, error_mess
             lg.out(_DebugLevel, '<<< IN <<< (%d) [%s://%s] %s : %s' % (
                 transfer_id, pkt_in.proto, pkt_in.host, status.upper(), error_message))
     pkt_in.automat('unregister-item', (status, bytes_received, error_message))
-    control.request_update([('stream', transfer_id)])
+    # control.request_update([('stream', transfer_id)])
     return True
 
 #------------------------------------------------------------------------------

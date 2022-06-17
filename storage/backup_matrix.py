@@ -124,7 +124,7 @@ def init():
     """
     if _Debug:
         lg.out(_DebugLevel, 'backup_matrix.init')
-    RepaintingProcess(True)
+    # RepaintingProcess(True)
     ReadLocalFiles()
     ReadLatestRawListFiles()
 
@@ -135,7 +135,7 @@ def shutdown():
     """
     if _Debug:
         lg.out(_DebugLevel, 'backup_matrix.shutdown')
-    RepaintingProcess(False)
+    # RepaintingProcess(False)
 
 #------------------------------------------------------------------------------
 
@@ -341,7 +341,7 @@ def process_line_file(line, current_key_alias=None, customer_idurl=None, is_in_s
                 name=pth.strip('/'),
                 path_id=pth.strip('/'),
                 typ=backup_fs.FILE,
-                # key_id=global_id.MakeGlobalID(idurl=customer_idurl, key_alias=current_key_alias),
+                key_id=global_id.MakeGlobalID(idurl=customer_idurl, key_alias=current_key_alias),
             )
             item.size = filesz
             backup_fs.SetFile(item, customer_idurl=customer_idurl)
@@ -550,7 +550,7 @@ def process_line_version(line, supplier_num, current_key_alias=None, customer_id
         item.set_version_info(versionName, maxBlockNum, versionSize)
         modified = True
     # mark this backup to be repainted
-    RepaintBackup(backupID)
+    # RepaintBackup(backupID)
     return modified, backups2remove, paths2remove, found_backups, newfiles
 
 
@@ -587,12 +587,12 @@ def process_raw_list_files(supplier_num, list_files_text_body, customer_idurl=No
     if is_in_sync is None:
         if driver.is_on('service_backup_db'):
             from storage import index_synchronizer
-            is_in_sync = index_synchronizer.is_synchronized() and backup_control.revision() > 0
+            is_in_sync = index_synchronizer.is_synchronized() and backup_fs.revision() > 0
         else:
             is_in_sync = False
     if _Debug:
         lg.out(_DebugLevel, 'backup_matrix.process_raw_list_files [%d] : %d bytes, is_in_sync=%s, rev:%d, customer_idurl=%s' % (
-            supplier_num, len(list_files_text_body), is_in_sync, backup_control.revision(), customer_idurl))
+            supplier_num, len(list_files_text_body), is_in_sync, backup_fs.revision(), customer_idurl))
     backups2remove = set()
     paths2remove = set()
     missed_backups = set(remote_files().keys())
@@ -602,6 +602,7 @@ def process_raw_list_files(supplier_num, list_files_text_body, customer_idurl=No
     current_key_alias = 'master'
     current_query = None
     query_results = set()
+    updated_keys = []
     inpt = BytesIO(strng.to_bin(list_files_text_body))
     while True:
         line = strng.to_text(inpt.readline())
@@ -636,6 +637,8 @@ def process_raw_list_files(supplier_num, list_files_text_body, customer_idurl=No
             )
             paths2remove.update(_paths2remove)
             remote_files_changed = remote_files_changed or modified
+            if modified:
+                updated_keys.append(current_key_alias)
             continue
 
         if typ == 'F':
@@ -648,6 +651,8 @@ def process_raw_list_files(supplier_num, list_files_text_body, customer_idurl=No
             )
             paths2remove.update(_paths2remove)
             remote_files_changed = remote_files_changed or modified
+            if modified:
+                updated_keys.append(current_key_alias)
             continue
 
         if typ == 'V':
@@ -666,6 +671,8 @@ def process_raw_list_files(supplier_num, list_files_text_body, customer_idurl=No
             remote_files_changed = remote_files_changed or modified
             if current_query is not None:
                 query_results.add((customer_idurl, current_query))
+            if modified:
+                updated_keys.append(current_key_alias)
             continue
 
         raise Exception('unexpected line received: %r' % line)
@@ -675,7 +682,8 @@ def process_raw_list_files(supplier_num, list_files_text_body, customer_idurl=No
         lg.out(_DebugLevel, 'backup_matrix.process_raw_list_files remote_files_changed:%s old:%d new:%d backups2remove:%d paths2remove:%d missed_backups:%d remote_files:%d query_results:%d' % (
             remote_files_changed, oldfiles, newfiles, len(backups2remove), len(paths2remove), len(missed_backups), len(remote_files()), len(query_results), ))
     if remote_files_changed and is_in_sync:
-        backup_control.Save()
+        for key_alias in updated_keys:
+            backup_control.Save(customer_idurl, key_alias)
     for query_key in query_results:
         if query_key in _ListFilesQueryCallbacks:
             for cb in _ListFilesQueryCallbacks[query_key]:
@@ -825,7 +833,7 @@ def RemoteFileReport(backupID, blockNum, supplierNum, dataORparity, result, item
     # but we uploaded N+1 block - remember that
     maxBlockNum = max(remote_max_block_numbers().get(backupID, -1), blockNum)
     remote_max_block_numbers()[backupID] = maxBlockNum
-    RepaintBackup(backupID)
+    # RepaintBackup(backupID)
     full_remote_path = global_id.MakeGlobalID(path=itemInfo['name'], key_id=itemInfo['key_id'])
     full_remote_path_id = global_id.MakeGlobalID(path=itemInfo['path_id'], key_id=itemInfo['key_id'])
     _, percent, _, weakPercent = GetBackupRemoteStats(backupID)
@@ -900,7 +908,7 @@ def LocalFileReport(packetID=None, backupID=None, blockNum=None, supplierNum=Non
         local_backup_size()[backupID] += os.path.getsize(localDest)
     except:
         lg.exc()
-    RepaintBackup(backupID)
+    # RepaintBackup(backupID)
 
 
 def LocalBlockReport(backupID, blockNumber, result):
@@ -917,7 +925,7 @@ def LocalBlockReport(backupID, blockNumber, result):
         return
     customer, _ = packetid.SplitPacketID(backupID)
     customer_idurl = global_id.GlobalUserToIDURL(customer)
-    repaint_flag = False
+    # repaint_flag = False
     if _Debug:
         lg.out(_DebugLevel, 'backup_matrix.LocalFileReport  in block %d at %s for %s' % (blockNumber, backupID, customer, ))
     num_suppliers = contactsdb.num_suppliers(customer_idurl=customer_idurl)
@@ -932,25 +940,25 @@ def LocalBlockReport(backupID, blockNumber, result):
             local_file = os.path.join(settings.getLocalBackupsDir(), customer, packetID)
             if backupID not in local_files():
                 local_files()[backupID] = {}
-                repaint_flag = True
+                # repaint_flag = True
                 if _Debug:
                     lg.out(_DebugLevel, '    new local entry for %s created in memory' % backupID)
             if blockNum not in local_files()[backupID]:
                 local_files()[backupID][blockNum] = {
                     'D': [0, ] * num_suppliers,
                     'P': [0, ] * num_suppliers}
-                repaint_flag = True
+                # repaint_flag = True
             if not os.path.isfile(local_file):
                 local_files()[backupID][blockNum][dataORparity[0]][supplierNum] = 0
-                repaint_flag = True
+                # repaint_flag = True
                 continue
             local_files()[backupID][blockNum][dataORparity[0]][supplierNum] = 1
             if backupID not in local_backup_size():
                 local_backup_size()[backupID] = 0
-                repaint_flag = True
+                # repaint_flag = True
             try:
                 local_backup_size()[backupID] += os.path.getsize(local_file)
-                repaint_flag = True
+                # repaint_flag = True
             except:
                 lg.exc()
             if _Debug:
@@ -960,8 +968,8 @@ def LocalBlockReport(backupID, blockNumber, result):
         local_max_block_numbers()[backupID] = -1
     if local_max_block_numbers()[backupID] < blockNum:
         local_max_block_numbers()[backupID] = blockNum
-    if repaint_flag:
-        RepaintBackup(backupID)
+    # if repaint_flag:
+    #     RepaintBackup(backupID)
 
 #------------------------------------------------------------------------------
 

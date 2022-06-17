@@ -994,17 +994,9 @@ def BackupInfoEncryptedFileName():
 
 def BackupIndexFileName():
     """
-    This is backup data base index file location. This store folder and files
-    names and locations with path ID's and some extra info. Located in the
-    file.
-
-    .bitdust/metadata/index . Also this file is saved on suppliers in encrypted
-    state.
-
-    TODO:
-    - need to store files checksums
-    - need to store file and folders access modes - just like in Linux
-    - need to store user and group for files and folders - like in Linux
+    This is backup data base index file name.
+    The file stores folder and files names and locations with path ID's and some extra info.
+    Also this file is saved on suppliers in encrypted state.
     """
     return 'index'
 
