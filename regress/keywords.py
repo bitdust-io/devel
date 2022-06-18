@@ -322,7 +322,7 @@ def file_list_all_v1(node, expected_reliable=100, reliable_shares=True, attempts
                     lowest = reliable
                     lowest_file = fil
         latest_reliable = lowest
-        latest_reliable_fileinfo = fil
+        latest_reliable_fileinfo = lowest_file
         if latest_reliable >= expected_reliable:
             break
         count += 1

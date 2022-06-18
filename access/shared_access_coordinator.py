@@ -55,9 +55,15 @@ _DebugLevel = 6
 
 #------------------------------------------------------------------------------
 
+from twisted.internet import reactor  # @UnresolvedImport
+
+#------------------------------------------------------------------------------
+
 from logs import lg
 
 from automats import automat
+
+from system import bpio
 
 from lib import strng
 
@@ -75,7 +81,9 @@ from transport import packet_out
 from contacts import identitycache
 
 from crypt import my_keys
+from crypt import key
 from crypt import signed
+from crypt import encrypted
 
 from access import key_ring
 
@@ -183,8 +191,16 @@ class SharedAccessCoordinator(automat.Automat):
         self.known_ecc_map = None
         self.dht_lookup_use_cache = True
         self.outgoing_list_files_packets_ids = []
+        self.latest_supplier_revision = -1
+        self.requesting_suppliers = set()
+        self.requested_suppliers_number = 0
+        self.requests_packets_sent = []
+        self.sending_suppliers = set()
+        self.sent_suppliers_number = 0
+        self.outgoing_packets_ids = []
+        self.last_time_in_sync = -1
         super(SharedAccessCoordinator, self).__init__(
-            name="%s$%s" % (self.key_alias[:10], self.glob_id['customer']),
+            name="%s$%s" % (self.key_alias[:10], self.glob_id['customer'], ),
             state='AT_STARTUP',
             debug_level=debug_level,
             log_events=log_events,
@@ -421,6 +437,7 @@ class SharedAccessCoordinator(automat.Automat):
         """
         Action method.
         """
+        self._do_send_index_file()
 
     def doCancelSuppliersRequests(self, *args, **kwargs):
         """
@@ -575,6 +592,52 @@ class SharedAccessCoordinator(automat.Automat):
                 self.requested_suppliers_number += 1
                 self.requests_packets_sent.append((packetID, supplier_idurl))
 
+    def _do_send_index_file(self):
+        packetID = global_id.MakeGlobalID(
+            key_id=self.key_id,
+            path=settings.BackupIndexFileName(),
+        )
+        self.sending_suppliers.clear()
+        self.outgoing_packets_ids = []
+        self.sent_suppliers_number = 0
+        b = encrypted.Block(
+            CreatorID=my_id.getIDURL(),
+            BackupID=packetID,
+            BlockNumber=0,
+            SessionKey=key.NewSessionKey(session_key_type=key.SessionKeyType()),
+            SessionKeyType=key.SessionKeyType(),
+            LastBlock=True,
+            Data=bpio.ReadBinaryFile(settings.BackupIndexFilePath(self.customer_idurl, self.key_alias)),
+            EncryptKey=self.key_id,
+        )
+        Payload = b.Serialize()
+        for supplier_idurl in self.known_suppliers_list:
+            if not supplier_idurl:
+                continue
+            sc = supplier_connector.by_idurl(supplier_idurl)
+            if sc is None or sc.state != 'CONNECTED':
+                continue
+            if online_status.isOffline(supplier_idurl):
+                continue
+            newpacket, pkt_out = p2p_service.SendData(
+                raw_data=Payload,
+                ownerID=self.customer_idurl,
+                creatorID=my_id.getIDURL(),
+                remoteID=supplier_idurl,
+                packetID=packetID,
+                callbacks={
+                    commands.Ack(): self._on_supplier_send_index_file_ack,
+                    commands.Fail(): self._on_supplier_send_index_file_ack,
+                },
+            )
+            if pkt_out:
+                self.sending_suppliers.add(supplier_idurl)
+                self.sent_suppliers_number += 1
+                if newpacket.PacketID not in self.outgoing_packets_ids:
+                    self.outgoing_packets_ids.append(newpacket.PacketID)
+        if _Debug:
+            lg.args(_DebugLevel, count=self.sent_suppliers_number)
+
     def _on_read_customer_suppliers(self, dht_value):
         if _Debug:
             lg.args(_DebugLevel, dht_value=dht_value)
@@ -635,7 +698,7 @@ class SharedAccessCoordinator(automat.Automat):
             lg.out(_DebugLevel, 'shared_access_coordinator._on_supplier_retreive_index_file_response %s from %r, pending: %d, total: %d' % (
                 newpacket, supplier_idurl, len(self.requesting_suppliers), self.requested_suppliers_number))
         if len(self.requesting_suppliers) == 0:
-            reactor.callLater(0, self.automat, 'all-responded')  # @UndefinedVariable
+            reactor.callLater(0, self.automat, 'all-suppliers-responded')  # @UndefinedVariable
 
     def _on_supplier_retreive_index_file_fail(self, newpacket, info):
         if _Debug:
@@ -646,4 +709,19 @@ class SharedAccessCoordinator(automat.Automat):
             lg.out(_DebugLevel, 'index_synchronizer._on_supplier_fail %s from %r, pending: %d, total: %d' % (
                 newpacket, supplier_idurl, len(self.requesting_suppliers), self.requested_suppliers_number))
         if len(self.requesting_suppliers) == 0:
-            reactor.callLater(0, self.automat, 'all-responded')  # @UndefinedVariable
+            reactor.callLater(0, self.automat, 'all-suppliers-responded')  # @UndefinedVariable
+
+    def _on_supplier_send_index_file_ack(self, newpacket, info):
+        self.sending_suppliers.discard(newpacket.CreatorID)
+        # if newpacket.PacketID in self.outgoing_packets_ids:
+        #     self.outgoing_packets_ids.remove(newpacket.PacketID)
+        sc = supplier_connector.by_idurl(newpacket.CreatorID)
+        if sc:
+            sc.automat(newpacket.Command.lower(), newpacket)
+        else:
+            lg.warn('did not found supplier connector for %r' % newpacket.OwnerID)
+        if _Debug:
+            lg.out(_DebugLevel, 'index_synchronizer._on_supplier_acked %s, pending: %d, total: %d' % (
+                newpacket, len(self.sending_suppliers), self.sent_suppliers_number))
+        if len(self.sending_suppliers) == 0:
+            reactor.callLater(0, self.automat, 'all-suppliers-acked')  # @UndefinedVariable

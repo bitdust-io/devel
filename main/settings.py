@@ -1001,25 +1001,16 @@ def BackupIndexFileName():
     return 'index'
 
 
-def BackupInfoFileFullPath():
-    """
-    Obsolete.
-    """
-    return os.path.join(MetaDataDir(), BackupInfoFileName())
-
-
-def BackupInfoFileFullPathOld():
-    """
-    Obsolete.
-    """
-    return os.path.join(MetaDataDir(), BackupInfoFileNameOld())
-
-
-def BackupIndexFilePath():
-    """
-    A full local path for ``BackupIndexFileName`` file.
-    """
-    return os.path.join(MetaDataDir(), BackupIndexFileName())
+def BackupIndexFilePath(customer_idurl=None, key_alias='master'):
+    from userid import my_id
+    from userid import id_url
+    if customer_idurl is None:
+        customer_idurl = my_id.getIDURL()
+    customer_idurl = id_url.field(customer_idurl)
+    customer_id = customer_idurl.to_id()
+    index_dir_path = os.path.join(ServiceDir('service_backups'), 'index')
+    index_file_path = os.path.join(index_dir_path, '%s$%s' % (key_alias, customer_id, ))
+    return index_file_path
 
 
 def SupplierPath(supplier_idurl, customer_idurl, filename=None):

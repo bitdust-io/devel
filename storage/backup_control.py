@@ -41,7 +41,7 @@ from io import StringIO
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 12
 
 #------------------------------------------------------------------------------
@@ -307,8 +307,8 @@ def IncomingSupplierBackupIndex(newpacket):
             if _Debug:
                 lg.out(_DebugLevel, 'backup_control.IncomingSupplierBackupIndex updated to revision %d from %s' % (
                     backup_fs.revision(customer_idurl, key_alias), newpacket.RemoteID))
-    else:
-        lg.warn('failed to read catalog index from supplier')
+    # else:
+    #     lg.warn('failed to read catalog index from supplier')
     return supplier_revision
 
 #------------------------------------------------------------------------------

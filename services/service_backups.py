@@ -47,6 +47,7 @@ class BackupsService(LocalService):
         return [
             'service_list_files',
             'service_rebuilding',
+            'service_backup_db',
         ]
 
     def start(self):

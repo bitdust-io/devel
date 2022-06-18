@@ -1880,10 +1880,9 @@ def SaveIndex(customer_idurl=None, key_alias='master', encoding='utf-8'):
         customer_idurl = my_id.getIDURL()
     customer_idurl = id_url.field(customer_idurl)
     customer_id = customer_idurl.to_id()
-    index_dir_path = os.path.join(settings.ServiceDir('service_backups'), 'index')
-    if not os.path.isdir(index_dir_path):
-        os.makedirs(index_dir_path)
-    index_file_path = os.path.join(index_dir_path, '%s$%s'.format(key_alias, customer_id, ))
+    index_file_path = settings.BackupIndexFilePath(customer_idurl, key_alias)
+    if not os.path.isdir(os.path.dirname(index_file_path)):
+        os.makedirs(os.path.dirname(index_file_path))
     json_data = {}
     json_data[customer_id] = Serialize(
         customer_idurl=customer_idurl,

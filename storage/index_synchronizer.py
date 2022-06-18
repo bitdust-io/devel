@@ -86,7 +86,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 8
 
 #------------------------------------------------------------------------------
@@ -412,7 +412,8 @@ class IndexSynchronizer(automat.Automat):
             if pkt_out:
                 self.sending_suppliers.add(supplier_idurl)
                 self.sent_suppliers_number += 1
-                self.outgoing_packets_ids.append(packetID)
+                if newpacket.PacketID not in self.outgoing_packets_ids:
+                    self.outgoing_packets_ids.append(newpacket.PacketID)
             if _Debug:
                 lg.out(_DebugLevel, '    %s sending to %s' %
                        (newpacket, nameurl.GetName(supplier_idurl)))
@@ -474,8 +475,8 @@ class IndexSynchronizer(automat.Automat):
         if supplier_revision is not None:
             reactor.callLater(0, self.automat, 'index-file-received', (newpacket, supplier_revision, ))  # @UndefinedVariable
         if _Debug:
-            lg.out(_DebugLevel, 'index_synchronizer._on_supplier_response %s from %r, pending: %d, total: %d' % (
-                newpacket, supplier_idurl, len(self.requesting_suppliers), self.requested_suppliers_number))
+            lg.out(_DebugLevel, 'index_synchronizer._on_supplier_response %s from %r, rev:%s, pending: %d, total: %d' % (
+                newpacket, supplier_idurl, supplier_revision, len(self.requesting_suppliers), self.requested_suppliers_number))
         if len(self.requesting_suppliers) == 0:
             reactor.callLater(0, self.automat, 'all-responded')  # @UndefinedVariable
 
@@ -492,8 +493,8 @@ class IndexSynchronizer(automat.Automat):
 
     def _on_supplier_acked(self, newpacket, info):
         self.sending_suppliers.discard(newpacket.OwnerID)
-        if newpacket.PacketID in self.outgoing_packets_ids:
-            self.outgoing_packets_ids.remove(newpacket.PacketID)
+        # if newpacket.PacketID in self.outgoing_packets_ids:
+        #     self.outgoing_packets_ids.remove(newpacket.PacketID)
         sc = supplier_connector.by_idurl(newpacket.OwnerID)
         if sc:
             sc.automat(newpacket.Command.lower(), newpacket)

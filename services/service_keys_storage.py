@@ -49,7 +49,6 @@ class KeysStorageService(LocalService):
     def dependent_on(self):
         return [
             'service_restores',
-            'service_backup_db',
         ]
 
     def start(self):
