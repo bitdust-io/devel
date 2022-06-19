@@ -177,6 +177,8 @@ def share_create_v1(customer: str, key_size=1024):
     assert response.status_code == 200
     dbg('share/create/v1 [%s] : %s\n' % (customer, pprint.pformat(response.json())))
     assert response.json()['status'] == 'OK', response.json()
+    packet_list_v1(customer, wait_all_finish=True)
+    transfer_list_v1(customer, wait_all_finish=True)
     return response.json()['result']['key_id']
 
 
@@ -185,6 +187,8 @@ def share_open_v1(customer: str, key_id):
     assert response.status_code == 200
     dbg('share/open/v1 [%s] key_id=%r : %s\n' % (customer, key_id, pprint.pformat(response.json())))
     assert response.json()['status'] == 'OK', response.json()
+    packet_list_v1(customer, wait_all_finish=True)
+    transfer_list_v1(customer, wait_all_finish=True)
     return response.json()
 
 
@@ -193,6 +197,8 @@ def group_create_v1(customer: str, key_size=1024, label='', attempts=1):
     assert response.status_code == 200
     dbg('group/create/v1 [%s] : %s\n' % (customer, pprint.pformat(response.json())))
     assert response.json()['status'] == 'OK', response.json()
+    packet_list_v1(customer, wait_all_finish=True)
+    transfer_list_v1(customer, wait_all_finish=True)
     return response.json()['result']['group_key_id']
 
 
@@ -253,6 +259,8 @@ def group_join_v1(customer: str, group_key_id, attempts=1, timeout=120):
     assert response.status_code == 200
     dbg('group/join/v1 [%s] group_key_id=%r : %s\n' % (customer, group_key_id, pprint.pformat(response.json())))
     assert response.json()['status'] == 'OK', response.json()
+    packet_list_v1(customer, wait_all_finish=True)
+    transfer_list_v1(customer, wait_all_finish=True)
     return response.json()
 
 
@@ -269,6 +277,8 @@ def group_reconnect_v1(customer: str, group_key_id, timeout=120):
     assert response.status_code == 200
     dbg('group/reconnect/v1 [%s] group_key_id=%r : %s\n' % (customer, group_key_id, pprint.pformat(response.json())))
     assert response.json()['status'] == 'OK', response.json()
+    packet_list_v1(customer, wait_all_finish=True)
+    transfer_list_v1(customer, wait_all_finish=True)
     return response.json()
 
 

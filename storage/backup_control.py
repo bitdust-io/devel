@@ -262,21 +262,22 @@ def IncomingSupplierListFiles(newpacket, list_files_global_id):
     return True
 
 
-def IncomingSupplierBackupIndex(newpacket):
+def IncomingSupplierBackupIndex(newpacket, key_id=None):
     """
     Called by ``p2p.p2p_service`` when a remote copy of our local index data
     base ( in the "Data" packet ) is received from one of our suppliers.
 
     The index is also stored on suppliers to be able to restore it.
     """
-    b = encrypted.Unserialize(newpacket.Payload)
-    if b is None:
+    b = encrypted.Unserialize(newpacket.Payload, decrypt_key=key_id)
+    if not b:
         lg.err('failed reading data from %s' % newpacket.RemoteID)
         return None
     try:
-        session_key = key.DecryptLocalPrivateKey(b.EncryptedSessionKey)
-        padded_data = key.DecryptWithSessionKey(session_key, b.EncryptedData, session_key_type=b.SessionKeyType)
-        inpt = StringIO(strng.to_text(padded_data[:int(b.Length)]))
+        d = b.Data()
+        if _Debug:
+            lg.args(_DebugLevel, d=strng.to_text(d))
+        inpt = StringIO(strng.to_text(d))
         supplier_revision = inpt.readline().rstrip('\n')
         if supplier_revision:
             supplier_revision = int(supplier_revision)
@@ -296,6 +297,8 @@ def IncomingSupplierBackupIndex(newpacket):
 #             lg.out(_DebugLevel, 'backup_control.IncomingSupplierBackupIndex SKIP, supplier %s revision=%d, local revision=%d' % (
 #                 newpacket.RemoteID, supplier_revision, backup_fs.revision(), ))
 #         return supplier_revision
+    if _Debug:
+        lg.args(_DebugLevel, k=key_id, p=newpacket.PacketID, sz=len(text_data), inp=len(d))
     count, updated_customers_keys = backup_fs.ReadIndex(text_data, new_revision=supplier_revision)
     if updated_customers_keys:
         # backup_fs.commit(supplier_revision)

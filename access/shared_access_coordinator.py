@@ -683,13 +683,13 @@ class SharedAccessCoordinator(automat.Automat):
 
     def _on_supplier_retreive_index_file_response(self, newpacket, info):
         wrapped_packet = signed.Unserialize(newpacket.Payload)
+        supplier_idurl = wrapped_packet.RemoteID
         if _Debug:
-            lg.args(_DebugLevel, newpacket=newpacket, wrapped_packet=wrapped_packet)
+            lg.args(_DebugLevel, sz=len(newpacket.Payload), s=supplier_idurl, i=info)
         if not wrapped_packet or not wrapped_packet.Valid():
             lg.err('incoming Data() is not valid')
             return
-        supplier_idurl = wrapped_packet.RemoteID
-        supplier_revision = backup_control.IncomingSupplierBackupIndex(wrapped_packet)
+        supplier_revision = backup_control.IncomingSupplierBackupIndex(wrapped_packet, key_id=self.key_id)
         self.requesting_suppliers.discard(supplier_idurl)
         if supplier_revision is not None:
             if supplier_revision > self.latest_supplier_revision:

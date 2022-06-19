@@ -100,28 +100,6 @@ class KeysStorageService(LocalService):
         from storage import keys_synchronizer
         return keys_synchronizer.is_synchronized() and index_synchronizer.is_synchronized()
 
-    def _on_key_generated(self, evt):
-        self._do_synchronize_keys()
-
-    def _on_key_registered(self, evt):
-        self._do_synchronize_keys()
-
-    def _on_key_erased(self, evt):
-        from interface import api
-        from userid import global_id
-        from userid import my_id
-        if evt.data['is_private']:
-            remote_path_for_key = '.keys/%s.private' % evt.data['key_id']
-        else:
-            remote_path_for_key = '.keys/%s.public' % evt.data['key_id']
-        global_key_path = global_id.MakeGlobalID(
-            key_alias='master',
-            customer=my_id.getGlobalID(),
-            path=remote_path_for_key,
-        )
-        api.file_delete(global_key_path)
-        self._do_synchronize_keys()
-
     def _do_synchronize_keys(self):
         """
         Make sure all my keys are stored on my suppliers nodes (encrypted with my master key).
@@ -168,6 +146,28 @@ class KeysStorageService(LocalService):
                 return
             lg.info('created new remote folder ".keys" in the catalog: %r' % global_keys_folder_path)
         keys_synchronizer.A('sync', result)
+
+    def _on_key_generated(self, evt):
+        self._do_synchronize_keys()
+
+    def _on_key_registered(self, evt):
+        self._do_synchronize_keys()
+
+    def _on_key_erased(self, evt):
+        from interface import api
+        from userid import global_id
+        from userid import my_id
+        if evt.data['is_private']:
+            remote_path_for_key = '.keys/%s.private' % evt.data['key_id']
+        else:
+            remote_path_for_key = '.keys/%s.public' % evt.data['key_id']
+        global_key_path = global_id.MakeGlobalID(
+            key_alias='master',
+            customer=my_id.getGlobalID(),
+            path=remote_path_for_key,
+        )
+        api.file_delete(global_key_path)
+        self._do_synchronize_keys()
 
     def _on_my_backup_index_synchronized(self, evt):
         import time
@@ -217,7 +217,7 @@ class KeysStorageService(LocalService):
         if self.starting_deferred:
             self.starting_deferred.errback(err)
             self.starting_deferred = None
-        lg.err(err.getErrorMessage() if err else 'synchronize keys failed with unknown reason')
+        lg.warn(err.getErrorMessage() if err else 'synchronize keys failed with unknown reason')
         events.send('my-keys-out-of-sync', data=dict())
         events.send('my-storage-not-ready-yet', data=dict())
         return None

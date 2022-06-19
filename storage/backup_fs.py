@@ -1912,7 +1912,7 @@ def ReadIndex(text_data, new_revision=None, encoding='utf-8'):
         )
     except:
         lg.exc()
-        json_data = text_data
+        return 0, []
     if _Debug:
         lg.args(_DebugLevel, json_data=json_data)
     for customer_id in json_data.keys():
