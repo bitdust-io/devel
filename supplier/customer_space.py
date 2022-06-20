@@ -40,6 +40,7 @@ _DebugLevel = 6
 #------------------------------------------------------------------------------
 
 import os
+import base64
 
 #------------------------------------------------------------------------------
 
@@ -328,20 +329,41 @@ def on_retrieve(newpacket):
         lg.warn('no customer global id found in PacketID: %s' % newpacket.PacketID)
         p2p_service.SendFail(newpacket, 'incorrect retrieve request')
         return False
-    if newpacket.CreatorID != glob_path['idurl']:
-        lg.warn('one of customers requesting a Data from another customer!')
-    else:
-        pass  # same customer, based on CreatorID : OK!
+    key_id = glob_path['key_id']
     recipient_idurl = newpacket.OwnerID
-    # TODO: process requests from another customer : glob_path['idurl']
+    if newpacket.CreatorID != glob_path['idurl'] and newpacket.CreatorID != newpacket.OwnerID:
+        # SECURITY
+        lg.warn('one of customers requesting a Data from another customer!')
+        if not my_keys.is_key_registered(key_id):
+            lg.warn('key %s is not registered' % key_id)
+            p2p_service.SendFail(newpacket, 'key is not registered')
+            return False
+        verified = False
+        if _Debug:
+            lg.args(_DebugLevel, Payload=newpacket.Payload)
+        try:
+            json_payload = serialization.BytesToDict(newpacket.Payload, keys_to_text=True, values_to_text=True)
+            test_sample_bin = base64.b64decode(json_payload['t'])
+            test_signature_bin = strng.to_bin(json_payload['s'])
+            verified = my_keys.verify(key_id, test_sample_bin, test_signature_bin)
+        except:
+            lg.exc()
+            return False
+        if not verified:
+            lg.warn('request is not authorized, test sample signature verification failed')
+            return False
+        # requester signed the test sample with the private key and we verified the signature with the public key
+        # now we checked the signature of the test sample and can be sure that requester really possess the same key
+        recipient_idurl = newpacket.CreatorID
     filename = make_valid_filename(newpacket.OwnerID, glob_path)
     if not filename:
-        if True:
+        filename = make_valid_filename(glob_path['idurl'], glob_path)
+        # if True:
             # TODO: settings.getCustomersDataSharingEnabled() and
             # SECURITY
             # TODO: add more validations for receiver idurl
             # recipient_idurl = glob_path['idurl']
-            filename = make_valid_filename(glob_path['idurl'], glob_path)
+            # filename = make_valid_filename(glob_path['idurl'], glob_path)
     if not filename:
         lg.warn("had empty filename")
         p2p_service.SendFail(newpacket, 'empty filename')
@@ -378,16 +400,17 @@ def on_retrieve(newpacket):
     # it can be not a new Data(), but the old data returning back as a response to Retreive() packet
     # to solve the issue we will create a new Data() packet
     # which will be addressed directly to recipient and "wrap" stored data inside it
+    payload = stored_packet.Serialize()
     routed_packet = signed.Packet(
         Command=commands.Data(),
         OwnerID=stored_packet.OwnerID,
         CreatorID=my_id.getIDURL(),
         PacketID=stored_packet.PacketID,
-        Payload=stored_packet.Serialize(),
+        Payload=payload,
         RemoteID=recipient_idurl,
     )
     if _Debug:
-        lg.args(_DebugLevel, sz=sz, fn=filename, recipient_idurl=recipient_idurl)
+        lg.args(_DebugLevel, file_size=sz, payload_size=len(payload), fn=filename, recipient=recipient_idurl)
     if recipient_idurl == stored_packet.OwnerID:
         if _Debug:
             lg.dbg(_DebugLevel, 'from request %r : sending %r back to owner: %s' % (

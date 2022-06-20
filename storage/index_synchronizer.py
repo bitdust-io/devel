@@ -370,8 +370,6 @@ class IndexSynchronizer(automat.Automat):
         """
         Action method.
         """
-        if _Debug:
-            lg.out(_DebugLevel, 'index_synchronizer.doSuppliersSendIndexFile')
         packetID = global_id.MakeGlobalID(
             customer=my_id.getGlobalID(key_alias='master'),
             path=settings.BackupIndexFileName(),
@@ -380,6 +378,7 @@ class IndexSynchronizer(automat.Automat):
         self.outgoing_packets_ids = []
         self.sent_suppliers_number = 0
         localID = my_id.getIDURL()
+        data = bpio.ReadBinaryFile(settings.BackupIndexFilePath())
         b = encrypted.Block(
             CreatorID=localID,
             BackupID=packetID,
@@ -387,9 +386,11 @@ class IndexSynchronizer(automat.Automat):
             SessionKey=key.NewSessionKey(session_key_type=key.SessionKeyType()),
             SessionKeyType=key.SessionKeyType(),
             LastBlock=True,
-            Data=bpio.ReadBinaryFile(settings.BackupIndexFilePath()),
+            Data=data,
         )
         Payload = b.Serialize()
+        if _Debug:
+            lg.args(_DebugLevel, pid=packetID, sz=len(data), payload=len(Payload), length=b.Length)
         for supplier_idurl in contactsdb.suppliers():
             if not supplier_idurl:
                 continue

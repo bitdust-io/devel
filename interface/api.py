@@ -2309,10 +2309,13 @@ def share_create(owner_id=None, key_size=None, label=''):
     from main import settings
     from crypt import key
     from crypt import my_keys
+    from storage import backup_fs
+    from userid import global_id
     from userid import my_id
     if not owner_id:
         owner_id = my_id.getID()
     key_id = None
+    key_alias = None
     while True:
         random_sample = os.urandom(24)
         key_alias = 'share_%s' % strng.to_text(key.HashMD5(random_sample, hexdigest=True))
@@ -2333,7 +2336,8 @@ def share_create(owner_id=None, key_size=None, label=''):
         include_private=False,
     )
     key_info.pop('include_private', None)
-    return OK(key_info, message='new share %r generated successfully' % key_id, )
+    backup_fs.SaveIndex(customer_idurl=global_id.glob2idurl(owner_id), key_alias=key_alias)
+    return OK(key_info, message='new share %r created successfully' % key_id, )
 
 
 def share_delete(key_id):

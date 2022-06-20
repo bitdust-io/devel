@@ -28,19 +28,25 @@
 BitDust shared_access_coordinator() Automat
 
 EVENTS:
-    * :red:`all-suppliers-acked`
     * :red:`all-suppliers-connected`
-    * :red:`all-suppliers-responded`
+    * :red:`all-suppliers-disconnected`
     * :red:`dht-lookup-ok`
     * :red:`fail`
+    * :red:`index-failed`
+    * :red:`index-missing`
+    * :red:`index-received`
+    * :red:`index-sent`
+    * :red:`key-not-registered`
+    * :red:`key-sent`
+    * :red:`list-files-failed`
+    * :red:`list-files-received`
     * :red:`new-private-key-registered`
     * :red:`restart`
     * :red:`shutdown`
     * :red:`supplier-connected`
     * :red:`supplier-failed`
-    * :red:`timer-10sec`
-    * :red:`timer-15sec`
     * :red:`timer-1min`
+    * :red:`timer-30sec`
     * :red:`timer-3sec`
 """
 
@@ -55,7 +61,7 @@ _DebugLevel = 6
 
 #------------------------------------------------------------------------------
 
-from twisted.internet import reactor  # @UnresolvedImport
+import base64
 
 #------------------------------------------------------------------------------
 
@@ -66,6 +72,7 @@ from automats import automat
 from system import bpio
 
 from lib import strng
+from lib import serialization
 
 from main import events
 from main import settings
@@ -76,8 +83,6 @@ from p2p import commands
 from p2p import p2p_service
 from p2p import online_status
 
-from transport import packet_out
-
 from contacts import identitycache
 
 from crypt import my_keys
@@ -87,7 +92,6 @@ from crypt import encrypted
 
 from access import key_ring
 
-from storage import backup_fs
 from storage import backup_control
 
 from customer import supplier_connector
@@ -166,10 +170,9 @@ class SharedAccessCoordinator(automat.Automat):
     """
 
     timers = {
-        'timer-10sec': (10.0, ['SUPPLIERS?', 'READ_INDEX']),
-        'timer-15sec': (15.0, ['WRITE_INDEX']),
-        'timer-1min': (60, ['CONNECTED', 'DHT_LOOKUP']),
-        'timer-3sec': (3.0, ['SUPPLIERS?', 'READ_INDEX']),
+        'timer-1min': (60, ['DHT_LOOKUP']),
+        'timer-30sec': (30.0, ['SUPPLIERS?']),
+        'timer-3sec': (3.0, ['SUPPLIERS?']),
     }
 
     def __init__(self,
@@ -190,15 +193,10 @@ class SharedAccessCoordinator(automat.Automat):
         self.known_suppliers_list = []
         self.known_ecc_map = None
         self.dht_lookup_use_cache = True
-        self.outgoing_list_files_packets_ids = []
         self.latest_supplier_revision = -1
-        self.requesting_suppliers = set()
-        self.requested_suppliers_number = 0
-        self.requests_packets_sent = []
-        self.sending_suppliers = set()
-        self.sent_suppliers_number = 0
-        self.outgoing_packets_ids = []
         self.last_time_in_sync = -1
+        self.suppliers_in_progress = []
+        self.suppliers_succeed = []
         super(SharedAccessCoordinator, self).__init__(
             name="%s$%s" % (self.key_alias[:10], self.glob_id['customer'], ),
             state='AT_STARTUP',
@@ -271,18 +269,26 @@ class SharedAccessCoordinator(automat.Automat):
                 self.doReportDisconnected(*args, **kwargs)
         #---SUPPLIERS?---
         elif self.state == 'SUPPLIERS?':
-            if event == 'supplier-connected':
-                self.doRequestSupplierFiles(*args, **kwargs)
-                self.doCheckAllConnected(*args, **kwargs)
-            elif event == 'shutdown':
+            if event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'timer-10sec':
+            elif event == 'timer-30sec' or event == 'all-suppliers-disconnected':
                 self.state = 'DISCONNECTED'
                 self.doReportDisconnected(*args, **kwargs)
-            elif event == 'all-suppliers-connected' or ( event == 'timer-3sec' and self.isAnySupplierConnected(*args, **kwargs) ):
-                self.state = 'READ_INDEX'
-                self.doSuppliersRequestIndexFile(*args, **kwargs)
+            elif event == 'all-suppliers-connected' or ( event == 'timer-3sec' and self.isEnoughSuppliersConnected(*args, **kwargs) ):
+                self.state = 'CONNECTED'
+                self.doReportConnected(*args, **kwargs)
+            elif event == 'list-files-received':
+                self.doSupplierRequestIndexFile(*args, **kwargs)
+            elif event == 'index-sent' or event == 'index-failed' or event == 'list-files-failed' or event == 'supplier-failed':
+                self.doRemember(event, *args, **kwargs)
+                self.doCheckAllConnected(*args, **kwargs)
+            elif event == 'key-not-registered':
+                self.doSupplierTransferPubKey(*args, **kwargs)
+            elif event == 'index-received' or event == 'index-missing':
+                self.doSupplierSendIndexFile(*args, **kwargs)
+            elif event == 'supplier-connected' or event == 'key-sent':
+                self.doSupplierRequestListFiles(*args, **kwargs)
         #---DISCONNECTED---
         elif self.state == 'DISCONNECTED':
             if event == 'shutdown':
@@ -296,70 +302,19 @@ class SharedAccessCoordinator(automat.Automat):
             if event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'timer-1min':
-                self.doCheckReconnectSuppliers(*args, **kwargs)
             elif event == 'supplier-failed' or event == 'restart':
                 self.state = 'DHT_LOOKUP'
                 self.doDHTLookupSuppliers(*args, **kwargs)
         #---CLOSED---
         elif self.state == 'CLOSED':
             pass
-        #---READ_INDEX---
-        elif self.state == 'READ_INDEX':
-            if event == 'all-suppliers-responded' or ( event == 'timer-3sec' and self.isSomeResponded(*args, **kwargs) ):
-                self.state = 'WRITE_INDEX'
-                self.doCancelSuppliersRequests(*args, **kwargs)
-                self.doSuppliersSendIndexFile(*args, **kwargs)
-            elif event == 'timer-10sec':
-                self.state = 'DISCONNECTED'
-                self.doCancelSuppliersRequests(*args, **kwargs)
-                self.doReportDisconnected(*args, **kwargs)
-            elif event == 'shutdown':
-                self.state = 'CLOSED'
-                self.doCancelSuppliersRequests(*args, **kwargs)
-                self.doDestroyMe(*args, **kwargs)
-            elif event == 'supplier-connected':
-                self.doRequestSupplierFiles(*args, **kwargs)
-        #---WRITE_INDEX---
-        elif self.state == 'WRITE_INDEX':
-            if event == 'all-suppliers-acked' or ( event == 'timer-15sec' and self.isSomeAcked(*args, **kwargs) ):
-                self.state = 'CONNECTED'
-                self.doCancelSuppliersSendings(*args, **kwargs)
-                self.doReportConnected(*args, **kwargs)
-                self.doDestroyMe(*args, **kwargs)
-            elif event == 'all-suppliers-acked' or ( event == 'timer-15sec' and not self.isSomeAcked(*args, **kwargs) ):
-                self.state = 'DISCONNECTED'
-                self.doCancelSuppliersSendings(*args, **kwargs)
-                self.doReportDisconnected(*args, **kwargs)
-            elif event == 'shutdown':
-                self.state = 'CLOSED'
-                self.doCancelSuppliersSendings(*args, **kwargs)
-                self.doDestroyMe(*args, **kwargs)
-            elif event == 'supplier-connected':
-                self.doRequestSupplierFiles(*args, **kwargs)
         return None
 
-    def isSomeAcked(self, *args, **kwargs):
+    def isEnoughSuppliersConnected(self, *args, **kwargs):
         """
         Condition method.
         """
-
-    def isSomeResponded(self, *args, **kwargs):
-        """
-        Condition method.
-        """
-
-    def isAnySupplierConnected(self, *args, **kwargs):
-        """
-        Condition method.
-        """
-        for supplier_idurl in self.known_suppliers_list:
-            sc = supplier_connector.by_idurl(supplier_idurl, customer_idurl=self.customer_idurl)
-            if sc is not None and sc.state == 'CONNECTED':
-                return True
-        if _Debug:
-            lg.dbg(_DebugLevel, 'no suppliers connected yet, known list has %d suppliers for %r' % (
-                len(self.known_suppliers_list), self.known_ecc_map, ))
+        # TODO:
         return False
 
 #     def isAnyFilesShared(self, *args, **kwargs):
@@ -403,69 +358,112 @@ class SharedAccessCoordinator(automat.Automat):
         except:
             lg.exc()
             return
-        self.outgoing_list_files_packets_ids = []
         self.known_ecc_map = args[0].get('ecc_map')
         if _Debug:
             lg.args(_DebugLevel, known_ecc_map=self.known_ecc_map, known_suppliers_list=self.known_suppliers_list)
+        self.suppliers_in_progress.clear()
+        self.suppliers_succeed.clear()
         for supplier_idurl in self.known_suppliers_list:
+            self.suppliers_in_progress.append(supplier_idurl)
             if id_url.is_cached(supplier_idurl):
                 self._do_connect_with_supplier(supplier_idurl)
             else:
                 d = identitycache.immediatelyCaching(supplier_idurl)
                 d.addCallback(lambda *a: self._do_connect_with_supplier(supplier_idurl))
-                d.addErrback(lambda err: lg.warn('failed caching supplier %r identity: %r' % (supplier_idurl, str(err), )) and None)
+                d.addErrback(self._on_supplier_failed, supplier_idurl=kwargs['supplier_idurl'], reason='failed caching supplier identity')
 
-    def doRequestSupplierFiles(self, *args, **kwargs):
+    def doSupplierRequestListFiles(self, *args, **kwargs):
         """
         Action method.
         """
-        self._do_request_supplier_list_files(args[0], self.customer_idurl, self.key_id)
+        pkt_out = p2p_service.SendListFiles(
+            target_supplier=kwargs['supplier_idurl'],
+            customer_idurl=self.customer_idurl,
+            key_id=self.key_id,
+            callbacks={
+                commands.Files(): lambda r, i: self._on_list_files_response(r, i, self.customer_idurl, kwargs['supplier_idurl'], self.key_id),
+                commands.Fail(): lambda r, i: self._on_list_files_failed(r, i, self.customer_idurl, kwargs['supplier_idurl'], self.key_id),
+            },
+            timeout=20,
+        )
+        if _Debug:
+            lg.args(_DebugLevel, supplier=kwargs['supplier_idurl'], pid=pkt_out.PacketID)
+
+    def doSupplierTransferPubKey(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        d = key_ring.transfer_key(kwargs['key_id'], kwargs['supplier_idurl'], include_private=False, include_signature=False)
+        d.addCallback(lambda r: self._on_key_transfer_success(**kwargs))
+        d.addErrback(self._on_supplier_failed, supplier_idurl=kwargs['supplier_idurl'], reason='failed sending key %r' % kwargs['key_id'])
+
+    def doSupplierRequestIndexFile(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        self._do_retrieve_index_file(kwargs['supplier_idurl'])
+
+    def doSupplierSendIndexFile(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        self._do_send_index_file(kwargs['supplier_idurl'])
+
+    def doRemember(self, event, *args, **kwargs):
+        """
+        Action method.
+        """
+        supplier_idurl = kwargs['supplier_idurl']
+        if supplier_idurl not in self.suppliers_in_progress:
+            lg.err('supplier %r was not in progress' % supplier_idurl)
+        else:
+            self.suppliers_in_progress.remove(supplier_idurl)
+        if event in ['index-sent', ]:
+            self.suppliers_succeed.append(supplier_idurl)
+        if _Debug:
+            lg.args(_DebugLevel, e=event, s=supplier_idurl, progress=len(self.suppliers_in_progress), succeed=len(self.suppliers_succeed))
 
     def doCheckAllConnected(self, *args, **kwargs):
         """
         Action method.
         """
-        self._do_check_supplier_connectors()
+#         connected_count = 0
+#         for supplier_idurl in self.known_suppliers_list:
+#             if not id_url.is_cached(supplier_idurl):
+#                 continue
+#             sc = supplier_connector.by_idurl(supplier_idurl, customer_idurl=self.customer_idurl)
+#             if sc is None or sc.state != 'CONNECTED':
+#                 continue
+#             connected_count += 1
+        critical_suppliers_number = 1
+        if self.known_ecc_map:
+            from raid import eccmap
+            critical_suppliers_number = eccmap.GetCorrectableErrors(eccmap.GetEccMapSuppliersNumber(self.known_ecc_map))
+#         if _Debug:
+#             lg.args(_DebugLevel, connected_count=connected_count, critical_suppliers_number=critical_suppliers_number)
+        if len(self.suppliers_in_progress) == 0:
+            if len(self.suppliers_succeed) >= critical_suppliers_number:
+                self.automat('all-suppliers-connected')
+            else:
+                self.automat('all-suppliers-disconnected')
 
-    def doSuppliersRequestIndexFile(self, *args, **kwargs):
-        """
-        Action method.
-        """
-        self._do_retrieve_index_file()
-
-    def doSuppliersSendIndexFile(self, *args, **kwargs):
-        """
-        Action method.
-        """
-        self._do_send_index_file()
-
-    def doCancelSuppliersRequests(self, *args, **kwargs):
-        """
-        Action method.
-        """
-
-    def doCancelSuppliersSendings(self, *args, **kwargs):
-        """
-        Action method.
-        """
-
-    def doCheckReconnectSuppliers(self, *args, **kwargs):
-        """
-        Action method.
-        """
-        # TODO:
+#     def doCheckReconnectSuppliers(self, *args, **kwargs):
+#         """
+#         Action method.
+#         """
+#         # TODO:
 
     def doReportConnected(self, *args, **kwargs):
         """
         Action method.
         """
         self.dht_lookup_use_cache = True
-        for packet_id in self.outgoing_list_files_packets_ids:
-            packetsToCancel = packet_out.search_by_packet_id(packet_id)
-            for pkt_out in packetsToCancel:
-                if pkt_out.outpacket.Command == commands.ListFiles():
-                    lg.warn('sending "cancel" to %r from %r' % (pkt_out, self, ))
-                    pkt_out.automat('cancel')
+#         for packet_id in self.outgoing_list_files_packets_ids:
+#             packetsToCancel = packet_out.search_by_packet_id(packet_id)
+#             for pkt_out in packetsToCancel:
+#                 if pkt_out.outpacket.Command == commands.ListFiles():
+#                     lg.warn('sending "cancel" to %r from %r' % (pkt_out, self, ))
+#                     pkt_out.automat('cancel')
         events.send('share-connected', data=dict(self.to_json()))
         if self.result_defer:
             self.result_defer.callback(True)
@@ -481,12 +479,12 @@ class SharedAccessCoordinator(automat.Automat):
         Action method.
         """
         self.dht_lookup_use_cache = False
-        for packet_id in self.outgoing_list_files_packets_ids:
-            packetsToCancel = packet_out.search_by_packet_id(packet_id)
-            for pkt_out in packetsToCancel:
-                if pkt_out.outpacket.Command == commands.ListFiles():
-                    lg.warn('sending "cancel" to %r from %r' % (pkt_out, self, ))
-                    pkt_out.automat('cancel')
+#         for packet_id in self.outgoing_list_files_packets_ids:
+#             packetsToCancel = packet_out.search_by_packet_id(packet_id)
+#             for pkt_out in packetsToCancel:
+#                 if pkt_out.outpacket.Command == commands.ListFiles():
+#                     lg.warn('sending "cancel" to %r from %r' % (pkt_out, self, ))
+#                     pkt_out.automat('cancel')
         events.send('share-disconnected', data=dict(self.to_json()))
         if self.result_defer:
             self.result_defer.errback(Exception('disconnected'))
@@ -501,7 +499,7 @@ class SharedAccessCoordinator(automat.Automat):
         """
         Remove all references to the state machine object to destroy it.
         """
-        self.outgoing_list_files_packets_ids = []
+        # self.outgoing_list_files_packets_ids = []
         self.result_defer = None
         self.destroy()
 
@@ -518,88 +516,71 @@ class SharedAccessCoordinator(automat.Automat):
                 queue_subscribe=False,
             )
         if sc.state in ['CONNECTED', 'QUEUE?', ]:
-            self.automat('supplier-connected', supplier_idurl)
+            self.automat('supplier-connected', supplier_idurl=supplier_idurl)
         else:
             sc.set_callback('shared_access_coordinator', self._on_supplier_connector_state_changed)
             sc.automat('connect')
 
-    def _do_request_supplier_list_files(self, supplier_idurl, customer_idurl, key_id):
-        pkt_out = p2p_service.SendListFiles(
-            target_supplier=supplier_idurl,
-            customer_idurl=customer_idurl,
-            key_id=key_id,
+#     def _do_check_supplier_connectors(self):
+#         connected_count = 0
+#         for supplier_idurl in self.known_suppliers_list:
+#             if not id_url.is_cached(supplier_idurl):
+#                 continue
+#             sc = supplier_connector.by_idurl(supplier_idurl, customer_idurl=self.customer_idurl)
+#             if sc is None or sc.state != 'CONNECTED':
+#                 continue
+#             connected_count += 1
+#         critical_suppliers_number = 1
+#         if self.known_ecc_map:
+#             from raid import eccmap
+#             critical_suppliers_number = eccmap.GetCorrectableErrors(eccmap.GetEccMapSuppliersNumber(self.known_ecc_map))
+#         if _Debug:
+#             lg.args(_DebugLevel, connected_count=connected_count, critical_suppliers_number=critical_suppliers_number)
+#         if connected_count >= critical_suppliers_number:
+#             self.automat('all-suppliers-connected')
+
+    def _do_retrieve_index_file(self, supplier_idurl):
+        packetID = global_id.MakeGlobalID(
+            key_id=self.key_id,
+            path=settings.BackupIndexFileName(),
+        )
+        sc = supplier_connector.by_idurl(supplier_idurl, customer_idurl=self.customer_idurl)
+        if sc is None or sc.state != 'CONNECTED':
+            lg.warn('supplier connector for %r is not found or offline' % supplier_idurl)
+            self.automat('supplier-failed', supplier_idurl=supplier_idurl)
+            return
+        if online_status.isOffline(supplier_idurl):
+            lg.warn('supplier %r is offline' % supplier_idurl)
+            self.automat('supplier-failed', supplier_idurl=supplier_idurl)
+            return
+        public_test_sample = key.NewSessionKey(session_key_type=key.SessionKeyType())
+        signed_test_sample = my_keys.sign(self.key_id, public_test_sample)
+        json_payload = {
+            't': base64.b64encode(public_test_sample),
+            's': strng.to_text(signed_test_sample),
+        }
+        raw_payload = serialization.DictToBytes(json_payload, values_to_text=True)
+        p2p_service.SendRetreive(
+            ownerID=self.customer_idurl,
+            creatorID=my_id.getIDURL(),
+            packetID=packetID,
+            remoteID=supplier_idurl,
+            response_timeout=60*2,
+            payload=raw_payload,
             callbacks={
-                commands.Files(): lambda r, i: self._on_list_files_response(r, i, customer_idurl, supplier_idurl, key_id),
-                commands.Fail(): lambda r, i: self._on_list_files_failed(r, i, customer_idurl, supplier_idurl, key_id),
-            },
-            timeout=20,
+                commands.Data(): self._on_supplier_retreive_index_file_response,
+                commands.Fail(): self._on_supplier_retreive_index_file_fail,
+            }
         )
-        self.outgoing_list_files_packets_ids.append(pkt_out.PacketID)
         if _Debug:
-            lg.args(_DebugLevel, supplier=supplier_idurl, pid=pkt_out.PacketID, outgoing=len(self.outgoing_list_files_packets_ids), )
+            lg.args(_DebugLevel, pid=packetID, supplier=supplier_idurl)
 
-    def _do_check_supplier_connectors(self):
-        connected_count = 0
-        for supplier_idurl in self.known_suppliers_list:
-            if not id_url.is_cached(supplier_idurl):
-                continue
-            sc = supplier_connector.by_idurl(supplier_idurl, customer_idurl=self.customer_idurl)
-            if sc is None or sc.state != 'CONNECTED':
-                continue
-            connected_count += 1
-        critical_suppliers_number = 1
-        if self.known_ecc_map:
-            from raid import eccmap
-            critical_suppliers_number = eccmap.GetCorrectableErrors(eccmap.GetEccMapSuppliersNumber(self.known_ecc_map))
-        if _Debug:
-            lg.args(_DebugLevel, connected_count=connected_count, critical_suppliers_number=critical_suppliers_number)
-        if connected_count >= critical_suppliers_number:
-            self.automat('all-suppliers-connected')
-
-    def _do_retrieve_index_file(self, x=None):
-        self.current_local_revision = -1
-        self.latest_supplier_revision = -1
-        self.requesting_suppliers.clear()
-        self.requested_suppliers_number = 0
-        self.requests_packets_sent = []
+    def _do_send_index_file(self, supplier_idurl):
         packetID = global_id.MakeGlobalID(
             key_id=self.key_id,
             path=settings.BackupIndexFileName(),
         )
-        for supplier_idurl in self.known_suppliers_list:
-            if not supplier_idurl:
-                continue
-            if not id_url.is_cached(supplier_idurl):
-                continue
-            sc = supplier_connector.by_idurl(supplier_idurl, customer_idurl=self.customer_idurl)
-            if sc is None or sc.state != 'CONNECTED':
-                continue
-            if online_status.isOffline(supplier_idurl):
-                continue
-            pkt_out = p2p_service.SendRetreive(
-                ownerID=self.customer_idurl,
-                creatorID=my_id.getIDURL(),
-                packetID=packetID,
-                remoteID=supplier_idurl,
-                response_timeout=60*2,
-                callbacks={
-                    commands.Data(): self._on_supplier_retreive_index_file_response,
-                    commands.Fail(): self._on_supplier_retreive_index_file_fail,
-                }
-            )
-            if pkt_out:
-                self.requesting_suppliers.add(supplier_idurl)
-                self.requested_suppliers_number += 1
-                self.requests_packets_sent.append((packetID, supplier_idurl))
-
-    def _do_send_index_file(self):
-        packetID = global_id.MakeGlobalID(
-            key_id=self.key_id,
-            path=settings.BackupIndexFileName(),
-        )
-        self.sending_suppliers.clear()
-        self.outgoing_packets_ids = []
-        self.sent_suppliers_number = 0
+        data = bpio.ReadBinaryFile(settings.BackupIndexFilePath(self.customer_idurl, self.key_alias))
         b = encrypted.Block(
             CreatorID=my_id.getIDURL(),
             BackupID=packetID,
@@ -607,36 +588,37 @@ class SharedAccessCoordinator(automat.Automat):
             SessionKey=key.NewSessionKey(session_key_type=key.SessionKeyType()),
             SessionKeyType=key.SessionKeyType(),
             LastBlock=True,
-            Data=bpio.ReadBinaryFile(settings.BackupIndexFilePath(self.customer_idurl, self.key_alias)),
+            Data=data,
             EncryptKey=self.key_id,
         )
         Payload = b.Serialize()
-        for supplier_idurl in self.known_suppliers_list:
-            if not supplier_idurl:
-                continue
-            sc = supplier_connector.by_idurl(supplier_idurl)
-            if sc is None or sc.state != 'CONNECTED':
-                continue
-            if online_status.isOffline(supplier_idurl):
-                continue
-            newpacket, pkt_out = p2p_service.SendData(
-                raw_data=Payload,
-                ownerID=self.customer_idurl,
-                creatorID=my_id.getIDURL(),
-                remoteID=supplier_idurl,
-                packetID=packetID,
-                callbacks={
-                    commands.Ack(): self._on_supplier_send_index_file_ack,
-                    commands.Fail(): self._on_supplier_send_index_file_ack,
-                },
-            )
-            if pkt_out:
-                self.sending_suppliers.add(supplier_idurl)
-                self.sent_suppliers_number += 1
-                if newpacket.PacketID not in self.outgoing_packets_ids:
-                    self.outgoing_packets_ids.append(newpacket.PacketID)
+        sc = supplier_connector.by_idurl(supplier_idurl)
+        if sc is None or sc.state != 'CONNECTED':
+            lg.warn('supplier connector for %r is not found or offline' % supplier_idurl)
+            self.automat('supplier-failed', supplier_idurl=supplier_idurl)
+            return
+        if online_status.isOffline(supplier_idurl):
+            lg.warn('supplier %r is offline' % supplier_idurl)
+            self.automat('supplier-failed', supplier_idurl=supplier_idurl)
+            return
+        p2p_service.SendData(
+            raw_data=Payload,
+            ownerID=self.customer_idurl,
+            creatorID=my_id.getIDURL(),
+            remoteID=supplier_idurl,
+            packetID=packetID,
+            callbacks={
+                commands.Ack(): self._on_supplier_send_index_file_ack,
+                commands.Fail(): self._on_supplier_send_index_file_ack,
+            },
+        )
         if _Debug:
-            lg.args(_DebugLevel, count=self.sent_suppliers_number)
+            lg.args(_DebugLevel, pid=packetID, sz=len(data), supplier=supplier_idurl)
+
+    def _on_supplier_failed(self, err, supplier_idurl, reason):
+        lg.err('supplier %s failed with %r : %r' % (supplier_idurl, reason, err, ))
+        self.automat('supplier-failed', supplier_idurl=supplier_idurl)
+        return None
 
     def _on_read_customer_suppliers(self, dht_value):
         if _Debug:
@@ -656,30 +638,30 @@ class SharedAccessCoordinator(automat.Automat):
         if sc:
             sc.remove_callback('shared_access_coordinator', self._on_supplier_connector_state_changed)
         if newstate == 'CONNECTED':
-            self.automat('supplier-connected', idurl)
+            self.automat('supplier-connected', supplier_idurl=idurl)
 
     def _on_list_files_response(self, response, info, customer_idurl, supplier_idurl, key_id):
         # TODO: remember the response and prevent sending ListFiles() too often
         if _Debug:
             lg.args(_DebugLevel, response=response, customer_idurl=customer_idurl, supplier_idurl=supplier_idurl, key_id=key_id)
+        self.automat('list-files-received', supplier_idurl=supplier_idurl, customer_idurl=customer_idurl, key_id=key_id)
 
     def _on_list_files_failed(self, response, info, customer_idurl, supplier_idurl, key_id):
         if strng.to_text(response.Payload) == 'key not registered':
             if _Debug:
                 lg.dbg(_DebugLevel, 'supplier %r of customer %r do not possess public key %r yet, sending it now' % (
                     supplier_idurl, customer_idurl, key_id, ))
-            result = key_ring.transfer_key(key_id, supplier_idurl, include_private=False, include_signature=False)
-            result.addCallback(lambda r: self._on_key_transfer_success(customer_idurl, supplier_idurl, key_id))
-            result.addErrback(lambda err: lg.err('failed sending key %r : %r' % (key_id, err, )))
-        else:
-            lg.err('failed requesting ListFiles() with %r for customer %r from supplier %r' % (
-                key_id, customer_idurl, supplier_idurl, ))
+            self.automat('key-not-registered', supplier_idurl=supplier_idurl, customer_idurl=customer_idurl, key_id=key_id)
+            return None
+        lg.err('failed requesting ListFiles() with %r for customer %r from supplier %r' % (
+            key_id, customer_idurl, supplier_idurl, ))
+        self.automat('list-files-failed', supplier_idurl=supplier_idurl, customer_idurl=customer_idurl, key_id=key_id)
         return None
 
     def _on_key_transfer_success(self, customer_idurl, supplier_idurl, key_id):
         if _Debug:
             lg.out(_DebugLevel, 'shared_access_coordinator._on_key_transfer_success public key %r shared to supplier %r of customer %r, now will send ListFiles() again' % (key_id, supplier_idurl, customer_idurl))
-        self._do_request_supplier_list_files(supplier_idurl, customer_idurl, key_id)
+        self.automat('key-sent', supplier_idurl=supplier_idurl, customer_idurl=customer_idurl, key_id=key_id)
 
     def _on_supplier_retreive_index_file_response(self, newpacket, info):
         wrapped_packet = signed.Unserialize(newpacket.Payload)
@@ -687,41 +669,37 @@ class SharedAccessCoordinator(automat.Automat):
         if _Debug:
             lg.args(_DebugLevel, sz=len(newpacket.Payload), s=supplier_idurl, i=info)
         if not wrapped_packet or not wrapped_packet.Valid():
-            lg.err('incoming Data() is not valid')
+            lg.err('incoming Data() is not valid from supplier %r' % supplier_idurl)
+            self.automat('supplier-failed', supplier_idurl=supplier_idurl)
             return
         supplier_revision = backup_control.IncomingSupplierBackupIndex(wrapped_packet, key_id=self.key_id)
-        self.requesting_suppliers.discard(supplier_idurl)
-        if supplier_revision is not None:
-            if supplier_revision > self.latest_supplier_revision:
-                self.latest_supplier_revision = supplier_revision
+        # if supplier_revision is not None:
+        #     if supplier_revision > self.latest_supplier_revision:
+        #         self.latest_supplier_revision = supplier_revision
         if _Debug:
-            lg.out(_DebugLevel, 'shared_access_coordinator._on_supplier_retreive_index_file_response %s from %r, pending: %d, total: %d' % (
-                newpacket, supplier_idurl, len(self.requesting_suppliers), self.requested_suppliers_number))
-        if len(self.requesting_suppliers) == 0:
-            reactor.callLater(0, self.automat, 'all-suppliers-responded')  # @UndefinedVariable
+            lg.out(_DebugLevel, 'shared_access_coordinator._on_supplier_retreive_index_file_response %s from %r with rev: %s' % (
+                newpacket, supplier_idurl, supplier_revision, ))
+        self.automat('index-received', supplier_idurl=supplier_idurl)
 
     def _on_supplier_retreive_index_file_fail(self, newpacket, info):
         if _Debug:
             lg.args(_DebugLevel, newpacket=newpacket)
         supplier_idurl = newpacket.CreatorID
-        self.requesting_suppliers.discard(supplier_idurl)
         if _Debug:
-            lg.out(_DebugLevel, 'index_synchronizer._on_supplier_fail %s from %r, pending: %d, total: %d' % (
-                newpacket, supplier_idurl, len(self.requesting_suppliers), self.requested_suppliers_number))
-        if len(self.requesting_suppliers) == 0:
-            reactor.callLater(0, self.automat, 'all-suppliers-responded')  # @UndefinedVariable
+            lg.out(_DebugLevel, 'index_synchronizer._on_supplier_retreive_index_file_fail %s from %r' % (newpacket, supplier_idurl, ))
+        self.automat('index-missing', supplier_idurl=supplier_idurl)
 
     def _on_supplier_send_index_file_ack(self, newpacket, info):
-        self.sending_suppliers.discard(newpacket.CreatorID)
-        # if newpacket.PacketID in self.outgoing_packets_ids:
-        #     self.outgoing_packets_ids.remove(newpacket.PacketID)
-        sc = supplier_connector.by_idurl(newpacket.CreatorID)
+        supplier_idurl = newpacket.CreatorID
+        sc = supplier_connector.by_idurl(supplier_idurl)
         if sc:
             sc.automat(newpacket.Command.lower(), newpacket)
         else:
-            lg.warn('did not found supplier connector for %r' % newpacket.OwnerID)
+            lg.warn('did not found supplier connector for %r' % supplier_idurl)
         if _Debug:
-            lg.out(_DebugLevel, 'index_synchronizer._on_supplier_acked %s, pending: %d, total: %d' % (
-                newpacket, len(self.sending_suppliers), self.sent_suppliers_number))
-        if len(self.sending_suppliers) == 0:
-            reactor.callLater(0, self.automat, 'all-suppliers-acked')  # @UndefinedVariable
+            lg.out(_DebugLevel, 'index_synchronizer._on_supplier_send_index_file_ack %s from %r' % (
+                newpacket, supplier_idurl, ))
+        if newpacket.Command == commands.Ack():
+            self.automat('index-sent', supplier_idurl=supplier_idurl)
+        else:
+            self.automat('index-failed', supplier_idurl=supplier_idurl)

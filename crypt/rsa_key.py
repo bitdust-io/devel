@@ -236,7 +236,7 @@ class RSAKey(object):
         if not self.keyObject:
             raise ValueError('key object is not exist')
         cipher = PKCS1_OAEP.new(self.keyObject)
-        ciphertext = cipher.encrypt(private_message)        
+        ciphertext = cipher.encrypt(private_message)
         return ciphertext
 
     def decrypt(self, encrypted_payload):

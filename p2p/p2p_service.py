@@ -73,6 +73,7 @@ from crypt import my_keys
 
 from transport import gateway
 from transport import packet_out
+from transport import callback
 
 from userid import identity
 from userid import id_url
@@ -84,23 +85,26 @@ from userid import my_id
 def init():
     if _Debug:
         lg.out(_DebugLevel, 'p2p_service.init')
+    callback.insert_outbox_filter_callback(0, outbox)
 
 
 def shutdown():
     if _Debug:
         lg.out(_DebugLevel, 'p2p_service.shutdown')
+    callback.remove_outbox_filter_callback(outbox)
 
 #------------------------------------------------------------------------------
 
-
 def inbox(newpacket, info, status, error_message):
-    """
-    """
-    if newpacket.CreatorID != my_id.getIDURL() and newpacket.RemoteID != my_id.getIDURL():
-        # packet is NOT for us, skip
-        return False
+#     if newpacket.CreatorID != my_id.getIDURL() and newpacket.RemoteID != my_id.getIDURL():
+#         # packet is NOT for us, skip
+#         return False
 
-    if newpacket.Command == commands.Ack():
+    if newpacket.Command == commands.Identity():
+        # a response from remote node, typically handled in other places
+        Identity(newpacket, info)
+
+    elif newpacket.Command == commands.Ack():
         # a response from remote node, typically handled in other places
         Ack(newpacket, info)
 
@@ -178,13 +182,16 @@ def inbox(newpacket, info, status, error_message):
         # handled by service_customer_family()
         Contacts(newpacket, info)
 
+    else:
+        lg.warn('unexpected command received: %r from %r' % (newpacket, info, ))
+
     return False
 
 
-def outbox(outpacket):
+def outbox(outpacket, wide, callbacks, target=None, route=None, response_timeout=None, keep_alive=True):
     if _Debug:
-        lg.out(_DebugLevel, "p2p_service.outbox [%s] to %s" % (outpacket.Command, nameurl.GetName(outpacket.RemoteID)))
-    return True
+        lg.out(_DebugLevel, "p2p_service.outbox [%s] to %s with route %r" % (outpacket.Command, nameurl.GetName(outpacket.RemoteID), route, ))
+    return None
 
 #------------------------------------------------------------------------------
 
@@ -233,11 +240,10 @@ def SendAckNoRequest(remoteID, packetid, response='', wide=False, callbacks={}):
 
 
 def Fail(newpacket):
-    if newpacket.Payload:
-        if _Debug:
+    if _Debug:
+        if newpacket.Payload:
             lg.warn('%r received from [%s] in %r' % (newpacket.Payload, newpacket.CreatorID, newpacket))
-    else:
-        if _Debug:
+        else:
             lg.out(_DebugLevel, "p2p_service.Fail from %s|%s packetID=%s : %s" % (
                 newpacket.CreatorID, newpacket.OwnerID, newpacket.PacketID, newpacket.Payload))
 
@@ -276,70 +282,76 @@ def SendFailNoRequest(remoteID, packetID, response=''):
 
 #------------------------------------------------------------------------------
 
-def Identity(newpacket, send_ack=True):
-    """
-    Normal node or Identity server is sending us a new copy of an identity for a contact of ours.
-    Checks that identity is signed correctly.
-    Sending requests to cache all sources (other identity servers) holding that identity.
-    """
-    # TODO:  move to service_gateway
-    newxml = newpacket.Payload
-    newidentity = identity.identity(xmlsrc=newxml)
-    # SECURITY
-    # check that identity is signed correctly
-    # old public key matches new one
-    # this is done in `UpdateAfterChecking()`
-    idurl = newidentity.getIDURL()
-    if not identitycache.HasKey(idurl):
-        lg.info('received new identity %s rev %r' % (idurl, newidentity.getRevisionValue()))
-    if not identitycache.UpdateAfterChecking(idurl, newxml):
-        lg.warn("ERROR has non-Valid identity")
-        return False
-    if my_id.isLocalIdentityReady():
-        if newidentity.getPublicKey() == my_id.getLocalIdentity().getPublicKey():
-            if newidentity.getRevisionValue() > my_id.getLocalIdentity().getRevisionValue():
-                lg.warn('received my own identity from another user, but with higher revision number')
-                reactor.callLater(0, my_id.rebuildLocalIdentity, new_revision=newidentity.getRevisionValue() + 1)  # @UndefinedVariable
-                return False
-    latest_identity = id_url.get_latest_ident(newidentity.getPublicKey())
-    if latest_identity:
-        if latest_identity.getRevisionValue() > newidentity.getRevisionValue():
-            # check if received identity is the most recent revision number we every saw for that remote user
-            # in case we saw same identity with higher revision number need to reply with Fail packet and notify user
-            # this may happen after identity restore - the user starts counting revision number from 0
-            # but other nodes already store previous copies, user just need to jump to the most recent revision number
-            lg.warn('received new identity with out-dated revision number from %r' % idurl)
-            ident_packet = signed.Packet(
-                Command=commands.Identity(),
-                OwnerID=latest_identity.getIDURL(),
-                CreatorID=latest_identity.getIDURL(),
-                PacketID='identity:%s' % packetid.UniqueID(),
-                Payload=latest_identity.serialize(),
-                RemoteID=idurl,
-            )
-            reactor.callLater(0, packet_out.create, outpacket=ident_packet, wide=True, callbacks={}, keep_alive=False)  # @UndefinedVariable
-            return False
-    # Now that we have ID we can check packet
-    if not newpacket.Valid():
-        # If not valid do nothing
-        lg.warn("not Valid packet from %s" % idurl)
-        return False
-    if not send_ack:
-        if _Debug:
-            lg.out(_DebugLevel, "p2p_service.Identity %s  idurl=%s  remoteID=%r  skip sending Ack()" % (
-                newpacket.PacketID, idurl, newpacket.RemoteID))
-        return True
-    if newpacket.OwnerID == idurl:
-        if _Debug:
-            lg.out(_DebugLevel, "p2p_service.Identity %s  idurl=%s  remoteID=%r  sending wide Ack()" % (
-                newpacket.PacketID, idurl, newpacket.RemoteID))
-    else:
-        if _Debug:
-            lg.out(_DebugLevel, "p2p_service.Identity %s  idurl=%s  remoteID=%r  but packet ownerID=%s   sending wide Ack()" % (
-                newpacket.PacketID, idurl, newpacket.RemoteID, newpacket.OwnerID, ))
-    # wide=True : a small trick to respond to all his contacts
-    reactor.callLater(0, SendAck, newpacket, wide=True)  # @UndefinedVariable
-    return True
+def Identity(newpacket, info):
+    if _Debug:
+        lg.out(_DebugLevel, "p2p_service.Identity %s from [%s] at %s://%s with %d bytes payload" % (
+            newpacket.PacketID, nameurl.GetName(newpacket.CreatorID),
+            info.proto, info.host, len(newpacket.Payload)))
+
+
+#     """
+#     Normal node or Identity server is sending us a new copy of an identity for a contact of ours.
+#     Checks that identity is signed correctly.
+#     Sending requests to cache all sources (other identity servers) holding that identity.
+#     """
+#     # TODO:  move to service_gateway
+#     newxml = newpacket.Payload
+#     newidentity = identity.identity(xmlsrc=newxml)
+#     # SECURITY
+#     # check that identity is signed correctly
+#     # old public key matches new one
+#     # this is done in `UpdateAfterChecking()`
+#     idurl = newidentity.getIDURL()
+#     if not identitycache.HasKey(idurl):
+#         lg.info('received new identity %s rev %r' % (idurl, newidentity.getRevisionValue()))
+#     if not identitycache.UpdateAfterChecking(idurl, newxml):
+#         lg.warn("ERROR has non-Valid identity")
+#         return False
+#     if my_id.isLocalIdentityReady():
+#         if newidentity.getPublicKey() == my_id.getLocalIdentity().getPublicKey():
+#             if newidentity.getRevisionValue() > my_id.getLocalIdentity().getRevisionValue():
+#                 lg.warn('received my own identity from another user, but with higher revision number')
+#                 reactor.callLater(0, my_id.rebuildLocalIdentity, new_revision=newidentity.getRevisionValue() + 1)  # @UndefinedVariable
+#                 return False
+#     latest_identity = id_url.get_latest_ident(newidentity.getPublicKey())
+#     if latest_identity:
+#         if latest_identity.getRevisionValue() > newidentity.getRevisionValue():
+#             # check if received identity is the most recent revision number we every saw for that remote user
+#             # in case we saw same identity with higher revision number need to reply with Fail packet and notify user
+#             # this may happen after identity restore - the user starts counting revision number from 0
+#             # but other nodes already store previous copies, user just need to jump to the most recent revision number
+#             lg.warn('received new identity with out-dated revision number from %r' % idurl)
+#             ident_packet = signed.Packet(
+#                 Command=commands.Identity(),
+#                 OwnerID=latest_identity.getIDURL(),
+#                 CreatorID=latest_identity.getIDURL(),
+#                 PacketID='identity:%s' % packetid.UniqueID(),
+#                 Payload=latest_identity.serialize(),
+#                 RemoteID=idurl,
+#             )
+#             reactor.callLater(0, packet_out.create, outpacket=ident_packet, wide=True, callbacks={}, keep_alive=False)  # @UndefinedVariable
+#             return False
+#     # Now that we have ID we can check the packet
+#     if not newpacket.Valid():
+#         # If not valid do nothing
+#         lg.warn("not Valid packet from %s" % idurl)
+#         return False
+#     if not send_ack:
+#         if _Debug:
+#             lg.out(_DebugLevel, "p2p_service.Identity %s  idurl=%s  remoteID=%r  skip sending Ack()" % (
+#                 newpacket.PacketID, idurl, newpacket.RemoteID))
+#         return True
+#     if newpacket.OwnerID == idurl:
+#         if _Debug:
+#             lg.out(_DebugLevel, "p2p_service.Identity %s  idurl=%s  remoteID=%r  sending wide Ack()" % (
+#                 newpacket.PacketID, idurl, newpacket.RemoteID))
+#     else:
+#         if _Debug:
+#             lg.out(_DebugLevel, "p2p_service.Identity %s  idurl=%s  remoteID=%r  but packet ownerID=%s   sending wide Ack()" % (
+#                 newpacket.PacketID, idurl, newpacket.RemoteID, newpacket.OwnerID, ))
+#     # wide=True : a small trick to respond to all known contacts of the remote user
+#     reactor.callLater(0, SendAck, newpacket, wide=True)  # @UndefinedVariable
+#     return True
 
 
 def SendIdentity(remote_idurl, wide=False, timeout=10, callbacks={}):
@@ -366,12 +378,12 @@ def SendIdentity(remote_idurl, wide=False, timeout=10, callbacks={}):
 def RequestService(request, info):
     """
     """
-    try:
-        service_info = serialization.BytesToDict(request.Payload)
-    except:
-        lg.exc()
-        service_info = {}
     if _Debug:
+        try:
+            service_info = serialization.BytesToDict(request.Payload)
+        except:
+            lg.exc()
+            service_info = {}
         lg.out(_DebugLevel, 'p2p_service.RequestService %s with "%s" in %d bytes' % (
             request.PacketID, service_info.get('name', 'unknown service name'), len(request.Payload)))
         lg.out(_DebugLevel, '  from remoteID=%s  ownerID=%s  creatorID=%s' % (
@@ -402,12 +414,12 @@ def SendRequestService(remote_idurl, service_name, json_payload={}, wide=False, 
 
 
 def CancelService(request, info):
-    try:
-        service_info = serialization.BytesToDict(request.Payload)
-    except:
-        lg.exc()
-        service_info = {}
     if _Debug:
+        try:
+            service_info = serialization.BytesToDict(request.Payload)
+        except:
+            lg.exc()
+            service_info = {}
         lg.out(_DebugLevel, 'p2p_service.CancelService %s with "%s" in %d bytes' % (
             request.PacketID, service_info.get('name', 'unknown service name'), len(request.Payload), ))
         lg.out(_DebugLevel, '  from remoteID=%s  ownerID=%s  creatorID=%s' % (

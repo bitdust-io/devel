@@ -269,15 +269,13 @@ def IncomingSupplierBackupIndex(newpacket, key_id=None):
 
     The index is also stored on suppliers to be able to restore it.
     """
-    b = encrypted.Unserialize(newpacket.Payload, decrypt_key=key_id)
-    if not b:
+    block = encrypted.Unserialize(newpacket.Payload, decrypt_key=key_id)
+    if not block:
         lg.err('failed reading data from %s' % newpacket.RemoteID)
         return None
     try:
-        d = b.Data()
-        if _Debug:
-            lg.args(_DebugLevel, d=strng.to_text(d))
-        inpt = StringIO(strng.to_text(d))
+        data = block.Data()
+        inpt = StringIO(strng.to_text(data))
         supplier_revision = inpt.readline().rstrip('\n')
         if supplier_revision:
             supplier_revision = int(supplier_revision)
@@ -298,7 +296,7 @@ def IncomingSupplierBackupIndex(newpacket, key_id=None):
 #                 newpacket.RemoteID, supplier_revision, backup_fs.revision(), ))
 #         return supplier_revision
     if _Debug:
-        lg.args(_DebugLevel, k=key_id, p=newpacket.PacketID, sz=len(text_data), inp=len(d))
+        lg.args(_DebugLevel, k=key_id, p=newpacket.PacketID, sz=len(text_data), inp=len(newpacket.Payload))
     count, updated_customers_keys = backup_fs.ReadIndex(text_data, new_revision=supplier_revision)
     if updated_customers_keys:
         # backup_fs.commit(supplier_revision)
@@ -308,8 +306,8 @@ def IncomingSupplierBackupIndex(newpacket, key_id=None):
             backup_fs.SaveIndex(customer_idurl, key_alias)
             # control.request_update()
             if _Debug:
-                lg.out(_DebugLevel, 'backup_control.IncomingSupplierBackupIndex updated to revision %d from %s' % (
-                    backup_fs.revision(customer_idurl, key_alias), newpacket.RemoteID))
+                lg.out(_DebugLevel, 'backup_control.IncomingSupplierBackupIndex updated to revision %d for %s of %s from %s' % (
+                    backup_fs.revision(customer_idurl, key_alias), customer_idurl, key_alias, newpacket.RemoteID))
     # else:
     #     lg.warn('failed to read catalog index from supplier')
     return supplier_revision

@@ -183,7 +183,8 @@ def process(newpacket, info):
     Main entry point where all incoming signed packets are coming from remote peers.
     The main aspect here is to "authenticate" remote node - need to know it identity.
     """
-    from p2p import p2p_service
+    # from p2p import p2p_service
+    from transport import gateway
     from userid import my_id
     if not driver.is_on('service_p2p_hookups'):
         if _Debug:
@@ -212,7 +213,7 @@ def process(newpacket, info):
         if newpacket.RemoteID != my_id.getIDURL():
             if _Debug:
                 lg.out(_DebugLevel, '    incoming Identity is routed to another user')
-            if not p2p_service.Identity(newpacket, send_ack=False):
+            if not gateway.on_identity_received(newpacket, send_ack=False):
                 lg.warn('received identity was not processed')
                 return None
             # remote peer sending a valid identity to another peer routed via my machine
@@ -223,7 +224,7 @@ def process(newpacket, info):
         # because we might not have his identity on hands and so can not verify the packet
         # so we check that his Identity is valid and save it into cache
         # than we check the packet to be valid too.
-        if not p2p_service.Identity(newpacket):
+        if not gateway.on_identity_received(newpacket):
             lg.warn('received identity was not processed')
             return None
     if not identitycache.HasKey(newpacket.CreatorID):
