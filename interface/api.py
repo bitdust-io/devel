@@ -1178,6 +1178,10 @@ def files_list(remote_path=None, key_id=None, recursive=True, all_customers=Fals
             remote_path, key_id, key_alias, recursive, all_customers, include_uploads, include_downloads, ))
     if not all_customers and customer_idurl not in backup_fs.known_customers():
         return ERROR('customer %r not found' % customer_idurl)
+    backup_info_callback = None
+    if driver.is_on('service_restores'):
+        from storage import restore_monitor
+        backup_info_callback = restore_monitor.GetBackupStatusInfo
     if all_customers:
         lookup = []
         for customer_idurl in backup_fs.known_customers():
@@ -1186,6 +1190,7 @@ def files_list(remote_path=None, key_id=None, recursive=True, all_customers=Fals
                 recursive=recursive,
                 iter=backup_fs.fs(customer_idurl, key_alias),
                 iterID=backup_fs.fsID(customer_idurl, key_alias),
+                backup_info_callback=backup_info_callback,
             )
             if isinstance(look, list):
                 lookup.extend(look)
@@ -1197,6 +1202,7 @@ def files_list(remote_path=None, key_id=None, recursive=True, all_customers=Fals
             recursive=recursive,
             iter=backup_fs.fs(customer_idurl, key_alias),
             iterID=backup_fs.fsID(customer_idurl, key_alias),
+            backup_info_callback=backup_info_callback,
         )
     if not isinstance(lookup, list):
         return ERROR(lookup)

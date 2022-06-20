@@ -140,6 +140,7 @@ def init():
     if _Debug:
         lg.out(_DebugLevel, 'backup_fs.init')
     LoadAllIndexes()
+    SaveIndex()
 
 
 def shutdown():
@@ -148,7 +149,6 @@ def shutdown():
     """
     if _Debug:
         lg.out(_DebugLevel, 'backup_fs.shutdown')
-
 
 #------------------------------------------------------------------------------
 
@@ -1401,45 +1401,7 @@ def IterateIDs(iterID=None):
 
 #------------------------------------------------------------------------------
 
-def GetBackupStatusInfo(backupID, item_info, item_name, parent_path_existed=None):
-    from storage import backup_control
-    from storage import restore_monitor
-    from storage import backup_matrix
-    blocks, percent, weakBlock, weakPercent = backup_matrix.GetBackupRemoteStats(backupID)
-    totalNumberOfFiles, maxBlockNum, statsArray = backup_matrix.GetBackupStats(backupID)
-    ret = {
-        'state': 'ready',
-        'delivered': misc.percent2string(percent),
-        'reliable': misc.percent2string(weakPercent),
-        'fragments': totalNumberOfFiles,
-        'weak_block': weakBlock,
-        'max_block': maxBlockNum,
-        'suppliers': [{
-            'stored': misc.percent2string(i[0]),
-            'fragments': i[1],
-        } for i in statsArray],
-    }
-    if backup_control.IsBackupInProcess(backupID):
-        backupObj = backup_control.GetRunningBackupObject(backupID)
-        if backupObj:
-            ret['state'] = 'uploading'
-            ret['progress'] = misc.percent2string(backupObj.progress())
-            return ret
-    elif restore_monitor.IsWorking(backupID):
-        restoreObj = restore_monitor.GetWorkingRestoreObject(backupID)
-        if restoreObj:
-            maxBlockNum = backup_matrix.GetKnownMaxBlockNum(backupID)
-            currentBlock = max(0, restoreObj.block_number)
-            percent = 0.0
-            if maxBlockNum > 0:
-                percent = 100.0 * currentBlock / maxBlockNum
-            ret['state'] = 'downloading'
-            ret['progress'] = misc.percent2string(percent)
-            return ret
-    return ret
-
-
-def ExtractVersions(pathID, item_info, path_exist=None, customer_id=None):
+def ExtractVersions(pathID, item_info, path_exist=None, customer_id=None, backup_info_callback=None):
     if not customer_id:
         customer_id = item_info.key_id or my_id.getGlobalID(key_alias='master')
     item_size = 0
@@ -1462,13 +1424,14 @@ def ExtractVersions(pathID, item_info, path_exist=None, customer_id=None):
                 b[1:5], b[5:7], b[7:9], b[9:11], b[11:13], b[13:15], b[15:17])
         else:
             version_label = backupID
-        backup_info_dict = GetBackupStatusInfo(backupID, item_info, item_info.name(), path_exist)
-        backup_info_dict.update({
+        backup_info_dict = {
             'backup_id': backupID,
             'label': version_label,
             'time': version_time,
             'size': version_size,
-        })
+        }
+        if backup_info_callback:
+            backup_info_dict.update(backup_info_callback(backupID, item_info, item_info.name(), path_exist))
         versions.append(backup_info_dict)
     item_time = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(item_time)) if item_time else ''
     return item_size, item_time, versions
@@ -1515,7 +1478,7 @@ def ListAllBackupIDsFull(sorted=False, reverse=False, iterID=None, base_path_id=
     return lst
 
 
-def ListChildsByPath(path, recursive=False, iter=None, iterID=None):
+def ListChildsByPath(path, recursive=False, iter=None, iterID=None, backup_info_callback=None):
     """
     List all items at given ``path`` and return data as a list of dict objects.
     Return string with error message if operation failed.
@@ -1544,7 +1507,7 @@ def ListChildsByPath(path, recursive=False, iter=None, iterID=None):
 
     def visitor(item_type, item_name, item_path_id, item_info, num_childs):
         item_id = (pathID + '/' + item_path_id).strip('/')
-        item_size, item_time, versions = ExtractVersions(item_id, item_info, path_exist)
+        item_size, item_time, versions = ExtractVersions(item_id, item_info, path_exist, backup_info_callback=backup_info_callback)
         i = {
             'type': item_type,
             'name': item_info.name(),
@@ -1564,7 +1527,7 @@ def ListChildsByPath(path, recursive=False, iter=None, iterID=None):
 
     if recursive:
         for sub_dir in sub_dirs:
-            sub_lookup = ListChildsByPath(sub_dir['path'], recursive=False, iter=iter, iterID=iterID)
+            sub_lookup = ListChildsByPath(sub_dir['path'], recursive=False, iter=iter, iterID=iterID, backup_info_callback=backup_info_callback)
             if not isinstance(sub_lookup, list):
                 return sub_lookup
             result.extend(sub_lookup)

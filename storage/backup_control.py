@@ -72,11 +72,9 @@ from lib import misc
 from lib import packetid
 from lib import nameurl
 from lib import strng
-from lib import jsn
 
 from main import settings
 from main import events
-# from main import control
 
 from raid import eccmap
 
@@ -90,7 +88,6 @@ from userid import id_url
 from services import driver
 
 from contacts import contactsdb
-from contacts import identitycache
 
 from p2p import p2p_service
 

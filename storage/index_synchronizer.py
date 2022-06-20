@@ -344,6 +344,7 @@ class IndexSynchronizer(automat.Automat):
         Action method.
         """
         self.ping_required = False
+        data = bpio.ReadBinaryFile(settings.BackupIndexFilePath())
 
     def doSuppliersRequestIndexFile(self, *args, **kwargs):
         """

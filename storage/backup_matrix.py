@@ -628,6 +628,8 @@ def process_raw_list_files(supplier_num, list_files_text_body, customer_idurl=No
             continue
 
         if typ == 'D':
+            if current_key_alias == 'master' and not id_url.is_the_same(customer_idurl, my_id.getIDURL()):
+                continue
             modified, _paths2remove = process_line_dir(
                 line,
                 current_key_alias=current_key_alias,
@@ -642,6 +644,8 @@ def process_raw_list_files(supplier_num, list_files_text_body, customer_idurl=No
             continue
 
         if typ == 'F':
+            if current_key_alias == 'master' and not id_url.is_the_same(customer_idurl, my_id.getIDURL()):
+                continue
             modified, _paths2remove = process_line_file(
                 line,
                 current_key_alias=current_key_alias,
@@ -656,6 +660,8 @@ def process_raw_list_files(supplier_num, list_files_text_body, customer_idurl=No
             continue
 
         if typ == 'V':
+            if current_key_alias == 'master' and not id_url.is_the_same(customer_idurl, my_id.getIDURL()):
+                continue
             modified, _backups2remove, _paths2remove, found_backups, _newfiles = process_line_version(
                 line,
                 supplier_num=supplier_num,

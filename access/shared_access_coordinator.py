@@ -427,31 +427,15 @@ class SharedAccessCoordinator(automat.Automat):
         """
         Action method.
         """
-#         connected_count = 0
-#         for supplier_idurl in self.known_suppliers_list:
-#             if not id_url.is_cached(supplier_idurl):
-#                 continue
-#             sc = supplier_connector.by_idurl(supplier_idurl, customer_idurl=self.customer_idurl)
-#             if sc is None or sc.state != 'CONNECTED':
-#                 continue
-#             connected_count += 1
         critical_suppliers_number = 1
         if self.known_ecc_map:
             from raid import eccmap
             critical_suppliers_number = eccmap.GetCorrectableErrors(eccmap.GetEccMapSuppliersNumber(self.known_ecc_map))
-#         if _Debug:
-#             lg.args(_DebugLevel, connected_count=connected_count, critical_suppliers_number=critical_suppliers_number)
         if len(self.suppliers_in_progress) == 0:
             if len(self.suppliers_succeed) >= critical_suppliers_number:
                 self.automat('all-suppliers-connected')
             else:
                 self.automat('all-suppliers-disconnected')
-
-#     def doCheckReconnectSuppliers(self, *args, **kwargs):
-#         """
-#         Action method.
-#         """
-#         # TODO:
 
     def doReportConnected(self, *args, **kwargs):
         """
@@ -686,7 +670,7 @@ class SharedAccessCoordinator(automat.Automat):
             lg.args(_DebugLevel, newpacket=newpacket)
         supplier_idurl = newpacket.CreatorID
         if _Debug:
-            lg.out(_DebugLevel, 'index_synchronizer._on_supplier_retreive_index_file_fail %s from %r' % (newpacket, supplier_idurl, ))
+            lg.out(_DebugLevel, 'shared_access_coordinator._on_supplier_retreive_index_file_fail %s from %r' % (newpacket, supplier_idurl, ))
         self.automat('index-missing', supplier_idurl=supplier_idurl)
 
     def _on_supplier_send_index_file_ack(self, newpacket, info):
@@ -697,7 +681,7 @@ class SharedAccessCoordinator(automat.Automat):
         else:
             lg.warn('did not found supplier connector for %r' % supplier_idurl)
         if _Debug:
-            lg.out(_DebugLevel, 'index_synchronizer._on_supplier_send_index_file_ack %s from %r' % (
+            lg.out(_DebugLevel, 'shared_access_coordinator._on_supplier_send_index_file_ack %s from %r' % (
                 newpacket, supplier_idurl, ))
         if newpacket.Command == commands.Ack():
             self.automat('index-sent', supplier_idurl=supplier_idurl)
