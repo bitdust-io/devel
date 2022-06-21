@@ -323,11 +323,11 @@ def on_retrieve(newpacket):
         glob_path = global_id.ParseGlobalID(my_id.getGlobalID('master') + ':' + newpacket.PacketID)
     if not glob_path['path']:
         lg.err("got incorrect PacketID")
-        p2p_service.SendFail(newpacket, 'incorrect path')
+        p2p_service.SendFail(newpacket, 'incorrect path', remote_idurl=newpacket.CreatorID)
         return False
     if not glob_path['idurl']:
         lg.warn('no customer global id found in PacketID: %s' % newpacket.PacketID)
-        p2p_service.SendFail(newpacket, 'incorrect retrieve request')
+        p2p_service.SendFail(newpacket, 'incorrect retrieve request', remote_idurl=newpacket.CreatorID)
         return False
     key_id = glob_path['key_id']
     recipient_idurl = newpacket.OwnerID
@@ -336,7 +336,7 @@ def on_retrieve(newpacket):
         lg.warn('one of customers requesting a Data from another customer!')
         if not my_keys.is_key_registered(key_id):
             lg.warn('key %s is not registered' % key_id)
-            p2p_service.SendFail(newpacket, 'key is not registered')
+            p2p_service.SendFail(newpacket, 'key is not registered', remote_idurl=newpacket.CreatorID)
             return False
         verified = False
         if _Debug:
@@ -366,31 +366,31 @@ def on_retrieve(newpacket):
             # filename = make_valid_filename(glob_path['idurl'], glob_path)
     if not filename:
         lg.warn("had empty filename")
-        p2p_service.SendFail(newpacket, 'empty filename')
+        p2p_service.SendFail(newpacket, 'empty filename', remote_idurl=recipient_idurl)
         return False
     if not os.path.exists(filename):
         lg.warn("did not found requested file locally : %s" % filename)
-        p2p_service.SendFail(newpacket, 'did not found requested file locally')
+        p2p_service.SendFail(newpacket, 'did not found requested file locally', remote_idurl=recipient_idurl)
         return False
     if not os.access(filename, os.R_OK):
         lg.warn("no read access to requested packet %s" % filename)
-        p2p_service.SendFail(newpacket, 'no read access to requested packet')
+        p2p_service.SendFail(newpacket, 'failed reading requested file', remote_idurl=recipient_idurl)
         return False
     data = bpio.ReadBinaryFile(filename)
     if not data:
         lg.warn("empty data on disk %s" % filename)
-        p2p_service.SendFail(newpacket, 'empty data on disk')
+        p2p_service.SendFail(newpacket, 'empty data on disk', remote_idurl=recipient_idurl)
         return False
     stored_packet = signed.Unserialize(data)
     sz = len(data)
     del data
     if stored_packet is None:
         lg.warn("Unserialize failed, not Valid packet %s" % filename)
-        p2p_service.SendFail(newpacket, 'unserialize failed')
+        p2p_service.SendFail(newpacket, 'unserialize failed', remote_idurl=recipient_idurl)
         return False
     if not stored_packet.Valid():
         lg.warn("Stored packet is not Valid %s" % filename)
-        p2p_service.SendFail(newpacket, 'stored packet is not valid')
+        p2p_service.SendFail(newpacket, 'stored packet is not valid', remote_idurl=recipient_idurl)
         return False
     if stored_packet.Command != commands.Data():
         lg.warn('sending back packet which is not a Data')

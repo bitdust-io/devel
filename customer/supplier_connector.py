@@ -192,8 +192,9 @@ class SupplierConnector(automat.Automat):
         self.key_id = key_id
         self.queue_subscribe = queue_subscribe
         self.do_calculate_needed_bytes()
-        name = 'supplier_%s_%s' % (
+        name = 'supplier_%s_%s_%s' % (
             nameurl.GetName(self.supplier_idurl),
+            nameurl.GetName(self.customer_idurl),
             diskspace.MakeStringFromBytes(self.needed_bytes).replace(' ', ''),
         )
         self.request_packet_id = None

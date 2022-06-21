@@ -576,7 +576,7 @@ class SharedAccessCoordinator(automat.Automat):
             EncryptKey=self.key_id,
         )
         Payload = b.Serialize()
-        sc = supplier_connector.by_idurl(supplier_idurl)
+        sc = supplier_connector.by_idurl(supplier_idurl, customer_idurl=self.customer_idurl)
         if sc is None or sc.state != 'CONNECTED':
             lg.warn('supplier connector for %r is not found or offline' % supplier_idurl)
             self.automat('supplier-failed', supplier_idurl=supplier_idurl)
@@ -618,7 +618,7 @@ class SharedAccessCoordinator(automat.Automat):
         if _Debug:
             lg.out(_DebugLevel, 'shared_access_coordinator._supplier_connector_state_changed %s to %s, own state is %s' % (
                 idurl, newstate, self.state))
-        sc = supplier_connector.by_idurl(idurl)
+        sc = supplier_connector.by_idurl(idurl, customer_idurl=self.customer_idurl)
         if sc:
             sc.remove_callback('shared_access_coordinator', self._on_supplier_connector_state_changed)
         if newstate == 'CONNECTED':
@@ -675,7 +675,7 @@ class SharedAccessCoordinator(automat.Automat):
 
     def _on_supplier_send_index_file_ack(self, newpacket, info):
         supplier_idurl = newpacket.CreatorID
-        sc = supplier_connector.by_idurl(supplier_idurl)
+        sc = supplier_connector.by_idurl(supplier_idurl, customer_idurl=self.customer_idurl)
         if sc:
             sc.automat(newpacket.Command.lower(), newpacket)
         else:

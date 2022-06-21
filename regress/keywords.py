@@ -337,7 +337,7 @@ def file_list_all_v1(node, expected_reliable=100, reliable_shares=True, attempts
             break
         count += 1
         if count >= attempts:
-            warn(f'    latest reliable item info: {latest_reliable_fileinfo}')
+            warn(f'    latest reliable item info: {pprint.pformat(latest_reliable_fileinfo)}')
             assert False, f"file {lowest_file} is not {expected_reliable} % reliable after {attempts} attempts"
             return
         time.sleep(delay)

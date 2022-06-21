@@ -170,6 +170,10 @@ def inbox(newpacket, info, status, error_message):
         # handled by service_keys_registry()
         Key(newpacket, info)
 
+    elif newpacket.Command == commands.AuditKey():
+        # handled by service_keys_registry()
+        AuditKey(newpacket, info)
+
     elif newpacket.Command == commands.Event():
         # handled by service_p2p_hookups()
         Event(newpacket, info)
