@@ -318,7 +318,7 @@ class DefaultsConfig(BaseConfig):
     _default = {}
 
     def setDefaultValue(self, entryPath, value):
-        self._default[entryPath] = str(value)
+        self._default[entryPath] = value
 
     def getDefaultValue(self, entryPath):
         return self._default.get(entryPath, None)
@@ -429,7 +429,8 @@ class FixedTypesConfig(NotifiableConfig):
             return {}
         elif typ == config_types.TYPE_COMBO_BOX:
             if entryPath == 'services/customer/suppliers-number':
-                return {'possible_values': ['2', '4', '7', '13', '18', '26', '64', ], }
+                from raid import eccmap
+                return {'possible_values': eccmap.SuppliersNumbers(), }
             else:
                 raise TypeError('unexpected option type for %r' % entryPath)
         return {}
@@ -451,7 +452,6 @@ class FixedTypesConfig(NotifiableConfig):
             value = self.getInt(entryPath)
         elif typ in [config_types.TYPE_FOLDER_PATH,
                      config_types.TYPE_FILE_PATH,
-                     config_types.TYPE_COMBO_BOX,
                      config_types.TYPE_PASSWORD, ]:
             value = self.getString(entryPath) or ''
             if typ in [config_types.TYPE_FOLDER_PATH, ]:
@@ -462,6 +462,11 @@ class FixedTypesConfig(NotifiableConfig):
                             value = value + u'\\'
                     elif not value.endswith(u'/'):
                         value = value + u'/'
+        elif typ == config_types.TYPE_COMBO_BOX:
+            if entryPath == 'services/customer/suppliers-number':
+                value = self.getInt(entryPath)
+            else:
+                raise TypeError('unexpected option type for %r' % entryPath)
         else:
             value = self.getData(entryPath)
         return value
@@ -486,9 +491,13 @@ class FixedTypesConfig(NotifiableConfig):
             self.setInt(entryPath, int(value))
         elif typ in [config_types.TYPE_FOLDER_PATH,
                      config_types.TYPE_FILE_PATH,
-                     config_types.TYPE_COMBO_BOX,
                      config_types.TYPE_PASSWORD, ]:
             self.setString(entryPath, value)
+        elif typ == config_types.TYPE_COMBO_BOX:
+            if entryPath == 'services/customer/suppliers-number':
+                value = self.setInt(entryPath, int(value))
+            else:
+                raise TypeError('unexpected option type for %r' % entryPath)
         else:
             self.setData(entryPath, strng.text_type(value))
         return True
