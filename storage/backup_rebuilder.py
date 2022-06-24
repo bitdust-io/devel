@@ -512,11 +512,12 @@ class BackupRebuilder(automat.Automat):
                                 )
                                 if not os.path.exists(filename):
                                     if io_throttle.QueueRequestFile(
-                                            self._file_received,
-                                            my_id.getIDURL(),
-                                            PacketID,
-                                            my_id.getIDURL(),
-                                            supplierID):
+                                        self._file_received,
+                                        my_id.getIDURL(),
+                                        PacketID,
+                                        my_id.getIDURL(),
+                                        supplierID,
+                                    ):
                                         requests_count += 1
                     else:
                         # count this packet as missing
@@ -571,7 +572,7 @@ class BackupRebuilder(automat.Automat):
                 self.automat('no-requests')
 
     def _file_received(self, newpacket, state):
-        if state in ['in queue', 'shutdown', 'exist', 'failed']:
+        if state in ['in queue', 'shutdown', 'exist', 'failed', 'cancelled', ]:
             return
         if state != 'received':
             lg.warn("incorrect state [%s] for packet %s" % (str(state), str(newpacket)))

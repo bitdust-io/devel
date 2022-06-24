@@ -245,6 +245,7 @@ def scenario4():
     run_ssh_command_and_wait('customer-2', f'mkdir /customer_2/cat_shared/', verbose=ssh_cmd_verbose)
 
     # make sure private key for shared location was delivered from customer-1 to customer-2
+    kw.service_info_v1('customer-2', 'service_keys_storage', 'ON')
     customer_2_keys = [k['key_id'] for k in kw.key_list_v1('customer-2')['result']]
     assert customer_1_share_id_cat in customer_2_keys
 
@@ -652,6 +653,8 @@ def scenario9(target_nodes):
     set_active_scenario('SCENARIO 9')
     msg('\n\n============\n[SCENARIO 9] ID server id-dead is dead and few nodes has rotated identities')
 
+    kw.wait_packets_finished(target_nodes)
+
     # remember old IDURL of the rotated nodes
     if 'proxy-rotated' in target_nodes:
         r = kw.identity_get_v1('proxy-rotated')
@@ -676,6 +679,8 @@ def scenario9(target_nodes):
 
     if 'customer-rotated' in target_nodes:
         # remember list of existing keys on customer-rotated
+        kw.service_info_v1('customer-rotated', 'service_customer', 'ON')
+        kw.service_info_v1('customer-rotated', 'service_keys_storage', 'ON')
         old_customer_keys = [k['key_id'] for k in kw.key_list_v1('customer-rotated')['result']]
         assert f'master${old_customer_global_id}' in old_customer_keys
         assert f'customer${old_customer_global_id}' in old_customer_keys
@@ -920,6 +925,7 @@ def scenario10_end(old_customer_rotated_info, old_customer_rotated_file_info, ol
     second_supplier = customer_rotated_suppliers[1].replace('http://id-a:8084/', '').replace('http://id-b:8084/', '').replace('.xml', '')
 
     # make sure keys are renamed on customer-rotated
+    kw.service_info_v1('customer-rotated', 'service_keys_storage', 'ON')
     new_customer_keys = [k['key_id'] for k in kw.key_list_v1('customer-rotated')['result']]
     # assert len(old_customer_rotated_keys) == len(new_customer_keys)
     assert f'master${new_customer_global_id}' in new_customer_keys

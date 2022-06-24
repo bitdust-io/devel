@@ -56,7 +56,7 @@ from __future__ import absolute_import
 #------------------------------------------------------------------------------
 
 _Debug = False
-_DebugLevel = 14
+_DebugLevel = 12
 
 #------------------------------------------------------------------------------
 
@@ -382,8 +382,9 @@ class LocalService(automat.Automat):
             if self.service_name in svc.dependent_on():
                 if _Debug:
                     lg.out(_DebugLevel, '%r sends "stop" to %r' % (self, svc))
-                svc.automat('stop')
-                count += 1
+                if svc.installed():
+                    svc.automat('stop')
+                    count += 1
         if count == 0:
             self.automat('depend-service-stopped')
 

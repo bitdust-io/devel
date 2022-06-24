@@ -50,6 +50,10 @@ class PersonalMessagesService(LocalService):
             'service_private_groups',
         ]
 
+    def installed(self):
+        # TODO: needs more work, service_private_groups() must be reliable first
+        return False
+
     def start(self):
         from twisted.internet import reactor  # @UnresolvedImport
         from twisted.internet.defer import Deferred
@@ -88,7 +92,7 @@ class PersonalMessagesService(LocalService):
 
     def stop(self):
         from interface import api
-        api.group_leave(self.personal_group_key_id, erase_key=False)
+        # api.group_leave(self.personal_group_key_id, erase_key=False)
         return True
 
     def _do_join_my_personal_group(self):

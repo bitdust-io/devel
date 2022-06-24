@@ -264,7 +264,7 @@ class BackupMonitor(automat.Automat):
         """
         Action method.
         """
-        lg.warn('about to erase all backups')
+        lg.warn('about to erase all my backups')
         # cancel all tasks and jobs
         backup_control.DeleteAllTasks()
         backup_control.AbortAllRunningBackups()

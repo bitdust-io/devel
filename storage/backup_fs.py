@@ -149,6 +149,7 @@ def shutdown():
     """
     if _Debug:
         lg.out(_DebugLevel, 'backup_fs.shutdown')
+    ClearAllIndexes()
 
 #------------------------------------------------------------------------------
 
@@ -218,7 +219,7 @@ def commit(new_revision_number=None, customer_idurl=None, key_alias='master'):
     """
     Need to be called after any changes in the index database.
 
-    This increase revision number by 1 or set ``new_revision_number``.
+    This increase revision number by 1 or set revision to ``new_revision_number`` if not None.
     """
     global _RevisionNumber
     if customer_idurl is None:
@@ -241,6 +242,29 @@ def commit(new_revision_number=None, customer_idurl=None, key_alias='master'):
     if _Debug:
         lg.args(_DebugLevel, old=old_v, new=new_v, c=customer_idurl, k=key_alias)
     return old_v, new_v
+
+
+def forget(customer_idurl=None, key_alias=None):
+    """
+    Release currently known revision number for the corresponding index.
+    """
+    global _RevisionNumber
+    if _Debug:
+        lg.args(_DebugLevel, c=customer_idurl, k=key_alias)
+    if customer_idurl is None:
+        _RevisionNumber.clear()
+        return
+    customer_idurl = id_url.field(customer_idurl)
+    if customer_idurl not in _RevisionNumber:
+        lg.warn('customer %r was not registered' % customer_idurl)
+        return
+    if key_alias is None:
+        _RevisionNumber[customer_idurl].clear()
+        return
+    if key_alias not in _RevisionNumber[customer_idurl]:
+        lg.warn('key alias %r was not registered for customer %r' % (key_alias, customer_idurl, ))
+        return
+    _RevisionNumber[customer_idurl].pop(key_alias)
 
 #------------------------------------------------------------------------------
 
@@ -1738,12 +1762,22 @@ def Calculate(iterID=None):
 
 #------------------------------------------------------------------------------
 
-def Clear(customer_idurl=None, key_alias=None):
+def Clear(customer_idurl, key_alias=None):
     """
-    Erase all items in the index.
+    Erase all items in the index for given customer and key alias and also forget the latest revision.
     """
-    fs(customer_idurl=customer_idurl, key_alias=key_alias).clear()
-    fsID(customer_idurl=customer_idurl, key_alias=key_alias).clear()
+    fs(customer_idurl, key_alias).clear()
+    fsID(customer_idurl, key_alias).clear()
+    # forget(customer_idurl, key_alias)
+
+
+def ClearAllIndexes():
+    global _FileSystemIndexByID
+    global _FileSystemIndexByName
+    global _RevisionNumber
+    _FileSystemIndexByID.clear()
+    _FileSystemIndexByName.clear()
+    _RevisionNumber.clear()
 
 #------------------------------------------------------------------------------
 
@@ -1793,9 +1827,9 @@ def Unserialize(json_data, customer_idurl=None, new_revision=None, decoding='utf
     for key_alias in json_data.keys():
         if new_revision is not None:
             cur_revision = revision(customer_idurl, key_alias)
-            if cur_revision >= new_revision:
+            if cur_revision > new_revision:
                 if _Debug:
-                    lg.dbg(_DebugLevel, 'ignore items for %r with alias %r because current revision is up to date: %d>=%d' % (
+                    lg.dbg(_DebugLevel, 'ignore items for %r with alias %r because current revision is up to date: %d>%d' % (
                         customer_idurl, key_alias, cur_revision, new_revision, ))
                 continue
         Clear(customer_idurl, key_alias)
