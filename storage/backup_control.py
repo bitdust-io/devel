@@ -178,6 +178,11 @@ def on_files_received(newpacket, info):
     if not list_files_global_id['idurl']:
         lg.warn('invalid PacketID: %s' % newpacket.PacketID)
         return False
+    if list_files_global_id['key_alias'] != 'master':
+        # ignore Files() if this is a shared data
+        if _Debug:
+            lg.dbg(_DebugLevel, 'ignore incoming %r, this is not a private data' % newpacket)
+        return False
     if not id_url.is_the_same(list_files_global_id['idurl'], my_id.getIDURL()):
         # ignore Files() if this is another customer
         if _Debug:

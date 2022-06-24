@@ -336,7 +336,7 @@ def on_retrieve(newpacket):
         lg.warn('one of customers requesting a Data from another customer!')
         if not my_keys.is_key_registered(key_id):
             lg.warn('key %s is not registered' % key_id)
-            p2p_service.SendFail(newpacket, 'key is not registered', remote_idurl=newpacket.CreatorID)
+            p2p_service.SendFail(newpacket, 'key not registered', remote_idurl=newpacket.CreatorID)
             return False
         verified = False
         if _Debug:

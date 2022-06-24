@@ -35,7 +35,7 @@ from __future__ import absolute_import
 #------------------------------------------------------------------------------
 
 _Debug = True
-_DebugLevel = 4
+_DebugLevel = 8
 
 #------------------------------------------------------------------------------
 
@@ -737,13 +737,14 @@ def on_files_received(newpacket, info):
         return False
     trusted_customer_idurl = list_files_global_id['idurl']
     incoming_key_id = list_files_global_id['key_id']
-    if trusted_customer_idurl == my_id.getIDURL():
+    if not my_keys.is_valid_key_id(incoming_key_id):
+        lg.warn('ignore, invalid key id in packet %s' % newpacket)
+        return False
+    # if trusted_customer_idurl == my_id.getIDURL():
+    if list_files_global_id['key_alias'] == 'master':
         if _Debug:
             lg.dbg(_DebugLevel, 'ignore %s packet which seems to came from my own supplier' % newpacket)
         # only process list Files() from other customers who granted me access to their files
-        return False
-    if not my_keys.is_valid_key_id(incoming_key_id):
-        lg.warn('ignore, invalid key id in packet %s' % newpacket)
         return False
     if not my_keys.is_key_private(incoming_key_id):
         lg.warn('private key is not registered : %s' % incoming_key_id)
@@ -765,9 +766,9 @@ def on_files_received(newpacket, info):
     except:
         lg.exc()
         return False
-    if block.CreatorID == trusted_customer_idurl:
-        # this is a trusted guy sending some shared files to me
-        return False
+#     if block.CreatorID == trusted_customer_idurl:
+#         # this is a trusted guy sending some shared files to me
+#         return False
 #         try:
 #             json_data = serialization.BytesToDict(raw_files, keys_to_text=True, encoding='utf-8')
 #         except:
@@ -803,13 +804,17 @@ def on_files_received(newpacket, info):
     # and place that supplier on the correct position in contactsdb
     supplier_pos = backup_matrix.DetectSupplierPosition(supplier_raw_list_files)
     known_supplier_pos = contactsdb.supplier_position(external_supplier_idurl, trusted_customer_idurl)
+    if known_supplier_pos < 0:
+        lg.warn('received %r from an unknown node %r which is not a supplier of %r' % (newpacket, external_supplier_idurl, trusted_customer_idurl, ))
+        return False
     if _Debug:
         lg.args(_DebugLevel, supplier_pos=supplier_pos, known_supplier_pos=known_supplier_pos, external_supplier=external_supplier_idurl,
                 trusted_customer=trusted_customer_idurl, key_id=incoming_key_id)
     if supplier_pos >= 0:
-        if known_supplier_pos >= 0 and known_supplier_pos != supplier_pos:
-            lg.err('known external supplier %r position %d is not matching to received list files position %d for customer %s' % (
+        if known_supplier_pos != supplier_pos:
+            lg.err('known external supplier %r position %d is not matching with received list files position %d for customer %s' % (
                 external_supplier_idurl, known_supplier_pos,  supplier_pos, trusted_customer_idurl))
+            return False
     else:
         lg.warn('not possible to detect external supplier position for customer %s from received list files, known position is %s' % (
             trusted_customer_idurl, known_supplier_pos))
