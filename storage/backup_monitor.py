@@ -176,8 +176,13 @@ class BackupMonitor(automat.Automat):
         from storage import backup_rebuilder
         from storage import index_synchronizer
         from stream import data_sender
+        #---AT_STARTUP---
+        if self.state == 'AT_STARTUP':
+            if event == 'init':
+                self.state = 'READY'
+                self.RestartAgain = False
         #---READY---
-        if self.state == 'READY':
+        elif self.state == 'READY':
             if event == 'timer-5sec':
                 self.doOverallCheckUp(*args, **kwargs)
             elif event == 'restart' or event == 'suppliers-changed' or (event == 'instant' and self.RestartAgain):
@@ -239,11 +244,6 @@ class BackupMonitor(automat.Automat):
                 list_files_orator.A('need-files')
             elif event == 'restart':
                 self.RestartAgain = True
-        #---AT_STARTUP---
-        elif self.state == 'AT_STARTUP':
-            if event == 'init':
-                self.state = 'READY'
-                self.RestartAgain = False
         return None
 
     def isSuppliersNumberChanged(self, *args, **kwargs):
@@ -275,7 +275,6 @@ class BackupMonitor(automat.Automat):
         # also erase local info
         backup_matrix.ClearLocalInfo()
         # finally save the list of current suppliers and clear all stats
-        # backup_matrix.suppliers_set().UpdateSuppliers(contactsdb.suppliers())
         from stream import io_throttle
         io_throttle.DeleteAllSuppliers()
 
@@ -289,17 +288,11 @@ class BackupMonitor(automat.Automat):
         changedSupplierNums = backup_matrix.SuppliersChangedNumbers(self.current_suppliers)
         # notify io_throttle that we do not neeed already this suppliers
         for supplierNum in changedSupplierNums:
-            if _Debug:
-                lg.out(_DebugLevel, "backup_monitor.doUpdateSuppliers supplier %d changed: [%s]->[%s]" % (
-                    supplierNum,
-                    nameurl.GetName(self.current_suppliers[supplierNum]),
-                    nameurl.GetName(contactsdb.suppliers()[supplierNum]),))
             suplier_idurl = self.current_suppliers[supplierNum]
-            io_throttle.DeleteSuppliers([suplier_idurl, ])
+            if suplier_idurl:
+                io_throttle.DeleteSuppliers([suplier_idurl, ])
             # erase (set to 0) remote info for this guys
             backup_matrix.ClearSupplierRemoteInfo(supplierNum)
-        # finally save the list of current suppliers and clear all stats
-        # backup_matrix.suppliers_set().UpdateSuppliers(supplierList)
 
     def doPrepareListBackups(self, *args, **kwargs):
         from storage import backup_rebuilder

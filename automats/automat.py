@@ -390,7 +390,12 @@ class Automat(object):
         self._timers = {}
         self._state_callbacks = {}
         self._callbacks_before_die = {}
-        self.init(**kwargs)
+        try:
+            self.init(**kwargs)
+        except Exception as exc:
+            self.exc(msg='Exception in {}:{} automat init(), state is {}: {}'.format(
+                self.id, self.name, self.state, exc))
+            raise exc
         self.startTimers()
         self.register()
         self.publish_events = publish_events

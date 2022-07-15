@@ -209,7 +209,7 @@ def revision(customer_idurl=None, key_alias='master'):
         if _Debug:
             lg.dbg(_DebugLevel, 'new customer registered : %r' % customer_idurl)
     if key_alias not in _RevisionNumber[customer_idurl]:
-        _RevisionNumber[customer_idurl][key_alias] = 0
+        _RevisionNumber[customer_idurl][key_alias] = -1
         if _Debug:
             lg.dbg(_DebugLevel, 'new key alias registered for customer %r : %r' % (customer_idurl, key_alias, ))
     return _RevisionNumber[customer_idurl][key_alias]

@@ -235,11 +235,20 @@ def SuppliersChangedNumbers(oldSupplierList, customer_idurl=None):
     """
     changedList = []
     for i in range(len(oldSupplierList)):
-        suplier_idurl = oldSupplierList[i]
-        if not suplier_idurl:
+        old_supplier_idurl = oldSupplierList[i]
+        new_supplier_idurl = contactsdb.supplier(i, customer_idurl=customer_idurl)
+        if not old_supplier_idurl:
+            if new_supplier_idurl:
+                changedList.append(i)
+                lg.info('found empty supplier on position %d replaced with new supplier %r' % (i, new_supplier_idurl, ))
+            else:
+                lg.warn('found empty supplier on position %d which was not replaced yet' % i)
             continue
-        if contactsdb.supplier(i, customer_idurl=customer_idurl) != suplier_idurl:
+        if not id_url.is_the_same(new_supplier_idurl, old_supplier_idurl):
             changedList.append(i)
+            lg.info('found supplier change on position %d: %r -> %r' % (i, old_supplier_idurl, new_supplier_idurl, ))
+    if _Debug:
+        lg.args(_DebugLevel, changed=changedList, old_suppliers=oldSupplierList)
     return changedList
 
 #------------------------------------------------------------------------------
@@ -684,8 +693,9 @@ def process_raw_list_files(supplier_num, list_files_text_body, customer_idurl=No
         raise Exception('unexpected line received: %r' % line)
 
     inpt.close()
+    remote_files_changed = remote_files_changed or (oldfiles != newfiles)
     if _Debug:
-        lg.out(_DebugLevel, 'backup_matrix.process_raw_list_files remote_files_changed:%s old:%d new:%d backups2remove:%d paths2remove:%d missed_backups:%d remote_files:%d query_results:%d' % (
+        lg.out(_DebugLevel, 'backup_matrix.process_raw_list_files   remote_files_changed:%s old:%d new:%d backups2remove:%d paths2remove:%d missed_backups:%d remote_files:%d query_results:%d' % (
             remote_files_changed, oldfiles, newfiles, len(backups2remove), len(paths2remove), len(missed_backups), len(remote_files()), len(query_results), ))
     if remote_files_changed and is_in_sync:
         for key_alias in updated_keys:
@@ -1272,6 +1282,8 @@ def ClearSupplierRemoteInfo(supplierNum, customer_idurl=None):
                         remote_files()[backupID][blockNum]['P'][supplierNum] = 0
                 except:
                     pass
+    if _Debug:
+        lg.args(_DebugLevel, files_cleaned=files, supplier_pos=supplierNum, customer=customer_idurl)
     return files
 
 #------------------------------------------------------------------------------

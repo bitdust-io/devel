@@ -1789,6 +1789,12 @@ def scenario17(old_customer_1_info, old_customer_2_info):
         expected_suppliers_number=2,
     )
 
+    # make sure both shared locations are activated
+    kw.share_open_v1('customer-restore', old_customer_1_info['share_id'])
+    kw.share_open_v1('customer-restore', old_customer_2_info['share_id'])
+
+    kw.file_sync_v1('customer-restore')
+
     # TODO:
     # test my keys are also recovered
     # test my message history also recovered
