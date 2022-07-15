@@ -31,14 +31,14 @@ module:: service_my_data
 """
 
 from __future__ import absolute_import
-from services.local_service import LocalService
+from services.local_service import SlowStartingLocalService
 
 
 def create_service():
     return MyDataService()
 
 
-class MyDataService(LocalService):
+class MyDataService(SlowStartingLocalService):
 
     service_name = 'service_my_data'
     config_path = 'services/my-data/enabled'
@@ -51,6 +51,7 @@ class MyDataService(LocalService):
         ]
 
     def init(self, **kwargs):
+        SlowStartingLocalService.init(self, **kwargs)
         from main import events
         events.add_subscriber(self._on_my_storage_ready, 'my-storage-ready')
         events.add_subscriber(self._on_my_storage_not_ready_yet, 'my-storage-not-ready-yet')
@@ -59,20 +60,16 @@ class MyDataService(LocalService):
         from main import events
         events.remove_subscriber(self._on_my_storage_not_ready_yet, 'my-storage-not-ready-yet')
         events.remove_subscriber(self._on_my_storage_ready, 'my-storage-ready')
+        SlowStartingLocalService.shutdown(self)
 
     def start(self):
-        from twisted.internet.defer import Deferred
         from logs import lg
         from main import listeners
         from storage import keys_synchronizer
         from storage import index_synchronizer
         from storage import backup_fs
-        self.starting_deferred = Deferred()
-        self.starting_deferred.addErrback(lambda err: lg.warn('service %r was not started: %r' % (
-            self.service_name, err.getErrorMessage() if err else 'unknown reason')))
         if keys_synchronizer.is_synchronized() and index_synchronizer.is_synchronized():
-            if not self.starting_deferred.called:
-                self.starting_deferred.callback(True)
+            self.confirm_service_started(result=True)
             if listeners.is_populate_requered('private_file'):
                 listeners.populate_later().remove('private_file')
                 backup_fs.populate_private_files()
@@ -93,9 +90,7 @@ class MyDataService(LocalService):
         from services import driver
         from storage import backup_fs
         if self.starting_deferred:
-            if not self.starting_deferred.called:
-                self.starting_deferred.callback(True)
-            self.starting_deferred = None
+            self.confirm_service_started(result=True)
             if listeners.is_populate_requered('private_file'):
                 listeners.populate_later().remove('private_file')
                 backup_fs.populate_private_files()
@@ -108,9 +103,7 @@ class MyDataService(LocalService):
         from logs import lg
         from services import driver
         if self.starting_deferred:
-            if not self.starting_deferred.called:
-                self.starting_deferred.errback(Exception('my storage is not ready yet'))
-            self.starting_deferred = None
+            self.confirm_service_started(result=Exception('my storage is not ready yet'))
         if driver.is_enabled('service_my_data'):
             if not driver.is_started('service_my_data'):
                 lg.info('my storage is not ready yet, stopping service_my_data()')

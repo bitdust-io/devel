@@ -71,7 +71,8 @@ class KeysStorageService(LocalService):
         if index_synchronizer.A():
             index_synchronizer.A().addStateChangedCallback(self._on_index_synchronizer_state_changed)
         if index_synchronizer.A() and index_synchronizer.A().state == 'NO_INFO':
-            # it seems I am offline...  must start here, but expect to be online soon and sync keys later 
+            # it seems I am offline...
+            #   must start here, but expect to be online soon and sync keys later
             return True
         if index_synchronizer.A() and index_synchronizer.A().state == 'IN_SYNC!':
             # if I am already online and backup index in sync - refresh keys ASAP
@@ -108,10 +109,9 @@ class KeysStorageService(LocalService):
         When key was renamed (after identity rotate) make sure to store the latest copy and remove older one. 
         """
         from logs import lg
-        from storage import backup_fs
         from storage import index_synchronizer
         from twisted.internet.defer import Deferred
-        is_in_sync = index_synchronizer.is_synchronized() and backup_fs.revision() > 0
+        is_in_sync = index_synchronizer.is_synchronized()
         if is_in_sync:
             result = Deferred()
             result.addCallback(self._on_keys_synchronized)
