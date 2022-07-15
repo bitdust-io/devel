@@ -423,7 +423,7 @@ class SharedAccessCoordinator(automat.Automat):
             lg.err('supplier %r was not in progress' % supplier_idurl)
         else:
             self.suppliers_in_progress.remove(supplier_idurl)
-        if event in ['index-sent', ]:
+        if event in ['index-sent', 'index-up-to-date', ]:
             self.suppliers_succeed.append(supplier_idurl)
         if _Debug:
             lg.args(_DebugLevel, e=event, s=supplier_idurl, progress=len(self.suppliers_in_progress), succeed=len(self.suppliers_succeed))
