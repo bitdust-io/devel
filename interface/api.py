@@ -1185,25 +1185,27 @@ def files_list(remote_path=None, key_id=None, recursive=True, all_customers=Fals
     if all_customers:
         lookup = []
         for customer_idurl in backup_fs.known_customers():
-            look = backup_fs.ListChildsByPath(
+            if key_alias in backup_fs.known_keys_aliases(customer_idurl):
+                look = backup_fs.ListChildsByPath(
+                    path=remotePath,
+                    recursive=recursive,
+                    iter=backup_fs.fs(customer_idurl, key_alias),
+                    iterID=backup_fs.fsID(customer_idurl, key_alias),
+                    backup_info_callback=backup_info_callback,
+                )
+                if isinstance(look, list):
+                    lookup.extend(look)
+                else:
+                    lg.warn(look)
+    else:
+        if key_alias in backup_fs.known_keys_aliases(customer_idurl):
+            lookup = backup_fs.ListChildsByPath(
                 path=remotePath,
                 recursive=recursive,
                 iter=backup_fs.fs(customer_idurl, key_alias),
                 iterID=backup_fs.fsID(customer_idurl, key_alias),
                 backup_info_callback=backup_info_callback,
             )
-            if isinstance(look, list):
-                lookup.extend(look)
-            else:
-                lg.warn(look)
-    else:
-        lookup = backup_fs.ListChildsByPath(
-            path=remotePath,
-            recursive=recursive,
-            iter=backup_fs.fs(customer_idurl, key_alias),
-            iterID=backup_fs.fsID(customer_idurl, key_alias),
-            backup_info_callback=backup_info_callback,
-        )
     if not isinstance(lookup, list):
         return ERROR(lookup)
     if _Debug:
@@ -2438,33 +2440,42 @@ def share_open(key_id, publish_events=False):
     if not key_id.startswith('share_'):
         return ERROR('invalid share id')
     from access import shared_access_coordinator
-    active_share = shared_access_coordinator.get_active_share(key_id)
-    new_share = False
-    if not active_share:
-        new_share = True
-        active_share = shared_access_coordinator.SharedAccessCoordinator(
-            key_id=key_id,
-            log_events=True,
-            publish_events=publish_events,
-        )
+    from contacts import identitycache
+    from userid import global_id
+    idurl = global_id.glob2idurl(key_id)
     ret = Deferred()
 
-    def _on_shared_access_coordinator_state_changed(oldstate, newstate, event_string, *args, **kwargs):
-        if _Debug:
-            lg.args(_DebugLevel, oldstate=oldstate, newstate=newstate, event_string=event_string)
-        if newstate == 'CONNECTED' and oldstate != newstate:
-            active_share.removeStateChangedCallback(_on_shared_access_coordinator_state_changed)
-            if new_share:
-                ret.callback(OK(active_share.to_json(), message='share %r opened' % key_id, api_method='share_open'))
-            else:
-                ret.callback(OK(active_share.to_json(), message='share %r refreshed' % key_id, api_method='share_open'))
-        if newstate == 'DISCONNECTED' and oldstate != newstate:
-            active_share.removeStateChangedCallback(_on_shared_access_coordinator_state_changed)
-            ret.callback(ERROR('share %r disconnected' % key_id, details=active_share.to_json(), api_method='share_open'))
-        return None
+    def _get_active_share(x):
+        new_share = False
+        active_share = shared_access_coordinator.get_active_share(key_id)
+        if not active_share:
+            new_share = True
+            active_share = shared_access_coordinator.SharedAccessCoordinator(
+                key_id=key_id,
+                log_events=True,
+                publish_events=publish_events,
+            )
 
-    active_share.addStateChangedCallback(_on_shared_access_coordinator_state_changed)
-    active_share.automat('restart')
+        def _on_shared_access_coordinator_state_changed(oldstate, newstate, event_string, *args, **kwargs):
+            if _Debug:
+                lg.args(_DebugLevel, oldstate=oldstate, newstate=newstate, event_string=event_string, active_share=active_share)
+            if newstate == 'CONNECTED' and oldstate != newstate:
+                active_share.removeStateChangedCallback(_on_shared_access_coordinator_state_changed)
+                if new_share:
+                    ret.callback(OK(active_share.to_json(), message='share %r opened' % key_id, api_method='share_open'))
+                else:
+                    ret.callback(OK(active_share.to_json(), message='share %r refreshed' % key_id, api_method='share_open'))
+            if newstate == 'DISCONNECTED' and oldstate != newstate:
+                active_share.removeStateChangedCallback(_on_shared_access_coordinator_state_changed)
+                ret.callback(ERROR('share %r disconnected' % key_id, details=active_share.to_json(), api_method='share_open'))
+            return None
+
+        active_share.addStateChangedCallback(_on_shared_access_coordinator_state_changed)
+        active_share.automat('restart')
+
+    d = identitycache.GetLatest(idurl)
+    d.addErrback(lambda *args: ret.callback(ERROR('failed caching identity of the share creator')) and None)
+    d.addCallback(_get_active_share)
     return ret
 
 
@@ -3066,7 +3077,7 @@ def friend_remove(user_id):
         return _remove()
 
     ret = Deferred()
-    d = identitycache.immediatelyCaching(idurl)
+    d = identitycache.GetLatest(idurl)
     d.addErrback(lambda *args: ret.callback(ERROR('failed caching user identity', api_method='friend_remove')) and None)
     d.addCallback(lambda *args: ret.callback(_remove()))
     return ret
