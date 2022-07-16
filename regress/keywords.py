@@ -177,6 +177,8 @@ def share_create_v1(customer: str, key_size=1024):
     assert response.status_code == 200
     dbg('share/create/v1 [%s] : %s\n' % (customer, pprint.pformat(response.json())))
     assert response.json()['status'] == 'OK', response.json()
+    packet_list_v1(customer, wait_all_finish=True)
+    transfer_list_v1(customer, wait_all_finish=True)
     return response.json()['result']['key_id']
 
 
@@ -185,6 +187,8 @@ def share_open_v1(customer: str, key_id):
     assert response.status_code == 200
     dbg('share/open/v1 [%s] key_id=%r : %s\n' % (customer, key_id, pprint.pformat(response.json())))
     assert response.json()['status'] == 'OK', response.json()
+    packet_list_v1(customer, wait_all_finish=True)
+    transfer_list_v1(customer, wait_all_finish=True)
     return response.json()
 
 
@@ -193,6 +197,8 @@ def group_create_v1(customer: str, key_size=1024, label='', attempts=1):
     assert response.status_code == 200
     dbg('group/create/v1 [%s] : %s\n' % (customer, pprint.pformat(response.json())))
     assert response.json()['status'] == 'OK', response.json()
+    packet_list_v1(customer, wait_all_finish=True)
+    transfer_list_v1(customer, wait_all_finish=True)
     return response.json()['result']['group_key_id']
 
 
@@ -253,6 +259,8 @@ def group_join_v1(customer: str, group_key_id, attempts=1, timeout=120):
     assert response.status_code == 200
     dbg('group/join/v1 [%s] group_key_id=%r : %s\n' % (customer, group_key_id, pprint.pformat(response.json())))
     assert response.json()['status'] == 'OK', response.json()
+    packet_list_v1(customer, wait_all_finish=True)
+    transfer_list_v1(customer, wait_all_finish=True)
     return response.json()
 
 
@@ -269,6 +277,8 @@ def group_reconnect_v1(customer: str, group_key_id, timeout=120):
     assert response.status_code == 200
     dbg('group/reconnect/v1 [%s] group_key_id=%r : %s\n' % (customer, group_key_id, pprint.pformat(response.json())))
     assert response.json()['status'] == 'OK', response.json()
+    packet_list_v1(customer, wait_all_finish=True)
+    transfer_list_v1(customer, wait_all_finish=True)
     return response.json()
 
 
@@ -322,12 +332,12 @@ def file_list_all_v1(node, expected_reliable=100, reliable_shares=True, attempts
                     lowest = reliable
                     lowest_file = fil
         latest_reliable = lowest
-        latest_reliable_fileinfo = fil
+        latest_reliable_fileinfo = lowest_file
         if latest_reliable >= expected_reliable:
             break
         count += 1
         if count >= attempts:
-            warn(f'    latest reliable item info: {latest_reliable_fileinfo}')
+            warn(f'    latest reliable item info: {pprint.pformat(latest_reliable_fileinfo)}')
             assert False, f"file {lowest_file} is not {expected_reliable} % reliable after {attempts} attempts"
             return
         time.sleep(delay)
@@ -343,7 +353,7 @@ def file_create_v1(node, remote_path):
 
 
 def file_upload_start_v1(customer: str, remote_path: str, local_path: str,
-                         open_share=True, wait_result=True,
+                         wait_result=True,
                          wait_finish_attempts=20, delay=5,
                          wait_job_finish=True,
                          wait_packets_finish=True,
@@ -354,7 +364,6 @@ def file_upload_start_v1(customer: str, remote_path: str, local_path: str,
             'remote_path': remote_path,
             'local_path': local_path,
             'wait_result': '1' if wait_result else '0',
-            'open_share': '1' if open_share else '0',
         },
         timeout=30,
     )
@@ -381,7 +390,7 @@ def file_upload_start_v1(customer: str, remote_path: str, local_path: str,
 
 
 def file_download_start_v1(customer: str, remote_path: str, destination: str,
-                           open_share=True, wait_result=True,
+                           wait_result=True,
                            download_attempts=1, wait_finish_attempts=20, delay=5,
                            wait_tasks_finish=True):
     for _ in range(download_attempts):
@@ -390,7 +399,6 @@ def file_download_start_v1(customer: str, remote_path: str, destination: str,
                 'remote_path': remote_path,
                 'destination_folder': destination,
                 'wait_result': '1' if wait_result else '0',
-                'open_share': '1' if open_share else '0',
             },
             timeout=30,
         )

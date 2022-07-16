@@ -77,6 +77,7 @@ from automats import automat
 from crypt import my_keys
 
 from storage import backup_fs
+from storage import restore_monitor
 
 from main import events
 
@@ -257,7 +258,7 @@ class KeysSynchronizer(automat.Automat):
         self.keys_to_upload = set()
         self.keys_to_erase = {}
         self.keys_to_rename = {}
-        lookup = backup_fs.ListChildsByPath(path='.keys', recursive=False)
+        lookup = backup_fs.ListChildsByPath(path='.keys', recursive=False, backup_info_callback=restore_monitor.GetBackupStatusInfo)
         if isinstance(lookup, list):
             minimum_reliable_percent = eccmap.GetCorrectablePercent(eccmap.Current().suppliers_number)
             for i in lookup:

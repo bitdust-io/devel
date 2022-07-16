@@ -35,7 +35,7 @@ from __future__ import absolute_import
 #------------------------------------------------------------------------------
 
 _Debug = True
-_DebugLevel = 4
+_DebugLevel = 8
 
 #------------------------------------------------------------------------------
 
@@ -361,8 +361,8 @@ def _on_audit_private_key_response(response, info, key_id, untrusted_idurl, test
 
 def audit_private_key(key_id, untrusted_idurl, timeout=10):
     """
-    Be sure remote user posses given private key.
-    I need to posses the public key to be able to audit.
+    Be sure remote user possess given private key.
+    I need to possess the public key to be able to audit.
     I will generate a random string, encrypt it with given key public key and send encrypted string to him.
     He will decrypt and send me back original string.
     Returns Deferred object.
@@ -611,8 +611,6 @@ def do_backup_key(key_id, keys_folder=None):
         local_path=local_key_filepath,
         remote_path=global_key_path,
         wait_result=True,
-        wait_finish=False,
-        open_share=False,
     )
     backup_result = Deferred()
 
@@ -674,7 +672,6 @@ def do_restore_key(key_id, is_private, keys_folder=None, wait_result=False):
         remote_path=global_key_path,
         destination_path=keys_folder,
         wait_result=True,
-        open_share=False,
     )
     if not isinstance(ret, Deferred):
         lg.err('failed to download key "%s": %s' % (key_id, ret))
@@ -740,13 +737,14 @@ def on_files_received(newpacket, info):
         return False
     trusted_customer_idurl = list_files_global_id['idurl']
     incoming_key_id = list_files_global_id['key_id']
-    if trusted_customer_idurl == my_id.getIDURL():
+    if not my_keys.is_valid_key_id(incoming_key_id):
+        lg.warn('ignore, invalid key id in packet %s' % newpacket)
+        return False
+    # if trusted_customer_idurl == my_id.getIDURL():
+    if list_files_global_id['key_alias'] == 'master':
         if _Debug:
             lg.dbg(_DebugLevel, 'ignore %s packet which seems to came from my own supplier' % newpacket)
         # only process list Files() from other customers who granted me access to their files
-        return False
-    if not my_keys.is_valid_key_id(incoming_key_id):
-        lg.warn('ignore, invalid key id in packet %s' % newpacket)
         return False
     if not my_keys.is_key_private(incoming_key_id):
         lg.warn('private key is not registered : %s' % incoming_key_id)
@@ -768,31 +766,33 @@ def on_files_received(newpacket, info):
     except:
         lg.exc()
         return False
-    if block.CreatorID == trusted_customer_idurl:
-        # this is a trusted guy sending some shared files to me
-        try:
-            json_data = serialization.BytesToDict(raw_files, keys_to_text=True, encoding='utf-8')
-            json_data['items']
-        except:
-            lg.exc()
-            return False
-        count = backup_fs.Unserialize(
-            raw_data=json_data,
-            customer_idurl=trusted_customer_idurl,
-            from_json=True,
-        )
-        p2p_service.SendAck(newpacket)
-        if count == 0:
-            lg.warn('no files were imported during file sharing')
-        else:
-            backup_control.Save()
-            lg.info('imported %d shared files from %s, key_id=%s' % (
-                count, trusted_customer_idurl, incoming_key_id, ))
-        events.send('shared-list-files-received', data=dict(
-            customer_idurl=trusted_customer_idurl,
-            new_items=count,
-        ))
-        return True
+#     if block.CreatorID == trusted_customer_idurl:
+#         # this is a trusted guy sending some shared files to me
+#         return False
+#         try:
+#             json_data = serialization.BytesToDict(raw_files, keys_to_text=True, encoding='utf-8')
+#         except:
+#             lg.exc()
+#             return False
+#         count, updated_keys = backup_fs.Unserialize(
+#             json_data=json_data,
+#             customer_idurl=trusted_customer_idurl,
+#         )
+#         p2p_service.SendAck(newpacket)
+#         if not updated_keys:
+#             lg.warn('no files were imported during file sharing')
+#         else:
+#             for key_alias in updated_keys:
+#                 backup_fs.SaveIndex(trusted_customer_idurl, key_alias)
+#             # backup_control.Save()
+#             lg.info('imported %d shared files from %s, key_id=%s' % (
+#                 count, trusted_customer_idurl, incoming_key_id, ))
+#         events.send('shared-list-files-received', data=dict(
+#             customer_idurl=trusted_customer_idurl,
+#             new_items=count,
+#         ))
+#         return True
+
     # otherwise this must be an external supplier sending us a files he stores for trusted customer
     external_supplier_idurl = block.CreatorID
     try:
@@ -804,13 +804,17 @@ def on_files_received(newpacket, info):
     # and place that supplier on the correct position in contactsdb
     supplier_pos = backup_matrix.DetectSupplierPosition(supplier_raw_list_files)
     known_supplier_pos = contactsdb.supplier_position(external_supplier_idurl, trusted_customer_idurl)
+    if known_supplier_pos < 0:
+        lg.warn('received %r from an unknown node %r which is not a supplier of %r' % (newpacket, external_supplier_idurl, trusted_customer_idurl, ))
+        return False
     if _Debug:
         lg.args(_DebugLevel, supplier_pos=supplier_pos, known_supplier_pos=known_supplier_pos, external_supplier=external_supplier_idurl,
                 trusted_customer=trusted_customer_idurl, key_id=incoming_key_id)
     if supplier_pos >= 0:
-        if known_supplier_pos >= 0 and known_supplier_pos != supplier_pos:
-            lg.err('known external supplier %r position %d is not matching to received list files position %d for customer %s' % (
+        if known_supplier_pos != supplier_pos:
+            lg.err('known external supplier %r position %d is not matching with received list files position %d for customer %s' % (
                 external_supplier_idurl, known_supplier_pos,  supplier_pos, trusted_customer_idurl))
+            return False
     else:
         lg.warn('not possible to detect external supplier position for customer %s from received list files, known position is %s' % (
             trusted_customer_idurl, known_supplier_pos))

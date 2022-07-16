@@ -97,29 +97,33 @@ if __name__ == '__main__':
 from logs import lg
 
 from p2p import commands
+from p2p import p2p_service
 
 from lib import nameurl
 from lib import misc
 from lib import strng
+from lib import packetid
 
 from system import bpio
 from system import tmpfile
 
 from main import settings
-from main import control
+# from main import control
 from main import config
 from main import events
 
 from crypt import signed
-
-from userid import my_id
-from userid import global_id
 
 from contacts import identitycache
 
 from transport import callback
 from transport import packet_in
 from transport import packet_out
+
+from userid import global_id
+from userid import identity
+from userid import id_url
+from userid import my_id
 
 #------------------------------------------------------------------------------
 
@@ -785,6 +789,72 @@ def on_file_received(info, data):
     return False
 
 
+def on_identity_received(newpacket, send_ack=True):
+    """
+    A normal node or identity server is sending us a new copy of an identity for a contact of ours.
+    Checks that identity is signed correctly.
+    This will be also sending requests to cache all sources (other identity servers) holding that identity.
+    """
+    # TODO:  move to service_gateway
+    newxml = newpacket.Payload
+    newidentity = identity.identity(xmlsrc=newxml)
+    # SECURITY
+    # check that identity is signed correctly
+    # old public key matches new one
+    # this is done in `UpdateAfterChecking()`
+    idurl = newidentity.getIDURL()
+    if not identitycache.HasKey(idurl):
+        lg.info('received new identity %s rev %r' % (idurl, newidentity.getRevisionValue()))
+    if not identitycache.UpdateAfterChecking(idurl, newxml):
+        lg.warn("ERROR has non-Valid identity")
+        return False
+    if my_id.isLocalIdentityReady():
+        if newidentity.getPublicKey() == my_id.getLocalIdentity().getPublicKey():
+            if newidentity.getRevisionValue() > my_id.getLocalIdentity().getRevisionValue():
+                lg.warn('received my own identity from another user, but with higher revision number')
+                reactor.callLater(0, my_id.rebuildLocalIdentity, new_revision=newidentity.getRevisionValue() + 1)  # @UndefinedVariable
+                return False
+    latest_identity = id_url.get_latest_ident(newidentity.getPublicKey())
+    if latest_identity:
+        if latest_identity.getRevisionValue() > newidentity.getRevisionValue():
+            # check if received identity is the most recent revision number we every saw for that remote user
+            # in case we saw same identity with higher revision number need to reply with Fail packet and notify user
+            # this may happen after identity restore - the user starts counting revision number from 0
+            # but other nodes already store previous copies, user just need to jump to the most recent revision number
+            lg.warn('received new identity with out-dated revision number from %r' % idurl)
+            ident_packet = signed.Packet(
+                Command=commands.Identity(),
+                OwnerID=latest_identity.getIDURL(),
+                CreatorID=latest_identity.getIDURL(),
+                PacketID='identity:%s' % packetid.UniqueID(),
+                Payload=latest_identity.serialize(),
+                RemoteID=idurl,
+            )
+            reactor.callLater(0, packet_out.create, outpacket=ident_packet, wide=True, callbacks={}, keep_alive=False)  # @UndefinedVariable
+            return False
+    # Now that we have ID we can check the packet
+    if not newpacket.Valid():
+        # If not valid do nothing
+        lg.warn("not Valid packet from %s" % idurl)
+        return False
+    if not send_ack:
+        if _Debug:
+            lg.dbg(_DebugLevel, "%s  idurl=%s  remoteID=%r  skip sending Ack()" % (
+                newpacket.PacketID, idurl, newpacket.RemoteID))
+        return True
+    if newpacket.OwnerID == idurl:
+        if _Debug:
+            lg.dbg(_DebugLevel, "%s  idurl=%s  remoteID=%r  sending wide Ack()" % (
+                newpacket.PacketID, idurl, newpacket.RemoteID))
+    else:
+        if _Debug:
+            lg.dbg(_DebugLevel, "%s  idurl=%s  remoteID=%r  but packet ownerID=%s   sending wide Ack()" % (
+                newpacket.PacketID, idurl, newpacket.RemoteID, newpacket.OwnerID, ))
+    # wide=True : a small trick to respond to all known contacts of the remote user
+    reactor.callLater(0, p2p_service.SendAck, newpacket, wide=True)  # @UndefinedVariable
+    return True
+
+
 def on_outbox_packet(outpacket, wide, callbacks, target=None, route=None, response_timeout=None, keep_alive=True):
     """
     """
@@ -797,7 +867,7 @@ def on_outbox_packet(outpacket, wide, callbacks, target=None, route=None, respon
             lg.warn('skip creating new outbox packet because found similar pending packet: %r' % active_packet)
             return active_packet
     pkt_out = packet_out.create(outpacket, wide, callbacks, target, route, response_timeout, keep_alive)
-    control.request_update([('packet', outpacket.PacketID)])
+    # control.request_update([('packet', outpacket.PacketID)])
     return pkt_out
 
 
@@ -917,7 +987,7 @@ def on_register_file_sending(proto, host, receiver_idurl, filename, size=0, desc
             pkt_out.description, transfer_id, os.path.basename(filename), proto,
             nameurl.GetName(receiver_idurl), host))
     pkt_out.automat('register-item', (proto, host, filename, transfer_id))
-    control.request_update([('stream', transfer_id)])
+    # control.request_update([('stream', transfer_id)])
     return transfer_id
 
 
@@ -935,7 +1005,7 @@ def on_unregister_file_sending(transfer_id, status, bytes_sent, error_message=No
             lg.out(_DebugLevel, '        %s is not found' % str(transfer_id))
         return False
     pkt_out.automat('unregister-item', (transfer_id, status, bytes_sent, error_message))
-    control.request_update([('stream', transfer_id)])
+    # control.request_update([('stream', transfer_id)])
     if status == 'finished':
         if _Debug:
             lg.out(_DebugLevel, '>>> OUT >>> %s (%d) [%s://%s] %s with %d bytes' % (
@@ -957,8 +1027,8 @@ def on_cancelled_file_sending(proto, host, filename, size, description='', error
                 proto, host, os.path.basename(filename)))
         return True
     pkt_out.automat('item-cancelled', (proto, host, filename, size, description, error_message, ))
-    if pkt_out.outpacket:
-        control.request_update([('packet', pkt_out.outpacket.PacketID)])
+    # if pkt_out.outpacket:
+    #     control.request_update([('packet', pkt_out.outpacket.PacketID)])
     if _Debug:
         lg.out(_DebugLevel, '>>> OUT >>>  {%s} CANCELLED via [%s] to %s : %s' % (
             os.path.basename(filename), proto, host, error_message, ))
@@ -981,7 +1051,7 @@ def on_register_file_receiving(proto, host, sender_idurl, filename, size=0):
             nameurl.GetName(sender_idurl), host))
     incoming_packet = packet_in.create(transfer_id)
     incoming_packet.event('register-item', (proto, host, sender_idurl, filename, size))
-    control.request_update([('stream', transfer_id)])
+    # control.request_update([('stream', transfer_id)])
     return transfer_id
 
 
@@ -1001,7 +1071,7 @@ def on_unregister_file_receiving(transfer_id, status, bytes_received, error_mess
             lg.out(_DebugLevel, '<<< IN <<< (%d) [%s://%s] %s : %s' % (
                 transfer_id, pkt_in.proto, pkt_in.host, status.upper(), error_message))
     pkt_in.automat('unregister-item', (status, bytes_received, error_message))
-    control.request_update([('stream', transfer_id)])
+    # control.request_update([('stream', transfer_id)])
     return True
 
 #------------------------------------------------------------------------------

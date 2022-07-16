@@ -364,7 +364,7 @@ class GroupMember(automat.Automat):
         self.recorded_messages = []
         self.group_brokers_updated = False
         super(GroupMember, self).__init__(
-            name="group_member_%s$%s" % (self.group_queue_alias[:10], self.group_creator_id),
+            name="group_member_%s$%s" % (self.group_queue_alias[:10], self.group_creator_id, ),
             state="AT_STARTUP",
             debug_level=debug_level,
             log_events=log_events,

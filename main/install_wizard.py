@@ -104,8 +104,8 @@ class InstallWizard(automat.Automat):
             # TODO:
             # here just skip Contacts page!
             # we do not need that now, but can back to that soon when add chat
-        from main import control
-        control.request_update()
+        # from main import control
+        # control.request_update()
         installer.A('install_wizard.state', newstate)
 
     def A(self, event, *args, **kwargs):

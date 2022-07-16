@@ -994,40 +994,23 @@ def BackupInfoEncryptedFileName():
 
 def BackupIndexFileName():
     """
-    This is backup data base index file location. This store folder and files
-    names and locations with path ID's and some extra info. Located in the
-    file.
-
-    .bitdust/metadata/index . Also this file is saved on suppliers in encrypted
-    state.
-
-    TODO:
-    - need to store files checksums
-    - need to store file and folders access modes - just like in Linux
-    - need to store user and group for files and folders - like in Linux
+    This is backup data base index file name.
+    The file stores folder and files names and locations with path ID's and some extra info.
+    Also this file is saved on suppliers in encrypted state.
     """
     return 'index'
 
 
-def BackupInfoFileFullPath():
-    """
-    Obsolete.
-    """
-    return os.path.join(MetaDataDir(), BackupInfoFileName())
-
-
-def BackupInfoFileFullPathOld():
-    """
-    Obsolete.
-    """
-    return os.path.join(MetaDataDir(), BackupInfoFileNameOld())
-
-
-def BackupIndexFilePath():
-    """
-    A full local path for ``BackupIndexFileName`` file.
-    """
-    return os.path.join(MetaDataDir(), BackupIndexFileName())
+def BackupIndexFilePath(customer_idurl=None, key_alias='master'):
+    from userid import my_id
+    from userid import id_url
+    if customer_idurl is None:
+        customer_idurl = my_id.getIDURL()
+    customer_idurl = id_url.field(customer_idurl)
+    customer_id = customer_idurl.to_id()
+    index_dir_path = os.path.join(ServiceDir('service_backups'), 'index')
+    index_file_path = os.path.join(index_dir_path, '%s$%s' % (key_alias, customer_id, ))
+    return index_file_path
 
 
 def SupplierPath(supplier_idurl, customer_idurl, filename=None):

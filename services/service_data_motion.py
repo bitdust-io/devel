@@ -69,6 +69,7 @@ class DataMotionService(LocalService):
         from stream import data_sender
         from stream import data_receiver
         io_throttle.init()
+        data_sender.SetShutdownFlag(False)
         data_sender.A('init')
         data_receiver.A('init')
         events.add_subscriber(self._on_identity_url_changed, 'identity-url-changed')
@@ -83,7 +84,7 @@ class DataMotionService(LocalService):
         events.remove_subscriber(self._on_supplier_modified, 'supplier-modified')
         events.remove_subscriber(self._on_identity_url_changed, 'identity-url-changed')
         data_receiver.A('shutdown')
-        data_sender.SetShutdownFlag()
+        data_sender.SetShutdownFlag(True)
         data_sender.A('shutdown')
         io_throttle.shutdown()
         return True

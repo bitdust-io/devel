@@ -40,6 +40,7 @@ _DebugLevel = 6
 #------------------------------------------------------------------------------
 
 import os
+import base64
 
 #------------------------------------------------------------------------------
 
@@ -294,7 +295,8 @@ def on_data(newpacket):
         return False
     # Here Data() packet was stored as it is on supplier node (current machine)
     del data
-    p2p_service.SendAck(newpacket, response=strng.to_text(len(newpacket.Payload)), remote_idurl=authorized_idurl)
+    sz = len(newpacket.Payload)
+    p2p_service.SendAck(newpacket, response=strng.to_text(sz), remote_idurl=authorized_idurl)
     reactor.callLater(0, local_tester.TestSpaceTime)  # @UndefinedVariable
 #     if self.publish_event_supplier_file_modified:  #  TODO: must remove that actually
 #         from main import events
@@ -303,6 +305,8 @@ def on_data(newpacket):
 #             glob_path=glob_path['path'],
 #             owner_id=newpacket.OwnerID,
 #         ))
+    if _Debug:
+        lg.args(_DebugLevel, sz=sz, fn=filename, remote_idurl=authorized_idurl, pid=newpacket.PacketID)
     return True
 
 
@@ -319,75 +323,103 @@ def on_retrieve(newpacket):
         glob_path = global_id.ParseGlobalID(my_id.getGlobalID('master') + ':' + newpacket.PacketID)
     if not glob_path['path']:
         lg.err("got incorrect PacketID")
-        p2p_service.SendFail(newpacket, 'incorrect path')
+        p2p_service.SendFail(newpacket, 'incorrect path', remote_idurl=newpacket.CreatorID)
         return False
     if not glob_path['idurl']:
         lg.warn('no customer global id found in PacketID: %s' % newpacket.PacketID)
-        p2p_service.SendFail(newpacket, 'incorrect retrieve request')
+        p2p_service.SendFail(newpacket, 'incorrect retrieve request', remote_idurl=newpacket.CreatorID)
         return False
-    if newpacket.CreatorID != glob_path['idurl']:
-        lg.warn('one of customers requesting a Data from another customer!')
-    else:
-        pass  # same customer, based on CreatorID : OK!
+    key_id = glob_path['key_id']
     recipient_idurl = newpacket.OwnerID
-    # TODO: process requests from another customer : glob_path['idurl']
+    if newpacket.CreatorID != glob_path['idurl'] and newpacket.CreatorID != newpacket.OwnerID:
+        # SECURITY
+        lg.warn('one of customers requesting a Data from another customer!')
+        if not my_keys.is_key_registered(key_id):
+            lg.warn('key %s is not registered' % key_id)
+            p2p_service.SendFail(newpacket, 'key not registered', remote_idurl=newpacket.CreatorID)
+            return False
+        verified = False
+        if _Debug:
+            lg.args(_DebugLevel, Payload=newpacket.Payload)
+        try:
+            json_payload = serialization.BytesToDict(newpacket.Payload, keys_to_text=True, values_to_text=True)
+            test_sample_bin = base64.b64decode(json_payload['t'])
+            test_signature_bin = strng.to_bin(json_payload['s'])
+            verified = my_keys.verify(key_id, test_sample_bin, test_signature_bin)
+        except:
+            lg.exc()
+            return False
+        if not verified:
+            lg.warn('request is not authorized, test sample signature verification failed')
+            return False
+        # requester signed the test sample with the private key and we verified the signature with the public key
+        # now we checked the signature of the test sample and can be sure that requester really possess the same key
+        recipient_idurl = newpacket.CreatorID
     filename = make_valid_filename(newpacket.OwnerID, glob_path)
     if not filename:
-        if True:
+        filename = make_valid_filename(glob_path['idurl'], glob_path)
+        # if True:
             # TODO: settings.getCustomersDataSharingEnabled() and
             # SECURITY
             # TODO: add more validations for receiver idurl
             # recipient_idurl = glob_path['idurl']
-            filename = make_valid_filename(glob_path['idurl'], glob_path)
+            # filename = make_valid_filename(glob_path['idurl'], glob_path)
     if not filename:
         lg.warn("had empty filename")
-        p2p_service.SendFail(newpacket, 'empty filename')
+        p2p_service.SendFail(newpacket, 'empty filename', remote_idurl=recipient_idurl)
         return False
     if not os.path.exists(filename):
         lg.warn("did not found requested file locally : %s" % filename)
-        p2p_service.SendFail(newpacket, 'did not found requested file locally')
+        p2p_service.SendFail(newpacket, 'did not found requested file locally', remote_idurl=recipient_idurl)
         return False
     if not os.access(filename, os.R_OK):
         lg.warn("no read access to requested packet %s" % filename)
-        p2p_service.SendFail(newpacket, 'no read access to requested packet')
+        p2p_service.SendFail(newpacket, 'failed reading requested file', remote_idurl=recipient_idurl)
         return False
     data = bpio.ReadBinaryFile(filename)
     if not data:
         lg.warn("empty data on disk %s" % filename)
-        p2p_service.SendFail(newpacket, 'empty data on disk')
+        p2p_service.SendFail(newpacket, 'empty data on disk', remote_idurl=recipient_idurl)
         return False
     stored_packet = signed.Unserialize(data)
+    sz = len(data)
     del data
     if stored_packet is None:
         lg.warn("Unserialize failed, not Valid packet %s" % filename)
-        p2p_service.SendFail(newpacket, 'unserialize failed')
+        p2p_service.SendFail(newpacket, 'unserialize failed', remote_idurl=recipient_idurl)
         return False
     if not stored_packet.Valid():
         lg.warn("Stored packet is not Valid %s" % filename)
-        p2p_service.SendFail(newpacket, 'stored packet is not valid')
+        p2p_service.SendFail(newpacket, 'stored packet is not valid', remote_idurl=recipient_idurl)
         return False
     if stored_packet.Command != commands.Data():
         lg.warn('sending back packet which is not a Data')
     # here Data() packet is sent back as it is...
     # that means outpacket.RemoteID=my_id.getIDURL() - it was addressed to that node and stored as it is
-    # need to take that in account every time you receive Data() packet
+    # need to take that into account: every time you receive Data() packet
     # it can be not a new Data(), but the old data returning back as a response to Retreive() packet
-    # let's create a new Data() packet which will be addressed directly to recipient and "wrap" stored data inside it
+    # to solve the issue we will create a new Data() packet
+    # which will be addressed directly to recipient and "wrap" stored data inside it
+    payload = stored_packet.Serialize()
     routed_packet = signed.Packet(
         Command=commands.Data(),
         OwnerID=stored_packet.OwnerID,
         CreatorID=my_id.getIDURL(),
         PacketID=stored_packet.PacketID,
-        Payload=stored_packet.Serialize(),
+        Payload=payload,
         RemoteID=recipient_idurl,
     )
+    if _Debug:
+        lg.args(_DebugLevel, file_size=sz, payload_size=len(payload), fn=filename, recipient=recipient_idurl)
     if recipient_idurl == stored_packet.OwnerID:
-        lg.info('from request %r : sending %r back to owner: %s' % (
-            newpacket, stored_packet, recipient_idurl))
-        gateway.outbox(routed_packet)  # , target=recipient_idurl)
+        if _Debug:
+            lg.dbg(_DebugLevel, 'from request %r : sending %r back to owner: %s' % (
+                newpacket, stored_packet, recipient_idurl))
+        gateway.outbox(routed_packet)
         return True
-    lg.info('from request %r : returning data owned by %s to %s' % (
-        newpacket, stored_packet.OwnerID, recipient_idurl))
+    if _Debug:
+        lg.dbg(_DebugLevel, 'from request %r : returning data owned by %s to %s' % (
+            newpacket, stored_packet.OwnerID, recipient_idurl))
     gateway.outbox(routed_packet)
     return True
 
@@ -426,6 +458,8 @@ def on_list_files(newpacket):
         remote_idurl=newpacket.OwnerID,  # send back to the requesting node
         query_items=json_query['items'],
     )
+    if _Debug:
+        lg.args(_DebugLevel, r=newpacket.OwnerID, c=customer_idurl, k=key_id, pid=newpacket.PacketID)
     return True
 
 #------------------------------------------------------------------------------
@@ -478,10 +512,10 @@ def on_delete_file(newpacket):
 #                 glob_path=glob_path['path'],
 #                 owner_id=newpacket.OwnerID,
 #             ))
+    p2p_service.SendAck(newpacket)
     if _Debug:
         lg.dbg(_DebugLevel, "from [%s] with %d IDs, %d files and %d folders were removed" % (
             newpacket.OwnerID, len(ids), filescount, dirscount))
-    p2p_service.SendAck(newpacket)
     return True
 
 
@@ -533,10 +567,10 @@ def on_delete_backup(newpacket):
 #                 glob_path=glob_path['path'],
 #                 owner_id=newpacket.OwnerID,
 #             ))
+    p2p_service.SendAck(newpacket)
     if _Debug:
         lg.dbg(_DebugLevel, "from [%s] with %d IDs, %d were removed" % (
             newpacket.OwnerID, len(ids), count))
-    p2p_service.SendAck(newpacket)
     return True
 
 #------------------------------------------------------------------------------

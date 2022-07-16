@@ -47,10 +47,13 @@ from logs import lg
 
 from main import events
 
+from lib import misc
+
 from system import tmpfile
 
 from storage import backup_tar
 from storage import backup_matrix
+from storage import backup_control
 
 from userid import global_id
 
@@ -250,3 +253,37 @@ def FindWorking(pathID=None, customer=None):
             if backupID.count(customer + ':'):
                 result.add(backupID)
     return list(result)
+
+
+def GetBackupStatusInfo(backupID, item_info, item_name, parent_path_existed=None):
+    _, percent, weakBlock, weakPercent = backup_matrix.GetBackupRemoteStats(backupID)
+    totalNumberOfFiles, maxBlockNum, statsArray = backup_matrix.GetBackupStats(backupID)
+    ret = {
+        'state': 'ready',
+        'delivered': misc.percent2string(percent),
+        'reliable': misc.percent2string(weakPercent),
+        'fragments': totalNumberOfFiles,
+        'weak_block': weakBlock,
+        'max_block': maxBlockNum,
+        'suppliers': [{
+            'stored': misc.percent2string(i[0]),
+            'fragments': i[1],
+        } for i in statsArray],
+    }
+    backupObj = backup_control.GetRunningBackupObject(backupID)
+    if backupObj:
+        ret['state'] = 'uploading'
+        ret['progress'] = misc.percent2string(backupObj.progress())
+        return ret
+    elif IsWorking(backupID):
+        restoreObj = GetWorkingRestoreObject(backupID)
+        if restoreObj:
+            maxBlockNum = backup_matrix.GetKnownMaxBlockNum(backupID)
+            currentBlock = max(0, restoreObj.block_number)
+            percent = 0.0
+            if maxBlockNum > 0:
+                percent = 100.0 * currentBlock / maxBlockNum
+            ret['state'] = 'downloading'
+            ret['progress'] = misc.percent2string(percent)
+            return ret
+    return ret

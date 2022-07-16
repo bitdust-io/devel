@@ -49,7 +49,6 @@ class KeysStorageService(LocalService):
     def dependent_on(self):
         return [
             'service_restores',
-            'service_backup_db',
         ]
 
     def start(self):
@@ -72,7 +71,8 @@ class KeysStorageService(LocalService):
         if index_synchronizer.A():
             index_synchronizer.A().addStateChangedCallback(self._on_index_synchronizer_state_changed)
         if index_synchronizer.A() and index_synchronizer.A().state == 'NO_INFO':
-            # it seems I am offline...  must start here, but expect to be online soon and sync keys later 
+            # it seems I am offline...
+            #   must start here, but expect to be online soon and sync keys later
             return True
         if index_synchronizer.A() and index_synchronizer.A().state == 'IN_SYNC!':
             # if I am already online and backup index in sync - refresh keys ASAP
@@ -101,28 +101,6 @@ class KeysStorageService(LocalService):
         from storage import keys_synchronizer
         return keys_synchronizer.is_synchronized() and index_synchronizer.is_synchronized()
 
-    def _on_key_generated(self, evt):
-        self._do_synchronize_keys()
-
-    def _on_key_registered(self, evt):
-        self._do_synchronize_keys()
-
-    def _on_key_erased(self, evt):
-        from interface import api
-        from userid import global_id
-        from userid import my_id
-        if evt.data['is_private']:
-            remote_path_for_key = '.keys/%s.private' % evt.data['key_id']
-        else:
-            remote_path_for_key = '.keys/%s.public' % evt.data['key_id']
-        global_key_path = global_id.MakeGlobalID(
-            key_alias='master',
-            customer=my_id.getGlobalID(),
-            path=remote_path_for_key,
-        )
-        api.file_delete(global_key_path)
-        self._do_synchronize_keys()
-
     def _do_synchronize_keys(self):
         """
         Make sure all my keys are stored on my suppliers nodes (encrypted with my master key).
@@ -131,10 +109,9 @@ class KeysStorageService(LocalService):
         When key was renamed (after identity rotate) make sure to store the latest copy and remove older one. 
         """
         from logs import lg
-        from storage import backup_control
         from storage import index_synchronizer
         from twisted.internet.defer import Deferred
-        is_in_sync = index_synchronizer.is_synchronized() and backup_control.revision() > 0
+        is_in_sync = index_synchronizer.is_synchronized()
         if is_in_sync:
             result = Deferred()
             result.addCallback(self._on_keys_synchronized)
@@ -169,6 +146,28 @@ class KeysStorageService(LocalService):
                 return
             lg.info('created new remote folder ".keys" in the catalog: %r' % global_keys_folder_path)
         keys_synchronizer.A('sync', result)
+
+    def _on_key_generated(self, evt):
+        self._do_synchronize_keys()
+
+    def _on_key_registered(self, evt):
+        self._do_synchronize_keys()
+
+    def _on_key_erased(self, evt):
+        from interface import api
+        from userid import global_id
+        from userid import my_id
+        if evt.data['is_private']:
+            remote_path_for_key = '.keys/%s.private' % evt.data['key_id']
+        else:
+            remote_path_for_key = '.keys/%s.public' % evt.data['key_id']
+        global_key_path = global_id.MakeGlobalID(
+            key_alias='master',
+            customer=my_id.getGlobalID(),
+            path=remote_path_for_key,
+        )
+        api.file_delete(global_key_path)
+        self._do_synchronize_keys()
 
     def _on_my_backup_index_synchronized(self, evt):
         import time
@@ -218,7 +217,7 @@ class KeysStorageService(LocalService):
         if self.starting_deferred:
             self.starting_deferred.errback(err)
             self.starting_deferred = None
-        lg.err(err.getErrorMessage() if err else 'synchronize keys failed with unknown reason')
+        lg.warn(err.getErrorMessage() if err else 'synchronize keys failed with unknown reason')
         events.send('my-keys-out-of-sync', data=dict())
         events.send('my-storage-not-ready-yet', data=dict())
         return None

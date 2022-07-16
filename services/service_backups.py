@@ -47,24 +47,23 @@ class BackupsService(LocalService):
         return [
             'service_list_files',
             'service_rebuilding',
+            'service_backup_db',
         ]
 
     def start(self):
-        from storage import backup_fs
         from storage import backup_control
         from storage import backup_matrix
         from storage import backup_monitor
         from main.config import conf
-        from main import control
+        # from main import control
         from main import events
         from main import listeners
         from transport import callback
         from p2p import p2p_connector
-        backup_fs.init()
         backup_control.init()
         backup_matrix.init()
-        backup_matrix.SetBackupStatusNotifyCallback(control.on_backup_stats)
-        backup_matrix.SetLocalFilesNotifyCallback(control.on_read_local_files)
+        # backup_matrix.SetBackupStatusNotifyCallback(control.on_backup_stats)
+        # backup_matrix.SetLocalFilesNotifyCallback(control.on_read_local_files)
         backup_monitor.A('init')
         backup_monitor.A('restart')
         conf().addConfigNotifier('services/backups/keep-local-copies-enabled',
@@ -84,7 +83,6 @@ class BackupsService(LocalService):
         return True
 
     def stop(self):
-        from storage import backup_fs
         from storage import backup_monitor
         from storage import backup_control
         from transport import callback
@@ -97,7 +95,6 @@ class BackupsService(LocalService):
         if p2p_connector.A():
             p2p_connector.A().removeStateChangedCallback(self._on_p2p_connector_state_changed)
         backup_monitor.Destroy()
-        backup_fs.shutdown()
         backup_control.shutdown()
         conf().removeConfigNotifier('services/backups/keep-local-copies-enabled')
         return True

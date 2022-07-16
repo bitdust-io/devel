@@ -202,7 +202,7 @@ class DataSender(automat.Automat):
         global _ShutdownFlag
         if _ShutdownFlag:
             if _Debug:
-                lg.out(_DebugLevel, 'data_sender.doScanAndQueue   _ShutdownFlag is True\n')
+                lg.out(_DebugLevel, 'data_sender.doScanAndQueue   _ShutdownFlag is True')
             self.automat('scan-done', 0)
             return
         from storage import backup_matrix
@@ -452,9 +452,9 @@ def statistic():
     return _DataSender.statistic
 
 
-def SetShutdownFlag():
+def SetShutdownFlag(state=True):
     """
-    Set flag to indicate that no need to send anything anymore.
+    Set flag to indicate that no need to send anything right now because service is stopping.
     """
     global _ShutdownFlag
-    _ShutdownFlag = True
+    _ShutdownFlag = state

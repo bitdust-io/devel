@@ -208,7 +208,7 @@ class CustomerAssistant(automat.Automat):
             if my_keys.is_key_registered(customer_master_key_id):
                 list_files.send(
                     customer_idurl=self.customer_idurl,
-                    packet_id='%s:%s' % (customer_key_id, packetid.UniqueID(), ),
+                    packet_id='%s:%s' % (customer_master_key_id, packetid.UniqueID(), ),
                     format_type=settings.ListFilesFormat(),
                     key_id=customer_master_key_id,
                     remote_idurl=self.customer_idurl,  # send to the customer

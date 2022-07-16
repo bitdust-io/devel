@@ -68,7 +68,7 @@ from six.moves import range
 #------------------------------------------------------------------------------
 
 _Debug = False
-_DebugLevel = 16
+_DebugLevel = 12
 
 #------------------------------------------------------------------------------
 
@@ -296,7 +296,6 @@ class BackupRebuilder(automat.Automat):
         Condition method.
         """
         from storage import backup_matrix
-        # supplierSet = backup_matrix.suppliers_set()
         # start checking in reverse order, see below for explanation
         for blockIndex in range(len(self.workingBlocksQueue) - 1, -1, -1):
             blockNumber = self.workingBlocksQueue[blockIndex]
@@ -315,7 +314,6 @@ class BackupRebuilder(automat.Automat):
         Condition method.
         """
         from stream import io_throttle
-        # supplierSet = backup_matrix.suppliers_set()
         for supplierNum in range(contactsdb.num_suppliers()):
             supplierID = contactsdb.supplier(supplierNum)
             if io_throttle.HasBackupIDInRequestQueue(supplierID, self.currentBackupID):
@@ -512,11 +510,12 @@ class BackupRebuilder(automat.Automat):
                                 )
                                 if not os.path.exists(filename):
                                     if io_throttle.QueueRequestFile(
-                                            self._file_received,
-                                            my_id.getIDURL(),
-                                            PacketID,
-                                            my_id.getIDURL(),
-                                            supplierID):
+                                        self._file_received,
+                                        my_id.getIDURL(),
+                                        PacketID,
+                                        my_id.getIDURL(),
+                                        supplierID,
+                                    ):
                                         requests_count += 1
                     else:
                         # count this packet as missing
@@ -571,7 +570,7 @@ class BackupRebuilder(automat.Automat):
                 self.automat('no-requests')
 
     def _file_received(self, newpacket, state):
-        if state in ['in queue', 'shutdown', 'exist', 'failed']:
+        if state in ['in queue', 'shutdown', 'exist', 'failed', 'cancelled', ]:
             return
         if state != 'received':
             lg.warn("incorrect state [%s] for packet %s" % (str(state), str(newpacket)))

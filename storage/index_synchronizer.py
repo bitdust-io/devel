@@ -86,7 +86,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 8
 
 #------------------------------------------------------------------------------
@@ -344,6 +344,7 @@ class IndexSynchronizer(automat.Automat):
         Action method.
         """
         self.ping_required = False
+        data = bpio.ReadBinaryFile(settings.BackupIndexFilePath())
 
     def doSuppliersRequestIndexFile(self, *args, **kwargs):
         """
@@ -352,8 +353,8 @@ class IndexSynchronizer(automat.Automat):
         if _Debug:
             lg.out(_DebugLevel, 'index_synchronizer.doSuppliersRequestIndexFile')
         if driver.is_on('service_backups'):
-            from storage import backup_control
-            self.current_local_revision = backup_control.revision()
+            from storage import backup_fs
+            self.current_local_revision = backup_fs.revision()
         else:
             self.current_local_revision = -1
         self.latest_supplier_revision = -1
@@ -370,8 +371,6 @@ class IndexSynchronizer(automat.Automat):
         """
         Action method.
         """
-        if _Debug:
-            lg.out(_DebugLevel, 'index_synchronizer.doSuppliersSendIndexFile')
         packetID = global_id.MakeGlobalID(
             customer=my_id.getGlobalID(key_alias='master'),
             path=settings.BackupIndexFileName(),
@@ -380,6 +379,7 @@ class IndexSynchronizer(automat.Automat):
         self.outgoing_packets_ids = []
         self.sent_suppliers_number = 0
         localID = my_id.getIDURL()
+        data = bpio.ReadBinaryFile(settings.BackupIndexFilePath())
         b = encrypted.Block(
             CreatorID=localID,
             BackupID=packetID,
@@ -387,9 +387,11 @@ class IndexSynchronizer(automat.Automat):
             SessionKey=key.NewSessionKey(session_key_type=key.SessionKeyType()),
             SessionKeyType=key.SessionKeyType(),
             LastBlock=True,
-            Data=bpio.ReadBinaryFile(settings.BackupIndexFilePath()),
+            Data=data,
         )
         Payload = b.Serialize()
+        if _Debug:
+            lg.args(_DebugLevel, pid=packetID, sz=len(data), payload=len(Payload), length=b.Length)
         for supplier_idurl in contactsdb.suppliers():
             if not supplier_idurl:
                 continue
@@ -412,7 +414,8 @@ class IndexSynchronizer(automat.Automat):
             if pkt_out:
                 self.sending_suppliers.add(supplier_idurl)
                 self.sent_suppliers_number += 1
-                self.outgoing_packets_ids.append(packetID)
+                if newpacket.PacketID not in self.outgoing_packets_ids:
+                    self.outgoing_packets_ids.append(newpacket.PacketID)
             if _Debug:
                 lg.out(_DebugLevel, '    %s sending to %s' %
                        (newpacket, nameurl.GetName(supplier_idurl)))
@@ -474,8 +477,8 @@ class IndexSynchronizer(automat.Automat):
         if supplier_revision is not None:
             reactor.callLater(0, self.automat, 'index-file-received', (newpacket, supplier_revision, ))  # @UndefinedVariable
         if _Debug:
-            lg.out(_DebugLevel, 'index_synchronizer._on_supplier_response %s from %r, pending: %d, total: %d' % (
-                newpacket, supplier_idurl, len(self.requesting_suppliers), self.requested_suppliers_number))
+            lg.out(_DebugLevel, 'index_synchronizer._on_supplier_response %s from %r, rev:%s, pending: %d, total: %d' % (
+                newpacket, supplier_idurl, supplier_revision, len(self.requesting_suppliers), self.requested_suppliers_number))
         if len(self.requesting_suppliers) == 0:
             reactor.callLater(0, self.automat, 'all-responded')  # @UndefinedVariable
 
@@ -492,8 +495,8 @@ class IndexSynchronizer(automat.Automat):
 
     def _on_supplier_acked(self, newpacket, info):
         self.sending_suppliers.discard(newpacket.OwnerID)
-        if newpacket.PacketID in self.outgoing_packets_ids:
-            self.outgoing_packets_ids.remove(newpacket.PacketID)
+        # if newpacket.PacketID in self.outgoing_packets_ids:
+        #     self.outgoing_packets_ids.remove(newpacket.PacketID)
         sc = supplier_connector.by_idurl(newpacket.OwnerID)
         if sc:
             sc.automat(newpacket.Command.lower(), newpacket)

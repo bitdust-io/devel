@@ -316,6 +316,9 @@ class SharedAccessDonor(automat.Automat):
         """
         Action method.
         """
+        self.automat('list-files-ok')
+        return
+        # TODO: cleanup
         json_list_files = backup_fs.Serialize(
             customer_idurl=global_id.glob2idurl(self.key_id),
             to_json=True,

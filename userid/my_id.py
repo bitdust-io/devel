@@ -581,7 +581,9 @@ def rebuildLocalIdentity(identity_object=None, skip_transports=[], new_sources=N
     vernum = strng.to_bin(bpio.ReadTextFile(settings.VersionNumberFile())).strip()
     # repo, _ = misc.ReadRepoLocation()
     repo = 'sources'
-    lid.setVersion((vernum + b' ' + strng.to_bin(repo.strip()) + b' ' + strng.to_bin(bpio.osinfo().strip()).strip()))
+    # lid.setVersion((vernum + b' ' + strng.to_bin(repo.strip()) + b' ' + strng.to_bin(bpio.osinfo().strip()).strip()))
+    # TODO: add latest commit hash from the GIT repo to the version
+    lid.setVersion(vernum + b' ' + strng.to_bin(repo.strip()))
     # generate signature with changed content
     lid.sign()
     new_xmlsrc = lid.serialize()

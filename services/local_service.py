@@ -56,7 +56,7 @@ from __future__ import absolute_import
 #------------------------------------------------------------------------------
 
 _Debug = False
-_DebugLevel = 14
+_DebugLevel = 12
 
 #------------------------------------------------------------------------------
 
@@ -75,7 +75,6 @@ from automats import automat
 from services import driver
 
 #------------------------------------------------------------------------------
-
 
 class LocalService(automat.Automat):
     """
@@ -333,7 +332,7 @@ class LocalService(automat.Automat):
             lg.out(_DebugLevel, '[%s] STARTING' % self.service_name)
         self.suspended = bool(self.start_suspended)
         try:
-            result = self.start()
+            result = self._do_start()
         except Exception as exc:
             lg.exc()
             self.automat('service-failed', exc)
@@ -356,7 +355,7 @@ class LocalService(automat.Automat):
             lg.out(_DebugLevel, '[%s] STOPPING' % self.service_name)
         self.suspended = False
         try:
-            result = self.stop()
+            result = self._do_stop()
         except:
             lg.exc()
             self.automat('service-stopped', 'exception during stopping [%s]' % self.service_name)
@@ -382,8 +381,9 @@ class LocalService(automat.Automat):
             if self.service_name in svc.dependent_on():
                 if _Debug:
                     lg.out(_DebugLevel, '%r sends "stop" to %r' % (self, svc))
-                svc.automat('stop')
-                count += 1
+                if svc.installed():
+                    svc.automat('stop')
+                    count += 1
         if count == 0:
             self.automat('depend-service-stopped')
 
@@ -453,3 +453,47 @@ class LocalService(automat.Automat):
         """
         self.result_deferred = None
         self.destroy()
+
+
+    def _do_start(self):
+        return self.start()
+
+    def _do_stop(self):
+        return self.stop()
+
+#------------------------------------------------------------------------------
+
+class SlowStartingLocalService(LocalService):
+
+    def _do_start(self, **kwargs):
+        if _Debug:
+            lg.args(_DebugLevel, service_name=self.service_name)
+        if getattr(self, 'starting_deferred', None):
+            raise Exception('service already starting')
+        self.starting_deferred = Deferred()
+        self.starting_deferred.addErrback(lambda err: lg.warn('service %r was not started: %r' % (
+            self.service_name, err.getErrorMessage() if err else 'unknown reason')))
+        return self.start()
+
+    def _do_stop(self):
+        if _Debug:
+            lg.args(_DebugLevel, service_name=self.service_name)
+        if self.starting_deferred:
+            if not self.starting_deferred.called:
+                self.starting_deferred.errback(Exception('service was stopped before starting process finished'))
+            self.starting_deferred = None
+        return self.stop()
+
+    def confirm_service_started(self, result=True):
+        if _Debug:
+            lg.args(_DebugLevel, service_name=self.service_name, result=result, starting_deferred=self.starting_deferred)
+        if self.starting_deferred:
+            if not self.starting_deferred.called:
+                if result is True:
+                    self.starting_deferred.callback(True)
+                else:
+                    if isinstance(result, Exception):
+                        self.starting_deferred.errback(result)
+                    else:
+                        self.starting_deferred.callback(result)
+            self.starting_deferred = None

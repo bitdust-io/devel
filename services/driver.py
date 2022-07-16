@@ -676,6 +676,21 @@ def populate_services():
 
 #------------------------------------------------------------------------------
 
+def do_finish_starting():
+    global _StartingDeferred
+    if _Debug:
+        lg.args(_DebugLevel, starting=bool(_StartingDeferred))
+    _StartingDeferred = None
+
+
+def do_finish_stoping():
+    global _StopingDeferred
+    if _Debug:
+        lg.args(_DebugLevel, stoping=bool(_StopingDeferred))
+    _StopingDeferred = None
+
+#------------------------------------------------------------------------------
+
 def on_service_callback(result, service_name):
     if _Debug:
         lg.out(_DebugLevel, 'driver.on_service_callback %s : [%s]' % (service_name, result))
@@ -704,6 +719,8 @@ def on_service_callback(result, service_name):
                     continue
                 if relative_service.state == 'ON':
                     continue
+                if _Debug:
+                    lg.out(_DebugLevel, '    making attempt to start relative service %r' % relative_service)
                 relative_service.automat('start')
     elif result == 'stopped':
         if _Debug:
@@ -726,20 +743,6 @@ def on_service_callback(result, service_name):
     svc_data['event'] = result
     listeners.push_snapshot('service', snap_id=service_name, data=svc_data)
     return result
-
-
-def do_finish_starting():
-    global _StartingDeferred
-    if _Debug:
-        lg.args(_DebugLevel, starting=bool(_StartingDeferred))
-    _StartingDeferred = None
-
-
-def do_finish_stoping():
-    global _StopingDeferred
-    if _Debug:
-        lg.args(_DebugLevel, stoping=bool(_StopingDeferred))
-    _StopingDeferred = None
 
 
 def on_started_all_services(results):
