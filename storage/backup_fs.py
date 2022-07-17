@@ -1912,6 +1912,8 @@ def ReadIndex(text_data, new_revision=None, encoding='utf-8'):
         return 0, []
     if _Debug:
         lg.args(_DebugLevel, json_data=json_data)
+    if not json_data:
+        return 0, []
     for customer_id in json_data.keys():
         customer_idurl = global_id.GlobalUserToIDURL(customer_id)
         if not id_url.is_cached(customer_idurl):
