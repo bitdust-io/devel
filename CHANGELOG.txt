@@ -1,6 +1,28 @@
 Change Log
 ==========
 
+
+2022-07-17 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* bump twisted from 20.3.0 to 22.4.0
+* do not publish device OS version in the identity file
+* real-time data streaming via WebSocket API to support front-end apps (#161)
+* keep track of key alias in storage/backup_fs.py (#163)
+* transition from ParseGlobalID to NormalizeGlobalID
+* rework in backup_fs and backup_control
+* store backup_db file index separately for each private key
+* changed dependecies of service_backups() and service_keys_storage()
+* rework in shared_access_coordinator()
+* keep track of suppliers's index file revision in the shared_access_coordinator()
+* moved GetBackupStatusInfo() to restore_monitor.py
+* bug fixes in customer_space.py and customer_assistant.py
+* changed config services/customer/suppliers-number type to integer
+* bug fixes in few services
+* bug fixes in few API methods
+* IDURL fix in message_peddler()
+
+
+
 2022-05-22 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * populate more information in API streaming for private/shared files

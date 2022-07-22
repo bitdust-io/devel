@@ -453,7 +453,7 @@ def remove_online_status_listener_callback(idurl, callback_method=None, callback
 
 def populate_online_statuses():
     for online_s in online_statuses().values():
-        listeners.push_snapshot('online_status', snap_id=online_s.idurl.to_bin(), data=online_s.to_json())
+        listeners.push_snapshot('online_status', snap_id=online_s.idurl.to_text(), data=online_s.to_json())
 
 #------------------------------------------------------------------------------
 
@@ -601,13 +601,13 @@ class OnlineStatus(automat.Automat):
             **kwargs
         )
         if _Debug:
-            lg.out(_DebugLevel + 2, 'online_status.ContactStatus %s %s %s' % (name, state, idurl))
+            lg.out(_DebugLevel, 'online_status.ContactStatus %s %s %s' % (name, state, idurl))
 
     def to_json(self):
         j = super().to_json()
         glob_id = global_id.ParseIDURL(self.idurl)
         j.update({
-            'idurl': self.idurl.to_bin(),
+            'idurl': self.idurl.to_text(),
             'global_id': glob_id['customer'],
             'idhost': glob_id['idhost'],
             'username': glob_id['user'],
@@ -625,7 +625,7 @@ class OnlineStatus(automat.Automat):
         Method to catch the moment when `online_status()` state were changed.
         """
         if _Debug:
-            lg.out(_DebugLevel - 2, '%s : [%s]->[%s]' % (self.name, oldstate, newstate))
+            lg.out(_DebugLevel, '%s : [%s]->[%s]' % (self.name, oldstate, newstate))
         if newstate == 'CONNECTED':
             lg.info('remote node connected : %s' % self.idurl)
             events.send('node-connected', data=dict(
@@ -634,7 +634,7 @@ class OnlineStatus(automat.Automat):
                 old_state=oldstate,
                 new_state=newstate,
             ))
-            listeners.push_snapshot('online_status', snap_id=self.idurl.to_bin(), data=self.to_json())
+            listeners.push_snapshot('online_status', snap_id=self.idurl.to_text(), data=self.to_json())
         if newstate == 'OFFLINE' and oldstate != 'AT_STARTUP':
             lg.info('remote node disconnected : %s' % self.idurl)
             events.send('node-disconnected', data=dict(
@@ -643,9 +643,9 @@ class OnlineStatus(automat.Automat):
                 old_state=oldstate,
                 new_state=newstate,
             ))
-            listeners.push_snapshot('online_status', snap_id=self.idurl.to_bin(), data=self.to_json())
+            listeners.push_snapshot('online_status', snap_id=self.idurl.to_text(), data=self.to_json())
         if newstate == 'PING?' and oldstate != 'AT_STARTUP':
-            listeners.push_snapshot('online_status', snap_id=self.idurl.to_bin(), data=self.to_json())
+            listeners.push_snapshot('online_status', snap_id=self.idurl.to_text(), data=self.to_json())
 
     def A(self, event, *args, **kwargs):
         """

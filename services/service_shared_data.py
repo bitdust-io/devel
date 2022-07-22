@@ -51,11 +51,12 @@ class SharedDataService(LocalService):
     def start(self):
         from main import events
         from transport import callback
+        from access import shared_access_coordinator
         callback.append_inbox_callback(self._on_inbox_packet_received)
         events.add_subscriber(self._on_supplier_modified, 'supplier-modified')
         events.add_subscriber(self._on_my_list_files_refreshed, 'my-list-files-refreshed')
         events.add_subscriber(self._on_key_erased, 'key-erased')
-        self._do_open_known_shares()
+        shared_access_coordinator.open_known_shares()
         return True
 
     def stop(self):
@@ -161,32 +162,3 @@ class SharedDataService(LocalService):
         if newpacket.Command == commands.Files():
             return key_ring.on_files_received(newpacket, info)
         return False
-
-    def _do_open_known_shares(self):
-        from crypt import my_keys
-        from main import listeners
-        from access import shared_access_coordinator
-        from storage import backup_fs
-        known_offline_shares = []
-        for key_id in my_keys.known_keys():
-            if not key_id.startswith('share_'):
-                continue
-            active_share = shared_access_coordinator.get_active_share(key_id)
-            if active_share:
-                continue
-            known_offline_shares.append(key_id)
-        to_be_opened = []
-        for _, _, itemInfo in backup_fs.IterateIDs():
-            if not itemInfo.key_id:
-                continue
-            if itemInfo.key_id in to_be_opened:
-                continue
-            if itemInfo.key_id not in known_offline_shares:
-                continue
-            to_be_opened.append(itemInfo.key_id)
-        for key_id in to_be_opened:
-            active_share = shared_access_coordinator.SharedAccessCoordinator(key_id, log_events=True, publish_events=False, )
-            active_share.automat('restart')
-            if listeners.is_populate_requered('shared_file'):
-                listeners.populate_later().remove('shared_file')
-                backup_fs.populate_shared_files(key_id=key_id)

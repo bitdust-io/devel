@@ -255,6 +255,12 @@ def enable_model_listener(model_name, request_all=False):
             backup_matrix.populate_remote_versions()
         else:
             listeners.populate_later('remote_version')
+    elif model_name == 'shared_location':
+        if driver.is_on('service_shared_data'):
+            from access import shared_access_coordinator
+            shared_access_coordinator.populate_shares()
+        else:
+            listeners.populate_later('shared_location')
     return OK()
 
 
@@ -1619,7 +1625,6 @@ def file_delete(remote_path):
     from storage import backup_control
     from storage import backup_monitor
     from main import settings
-    from main import control
     from main import listeners
     from lib import packetid
     from system import bpio
@@ -1638,7 +1643,7 @@ def file_delete(remote_path):
     if not packetid.Valid(pathID):
         return ERROR('invalid item found: %r' % pathID)
     itemInfo = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(customer_idurl, key_alias))
-    pathIDfull = packetid.MakeBackupID(parts['customer'], pathID)
+    pathIDfull = packetid.MakeBackupID(customer=parts['customer'], path_id=pathID, key_alias=key_alias)
     full_glob_id = global_id.MakeGlobalID(customer=parts['customer'], path=pathID, key_alias=key_alias)
     full_remote_path = global_id.MakeGlobalID(customer=parts['customer'], path=parts['path'], key_alias=key_alias)
     result = backup_control.DeletePathBackups(pathID=pathIDfull, saveDB=False, calculate=False)
@@ -1650,7 +1655,6 @@ def file_delete(remote_path):
     backup_fs.Calculate(iterID=backup_fs.fsID(customer_idurl, key_alias))
     backup_control.Save(customer_idurl, key_alias)
     backup_monitor.A('restart')
-    # control.request_update([('pathID', pathIDfull), ])
     if id_url.is_the_same(parts['idurl'], my_id.getIDURL()) and key_alias == 'master':
         listeners.push_snapshot('private_file', snap_id=full_glob_id, deleted=True, data=dict(
             global_id=full_glob_id,
@@ -1879,7 +1883,7 @@ def file_upload_stop(remote_path):
         return ERROR('remote path %r not found' % parts['path'])
     if not packetid.Valid(pathID):
         return ERROR('invalid item found: %r' % pathID)
-    pathIDfull = packetid.MakeBackupID(parts['customer'], pathID)
+    pathIDfull = packetid.MakeBackupID(customer=parts['customer'], path_id=pathID, key_alias=key_alias)
     r = []
     msg = []
     if backup_control.AbortPendingTask(pathIDfull):
@@ -2278,7 +2282,7 @@ def shares_list(only_active=False, include_mine=True, include_granted=True):
             to_be_listed = True
         if not to_be_listed:
             continue
-        results.append({
+        r = {
             'key_id': key_id,
             'alias': key_alias,
             'label': my_keys.get_label(key_id),
@@ -2286,7 +2290,11 @@ def shares_list(only_active=False, include_mine=True, include_granted=True):
             'state': None,
             'suppliers': [],
             'ecc_map': None,
-        })
+        }
+        one_share = shared_access_coordinator.get_active_share(key_id)
+        if one_share:
+            r.update(one_share.to_json())
+        results.append(r)
     return RESULT(results)
 
 

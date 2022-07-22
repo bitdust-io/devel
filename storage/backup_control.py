@@ -414,7 +414,7 @@ def DeletePathBackups(pathID, removeLocalFilesToo=True, saveDB=True, calculate=T
     # this is a list of all known backups of this path
     versions = item.list_versions()
     for version in versions:
-        backupID = packetid.MakeBackupID(customer, remotePath, version)
+        backupID = packetid.MakeBackupID(customer, remotePath, version, key_alias=key_alias)
         if _Debug:
             lg.out(_DebugLevel, '        removing %s' % backupID)
         # abort backup if it just started and is running at the moment
@@ -759,7 +759,7 @@ def OnFoundFolderSize(pth, sz, arg):
             backup_fs.Calculate()
             Save()
         if version:
-            backupID = packetid.MakeBackupID(customerGlobID, pathID, version)
+            backupID = packetid.MakeBackupID(customerGlobID, pathID, version, key_alias=keyAlias)
             job = GetRunningBackupObject(backupID)
             if job:
                 job.totalSize = sz
@@ -790,7 +790,7 @@ def OnJobDone(backupID, result):
                 if len(versions) > maxBackupsNum:
                     for version in versions[maxBackupsNum:]:
                         item.delete_version(version)
-                        backupID = packetid.MakeBackupID(customerGlobalID, remotePath, version)
+                        backupID = packetid.MakeBackupID(customerGlobalID, remotePath, version, key_alias=keyAlias)
                         backup_rebuilder.RemoveBackupToWork(backupID)
                         # io_throttle.DeleteBackupRequests(backupID)
                         # io_throttle.DeleteBackupSendings(backupID)
