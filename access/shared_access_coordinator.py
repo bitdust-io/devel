@@ -76,6 +76,7 @@ from lib import serialization
 
 from main import events
 from main import settings
+from main import listeners
 
 from dht import dht_relations
 
@@ -164,6 +165,12 @@ def find_active_shares(customer_idurl):
 
 #-----------------------------------------------------------------------------
 
+def populate_shares():
+    global _ActiveShares
+    for share_instance in _ActiveShares.values():
+        listeners.push_snapshot('shared_location', snap_id=share_instance.key_id, data=share_instance.to_json())
+
+#------------------------------------------------------------------------------
 
 class SharedAccessCoordinator(automat.Automat):
     """
@@ -234,17 +241,28 @@ class SharedAccessCoordinator(automat.Automat):
         self.connected_callbacks = {}
 
     def register(self):
-        """
-        """
         automat_index = automat.Automat.register(self)
         register_share(self)
         return automat_index
 
     def unregister(self):
-        """
-        """
         unregister_share(self)
         return automat.Automat.unregister(self)
+
+    def state_changed(self, oldstate, newstate, event, *args, **kwargs):
+        """
+        Method to catch the moment when `shared_access_coordinator()` state were changed.
+        """
+        if _Debug:
+            lg.out(_DebugLevel, '%s : [%s]->[%s]' % (self.name, oldstate, newstate))
+        if newstate == 'CONNECTED':
+            lg.info('share connected : %s' % self.key_id)
+            listeners.push_snapshot('shared_location', snap_id=self.key_id, data=self.to_json())
+        if newstate == 'DISCONNECTED' and oldstate != 'AT_STARTUP':
+            lg.info('share disconnected : %s' % self.key_id)
+            listeners.push_snapshot('shared_location', snap_id=self.key_id, data=self.to_json())
+        if newstate in ['DHT_LOOKUP', 'SUPPLIERS?', ] and oldstate != 'AT_STARTUP':
+            listeners.push_snapshot('shared_location', snap_id=self.key_id, data=self.to_json())
 
     def A(self, event, *args, **kwargs):
         """

@@ -50,12 +50,17 @@ class SharedDataService(LocalService):
 
     def start(self):
         from main import events
+        from main import listeners
         from transport import callback
+        from access import shared_access_coordinator
         callback.append_inbox_callback(self._on_inbox_packet_received)
         events.add_subscriber(self._on_supplier_modified, 'supplier-modified')
         events.add_subscriber(self._on_my_list_files_refreshed, 'my-list-files-refreshed')
         events.add_subscriber(self._on_key_erased, 'key-erased')
         self._do_open_known_shares()
+        if listeners.is_populate_requered('shared_location'):
+            listeners.populate_later().remove('shared_location')
+            shared_access_coordinator.populate_shares()
         return True
 
     def stop(self):
