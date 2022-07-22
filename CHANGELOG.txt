@@ -2,6 +2,14 @@ Change Log
 ==========
 
 
+2022-07-22 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* make sure all known shared locations are opened during start-up
+* websocket api streaming of the shared locations
+* bug fixes in few api methods related to key_aliases in backup_fs
+
+
+
 2022-07-17 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * bump twisted from 20.3.0 to 22.4.0
