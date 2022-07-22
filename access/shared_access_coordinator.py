@@ -172,6 +172,44 @@ def populate_shares():
 
 #------------------------------------------------------------------------------
 
+def open_known_shares():
+    known_offline_shares = []
+    for key_id in my_keys.known_keys():
+        if not key_id.startswith('share_'):
+            continue
+        active_share = get_active_share(key_id)
+        if active_share:
+            continue
+        known_offline_shares.append(key_id)
+    to_be_opened = []
+    for customer_idurl in backup_fs.known_customers():
+        for key_alias in backup_fs.known_keys_aliases(customer_idurl):
+            key_id = my_keys.make_key_id(alias=key_alias, creator_idurl=customer_idurl)
+            if not key_id:
+                continue
+            if not key_id.startswith('share_'):
+                continue
+            if key_id in to_be_opened:
+                continue
+            if key_id not in known_offline_shares:
+                continue
+            to_be_opened.append(key_id)
+    if _Debug:
+        lg.args(_DebugLevel, known_offline_shares=known_offline_shares, to_be_opened=to_be_opened)
+    populate_shared_files = listeners.is_populate_requered('shared_file')
+    for key_id in to_be_opened:
+        active_share = SharedAccessCoordinator(key_id, log_events=True, publish_events=False, )
+        active_share.automat('restart')
+        if populate_shared_files:
+            backup_fs.populate_shared_files(key_id=key_id)
+    if populate_shared_files:
+        listeners.populate_later().remove('shared_file')
+    if listeners.is_populate_requered('shared_location'):
+        listeners.populate_later().remove('shared_location')
+        populate_shares()
+
+#------------------------------------------------------------------------------
+
 class SharedAccessCoordinator(automat.Automat):
     """
     This class implements all the functionality of the ``shared_access_coordinator()`` state machine.
@@ -377,8 +415,6 @@ class SharedAccessCoordinator(automat.Automat):
             lg.exc()
             return
         self.known_ecc_map = args[0].get('ecc_map')
-        if _Debug:
-            lg.args(_DebugLevel, known_ecc_map=self.known_ecc_map, known_suppliers_list=self.known_suppliers_list)
         self.suppliers_in_progress.clear()
         self.suppliers_succeed.clear()
         for supplier_idurl in self.known_suppliers_list:
@@ -389,6 +425,8 @@ class SharedAccessCoordinator(automat.Automat):
                 d = identitycache.immediatelyCaching(supplier_idurl)
                 d.addCallback(lambda *a: self._do_connect_with_supplier(supplier_idurl))
                 d.addErrback(self._on_supplier_failed, supplier_idurl=kwargs['supplier_idurl'], reason='failed caching supplier identity')
+        if _Debug:
+            lg.args(_DebugLevel, known_ecc_map=self.known_ecc_map, known_suppliers_list=self.known_suppliers_list)
 
     def doSupplierRequestIndexFile(self, *args, **kwargs):
         """
@@ -437,12 +475,11 @@ class SharedAccessCoordinator(automat.Automat):
         Action method.
         """
         supplier_idurl = kwargs['supplier_idurl']
-        if supplier_idurl not in self.suppliers_in_progress:
-            lg.err('supplier %r was not in progress' % supplier_idurl)
-        else:
+        if supplier_idurl in self.suppliers_in_progress:
             self.suppliers_in_progress.remove(supplier_idurl)
-        if event in ['index-sent', 'index-up-to-date', ]:
-            self.suppliers_succeed.append(supplier_idurl)
+            if event in ['index-sent', 'index-up-to-date', ]:
+                if supplier_idurl not in self.suppliers_succeed:
+                    self.suppliers_succeed.append(supplier_idurl)
         if _Debug:
             lg.args(_DebugLevel, e=event, s=supplier_idurl, progress=len(self.suppliers_in_progress), succeed=len(self.suppliers_succeed))
 
@@ -454,6 +491,8 @@ class SharedAccessCoordinator(automat.Automat):
         if self.known_ecc_map:
             from raid import eccmap
             critical_suppliers_number = eccmap.GetCorrectableErrors(eccmap.GetEccMapSuppliersNumber(self.known_ecc_map))
+        if _Debug:
+            lg.args(_DebugLevel, progress=len(self.suppliers_in_progress), succeed=self.suppliers_succeed, critical_suppliers_number=critical_suppliers_number)
         if len(self.suppliers_in_progress) == 0:
             if len(self.suppliers_succeed) >= critical_suppliers_number:
                 self.automat('all-suppliers-connected')

@@ -2282,7 +2282,7 @@ def shares_list(only_active=False, include_mine=True, include_granted=True):
             to_be_listed = True
         if not to_be_listed:
             continue
-        results.append({
+        r = {
             'key_id': key_id,
             'alias': key_alias,
             'label': my_keys.get_label(key_id),
@@ -2290,7 +2290,11 @@ def shares_list(only_active=False, include_mine=True, include_granted=True):
             'state': None,
             'suppliers': [],
             'ecc_map': None,
-        })
+        }
+        one_share = shared_access_coordinator.get_active_share(key_id)
+        if one_share:
+            r.update(one_share.to_json())
+        results.append(r)
     return RESULT(results)
 
 
