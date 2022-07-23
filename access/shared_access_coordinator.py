@@ -214,6 +214,7 @@ class SharedAccessCoordinator(automat.Automat):
     """
     This class implements all the functionality of the ``shared_access_coordinator()`` state machine.
     """
+    fast = False
 
     timers = {
         'timer-1min': (60, ['DHT_LOOKUP']),
@@ -296,10 +297,10 @@ class SharedAccessCoordinator(automat.Automat):
         if newstate == 'CONNECTED':
             lg.info('share connected : %s' % self.key_id)
             listeners.push_snapshot('shared_location', snap_id=self.key_id, data=self.to_json())
-        if newstate == 'DISCONNECTED' and oldstate != 'AT_STARTUP':
+        elif newstate == 'DISCONNECTED' and oldstate != 'AT_STARTUP':
             lg.info('share disconnected : %s' % self.key_id)
             listeners.push_snapshot('shared_location', snap_id=self.key_id, data=self.to_json())
-        if newstate in ['DHT_LOOKUP', 'SUPPLIERS?', ] and oldstate != 'AT_STARTUP':
+        elif newstate in ['DHT_LOOKUP', 'SUPPLIERS?', 'CLOSED', ] and oldstate != 'AT_STARTUP':
             listeners.push_snapshot('shared_location', snap_id=self.key_id, data=self.to_json())
 
     def A(self, event, *args, **kwargs):

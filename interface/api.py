@@ -2492,7 +2492,7 @@ def share_close(key_id):
     Disconnects and deactivate given share location.
 
     ###### HTTP
-        curl -X PUT 'localhost:8180/share/close/v1' -d '{"key_id": "share_7e9726e2dccf9ebe6077070e98e78082$alice@server-a.com"}'
+        curl -X DELETE 'localhost:8180/share/close/v1' -d '{"key_id": "share_7e9726e2dccf9ebe6077070e98e78082$alice@server-a.com"}'
 
     ###### WebSocket
         websocket.send('{"command": "api_call", "method": "share_close", "kwargs": {"key_id": "share_7e9726e2dccf9ebe6077070e98e78082$alice@server-a.com"} }');
@@ -2506,8 +2506,11 @@ def share_close(key_id):
     this_share = shared_access_coordinator.get_active_share(key_id)
     if not this_share:
         return ERROR('share %r not opened' % key_id)
+    ret = Deferred()
+    ret.addTimeout(20, clock=reactor)
+    this_share.addStateChangedCallback(lambda *a, **kw: ret.callback(OK(this_share.to_json(), message='share %r closed' % key_id, )))
     this_share.automat('shutdown')
-    return OK(this_share.to_json(), message='share %r closed' % key_id, )
+    return ret
 
 
 def share_history():
