@@ -527,7 +527,7 @@ def config_get(key, include_info=False):
     if _Debug:
         lg.out(_DebugLevel, 'api.config_get [%s]' % key)
     if not config.conf().exist(key):
-        return ERROR('option %r not exist' % key)
+        return ERROR('option %s does not exist' % key)
     if not config.conf().hasChilds(key):
         return RESULT([config.conf().toJson(key, include_info=include_info), ], )
     known_childs = sorted(config.conf().listEntries(key))
@@ -963,9 +963,9 @@ def key_create(key_alias, key_size=None, label='', include_private=False):
     key_alias = key_alias.strip().lower()
     key_id = my_keys.make_key_id(key_alias, creator_idurl=my_id.getIDURL())
     if not my_keys.is_valid_key_id(key_id):
-        return ERROR('key %r is not valid' % key_id)
+        return ERROR('key %s is not valid' % key_id)
     if my_keys.is_key_registered(key_id):
-        return ERROR('key %r already exist' % key_id)
+        return ERROR('key %s already exist' % key_id)
     if not key_size:
         key_size = settings.getPrivateKeySize()
     if _Debug:
@@ -974,14 +974,14 @@ def key_create(key_alias, key_size=None, label='', include_private=False):
         label = 'share%s' % utime.make_timestamp()
     key_object = my_keys.generate_key(key_id, label=label, key_size=key_size)
     if key_object is None:
-        return ERROR('failed to generate private key %r' % key_id)
+        return ERROR('failed to generate private key %s' % key_id)
     key_info = my_keys.make_key_info(
         key_object,
         key_id=key_id,
         include_private=include_private
     )
     key_info.pop('include_private', None)
-    return OK(key_info, message='new private key %r was generated successfully' % key_alias, )
+    return OK(key_info, message='new private key %s was generated successfully' % key_alias, )
 
 
 def key_label(key_id, label):
@@ -1000,9 +1000,9 @@ def key_label(key_id, label):
     from userid import my_id
     key_label = strng.to_text(label)
     if not my_keys.is_valid_key_id(key_id):
-        return ERROR('key %r is not valid' % key_id)
+        return ERROR('key %s is not valid' % key_id)
     if not my_keys.is_key_registered(key_id):
-        return ERROR('key %r not exist' % key_id)
+        return ERROR('key %s does not exist' % key_id)
     if key_id == 'master' or key_id == my_id.getGlobalID(key_alias='master') or key_id == my_id.getID():
         return ERROR('master key label can not be changed')
     if _Debug:
@@ -1010,8 +1010,8 @@ def key_label(key_id, label):
     key_id = my_keys.latest_key_id(key_id)
     my_keys.key_obj(key_id).label = label
     if not my_keys.save_key(key_id):
-        return ERROR('key %r store failed' % key_id)
-    return OK(message='key %r label updated successfully' % key_id)
+        return ERROR('key %s store failed' % key_id)
+    return OK(message='label for the key %s updated successfully' % key_id)
 
 
 def key_erase(key_id):
@@ -1036,8 +1036,8 @@ def key_erase(key_id):
     if not key_alias or not creator_idurl:
         return ERROR('incorrect key_id format')
     if not my_keys.erase_key(key_id):
-        return ERROR('failed to erase private key %r' % key_id)
-    return OK(message='private key %r erased successfully' % key_id)
+        return ERROR('failed to erase private key %s' % key_id)
+    return OK(message='key %s was erased' % key_id)
 
 
 def key_share(key_id, trusted_user_id, include_private=False, include_signature=False, timeout=30):
@@ -1183,7 +1183,7 @@ def files_list(remote_path=None, key_id=None, recursive=True, all_customers=Fals
         lg.out(_DebugLevel, 'api.files_list remote_path=%s key_id=%s key_alias=%s recursive=%s all_customers=%s include_uploads=%s include_downloads=%s' % (
             remote_path, key_id, key_alias, recursive, all_customers, include_uploads, include_downloads, ))
     if not all_customers and customer_idurl not in backup_fs.known_customers():
-        return ERROR('customer %r not found' % customer_idurl)
+        return ERROR('customer %s was not found' % customer_idurl)
     backup_info_callback = None
     if driver.is_on('service_restores'):
         from storage import restore_monitor
@@ -1340,13 +1340,13 @@ def file_exists(remote_path):
     remotePath = bpio.remotePath(norm_path['path'])
     customer_idurl = norm_path['idurl']
     if customer_idurl not in backup_fs.known_customers():
-        return OK({'exist': False, 'path_id': None, }, message='customer %r not found' % customer_idurl, )
+        return OK({'exist': False, 'path_id': None, }, message='customer %s was not found' % customer_idurl, )
     pathID = backup_fs.ToID(remotePath, iter=backup_fs.fs(customer_idurl, norm_path['key_alias']))
     if not pathID:
-        return OK({'exist': False, 'path_id': None, }, message='path %r not found in the catalog' % remotePath, )
+        return OK({'exist': False, 'path_id': None, }, message='path %s was not found in the catalog' % remotePath, )
     item = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(customer_idurl, norm_path['key_alias']))
     if not item:
-        return OK({'exist': False, 'path_id': None, }, message='item %r not found in the catalog' % pathID, )
+        return OK({'exist': False, 'path_id': None, }, message='item %s was not found in the catalog' % pathID, )
     return OK({'exist': True, 'path_id': pathID, }, )
 
 
@@ -1377,13 +1377,13 @@ def file_info(remote_path, include_uploads=True, include_downloads=True):
     remotePath = bpio.remotePath(norm_path['path'])
     customer_idurl = norm_path['idurl']
     if customer_idurl not in backup_fs.known_customers():
-        return ERROR('customer %r not found' % customer_idurl)
+        return ERROR('customer %s was not found' % customer_idurl)
     pathID = backup_fs.ToID(remotePath, iter=backup_fs.fs(customer_idurl, norm_path['key_alias']))
     if not pathID:
-        return ERROR('path %r not found in the catalog' % remotePath)
+        return ERROR('path %s was not found in the catalog' % remotePath)
     item = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(customer_idurl, norm_path['key_alias']))
     if not item:
-        return ERROR('item %r not found in the catalog' % pathID)
+        return ERROR('item %s was not found in the catalog' % pathID)
     (item_size, item_time, versions) = backup_fs.ExtractVersions(pathID, item)
     glob_path_item = norm_path.copy()
     glob_path_item['path'] = pathID
@@ -1528,8 +1528,8 @@ def file_create(remote_path, as_folder=False, exist_ok=False, force_path_id=None
                 'customer': customer_idurl,
                 'created': False,
                 'type': ('dir' if as_folder else 'file'),
-            }, message='remote path %r already exist in catalog: %r' % (('folder' if as_folder else 'file'), fullGlobID), )
-        return ERROR('remote path %r already exist in catalog: %r' % (path, pathID))
+            }, message='remote path %s already exists in the catalog: %s' % (('folder' if as_folder else 'file'), fullGlobID), )
+        return ERROR('remote path %s already exists in the catalog: %s' % (path, pathID))
     if as_folder:
         newPathID, itemInfo, _, _ = backup_fs.AddDir(
             path,
@@ -1543,7 +1543,7 @@ def file_create(remote_path, as_folder=False, exist_ok=False, force_path_id=None
         parent_path = os.path.dirname(path)
         if not backup_fs.IsDir(parent_path, iter=backup_fs.fs(customer_idurl, key_alias)):
             if backup_fs.IsFile(parent_path, iter=backup_fs.fs(customer_idurl, key_alias)):
-                return ERROR('remote path can not be assigned, file already exist: %r' % parent_path)
+                return ERROR('remote path can not be assigned, file %s already exists' % parent_path)
             parentPathID, _, _, _ = backup_fs.AddDir(
                 parent_path,
                 read_stats=False,
@@ -1559,7 +1559,7 @@ def file_create(remote_path, as_folder=False, exist_ok=False, force_path_id=None
             iterID=backup_fs.fsID(customer_idurl, key_alias),
         )
         if not id_iter_iterID:
-            return ERROR('remote path can not be assigned, parent folder not found: %r' % parent_path)
+            return ERROR('remote path can not be assigned, parent folder %s was not found' % parent_path)
         parentPathID = id_iter_iterID[0]
         newPathID, itemInfo, _, _ = backup_fs.PutItem(
             name=os.path.basename(path),
@@ -1570,7 +1570,7 @@ def file_create(remote_path, as_folder=False, exist_ok=False, force_path_id=None
             key_id=keyID,
         )
         if not newPathID:
-            return ERROR('remote path can not be assigned, failed to create a new item: %r' % path)
+            return ERROR('remote path can not be assigned, failed to create new item %s' % path)
     backup_control.Save(customer_idurl, key_alias)
     # control.request_update([('pathID', newPathID), ])
     full_glob_id = global_id.MakeGlobalID(customer=parts['customer'], path=newPathID, key_alias=key_alias)
@@ -1604,7 +1604,7 @@ def file_create(remote_path, as_folder=False, exist_ok=False, force_path_id=None
         'customer': parts['idurl'],
         'created': True,
         'type': ('dir' if as_folder else 'file'),
-    }, message='new %s created in %r' % (('folder' if as_folder else 'file'), full_glob_id), )
+    }, message='new %s created in %s successfully' % (('folder' if as_folder else 'file'), full_glob_id), )
 
 
 def file_delete(remote_path):
@@ -1639,16 +1639,16 @@ def file_delete(remote_path):
     key_alias = parts['key_alias']
     pathID = backup_fs.ToID(path, iter=backup_fs.fs(customer_idurl, key_alias))
     if not pathID:
-        return ERROR('remote path %r was not found' % parts['path'])
+        return ERROR('remote path %s was not found' % parts['path'])
     if not packetid.Valid(pathID):
-        return ERROR('invalid item found: %r' % pathID)
+        return ERROR('invalid item found: %s' % pathID)
     itemInfo = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(customer_idurl, key_alias))
     pathIDfull = packetid.MakeBackupID(customer=parts['customer'], path_id=pathID, key_alias=key_alias)
     full_glob_id = global_id.MakeGlobalID(customer=parts['customer'], path=pathID, key_alias=key_alias)
     full_remote_path = global_id.MakeGlobalID(customer=parts['customer'], path=parts['path'], key_alias=key_alias)
     result = backup_control.DeletePathBackups(pathID=pathIDfull, saveDB=False, calculate=False)
     if not result:
-        return ERROR('remote item %r was not found' % pathIDfull)
+        return ERROR('remote item %s was not found' % pathIDfull)
     backup_fs.DeleteLocalDir(settings.getLocalBackupsDir(), pathIDfull)
     backup_fs.DeleteByID(pathID, iter=backup_fs.fs(customer_idurl, key_alias), iterID=backup_fs.fsID(customer_idurl, key_alias))
     backup_fs.Scan(customer_idurl=customer_idurl, key_alias=key_alias)
@@ -1681,7 +1681,7 @@ def file_delete(remote_path):
         'remote_path': full_remote_path,
         'global_id': full_glob_id,
         'customer': parts['idurl'],
-    }, message='item %r was deleted from remote suppliers' % pathIDfull, )
+    }, message='item %s was deleted from remote suppliers' % pathIDfull, )
 
 
 def files_uploads(include_running=True, include_pending=True):
@@ -1759,7 +1759,7 @@ def file_upload_start(local_path, remote_path, wait_result=False, publish_events
     from userid import global_id
     from crypt import my_keys
     if not bpio.pathExist(local_path):
-        return ERROR('local file or folder %r not exist' % local_path)
+        return ERROR('local file or folder %s not exist' % local_path)
     parts = global_id.NormalizeGlobalID(remote_path)
     if not parts['idurl'] or not parts['path']:
         return ERROR('invalid "remote_path" format')
@@ -1773,7 +1773,7 @@ def file_upload_start(local_path, remote_path, wait_result=False, publish_events
     path = bpio.remotePath(parts['path'])
     pathID = backup_fs.ToID(path, iter=backup_fs.fs(customer_idurl, key_alias))
     if not pathID:
-        return ERROR('path %r is not registered yet' % remote_path)
+        return ERROR('path %s was not registered yet' % remote_path)
     keyID = my_keys.make_key_id(alias=key_alias, creator_glob_id=parts['customer'])
     # customerID = global_id.MakeGlobalID(customer=parts['customer'], key_alias=key_alias)
     pathIDfull = packetid.MakeBackupID(keyID, pathID)
@@ -1812,11 +1812,11 @@ def file_upload_start(local_path, remote_path, wait_result=False, publish_events
                 'source_path': local_path,
                 'path_id': pathID,
             },
-            message='item %r uploaded, local path is: %r' % (remote_path, local_path),
+            message='item %s was uploaded, local path is: %s' % (remote_path, local_path),
             api_method='file_upload_start',
         )))
         tsk.result_defer.addErrback(
-            lambda result: task_created_defer.callback(ERROR('upload task %d for %r failed: %r' % (
+            lambda result: task_created_defer.callback(ERROR('uploading task %d for %s failed: %s' % (
                 tsk.number, tsk.pathID, result[1],
             ),
             api_method='file_upload_start',
@@ -1849,7 +1849,7 @@ def file_upload_start(local_path, remote_path, wait_result=False, publish_events
             'source_path': local_path,
             'path_id': pathID,
         },
-        message='uploading %r started, local path is: %r' % (remote_path, local_path, ),
+        message='uploading task for %s started, local path is %s' % (remote_path, local_path, ),
     )
 
 
@@ -1880,21 +1880,21 @@ def file_upload_stop(remote_path):
     key_alias = parts['key_alias']
     pathID = backup_fs.ToID(remotePath, iter=backup_fs.fs(customer_idurl, key_alias))
     if not pathID:
-        return ERROR('remote path %r not found' % parts['path'])
+        return ERROR('remote path %s was not found' % parts['path'])
     if not packetid.Valid(pathID):
-        return ERROR('invalid item found: %r' % pathID)
+        return ERROR('invalid item was found: %s' % pathID)
     pathIDfull = packetid.MakeBackupID(customer=parts['customer'], path_id=pathID, key_alias=key_alias)
     r = []
     msg = []
     if backup_control.AbortPendingTask(pathIDfull):
         r.append(pathIDfull)
-        msg.append('pending item %r removed' % pathIDfull)
+        msg.append('pending item %s was removed' % pathIDfull)
     for backupID in backup_control.FindRunningBackup(pathIDfull):
         if backup_control.AbortRunningBackup(backupID):
             r.append(backupID)
-            msg.append('backup %r aborted' % backupID)
+            msg.append('uploading task %s was aborted' % backupID)
     if not r:
-        return ERROR('no running or pending tasks for %r found' % pathIDfull)
+        return ERROR('no running or pending tasks for path %s were found' % pathIDfull)
     if _Debug:
         lg.out(_DebugLevel, 'api.file_upload_stop %s' % r)
     return RESULT(r, message=(', '.join(msg)))
@@ -1986,11 +1986,11 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, p
             pathID, version = version, ''
         item = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(customer_idurl, key_alias))
         if not item:
-            return ERROR('path %r not found in the catalog' % remote_path)
+            return ERROR('path %s was not found in the catalog' % remote_path)
         if not version:
             version = item.get_latest_version()
         if not version:
-            return ERROR('not found any remote versions for %r' % remote_path)
+            return ERROR('did not found any remote versions for %s' % remote_path)
         if item.key_id:
             key_alias = packetid.KeyAlias(item.key_id)
         customerGlobalID = global_id.MakeGlobalID(customer=glob_path['customer'], key_alias=key_alias)
@@ -1999,23 +1999,23 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, p
         remotePath = bpio.remotePath(glob_path['path'])
         knownPathID = backup_fs.ToID(remotePath, iter=backup_fs.fs(customer_idurl, key_alias))
         if not knownPathID:
-            return ERROR('path %r not found in the catalog' % remotePath)
+            return ERROR('path %s was not found in the catalog' % remotePath)
         item = backup_fs.GetByID(knownPathID, iterID=backup_fs.fsID(customer_idurl, key_alias))
         if not item:
-            return ERROR('item %r not found in the catalog' % knownPathID)
+            return ERROR('item %s was not found in the catalog' % knownPathID)
         version = glob_path['version']
         if not version:
             version = item.get_latest_version()
         if not version:
-            return ERROR('not found any remote versions for %r' % remote_path)
+            return ERROR('did not found any remote versions for %s' % remote_path)
         if item.key_id:
             key_alias = packetid.KeyAlias(item.key_id)
         customerGlobalID = global_id.MakeGlobalID(customer=glob_path['customer'], key_alias=key_alias)
         backupID = packetid.MakeBackupID(customerGlobalID, knownPathID, version)
     if backup_control.IsBackupInProcess(backupID):
-        return ERROR('download not possible, uploading %r is in process' % backupID)
+        return ERROR('downloading is not possible, uploading task %s is currently in progress' % backupID)
     if restore_monitor.IsWorking(backupID):
-        return ERROR('downloading task for %r already scheduled' % backupID)
+        return ERROR('downloading task %s was already scheduled' % backupID)
     keyAlias, customerGlobalID, pathID_target, version = packetid.SplitBackupIDFull(backupID)
     if not customerGlobalID:
         customerGlobalID = global_id.UrlToGlobalID(my_id.getIDURL())
@@ -2024,7 +2024,7 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, p
         key_alias=keyAlias,
     ))
     if not knownPath:
-        return ERROR('location %r not found in the catalog' % knownPath)
+        return ERROR('location %s was not found in the catalog' % knownPath)
     if not destination_path:
         destination_path = settings.getRestoreDir()
     if not destination_path:
@@ -2043,12 +2043,12 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, p
                     'path_id': pathID_target,
                     'remote_path': knownPath,
                 },
-                message='version %r downloaded to %r' % (backupID, destination_path),
+                message='version %s downloaded to %s successfully' % (backupID, destination_path),
                 api_method='file_download_start'
             ))
         else:
             ret.callback(ERROR(
-                'downloading version %r failed, result is %r' % (backupID, result),
+                'downloading task %s failed, result is %s' % (backupID, result),
                 details={
                     'downloaded': False,
                     'key_id': key_id,
@@ -2080,7 +2080,7 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, p
                 'path_id': pathID_target,
                 'remote_path': knownPath,
             },
-            message='downloading version %r started, destination is %r' % (backupID, destination_path),
+            message='downloading task %s started, destination is %s' % (backupID, destination_path),
             api_method='file_download_start',
         ))
         return True
@@ -2093,7 +2093,7 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, p
                 lg.out(_DebugLevel, '    share %s is now DISCONNECTED, removing callback %s' % (active_share.key_id, callback_id,))
             active_share.remove_connected_callback(callback_id)
             ret.callback(ERROR(
-                'downloading version %r failed, result is %r' % (backupID, 'share is disconnected'),
+                'downloading task %s failed, result is: %s' % (backupID, 'share is disconnected'),
                 details={
                     'key_id': active_share.key_id,
                     'backup_id': backupID,
@@ -2177,7 +2177,7 @@ def file_download_stop(remote_path):
             customerGlobalID = global_id.UrlToGlobalID(my_id.getIDURL())
         item = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(customer_idurl, key_alias))
         if not item:
-            return ERROR('path %r not found in the catalog' % remote_path)
+            return ERROR('path %s was not found in the catalog' % remote_path)
         versions = []
         if version:
             versions.append(version)
@@ -2189,10 +2189,10 @@ def file_download_stop(remote_path):
         remotePath = bpio.remotePath(glob_path['path'])
         knownPathID = backup_fs.ToID(remotePath, iter=backup_fs.fs(customer_idurl, key_alias))
         if not knownPathID:
-            return ERROR('path %r not found in the catalog' % remotePath)
+            return ERROR('path %s was not found in the catalog' % remotePath)
         item = backup_fs.GetByID(knownPathID, iterID=backup_fs.fsID(customer_idurl, key_alias))
         if not item:
-            return ERROR('item %r not found in the catalog' % knownPathID)
+            return ERROR('item %s was not found in the catalog' % knownPathID)
         versions = []
         if glob_path['version']:
             versions.append(glob_path['version'])
@@ -2201,7 +2201,7 @@ def file_download_stop(remote_path):
         for version in versions:
             backupIDs.append(packetid.MakeBackupID(glob_path['customer'], knownPathID, version, key_alias=key_alias))
     if not backupIDs:
-        return ERROR('not found any remote versions for %r' % remote_path)
+        return ERROR('did not found any remote versions for %s' % remote_path)
     r = []
     for backupID in backupIDs:
         r.append({'backup_id': backupID, 'aborted': restore_monitor.Abort(backupID), })
@@ -2267,7 +2267,7 @@ def shares_list(only_active=False, include_mine=True, include_granted=True):
                 continue
             cur_share = shared_access_coordinator.get_active_share(key_id)
             if not cur_share:
-                lg.warn('share %s not found' % key_id)
+                lg.warn('share %s was not found' % key_id)
                 continue
             results.append(cur_share.to_json())
         return RESULT(results)
@@ -2345,7 +2345,7 @@ def share_create(owner_id=None, key_size=None, label=''):
         key_size = settings.getPrivateKeySize()
     key_object = my_keys.generate_key(key_id, label=label, key_size=key_size)
     if key_object is None:
-        return ERROR('failed to generate private key %r' % key_id)
+        return ERROR('failed to generate private key %s' % key_id)
     key_info = my_keys.make_key_info(
         key_object,
         key_id=key_id,
@@ -2353,7 +2353,7 @@ def share_create(owner_id=None, key_size=None, label=''):
     )
     key_info.pop('include_private', None)
     backup_fs.SaveIndex(customer_idurl=global_id.glob2idurl(owner_id), key_alias=key_alias)
-    return OK(key_info, message='new share %r created successfully' % key_id, )
+    return OK(key_info, message='new share %s created successfully' % key_id, )
 
 
 def share_delete(key_id):
@@ -2375,11 +2375,11 @@ def share_delete(key_id):
     from crypt import my_keys
     this_share = shared_access_coordinator.get_active_share(key_id)
     if not this_share:
-        return ERROR('share %r is not opened' % key_id)
+        return ERROR('share %s was not opened' % key_id)
     this_share.automat('shutdown')
     my_keys.erase_key(key_id)
     # TODO: cleanup backup_fs as well
-    return OK(this_share.to_json(), message='share %r deleted' % key_id, )
+    return OK(this_share.to_json(), message='share %s deleted successfully' % key_id, )
 
 
 def share_grant(key_id, trusted_user_id, timeout=45, publish_events=True):
@@ -2470,12 +2470,12 @@ def share_open(key_id, publish_events=False):
             if newstate == 'CONNECTED' and oldstate != newstate:
                 active_share.removeStateChangedCallback(_on_shared_access_coordinator_state_changed)
                 if new_share:
-                    ret.callback(OK(active_share.to_json(), message='share %r opened' % key_id, api_method='share_open'))
+                    ret.callback(OK(active_share.to_json(), message='share %s opened successfully' % key_id, api_method='share_open'))
                 else:
-                    ret.callback(OK(active_share.to_json(), message='share %r refreshed' % key_id, api_method='share_open'))
+                    ret.callback(OK(active_share.to_json(), message='share %s refreshed successfully' % key_id, api_method='share_open'))
             if newstate == 'DISCONNECTED' and oldstate != newstate:
                 active_share.removeStateChangedCallback(_on_shared_access_coordinator_state_changed)
-                ret.callback(ERROR('share %r disconnected' % key_id, details=active_share.to_json(), api_method='share_open'))
+                ret.callback(ERROR('share %s disconnected' % key_id, details=active_share.to_json(), api_method='share_open'))
             return None
 
         active_share.addStateChangedCallback(_on_shared_access_coordinator_state_changed)
@@ -2505,10 +2505,10 @@ def share_close(key_id):
     from access import shared_access_coordinator
     this_share = shared_access_coordinator.get_active_share(key_id)
     if not this_share:
-        return ERROR('share %r not opened' % key_id)
+        return ERROR('share %s was not opened' % key_id)
     ret = Deferred()
     ret.addTimeout(20, clock=reactor)
-    this_share.addStateChangedCallback(lambda *a, **kw: ret.callback(OK(this_share.to_json(), message='share %r closed' % key_id, )))
+    this_share.addStateChangedCallback(lambda *a, **kw: ret.callback(OK(this_share.to_json(), message='share %s closed' % key_id, )))
     this_share.automat('shutdown')
     return ret
 
@@ -2640,7 +2640,7 @@ def group_create(creator_id=None, key_size=None, label='', timeout=20):
     key_info['group_key_id'] = key_info.pop('key_id')
     ret = Deferred()
     d = groups.send_group_pub_key_to_suppliers(group_key_id)
-    d.addCallback(lambda results: ret.callback(OK(key_info, message='new group %r created successfully' % group_key_id)))
+    d.addCallback(lambda results: ret.callback(OK(key_info, message='new group %s created successfully' % group_key_id)))
     d.addErrback(lambda err: ret.callback(ERROR('failed to deliver group public key to my suppliers')))
     d.addTimeout(timeout, clock=reactor)
     return ret
@@ -2673,7 +2673,7 @@ def group_info(group_key_id):
         'active': False,
     }
     if not my_keys.is_key_registered(group_key_id):
-        return ERROR('group key not found')
+        return ERROR('group key %s was not found' % group_key_id)
     response.update({'group_key_info': my_keys.get_key_info(group_key_id), })
     this_group_member = group_member.get_active_group_member(group_key_id)
     if this_group_member:
@@ -2690,7 +2690,7 @@ def group_info(group_key_id):
         response['state'] = 'CLOSED'
         return OK(response)
     response['state'] = 'CLEANED'
-    lg.warn('did not found stored group info for %r, but group key exist' % group_key_id)
+    lg.warn('did not found stored group info for %s, but group key exist' % group_key_id)
     return OK(response)
 
 
@@ -3071,7 +3071,7 @@ def friend_remove(user_id):
         idurl = global_id.GlobalUserToIDURL(user_id, as_field=False)
     idurl = id_url.field(idurl)
     if not idurl:
-        return ERROR('you must specify the global IDURL address where your identity file was last located')
+        return ERROR('you must specify IDURL or user ID in short form')
 
     def _remove():
         if contactsdb.is_correspondent(idurl):
@@ -3082,7 +3082,7 @@ def friend_remove(user_id):
                 global_id=global_id.idurl2glob(idurl),
             ))
             return OK(message='friend has been removed', api_method='friend_remove')
-        return ERROR('friend not found', api_method='friend_remove')
+        return ERROR('friend %s was not found' % idurl.to_id(), api_method='friend_remove')
 
     if id_url.is_cached(idurl):
         return _remove()
@@ -3381,7 +3381,7 @@ def message_history(recipient_id=None, sender_id=None, message_type=None, offset
     if recipient_id:
         recipient_local_key_id = my_keys.get_local_key_id(recipient_id)
         if recipient_local_key_id is None:
-            lg.warn('recipient %r local key id was not registered' % recipient_id)
+            lg.warn('local key id for recipient %s was not registered' % recipient_id)
             return RESULT([])
     messages = [{'doc': m, } for m in message_database.query_messages(
         sender_id=sender_id,
@@ -3454,7 +3454,7 @@ def message_send(recipient_id, data, ping_timeout=15, message_ack_timeout=15):
         if not recipient_idurl:
             recipient_idurl = strng.to_bin(recipient_id)
         if not recipient_idurl:
-            return ERROR('recipient not found')
+            return ERROR('recipient was not found')
         recipient_id = global_id.glob2idurl(recipient_idurl, as_field=False)
     glob_id = global_id.ParseGlobalID(recipient_id)
     if not glob_id['idurl']:
@@ -3757,7 +3757,7 @@ def supplier_change(position=None, supplier_id=None, new_supplier_id=None):
             supplier_idurl = global_id.GlobalUserToIDURL(supplier_id)
     supplier_idurl = strng.to_bin(supplier_idurl)
     if not supplier_idurl or not contactsdb.is_supplier(supplier_idurl, customer_idurl=customer_idurl):
-        return ERROR('supplier not found')
+        return ERROR('supplier was not found')
     new_supplier_idurl = new_supplier_id
     if new_supplier_id is not None:
         if global_id.IsValidGlobalUser(new_supplier_id):
@@ -3765,7 +3765,7 @@ def supplier_change(position=None, supplier_id=None, new_supplier_id=None):
         new_supplier_idurl = strng.to_bin(new_supplier_idurl)
 
         if contactsdb.is_supplier(new_supplier_idurl, customer_idurl=customer_idurl):
-            return ERROR('peer %r is your supplier already' % new_supplier_idurl)
+            return ERROR('user %s is already a known supplier' % new_supplier_idurl)
     ret = Deferred()
 
     def _do_change(x):
@@ -3776,9 +3776,9 @@ def supplier_change(position=None, supplier_id=None, new_supplier_id=None):
         fire_hire.AddSupplierToFire(supplier_idurl)
         fire_hire.A('restart')
         if new_supplier_idurl is not None:
-            ret.callback(OK(message='supplier %r will be replaced by %r' % (supplier_idurl, new_supplier_idurl), api_method='supplier_change'))
+            ret.callback(OK(message='supplier %s will be replaced by %s' % (supplier_idurl, new_supplier_idurl), api_method='supplier_change'))
         else:
-            ret.callback(OK(message='supplier %r will be replaced by a new random peer' % supplier_idurl, api_method='supplier_change'))
+            ret.callback(OK(message='supplier %s will be replaced by a randomly selected user' % supplier_idurl, api_method='supplier_change'))
         return None
 
     if new_supplier_id is None:
@@ -3924,7 +3924,7 @@ def customer_reject(customer_id, erase_customer_key=True):
         customer_idurl = global_id.GlobalUserToIDURL(customer_id)
     customer_idurl = id_url.field(customer_idurl)
     if not contactsdb.is_customer(customer_idurl):
-        return ERROR('customer not found')
+        return ERROR('customer was not found')
     # send packet to notify about service from us was rejected
     # TODO: - this is not yet handled on other side
     p2p_service.SendFailNoRequest(customer_idurl, packetid.UniqueID(), 'service rejected')
@@ -3952,7 +3952,7 @@ def customer_reject(customer_id, erase_customer_key=True):
     ))
     # restart local tester
     local_tester.TestUpdateCustomers()
-    return OK(message='customer %r rejected, %r bytes freed' % (customer_idurl, consumed_by_cutomer))
+    return OK(message='all services for client %s have been stopped, %r bytes freed' % (customer_idurl, consumed_by_cutomer))
 
 
 def customers_ping():
@@ -4070,7 +4070,7 @@ def service_info(service_name):
     """
     svc_info = driver.info(service_name)
     if svc_info is None:
-        return ERROR('service not found')
+        return ERROR('service was not found')
     return OK(svc_info)
 
 
@@ -4097,7 +4097,7 @@ def service_start(service_name):
         service_name = 'service_' + service_name.replace('-', '_')
         svc = driver.services().get(service_name, None)
     if svc is None:
-        lg.warn('service %r not found' % service_name)
+        lg.warn('service %r was not found' % service_name)
         return ERROR('service %s was not found' % service_name)
     if svc.state == 'ON':
         lg.warn('service %r already started' % service_name)
@@ -4133,8 +4133,8 @@ def service_stop(service_name):
         service_name = 'service_' + service_name.replace('-', '_')
         svc = driver.services().get(service_name, None)
     if svc is None:
-        lg.warn('service %r not found' % service_name)
-        return ERROR('service %s not found' % service_name)
+        lg.warn('service %r was not found' % service_name)
+        return ERROR('service %s was not found' % service_name)
     current_config = config.conf().getBool(svc.config_path)
     if current_config is None:
         lg.warn('config item %r was not found' % svc.config_path)
@@ -4168,8 +4168,8 @@ def service_restart(service_name, wait_timeout=10):
         service_name = 'service_' + service_name.replace('-', '_')
         svc = driver.services().get(service_name, None)
     if svc is None:
-        lg.warn('service %r not found' % service_name)
-        return ERROR('service %s not found' % service_name)
+        lg.warn('service %s was not found' % service_name)
+        return ERROR('service %s was not found' % service_name)
     ret = Deferred()
     d = driver.restart(service_name, wait_timeout=wait_timeout)
     d.addCallback(lambda resp: ret.callback(OK(resp, api_method='service_restart')))
@@ -5046,7 +5046,7 @@ def dht_user_random(layer_id=0, count=1):
 
     def _cb(idurls):
         if not idurls:
-            ret.callback(ERROR('no users found', api_method='dht_user_random'))
+            ret.callback(ERROR('no users were found', api_method='dht_user_random'))
             return None
         return ret.callback(RESULT(result=idurls, api_method='dht_user_random'))
 
@@ -5294,7 +5294,7 @@ def automat_info(index=None, automat_id=None):
     else:
         inst = automat.by_index(int(index))
     if not inst:
-        return ERROR('state machine is not found')
+        return ERROR('state machine instance was not found')
     return OK(inst.to_json())
 
 
@@ -5326,7 +5326,7 @@ def automat_events_start(index=None, automat_id=None, state_unchanged=False):
     else:
         inst = automat.by_index(int(index))
     if not inst:
-        return ERROR('state machine is not found')
+        return ERROR('state machine instance was not found')
     inst.publishEvents(True, publish_event_state_not_changed=state_unchanged)
     return OK(message='started publishing events from the state machine', result=inst.to_json())
 
@@ -5354,7 +5354,7 @@ def automat_events_stop(index=None, automat_id=None):
     else:
         inst = automat.by_index(int(index))
     if not inst:
-        return ERROR('state machine is not found')
+        return ERROR('state machine instance was not found')
     inst.publishEvents(False, publish_event_state_not_changed=False)
     return OK(message='stopped publishing events from the state machine', result=inst.to_json())
 
