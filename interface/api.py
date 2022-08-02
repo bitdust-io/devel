@@ -1384,7 +1384,11 @@ def file_info(remote_path, include_uploads=True, include_downloads=True):
     item = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(customer_idurl, norm_path['key_alias']))
     if not item:
         return ERROR('item %s was not found in the catalog' % pathID)
-    (item_size, item_time, versions) = backup_fs.ExtractVersions(pathID, item)
+    backup_info_callback = None
+    if driver.is_on('service_restores'):
+        from storage import restore_monitor
+        backup_info_callback = restore_monitor.GetBackupStatusInfo
+    (item_size, item_time, versions) = backup_fs.ExtractVersions(pathID, item, backup_info_callback=backup_info_callback)
     glob_path_item = norm_path.copy()
     glob_path_item['path'] = pathID
     key_alias = norm_path['key_alias']
