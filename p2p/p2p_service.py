@@ -194,7 +194,8 @@ def inbox(newpacket, info, status, error_message):
 
 def outbox(outpacket, wide, callbacks, target=None, route=None, response_timeout=None, keep_alive=True):
     if _Debug:
-        lg.out(_DebugLevel, "p2p_service.outbox [%s] to %s with route %r" % (outpacket.Command, nameurl.GetName(outpacket.RemoteID), route, ))
+        lg.out(_DebugLevel, "p2p_service.outbox [%s:%s] to %s with route %r" % (
+            outpacket.Command, outpacket.PacketID, nameurl.GetName(outpacket.RemoteID), route, ))
     return None
 
 #------------------------------------------------------------------------------

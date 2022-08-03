@@ -861,6 +861,8 @@ def on_outbox_packet(outpacket, wide, callbacks, target=None, route=None, respon
     started_packets = packet_out.search_similar_packets(outpacket)
     if started_packets:
         for active_packet, _ in started_packets:
+            if active_packet.Command in [commands.Ack(), commands.Fail(), ]:
+                continue
             if callbacks:
                 for command, cb in callbacks.items():
                     active_packet.set_callback(command, cb)
@@ -1018,8 +1020,6 @@ def on_unregister_file_sending(transfer_id, status, bytes_sent, error_message=No
 
 
 def on_cancelled_file_sending(proto, host, filename, size, description='', error_message=None):
-    """
-    """
     pkt_out, work_item = packet_out.search(proto, host, filename)
     if pkt_out is None:
         if _Debug:
