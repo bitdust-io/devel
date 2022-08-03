@@ -2302,6 +2302,28 @@ def shares_list(only_active=False, include_mine=True, include_granted=True):
     return RESULT(results)
 
 
+def share_info(key_id):
+    """
+    Returns detailed info about given shared location.
+
+    ###### HTTP
+        curl -X GET 'localhost:8180/share/info/v1?key_id=share_7e9726e2dccf9ebe6077070e98e78082$alice@server-a.com'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "share_info", "kwargs": {"key_id": "share_7e9726e2dccf9ebe6077070e98e78082$alice@server-a.com"} }');
+    """
+    key_id = strng.to_text(key_id)
+    if not driver.is_on('service_shared_data'):
+        return ERROR('service_shared_data() is not started')
+    if not key_id.startswith('share_'):
+        return ERROR('invalid share id')
+    from access import shared_access_coordinator
+    this_share = shared_access_coordinator.get_active_share(key_id)
+    if not this_share:
+        return ERROR('share %s was not opened' % key_id)
+    return OK(this_share.to_json())
+
+
 def share_create(owner_id=None, key_size=None, label=''):
     """
     Creates a new "share" - virtual location where you or other users can upload/download files.

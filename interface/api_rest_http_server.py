@@ -712,6 +712,12 @@ class BitDustRESTHTTPServer(JsonAPIResource):
             include_granted=bool(_request_arg(request, 'granted', '1') in ['1', 'true', ]),
         )
 
+    @GET('^/sh/i$')
+    @GET('^/v1/share/info$')
+    @GET('^/share/info/v1$')
+    def share_info_v1(self, request):
+        return api.share_info(key_id=_request_arg(request, 'key_id', mandatory=True))
+
     @POST('^/sh/c$')
     @POST('^/v1/share/create$')
     @POST('^/share/create/v1$')
