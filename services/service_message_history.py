@@ -59,6 +59,7 @@ class MessageHistoryService(LocalService):
         events.add_subscriber(self.on_key_registered, 'key-registered')
         events.add_subscriber(self.on_key_renamed, 'key-renamed')
         events.add_subscriber(self.on_key_generated, 'key-generated')
+        events.add_subscriber(self.on_key_erased, 'key-erased')
         if listeners.is_populate_requered('conversation'):
             listeners.populate_later().remove('conversation')
             message_database.populate_conversations()
@@ -71,6 +72,7 @@ class MessageHistoryService(LocalService):
         from chat import message_database
         from chat import message_keeper
         from main import events
+        events.remove_subscriber(self.on_key_erased, 'key-erased')
         events.remove_subscriber(self.on_key_generated, 'key-generated')
         events.remove_subscriber(self.on_key_renamed, 'key-renamed')
         events.remove_subscriber(self.on_key_registered, 'key-registered')
@@ -89,6 +91,13 @@ class MessageHistoryService(LocalService):
 
     def on_key_renamed(self, evt):
         self.do_check_create_rename_key(evt.data['new_key_id'])
+
+    def on_key_erased(self, evt):
+        from main import listeners
+        from crypt import my_keys
+        if evt.data['key_id'].startswith('group_'):
+            local_key_id = my_keys.get_local_key_id(evt.data['key_id'])
+            listeners.push_snapshot('conversation', snap_id=local_key_id, deleted=True)
 
     def do_check_create_rename_key(self, new_key_id):
         from logs import lg

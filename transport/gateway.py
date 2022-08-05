@@ -821,7 +821,10 @@ def on_identity_received(newpacket, send_ack=True):
             # in case we saw same identity with higher revision number need to reply with Fail packet and notify user
             # this may happen after identity restore - the user starts counting revision number from 0
             # but other nodes already store previous copies, user just need to jump to the most recent revision number
-            lg.warn('received new identity with out-dated revision number from %r' % idurl)
+            lg.warn('received new identity with out-dated revision number %d from %r, known revision is %d' % (
+                newidentity.getRevisionValue(), idurl, latest_identity.getRevisionValue(), ))
+            lg.warn('received identity: %r' % newxml)
+            lg.warn('known identity: %r' % latest_identity.serialize())
             ident_packet = signed.Packet(
                 Command=commands.Identity(),
                 OwnerID=latest_identity.getIDURL(),
@@ -856,8 +859,6 @@ def on_identity_received(newpacket, send_ack=True):
 
 
 def on_outbox_packet(outpacket, wide, callbacks, target=None, route=None, response_timeout=None, keep_alive=True):
-    """
-    """
     started_packets = packet_out.search_similar_packets(outpacket)
     if started_packets:
         for active_packet, _ in started_packets:
@@ -874,8 +875,6 @@ def on_outbox_packet(outpacket, wide, callbacks, target=None, route=None, respon
 
 
 def on_transport_state_changed(transport, oldstate, newstate):
-    """
-    """
     global _TransportStateChangedCallbacksList
     if _Debug:
         lg.out(_DebugLevel - 2, 'gateway.on_transport_state_changed in %r : %s->%s' % (
@@ -888,8 +887,6 @@ def on_transport_state_changed(transport, oldstate, newstate):
 
 
 def on_transport_initialized(proto, xmlrpcurl=None):
-    """
-    """
     transport(proto).automat('transport-initialized', xmlrpcurl)
     events.send('gateway-transport-initialized', data=dict(
         proto=proto,
@@ -899,8 +896,6 @@ def on_transport_initialized(proto, xmlrpcurl=None):
 
 
 def on_receiving_started(proto, host, options_modified=None):
-    """
-    """
     if _Debug:
         lg.out(_DebugLevel - 2, 'gateway.on_receiving_started %r host=%r' % (proto.upper(), host))
     transport(proto).automat('receiving-started', (proto, host, options_modified))
@@ -913,8 +908,6 @@ def on_receiving_started(proto, host, options_modified=None):
 
 
 def on_receiving_failed(proto, error_code=None):
-    """
-    """
     if _Debug:
         lg.out(_DebugLevel - 2, 'gateway.on_receiving_failed %s    error=[%s]' % (proto.upper(), str(error_code)))
     transport(proto).automat('failed')
@@ -926,8 +919,6 @@ def on_receiving_failed(proto, error_code=None):
 
 
 def on_disconnected(proto, result=None):
-    """
-    """
     if _Debug:
         lg.out(_DebugLevel - 2, 'gateway.on_disconnected %s    result=%s' % (proto.upper(), str(result)))
     if proto in transports():
@@ -940,8 +931,6 @@ def on_disconnected(proto, result=None):
 
 
 def on_start_connecting(host):
-    """
-    """
     return True
 
 

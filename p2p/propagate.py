@@ -457,14 +457,14 @@ def SendToIDs(idlist, wide=False, ack_handler=None, timeout_handler=None, respon
     Same, but send to many IDs and also check previous packets to not re-send.
     """
     global _PropagateCounter
-    if _Debug:
-        lg.out(_DebugLevel, "propagate.SendToIDs to %d users, wide=%s" % (len(idlist), wide))
     if ack_handler is None:
         ack_handler = HandleAck
     if timeout_handler is None:
         timeout_handler = HandleTimeOut
     LocalIdentity = my_id.getLocalIdentity()
     Payload = strng.to_bin(LocalIdentity.serialize())
+    if _Debug:
+        lg.out(_DebugLevel, "propagate.SendToIDs to %d users, rev=%r wide=%s" % (len(idlist), LocalIdentity.getRevisionValue(), wide))
     alreadysent = set()
     totalsent = 0
     inqueue = {}

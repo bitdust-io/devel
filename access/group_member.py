@@ -93,6 +93,7 @@ from main import events
 from main import config
 
 from crypt import my_keys
+from crypt import signed
 
 from dht import dht_relations
 
@@ -1447,6 +1448,8 @@ class GroupMember(automat.Automat):
                     resp_payload = strng.to_text(err.value.args[0])
                 elif isinstance(err.value.args[0], packet_out.PacketOut):
                     resp_payload = strng.to_text(err.value.args[0].outpacket.Payload)
+                elif isinstance(err.value.args[0], signed.Packet):
+                    resp_payload = strng.to_text(err.value.args[0].Payload)
                 else:
                     resp_payload = strng.to_text(err.value.args[0][0].Payload)
                 if _Debug:

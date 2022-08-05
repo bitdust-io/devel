@@ -34,6 +34,8 @@ from testsupport import info, warn
 
 #------------------------------------------------------------------------------
 
+VERBOSE = False
+
 TEST_NAME = os.environ['TEST_NAME']
 
 CONF = json.loads(open(f'/app/tests/{TEST_NAME}/conf.json', 'r').read())
@@ -252,7 +254,7 @@ def global_wrapper(event_loop):
 
     time.sleep(PAUSE_BEFORE)
 
-    verbose = False
+    verbose = VERBOSE
 
     _begin = time.time()
 
