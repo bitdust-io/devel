@@ -74,8 +74,6 @@ _SuppliersToHire = []
 #------------------------------------------------------------------------------
 
 def AddSupplierToHire(idurl):
-    """
-    """
     global _SuppliersToHire
     idurl = strng.to_bin(idurl)
     if idurl not in _SuppliersToHire:
@@ -85,8 +83,6 @@ def AddSupplierToHire(idurl):
 
 
 def InsertSupplierToHire(idurl):
-    """
-    """
     global _SuppliersToHire
     idurl = strng.to_bin(idurl)
     if idurl not in _SuppliersToHire:

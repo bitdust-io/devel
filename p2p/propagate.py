@@ -411,8 +411,6 @@ def HandleTimeOut(pkt_out):
 
 
 def OnFileSent(pkt_out, item, status, size, error_message):
-    """
-    """
     return False
 
 

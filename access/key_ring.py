@@ -90,16 +90,12 @@ _MyKeysInSync = False
 #------------------------------------------------------------------------------
 
 def init():
-    """
-    """
     if _Debug:
         lg.out(_DebugLevel, 'key_ring.init')
     my_keys.check_rename_my_keys()
 
 
 def shutdown():
-    """
-    """
     if _Debug:
         lg.out(_DebugLevel, 'key_ring.shutdown')
 

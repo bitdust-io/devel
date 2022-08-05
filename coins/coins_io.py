@@ -98,8 +98,6 @@ def storage_contract_open(customer_idurl, duration, amount, price=1.0, trustee=N
 
 
 def storage_contract_accept(prev_coin_json):
-    """
-    """
     return {
         "miner": {
             # populate previous hash from existing coin
@@ -112,8 +110,6 @@ def storage_contract_accept(prev_coin_json):
 
 
 def storage_contract_continue(prev_coin_json, duration):
-    """
-    """
     return {
         "miner": {
             # populate previous hash from existing coin
@@ -127,8 +123,6 @@ def storage_contract_continue(prev_coin_json, duration):
 
 
 def add_signature(coin_json, role):
-    """
-    """
     _coin = coin_json.copy()
     _coin[role] = {
         'idurl': my_id.getIDURL().to_bin(),
@@ -140,8 +134,6 @@ def add_signature(coin_json, role):
 
 
 def verify_signature(coin_json, role):
-    """
-    """
     signature = coin_json[role]['signature']
     coin_json[role]['signature'] = ''
     # role_data = coin_json[role].copy()
@@ -153,8 +145,6 @@ def verify_signature(coin_json, role):
 
 
 def set_prev_hash(coin_json, prev_hash):
-    """
-    """
     if 'miner' not in coin_json:
         coin_json['miner'] = {}
     coin_json['miner']['prev'] = prev_hash

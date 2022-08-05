@@ -48,14 +48,10 @@ from coins import contract_chain_consumer
 #------------------------------------------------------------------------------
 
 def reconnect():
-    """
-    """
     contract_chain_consumer.A('start')
 
 
 def is_connected():
-    """
-    """
     if contract_chain_consumer.A() is None:
         lg.warn('contract_chain_consumer() not exist')
         return False
@@ -67,8 +63,6 @@ def is_connected():
 
 
 def get_coin_by_hash(hash_id):
-    """
-    """
     if not is_connected():
         return succeed(None)
     return Query(dict(
@@ -79,8 +73,6 @@ def get_coin_by_hash(hash_id):
 
 
 def get_coins_by_chain(chain, provider_idurl, consumer_idurl):
-    """
-    """
     if not is_connected():
         return succeed(None)
     return Query(dict(
@@ -91,8 +83,6 @@ def get_coins_by_chain(chain, provider_idurl, consumer_idurl):
 
 
 def send_to_miner(coins):
-    """
-    """
     if not is_connected():
         return succeed(None)
     result = Deferred()

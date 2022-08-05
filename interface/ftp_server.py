@@ -152,8 +152,6 @@ def shutdown():
 #------------------------------------------------------------------------------
 
 class BitDustFileReader(_FileReader):
-    """
-    """
 
     def __init__(self, fObj, filepath):
         super(BitDustFileReader, self).__init__(fObj)
@@ -167,8 +165,6 @@ class BitDustFileReader(_FileReader):
 #------------------------------------------------------------------------------
 
 class BitDustFTP(FTP):
-    """
-    """
 
     def _accessGrantedResponse(self, result, segments):
         self.workingDirectory = segments
@@ -523,8 +519,6 @@ class BitDustFTP(FTP):
 #------------------------------------------------------------------------------
 
 class BitDustFTPFactory(FTPFactory):
-    """
-    """
     protocol = BitDustFTP
 
 

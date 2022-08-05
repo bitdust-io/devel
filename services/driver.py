@@ -226,8 +226,6 @@ def cancel(service_name, service_cancel_payload, request, info):
 
 
 def init():
-    """
-    """
     if _Debug:
         lg.out(_DebugLevel, 'driver.init')
     available_services_dir = os.path.join(bpio.getExecutableDir(), 'services')
@@ -271,8 +269,6 @@ def init():
 
 
 def shutdown():
-    """
-    """
     if _Debug:
         lg.out(_DebugLevel, 'driver.shutdown')
     config.conf().removeConfigNotifier('services/')
@@ -287,8 +283,6 @@ def shutdown():
 
 
 def build_order():
-    """
-    """
     global _BootUpOrder
     order = list(enabled_services())
     progress = True
@@ -327,8 +321,6 @@ def build_order():
 
 
 def start(services_list=[]):
-    """
-    """
     global _StartingDeferred
     global _StopingDeferred
     if _Debug:
@@ -366,8 +358,6 @@ def start(services_list=[]):
 
 
 def stop(services_list=[]):
-    """
-    """
     global _StopingDeferred
     global _StartingDeferred
     if _Debug:
@@ -429,8 +419,6 @@ def info(service_name):
 #------------------------------------------------------------------------------
 
 def restart(service_name, wait_timeout=None):
-    """
-    """
     global _StopingDeferred
     global _StartingDeferred
     restart_result = Deferred()

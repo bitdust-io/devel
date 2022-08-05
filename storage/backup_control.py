@@ -716,8 +716,6 @@ def HasTask(pathID):
 
 
 def GetPendingTask(pathID):
-    """
-    """
     pathID = global_id.CanonicalID(pathID)
     for t in tasks():
         if t.pathID == pathID:
@@ -726,14 +724,10 @@ def GetPendingTask(pathID):
 
 
 def ListPendingTasks():
-    """
-    """
     return tasks()
 
 
 def AbortPendingTask(pathID):
-    """
-    """
     pathID = global_id.CanonicalID(pathID)
     for t in tasks():
         if t.pathID == pathID:
@@ -820,8 +814,6 @@ def OnJobDone(backupID, result):
 
 
 def OnJobFailed(backupID, err):
-    """
-    """
     lg.err('job failed [%s] : %s' % (backupID, err))
     jobs().pop(backupID)
 
@@ -846,22 +838,16 @@ def OnBackupBlockReport(backupID, blockNum, result):
 
 
 def OnNewDataPrepared():
-    """
-    """
     data_sender.A('new-data')
 
 
 def OnTaskExecutedCallback(result):
-    """
-    """
     if _Debug:
         lg.out(_DebugLevel, 'backup_control.OnTaskExecuted %s : %s' % (result[0], result[1]))
     return result
 
 
 def OnTaskFailedCallback(result):
-    """
-    """
     lg.err('pathID: %s, error: %s' % (result[0], result[1]))
     return result
 
@@ -973,8 +959,6 @@ def IsPathInProcess(pathID):
 
 
 def FindRunningBackup(pathID=None, customer=None):
-    """
-    """
     if pathID:
         pathID = global_id.CanonicalID(pathID)
     result = set()

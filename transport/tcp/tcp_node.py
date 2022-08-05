@@ -172,8 +172,6 @@ def receive(options):
 
 
 def connect_to(host, keep_alive=True):
-    """
-    """
     host = net_misc.normalize_address(host)
     if host in started_connections():
         lg.warn('already connecting to "%s"' % host)
@@ -196,8 +194,6 @@ def connect_to(host, keep_alive=True):
 
 
 def disconnect_from(host):
-    """
-    """
     host = net_misc.normalize_address(host)
     ok = False
     for peeraddr, connections in opened_connections().items():
@@ -217,8 +213,6 @@ def disconnect_from(host):
 
 
 def disconnect():
-    """
-    """
     global _Listener
     from transport.tcp import tcp_interface
     if not _Listener:
@@ -232,8 +226,6 @@ def disconnect():
 
 
 def close_connections():
-    """
-    """
     for sc in list(started_connections().values()):
         sc.connector.disconnect()
     for oclist in list(opened_connections().values()):
@@ -243,8 +235,6 @@ def close_connections():
 
 
 def send(filename, remoteaddress, description=None, keep_alive=True):
-    """
-    """
     remoteaddress = net_misc.normalize_address(remoteaddress)
     result_defer = Deferred()
     if remoteaddress == my_host(normalize=True):
@@ -297,38 +287,26 @@ def send_keep_alive(host):
 
 
 def start_streams():
-    """
-    """
     return tcp_stream.start_process_streams()
 
 
 def stop_streams():
-    """
-    """
     return tcp_stream.stop_process_streams()
 
 
 def list_input_streams(sorted_by_time=True):
-    """
-    """
     return tcp_stream.list_input_streams(sorted_by_time)
 
 
 def list_output_streams(sorted_by_time=True):
-    """
-    """
     return tcp_stream.list_output_streams(sorted_by_time)
 
 
 def find_stream(file_id=None, transfer_id=None):
-    """
-    """
     return tcp_stream.find_stream(file_id=file_id, transfer_id=transfer_id)
 
 
 def cancel_file_receiving(transferID):
-    """
-    """
     # at the moment for TCP transport we can not stop particular file transfer
     # we can only close connection itself, which is not we really want
     # need to find a way to notify remote side about to stop
@@ -344,8 +322,6 @@ def cancel_file_receiving(transferID):
 
 
 def cancel_file_sending(transferID):
-    """
-    """
     for connections in opened_connections().values():
         for connection in connections:
             if connection.stream:
@@ -358,8 +334,6 @@ def cancel_file_sending(transferID):
 
 
 def cancel_outbox_file(host, filename):
-    """
-    """
     host = net_misc.normalize_address(host)
     if _Debug:
         lg.args(_DebugLevel, host=host, filename=filename)

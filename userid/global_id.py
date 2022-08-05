@@ -129,8 +129,6 @@ def MakeGlobalID(
 
 
 def ParseIDURL(idurl):
-    """
-    """
     return ParseGlobalID(UrlToGlobalID(idurl, include_key=False))
 
 
@@ -295,8 +293,6 @@ def NormalizeGlobalID(inp, detect_version=False, as_field=True):
 
 
 def CanonicalID(inp, include_key=True):
-    """
-    """
     parts = NormalizeGlobalID(ParseGlobalID(inp))
     if include_key:
         parts['key_alias'] = parts.get('key_alias') or 'master'
@@ -338,8 +334,6 @@ def SubstitutePacketID(packet_id, idurl=None, customer=None, key_id=None, path=N
 #------------------------------------------------------------------------------
 
 def UrlToGlobalID(url, include_key=False):
-    """
-    """
     if not url:
         return url
     from lib import nameurl
@@ -360,8 +354,6 @@ def UrlToGlobalID(url, include_key=False):
 
 
 def GlobalUserToIDURL(inp, as_field=True):
-    """
-    """
     inp = strng.to_text(inp)
     user, _, idhost = inp.strip().rpartition('@')
     if not user:
@@ -387,8 +379,6 @@ def GlobalUserToIDURL(inp, as_field=True):
 #------------------------------------------------------------------------------
 
 def IsValidGlobalUser(inp):
-    """
-    """
     if not inp:
         return False
     inp = strng.to_text(inp)
@@ -404,8 +394,6 @@ def IsValidGlobalUser(inp):
 
 
 def IsFullGlobalID(inp):
-    """
-    """
     if not inp:
         return False
     inp = strng.to_text(inp)
@@ -419,8 +407,6 @@ def IsFullGlobalID(inp):
 #------------------------------------------------------------------------------
 
 def MakeGlobalQueueID(queue_alias, owner_id, supplier_id):
-    """
-    """
     global _FORMAT_GLOBAL_ID_QUEUE_ID
     return _FORMAT_GLOBAL_ID_QUEUE_ID.format(
         queue_alias=strng.to_text(queue_alias),

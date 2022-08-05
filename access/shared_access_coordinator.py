@@ -110,8 +110,6 @@ _ActiveSharesByIDURL = {}
 #------------------------------------------------------------------------------
 
 def register_share(A):
-    """
-    """
     global _ActiveShares
     global _ActiveSharesByIDURL
     if A.key_id in _ActiveShares:
@@ -123,8 +121,6 @@ def register_share(A):
 
 
 def unregister_share(A):
-    """
-    """
     global _ActiveShares
     global _ActiveSharesByIDURL
     _ActiveShares.pop(A.key_id, None)
@@ -136,14 +132,10 @@ def unregister_share(A):
 #------------------------------------------------------------------------------
 
 def list_active_shares():
-    """
-    """
     global _ActiveShares
     return list(_ActiveShares.keys())
 
 def get_active_share(key_id):
-    """
-    """
     global _ActiveShares
     if key_id not in _ActiveShares:
         return None
@@ -151,8 +143,6 @@ def get_active_share(key_id):
 
 
 def find_active_shares(customer_idurl):
-    """
-    """
     global _ActiveSharesByIDURL
     result = []
     for automat_index in _ActiveSharesByIDURL.values():

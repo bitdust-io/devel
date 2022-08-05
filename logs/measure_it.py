@@ -45,13 +45,9 @@ _CallsIndex = {}
 #------------------------------------------------------------------------------
 
 def init():
-    """
-    """
 
 
 def shutdown():
-    """
-    """
     global _CallsIndex
     _CallsIndex.clear()
 

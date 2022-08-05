@@ -160,21 +160,15 @@ def GetLastFireTime():
 
 
 def ClearLastFireTime():
-    """
-    """
     _LastFireTime = 0
 
 
 def AddSupplierToFire(idurl):
-    """
-    """
     global _SuppliersToFire
     _SuppliersToFire.append(idurl)
 
 
 def IsAllHired():
-    """
-    """
     if settings.getSuppliersNumberDesired() < 0:
         # I must know how many suppliers I want
         lg.warn('my desired number of suppliers not set')

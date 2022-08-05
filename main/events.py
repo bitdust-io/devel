@@ -83,16 +83,12 @@ def subscribers():
 #------------------------------------------------------------------------------
 
 def init():
-    """
-    """
     if _Debug:
         lg.out(_DebugLevel, 'events.init')
     add_subscriber(push_event)
 
 
 def shutdown():
-    """
-    """
     if _Debug:
         lg.out(_DebugLevel, 'events.shutdown')
     clear_subscribers()
@@ -101,8 +97,6 @@ def shutdown():
 #------------------------------------------------------------------------------
 
 class Event(object):
-    """
-    """
 
     def __init__(self, event_id, data=None, created=None):
         self.event_id = event_id
@@ -125,8 +119,6 @@ def add_subscriber(subscriber_callback, event_id='*'):
 
 
 def remove_subscriber(subscriber_callback, event_id='*'):
-    """
-    """
     removed = False
     if event_id == '*':
         for event_id, subscriber_callbacks in subscribers().items():
@@ -142,8 +134,6 @@ def remove_subscriber(subscriber_callback, event_id='*'):
 
 
 def clear_subscribers(event_id='*'):
-    """
-    """
     removed = False
     for _event_id, subscriber_callbacks in subscribers().items():
         if _event_id == event_id or event_id == '*':
@@ -155,8 +145,6 @@ def clear_subscribers(event_id='*'):
 #------------------------------------------------------------------------------
 
 def dispatch(evt):
-    """
-    """
     global _EventLogFileEnabled
     global _EventLogUseColors
     global _EventsCount
@@ -201,8 +189,6 @@ def dispatch(evt):
 
 
 def send(event_id, data=None, created=None, fast=False):
-    """
-    """
     evt = Event(event_id, data=data, created=created)
     if fast:
         dispatch(evt)
@@ -224,8 +210,6 @@ def consumers_callbacks():
 
 
 def consume_events(consumer_id):
-    """
-    """
     if consumer_id not in consumers_callbacks():
         consumers_callbacks()[consumer_id] = []
     d = Deferred()
@@ -238,8 +222,6 @@ def consume_events(consumer_id):
 
 
 def push_event(event_object):
-    """
-    """
     for consumer_id in consumers_callbacks().keys():
         if consumer_id not in event_queue():
             event_queue()[consumer_id] = []
@@ -256,8 +238,6 @@ def push_event(event_object):
 
 
 def pop_event():
-    """
-    """
     for consumer_id in list(consumers_callbacks().keys()):
         if consumer_id not in event_queue() or len(event_queue()[consumer_id]) == 0:
             continue

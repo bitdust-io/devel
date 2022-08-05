@@ -360,8 +360,6 @@ def Identity(newpacket, info):
 
 
 def SendIdentity(remote_idurl, wide=False, timeout=10, callbacks={}):
-    """
-    """
     packet_id = 'identity:%s' % packetid.UniqueID()
     if _Debug:
         lg.out(_DebugLevel, "p2p_service.SendIdentity to %s wide=%s packet_id=%r" % (
@@ -381,8 +379,6 @@ def SendIdentity(remote_idurl, wide=False, timeout=10, callbacks={}):
 
 
 def RequestService(request, info):
-    """
-    """
     if _Debug:
         try:
             service_info = serialization.BytesToDict(request.Payload)
@@ -562,8 +558,6 @@ def Data(request):
 
 
 def SendData(raw_data, ownerID, creatorID, remoteID, packetID, callbacks={}):
-    """
-    """
     newpacket = signed.Packet(
         Command=commands.Data(),
         OwnerID=ownerID,
@@ -594,8 +588,6 @@ def Retrieve(request):
 
 
 def SendRetreive(ownerID, creatorID, packetID, remoteID, payload='', response_timeout=None, callbacks={}):
-    """
-    """
     newpacket = signed.Packet(
         Command=commands.Retrieve(),
         OwnerID=ownerID,
@@ -836,8 +828,6 @@ def SendRetrieveCoin(remote_idurl, query, wide=False, callbacks={}):
 #------------------------------------------------------------------------------
 
 def Key(request, info):
-    """
-    """
     if _Debug:
         lg.out(_DebugLevel, 'p2p_service.Key %d bytes in [%s]' % (len(request.Payload), request.PacketID))
         lg.out(_DebugLevel, '  from senderID=%s to remoteID=%s  ownerID=%s  creatorID=%s  ' % (
@@ -863,8 +853,6 @@ def SendKey(remote_idurl, encrypted_key_data, packet_id=None, wide=False, callba
 
 
 def AuditKey(request, info):
-    """
-    """
     if _Debug:
         lg.out(_DebugLevel, 'p2p_service.AuditKey %d bytes in [%s]' % (len(request.Payload), request.PacketID))
         lg.out(_DebugLevel, '  from remoteID=%s  ownerID=%s  creatorID=%s  sender_idurl=%s' % (
@@ -891,8 +879,6 @@ def SendAuditKey(remote_idurl, encrypted_payload, packet_id=None, timeout=10, wi
 #------------------------------------------------------------------------------
 
 def Event(request, info):
-    """
-    """
     if _Debug:
         try:
             e_json = serialization.BytesToDict(request.Payload, keys_to_text=True)
@@ -943,8 +929,6 @@ def SendEvent(remote_idurl, event_id, payload=None,
 #------------------------------------------------------------------------------
 
 def Message(request, info):
-    """
-    """
     if _Debug:
         lg.out(_DebugLevel, 'p2p_service.Message %d bytes in [%s]' % (len(request.Payload), request.PacketID))
         lg.out(_DebugLevel, '  from remoteID=%s  ownerID=%s  creatorID=%s' % (
@@ -952,8 +936,6 @@ def Message(request, info):
 
 
 def SendMessage(remote_idurl, packet_id=None, payload=None, wide=True, callbacks={}, response_timeout=None):
-    """
-    """
     if packet_id is None:
         packet_id = packetid.UniqueID()
     if _Debug:
@@ -972,8 +954,6 @@ def SendMessage(remote_idurl, packet_id=None, payload=None, wide=True, callbacks
 #------------------------------------------------------------------------------
 
 def Contacts(request, info):
-    """
-    """
     if _Debug:
         lg.out(_DebugLevel, 'p2p_service.Contacts %d bytes in [%s]' % (len(request.Payload), request.PacketID))
         lg.out(_DebugLevel, '  from remoteID=%s  ownerID=%s  creatorID=%s' % (
@@ -981,8 +961,6 @@ def Contacts(request, info):
 
 
 def SendContacts(remote_idurl, json_payload={}, wide=False, callbacks={}):
-    """
-    """
     MyID = my_id.getIDURL()
     if _Debug:
         lg.out(_DebugLevel, "p2p_service.SendContacts to %s" % nameurl.GetName(remote_idurl))

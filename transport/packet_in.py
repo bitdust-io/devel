@@ -99,15 +99,11 @@ _History = []
 #------------------------------------------------------------------------------
 
 def init():
-    """
-    """
     global _PacketLogFileEnabled
     _PacketLogFileEnabled = config.conf().getBool('logs/packet-enabled')
 
 
 def shutdown():
-    """
-    """
     global _PacketLogFileEnabled
     _PacketLogFileEnabled = False
 
@@ -126,8 +122,6 @@ def increment_packets_counter():
 
 
 def inbox_items():
-    """
-    """
     global _InboxItems
     return _InboxItems
 

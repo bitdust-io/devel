@@ -99,8 +99,6 @@ def RoundupFile(filename, stepsize):
 
 
 def ReadBinaryFile(filename):
-    """
-    """
     if not os.path.isfile(filename):
         return b''
     if not os.access(filename, os.R_OK):
@@ -112,8 +110,6 @@ def ReadBinaryFile(filename):
 
 
 def WriteFile(filename, data):
-    """
-    """
     if sys.version_info[0] == 3:
         binary_type = bytes
     else:
@@ -129,8 +125,6 @@ def WriteFile(filename, data):
 
 
 def ReadBinaryFileAsArray(filename):
-    """
-    """
     if not os.path.isfile(filename):
         return b''
     if not os.access(filename, os.R_OK):

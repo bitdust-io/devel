@@ -143,8 +143,6 @@ _TransportLogFilename = None
 #------------------------------------------------------------------------------
 
 def init():
-    """
-    """
     global _LocalListener
     global _PacketLogFileEnabled
     if _Debug:
@@ -180,23 +178,17 @@ def shutdown():
 #------------------------------------------------------------------------------
 
 def transport(proto):
-    """
-    """
     global _TransportsDict
     proto = strng.to_text(proto)
     return _TransportsDict[proto]
 
 
 def transports():
-    """
-    """
     global _TransportsDict
     return _TransportsDict
 
 
 def listener():
-    """
-    """
     global _LocalListener
     return _LocalListener
 
@@ -218,22 +210,16 @@ def is_installed(proto):
 
 
 def can_send(proto):
-    """
-    """
     return transport(proto).state == 'LISTENING'
 
 
 def last_inbox_time():
-    """
-    """
     global _LastInboxPacketTime
     return _LastInboxPacketTime
 
 #------------------------------------------------------------------------------
 
 def start():
-    """
-    """
     if _Debug:
         lg.out(4, 'gateway.start')
     callback.append_outbox_filter_callback(on_outbox_packet)
@@ -254,8 +240,6 @@ def start():
 
 
 def cold_start():
-    """
-    """
     if _Debug:
         lg.out(4, 'gateway.cold_start : sending "start" only to one transport - most preferable')
     callback.append_outbox_filter_callback(on_outbox_packet)
@@ -281,8 +265,6 @@ def cold_start():
 #------------------------------------------------------------------------------
 
 def stop():
-    """
-    """
     if _Debug:
         lg.out(4, 'gateway.stop')
     stop_packets_timeout_loop()
@@ -306,8 +288,6 @@ def stop():
 #------------------------------------------------------------------------------
 
 def verify():
-    """
-    """
     ordered_list = list(transports().keys())
     ordered_list.sort(key=settings.getTransportPriority, reverse=True)
     if _Debug:
@@ -363,8 +343,6 @@ def verify():
 
 
 def attach(transport_instance):
-    """
-    """
     global _TransportsDict
     global _AvailableTransports
     proto = strng.to_text(transport_instance.proto)
@@ -375,8 +353,6 @@ def attach(transport_instance):
 
 
 def detach(transport_instance):
-    """
-    """
     global _TransportsDict
     global _AvailableTransports
     proto = strng.to_text(transport_instance.proto)
@@ -537,8 +513,6 @@ def make_transfer_ID():
 #------------------------------------------------------------------------------
 
 def connect_to(proto, host):
-    """
-    """
     if not is_ready():
         return fail(Exception('gateway is not ready'))
     if not is_installed(proto):
@@ -547,8 +521,6 @@ def connect_to(proto, host):
 
 
 def disconnect_from(proto, host):
-    """
-    """
     if not is_ready():
         return fail(Exception('gateway is not ready'))
     if not is_installed(proto):
@@ -582,8 +554,6 @@ def send_file(remote_idurl, proto, host, filename, description='', pkt_out=None)
 
 
 def send_file_single(remote_idurl, proto, host, filename, description='', pkt_out=None):
-    """
-    """
     if not is_ready():
         lg.warn('gateway is not ready')
         return False
@@ -596,8 +566,6 @@ def send_file_single(remote_idurl, proto, host, filename, description='', pkt_ou
 
 
 def send_keep_alive(proto, host):
-    """
-    """
     if not is_ready():
         lg.warn('gateway is not ready')
         return False
@@ -609,8 +577,6 @@ def send_keep_alive(proto, host):
 
 
 def list_active_transports():
-    """
-    """
     if not is_ready():
         return fail(Exception('gateway is not ready'))
     result = []
@@ -622,8 +588,6 @@ def list_active_transports():
 
 
 def list_active_sessions(proto):
-    """
-    """
     if not is_ready():
         return fail(Exception('gateway is not ready'))
     if not is_installed(proto):
@@ -632,8 +596,6 @@ def list_active_sessions(proto):
 
 
 def list_active_streams(proto):
-    """
-    """
     if not is_ready():
         return fail(Exception('gateway is not ready'))
     if not is_installed(proto):
@@ -642,8 +604,6 @@ def list_active_streams(proto):
 
 
 def find_active_session(proto, host=None, idurl=None):
-    """
-    """
     if not is_ready():
         # return fail(Exception('gateway is not ready'))
         lg.warn('gateway is not ready')
@@ -656,8 +616,6 @@ def find_active_session(proto, host=None, idurl=None):
 
 
 def find_active_stream(proto, stream_id=None, transfer_id=None):
-    """
-    """
     if not is_ready():
         lg.warn('gateway is not ready')
         return None
@@ -719,8 +677,6 @@ def current_bytes_received():
 
 
 def shutdown_all_outbox_packets():
-    """
-    """
     if _Debug:
         lg.out(_DebugLevel, 'gateway.shutdown_all_outbox_packets, %d live objects at the moment' % len(packet_out.queue()))
     for pkt_out in list(packet_out.queue()):
@@ -728,8 +684,6 @@ def shutdown_all_outbox_packets():
 
 
 def shutdown_all_inbox_packets():
-    """
-    """
     if _Debug:
         lg.out(_DebugLevel, 'gateway.shutdown_all_inbox_packets, %d live objects at the moment' % len(list(packet_in.inbox_items().values())))
     for pkt_in in list(packet_in.inbox_items().values()):
@@ -935,23 +889,15 @@ def on_start_connecting(host):
 
 
 def on_session_opened(host, remote_user_id):
-    """
-    """
 
 
 def on_connection_failed(host, error_message=None):
-    """
-    """
 
 
 def on_session_closed(host, remote_user_id, reason=None):
-    """
-    """
 
 
 def on_message_received(host, remote_user_id, data):
-    """
-    """
 
 
 def on_register_file_sending(proto, host, receiver_idurl, filename, size=0, description=''):

@@ -284,8 +284,6 @@ def saveLocalIdentity():
 
 
 def forgetLocalIdentity():
-    """
-    """
     global _LocalIdentity
     global _LocalIDURL
     global _LocalID
@@ -336,8 +334,6 @@ def eraseLocalIdentity(do_backup=True):
 
 
 def getValidTransports():
-    """
-    """
     global _ValidTransports
     return _ValidTransports
 

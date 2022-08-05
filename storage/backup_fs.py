@@ -1344,8 +1344,6 @@ def TraverseByIDSorted(callback, iterID=None):
 
 
 def TraverseChildsByID(callback, iterID=None):
-    """
-    """
     if iterID is None:
         iterID = fsID()
 

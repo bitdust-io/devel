@@ -231,8 +231,6 @@ def make(name, extension='', prefix='', close_fd=False):
 
 
 def make_dir(name, extension='', prefix=''):
-    """
-    """
     global _TempDirPath
     global _FilesDict
     if _TempDirPath is None:

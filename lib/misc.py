@@ -450,8 +450,6 @@ def RoundupFile(filename, stepsize):
 
 
 def RoundupString(data, stepsize):
-    """
-    """
     size = len(data)
     mod = size % stepsize
     increase = 0
@@ -673,8 +671,6 @@ def percent2string(percent, precis=3):
 
 
 def value2percent(value, total, precis=3):
-    """
-    """
     if not total:
         return '0%'
     return percent2string(100.0 * (float(value) / float(total)), precis)

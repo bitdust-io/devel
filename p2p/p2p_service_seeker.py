@@ -372,8 +372,6 @@ class P2PServiceSeeker(automat.Automat):
 #------------------------------------------------------------------------------
 
 def on_lookup_result(event, result_defer, *args, **kwargs):
-    """
-    """
     if _Debug:
         lg.args(_DebugLevel, event=event, args=args, kwargs=kwargs)
     if event == 'node-connected':

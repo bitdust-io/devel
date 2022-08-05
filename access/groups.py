@@ -139,16 +139,12 @@ _KnownBrokers = {}
 #------------------------------------------------------------------------------
 
 def init():
-    """
-    """
     if _Debug:
         lg.out(_DebugLevel, 'groups.init')
     load_groups()
 
 
 def shutdown():
-    """
-    """
     unload_groups()
     if _Debug:
         lg.out(_DebugLevel, 'groups.shutdown')

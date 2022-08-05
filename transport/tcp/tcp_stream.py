@@ -157,8 +157,6 @@ def find_stream(file_id=None, transfer_id=None):
 #------------------------------------------------------------------------------
 
 def make_stream_id():
-    """
-    """
     global _StreamCounter
     _StreamCounter += 1
     return random.randint(10, 99) * 1000000 + random.randint(10, 99) * 10000 + _StreamCounter % 10000
@@ -527,8 +525,6 @@ class OutboxFile():
 
 @implementer(interfaces.IProducer)
 class MultipleFilesSender:
-    """
-    """
 
     CHUNK_SIZE = 2 ** 14
 

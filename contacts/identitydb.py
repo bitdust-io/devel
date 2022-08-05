@@ -168,8 +168,6 @@ def has_idurl(idurl):
 
 
 def has_file(idurl):
-    """
-    """
     idurl = id_url.to_original(idurl)
     try:
         partfilename = nameurl.UrlFilename(idurl)
@@ -454,8 +452,6 @@ def search_local_ip(ip):
 
 
 def get_last_modified_time(idurl):
-    """
-    """
     global _IdentityCacheModifiedTime
     idurl = id_url.to_original(idurl)
     return _IdentityCacheModifiedTime.get(idurl, None)
