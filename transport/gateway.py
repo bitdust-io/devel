@@ -889,15 +889,19 @@ def on_start_connecting(host):
 
 
 def on_session_opened(host, remote_user_id):
+    pass
 
 
 def on_connection_failed(host, error_message=None):
+    pass
 
 
 def on_session_closed(host, remote_user_id, reason=None):
+    pass
 
 
 def on_message_received(host, remote_user_id, data):
+    pass
 
 
 def on_register_file_sending(proto, host, receiver_idurl, filename, size=0, description=''):

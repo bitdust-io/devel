@@ -71,6 +71,7 @@ class RSAKey(object):
         self.local_key_id = None
         self.label = ''
         self.signed = None
+        self.active = True
 
     def isReady(self):
         return self.keyObject is not None
@@ -80,6 +81,7 @@ class RSAKey(object):
         self.local_key_id = None
         self.label = ''
         self.signed = None
+        self.active = False
         # gc.collect()
         return True
 
@@ -118,6 +120,7 @@ class RSAKey(object):
         result = self.fromString(key_src)
         if result:
             self.label = key_dict.get('label', '')
+            self.active = key_dict.get('active', True)
             self.local_key_id = key_dict.get('local_key_id', None)
             if 'signature' in key_dict and 'signature_pubkey' in key_dict:
                 self.signed = (key_dict['signature'], key_dict['signature_pubkey'], )
@@ -178,6 +181,7 @@ class RSAKey(object):
             'body': key_body,
             'local_key_id': self.local_key_id,
             'label': self.label,
+            'active': self.active,
         }
         if self.isSigned():
             key_dict.update({

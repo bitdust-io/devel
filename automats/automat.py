@@ -630,7 +630,14 @@ class Automat(object):
         """
         return self._timers
 
-    def to_json(self):
+    def to_json(self, short=True):
+        if short:
+            return {
+                'index': self.index,
+                'id': self.id,
+                'name': self.__class__.__name__,
+                'state': self.state,
+            }
         return {
             'index': self.index,
             'id': self.id,

@@ -1877,10 +1877,6 @@ def getUpdatesMode():
     return 'turn off updates'
 
 
-def setUpdatesMode(mode):
-    # TODO: remove this after get rid of webcontrol.py
-
-
 def getUpdatesModeValues():
     """
     List of available update modes.

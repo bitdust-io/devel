@@ -167,6 +167,8 @@ def open_known_shares():
     for key_id in my_keys.known_keys():
         if not key_id.startswith('share_'):
             continue
+        if not my_keys.is_active(key_id):
+            continue
         active_share = get_active_share(key_id)
         if active_share:
             continue
@@ -182,6 +184,10 @@ def open_known_shares():
             if key_id in to_be_opened:
                 continue
             if key_id not in known_offline_shares:
+                continue
+            if not my_keys.is_key_private(key_id):
+                continue
+            if not my_keys.is_active(key_id):
                 continue
             to_be_opened.append(key_id)
     if _Debug:
@@ -234,7 +240,7 @@ class SharedAccessCoordinator(automat.Automat):
         self.suppliers_in_progress = []
         self.suppliers_succeed = []
         super(SharedAccessCoordinator, self).__init__(
-            name="%s$%s" % (self.key_alias[:10], self.glob_id['customer'], ),
+            name="%s$%s" % (self.key_alias, self.glob_id['customer'], ),
             state='AT_STARTUP',
             debug_level=debug_level,
             log_events=log_events,
@@ -246,6 +252,7 @@ class SharedAccessCoordinator(automat.Automat):
     def to_json(self):
         j = super().to_json()
         j.update({
+            'active': my_keys.is_active(self.key_id),
             'key_id': self.key_id,
             'alias': self.key_alias,
             'label': my_keys.get_label(self.key_id),

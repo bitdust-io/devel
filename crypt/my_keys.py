@@ -349,6 +349,7 @@ def read_key_file(key_id, keys_folder=None):
                 'body': key_raw_strip,
                 'local_key_id': None,
                 'need_to_convert': True,
+                'active': True,
             }
     except:
         lg.exc()
@@ -384,8 +385,8 @@ def load_key(key_id, keys_folder=None):
             local_keys()[key_object.local_key_id] = key_id
             local_keys_index()[key_object.toPublicString()] = key_object.local_key_id
             if _Debug:
-                lg.out(_DebugLevel, 'my_keys.load_key %r  label=%r  is_private=%r  local_key_id=%r  from %s' % (
-                    key_id, key_object.label, not key_object.isPublic(), key_object.local_key_id, keys_folder, ))
+                lg.out(_DebugLevel, 'my_keys.load_key %r  label=%r  active=%r  is_private=%r  local_key_id=%r  from %s' % (
+                    key_id, key_object.label, key_object.active, not key_object.isPublic(), key_object.local_key_id, keys_folder, ))
         else:
             lg.warn('for key %r local_key_id was not set' % key_id)
     events.send('key-loaded', data=dict(key_id=key_id, label=key_object.label, key_size=key_object.size(), ))
@@ -397,6 +398,7 @@ def load_key(key_id, keys_folder=None):
         include_local_id=True,
         include_signature=True,
         include_label=True,
+        include_state=True,
     ))
     return True
 
@@ -454,7 +456,7 @@ def save_latest_local_key_id(keys_folder=None):
 
 #------------------------------------------------------------------------------
 
-def generate_key(key_id, label='', key_size=4096, keys_folder=None):
+def generate_key(key_id, label='', active=True, key_size=4096, keys_folder=None):
     global _LatestLocalKeyID
     key_id = latest_key_id(key_id)
     if is_key_registered(key_id):
@@ -469,6 +471,7 @@ def generate_key(key_id, label='', key_size=4096, keys_folder=None):
     key_object = rsa_key.RSAKey()
     key_object.generate(key_size)
     key_object.label = label
+    key_object.active = active
     key_object.local_key_id = _LatestLocalKeyID
     known_keys()[key_id] = key_object
     if _Debug:
@@ -485,11 +488,12 @@ def generate_key(key_id, label='', key_size=4096, keys_folder=None):
         include_local_id=True,
         include_signature=True,
         include_label=True,
+        include_state=True,
     ))
     return key_object
 
 
-def register_key(key_id, key_object_or_string, label='', keys_folder=None):
+def register_key(key_id, key_object_or_string, label='', active=True, keys_folder=None):
     global _LatestLocalKeyID
     key_id = latest_key_id(key_id)
     if is_key_registered(key_id):
@@ -498,7 +502,7 @@ def register_key(key_id, key_object_or_string, label='', keys_folder=None):
     if not keys_folder:
         keys_folder = settings.KeyStoreDir()
     if not label:
-        label = 'key%s' % utime.make_timestamp() 
+        label = 'key%s' % utime.make_timestamp()
     if strng.is_string(key_object_or_string):
         key_object_or_string = strng.to_bin(key_object_or_string)
         if _Debug:
@@ -512,6 +516,7 @@ def register_key(key_id, key_object_or_string, label='', keys_folder=None):
         if _Debug:
             lg.out(_DebugLevel, 'my_keys.register_key %r from object' % key_id)
         key_object = key_object_or_string
+        label = key_object.label or label
     known_local_key_id = local_keys_index().get(key_object.toPublicString())
     if known_local_key_id is not None:
         known_key_id = local_keys().get(known_local_key_id)
@@ -526,6 +531,8 @@ def register_key(key_id, key_object_or_string, label='', keys_folder=None):
         save_latest_local_key_id(keys_folder=keys_folder)
         new_local_key_id = _LatestLocalKeyID
     key_object.local_key_id = new_local_key_id
+    key_object.label = label
+    key_object.active = active
     known_keys()[key_id] = key_object
     if _Debug:
         lg.out(_DebugLevel, '    key %r registered' % key_id)
@@ -539,6 +546,7 @@ def register_key(key_id, key_object_or_string, label='', keys_folder=None):
         include_local_id=True,
         include_signature=True,
         include_label=True,
+        include_state=True,
     ))
     return key_object
 
@@ -576,6 +584,7 @@ def erase_key(key_id, keys_folder=None):
         include_local_id=True,
         include_signature=True,
         include_label=True,
+        include_state=True,
     ))
     return True
 
@@ -667,6 +676,7 @@ def sign_key(key_id, keys_folder=None, ignore_shared_keys=False, save=True):
         include_local_id=True,
         include_signature=True,
         include_label=True,
+        include_state=True,
     ))
     return key_object
 
@@ -844,11 +854,30 @@ def get_local_key(local_key_id):
 
 #------------------------------------------------------------------------------
 
+def is_active(key_id):
+    """
+    Returns True if given key has "active" state. If key is not set to "active" state, certain parts of the software should not use it.
+    """
+    key_id = strng.to_text(key_id)
+    if not is_key_registered(key_id):
+        return None
+    return key_obj(key_id).active
+
+
+def set_active(key_id, active=True):
+    key_id = strng.to_text(key_id)
+    if not is_key_registered(key_id):
+        return
+    key_obj(key_id).active = active
+
+#------------------------------------------------------------------------------
+
 def make_master_key_info(include_private=False):
     r = {
         'key_id': my_id.getGlobalID(key_alias='master'),
         'alias': 'master',
         'label': my_id.getGlobalID(key_alias='master'),
+        'active': True,
         'creator': my_id.getIDURL(),
         'is_public': key.MyPrivateKeyObject().isPublic(),
         # 'fingerprint': str(key.MyPrivateKeyObject().fingerprint()),
@@ -869,7 +898,7 @@ def make_master_key_info(include_private=False):
 
 def make_key_info(key_object, key_id=None, key_alias=None, creator_idurl=None,
                   include_private=False, generate_signature=False, include_signature=False,
-                  include_local_id=False, include_label=True, event=None):
+                  include_local_id=False, include_label=True, include_state=False, event=None):
     if key_id:
         key_id = latest_key_id(key_id)
         key_alias, creator_idurl = split_key_id(key_id)
@@ -887,6 +916,8 @@ def make_key_info(key_object, key_id=None, key_alias=None, creator_idurl=None,
         r['event'] = event
     if include_label:
         r['label'] = key_object.label if key_object else ''
+    if include_state:
+        r['active'] = key_object.active if key_object else True
     if key_object and key_object.isPublic():
         r['is_public'] = True
         if include_private:
@@ -910,7 +941,7 @@ def make_key_info(key_object, key_id=None, key_alias=None, creator_idurl=None,
     return r
 
 
-def get_key_info(key_id, include_private=False, include_signature=False, generate_signature=False, include_label=True):
+def get_key_info(key_id, include_private=False, include_signature=False, generate_signature=False, include_label=True, include_state=False):
     """
     Returns dictionary with full key info or raise an Exception.
     """
@@ -939,6 +970,7 @@ def get_key_info(key_id, include_private=False, include_signature=False, generat
         include_signature=include_signature,
         generate_signature=generate_signature,
         include_label=include_label,
+        include_state=include_state,
     )
     return key_info
 
@@ -955,6 +987,7 @@ def read_key_info(key_json):
         if not key_object:
             raise Exception('unserialize failed')
         key_object.label = strng.to_text(key_json.get('label', ''))
+        key_object.active = key_json.get('active', True)
         if 'signature' in key_json and 'signature_pubkey' in key_json:
             key_object.signed = (key_json['signature'], key_json['signature_pubkey'], )
     except:
@@ -1028,6 +1061,7 @@ def populate_keys():
             include_local_id=True,
             include_signature=True,
             include_label=True,
+            include_state=True,
         ))
 
 #------------------------------------------------------------------------------
