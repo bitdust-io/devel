@@ -52,7 +52,7 @@ def bin_convert_orig(string):
 
 def diffme(pool_address, nonce, db_block_hash):
     # minimum possible diff
-    diff = 40
+    diff = 60
     # will return 0 for diff < 60
     diff_result = 0
     mining_hash = bin_convert(sha224((pool_address + nonce + db_block_hash).encode("utf-8")).hexdigest())
@@ -64,7 +64,6 @@ def diffme(pool_address, nonce, db_block_hash):
 
 
 def miner(q, pool_address, db_block_hash, diff, mining_condition, netdiff, hq, thr, dh):
-    print('miner', (pool_address, db_block_hash, diff, mining_condition, netdiff, thr, dh, ))
     global how_much_coins
     mined_coins = 0
     process_mmap = False
@@ -99,17 +98,13 @@ def miner(q, pool_address, db_block_hash, diff, mining_condition, netdiff, hq, t
                 except Exception as e:
                     h1 = 1
                 if possibles:
-                    # print('possibles', possibles)
+                    # print(possibles)
                     for nonce in possibles:
                         # add the seed back to get a full 128 bits nonce
                         nonce = seed + nonce
                         # xdiffx = diffme(str(address[:56]),str(nonce),db_block_hash)
                         xdiffx = mining.diffme_heavy3(address, nonce, db_block_hash)
                         if xdiffx < diff:
-                            pass
-                        # elif xdiffx > diff:
-                        elif xdiffx > 14:
-                            # print("Thread {} solved work with difficulty {} in {} cycles, but ignoring the solution because of too high difficulty".format(q, xdiffx, tries))
                             pass
                         else:
                             print("Thread {} solved work with difficulty {} in {} cycles - YAY!".format(q, xdiffx, tries))
@@ -159,7 +154,6 @@ def runit():
     hq = Queue()
 
     while True:
-        print('runit', totoally_mined_coins, how_much_coins)
         try:
 
             s = socks.socksocket()
@@ -176,7 +170,6 @@ def runit():
 
             diff_hex = math.floor((diff / 8) - 1)
             mining_condition = db_block_hash[0:diff_hex]
-            print('mining_condition', mining_condition, db_block_hash, diff, diff_hex)
 
             instances = range(int(mining_threads_conf))
             thr = int(mining_threads_conf)
@@ -194,11 +187,10 @@ def runit():
                 p.terminate()
 
             raw_results = [hq.get() for q in instances]
-            print('raw_results', raw_results)
             results = [int(r.split('_')[0]) for r in raw_results]
             totoally_mined_coins += sum([int(r.split('_')[1]) for r in raw_results])
             dh = sum(results)
-            print("Current total hash rate is {} kh/s with total {} coins mined ".format(str(dh), totoally_mined_coins))
+            print("Current total hash rate is {} kh/s : in total {} coins mined ".format(str(dh), totoally_mined_coins))
             if totoally_mined_coins >= how_much_coins * len(instances):
                 break
 

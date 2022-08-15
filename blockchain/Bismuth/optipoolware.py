@@ -170,7 +170,6 @@ def payout(payout_threshold,myfee,othfee):
     reward_total = "%.8f" % (((100-(myfee+othfee))*super_total)/100)
     reward_total = float(reward_total)
 
-    print('reward_total', reward_total)
     if reward_total > 0:
 
         # calculate alt address fee
@@ -220,7 +219,7 @@ def payout(payout_threshold,myfee,othfee):
         except:
             reward_per_share = 0
 
-        print(reward_per_share)
+        print('reward_per_share', reward_per_share)
 
         paylist = []
         for p in payadd:
@@ -260,7 +259,6 @@ def payout(payout_threshold,myfee,othfee):
                 mytxid = txid.decode("utf-8")
                 tx_submit = (str(timestamp), str(address), str(recipient), '%.8f' % float(claim - fee), str(signature_enc.decode("utf-8")), str(public_key_hashed.decode("utf-8")), str(keep), str(openfield)) #float kept for compatibility
 
-                print('payout to', node_ip_conf, int(port))
                 t = socks.socksocket()
                 t.connect((node_ip_conf, int(port)))  # connect to local node
 
@@ -407,7 +405,6 @@ def worker(s_time):
     global new_time
     doclean = 0
 
-    print('worker', node_ip_conf, port)
     n = socks.socksocket()
     n.connect((node_ip_conf, int(port)))  # connect to local node
 
@@ -431,7 +428,6 @@ def worker(s_time):
 
             app_log.warning("Difficulty = {}".format(str(new_diff)))
             app_log.warning("Blockhash = {}".format(str(new_hash)))
-            app_log.warning("Block time = {}".format(str(new_time)))
             # print("Worker")
 
         except Exception as e:
@@ -704,9 +700,10 @@ if __name__ == "__main__":
     mining.mining_open()
 
     try:
-        background_thread = threading.Thread(target=paydb)
-        background_thread.daemon = True
-        background_thread.start()
+        # Disabling payouts
+        # background_thread = threading.Thread(target=paydb)
+        # background_thread.daemon = True
+        # background_thread.start()
 
         worker_thread = threading.Thread(target=worker, args=(w_time,))
         worker_thread.daemon = True

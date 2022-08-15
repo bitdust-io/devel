@@ -17,7 +17,6 @@ fork = Fork()
 
 def digest_block(node, data, sdef, peer_ip, db_handler):
     """node param for imports"""
-    print('digest_block', node, data, sdef, peer_ip, db_handler)
 
     class Transaction:
         def __init__(self):
@@ -96,10 +95,9 @@ def digest_block(node, data, sdef, peer_ip, db_handler):
                                  f"to {tx.received_recipient} amount {tx.received_amount}")
 
     def rewards():
-        # if int(block_instance.block_height_new) % 10 == 0:  # every 10 blocks
-        #     db_handler.dev_reward(node, block_instance, miner_tx, block_instance.mining_reward, block_instance.mirror_hash)
-        #     db_handler.hn_reward(node,block_instance,miner_tx,block_instance.mirror_hash)
-        pass
+        if int(block_instance.block_height_new) % 10 == 0:  # every 10 blocks
+            db_handler.dev_reward(node, block_instance, miner_tx, block_instance.mining_reward, block_instance.mirror_hash)
+            db_handler.hn_reward(node,block_instance,miner_tx,block_instance.mirror_hash)
 
     def check_signature(block):
         # TODO EGG: benchmark this loop vs a single "WHERE IN" SQL
@@ -418,7 +416,8 @@ def digest_block(node, data, sdef, peer_ip, db_handler):
                 block_instance.mirror_hash = hashlib.blake2b(str(tx_list_to_hash).encode(), digest_size=20).hexdigest()
                 # /new sha_hash
 
-                rewards()
+                # Disabling rewards
+                # rewards()
 
                 # node.logger.app_log.warning("Block: {}: {} valid and saved from {}"
                 # .format(block_instance.block_height_new, block_hash[:10], peer_ip))

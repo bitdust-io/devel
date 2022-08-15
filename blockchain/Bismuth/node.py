@@ -39,7 +39,7 @@ import wallet_keys
 from connections import send, receive
 from digest import *
 from essentials import fee_calculate, download_file
-from libs import node, logger, keys, client
+from libs import node as _node, logger, keys, client
 from fork import Fork
 
 # todo: migrate this to polysign\signer_crw.py
@@ -289,7 +289,6 @@ def ledger_check_heights(node, db_handler):
         hdd2_block_last_misc = db_handler.block_height_max_diff_hyper()
 
         # cross-integrity check
-        print('ledger_check_heights', hdd_block_max, hdd2_block_last, hdd2_block_last_misc, hdd_block_max_diff, node.hyper_recompress)
         if hdd_block_max == hdd2_block_last == hdd2_block_last_misc == hdd_block_max_diff and node.hyper_recompress:  # cross-integrity check
             node.logger.app_log.warning("Status: Recompressing hyperblocks (keeping full ledger)")
             node.recompress = True
@@ -676,6 +675,7 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
 
         timeout_operation = 120  # timeout
         timer_operation = time.time()  # start counting
+        received_block_height = 0
 
         while not node.peers.is_banned(peer_ip) and node.peers.version_allowed(peer_ip, node.version_allow) and client_instance.connected:
             try:
@@ -2078,7 +2078,7 @@ def add_indices(db_handler: dbhandler.DbHandler):
 
 if __name__ == "__main__":
     # classes
-    node = node.Node()
+    node = _node.Node()
     node.logger = logger.Logger()
     node.keys = keys.Keys()
 
