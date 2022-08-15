@@ -29,7 +29,12 @@ static/*.tar.gz
 static/*.db
 heavy3a.bin
 heavy3a.bin_
-config_custom.txt
+archive.db
+miner.txt
+pool.txt
+shares.db
+wallet_server.txt
+# config_custom.txt
 sequencing_last
 # ignore polysign, so devs can have a symlink or local dev version.
 polysign

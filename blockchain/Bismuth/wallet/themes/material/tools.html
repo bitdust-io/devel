@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block body %}
+
+
+
+<div class="row">
+
+    <div class="col-lg-12 col-md-12">
+        <div class="card">
+            <div class="card-header card-header-text card-header-primary">
+                <div class="card-text">
+                  <h4 class="card-title" style="color:#fff">Dedicated Tools</h4>
+                </div>
+            </div>
+            <div class="card-body table-responsive">
+                <ul>
+                    <li>Sublimate and condensate sensible data</li>
+                    <li>WIP</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+
+    <div class="col-lg-6 col-sm-12">
+        <!-- form method="post" action="/tools/sublimate" -->
+                <div class="card">
+                    <div class="card-header card-header-primary">
+                        <h4 class="card-title"><i class="material-icons">gesture</i> {{ _("Sublimate sensible data")}}</h4>
+                        <p class="card-category">{{ _("Split sensible data - like a private key - into several secure chunks")}}</p>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label class="bmd-label-floating">{{ _("Data (message)")}}</label>
+                            <textarea class="form-control" id="data" name="data" rows="5"></textarea>
+                        </div>
+                        <div class="form-group">
+                                <label class="bmd-label-floating">{{ _("Chunks count (Min 2")}}</label>
+                                <!-- https://stackoverflow.com/questions/468288/input-type-password-dont-let-browser-remember-the-password -->
+                                <!-- https://medium.com/@idanhareven/how-to-workaround-browsers-save-password-password-autocomplete-features-135b91ad06d2 -->
+                                <input class="form-control" id="chunks_count" type="number" name="chunks_count"  value="5"/>
+                        </div>
+
+                        {% raw xsrf_form_html() %}
+                        <button class="btn btn-primary " name="action" value="sign" onclick="sign($('#data').val(), $('#spend_token').val());return false;">
+                               {{ _("Sublimate data") }}
+                        </button>
+                        <div class="clearfix"></div>
+
+                    </div>
+                </div>
+
+        <!-- /form -->
+    </div>
+
+
+    <div class="col-lg-6 col-sm-12">
+                <div class="card">
+                    <div class="card-header card-header-info">
+                        <h4 class="card-title"><i class="material-icons">comments</i> {{ _("Fill in Private Key")}}</h4>
+                        <p class="card-category">{{ _("Fill in data with your current address private key")}}</p>
+                    </div>
+                    <div class="card-body">
+                        This will fetch your private key and show it, ready for use, in the sublimate panel.
+                        <!-- TODO: make that a generic block -->
+                        {% if bismuth['spend_type']['type'] %}
+                        <div class="form-group">
+                                <label class="bmd-label-floating">{{ _("Spend protection")}}</label>
+                                <!-- https://stackoverflow.com/questions/468288/input-type-password-dont-let-browser-remember-the-password -->
+                                <!-- https://medium.com/@idanhareven/how-to-workaround-browsers-save-password-password-autocomplete-features-135b91ad06d2 -->
+                                <input class="form-control password" id="spend_token" type="password" name="spend_token"  autocomplete="nope874554588" re_adonly="readonly" on_focus="javascript: this.removeAttribute('readonly')" />
+                                <small>{{ bismuth['spend_type']['label'] }}</small>
+                        </div>
+                        {% else %}
+                        <input type="hidden" name="spend_token" value="" />
+                        {% end %}
+
+                    {% raw xsrf_form_html() %}
+                    <button class="btn btn-info " name="action" value="encrypt" onclick="encrypt($('#data2').val(), $('#recipient').val());return false;">
+                           {{ _("Fill PK") }}
+                    </button>
+                    <div class="clearfix"></div>
+                    </div>
+                </div>
+
+    </div>
+
+</div>
+
+
+<div class="row">
+
+    <div class="col-lg-6 col-sm-12">
+        <!-- form method="post" action="/tools/condensate" -->
+                <div class="card">
+                    <div class="card-header card-header-success">
+                        <h4 class="card-title"><i class="material-icons">gesture</i> {{ _("Decrypt message")}}</h4>
+                        <p class="card-category">{{ _("Decrypt off chain message with your private key.")}}</p>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label class="bmd-label-floating">{{ _("Encrypted message")}}</label>
+                            <textarea class="form-control" id="enc_data" name="enc_data" rows="5"></textarea>
+                        </div>
+                        <!-- TODO: make that a generic block -->
+                        {% if bismuth['spend_type']['type'] %}
+                        <div class="form-group">
+                                <label class="bmd-label-floating">{{ _("Spend protection")}}</label>
+                                <!-- https://stackoverflow.com/questions/468288/input-type-password-dont-let-browser-remember-the-password -->
+                                <!-- https://medium.com/@idanhareven/how-to-workaround-browsers-save-password-password-autocomplete-features-135b91ad06d2 -->
+                                <input class="form-control password" id="spend_token2" type="password" name="spend_token"  autocomplete="nope87454554588" re_adonly="readonly" on_focus="javascript: this.removeAttribute('readonly')" />
+                                <small>{{ bismuth['spend_type']['label'] }}</small>
+                        </div>
+                        {% else %}
+                        <input type="hidden" name="spend_token" value="" />
+                        {% end %}
+                        {% raw xsrf_form_html() %}
+                        <button class="btn btn-primary " name="action" value="decrypt" onclick="decrypt($('#enc_data').val(), $('#spend_token2').val());return false;">
+                               {{ _("Decrypt Message") }}
+                        </button>
+                        <div class="clearfix"></div>
+
+                    </div>
+                </div>
+
+        <!-- /form -->
+    </div>
+</div>
+
+
+
+{% end %}

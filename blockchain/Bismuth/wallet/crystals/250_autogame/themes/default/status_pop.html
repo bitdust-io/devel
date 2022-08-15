@@ -1,0 +1,39 @@
+
+<h4 class="card-title">{{ _("AG:Game {} status").format(hash) }}</h4>
+<div >
+    {% if  status['finished'] == 1 %}
+    <span class="btn btn-success" >Finished game</span>
+    {% else %}
+    <span class="btn btn-primary" >Ongoing game</span>
+    {% end %}
+    <ul>
+        <li><span class="btn btn-success" style="padding:3px;">League: {{ status['league'] }}</span></li>
+        <li>Block Start: {{ status['block_start'] }}</li>
+        <li>Block End: {{ status['block_end'] }}</li>
+        <li>Address: {{ status['seed'] }}</li>
+        <li>Bet: {{ status['bet'] }}</li>
+        <li><span class="btn btn-primary" style="padding:3px;">Experience: {{ status['experience'] }}</span></li>
+        <li><span class="btn btn-success" style="padding:3px;">Inventory:</span>
+            <ul>
+            {% for key, value in status['inventory'].items() %}
+                <li>{{ key }}: {{ value }}</li>
+            {% end %}
+            </ul>
+        </li>
+        <li><span class="btn btn-warning" style="padding:3px;">Damage:</span>
+            <ul>
+            {% for key, value in status['damage'].items() %}
+                <li>{{ key }}: {{ value }}</li>
+            {% end %}
+            </ul>
+        </li>
+        <li><span class="btn btn-warning" style="padding:3px;">Defense:</span>
+            <ul>
+            {% for key, value in status['defense'].items() %}
+                <li>{{ key }}: {{ value }}</li>
+            {% end %}
+            </ul>
+        </li>
+    </ul>
+</div>
+

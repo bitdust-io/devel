@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block body %}
+
+<div class="row">
+    <div class="col-lg-6 col-md-12">
+        <div class="card">
+            <div class="card-header card-header-info">
+                <h4 class="card-title">EGGPOOL CRYSTAL</h4>
+                <p class="card-category"></p>
+            </div>
+            <div class="card-body">
+                <ul>
+                    <li><a href="https://eggpool.net/index.php?action=miner&miner={{ bismuth['address'] }}" target="_blank">{{ _('EP:Direct Link to official Dashboard') }}</a></li>
+                    <li><a href="https://github.com/EggPool/EggMinerGpu/releases" target="_blank">{{ _('EP:Get last GPU miner') }}</a></li>
+                    <li><a href="https://discordapp.com/invite/2y2ZFQR" target="_blank">{{ _('Join the Official Bismuth Discord for support') }}</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6 col-md-12">
+        <div class="card">
+            <div class="card-header card-header-success">
+                <h4 class="card-title">{{ _("About") }}</h4>
+                <p class="card-category"></p>
+            </div>
+            <div class="card-body">
+                {{ _("Version") }} {{ version }}
+            </div>
+        </div>
+    </div>
+
+</div>
+
+
+<div class="row">
+
+     <div class="col-xl-6 col-lg-12">
+        <div class="card card-chart">
+            <div class="card-header card-header">
+                <!-- div class="ct-chart" id="sharesViewsChart"></div -->
+                <div class="ct-chart">
+                    <canvas id="lineChartHR"></canvas>
+                </div>
+            </div>
+            <div class="card-body">
+                <h4 class="card-title">{{ _("EP:Hash Rate") }}</h4>
+                <p class="card-category">{{ _("EP:Last 12 hours")}}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-6 col-lg-12">
+        <div class="card card-chart">
+            <div class="card-header card-header">
+                <!-- div class="ct-chart" id="sharesViewsChart"></div -->
+                <div class="ct-chart">
+                    <canvas id="lineChartSH"></canvas>
+                </div>
+            </div>
+            <div class="card-body">
+                <h4 class="card-title">{{ _("EP:Shares") }}</h4>
+                <p class="card-category">{{ _("EP:Last 12 hours")}}</p>
+            </div>
+
+        </div>
+    </div>
+
+     <div class="col-xl-12 col-lg-12">
+        <div class="card">
+            <div class="card-body">
+                <h4 class="card-title">{{ _("EP:Workers") }}</h4>
+            </div>
+            <div class="card-footer">
+              <div class="stats">
+                {% for worker,color in workers_name.items() %}
+                  <span class="btn" style="background-color:{{color}};padding:3px">{{worker}}</span>
+                {% end %}
+              </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+
+{% end %}

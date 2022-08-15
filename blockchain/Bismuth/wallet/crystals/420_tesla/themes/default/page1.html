@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+<!-- "../../../../themes/material/base.html" -->
+
+{% block header %}
+<link rel="stylesheet" type="text/css" href="{{ handler.common_url('css/dataTables.min.css') }}">
+{% end %}
+
+{% block body %}
+{% raw xsrf_form_html() %}
+
+<nav class="nav"><a class="nav-link active" href="about" style="color:#888888">HOME</a></nav>
+<div class="row">
+
+    <div class="col-lg-6 col-md-12">
+        <div class="card">
+            <div class="card-header card-header-info">
+                <h4 class="card-title">Tesla Credentials</h4>
+                <p class="card-category"></p>
+            </div>
+            <div class="card-body">
+                <table>
+                <tr><td>Email address:&nbsp;</td><td><input id="tesla_email" class="form-control" type="text" size="50%" name="tesla_email" value="" style="color: #888888"></td></tr>
+                </table>
+                <br/>
+                Vehicle Anonymizer Password (remember this for later): <input type="password" id="tesla_pwd" class="form-control" style="color: #888888">
+                <br/>
+                <input type="submit" class="btn btn-primary" value="Fetch Your VIN Numbers" onClick="FetchVIN();">
+                <br/>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6 col-md-12">
+        <div class="card">
+            <div class="card-header card-header-success">
+                <h4 class="card-title">Register</h4>
+                <p class="card-category"></p>
+            </div>
+            <div class="card-body">
+                You will be able to register your Tesla vehicle(s) on the Bismuth blockchain if you supply valid Tesla credentials and are able to fetch valid VIN numbers.
+                <br/><br/>
+                <div id="div_reg" style="display:none">
+                    List of Your Asset ID Numbers:<br/>
+                    <select id="vin_input" class="form-control" style="color:#888888">
+                    </select>
+                    <br/><br/>
+                    Register your Tesla vehicle on the Bismuth blockchain:<br/>
+                    <input type="submit" class="btn btn-primary" name="reg" value="Register Vehicle" onClick="RegisterVehicle();">
+                    <br/><br/>
+                    Unregister your Tesla vehicle on the Bismuth blockchain:<br/>
+                    <input type="submit" class="btn btn-primary" name="unreg" value="Unregister Vehicle" onClick="UnregisterVehicle();">
+                    <br/><br/>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="message_window" class="modal" tabindex="-1" role="dialog"></div>
+
+</div>
+
+<br/>
+
+{% end %}
+
+{% block footer %}
+<!-- this goes after default includes, like jquery -->
+<script src="{{ handler.common_url('js/plugins/jquery.dataTables.min.js') }}"></script>
+<script src="{{ handler.common_url('js/plugins/Chart.min.js') }}"></script>
+<script src="{{ handler.common_url('js/core/jquery-ui.min.js') }}"></script>
+<script src="{{ handler.common_url('js/plugins/dataTables.buttons.min.js') }}"></script>
+<script src="{{ handler.common_url('js/plugins/jszip.min.js') }}"></script>
+<script src="{{ handler.common_url('js/plugins/pdfmake.min.js') }}"></script>
+<script src="{{ handler.common_url('js/plugins/vfs_fonts.js') }}"></script>
+<script src="{{ handler.common_url('js/plugins/buttons.html5.min.js') }}"></script>
+
+<script src="/crystal/tesla/static/util.js"></script>
+<script src="/crystal/tesla/static/tesla.js"></script>
+<script src="/crystal/tesla/static/footer.js"></script>
+{% end %}

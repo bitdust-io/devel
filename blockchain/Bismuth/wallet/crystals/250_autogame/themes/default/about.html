@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block body %}
+
+<div class="row">
+    <div class="col-lg-6 col-md-12">
+        <div class="card">
+            <div class="card-header card-header-info">
+                <h4 class="card-title">AUTOGAME CRYSTAL</h4>
+                <p class="card-category"></p>
+            </div>
+            <div class="card-body">
+                <ul>
+                    <li><a href="https://github.com/hclivess/autogame/blob/master/about.md" target="_blank">{{ _('AG:Direct Link to latest autogame doc.') }}</a></li>
+                    <li><a href="https://discordapp.com/invite/2y2ZFQR" target="_blank">{{ _('Join the Official Bismuth Discord for support') }}</a></li>
+                </ul>
+    <br />
+                                <div class="form-group">
+                    <label class="bmd-label-floating">{{ _("BIS URL")}}</label>
+                    <input class="form-control" id="bisurl" type="text" name="bisurl"/>
+                    <small>{{ _("Paste the BIS URL you were given here")}}</small>
+                </div>
+                <button class="btn btn-primary" id="reg_bisurl">{{_("D:Register")}}</button>
+
+            </div>
+            <div class="card-footer">
+            </div>
+        </div>
+
+    </div>
+
+    <div class="col-lg-6 col-md-12">
+        <div class="card">
+            <div class="card-header card-header-success">
+                <h4 class="card-title">{{ _("About") }}</h4>
+                <p class="card-category"></p>
+            </div>
+            <div class="card-body">
+                {{ _("Version") }} {{ version }}
+            </div>
+        </div>
+    </div>
+
+</div>
+
+
+<div class="row">
+
+     <div class="col-xl-6 col-lg-6 col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <h4 class="card-title">{{ _("AG:Your games") }}</h4>
+                <div class="games">
+                    <ul>
+                    {% for hash, status in games_detail.items() %}
+                        <li><span class="btn game_status" style="padding:3px" data-hash="{{hash}}">{{hash}}</span>
+                            <span class="btn btn-success" style="padding:3px;">League: {{ status['league'] }}</span> <span class="btn btn-primary" style="padding:3px;">Experience: {{ status['experience'] }}</span>
+                            {% if status['finished'] == 1 %}
+                                &nbsp;<span class="btn btn-success game_replay"  style="padding:3px" data-hash="{{hash}}">{{ _("Replay") }}</span>
+                            {% else %}
+
+                            {% end %}
+                        </li>
+                    {% end %}
+                    </ul>
+                </div>
+            </div>
+            <div class="card-footer">
+            </div>
+        </div>
+    </div>
+
+     <div class="col-xl-6 col-lg-6 col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <h4 class="card-title">{{ _("AG:Game detail") }}</h4>
+               <div id="detail" name="detail" style="width:100%; height:400px;overflow:auto"></div>
+
+            </div>
+            <div class="card-footer">
+            </div>
+        </div>
+    </div>
+
+
+</div>
+
+
+{% end %}

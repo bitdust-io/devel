@@ -21,6 +21,9 @@ from essentials import most_common_dict, percentage_in
 __version__ = "0.0.19"
 
 
+_LogStatusMessages = False
+
+
 class Peers:
     """The peers manager. A thread safe peers manager"""
 
@@ -518,7 +521,8 @@ class Peers:
                 self.reset_tried()
                 self.reset_time = time()
 
-            self.app_log.warning("Status: Testing peers")
+            if _LogStatusMessages:
+                self.app_log.warning("Status: Testing peers")
             self.peer_dict.update(self.peers_get(self.peerfile))
             # self.peer_dict.update(self.peers_get(self.suggested_peerfile))
 
@@ -536,6 +540,8 @@ class Peers:
 
     def status_log(self):
         """Prints the peers part of the node status"""
+        if not _LogStatusMessages:
+            return
         if self.banlist:
             self.app_log.warning(f"Status: Banlist: {self.banlist}")
             self.app_log.warning(f"Status: Banlist Count : {len(self.banlist)}")

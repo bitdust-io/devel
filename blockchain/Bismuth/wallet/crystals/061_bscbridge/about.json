@@ -1,0 +1,9 @@
+{
+  "author": "Bismuth Foundation",
+  "description": "BIS <-> wBIS (BEP-20) bridge Crystal",
+  "email": "N/A",
+  "version": "1.0.4",
+  "date": "2021-05-10",
+  "url":"https://github.com/bismuthfoundation/TornadoWallet/tree/master/wallet/crystals/061_bscbridge",
+  "icon": "bscbridge.icon.png"
+}

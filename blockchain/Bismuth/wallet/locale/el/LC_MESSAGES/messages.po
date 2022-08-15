@@ -1,0 +1,1187 @@
+msgid ""
+msgstr ""
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: POEditor.com\n"
+"Project-Id-Version: TornadoWallet\n"
+"Language: el\n"
+
+#: themes/material/about_credits.html:10 themes/material/base.html:228
+msgid "Credits"
+msgstr "Συντελεστες"
+
+#: themes/material/about_credits.html:11
+msgid "This wallet wouldn't have existed without..."
+msgstr "Αυτο το πορτοφολι δεν θα υπηρχε χωρις τους..."
+
+#: themes/material/about_credits.html:16
+msgid "The \"Material Dark\" template by <a href=\"https://www.creative-tim.com\" target=\"_blank\">Creative Tim</a>"
+msgstr "Το υποδειγμα \"Material Dark\" απο τον <a href=\"https://www.creative-tim.com\" target=\"_blank\">Creative Tim</a>"
+
+#: themes/material/about_credits.html:19
+msgid "Python, awesome language!"
+msgstr "Python, μια καταπληκτικη γλωσσα προγραμματισμου!"
+
+#: themes/material/about_credits.html:20
+msgid "The <a href=\"https://www.tornadoweb.org/en/stable/index.html\" target=\"_blank\">Tornado</a> web application framework"
+msgstr "Το πλαισιο της δυκτιακης εφαρμογης <a href=\"https://www.tornadoweb.org/en/stable/index.html\" target=\"_blank\">Tornado</a>"
+
+#: crystals/100_bismuthprice/themes/default/about.html:23
+#: crystals/210_eggpool/themes/default/about.html:25
+#: crystals/250_autogame/themes/default/about.html:35
+#: themes/material/about_credits.html:30
+msgid "About"
+msgstr "Σχετικα"
+
+#: themes/material/about_credits.html:35
+msgid "Tornado wallet version {}"
+msgstr "Εκδοση πορτοφολιου Tornado {}"
+
+#: themes/material/about_credits.html:39
+msgid "This is the default wallet theme by {} from {}."
+msgstr "Αυτο ειναι το προεπιλεγμενο θεμα πορτοφολιου {} απο {}"
+
+#: themes/material/about_network.html:14
+msgid "Current wallet server"
+msgstr "Τρεχων διακομιστης πορτοφολιου"
+
+#: themes/material/about_network.html:16
+msgid "This is the server you're connected to."
+msgstr "Αυτος ειναι ο διακομιστης στον οποιο ειστε συνδεδεμενοι."
+
+#: themes/material/about_network.html:19
+msgid "Server:"
+msgstr "Διακομιστης:"
+
+#: themes/material/about_network.html:21
+msgid "IP"
+msgstr "IP"
+
+#: themes/material/about_network.html:21
+msgid "Wallet  server version {}"
+msgstr "Εκδοση πορτοφολιου διακομιστη"
+
+#: themes/material/about_network.html:25
+msgid "Connected clients:"
+msgstr "Συνδεδεμενοι τερματικοι χρηστες:"
+
+#: themes/material/about_network.html:26
+msgid "Protocol"
+msgstr "Πρωτοκολλο"
+
+#: themes/material/about_network.html:27
+msgid "Node Version"
+msgstr "Εκδοση κομβου"
+
+#: themes/material/about_network.html:28
+msgid "Peers connections:"
+msgstr "Ομοτιμες συνδεσεις:"
+
+#: themes/material/about_network.html:29
+msgid "UpTime:"
+msgstr "Χρονος συνδεσης"
+
+#: themes/material/about_network.html:30
+msgid "Consensus:"
+msgstr "Πλαισιο κοινης συναινεσης:"
+
+#: themes/material/about_network.html:52
+msgid "Block"
+msgstr "Block"
+
+#: themes/material/about_network.html:64
+msgid "Difficulty"
+msgstr "Δυσκολια"
+
+#: themes/material/about_network.html:77
+msgid "Available wallet servers"
+msgstr "Διαθεσιμοι διακομιστες πορτοφολιου"
+
+#: themes/material/about_network.html:79
+msgid "servers"
+msgstr "διακομιστες"
+
+#: themes/material/about_network.html:88
+msgid "Refresh from API"
+msgstr "Ανανεωση απο API"
+
+#: themes/material/base.html:43
+msgid "Bismuth Wallet"
+msgstr "Πορτοφολι Bismuth"
+
+#: themes/material/base.html:51
+msgid "Dashboard"
+msgstr "Συγκεντρωτικος πινακας"
+
+#: themes/material/base.html:57
+msgid "Transactions"
+msgstr "Συναλλαγες"
+
+#: themes/material/base.html:63
+msgid "Address book"
+msgstr "Βιβλιο διευθυνσεων"
+
+#: themes/material/base.html:70 themes/material/tokens_list.html:10
+msgid "Tokens"
+msgstr "Tokens"
+
+#: themes/material/base.html:76
+msgid "Messages"
+msgstr "Μηνυματα"
+
+#: themes/material/base.html:83
+msgid "Network"
+msgstr "Δυκτιο"
+
+#: themes/material/base.html:86 themes/material/cristals_list.html:10
+msgid "Cristals"
+msgstr "Crystals"
+
+#: themes/material/base.html:122
+msgid "Toggle navigation"
+msgstr "Μετακινηση πλοηγησης"
+
+#: themes/material/base.html:208
+msgid "Source"
+msgstr "Πηγη"
+
+#: themes/material/base.html:213
+msgid "Blog"
+msgstr "Blog"
+
+#: themes/material/base.html:218
+msgid "Discord"
+msgstr "Discord"
+
+#: themes/material/base.html:223
+msgid "Donate"
+msgstr "Συνεισφερετε"
+
+#: themes/material/base.html:234
+msgid "block #"
+msgstr "block #"
+
+#: themes/material/base.html:254
+msgid "Sidebar Filters"
+msgstr "Φιλτρα πλαινης μπαρας"
+
+#: themes/material/base.html:267
+msgid "Images"
+msgstr "Εικονες"
+
+#: themes/material/cristals_list.html:11
+msgid "Cristals are extra functionalities you can add to your wallet"
+msgstr "Οι κρυσταλλοι ειναι εξτρα λειτουργιες τις οποιες μπορειτε να προσθεσετε στο πορτοφολι"
+
+#: crystals/100_bismuthprice/themes/default/about.html:15
+#: themes/material/tokens_list.html:14
+msgid "WIP"
+msgstr "Εργασια σε εξελιξη"
+
+#: themes/material/home.html:15 themes/material/transactions.html:15
+msgid "Balance"
+msgstr "Υπολοιπο"
+
+#: themes/material/home.html:34 themes/material/transactions.html:34
+msgid "Send"
+msgstr "Αποστολη"
+
+#: themes/material/home.html:39 themes/material/transactions.html:39
+msgid "Send $BIS to..."
+msgstr "Στειλτε $BIS στο..."
+
+#: themes/material/home.html:53 themes/material/transactions.html:53
+#: themes/material/transactions_receive.html:15
+msgid "Receive"
+msgstr "Ληψη"
+
+#: themes/material/home.html:58 themes/material/transactions.html:58
+msgid "Request a $BIS payment"
+msgstr "Ζητηστε μια πληρωμη με $BIS"
+
+#: themes/material/home.html:74 themes/material/transactions.html:73
+msgid "Latest transactions"
+msgstr "Τελευταιες συναλλαγες"
+
+#: themes/material/home.html:75 themes/material/transactions.html:74
+#: themes/material/wallet_load.html:37
+msgid "Updated on"
+msgstr "Ενημερωθηκε"
+
+#: themes/material/home.html:80 themes/material/transactions.html:80
+msgid "Date"
+msgstr "Ημερομηνια"
+
+#: themes/material/home.html:81 themes/material/transactions.html:81
+#: themes/material/wallet_load.html:43 themes/material/wallet_load.html:100
+#: themes/material/wallet_load.html:137
+msgid "Address"
+msgstr "Διευθυνση"
+
+#: themes/material/home.html:82 themes/material/transactions.html:82
+#: themes/material/transactions_receive.html:46
+#: themes/material/transactions_send.html:52
+#: themes/material/transactions_send_confirm.html:55
+msgid "Amount"
+msgstr "Ποσο"
+
+#: themes/material/home.html:83 themes/material/transactions.html:83
+msgid "Type"
+msgstr "Ειδος"
+
+#: themes/material/home.html:150
+msgid "Bismuth news"
+msgstr "Νεα του Bismuth"
+
+#: crystals/100_bismuthprice/themes/default/modules/home.html:28
+msgid "Bismuth vs USD"
+msgstr "Bismuth προς Δολαριο Αμερικης"
+
+#: crystals/100_bismuthprice/themes/default/modules/home.html:33
+msgid "This is a mockup with fake data"
+msgstr "Αυτο ειναι ενα προτυπο με ψευδη δεδομενα"
+
+#: themes/material/home.html:136
+msgid "Account balance"
+msgstr "Υπολογισμος υπολοιπου"
+
+#: themes/material/home.html:137
+msgid "Last 12 months"
+msgstr "Τελευταιοι 12 μηνες"
+
+#: themes/material/home.html:141
+msgid "Mockup with fake data"
+msgstr "Προτυπο με ψευδη δεδομενα"
+
+#: themes/material/message.html:16
+#: themes/material/transactions_send_confirm.html:16
+msgid "Previous page"
+msgstr "Προηγουμενη σελιδα"
+
+#: themes/material/tokens_list.html:11
+msgid "Tokens are a core BIS functionality"
+msgstr "Τα Tokens ειναι μια βασικη λειτουργεια του BIS"
+
+#: themes/material/transactions_send.html:15
+#: themes/material/transactions_send_confirm.html:28
+msgid "Send To"
+msgstr "Στειλτε στο"
+
+#: themes/material/transactions_send.html:16
+#: themes/material/transactions_send_confirm.html:29
+msgid "To whom send BIS."
+msgstr "Σε ποιον στελνετε BIS"
+
+#: themes/material/messages.html:61 themes/material/transactions_send.html:20
+#: themes/material/transactions_send_confirm.html:33
+#: themes/material/transactions_sendpop_confirm.html:29
+msgid "Recipient"
+msgstr "Αποδεκτης"
+
+#: themes/material/messages.html:20 themes/material/messages.html:57
+#: themes/material/transactions_receive.html:27
+#: themes/material/transactions_send.html:25
+#: themes/material/transactions_send_confirm.html:39
+#: themes/material/transactions_sendpop_confirm.html:68
+msgid "Data (message)"
+msgstr "Δεδομενα (μηνυμα)"
+
+#: themes/material/transactions_send.html:27
+#: themes/material/transactions_send_confirm.html:43
+#: themes/material/transactions_sendpop_confirm.html:73
+msgid "Optionally, you can add a small comment to your transaction. Required for exchanges deposit."
+msgstr "Προαιρετικα, μπορειτε να προσθεσετε ενα μικρο σχολιο στην συναλλαγη σας. Χρειαζεται για καταθεσεις σε ανταλλακτηρια"
+
+#: themes/material/transactions_send.html:53
+#: themes/material/transactions_send_confirm.html:56
+msgid "How many BIS to send."
+msgstr "Ποσα $BIS θα στειλετε"
+
+#: themes/material/transactions_receive.html:53
+#: themes/material/transactions_send.html:59
+#: themes/material/transactions_send_confirm.html:62
+#: themes/material/transactions_sendpop_confirm.html:38
+msgid "Amount (BIS)"
+msgstr "Ποσο (BIS)"
+
+#: themes/material/transactions_receive.html:61
+#: themes/material/transactions_send.html:66
+#: themes/material/transactions_send_confirm.html:70
+#: themes/material/transactions_sendpop_confirm.html:46
+msgid "Est. fees"
+msgstr "Εκτιμωμενα τελη"
+
+#: themes/material/transactions_receive.html:66
+#: themes/material/transactions_send.html:71
+#: themes/material/transactions_send_confirm.html:75
+#: themes/material/transactions_sendpop_confirm.html:52
+msgid "Total (BIS)"
+msgstr "Συνολικα (BIS)"
+
+#: main.py:133 main.py:161 themes/material/transactions_send.html:78
+#: themes/material/transactions_send.html:81
+#: themes/material/transactions_send.html:127 wallet.py:151 wallet.py:178
+msgid "Send BIS"
+msgstr "Στειλτε BIS"
+
+#: themes/material/wallet_info.html:11
+msgid "Current Wallet"
+msgstr "Τρεχων πορτοφολι"
+
+#: themes/material/wallet_info.html:28
+msgid "Open existing"
+msgstr "Ανοιξτε υπαρχων"
+
+#: themes/material/wallet_info.html:29
+msgid "wallet"
+msgstr "πορτοφολι"
+
+#: themes/material/wallet_info.html:33
+msgid "Load a wallet from disk"
+msgstr "Φορτωστε πορτοφολι απο δισκο"
+
+#: themes/material/wallet_info.html:47 themes/material/wallet_load.html:34
+msgid "Create a"
+msgstr "Δημιουργηστε ενα"
+
+#: themes/material/wallet_info.html:48 themes/material/wallet_load.html:35
+msgid "new wallet"
+msgstr "νεο πορτοφολι"
+
+#: themes/material/wallet_load.html:99
+msgid "File"
+msgstr "Αρχειο"
+
+#: themes/material/wallet_load.html:101
+msgid "Encrypted"
+msgstr "Κωδικοποιημενο"
+
+#: themes/material/messages.html:82 themes/material/wip.html:10
+msgid "W.I.P."
+msgstr "Εργασια σε εξελιξη"
+
+#: themes/material/messages.html:85 themes/material/wip.html:13
+msgid "This feature is under construction."
+msgstr "Αυτη η λειτουργεια ειναι υπο κατασκευη"
+
+#: main.py:243 wallet.py:326
+msgid "Transaction list"
+msgstr "Λιστα συναλλαγων"
+
+#: main.py:203 main.py:315 main.py:324 modules/basehandlers.py:60
+#: wallet.py:264 wallet.py:375 wallet.py:401 wallet.py:415 wallet.py:421
+#: wallet.py:436 wallet.py:445 wallet.py:451 wallet.py:460 wallet.py:474
+#: wallet.py:489 wallet.py:497 wallet.py:506 wallet.py:512 wallet.py:523
+msgid "Error"
+msgstr "Σφαλμα"
+
+#: main.py:315 wallet.py:436
+msgid "This file already exists: {}.der"
+msgstr "Αυτο το αρχειο ηδη υπαρχει {}.der"
+
+#: main.py:324 wallet.py:445
+msgid "Error creating {}.der"
+msgstr "Σφαλμα στην δημιουργεια {}.der"
+
+#: themes/material/transactions.html:79
+msgid "Txid"
+msgstr "Ταυτοτητα συναλλαγης"
+
+#: themes/material/transactions.html:84
+msgid "Fees"
+msgstr "Τελη"
+
+#: themes/material/transactions.html:85
+msgid "Data"
+msgstr "Δεδομενα"
+
+#: themes/material/transactions_receive.html:16
+msgid "Request BIS"
+msgstr "Ζητηστε BIS"
+
+#: themes/material/transactions_receive.html:20
+msgid "Your address"
+msgstr "Η διευθυνση σας"
+
+#: themes/material/transactions_receive.html:22
+msgid "This is your address for current wallet, but you can change it if needed. Double check then."
+msgstr "Αυτη ειναι η διευθυνση του τρεχοντος πορτοφολιου, μπορειτε ομως να την αλλαξετε εαν το επιθυμητε. Διπλο ελεγξτε την."
+
+#: themes/material/transactions_receive.html:30
+msgid "Optionally, you can add a small comment to your transaction, like a reference of your own. Will be stored on chain."
+msgstr "Προαιρετικα, μπορειτε να προσθεσετε ενα μικρο σχολιο στην συναλλαγη σας, οπως μια προσωπικη αναφορα. Θα αποθηκευτει στην αλυσιδα."
+
+#: themes/material/transactions_receive.html:35
+msgid "This is the QR code for your address only."
+msgstr "Αυτο ειναι ενα QR code μονο για την διευθυνση σας."
+
+#: themes/material/transactions_receive.html:47
+msgid "How many BIS to request."
+msgstr "Ποσα BIS θα ζητησετε."
+
+#: themes/material/transactions_receive.html:56
+msgid "This is what you will receive"
+msgstr "Αυτο το ποσο θα λαβετε"
+
+#: themes/material/transactions_receive.html:63
+#: themes/material/transactions_send.html:68
+#: themes/material/transactions_send_confirm.html:72
+#: themes/material/transactions_sendpop_confirm.html:48
+msgid "Fees depend on Data length"
+msgstr "Τα τελη εξαρτωνται απο το μεγεθος των δεδομενων"
+
+#: themes/material/transactions_receive.html:68
+msgid "This is what the sender will pay"
+msgstr "Αυτο το ποσο θα πληρωσει ο αποστολεας"
+
+#: themes/material/transactions_receive.html:72
+msgid "Get BIS URL"
+msgstr "Δημιουργηστε BIS URL"
+
+#: themes/material/transactions_receive.html:78
+msgid "This is the QR code for your address, data and amount as a BisUrl."
+msgstr "Αυτο ειναι ενα QR code με την διευθυνση σας, τα δεδομενα και το ποσο σαν ενα BIS URL"
+
+#: themes/material/transactions_receive.html:79
+msgid "You can copy/paste this image to send in a mail or anything"
+msgstr "Μπορειτε να κανετε αντιγραφη/επικολληση αυτης της εικονας ωστε να την στειλετε σε μια διευθυνση ηλεκτρονικου ταχυδρομειου η καπου αλλου"
+
+#: themes/material/transactions_send.html:61
+#: themes/material/transactions_send_confirm.html:65
+#: themes/material/transactions_sendpop_confirm.html:41
+msgid "This is what the recipient will receive"
+msgstr "Αυτο το ποσο θα παραλαβει ο παραληπτης"
+
+#: themes/material/transactions_send.html:73
+#: themes/material/transactions_send_confirm.html:77
+#: themes/material/transactions_sendpop_confirm.html:54
+msgid "This is what you will pay, fees included."
+msgstr "Αυτο ειναι το ποσο που θα πληρωσετε, συμπεριλαμβανονται τελη."
+
+#: themes/material/wallet_load.html:45 themes/material/wallet_load.html:102
+msgid "Action"
+msgstr "Δραση"
+
+#: themes/material/about_credits.html:52
+msgid "Translations"
+msgstr "Μεταφρασεις"
+
+#: themes/material/transactions_send_confirm.html:117
+#: themes/material/transactions_sendpop_confirm.html:103
+#: themes/material/wallet_load.html:150
+msgid "Cancel"
+msgstr "Ακυρωση"
+
+#: themes/material/transactions_send_confirm.html:122
+#: themes/material/transactions_sendpop_confirm.html:111
+msgid "Confirm and send BIS"
+msgstr "Επιβεβαιωστε και στειλτε BIS"
+
+#: main.py:144 main.py:172 wallet.py:161 wallet.py:190 wallet.py:212
+msgid "Send BIS: Confirmation"
+msgstr "Στειλτε BIS: Επιβεβαιωση"
+
+#: main.py:146 main.py:174 wallet.py:163 wallet.py:192 wallet.py:214
+msgid "Please confirm this transaction"
+msgstr "Παρακαλω επιβεβαιωστε την συναλλαγη"
+
+#: main.py:147 main.py:175 wallet.py:164 wallet.py:193 wallet.py:215
+msgid "Check this is what you intended to do and hit the \"confirm\" button"
+msgstr "Ελεγξτε οτι θελετε να πραγματοποιησετε αυτη την εντολη και πατηστε το κουμπι \"Επιβεβαιωση\""
+
+#: main.py:227 wallet.py:309
+msgid "Receive BIS"
+msgstr "Λαβετε BIS"
+
+#: themes/material/about_credits.html:36
+msgid "Wallet template {} by {}."
+msgstr "Υποδειγμα πορτοφολιου {} απο {}"
+
+#: themes/material/about_credits.html:53
+msgid "Many thanks to our translators and proofreaders"
+msgstr "Ευχαριστουμε πολυ τους μεταφραστες και τους διορθωτες"
+
+#: themes/material/about_network.html:22
+msgid "Wallet server version {}"
+msgstr "Εκδοση διακομιστη πορτοφολιου"
+
+#: themes/material/base.html:173
+msgid "Wallet"
+msgstr "Πορτοφολι"
+
+#: crystals/250_autogame/themes/default/about.html:19
+#: themes/material/transactions_receive.html:81
+#: themes/material/transactions_send.html:100
+#: themes/material/transactions_send.html:108
+msgid "BIS URL"
+msgstr "BIS URL"
+
+#: themes/material/wallet_load.html:16
+msgid "Your Bismuth wallets"
+msgstr "Τα πορτοφολια Bismuth σας"
+
+#. Is that wallets’ or wallet’s
+#: themes/material/wallet_load.html:20
+msgid "Your wallets directory is {}"
+msgstr "Ο φακελος των πορτοφολιων σας ειναι {}"
+
+#: crystals/210_eggpool/__init__.py:85 main.py:136 main.py:140 main.py:164
+#: main.py:168 main.py:182 main.py:221 wallet.py:153 wallet.py:157
+#: wallet.py:181 wallet.py:185 wallet.py:197 wallet.py:228 wallet.py:234
+#: wallet.py:237 wallet.py:244 wallet.py:271 wallet.py:274 wallet.py:281
+#: wallet.py:296 wallet.py:302 wallet.py:306 wallet.py:657 wallet.py:661
+#: wallet.py:668 wallet.py:680
+msgid "Error:"
+msgstr "Σφαλμα:"
+
+#: main.py:136 main.py:164 wallet.py:153 wallet.py:181 wallet.py:234
+#: wallet.py:271 wallet.py:302 wallet.py:657
+msgid "Load your wallet first"
+msgstr "Φορτωστε το πορτοφολι σας πρωτα"
+
+#: main.py:136 main.py:164 wallet.py:153 wallet.py:181 wallet.py:234
+#: wallet.py:271 wallet.py:302 wallet.py:657
+msgid "No Wallet"
+msgstr "Δεν υπαρχει πορτοφολι"
+
+#: main.py:140 main.py:168 wallet.py:157 wallet.py:185 wallet.py:237
+#: wallet.py:274 wallet.py:306 wallet.py:661
+msgid "Encrypted wallet"
+msgstr "Κρυπτογραφημενο πορτοφολι"
+
+#: main.py:140 main.py:168 wallet.py:157 wallet.py:185 wallet.py:237
+#: wallet.py:274 wallet.py:306 wallet.py:375 wallet.py:415 wallet.py:661
+msgid "You have to unlock your wallet first"
+msgstr "Πρεπει πρωτα να ξεκλειδωσετε το πορτοφολι σας"
+
+#: main.py:193 main.py:216 wallet.py:254 wallet.py:291
+msgid "Success:"
+msgstr "Επιτυχια:"
+
+#: main.py:193 main.py:216 wallet.py:254 wallet.py:291
+msgid "Transaction sent"
+msgstr "Η συναλλαγη εσταλη"
+
+#: main.py:194 main.py:217 wallet.py:255 wallet.py:292
+msgid "The transaction was submitted to the mempool."
+msgstr "Η συναλλαγη εχει υποβληθει στο mempool"
+
+#: main.py:196 main.py:219 wallet.py:257 wallet.py:294
+msgid "Txid is {}"
+msgstr "Η ταυτοτητα της συναλλαγης ειναι {}"
+
+#: main.py:201 main.py:221 wallet.py:262 wallet.py:296
+msgid "There was an error submitting to the mempool, transaction was not sent."
+msgstr "Υπηρξε ενα σφαλμα κατα την υποβολη της συναλλαγης στο mempool, η συναλλαγη δεν εσταλη"
+
+#: crystals/200_dragginator/themes/default/about.html:89
+#: modules/basehandlers.py:55
+msgid "No Bismuth address, please create or load a wallet first."
+msgstr "Δεν υπαρχει διευθυνση Bismuth, παρακαλω δημιουργηστε η φορτωστε μια."
+
+#: themes/material/base.html:95 themes/material/crystals_list.html:11
+msgid "Crystals"
+msgstr "Crystals"
+
+#: themes/material/base.html:131
+msgid "Search..."
+msgstr "Αναζητηση..."
+
+#: themes/material/crystals_list.html:12
+msgid "Crystals are extra functionalities you can add to your wallet"
+msgstr "Ta Crystals ειναι εξτρα λειτουργιες τις οποιες μπορειτε να προσθεσετε στο πορτοφολι"
+
+#: crystals/100_bismuthprice/themes/default/about.html:11
+#: crystals/100_bismuthprice/themes/default/modules/home.html:16
+msgid "Crystal"
+msgstr "Crystal"
+
+#: crystals/100_bismuthprice/themes/default/about.html:28
+#: crystals/210_eggpool/themes/default/about.html:29
+#: crystals/250_autogame/themes/default/about.html:39
+msgid "Version"
+msgstr "Εκδοση"
+
+#: crystals/100_bismuthprice/themes/default/modules/home.html:4
+msgid "Current Bismuth Prices"
+msgstr "Τρεχουσα διευθυνση Bismuth"
+
+#: crystals/200_dragginator/themes/default/egg.html:20
+msgid "BIS"
+msgstr "BIS"
+
+#: main.py:198 wallet.py:259
+msgid "Success"
+msgstr "Επιτυχια"
+
+#: themes/material/transactions_confirmpop.html:10
+msgid "Confirm Transaction"
+msgstr "Επιβεβαιωστε την συναλλαγη"
+
+#: themes/material/transactions_send.html:36
+#: themes/material/transactions_sendpop_confirm.html:61
+msgid "Operation"
+msgstr "Διεργασια"
+
+#: .buildozer/android/platform/python-for-android-new-toolchain/doc/source/ext/sphinx_rtd_theme/sphinx_rtd_theme/layout_old.html:29
+msgid "Navigation"
+msgstr "Πλοηγηση"
+
+#: .buildozer/android/platform/python-for-android-new-toolchain/doc/source/ext/sphinx_rtd_theme/sphinx_rtd_theme/search.html:11
+msgid "Search"
+msgstr "Αναζητηση"
+
+#: .buildozer/android/platform/python-for-android-new-toolchain/doc/source/ext/sphinx_rtd_theme/sphinx_rtd_theme/search.html:33
+msgid "Search Results"
+msgstr "Αναζητηση αποτελεσματων"
+
+#: crystals/200_dragginator/__init__.py:64
+msgid "D:Air egg"
+msgstr "Αυγο του αερα"
+
+#: crystals/200_dragginator/__init__.py:63
+msgid "D:Earth egg"
+msgstr "Αυγο της γης"
+
+#: crystals/200_dragginator/__init__.py:63
+msgid "D:Fire egg"
+msgstr "Αυγο της φωτιας"
+
+#: crystals/200_dragginator/__init__.py:63
+msgid "D:Water egg"
+msgstr "Αυγο του νερου"
+
+#: crystals/200_dragginator/__init__.py:68
+msgid "D:Cup"
+msgstr "Κυπελλο"
+
+#: crystals/200_dragginator/__init__.py:68
+msgid "D:special egg"
+msgstr "Ειδικο αυγο"
+
+#: crystals/200_dragginator/__init__.py:68
+msgid "D:world cup 2018"
+msgstr "Παγκοσμιο κυπελλο 2018"
+
+#: crystals/200_dragginator/themes/default/about.html:21
+msgid "D:Dragginator News"
+msgstr "Νεα του Dragginator"
+
+#: crystals/200_dragginator/themes/default/about.html:36
+msgid "D:My eggs"
+msgstr "Τα αυγα μου"
+
+#: crystals/200_dragginator/themes/default/about.html:47
+msgid "D:And you are registered to the current eggdrop"
+msgstr "Και ειστε εγγεγραμενοι στον τρεχων διαμοιρασμο αυγων"
+
+#: crystals/200_dragginator/themes/default/about.html:49
+#: crystals/250_autogame/themes/default/about.html:23
+msgid "D:Register"
+msgstr "Εγγραφη"
+
+#: crystals/200_dragginator/themes/default/about.html:49
+msgid "D:So you can register to the eggdrop!"
+msgstr "Μπορειτε να εγγραφειτε στον διαμοιρασμο αυγων"
+
+#: crystals/200_dragginator/themes/default/about.html:61
+msgid "D:DNA"
+msgstr "DNA"
+
+#: crystals/200_dragginator/themes/default/about.html:62
+#: crystals/200_dragginator/themes/default/egg.html:56
+msgid "D:Element"
+msgstr "Στοιχειο"
+
+#: crystals/200_dragginator/themes/default/about.html:63
+#: crystals/200_dragginator/themes/default/egg.html:57
+msgid "D:Species"
+msgstr "Ειδη"
+
+#: crystals/200_dragginator/themes/default/egg.html:11
+msgid "D:DNA:"
+msgstr "DNA:"
+
+#: crystals/200_dragginator/themes/default/egg.html:11
+msgid "D:See on Dragginator.com"
+msgstr "Δειτε στο Dragginator.com"
+
+#: crystals/200_dragginator/themes/default/egg.html:23
+msgid "D:Archive"
+msgstr "Αρχειο"
+
+#: crystals/200_dragginator/themes/default/egg.html:58
+msgid "D:Age"
+msgstr "Ηλικια"
+
+#: crystals/200_dragginator/themes/default/egg.html:59
+msgid "D:Rarity"
+msgstr "σπανιοτητα"
+
+#: crystals/200_dragginator/themes/default/egg.html:69
+msgid "D:You own this egg"
+msgstr "Σας ανηκει αυτο το αυγο"
+
+#: crystals/200_dragginator/themes/default/egg.html:72
+msgid "D:You don't own this egg"
+msgstr "Δεν σας ανηκει αυτο το αυγο"
+
+#: crystals/200_dragginator/themes/default/egg.html:86
+msgid "D:Send this egg to..."
+msgstr "Στειλτε αυτο το αυγο στο..."
+
+#: crystals/200_dragginator/themes/default/egg.html:89
+msgid "D:Sell this egg for BIS"
+msgstr "Πουληστε αυτο το αυγο για BIS"
+
+#: crystals/200_dragginator/themes/default/egg.html:95
+msgid "D:Remove this egg from the marketplace"
+msgstr "Αφαιρεστε αυτο το αυγο απο την αγορα"
+
+#: crystals/210_eggpool/themes/default/about.html:14
+msgid "EP:Direct Link to official Dashboard"
+msgstr "Απευθειας συνδεση στον επισημο συγκεντρωτικο πινκακα"
+
+#: crystals/210_eggpool/themes/default/about.html:15
+msgid "EP:Get last GPU miner"
+msgstr "Κατεβαστε το τελευταιο GPU miner"
+
+#: crystals/210_eggpool/themes/default/about.html:16
+#: crystals/250_autogame/themes/default/about.html:15
+msgid "Join the Official Bismuth Discord for support"
+msgstr "Μπορειτε να συμμετεχετε στο επισημο Discord του Bismuth για υποστηριξη"
+
+#: crystals/210_eggpool/themes/default/about.html:48
+msgid "EP:Hash Rate"
+msgstr "Hash Rate"
+
+#: crystals/210_eggpool/themes/default/about.html:49
+#: crystals/210_eggpool/themes/default/about.html:64
+msgid "EP:Last 12 hours"
+msgstr "Τελευταιες 12 ωρες"
+
+#: crystals/210_eggpool/themes/default/about.html:63
+msgid "EP:Shares"
+msgstr "Shares"
+
+#: crystals/210_eggpool/themes/default/about.html:73
+msgid "EP:Workers"
+msgstr "Workers"
+
+#: modules/i18n.py:22
+msgid "DT:Processing..."
+msgstr "Σε επεξεργασια..."
+
+#: modules/i18n.py:23
+msgid "DT:Search&nbsp;..."
+msgstr "Αναζητηση&nbsp;..."
+
+#. display verb or noun? as demonstration,show, arrangement, exhibit or make viewable?
+#: modules/i18n.py:24
+msgid "DT:Display _MENU_ elements"
+msgstr "Εμφανισε _MENU_ στοιχεια"
+
+#: modules/i18n.py:25
+msgid "DT:Display element _START_ to _END_ from _TOTAL_ elements"
+msgstr "Εμφανισε στοιχεια απο _START_ εως _END_ απο _TOTAL_ στοιχεια"
+
+#: modules/i18n.py:26 modules/i18n.py:30
+msgid "DT:Nothing to display"
+msgstr "Τιποτα για εμφανιση"
+
+#: modules/i18n.py:27
+msgid "DT:filtered from _MAX_ total elements"
+msgstr "φιλτραρισμενο απο _MAX_ στοιχεια"
+
+#: modules/i18n.py:29
+msgid "DT:Loading..."
+msgstr "Φορτωνει..."
+
+#: modules/i18n.py:31
+msgid "DT:No data in the table"
+msgstr "Δεν υπαρχουν δεδομενα"
+
+#. is this a page navigator? "First Page" ?
+#: modules/i18n.py:33
+msgid "DT:First"
+msgstr "Πρωτη"
+
+#: modules/i18n.py:34
+msgid "DT:Previous"
+msgstr "Προηγουμενη"
+
+#: modules/i18n.py:35
+msgid "DT:Next"
+msgstr "Επομενη"
+
+#: modules/i18n.py:36
+msgid "DT:Last"
+msgstr "Τελευταια"
+
+#: modules/i18n.py:39
+msgid "DT:Sort by ascending order"
+msgstr "Ταξινομιση σε αυξουσα σειρα"
+
+#: modules/i18n.py:40
+msgid "DT:Sort by descending order"
+msgstr "Ταξινομιση σε φθινουσα σειρα"
+
+#: crystals/200_dragginator/themes/default/about.html:44
+msgid "D:You don't own any egg ;("
+msgstr "Δεν σας ανηκει καποιο αυγο :("
+
+#: crystals/200_dragginator/themes/default/about.html:15
+msgid "D:Buy an egg for {} BIS"
+msgstr "Αγοραστε ενα αυγο για {} BIS"
+
+#: crystals/200_dragginator/themes/default/about.html:54
+msgid "D:You own {} eggs"
+msgstr "Σας ανηκουν {} αυγα"
+
+#: crystals/200_dragginator/themes/default/egg.html:104
+msgid "D:Buy for {} BIS"
+msgstr "Αγοραστε για {} BIS"
+
+#: crystals/200_dragginator/themes/default/egg.html:91
+msgid "D:Price"
+msgstr "Τιμη"
+
+#: themes/material/transactions_confirmpop.html:7
+msgid "Transaction Status"
+msgstr "Κατασταση συναλλαγης"
+
+#: themes/material/transactions_confirmpop.html:23
+msgid "OK"
+msgstr "ΟΚ"
+
+#: themes/material/transactions_send.html:38
+msgid "\"operation\" allows for powerful Bismuth Features. Leave empty until otherwise required."
+msgstr "η \"διεργασια\" υπολογιζετε για ισχυρες λειτουργιες του Bismuth. Αφηστε κενο εκτος εαν χρειαζεται."
+
+#: crystals/210_eggpool/__init__.py:68
+msgid "No data"
+msgstr "Δεν υπαρχουν δεδομενα"
+
+#: crystals/210_eggpool/__init__.py:85
+msgid "This crystal is activated but needs a wallet restart."
+msgstr "Αυτος ο κρυσταλλος ειναι ενεργοποιημενος αλλα χρειαζεται επανεκινηση του πορτοφολιου"
+
+#: modules/i18n.py:8 themes/material/wallet_info.html:235
+msgid "No protection"
+msgstr "Δεν υπαρχει προστασια"
+
+#: modules/i18n.py:10 themes/material/wallet_info.html:232
+msgid "PIN Code"
+msgstr "Κωδικος PIN"
+
+#: modules/i18n.py:12 themes/material/wallet_info.html:233
+msgid "YUBICO"
+msgstr "YUBICO"
+
+#: modules/i18n.py:14
+msgid "U2F Token"
+msgstr "U2F Token"
+
+#: themes/material/base.html:117
+msgid "Wallet info"
+msgstr "Πληροφοριες πορτοφολιου"
+
+#: themes/material/crystals_list.html:48
+msgid "Apply"
+msgstr "Εφαρμογη"
+
+#: themes/material/message_pop.html:23 themes/material/messages_pop.html:31
+msgid "Close"
+msgstr "Κλεισιμο"
+
+#: themes/material/messages.html:15 wallet.py:655
+msgid "Sign message"
+msgstr "Υπογραψτε το μηνυμα"
+
+#: themes/material/messages.html:16
+msgid "Sign some data for off chain usage with your private key."
+msgstr "Υπογραψτε με το προσωπικο σας κλειδι τα δεδομενα για χρηση εκτος αλυσιδας."
+
+#: themes/material/messages.html:26
+#: themes/material/transactions_send_confirm.html:104
+#: themes/material/transactions_sendpop_confirm.html:91
+#: themes/material/wallet_info.html:218 themes/material/wallet_info.html:219
+#: wallet.py:244 wallet.py:281 wallet.py:668
+msgid "Spend protection"
+msgstr "Ξοδεψτε προστασια"
+
+#: themes/material/messages.html:37
+msgid "Sign Message"
+msgstr "Υπογραψτε Το Μηνυμα"
+
+#: themes/material/messages.html:52
+msgid "Encrypt message"
+msgstr "Κρυπτοφραφηστε το μηνυμα"
+
+#: themes/material/messages.html:53
+msgid "Encrypt data for off chain usage."
+msgstr "Κρυπτογραφηστε δεδομενα για χρηση εκτος αλυσιδας."
+
+#: themes/material/messages.html:63
+msgid "You have to tell the recipient address so the message can be encrypted with his public key"
+msgstr "Θα πρεπει να ενημερωσετε την διευθυνση του αποδεκτη ωστε το μηνυμα να κρυπτογραφηθει με το δικο του προσωπικο κλειδι"
+
+#: themes/material/messages.html:67
+msgid "Encrypt Message"
+msgstr "Κρυπτογραφηστε Το Μηνυμα"
+
+#: themes/material/messages_pop.html:24
+#: themes/material/transactions_receive.html:81
+msgid "Click text to copy"
+msgstr "Πατηστε στο κειμενο για αντιγραφη"
+
+#: themes/material/messages_pop.html:34
+#: themes/material/transactions_receive.html:84
+msgid "Copied to Clipboard"
+msgstr "Αντιγραφηκε στο προχειρο"
+
+#: themes/material/transactions_send.html:103
+msgid "Send a transaction from a BIS URL"
+msgstr "Στειλτε μια συναλλαγη απο BIS URL"
+
+#: crystals/250_autogame/themes/default/about.html:21
+#: themes/material/transactions_send.html:110
+msgid "Paste the BIS URL you were given here"
+msgstr "Καντε επικολληση του BIS URL που σας δοθηκε εδω."
+
+#: themes/material/transactions_send.html:117
+msgid "Decode BIS URL"
+msgstr "Αποκωδικοποιηση του BIS URL"
+
+#: themes/material/transactions_send.html:123
+msgid "Send BIS URL..."
+msgstr "Στειλτε BIS URL..."
+
+#: themes/material/wallet_info.html:16
+msgid "{} Address(es)"
+msgstr "{} Διευθυνση(εις)"
+
+#: themes/material/wallet_info.html:29
+msgid "Manage"
+msgstr "Οργανωση"
+
+#: themes/material/wallet_info.html:30
+msgid "addresses"
+msgstr "διευθυνσεις"
+
+#: themes/material/wallet_info.html:34
+msgid "Select one of your Bismuth addresses"
+msgstr "Επιλεξτε μια απο τις Bismuth διευθυνσεις σας"
+
+#: themes/material/wallet_info.html:49
+msgid "Create a new"
+msgstr "Δημιουργια νεας"
+
+#: themes/material/wallet_info.html:50
+msgid "address"
+msgstr "διευθυνση"
+
+#: themes/material/wallet_info.html:72
+msgid "Wallet is locked"
+msgstr "Το πορτοφολι ειναι κλειδωμενο"
+
+#: themes/material/wallet_info.html:76
+msgid "Existing master password"
+msgstr "Υφισταμενος βασικος κωδικος"
+
+#: themes/material/wallet_info.html:79
+msgid "This is the password that protects your private key(s)"
+msgstr "Αυτος ο κωδικος προστατευει τα πρωσοπικα κλειδια σας"
+
+#: themes/material/wallet_info.html:95
+msgid "Wallet is unlocked"
+msgstr "Το πορτοφολι ειναι ξεκλειδωτο"
+
+#: themes/material/wallet_info.html:100
+msgid "You can lock it back for extra safety if you don't plan to use it soon."
+msgstr "Μπορειτε να το κλειδωσετε για περισσοτερη προστασια εαν δεν σκοπευετε να το χρησιμοποιησετε."
+
+#: themes/material/wallet_info.html:137 themes/material/wallet_info.html:160
+#: themes/material/wallet_info.html:164 themes/material/wallet_info.html:244
+msgid "Master password"
+msgstr "Βασικος κωδικος"
+
+#: themes/material/wallet_info.html:144
+msgid "Master password is set"
+msgstr "Εχει οριστει βασικος κωδικος"
+
+#: themes/material/wallet_info.html:168
+msgid "This is the password that will protect your private keys."
+msgstr "Αυτος ειναι ενας κωδικος που θα προστατευει τα προσωπικα κλειδια σας."
+
+#: themes/material/wallet_info.html:172
+msgid "Retype Master password"
+msgstr "Ξαναπληκτολογηστε τον βαασικο κωδικο"
+
+#: themes/material/wallet_info.html:176
+msgid "Losing this password means loosing your keys!"
+msgstr "Εαν χασετε αυτο τον κωδικο χανετε τα προσωπικα κλειδια σας!"
+
+#: themes/material/wallet_info.html:186
+msgid "This will encrypt your wallet file. You may want to backup the unencrypted file first."
+msgstr "Αυτη η ενεργεια θα κρυπτογραφησει το αρχειο του πορτοφολιου σας. Ισως θελετε να δημιουργησετε αρχειο ασφαλειας χωρις κρυπτογραφηση πρωτα."
+
+#: themes/material/wallet_info.html:192
+msgid "Master password is not set"
+msgstr "Δεν εχει οριστει βασικος κωδικος"
+
+#: themes/material/wallet_info.html:234
+msgid "U2F TOKEN"
+msgstr "U2F TOKEN"
+
+#: themes/material/wallet_info.html:248
+msgid "Needed to confirm operation"
+msgstr "Πρεπει να επιβεβαιωσετε την ενεργεια"
+
+#: themes/material/wallet_info.html:264
+msgid "Spending is currently not protected"
+msgstr "Η διαδικασια ξοδεματος αυτη την στιγμη δεν προστατευετε"
+
+#: themes/material/wallet_info.html:266
+msgid "Spending is currently protected by {}"
+msgstr "Η διαδικασια ξοδεματος αυτη την στιγμη προστατευετε απο {}"
+
+#: themes/material/wallet_load.html:16 themes/material/wallet_load.html:36
+msgid "Your Bismuth addresses"
+msgstr "Οι Bismuth διευθυνσεις σας"
+
+#: themes/material/wallet_load.html:20
+msgid "Your wallet directory is {}"
+msgstr "Ο φακελος του πορτοφολιου σας ειναι {}"
+
+#: themes/material/wallet_load.html:21
+msgid "Your wallet is {}"
+msgstr "Το πορτοφολι σας ειναι {}"
+
+#: themes/material/wallet_load.html:42 themes/material/wallet_load.html:73
+#: themes/material/wallet_load.html:142
+msgid "Label"
+msgstr "Τιτλος"
+
+#: themes/material/wallet_load.html:44
+msgid "Creation date"
+msgstr "Ημερομηνια δημιουργιας"
+
+#: themes/material/wallet_load.html:75
+msgid "A private label for the new address"
+msgstr "Προσωπικος τιτλος της νεας σας διευθυνσης"
+
+#: themes/material/wallet_load.html:80
+msgid "Create a new address"
+msgstr "Δημιουργηστε νεα διευθυνση"
+
+#: themes/material/wallet_load.html:96
+msgid "Potential legacy wallet imports"
+msgstr "Εν δυναμει κληροδοτημενες εισαγωγες πορτοφολιου"
+
+#: wallet.py:244 wallet.py:281 wallet.py:668
+msgid "Invalid PIN Number"
+msgstr "Λαθος κωδικος PIN"
+
+#: wallet.py:401 wallet.py:421 wallet.py:460 wallet.py:474 wallet.py:489
+#: wallet.py:497 wallet.py:512 wallet.py:523
+msgid "Error: {}"
+msgstr "Σφαλμα: {}"
+
+#: wallet.py:451
+msgid "Max of {} addresses reached."
+msgstr "Φτασατε τον μεγιστο αριθμο {} διευθυνσεων."
+
+#: wallet.py:506
+msgid "Passwords do not match"
+msgstr "Οι κωδικοι δεν ταιριαζουν"
+
+#: wallet.py:674
+msgid "Your message '{}' has been signed."
+msgstr "Το μηνυμα '{}' εχει υπογραφει."
+
+#: wallet.py:676
+msgid "Signature"
+msgstr "Υπογραφη"
+
+#: wallet.py:680
+msgid "This feature is under construction. "
+msgstr "Αυτη η επιλογη ειναι υπο κατασκευη."
+
+#: crystals/200_dragginator/themes/default/egg.html:32
+msgid "D:draggon"
+msgstr "Δρακος"
+
+#: crystals/200_dragginator/themes/default/egg.html:33
+msgid "D:egg"
+msgstr "αυγο"
+
+#: crystals/250_autogame/themes/default/about.html:14
+msgid "AG:Direct Link to latest autogame doc."
+msgstr "Συνδεσμος για μεταβαση στο πιο προσφατο αυτοματο παιχνιδι"
+
+#: crystals/250_autogame/themes/default/about.html:52
+msgid "AG:Your games"
+msgstr "Τα παιχνιδια σας"
+
+#: crystals/250_autogame/themes/default/about.html:76
+msgid "AG:Game detail"
+msgstr "Λεπτομερειες παιχνιδιου"
+
+#: themes/material/wallet_info.html:85
+msgid "Unlock wallet"
+msgstr "Ξεκλειδωστε το πορτοφολι"
+
+#: themes/material/wallet_info.html:106
+msgid "Lock wallet"
+msgstr "Κλειδωστε το πορτοφολι"
+
+#: themes/material/wallet_info.html:110
+msgid "You have to encrypt your wallet first to use this feature"
+msgstr "Πρεπει πρωτα να κρυπτογραφησετε πρωτα το πορτοφολι σας για να χρησιμοποιησετε αυτη την λειτουργια"
+
+#: themes/material/wallet_info.html:183
+msgid "Set master password"
+msgstr "Οριστε βασικο κωδικο"
+
+#: themes/material/wallet_info.html:254
+msgid "Set spend protection"
+msgstr "Οριστε προστασια για ξοδεμα"
+
+#: crystals/250_autogame/themes/default/about.html:59
+msgid "Replay"
+msgstr "Επαναληψη"
+
+#: crystals/250_autogame/themes/default/replay_pop.html:2
+msgid "AG:Game {} replay"
+msgstr "Επαναληψη {} παιχνιδιου"
+
+#: crystals/250_autogame/themes/default/status_pop.html:2
+msgid "AG:Game {} status"
+msgstr "Κατασταση {} παιχνιδιου"
+
+#: modules/basehandlers.py:60
+msgid "Wallet server did not send an answer. Please try again."
+msgstr "Ο διακομιστης του πορτοφολιου δεν απαντησε. Παρακαλω δοκιμαστε ξανα."
+
+#: themes/material/about_network.html:85
+msgid "Height"
+msgstr "Υψος"
+
+#: themes/material/about_network.html:85
+msgid "Load"
+msgstr "Φορτωση"
+
+#: themes/material/wallet_load.html:128
+msgid "Edit label"
+msgstr "Επεξεργαστητε την ετικετα"
+
+#: themes/material/wallet_load.html:144
+msgid "A private label for that address"
+msgstr "Μια εξατομικευμενη ετικετα για αυτη την διευθυνση"
+
+#: themes/material/wallet_load.html:152
+msgid "Set label"
+msgstr "Οριστε ετικετα"
+

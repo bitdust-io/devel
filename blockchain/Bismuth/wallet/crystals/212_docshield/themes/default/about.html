@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+<!-- "../../../../themes/material/base.html" -->
+
+{% block header %}
+<link rel="stylesheet" type="text/css" href="{{ handler.common_url('css/dataTables.min.css') }}">
+<style>
+input, td {
+  background-color:#202940;
+}
+
+.ro-input {
+  color:#bbb; width:100%;
+  border:none;
+  background-image: linear-gradient(to top, #9c27b0 2px, rgba(156, 39, 176, 0) 2px), linear-gradient(to top, rgba(180, 180, 180, 0.1) 1px, rgba(180, 180, 180, 0) 1px);
+  margin-bottom:6px;
+}
+</style>
+{%end %}
+
+{% block body %}
+
+<div class="row">
+
+    <div class="col-lg-6 col-md-12">
+        <div class="data-image">
+            <img src="/crystal/docshield/static/logo.png" width="100%" alt="Logo">
+            <br/><br/>
+            Link to the public website: <a href="https://docshield.bismuthplatform.net">https://docshield.bismuthplatform.net</a>
+            <br/>
+        </div>
+    </div>
+
+    <div class="col-lg-6 col-md-12">
+         <div class="card">
+            <div class="card-header card-header-info">
+                <h4 class="card-title">DOCUMENT INFO</h4>
+                <p class="card-category"></p>
+            </div>
+            <div class="card-body">
+                <button class="btn btn-primary" onclick="fileDialog()">{{ _("Load Document") }} </button>
+                <input id="ip-file-input" type="file" name="ip-file-input" style="display: none;" onchange="loadFile('{{bismuth['address']}}')" />
+
+                <div id="detail1" name="detail1" sty_le="width:100%; height:300px;overflow:auto">
+                    <br/>
+                    <table style="width:100%">
+                    <tr><td style="width:120px">File name:</td><td ><input id="ip-file-name" name="ip-file-name" type="text" readonly="readonly" class="ro-input"></td></tr>
+                    <tr><td>File size:</td><td><input id="ip-file-size" name="ip-file-size" type="text" readonly="readonly" class="ro-input"></td></tr>
+                    <tr><td>File sha256:</td><td><input id="ip-file-hash" name="ip-file-hash" type="text" readonly="readonly" class="ro-input"></td></tr>
+                    <tr><td>Sha256 in ledger:</td><td><input id="ip-file-ledger-1" name="ip-file-ledger-1" type="text" readonly="readonly" class="ro-input" value=""></td></tr>
+                    <tr><td>Json in ledger:</td><td><input id="ip-file-ledger-2" name="ip-file-ledger-2" type="text" readonly="readonly"  class="ro-input" value=""></td></tr>
+                    </table>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+
+    <div class="col-lg-6 col-md-12">
+        <div class="card">
+            <div class="card-header card-header-primary">
+                <h4 class="card-title">PROTECT Intellectual Property</h4>
+                <p class="card-category"></p>
+            </div>
+            <div class="card-body">
+                <div id="detail2" name="detail2">
+                    <table style="width:100%">
+                    <tr><td style="width:120px">Recipient:</td>
+                        <td><input id="ip-recipient" name="ip-recipient" type="text" readonly="readonly"  class="ro-input" size="70"></td>
+                    </tr><tr style="margin-top:12px;"><td colspan="2"><b>Transaction 1 - Fees <span id="ip-fee-1"></span> $BIS</b></td></tr>
+                    <tr><td>Operation:</td><td><input id="ip-operation-1" name="ip-operation-1" type="text" readonly="readonly"  class="ro-input" size="20"></td></tr>
+                    <tr><td>Data:</td><td><input id="ip-datafield-1" name="ip-datafield-1" type="text" readonly="readonly"  class="ro-input" size="70"></td>
+                    </tr><tr style="padding-top:12px;"><td colspan="2"><b>Transaction 2 - Fees <span id="ip-fee-2"></span> $BIS</b></td></tr>
+                    <tr><td>Operation:</td><td><input id="ip-operation-2" name="ip-operation-2" type="text" readonly="readonly"  class="ro-input" size="20"></td></tr>
+                    <tr><td>Data:</td><td><input id="ip-datafield-2" name="ip-datafield-2" type="text" readonly="readonly"  class="ro-input" size="70"></td></tr>
+                    </table>
+                    <br/>
+                    <button class="btn btn-primary" onclick="ipSubmit(1,parseFloat({{bismuth['balance']}}))">{{ _("Submit Transaction 1") }} </button>
+                    <button class="btn btn-primary" onclick="ipSubmit(2,parseFloat({{bismuth['balance']}}))">{{ _("Submit Transaction 2") }} </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6 col-md-12">
+
+        <div class="card">
+            <div class="card-header card-header-success">
+                <h4 class="card-title">My Shielded Docs</h4>
+                <p class="card-category"></p>
+            </div>
+            <div class="card-body">
+                <div id="detail" name="detail" st_yle="width:100%; height:270px;overflow:auto">
+                    <table id="missionTable" width="100%">
+                        <thead>
+                        <tr>
+                            <th>Block</th>
+                            <th>Date/Time</th>
+                            <th>Operation</th>
+                            <th>Datafield</th>
+                        </tr>
+                        </thead>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    // To be used by docshield.js
+    var address = "{{bismuth['address']}}";
+</script>
+
+{% end %}
+
+{% block footer %}
+<!-- this goes after default includes, like jquery -->
+<script src="{{ handler.common_url('js/plugins/jquery.dataTables.min.js') }}"></script>
+<!-- no etag, versionning or helper yet -->
+<script src="/crystal/docshield/static/docshield.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.9-1/crypto-js.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.9-1/sha256.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.9-1/enc-hex.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.9-1/enc-latin1.min.js"></script>
+{% end %}

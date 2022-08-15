@@ -32,7 +32,7 @@ class MainHandler(tornado.web.RequestHandler):
         #    conn = sqlite3.connect(ledger_path)
         #else:
 
-        conn = sqlite3.connect(hyper_path)
+        conn = sqlite3.connect(hyper_path, timeout=60.0)
 
         c = conn.cursor()
         execute(c, "SELECT * FROM transactions ORDER BY block_height DESC, timestamp DESC LIMIT 100;")

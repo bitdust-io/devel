@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block body %}
+
+
+<div class="row">
+    <div class="col-lg-6 col-md-12">
+        <div class="card">
+            <div class="card-header card-header-info">
+                <h4 class="card-title">{{ _("Credits") }}</h4>
+                <p class="card-category">{{ _("This wallet wouldn't have existed without...") }}</p>
+            </div>
+            <div class="card-body">
+                <ul>
+                    <!-- html text have to use { % raw % } instead of { {  } } -->
+                    <li>The "Material Dark" template by
+                        <a href="https://www.creative-tim.com" target="_blank">Creative Tim</a>
+                    </li>
+                    <li>{{ _("Python, awesome language!") }}</li>
+                    <li>{% raw _('The <a href="https://www.tornadoweb.org/en/stable/index.html" target="_blank">Tornado</a> web application framework') %}
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6 col-md-12">
+        <div class="card">
+            <div class="card-header card-header-success">
+                <h4 class="card-title">{{ _("About") }}</h4>
+                <p class="card-category"></p>
+            </div>
+            <div class="card-body">
+                <ul>
+                    <li>{{ _("Tornado wallet version {}").format(bismuth['wallet_version']) }}</li>
+                    <li>{{ _("BismuthClient version {}").format(bismuth['bismuthclient_version']) }}</li>
+                    <li>{% raw _("Wallet template {} by {}.").format(
+                        'Material (Default template)',
+                        '<a href="https://twitter.com/EggPoolNet" target="_blank">EggdraSyl, Bismuth Foundation</a>') %}
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+
+</div>
+
+<div class="row">
+    <div class="col-lg-6 col-md-12">
+        <div class="card">
+            <div class="card-header card-header-primary">
+                <h4 class="card-title">{{ _("Translations")}}</h4>
+                <p class="card-category">{{ _("Many thanks to our translators and proofreaders") }}</p>
+            </div>
+            <!-- note: find a way to have this list in the wallet, not the template -->
+            <div class="card-body">
+                <ul>
+
+                    <li>Czech: Hclivess, cipery</li>
+                    <li>Dutch: cxn</li>
+                    <li>Finnish: Aksss, DTC, Evilpokerqueen</li>
+                    <li>French: EggPool, k4nd17r33</li>
+                    <li>German: Damian</li>
+                    <li>Greek: SatoshiHaze</li>
+                    <li>Hungarian: Adricrypto</li>
+                    <li>Italian: Shakitano_</li>
+                    <li>Norwegian: GH2</li>
+                    <li>Polish: Feri</li>
+                    <li>Portuguese (BR): jcsanches</li>
+                    <li>Romanian: Gawlea</li>
+                    <li>Russian: anykayebyka, Whatever</li>
+                    <li>Serbian: Adricrypto</li>
+                    <li>Spanish: Savitend</li>
+                    <li>Swedish: GH2</li>
+                    <li>Turkish: Asertin, k4nd17r33</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+
+{% end %}

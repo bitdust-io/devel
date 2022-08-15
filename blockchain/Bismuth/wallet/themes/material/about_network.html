@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block body %}
+
+
+<div class="row">
+
+
+    <div class="col-lg-6 col-sm-12">
+
+        <div class="col-lg-12 col-md-12">
+            <div class="card">
+                <div class="card-header card-header-info">
+                    <h4 class="card-title"><i class="material-icons">compare_arrows</i> {{ _("Current wallet server") }}
+                    </h4>
+                    <p class="card-category">{{ _("This is the server you're connected to.") }}</p>
+                </div>
+                <div class="card-body">
+                    {{ _("Server:") }}
+                    <ul>
+                        <li>{{ _("IP") }} {{ bismuth['server']['server'] }}</li>
+                        <li>{{ _("Wallet server version {}").format(bismuth['server_status']['extended']['version'])
+                            }}
+                        </li>
+                        <li>{{ _("Connected clients:") }} {{ bismuth['server_status']['extended']['clients'] }} / {{ bismuth['server_status']['extended']['max_clients'] }} </li>
+                        <li>{{ _("Protocol") }} {{ bismuth['server_status']['protocolversion'] }}</li>
+                        <li>{{ _("Node Version") }} {{ bismuth['server_status']['walletversion'] }}</li>
+                        <li>{{ _("Peers connections:") }} {{ bismuth['server_status']['connections'] }}</li>
+                        <li>{{ _("UpTime:") }} {{ bismuth['server_status']['uptime_human'] }}</li>
+                        <li>{{ _("Time Drift:") }} {{ bismuth['server_status']['time_drift'] }}</li>
+                        <li>{{ _("Consensus:") }} {{ bismuth['server_status']['consensus'] }}
+                            ({{ '{:.1f}'.format(bismuth['server_status']['consensus_percent']) }}%)
+                        </li>
+                    </ul>
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+
+    <div class="col-lg-6 col-sm-12">
+
+        <div class="row">
+
+            <div class="col-md-6 col-xs-12">
+                <div class="card card-stats">
+                    <div class="card-header card-header-success card-header-icon">
+                        <div class="card-icon">
+                            <i class="material-icons">account_balance_wallet</i>
+                        </div>
+                        <p class="card-category">{{ _("Block") }}</p>
+                        <h3 class="card-title">{{ bismuth['server_status']['blocks'] }}</h3>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6 col-xs-12">
+                <div class="card card-stats">
+                    <div class="card-header card-header-success card-header-icon">
+                        <div class="card-icon">
+                            <i class="fas fa-hammer"></i>
+                        </div>
+                        <p class="card-category">{{ _("Difficulty") }}</p>
+                        <h3 class="card-title">{{ "{:.4f}".format(bismuth['server_status']['difficulty']) }}</h3>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="row">
+
+            <div class="col-md-12 col-xs-12">
+                <div class="card">
+                    <div class="card-header card-header-success">
+                        <h4 class="card-title"><i class="material-icons">dns</i> {{ _("Available wallet servers") }}
+                        </h4>
+                        <p class="card-category">{{ len(bismuth['server']['servers_list']) }} {{ _("servers") }}</p>
+                    </div>
+                    <div class="card-body">
+                        <ul>
+                            {% for server in bismuth['server']['full_servers_list'] %}
+                            <li><a href="/about/connect/{{ server['ip'] }}:{{ server['port'] }}">{{ server['ip'] }}:{{ server['port'] }}</a> -
+                                {{ _("Load") }} {{ server['load'] }} %, {{ _("Height") }} {{ server['height'] }}</li>
+                            {% end %}
+                        </ul>
+                        <a href="/about/refresh"><i class="material-icons">autorenew</i> {{ _("Refresh from API") }}</a>
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+
+    </div>
+
+
+</div>
+
+
+{% end %}

@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+<!-- "../../../../themes/material/base.html" -->
+
+{% block body %}
+
+<nav class="nav"><a class="nav-link active" href="about" style="color:#888888">HOME</a></nav>
+<div class="row">
+
+    <div class="col-lg-6 col-md-12">
+        <div class="card">
+            <div class="card-header card-header-info">
+                <h4 class="card-title">About</h4>
+                <p class="card-category"></p>
+            </div>
+            <div class="card-body">
+                   Phone Battery Crystal for Bismuth's Tornado Wallet<br/>
+                   Version 1.0.2d<br/>
+                   <br/>
+                   GitHub Link: <a href='https://github.com/bismuthfoundation/TornadoWallet/tree/master/wallet/crystals/400_phonebattery'>https://github.com/bismuthfoundation/TornadoWallet/tree/master/wallet/crystals/400_phonebattery</a><br/>
+                   Blog: <a href='https://hypernodes.bismuth.live/?p=1696'>https://hypernodes.bismuth.live/?p=1696</a><br/>
+                   Public website: <a href='https://phone.batterylife.info'>https://phone.batterylife.info</a><br/>
+                   <br/><br/>
+                   <img src="/crystal/phonebattery/static/logo.png" width="100%" alt="">
+               </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6 col-md-12">
+        <div class="card">
+            <div class="card-header card-header-success">
+                <h4 class="card-title">Menu</h4>
+                <p class="card-category"></p>
+            </div>
+            <div class="card-body" id="menu">
+                <b>Commands for all users:</b><br/>
+                Analyze historic battery data from phones:<br/>
+                <form action="page3"><input type="submit" class="btn btn-primary" value="Analyze Phone Data"></form>
+
+                <br/><br/>
+                <b>Commands for Android phone owners only:</b><br/>
+                Fetch battery data from your Android phone and store on the blockchain:<br/>
+                <form action="page2"><input type="submit" class="btn btn-secondary" value="Fetch Phone Data"></form><br/>
+                Register your Android phone on the blockchain:<br/>
+                <form action="page1"><input type="submit" class="btn btn-secondary" value="Register Phone"></form><br/>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<br/>
+
+{% end %}
+
+{% block footer %}
+<!-- this goes after default includes, like jquery -->
+<script src="/crystal/phonebattery/static/util.js"></script>
+<script>
+try { 
+    is_static_available();
+} catch(e) {
+    $("#menu").html("<font color='red'>As a safety precaution, the TornadoWallet must be restarted the first time a new crystal has been activated!</font>");
+}
+</script>
+{% end %}

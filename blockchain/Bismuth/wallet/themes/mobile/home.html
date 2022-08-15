@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block body %}
+
+		<div style="margin-top:15px;margin-left:5px;">
+			<img id="image_WalletImage" src="static/images/BitCoin_L.png" height="50" width="50" alt="Bitcoind" />
+			<span id="span_WalletHeaderText">Bismuth <span style="font-style: italic;font-size:.7em;">m</span>Wallet</span>
+			<hr class="hr_wallet">
+		</div>
+
+		<div class="div_WalletOverview">
+			<span class="primary">Your address:</span>
+			<span class="secondary_lite">{{ bismuth['address'] }}</span>
+		</div>
+		<div class="div_WalletOverview">
+			<span class="primary">Total Balance:</span>
+			<span class="secondary_lite">{{ escape(bismuth['balance']) }}&nbsp;BIS</span>
+		</div>
+
+		<div class="div_WalletOverview">
+			<span class="primary">Fee per transaction:</span>
+			<span class="secondary_lite">0.01</span>
+		</div>
+
+		<div class="div_WalletOverview">
+			<span class="primary">Wallet Version:</span>
+			<span class="secondary_lite">0.0.2</span>
+		</div>
+
+		<div class="div_WalletOverview">
+			<span class="primary">Server:</span>
+			<span class="secondary_lite">{{ bismuth['server']['server'] }}</span>
+		</div>
+
+		<div class="div_WalletOverview">
+			<span class="primary">Server version:</span>
+			<span class="secondary_lite">4.1.0</span>
+		</div>
+
+		<div class="div_WalletOverview">
+			<span class="primary">Available servers:</span>
+			<span class="secondary_lite">{{ bismuth['server']['servers_list'] }}</span>
+		</div>
+
+{% end %}

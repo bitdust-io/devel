@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+<!-- "../../../../themes/material/base.html" -->
+
+{% block body %}
+
+
+
+<div class="row">
+
+    <div class="col-lg-12 col-md-12">
+        <div class="card">
+            <div class="card-header card-header-text card-header-primary">
+                <div class="card-text">
+                  <h4 class="card-title" style="color:#fff">wBIS (BSC) to BIS (Native Bismuth) 1/2</h4>
+                </div>
+            </div>
+            <div class="card-body table-responsive">
+                <ul>
+                    <li>Burn your wBIS on the BSC chain</li>
+                    <li>Wait for the native BIS deliver transaction to be sent</li>
+                    <li>Check the <a href="/crystal/bscbridge/swaps">"Swaps"</a> page for current status.</li>
+                </ul>
+                <br />
+                <b style="color:orange;">Please read the manual! See <a href="https://hypernodes.bismuth.live/?p=2863" style="color:orange;text-decoration:underline;" target="_blank">BSC Bridge Blog post</a></b>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="row">
+
+    <div class="col-lg-6 col-md-6">
+        <div class="card">
+            <div class="card-header card-header-text card-header-info">
+
+                <div class="card-text">
+                  <h4 class="card-title" style="color:#fff">wBIS (BSC) Balance</h4>
+                </div>
+                <i class="material-icons float-right">looks_one</i>
+            </div>
+            <div class="card-body table-responsive">
+
+                    <div class="form-group">
+                        <label class="bmd-label-floating">{{ _("BSC Address")}}</label>
+                        <input class="form-control" id="user_eth_address" type="text" name="user_eth_address" value=" "/>
+                    </div>
+                    <br />
+                    <div class="form-group">
+                        <label class="bmd-label-floating">{{ _("wBIS Balance (BEP-20)")}}</label>
+                        <div id="wbis_amount" name="wbis_amount" ></div>
+                    </div>
+                <br />
+                       <button id = "refresh_balance" name="refresh_balance" type="submit" value="" class="btn btn-success">
+                           <i class="material-icons">autorenew</i>
+                           Refresh balance
+                       </button>
+
+            </div>
+        </div>
+    </div>
+
+
+    <div class="col-lg-6 col-md-6">
+        <div class="card">
+            <div class="card-header card-header-text card-header-primary">
+                <div class="card-text">
+                  <h4 class="card-title" style="color:#fff">Burn wBIS (BSC)</h4>
+                </div>
+                <i class="material-icons float-right">looks_two</i>
+            </div>
+            <div class="card-body table-responsive">
+
+                    <div class="form-group">
+                        <label class="bmd-label-floating">{{ _("Recipient (BIS address that will get the native BIS)")}}</label>
+                        <input class="form-control" id="burn_recipient" type="text" name="burn_recipient" value=""/>
+                    </div>
+                    <br />
+                    <div class="form-group">
+                        <label class="bmd-label-floating">{{ _("Amount (wBIS to burn) - Min 10")}}</label>
+                        <input class="form-control" id="burn_amount" type="number" name="burn_amount" value="10"/>
+                    </div>
+                <br />
+                    <div class="form-group">
+                        <label class="bmd-label-floating">{{ _("Gas price (gwei)")}}</label>
+                        <input class="form-control" id="gwei" type="number" name="gwei" value="8"/>
+
+                        <small>Gas price will decide if your transaction waits forever or is processed quickly. <br/>
+                            8 Gwei is there as default, but you'd better check <a href="https://bscscan.com/chart/gasprice" target="_blank">BSC Gas price</a> for the current appropriate price.</small>
+                    </div>
+                    <br />
+                        Make sure you double-checked your BIS address before burning wBIS! <br />
+                       <button id="burn" name="burn" type="submit" value="" class="btn btn-warning">
+                           <i class="material-icons">local_fire_department</i> Burn wBIS BEP-20
+                       </button>
+                <br>
+                    <div class="card-footer table-responsive warning" id="burn_result">
+                    </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+{% end %}

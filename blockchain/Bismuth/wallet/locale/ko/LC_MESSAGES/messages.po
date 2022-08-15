@@ -1,0 +1,1293 @@
+# Korean translations for s package.
+# Copyright (C) 2019 THE s'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the s package.
+# s18 <heavens7319@gmail.com>, 2019.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: TornadoWallet\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2019-06-23 10:03+0900\n"
+"PO-Revision-Date: 2019-06-23 10:03+0900\n"
+"Last-Translator: s18 <heavens7319@gmail.com>\n"
+"Language-Team: Korean\n"
+"Language: ko\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: crystals/100_bismuthprice/themes/default/about.html:11
+#: crystals/100_bismuthprice/themes/default/modules/home.html:16
+msgid "Crystal"
+msgstr "크리스탈"
+
+#: crystals/100_bismuthprice/themes/default/about.html:15
+#: themes/material/tokens_list.html:14
+msgid "WIP"
+msgstr "WIP"
+
+#: crystals/100_bismuthprice/themes/default/about.html:23
+#: crystals/210_eggpool/themes/default/about.html:25
+#: crystals/250_autogame/themes/default/about.html:35
+#: themes/material/about_credits.html:30
+msgid "About"
+msgstr "안내"
+
+#: crystals/100_bismuthprice/themes/default/about.html:28
+#: crystals/210_eggpool/themes/default/about.html:29
+#: crystals/250_autogame/themes/default/about.html:39
+#: themes/material/crystals_list.html:21
+msgid "Version"
+msgstr "버전"
+
+#: crystals/100_bismuthprice/themes/default/modules/home.html:4
+msgid "Current Bismuth Prices"
+msgstr "비스무트 가격"
+
+#: crystals/100_bismuthprice/themes/default/modules/home.html:28
+msgid "Bismuth vs USD"
+msgstr "비스무트 vs 달러"
+
+#: crystals/100_bismuthprice/themes/default/modules/home.html:33
+msgid "This is a mockup with fake data"
+msgstr "가공의 수치로 만든 모형"
+
+#: crystals/200_dragginator/__init__.py:63
+msgid "D:Earth egg"
+msgstr "흙의 알"
+
+#: crystals/200_dragginator/__init__.py:63
+msgid "D:Fire egg"
+msgstr "불의 알"
+
+#: crystals/200_dragginator/__init__.py:63
+msgid "D:Water egg"
+msgstr "물의 알"
+
+#: crystals/200_dragginator/__init__.py:64
+msgid "D:Air egg"
+msgstr "공기의 알"
+
+#: crystals/200_dragginator/__init__.py:68
+msgid "D:Cup"
+msgstr "대회"
+
+#: crystals/200_dragginator/__init__.py:68
+msgid "D:special egg"
+msgstr "특별한 알"
+
+#: crystals/200_dragginator/__init__.py:68
+msgid "D:world cup 2018"
+msgstr "월드컵 2018"
+
+#: crystals/200_dragginator/themes/default/about.html:15
+msgid "D:Buy an egg for {} BIS"
+msgstr "{} BIS에 공룡알 구입"
+
+#: crystals/200_dragginator/themes/default/about.html:21
+msgid "D:Dragginator News"
+msgstr "새소식"
+
+#: crystals/200_dragginator/themes/default/about.html:36
+msgid "D:My eggs"
+msgstr "소유한 알(eggs)"
+
+#: crystals/200_dragginator/themes/default/about.html:44
+msgid "D:You don't own any egg ;("
+msgstr "가지고 있는 알이 없습니다 ;("
+
+#: crystals/200_dragginator/themes/default/about.html:47
+msgid "D:And you are registered to the current eggdrop"
+msgstr "이번 eggdrop에 등록됐습니다"
+
+#: crystals/200_dragginator/themes/default/about.html:49
+#: crystals/250_autogame/themes/default/about.html:23
+msgid "D:Register"
+msgstr "등록"
+
+#: crystals/200_dragginator/themes/default/about.html:49
+msgid "D:So you can register to the eggdrop!"
+msgstr "eggdrop에 등록할 수 있습니다"
+
+#: crystals/200_dragginator/themes/default/about.html:54
+msgid "D:You own {} eggs"
+msgstr "당신은 {} 개의 알을 가지고 있습니다"
+
+#: crystals/200_dragginator/themes/default/about.html:61
+msgid "D:DNA"
+msgstr "유전자"
+
+#: crystals/200_dragginator/themes/default/about.html:62
+#: crystals/200_dragginator/themes/default/egg.html:56
+msgid "D:Element"
+msgstr "아이템"
+
+#: crystals/200_dragginator/themes/default/about.html:63
+#: crystals/200_dragginator/themes/default/egg.html:57
+msgid "D:Species"
+msgstr "종족"
+
+#: crystals/200_dragginator/themes/default/about.html:64
+msgid "D:Class"
+msgstr "클래스"
+
+#: crystals/200_dragginator/themes/default/about.html:75
+#: crystals/200_dragginator/themes/default/about.html:77
+msgid "D:"
+msgstr ""
+
+#: crystals/200_dragginator/themes/default/about.html:92
+#: modules/basehandlers.py:71
+msgid "No Bismuth address, please create or load a wallet first."
+msgstr "비스무트 주소가 없습니다. 지갑부터 만드세요."
+
+#: crystals/200_dragginator/themes/default/egg.html:11
+msgid "D:DNA:"
+msgstr "유전자"
+
+#: crystals/200_dragginator/themes/default/egg.html:11
+msgid "D:See on Dragginator.com"
+msgstr "Dragginator.com 으로 오세요"
+
+#: crystals/200_dragginator/themes/default/egg.html:20
+msgid "BIS"
+msgstr "BIS"
+
+#: crystals/200_dragginator/themes/default/egg.html:23
+msgid "D:Archive"
+msgstr "자료보관소"
+
+#: crystals/200_dragginator/themes/default/egg.html:32
+msgid "D:draggon"
+msgstr "드래곤"
+
+#: crystals/200_dragginator/themes/default/egg.html:33
+msgid "D:egg"
+msgstr "알(egg)"
+
+#: crystals/200_dragginator/themes/default/egg.html:58
+msgid "D:Age"
+msgstr "나이"
+
+#: crystals/200_dragginator/themes/default/egg.html:59
+msgid "D:Rarity"
+msgstr "희소성"
+
+#: crystals/200_dragginator/themes/default/egg.html:70
+msgid "D:You own this egg"
+msgstr "이 알을 소유하고 있습니다"
+
+#: crystals/200_dragginator/themes/default/egg.html:73
+msgid "D:You don't own this egg"
+msgstr "이 알을 소유하고 있지 않습니다"
+
+#: crystals/200_dragginator/themes/default/egg.html:87
+msgid "D:Send this egg to..."
+msgstr "알을 ... 에게 보내기"
+
+#: crystals/200_dragginator/themes/default/egg.html:90
+msgid "D:Sell this egg for BIS"
+msgstr "알 팔기"
+
+#: crystals/200_dragginator/themes/default/egg.html:92
+msgid "D:Price"
+msgstr "가격"
+
+#: crystals/200_dragginator/themes/default/egg.html:98
+msgid "D:Register this egg to the hunt"
+msgstr "사냥하기 위해 알을 등록"
+
+#: crystals/200_dragginator/themes/default/egg.html:105
+msgid "D:This egg can hatch"
+msgstr "부화할 수 없습니다"
+
+#: crystals/200_dragginator/themes/default/egg.html:108
+msgid "D:You can find this egg"
+msgstr "이 알을 찾을 수 없습니다"
+
+#: crystals/200_dragginator/themes/default/egg.html:118
+msgid "D:Remove this egg from the marketplace"
+msgstr "마켓에서 이 알 제거"
+
+#: crystals/200_dragginator/themes/default/egg.html:127
+msgid "D:Buy for {} BIS"
+msgstr "{} BIS 에 구입"
+
+#: crystals/210_eggpool/__init__.py:78
+msgid "No data"
+msgstr "자료 없음"
+
+#: crystals/210_eggpool/__init__.py:108 wallet.py:186 wallet.py:194
+#: wallet.py:215 wallet.py:241 wallet.py:249 wallet.py:266 wallet.py:279
+#: wallet.py:317 wallet.py:334 wallet.py:343 wallet.py:350 wallet.py:361
+#: wallet.py:409 wallet.py:416 wallet.py:427 wallet.py:448 wallet.py:459
+#: wallet.py:467 wallet.py:1019 wallet.py:1027 wallet.py:1038 wallet.py:1066
+#: wallet.py:1074 wallet.py:1085 wallet.py:1107 wallet.py:1110
+msgid "Error:"
+msgstr "에러:"
+
+#: crystals/210_eggpool/__init__.py:109
+msgid "This crystal is activated but needs a wallet restart."
+msgstr "크리스탈을 등록했습니다. 지갑 재실행이 필요합니다"
+
+#: crystals/210_eggpool/themes/default/about.html:14
+msgid "EP:Direct Link to official Dashboard"
+msgstr "대시보드로 직접 연결"
+
+#: crystals/210_eggpool/themes/default/about.html:15
+msgid "EP:Get last GPU miner"
+msgstr "최신 GPU 마이너 받기 "
+
+#: crystals/210_eggpool/themes/default/about.html:16
+#: crystals/250_autogame/themes/default/about.html:15
+msgid "Join the Official Bismuth Discord for support"
+msgstr "비스무트 디스코트에 가입"
+
+#: crystals/210_eggpool/themes/default/about.html:48
+msgid "EP:Hash Rate"
+msgstr "채굴 해시"
+
+#: crystals/210_eggpool/themes/default/about.html:49
+#: crystals/210_eggpool/themes/default/about.html:64
+msgid "EP:Last 12 hours"
+msgstr "최근 12시간"
+
+#: crystals/210_eggpool/themes/default/about.html:63
+msgid "EP:Shares"
+msgstr "내몫"
+
+#: crystals/210_eggpool/themes/default/about.html:73
+msgid "EP:Workers"
+msgstr "일꾼들"
+
+#: crystals/212_docshield/themes/default/about.html:34
+msgid "Load Document"
+msgstr "문서 불러오기"
+
+#: crystals/212_docshield/themes/default/about.html:74
+msgid "Submit Transaction 1"
+msgstr "트랜잭션 보내기 1"
+
+#: crystals/212_docshield/themes/default/about.html:75
+msgid "Submit Transaction 2"
+msgstr "트랜잭션 보내기 2"
+
+#: crystals/250_autogame/themes/default/about.html:14
+msgid "AG:Direct Link to latest autogame doc."
+msgstr "최신 autogame 문서로 직접 연결"
+
+#: crystals/250_autogame/themes/default/about.html:19
+#: themes/material/transactions_receive.html:81
+#: themes/material/transactions_send.html:100
+#: themes/material/transactions_send.html:108
+msgid "BIS URL"
+msgstr "BIS URL"
+
+#: crystals/250_autogame/themes/default/about.html:21
+#: themes/material/transactions_send.html:110
+msgid "Paste the BIS URL you were given here"
+msgstr "BIS URL을 여기에 붙이세요"
+
+#: crystals/250_autogame/themes/default/about.html:52
+msgid "AG:Your games"
+msgstr "당신의 게임들"
+
+#: crystals/250_autogame/themes/default/about.html:59
+msgid "Replay"
+msgstr "리플레이"
+
+#: crystals/250_autogame/themes/default/about.html:76
+msgid "AG:Game detail"
+msgstr "게임 상세정보"
+
+#: crystals/250_autogame/themes/default/replay_pop.html:2
+msgid "AG:Game {} replay"
+msgstr "게임 {} 리플레이"
+
+#: crystals/250_autogame/themes/default/status_pop.html:2
+msgid "AG:Game {} status"
+msgstr "게임 {} 현황"
+
+#: modules/basehandlers.py:78 wallet.py:393 wallet.py:569 wallet.py:583
+#: wallet.py:613 wallet.py:632 wallet.py:644 wallet.py:658 wallet.py:677
+#: wallet.py:678 wallet.py:693 wallet.py:713 wallet.py:728 wallet.py:740
+#: wallet.py:754 wallet.py:773 wallet.py:793 wallet.py:806 wallet.py:820
+#: wallet.py:831 wallet.py:845 wallet.py:858
+msgid "Error"
+msgstr "에러"
+
+#: modules/basehandlers.py:79
+msgid "Wallet server did not send an answer. Please try again."
+msgstr "지갑 서버가 응답하지 않았습니다. 다시 시도하세요."
+
+#: modules/i18n.py:60 themes/material/wallet_info.html:235
+msgid "No protection"
+msgstr "보호 해제"
+
+#: modules/i18n.py:62 themes/material/wallet_info.html:232
+#: themes/material/wallet_info.html:238 themes/material/wallet_info.html:241
+msgid "PIN Code"
+msgstr "핀 코드"
+
+#: modules/i18n.py:64 themes/material/wallet_info.html:233
+msgid "YUBICO"
+msgstr "YUBICO"
+
+#: modules/i18n.py:66
+msgid "U2F Token"
+msgstr "U2F Token"
+
+#: modules/i18n.py:74
+msgid "DT:Processing..."
+msgstr "처리중..."
+
+#: modules/i18n.py:75
+msgid "DT:Search&nbsp;..."
+msgstr "검색&nbsp;..."
+
+#: modules/i18n.py:76
+msgid "DT:Display _MENU_ elements"
+msgstr "_MENU_ 개 아이템을 표시"
+
+#: modules/i18n.py:78
+msgid "DT:Display element _START_ to _END_ from _TOTAL_ elements"
+msgstr "전체 _TOTAL_ 개 중 _START_ 부터 _END_ 까지 아이템 표시"
+
+#: modules/i18n.py:80 modules/i18n.py:86
+msgid "DT:Nothing to display"
+msgstr "표시할 것 없음"
+
+#: modules/i18n.py:82
+msgid "DT:filtered from _MAX_ total elements"
+msgstr "전체 _MAX_ 개 아이템에서 간추림"
+
+#: modules/i18n.py:85
+msgid "DT:Loading..."
+msgstr "불러오는 중..."
+
+#: modules/i18n.py:87
+msgid "DT:No data in the table"
+msgstr "데이터 없음"
+
+#: modules/i18n.py:89
+msgid "DT:First"
+msgstr "처음"
+
+#: modules/i18n.py:90
+msgid "DT:Previous"
+msgstr "이전"
+
+#: modules/i18n.py:91
+msgid "DT:Next"
+msgstr "다음"
+
+#: modules/i18n.py:92
+msgid "DT:Last"
+msgstr "마지막"
+
+#: modules/i18n.py:95
+msgid "DT:Sort by ascending order"
+msgstr "오름차순으로 정렬"
+
+#: modules/i18n.py:96
+msgid "DT:Sort by descending order"
+msgstr "내림차순으로 정렬"
+
+#: themes/material/about_credits.html:10 themes/material/base.html:246
+msgid "Credits"
+msgstr "크레딧"
+
+#: themes/material/about_credits.html:11
+msgid "This wallet wouldn't have existed without..."
+msgstr "... 없었다면 이 지갑은 존재할 수 없었음"
+
+#: themes/material/about_credits.html:19
+msgid "Python, awesome language!"
+msgstr "파이썬, 놀라운 언어"
+
+#: themes/material/about_credits.html:20
+msgid "The <a href=\"https://www.tornadoweb.org/en/stable/index.html\" target=\"_blank\">Tornado</a> web application framework"
+msgstr "<a href=\"https://www.tornadoweb.org/en/stable/index.html\" target=\"_blank\">Tornad     o</a> 웹 프레임워크"
+
+#: themes/material/about_credits.html:35
+msgid "Tornado wallet version {}"
+msgstr "Tornado 지갑 버전 {}"
+
+#: themes/material/about_credits.html:36
+msgid "BismuthClient version {}"
+msgstr "BismuthClient 버전 {}"
+
+#: themes/material/about_credits.html:37
+msgid "Wallet template {} by {}."
+msgstr "지갑 템플릿 {} by {}"
+
+#: themes/material/about_credits.html:53
+msgid "Translations"
+msgstr "번역"
+
+#: themes/material/about_credits.html:54
+msgid "Many thanks to our translators and proofreaders"
+msgstr "번역자와 도움주신 분들께 감사드립니다"
+
+#: themes/material/about_help.html:10
+msgid "Get help"
+msgstr "도움 받기"
+
+#: themes/material/about_help.html:15
+msgid "Wallet F.A.Q."
+msgstr "지갑 F.A.Q."
+
+#: themes/material/about_help.html:18 themes/material/base.html:231
+msgid "Discord"
+msgstr "디스코드"
+
+#: themes/material/about_network.html:14
+msgid "Current wallet server"
+msgstr "현재의 지갑 서버"
+
+#: themes/material/about_network.html:16
+msgid "This is the server you're connected to."
+msgstr "연결된 서버입니다."
+
+#: themes/material/about_network.html:19
+msgid "Server:"
+msgstr "서버:"
+
+#: themes/material/about_network.html:21
+msgid "IP"
+msgstr "IP"
+
+#: themes/material/about_network.html:22
+msgid "Wallet server version {}"
+msgstr "지갑 서버 버전 {}"
+
+#: themes/material/about_network.html:25
+msgid "Connected clients:"
+msgstr "연결된 클라이언트"
+
+#: themes/material/about_network.html:26
+msgid "Protocol"
+msgstr "프로토콜"
+
+#: themes/material/about_network.html:27
+msgid "Node Version"
+msgstr "노드 버전"
+
+#: themes/material/about_network.html:28
+msgid "Peers connections:"
+msgstr "피어(peers) 연결:"
+
+#: themes/material/about_network.html:29
+msgid "UpTime:"
+msgstr "연결된 기간"
+
+#: themes/material/about_network.html:30
+msgid "Time Drift:"
+msgstr "타임 드리프트:"
+
+#: themes/material/about_network.html:31
+msgid "Consensus:"
+msgstr "컨센서스:"
+
+#: themes/material/about_network.html:53
+msgid "Block"
+msgstr "블록"
+
+#: themes/material/about_network.html:65
+msgid "Difficulty"
+msgstr "난이도"
+
+#: themes/material/about_network.html:78
+msgid "Available wallet servers"
+msgstr "이용할 수 있는 지갑 서버"
+
+#: themes/material/about_network.html:80
+msgid "servers"
+msgstr "서버"
+
+#: themes/material/about_network.html:86
+msgid "Height"
+msgstr "Height"
+
+#: themes/material/about_network.html:86
+msgid "Load"
+msgstr "불러오기"
+
+#: themes/material/about_network.html:89
+msgid "Refresh from API"
+msgstr "API로부터 업데이트"
+
+#: themes/material/base.html:44
+msgid "Bismuth Wallet"
+msgstr "비스무트 지갑"
+
+#: themes/material/base.html:52
+msgid "Dashboard"
+msgstr "대시보드(보내기/받기)"
+
+#: themes/material/base.html:58
+msgid "Transactions"
+msgstr "거래기록"
+
+#: themes/material/base.html:65
+msgid "Address book"
+msgstr "주소록"
+
+#: themes/material/base.html:71 themes/material/tokens_list.html:10
+msgid "Tokens"
+msgstr "토큰"
+
+#: themes/material/base.html:78
+msgid "Messages"
+msgstr "메시지"
+
+#: themes/material/base.html:85
+msgid "Network"
+msgstr "네트워크"
+
+#: themes/material/base.html:97 themes/material/crystals_list.html:11
+msgid "Crystals"
+msgstr "크리스탈"
+
+#: themes/material/base.html:119
+msgid "Wallet info"
+msgstr "지갑정보"
+
+#: themes/material/base.html:125
+msgid "Toggle navigation"
+msgstr "네비게이션 온오프"
+
+#: themes/material/base.html:134
+msgid "Search..."
+msgstr "검색..."
+
+#: themes/material/base.html:186
+msgid "Wallet"
+msgstr "지갑관리"
+
+#: themes/material/base.html:221
+msgid "Source"
+msgstr "소스코드"
+
+#: themes/material/base.html:226
+msgid "Blog"
+msgstr "블로그"
+
+#: themes/material/base.html:236
+msgid "Donate"
+msgstr "기부"
+
+#: themes/material/base.html:241
+msgid "Help"
+msgstr "도움말"
+
+#: themes/material/base.html:252
+msgid "block #"
+msgstr "블록 #"
+
+#: themes/material/base.html:272
+msgid "Sidebar Filters"
+msgstr "사이드바 필터들"
+
+#: themes/material/base.html:285
+msgid "Images"
+msgstr "이미지"
+
+#: themes/material/crystals_list.html:12
+msgid "Crystals are extra functionalities you can add to your wallet"
+msgstr "크리스탈은 지갑에 추가할 수 있는 부가기능들입니다"
+
+#: themes/material/crystals_list.html:19
+msgid "Active"
+msgstr "사용중"
+
+#: themes/material/crystals_list.html:20
+msgid "Name"
+msgstr "명칭"
+
+#: themes/material/crystals_list.html:21 themes/material/home.html:81
+#: themes/material/transactions.html:80
+msgid "Date"
+msgstr "날짜"
+
+#: themes/material/crystals_list.html:22
+msgid "Description"
+msgstr "설명"
+
+#: themes/material/crystals_list.html:23
+msgid "Author"
+msgstr "저자"
+
+#: themes/material/crystals_list.html:24
+msgid "Learn more..."
+msgstr "더 알아보기..."
+
+#: themes/material/crystals_list.html:44
+msgid "More..."
+msgstr "More..."
+
+#: themes/material/crystals_list.html:53
+msgid "Apply"
+msgstr "적용"
+
+#: themes/material/home.html:15 themes/material/transactions.html:15
+#: themes/material/wallet_load.html:35
+msgid "Balance"
+msgstr "잔액"
+
+#: themes/material/home.html:34 themes/material/transactions.html:34
+msgid "Send"
+msgstr "보내기"
+
+#: themes/material/home.html:39 themes/material/transactions.html:39
+msgid "Send $BIS to..."
+msgstr "BIS 를 ... 로 보내기"
+
+#: themes/material/home.html:53 themes/material/transactions.html:53
+#: theme/s/material/transactions_receive.html:15
+msgid "Receive"
+msgstr "받기"
+
+#: themes/material/home.html:58 themes/material/transactions.html:58
+msgid "Request a $BIS payment"
+msgstr "BIS 지불 요청"
+
+#: themes/material/home.html:74 themes/material/transactions.html:73
+msgid "Latest transactions"
+msgstr "최근 트랜잭션"
+
+#: themes/material/home.html:75 themes/material/transactions.html:74
+#: themes/material/wallet_load.html:56
+msgid "Updated on"
+msgstr "갱신됨"
+
+#: themes/material/home.html:80 themes/material/transactions.html:79
+msgid "Txid"
+msgstr "Txid"
+
+#: themes/material/home.html:82 themes/material/transactions.html:81
+#: themes/material/wallet_load.html:62 themes/material/wallet_load.html:125
+#: themes/material/wallet_load.html:170
+msgid "Address"
+msgstr "주소"
+
+#: themes/material/home.html:83 themes/material/transactions.html:82
+#: themes/material/transactions_receive.html:46
+#: themes/material/transactions_send.html:52
+#: themes/material/transactions_send_confirm.html:55
+msgid "Amount"
+msgstr "금액"
+
+#: themes/material/home.html:84 themes/material/transactions.html:83
+msgid "Type"
+msgstr "타입"
+
+#: themes/material/home.html:118 themes/material/messages_pop.html:34
+#: themes/material/transactions.html:122
+#: themes/material/transactions_receive.html:84
+msgid "Copied to Clipboard"
+msgstr "클립보드로 복사됨"
+
+#: themes/material/home.html:147
+msgid "Account balance"
+msgstr "계정 잔액"
+
+#: themes/material/home.html:148
+msgid "Last 12 months"
+msgstr "최근 12개월"
+
+#: themes/material/home.html:152
+msgid "Mockup with fake data"
+msgstr "가공의 수치로 만든 모형"
+
+#: themes/material/home.html:161
+msgid "Bismuth news"
+msgstr "비스무트 소식"
+
+#: themes/material/message.html:16
+#: themes/material/transactions_send_confirm.html:16
+#: themes/material/wallet_import_encrypted_der1.html:48
+msgid "Previous page"
+msgstr "이전 페이지"
+
+#: themes/material/message_pop.html:23 themes/material/messages_pop.html:31
+msgid "Close"
+msgstr "닫기"
+
+#: themes/material/messages.html:15 wallet.py:1016
+msgid "Sign message"
+msgstr "메시지 서명"
+
+#: themes/material/messages.html:16
+msgid "Sign some data for off chain usage with your private key."
+msgstr "개인키로 오프체인용 데이터 서명"
+
+#: themes/material/messages.html:20 themes/material/messages.html:57
+#: themes/material/transactions_receive.html:27
+#: themes/material/transactions_send.html:25
+#: themes/material/transactions_send_confirm.html:39
+#: themes/material/transactions_sendpop_confirm.html:68
+msgid "Data (message)"
+msgstr "추가자료 (메시지)"
+
+#: themes/material/messages.html:26 themes/material/messages.html:96
+#: themes/material/transactions_send_confirm.html:104
+#: themes/material/transactions_sendpop_confirm.html:91
+#: themes/material/wallet_info.html:218 themes/material/wallet_info.html:219
+#: wallet.py:361 wallet.py:427 wallet.py:1038 wallet.py:1085
+msgid "Spend protection"
+msgstr "보내기 안전장치"
+
+#: themes/material/messages.html:37
+msgid "Sign Message"
+msgstr "메시지 서명"
+
+#: themes/material/messages.html:52
+msgid "Encrypt message"
+msgstr "메시지 암호화"
+
+#: themes/material/messages.html:53
+msgid "Encrypt data for off chain usage."
+msgstr "오프체인용으로 데이터 암호화"
+
+#: themes/material/messages.html:61 themes/material/transactions_send.html:20
+#: themes/material/transactions_send_confirm.html:33
+#: themes/material/transactions_sendpop_confirm.html:29
+msgid "Recipient"
+msgstr "수신자의 지갑 주소"
+
+#: themes/material/messages.html:63
+msgid "You have to tell the recipient address so the message can be encrypted with his public key"
+msgstr "받는 주소를 알려주세요. 그래야 메시지를 암호화할 수 있습니다"
+
+#: themes/material/messages.html:67
+msgid "Encrypt Message"
+msgstr "메시지 암호화"
+
+#: themes/material/messages.html:85 wallet.py:1063
+msgid "Decrypt message"
+msgstr "메시지 암호 풀기"
+
+#: themes/material/messages.html:86
+msgid "Decrypt off chain message with your private key."
+msgstr "개인키로 오프체인 메시지 암호 풀기"
+
+#: themes/material/messages.html:90
+msgid "Encrypted message"
+msgstr "암호화된 메시지"
+
+#: themes/material/messages.html:107
+msgid "Decrypt Message"
+msgstr "메시지 암호 풀기"
+
+#: themes/material/messages.html:123 themes/material/wip.html:10
+msgid "W.I.P."
+msgstr "W.I.P."
+
+#: themes/material/messages.html:126 themes/material/wip.html:13
+msgid "This feature is under construction."
+msgstr "개발중인 기능입니다"
+
+#: themes/material/messages_pop.html:24
+#: themes/material/transactions_receive.html:81
+msgid "Click text to copy"
+msgstr "텍스트를 클릭하면 URL을 클립보드에 복사합니다"
+
+#: themes/material/tokens_list.html:11
+msgid "Tokens are a core BIS functionality"
+msgstr "토큰은 비스무트의 핵심 기능 중 하나입니다"
+
+#: themes/material/transactions.html:84
+msgid "Fees"
+msgstr "수수료"
+
+#: themes/material/transactions.html:85
+msgid "Data"
+msgstr "추가자료(Data)"
+
+#: themes/material/transactions_confirmpop.html:7
+msgid "Transaction Status"
+msgstr "트랜잭션 상태"
+
+#: themes/material/transactions_confirmpop.html:23
+msgid "OK"
+msgstr "OK"
+
+#: themes/material/transactions_receive.html:16
+msgid "Request BIS"
+msgstr "BIS를 받기 위한 정보"
+
+#: themes/material/transactions_receive.html:20
+msgid "Your address"
+msgstr "당신의 주소"
+
+#: themes/material/transactions_receive.html:22
+msgid "This is your address for current wallet, but you can change it if needed. Double check then."
+msgstr "현재 지갑의 당신 주소입니다. 원하시면 바꿀 수 있습니다. 꼼꼼히 확인하세요."
+
+#: themes/material/transactions_receive.html:30
+msgid "Optionally, you can add a small comment to your transaction, like a reference of your own. Will be stored on chain."
+msgstr "트랜잭션에 짤막한 메시지를 덧붙일 수 있습니다. 이 메시지 기록은 블록체인에 영원히 남습니다."
+
+#: themes/material/transactions_receive.html:35
+msgid "This is the QR code for your address only."
+msgstr "주소만 담긴 QR코드입니다."
+
+#: themes/material/transactions_receive.html:47
+msgid "How many BIS to request."
+msgstr "지불 요청할 BIS 수량"
+
+#: themes/material/transactions_receive.html:53
+#: themes/material/transactions_send.html:59
+#: themes/material/transactions_send_confirm.html:62
+#: themes/material/transactions_sendpop_confirm.html:38
+msgid "Amount (BIS)"
+msgstr "금액 (BIS)"
+
+#: themes/material/transactions_receive.html:56
+msgid "This is what you will receive"
+msgstr "내가 받을 금액"
+
+#: themes/material/transactions_receive.html:61
+#: themes/material/transactions_send.html:66
+#: themes/material/transactions_send_confirm.html:70
+#: themes/material/transactions_sendpop_confirm.html:46
+msgid "Est. fees"
+msgstr "예상 수수료"
+
+#: themes/material/transactions_receive.html:63
+#: themes/material/transactions_send.html:68
+#: themes/material/transactions_send_confirm.html:72
+#: themes/material/transactions_sendpop_confirm.html:48
+msgid "Fees depend on Data length"
+msgstr "수수료는 데이터 분량에 따라 달라집니다"
+
+#: themes/material/transactions_receive.html:66
+#: themes/material/transactions_send.html:71
+#: themes/material/transactions_send_confirm.html:75
+#: themes/material/transactions_sendpop_confirm.html:52
+msgid "Total (BIS)"
+msgstr "총액 (BIS)"
+
+#: themes/material/transactions_receive.html:68
+msgid "This is what the sender will pay"
+msgstr "보내는 사람이 지출할 금액"
+
+#: themes/material/transactions_receive.html:72
+msgid "Get BIS URL"
+msgstr "BIS URL 만들기"
+
+#: themes/material/transactions_receive.html:78
+msgid "This is the QR code for your address, data and amount as a BisUrl."
+msgstr "주소, 메시지(data), 금액이 기록된 BIS URL을 담은 QR코드입니다.  "
+
+#: themes/material/transactions_receive.html:79
+msgid "You can copy/paste this image to send in a mail or anything"
+msgstr "이 이미지를 복사해 이메일 등에 붙여넣기 할 수 있습니다"
+
+#: themes/material/transactions_send.html:15
+#: themes/material/transactions_send_confirm.html:28
+msgid "Send To"
+msgstr "보낼 주소"
+
+#: themes/material/transactions_send.html:16
+#: themes/material/transactions_send_confirm.html:29
+msgid "To whom send BIS."
+msgstr "BIS를 보낼 곳"
+
+#: themes/material/transactions_send.html:27
+#: themes/material/transactions_send_confirm.html:43
+#: themes/material/transactions_sendpop_confirm.html:73
+msgid "Optionally, you can add a small comment to your transaction. Required for exchanges deposit."
+msgstr "트랜잭션에 짧은 메시지를 덧붙일 수 있습니다. 거래소로 입금할 때 필요합니다."
+
+#: themes/material/transactions_send.html:36
+#: themes/material/transactions_sendpop_confirm.html:61
+msgid "Operation"
+msgstr "오퍼레이션"
+
+#: themes/material/transactions_send.html:38
+msgid "\"operation\" allows for powerful Bismuth Features. Leave empty until otherwise required."
+msgstr "\"오퍼레이션\"은 비스무트의 특수 기능입니다. 꼭 필요하지 않으면 비워두시기 바랍니다. "
+
+#: themes/material/transactions_send.html:53
+#: themes/material/transactions_send_confirm.html:56
+msgid "How many BIS to send."
+msgstr "보낼 BIS 수량"
+
+#: themes/material/transactions_send.html:61
+#: themes/material/transactions_send_confirm.html:65
+#: themes/material/transactions_sendpop_confirm.html:41
+msgid "This is what the recipient will receive"
+msgstr "수신자가 받을 금액"
+
+#: themes/material/transactions_send.html:73
+#: themes/material/transactions_send_confirm.html:77
+#: themes/material/transactions_sendpop_confirm.html:54
+msgid "This is what you will pay, fees included."
+msgstr "당신이 지출할 금액. 수수료 포함."
+
+#: themes/material/transactions_send.html:78
+#: themes/material/transactions_send.html:81
+#: themes/material/transactions_send.html:127 wallet.py:183 wallet.py:237
+msgid "Send BIS"
+msgstr "BIS 보내기"
+
+#: themes/material/transactions_send.html:103
+msgid "Send a transaction from a BIS URL"
+msgstr "BIS URL으로 트랜잭션 보내기"
+
+#: themes/material/transactions_send.html:117
+msgid "Decode BIS URL"
+msgstr "BIS URL 풀기"
+
+#: themes/material/transactions_send.html:123
+msgid "Send BIS URL..."
+msgstr "BIS URL 보내기..."
+
+#: themes/material/transactions_send_confirm.html:117
+#: themes/material/transactions_sendpop_confirm.html:103
+#: themes/material/wallet_load.html:183
+msgid "Cancel"
+msgstr "취소"
+
+#: themes/material/transactions_send_confirm.html:122
+#: themes/material/transactions_sendpop_confirm.html:111
+msgid "Confirm and send BIS"
+msgstr "승인하고 BIS 보내기"
+
+#: themes/material/wallet_import_encrypted_der1.html:10
+msgid "Password"
+msgstr "패스워드"
+
+#: themes/material/wallet_import_encrypted_der1.html:20
+msgid "Enter wallet password for {}"
+msgstr "{} 지갑 패스워드 입력"
+
+#: themes/material/wallet_import_encrypted_der1.html:24
+msgid "Wallet password"
+msgstr "지갑 패스워드"
+
+#: themes/material/wallet_import_encrypted_der1.html:34
+msgid "Import wallet"
+msgstr "지갑 백업 가져오기"
+
+#: themes/material/wallet_import_encrypted_der1.html:41
+msgid "Wallet will be decrypted, imported, and re-encrypted ith the main wallet master password"
+msgstr "지갑 백업의 암호를 풀고, 가져오고, 현재 지갑의 마스터 패스워드로 다시 암호화 합니다"
+
+#: themes/material/wallet_info.html:11
+msgid "Current Wallet"
+msgstr "현재의 지갑"
+
+#: themes/material/wallet_info.html:16
+msgid "{} Address(es)"
+msgstr "{} 주소"
+
+#: themes/material/wallet_info.html:29
+msgid "Manage"
+msgstr "관리"
+
+#: themes/material/wallet_info.html:30
+msgid "addresses"
+msgstr "주소"
+
+#: themes/material/wallet_info.html:34
+msgid "Select one of your Bismuth addresses"
+msgstr "비스무트 주소를 고르세요"
+
+#: themes/material/wallet_info.html:49
+msgid "Create a new"
+msgstr "새로 생성"
+
+#: themes/material/wallet_info.html:50
+msgid "address"
+msgstr "주소"
+
+#: themes/material/wallet_info.html:72
+msgid "Wallet is locked"
+msgstr "지갑이 잠겼습니다"
+
+#: themes/material/wallet_info.html:76
+msgid "Existing master password"
+msgstr "기존 마스터 패스워드"
+
+#: themes/material/wallet_info.html:79
+msgid "This is the password that protects your private key(s)"
+msgstr "개인키를 보호하는 패스워드 입니다"
+
+#: themes/material/wallet_info.html:85
+msgid "Unlock wallet"
+msgstr "지갑 잠금 풀기"
+
+#: themes/material/wallet_info.html:95
+msgid "Wallet is unlocked"
+msgstr "지갑 잠금이 풀렸습니다"
+
+#: themes/material/wallet_info.html:100
+msgid "You can lock it back for extra safety if you don't plan to use it soon."
+msgstr "곧 다시 사용하지 않는다면 지감을 잠그시기 바랍니다"
+
+#: themes/material/wallet_info.html:106
+msgid "Lock wallet"
+msgstr "지갑 잠그기"
+
+#: themes/material/wallet_info.html:110
+msgid "You have to encrypt your wallet first to use this feature"
+msgstr "이 기능을 사용하려면 먼저 지갑을 암호화해야 합니다"
+
+#: themes/material/wallet_info.html:137 themes/material/wallet_info.html:160
+#: themes/material/wallet_info.html:164 themes/material/wallet_info.html:244
+msgid "Master password"
+msgstr "마스터 패스워드"
+
+#: themes/material/wallet_info.html:144
+msgid "Master password is set"
+msgstr "마스터 패스워드가 설정됐습니다"
+
+#: themes/material/wallet_info.html:168
+msgid "This is the password that will protect your private keys."
+msgstr "개인키를 보호할 패스워드입니다"
+
+#: themes/material/wallet_info.html:172
+msgid "Retype Master password"
+msgstr "패스워드를 다시 입력해주세요"
+
+#: themes/material/wallet_info.html:176
+msgid "Losing this password means loosing your keys!"
+msgstr "패스워드를 분실하면 개인키를 잃어버리게 됩니다"
+
+#: themes/material/wallet_info.html:183
+msgid "Set master password"
+msgstr "마스터 패스워드 설정"
+
+#: themes/material/wallet_info.html:186
+msgid "This will encrypt your wallet file. You may want to backup the unencrypted file first."
+msgstr "당신의 지갑 파일을 암호화합니다. 순정 개인키가 꼭 필요하면 암호화하지 전 파일을 백업하시기 바랍니다 "
+
+#: themes/material/wallet_info.html:192
+msgid "Master password is not set"
+msgstr "마스터 패스워드가 설정되지 않았습니다"
+
+#: themes/material/wallet_info.html:234
+msgid "U2F TOKEN"
+msgstr "U2F 토큰"
+
+#: themes/material/wallet_info.html:248
+msgid "Needed to confirm operation"
+msgstr "오퍼레이션을 승인하셔야 합니다"
+
+#: themes/material/wallet_info.html:254
+msgid "Set spend protection"
+msgstr "보내기 안전보호 설정"
+
+#: themes/material/wallet_info.html:264
+msgid "Spending is currently not protected"
+msgstr "보내기 안전보호가 없습니다"
+
+#: themes/material/wallet_info.html:266
+msgid "Spending is currently protected by {}"
+msgstr "보내기가 {} 안전보호를 사용합니다 "
+
+#: themes/material/wallet_load.html:16 themes/material/wallet_load.html:55
+msgid "Your Bismuth addresses"
+msgstr "당신의 비스무트 주소"
+
+#: themes/material/wallet_load.html:20
+msgid "Your wallet directory is {}"
+msgstr "당신 지갑 폴더는 {}"
+
+#: themes/material/wallet_load.html:21
+msgid "Your wallet is {}"
+msgstr "당신의 지갑은 {}"
+
+#: themes/material/wallet_load.html:40
+msgid "Click to query total balance"
+msgstr "잔액을 조회하려면 클릭"
+
+#: themes/material/wallet_load.html:61 themes/material/wallet_load.html:98
+#: themes/material/wallet_load.html:175
+msgid "Label"
+msgstr "별명"
+
+#: themes/material/wallet_load.html:63
+msgid "Creation date"
+msgstr "생성일"
+
+#: themes/material/wallet_load.html:64 themes/material/wallet_load.html:127
+msgid "Action"
+msgstr "실행"
+
+#: themes/material/wallet_load.html:100
+msgid "A private label for the new address"
+msgstr "새 주소의 별명"
+
+#: themes/material/wallet_load.html:105
+msgid "Create a new address"
+msgstr "새 주소 생성"
+
+#: themes/material/wallet_load.html:121
+msgid "Potential legacy wallet imports"
+msgstr "구 지갑 가져오기"
+
+#: themes/material/wallet_load.html:124
+msgid "File"
+msgstr "파일"
+
+#: themes/material/wallet_load.html:126
+msgid "Encrypted"
+msgstr "암호화됨"
+
+#: themes/material/wallet_load.html:161
+msgid "Edit label"
+msgstr "별명 수정"
+
+#: themes/material/wallet_load.html:177
+msgid "A private label for that address"
+msgstr "이 주소의 별명"
+
+#: themes/material/wallet_load.html:185
+msgid "Set label"
+msgstr "별명 설정"
+
+#: themes/material/wallet_load.html:186
+msgid "This can take some time, especially if your wallet is encrypted. Do not interrupt."
+msgstr "꽤 시간이 걸릴 수 있습니다. 기다리세요"
+
+#: wallet.py:186 wallet.py:241 wallet.py:343 wallet.py:409 wallet.py:459
+#: wallet.py:1019 wallet.py:1066
+msgid "No Wallet"
+msgstr "지갑 없음"
+
+#: wallet.py:187 wallet.py:242 wallet.py:344 wallet.py:410 wallet.py:460
+#: wallet.py:1020 wallet.py:1067
+msgid "Load your wallet first"
+msgstr "먼저 지갑을 불러오세요"
+
+#: wallet.py:194 wallet.py:249 wallet.py:350 wallet.py:416 wallet.py:467
+#: wallet.py:1027 wallet.py:1074
+msgid "Encrypted wallet"
+msgstr "암호화된 지갑"
+
+#: wallet.py:195 wallet.py:250 wallet.py:351 wallet.py:417 wallet.py:468
+#: wallet.py:570 wallet.py:633 wallet.py:659 wallet.py:1028 wallet.py:1075
+msgid "You have to unlock your wallet first"
+msgstr "지갑 잠금을 풀어야 합니다"
+
+#: wallet.py:202 wallet.py:257 wallet.py:296
+msgid "Send BIS: Confirmation"
+msgstr "BIS 보내기: 승인"
+
+#: wallet.py:204 wallet.py:259 wallet.py:298
+msgid "Please confirm this transaction"
+msgstr "이 트랜잭션을 승인해주세요"
+
+#: wallet.py:206 wallet.py:261 wallet.py:300
+msgid "Check this is what you intended to do and hit the \"confirm\" button"
+msgstr "당신이 의도한 내용인지 확인하고 \"승인\" 버튼을 누르세요"
+
+#: wallet.py:215 wallet.py:279 wallet.py:317
+msgid "No message"
+msgstr "메시지 없음"
+
+#: wallet.py:216 wallet.py:280 wallet.py:318
+msgid "Sending to this recipient needs a proper message"
+msgstr "이 주소로 보내려면 필요한 추가 메시지를 입력하셔야 합니다"
+
+#: wallet.py:362 wallet.py:428 wallet.py:1039 wallet.py:1086
+msgid "Invalid PIN Number"
+msgstr "핀 번호 틀림"
+
+#: wallet.py:375 wallet.py:440
+msgid "Success:"
+msgstr "성공:"
+
+#: wallet.py:377 wallet.py:440
+msgid "Transaction sent"
+msgstr "트랜잭션을 보냈습니다"
+
+#: wallet.py:379 wallet.py:441
+msgid "The transaction was submitted to the mempool."
+msgstr "트랜잭션을 mempool에 등록했습니다"
+
+#: wallet.py:381 wallet.py:443
+msgid "Txid is {}"
+msgstr "Txid 는 {}"
+
+#: wallet.py:384
+msgid "Success"
+msgstr "성공"
+
+#: wallet.py:388 wallet.py:450
+msgid "There was an error submitting to the mempool, transaction was not sent."
+msgstr "트랜잭션을 mempool에 등록하지 못했습니다. 보내기 실패"
+
+#: wallet.py:473
+msgid "Receive BIS"
+msgstr "BIS 받기"
+
+#: wallet.py:504
+msgid "Transaction list"
+msgstr "트랜잭션 목록"
+
+#: wallet.py:573
+msgid "Click"
+msgstr "클릭"
+
+#: wallet.py:584
+msgid "Time out, please try reloading"
+msgstr "시간 초과, 다시 로딩하세요"
+
+#: wallet.py:614 wallet.py:645 wallet.py:694 wallet.py:755 wallet.py:774
+#: wallet.py:794 wallet.py:807 wallet.py:832 wallet.py:846 wallet.py:859
+msgid "Error: {}"
+msgstr "에러: {}"
+
+#: wallet.py:714
+msgid "This file already exists: {}.der"
+msgstr "파일이 이미 있습니다: {}.der "
+
+#: wallet.py:729
+msgid "Error creating {}.der"
+msgstr "{}.der 생성 에러"
+
+#: wallet.py:741
+msgid "Max of {} addresses reached."
+msgstr "{} 주소 최대치에 도달했습니다"
+
+#: wallet.py:821
+msgid "Passwords do not match"
+msgstr "패스워드가 일치하지 않습니다"
+
+#: wallet.py:846
+msgid "PIN code can't be empty"
+msgstr "핀 코드를 입력하세요"
+
+#: wallet.py:1046
+msgid "Your message '{}' has been signed."
+msgstr "'{}' 메시지를 서명했습니다"
+
+#: wallet.py:1053 wallet.py:1098
+msgid "Signature"
+msgstr "전자서명"
+
+#: wallet.py:1091
+msgid "Your message has been decrypted."
+msgstr "메시지 암호가 풀렸습니다"
+
+#: wallet.py:1107
+msgid "Message is empty"
+msgstr "빈 메시지입니다"
+
+#: wallet.py:1110
+msgid "Recipient is empty"
+msgstr "받는 주소가 없습니다"
+
+#: wallet.py:1113
+msgid "Your message has been encrypted."
+msgstr "메시지를 암호화했습니다"
+
+#: wallet.py:1120
+msgid "Message"
+msgstr "메시지"

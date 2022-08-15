@@ -1,0 +1,1184 @@
+msgid ""
+msgstr ""
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: POEditor.com\n"
+"Project-Id-Version: TornadoWallet\n"
+"Language: sr\n"
+
+#: themes/material/about_credits.html:10 themes/material/base.html:228
+msgid "Credits"
+msgstr "Zasluga"
+
+#: themes/material/about_credits.html:11
+msgid "This wallet wouldn't have existed without..."
+msgstr "Ovaj novčanik ne bi postojalo bez, da..."
+
+#: themes/material/about_credits.html:16
+msgid "The \"Material Dark\" template by <a href=\"https://www.creative-tim.com\" target=\"_blank\">Creative Tim</a>"
+msgstr "Sa pomoćom \"Material Dark\" <a href=\"https://www.creative-tim.com\" target=\"_blank\"> Creative Tim </a> sablonom"
+
+#: themes/material/about_credits.html:19
+msgid "Python, awesome language!"
+msgstr "Python, fantastican jezik!"
+
+#: themes/material/about_credits.html:20
+msgid "The <a href=\"https://www.tornadoweb.org/en/stable/index.html\" target=\"_blank\">Tornado</a> web application framework"
+msgstr "<a href=\"https://www.tornadoweb.org/en/stable/index.html\" target=\"_blank\">Tornado</a> okruženje web aplikacije"
+
+#: crystals/100_bismuthprice/themes/default/about.html:23
+#: crystals/210_eggpool/themes/default/about.html:25
+#: crystals/250_autogame/themes/default/about.html:35
+#: themes/material/about_credits.html:30
+msgid "About"
+msgstr "O nama"
+
+#: themes/material/about_credits.html:35
+msgid "Tornado wallet version {}"
+msgstr "Verzija Tornado novčanika {}"
+
+#: themes/material/about_credits.html:39
+msgid "This is the default wallet theme by {} from {}."
+msgstr "Podrazumevana tema je {} od {}."
+
+#: themes/material/about_network.html:14
+msgid "Current wallet server"
+msgstr "Trenutni server novčanika"
+
+#: themes/material/about_network.html:16
+msgid "This is the server you're connected to."
+msgstr "Ovo je server gde ste konektovani."
+
+#: themes/material/about_network.html:19
+msgid "Server:"
+msgstr "Server:"
+
+#: themes/material/about_network.html:21
+msgid "IP"
+msgstr "IP:"
+
+#: themes/material/about_network.html:21
+msgid "Wallet  server version {}"
+msgstr "Verzija novčanika {}"
+
+#: themes/material/about_network.html:25
+msgid "Connected clients:"
+msgstr "Konektovani klijenti:"
+
+#: themes/material/about_network.html:26
+msgid "Protocol"
+msgstr "Protokol"
+
+#: themes/material/about_network.html:27
+msgid "Node Version"
+msgstr "Verzija node-a"
+
+#: themes/material/about_network.html:28
+msgid "Peers connections:"
+msgstr "Peer konekcije:"
+
+#: themes/material/about_network.html:29
+msgid "UpTime:"
+msgstr "Vreme od pokretanja:"
+
+#: themes/material/about_network.html:30
+msgid "Consensus:"
+msgstr "Koncenzus:"
+
+#: themes/material/about_network.html:52
+msgid "Block"
+msgstr "Blok"
+
+#: themes/material/about_network.html:64
+msgid "Difficulty"
+msgstr "Teskoća"
+
+#: themes/material/about_network.html:77
+msgid "Available wallet servers"
+msgstr "Dostupni serveri novčanika"
+
+#: themes/material/about_network.html:79
+msgid "servers"
+msgstr "serveri"
+
+#: themes/material/about_network.html:88
+msgid "Refresh from API"
+msgstr "Osvezi iz API-ja"
+
+#: themes/material/base.html:43
+msgid "Bismuth Wallet"
+msgstr "Bismuth Novčanik"
+
+#: themes/material/base.html:51
+msgid "Dashboard"
+msgstr "Komandna tabla"
+
+#: themes/material/base.html:57
+msgid "Transactions"
+msgstr "Tranzakcije"
+
+#: themes/material/base.html:63
+msgid "Address book"
+msgstr "Adresar"
+
+#: themes/material/base.html:70 themes/material/tokens_list.html:10
+msgid "Tokens"
+msgstr "Tokeni"
+
+#: themes/material/base.html:76
+msgid "Messages"
+msgstr "Poruke"
+
+#: themes/material/base.html:83
+msgid "Network"
+msgstr "Mreža"
+
+#: themes/material/base.html:86 themes/material/cristals_list.html:10
+msgid "Cristals"
+msgstr "Kristali"
+
+#: themes/material/base.html:122
+msgid "Toggle navigation"
+msgstr "Prebaciti navigaciju"
+
+#: themes/material/base.html:208
+msgid "Source"
+msgstr "Izvor"
+
+#: themes/material/base.html:213
+msgid "Blog"
+msgstr "Blog"
+
+#: themes/material/base.html:218
+msgid "Discord"
+msgstr "Discord"
+
+#: themes/material/base.html:223
+msgid "Donate"
+msgstr "Donacija"
+
+#: themes/material/base.html:234
+msgid "block #"
+msgstr "Blok #"
+
+#: themes/material/base.html:254
+msgid "Sidebar Filters"
+msgstr "Filteri bocne trake"
+
+#: themes/material/base.html:267
+msgid "Images"
+msgstr "Slike"
+
+#: themes/material/cristals_list.html:11
+msgid "Cristals are extra functionalities you can add to your wallet"
+msgstr "Kristali su extra funkcije koje možete dodati svom novčaniku"
+
+#: crystals/100_bismuthprice/themes/default/about.html:15
+#: themes/material/tokens_list.html:14
+msgid "WIP"
+msgstr "WIP"
+
+#: themes/material/home.html:15 themes/material/transactions.html:15
+msgid "Balance"
+msgstr "Balans"
+
+#: themes/material/home.html:34 themes/material/transactions.html:34
+msgid "Send"
+msgstr "Posalji"
+
+#: themes/material/home.html:39 themes/material/transactions.html:39
+msgid "Send $BIS to..."
+msgstr "Posalji $BIS za..."
+
+#: themes/material/home.html:53 themes/material/transactions.html:53
+#: themes/material/transactions_receive.html:15
+msgid "Receive"
+msgstr "Primiti"
+
+#: themes/material/home.html:58 themes/material/transactions.html:58
+msgid "Request a $BIS payment"
+msgstr "Zahtevati $BIS isplate"
+
+#: themes/material/home.html:74 themes/material/transactions.html:73
+msgid "Latest transactions"
+msgstr "Poslednje tranzakcije"
+
+#: themes/material/home.html:75 themes/material/transactions.html:74
+#: themes/material/wallet_load.html:37
+msgid "Updated on"
+msgstr "Ažurirano"
+
+#: themes/material/home.html:80 themes/material/transactions.html:80
+msgid "Date"
+msgstr "Datum"
+
+#: themes/material/home.html:81 themes/material/transactions.html:81
+#: themes/material/wallet_load.html:43 themes/material/wallet_load.html:100
+#: themes/material/wallet_load.html:137
+msgid "Address"
+msgstr "Adresa"
+
+#: themes/material/home.html:82 themes/material/transactions.html:82
+#: themes/material/transactions_receive.html:46
+#: themes/material/transactions_send.html:52
+#: themes/material/transactions_send_confirm.html:55
+msgid "Amount"
+msgstr "Količina"
+
+#: themes/material/home.html:83 themes/material/transactions.html:83
+msgid "Type"
+msgstr "Tip"
+
+#: themes/material/home.html:150
+msgid "Bismuth news"
+msgstr "Bismuth novosti"
+
+#: crystals/100_bismuthprice/themes/default/modules/home.html:28
+msgid "Bismuth vs USD"
+msgstr "Bismuth vs USD"
+
+#: crystals/100_bismuthprice/themes/default/modules/home.html:33
+msgid "This is a mockup with fake data"
+msgstr "Ovo je šablon sa lažnim podacima"
+
+#: themes/material/home.html:136
+msgid "Account balance"
+msgstr "Balans naloga"
+
+#: themes/material/home.html:137
+msgid "Last 12 months"
+msgstr "U poslednjih 12 meseci"
+
+#: themes/material/home.html:141
+msgid "Mockup with fake data"
+msgstr "Šablon sa lažnim podacima"
+
+#: themes/material/message.html:16
+#: themes/material/transactions_send_confirm.html:16
+msgid "Previous page"
+msgstr "Prethodna strana"
+
+#: themes/material/tokens_list.html:11
+msgid "Tokens are a core BIS functionality"
+msgstr "Tokeni su glavne BIS funkcije."
+
+#: themes/material/transactions_send.html:15
+#: themes/material/transactions_send_confirm.html:28
+msgid "Send To"
+msgstr "Poslati"
+
+#: themes/material/transactions_send.html:16
+#: themes/material/transactions_send_confirm.html:29
+msgid "To whom send BIS."
+msgstr "Kome poslati BIS."
+
+#: themes/material/messages.html:61 themes/material/transactions_send.html:20
+#: themes/material/transactions_send_confirm.html:33
+#: themes/material/transactions_sendpop_confirm.html:29
+msgid "Recipient"
+msgstr "Primalac"
+
+#: themes/material/messages.html:20 themes/material/messages.html:57
+#: themes/material/transactions_receive.html:27
+#: themes/material/transactions_send.html:25
+#: themes/material/transactions_send_confirm.html:39
+#: themes/material/transactions_sendpop_confirm.html:68
+msgid "Data (message)"
+msgstr "Podatak (poruka)"
+
+#: themes/material/transactions_send.html:27
+#: themes/material/transactions_send_confirm.html:43
+#: themes/material/transactions_sendpop_confirm.html:73
+msgid "Optionally, you can add a small comment to your transaction. Required for exchanges deposit."
+msgstr "Izborno možete dodati mali komentar za tranzakciju. Neophodno je za slanje ka menjačnici."
+
+#: themes/material/transactions_send.html:53
+#: themes/material/transactions_send_confirm.html:56
+msgid "How many BIS to send."
+msgstr "Koliko komada BIS-a poslati."
+
+#: themes/material/transactions_receive.html:53
+#: themes/material/transactions_send.html:59
+#: themes/material/transactions_send_confirm.html:62
+#: themes/material/transactions_sendpop_confirm.html:38
+msgid "Amount (BIS)"
+msgstr "Količina (BIS)"
+
+#: themes/material/transactions_receive.html:61
+#: themes/material/transactions_send.html:66
+#: themes/material/transactions_send_confirm.html:70
+#: themes/material/transactions_sendpop_confirm.html:46
+msgid "Est. fees"
+msgstr "Približna taksa"
+
+#: themes/material/transactions_receive.html:66
+#: themes/material/transactions_send.html:71
+#: themes/material/transactions_send_confirm.html:75
+#: themes/material/transactions_sendpop_confirm.html:52
+msgid "Total (BIS)"
+msgstr "Ukupan (BIS)"
+
+#: main.py:133 main.py:161 themes/material/transactions_send.html:78
+#: themes/material/transactions_send.html:81
+#: themes/material/transactions_send.html:127 wallet.py:151 wallet.py:178
+msgid "Send BIS"
+msgstr "Pošalji BIS"
+
+#: themes/material/wallet_info.html:11
+msgid "Current Wallet"
+msgstr "Trenutni novčanik"
+
+#: themes/material/wallet_info.html:28
+msgid "Open existing"
+msgstr "Otvori postojeći"
+
+#: themes/material/wallet_info.html:29
+msgid "wallet"
+msgstr "novčanik"
+
+#: themes/material/wallet_info.html:33
+msgid "Load a wallet from disk"
+msgstr "Učitaj novčanik iz disk-a"
+
+#: themes/material/wallet_info.html:47 themes/material/wallet_load.html:34
+msgid "Create a"
+msgstr "Stvoriti"
+
+#: themes/material/wallet_info.html:48 themes/material/wallet_load.html:35
+msgid "new wallet"
+msgstr "novi novčanik"
+
+#: themes/material/wallet_load.html:99
+msgid "File"
+msgstr "Fajl"
+
+#: themes/material/wallet_load.html:101
+msgid "Encrypted"
+msgstr "Enkriptovan"
+
+#: themes/material/messages.html:82 themes/material/wip.html:10
+msgid "W.I.P."
+msgstr "W.I.P."
+
+#: themes/material/messages.html:85 themes/material/wip.html:13
+msgid "This feature is under construction."
+msgstr "Ova opcija je u fazi izrade."
+
+#: main.py:243 wallet.py:326
+msgid "Transaction list"
+msgstr "Lista trnzakcije"
+
+#: main.py:203 main.py:315 main.py:324 modules/basehandlers.py:60
+#: wallet.py:264 wallet.py:375 wallet.py:401 wallet.py:415 wallet.py:421
+#: wallet.py:436 wallet.py:445 wallet.py:451 wallet.py:460 wallet.py:474
+#: wallet.py:489 wallet.py:497 wallet.py:506 wallet.py:512 wallet.py:523
+msgid "Error"
+msgstr "Greška"
+
+#: main.py:315 wallet.py:436
+msgid "This file already exists: {}.der"
+msgstr "Postojeci fajl: {}.der"
+
+#: main.py:324 wallet.py:445
+msgid "Error creating {}.der"
+msgstr "Greška stvaranje {}.der"
+
+#: themes/material/transactions.html:79
+msgid "Txid"
+msgstr "Txid"
+
+#: themes/material/transactions.html:84
+msgid "Fees"
+msgstr "Taksa"
+
+#: themes/material/transactions.html:85
+msgid "Data"
+msgstr "Podatak"
+
+#: themes/material/transactions_receive.html:16
+msgid "Request BIS"
+msgstr "Zahtev BIS-a"
+
+#: themes/material/transactions_receive.html:20
+msgid "Your address"
+msgstr "Vaša adresa"
+
+#: themes/material/transactions_receive.html:22
+msgid "This is your address for current wallet, but you can change it if needed. Double check then."
+msgstr "Ovo je vaša trenutna adresa, ali ga možete izmeniti po potrebi. U tom slučaju budite pažljivi."
+
+#: themes/material/transactions_receive.html:30
+msgid "Optionally, you can add a small comment to your transaction, like a reference of your own. Will be stored on chain."
+msgstr "Izborno možete dodati mali komentar za transakciju, kao lična referenca. Biće sačuvano u lancu."
+
+#: themes/material/transactions_receive.html:35
+msgid "This is the QR code for your address only."
+msgstr "Ovaj QR kod je za vašu adresu."
+
+#: themes/material/transactions_receive.html:47
+msgid "How many BIS to request."
+msgstr "Koliko komada BIS-a za zahtev."
+
+#: themes/material/transactions_receive.html:56
+msgid "This is what you will receive"
+msgstr "Ovo je što ćete dobiti"
+
+#: themes/material/transactions_receive.html:63
+#: themes/material/transactions_send.html:68
+#: themes/material/transactions_send_confirm.html:72
+#: themes/material/transactions_sendpop_confirm.html:48
+msgid "Fees depend on Data length"
+msgstr "Taksa zavisnosti od dužine Podataka"
+
+#: themes/material/transactions_receive.html:68
+msgid "This is what the sender will pay"
+msgstr "Ovo je što će pošiljalac plaćati"
+
+#: themes/material/transactions_receive.html:72
+msgid "Get BIS URL"
+msgstr "Dobiti BIS URL"
+
+#: themes/material/transactions_receive.html:78
+msgid "This is the QR code for your address, data and amount as a BisUrl."
+msgstr "Ovo je QR kod za vašu adresu, podatke i kolicinu kao BIS URL"
+
+#: themes/material/transactions_receive.html:79
+msgid "You can copy/paste this image to send in a mail or anything"
+msgstr "Možete kopirati/nalepiti ovu sliku da bi mogli slati emailom ili drugom"
+
+#: themes/material/transactions_send.html:61
+#: themes/material/transactions_send_confirm.html:65
+#: themes/material/transactions_sendpop_confirm.html:41
+msgid "This is what the recipient will receive"
+msgstr "Ovo je što je primalac primiti"
+
+#: themes/material/transactions_send.html:73
+#: themes/material/transactions_send_confirm.html:77
+#: themes/material/transactions_sendpop_confirm.html:54
+msgid "This is what you will pay, fees included."
+msgstr "Ovo je što ćete plaćati, takse su uračunate."
+
+#: themes/material/wallet_load.html:45 themes/material/wallet_load.html:102
+msgid "Action"
+msgstr "Akcija"
+
+#: themes/material/about_credits.html:52
+msgid "Translations"
+msgstr "Prevodi"
+
+#: themes/material/transactions_send_confirm.html:117
+#: themes/material/transactions_sendpop_confirm.html:103
+#: themes/material/wallet_load.html:150
+msgid "Cancel"
+msgstr "Odustati"
+
+#: themes/material/transactions_send_confirm.html:122
+#: themes/material/transactions_sendpop_confirm.html:111
+msgid "Confirm and send BIS"
+msgstr "Potvrditi i poslati BIS"
+
+#: main.py:144 main.py:172 wallet.py:161 wallet.py:190 wallet.py:212
+msgid "Send BIS: Confirmation"
+msgstr "Poslati BIS: Potvrditi"
+
+#: main.py:146 main.py:174 wallet.py:163 wallet.py:192 wallet.py:214
+msgid "Please confirm this transaction"
+msgstr "Molimo potvrdite ovu tranzakciju"
+
+#: main.py:147 main.py:175 wallet.py:164 wallet.py:193 wallet.py:215
+msgid "Check this is what you intended to do and hit the \"confirm\" button"
+msgstr "Oznacite ovo je sta ste nameravali da uradite i udarite (pritisnite) dugme za potvrdu"
+
+#: main.py:227 wallet.py:309
+msgid "Receive BIS"
+msgstr "Primiti BIS"
+
+#: themes/material/about_credits.html:36
+msgid "Wallet template {} by {}."
+msgstr "{} šablon novčanika od {}."
+
+#: themes/material/about_credits.html:53
+msgid "Many thanks to our translators and proofreaders"
+msgstr "Puno zahvala našim prevodiocima i korektorima"
+
+#: themes/material/about_network.html:22
+msgid "Wallet server version {}"
+msgstr "Verzija servera od novčanika {}"
+
+#: themes/material/base.html:173
+msgid "Wallet"
+msgstr "Novčanik"
+
+#: crystals/250_autogame/themes/default/about.html:19
+#: themes/material/transactions_receive.html:81
+#: themes/material/transactions_send.html:100
+#: themes/material/transactions_send.html:108
+msgid "BIS URL"
+msgstr "BIS URL"
+
+#: themes/material/wallet_load.html:16
+msgid "Your Bismuth wallets"
+msgstr "Vaši Bismuth novčanici"
+
+#: themes/material/wallet_load.html:20
+msgid "Your wallets directory is {}"
+msgstr "Direktorijum vašeg novčanika je {}"
+
+#: crystals/210_eggpool/__init__.py:85 main.py:136 main.py:140 main.py:164
+#: main.py:168 main.py:182 main.py:221 wallet.py:153 wallet.py:157
+#: wallet.py:181 wallet.py:185 wallet.py:197 wallet.py:228 wallet.py:234
+#: wallet.py:237 wallet.py:244 wallet.py:271 wallet.py:274 wallet.py:281
+#: wallet.py:296 wallet.py:302 wallet.py:306 wallet.py:657 wallet.py:661
+#: wallet.py:668 wallet.py:680
+msgid "Error:"
+msgstr "Greška:"
+
+#: main.py:136 main.py:164 wallet.py:153 wallet.py:181 wallet.py:234
+#: wallet.py:271 wallet.py:302 wallet.py:657
+msgid "Load your wallet first"
+msgstr "Pokreni svoj novčanik prvo"
+
+#: main.py:136 main.py:164 wallet.py:153 wallet.py:181 wallet.py:234
+#: wallet.py:271 wallet.py:302 wallet.py:657
+msgid "No Wallet"
+msgstr "Nema novčanika"
+
+#: main.py:140 main.py:168 wallet.py:157 wallet.py:185 wallet.py:237
+#: wallet.py:274 wallet.py:306 wallet.py:661
+msgid "Encrypted wallet"
+msgstr "Kodiran novčanik"
+
+#: main.py:140 main.py:168 wallet.py:157 wallet.py:185 wallet.py:237
+#: wallet.py:274 wallet.py:306 wallet.py:375 wallet.py:415 wallet.py:661
+msgid "You have to unlock your wallet first"
+msgstr "Morate prvo otključati svoj novčanik"
+
+#: main.py:193 main.py:216 wallet.py:254 wallet.py:291
+msgid "Success:"
+msgstr "Uspešno:"
+
+#: main.py:193 main.py:216 wallet.py:254 wallet.py:291
+msgid "Transaction sent"
+msgstr "Tranzakcija poslata"
+
+#: main.py:194 main.py:217 wallet.py:255 wallet.py:292
+msgid "The transaction was submitted to the mempool."
+msgstr "Tranzakcija je podnešena mempool-u."
+
+#: main.py:196 main.py:219 wallet.py:257 wallet.py:294
+msgid "Txid is {}"
+msgstr "Txid je {}"
+
+#: main.py:201 main.py:221 wallet.py:262 wallet.py:296
+msgid "There was an error submitting to the mempool, transaction was not sent."
+msgstr "Doslo je do greske poslati na mempool, tranzakcija nije poslata."
+
+#: crystals/200_dragginator/themes/default/about.html:89
+#: modules/basehandlers.py:55
+msgid "No Bismuth address, please create or load a wallet first."
+msgstr "Nema Bismuth adrese, prvo kreirajte jednu ili ga ucitajte."
+
+#: themes/material/base.html:95 themes/material/crystals_list.html:11
+msgid "Crystals"
+msgstr "Crystal-i"
+
+#: themes/material/base.html:131
+msgid "Search..."
+msgstr "Potrazi"
+
+#: themes/material/crystals_list.html:12
+msgid "Crystals are extra functionalities you can add to your wallet"
+msgstr "Crystal-i su ekstra funkcije koje mozete dodati svom novcaniku"
+
+#: crystals/100_bismuthprice/themes/default/about.html:11
+#: crystals/100_bismuthprice/themes/default/modules/home.html:16
+msgid "Crystal"
+msgstr "Crystal"
+
+#: crystals/100_bismuthprice/themes/default/about.html:28
+#: crystals/210_eggpool/themes/default/about.html:29
+#: crystals/250_autogame/themes/default/about.html:39
+msgid "Version"
+msgstr "Verzija"
+
+#: crystals/100_bismuthprice/themes/default/modules/home.html:4
+msgid "Current Bismuth Prices"
+msgstr "Trenutna cena BIS-a"
+
+#: crystals/200_dragginator/themes/default/egg.html:20
+msgid "BIS"
+msgstr "BIS"
+
+#: main.py:198 wallet.py:259
+msgid "Success"
+msgstr "Uspeh"
+
+#: themes/material/transactions_confirmpop.html:10
+msgid "Confirm Transaction"
+msgstr "Potvrditi tranzakciju"
+
+#: themes/material/transactions_send.html:36
+#: themes/material/transactions_sendpop_confirm.html:61
+msgid "Operation"
+msgstr "Operacija"
+
+#: .buildozer/android/platform/python-for-android-new-toolchain/doc/source/ext/sphinx_rtd_theme/sphinx_rtd_theme/layout_old.html:29
+msgid "Navigation"
+msgstr "Navigacija"
+
+#: .buildozer/android/platform/python-for-android-new-toolchain/doc/source/ext/sphinx_rtd_theme/sphinx_rtd_theme/search.html:11
+msgid "Search"
+msgstr "Pretraga"
+
+#: .buildozer/android/platform/python-for-android-new-toolchain/doc/source/ext/sphinx_rtd_theme/sphinx_rtd_theme/search.html:33
+msgid "Search Results"
+msgstr "Rezultat pretrage"
+
+#: crystals/200_dragginator/__init__.py:64
+msgid "D:Air egg"
+msgstr "Egg vazduha"
+
+#: crystals/200_dragginator/__init__.py:63
+msgid "D:Earth egg"
+msgstr "Egg Zemlje"
+
+#: crystals/200_dragginator/__init__.py:63
+msgid "D:Fire egg"
+msgstr "Egg vatre"
+
+#: crystals/200_dragginator/__init__.py:63
+msgid "D:Water egg"
+msgstr "Egg vode"
+
+#: crystals/200_dragginator/__init__.py:68
+msgid "D:Cup"
+msgstr "Pehar"
+
+#: crystals/200_dragginator/__init__.py:68
+msgid "D:special egg"
+msgstr "Specijalni Egg"
+
+#: crystals/200_dragginator/__init__.py:68
+msgid "D:world cup 2018"
+msgstr "Svetsko prventsvo 2018"
+
+#: crystals/200_dragginator/themes/default/about.html:21
+msgid "D:Dragginator News"
+msgstr "Dragginator vesti"
+
+#: crystals/200_dragginator/themes/default/about.html:36
+msgid "D:My eggs"
+msgstr "Moji egg-ovi"
+
+#: crystals/200_dragginator/themes/default/about.html:47
+msgid "D:And you are registered to the current eggdrop"
+msgstr "Registrovali ste za trenutni eggdrop"
+
+#: crystals/200_dragginator/themes/default/about.html:49
+#: crystals/250_autogame/themes/default/about.html:23
+msgid "D:Register"
+msgstr "Registracija"
+
+#: crystals/200_dragginator/themes/default/about.html:49
+msgid "D:So you can register to the eggdrop!"
+msgstr "Možete se registrovati za eggdrop!"
+
+#: crystals/200_dragginator/themes/default/about.html:61
+msgid "D:DNA"
+msgstr "DNA"
+
+#: crystals/200_dragginator/themes/default/about.html:62
+#: crystals/200_dragginator/themes/default/egg.html:56
+msgid "D:Element"
+msgstr "Elemenat"
+
+#: crystals/200_dragginator/themes/default/about.html:63
+#: crystals/200_dragginator/themes/default/egg.html:57
+msgid "D:Species"
+msgstr "Vrsta"
+
+#: crystals/200_dragginator/themes/default/egg.html:11
+msgid "D:DNA:"
+msgstr "DNA:"
+
+#: crystals/200_dragginator/themes/default/egg.html:11
+msgid "D:See on Dragginator.com"
+msgstr "Videti na Dragginator.com"
+
+#: crystals/200_dragginator/themes/default/egg.html:23
+msgid "D:Archive"
+msgstr "Arhiva"
+
+#: crystals/200_dragginator/themes/default/egg.html:58
+msgid "D:Age"
+msgstr "Starost"
+
+#: crystals/200_dragginator/themes/default/egg.html:59
+msgid "D:Rarity"
+msgstr "Retkost"
+
+#: crystals/200_dragginator/themes/default/egg.html:69
+msgid "D:You own this egg"
+msgstr "Vlastujete ovaj Egg"
+
+#: crystals/200_dragginator/themes/default/egg.html:72
+msgid "D:You don't own this egg"
+msgstr "Ne vlastujete ovaj Egg"
+
+#: crystals/200_dragginator/themes/default/egg.html:86
+msgid "D:Send this egg to..."
+msgstr "Poslati ovaj Egg za..."
+
+#: crystals/200_dragginator/themes/default/egg.html:89
+msgid "D:Sell this egg for BIS"
+msgstr "Prodati ovaj Egg za BIS"
+
+#: crystals/200_dragginator/themes/default/egg.html:95
+msgid "D:Remove this egg from the marketplace"
+msgstr "Uklioniti ovaj Egg s pijace"
+
+#: crystals/210_eggpool/themes/default/about.html:14
+msgid "EP:Direct Link to official Dashboard"
+msgstr "Direktni lnk za oficijalnu kontrolnu tablu"
+
+#: crystals/210_eggpool/themes/default/about.html:15
+msgid "EP:Get last GPU miner"
+msgstr "Doći do zadnje verzije GPU majnera"
+
+#: crystals/210_eggpool/themes/default/about.html:16
+#: crystals/250_autogame/themes/default/about.html:15
+msgid "Join the Official Bismuth Discord for support"
+msgstr "Pridruži se oficijalnog Discord grupe za podršku"
+
+#: crystals/210_eggpool/themes/default/about.html:48
+msgid "EP:Hash Rate"
+msgstr "Hash Rate"
+
+#: crystals/210_eggpool/themes/default/about.html:49
+#: crystals/210_eggpool/themes/default/about.html:64
+msgid "EP:Last 12 hours"
+msgstr "Zadnjih 12 sati"
+
+#: crystals/210_eggpool/themes/default/about.html:63
+msgid "EP:Shares"
+msgstr "Share-ovi"
+
+#: crystals/210_eggpool/themes/default/about.html:73
+msgid "EP:Workers"
+msgstr "Worker-i"
+
+#: modules/i18n.py:22
+msgid "DT:Processing..."
+msgstr "Obrada"
+
+#: modules/i18n.py:23
+msgid "DT:Search&nbsp;..."
+msgstr "Search&nbsp;..."
+
+#: modules/i18n.py:24
+msgid "DT:Display _MENU_ elements"
+msgstr "Prikazati _MENU_ elemente"
+
+#: modules/i18n.py:25
+msgid "DT:Display element _START_ to _END_ from _TOTAL_ elements"
+msgstr "Prikazati elemente od _START_  do _END_  iz _TOTAL_ elemenata"
+
+#: modules/i18n.py:26 modules/i18n.py:30
+msgid "DT:Nothing to display"
+msgstr "Ništa za prikazivanje"
+
+#: modules/i18n.py:27
+msgid "DT:filtered from _MAX_ total elements"
+msgstr "filtrirano iz _MAX_ total elemenata"
+
+#: modules/i18n.py:29
+msgid "DT:Loading..."
+msgstr "Učitavanje..."
+
+#: modules/i18n.py:31
+msgid "DT:No data in the table"
+msgstr "Nema podataka u tabeli"
+
+#: modules/i18n.py:33
+msgid "DT:First"
+msgstr "Prvi"
+
+#: modules/i18n.py:34
+msgid "DT:Previous"
+msgstr "Prethodni"
+
+#: modules/i18n.py:35
+msgid "DT:Next"
+msgstr "Sledeći"
+
+#: modules/i18n.py:36
+msgid "DT:Last"
+msgstr "Zadnji"
+
+#: modules/i18n.py:39
+msgid "DT:Sort by ascending order"
+msgstr "Sortiraj po uzlaznog redosleda"
+
+#: modules/i18n.py:40
+msgid "DT:Sort by descending order"
+msgstr "Sortiraj po silaznog redosleda"
+
+#: crystals/200_dragginator/themes/default/about.html:44
+msgid "D:You don't own any egg ;("
+msgstr "Nemate svojih jajeta ;("
+
+#: crystals/200_dragginator/themes/default/about.html:15
+msgid "D:Buy an egg for {} BIS"
+msgstr "Kupiti jajeta za {} komada BIS-a"
+
+#: crystals/200_dragginator/themes/default/about.html:54
+msgid "D:You own {} eggs"
+msgstr "Imate {} komada jajeta"
+
+#: crystals/200_dragginator/themes/default/egg.html:104
+msgid "D:Buy for {} BIS"
+msgstr "Kupiti {} komada BIS-a"
+
+#: crystals/200_dragginator/themes/default/egg.html:91
+msgid "D:Price"
+msgstr "Cena"
+
+#: themes/material/transactions_confirmpop.html:7
+msgid "Transaction Status"
+msgstr "Status tranzakcije"
+
+#: themes/material/transactions_confirmpop.html:23
+msgid "OK"
+msgstr "OK"
+
+#: themes/material/transactions_send.html:38
+msgid "\"operation\" allows for powerful Bismuth Features. Leave empty until otherwise required."
+msgstr "\"operacija\" omogućava snažan Bismuth osobine. Ostavite prazno osim ako drugačije zahtevno."
+
+#: crystals/210_eggpool/__init__.py:68
+msgid "No data"
+msgstr "Nema podataka"
+
+#: crystals/210_eggpool/__init__.py:85
+msgid "This crystal is activated but needs a wallet restart."
+msgstr "Crystal je aktivirano ali treba novčaniku restart."
+
+#: modules/i18n.py:8 themes/material/wallet_info.html:235
+msgid "No protection"
+msgstr "Bez zaštite"
+
+#: modules/i18n.py:10 themes/material/wallet_info.html:232
+msgid "PIN Code"
+msgstr "PIN kod"
+
+#: modules/i18n.py:12 themes/material/wallet_info.html:233
+msgid "YUBICO"
+msgstr "YUBICO"
+
+#: modules/i18n.py:14
+msgid "U2F Token"
+msgstr "U2F Token"
+
+#: themes/material/base.html:117
+msgid "Wallet info"
+msgstr "Informacije o novčaniku"
+
+#: themes/material/crystals_list.html:48
+msgid "Apply"
+msgstr "Primeniti"
+
+#: themes/material/message_pop.html:23 themes/material/messages_pop.html:31
+msgid "Close"
+msgstr "Zatvoriti"
+
+#: themes/material/messages.html:15 wallet.py:655
+msgid "Sign message"
+msgstr "Potpiši poruku"
+
+#: themes/material/messages.html:16
+msgid "Sign some data for off chain usage with your private key."
+msgstr "Potpišite neke podatke za upotrebu van lanca sa svojim privatnim ključem."
+
+#: themes/material/messages.html:26
+#: themes/material/transactions_send_confirm.html:104
+#: themes/material/transactions_sendpop_confirm.html:91
+#: themes/material/wallet_info.html:218 themes/material/wallet_info.html:219
+#: wallet.py:244 wallet.py:281 wallet.py:668
+msgid "Spend protection"
+msgstr "Zaštita potrošnje"
+
+#: themes/material/messages.html:37
+msgid "Sign Message"
+msgstr "Potpiši Poruku "
+
+#: themes/material/messages.html:52
+msgid "Encrypt message"
+msgstr "Šifruj poruku"
+
+#: themes/material/messages.html:53
+msgid "Encrypt data for off chain usage."
+msgstr "Šifrujte podatke za upotrebu van lanca."
+
+#: themes/material/messages.html:63
+msgid "You have to tell the recipient address so the message can be encrypted with his public key"
+msgstr "Morate da kažete primaoca adrese tako da se poruka može kriptovati njegovim javnim ključem"
+
+#: themes/material/messages.html:67
+msgid "Encrypt Message"
+msgstr "Šifruj Poruku"
+
+#: themes/material/messages_pop.html:24
+#: themes/material/transactions_receive.html:81
+msgid "Click text to copy"
+msgstr "Kliknite na tekst za kopiranje"
+
+#: themes/material/messages_pop.html:34
+#: themes/material/transactions_receive.html:84
+msgid "Copied to Clipboard"
+msgstr "Kopirano u Clipboard"
+
+#: themes/material/transactions_send.html:103
+msgid "Send a transaction from a BIS URL"
+msgstr "Pošaljite transakciju sa BIS URL-a"
+
+#: crystals/250_autogame/themes/default/about.html:21
+#: themes/material/transactions_send.html:110
+msgid "Paste the BIS URL you were given here"
+msgstr "Zalepite BIS URL koji ste dobili ovde"
+
+#: themes/material/transactions_send.html:117
+msgid "Decode BIS URL"
+msgstr "Dekodiraj BIS URL"
+
+#: themes/material/transactions_send.html:123
+msgid "Send BIS URL..."
+msgstr "Pošalji BIS URL..."
+
+#: themes/material/wallet_info.html:16
+msgid "{} Address(es)"
+msgstr "{} Adresa(e)"
+
+#: themes/material/wallet_info.html:29
+msgid "Manage"
+msgstr "Upravljati"
+
+#: themes/material/wallet_info.html:30
+msgid "addresses"
+msgstr "Adrese"
+
+#: themes/material/wallet_info.html:34
+msgid "Select one of your Bismuth addresses"
+msgstr "Izaberite jednu od Bizmutovih adresa"
+
+#: themes/material/wallet_info.html:49
+msgid "Create a new"
+msgstr "Stvoriti nova"
+
+#: themes/material/wallet_info.html:50
+msgid "address"
+msgstr "adresa"
+
+#: themes/material/wallet_info.html:72
+msgid "Wallet is locked"
+msgstr "Novčanik je zaključan"
+
+#: themes/material/wallet_info.html:76
+msgid "Existing master password"
+msgstr "Postojeća glavna lozinka"
+
+#: themes/material/wallet_info.html:79
+msgid "This is the password that protects your private key(s)"
+msgstr "Ovo je lozinka koja štiti vaše privatne ključeve"
+
+#: themes/material/wallet_info.html:95
+msgid "Wallet is unlocked"
+msgstr "Novčanik je otključan"
+
+#: themes/material/wallet_info.html:100
+msgid "You can lock it back for extra safety if you don't plan to use it soon."
+msgstr "Možete ga zaključati za dodatnu sigurnost ako ga ne planirate koristiti uskoro."
+
+#: themes/material/wallet_info.html:137 themes/material/wallet_info.html:160
+#: themes/material/wallet_info.html:164 themes/material/wallet_info.html:244
+msgid "Master password"
+msgstr "Glavna lozinka"
+
+#: themes/material/wallet_info.html:144
+msgid "Master password is set"
+msgstr "Glavna lozinka je postavljena"
+
+#: themes/material/wallet_info.html:168
+msgid "This is the password that will protect your private keys."
+msgstr "Ovo je lozinka koja će zaštititi vaše privatne ključeve."
+
+#: themes/material/wallet_info.html:172
+msgid "Retype Master password"
+msgstr "Ponovo upišite glavnu lozinku"
+
+#: themes/material/wallet_info.html:176
+msgid "Losing this password means loosing your keys!"
+msgstr "Gubljenje ove lozinke znači gubitak ključeva!"
+
+#: themes/material/wallet_info.html:186
+msgid "This will encrypt your wallet file. You may want to backup the unencrypted file first."
+msgstr "Ovo će šifrovati vašu datoteku novčanika. Možda želite prvo da napravite rezervnu kopiju nešifrovane datoteke."
+
+#: themes/material/wallet_info.html:192
+msgid "Master password is not set"
+msgstr "Glavna lozinka nije postavljena"
+
+#: themes/material/wallet_info.html:234
+msgid "U2F TOKEN"
+msgstr "U2F TOKEN"
+
+#: themes/material/wallet_info.html:248
+msgid "Needed to confirm operation"
+msgstr "Potrebno za potvrdu operacije"
+
+#: themes/material/wallet_info.html:264
+msgid "Spending is currently not protected"
+msgstr "Potrošnja trenutno nije zaštićena"
+
+#: themes/material/wallet_info.html:266
+msgid "Spending is currently protected by {}"
+msgstr "Potrošnja je trenutno zaštićena od {}"
+
+#: themes/material/wallet_load.html:16 themes/material/wallet_load.html:36
+msgid "Your Bismuth addresses"
+msgstr "Vaše Bismuth adrese"
+
+#: themes/material/wallet_load.html:20
+msgid "Your wallet directory is {}"
+msgstr "Vaša direktorija novčanika je {}"
+
+#: themes/material/wallet_load.html:21
+msgid "Your wallet is {}"
+msgstr "Vaš novčanik je {}"
+
+#: themes/material/wallet_load.html:42 themes/material/wallet_load.html:73
+#: themes/material/wallet_load.html:142
+msgid "Label"
+msgstr "Etiketa"
+
+#: themes/material/wallet_load.html:44
+msgid "Creation date"
+msgstr "Datum izrade"
+
+#: themes/material/wallet_load.html:75
+msgid "A private label for the new address"
+msgstr "Privatna oznaka za novu adresu"
+
+#: themes/material/wallet_load.html:80
+msgid "Create a new address"
+msgstr "Napravite novu adresu"
+
+#: themes/material/wallet_load.html:96
+msgid "Potential legacy wallet imports"
+msgstr "Potencijalni uvoz iz prethodnog novčanika"
+
+#: wallet.py:244 wallet.py:281 wallet.py:668
+msgid "Invalid PIN Number"
+msgstr "Nevažeći PIN broj"
+
+#: wallet.py:401 wallet.py:421 wallet.py:460 wallet.py:474 wallet.py:489
+#: wallet.py:497 wallet.py:512 wallet.py:523
+msgid "Error: {}"
+msgstr "Greška: {}"
+
+#: wallet.py:451
+msgid "Max of {} addresses reached."
+msgstr "Dostignuto je najviše {} adresa."
+
+#: wallet.py:506
+msgid "Passwords do not match"
+msgstr "Lozinke se ne poklapaju"
+
+#: wallet.py:674
+msgid "Your message '{}' has been signed."
+msgstr "Vaša poruka '{}' je potpisana."
+
+#: wallet.py:676
+msgid "Signature"
+msgstr "Potpis"
+
+#: wallet.py:680
+msgid "This feature is under construction. "
+msgstr "Ova funkcija je u izgradnji."
+
+#: crystals/200_dragginator/themes/default/egg.html:32
+msgid "D:draggon"
+msgstr "draggon"
+
+#: crystals/200_dragginator/themes/default/egg.html:33
+msgid "D:egg"
+msgstr "egg"
+
+#: crystals/250_autogame/themes/default/about.html:14
+msgid "AG:Direct Link to latest autogame doc."
+msgstr "Direct Link to najnoviji autogame doc."
+
+#: crystals/250_autogame/themes/default/about.html:52
+msgid "AG:Your games"
+msgstr "Vaše igre"
+
+#: crystals/250_autogame/themes/default/about.html:76
+msgid "AG:Game detail"
+msgstr "Detalj igre"
+
+#: themes/material/wallet_info.html:85
+msgid "Unlock wallet"
+msgstr "Otključaj novčanik"
+
+#: themes/material/wallet_info.html:106
+msgid "Lock wallet"
+msgstr "Zaključaj novčanik"
+
+#: themes/material/wallet_info.html:110
+msgid "You have to encrypt your wallet first to use this feature"
+msgstr "Morate prvo da šifrujete svoj novčanik da biste koristili ovu funkciju"
+
+#: themes/material/wallet_info.html:183
+msgid "Set master password"
+msgstr "Postavite glavnu lozinku"
+
+#: themes/material/wallet_info.html:254
+msgid "Set spend protection"
+msgstr "Postavite zaštitu za potrošnju"
+
+#: crystals/250_autogame/themes/default/about.html:59
+msgid "Replay"
+msgstr "Ponovo odigrati"
+
+#: crystals/250_autogame/themes/default/replay_pop.html:2
+msgid "AG:Game {} replay"
+msgstr "Ponovo odigrati igru {}"
+
+#: crystals/250_autogame/themes/default/status_pop.html:2
+msgid "AG:Game {} status"
+msgstr "Status {} igre"
+
+#: modules/basehandlers.py:60
+msgid "Wallet server did not send an answer. Please try again."
+msgstr "Server novčanika nije poslao odgovor. Molim vas, pokušajte ponovo."
+
+#: themes/material/about_network.html:85
+msgid "Height"
+msgstr "Visina"
+
+#: themes/material/about_network.html:85
+msgid "Load"
+msgstr "Učitati"
+
+#: themes/material/wallet_load.html:128
+msgid "Edit label"
+msgstr "Izmeni oznaku"
+
+#: themes/material/wallet_load.html:144
+msgid "A private label for that address"
+msgstr "Privatna etiketa za tu adresu"
+
+#: themes/material/wallet_load.html:152
+msgid "Set label"
+msgstr "Podesiti etiketu"
+

@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+<!-- "../../../../themes/material/base.html" -->
+
+{% block header %}
+<link rel="stylesheet" type="text/css" href="{{ handler.common_url('css/dataTables.min.css') }}">
+{% end %}
+
+{% block body %}
+{% raw xsrf_form_html() %}
+
+<nav class="nav"><a class="nav-link active" href="about" style="color:#888888">HOME</a></nav>
+<div class="row">
+
+    <div class="col-lg-6 col-md-12">
+        <div class="card">
+            <div class="card-header card-header-info">
+                <h4 class="card-title">Phone ID</h4>
+                <p class="card-category"></p>
+            </div>
+            <div class="card-body">
+                Anonymizer Password (remember this for later): <input type="password" style="color: #888888" id="phone_pwd" class="form-control">
+                <br/>
+                <input type="submit" class="btn btn-primary" value="Fetch Your Phone ID" onClick="FetchID();">
+                <br/>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6 col-md-12">
+        <div class="card">
+            <div class="card-header card-header-success">
+                <h4 class="card-title">Register</h4>
+                <p class="card-category"></p>
+            </div>
+            <div class="card-body">
+                You will be able to register your Android phone ID on the Bismuth blockchain if you are running the crystal on Termux.
+                <br/><br/>
+                <div id="div_reg" style="display:none">
+                    List of Your Anonymized Asset ID numbers:<br/>
+                    <select id="asset_id" class="form-control" style='color:#888888'></select>
+                    <br/><br/>
+                    Register your Android phone on the Bismuth blockchain:<br/>
+                    <input type="submit" class="btn btn-primary" name="reg" value="Register Phone" onClick="RegisterPhone();">
+                    <br/><br/>
+                    Unregister your Android phone on the Bismuth blockchain:<br/>
+                    <input type="submit" class="btn btn-primary" name="unreg" value="Unregister Vehicle" onClick="UnregisterPhone();">
+                    <br/><br/>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="message_window" class="modal" tabindex="-1" role="dialog"></div>
+
+</div>
+
+<br/>
+
+{% end %}
+
+{% block footer %}
+<!-- this goes after default includes, like jquery -->
+<script src="{{ handler.common_url('js/plugins/jquery.dataTables.min.js') }}"></script>
+<script src="{{ handler.common_url('js/plugins/Chart.min.js') }}"></script>
+<script src="{{ handler.common_url('js/core/jquery-ui.min.js') }}"></script>
+<script src="{{ handler.common_url('js/plugins/dataTables.buttons.min.js') }}"></script>
+<script src="{{ handler.common_url('js/plugins/jszip.min.js') }}"></script>
+<script src="{{ handler.common_url('js/plugins/pdfmake.min.js') }}"></script>
+<script src="{{ handler.common_url('js/plugins/vfs_fonts.js') }}"></script>
+<script src="{{ handler.common_url('js/plugins/buttons.html5.min.js') }}"></script>
+
+<script src="/crystal/phonebattery/static/util.js"></script>
+<script src="/crystal/phonebattery/static/android.js"></script>
+<script src="/crystal/phonebattery/static/footer.js"></script>
+{% end %}

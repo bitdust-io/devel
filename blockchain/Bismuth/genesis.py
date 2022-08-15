@@ -100,7 +100,7 @@ else:
         #     'LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUlJQ0lqQU5CZ2txaGtpRzl3MEJBUUVGQUFPQ0FnOEFNSUlDQ2dLQ0FnRUF2OUpSSmJ0REJsMTc3OTBxWjB1TwpTRW0rVUZFOXU3SENIb2JlblFmc0RNWEFyZ3J1dTFmdlM0VUh0RW55VFI0dnJsNGpybUxJNmVhaCtDTjZHSno0CnRja1ZTV2FQOTNWVm5iNkpPTStTdzdTckd6MHlOR1E5KzVRMXI2NXZNVjZKWWQrK3VTNjJPUDdkZHN1MzJGMTcKK2d0UEV2OUIrNUZ6bm9ya25BRzh2SitEVmFHSTh1RGt3bzFZSXlHL0VNVCtXaVZJcGI4UWZFNzlxK2NKdHF6agpkNklEYWFhdjdSWEpxZU04Q2ZTR05rYWFvSEZ0YStBZFV3Q0syVHdtOW5JZjBqRWxwVENHcnNjMzRLYVlMRGh0CmVWbkZSRWVsbGhyR2FiMmgwR3M2azdPbmJ5TXoxYkFhb0dGNk9acG45MEkwYmVGRmZuN3dnWXZJWUMwanNIcVEKZGowZlhhUGo1bGRETGR4bHJmWVBwcTVacXRyVEcyeU1FTmhYRzZYbFEyOENZS0psRGR3SmRFMHRTWm1pc1lnVwoxVnlEYkxtUjUzQ3JSR1dTTENrY05BSWlSRHYrM2ZSRXlWV0d3MmM3bEEwVHFueFJyN01rZFhiTjZiRDJSTVhECk00ZFBHWTZzZllMVU9OZGFUYS82ZkduR0NqTXRBNVZGTXpuUEhBcmdjSmpJSzZDeGJ6aTYxVnA0QzFJRzF4bk8KYkJIM1BtSUE3Qmh0ZEtWUmxucWZ2M1p6d1g0RFVEWEdLTm5qNVlKQ2pvUm9pUFN4ZW85ajM2OFBkRnU5OHVLcgpRTGpqZFo3b1hFMTVxVW5TeWIrWjdXQjlHNnBQT3dtRjQ0T0dka2lkQjRCS1pzb2Fzb09oUVBlMUhpVTVLdGh3CmlNQ0UzZnJiUDlJSTBtMWNWYWZUbHlVQ0F3RUFBUT09Ci0tLS0tRU5EIFBVQkxJQyBLRVktLS0tLQ==',
         #     'c5adf0949d1e678de1e9a8708045a474eb8022f8029bf01e7e975e5a', 0, 1, 1, 'genesis',
         # ))
-        cursor.execute("INSERT INTO transactions VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", ("1", timestamp, 'genesis', address, '0', str(signature_enc), public_key_b64encoded, block_hash, 0, 1, 1, 'genesis'))  # Insert a row of data
+        cursor.execute("INSERT INTO transactions VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", ("1", timestamp, 'genesis', address, '0', signature_enc.decode("utf-8"), public_key_b64encoded, block_hash, 0, 1, 1, 'genesis'))  # Insert a row of data
         cursor.execute("INSERT INTO misc (difficulty, block_height) VALUES ({},1)".format(DIFFICULTY))
         conn.commit()  # Save (commit) the changes
 
@@ -133,7 +133,7 @@ else:
         hyper_conn = sqlite3.connect('static/hyper.db')
         hyper_cursor = hyper_conn.cursor()
         hyper_cursor.execute("CREATE TABLE transactions (block_height INTEGER, timestamp, address, recipient, amount, signature, public_key, block_hash, fee, reward, operation, openfield)")
-        hyper_cursor.execute("INSERT INTO transactions VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", ("1", timestamp, 'genesis', address, '0', str(signature_enc), public_key_b64encoded, block_hash, 0, 1, 1, 'genesis'))  # Insert a row of data
+        hyper_cursor.execute("INSERT INTO transactions VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", ("1", timestamp, 'genesis', address, '0', signature_enc.decode("utf-8"), public_key_b64encoded, block_hash, 0, 1, 1, 'genesis'))  # Insert a row of data
         hyper_cursor.execute("CREATE TABLE misc (block_height INTEGER, difficulty TEXT)")
         hyper_cursor.execute("INSERT INTO misc (difficulty, block_height) VALUES ({},1)".format(DIFFICULTY))
         # TODO: create indexes

@@ -1,0 +1,232 @@
+{% extends "base.html" %}
+<!-- "../../../../themes/material/base.html" -->
+
+{% block body %}
+
+
+
+<div class="row">
+
+    <div class="col-lg-12 col-md-12">
+        <div class="card">
+            <div class="card-header card-header-text card-header-primary">
+                <div class="card-text">
+                  <h4 class="card-title" style="color:#fff">Transactions</h4>
+                </div>
+            </div>
+            <div class="card-body table-responsive">
+                TODO
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="row">
+
+    <div class="col-lg-6 col-md-6">
+        <div class="card">
+            <div class="card-header card-header-text card-header-info">
+                <div class="card-text">
+                  <h4 class="card-title" style="color:#fff">Bis -> wBIS<i class="material-icons" title="{{ _('These transactions - if valid - are waiting for confirmations or a signature, just wait')}}">info</i>
+                  </h4>
+                </div>
+            </div>
+            <div class="card-body table-responsive">
+
+                <table class="table table-hover">
+                    <thead>
+                        <th>{{ _("Transaction Date")}}</th>
+                        <th>{{ _("Block")}}</th>
+                        <th class="center">{{ _("Txid/TxidHash")}}</th>
+                        <th class="amount">{{ _("Amount (BIS)")}}</th>
+                        <th class="amount">{{ _("Confs")}}</th>
+                    </thead>
+                    <tbody>
+
+                    {% for transaction in data['bismuth_transactions'] %}
+                        <tr style="border-top:2px solid #666666;">
+                            <td>
+                                <b>{%raw datetime.datetime.utcfromtimestamp(transaction['timestamp']).strftime('%Y-%m-%d %H:%M:%S').replace(" ", "&nbsp;") %}</b>
+                            </td>
+                            <td>
+                                {{ transaction['block_height'] }}
+                            </td>
+                            <td class="center">
+                                <i class="material-icons copy-title-to-clipboard-base"
+                                                  title="{{ transaction['signature'][:56] }}">description</i>
+                                <i class="material-icons copy-title-to-clipboard-base"
+                                                  title="{{ handler.sha256(transaction['signature'][:56]) }}">file_present</i>
+
+                            </td>
+                            <td class="amount "> {{ transaction['amount'] }}</td>
+                            <td class="amount "> {{ bismuth['server_status']['blocks'] - transaction['block_height'] }}/{{ bismuth['extra']['bis_confs'] }}</td>
+                        </tr>
+                        <tr>
+                            <td colspan="5" class="text">From BIS <span class="text-success ">{{ transaction['address'] }}</span> <br/>To ETH <span class="text-info ">{{ transaction['openfield'] }}</span></td>
+                        </tr>
+                    {% end %}
+                    <tr id="copied" style="display:none;">
+                        <td colspan="3">
+                            <button type="button" class="btn btn-success" >
+                                        <i class="material-icons">done_outline</i> {{ _('Copied to Clipboard') }}
+                            </button>
+                        </td>
+                        <td colspan="2"></td>
+                    </tr>
+
+                    <!-- pagination -->
+                    <!-- tr>
+                        <td colspan="3"></td>
+                        <td colspan="2">
+                            <form method="get" action="/transactions/">
+                            <button type="submit" class="btn btn-success" name="start" value="0" {_{ handler.disabled_if(offset==0) }} ><i class="material-icons">first_page</i></button>
+                            <button type="submit" class="btn btn-info" name="start" value="{_{ offset - count }}" {_{ handler.disabled_if(offset==0) }}><i class="material-icons">chevron_left</i> -{_{ count }}</button>
+                            <button type="button" class="btn btn-primary" disabled>{_{ offset }}</button>
+                            <button type="submit" class="btn btn-info" name="start" value="{_{ offset + count }}">+{_{ count }} <i class="material-icons">chevron_right</i></button>
+                            </form>
+                        </td>
+
+                    </tr -->
+
+                    </tbody>
+                </table>
+
+
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6 col-md-6">
+        <div class="card">
+            <div class="card-header card-header-text card-header-success">
+                <div class="card-text">
+                  <h4 class="card-title" style="color:#fff">wBis -> BIS<i class="material-icons" title="{{ _('These transactions - if valid - are waiting for confirmations or a signature, just wait')}}">info</i></h4>
+                </div>
+            </div>
+            <div class="card-body table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <th>{{ _("Submit Date")}}</th>
+                        <th>{{ _("Block")}}</th>
+                        <th class="center">{{ _("Txid")}}</th>
+                        <th class="amount">{{ _("Amount (wBIS)")}}</th>
+                        <th class="amount">{{ _("Confs")}}</th>
+                    </thead>
+                    <tbody>
+
+                    {% for transaction in data['eth_transactions'] %}
+                        <tr style="border-top:2px solid #666666;">
+                            <td>
+                                <b>{%raw datetime.datetime.utcfromtimestamp(transaction['timestamp']).strftime('%Y-%m-%d %H:%M:%S').replace(" ", "&nbsp;") %}</b>
+                            </td>
+                            <td>
+                                {{ transaction['block'] }}
+                            </td>
+                            <td class="center">
+                                <i class="material-icons copy-title-to-clipboard-base"
+                                   title="{{ transaction['txid'] }}">description</i>
+                            </td>
+                            <td class="amount "> {{ transaction['amount']/100000000 }}</td>
+                            <td class="amount "> {{ transaction['conf'] }}/{{ bismuth['extra']['eth_confs'] }}</td>
+                        </tr>
+                        <tr>
+                            <td colspan="5" class="text">From ETH <span class="text-success ">{{ transaction['sender'] }}</span> <br/>To BIS <span class="text-info ">{{ transaction['data'] }}</span></td>
+                        </tr>
+                    {% end %}
+
+                    </tbody>
+                </table>
+
+            </div>
+        </div>
+    </div>
+
+     <div class="col-lg-12 col-md-12">
+        <div class="card">
+            <div class="card-header card-header-text card-header-primary">
+                <div class="card-text">
+                  <h4 class="card-title" style="color:#fff">Swaps</h4>
+                </div>
+            </div>
+            <div class="card-body table-responsive">
+
+                <table class="table table-hover">
+                    <thead>
+                        <th>{{ _("Processed Date")}}<br/>&nbsp;</th>
+                        <th class="amount">{{ _("BIS")}}<br/>Fees</th>
+                        <th>{{ _("BIS Address")}}<br/>&nbsp;</th>
+                        <th><i class="material-icons" alt="Bridge direction">sync_alt</i></th>
+                        <th>{{ _("ETH Address")}}<br/>&nbsp;</th>
+                    </thead>
+                    <tbody>
+
+                    {% for swap in data['swaps'] %}
+                    {% set split = swap["openfield"].split(":") %}
+                    {% if swap["operation"] == "ethbridge:signature" %}
+                    {% set swap["direction"] = 1 %}
+                    {% set swap["eth_address"] = "e1" %}
+                    {% set swap["bis_address"] = "b1" %}
+                    {% else %}
+                    {% set swap["direction"] = 2 %}
+                    {% set swap["eth_address"] = "e2" %}
+                    {% set swap["bis_address"] = "b2" %}
+                    {% end %}
+                        <tr style="border-top:2px solid #666666;">
+                            <td>
+                                <b>{%raw datetime.datetime.utcfromtimestamp(swap['timestamp']).strftime('%Y-%m-%d %H:%M:%S').replace(" ", "&nbsp;") %}</b>
+                            </td>
+                            <td class="amount "> {{ int(split[2])/100000000 }}</td>
+                            <td class="text-info">
+                                <i class="material-icons copy-title-to-clipboard-base"
+                                                  title="{{ swap['signature'][:56] }}">description</i>
+                                <i class="material-icons copy-title-to-clipboard-base"
+                                                  title="{{ handler.sha256(swap['signature'][:56]) }}">file_present</i>
+                                {{ swap["bis_address"] }}</td>
+                            <td class=" ">{% if swap["direction"] == 1 %}<i class="material-icons text-info">east</i>{% else %}<i class="material-icons text-success">west</i>{% end %}</td>
+                            <td class="text-success">
+                                {% if swap['direction'] == 2 %}
+                                <i class="material-icons copy-title-to-clipboard-base" title="{{ swap['eth_txid'] }}">description</i>
+                                {% end %}
+                                {{ swap["eth_address"] }}</td>
+                        </tr>
+                        <tr >
+                            <td style="text-align: right;">
+                                <b>Fees</b>
+                            </td>
+                            <td class="amount "> {{ bismuth['extra']['bis_fixed_fees'] }}</td>
+                            <td class="center">
+                                {% if swap["direction"] == 2 %}
+                                        <a href="{{ swap['signature'][:56] }}" class="text-success" style="text-decoration: underline;"><i class="material-icons" style="width:24px;">open_in_new</i>&nbsp;See on explorer</a>
+                                {% end %}
+                            </td>
+                            <td class=" ">
+                                {% if swap["direction"] == 1 %}
+                                    <!-- if bis -> wbis -->
+                                    <i class="material-icons text-warning">hourglass_top</i> <i class="material-icons text-warning">manage_accounts</i>
+                                    <!-- i class="material-icons text-success">check</i -->
+                                {% end %}
+                            </td>
+                            <td class="" >
+                                {% if swap["direction"] == 1 %}
+                                    <!-- if bis -> wbis -->
+                                        <a href="/to_eth/?eth_address={-{ swap['eth_address'] }-}&amount={-{ int(split[2])/100000000 }-}&txidhash={-{ swap['bis_txidhash'] }-}&auth={-{ swap['signature'] }-}" class="text-warning" style="text-decoration: underline;"><i class="material-icons" style="width:24px;">settings_sugg</i>&nbsp;Proxy Mint your wBIS</a>
+                                {% else %}
+                                    <!-- if wbis -> bis -->
+                                {% end %}
+                            </td>
+                        </tr>
+                    {% end %}
+
+                    </tbody>
+                </table>
+
+
+        </div>
+    </div>
+            </div>
+</div>
+
+<br/>
+
+{% end %}

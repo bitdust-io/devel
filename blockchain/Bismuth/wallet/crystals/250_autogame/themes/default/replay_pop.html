@@ -1,0 +1,19 @@
+
+<h4 class="card-title">{{ _("AG:Game {} replay").format(hash) }}</h4>
+<div>
+    <ol>
+        {% for action in actions %}
+        {% if action.startswith('Event: attacked') %}
+        <li><span class="btn btn-danger" style="padding:3px;">{{ action }}</span></li>
+        {% elif action.startswith('Event: attack') %}
+        <li><span class="btn btn-success" style="padding:3px;">{{ action }}</span></li>
+        {% elif action.startswith('Event:') %}
+        <li><span class="btn btn-primary" style="padding:3px;">{{ action }}</span></li>
+        {% else %}
+        <li>{{ action }}</li>
+        {% end %}
+        {% end %}
+    </ol>
+</div>
+
+

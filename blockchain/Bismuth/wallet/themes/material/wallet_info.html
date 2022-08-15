@@ -1,0 +1,284 @@
+{% extends "base.html" %}
+
+{% block body %}
+
+<div class="row">
+
+
+    <div class="col-lg-6 col-md-12">
+        <div class="card">
+            <div class="card-header card-header-info">
+                <h4 class="card-title">{{ _("Current Wallet")}}</h4>
+            </div>
+            <div class="card-body">
+                {{ wallet['file'] }}<br>
+                {{ wallet['address'] }}<br>
+                {{ _("{} Address(es)").format(wallet['count']) }}<br>
+            </div>
+        </div>
+    </div>
+
+    {% if not bismuth['wallet_locked'] %}
+    <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6">
+        <div class="card card-stats">
+            <a href="/wallet/load">
+                <div class="card-header card-header-success card-header-icon">
+                    <div class="card-icon">
+                        <i class="material-icons">find_replace</i>
+                    </div>
+                    <p class="card-category">{{ _("Manage")}}</p>
+                    <h3 class="card-title">{{ _("addresses")}}</h3>
+                </div>
+                <div class="card-footer">
+                    <div class="stats">
+                        {{ _("Select one of your Bismuth addresses")}}
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+    {% end %}
+
+    <!-- div class="col-xl-3 col-lg-6 col-md-6 col-sm-6">
+        <div class="card card-stats">
+            <form action="/wallet/create/">
+                <div class="card-header card-header-warning card-header-icon">
+                    <div class="card-icon">
+                        <i class="material-icons">create_new_folder</i>
+                    </div>
+                    <p class="card-category">{{ _("Create a new")}}</p>
+                    <h3 class="card-title">{{ _("address")}}</h3>
+                </div>
+                <div class="card-footer">
+                    <div class="stats">
+
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div -->
+</div>
+
+<div class="row">
+
+<div class="col-xl-3 col-lg-3 col-md-6 col-sm-6">
+        <div class="card">
+            <form action="/wallet/protection/" method="post" autocomplete="in_your_dreams_45654762">
+                {% if bismuth['wallet_locked'] %}
+                <div class="card-header card-header-danger card-header-icon">
+                    <div class="card-icon">
+                        <i class="material-icons">lock</i>
+                    </div>
+                    <h3 class="card-title">&nbsp;{{ _("Wallet is locked")}}</h3>
+                </div>
+                <div class="card-body">
+                        <div class="form-group">
+                            <label class="bmd-label-floating">{{ _("Existing master password")}}</label>
+                            <input class="form-control password" type="password" name="master_password" value="" autocomplete="nope459262"
+                             re_adonly="readonly" on_focus="javascript: this.removeAttribute('readonly')" />
+                            <small>{{ _("This is the password that protects your private key(s)")}}
+                            </small>
+                        </div>
+                        <input type="hidden" name="action" value="unlock">
+                        {% raw xsrf_form_html() %}
+                        <input class="btn btn-warning" type="submit" value='{{
+                        _("Unlock wallet")
+                        }}'>
+                        <i class="material-icons" title="{{ _('This is likely to take some time, please do not interrupt the process.')}}">hourglass_empty</i>
+                </div>
+                {% else %}
+
+                <div class="card-header card-header-info card-header-icon">
+                    <div class="card-icon">
+                        <i class="material-icons">lock_open</i>
+                    </div>
+                    <h3 class="card-title">&nbsp;{{ _("Wallet is unlocked")}}</h3>
+                </div>
+                <div class="card-body">
+
+                    {% if bismuth['master_set'] %}
+                    {{ _("You can lock it back for extra safety if you don't plan to use it soon.") }}
+                    <br/>
+                        <div class="form-group">
+                        <input type="hidden" name="action" value="lock">
+                        {% raw xsrf_form_html() %}
+                        <input class="btn btn-warning" type="submit" value="{{
+                        _('Lock wallet')
+                        }}">
+                        </div>
+                    {% else %}
+                    {{ _("You have to encrypt your wallet first to use this feature") }}
+                    {% end %}
+
+
+                </div>
+                {% end %}
+                <div class="card-footer">
+                    <div class="stats">
+
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+{% if not bismuth['wallet_locked'] %}
+
+    {% if bismuth['master_set'] %}
+
+    <div class="col-xl-3 col-lg-3 col-md-6 col-sm-6">
+        <div class="card">
+            <form action="/wallet/protection/" method="post" autocomplete="in_your_dreams_4973452">
+                <div class="card-header card-header-success card-header-icon">
+                    <div class="card-icon">
+                        <i class="material-icons">lock</i>
+                    </div>
+                    <h3 class="card-title">&nbsp;{{ _("Master password")}}</h3>
+                </div>
+                <div class="card-body">
+
+                </div>
+                <div class="card-footer">
+                    <div class="stats">
+                        <i class="material-icons">lock</i> {{ _("Master password is set") }}
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% else %}
+
+    <div class="col-xl-3 col-lg-3 col-md-6 col-sm-6">
+        <div class="card">
+            <form action="/wallet/protection/" method="post" autocomplete="in_your_dreams_412794">
+                <div class="card-header card-header-warning card-header-icon">
+                    <div class="card-icon">
+                        <i class="material-icons">lock_open</i>
+                    </div>
+                    <h3 class="card-title">&nbsp;{{ _("Master password")}}</h3>
+                </div>
+                <div class="card-body">
+                        <div class="form-group">
+                            <label class="bmd-label-floating">{{ _("Master password")}}</label>
+                            <input class="form-control password" id="new_master_password" type="password" name="new_master_password"
+                                   autocomplete="nope8912987" value=""
+                             re_adonly="readonly" on_focus="javascript: this.removeAttribute('readonly')" />
+                            <small>{{ _("This is the password that will protect your private keys.")}}
+                            </small>
+                        </div>
+                        <div class="form-group">
+                            <label class="bmd-label-floating">{{ _("Retype Master password")}}</label>
+                            <input class="form-control password" id="new_master_password2" type="password" name="new_master_password2"
+                                   autocomplete="nope7359998" value=""
+                             re_adonly="readonly" on_focus="javascript: this.removeAttribute('readonly')" />
+                            <small>{{ _("Losing this password means loosing your keys!")}}
+                            </small>
+                        </div>
+                        <br/>
+                        <input type="hidden" name="action" value="set_master">
+                        {% raw xsrf_form_html() %}
+                        <input class="btn btn-warning" type="submit" value="{{
+                        _('Set master password')
+                        }}">
+                        <i class="material-icons" title="{{ _('This is likely to take some time, please do not interrupt the process.')}}">hourglass_empty</i>
+                    <br /><small style="color:orange">{{ _("This will encrypt your wallet file. You may want to backup the unencrypted file first.")}}
+                            </small>
+
+                    </div>
+                <div class="card-footer">
+                    <div class="stats">
+                        <i class="material-icons">lock_open</i> {{ _("Master password is not set") }}
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    {% end %}
+
+
+    {% if bismuth['master_set'] %}
+    <div class="col-xl-3 col-lg-3 col-md-6 col-sm-6">
+        <div class="card">
+            <form action="/wallet/protection/" method="post" autocomplete="in_your_dreams_459842">
+                {% if not bismuth['spend_type']['type'] %}
+                <div class="card-header card-header-warning card-header-icon">
+                    <div class="card-icon">
+                        <i class="material-icons">lock_open</i>
+                    </div>
+                {% else %}
+                <div class="card-header card-header-success card-header-icon">
+                    <div class="card-icon">
+                        <i class="material-icons">lock</i>
+                    </div>
+                {% end %}
+                    <!-- p class="card-category">{{ _("Spend protection")}}</p -->
+                    <h3 class="card-title">&nbsp;{{ _("Spend protection")}}</h3>
+                </div>
+                <div class="card-body">
+
+                    {% if bismuth['spend_type']['type'] %}
+                    <span data-toggle="collapse" data-target="#extra_option">
+                            <i id="extra" class="material-icons" style="color:#029eb1;">
+                                arrow_drop_down</i></span>
+                    <div id="extra_option" class="collapse">
+                    {% else %}
+                        <div id="void" class="">
+                    {% end %}
+                        <div class="form-group">
+                            <input type="radio" name="spend_type" value="PIN" {{ handler.checked_if(bismuth['spend_type']['type'] == 'PIN') }}> {{ _("PIN Code") }}<br>
+                            <input type="radio" name="spend_type" value="YUBICO" disabled {{ handler.checked_if(bismuth['spend_type']['type'] == 'YUBICO') }}> <strike>{{ _("YUBICO") }}</strike><br>
+                            <input type="radio" name="spend_type" value="U2F" disabled {{ handler.checked_if(bismuth['spend_type']['type'] == 'U2F') }}> <strike>{{ _("U2F TOKEN") }} </strike><br>
+                            <input type="radio" name="spend_type" value="None" {{ handler.checked_if(bismuth['spend_type']['type'] is None) }}> {{ _("No protection") }}
+                        </div>
+                        <div class="form-group">
+                            <label class="bmd-label-floating">{{ _("PIN Code") }}</label>
+                            <input class="form-control password" id="data" type="password" name="spend_value" value=""
+                            autocomplete="nope8744588" re_adonly="readonly" on_focus="javascript: this.removeAttribute('readonly')" />
+                            <small id="value_detail">{{ _("PIN Code") }}</small>
+                        </div>
+                        <div class="form-group">
+                            <label class="bmd-label-floating">{{ _("Master password")}}</label>
+                            <input class="form-control password" id="check_master_password" type="password"
+                                   name="master_password" value="" autocomplete="nope788844455"
+                            re_adonly="readonly" on_focus="javascript: this.removeAttribute('readonly')" />
+                            <small>{{ _("Needed to confirm operation")}}
+                            </small>
+                        </div>
+                        <input type="hidden" name="action" value="set_spend">
+                        {% raw xsrf_form_html() %}
+                        <input class="btn btn-warning" type="submit" value="{{
+                        _('Set spend protection')
+                        }}">
+                        {% if bismuth['master_set'] %}
+                        <i class="material-icons" title="{{ _('This is likely to take some time, please do not interrupt the process.')}}">hourglass_empty</i>
+                        {% end %}
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="stats">
+                {% if bismuth['spend_type']['type'] == None %}
+                        <i class="material-icons">lock_open</i> {{ _("Spending is currently not protected") }}
+                {% else %}
+                        <i class="material-icons">lock</i> {{ _("Spending is currently protected by {}").format(bismuth['spend_type']['label']) }}
+                {% end %}
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    {% end %}
+
+
+
+{% end %}
+
+</div>
+
+{% end %}
+

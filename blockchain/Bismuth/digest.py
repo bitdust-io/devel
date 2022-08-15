@@ -17,6 +17,7 @@ fork = Fork()
 
 def digest_block(node, data, sdef, peer_ip, db_handler):
     """node param for imports"""
+    print('digest_block', node, data, sdef, peer_ip, db_handler)
 
     class Transaction:
         def __init__(self):
@@ -95,9 +96,10 @@ def digest_block(node, data, sdef, peer_ip, db_handler):
                                  f"to {tx.received_recipient} amount {tx.received_amount}")
 
     def rewards():
-        if int(block_instance.block_height_new) % 10 == 0:  # every 10 blocks
-            db_handler.dev_reward(node, block_instance, miner_tx, block_instance.mining_reward, block_instance.mirror_hash)
-            db_handler.hn_reward(node,block_instance,miner_tx,block_instance.mirror_hash)
+        # if int(block_instance.block_height_new) % 10 == 0:  # every 10 blocks
+        #     db_handler.dev_reward(node, block_instance, miner_tx, block_instance.mining_reward, block_instance.mirror_hash)
+        #     db_handler.hn_reward(node,block_instance,miner_tx,block_instance.mirror_hash)
+        pass
 
     def check_signature(block):
         # TODO EGG: benchmark this loop vs a single "WHERE IN" SQL
@@ -285,14 +287,14 @@ def digest_block(node, data, sdef, peer_ip, db_handler):
             print(exc_type, fname, exc_tb.tb_lineno)
             raise
 
-    def process_blocks(block_data):
+    def process_blocks(b_data):
         # TODO: block_data shadows block_data from outer scope. Very error prone.
         # here, functions in functions use both local vars or parent variables, it's a call for nasty bugs.
         # take care of pycharms hints, do not define func in funcs.
         try:
-            block_instance.block_count = len(block_data)
+            block_instance.block_count = len(b_data)
 
-            for block in block_data:
+            for block in b_data:
                 if node.IS_STOPPING:
                     node.logger.app_log.warning("Process_blocks aborted, node is stopping")
                     return

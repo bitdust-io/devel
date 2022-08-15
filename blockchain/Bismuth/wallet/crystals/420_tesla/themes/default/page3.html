@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+<!-- "../../../../themes/material/base.html" -->
+
+{% block header %}
+<link rel="stylesheet" type="text/css" href="{{ handler.common_url('css/dataTables.min.css') }}">
+<style>
+body { color: white; background-color: #d8da3d }
+#table1 { font-family: "Trebuchet MS", Arial, Helvetica, sans-serif; border-collapse: collapse; width: 100%; color: white; }
+#table1 td, #table1 th { border: 1px solid #ddd; padding: 8px; }
+#table1 tr:nth-child(odd){background-color: #a2a2a2;}
+#table1 tr:nth-child(even){background-color: #727272;}
+#table1 tr:hover {background-color: #ddd;}
+#table1 th { padding-top: 12px; padding-bottom: 12px; text-align: left; background-color: #4CAF50; color: white; }
+.ui-datepicker { background: #888888; }
+#table2 td { background-color:#eeeeee; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#table2 { table-layout: fixed; }
+.dataTables_info, .dataTables_length { color: red; }
+.cell { box-sizing: border-box; display: block; padding: 8px; width: 100%; }
+.cell-overflow { box-sizing: border-box; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+</style>
+{% end %}
+
+{% block body %}
+{% raw xsrf_form_html() %}
+
+<nav class="nav"><a class="nav-link active" href="about" style="color:#888888">HOME</a></nav>
+<div class="row">
+
+    <div class="col-lg-6 col-md-12">
+        <div class="card">
+            <div class="card-header card-header-info">
+                <h4 class="card-title">Data Selection</h4>
+                <p class="card-category"></p>
+            </div>
+            <div class="card-body">
+                Search filter for vehicle asset ids (empty=all):<br/>
+                <input type="text" id="asset_search" class="form-control" style="color:#888888">
+                <input type="submit" class="btn btn-primary" value="Search" onClick="searchVehicles();">
+                <br/><br/>
+                <p id="p_selectBox">
+                <img src="static/logo.png" width="100%" alt="">
+                <br/><br/>
+                <button onclick='display_mode("Day");' class='btn btn-secondary'>Day Mode</button>
+                &nbsp;&nbsp;
+                <button onclick='display_mode("Night");' class='btn btn-secondary'>Night Mode</button>
+                <br/>
+                </p>
+                <br/>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6 col-md-12">
+        <div class="card">
+            <div class="card-header card-header-success">
+                <h4 class="card-title">Plot</h4>
+                <p class="card-category"></p>
+            </div>
+            <div class="card-body">
+                <div id="div_plot" class="ct-chart">
+                    <canvas id="myChart"></canvas>
+                </div>
+                <br/>
+                <div id="div_table">
+                    <table id='table1' style='display:None'><thead><tr><th>Date/Time</th><th>Variable</th></tr></thead></table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="message_window" class="modal" tabindex="-1" role="dialog"></div>
+    <canvas id="canvas" width="491" height="190" style="display: none;"></canvas>
+</div>
+
+<br/>
+
+{% end %}
+
+{% block footer %}
+<!-- this goes after default includes, like jquery -->
+<script src="{{ handler.common_url('js/plugins/jquery.dataTables.min.js') }}"></script>
+<script src="{{ handler.common_url('js/plugins/Chart.min.js') }}"></script>
+<script src="{{ handler.common_url('js/core/jquery-ui.min.js') }}"></script>
+<script src="{{ handler.common_url('js/plugins/dataTables.buttons.min.js') }}"></script>
+<script src="{{ handler.common_url('js/plugins/jszip.min.js') }}"></script>
+<script src="{{ handler.common_url('js/plugins/pdfmake.min.js') }}"></script>
+<script src="{{ handler.common_url('js/plugins/vfs_fonts.js') }}"></script>
+<script src="{{ handler.common_url('js/plugins/buttons.html5.min.js') }}"></script>
+
+<script src="/crystal/tesla/static/util.js"></script>
+<script src="/crystal/tesla/static/tesla.js"></script>
+<script src="/crystal/tesla/static/footer.js"></script>
+{% end %}

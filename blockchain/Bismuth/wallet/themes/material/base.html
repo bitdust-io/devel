@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8"/>
+
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ static_url('apple-touch-icon.png') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ static_url('favicon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ static_url('favicon-16x16.png') }}">
+    <link rel="manifest" href="{{ static_url('site.webmanifest') }}">
+    <link rel="mask-icon" href="{{ static_url('safari-pinned-tab.svg') }}" color="#7100be">
+    <meta name="msapplication-TileColor" content="#000000">
+    <meta name="theme-color" content="#000000">
+
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+    <title>{{ escape(handler.settings["page_title"]) }}</title>
+    <meta content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, shrink-to-fit=no' name='viewport'/>
+    <!--     Fonts and icons     -->
+    <link rel="stylesheet" type="text/css"
+          href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700|Roboto+Slab:400,700|Material+Icons"/>
+    <!-- link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/latest/css/font-awesome.min.css" -->
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.5.0/css/all.css"
+          integrity="sha384-B4dIYHKNBt8Bc12p+WXckhzcICo0wtJAoU8YZTY5qE0Id1GSseTk6S+L3BlXeVIU" crossorigin="anonymous">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/flag-icon-css/3.1.0/css/flag-icon.min.css" rel="stylesheet"  crossorigin="anonymous">
+    <!-- CSS Files -->
+    <link href="{{ static_url('css/material-dashboard.css') }}" rel="stylesheet"/>
+    <link href="{{ static_url('css/custom.css') }}" rel="stylesheet"/>
+    <!-- CSS Just for demo purpose, dont include it in your project -->
+    <link href="{{ static_url('demo/demo.css') }}" rel="stylesheet"/>
+    {% raw bismuth['extra']['header'] %}
+    {% block header %}{% end %}
+</head>
+
+<body class="dark-edition">
+<div class="wrapper ">
+    <div class="sidebar" data-color="purple" data-background-color="black" data-image="{{ static_url('img/abstract_background2.png') }}" id="sidebar" style="" >
+        <!--
+          Tip 1: You can change the color of the sidebar using: data-color="purple | azure | green | orange | danger"
+  {{ handler.request.uri }}
+          Tip 2: you can also add an image using data-image tag
+      -->
+        <div class="logo">
+            <a href="/" class="simple-text logo-normal">
+                <img height="100px" width="200px" src="{{ static_url('img/bistornado.svg') }}" /><br />
+                <!-- <b>{{_("Bismuth Wallet")}}</b> -->
+            </a>
+        </div>
+        <div class="sidebar-wrapper" >
+            <ul class="nav" >
+                <li class="nav-item {{ handler.active_if('/') }} ">
+                <a class="nav-link" href="/">
+                    <i class="material-icons">dashboard</i>
+                    <p>{{ _("Dashboard") }}</p>
+                </a>
+                </li>
+                <li class="nav-item {{ handler.active_if_start('/transactions/') }} ">
+                <a class="nav-link" href="/transactions/">
+                    <i class="material-icons">content_paste</i>
+                    <p>{{_("Transactions")}}</p>
+                </a>
+                </li>
+                <!--
+                <li class="nav-item {{ handler.active_if_start('/address/') }} ">
+                <a class="nav-link disabled" href="#" data-real="/address/">
+                    <i class="material-icons">perm_contact_calendar</i>
+                    <p>{{_("Address book")}}</p>
+                </a>
+                </li>
+                <li class="nav-item  {{ handler.active_if_start('/tokens/') }} ">
+                <a class="nav-link" href="/tokens/">
+                    <i class="material-icons">scatter_plot</i>
+                    <p>{{_("Tokens")}}</p>
+                </a>
+                </li>
+                -->
+                <li class="nav-item  {{ handler.active_if_start('/messages/') }} ">
+                <a class="nav-link" href="/messages/">
+                    <i class="material-icons">question_answer</i>
+                    <p>{{_("Messages")}}</p>
+                </a>
+                </li>
+
+                <li class="nav-item  {{ handler.active_if_start('/about/network') }} ">
+                <a class="nav-link" href="/about/network">
+                    <i class="material-icons">public</i>
+                    <p>{{_("Network")}}</p>
+                </a>
+                </li>
+                <!-- li class="nav-item ">
+                  <a class="nav-link" href="/notifications">
+                    <i class="material-icons">notifications</i>
+                    <p>Notifications</p>
+                  </a>
+                </li -->
+                <li class="nav-item  {{ handler.active_if_start('/crystal') }} ">
+                <a class="nav-link" href="/crystals/">
+                    <i class="material-icons">brightness_high</i>
+                    <p>{{_("Crystals")}}</p>
+                </a>
+                    {% if handler.active_if_start('/crystal') %}
+                    <ul class="nav" style="padding-left:20px">
+                        {% for i, crystal in enumerate(bismuth['crystals']) %}
+                        <li class="nav-item  {{ handler.active_if_start('/crystal/'+crystal) }}">
+                            <a class="nav-link" href="/crystal/{{ crystal }}/">
+                                {% if bismuth['crystals_icons'][i] %}
+                                    {% if handler.if_start('/crystal/'+crystal) %}
+                                        <img src="/static/crystals/{{ bismuth['crystals_icons'][i] }}" width="32" style="margin-right:10px;"/>
+                                    {% else %}
+                                        <img src="/static/crystals/{{ bismuth['crystals_icons'][i] }}" width="32" style="margin-right:10px; filter:saturate(0);" />
+                                    {% end %}
+
+                                {% else %}
+                                    <i class="material-icons">brightness_high</i>
+                                {% end %}
+                                {{ crystal }}
+                            </a>
+                        </li>
+                        {% end %}
+                    </ul>
+                    {% end %}
+                </li>
+
+            </ul>
+        </div>
+    </div>
+    <div class="main-panel">
+        <!-- Navbar -->
+        <nav class="navbar navbar-expand-lg navbar-transparent navbar-absolute fixed-top " id="navigation-example">
+            <div class="container-fluid">
+                <div class="navbar-wrapper">
+                    {% if bismuth['address'] %}
+                    <span class="navbar-brand" >{{ bismuth['address'] }}</span>
+                    {% else %}
+                    <a class="navbar-brand" href="/wallet/info">{{ _("Wallet info") }}</a>
+                    {% end %}
+                     <a class="navbar-brand" href="/wallet/load"><i class="material-icons" title="{{_('Manage')}} {{_('addresses')}}">find_replace</i></a>
+                </div>
+                <button class="navbar-toggler" type="button" data-toggle="collapse" aria-controls="navigation-index"
+                        aria-expanded="false" aria-label="Toggle navigation" data-target="#navigation-example">
+                    <span class="sr-only">{{ _("Toggle navigation")}}</span>
+                    <span class="navbar-toggler-icon icon-bar"></span>
+                    <span class="navbar-toggler-icon icon-bar"></span>
+                    <span class="navbar-toggler-icon icon-bar"></span>
+                </button>
+                <div class="collapse navbar-collapse justify-content-end">
+                    <!-- form class="navbar-form" method="get" action="/search/">
+                        <div class="input-group no-border">
+                            <input type="text" name="data" value="" class="form-control" placeholder="{{ _('Search...') }}"/> -->
+                            <!-- {{ _('Search...')}} -->
+                    <!--
+                            <button type="submit" class="btn btn-default btn-round btn-just-icon" onclick="return false;">
+                                <i class="material-icons">search</i>
+                                <div class="ripple-container"></div>
+                            </button>
+                        </div>
+                    </form> -->
+                    <ul class="navbar-nav">
+                        <!-- li class="nav-item">
+                          <a class="nav-link" href="javascript:void(0)">
+                            <i class="material-icons">dashboard</i>
+                            <p class="d-lg-none d-md-block">
+                              Stats
+                            </p>
+                          </a>
+                        </li -->
+                        <!-- li class="nav-item dropdown">
+                            <a class="nav-link" href="javscript:void(0)" id="navbarDropdownMenuLink"
+                               data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <i class="material-icons">notifications</i>
+                                <span class="notification">4</span>
+                                <p class="d-lg-none d-md-block">
+                                    Some Actions
+                                </p>
+                            </a>
+                            <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdownMenuLink">
+                                <a class="dropdown-item" href="javascript:void(0)">This is a mockup</a>
+                                <a class="dropdown-item" href="javascript:void(0)">No meaning here</a>
+                                <a class="dropdown-item" href="javascript:void(0)">Another Notification</a>
+                                <a class="dropdown-item" href="javascript:void(0)">Another One</a>
+                            </div>
+                        </li -->
+
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="dropdown09" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span class="flag-icon flag-icon-{{ bismuth['lang']['flag']}}"> </span></a>
+                            <div class="dropdown-menu" aria-labelledby="dropdown09">
+                                {% for locale, detail in bismuth['lang']['list'].items() %}
+                                   <a class="dropdown-item" href="/about/setlang/{{ locale }}"><span class="flag-icon flag-icon-{{detail[1]}}"> </span> &nbsp; {{ detail[0] }}</a>
+                                {% end %}
+                            </div>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link" href="/wallet/info" title="{{ _('Wallet') }}">
+                                <i class="material-icons">account_balance_wallet</i>
+                                {% if bismuth['wallet_locked'] %}
+                                <i class="material-icons" style="color:red;" title="{{ _('Your wallet is locked') }}">lock</i>
+                                {% else %}
+                                <i class="material-icons">lock_open</i>
+                                {% end %}
+                                <p class="d-lg-none d-md-block">
+                                    {{ _("Wallet") }}
+                                </p>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+        <!-- End Navbar -->
+        <div class="content">
+            <div class="container-fluid">
+
+
+                {% block body %}{% end %}
+
+                <div id="payment_window" class="modal" tabindex="-1" role="dialog"></div>
+
+
+            </div>
+        </div>
+        <footer class="footer">
+            <div class="container-fluid">
+                <nav class="float-left">
+                    <ul>
+                        <li>
+                            <a href="/about/credits" id="date">
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://www.bismuthplatform.com/" target="_blank">
+                                BismuthPlatform.com
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://github.com/BismuthFoundation/TornadoWallet/"  target="_blank">
+                                {{ _("Source")}}
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://hypernodes.bismuth.live/?page_id=20" target="_blank">
+                                {{ _("Blog")}}
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://discordapp.com/invite/8KvA3JU"  target="_blank">
+                                {{ _("Discord")}}
+                            </a>
+                        </li>
+                        <!-- li>
+                            <a href="#donate">
+                                {{ _("Donate")}}
+                            </a>
+                        </li -->
+                        <li>
+                            <a href="/about/help">
+                                <b>{{ _("Help")}}</b>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/about/credits">
+                                {{ _("Credits")}}
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+                <div class="copyright float-right">
+                    {{ bismuth['server']['server'] }} - {{ _("block #")}}{{ bismuth['server_status']['blocks'] }}
+                </div>
+            </div>
+
+
+        </footer>
+        <script>
+        const x = new Date().getFullYear();
+        let date = document.getElementById('date');
+        date.innerHTML = '&copy; ' + x + date.innerHTML;
+
+        </script>
+    </div>
+</div>
+<!-- div class="fixed-plugin">
+    <div class="dropdown show-dropdown">
+        <a href="#" data-toggle="dropdown">
+            <i class="fa fa-cog fa-2x"> </i>
+        </a>
+        <ul class="dropdown-menu">
+            <li class="header-title"> {{ _("Sidebar Filters")}}</li>
+            <li class="adjustments-line">
+                <a href="javascript:void(0)" class="switch-trigger active-color">
+                    <div class="badge-colors ml-auto mr-auto">
+                        <span class="badge filter badge-purple active" data-color="purple"></span>
+                        <span class="badge filter badge-azure" data-color="azure"></span>
+                        <span class="badge filter badge-green" data-color="green"></span>
+                        <span class="badge filter badge-warning" data-color="orange"></span>
+                        <span class="badge filter badge-danger" data-color="danger"></span>
+                    </div>
+                    <div class="clearfix"></div>
+                </a>
+            </li>
+            <li class="header-title">{{ _("Images")}}</li>
+            <li>
+                <a class="img-holder switch-trigger" href="javascript:void(0)">
+                    <img src="/static/img/sidebar-1.jpg" alt="">
+                </a>
+            </li>
+            <li class="active">
+                <a class="img-holder switch-trigger" href="javascript:void(0)">
+                    <img src="/static/img/sidebar-2.jpg" alt="">
+                </a>
+            </li>
+            <li>
+                <a class="img-holder switch-trigger" href="javascript:void(0)">
+                    <img src="/static/img/sidebar-3.jpg" alt="">
+                </a>
+            </li>
+            <li>
+                <a class="img-holder switch-trigger" href="javascript:void(0)">
+                    <img src="/static/img/sidebar-4.jpg" alt="">
+                </a>
+            </li>
+
+
+            <li class="header-title">Thank you for 95 shares!</li>
+            <li class="button-container text-center">
+                <button id="twitter" class="btn btn-round btn-twitter"><i class="fa fa-twitter"></i> &middot; 45
+                </button>
+                <button id="facebook" class="btn btn-round btn-facebook"><i class="fa fa-facebook-f"></i> &middot; 50
+                </button>
+                <br>
+                <br>
+            </li>
+        </ul>
+    </div>
+</div -->
+<!--   Core JS Files   -->
+<script src="{{ handler.common_url('js/core/jquery.min.js') }}"></script>
+<script src="{{ handler.common_url('js/core/popper.min.js') }}"></script><!-- t -->
+<script src="{{ static_url('js/core/bootstrap-material-design.min.js') }}"></script>
+<script src="https://unpkg.com/default-passive-events"></script>
+<script src="{{ handler.common_url('js/plugins/perfect-scrollbar.jquery.min.js') }}"></script>
+<!-- Place this tag in your head or just before your close body tag. -->
+<!-- script async defer src="https://buttons.github.io/buttons.js"></script -->
+<!--  Google Maps Plugin    -->
+<!-- script src="https://maps.googleapis.com/maps/api/js?key=YOUR_KEY_HERE"></script -->
+<!-- Chartist JS -->
+<script src="{{ handler.common_url('js/plugins/chartist.min.js') }}"></script>
+<!--  Notifications Plugin    -->
+<script src="{{ handler.common_url('js/plugins/bootstrap-notify.js') }}"></script>
+<!-- Control Center for Material Dashboard: parallax effects, scripts for the example pages etc -->
+<script src="{{ static_url('js/material-dashboard.js') }}"></script>
+<!-- Material Dashboard DEMO methods, dont include it in your project -->
+<!-- script src="{{ static_url('demo/demo.js') }}"></script -->
+<!-- Helpers for base and crystals. Used to factorize common functions crystals may need -->
+<script src="{{ static_url('helpers.js') }}"></script>
+<script>
+
+    function sendurl(url){
+        if (url == '') { return false}
+        enabled = true;
+        $.get('/transactions/send_pop?url='+encodeURIComponent(url),function(page){
+            $("#payment_window").html(page);
+            $("#payment_window").modal("show");
+            try { $("#cspend_token").focus() } catch(err) {}
+            // TODO: missing alias and token emission
+            data = $("#cdata").val();
+            amount = $("#camount").val();
+            if (amount <= 0) { amount=0}
+            fees = 0.01+0.00001*data.length
+            operation = $("#coperation").val();
+            if (operation == "token:issue") { fees += 10 }
+            if (operation == "alias:register") { fees += 1 }
+            $(".totalpop").val(float_to_bis(parseFloat(amount) + fees));
+            $(".feespop").val(float_to_bis(fees));
+            });
+    }
+
+    function send(address, amount, operation, data){
+        if (address == '') { return false}
+        if (amount <= 0) { amount=0}
+        enabled = true;
+        $.get('/transactions/send_pop?recipient='+address+'&amount='+amount+"&data="+encodeURIComponent(data)
+               + "&operation="+encodeURIComponent(operation),function(page){
+            $("#payment_window").html(page);
+            $("#payment_window").modal("show");
+            try { $("#cspend_token").focus() } catch(err) {}
+            fees = 0.01+0.00001*data.length
+            if (operation == "token:issue") { fees += 10 }
+            if (operation == "alias:register") { fees += 1 }
+            $(".totalpop").val(float_to_bis(parseFloat(amount) + fees));
+            $(".feespop").val(float_to_bis(fees));
+            });
+    }
+
+    function send_token(token, address, amount, message, txid){
+        if (address == '') { return false}
+        if (amount <= 0) { amount=0}
+        var extra='';
+        if (message != '') {
+            extra = {"message": message};
+            if (txid != '') {
+                extra["TxId"] = txid;
+            }
+        } else {
+            if (txid != '') {
+                extra = {"TxId": txid};
+            }
+        }
+        var data =token + ":" + Math.round(amount);
+        if (extra != '') {
+            extra = JSON.stringify(extra);
+            data += ':' + extra;
+        }
+        send(address, 0, "token:transfer", data);
+    }
+
+
+    function sign(data, token){
+        // TODO: convert to post for lengthy data
+        if (data == '') { return false}
+        enabled = true;
+        $.get('/messages/sign_pop?data='+data+"&token="+encodeURIComponent(token),function(page){
+            $("#payment_window").html(page);
+            $("#payment_window").modal("show");
+            });
+    }
+
+
+    function decrypt(data, token){
+        if (data == '') { return false}
+        enabled = true;
+        var xsrf = $("[name='_xsrf']").val();
+        $.post('/messages/decrypt_pop', { data: data, token: token, _xsrf: xsrf } ,function(page){
+            $("#payment_window").html(page);
+            $("#payment_window").modal("show");
+            });
+    }
+
+
+    function encrypt(data, recipient){
+        if (data == '') { return false}
+        enabled = true;
+        $.get('/messages/encrypt_pop?data='+encodeURIComponent(data)+"&recipient="+recipient,function(page){
+            $("#payment_window").html(page);
+            $("#payment_window").modal("show");
+            });
+    }
+
+
+    function confirmed(){
+        if(enabled){
+            enabled = false;
+            $("#payment_window").css({"cursor":"wait"});
+            $("#send_button").prop("disabled",true);
+
+            address = $("div.modal-dialog#recipient").val();
+            alert(address);
+            data = $("div.modal-dialog#data").val();
+            amount = $("div.modal-dialog#amount").val();
+            operation = $("div.modal-dialog#operation").val();
+            token = $("div.modal-dialog#spend_token").val();
+
+            $.get('/transactions/confirmpop?recipient='+address+'&amount='+amount+"&data="+encodeURIComponent(data)
+             +"&operation="+encodeURIComponent(operation)+"&token="+encodeURIComponent(token),function(page){
+                $("#payment_window").html(page);
+                $("#payment_window").css({"cursor":"context-menu"});
+                //$("#payment_window").modal("show");
+            });
+
+        }
+    }
+
+
+    function confirmtx(address, data, amount, operation, token){
+        if(enabled){
+            enabled = false;
+            $("#payment_window").css({"cursor":"wait"});
+            $("#send_button").prop("disabled",true);
+
+            $.get('/transactions/confirmpop?recipient='+address+'&amount='+amount+"&data="+encodeURIComponent(data)
+             +"&operation="+encodeURIComponent(operation)+"&token="+encodeURIComponent(token),function(page){
+                $("#payment_window").html(page);
+                $("#payment_window").css({"cursor":"context-menu"});
+                //$("#payment_window").modal("show");
+            });
+
+        }
+    }
+
+   function fees_calc() {
+        data = $("#data").val();
+        amount = $("#amount").val();
+        if (amount <= 0) { amount=0}
+        fees = 0.01+0.00001*data.length
+        $("#fees").val(float_to_bis(fees));
+        $("#total").val(float_to_bis(parseFloat(amount) + fees));
+   }
+
+    $(document).ready(function() {
+
+        $(".label_edit").click(function() {
+            // console.log(this)
+            $("#edit_window").css({"cursor":"context-menu"});
+            $("#label_address").html($(this).data('address'))
+            $("#label_address_input").val($(this).data('address'))
+            $("#label_input").val($(this).data('label'))
+            $("#edit_window").modal("show");
+            $("#label_address_input").focus();
+        });
+
+        $("#set_label_form").on('submit', function() {
+            $("#edit_window").css({"cursor":"wait"});
+            $("#set_label_btn").css({"cursor":"wait"});
+            $("#set_label_btn").prop("disabled",true);
+        });
+
+        $("#waitform").on('submit', function() {
+            $(".content").css({"cursor":"wait"});
+            $("#btn_submit").css({"cursor":"wait"});
+            $("#btn_submit").prop("disabled",true);
+        });
+
+
+        $("#amount").on('keyup paste', fees_calc);
+        $("#data").on('keyup paste', fees_calc);
+
+      $("#extra_option").on("hide.bs.collapse", function(){
+        $("#extra").text('arrow_drop_down');
+      });
+      $("#extra_option").on("show.bs.collapse", function(){
+        $("#extra").text('arrow_drop_up');
+      });
+
+      $().ready(function() {
+        $sidebar = $('.sidebar');
+
+        $sidebar_img_container = $sidebar.find('.sidebar-background');
+
+        $full_page = $('.full-page');
+
+        $sidebar_responsive = $('body > .navbar-collapse');
+
+        window_width = $(window).width();
+
+        $('.fixed-plugin a').click(function(event) {
+          // Alex if we click on switch, stop propagation of the event, so the dropdown will not be hide, otherwise we set the  section active
+          if ($(this).hasClass('switch-trigger')) {
+            if (event.stopPropagation) {
+              event.stopPropagation();
+            } else if (window.event) {
+              window.event.cancelBubble = true;
+            }
+          }
+        });
+
+        $('.fixed-plugin .active-color span').click(function() {
+          $full_page_background = $('.full-page-background');
+
+          $(this).siblings().removeClass('active');
+          $(this).addClass('active');
+
+          var new_color = $(this).data('color');
+
+          if ($sidebar.length != 0) {
+            $sidebar.attr('data-color', new_color);
+          }
+
+          if ($full_page.length != 0) {
+            $full_page.attr('filter-color', new_color);
+          }
+
+          if ($sidebar_responsive.length != 0) {
+            $sidebar_responsive.attr('data-color', new_color);
+          }
+        });
+
+        $('.fixed-plugin .background-color .badge').click(function() {
+          $(this).siblings().removeClass('active');
+          $(this).addClass('active');
+
+          var new_color = $(this).data('background-color');
+
+          if ($sidebar.length != 0) {
+            $sidebar.attr('data-background-color', new_color);
+          }
+        });
+
+        $('.fixed-plugin .img-holder').click(function() {
+          $full_page_background = $('.full-page-background');
+
+          $(this).parent('li').siblings().removeClass('active');
+          $(this).parent('li').addClass('active');
+
+
+          var new_image = $(this).find("img").attr('src');
+
+          if ($sidebar_img_container.length != 0 && $('.switch-sidebar-image input:checked').length != 0) {
+            $sidebar_img_container.fadeOut('fast', function() {
+              $sidebar_img_container.css('background-image', 'url("' + new_image + '")');
+              $sidebar_img_container.fadeIn('fast');
+            });
+          }
+
+          if ($full_page_background.length != 0 && $('.switch-sidebar-image input:checked').length != 0) {
+            var new_image_full_page = $('.fixed-plugin li.active .img-holder').find('img').data('src');
+
+            $full_page_background.fadeOut('fast', function() {
+              $full_page_background.css('background-image', 'url("' + new_image_full_page + '")');
+              $full_page_background.fadeIn('fast');
+            });
+          }
+
+          if ($('.switch-sidebar-image input:checked').length == 0) {
+            var new_image = $('.fixed-plugin li.active .img-holder').find("img").attr('src');
+            var new_image_full_page = $('.fixed-plugin li.active .img-holder').find('img').data('src');
+
+            $sidebar_img_container.css('background-image', 'url("' + new_image + '")');
+            $full_page_background.css('background-image', 'url("' + new_image_full_page + '")');
+          }
+
+          if ($sidebar_responsive.length != 0) {
+            $sidebar_responsive.css('background-image', 'url("' + new_image + '")');
+          }
+        });
+
+        $('.switch-sidebar-image input').change(function() {
+          $full_page_background = $('.full-page-background');
+
+          $input = $(this);
+
+          if ($input.is(':checked')) {
+            if ($sidebar_img_container.length != 0) {
+              $sidebar_img_container.fadeIn('fast');
+              $sidebar.attr('data-image', '#');
+            }
+
+            if ($full_page_background.length != 0) {
+              $full_page_background.fadeIn('fast');
+              $full_page.attr('data-image', '#');
+            }
+
+            background_image = true;
+          } else {
+            if ($sidebar_img_container.length != 0) {
+              $sidebar.removeAttr('data-image');
+              $sidebar_img_container.fadeOut('fast');
+            }
+
+            if ($full_page_background.length != 0) {
+              $full_page.removeAttr('data-image', '#');
+              $full_page_background.fadeOut('fast');
+            }
+
+            background_image = false;
+          }
+        });
+
+        $('.switch-sidebar-mini input').change(function() {
+          $body = $('body');
+
+          $input = $(this);
+
+          if (md.misc.sidebar_mini_active == true) {
+            $('body').removeClass('sidebar-mini');
+            md.misc.sidebar_mini_active = false;
+
+            $('.sidebar .sidebar-wrapper, .main-panel').perfectScrollbar();
+
+          } else {
+
+            $('.sidebar .sidebar-wrapper, .main-panel').perfectScrollbar('destroy');
+
+            setTimeout(function() {
+              $('body').addClass('sidebar-mini');
+
+              md.misc.sidebar_mini_active = true;
+            }, 300);
+          }
+
+          // we simulate the window Resize so the charts will get updated in realtime.
+          var simulateWindowResize = setInterval(function() {
+            window.dispatchEvent(new Event('resize'));
+          }, 180);
+
+          // we stop the simulation of Window Resize after the animations are completed
+          setTimeout(function() {
+            clearInterval(simulateWindowResize);
+          }, 1000);
+
+        });
+      });
+    });
+
+
+    $(document).ready(function() {
+
+        if ($(window).height() < 680) {
+            $('#sidebar').css("overflow-y","scroll");
+            $('#sidebar').css("overflow-x","hidden");
+        }
+        // Javascript methods body can be found in static/js/demos.js
+        md.initDashboardPageCharts();
+
+        $('.copy-to-clipboard-base').click(function() {
+            $(this).focus();
+            $(this).select();
+            document.execCommand('copy');
+            $(".copied").show().fadeOut(2500);
+        });
+
+
+        function copyTitleToClipboard(element) {
+            var str = $(this).attr('title');
+            //alert(str);
+            var $temp = $("<input>");
+            $("body").append($temp);
+            $temp.val(str).select();
+            document.execCommand("copy");
+            $temp.remove();
+            //console.log($($(this).parents("tr")[0]))
+            //$("#copied").detach().appendTo($(this).parents("tr")[0]);
+            $("#copied").detach().insertAfter($(this).closest('tr'))
+            $("#copied").show().fadeOut(2500);
+        };
+
+        $('.copy-title-to-clipboard-base').on('click', copyTitleToClipboard);
+
+    });
+
+</script>
+
+{% raw bismuth['extra']['footer'] %}
+{% block footer %}{% end %}
+</body>
+
+</html>

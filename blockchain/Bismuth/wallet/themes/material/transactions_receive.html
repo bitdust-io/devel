@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block body %}
+
+
+<form method="get" action="/transactions/receive">
+
+<div class="row">
+
+
+    <div class="col-lg-6 col-sm-12">
+            <div class="col-lg-12 col-md-12">
+                <div class="card">
+                    <div class="card-header card-header-info">
+                        <h4 class="card-title"><i class="material-icons">account_circle</i> {{ _("Receive")}}</h4>
+                        <p class="card-category">{{ _("Request BIS")}}</p>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label class="bmd-label-floating">{{ _("Your address")}}</label>
+                            <input class="form-control" id="address" type="text" name="address" value="{{ address }}"/>
+                            <small>{{ _("This is your address for current wallet, but you can change it if needed. Double check then.")}}
+                            </small>
+                        </div>
+                        <br/>
+                        <div class="form-group">
+                            <label class="bmd-label-floating">{{ _("Data (message)")}}</label>
+                            <input class="form-control" id="data" type="text" name="data"
+                                   value="{{ bismuth['params'].get('data', '') }}"/>
+                            <small>{{ _("Optionally, you can add a small comment to your transaction, like a reference of your own. Will be stored on chain.")}}
+                            </small>
+                        </div>
+                        <br/>
+                        <img src="http://chart.apis.google.com/chart?cht=qr&chs=300x300&chl={{ bismuth['server']['address'] }}&chld=H|0"/><br/>
+                        {{ _("This is the QR code for your address only.")}}
+                    </div>
+                </div>
+            </div>
+    </div>
+
+    <div class="col-lg-6 col-sm-12">
+
+        <div class="col-lg-12 col-md-12">
+            <div class="card">
+                <div class="card-header card-header-success">
+                    <h4 class="card-title"><i class="material-icons">payment</i> {{ _("Amount")}}</h4>
+                    <p class="card-category">{{ _("How many BIS to request.")}}</p>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="bmd-label-floating">{{ _("Amount (BIS)")}}</label>
+                                <input class="form-control" id="amount" type="text" name="amount"
+                                       value="{{ bismuth['params'].get('amount', 0) }}"/>
+                                <small>{{ _("This is what you will receive")}}</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="bmd-label-floating">{{ _("Est. fees")}}</label>
+                                <input class="form-control" id="fees" type="text" name="fees" disabled/>
+                                <small>{{ _("Fees depend on Data length")}}</small>
+                            </div>
+                            <div class="form-group">
+                                <label class="bmd-label-floating">{{ _("Total (BIS)")}}</label>
+                                <input class="form-control" id="total" type="text" name="total" disabled/>
+                                <small>{{ _("This is what the sender will pay")}}</small>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary pull-right">{{ _("Get BIS URL")}}</button>
+                    <div class="clearfix"></div>
+                    {% if bisurl %}
+
+                    <br/>
+                    <img src="http://chart.apis.google.com/chart?cht=qr&chs=300x300&chl={{ bisurl }}&chld=H|0"/><br/>
+                    {{ _("This is the QR code for your address, data and amount as a BisUrl.")}}<br/>
+                    {{ _("You can copy/paste this image to send in a mail or anything")}}
+                    <br/>
+                    <label class="bmd-label-floating">{{ _("BIS URL")}} ({{ _("Click text to copy") }})</label>
+                    <input class="form-control copy-to-clipboard-base" id="bisurl" type="text" name="bisurl" value="{{ bisurl }}"/>
+                    <button type="button" class="btn btn-success float-right copied" style="display:none">
+                                <i class="material-icons">done_outline</i> {{ _('Copied to Clipboard') }}
+                    </button>
+                    {% end %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+</form>
+
+
+
+{% end %}

@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block body %}
+
+
+<div class="row">
+    <div class="col-lg-12 col-md-12">
+        <div class="card">
+            <div class="card-header card-header-{{ type }}">
+                <h4 class="card-title">{{ title }}</h4>
+            </div>
+            <div class="card-body">
+                {{ message }}
+            </div>
+            <div class="card-footer">
+                <a href="javascript:history.go(-1)"><i class="material-icons">undo</i> {{ _("Previous page")}}</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+{% end %}

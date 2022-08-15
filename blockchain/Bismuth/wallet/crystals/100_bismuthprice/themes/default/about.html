@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+<!-- "../../../../themes/material/base.html" -->
+
+{% block body %}
+
+
+<div class="row">
+    <div class="col-lg-6 col-md-12">
+        <div class="card">
+            <div class="card-header card-header-info">
+                <h4 class="card-title">{{ _('Crystal') }} : BISMUTH PRICE </h4>
+                <p class="card-category"></p>
+            </div>
+            <div class="card-body">
+                {{ _("WIP")}}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6 col-md-12">
+        <div class="card">
+            <div class="card-header card-header-success">
+                <h4 class="card-title">{{ _("About") }}</h4>
+                <p class="card-category"></p>
+            </div>
+            <div class="card-body">
+                <ul>
+                    <li>{{ _('Version') }} {{ version }}</li>
+                    <li>Aggregated prices API courtesy of <a href="https://www.coingecko.com/en/api" target="_blank">Coingecko</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+
+</div>
+
+
+
+
+{% end %}

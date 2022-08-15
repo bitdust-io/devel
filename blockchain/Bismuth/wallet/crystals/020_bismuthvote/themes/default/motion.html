@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+<!-- "../../../../themes/material/base.html" -->
+
+{% block body %}
+
+
+<div class="row">
+    <div class="col-lg-6 col-md-12">
+        <div class="card">
+            <div class="card-header card-header-info">
+                <h4 class="card-title">{{ _('BISMUTH VOTING') }} : BGV-{{ motion["Motion_number"] }}</h4>
+                <p class="card-category"></p>
+            </div>
+            <div class="card-body">
+                <b>BGV-{{ motion["Motion_number"] }}: {{ motion["Motion_title"] }}</b>
+                <ul>
+                    <li>id: {{ motion["Motion_number"] }}</li>
+                    <li>Txid: {{ motion["Motion_id"] }}</li>
+                    <li>Url:  <a href="{{ motion['Motion_url'] }}">{{ motion["Motion_url"] }} <i class="material-icons">open_in_new</i></a></li>
+                    <li>Address: {{ motion["Motion_address"] }}</li>
+                    <li>Start date: {{ datetime.datetime.utcfromtimestamp(motion["Vote_start_date"]).strftime('%Y-%m-%d %H:%M:%S') }} UTC</li>
+                    <li>Reveal date: {{ datetime.datetime.utcfromtimestamp(motion["Vote_reading_date"]).strftime('%Y-%m-%d %H:%M:%S') }} UTC</li>
+                    <li>End date: {{ datetime.datetime.utcfromtimestamp(motion["Vote_end_date"]).strftime('%Y-%m-%d %H:%M:%S') }}  UTC</li>
+                    <li>Status: <i class="material-icons" >{{ motion["Material_status"] }}</i> {{ motion['Status'] }}</li>
+                </ul>
+
+                <b>Vote Options:</b> <ul>
+                {% for option in motion["Options"] %}
+                <li>BGV-{{ motion["Motion_number"] }}/{{ option["option_value"] }} : {{ option["option_title"] }}</li>
+                {% end %}
+                </ul>
+
+                <span data-toggle="collapse" data-target="#master_option">
+                    <i class="material-icons" style="color:#029eb1;" title="{{ _('AES Key')}}">
+                                vpn_key</i>
+                            <i id="extra" class="material-icons" style="color:#029eb1;" title="{{ _('AES Key')}}">
+                                arrow_drop_down</i></span>
+                <div id="master_option" class="collapse">
+                        <div id="extra_option2" class="form-group">
+                            <label class="bmd-label-floating">{{ _("AES voting key")}}</label>
+                            <input class="form-control" id="masterkey" type="text" name="masterkey" value="{{ motion['aes_key_hex'] }}" />
+                            <small>{{ _('This is the AES disposable key for this address and motion, derived from your master key')}}
+                            </small>
+                        </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6 col-md-12">
+        <div class="card">
+            <div class="card-header card-header-success">
+                <h4 class="card-title">BGV-{{ motion["Motion_number"] }} {{ _("Stats") }}</h4>
+
+                <p class="card-category"></p>
+            </div>
+            <div class="card-body">
+                <table class="table table-hover">
+                    <tbody>
+                    <tr><td>Status</td><td>{{ motion['Status'] }}</td><td><i class="material-icons" >{{ motion["Material_status"] }}</i></td></tr>
+                    <tr><td>Total Voters</td><td>{{ stats["total_voters"][0] }}</td><td><i class="material-icons">how_to_reg</i></td></tr>
+                    <tr><td>Total Votes</td><td>{{ stats["total_votes_count"][0] }}</td><td><i class="material-icons">how_to_vote</i></td></tr>
+                    <tr><td>Total Votes Amount</td><td>{{ stats["total_votes_amount"][0] }} $BIS</td><td><i class="material-icons">attach_money</i></td></tr>
+                    <tr><td>Total Votes changes</td><td>{{ stats["total_change_count"][0] }}</td><td><i class="material-icons">cached</i></td></tr>
+                    <tr><td>Total Reveals</td><td>{{ stats["total_reveals"][0] }}</td><td><i class="material-icons">record_voice_over</i></td></tr>
+                    </tbody>
+                </table>
+                <b>Votes:</b>
+                <ul>
+                    {% for option, result in stats["Votes"].items() %}
+                    <li>BGV-{{ motion["Motion_number"] }}/{{ option }}: {{ result }}</li>
+                    {% end %}
+                </ul>
+                <div class="text-right"><div class="btn" style="background-color:rgba(211, 84, 0,1.0);padding:3px;margin:0">Updated /15min</div></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-12 col-md-12">
+        <div class="card">
+            <div class="card-header card-header-primary">
+                <h4 class="card-title">{{ _('Your transactions for this motion') }}</h4>
+                <p class="card-category"></p>
+            </div>
+            <div class="card-body table-responsive">
+                <table class="table table-hover">
+                    <thead class="text-warning">
+                     <th class="center">{{ _("Txid")}}</th>
+                    <th>{{ _("Date")}}</th>
+                    <th class="amount">{{ _("Amount")}}</th>
+                    <th class="center">{{ _("Type")}}</th>
+                    <th>{{ _("Data")}}</th>
+                    <th>{{ _("Status")}}</th>
+                    </thead>
+                    <tbody>
+
+                    {% for transaction in transactions %}
+                    {% if False %}
+                        <tr style="font-style:italic;">
+                    {% else %}
+                        <tr>
+                    {% end %}
+
+                        <td class="center">
+                            <i class="material-icons copy-title-to-clipboard-base"
+                                              title="{{ transaction['signature'][:56] }}">receipt</i>
+                        </td>
+                        <td>
+                        {{ datetime.datetime.utcfromtimestamp(transaction['timestamp']).strftime('%Y-%m-%d %H:%M:%S') }}
+                        </td>
+                        <td class="text-success amount"> {{ transaction['amount'] }}</td>
+                        <td class="center"> {{ transaction['operation'] }}</td>
+                        <td>
+                            {{ transaction['decoded'] }}
+                        </td>
+                        <td>
+                            {% if transaction['ok'] %}
+                                <i class="material-icons">done</i>
+                            {% else %}
+                                <i class="material-icons" title="{{ transaction['error'] }}">bug_report</i>
+                            {% end %}
+                        </td>
+                    </tr>
+                    {% end %}
+                    <tr id="copied" style="display:none;">
+                        <td colspan="2">
+                            <button type="button" class="btn btn-success" >
+                                        <i class="material-icons">done_outline</i> {{ _('Copied to Clipboard') }}
+                            </button>
+                        </td>
+                        <td colspan="8"></td>
+                    </tr>
+                    </tbody>
+                </table>
+                <i class="material-icons">help</i> {{ _('Data is the decoded message, thanks to your own voting key. Only you can see it, everyone else only sees the encrypted data.') }}
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div class="row">
+
+    <div class="col-lg-6 col-md-12">
+        <div class="card">
+            <div class="card-header card-header-warning">
+                <h4 class="card-title">{{ _('Cast your vote') }}: BGV-{{ motion["Motion_number"] }}</h4>
+                <p class="card-category"></p>
+            </div>
+            <div class="card-body">
+                {% if motion['Vote_start_date'] < now <  motion['Vote_reading_date'] %}
+                    <form>
+                        <b>BGV-{{ motion["Motion_number"] }}: {{ motion["Motion_title"] }}</b>
+                        <ul>
+                        {% for option in motion["Options"] %}
+                        <li>BGV-{{ motion["Motion_number"] }}/{{ option["option_value"] }} : {{ option["option_title"] }}</li>
+                        {% end %}
+                        </ul>
+                        <div class="form-group">
+                            <label class="bmd-label-floating">{{ _("Amount (BIS)")}}</label>
+                            <input class="form-control" id="amount" type="number" name="amount"/>
+                            <small>{{ _("This is your voting weight")}}</small>
+                        </div>
+                        <div class="row">
+                        {% for click in motion["Clicks"] %}
+                            <div class="col-lg-6 col-md-12">
+                                <center>
+                                <button class="btn btn-primary" title="{{ click['control'] }}" onclick="{% raw click['js'] %};return false">{% raw click['text1'] %}</button><br />
+                                <b>{% raw click['text2'] %}</b>
+                                </center>
+                            </div>
+                        {% end %}
+                        </div>
+                    </form>
+                {% else %}
+                    Out of the voting period, unable to cast vote.
+                {% end %}
+            </div>
+        </div>
+    </div>
+
+
+    <div class="col-lg-6 col-md-12">
+        <div class="card">
+            <div class="card-header card-header-warning">
+                <h4 class="card-title">{{ _('Reveal your vote(s)') }}: BGV-{{ motion["Motion_number"] }}</h4>
+                <p class="card-category"></p>
+            </div>
+            <div class="card-body">
+                {% if motion['Vote_reading_date'] < now <  motion['Vote_end_date'] %}
+                    <form>
+                        <b>BGV-{{ motion["Motion_number"] }}: {{ motion["Motion_title"] }}</b>
+                        <br />
+                        <center>
+                        <button class="btn btn-primary" title="Reveal" onclick="{% raw motion['Reveal_click'] %};return false">
+                            Reveal your votes for that motion
+                        </button><br />
+                        </center>
+                    </form>
+                {% else %}
+                    Out of the Reveal period, unable to reval vote.
+                {% end %}
+            </div>
+        </div>
+    </div>
+
+
+</div>
+{% end %}

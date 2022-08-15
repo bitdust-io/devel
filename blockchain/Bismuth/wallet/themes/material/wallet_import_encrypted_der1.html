@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block body %}
+
+
+<div class="row">
+    <div class="col-lg-12 col-md-12">
+        <div class="card">
+            <div class="card-header card-header-success">
+                <h4 class="card-title">{{ _("Password") }}</h4>
+            </div>
+            <div class="card-body">
+
+
+                 <form action="/wallet/import_encrypted_der2/" method="post" autocomplete="in_your_dreams_432794" id="waitform">
+                <div class="card-header card-header-warning card-header-icon">
+                    <div class="card-icon">
+                        <i class="material-icons">lock_open</i>
+                    </div>
+                    <h3 class="card-title">&nbsp;{{ _("Enter wallet password for {}".format(wallet_file)) }}</h3>
+                </div>
+                <div class="card-body">
+                        <div class="form-group" id="test1">
+                            <label class="bmd-label-floating">{{ _("Wallet password")}}</label>
+                            <input class="form-control password" id="wallet_password" type="password" name="wallet_password"
+                                   autocomplete="nope8912ff987" value=""
+                             reado_nly="readonly" on_focus="javascript: this.removeAttribute('readonly')" />
+                        </div>
+                        <br/>
+                        <input type="hidden" name="action" value="import">
+                        <input type="hidden" name="wallet_file" value="{{ wallet_file }}">
+                        {% raw xsrf_form_html() %}
+                        <input id="btn_submit" class="btn btn-warning" type="submit" value="{{
+                        _('Import wallet')
+                        }}">
+                        <i class="material-icons" title="{{ _('This is likely to take some time, please do not interrupt the process.')}}">hourglass_empty</i>
+
+                    </div>
+                <div class="card-footer">
+                    <div class="stats">
+                        {{ _("Wallet will be decrypted, imported, and re-encrypted ith the main wallet master password") }}
+                    </div>
+                </div>
+            </form>
+
+            </div>
+            <div class="card-footer">
+                <a href="javascript:history.go(-1)"><i class="material-icons">undo</i> {{ _("Previous page")}}</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+{% end %}

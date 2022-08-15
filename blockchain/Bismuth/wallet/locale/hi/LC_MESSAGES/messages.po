@@ -1,0 +1,1401 @@
+msgid ""
+msgstr ""
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: POEditor.com\n"
+"Project-Id-Version: TornadoWallet\n"
+"Language: hi\n"
+
+#: themes/material/about_credits.html:10 themes/material/base.html:246
+msgid "Credits"
+msgstr "क्रेडिट"
+
+#: themes/material/about_credits.html:11
+msgid "This wallet wouldn't have existed without..."
+msgstr "इस बटुए के बिना अस्तित्व में नहीं होता ..."
+
+#: themes/material/about_credits.html:16
+msgid "The \"Material Dark\" template by <a href=\"https://www.creative-tim.com\" target=\"_blank\">Creative Tim</a>"
+msgstr "\"सामग्री डार्क\" टेम्पलेट द्वारा <a href=\"https://www.creative-tim.com\" target=\"_blank\">रचनात्मक टिम</a>"
+
+#: themes/material/about_credits.html:19
+msgid "Python, awesome language!"
+msgstr "Python, भयानक भाषा!"
+
+#: themes/material/about_credits.html:20
+msgid "The <a href=\"https://www.tornadoweb.org/en/stable/index.html\" target=\"_blank\">Tornado</a> web application framework"
+msgstr "<a href=\"https://www.tornadoweb.org/en/stable/index.html\" target=\"_blank\">Tornado</a> वेब अनुप्रयोग ढांचा"
+
+#: crystals/100_bismuthprice/themes/default/about.html:23
+#: crystals/210_eggpool/themes/default/about.html:25
+#: crystals/250_autogame/themes/default/about.html:35
+#: themes/material/about_credits.html:30
+msgid "About"
+msgstr "विषय में"
+
+#: themes/material/about_credits.html:35
+msgid "Tornado wallet version {}"
+msgstr "Tornado वॉलेट संस्करण{}"
+
+#: themes/material/about_credits.html:39
+msgid "This is the default wallet theme by {} from {}."
+msgstr "यह चूक बटुआ विषय है जो {} से {} द्वारा."
+
+#: themes/material/about_network.html:14
+msgid "Current wallet server"
+msgstr "वर्तमान बटुआ सर्वर"
+
+#: themes/material/about_network.html:16
+msgid "This is the server you're connected to."
+msgstr "यह वह सर्वर है जिससे आप कनेक्ट हैं."
+
+#: themes/material/about_network.html:19
+msgid "Server:"
+msgstr "सर्वर:"
+
+#: themes/material/about_network.html:21
+msgid "IP"
+msgstr "IP"
+
+#: themes/material/about_network.html:21
+msgid "Wallet  server version {}"
+msgstr "बटुआ सर्वर संस्करण {}"
+
+#: themes/material/about_network.html:25
+msgid "Connected clients:"
+msgstr "कनेक्ट किए गए क्लाइंट:"
+
+#: themes/material/about_network.html:26
+msgid "Protocol"
+msgstr "प्रोटोकॉल"
+
+#: themes/material/about_network.html:27
+msgid "Node Version"
+msgstr "नोड संस्करण"
+
+#: themes/material/about_network.html:28
+msgid "Peers connections:"
+msgstr "साथियों कनेक्शन:"
+
+#: themes/material/about_network.html:29
+msgid "UpTime:"
+msgstr "उपरिकाल"
+
+#: themes/material/about_network.html:31
+msgid "Consensus:"
+msgstr "आम सहमति:"
+
+#: themes/material/about_network.html:53
+msgid "Block"
+msgstr "ब्लॉक"
+
+#: themes/material/about_network.html:65
+msgid "Difficulty"
+msgstr "कठिनाई"
+
+#: themes/material/about_network.html:78
+msgid "Available wallet servers"
+msgstr "उपलब्ध बटुआ सर्वर"
+
+#: themes/material/about_network.html:80
+msgid "servers"
+msgstr "सर्वर"
+
+#: themes/material/about_network.html:89
+msgid "Refresh from API"
+msgstr "API से ताज़ा करें"
+
+#: themes/material/base.html:44
+msgid "Bismuth Wallet"
+msgstr "Bismuth बटुआ"
+
+#: themes/material/base.html:52
+msgid "Dashboard"
+msgstr "डैशबोर्ड"
+
+#: themes/material/base.html:58
+msgid "Transactions"
+msgstr "लेनदेन"
+
+#: themes/material/base.html:65
+msgid "Address book"
+msgstr "पता पुस्तिका"
+
+#: themes/material/base.html:71 themes/material/tokens_list.html:10
+msgid "Tokens"
+msgstr "टोकन"
+
+#: themes/material/base.html:78
+msgid "Messages"
+msgstr "संदेश"
+
+#: themes/material/base.html:85
+msgid "Network"
+msgstr "नेटवर्क"
+
+#: themes/material/base.html:86 themes/material/cristals_list.html:10
+msgid "Cristals"
+msgstr "क्रिस्टल"
+
+#: themes/material/base.html:125
+msgid "Toggle navigation"
+msgstr "संचालित करना"
+
+#: themes/material/base.html:221
+msgid "Source"
+msgstr "स्रोत"
+
+#: themes/material/base.html:226
+msgid "Blog"
+msgstr "ब्लॉग"
+
+#: themes/material/about_help.html:18 themes/material/base.html:231
+msgid "Discord"
+msgstr "डिस्कॉर्ड "
+
+#: themes/material/base.html:236
+msgid "Donate"
+msgstr "दान करना"
+
+#: themes/material/base.html:252
+msgid "block #"
+msgstr "ब्लॉक #"
+
+#: themes/material/base.html:272
+msgid "Sidebar Filters"
+msgstr "साइडबार फ़िल्टर"
+
+#: themes/material/base.html:285
+msgid "Images"
+msgstr "छवियां"
+
+#: themes/material/cristals_list.html:11
+msgid "Cristals are extra functionalities you can add to your wallet"
+msgstr "क्रिस्टल अतिरिक्त कार्यक्षमताओं आप अपने बटुए में जोड़ सकते हैं"
+
+#: crystals/100_bismuthprice/themes/default/about.html:15
+#: themes/material/tokens_list.html:14
+msgid "WIP"
+msgstr "WIP"
+
+#: themes/material/home.html:15 themes/material/transactions.html:15
+#: themes/material/wallet_load.html:35
+msgid "Balance"
+msgstr "संतुलन"
+
+#: themes/material/home.html:34 themes/material/transactions.html:34
+msgid "Send"
+msgstr "भेजें"
+
+#: themes/material/home.html:39 themes/material/transactions.html:39
+msgid "Send $BIS to..."
+msgstr "$BIS भेजें..."
+
+#: themes/material/home.html:53 themes/material/transactions.html:53
+#: themes/material/transactions_receive.html:15
+msgid "Receive"
+msgstr "प्राप्त करना"
+
+#: themes/material/home.html:58 themes/material/transactions.html:58
+msgid "Request a $BIS payment"
+msgstr "$BIS भुगतान का अनुरोध करें"
+
+#: themes/material/home.html:74 themes/material/transactions.html:73
+msgid "Latest transactions"
+msgstr "नवीनतम लेनदेन"
+
+#: themes/material/home.html:75 themes/material/transactions.html:74
+#: themes/material/wallet_load.html:56
+msgid "Updated on"
+msgstr "अद्यतन किया गया"
+
+#: themes/material/crystals_list.html:21 themes/material/home.html:81
+#: themes/material/transactions.html:80
+msgid "Date"
+msgstr "दिनांक"
+
+#: themes/material/home.html:82 themes/material/transactions.html:81
+#: themes/material/wallet_load.html:62 themes/material/wallet_load.html:125
+#: themes/material/wallet_load.html:170
+msgid "Address"
+msgstr "पता"
+
+#: themes/material/home.html:83 themes/material/transactions.html:82
+#: themes/material/transactions_receive.html:46
+#: themes/material/transactions_send.html:52
+#: themes/material/transactions_send_confirm.html:55
+msgid "Amount"
+msgstr "राशि"
+
+#: themes/material/home.html:84 themes/material/transactions.html:83
+msgid "Type"
+msgstr "प्ररूप"
+
+#: themes/material/home.html:161
+msgid "Bismuth news"
+msgstr "Bismuth समाचार"
+
+#: crystals/100_bismuthprice/themes/default/modules/home.html:28
+msgid "Bismuth vs USD"
+msgstr "Bismuth vs USD"
+
+#: crystals/100_bismuthprice/themes/default/modules/home.html:33
+msgid "This is a mockup with fake data"
+msgstr "यह नकली डेटा के साथ एक नकली है"
+
+#: themes/material/home.html:147
+msgid "Account balance"
+msgstr "खाता शेष"
+
+#: themes/material/home.html:148
+msgid "Last 12 months"
+msgstr "पिछले 12 महीने"
+
+#: themes/material/home.html:152
+msgid "Mockup with fake data"
+msgstr "नकली डेटा के साथ मॉकअप"
+
+#: themes/material/message.html:16
+#: themes/material/transactions_send_confirm.html:16
+#: themes/material/wallet_import_encrypted_der1.html:48
+msgid "Previous page"
+msgstr "पिछला पृष्ठ"
+
+#: themes/material/tokens_list.html:11
+msgid "Tokens are a core BIS functionality"
+msgstr "टोकन एक कोर BIS कार्यक्षमता हैं"
+
+#: themes/material/transactions_send.html:15
+#: themes/material/transactions_send_confirm.html:28
+msgid "Send To"
+msgstr "भेजना"
+
+#: themes/material/transactions_send.html:16
+#: themes/material/transactions_send_confirm.html:29
+msgid "To whom send BIS."
+msgstr "जिसे BIS भेजना है।"
+
+#: themes/material/messages.html:61 themes/material/transactions_send.html:20
+#: themes/material/transactions_send_confirm.html:33
+#: themes/material/transactions_sendpop_confirm.html:29
+msgid "Recipient"
+msgstr "प्राप्तकर्ता"
+
+#: themes/material/messages.html:20 themes/material/messages.html:57
+#: themes/material/transactions_receive.html:27
+#: themes/material/transactions_send.html:25
+#: themes/material/transactions_send_confirm.html:39
+#: themes/material/transactions_sendpop_confirm.html:68
+msgid "Data (message)"
+msgstr "डेटा (संदेश)"
+
+#: themes/material/transactions_send.html:27
+#: themes/material/transactions_send_confirm.html:43
+#: themes/material/transactions_sendpop_confirm.html:73
+msgid "Optionally, you can add a small comment to your transaction. Required for exchanges deposit."
+msgstr "वैकल्पिक रूप से, आप अपने लेन-देन में एक छोटी टिप्पणी जोड़ सकते हैं. विनिमय जमा के लिए आवश्यक."
+
+#: themes/material/transactions_send.html:53
+#: themes/material/transactions_send_confirm.html:56
+msgid "How many BIS to send."
+msgstr "कितने BIS भेजने के लिए."
+
+#: themes/material/transactions_receive.html:53
+#: themes/material/transactions_send.html:59
+#: themes/material/transactions_send_confirm.html:62
+#: themes/material/transactions_sendpop_confirm.html:38
+msgid "Amount (BIS)"
+msgstr "राशि (BIS)"
+
+#: themes/material/transactions_receive.html:61
+#: themes/material/transactions_send.html:66
+#: themes/material/transactions_send_confirm.html:70
+#: themes/material/transactions_sendpop_confirm.html:46
+msgid "Est. fees"
+msgstr "अनुमानित शुल्क"
+
+#: themes/material/transactions_receive.html:66
+#: themes/material/transactions_send.html:71
+#: themes/material/transactions_send_confirm.html:75
+#: themes/material/transactions_sendpop_confirm.html:52
+msgid "Total (BIS)"
+msgstr "कुल (BIS)"
+
+#: TornadoBismuthWallet.py:153 TornadoBismuthWallet.py:179
+#: themes/material/transactions_send.html:78
+#: themes/material/transactions_send.html:81
+#: themes/material/transactions_send.html:127 wallet.py:183 wallet.py:237
+msgid "Send BIS"
+msgstr "भेजें (BIS)"
+
+#: themes/material/wallet_info.html:11
+msgid "Current Wallet"
+msgstr "वर्तमान वॉलेट"
+
+#: themes/material/wallet_info.html:28
+msgid "Open existing"
+msgstr "मौजूदा खोलें"
+
+#: themes/material/wallet_info.html:29
+msgid "wallet"
+msgstr "बटुआ"
+
+#: themes/material/wallet_info.html:33
+msgid "Load a wallet from disk"
+msgstr "डिस्क से वॉलेट लोड करें"
+
+#: themes/material/wallet_info.html:47 themes/material/wallet_load.html:34
+msgid "Create a"
+msgstr "बनाएँ एक "
+
+#: themes/material/wallet_info.html:48 themes/material/wallet_load.html:35
+msgid "new wallet"
+msgstr "नया बटुआ"
+
+#: themes/material/wallet_load.html:124
+msgid "File"
+msgstr "फ़ाइल"
+
+#: themes/material/wallet_load.html:126
+msgid "Encrypted"
+msgstr "एन्क्रिप्टेड"
+
+#: themes/material/messages.html:123 themes/material/wip.html:10
+msgid "W.I.P."
+msgstr "W.I.P"
+
+#: themes/material/messages.html:126 themes/material/wip.html:13
+msgid "This feature is under construction."
+msgstr "यह सुविधा निर्माणाधीन है."
+
+#: TornadoBismuthWallet.py:331 wallet.py:504
+msgid "Transaction list"
+msgstr "लेन-देन सूची"
+
+#: TornadoBismuthWallet.py:265 TornadoBismuthWallet.py:380
+#: TornadoBismuthWallet.py:406 TornadoBismuthWallet.py:420
+#: TornadoBismuthWallet.py:426 TornadoBismuthWallet.py:441
+#: TornadoBismuthWallet.py:450 TornadoBismuthWallet.py:456
+#: TornadoBismuthWallet.py:465 TornadoBismuthWallet.py:479
+#: TornadoBismuthWallet.py:494 TornadoBismuthWallet.py:502
+#: TornadoBismuthWallet.py:511 TornadoBismuthWallet.py:517
+#: TornadoBismuthWallet.py:526 TornadoBismuthWallet.py:532
+#: modules/basehandlers.py:78 wallet.py:393 wallet.py:569 wallet.py:583
+#: wallet.py:613 wallet.py:632 wallet.py:644 wallet.py:658 wallet.py:677
+#: wallet.py:678 wallet.py:693 wallet.py:713 wallet.py:728 wallet.py:740
+#: wallet.py:754 wallet.py:773 wallet.py:793 wallet.py:806 wallet.py:820
+#: wallet.py:831 wallet.py:845 wallet.py:858
+msgid "Error"
+msgstr "त्रुटि"
+
+#: TornadoBismuthWallet.py:441 wallet.py:714
+msgid "This file already exists: {}.der"
+msgstr "यह फ़ाइल पहले से मौजूद है: {}.der"
+
+#: TornadoBismuthWallet.py:450 wallet.py:729
+msgid "Error creating {}.der"
+msgstr "बनाने में त्रुटि {}.der"
+
+#: themes/material/home.html:80 themes/material/transactions.html:79
+msgid "Txid"
+msgstr "Txid"
+
+#: themes/material/transactions.html:84
+msgid "Fees"
+msgstr "शुल्क"
+
+#: themes/material/transactions.html:85
+msgid "Data"
+msgstr "डेटा"
+
+#: themes/material/transactions_receive.html:16
+msgid "Request BIS"
+msgstr "अनुरोध BIS"
+
+#: themes/material/transactions_receive.html:20
+msgid "Your address"
+msgstr "आपका पता"
+
+#: themes/material/transactions_receive.html:22
+msgid "This is your address for current wallet, but you can change it if needed. Double check then."
+msgstr "यह वर्तमान बटुए के लिए आपका पता है, लेकिन यदि आवश्यक हो तो आप इसे बदल सकते हैं। डबल जाँच करें तो."
+
+#: themes/material/transactions_receive.html:30
+msgid "Optionally, you can add a small comment to your transaction, like a reference of your own. Will be stored on chain."
+msgstr "वैकल्पिक रूप से, आप अपने लेन-देन में एक छोटी सी टिप्पणी जोड़ सकते हैं, जैसे कि आपका स्वयं का संदर्भ. श्रृंखला पर संग्रहीत किया जाएगा."
+
+#: themes/material/transactions_receive.html:35
+msgid "This is the QR code for your address only."
+msgstr "यह केवल आपके पते के लिए QR कोड है."
+
+#: themes/material/transactions_receive.html:47
+msgid "How many BIS to request."
+msgstr "कितने BIS अनुरोध करने के लिए."
+
+#: themes/material/transactions_receive.html:56
+msgid "This is what you will receive"
+msgstr "यह वही है जो आप प्राप्त करेंगे"
+
+#: themes/material/transactions_receive.html:63
+#: themes/material/transactions_send.html:68
+#: themes/material/transactions_send_confirm.html:72
+#: themes/material/transactions_sendpop_confirm.html:48
+msgid "Fees depend on Data length"
+msgstr "शुल्क डेटा लंबाई पर निर्भर करता है"
+
+#: themes/material/transactions_receive.html:68
+msgid "This is what the sender will pay"
+msgstr "यह वही है जो प्रेषक भुगतान करेगा"
+
+#: themes/material/transactions_receive.html:72
+msgid "Get BIS URL"
+msgstr "BIS URL प्राप्त करें"
+
+#: themes/material/transactions_receive.html:78
+msgid "This is the QR code for your address, data and amount as a BisUrl."
+msgstr "यह आपके पते, डेटा और राशि के लिए एक BIS URL के रूप में QR कोड है"
+
+#: themes/material/transactions_receive.html:79
+msgid "You can copy/paste this image to send in a mail or anything"
+msgstr "आप कॉपी या पेस्ट कर सकते हैं इस छवि को एक मेल में या कहीं और भेजने के लिए"
+
+#: themes/material/transactions_send.html:61
+#: themes/material/transactions_send_confirm.html:65
+#: themes/material/transactions_sendpop_confirm.html:41
+msgid "This is what the recipient will receive"
+msgstr "यह वही है जो प्राप्तकर्ता प्राप्त होगा"
+
+#: themes/material/transactions_send.html:73
+#: themes/material/transactions_send_confirm.html:77
+#: themes/material/transactions_sendpop_confirm.html:54
+msgid "This is what you will pay, fees included."
+msgstr "यह है कि तुम क्या भुगतान करेंगे, फीस शामिल थे."
+
+#: themes/material/wallet_load.html:64 themes/material/wallet_load.html:127
+msgid "Action"
+msgstr "कार्रवाई"
+
+#: themes/material/about_credits.html:53
+msgid "Translations"
+msgstr "अनुवाद"
+
+#: themes/material/transactions_send_confirm.html:117
+#: themes/material/transactions_sendpop_confirm.html:103
+#: themes/material/wallet_load.html:183
+msgid "Cancel"
+msgstr "रद्द करना"
+
+#: themes/material/transactions_send_confirm.html:122
+#: themes/material/transactions_sendpop_confirm.html:111
+msgid "Confirm and send BIS"
+msgstr "पुष्टि करें और BIS भेजें"
+
+#: TornadoBismuthWallet.py:164 TornadoBismuthWallet.py:191
+#: TornadoBismuthWallet.py:213 wallet.py:202 wallet.py:257 wallet.py:296
+msgid "Send BIS: Confirmation"
+msgstr "BIS भेजें: पुष्टिकरण"
+
+#: TornadoBismuthWallet.py:166 TornadoBismuthWallet.py:193
+#: TornadoBismuthWallet.py:215 wallet.py:204 wallet.py:259 wallet.py:298
+msgid "Please confirm this transaction"
+msgstr "कृपया इस लेन-देन की पुष्टि करें"
+
+#: TornadoBismuthWallet.py:167 TornadoBismuthWallet.py:194
+#: TornadoBismuthWallet.py:216 wallet.py:206 wallet.py:261 wallet.py:300
+msgid "Check this is what you intended to do and hit the \"confirm\" button"
+msgstr "यह जाँच करें कि आप क्या करना चाहते हैं और \"पुष्टि\" बटन मारा"
+
+#: TornadoBismuthWallet.py:309 wallet.py:473
+msgid "Receive BIS"
+msgstr "BIS प्राप्त करें"
+
+#: themes/material/about_credits.html:37
+msgid "Wallet template {} by {}."
+msgstr "वॉलेट टेम्पलेट {} द्वारा {}"
+
+#: themes/material/about_credits.html:54
+msgid "Many thanks to our translators and proofreaders"
+msgstr "हमारे अनुवादकों और सबूत पाठकों के लिए बहुत धन्यवाद"
+
+#: themes/material/about_network.html:22
+msgid "Wallet server version {}"
+msgstr "बटुआ सर्वर संस्करण {}"
+
+#: themes/material/base.html:186
+msgid "Wallet"
+msgstr "बटुआ"
+
+#: crystals/250_autogame/themes/default/about.html:19
+#: themes/material/transactions_receive.html:81
+#: themes/material/transactions_send.html:100
+#: themes/material/transactions_send.html:108
+msgid "BIS URL"
+msgstr "BIS URL"
+
+#: themes/material/wallet_load.html:16
+msgid "Your Bismuth wallets"
+msgstr "आपका बिस्मथ पर्स"
+
+#: themes/material/wallet_load.html:20
+msgid "Your wallets directory is {}"
+msgstr "अपने पर्स निर्देशिका है {}"
+
+#: TornadoBismuthWallet.py:155 TornadoBismuthWallet.py:159
+#: TornadoBismuthWallet.py:182 TornadoBismuthWallet.py:186
+#: TornadoBismuthWallet.py:198 TornadoBismuthWallet.py:229
+#: TornadoBismuthWallet.py:235 TornadoBismuthWallet.py:238
+#: TornadoBismuthWallet.py:245 TornadoBismuthWallet.py:272
+#: TornadoBismuthWallet.py:275 TornadoBismuthWallet.py:282
+#: TornadoBismuthWallet.py:297 TornadoBismuthWallet.py:302
+#: TornadoBismuthWallet.py:306 TornadoBismuthWallet.py:672
+#: TornadoBismuthWallet.py:676 TornadoBismuthWallet.py:683
+#: TornadoBismuthWallet.py:695 crystals/210_eggpool/__init__.py:85
+#: wallet.py:186 wallet.py:194 wallet.py:215 wallet.py:241 wallet.py:249
+#: wallet.py:266 wallet.py:279 wallet.py:317 wallet.py:334 wallet.py:343
+#: wallet.py:350 wallet.py:361 wallet.py:409 wallet.py:416 wallet.py:427
+#: wallet.py:448 wallet.py:459 wallet.py:467 wallet.py:1019 wallet.py:1027
+#: wallet.py:1038 wallet.py:1066 wallet.py:1074 wallet.py:1085 wallet.py:1107
+#: wallet.py:1110
+msgid "Error:"
+msgstr "त्रुटि:"
+
+#: TornadoBismuthWallet.py:155 TornadoBismuthWallet.py:182
+#: TornadoBismuthWallet.py:235 TornadoBismuthWallet.py:272
+#: TornadoBismuthWallet.py:302 TornadoBismuthWallet.py:672 wallet.py:187
+#: wallet.py:242 wallet.py:344 wallet.py:410 wallet.py:460 wallet.py:1020
+#: wallet.py:1067
+msgid "Load your wallet first"
+msgstr "पहले अपना बटुआ लोड करें"
+
+#: TornadoBismuthWallet.py:155 TornadoBismuthWallet.py:182
+#: TornadoBismuthWallet.py:235 TornadoBismuthWallet.py:272
+#: TornadoBismuthWallet.py:302 TornadoBismuthWallet.py:672 wallet.py:186
+#: wallet.py:241 wallet.py:343 wallet.py:409 wallet.py:459 wallet.py:1019
+#: wallet.py:1066
+msgid "No Wallet"
+msgstr "कोई बटुआ नहीं"
+
+#: TornadoBismuthWallet.py:159 TornadoBismuthWallet.py:186
+#: TornadoBismuthWallet.py:238 TornadoBismuthWallet.py:275
+#: TornadoBismuthWallet.py:306 TornadoBismuthWallet.py:676 wallet.py:194
+#: wallet.py:249 wallet.py:350 wallet.py:416 wallet.py:467 wallet.py:1027
+#: wallet.py:1074
+msgid "Encrypted wallet"
+msgstr "एनक्रिप्टेड बटुआ"
+
+#: TornadoBismuthWallet.py:159 TornadoBismuthWallet.py:186
+#: TornadoBismuthWallet.py:238 TornadoBismuthWallet.py:275
+#: TornadoBismuthWallet.py:306 TornadoBismuthWallet.py:380
+#: TornadoBismuthWallet.py:420 TornadoBismuthWallet.py:676 wallet.py:195
+#: wallet.py:250 wallet.py:351 wallet.py:417 wallet.py:468 wallet.py:570
+#: wallet.py:633 wallet.py:659 wallet.py:1028 wallet.py:1075
+msgid "You have to unlock your wallet first"
+msgstr "आप पहले अपने बटुए अनलॉक करने के लिए है"
+
+#: TornadoBismuthWallet.py:255 TornadoBismuthWallet.py:292 wallet.py:375
+#: wallet.py:440
+msgid "Success:"
+msgstr "सफलता :"
+
+#: TornadoBismuthWallet.py:255 TornadoBismuthWallet.py:292 wallet.py:377
+#: wallet.py:440
+msgid "Transaction sent"
+msgstr "लेन-देन भेजा गया"
+
+#: TornadoBismuthWallet.py:256 TornadoBismuthWallet.py:293 wallet.py:379
+#: wallet.py:441
+msgid "The transaction was submitted to the mempool."
+msgstr "हस्तांतरण स्मृति पूल करने के लिए जमा किया गया था।"
+
+#: TornadoBismuthWallet.py:258 TornadoBismuthWallet.py:295 wallet.py:381
+#: wallet.py:443
+msgid "Txid is {}"
+msgstr "TXid {}"
+
+#: TornadoBismuthWallet.py:263 TornadoBismuthWallet.py:297 wallet.py:388
+#: wallet.py:450
+msgid "There was an error submitting to the mempool, transaction was not sent."
+msgstr "स्मृति पूल में कोई त्रुटि थी, हस्तांतरण नहीं भेजा गया था।"
+
+#: crystals/200_dragginator/themes/default/about.html:92
+#: modules/basehandlers.py:71
+msgid "No Bismuth address, please create or load a wallet first."
+msgstr "नहीं बिस्मथ पता, कृपया बनाने के लिए या पहले एक बटुआ लोड."
+
+#: themes/material/base.html:97 themes/material/crystals_list.html:11
+msgid "Crystals"
+msgstr "क्रिस्टल"
+
+#: themes/material/base.html:134
+msgid "Search..."
+msgstr "खोज..."
+
+#: themes/material/crystals_list.html:12
+msgid "Crystals are extra functionalities you can add to your wallet"
+msgstr "क्रिस्टल अतिरिक्त कार्यक्षमताओं आप अपने बटुए में जोड़ सकते हैं"
+
+#: crystals/100_bismuthprice/themes/default/about.html:11
+#: crystals/100_bismuthprice/themes/default/modules/home.html:16
+msgid "Crystal"
+msgstr "क्रिस्टल"
+
+#: crystals/100_bismuthprice/themes/default/about.html:28
+#: crystals/210_eggpool/themes/default/about.html:29
+#: crystals/250_autogame/themes/default/about.html:39
+#: themes/material/crystals_list.html:21
+msgid "Version"
+msgstr "संस्करण"
+
+#: crystals/100_bismuthprice/themes/default/modules/home.html:4
+msgid "Current Bismuth Prices"
+msgstr "वर्तमान बिस्मथ मूल्य"
+
+#: crystals/200_dragginator/themes/default/egg.html:20
+msgid "BIS"
+msgstr "BIS"
+
+#: TornadoBismuthWallet.py:260 wallet.py:384
+msgid "Success"
+msgstr "सफलता"
+
+#: themes/material/transactions_confirmpop.html:10
+msgid "Confirm Transaction"
+msgstr "लेन-देन की पुष्टि करें"
+
+#: themes/material/transactions_send.html:36
+#: themes/material/transactions_sendpop_confirm.html:61
+msgid "Operation"
+msgstr "कार्रवाई"
+
+#: .buildozer/android/platform/python-for-android-new-toolchain/doc/source/ext/sphinx_rtd_theme/sphinx_rtd_theme/layout_old.html:29
+msgid "Navigation"
+msgstr "नेविगेशन"
+
+#: .buildozer/android/platform/python-for-android-new-toolchain/doc/source/ext/sphinx_rtd_theme/sphinx_rtd_theme/search.html:11
+msgid "Search"
+msgstr "खोज"
+
+#: .buildozer/android/platform/python-for-android-new-toolchain/doc/source/ext/sphinx_rtd_theme/sphinx_rtd_theme/search.html:33
+msgid "Search Results"
+msgstr "खोज परिणाम"
+
+#: crystals/200_dragginator/__init__.py:64
+msgid "D:Air egg"
+msgstr "हवा अंडे"
+
+#: crystals/200_dragginator/__init__.py:63
+msgid "D:Earth egg"
+msgstr "पृथ्वी अंडे"
+
+#: crystals/200_dragginator/__init__.py:63
+msgid "D:Fire egg"
+msgstr "आग अंडे"
+
+#: crystals/200_dragginator/__init__.py:63
+msgid "D:Water egg"
+msgstr "पानी अंडे"
+
+#: crystals/200_dragginator/__init__.py:68
+msgid "D:Cup"
+msgstr "कप"
+
+#: crystals/200_dragginator/__init__.py:68
+msgid "D:special egg"
+msgstr "विशेष अंडा"
+
+#: crystals/200_dragginator/__init__.py:68
+msgid "D:world cup 2018"
+msgstr "2018 विश्व कप"
+
+#: crystals/200_dragginator/themes/default/about.html:21
+msgid "D:Dragginator News"
+msgstr "Dragginator समाचार"
+
+#: crystals/200_dragginator/themes/default/about.html:36
+msgid "D:My eggs"
+msgstr "मेरे अंडे"
+
+#: crystals/200_dragginator/themes/default/about.html:47
+msgid "D:And you are registered to the current eggdrop"
+msgstr "और आप वर्तमान अंडे की बूंद के लिए पंजीकृत हैं"
+
+#: crystals/200_dragginator/themes/default/about.html:49
+#: crystals/250_autogame/themes/default/about.html:23
+msgid "D:Register"
+msgstr "पंजीकृत करें"
+
+#: crystals/200_dragginator/themes/default/about.html:49
+msgid "D:So you can register to the eggdrop!"
+msgstr "तो आप अंडे की बूंद के लिए रजिस्टर कर सकते हैं!"
+
+#: crystals/200_dragginator/themes/default/about.html:61
+msgid "D:DNA"
+msgstr "DNA"
+
+#: crystals/200_dragginator/themes/default/about.html:62
+#: crystals/200_dragginator/themes/default/egg.html:56
+msgid "D:Element"
+msgstr "तत्व"
+
+#: crystals/200_dragginator/themes/default/about.html:63
+#: crystals/200_dragginator/themes/default/egg.html:57
+msgid "D:Species"
+msgstr "प्रजातियां"
+
+#: crystals/200_dragginator/themes/default/egg.html:11
+msgid "D:DNA:"
+msgstr "DNA:"
+
+#: crystals/200_dragginator/themes/default/egg.html:11
+msgid "D:See on Dragginator.com"
+msgstr "Dragginator.com पर देखें"
+
+#: crystals/200_dragginator/themes/default/egg.html:23
+msgid "D:Archive"
+msgstr "पुरालेख"
+
+#: crystals/200_dragginator/themes/default/egg.html:58
+msgid "D:Age"
+msgstr "उम्र"
+
+#: crystals/200_dragginator/themes/default/egg.html:59
+msgid "D:Rarity"
+msgstr "दुर्लभता"
+
+#: crystals/200_dragginator/themes/default/egg.html:70
+msgid "D:You own this egg"
+msgstr "आप इस अंडे के मालिक हैं"
+
+#: crystals/200_dragginator/themes/default/egg.html:73
+msgid "D:You don't own this egg"
+msgstr "आप इस अंडे के मालिक नहीं है"
+
+#: crystals/200_dragginator/themes/default/egg.html:87
+msgid "D:Send this egg to..."
+msgstr "यह अंडा भेजें ...."
+
+#: crystals/200_dragginator/themes/default/egg.html:90
+msgid "D:Sell this egg for BIS"
+msgstr "BIS के लिए इस अंडे को बेचें"
+
+#: crystals/200_dragginator/themes/default/egg.html:118
+msgid "D:Remove this egg from the marketplace"
+msgstr "बाजार से इस अंडे निकालें"
+
+#: crystals/210_eggpool/themes/default/about.html:14
+msgid "EP:Direct Link to official Dashboard"
+msgstr "आधिकारिक डैशबोर्ड से सीधा लिंक"
+
+#: crystals/210_eggpool/themes/default/about.html:15
+msgid "EP:Get last GPU miner"
+msgstr "नवीनतम GPU खान में काम करनेवाला जाओ"
+
+#: crystals/210_eggpool/themes/default/about.html:16
+#: crystals/250_autogame/themes/default/about.html:15
+msgid "Join the Official Bismuth Discord for support"
+msgstr "समर्थन के लिए सरकारी बिस्मथ डिस्कॉर्ड में शामिल हों"
+
+#: crystals/210_eggpool/themes/default/about.html:48
+msgid "EP:Hash Rate"
+msgstr "हैश दर"
+
+#: crystals/210_eggpool/themes/default/about.html:49
+#: crystals/210_eggpool/themes/default/about.html:64
+msgid "EP:Last 12 hours"
+msgstr "पिछले 12 घंटे"
+
+#: crystals/210_eggpool/themes/default/about.html:63
+msgid "EP:Shares"
+msgstr "शेयरों"
+
+#: crystals/210_eggpool/themes/default/about.html:73
+msgid "EP:Workers"
+msgstr "श्रमिकों"
+
+#: modules/i18n.py:74
+msgid "DT:Processing..."
+msgstr "प्रसंस्करण..."
+
+#: modules/i18n.py:75
+msgid "DT:Search&nbsp;..."
+msgstr "खोज और nbsp;..."
+
+#: modules/i18n.py:76
+msgid "DT:Display _MENU_ elements"
+msgstr "प्रदर्शन_मेनू_ तत्वों"
+
+#: modules/i18n.py:78
+msgid "DT:Display element _START_ to _END_ from _TOTAL_ elements"
+msgstr "प्रदर्शन तत्व_प्रारंभ_ के लिए_अंत_ से_कुल_ तत्वों"
+
+#: modules/i18n.py:80 modules/i18n.py:86
+msgid "DT:Nothing to display"
+msgstr "प्रदर्शित करने के लिए कुछ भी नहीं"
+
+#: modules/i18n.py:82
+msgid "DT:filtered from _MAX_ total elements"
+msgstr "फ़िल्टर किया गया_MAX_ कुल तत्व"
+
+#: modules/i18n.py:85
+msgid "DT:Loading..."
+msgstr "लोड..."
+
+#: modules/i18n.py:87
+msgid "DT:No data in the table"
+msgstr "तालिका में कोई डेटा नहीं"
+
+#: modules/i18n.py:89
+msgid "DT:First"
+msgstr "पहले"
+
+#: modules/i18n.py:90
+msgid "DT:Previous"
+msgstr "पिछला"
+
+#: modules/i18n.py:91
+msgid "DT:Next"
+msgstr "अगला"
+
+#: modules/i18n.py:92
+msgid "DT:Last"
+msgstr "पिछला"
+
+#: modules/i18n.py:95
+msgid "DT:Sort by ascending order"
+msgstr "आरोही क्रम के द्वारा सॉर्ट करें"
+
+#: modules/i18n.py:96
+msgid "DT:Sort by descending order"
+msgstr "अवरोही क्रम के द्वारा सॉर्ट करें"
+
+#: crystals/200_dragginator/themes/default/about.html:44
+msgid "D:You don't own any egg ;("
+msgstr "आप किसी भी अंडे के मालिक नहीं ;("
+
+#: crystals/200_dragginator/themes/default/about.html:15
+msgid "D:Buy an egg for {} BIS"
+msgstr "{} BIS के लिए एक अंडा खरीदें"
+
+#: crystals/200_dragginator/themes/default/about.html:54
+msgid "D:You own {} eggs"
+msgstr "आप {} अंडे के मालिक हैं"
+
+#: crystals/200_dragginator/themes/default/egg.html:127
+msgid "D:Buy for {} BIS"
+msgstr "{} BIS के लिए खरीदें"
+
+#: crystals/200_dragginator/themes/default/egg.html:92
+msgid "D:Price"
+msgstr "मूल्य"
+
+#: themes/material/transactions_confirmpop.html:7
+msgid "Transaction Status"
+msgstr "लेन-देन की स्थिति"
+
+#: themes/material/transactions_confirmpop.html:23
+msgid "OK"
+msgstr "ठीक है"
+
+#: themes/material/transactions_send.html:38
+msgid "\"operation\" allows for powerful Bismuth Features. Leave empty until otherwise required."
+msgstr "\"ऑपरेशन\" शक्तिशाली बिस्मथ सुविधाओं के लिए अनुमति देता है। जब तक अन्यथा आवश्यक न हो रिक्त छोड़ दें।"
+
+#: crystals/210_eggpool/__init__.py:68
+msgid "No data"
+msgstr "कोई डेटा नहीं"
+
+#: crystals/210_eggpool/__init__.py:85
+msgid "This crystal is activated but needs a wallet restart."
+msgstr "इस क्रिस्टल सक्रिय है, लेकिन एक बटुआ पुनः आरंभ की जरूरत है."
+
+#: modules/i18n.py:60 themes/material/wallet_info.html:235
+msgid "No protection"
+msgstr "कोई सुरक्षा नहीं"
+
+#: modules/i18n.py:62 themes/material/wallet_info.html:232
+#: themes/material/wallet_info.html:238 themes/material/wallet_info.html:241
+msgid "PIN Code"
+msgstr "पिन कोड"
+
+#: modules/i18n.py:64 themes/material/wallet_info.html:233
+msgid "YUBICO"
+msgstr "YUBICO"
+
+#: modules/i18n.py:66
+msgid "U2F Token"
+msgstr "U2F टोकन"
+
+#: themes/material/base.html:119
+msgid "Wallet info"
+msgstr "वॉलेट जानकारी"
+
+#: themes/material/crystals_list.html:53
+msgid "Apply"
+msgstr "लागू करना"
+
+#: themes/material/message_pop.html:23 themes/material/messages_pop.html:31
+msgid "Close"
+msgstr "बंद करना"
+
+#: TornadoBismuthWallet.py:670 themes/material/messages.html:15 wallet.py:1016
+msgid "Sign message"
+msgstr "संदेश पर हस्ताक्षर करें"
+
+#: themes/material/messages.html:16
+msgid "Sign some data for off chain usage with your private key."
+msgstr "अपनी निजी कुंजी के साथ बंद श्रृंखला उपयोग के लिए कुछ डेटा पर हस्ताक्षर करें।"
+
+#: TornadoBismuthWallet.py:245 TornadoBismuthWallet.py:282
+#: TornadoBismuthWallet.py:683 themes/material/messages.html:26
+#: themes/material/messages.html:96
+#: themes/material/transactions_send_confirm.html:104
+#: themes/material/transactions_sendpop_confirm.html:91
+#: themes/material/wallet_info.html:218 themes/material/wallet_info.html:219
+#: wallet.py:361 wallet.py:427 wallet.py:1038 wallet.py:1085
+msgid "Spend protection"
+msgstr "सुरक्षा खर्च करें"
+
+#: themes/material/messages.html:37
+msgid "Sign Message"
+msgstr "संदेश पर हस्ताक्षर करें"
+
+#: themes/material/messages.html:52
+msgid "Encrypt message"
+msgstr "संदेश एन्क्रिप्ट करें"
+
+#: themes/material/messages.html:53
+msgid "Encrypt data for off chain usage."
+msgstr "बंद श्रृंखला उपयोग के लिए डेटा एन्क्रिप्ट करें।"
+
+#: themes/material/messages.html:63
+msgid "You have to tell the recipient address so the message can be encrypted with his public key"
+msgstr "आप को प्राप्तकर्ता का पता बताना है ताकि संदेश उसकी सार्वजनिक कुंजी के साथ एन्क्रिप्ट किया जा सकता है"
+
+#: themes/material/messages.html:67
+msgid "Encrypt Message"
+msgstr "संदेश एन्क्रिप्ट करें"
+
+#: themes/material/messages_pop.html:24
+#: themes/material/transactions_receive.html:81
+msgid "Click text to copy"
+msgstr "प्रतिलिपि बनाने के लिए पाठ क्लिक करें"
+
+#: themes/material/home.html:118 themes/material/messages_pop.html:34
+#: themes/material/transactions.html:122
+#: themes/material/transactions_receive.html:84
+msgid "Copied to Clipboard"
+msgstr "क्लिपबोर्ड पर प्रतिलिपि बनाई गई"
+
+#: themes/material/transactions_send.html:103
+msgid "Send a transaction from a BIS URL"
+msgstr "BIS URL से कोई लेन-देन भेजें"
+
+#: crystals/250_autogame/themes/default/about.html:21
+#: themes/material/transactions_send.html:110
+msgid "Paste the BIS URL you were given here"
+msgstr "आपयहाँ दिए गए BIS URL चिपकाएँ"
+
+#: themes/material/transactions_send.html:117
+msgid "Decode BIS URL"
+msgstr "URL को डीकोड करें"
+
+#: themes/material/transactions_send.html:123
+msgid "Send BIS URL..."
+msgstr "BIS URL भेजें..."
+
+#: themes/material/wallet_info.html:16
+msgid "{} Address(es)"
+msgstr "{} पता"
+
+#: themes/material/wallet_info.html:29
+msgid "Manage"
+msgstr "प्रबंध"
+
+#: themes/material/wallet_info.html:30
+msgid "addresses"
+msgstr "पता"
+
+#: themes/material/wallet_info.html:34
+msgid "Select one of your Bismuth addresses"
+msgstr "अपने बिस्मथ पतों में से किसी एक का चयन करें"
+
+#: themes/material/wallet_info.html:49
+msgid "Create a new"
+msgstr "एक नया बनाएँ"
+
+#: themes/material/wallet_info.html:50
+msgid "address"
+msgstr "पता"
+
+#: themes/material/wallet_info.html:72
+msgid "Wallet is locked"
+msgstr "बटुआ बंद है"
+
+#: themes/material/wallet_info.html:76
+msgid "Existing master password"
+msgstr "मौजूदा मास्टर पासवर्ड"
+
+#: themes/material/wallet_info.html:79
+msgid "This is the password that protects your private key(s)"
+msgstr "यह पासवर्ड है जो आपकी निजी कुंजियों की सुरक्षा करता है"
+
+#: themes/material/wallet_info.html:95
+msgid "Wallet is unlocked"
+msgstr "बटुआ खुला है"
+
+#: themes/material/wallet_info.html:100
+msgid "You can lock it back for extra safety if you don't plan to use it soon."
+msgstr "आप इसे वापस अतिरिक्त सुरक्षा के लिए बंद कर सकते हैं अगर आप इसे जल्द ही उपयोग करने की योजना नहीं है."
+
+#: themes/material/wallet_info.html:137 themes/material/wallet_info.html:160
+#: themes/material/wallet_info.html:164 themes/material/wallet_info.html:244
+msgid "Master password"
+msgstr "मास्टर पासवर्ड"
+
+#: themes/material/wallet_info.html:144
+msgid "Master password is set"
+msgstr "मास्टर पासवर्ड सेट है"
+
+#: themes/material/wallet_info.html:168
+msgid "This is the password that will protect your private keys."
+msgstr "यह पासवर्ड है कि आपके निजी कुंजी की रक्षा करेगा."
+
+#: themes/material/wallet_info.html:172
+msgid "Retype Master password"
+msgstr "मास्टर पासवर्ड पुन: लिखें"
+
+#: themes/material/wallet_info.html:176
+msgid "Losing this password means loosing your keys!"
+msgstr "इस पासवर्ड को खोने का मतलब है अपनी चाबी खो!"
+
+#: themes/material/wallet_info.html:186
+msgid "This will encrypt your wallet file. You may want to backup the unencrypted file first."
+msgstr "यह आपके बटुए फ़ाइल एन्क्रिप्ट करेगा। आप पहले अनएन्क्रिप्टेड फ़ाइल का बैकअप लेना चाह सकते हैं."
+
+#: themes/material/wallet_info.html:192
+msgid "Master password is not set"
+msgstr "मास्टर पासवर्ड सेट नहीं है"
+
+#: themes/material/wallet_info.html:234
+msgid "U2F TOKEN"
+msgstr "U2F टोकन"
+
+#: themes/material/wallet_info.html:248
+msgid "Needed to confirm operation"
+msgstr "ऑपरेशन की पुष्टि करने के लिए आवश्यक"
+
+#: themes/material/wallet_info.html:264
+msgid "Spending is currently not protected"
+msgstr "खर्च वर्तमान में सुरक्षित नहीं है"
+
+#: themes/material/wallet_info.html:266
+msgid "Spending is currently protected by {}"
+msgstr "खर्च वर्तमान में {} द्वारा सुरक्षित है "
+
+#: themes/material/wallet_load.html:16 themes/material/wallet_load.html:55
+msgid "Your Bismuth addresses"
+msgstr "आपका बिस्मथ पता"
+
+#: themes/material/wallet_load.html:20
+msgid "Your wallet directory is {}"
+msgstr "आपका बटुआ निर्देशिका {} है"
+
+#: themes/material/wallet_load.html:21
+msgid "Your wallet is {}"
+msgstr "आपका बटुआ {} है"
+
+#: themes/material/wallet_load.html:61 themes/material/wallet_load.html:98
+#: themes/material/wallet_load.html:175
+msgid "Label"
+msgstr "लेबल"
+
+#: themes/material/wallet_load.html:63
+msgid "Creation date"
+msgstr "निर्माण की तारीख"
+
+#: themes/material/wallet_load.html:100
+msgid "A private label for the new address"
+msgstr "नए पते के लिए एक निजी लेबल"
+
+#: themes/material/wallet_load.html:105
+msgid "Create a new address"
+msgstr "नया पता बनाएँ"
+
+#: themes/material/wallet_load.html:121
+msgid "Potential legacy wallet imports"
+msgstr "संभावित विरासत बटुआ आयात"
+
+#: TornadoBismuthWallet.py:245 TornadoBismuthWallet.py:282
+#: TornadoBismuthWallet.py:683 wallet.py:362 wallet.py:428 wallet.py:1039
+#: wallet.py:1086
+msgid "Invalid PIN Number"
+msgstr "अमान्य PIN नंबर"
+
+#: TornadoBismuthWallet.py:406 TornadoBismuthWallet.py:426
+#: TornadoBismuthWallet.py:465 TornadoBismuthWallet.py:479
+#: TornadoBismuthWallet.py:494 TornadoBismuthWallet.py:502
+#: TornadoBismuthWallet.py:517 TornadoBismuthWallet.py:526
+#: TornadoBismuthWallet.py:532 wallet.py:614 wallet.py:645 wallet.py:694
+#: wallet.py:755 wallet.py:774 wallet.py:794 wallet.py:807 wallet.py:832
+#: wallet.py:846 wallet.py:859
+msgid "Error: {}"
+msgstr "त्रुटि: {}"
+
+#: TornadoBismuthWallet.py:456 wallet.py:741
+msgid "Max of {} addresses reached."
+msgstr "{} पतों का अधिकतम पहुँच गया."
+
+#: TornadoBismuthWallet.py:511 wallet.py:821
+msgid "Passwords do not match"
+msgstr "पासवर्ड मेल नहीं खाते"
+
+#: TornadoBismuthWallet.py:689 wallet.py:1046
+msgid "Your message '{}' has been signed."
+msgstr "आपका संदेश '{}' पर हस्ताक्षर किए गए हैं."
+
+#: TornadoBismuthWallet.py:691 wallet.py:1053 wallet.py:1098
+msgid "Signature"
+msgstr "हस्ताक्षर"
+
+#: TornadoBismuthWallet.py:695
+msgid "This feature is under construction. "
+msgstr "यह सुविधा निर्माणाधीन है."
+
+#: crystals/200_dragginator/themes/default/egg.html:32
+msgid "D:draggon"
+msgstr "ड्रैगगोन"
+
+#: crystals/200_dragginator/themes/default/egg.html:33
+msgid "D:egg"
+msgstr "अंडा"
+
+#: crystals/250_autogame/themes/default/about.html:14
+msgid "AG:Direct Link to latest autogame doc."
+msgstr "नवीनतम ऑटो खेल दस्तावेज़ के लिए प्रत्यक्ष लिंक"
+
+#: crystals/250_autogame/themes/default/about.html:52
+msgid "AG:Your games"
+msgstr "आपका गेम"
+
+#: crystals/250_autogame/themes/default/about.html:76
+msgid "AG:Game detail"
+msgstr "खेल विस्तार"
+
+#: themes/material/wallet_info.html:85
+msgid "Unlock wallet"
+msgstr "बटुआ अनलॉक करें"
+
+#: themes/material/wallet_info.html:106
+msgid "Lock wallet"
+msgstr "लॉक बटुआ"
+
+#: themes/material/wallet_info.html:110
+msgid "You have to encrypt your wallet first to use this feature"
+msgstr "आप इस सुविधा का उपयोग करने के लिए पहले अपने बटुए एन्क्रिप्ट करने के लिए है"
+
+#: themes/material/wallet_info.html:183
+msgid "Set master password"
+msgstr "मास्टर पासवर्ड सेट करें"
+
+#: themes/material/wallet_info.html:254
+msgid "Set spend protection"
+msgstr "खर्च सुरक्षा सेट करें"
+
+#: crystals/250_autogame/themes/default/about.html:59
+msgid "Replay"
+msgstr "पुनरावृत्ति"
+
+#: crystals/250_autogame/themes/default/replay_pop.html:2
+msgid "AG:Game {} replay"
+msgstr "खेल {} फिर से खेलना"
+
+#: crystals/250_autogame/themes/default/status_pop.html:2
+msgid "AG:Game {} status"
+msgstr "गेम {} स्थिति"
+
+#: modules/basehandlers.py:79
+msgid "Wallet server did not send an answer. Please try again."
+msgstr "वॉलेट सर्वर ने कोई उत्तर नहीं भेजा. कृपया पुन: प्रयास करें."
+
+#: themes/material/about_network.html:86
+msgid "Height"
+msgstr "ऊंचाई"
+
+#: themes/material/about_network.html:86
+msgid "Load"
+msgstr "भार"
+
+#: themes/material/wallet_load.html:161
+msgid "Edit label"
+msgstr "लेबल संपादित करें"
+
+#: themes/material/wallet_load.html:177
+msgid "A private label for that address"
+msgstr "उस पते के लिए एक निजी लेबल"
+
+#: themes/material/wallet_load.html:185
+msgid "Set label"
+msgstr "लेबल सेट करें"
+
+#: TornadoBismuthWallet.py:526 wallet.py:846
+msgid "PIN code can't be empty"
+msgstr "पिन कोड रिक्त नहीं हो सकता"
+
+#: crystals/200_dragginator/themes/default/about.html:64
+msgid "D:Class"
+msgstr "कक्षा"
+
+#: crystals/200_dragginator/themes/default/about.html:75
+#: crystals/200_dragginator/themes/default/about.html:77
+msgid "D:"
+msgstr "D:"
+
+#: crystals/200_dragginator/themes/default/egg.html:98
+msgid "D:Register this egg to the hunt"
+msgstr "शिकार के लिए इस अंडे को पंजीकृत करें"
+
+#: crystals/200_dragginator/themes/default/egg.html:105
+msgid "D:This egg can hatch"
+msgstr "यह अंडा निकल सकता है"
+
+#: crystals/200_dragginator/themes/default/egg.html:108
+msgid "D:You can find this egg"
+msgstr "आप इस अंडे पा सकते हैं"
+
+#: crystals/212_docshield/themes/default/about.html:34
+msgid "Load Document"
+msgstr "दस्तावेज़ लोड करें"
+
+#: crystals/212_docshield/themes/default/about.html:74
+msgid "Submit Transaction 1"
+msgstr "लेन-देन 1 जमा करें "
+
+#: crystals/212_docshield/themes/default/about.html:75
+msgid "Submit Transaction 2"
+msgstr "लेन-देन 2 जमा करें "
+
+#: themes/material/about_credits.html:36
+msgid "BismuthClient version {}"
+msgstr "बिस्मथ क्लाइंट संस्करण {}"
+
+#: themes/material/about_help.html:10
+msgid "Get help"
+msgstr "मदद प्राप्त करें"
+
+#: themes/material/about_help.html:15
+msgid "Wallet F.A.Q."
+msgstr "बटुआ  F.A.Q"
+
+#: themes/material/about_network.html:30
+msgid "Time Drift:"
+msgstr "समय बहाव:"
+
+#: themes/material/base.html:241
+msgid "Help"
+msgstr "मदद"
+
+#: themes/material/crystals_list.html:19
+msgid "Active"
+msgstr "सक्रिय"
+
+#: themes/material/crystals_list.html:20
+msgid "Name"
+msgstr "नाम"
+
+#: themes/material/crystals_list.html:22
+msgid "Description"
+msgstr "विवरण"
+
+#: themes/material/crystals_list.html:23
+msgid "Author"
+msgstr "लेखक"
+
+#: themes/material/crystals_list.html:24
+msgid "Learn more..."
+msgstr "और जानो..."
+
+#: themes/material/crystals_list.html:44
+msgid "More..."
+msgstr "अधिक..."
+
+#: themes/material/messages.html:85 wallet.py:1063
+msgid "Decrypt message"
+msgstr "संदेश एन्क्रिप्ट करें"
+
+#: themes/material/messages.html:86
+msgid "Decrypt off chain message with your private key."
+msgstr "अपने निजी कुंजी के साथ श्रृंखला संदेश को एन्क्रिप्ट करें।"
+
+#: themes/material/messages.html:90
+msgid "Encrypted message"
+msgstr "एनक्रिप्टेड संदेश"
+
+#: themes/material/messages.html:107
+msgid "Decrypt Message"
+msgstr "डीक्रिप्ट किया गया संदेश"
+
+#: themes/material/wallet_import_encrypted_der1.html:10
+msgid "Password"
+msgstr "पासवर्ड"
+
+#: themes/material/wallet_import_encrypted_der1.html:20
+msgid "Enter wallet password for {}"
+msgstr "{} के लिए बटुआ पासवर्ड दर्ज करें"
+
+#: themes/material/wallet_import_encrypted_der1.html:24
+msgid "Wallet password"
+msgstr "वॉलेट पासवर्ड"
+
+#: themes/material/wallet_import_encrypted_der1.html:34
+msgid "Import wallet"
+msgstr "बटुआ आयात करें"
+
+#: themes/material/wallet_import_encrypted_der1.html:41
+msgid "Wallet will be decrypted, imported, and re-encrypted ith the main wallet master password"
+msgstr "बटुआ डीक्रिप्ट किया जाएगा, आयात, और मुख्य बटुआ मास्टर पासवर्ड के साथ फिर से एन्क्रिप्टेड"
+
+#: themes/material/wallet_load.html:40
+msgid "Click to query total balance"
+msgstr "कुल शेष सवाल करने के लिए क्लिक करें"
+
+#: themes/material/wallet_load.html:186
+msgid "This can take some time, especially if your wallet is encrypted. Do not interrupt."
+msgstr "यह कुछ समय लग सकता है, खासकर अगर आपके बटुए एन्क्रिप्टेड है. व्यवधान न डालें।"
+
+#: wallet.py:215 wallet.py:279 wallet.py:317
+msgid "No message"
+msgstr "कोई संदेश नहीं"
+
+#: wallet.py:216 wallet.py:280 wallet.py:318
+msgid "Sending to this recipient needs a proper message"
+msgstr "इस प्राप्तकर्ता को भेजने के लिए एक उचित संदेश की आवश्यकता है"
+
+#: wallet.py:573
+msgid "Click"
+msgstr "क्लिक करें"
+
+#: wallet.py:584
+msgid "Time out, please try reloading"
+msgstr "समय समाप्त , कृपया पुनः लोड करने का प्रयास करें"
+
+#: wallet.py:1091
+msgid "Your message has been decrypted."
+msgstr "आपका संदेश डीक्रिप्ट कर दिया गया है"
+
+#: wallet.py:1107
+msgid "Message is empty"
+msgstr "संदेश रिक्त है"
+
+#: wallet.py:1110
+msgid "Recipient is empty"
+msgstr "प्राप्तकर्ता रिक्त है"
+
+#: wallet.py:1113
+msgid "Your message has been encrypted."
+msgstr "आपका संदेश एन्क्रिप्ट किया गया है."
+
+#: wallet.py:1120
+msgid "Message"
+msgstr "संदेश"
+

@@ -114,6 +114,9 @@ def check_block(block_height_new, miner_address, nonce, db_block_hash, diff0, re
         if is_regnet:
             diff0 = regnet.REGNET_DIFF - 8
 
+        # TODO: Verify!!!
+        diff0 = 10
+
         real_diff = diffme_heavy3(miner_address, nonce, db_block_hash)
         diff_drop_time = Decimal(180)
         mining_condition = bin_convert(db_block_hash)[0:int(diff0)]
@@ -134,8 +137,8 @@ def check_block(block_height_new, miner_address, nonce, db_block_hash, diff0, re
                 factor = 10
                 diff_dropped = quantize_ten(diff0) - quantize_ten(1) - quantize_ten(factor * (time_difference-2*diff_drop_time) / diff_drop_time)
 
-            if diff_dropped < 50:
-                diff_dropped = 50
+            if diff_dropped < 10:
+                diff_dropped = 10
             if real_diff >= int(diff_dropped):
                 if app_log:
                     app_log.info ("Readjusted difficulty requirement satisfied for block {} from {}, {} >= {} (factor {})"

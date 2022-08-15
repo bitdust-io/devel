@@ -1,0 +1,96 @@
+html,body {height:100%;}
+
+#image_WalletImage {vertical-align:middle;margin-top:5px;height:50px;width:50px;margin-left:3px;}
+#span_WalletHeaderText {font-family:arial;color:#FFD249;font-size:26px;font-weight:bold;text-shadow: 1px 1px 1px #333;}
+.hr_wallet {width:96%;border:0;height:0;border-top:1px solid rgba(0,0,0,0.1);border-bottom:1px solid rgba(255,255,255,0.3);}
+.primary {color:#808080;font-weight:bold;}
+.secondary {color:#333;font-weight:bold;}
+.div_WalletOverview {height:20px;font-size:1em;padding-left:20px;padding-bottom:6px;"}
+.ui-priority-secondary {color:#FFD249;}
+.blackBG {background-color:#000;
+}
+.content {
+	display: inline-block; vertical-align: middle;
+ 	padding: 0;
+ 	position : absolute !important;
+ 	top:125px;
+ 	right : 0;
+ 	bottom : 58px !important; 
+ 	left : 0 !important;
+ 	
+}
+
+#loginWrapperDiv{
+	margin: auto;
+  	position: absolute;
+  	top: 0; left: 0; bottom: 0; right: 0;
+  	height:250px;text-align:center;vertical-align:middle;
+}
+
+#loginDiv {
+	
+	width:300px;
+	text-align:left;
+	border:1px solid #808080;
+	padding:10px;
+	-moz-box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+	-webkit-box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+	box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+  	background:#7f7f7f;
+}
+
+#scanWrapperDiv{
+	margin: auto;
+  	position: absolute;
+  	top: 0; left: 0; bottom: 0; right: 0;
+  	height:250px;text-align:center;vertical-align:middle;
+}
+
+#spanBTC {font-size:.8em;}
+#spanFee {font-size:.8em;}
+#spanTotal {font-weight:bold;font-size:.8em;}
+
+@media ( min-width: 40em ) {
+	/* Show the table header rows and set all cells to display: table-cell */
+	.my-custom-breakpoint td,
+	.my-custom-breakpoint th,
+	.my-custom-breakpoint tbody th,
+	.my-custom-breakpoint tbody td,
+	.my-custom-breakpoint thead td,
+	.my-custom-breakpoint thead th {
+		display: table-cell;
+		margin: 0;
+		
+	}
+	/* Hide the labels in each cell */
+	.my-custom-breakpoint td .ui-table-cell-label,
+	.my-custom-breakpoint th .ui-table-cell-label {
+		display: none;
+	}
+}
+
+.movie-list thead th,
+.movie-list tbody tr:last-child {
+	
+    border-bottom: 1px solid #505050; /* non-RGBA fallback */
+    
+    
+}
+.movie-list tbody th,
+.movie-list tbody td {
+	font-size:.8em;
+    border-bottom: 1px solid #505050; /* non-RGBA fallback  */
+   
+}
+.movie-list tbody tr:last-child th,
+.movie-list tbody tr:last-child td {
+    
+    
+}
+.movie-list tbody tr:nth-child(odd) td,
+.movie-list tbody tr:nth-child(odd) th {
+	font-size:.8em;
+    background-color: #eeeeee; /* non-RGBA fallback  */
+    background-color: rgba(0,0,0,.1);
+    
+}

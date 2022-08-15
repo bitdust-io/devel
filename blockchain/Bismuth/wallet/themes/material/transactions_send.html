@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block body %}
+
+
+<!-- form method="get" action="/transactions/send"-->
+
+<div class="row">
+
+
+    <div class="col-lg-6 col-sm-12">
+
+        <div class="card">
+            <div class="card-header card-header-info">
+                <h4 class="card-title"><i class="material-icons">account_circle</i> {{ _("Send To")}}</h4>
+                <p class="card-category">{{ _("To whom send BIS.")}}</p>
+            </div>
+            <div class="card-body">
+                <div class="form-group">
+                    <label class="bmd-label-floating">{{ _("Recipient")}}</label>
+                    <input class="form-control" id="recipient" type="text" name="recipient"/>
+                </div>
+                <br/>
+                <div class="form-group">
+                    <label class="bmd-label-floating">{{ _("Data (message)")}}</label>
+                    <input class="form-control" id="data" type="text" name="data"/>
+                    <small>{{ _("Optionally, you can add a small comment to your transaction. Required for exchanges deposit.")}}
+                    </small>
+                </div>
+
+                <span data-toggle="collapse" data-target="#extra_option">
+                            <i id="extra" class="material-icons" style="color:#029eb1;" title="{{ _('Expert')}}">
+                                arrow_drop_down</i></span>
+                <div id="extra_option" class="collapse">
+                    <div id="extra_option2" class="form-group">
+                        <label class="bmd-label-floating">{{ _("Operation")}}</label>
+                        <input class="form-control" id="operation" type="text" name="operation"/>
+                        <small>{{ _('"operation" allows for powerful Bismuth Features. Leave empty until otherwise required.')}}
+                        </small>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <div class="col-lg-6 col-sm-12">
+
+        <div class="card">
+            <div class="card-header card-header-success">
+                <h4 class="card-title"><i class="material-icons">payment</i> {{ _("Amount")}}</h4>
+                <p class="card-category">{{ _("How many BIS to send.")}}</p>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="bmd-label-floating">{{ _("Amount (BIS)")}}</label>
+                            <input class="form-control" id="amount" type="text" name="amount"/>
+                            <small>{{ _("This is what the recipient will receive")}}</small>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="bmd-label-floating">{{ _("Est. fees")}}</label>
+                            <input class="form-control" id="fees" type="text" name="fees" value="0.01" disabled/>
+                            <small>{{ _("Fees depend on Data length")}}</small>
+                        </div>
+                        <div class="form-group">
+                            <label class="bmd-label-floating">{{ _("Total (BIS)")}}</label>
+                            <input class="form-control" id="total" type="text" name="total" value="0.01" disabled/>
+                            <small>{{ _("This is what you will pay, fees included.")}}</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- button type="submit" class="btn btn-primary pull-right">{{ _("Send BIS")}}</button -->
+                <button class="btn btn-primary "
+                        onclick="send($('#recipient').val(), $('#amount').val(), $('#operation').val(), $('#data').val());return false;">
+                    {{ _("Send BIS")}}...
+                </button>
+                <div class="clearfix"></div>
+            </div>
+        </div>
+
+    </div>
+
+
+</div>
+
+<div class="row">
+
+    <div class="col-lg-6 col-sm-12">
+    </div>
+    <div class="col-lg-6 col-sm-12">
+
+        <div class="card">
+            <div class="card-header card-header-success" data-toggle="collapse" data-target="#extra_bisurl">
+                <h4 class="card-title"><i class="material-icons">payment</i> {{ _("BIS URL")}}
+                    <i class="material-icons pull-right" style="color:#fff;">arrow_drop_down</i>
+                </h4>
+                <p class="card-category">{{ _("Send a transaction from a BIS URL")}}</p>
+            </div>
+            <div class="card-body collapse" id="extra_bisurl">
+
+                <div class="form-group">
+                    <label class="bmd-label-floating">{{ _("BIS URL")}}</label>
+                    <input class="form-control" id="bisurl" type="text" name="bisurl"/>
+                    <small>{{ _("Paste the BIS URL you were given here")}}</small>
+                </div>
+
+                <div class="row">
+                    <!-- div class="col-md-6">
+                        <button class="btn btn-info "
+                                onclick="decode($('#bisurl').val())">
+                            {{ _('Decode BIS URL')}}
+                        </button>
+                    </div-->
+                    <div class="col-md-6">
+                        <button class="btn btn-primary "
+                                onclick="sendurl($('#bisurl').val())">
+                            {{ _('Send BIS URL...')}}
+                        </button>
+                    </div>
+                </div>
+                <!-- button type="submit" class="btn btn-primary pull-right">{{ _("Send BIS")}}</button -->
+
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<!-- /form -->
+
+<div id="payment_window" class="modal" tabindex="-1" role="dialog"></div>
+{% end %}

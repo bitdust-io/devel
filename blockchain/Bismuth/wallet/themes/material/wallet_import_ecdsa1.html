@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block body %}
+
+
+<div class="row">
+    <div class="col-lg-12 col-md-12">
+        <div class="card">
+            <div class="card-header card-header-success">
+                <h4 class="card-title">{{ _("ECDSA PK Import")}}</h4>
+            </div>
+            <div class="card-body">
+
+
+                 <form action="/wallet/import_ecdsa" method="post" autocomplete="in_your_dreams_43452794">
+                <div class="card-header card-header-warning card-header-icon">
+                    <div class="card-icon">
+                        <i class="material-icons">person</i>
+                    </div>
+                    <h3 class="card-title">&nbsp;{{ _("Please confirm.") }}</h3>
+                </div>
+                <div class="card-body">
+                        Private Key : {{ privkey }}
+                        <br/>
+                        Public Key : {{ pubkey }}
+                        <br/>
+                        Address : {{ address }}
+                        <br/>
+                        Label : {{ label }}
+
+                        <br/>
+                        {% raw xsrf_form_html() %}
+
+                        <input type="hidden" name="label" value="{{ label }}"/>
+                        <input type="hidden" name="privkey" value="{{ privkey }}"/>
+
+                        <input name="import" id="btn_submit" class="btn btn-warning" type="submit" value="{{ _('Import Address') }}">
+                        <input name="cancel" id="btn_cancel" class="btn btn-success" type="submit" value="{{ _('Cancel') }}">
+
+                    </div>
+                <div class="card-footer">
+                    <div class="stats">
+                        {{ _("Address will be added to main wallet file, poswallet.json") }}
+                    </div>
+                </div>
+            </form>
+
+            </div>
+            <div class="card-footer">
+                <a href="javascript:history.go(-1)"><i class="material-icons">undo</i> {{ _("Previous page")}}</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+{% end %}

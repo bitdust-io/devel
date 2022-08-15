@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+<!-- "../../../../themes/material/base.html" -->
+
+{% block body %}
+
+
+<div class="row">
+    <div class="col-lg-6 col-md-12">
+        <div class="card">
+            <div class="card-header card-header-info">
+                <h4 class="card-title">{{ _('Crystal') }} : {{ _('BISMUTH VOTING') }} </h4>
+                <p class="card-category"></p>
+            </div>
+            <div class="card-body">
+                {{ _("WIP")}}<br />
+                Check available motions, vote, reveal your vote and explore stats.
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6 col-md-12">
+        <div class="card">
+            <div class="card-header card-header-success">
+                <h4 class="card-title">{{ _("About") }}</h4>
+                <p class="card-category"></p>
+            </div>
+            <div class="card-body">
+                <ul>
+                    <li>{{ _('Version') }} {{ version }}</li>
+                    <li>For reference, see <a href="https://hypernodes.bismuth.live/?p=791" target="_blank">Bismuth Governance, the protocol</a></li>
+                </ul>
+
+                Your master voting key
+                    {% if voting.get("masterkey") %}
+                        is defined
+                    {% else %}
+                        is <b>not</b> defined.
+                    {% end %}<br />
+                {% if voting.get("key_check") %}
+                        Your key validates.
+                    {% else %}
+                Your key <b>does not</b> validate. This means it's not BIP39 compatible and probably bogus. Use at your own risks if you know what you're doing.
+                    {% end %}<br />
+
+                <span data-toggle="collapse" data-target="#master_option">
+                    <i class="material-icons" style="color:#029eb1;" title="{{ _('Master voting key')}}">
+                                vpn_key</i>
+                            <i id="extra" class="material-icons" style="color:#029eb1;" title="{{ _('Master voting key')}}">
+                                arrow_drop_down</i></span>
+                <div id="master_option" class="collapse">
+                    <form action="/crystal/bismuthvote/set_key" method="get">
+                        <div id="extra_option2" class="form-group">
+                            <label class="bmd-label-floating">{{ _("Master voting key")}}</label>
+                            <input class="form-control" id="masterkey" type="text" name="masterkey" value="{{ voting.get('masterkey') }}"/>
+                            <small>{{ _('This is your master voting key, you can use for all your addresses and all motions. Keep it safe and backup!')}}<br />
+                                Your key is stored in the {{ voting.get("masterkey_file") }} file.
+                            </small>
+                        </div>
+                        <button class="btn btn-primary" type="submit" name="set_key" value="1"> {{ _("Set or generate Key")}}...</button>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-12 col-md-12">
+        <div class="card">
+            <div class="card-header card-header-primary">
+                <h4 class="card-title">{{ _('BISMUTH Motions') }}</h4>
+                <p class="card-category"></p>
+            </div>
+            <div class="card-body table-responsive">
+                <table class="table table-hover">
+                    <thead class="text-warning">
+                    <th class="center">&nbsp;</th>
+                    <th class="center">{{ _("Motion ID")}}</th>
+                    <th>{{ _("Motion Title")}}</th>
+                    <th>{{ _("Start Date (UTC)")}}</th>
+                    <th >{{ _("Reveal Date")}}</th>
+                    <th >{{ _("End Date")}}</th>
+                    <th >{{ _("Status")}}</th>
+                    </thead>
+                    <tbody>
+
+                    {% for id, motion in voting["bgvp_motions"].items() %}
+                    {% if False %}
+                        <tr style="font-style:italic;">
+                    {% else %}
+                        <tr>
+                    {% end %}
+
+                        <td class="center">
+                           <a href="/crystal/bismuthvote/motion/{{ motion['Motion_number']}}"><i class="material-icons">open_in_browser</i></a>
+                        </td>
+                        <td class="center">
+                            <a href="/crystal/bismuthvote/motion/{{ motion['Motion_number']}}">BGV-{{ motion["Motion_number"] }}</a>  <a href="{{ motion["Motion_url"] }}" target="_blank"><i class="material-icons">link</i></a>
+                        </td>
+                         <td>
+                        {{ motion["Motion_title"] }}
+                        </td>
+                        <td>
+                        {{ datetime.datetime.utcfromtimestamp(motion["Vote_start_date"]).strftime('%Y-%m-%d %H:%M:%S') }}
+                        </td>
+                        <td>
+                        {{ datetime.datetime.utcfromtimestamp(motion["Vote_reading_date"]).strftime('%Y-%m-%d %H:%M:%S') }}
+                        </td>
+                        <td>
+                        {{ datetime.datetime.utcfromtimestamp(motion["Vote_end_date"]).strftime('%Y-%m-%d %H:%M:%S') }}
+                        </td>
+                        <td>
+                            <i class="material-icons" title="{{ motion['Status'] }}">{{ motion["Material_status"] }}</i></a>
+                        </td>
+                    </tr>
+                    {% end %}
+
+                    </tbody>
+                </table>
+
+            </div>
+        </div>
+    </div>
+
+</div>
+
+
+
+
+{% end %}

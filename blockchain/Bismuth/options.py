@@ -109,19 +109,19 @@ class Get:
                         left = params[1]
                     setattr(self, left, right)
         # Default genesis to keep compatibility
-        self.genesis = "4edadac9093d9326ee4b17f869b14f1a2534f96f9c5d7b48dc9acaed"
+        self.genesis = "3b9ca99a7804015f8eaebb78d4b50570bd8337e8a8196343dbbb59c4"
         for key, default in self.defaults.items():
             if key not in self.__dict__:
                 setattr(self, key, default)
 
         # print(self.__dict__)
 
-    def read(self):
+    def read(self, filename='config.txt', custom_filename='config_custom.txt'):
         # first of all, load from default config so we have all needed params
-        self.load_file("config.txt")
+        self.load_file(filename)
         # then override with optional custom config
-        if path.exists("config_custom.txt"):
-            self.load_file("config_custom.txt")
+        if path.exists(custom_filename):
+            self.load_file(custom_filename)
         file_name = "./mandatory_message.json"
         if path.isfile(file_name):
             try:

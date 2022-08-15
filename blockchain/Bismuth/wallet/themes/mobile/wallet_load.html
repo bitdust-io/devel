@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block body %}
+		<table data-role="table" id="movie-table-custom" data-mode="reflow" class="movie-list ui-responsive">
+		  <thead>
+		    <tr style="font-size:.8em;">
+		      <th data-priority="1">File</th>
+		      <th data-priority="2">Address</th>
+		      <th data-priority="3">Encrypted</th>
+		    </tr>
+		  </thead>
+		  <tbody>
+		    {% for wallet in wallets %}
+            <tr style="border-bottom:1px solid #808080;">
+                <td>{{ wallet['file'] }}</td>
+				<td><a href="/wallet/load/{{ wallet['file'] }}">{{ wallet['address'] }}</a></td>
+	            <td>{{ wallet['encrypted'] }}</td>
+            </tr>
+			{% end %}
+		  </tbody>
+		</table>
+{% end %}

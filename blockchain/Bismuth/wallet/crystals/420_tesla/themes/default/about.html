@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+<!-- "../../../../themes/material/base.html" -->
+
+{% block body %}
+
+<nav class="nav"><a class="nav-link active" href="about" style="color:#888888">HOME</a></nav>
+<div class="row">
+
+    <div class="col-lg-6 col-md-12">
+        <div class="card">
+            <div class="card-header card-header-info">
+                <h4 class="card-title">About</h4>
+                <p class="card-category"></p>
+            </div>
+            <div class="card-body" style="height: 600px;">
+                   EV Battery Monitoring for Bismuth's Tornado Wallet<br/>
+                   Version 1.0.3<br/>
+                   <br/>
+                   GitHub Link: <a href='https://github.com/bismuthfoundation/TornadoWallet/tree/master/wallet/crystals/420_tesla'>https://github.com/bismuthfoundation/TornadoWallet/tree/master/wallet/crystals/420_tesla</a><br/>
+                   Blog: <a href='https://hypernodes.bismuth.live/?p=1318'>https://hypernodes.bismuth.live/?p=1318</a><br/>
+                   Public website: <a href='https://ev.batterylife.info'>https://ev.batterylife.info</a><br/>
+                   <br/><br/>
+                   To submit vehicle data, the following is required: pip3 install teslapy<br/>
+                   Stop the Tornado Wallet, install teslapy and restart the wallet if you have not already done this.
+                   <br/><br/>
+                   The Tesla API uses Captchas to fetch an access token. The first time, the following will be displayed in the wallet terminal window:
+                   "Use browser to login. Page Not Found will be shown at success. Enter URL after authentication:"
+                   After entering your email address and Tesla account password, copy the auth.tesla.com URL into the wallet.py terminal window to fetch the access token.
+                   <br/><br/>
+                   <img src="/crystal/tesla/static/logo.png" width="100%" alt="">
+               </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6 col-md-12">
+        <div class="card">
+            <div class="card-header card-header-success">
+                <h4 class="card-title">Menu</h4>
+                <p class="card-category"></p>
+            </div>
+            <div class="card-body" id="menu" style="height: 600px;">
+                <b>Commands for all users:</b><br/>
+                Analyze historic data from vehicles:<br/>
+                <form action="page3"><input type="submit" class="btn btn-primary" value="Analyze Vehicle Data"></form>
+
+                <br/><br/>
+                <b>Commands for Tesla owners only:</b><br/>
+                Fetch data from your Tesla vehicle and store on the blockchain:<br/>
+                <form action="page2"><input type="submit" class="btn btn-secondary" value="Fetch Vehicle Data"></form><br/>
+                Register your Tesla vehicle on the blockchain:<br/>
+                <form action="page1"><input type="submit" class="btn btn-secondary" value="Register Vehicle"></form><br/>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<br/>
+
+{% end %}
+
+{% block footer %}
+<!-- this goes after default includes, like jquery -->
+<script src="/crystal/tesla/static/util.js"></script>
+<script>
+try { 
+    is_static_available();
+} catch(e) {
+    $("#menu").html("<font color='red'>As a safety precaution, the TornadoWallet must be restarted the first time a new crystal has been activated!</font>");
+}
+</script>
+{% end %}

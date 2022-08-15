@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+<!-- "../../../../themes/material/base.html" -->
+
+{% block body %}
+
+<div class="row">
+
+    <div class="col-lg-6 col-md-12">
+        <div class="card">
+            <div class="card-header card-header-info">
+                <h4 class="card-title">About</h4>
+                <p class="card-category"></p>
+            </div>
+            <div class="card-body">
+                   BIS <-> wBIS (ERC-20) Bridge Crystal for Bismuth Tornado Wallet<br/>
+                   Version 1.0.4<br/>
+                <b style="color:orange;">Please read the manual! See <a href="https://hypernodes.bismuth.live/?p=2818" style="color:orange;text-decoration:underline;" target="_blank">Blog post</a></b>
+                   <br/>&nbsp
+               <!--    <br/>
+                   GitHub Link: <a href='https://github.com/bismuthfoundation/TornadoWallet/tree/master/wallet/crystals/060_ethbridge'>https://github.com/bismuthfoundation/TornadoWallet/tree/master/wallet/crystals/060_ethbridge</a><br/>
+                Blog: <b>TODO</b>
+                   <br/><br/> -->
+                   <center>
+                       <img src="/crystal/ethbridge/static/logo.png" alt="The logo will appear after restarting Tornado." style="width:98%; max-width:600px;">
+                   </center>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6 col-md-12">
+        <div class="card">
+            <div class="card-header card-header-success">
+                <h4 class="card-title">Menu</h4>
+                <p class="card-category"></p>
+            </div>
+            <div class="card-body">
+                <!-- form action='page1'>
+                    <input type="submit" class="btn btn-success" value="Example Commands">
+                </form -->
+                <a class="btn btn-success" href='swaps'><i class="material-icons">receipt</i> Swaps</a> View pending and latest ERC swaps<br />
+                &nbsp;<br />
+                <a class="btn btn-info" href='to_eth1'><i class="material-icons">arrow_forward</i> BIS->wBIS 1/2</a> Send native $BIS to the ETH bridge<br />
+                <a class="btn btn-primary" href='to_eth2'><i class="material-icons">arrow_forward</i> BIS->wBIS 2/2</a> Mint your wBIS ERC20 on ETH<br />
+                &nbsp;<br />
+                <a class="btn btn-info" href='from_eth1'><i class="material-icons">arrow_back</i> wBIS->BIS</a> Burn your wBIS ERC20 on ETH and get native BIS<br />
+
+                <br />
+                &nbsp;<br />
+                A fixed fees of $BIS {{ bismuth['extra']['bis_fixed_fees'] }} applies to every swap. wBIS are proxy minted on ETH chain by the end user.
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6 col-md-12">
+        <div class="card">
+            <div class="card-header card-header-primary">
+                <h4 class="card-title">wBIS ERC-20 Token</h4>
+                <p class="card-category"></p>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                     <div class="col-lg-4 col-md-12">
+                        <img src="/crystal/ethbridge/static/wbis500x500b.png" alt="The logo will appear after restarting Tornado." class="float-left" style="width:100%;max-width:150px;"/>
+                     </div>
+                     <div class="col-lg-8 col-md-12">
+                        <b>Name:</b> Wrapped BIS<br />
+                        <b>Symbol:</b> wBIS<br />
+                        <b>Decimals:</b> 8<br />
+                        <b>Address:</b> {{ bismuth['extra']['eth_sc_address'] }}<br />
+                         <a class="btn btn-success" href='#' id="addmeta"><i class="material-icons">add_circle</i> Add to MetaMask</a> <a class="btn btn-info" target="_blank" href="{{ bismuth['extra']['eth_explorer'] }}/token/{{ bismuth['extra']['eth_sc_address'] }}"><i class="material-icons">open_in_new</i> View on Etherscan</a>
+                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6 col-md-12">
+        <div class="card">
+            <div class="card-header card-header-info">
+                <h4 class="card-title">Overview</h4>
+                <p class="card-category"></p>
+            </div>
+            <div class="card-body">
+                <b>Circulating BIS Supply:</b> <span id="circulating_bis">{{ bismuth['extra']['circulating'] }}</span><br />
+                <b>My BIS balance:</b> <span id="my_bis">{{ escape(bismuth['balance']) }}&nbsp;$BIS</span><br />
+                &nbsp;<br />
+                <b>Total Wrapped BIS (ERC-20):</b> <span id="wbis_total"></span><br />
+                <b>My ETH Address:</b> <span id="my_ethaddress"></span><br />
+                <b>My wBIS balance (ERC-20):</b> <span id="wbis_amount"></span><br />
+                &nbsp;<br />
+                <b>ETH Contract Address:</b> <a href="https://etherscan.io/address/{{ bismuth['extra']['eth_sc_address'] }}" target="_blank">{{ bismuth['extra']['eth_sc_address'] }}</a><br />
+                <b>BIS ETH Bridge Address:</b> <a href="http://bismuth.online/search?quicksearch={{ bismuth['extra']['ethbridge_address'] }}" target="_blank">{{ bismuth['extra']['ethbridge_address'] }}</a><br />
+                <b>BIS ETH Oracle Address:</b> <a href="http://bismuth.online/search?quicksearch={{ bismuth['extra']['ethoracle_address'] }}" target="_blank">{{ bismuth['extra']['ethoracle_address'] }}</a><br />
+            </div>
+        </div>
+    </div>
+
+</div>
+
+
+
+<div class="row">
+
+        <div class="col-lg-6 col-md-12">
+        <div class="card">
+            <div class="card-header card-header-success">
+                <h4 class="card-title">Legalese</h4>
+                <p class="card-category"></p>
+            </div>
+            <div class="card-body">
+                <h3>Legal</h3>
+                The bridge and oracles are operated by members of the Bismuth team.<br />
+                The BIS on-chain data is the reference used.<br/>
+                The bridge is not custodial. Its function is to swap native BIS to ETH wBIS as well as ETH wBIS to BIS.<br/>
+                This is just a relocation from one chain to another and the change rate is 1:1 at all time, minus fixed operation fees.<br/>
+                It's not an exchange either. There is no order book, no market.<br />
+                &nbsp;<br />
+                Due to its decentralized and distributed nature, the operation of the Bismuth Network, Bismuth Bridge and Bismuth ETH Oracle does not fall under the legislation of the USA nor the EEC.<br/>
+                End users local legislation may apply. It's up to the user to check whether usage of the service(s) are compliant to their local legislation.
+
+                <h3>Fees</h3>
+                A fixed fees of $BIS {{ bismuth['extra']['bis_fixed_fees'] }} applies to every swap. wBIS are ERC-20, proxy minted on ETH chain by the end user.
+            </div>
+        </div>
+    </div>
+
+
+
+</div>
+
+<br/>
+
+{% end %}

@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block body %}
+
+<form method="post" action="/transactions/confirm">
+    <div class="row">
+        <div class="col-lg-12 col-md-12">
+            <div class="card">
+                <div class="card-header card-header-{{ type }}">
+                    <h4 class="card-title">{{ title }}</h4>
+                </div>
+                <div class="card-body">
+                    {{ message }}
+                </div>
+                <div class="card-footer">
+                    <a href="javascript:history.go(-1)"><i class="material-icons">undo</i> {{ _("Previous page")}}</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="row">
+
+        <div class="col-lg-6 col-md-12">
+            <div class="card">
+                <div class="card-header card-header-info">
+                    <h4 class="card-title"><i class="material-icons">account_circle</i> {{ _("Send To")}}</h4>
+                    <p class="card-category">{{ _("To whom send BIS.")}}</p>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label class="bmd-label-floating">{{ _("Recipient")}}</label>
+                        <input class="form-control" id="recipient" type="text" name="recipient"
+                               value="{{ bismuth['params'].get('recipient', '') }}"/>
+                    </div>
+                    <br/>
+                    <div class="form-group">
+                        <label class="bmd-label-floating">{{ _("Data (message)")}}</label>
+                        <input class="form-control" id="data" type="text" name="data"
+                               value="{{ bismuth['params'].get('data', '') }}"/>
+                        <small>
+{{ _("Optionally, you can add a small comment to your transaction. Required for exchanges deposit.")}}
+                        </small>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+
+        <div class="col-lg-6 col-md-12">
+            <div class="card">
+                <div class="card-header card-header-success">
+                    <h4 class="card-title"><i class="material-icons">payment</i> {{ _("Amount")}}</h4>
+                    <p class="card-category">{{ _("How many BIS to send.")}}</p>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="bmd-label-floating">{{ _("Amount (BIS)")}}</label>
+                                <input class="form-control" id="amount" type="text" name="amount"
+                                       value="{{ bismuth['params'].get('amount', '') }}"/>
+                                <small>{{ _("This is what the recipient will receive")}}</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="bmd-label-floating">{{ _("Est. fees")}}</label>
+                                <input class="form-control" id="fees" type="text" name="fees" disabled/>
+                                <small>{{ _("Fees depend on Data length")}}</small>
+                            </div>
+                            <div class="form-group">
+                                <label class="bmd-label-floating">{{ _("Total (BIS)")}}</label>
+                                <input class="form-control" id="total" type="text" name="total" disabled/>
+                                <small>{{ _("This is what you will pay, fees included.")}}</small>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+
+    <div class="row">
+        <div class="col-lg-6 col-sm-12">
+
+            <div class="card">
+
+                <div class="card-body">
+
+                    <div class="row">
+
+                        <div class="col-lg-6 col-sm-12">
+                            </div>
+                             <div class="col-lg-6 col-sm-12">
+                                    <!-- TODO: make that a generic block -->
+                                    {% if bismuth['spend_type']['type'] %}
+                                    <div class="form-group">
+                                            <label class="bmd-label-floating">{{ _("Spend protection")}}</label>
+                                            <input class="form-control" id="spend_token" type="password" name="spend_token"
+                                             autocomplete="nope8744588" re_adonly="readonly" on_focus="javascript: this.removeAttribute('readonly')" />
+                                            <small>{{ bismuth['spend_type']['label'] }}</small>
+                                    </div>
+                                    {% else %}
+                                    <input type="hidden" name="spend_token" value="" />
+                                    {% end %}
+                             </div>
+
+                        <div class="col-lg-6 col-sm-12">
+
+                            <button type="submit" value="cancel" class="btn btn-warning"
+                                    onclick="javascript:history.go(-1);return false">{{ _("Cancel")}}
+                            </button>
+                        </div>
+                        <div class="col-lg-6 col-sm-12">
+                            <button type="submit" value="confirm" class="btn btn-success pull-right">
+                                {{ _("Confirm and send BIS")}}
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+    {% raw xsrf_form_html() %}
+</form>
+
+{% end %}

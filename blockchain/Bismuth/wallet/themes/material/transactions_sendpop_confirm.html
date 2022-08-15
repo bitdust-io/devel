@@ -1,0 +1,129 @@
+{% block body %}
+
+<div class="modal-open" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content" style="background-color: #1a2035;">
+
+            <div class="modal-body">
+
+                <!-- form method="post" action="/transactions/confirmpop" -->
+
+                    <div class="card">
+                        <div class="card-header card-header-{{ type }}">
+                            <h4 class="card-title">{{ title }}
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </h4>
+                        </div>
+                        <div class="card-body">
+                            {{ message }}
+                        </div>
+
+                    </div>
+
+                    <div class="card">
+
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label class="bmd-label-floating">{{ _("Recipient")}}</label>
+                                <input class="form-control" id="crecipient" type="text" name="recipient"
+                                       value="{{ bismuth['params'].get('recipient', '') }}" disabled/>
+                            </div>
+                            <br/>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label class="bmd-label-floating">{{ _("Amount (BIS)")}}</label>
+                                        <input class="form-control" id="camount" type="text" name="amount"
+                                               value="{{ bismuth['params'].get('amount', '') }}" disabled/>
+                                        <small>{{ _("This is what the recipient will receive")}}</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <!-- div class="form-group">
+                                        <label class="bmd-label-floating">{{ _("Est. fees")}}</label>
+                                        <input class="form-control" id="feespop" type="text" name="fees" disabled/>
+                                        <small>{{ _("Fees depend on Data length")}}</small>
+                                    </div -->
+                                    <input id="feespop" type="hidden" name="feespop" class="feespop" />
+                                    <div class="form-group">
+                                        <label class="bmd-label-floating">{{ _("Total (BIS)")}}</label>
+                                        <input class="form-control totalpop" id="totalpop" type="text" name="total" disabled/>
+                                        <small>{{ _("This is what you will pay, fees included.")}}</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- br -->
+                            <div class="form-group">
+                                <label class="bmd-label-floating">{{ _("Operation")}}</label>
+                                <input class="form-control" id="coperation" type="text" name="operation"
+                                       value="{{ bismuth['params'].get('operation', '') }}" disabled/>
+
+                            </div>
+                            <br/>
+                            <div class="form-group">
+                                <label class="bmd-label-floating">{{ _("Data (message)")}}</label>
+                                <input class="form-control" id="cdata" type="text" name="data"
+                                       title="{{ bismuth['params'].get('data', '') }}"
+                                       value="{{ bismuth['params'].get('data', '') }}" disabled/>
+                                <!-- small>
+                                    {{ _("Optionally, you can add a small comment to your transaction. Required for exchanges deposit.")}}
+                                </small-->
+                            </div>
+
+                        </div>
+                    </div>
+
+
+
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-lg-6 col-sm-12">
+                            </div>
+                             <div class="col-lg-6 col-sm-12">
+                                    <!-- TODO: make that a generic block -->
+                                    {% if bismuth['spend_type']['type'] %}
+                                    <div class="form-group">
+                                            <label class="bmd-label-floating">{{ _("Spend protection")}}</label>
+                                            <input class="form-control password" id="cspend_token" type="password" name="spend_token"
+                                             autocomplete="nope8744588" re_adonly="readonly" on_focus="javascript: this.removeAttribute('readonly')" />
+                                            <small>{{ bismuth['spend_type']['label'] }}</small>
+                                    </div>
+                                    {% else %}
+                                    <input type="hidden" id="cspend_token" name="spend_token" value="" />
+                                    {% end %}
+                             </div>
+                             <div class="col-lg-6 col-sm-12">
+
+                                <button value="cancel" class="btn btn-warning"
+                                        onclick="close()" data-dismiss="modal">{{ _("Cancel")}}
+                                </button>
+                             </div>
+                             <div class="col-lg-6 col-sm-12">
+                                <button id="send_button" type="submit" value="confirm"
+                                        class="btn btn-success float-right" onclick="confirmtx($('#crecipient').val(),
+                                        $('#cdata').val(), $('#camount').val(), $('#coperation').val(),
+                                        $('#cspend_token').val())">
+                                    {{ _("Confirm and send BIS")}}
+                                </button>
+                             </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                {% raw xsrf_form_html() %}
+
+
+
+            </div>
+        </div>
+    </div>
+</div>
+
+
+{% end %}

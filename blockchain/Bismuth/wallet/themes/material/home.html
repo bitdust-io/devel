@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+
+{% block body %}
+
+
+<div class="row">
+
+	<div class="col-xl-6 col-lg-6 col-md-6 col-sm-6">
+	  <div class="card card-stats">
+		  <a href="/transactions/">
+			<div class="card-header card-header-success card-header-icon">
+			  <div class="card-icon">
+				<i class="material-icons">account_balance_wallet</i>
+			  </div>
+			  <p class="card-category">{{ _("Balance")}}</p>
+			  <h3 class="card-title">{{ escape(bismuth['balance']) }}&nbsp;$BIS</h3>
+			</div>
+			<div class="card-footer">
+			  <div class="stats">
+				<i class="material-icons">date_range</i> <!-- Just now - xx USD -->
+			  </div>
+			</div>
+		  </a>
+	  </div>
+	</div>
+
+	<div class="col-xl-3 col-lg-6 col-md-6 col-sm-6">
+	  <div class="card card-stats">
+		<a href="/transactions/send/">
+			<div class="card-header card-header-warning card-header-icon">
+			  <div class="card-icon">
+				<i class="material-icons">forward</i>
+			  </div>
+				<p class="card-category">{{ _("Send")}}</p>
+			  <h3 class="card-title">...</h3>
+			</div>
+			<div class="card-footer">
+			  <div class="stats">
+				<i class="material-icons">local_offer</i> {{ _("Send $BIS to...")}}
+			  </div>
+			</div>
+		</a>
+	  </div>
+	</div>
+
+	<div class="col-xl-3 col-lg-6 col-md-6 col-sm-6">
+	  <div class="card card-stats">
+		<a href="/transactions/receive/">
+			<div class="card-header card-header-success card-header-icon">
+			  <div class="card-icon">
+				<i class="material-icons">save_alt</i>
+			  </div>
+			  <p class="card-category">{{ _("Receive")}}</p>
+			  <h3 class="card-title">...</h3>
+			</div>
+			<div class="card-footer">
+			  <div class="stats">
+				<i class="material-icons">local_offer</i> {{ _("Request a $BIS payment")}}
+			  </div>
+			</div>
+		</a>
+	  </div>
+	</div>
+
+
+</div>
+
+
+<div class="row">
+
+	 <div class="col-lg-12 col-md-12">
+		  <div class="card">
+			<div class="card-header card-header-primary">
+			  <h4 class="card-title">{{ _("Latest transactions")}}</h4>
+			  <p class="card-category"><!-- {{ _("Updated on")}} --></p>
+			</div>
+			<div class="card-body table-responsive">
+			  <table class="table table-hover">
+				<thead class="text-warning">
+				  <th class="center">{{ _("Txid")}}</th>
+				  <th>{{ _("Date")}}</th>
+				  <th>{{ _("Address")}}</th>
+				  <th class="amount">{{ _("Amount")}}</th>
+				  <th class="center">{{ _("Type")}}</th>
+				</thead>
+				<tbody>
+
+				{% for transaction in bismuth['transactions'][:3] %}
+				<!-- {{ transaction }} -->
+  			    <!-- module Transaction(transaction) -->
+					{% if transaction['block_height'] < 0 %}
+                        <tr style="font-style:italic;">
+                    {% else %}
+                        <tr>
+                    {% end %}
+						<!-- td>{{ datetime.datetime.utcfromtimestamp(transaction['timestamp']).strftime('%Y-%m-%d %H:%M:%S') }}</td -->
+                        <td class="center">
+							{% if transaction['block_height'] < 0 %}
+							<i class="material-icons" title="{{ _('In mempool...')}}">schedule</i>
+                        	{% else %}
+                            <i class="material-icons copy-title-to-clipboard-base"
+                                              title="{{ transaction['signature'][:56] }}">receipt</i>
+							{% end %}
+						</td>
+						<td>{{ transaction['datetime'] }}</td>
+						<!-- td>{{ transaction['signature'][:56] }}</td -->
+						{% if transaction['recipient'] == bismuth['address'] and transaction['address'] == bismuth['address']%}
+						<!-- tx to self-->
+						<td>{{ transaction['recipient'] }}</td>
+						<td class="text-info amount"> {{ transaction['amount'] }}</td>
+						{% elif transaction['address'] == bismuth['address'] %}
+						<td>{{ transaction['recipient'] }}</td>
+						<td class="text-warning amount">-{{ transaction['amount'] }}</td>
+						{% else %}
+						<td>{{ transaction['address'] }}</td>
+						<td class="text-success amount"> {{ transaction['amount'] }}</td>
+						{% end %}
+						<td class="center" title="{{ transaction['operation'] }}">{{ transaction['operation'][:14] }}
+                        {% if len(transaction['operation']) > 14 %}
+                        <small>[...]</small>
+                        {% end %}</td>
+					</tr>
+				{% end %}
+						<tr id="copied" style="display:none;">
+                        <td colspan="2">
+                            <button type="button" class="btn btn-success" >
+                                        <i class="material-icons">done_outline</i> {{ _('Copied to Clipboard') }}
+                            </button>
+                        </td>
+                        <td colspan="3"></td>
+                    </tr>
+				</tbody>
+			  </table>
+			</div>
+		  </div>
+	 </div>
+
+
+</div>
+
+
+
+
+
+<div class="row">
+	{% raw home_crystals['content'] %}
+</div>
+
+<div class="row">
+	 <!-- div class="col-xl-4 col-lg-12">
+		  <div class="card card-chart">
+			<div class="card-header card-header-warning">
+			  <div class="ct-chart" id="websiteViewsChart"></div>
+			</div>
+			<div class="card-body">
+			  <h4 class="card-title">{{ _("Account balance")}}</h4>
+			  <p class="card-category">{{ _("Last 12 months")}}</p>
+			</div>
+			<div class="card-footer">
+			  <div class="stats">
+				<i class="material-icons">access_time</i> {{ _("Mockup with fake data")}}
+			  </div>
+			</div>
+		  </div>
+	 </div -->
+
+	 <div class="col-lg-8 col-md-12">
+		  <div class="card">
+			<div class="card-header card-header-info">
+			  <h4 class="card-title">{{ _("Bismuth news")}}</h4>
+			  <!-- p class="card-category">Updated on November 19, 2018</p -->
+			</div>
+			<div class="card-body">
+				<ul>
+					<li>This awesome wallet is Tornado based and comes with themes</li>
+					<li>Bismuth is proud to be listed on QTrade.io exchange</li>
+					<li>4 000 000 $BIS now locked in Hypernodes collateral</li>
+				</ul>
+
+			</div>
+		  </div>
+	 </div>
+
+</div>
+
+{% end %}

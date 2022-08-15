@@ -6,6 +6,9 @@ from fork import *
 from quantizer import quantize_two, quantize_eight, quantize_ten
 from fork import Fork
 
+_Debug = False
+
+
 def difficulty(node, db_handler):
     try:
         fork = Fork()
@@ -15,6 +18,8 @@ def difficulty(node, db_handler):
 
         timestamp_last = Decimal(result[1])
         block_height = int(result[0])
+        if _Debug:
+            print('            difficulty block_height=%r' % block_height)
 
         node.last_block_timestamp = timestamp_last
         #node.last_block = block_height do not fetch this here, could interfere with block saving
@@ -34,9 +39,13 @@ def difficulty(node, db_handler):
         temp = db_handler.c.fetchone()
         timestamp_1440 = timestamp_1441 if temp is None else Decimal(temp[0])
         block_time = Decimal(timestamp_last - timestamp_1440) / 1440
+        if _Debug:
+            print('            difficulty block_time=%r' % block_time)
 
         db_handler.execute(db_handler.c, "SELECT difficulty FROM misc ORDER BY block_height DESC LIMIT 1")
         diff_block_previous = Decimal(db_handler.c.fetchone()[0])
+        if _Debug:
+            print('            difficulty diff_block_previous=%r' % diff_block_previous)
 
         time_to_generate = timestamp_last - timestamp_before_last
 
@@ -48,19 +57,27 @@ def difficulty(node, db_handler):
                 block_time * math.ceil(28 - diff_block_previous / Decimal(16.0)))
         # Calculate new difficulty for desired blocktime of 60 seconds
         target = Decimal(60.00)
+        if _Debug:
+            print('            difficulty hashrate=%r' % hashrate)
         ##D0 = diff_block_previous
         difficulty_new = Decimal(
             (2 / math.log(2)) * math.log(hashrate * target * math.ceil(28 - diff_block_previous / Decimal(16.0))))
+        if _Debug:
+            print('            difficulty difficulty_new=%r' % difficulty_new)
         # Feedback controller
         Kd = 10
         difficulty_new = difficulty_new - Kd * (block_time - block_time_prev)
         diff_adjustment = (difficulty_new - diff_block_previous) / 720  # reduce by factor of 720
+        if _Debug:
+            print('            difficulty diff_adjustment', diff_block_previous, difficulty_new, diff_adjustment)
 
         if diff_adjustment > Decimal(1.0):
             diff_adjustment = Decimal(1.0)
 
         difficulty_new_adjusted = quantize_ten(diff_block_previous + diff_adjustment)
         difficulty = difficulty_new_adjusted
+        if _Debug:
+            print('            difficulty difficulty_new_adjusted=%r' % difficulty_new_adjusted)
 
         #fork handling
         if node.is_mainnet:
@@ -80,16 +97,26 @@ def difficulty(node, db_handler):
             diff_dropped = quantize_ten(difficulty) + quantize_ten(1) - quantize_ten(time_difference / diff_drop_time)
         else:
             diff_dropped = difficulty
+        if _Debug:
+            print('            difficulty diff_dropped=%r' % diff_dropped)
 
-        if difficulty < 50:
-            difficulty = 50
-        if diff_dropped < 50:
-            diff_dropped = 50
+        if difficulty < 10:
+            difficulty = 10
+        if diff_dropped < 10:
+            diff_dropped = 10
+
+        # TODO: Verify!
+        difficulty = 10
+        diff_dropped = 10
 
         return (
             float('%.10f' % difficulty), float('%.10f' % diff_dropped), float(time_to_generate), float(diff_block_previous),
             float(block_time), float(hashrate), float(diff_adjustment),
             block_height)  # need to keep float here for database inserts support
-    except: #new chain or regnet
-        difficulty = [24,24,0,0,0,0,0,0]
+    except Exception as e: #new chain or regnet
+        print('Failed to calculate difficulty (default difficulty will be used):', e)
+        if _Debug:
+            import traceback
+            traceback.print_exc()
+        difficulty = [10,10,0,0,0,0,0,0]
         return difficulty
