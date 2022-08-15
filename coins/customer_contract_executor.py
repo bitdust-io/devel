@@ -77,15 +77,11 @@ _ActiveCustomerContracts = dict()  # provides CustomerContractExecutor object by
 #------------------------------------------------------------------------------
 
 def all_contracts():
-    """
-    """
     global _ActiveCustomerContracts
     return _ActiveCustomerContracts
 
 
 def init_contract(supplier_idurl):
-    """
-    """
     global _ActiveCustomerContracts
     if supplier_idurl in _ActiveCustomerContracts:
         lg.warn('contract with supplier %s already started' % supplier_idurl)
@@ -97,8 +93,6 @@ def init_contract(supplier_idurl):
 
 
 def shutdown_contract(supplier_idurl):
-    """
-    """
     global _ActiveCustomerContracts
     if supplier_idurl not in _ActiveCustomerContracts:
         lg.warn('no contract started for given supplier')
@@ -109,8 +103,6 @@ def shutdown_contract(supplier_idurl):
 
 
 def get_contract(supplier_idurl):
-    """
-    """
     global _ActiveCustomerContracts
     if supplier_idurl not in _ActiveCustomerContracts:
         return None
@@ -118,8 +110,6 @@ def get_contract(supplier_idurl):
 
 
 def recheck_contract(supplier_idurl):
-    """
-    """
     contract_executor = get_contract(supplier_idurl)
     if contract_executor is None:
         contract_executor = init_contract(supplier_idurl)

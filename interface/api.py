@@ -918,16 +918,14 @@ def keys_list(sort=False, include_private=False):
     from crypt import my_keys
     r = []
     for key_id, key_object in my_keys.known_keys().items():
-        # if not key_object:
-        #     key_object = my_keys.key_obj(key_id)
         key_alias, creator_idurl = my_keys.split_key_id(key_id)
         if not key_alias or not creator_idurl:
             lg.warn('incorrect key_id: %s' % key_id)
             continue
         try:
-            key_info = my_keys.make_key_info(key_object, key_id=key_id, include_private=include_private, include_local_id=True)
+            key_info = my_keys.make_key_info(key_object, key_id=key_id, include_private=include_private, include_local_id=True, include_state=True)
         except:
-            key_info = my_keys.make_key_info(key_object, key_id=key_id, include_private=False, include_local_id=True)
+            key_info = my_keys.make_key_info(key_object, key_id=key_id, include_private=False, include_local_id=True, include_state=True)
         key_info.pop('include_private', None)
         r.append(key_info)
     if sort:
@@ -936,7 +934,7 @@ def keys_list(sort=False, include_private=False):
     return RESULT(r)
 
 
-def key_create(key_alias, key_size=None, label='', include_private=False):
+def key_create(key_alias, key_size=None, label='', active=True, include_private=False):
     """
     Generate new RSA private key and add it to the list of registered keys with a new `key_id`.
 
@@ -971,14 +969,15 @@ def key_create(key_alias, key_size=None, label='', include_private=False):
     if _Debug:
         lg.out(_DebugLevel, 'api.key_create id=%s, size=%s' % (key_id, key_size))
     if not label:
-        label = 'share%s' % utime.make_timestamp()
-    key_object = my_keys.generate_key(key_id, label=label, key_size=key_size)
+        label = 'key%s' % utime.make_timestamp()
+    key_object = my_keys.generate_key(key_id, label=label, active=active, key_size=key_size)
     if key_object is None:
         return ERROR('failed to generate private key %s' % key_id)
     key_info = my_keys.make_key_info(
         key_object,
         key_id=key_id,
-        include_private=include_private
+        include_private=include_private,
+        include_state=True,
     )
     key_info.pop('include_private', None)
     return OK(key_info, message='new private key %s was generated successfully' % key_alias, )
@@ -1012,6 +1011,36 @@ def key_label(key_id, label):
     if not my_keys.save_key(key_id):
         return ERROR('key %s store failed' % key_id)
     return OK(message='label for the key %s updated successfully' % key_id)
+
+
+def key_state(key_id, active):
+    """
+    Set active/inactive state for the given key.
+    If key was set to "inactive" state, certain parts of the software will not use it.
+
+    ###### HTTP
+        curl -X POST 'localhost:8180/key/state/v1' -d '{"key_id": "abcd1234$alice@server-a.com", "active": false}'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "key_state", "kwargs": {"key_id": "abcd1234$alice@server-a.com", "active": false} }');
+    """
+    if not driver.is_on('service_keys_registry'):
+        return ERROR('service_keys_registry() is not started')
+    from crypt import my_keys
+    from userid import my_id
+    if not my_keys.is_valid_key_id(key_id):
+        return ERROR('key %s is not valid' % key_id)
+    if not my_keys.is_key_registered(key_id):
+        return ERROR('key %s does not exist' % key_id)
+    if key_id == 'master' or key_id == my_id.getGlobalID(key_alias='master') or key_id == my_id.getID():
+        return ERROR('master key can not be changed to inactive state')
+    if _Debug:
+        lg.out(_DebugLevel, 'api.key_state id=%s, active=%r' % (key_id, active))
+    key_id = my_keys.latest_key_id(key_id)
+    my_keys.set_active(key_id, active)
+    if not my_keys.save_key(key_id):
+        return ERROR('key %s store failed' % key_id)
+    return OK(message='active state for the key %s updated successfully' % key_id)
 
 
 def key_erase(key_id):
@@ -1384,7 +1413,11 @@ def file_info(remote_path, include_uploads=True, include_downloads=True):
     item = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(customer_idurl, norm_path['key_alias']))
     if not item:
         return ERROR('item %s was not found in the catalog' % pathID)
-    (item_size, item_time, versions) = backup_fs.ExtractVersions(pathID, item)
+    backup_info_callback = None
+    if driver.is_on('service_restores'):
+        from storage import restore_monitor
+        backup_info_callback = restore_monitor.GetBackupStatusInfo
+    (item_size, item_time, versions) = backup_fs.ExtractVersions(pathID, item, backup_info_callback=backup_info_callback)
     glob_path_item = norm_path.copy()
     glob_path_item['path'] = pathID
     key_alias = norm_path['key_alias']
@@ -2282,23 +2315,79 @@ def shares_list(only_active=False, include_mine=True, include_granted=True):
             to_be_listed = True
         if not to_be_listed:
             continue
-        r = {
-            'key_id': key_id,
-            'alias': key_alias,
-            'label': my_keys.get_label(key_id),
-            'creator': creator_idurl.to_id(),
-            'state': None,
-            'suppliers': [],
-            'ecc_map': None,
-        }
         one_share = shared_access_coordinator.get_active_share(key_id)
         if one_share:
-            r.update(one_share.to_json())
+            r = one_share.to_json()
+        else:
+            r = {
+                'active': my_keys.is_active(key_id),
+                'key_id': key_id,
+                'alias': key_alias,
+                'label': my_keys.get_label(key_id),
+                'creator': creator_idurl.to_id(),
+                'suppliers': [],
+                'ecc_map': None,
+                'index': None,
+                'id': None,
+                'name': None,
+                'state': None,
+            }
         results.append(r)
     return RESULT(results)
 
 
-def share_create(owner_id=None, key_size=None, label=''):
+def share_info(key_id):
+    """
+    Returns detailed info about given shared location.
+
+    ###### HTTP
+        curl -X GET 'localhost:8180/share/info/v1?key_id=share_7e9726e2dccf9ebe6077070e98e78082$alice@server-a.com'
+
+    ###### WebSocket
+        websocket.send('{"command": "api_call", "method": "share_info", "kwargs": {"key_id": "share_7e9726e2dccf9ebe6077070e98e78082$alice@server-a.com"} }');
+    """
+    key_id = strng.to_text(key_id)
+    if not driver.is_on('service_shared_data'):
+        return ERROR('service_shared_data() is not started')
+    if not key_id.startswith('share_'):
+        return ERROR('invalid share id')
+    from crypt import my_keys
+    from access import shared_access_coordinator
+    from userid import global_id
+    if not my_keys.is_active(key_id):
+        glob_id = global_id.NormalizeGlobalID(key_id)
+        return OK({
+            'active': False,
+            'key_id': key_id,
+            'alias': glob_id['key_alias'],
+            'label': my_keys.get_label(key_id),
+            'creator': glob_id['idurl'].to_id(),
+            'suppliers': [],
+            'ecc_map': None,
+            'index': None,
+            'id': None,
+            'name': None,
+            'state': None,
+        })
+    this_share = shared_access_coordinator.get_active_share(key_id)
+    if not this_share:
+        return OK({
+            'active': my_keys.is_active(key_id),
+            'key_id': key_id,
+            'alias': glob_id['key_alias'],
+            'label': my_keys.get_label(key_id),
+            'creator': glob_id['idurl'].to_id(),
+            'suppliers': None,
+            'ecc_map': None,
+            'index': None,
+            'id': None,
+            'name': None,
+            'state': None,
+        })
+    return OK(this_share.to_json())
+
+
+def share_create(owner_id=None, key_size=None, label='', active=True):
     """
     Creates a new "share" - virtual location where you or other users can upload/download files.
 
@@ -2343,13 +2432,14 @@ def share_create(owner_id=None, key_size=None, label=''):
         label = 'share%s' % utime.make_timestamp()
     if not key_size:
         key_size = settings.getPrivateKeySize()
-    key_object = my_keys.generate_key(key_id, label=label, key_size=key_size)
+    key_object = my_keys.generate_key(key_id, label=label, active=active, key_size=key_size)
     if key_object is None:
         return ERROR('failed to generate private key %s' % key_id)
     key_info = my_keys.make_key_info(
         key_object,
         key_id=key_id,
         include_private=False,
+        include_state=True,
     )
     key_info.pop('include_private', None)
     backup_fs.SaveIndex(customer_idurl=global_id.glob2idurl(owner_id), key_alias=key_alias)
@@ -2449,6 +2539,7 @@ def share_open(key_id, publish_events=False):
         return ERROR('invalid share id')
     from access import shared_access_coordinator
     from contacts import identitycache
+    from crypt import my_keys
     from userid import global_id
     idurl = global_id.glob2idurl(key_id)
     ret = Deferred()
@@ -2481,6 +2572,7 @@ def share_open(key_id, publish_events=False):
         active_share.addStateChangedCallback(_on_shared_access_coordinator_state_changed)
         active_share.automat('restart')
 
+    my_keys.set_active(key_id, True)
     d = identitycache.GetLatest(idurl)
     d.addErrback(lambda *args: ret.callback(ERROR('failed caching identity of the share creator')) and None)
     d.addCallback(_get_active_share)
@@ -2502,7 +2594,9 @@ def share_close(key_id):
         return ERROR('service_shared_data() is not started')
     if not key_id.startswith('share_'):
         return ERROR('invalid share id')
+    from crypt import my_keys
     from access import shared_access_coordinator
+    my_keys.set_active(key_id, False)
     this_share = shared_access_coordinator.get_active_share(key_id)
     if not this_share:
         return ERROR('share %s was not opened' % key_id)

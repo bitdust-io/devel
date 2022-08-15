@@ -304,8 +304,6 @@ def run_twisted_reactor():
 
 
 def run(UI='', options=None, args=None, overDict=None, executablePath=None, start_reactor=True):
-    """
-    """
     if options and options.cpu_profile:
         import cProfile, pstats, io
         from pstats import SortKey  # @UnresolvedImport

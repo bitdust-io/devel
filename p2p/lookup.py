@@ -79,8 +79,6 @@ _ProcessMethod = None  # method to do some stuff with discovered IDURL
 
 
 def init(lookup_method=None, observe_method=None, process_method=None):
-    """
-    """
     global _LookupMethod
     global _ObserveMethod
     global _ProcessMethod
@@ -92,8 +90,6 @@ def init(lookup_method=None, observe_method=None, process_method=None):
 
 
 def shutdown():
-    """
-    """
     global _LookupMethod
     global _ObserveMethod
     global _ProcessMethod
@@ -233,8 +229,6 @@ def on_lookup_task_failed(err):
 
 
 def work():
-    """
-    """
     global _CurrentLookupTask
     global _LookupTasks
     if _CurrentLookupTask:

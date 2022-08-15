@@ -158,8 +158,6 @@ def InsertIncomingMessageCallback(cb):
 
 
 def RemoveIncomingMessageCallback(cb):
-    """
-    """
     global _IncomingMessageCallbacks
     if cb in _IncomingMessageCallbacks:
         _IncomingMessageCallbacks.remove(cb)
@@ -179,8 +177,6 @@ def AddOutgoingMessageCallback(cb):
 
 
 def RemoveOutgoingMessageCallback(cb):
-    """
-    """
     global _OutgoingMessageCallbacks
     if cb in _OutgoingMessageCallbacks:
         _OutgoingMessageCallbacks.remove(cb)
@@ -549,8 +545,6 @@ def consume_messages(consumer_callback_id, callback=None, direction=None, messag
 
 
 def clear_consumer_callbacks(consumer_callback_id):
-    """
-    """
     if consumer_callback_id not in consumers_callbacks().keys():
         return True
     cb_info = consumers_callbacks().pop(consumer_callback_id)
@@ -568,8 +562,6 @@ def clear_consumer_callbacks(consumer_callback_id):
 #------------------------------------------------------------------------------
 
 def push_message(direction, msg_type, recipient_id, sender_id, packet_id, owner_idurl, json_message, run_consumers=True):
-    """
-    """
     for consumers_callback_id in consumers_callbacks().keys():
         if consumers_callback_id not in message_queue():
             message_queue()[consumers_callback_id] = []
@@ -594,8 +586,6 @@ def push_message(direction, msg_type, recipient_id, sender_id, packet_id, owner_
 #------------------------------------------------------------------------------
 
 def push_incoming_message(request, private_message_object, json_message):
-    """
-    """
     msg_type = None
     if request.PacketID.startswith('private_'):
         msg_type = 'private_message'
@@ -617,8 +607,6 @@ def push_incoming_message(request, private_message_object, json_message):
 
 
 def push_outgoing_message(json_message, private_message_object, remote_identity, request, result):
-    """
-    """
     msg_type = 'private_message'
     if request.PacketID.startswith('queue_'):
         msg_type = 'queue_message'
@@ -636,8 +624,6 @@ def push_outgoing_message(json_message, private_message_object, remote_identity,
 
 
 def push_group_message(json_message, direction, group_key_id, producer_id, sequence_id):
-    """
-    """
     return push_message(
         direction=direction,
         msg_type='group_message',
@@ -651,8 +637,6 @@ def push_group_message(json_message, direction, group_key_id, producer_id, seque
 #------------------------------------------------------------------------------
 
 def do_read():
-    """
-    """
     known_consumers = list(message_queue().keys())
     total_handled = 0
     for consumer_id in known_consumers:

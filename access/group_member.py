@@ -63,7 +63,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -93,6 +93,7 @@ from main import events
 from main import config
 
 from crypt import my_keys
+from crypt import signed
 
 from dht import dht_relations
 
@@ -129,8 +130,6 @@ _ActiveGroupMembersByIDURL = {}
 #------------------------------------------------------------------------------
 
 def register_group_member(A):
-    """
-    """
     global _ActiveGroupMembers
     global _ActiveGroupMembersByIDURL
     if _Debug:
@@ -146,8 +145,6 @@ def register_group_member(A):
 
 
 def unregister_group_member(A):
-    """
-    """
     global _ActiveGroupMembers
     global _ActiveGroupMembersByIDURL
     if _Debug:
@@ -166,15 +163,11 @@ def unregister_group_member(A):
 #------------------------------------------------------------------------------
 
 def list_active_group_members():
-    """
-    """
     global _ActiveGroupMembers
     return list(_ActiveGroupMembers.keys())
 
 
 def get_active_group_member(group_key_id):
-    """
-    """
     global _ActiveGroupMembers
     if group_key_id not in _ActiveGroupMembers:
         return None
@@ -182,8 +175,6 @@ def get_active_group_member(group_key_id):
 
 
 def find_active_group_members(group_creator_idurl):
-    """
-    """
     global _ActiveGroupMembersByIDURL
     result = []
     for automat_index in _ActiveGroupMembersByIDURL.values():
@@ -1447,6 +1438,8 @@ class GroupMember(automat.Automat):
                     resp_payload = strng.to_text(err.value.args[0])
                 elif isinstance(err.value.args[0], packet_out.PacketOut):
                     resp_payload = strng.to_text(err.value.args[0].outpacket.Payload)
+                elif isinstance(err.value.args[0], signed.Packet):
+                    resp_payload = strng.to_text(err.value.args[0].Payload)
                 else:
                     resp_payload = strng.to_text(err.value.args[0][0].Payload)
                 if _Debug:

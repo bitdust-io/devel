@@ -1055,7 +1055,7 @@ def list_known_brokers():
     result = set()
     for inst in queue_keeper.queue_keepers().values():
         for broker_idurl in inst.cooperated_brokers.values():
-            if id_url.is_cached(broker_idurl):
+            if not id_url.is_cached(broker_idurl):
                 continue
             if not id_url.is_the_same(my_id.getIDURL(), broker_idurl):
                 result.add(id_url.field(broker_idurl))

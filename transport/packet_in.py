@@ -99,15 +99,11 @@ _History = []
 #------------------------------------------------------------------------------
 
 def init():
-    """
-    """
     global _PacketLogFileEnabled
     _PacketLogFileEnabled = config.conf().getBool('logs/packet-enabled')
 
 
 def shutdown():
-    """
-    """
     global _PacketLogFileEnabled
     _PacketLogFileEnabled = False
 
@@ -126,8 +122,6 @@ def increment_packets_counter():
 
 
 def inbox_items():
-    """
-    """
     global _InboxItems
     return _InboxItems
 
@@ -210,7 +204,7 @@ def process(newpacket, info):
         d.addErrback(lambda err: lg.err('incoming remote ID is unknown, failed caching remote %s identity: %s' % (newpacket.RemoteID, str(err))) and None)
         return d
     if newpacket.Command == commands.Identity():
-        if newpacket.RemoteID != my_id.getIDURL():
+        if not id_url.is_the_same(newpacket.RemoteID, my_id.getIDURL()):
             if _Debug:
                 lg.out(_DebugLevel, '    incoming Identity is routed to another user')
             if not gateway.on_identity_received(newpacket, send_ack=False):

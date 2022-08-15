@@ -109,8 +109,6 @@ _Installer = None
 
 
 def IsExist():
-    """
-    """
     global _Installer
     return _Installer is not None
 

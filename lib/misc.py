@@ -118,8 +118,7 @@ def readSupplierData(supplier_idurl, filename, customer_idurl):
     """
     Read a file from [BitDust data dir]/suppliers/[IDURL] folder.
 
-    The file names right now is ['connected', 'disconnected',
-    'listfiles'].
+    The file names right now is ['connected', 'disconnected', 'listfiles'].
     """
     path = settings.SupplierPath(supplier_idurl, customer_idurl, filename)
     if not os.path.isfile(path):
@@ -161,8 +160,6 @@ def NewBackupID(time_st=None):
 
 
 def TimeStructFromVersion(backupID):
-    """
-    """
     try:
         if backupID.endswith('AM') or backupID.endswith('PM'):
             ampm = backupID[-2:]
@@ -173,7 +170,7 @@ def TimeStructFromVersion(backupID):
             st_time = list(time.strptime(backupID[1:i - 1], '%Y%m%d%I%M%S'))
         if ampm == 'PM':
             st_time[3] += 12
-        return st_time
+        return tuple(st_time)
     except:
         lg.exc()
         return None
@@ -186,6 +183,7 @@ def TimeFromBackupID(backupID):
     try:
         return time.mktime(TimeStructFromVersion(backupID))
     except:
+        lg.exc()
         return None
 
 
@@ -243,7 +241,7 @@ def backup_id_compare(backupID1, backupID2):
     if customerGlobalID1 != customerGlobalID2:
         return cmp(customerGlobalID1, customerGlobalID2)
     return version_compare(version1, version2)
-    
+
 
 def sorted_backup_ids(backupIds, reverse=False):
     """
@@ -261,40 +259,6 @@ def sorted_versions(versions, reverse=False):
     return sorted_versions_list
 
 #------------------------------------------------------------------------------
-
-
-BASE_ALPHABET = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!()+-#$^&_=@[]{}`~'
-BASE_LIST = BASE_ALPHABET
-BASE_DICT = dict((c, i) for i, c in enumerate(BASE_LIST))
-
-
-def base_decode(string, reverse_base=BASE_DICT):
-    """
-    Not used right now, I was playing with file paths on remote peers.
-    """
-    return base64.decodestring(string)
-#    length = len(reverse_base)
-#    ret = 0
-#    for i, c in enumerate(string[::-1]):
-#        ret += (length ** i) * reverse_base[c]
-#    return ret
-
-
-def base_encode(string, base=BASE_LIST):
-    """
-    Not used at the moment.
-    """
-    return base64.encodestring(string)
-#    length = len(base)
-#    ret = ''
-#    while integer != 0:
-#        ret = base[integer % length] + ret
-#        integer /= length
-#    return ret
-
-
-#------------------------------------------------------------------------------
-
 
 def DigitsOnly(inpt, includes=''):
     """
@@ -486,8 +450,6 @@ def RoundupFile(filename, stepsize):
 
 
 def RoundupString(data, stepsize):
-    """
-    """
     size = len(data)
     mod = size % stepsize
     increase = 0
@@ -709,8 +671,6 @@ def percent2string(percent, precis=3):
 
 
 def value2percent(value, total, precis=3):
-    """
-    """
     if not total:
         return '0%'
     return percent2string(100.0 * (float(value) / float(total)), precis)

@@ -293,8 +293,6 @@ def GetFireHireErrors(suppliers_number):
 
 
 def GetCorrectablePercent(suppliers_number):
-    """
-    """
     global __correctable_errors
     return 100.0 * (float(__correctable_errors[suppliers_number]) / float(suppliers_number))
 

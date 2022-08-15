@@ -250,7 +250,7 @@ def scenario4():
     assert customer_1_share_id_cat in customer_2_keys
 
     # make sure shared location is activated on customer-2 node
-    kw.share_open_v1('customer-2', customer_1_share_id_cat)
+    # kw.share_open_v1('customer-2', customer_1_share_id_cat)
 
     kw.file_sync_v1('customer-2')
 
@@ -1233,7 +1233,13 @@ def scenario12_end(old_customer_1_info):
     customer_1_group2_key_id = old_customer_1_info['group2_key_id']
 
     # verify customer-2 group state before sending a new message - it suppose to trigger broker rotation
-    customer_2_group_info_before = kw.group_info_v1('customer-2', customer_1_group_key_id, wait_state='IN_SYNC!')['result']
+    customer_2_group_info_before = kw.group_info_v1('customer-2', customer_1_group_key_id, wait_state='IN_SYNC!', stop_state='DISCONNECTED')['result']
+    if customer_2_group_info_before['state'] == 'DISCONNECTED':
+        # should retry in case of broker rotation failed
+        kw.group_join_v1('customer-2', customer_1_group_key_id)
+        kw.wait_packets_finished(['customer-2', ])
+        customer_2_group_info_before = kw.group_info_v1('customer-2', customer_1_group_key_id, wait_state='IN_SYNC!')['result']
+
     assert customer_2_group_info_before['state'] == 'IN_SYNC!'
     assert customer_2_group_info_before['last_sequence_id'] == 4
 

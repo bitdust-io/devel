@@ -285,8 +285,6 @@ def HashSHA(inp, hexdigest=False):
 
 
 def HashSHA512(inp, hexdigest=False):
-    """
-    """
     return hashes.sha256(inp, hexdigest=hexdigest)
 
 

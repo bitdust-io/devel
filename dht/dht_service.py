@@ -915,8 +915,6 @@ def set_valid_data(key, json_data, age=0, expire=KEY_EXPIRE_MAX_SECONDS, rules={
 #------------------------------------------------------------------------------
 
 def write_verify_republish_data(key, json_data, age=0, expire=KEY_EXPIRE_MAX_SECONDS, rules={}, layer_id=0):
-    """
-    """
     try:
         raw_value = jsn.dumps(json_data, indent=0, sort_keys=True, separators=(',', ':'))
     except:

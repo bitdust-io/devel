@@ -109,8 +109,6 @@ def init(base_dir=None):
 
 
 def shutdown():
-    """
-    """
     global _InitDone
     _InitDone = False
     deploy.set_base_dir(None)
@@ -705,8 +703,6 @@ def MetaDataDir():
 
 
 def ConfigDir():
-    """
-    """
     return os.path.join(BaseDir(), 'config')
 
 
@@ -738,8 +734,6 @@ def IdentityCacheDir():
 
 
 def IdentityServerDir():
-    """
-    """
     return os.path.join(BaseDir(), 'identityserver')
 
 
@@ -826,56 +820,38 @@ def RatingsDir():
 
 
 def ContractChainDir():
-    """
-    """
     return os.path.join(BaseDir(), 'contracts')
 
 
 def ChatMessagesDir():
-    """
-    """
     return os.path.join(BaseDir(), 'messages')
 
 
 def ChatChannelsDir():
-    """
-    """
     return os.path.join(BaseDir(), 'messages', 'channels')
 
 
 def ChatHistoryDir():
-    """
-    """
     return os.path.join(BaseDir(), 'messages', 'history')
 
 
 def KeyStoreDir():
-    """
-    """
     return os.path.join(BaseDir(), 'keys')
 
 
 def BlockchainDir():
-    """
-    """
     return os.path.join(BaseDir(), 'blockchain')
 
 
 def APICertificatesDir():
-    """
-    """
     return os.path.join(BaseDir(), 'apicerts')
 
 
 def ServicesDataDir():
-    """
-    """
     return os.path.join(BaseDir(), 'servicedata')
 
 
 def ServiceDir(service_name):
-    """
-    """
     return os.path.join(ServicesDataDir(), service_name.replace('service_', ''))
 
 #------------------------------------------------------------------------------
@@ -1054,14 +1030,10 @@ def RepoFile():
 
 
 def VersionNumberFile():
-    """
-    """
     return os.path.join(bpio.getExecutableDir(), 'version')
 
 
 def CheckSumFile():
-    """
-    """
     return os.path.join(bpio.getExecutableDir(), 'checksum')
 
 
@@ -1073,8 +1045,6 @@ def CustomersSpaceFile():
 
 
 def CustomersUsedSpaceFile():
-    """
-    """
     return os.path.join(MetaDataDir(), 'spaceused')
 
 
@@ -1098,50 +1068,34 @@ def CertificateFiles():
 
 
 def DHTDBFile():
-    """
-    """
     return os.path.join(MetaDataDir(), 'dhtdb')
 
 
 def FTPServerCredentialsFile():
-    """
-    """
     return os.path.join(MetaDataDir(), 'ftpcredentials')
 
 
 def APIServerCertificateKeyFile():
-    """
-    """
     return os.path.join(MetaDataDir(), 'apiservercertkey')
 
 
 def APIServerCertificateFile():
-    """
-    """
     return os.path.join(MetaDataDir(), 'apiservercert')
 
 
 def APIClientCertificateKeyFile():
-    """
-    """
     return os.path.join(MetaDataDir(), 'apiclientcertkey')
 
 
 def APIClientCertificateFile():
-    """
-    """
     return os.path.join(MetaDataDir(), 'apiclientcert')
 
 
 def APISecretFile():
-    """
-    """
     return os.path.join(MetaDataDir(), 'apisecret')
 
 
 def ChatMessagesHistoryDatabaseFile():
-    """
-    """
     return os.path.join(ChatMessagesDir(), 'message_v1.db')
 
 #------------------------------------------------------------------------------
@@ -1189,14 +1143,10 @@ def IconFilename():
 
 
 def StyleSheetsFilename():
-    """
-    """
     return 'styles.css'
 
 
 def StyleSheetsPath():
-    """
-    """
     return os.path.join(bpio.getExecutableDir(), 'html', StyleSheetsFilename())
 
 
@@ -1491,114 +1441,80 @@ def getBandInLimit():
 
 
 def enableIdServer(enable=None):
-    """
-    """
     if enable is None:
         return config.conf().getBool('services/identity-server/enabled')
     config.conf().setData('services/identity-server/enabled', str(enable))
 
 
 def enableAPIAuthSecret(enable=None):
-    """
-    """
     if enable is None:
         return config.conf().getBool('interface/api/auth-secret-enabled')
     config.conf().setData('interface/api/auth-secret-enabled', str(enable))
 
 
 def enableRESTHTTPServer(enable=None):
-    """
-    """
     if enable is None:
         return config.conf().getBool('interface/api/rest-http-enabled')
     config.conf().setData('interface/api/rest-http-enabled', str(enable))
 
 
 def enableWebSocketServer(enable=None):
-    """
-    """
     if enable is None:
         return config.conf().getBool('interface/api/web-socket-enabled')
     config.conf().setData('interface/api/web-socket-enabled', str(enable))
 
 
 def enableFTPServer(enable=None):
-    """
-    """
     if enable is None:
         return config.conf().getBool('interface/ftp/enabled')
     config.conf().setData('interface/ftp/enabled', str(enable))
 
 
 def getIdServerHost():
-    """
-    """
     return config.conf().getData("services/identity-server/host").strip()
 
 
 def setIdServerHost(hostname_or_ip):
-    """
-    """
     return config.conf().setData("services/identity-server/host", hostname_or_ip)
 
 
 def getIdServerWebPort():
-    """
-    """
     return config.conf().getInt("services/identity-server/web-port", IdentityWebPort())
 
 
 def setIdServerWebPort(web_port):
-    """
-    """
     return config.conf().setInt("services/identity-server/web-port", web_port)
 
 
 def getIdServerTCPPort():
-    """
-    """
     return config.conf().getInt("services/identity-server/tcp-port", IdentityServerPort())
 
 
 def setIdServerTCPPort(tcp_port):
-    """
-    """
     return config.conf().setInt("services/identity-server/tcp-port", tcp_port)
 
 
 def getRESTHTTPServerPort():
-    """
-    """
     return config.conf().getInt('interface/api/rest-http-port', DefaultRESTHTTPPort())
 
 
 def setRESTHTTPServerPort(rest_http_port):
-    """
-    """
     return config.conf().setInt("interface/api/rest-http-port", rest_http_port)
 
 
 def getWebSocketServerPort():
-    """
-    """
     return config.conf().getInt('interface/api/web-socket-port', DefaultWebSocketPort())
 
 
 def setWebSocketServerPort(rest_http_port):
-    """
-    """
     return config.conf().setInt("interface/api/web-socket-port", rest_http_port)
 
 
 def getFTPServerPort():
-    """
-    """
     return config.conf().getInt('interface/ftp/port', DefaultFTPPort())
 
 
 def setFTPServerPort(ftp_port):
-    """
-    """
     return config.conf().setInt("interface/ftp/port", ftp_port)
 
 
@@ -1781,14 +1697,10 @@ def setHTTPPort(port):
 
 
 def getTransportPriority(proto):
-    """
-    """
     return config.conf().getInt('services/%s-transport/priority' % proto, 1)
 
 
 def setTransportPriority(proto, value):
-    """
-    """
     return config.conf().setInt('services/%s-transport/priority' % proto, value)
 
 
@@ -1850,8 +1762,6 @@ def transportSendingIsEnabled(proto):
 
 
 def enableProxyServer(enable=None):
-    """
-    """
     if enable is None:
         return config.conf().getBool('services/proxy-server/enabled')
     config.conf().setData('services/proxy-server/enabled', str(enable))
@@ -1945,8 +1855,6 @@ def getNeededString():
 
 
 def getNeededBytes():
-    """
-    """
     return diskspace.GetBytesFromString(getNeededString())
 
 
@@ -1958,8 +1866,6 @@ def getDonatedString():
 
 
 def getDonatedBytes():
-    """
-    """
     return diskspace.GetBytesFromString(getDonatedString())
 
 
@@ -1969,12 +1875,6 @@ def getUpdatesMode():
     """
     # TODO: remove this after get rid of webcontrol.py
     return 'turn off updates'
-
-
-def setUpdatesMode(mode):
-    """
-    """
-    # TODO: remove this after get rid of webcontrol.py
 
 
 def getUpdatesModeValues():
@@ -2028,8 +1928,6 @@ def getGeneralWaitSuppliers():
 
 
 def getBackupBlockSizeStr():
-    """
-    """
     return config.conf().getData('services/backups/block-size')
 
 
@@ -2041,8 +1939,6 @@ def getBackupBlockSize():
 
 
 def getBackupMaxBlockSizeStr():
-    """
-    """
     return config.conf().getData('services/backups/max-block-size')
 
 

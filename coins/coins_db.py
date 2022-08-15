@@ -130,8 +130,6 @@ def db(instance='current'):
 #------------------------------------------------------------------------------
 
 def rewrite_indexes(db_instance, source_db_instance):
-    """
-    """
     if _Debug:
         lg.out(_DebugLevel, 'coins_db.rewrite_indexes')
     source_location = os.path.join(source_db_instance.path, '_indexes')
@@ -178,8 +176,6 @@ def rewrite_indexes(db_instance, source_db_instance):
 
 
 def refresh_indexes(db_instance):
-    """
-    """
     if _Debug:
         lg.out(_DebugLevel, 'coins_db.refresh_indexes in %s' % db_instance.path)
     for ind, ind_class in coins_index.definitions():
@@ -200,8 +196,6 @@ def refresh_indexes(db_instance):
 
 
 def regenerate_indexes(temp_dir):
-    """
-    """
     tmpdb = Database(temp_dir)
     tmpdb.custom_header = coins_index.make_custom_header()
     tmpdb.create()
@@ -212,8 +206,6 @@ def regenerate_indexes(temp_dir):
 #------------------------------------------------------------------------------
 
 def to_list(ret):
-    """
-    """
     if ret and ret[0]:
         lst = list(ret[0])
         # print '\n'.join(map(str, lst))

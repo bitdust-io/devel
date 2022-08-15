@@ -68,8 +68,6 @@ from updates import git_proc
 #------------------------------------------------------------------------------
 
 def init():
-    """
-    """
     lg.out(4, 'geth_service.init')
     try:
         verify_local_install()
@@ -80,15 +78,11 @@ def init():
 
 
 def shutdown():
-    """
-    """
     lg.out(4, 'geth_service.shutdown')
 
 #------------------------------------------------------------------------------
 
 def verify_local_install():
-    """
-    """
     ethereum_location = os.path.join(settings.BaseDir(), "ethereum")
     if not os.path.isdir(ethereum_location):
         raise ValueError('Ethereum root location not found: {}'.format(ethereum_location))
@@ -101,16 +95,12 @@ def verify_local_install():
     return True
 
 def verify_global_install():
-    """
-    """
     # TODO: try to run "geth" in shell
     return True
 
 #------------------------------------------------------------------------------
 
 def clone(callback=None):
-    """
-    """
     ethereum_location = os.path.join(settings.BaseDir(), "ethereum")
     if not os.path.isdir(ethereum_location):
         os.makedirs(ethereum_location)
@@ -125,14 +115,10 @@ def clone(callback=None):
     )
 
 def make(callback=None):
-    """
-    """
     geth_location = os.path.join(settings.BaseDir(), "ethereum", "go-ethereum")
     execute(['make', 'geth'], base_dir=geth_location, env=os.environ, callback=callback)
 
 def deploy(callback=None):
-    """
-    """
     def _clone(out, retcode):
         make(callback=callback)
     clone(callback=_clone)
@@ -140,15 +126,11 @@ def deploy(callback=None):
 #------------------------------------------------------------------------------
 
 def run(cmdargs, callback=None):
-    """
-    """
     geth_location = os.path.join(settings.BaseDir(), "ethereum", "go-ethereum",)
     cmdargs = ['build/bin/geth', ] + cmdargs
     execute(cmdargs, base_dir=geth_location, env=os.environ, callback=callback)
 
 def run_geth_node():
-    """
-    """
     geth_datadir = os.path.join(settings.BaseDir(), "ethereum", "datadir")
     if not os.path.isdir(geth_datadir):
         os.makedirs(geth_datadir)
@@ -158,8 +140,6 @@ def run_geth_node():
 #------------------------------------------------------------------------------
 
 def execute(cmdargs, base_dir=None, process_protocol=None, env=None, callback=None):
-    """
-    """
     global _CurrentProcess
     if _Debug:
         lg.out(_DebugLevel, 'geth_service.execute: "%s" in %s' % (' '.join(cmdargs), base_dir))

@@ -214,8 +214,6 @@ class GateInterface():
 
 
 def interface_transport_initialized(xmlrpcurl):
-    """
-    """
     if proxy():
         return proxy().callRemote('transport_initialized', 'http', xmlrpcurl)
     lg.warn('transport_http is not ready')
@@ -223,8 +221,6 @@ def interface_transport_initialized(xmlrpcurl):
 
 
 def interface_receiving_started(host, new_options={}):
-    """
-    """
     if proxy():
         return proxy().callRemote('receiving_started', 'http', net_misc.pack_address(host), new_options)
     lg.warn('transport_http is not ready')
@@ -232,8 +228,6 @@ def interface_receiving_started(host, new_options={}):
 
 
 def interface_receiving_failed(error_code=None):
-    """
-    """
     if proxy():
         return proxy().callRemote('receiving_failed', 'http', error_code)
     lg.warn('transport_http is not ready')
@@ -241,8 +235,6 @@ def interface_receiving_failed(error_code=None):
 
 
 def interface_disconnected(result=None):
-    """
-    """
     if proxy():
         return proxy().callRemote('disconnected', 'http', result)
     lg.warn('transport_http is not ready')
@@ -250,8 +242,6 @@ def interface_disconnected(result=None):
 
 
 def interface_register_file_sending(host, receiver_idurl, filename, size=0, description=''):
-    """
-    """
     if proxy():
         return proxy().callRemote(
             'register_file_sending', 'http', net_misc.pack_address(host), receiver_idurl, filename, size, description)
@@ -260,8 +250,6 @@ def interface_register_file_sending(host, receiver_idurl, filename, size=0, desc
 
 
 def interface_register_file_receiving(host, sender_idurl, filename, size=0):
-    """
-    """
     if proxy():
         return proxy().callRemote(
             'register_file_receiving', 'http', net_misc.pack_address(host), sender_idurl, filename, size)
@@ -270,8 +258,6 @@ def interface_register_file_receiving(host, sender_idurl, filename, size=0):
 
 
 def interface_unregister_file_sending(transfer_id, status, size=0, error_message=None):
-    """
-    """
     if proxy():
         return proxy().callRemote('unregister_file_sending', transfer_id, status, size, error_message)
     lg.warn('transport_http is not ready')
@@ -279,8 +265,6 @@ def interface_unregister_file_sending(transfer_id, status, size=0, error_message
 
 
 def interface_unregister_file_receiving(transfer_id, status, size=0, error_message=None):
-    """
-    """
     if proxy():
         return proxy().callRemote('unregister_file_receiving', transfer_id, status, size, error_message)
     lg.warn('transport_http is not ready')
@@ -288,8 +272,6 @@ def interface_unregister_file_receiving(transfer_id, status, size=0, error_messa
 
 
 def interface_cancelled_file_sending(host, filename, size=0, description=None, error_message=None):
-    """
-    """
     if proxy():
         return proxy().callRemote(
             'cancelled_file_sending', 'http', net_misc.pack_address(host), filename, size, description, error_message)

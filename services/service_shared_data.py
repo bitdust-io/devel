@@ -55,24 +55,57 @@ class SharedDataService(LocalService):
         callback.append_inbox_callback(self._on_inbox_packet_received)
         events.add_subscriber(self._on_supplier_modified, 'supplier-modified')
         events.add_subscriber(self._on_my_list_files_refreshed, 'my-list-files-refreshed')
+        events.add_subscriber(self._on_key_registered, 'key-registered')
         events.add_subscriber(self._on_key_erased, 'key-erased')
+        events.add_subscriber(self._on_share_connected, 'share-connected')
         shared_access_coordinator.open_known_shares()
         return True
 
     def stop(self):
         from main import events
         from transport import callback
+        events.remove_subscriber(self._on_key_registered, 'key-registered')
         events.remove_subscriber(self._on_key_erased, 'key-erased')
+        events.remove_subscriber(self._on_share_connected, 'share-connected')
         events.remove_subscriber(self._on_my_list_files_refreshed, 'my-list-files-refreshed')
         events.remove_subscriber(self._on_supplier_modified, 'supplier-modified')
         callback.remove_inbox_callback(self._on_inbox_packet_received)
         return True
 
+    def _on_key_registered(self, evt):
+        if not evt.data['key_id'].startswith('share_'):
+            return
+        import time
+        from lib import strng
+        from access import shared_access_coordinator
+        active_share = shared_access_coordinator.get_active_share(evt.data['key_id'])
+        if active_share:
+            active_share.automat('new-private-key-registered')
+            return
+        new_share = shared_access_coordinator.SharedAccessCoordinator(evt.data['key_id'], log_events=True, publish_events=False, )
+        new_share.add_connected_callback('key_registered' + strng.to_text(time.time()), lambda _id, _result: self._on_share_first_connected(evt.data['key_id'], _id, _result))
+        new_share.automat('new-private-key-registered')
+
     def _on_key_erased(self, evt):
+        if not evt.data['key_id'].startswith('share_'):
+            return
         from access import shared_access_coordinator
         active_share = shared_access_coordinator.get_active_share(evt.data['key_id'])
         if active_share:
             active_share.automat('shutdown')
+
+    def _on_share_connected(self, evt):
+        pass
+
+    def _on_share_first_connected(self, key_id, callback_id, result):
+        if not result:
+            return
+        from access import shared_access_coordinator
+        from storage import backup_fs
+        active_share = shared_access_coordinator.get_active_share(key_id)
+        if active_share:
+            active_share.remove_connected_callback(callback_id)
+            backup_fs.populate_shared_files(key_id=key_id)
 
     def _on_supplier_modified(self, evt):
         from access import key_ring

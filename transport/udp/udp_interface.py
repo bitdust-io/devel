@@ -77,8 +77,6 @@ def proxy():
 
 
 def idurl_to_id(idurl):
-    """
-    """
     proto, host, port, filename = nameurl.UrlParse(idurl)
     assert proto == 'http'
     user_id = filename.replace('.xml', '') + '@' + host
@@ -321,8 +319,6 @@ def proxy_errback(x):
 
 
 def interface_transport_initialized():
-    """
-    """
     if proxy():
         return proxy().callRemote('transport_initialized', 'udp').addErrback(proxy_errback)
     lg.warn('transport_udp is not ready')
@@ -330,8 +326,6 @@ def interface_transport_initialized():
 
 
 def interface_receiving_started(host, new_options={}):
-    """
-    """
     if proxy():
         return proxy().callRemote('receiving_started', 'udp', host, new_options).addErrback(proxy_errback)
     lg.warn('transport_udp is not ready')
@@ -339,8 +333,6 @@ def interface_receiving_started(host, new_options={}):
 
 
 def interface_receiving_failed(error_code=None):
-    """
-    """
     if proxy():
         return proxy().callRemote('receiving_failed', 'udp', error_code).addErrback(proxy_errback)
     lg.warn('transport_udp is not ready')
@@ -348,8 +340,6 @@ def interface_receiving_failed(error_code=None):
 
 
 def interface_disconnected(result=None):
-    """
-    """
     if proxy():
         return proxy().callRemote('disconnected', 'udp', result).addErrback(proxy_errback)
     lg.warn('transport_udp is not ready')
@@ -358,8 +348,6 @@ def interface_disconnected(result=None):
 
 
 def interface_register_file_sending(host, receiver_idurl, filename, size, description=''):
-    """
-    """
     if proxy():
         return proxy().callRemote(
             'register_file_sending', 'udp', host, receiver_idurl, filename, size, description).addErrback(proxy_errback)
@@ -368,8 +356,6 @@ def interface_register_file_sending(host, receiver_idurl, filename, size, descri
 
 
 def interface_register_file_receiving(host, sender_idurl, filename, size):
-    """
-    """
     if proxy():
         return proxy().callRemote(
             'register_file_receiving', 'udp', host, sender_idurl, filename, size).addErrback(proxy_errback)
@@ -378,8 +364,6 @@ def interface_register_file_receiving(host, sender_idurl, filename, size):
 
 
 def interface_unregister_file_sending(transfer_id, status, bytes_sent, error_message=None):
-    """
-    """
     if proxy():
         return proxy().callRemote(
             'unregister_file_sending', transfer_id, status,
@@ -389,8 +373,6 @@ def interface_unregister_file_sending(transfer_id, status, bytes_sent, error_mes
 
 
 def interface_unregister_file_receiving(transfer_id, status, bytes_received, error_message=None):
-    """
-    """
     if proxy():
         return proxy().callRemote(
             'unregister_file_receiving', transfer_id, status,
@@ -400,8 +382,6 @@ def interface_unregister_file_receiving(transfer_id, status, bytes_received, err
 
 
 def interface_cancelled_file_sending(host, filename, size, description=None, error_message=None):
-    """
-    """
     if proxy():
         return proxy().callRemote(
             'cancelled_file_sending', 'udp', host, filename,
@@ -411,8 +391,6 @@ def interface_cancelled_file_sending(host, filename, size, description=None, err
 
 
 def interface_cancelled_file_receiving(host, filename, size, error_message=None):
-    """
-    """
     if proxy():
         return proxy().callRemote(
             'cancelled_file_receiving', 'udp', host, filename, size, error_message).addErrback(proxy_errback)

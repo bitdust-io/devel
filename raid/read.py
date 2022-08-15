@@ -85,8 +85,6 @@ import raid.eccmap
 #------------------------------------------------------------------------------
 
 def ReadBinaryFile(filename):
-    """
-    """
     if not os.path.isfile(filename):
         return ''
     if not os.access(filename, os.R_OK):

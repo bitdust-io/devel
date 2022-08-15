@@ -76,8 +76,6 @@ _TimeCountsDict = {}
 #------------------------------------------------------------------------------
 
 def fqn(o):
-    """
-    """
     return o.__module__ + "." + o.__name__
 
 #------------------------------------------------------------------------------
@@ -864,11 +862,17 @@ class STDOUT_unbuffered(object):
         self.stream = stream
 
     def write(self, data):
-        self.stream.write(data)
+        try:
+            self.stream.write(data)
+        except:
+            pass
         self.stream.flush()
 
     def writelines(self, datas):
-        self.stream.writelines(datas)
+        try:
+            self.stream.writelines(datas)
+        except:
+            pass
         self.stream.flush()
 
     def __getattr__(self, attr):
@@ -881,11 +885,17 @@ class STDERR_unbuffered(object):
         self.stream = stream
 
     def write(self, data):
-        self.stream.write(data)
+        try:
+            self.stream.write(data)
+        except:
+            pass
         self.stream.flush()
 
     def writelines(self, datas):
-        self.stream.writelines(datas)
+        try:
+            self.stream.writelines(datas)
+        except:
+            pass
         self.stream.flush()
 
     def __getattr__(self, attr):

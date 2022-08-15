@@ -287,8 +287,6 @@ def interface_disconnected(result=None):
 
 
 def interface_register_file_sending(host, receiver_idurl, filename, size=0, description=''):
-    """
-    """
     if proxy():
         return proxy().callRemote(
             'register_file_sending', 'proxy', host, receiver_idurl, filename, size, description,
@@ -298,8 +296,6 @@ def interface_register_file_sending(host, receiver_idurl, filename, size=0, desc
 
 
 def interface_register_file_receiving(host, sender_idurl, filename, size=0):
-    """
-    """
     if proxy():
         return proxy().callRemote(
             'register_file_receiving', 'proxy', host, sender_idurl, filename, size,
@@ -309,8 +305,6 @@ def interface_register_file_receiving(host, sender_idurl, filename, size=0):
 
 
 def interface_unregister_file_sending(transfer_id, status, size=0, error_message=None):
-    """
-    """
     if proxy():
         return proxy().callRemote(
             'unregister_file_sending', transfer_id, status, size, error_message,
@@ -320,8 +314,6 @@ def interface_unregister_file_sending(transfer_id, status, size=0, error_message
 
 
 def interface_unregister_file_receiving(transfer_id, status, size=0, error_message=None):
-    """
-    """
     if proxy():
         return proxy().callRemote(
             'unregister_file_receiving', transfer_id, status, size, error_message,
@@ -331,8 +323,6 @@ def interface_unregister_file_receiving(transfer_id, status, size=0, error_messa
 
 
 def interface_cancelled_file_sending(host, filename, size=0, description=None, error_message=None):
-    """
-    """
     if proxy():
         return proxy().callRemote(
             'cancelled_file_sending', 'proxy', host, filename, size, description, error_message,

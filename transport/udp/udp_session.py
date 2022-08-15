@@ -85,29 +85,21 @@ _ProcessSessionsDelay = MIN_PROCESS_SESSIONS_DELAY
 
 
 def sessions():
-    """
-    """
     global _SessionsDict
     return _SessionsDict
 
 
 def sessions_by_peer_address():
-    """
-    """
     global _SessionsDictByPeerAddress
     return _SessionsDictByPeerAddress
 
 
 def sessions_by_peer_id():
-    """
-    """
     global _SessionsDictByPeerID
     return _SessionsDictByPeerID
 
 
 def pending_outbox_files():
-    """
-    """
     global _PendingOutboxFiles
     return _PendingOutboxFiles
 
@@ -115,8 +107,6 @@ def pending_outbox_files():
 
 
 def create(node, peer_address, peer_id=None):
-    """
-    """
     if _Debug:
         lg.out(_DebugLevel, 'udp_session.create peer_address=%r' % peer_address)
     s = UDPSession(node, peer_address, peer_id)
@@ -134,20 +124,14 @@ def create(node, peer_address, peer_id=None):
 
 
 def get(peer_address):
-    """
-    """
     return sessions_by_peer_address().get(peer_address, [])
 
 
 def get_by_peer_id(peer_id):
-    """
-    """
     return sessions_by_peer_id().get(peer_id, [])
 
 
 def close(peer_address):
-    """
-    """
     active_sessions = get(peer_address)
     if not active_sessions:
         return False
@@ -157,8 +141,6 @@ def close(peer_address):
 
 
 def add_pending_outbox_file(filename, host, description='', result_defer=None, keep_alive=True):
-    """
-    """
     pending_outbox_files().append((filename, host, description, result_defer, keep_alive, time.time()))
     if _Debug:
         lg.out(_DebugLevel, 'udp_session.add_pending_outbox_file %s for %s : %s' % (
@@ -181,8 +163,6 @@ def remove_pending_outbox_file(host, filename):
 
 
 def report_and_remove_pending_outbox_files_to_host(remote_host, error_message):
-    """
-    """
     from transport.udp import udp_interface
     global _PendingOutboxFiles
     i = 0

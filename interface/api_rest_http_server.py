@@ -538,6 +538,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
             key_alias=data['alias'],
             key_size=int(data['key_size']) if 'key_size' in data else None,
             label=data.get('label', ''),
+            active=bool(data.get('active', '1') in ['1', 'true', ]),
             include_private=bool(data.get('include_private', '0') in ['1', 'true', ]),
         )
 
@@ -549,6 +550,16 @@ class BitDustRESTHTTPServer(JsonAPIResource):
         return api.key_label(
             key_id=data['key_id'],
             label=data['label'],
+        )
+
+    @POST('^/k/st$')
+    @POST('^/v1/key/state$')
+    @POST('^/key/state/v1$')
+    def key_state_v1(self, request):
+        data = _request_data(request, mandatory_keys=['active', 'key_id', ])
+        return api.key_label(
+            key_id=data['key_id'],
+            active=bool(data.get('active', '1') in ['1', 'true', ]),
         )
 
     @DELETE('^/k/d$')
@@ -712,6 +723,12 @@ class BitDustRESTHTTPServer(JsonAPIResource):
             include_granted=bool(_request_arg(request, 'granted', '1') in ['1', 'true', ]),
         )
 
+    @GET('^/sh/i$')
+    @GET('^/v1/share/info$')
+    @GET('^/share/info/v1$')
+    def share_info_v1(self, request):
+        return api.share_info(key_id=_request_arg(request, 'key_id', mandatory=True))
+
     @POST('^/sh/c$')
     @POST('^/v1/share/create$')
     @POST('^/share/create/v1$')
@@ -721,6 +738,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
             owner_id=data.get('owner_id', None),
             key_size=int(data['key_size']) if 'key_size' in data else None,
             label=data.get('label', ''),
+            active=bool(data.get('active', '1') in ['1', 'true', ]),
         )
 
     @DELETE('^/sh/d$')

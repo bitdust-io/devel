@@ -80,15 +80,11 @@ _CustomerAssistants = {}
 #------------------------------------------------------------------------------
 
 def assistants():
-    """
-    """
     global _CustomerAssistants
     return _CustomerAssistants
 
 
 def create(customer_idurl):
-    """
-    """
     if customer_idurl in assistants():
         raise Exception('another CustomerAssistant instance for %s already exists' % customer_idurl)
     assistants()[customer_idurl] = CustomerAssistant(customer_idurl)

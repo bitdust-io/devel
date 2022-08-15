@@ -88,8 +88,6 @@ _ActiveMessageProducersByIDURL = {}
 #------------------------------------------------------------------------------
 
 def register_message_producer(A):
-    """
-    """
     global _ActiveMessageProducers
     global _ActiveMessageProducersByIDURL
     if _Debug:
@@ -103,8 +101,6 @@ def register_message_producer(A):
 
 
 def unregister_message_producer(A):
-    """
-    """
     global _ActiveMessageProducers
     global _ActiveMessageProducersByIDURL
     if _Debug:
@@ -121,15 +117,11 @@ def unregister_message_producer(A):
 #------------------------------------------------------------------------------
 
 def list_active_message_producers():
-    """
-    """
     global _ActiveMessageProducers
     return list(_ActiveMessageProducers.keys())
 
 
 def get_active_message_producer(group_key_id):
-    """
-    """
     global _ActiveMessageProducers
     if group_key_id not in _ActiveMessageProducers:
         return None
@@ -137,8 +129,6 @@ def get_active_message_producer(group_key_id):
 
 
 def find_active_message_producers(group_creator_idurl):
-    """
-    """
     global _ActiveMessageProducersByIDURL
     result = []
     for automat_index in _ActiveMessageProducersByIDURL.values():

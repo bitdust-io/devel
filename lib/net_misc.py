@@ -93,14 +93,11 @@ _ProxySettings = {
 
 
 def init():
-    """
-    Just in case.
-    """
+    pass
 
 
 def shutdown():
-    """
-    """
+    pass
 
 #------------------------------------------------------------------------------
 
@@ -752,8 +749,6 @@ def TestInternetConnectionOld2(remote_hosts=None, timeout=10):
 
 
 def TestInternetConnection(remote_hosts=None, timeout=10):
-    """
-    """
     if remote_hosts is None:
         remote_hosts = []
         from userid import known_servers

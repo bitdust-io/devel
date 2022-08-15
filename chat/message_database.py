@@ -97,8 +97,6 @@ MESSAGE_TYPE_CODES = {
 #------------------------------------------------------------------------------
 
 def init(filepath=None):
-    """
-    """
     global _HistoryDB
     global _HistoryCursor
 
@@ -158,8 +156,6 @@ def init(filepath=None):
 
 
 def shutdown():
-    """
-    """
     global _HistoryDB
     global _HistoryCursor
     if _Debug:

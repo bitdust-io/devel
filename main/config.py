@@ -66,8 +66,6 @@ _Config = None
 
 
 def init(configDir):
-    """
-    """
     global _Config
     if _Config is None:
         _Config = DetailedConfig(configDir)
@@ -78,8 +76,6 @@ def init(configDir):
 
 
 def shutdown():
-    """
-    """
     if _Debug:
         lg.out(_DebugLevel, 'config.shutdown')
     global _Config
@@ -90,8 +86,6 @@ def shutdown():
 #------------------------------------------------------------------------------
 
 def conf():
-    """
-    """
     global _Config
     return _Config
 

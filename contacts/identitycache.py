@@ -172,8 +172,6 @@ def PrintAllInCache():
 
 
 def Items():
-    """
-    """
     return identitydb.cache()
 
 
@@ -185,8 +183,6 @@ def HasKey(idurl):
 
 
 def GetLastModifiedTime(idurl):
-    """
-    """
     return identitydb.get_last_modified_time(idurl)
 
 
@@ -338,8 +334,6 @@ def OverrideIdentity(idurl, xml_src):
 
 
 def StopOverridingIdentity(idurl):
-    """
-    """
     global _OverriddenIdentities
     idurl = id_url.field(idurl)
     if not idurl.is_latest():
@@ -359,8 +353,6 @@ def StopOverridingIdentity(idurl):
 
 
 def IsOverridden(idurl):
-    """
-    """
     global _OverriddenIdentities
     idurl = id_url.field(idurl)
     if not idurl.is_latest():
@@ -374,8 +366,6 @@ def IsOverridden(idurl):
 
 
 def ReadOverriddenIdentityXMLSource(idurl):
-    """
-    """
     global _OverriddenIdentities
     idurl = id_url.field(idurl)
     if not idurl.is_latest():

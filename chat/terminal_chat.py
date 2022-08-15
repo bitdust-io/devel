@@ -89,30 +89,22 @@ def shutdown():
 
 
 def run():
-    """
-    """
     global _SimpleTerminalChat
     _SimpleTerminalChat.run()
     reactor.callFromThread(reactor.stop)
 
 
 def stop():
-    """
-    """
     global _SimpleTerminalChat
     _SimpleTerminalChat.stop()
 
 
 def process_message(sender, message):
-    """
-    """
     global _SimpleTerminalChat
     _SimpleTerminalChat.process_message(sender, message)
 
 
 def on_incoming_message(msg):
-    """
-    """
     global _SimpleTerminalChat
     _SimpleTerminalChat.on_inbox_message(msg['sender'], msg['message'])
     return msg

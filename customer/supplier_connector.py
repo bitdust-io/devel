@@ -99,8 +99,6 @@ _SuppliersConnectors = {}
 #------------------------------------------------------------------------------
 
 def connectors(customer_idurl=None, as_dict=False):
-    """
-    """
     global _SuppliersConnectors
     if as_dict:
         return _SuppliersConnectors
@@ -114,8 +112,6 @@ def connectors(customer_idurl=None, as_dict=False):
 
 def create(supplier_idurl, customer_idurl=None, needed_bytes=None,
            key_id=None, queue_subscribe=True):
-    """
-    """
     if customer_idurl is None:
         customer_idurl = my_id.getIDURL()
     customer_idurl = id_url.field(customer_idurl)
@@ -132,8 +128,6 @@ def create(supplier_idurl, customer_idurl=None, needed_bytes=None,
 
 
 def is_supplier(supplier_idurl, customer_idurl=None):
-    """
-    """
     global _SuppliersConnectors
     if customer_idurl is None:
         customer_idurl = my_id.getIDURL()
@@ -151,8 +145,6 @@ def is_supplier(supplier_idurl, customer_idurl=None):
 
 
 def by_idurl(supplier_idurl, customer_idurl=None):
-    """
-    """
     if customer_idurl is None:
         customer_idurl = my_id.getIDURL()
     customer_idurl = id_url.field(customer_idurl)
@@ -161,8 +153,6 @@ def by_idurl(supplier_idurl, customer_idurl=None):
 
 
 def total_connectors():
-    """
-    """
     count = 0
     for suppliers_list in _SuppliersConnectors.values():
         count += len(suppliers_list)

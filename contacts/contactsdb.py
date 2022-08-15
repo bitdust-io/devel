@@ -107,8 +107,6 @@ def init():
 
 
 def shutdown():
-    """
-    """
     global _SuppliersChangedCallback
     global _CustomersChangedCallback
     if _Debug:
@@ -149,8 +147,6 @@ def supplier(index, customer_idurl=None):
 
 
 def all_suppliers(as_dict=False):
-    """
-    """
     global _SuppliersList
     if as_dict:
         return _SuppliersList
@@ -233,8 +229,6 @@ def add_supplier(idurl, position=None, customer_idurl=None):
 
 
 def erase_supplier(idurl=None, position=None, customer_idurl=None):
-    """
-    """
     global _SuppliersList
     if not customer_idurl:
         customer_idurl = my_id.getIDURL()
@@ -506,8 +500,6 @@ def num_suppliers(customer_idurl=None):
 
 
 def total_suppliers():
-    """
-    """
     global _SuppliersList
     result = set()
     for suppliers_list in _SuppliersList.values():
@@ -880,8 +872,6 @@ def get_correspondent_identity(idurl):
 
 
 def get_correspondent_nickname(correspondent_idurl):
-    """
-    """
     for idurl, nickname in correspondents():
         if id_url.field(idurl).to_bin() == id_url.field(correspondent_idurl).to_bin():
             return nickname
@@ -906,15 +896,11 @@ def on_contacts_changed(old_contacts_list, new_contacts_list):
 #------------------------------------------------------------------------------
 
 def read_customers_meta_info_all():
-    """
-    """
     global _CustomersMetaInfo
     return _CustomersMetaInfo
 
 
 def write_customers_meta_info_all(new_customers_info):
-    """
-    """
     global _CustomersMetaInfo
     _CustomersMetaInfo = new_customers_info
     json_info = {k: jsn.dict_keys_to_text(v) for k, v in id_url.to_bin_dict(_CustomersMetaInfo).items()}
@@ -930,8 +916,6 @@ def write_customers_meta_info_all(new_customers_info):
 
 
 def add_customer_meta_info(customer_idurl, info):
-    """
-    """
     global _CustomersMetaInfo
     customer_idurl = id_url.field(customer_idurl)
     if not customer_idurl.is_latest():
@@ -968,8 +952,6 @@ def add_customer_meta_info(customer_idurl, info):
 
 
 def remove_customer_meta_info(customer_idurl):
-    """
-    """
     global _CustomersMetaInfo
     customer_idurl = id_url.field(customer_idurl)
     if not customer_idurl.is_latest():
@@ -993,8 +975,6 @@ def remove_customer_meta_info(customer_idurl):
 
 
 def get_customer_meta_info(customer_idurl):
-    """
-    """
     global _CustomersMetaInfo
     customer_idurl = id_url.field(customer_idurl)
     if not customer_idurl.is_latest():
@@ -1009,8 +989,6 @@ def get_customer_meta_info(customer_idurl):
 #------------------------------------------------------------------------------
 
 def add_supplier_meta_info(supplier_idurl, info, customer_idurl=None):
-    """
-    """
     global _SuppliersMetaInfo
     if not customer_idurl:
         customer_idurl = my_id.getIDURL()
@@ -1027,8 +1005,6 @@ def add_supplier_meta_info(supplier_idurl, info, customer_idurl=None):
 
 
 def remove_supplier_meta_info(supplier_idurl, customer_idurl=None):
-    """
-    """
     global _SuppliersMetaInfo
     if not customer_idurl:
         customer_idurl = my_id.getIDURL()
@@ -1045,8 +1021,6 @@ def remove_supplier_meta_info(supplier_idurl, customer_idurl=None):
 
 
 def get_supplier_meta_info(supplier_idurl, customer_idurl=None):
-    """
-    """
     global _SuppliersMetaInfo
     if not customer_idurl:
         customer_idurl = my_id.getIDURL()

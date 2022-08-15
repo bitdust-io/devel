@@ -112,8 +112,6 @@ def shutdown():
 
 
 def sync_callback(result):
-    """
-    """
     lg.out(6, 'git_proc.sync_callback: %s' % result)
 
     if result == 'code-fetched':
@@ -219,8 +217,6 @@ def sync(callback_func=None, update_method='rebase'):
 
 
 def run(cmdargs, base_dir=None, git_bin=None, env=None, callback=None):
-    """
-    """
     if _Debug:
         lg.out(_DebugLevel, 'git_proc.run')
     base_dir = base_dir or bpio.getExecutableDir()

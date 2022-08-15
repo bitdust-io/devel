@@ -205,26 +205,18 @@ def DeleteSuppliers(suppliers_IDURLs):
 
 
 def DeleteAllSuppliers():
-    """
-    """
     return throttle().DeleteSuppliers(list(throttle().supplierQueues.keys()))
 
 
 def OutboxStatus(pkt_out, status, error):
-    """
-    """
     return throttle().OutboxStatus(pkt_out, status, error)
 
 
 def FileSendingFinished(pkt_out, item, status, size, error_message):
-    """
-    """
     return throttle().FileSendingFinished(pkt_out, item, status, size, error_message)
 
 
 def IsSendingQueueEmpty():
-    """
-    """
     return throttle().IsSendingQueueEmpty()
 
 

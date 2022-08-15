@@ -318,8 +318,6 @@ def isCheckingNow(idurl):
 
 
 def getInstance(idurl, autocreate=True):
-    """
-    """
     if _ShutdownFlag:
         return None
     if id_url.is_empty(idurl):

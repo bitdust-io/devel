@@ -67,17 +67,11 @@ from six.moves import range
 #------------------------------------------------------------------------------
 
 _Debug = False
-_DebugLevel = 16
+_DebugLevel = 12
 
 #------------------------------------------------------------------------------
 
-import sys
 import time
-
-try:
-    from twisted.internet import reactor  # @UnresolvedImport
-except:
-    sys.exit('Error initializing twisted.internet.reactor in p2p_connector.py')
 
 from twisted.internet.task import LoopingCall  #@UnresolvedImport
 

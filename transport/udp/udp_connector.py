@@ -74,8 +74,6 @@ def connectors():
 
 
 def create(node, peer_id):
-    """
-    """
     if _Debug:
         lg.out(_DebugLevel, 'udp_connector.create peer_id=%s' % peer_id)
     c = DHTUDPConnector(node, peer_id)
@@ -84,8 +82,6 @@ def create(node, peer_id):
 
 
 def get(peer_id):
-    """
-    """
     for c in connectors().values():
         if c.peer_id == peer_id:
             return c

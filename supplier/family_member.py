@@ -76,15 +76,11 @@ DHT_RECORD_REFRESH_INTERVAL = 5 * 60
 #------------------------------------------------------------------------------
 
 def families():
-    """
-    """
     global _CustomersFamilies
     return _CustomersFamilies
 
 
 def create_family(customer_idurl):
-    """
-    """
     customer_idurl = id_url.field(customer_idurl)
     if customer_idurl in families():
         raise Exception('another FamilyMember for %s already exists' % customer_idurl)

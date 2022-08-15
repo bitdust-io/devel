@@ -869,8 +869,6 @@ def main_is_frozen():
 
 
 def isGUIpossible():
-    """
-    """
     # if Windows():
     #     return True
     # if Mac():
@@ -1253,8 +1251,6 @@ def kill_process_win32(pid):
 #------------------------------------------------------------------------------
 
 def find_main_process(pid_file_path=None, extra_lookups=[], check_processid_file=True):
-    """
-    """
     if Android():
         return []
     q = [

@@ -733,8 +733,6 @@ def RemoveBackupToWork(backupID):
 
 
 def BlockBackup(backupID):
-    """
-    """
     global _BackupIDsExclude
     _BackupIDsExclude.add(backupID)
     if A():
@@ -744,15 +742,11 @@ def BlockBackup(backupID):
 
 
 def UnBlockBackup(backupID):
-    """
-    """
     global _BackupIDsExclude
     _BackupIDsExclude.discard(backupID)
 
 
 def IsBackupNeedsWork(backupID):
-    """
-    """
     global _BackupIDsQueue
     return backupID in _BackupIDsQueue and backupID not in _BackupIDsExclude
 

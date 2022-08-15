@@ -45,13 +45,10 @@ _CallsIndex = {}
 #------------------------------------------------------------------------------
 
 def init():
-    """
-    """
+    pass
 
 
 def shutdown():
-    """
-    """
     global _CallsIndex
     _CallsIndex.clear()
 

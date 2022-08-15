@@ -113,8 +113,6 @@ def IsCommand(com):
 
 
 def IsCommandAck(com, ack):
-    """
-    """
     global P2PCommandAcks
     if P2PCommandAcks is None:
         init()
@@ -122,8 +120,6 @@ def IsCommandAck(com, ack):
 
 
 def IsAckExpected(com):
-    """
-    """
     global P2PCommandAcks
     if P2PCommandAcks is None:
         init()
@@ -131,8 +127,6 @@ def IsAckExpected(com):
 
 
 def IsReplyExpected(com):
-    """
-    """
     global P2PCommandAcks
     if P2PCommandAcks is None:
         init()
@@ -140,8 +134,6 @@ def IsReplyExpected(com):
 
 
 def IsRelay(com):
-    """
-    """
     global RelayCommands
     if RelayCommands is None:
         init()
@@ -173,32 +165,22 @@ def Identity():
 
 
 def RequestService():
-    """
-    """
     return "RequestService"
 
 
 def CancelService():
-    """
-    """
     return "CancelService"
 
 
 def Key():
-    """
-    """
     return "Key"
 
 
 def AuditKey():
-    """
-    """
     return "AuditKey"
 
 
 def Event():
-    """
-    """
     return "Event"
 
 
@@ -332,14 +314,10 @@ def Broadcast():
 
 
 def Coin():
-    """
-    """
     # TODO: something for the future :)
     return "Coin"
 
 
 def RetrieveCoin():
-    """
-    """
     # TODO: something for the future :)
     return "RetrieveCoin"

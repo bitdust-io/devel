@@ -187,8 +187,6 @@ def UrlFilenameHTML(url):
 #------------------------------------------------------------------------------
 
 def IdContactSplit(contact):
-    """
-    """
     try:
         return strng.to_text(contact).split('://')
     except:

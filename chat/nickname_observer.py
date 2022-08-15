@@ -73,8 +73,6 @@ from dht import dht_records
 
 
 def find_one(nickname, attempts=3, results_callback=None):
-    """
-    """
     if _Debug:
         lg.out(_DebugLevel, 'nickname_observer.find_one %s %d' % (nickname, attempts))
     observer = NicknameObserver(
@@ -89,8 +87,6 @@ def find_one(nickname, attempts=3, results_callback=None):
 
 
 def observe_many(nickname, attempts=10, results_callback=None):
-    """
-    """
     if _Debug:
         lg.out(_DebugLevel, 'nickname_observer.observe_many %s %d' % (nickname, attempts))
     observer = NicknameObserver(
@@ -105,8 +101,6 @@ def observe_many(nickname, attempts=10, results_callback=None):
 
 
 def stop_all():
-    """
-    """
     for a in automat.objects().values():
         if isinstance(a, NicknameObserver):
             if _Debug:
