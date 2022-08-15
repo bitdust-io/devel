@@ -1,9 +1,0 @@
-{
-  "author": "EggdraSyl",
-  "description": "Aggregates $BIS price from various exchanges. Updated to use coingecko's API",
-  "email": "dev@eggpool.net",
-  "version": "0.3",
-  "date": "2019-05-22",
-  "url":"https://github.com/bismuthfoundation/TornadoWallet",
-  "icon": "bismuthprice.icon.png"
-}

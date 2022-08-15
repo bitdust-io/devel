@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<?xml-stylesheet href="text-security-circle_files/intl.css" type="text/css"?>
-<parsererror xmlns="http://www.mozilla.org/newlayout/xml/parsererror.xml">XML Parsing Error: reference to invalid character number
-Location: https://cdn.rawgit.com/noppa/text-security/master/dist/text-security-circle.svg#text-security
-Line Number 11, Column 16:<sourcetext>      unicode="&amp;#x0;"
----------------^</sourcetext></parsererror>

@@ -1,9 +1,0 @@
-{
-  "author": "Bismuth Foundation",
-  "description": "BIS <-> wBIS (ERC-20) bridge Crystal",
-  "email": "N/A",
-  "version": "1.0.4",
-  "date": "2021-05-10",
-  "url":"https://github.com/bismuthfoundation/TornadoWallet/tree/master/wallet/crystals/060_ethbridge",
-  "icon": "ethbridge.icon.png"
-}
