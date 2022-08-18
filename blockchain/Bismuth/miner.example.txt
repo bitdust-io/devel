@@ -1,0 +1,9 @@
+port=8525
+mining_ip=127.0.0.1
+mining_threads=1
+tor=0
+miner_address=7faf220b6ec49b118df3c5a21ad8d191ccce6cb92987882374aa34ff
+max_diff=150
+miner_name=veselin01
+nonce_time=10
+hashcount=20000

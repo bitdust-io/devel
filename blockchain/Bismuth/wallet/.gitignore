@@ -1,0 +1,12 @@
+bismuthclient
+bismuthcore
+*.der
+.buildozer
+*.spec
+main.py
+bin
+TornadoBismuthWallet.py
+dist
+locale/*
+themes/*
+crystals/*
