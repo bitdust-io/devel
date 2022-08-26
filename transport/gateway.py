@@ -771,7 +771,7 @@ def on_identity_received(newpacket, send_ack=True):
     latest_identity = id_url.get_latest_ident(newidentity.getPublicKey())
     if latest_identity:
         if latest_identity.getRevisionValue() > newidentity.getRevisionValue():
-            # check if received identity is the most recent revision number we every saw for that remote user
+            # check if received identity is the most recent revision number we ever saw for that remote user
             # in case we saw same identity with higher revision number need to reply with Fail packet and notify user
             # this may happen after identity restore - the user starts counting revision number from 0
             # but other nodes already store previous copies, user just need to jump to the most recent revision number

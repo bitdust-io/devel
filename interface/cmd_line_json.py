@@ -38,7 +38,7 @@ from six.moves import range
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 
 #------------------------------------------------------------------------------
 
@@ -197,7 +197,7 @@ def call_websocket_method(method, **kwargs):
 
     def _on_result(resp):
         if _Debug:
-            print('call_websocket_method._on_result', method, kwargs, resp)
+            print('call_websocket_method._on_result', method, kwargs)
         try:
             websock.stop()
         except Exception as exc:

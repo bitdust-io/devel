@@ -113,7 +113,7 @@ class CustomerAssistant(automat.Automat):
         self.customer_idurl = customer_idurl
         self.donated_bytes = accounting.get_customer_quota(self.customer_idurl) or 0
         name = "customer_%s_%s" % (
-            nameurl.GetName(self.customer_idurl),
+            self.customer_idurl.to_id(),
             diskspace.MakeStringFromBytes(self.donated_bytes).replace(' ', ''),
         )
         super(CustomerAssistant, self).__init__(

@@ -192,6 +192,34 @@ def share_open_v1(customer: str, key_id):
     return response.json()
 
 
+def share_info_v1(node: str, key_id, wait_state=None, validate_retries=90, delay=2, stop_state=None):
+    response = request_get(node, 'share/info/v1?key_id=%s' % key_id, timeout=20)
+    assert response.status_code == 200
+    dbg('share/info/v1 [%s] : %s\n' % (node, pprint.pformat(response.json())))
+    assert response.json()['status'] == 'OK', response.json()
+    if wait_state is None:
+        return response.json()
+    count = 0
+    while True:
+        if count >= validate_retries:
+            dbg('share/info/v1 [%s] attempt %d : %s\n' % (node, count, pprint.pformat(response.json())))
+            break
+        response = request_get(node, 'share/info/v1?key_id=%s' % key_id, timeout=20)
+        assert response.status_code == 200
+        assert response.json()['status'] == 'OK', response.json()
+        # print('share/info/v1 [%s] attempt %d : %s\n' % (node, count, pprint.pformat(response.json())))
+        dbg('  share/info/v1 [%s] attempt %d : state=%s' % (node, count, response.json()['result']['state'], ))
+        if response.json()['result']['state'] == wait_state:
+            dbg('share/info/v1 [%s] : %s\n' % (node, pprint.pformat(response.json())))
+            return response.json()
+        if stop_state and response.json()['result']['state'] == stop_state:
+            dbg('share/info/v1 [%s] : %s\n' % (node, pprint.pformat(response.json())))
+            return response.json()
+        count += 1
+        time.sleep(delay)
+    assert False, 'state %r was not detected for %r after %d retries' % (wait_state, key_id, count, )
+
+
 def group_create_v1(customer: str, key_size=1024, label='', attempts=1):
     response = request_post(customer, 'group/create/v1', json={'key_size': key_size, 'label': label, }, timeout=40, attempts=attempts)
     assert response.status_code == 200

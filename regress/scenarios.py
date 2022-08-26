@@ -251,8 +251,8 @@ def scenario4():
 
     # make sure shared location is activated on customer-2 node
     # kw.share_open_v1('customer-2', customer_1_share_id_cat)
-
     kw.file_sync_v1('customer-2')
+    kw.share_info_v1('customer-2', customer_1_share_id_cat, 'CONNECTED')
 
     # now try to download shared by customer-1 cat.txt file on customer-2 and place it in a new local folder
     kw.verify_file_download_start(

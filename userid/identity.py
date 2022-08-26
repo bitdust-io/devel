@@ -854,7 +854,9 @@ class identity(object):
         """
         self.sources = []
         for source in sources_list:
-            self.sources.append(id_url.field(source))
+            s = id_url.field(source)
+            s.refresh()
+            self.sources.append(s)
 
     def setContacts(self, contacts_list):
         """

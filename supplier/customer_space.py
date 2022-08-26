@@ -173,10 +173,10 @@ def verify_packet_ownership(newpacket, raise_exception=False):
         return None
     if driver.is_enabled('service_proxy_server'):
         if _Debug:
-            lg.dbg(_DebugLevel, 'IGNORE, scenario 9: received Data() not authorized, but proxy router service was enabled')
+            lg.dbg(_DebugLevel, 'IGNORE, scenario 9: received Data() was not authorized, but proxy router service is enabled')
         return None
     # TODO:
-    # scenario 9: make possible to set "active" flag True/False for any key
+    # scenario 10: make possible to set "active" flag True/False for any key
     # this way customer can make virtual location available for other user but in read-only mode
     raise Exception('scenario not implemented yet, received %r' % newpacket)
 

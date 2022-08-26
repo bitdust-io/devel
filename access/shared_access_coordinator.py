@@ -255,7 +255,7 @@ class SharedAccessCoordinator(automat.Automat):
             'active': my_keys.is_active(self.key_id),
             'key_id': self.key_id,
             'alias': self.key_alias,
-            'label': my_keys.get_label(self.key_id),
+            'label': my_keys.get_label(self.key_id) or '',
             'creator': self.customer_idurl.to_id(),
             'suppliers': [id_url.idurl_to_id(s) for s in self.known_suppliers_list],
             'ecc_map': self.known_ecc_map,
