@@ -694,7 +694,7 @@ def shutdown_all_inbox_packets():
 
 def packets_timeout_loop():
     global _PacketsTimeOutTask
-    delay = 10
+    delay = 30
     _PacketsTimeOutTask = reactor.callLater(delay, packets_timeout_loop)  # @UndefinedVariable
     for pkt_in in list(packet_in.inbox_items().values()):
         if pkt_in.is_timed_out():
