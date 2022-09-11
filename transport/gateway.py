@@ -759,15 +759,15 @@ def on_identity_received(newpacket, send_ack=True):
     idurl = newidentity.getIDURL()
     if not identitycache.HasKey(idurl):
         lg.info('received new identity %s rev %r' % (idurl, newidentity.getRevisionValue()))
-    if not identitycache.UpdateAfterChecking(idurl, newxml):
-        lg.warn("ERROR has non-Valid identity")
-        return False
     if my_id.isLocalIdentityReady():
         if newidentity.getPublicKey() == my_id.getLocalIdentity().getPublicKey():
             if newidentity.getRevisionValue() > my_id.getLocalIdentity().getRevisionValue():
                 lg.warn('received my own identity from another user, but with higher revision number')
                 reactor.callLater(0, my_id.rebuildLocalIdentity, new_revision=newidentity.getRevisionValue() + 1)  # @UndefinedVariable
                 return False
+    if not identitycache.UpdateAfterChecking(idurl, newxml):
+        lg.warn("ERROR has non-Valid identity")
+        return False
     latest_identity = id_url.get_latest_ident(newidentity.getPublicKey())
     if latest_identity:
         if latest_identity.getRevisionValue() > newidentity.getRevisionValue():
