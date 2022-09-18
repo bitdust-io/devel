@@ -767,7 +767,7 @@ def ReadLocalFiles():
             return True
         if realpath.startswith('newblock-'):
             return False
-        if subpath in [settings.BackupIndexFileName(), settings.BackupInfoFileName(), settings.BackupInfoFileNameOld(), settings.BackupInfoEncryptedFileName()]:
+        if subpath == settings.BackupIndexFileName():
             return False
         try:
             version = subpath.split('/')[-2]

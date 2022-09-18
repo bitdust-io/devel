@@ -945,29 +945,6 @@ def UserNameFilename():
     return os.path.join(MetaDataDir(), "username")
 
 
-def BackupInfoFileNameOld():
-    """
-    Long time ago backup data base were stored in that file.
-
-    Obsolete, see ``BackupIndexFileName()``..
-    """
-    return "backup_info.xml"
-
-
-def BackupInfoFileName():
-    """
-    Obsolete, see ``BackupIndexFileName()``.
-    """
-    return 'backup_db'
-
-
-def BackupInfoEncryptedFileName():
-    """
-    Obsolete, see ``BackupIndexFileName()``.
-    """
-    return 'backup_info'
-
-
 def BackupIndexFileName():
     """
     This is backup data base index file name.

@@ -57,6 +57,7 @@ from lib import serialization
 from system import bpio
 
 from main import settings
+from main import events
 
 from contacts import contactsdb
 
@@ -182,7 +183,7 @@ def verify_packet_ownership(newpacket, raise_exception=False):
 
 #------------------------------------------------------------------------------
 
-def make_filename(customerGlobID, packetID, keyAlias=None):
+def make_filename(customerGlobID, filePath, keyAlias=None):
     keyAlias = keyAlias or 'master'
     customerDirName = str(customerGlobID)
     customersDir = settings.getCustomersFilesDir()
@@ -200,7 +201,7 @@ def make_filename(customerGlobID, packetID, keyAlias=None):
         if _Debug:
             lg.dbg(_DebugLevel, 'making a new folder: %s' % keyAliasDir)
         bpio._dir_make(keyAliasDir)
-    filename = os.path.join(keyAliasDir, packetID)
+    filename = os.path.join(keyAliasDir, filePath)
     return filename
 
 
@@ -210,31 +211,28 @@ def make_valid_filename(customerIDURL, glob_path):
     packet is stored locally.
     """
     keyAlias = glob_path['key_alias'] or 'master'
-    packetID = glob_path['path']
+    filePath = glob_path['path']
     customerGlobID = glob_path['customer']
     if not customerGlobID:
         lg.warn("customer id is empty")
         return ''
-    if not packetid.Valid(packetID):  # SECURITY
-        if packetID not in [settings.BackupInfoFileName(),
-                            settings.BackupInfoFileNameOld(),
-                            settings.BackupInfoEncryptedFileName(),
-                            settings.BackupIndexFileName()]:
+    if filePath != settings.BackupIndexFileName():
+        if not packetid.Valid(filePath):  # SECURITY
             lg.warn('invalid file path')
             return ''
     if not contactsdb.is_customer(customerIDURL):  # SECURITY
         lg.warn("%s is not my customer" % (customerIDURL))
-    if customerGlobID:
-        if glob_path['idurl'] != customerIDURL:
-            lg.warn('making filename for another customer: %s != %s' % (
-                glob_path['idurl'], customerIDURL))
-    filename = make_filename(customerGlobID, packetID, keyAlias)
+    # if customerGlobID:
+    #     if glob_path['idurl'] != customerIDURL:
+    #         lg.warn('making filename for another customer: %s != %s' % (
+    #             glob_path['idurl'], customerIDURL))
+    filename = make_filename(customerGlobID, filePath, keyAlias)
     return filename
 
 #------------------------------------------------------------------------------
 
 def on_data(newpacket):
-    if id_url.to_bin(newpacket.OwnerID) == my_id.getIDURL().to_bin():
+    if id_url.is_the_same(newpacket.OwnerID, my_id.getIDURL()):
         # this Data belong to us, SKIP
         return False
 #     if not contactsdb.is_customer(newpacket.OwnerID):
@@ -251,6 +249,8 @@ def on_data(newpacket):
         lg.err("got incorrect PacketID")
         # p2p_service.SendFail(newpacket, 'incorrect path')
         return False
+    remote_path = glob_path['path']
+    key_alias = glob_path['key_alias']
     authorized_idurl = verify_packet_ownership(newpacket)
     if authorized_idurl is None:
         if _Debug:
@@ -270,7 +270,7 @@ def on_data(newpacket):
             lg.err("can not create sub dir %s" % dirname)
             p2p_service.SendFail(newpacket, 'write error', remote_idurl=authorized_idurl)
             return False
-    data = newpacket.Serialize()
+    new_data = newpacket.Serialize()
     donated_bytes = settings.getDonatedBytes()
     accounting.check_create_customers_quotas(donated_bytes)
     space_dict, _ = accounting.read_customers_quotas()
@@ -283,28 +283,48 @@ def on_data(newpacket):
         try:
             bytes_used_by_customer = int(used_space_dict[newpacket.OwnerID.to_bin()])
             bytes_donated_to_customer = int(space_dict[newpacket.OwnerID.to_bin()])
-            if bytes_donated_to_customer - bytes_used_by_customer < len(data):
+            if bytes_donated_to_customer - bytes_used_by_customer < len(new_data):
                 lg.warn("no free space left for customer data: %s" % newpacket.OwnerID)
                 p2p_service.SendFail(newpacket, 'no free space left for customer data', remote_idurl=authorized_idurl)
                 return False
         except:
             lg.exc()
-    if not bpio.WriteBinaryFile(filename, data):
-        lg.err("can not write to %s" % str(filename))
-        p2p_service.SendFail(newpacket, 'write error', remote_idurl=authorized_idurl)
-        return False
+    data_exists = not os.path.exists(filename)
+    data_changed = True
+    if not data_exists:
+        if remote_path == settings.BackupIndexFileName():
+            current_data = bpio.ReadBinaryFile(filename)
+            if current_data == new_data:
+                lg.warn('skip rewriting existing file %s' % filename)
+                data_changed = False
+    if data_changed:
+        if not bpio.WriteBinaryFile(filename, new_data):
+            lg.err("can not write to %s" % str(filename))
+            p2p_service.SendFail(newpacket, 'write error', remote_idurl=authorized_idurl)
+            return False
     # Here Data() packet was stored as it is on supplier node (current machine)
-    del data
+    del new_data
     sz = len(newpacket.Payload)
     p2p_service.SendAck(newpacket, response=strng.to_text(sz), remote_idurl=authorized_idurl)
     reactor.callLater(0, local_tester.TestSpaceTime)  # @UndefinedVariable
-#     if self.publish_event_supplier_file_modified:  #  TODO: must remove that actually
-#         from main import events
-#         events.send('supplier-file-modified', data=dict(
-#             action='write',
-#             glob_path=glob_path['path'],
-#             owner_id=newpacket.OwnerID,
-#         ))
+    if key_alias != 'master' and data_changed:
+        if remote_path == settings.BackupIndexFileName():
+            events.send('supplier-file-modified', data=dict(
+                action='write',
+                remote_path=remote_path,
+                key_alias=key_alias,
+                owner_idurl=newpacket.OwnerID,
+                supplier_idurl=my_id.getIDURL(),
+            ))
+        else:
+            if packetid.BlockNumber(newpacket.PacketID) == 0:
+                events.send('supplier-file-modified', data=dict(
+                    action='write',
+                    remote_path=remote_path,
+                    key_alias=key_alias,
+                    owner_idurl=newpacket.OwnerID,
+                    supplier_idurl=my_id.getIDURL(),
+                ))
     if _Debug:
         lg.args(_DebugLevel, sz=sz, fn=filename, remote_idurl=authorized_idurl, pid=newpacket.PacketID)
     return True
@@ -505,13 +525,14 @@ def on_delete_file(newpacket):
             except:
                 lg.exc()
         else:
-            lg.warn("path not found %s" % filename)
-#         if self.publish_event_supplier_file_modified:
-#             events.send('supplier-file-modified', data=dict(
-#                 action='delete',
-#                 glob_path=glob_path['path'],
-#                 owner_id=newpacket.OwnerID,
-#             ))
+            lg.warn("path was not found %s" % filename)
+        events.send('supplier-file-modified', data=dict(
+            action='delete',
+            remote_path=glob_path['path'],
+            key_alias=glob_path['key_alias'],
+            owner_idurl=newpacket.OwnerID,
+            supplier_idurl=my_id.getIDURL(),
+        ))
     p2p_service.SendAck(newpacket)
     if _Debug:
         lg.dbg(_DebugLevel, "from [%s] with %d IDs, %d files and %d folders were removed" % (
@@ -561,12 +582,13 @@ def on_delete_backup(newpacket):
                 lg.exc()
         else:
             lg.warn("path not found %s" % filename)
-#         if self.publish_event_supplier_file_modified:
-#             events.send('supplier-file-modified', data=dict(
-#                 action='delete',
-#                 glob_path=glob_path['path'],
-#                 owner_id=newpacket.OwnerID,
-#             ))
+        events.send('supplier-file-modified', data=dict(
+            action='delete',
+            remote_path=glob_path['path'],
+            key_alias=glob_path['key_alias'],
+            owner_idurl=newpacket.OwnerID,
+            supplier_idurl=my_id.getIDURL(),
+        ))
     p2p_service.SendAck(newpacket)
     if _Debug:
         lg.dbg(_DebugLevel, "from [%s] with %d IDs, %d were removed" % (

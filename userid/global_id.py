@@ -301,7 +301,7 @@ def CanonicalID(inp, include_key=True):
     return MakeGlobalID(**parts)
 
 
-def SubstitutePacketID(packet_id, idurl=None, customer=None, key_id=None, path=None, key_alias=None, ):
+def SubstitutePacketID(packet_id, idurl=None, customer=None, key_id=None, path=None, key_alias=None):
     from lib import nameurl
     g = ParseGlobalID(packet_id, as_field=False)
     if key_id is not None:

@@ -43,8 +43,6 @@ class SupplierService(LocalService):
     service_name = 'service_supplier'
     config_path = 'services/supplier/enabled'
 
-    publish_event_supplier_file_modified = False
-
     def dependent_on(self):
         return [
             'service_keys_registry',
@@ -161,7 +159,7 @@ class SupplierService(LocalService):
                 p2p_service.SendFail(newpacket, 'key not registered')
                 return False
             data_owner_idurl = my_keys.split_key_id(key_id)[1]
-            if data_owner_idurl != target_customer_idurl and data_owner_idurl != customer_idurl:
+            if not id_url.is_the_same(data_owner_idurl, target_customer_idurl) and not id_url.is_the_same(data_owner_idurl, customer_idurl):
                 # pretty complex scenario:
                 # external customer requesting access to data which belongs not to that customer
                 # this is "third" customer accessing data belongs to "second" customer
@@ -210,7 +208,7 @@ class SupplierService(LocalService):
             new_customer = False
         else:
             new_customer = True
-        lg.args(8, new_customer=new_customer, current_allocated_bytes=space_dict.get(customer_idurl.to_bin()))
+        # lg.args(8, new_customer=new_customer, current_allocated_bytes=space_dict.get(customer_idurl.to_bin()))
         from supplier import local_tester
         if free_bytes <= bytes_for_customer:
             contactsdb.remove_customer_meta_info(customer_idurl)
