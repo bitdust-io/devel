@@ -80,6 +80,7 @@ from lib import utime
 from lib import misc
 from lib import packetid
 from lib import strng
+from lib import jsn
 from lib import serialization
 
 from main import events
@@ -356,6 +357,8 @@ def add_callback_method(consumer_id, callback_method):
     if callback_method in consumer(consumer_id).commands:
         raise Exception('callback method already exist')
     consumer(consumer_id).commands.append(callback_method)
+    if _Debug:
+        lg.args(_DebugLevel, c=consumer_id, cb=callback_method)
     return True
 
 
@@ -365,6 +368,8 @@ def remove_callback_method(consumer_id, callback_method):
     if callback_method not in consumer(consumer_id).commands:
         raise Exception('callback method not found')
     consumer(consumer_id).commands.remove(callback_method)
+    if _Debug:
+        lg.args(_DebugLevel, c=consumer_id, cb=callback_method)
     return True
 
 #------------------------------------------------------------------------------
@@ -622,7 +627,7 @@ def write_message(producer_id, queue_id, data, creation_time=None):
     queue(queue_id)[new_message.message_id] = new_message
     queue(queue_id)[new_message.message_id].state = 'PUSHED'
     if _Debug:
-        lg.out(_DebugLevel, 'p2p_queue.write_message  %r added to queue %s' % (new_message.message_id, queue_id, ))
+        lg.out(_DebugLevel, 'p2p_queue.write_message  %r added to queue %s with %r' % (new_message.message_id, queue_id, data, ))
     touch_queues()
     return new_message
 
@@ -742,9 +747,8 @@ def remove_message_processed_callback(cb):
 def on_event_packet_received(newpacket, info, status, error_message):
     global _EventPacketReceivedCallbacks
     try:
-        e_json = serialization.BytesToDict(newpacket.Payload, keys_to_text=True)
+        e_json = serialization.BytesToDict(newpacket.Payload, keys_to_text=True, values_to_text=True)
         strng.to_text(e_json['event_id'])
-        e_json['payload']
     except:
         lg.warn("invalid json payload")
         return False
@@ -767,7 +771,9 @@ def do_handle_event_packet(newpacket, e_json):
         lg.args(_DebugLevel, event_id=event_id, queue_id=queue_id, producer_id=producer_id, message_id=message_id)
     if queue_id and producer_id and message_id:
         # this message have an ID and producer so it came from a queue and needs to be consumed
-        # also needs to be attached more info coming from the queue to the event body
+        # also, more info coming from the queue needs to be attached to the event body
+        # TODO: need more verifications to be implemented here
+        # SECURITY
         if _Debug:
             lg.info('received new event %s from the queue at %s' % (event_id, queue_id, ))
         payload.update(dict(
@@ -780,7 +786,7 @@ def do_handle_event_packet(newpacket, e_json):
         p2p_service.SendAck(newpacket)
         return True
     if producer_id == my_id.getID() and not queue_id:
-        # this message addressed to me but not to any queue exclusively
+        # this message addressed directly to me, not to any specific queue
         return True
     # this message does not have nor ID nor producer so it came from another user directly
     # lets' try to find a queue for that event and see if we need to publish it or not
@@ -792,9 +798,12 @@ def do_handle_event_packet(newpacket, e_json):
     if queue_id not in queue():
         # such queue is not found locally, that means message is
         # probably addressed to that node and needs to be consumed directly
+        # TODO: check if we actually should consume the event locally and populate the event
+        # need more verifications to be implemented here
+        # SECURITY
         if _Debug:
             lg.warn('received event %s was not delivered to any queue, consume now and send an Ack' % event_id)
-        # also add more info comming from the queue
+        # also add more info coming from the queue
         payload.update(dict(
             queue_id=queue_id,
             producer_id=producer_id,
@@ -806,6 +815,7 @@ def do_handle_event_packet(newpacket, e_json):
         return True
     # found a queue for that message, pushing there
     # TODO: add verification of producer's identity and signature
+    # SECURITY
     if _Debug:
         lg.info('pushing event %s to the queue %s on behalf of producer %s' % (event_id, queue_id, producer_id))
     try:
@@ -832,6 +842,8 @@ def do_notify(callback_method, consumer_id, queue_id, message_id):
             lg.dbg(_DebugLevel, 'notification %r already started for consumer %r' % (message_id, consumer_id, ))
         # notification already sent to given consumer
         return False
+    if _Debug:
+        lg.args(_DebugLevel, cb=callback_method, c=consumer_id, q=queue_id, m=message_id)
     ret = start_notification(consumer_id, queue_id, message_id)
     if id_url.is_idurl(callback_method):
         p2p_service.SendEvent(
@@ -862,7 +874,7 @@ def do_notify(callback_method, consumer_id, queue_id, message_id):
                 created=existing_message.created,
             ))
         except:
-            lg.exc()
+            lg.exc('%r %r %r %r' % (callback_method, consumer_id, queue_id, message_id))
             result = False
         if isinstance(result, Deferred):
             result.addCallback(lambda ok: ret.callback(True) if ok else ret.callback(False))
@@ -974,7 +986,7 @@ class QueueMessage(object):
         self.producer_id = producer_id
         self.queue_id = queue_id
         self.created = created or utime.get_sec1970()
-        self.payload = json_data
+        self.payload = jsn.dict_items_to_text(json_data)
         self.state = 'CREATED'
         self.notifications = {}
         self.success_notifications = []

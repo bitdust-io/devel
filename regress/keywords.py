@@ -192,12 +192,12 @@ def share_open_v1(customer: str, key_id):
     return response.json()
 
 
-def share_info_v1(node: str, key_id, wait_state=None, validate_retries=90, delay=2, stop_state=None):
+def share_info_v1(node: str, key_id, wait_state=None, validate_retries=90, delay=2, stop_state=None, wait_suppliers=None):
     response = request_get(node, 'share/info/v1?key_id=%s' % key_id, timeout=20)
     assert response.status_code == 200
     dbg('share/info/v1 [%s] : %s\n' % (node, pprint.pformat(response.json())))
     assert response.json()['status'] == 'OK', response.json()
-    if wait_state is None:
+    if wait_state is None and wait_suppliers is None:
         return response.json()
     count = 0
     while True:
@@ -209,15 +209,25 @@ def share_info_v1(node: str, key_id, wait_state=None, validate_retries=90, delay
         assert response.json()['status'] == 'OK', response.json()
         # print('share/info/v1 [%s] attempt %d : %s\n' % (node, count, pprint.pformat(response.json())))
         dbg('  share/info/v1 [%s] attempt %d : state=%s' % (node, count, response.json()['result']['state'], ))
-        if response.json()['result']['state'] == wait_state:
-            dbg('share/info/v1 [%s] : %s\n' % (node, pprint.pformat(response.json())))
-            return response.json()
+        if wait_state is not None and wait_suppliers is None:
+            if response.json()['result']['state'] == wait_state:
+                dbg('share/info/v1 [%s] : %s\n' % (node, pprint.pformat(response.json())))
+                return response.json()
+        if wait_suppliers is not None and wait_state is None:
+            if len(response.json()['result']['suppliers']) == wait_suppliers:
+                dbg('share/info/v1 [%s] : %s\n' % (node, pprint.pformat(response.json())))
+                return response.json()
+        if wait_suppliers is not None and wait_state is not None:
+            if len(response.json()['result']['suppliers']) == wait_suppliers:
+                if response.json()['result']['state'] == wait_state:
+                    dbg('share/info/v1 [%s] : %s\n' % (node, pprint.pformat(response.json())))
+                    return response.json()
         if stop_state and response.json()['result']['state'] == stop_state:
             dbg('share/info/v1 [%s] : %s\n' % (node, pprint.pformat(response.json())))
             return response.json()
         count += 1
         time.sleep(delay)
-    assert False, 'state %r was not detected for %r after %d retries' % (wait_state, key_id, count, )
+    assert False, 'state:%s or suppliers:%s not detected for %r after %d retries' % (wait_state, wait_suppliers, key_id, count, )
 
 
 def group_create_v1(customer: str, key_size=1024, label='', attempts=1):
@@ -441,7 +451,9 @@ def file_download_start_v1(customer: str, remote_path: str, destination: str,
             # print('file/download/start/v1 [%s] remote_path=%s destination_folder=%s : %s\n' % (
             #     customer, remote_path, destination, 'ALREADY STARTED', ))
             break
-        if response.json()['errors'][0].count('failed') and response.json()['errors'][0].count('downloading'):
+        if (response.json()['errors'][0].count('failed') and response.json()['errors'][0].count('downloading')) or (
+            response.json()['errors'][0].count('was not found in the catalog')
+        ):
             time.sleep(delay)
         else:
             assert False, response.json()
@@ -1008,10 +1020,10 @@ def verify_file_create_upload_start(node, key_id, volume_path, filename='cat.txt
     return local_filepath, remote_path, download_filepath
 
 
-def verify_file_download_start(node, remote_path, destination_path, verify_from_local_path=None, verify_list_files=True, reliable_shares=True, expected_reliable=100):
+def verify_file_download_start(node, remote_path, destination_path, verify_from_local_path=None, verify_list_files=True, reliable_shares=True, expected_reliable=100, download_attempts=1):
     if verify_list_files:
         file_list_all_v1(node, reliable_shares=reliable_shares, expected_reliable=expected_reliable)
-    file_download_start_v1(node, remote_path=remote_path, destination=os.path.dirname(destination_path))
+    file_download_start_v1(node, remote_path=remote_path, destination=os.path.dirname(destination_path), download_attempts=download_attempts)
     if verify_from_local_path is not None:
         file_body_source = run_ssh_command_and_wait(node, f'cat {verify_from_local_path}')[0].strip()
         file_body_downloaded = run_ssh_command_and_wait(node, f'cat {destination_path}')[0].strip()

@@ -4683,7 +4683,7 @@ def queue_peddlers_list():
 
 def events_list():
     """
-    Returns a list of all logged events since the start of the main process and the total number of occurrences of each event.
+    Returns an overall statistic of the all logged events since the start of the main process.
 
     ###### HTTP
         curl -X GET 'localhost:8180/event/list/v1'

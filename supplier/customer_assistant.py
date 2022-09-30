@@ -190,7 +190,9 @@ class CustomerAssistant(automat.Automat):
         """
         customer_key_id = my_keys.make_key_id(alias='customer', creator_idurl=self.customer_idurl)
         customer_key_id = my_keys.latest_key_id(customer_key_id)
-        if my_keys.is_key_registered(customer_key_id):
+        # if my_keys.is_key_registered(customer_key_id):
+        # TODO: re-think again about the customer key, do we really need it?
+        if False:
             list_files.send(
                 customer_idurl=self.customer_idurl,
                 packet_id='%s:%s' % (customer_key_id, packetid.UniqueID(), ),

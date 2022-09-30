@@ -104,7 +104,7 @@ class Event(object):
         self.created = created or utime.get_sec1970()
 
     def __repr__(self):
-        return '<{}>'.format(self.event_id)
+        return '<Event({})>'.format(self.event_id)
 
 #------------------------------------------------------------------------------
 

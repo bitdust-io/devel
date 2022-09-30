@@ -53,184 +53,27 @@ class SharedDataService(LocalService):
         from transport import callback
         from access import shared_access_coordinator
         callback.append_inbox_callback(self._on_inbox_packet_received)
-        events.add_subscriber(self._on_supplier_modified, 'supplier-modified')
-        events.add_subscriber(self._on_my_list_files_refreshed, 'my-list-files-refreshed')
-        events.add_subscriber(self._on_key_registered, 'key-registered')
-        events.add_subscriber(self._on_key_erased, 'key-erased')
-        events.add_subscriber(self._on_share_connected, 'share-connected')
-        events.add_subscriber(self._on_supplier_file_modified, 'supplier-file-modified')
+        events.add_subscriber(shared_access_coordinator.on_supplier_modified, 'supplier-modified')
+        events.add_subscriber(shared_access_coordinator.on_my_list_files_refreshed, 'my-list-files-refreshed')
+        events.add_subscriber(shared_access_coordinator.on_key_registered, 'key-registered')
+        events.add_subscriber(shared_access_coordinator.on_key_erased, 'key-erased')
+        events.add_subscriber(shared_access_coordinator.on_share_connected, 'share-connected')
+        events.add_subscriber(shared_access_coordinator.on_supplier_file_modified, 'supplier-file-modified')
         shared_access_coordinator.open_known_shares()
         return True
 
     def stop(self):
         from main import events
         from transport import callback
-        events.remove_subscriber(self._on_key_registered, 'key-registered')
-        events.remove_subscriber(self._on_key_erased, 'key-erased')
-        events.remove_subscriber(self._on_share_connected, 'share-connected')
-        events.remove_subscriber(self._on_my_list_files_refreshed, 'my-list-files-refreshed')
-        events.remove_subscriber(self._on_supplier_modified, 'supplier-modified')
-        events.remove_subscriber(self._on_supplier_file_modified, 'supplier-file-modified')
+        from access import shared_access_coordinator
+        events.remove_subscriber(shared_access_coordinator.on_key_registered, 'key-registered')
+        events.remove_subscriber(shared_access_coordinator.on_key_erased, 'key-erased')
+        events.remove_subscriber(shared_access_coordinator.on_share_connected, 'share-connected')
+        events.remove_subscriber(shared_access_coordinator.on_my_list_files_refreshed, 'my-list-files-refreshed')
+        events.remove_subscriber(shared_access_coordinator.on_supplier_modified, 'supplier-modified')
+        events.remove_subscriber(shared_access_coordinator.on_supplier_file_modified, 'supplier-file-modified')
         callback.remove_inbox_callback(self._on_inbox_packet_received)
         return True
-
-    def _on_key_registered(self, evt):
-        if not evt.data['key_id'].startswith('share_'):
-            return
-        import time
-        from lib import strng
-        from access import shared_access_coordinator
-        active_share = shared_access_coordinator.get_active_share(evt.data['key_id'])
-        if active_share:
-            active_share.automat('new-private-key-registered')
-            return
-        new_share = shared_access_coordinator.SharedAccessCoordinator(evt.data['key_id'], log_events=True, publish_events=False, )
-        new_share.add_connected_callback('key_registered' + strng.to_text(time.time()), lambda _id, _result: self._on_share_first_connected(evt.data['key_id'], _id, _result))
-        new_share.automat('new-private-key-registered')
-
-    def _on_key_erased(self, evt):
-        if not evt.data['key_id'].startswith('share_'):
-            return
-        from access import shared_access_coordinator
-        active_share = shared_access_coordinator.get_active_share(evt.data['key_id'])
-        if active_share:
-            active_share.automat('shutdown')
-
-    def _on_share_connected(self, evt):
-        pass
-
-    def _on_share_first_connected(self, key_id, callback_id, result):
-        if not result:
-            return
-        from access import shared_access_coordinator
-        from storage import backup_fs
-        active_share = shared_access_coordinator.get_active_share(key_id)
-        if active_share:
-            active_share.remove_connected_callback(callback_id)
-            backup_fs.populate_shared_files(key_id=key_id)
-
-    def _on_supplier_modified(self, evt):
-        from access import key_ring
-        from crypt import my_keys
-        from userid import global_id
-        from userid import my_id
-        from logs import lg
-        if evt.data['new_idurl']:
-            my_keys_to_be_republished = []
-            for key_id in my_keys.known_keys():
-                if not key_id.startswith('share_'):
-                    continue
-                _glob_id = global_id.NormalizeGlobalID(key_id)
-                if _glob_id['idurl'].to_bin() == my_id.getIDURL().to_bin():
-                    # only send public keys of my own shares
-                    my_keys_to_be_republished.append(key_id)
-            for key_id in my_keys_to_be_republished:
-                d = key_ring.transfer_key(key_id, trusted_idurl=evt.data['new_idurl'], include_private=False, include_signature=False)
-                d.addErrback(lambda *a: lg.err('transfer key failed: %s' % str(*a)))
-
-    def _on_my_list_files_refreshed(self, evt):
-        from p2p import p2p_service
-        from p2p import commands
-        from access import shared_access_coordinator
-        from customer import supplier_connector
-        for key_id in shared_access_coordinator.list_active_shares():
-            cur_share = shared_access_coordinator.get_active_share(key_id)
-            if not cur_share:
-                continue
-            if cur_share.state != 'CONNECTED':
-                continue
-            for supplier_idurl in cur_share.known_suppliers_list:
-                sc = supplier_connector.by_idurl(
-                    supplier_idurl,
-                    customer_idurl=cur_share.customer_idurl,
-                )
-                if sc is not None and sc.state == 'CONNECTED':
-                    p2p_service.SendListFiles(
-                        target_supplier=supplier_idurl,
-                        customer_idurl=cur_share.customer_idurl,
-                        key_id=cur_share.key_id,
-                        timeout=20,
-                        callbacks={
-                            commands.Files(): lambda r, i: self._on_list_files_response(r, i, cur_share.customer_idurl, supplier_idurl, cur_share.key_id),
-                            commands.Fail(): lambda r, i: self._on_list_files_failed(r, i, cur_share.customer_idurl, supplier_idurl, cur_share.key_id),
-                        }
-                    )
-
-    def _on_supplier_file_modified(self, evt):
-        from logs import lg
-        from main import settings
-        from userid import global_id
-        from crypt import my_keys
-        from p2p import commands
-        from p2p import p2p_service
-        from access import shared_access_coordinator
-        from customer import supplier_connector
-        key_id = global_id.MakeGlobalID(idurl=evt.data['owner_idurl'], key_alias=evt.data['key_alias'])
-        if not my_keys.is_active(key_id):
-            return
-        active_share = shared_access_coordinator.get_active_share(key_id)
-        if not active_share:
-            lg.warn('supplier file was modified and key is active, but share %s is not known' % key_id)
-            return
-        if active_share.state == 'DISCONNECTED':
-            active_share.automat('restart')
-            return
-        if active_share.state != 'CONNECTED':
-            return
-        if evt.data['remote_path'] == settings.BackupIndexFileName():
-            active_share.automat('restart')
-        else:
-            supplier_idurl = evt.data['supplier_idurl']
-            sc = supplier_connector.by_idurl(
-                supplier_idurl,
-                customer_idurl=active_share.customer_idurl,
-            )
-            if sc is not None and sc.state == 'CONNECTED':
-                p2p_service.SendListFiles(
-                    target_supplier=supplier_idurl,
-                    customer_idurl=active_share.customer_idurl,
-                    key_id=active_share.key_id,
-                    timeout=20,
-                    callbacks={
-                        commands.Files(): lambda r, i: self._on_list_files_response(r, i, active_share.customer_idurl, supplier_idurl, active_share.key_id),
-                        commands.Fail(): lambda r, i: self._on_list_files_failed(r, i, active_share.customer_idurl, supplier_idurl, active_share.key_id),
-                    }
-                )
-
-    def _on_list_files_response(self, response, info, customer_idurl, supplier_idurl, key_id):
-        from logs import lg
-        # TODO: remember the response and prevent sending ListFiles() too often
-
-    def _on_list_files_failed(self, response, info, customer_idurl, supplier_idurl, key_id):
-        from logs import lg
-        from lib import strng
-        from access import key_ring
-        if strng.to_text(response.Payload) == 'key not registered' or strng.to_text(response.Payload) == '':
-            lg.warn('supplier %r of customer %r do not possess public key %r yet, sending it now' % (
-                supplier_idurl, customer_idurl, key_id, ))
-            result = key_ring.transfer_key(key_id, supplier_idurl, include_private=False, include_signature=False)
-            result.addCallback(lambda r: self._on_key_transfer_success(customer_idurl, supplier_idurl, key_id))
-            result.addErrback(lambda err: lg.err('failed sending key %r to %r : %r' % (key_id, supplier_idurl, err, )))
-        else:
-            lg.err('failed requesting ListFiles() with %r for customer %r from supplier %r' % (
-                key_id, customer_idurl, supplier_idurl, ))
-        return None
-
-    def _on_key_transfer_success(self, customer_idurl, supplier_idurl, key_id):
-        from logs import lg
-        from p2p import commands
-        from p2p import p2p_service
-        lg.info('public key %r shared to supplier %r of customer %r, now will send ListFiles()' % (key_id, supplier_idurl, customer_idurl))
-        p2p_service.SendListFiles(
-            target_supplier=supplier_idurl,
-            customer_idurl=customer_idurl,
-            key_id=key_id,
-            timeout=30,
-            callbacks={
-                commands.Files(): lambda r, i: self._on_list_files_response(r, i, customer_idurl, supplier_idurl, key_id),
-                commands.Fail(): lambda r, i: self._on_list_files_failed(r, i, customer_idurl, supplier_idurl, key_id),
-            }
-        )
 
     def _on_inbox_packet_received(self, newpacket, info, status, error_message):
         from p2p import commands

@@ -205,12 +205,26 @@ def scenario4():
 
     kw.supplier_list_v1('customer-1', expected_min_suppliers=2, expected_max_suppliers=2)
     kw.supplier_list_v1('customer-2', expected_min_suppliers=2, expected_max_suppliers=2)
+    kw.supplier_list_dht_v1(
+        customer_id='customer-1@id-a_8084',
+        observers_ids=['customer-1@id-a_8084', ],
+        expected_ecc_map='ecc/2x2',
+        expected_suppliers_number=2,
+    )
+    kw.supplier_list_dht_v1(
+        customer_id='customer-2@id-a_8084',
+        observers_ids=['customer-2@id-a_8084', ],
+        expected_ecc_map='ecc/2x2',
+        expected_suppliers_number=2,
+    )
 
     # create share (logic unit to upload/download/share files) on customer-1
     customer_1_share_id_cat = kw.share_create_v1('customer-1')
 
     # make sure shared location is activated
     kw.share_open_v1('customer-1', customer_1_share_id_cat)
+    customer_1_share_info = kw.share_info_v1('customer-1', customer_1_share_id_cat, wait_state='CONNECTED', wait_suppliers=2)
+    assert len(customer_1_share_info['result']['suppliers']) == 2
 
     # create a virtual "cat.txt" file for customer-1 and upload a "garbage" bytes there
     customer_1_local_filepath_cat, customer_1_remote_path_cat, customer_1_download_filepath_cat = kw.verify_file_create_upload_start(
@@ -230,6 +244,7 @@ def scenario4():
         expected_reliable=100,
     )
 
+    # customer-1 grant access to the share to customer-2
     response = request_put('customer-1', 'share/grant/v1',
         json={
             'trusted_global_id': 'customer-2@id-a_8084',
@@ -243,6 +258,7 @@ def scenario4():
 
     run_ssh_command_and_wait('customer-2', f'mkdir /customer_2/cat_mine/', verbose=ssh_cmd_verbose)
     run_ssh_command_and_wait('customer-2', f'mkdir /customer_2/cat_shared/', verbose=ssh_cmd_verbose)
+    run_ssh_command_and_wait('customer-2', f'mkdir /customer_2/dog_shared/', verbose=ssh_cmd_verbose)
 
     # make sure private key for shared location was delivered from customer-1 to customer-2
     kw.service_info_v1('customer-2', 'service_keys_storage', 'ON')
@@ -252,7 +268,8 @@ def scenario4():
     # make sure shared location is activated on customer-2 node
     # kw.share_open_v1('customer-2', customer_1_share_id_cat)
     kw.file_sync_v1('customer-2')
-    kw.share_info_v1('customer-2', customer_1_share_id_cat, 'CONNECTED')
+    customer_1_share_info_2 = kw.share_info_v1('customer-2', customer_1_share_id_cat, wait_state='CONNECTED', wait_suppliers=2)
+    assert len(customer_1_share_info_2['result']['suppliers']) == 2
 
     # now try to download shared by customer-1 cat.txt file on customer-2 and place it in a new local folder
     kw.verify_file_download_start(
@@ -261,6 +278,34 @@ def scenario4():
         destination_path='/customer_2/cat_shared/cat.txt',
         reliable_shares=False,
         expected_reliable=100,
+    )
+
+    # customer-2 upload a new file "dog.txt" to the share
+    customer_2_local_filepath_dog, customer_2_remote_path_dog, customer_2_download_filepath_dog = kw.verify_file_create_upload_start(
+        node='customer-2',
+        key_id=customer_1_share_id_cat,
+        volume_path='/customer_2',
+        filename='dog.txt',
+        randomize_bytes=200,
+        expected_reliable=100,
+    )
+    # make sure we can download the file back on customer-2
+    kw.verify_file_download_start(
+        node='customer-2',
+        remote_path=customer_2_remote_path_dog,
+        destination_path=customer_2_download_filepath_dog,
+        verify_from_local_path=customer_2_local_filepath_dog,
+        expected_reliable=100,
+    )
+
+    # now try to download shared by customer-2 dog.txt file on customer-1 and place it in a new local folder
+    kw.verify_file_download_start(
+        node='customer-1',
+        remote_path=customer_2_remote_path_dog,
+        destination_path='/customer_2/dog_shared/dog.txt',
+        reliable_shares=False,
+        expected_reliable=100,
+        download_attempts=30,
     )
 
     # vice versa: create new share on customer-2
@@ -2308,6 +2353,9 @@ def scenario22():
 def scenario23(customer_1_file_info, customer_1_shared_file_info):
     set_active_scenario('SCENARIO 23')
     msg('\n\n============\n[SCENARIO 23] customer-1 able to upload/download files when one supplier is down')
+
+    # cleanup first
+    kw.config_set_v1('customer-1', 'services/employer/candidates', '')
 
     customer_1_suppliers = kw.supplier_list_v1('customer-1', expected_min_suppliers=2, expected_max_suppliers=2, extract_suppliers=True)
     assert len(customer_1_suppliers) == 2

@@ -913,7 +913,7 @@ class FamilyMember(automat.Automat):
 
     def _do_write_transaction(self, retries):
         if _Debug:
-            lg.out(_DebugLevel, 'family_member._do_write_transaction   retries=%d' % retries)
+            lg.out(_DebugLevel, 'family_member._do_write_transaction  suppliers=%d  retries=%d' % (len(self.transaction['suppliers']), retries, ))
         d = dht_relations.write_customer_suppliers(
             customer_idurl=self.customer_idurl,
             suppliers_list=self.transaction['suppliers'],

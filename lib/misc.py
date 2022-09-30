@@ -1099,8 +1099,9 @@ def LoopAttenuation(current_delay, go_faster, min_delay, max_delay):
     called exactly when 3 seconds passed. But we do not want fixed periods
     sometimes.
 
-    You must be hury when you have a lot of work, in the next moment - need rest.
-    For example - need to read some queue as fast as possible when you have some items inside.
+    It is common to be in hurry when you have a lot of work, but when there is nothing to do you can take rest.
+    For example, while reading a queue of events it make sense to do it as fast as possible, but only when you have some items in the queue.
+    When the queue is empty - you can try to reduce the load on the main process and just check the queue less often.
     This method is used to calculate the delay to the next call of some 'idle' method.
         :param current_delay: current period of time in seconds between calls
         :param go_faster:  if this is True - method should return ``min`` period - call next time as soon as possible

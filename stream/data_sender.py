@@ -58,8 +58,8 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = False
-_DebugLevel = 12
+_Debug = True
+_DebugLevel = 8
 
 #------------------------------------------------------------------------------
 
@@ -212,11 +212,10 @@ class DataSender(automat.Automat):
         # if _Debug:
         #     lg.out(_DebugLevel, 'data_sender.doScanAndQueue    with %d known customers' % len(contactsdb.known_customers()))
         for customer_idurl in contactsdb.known_customers():
-            if customer_idurl != my_id.getIDURL():
-                # TODO: check that later
-                if _Debug:
-                    lg.out(_DebugLevel + 2, 'data_sender.doScanAndQueue  skip sending to another customer: %r' % customer_idurl)
-                continue
+            # if customer_idurl != my_id.getIDURL():
+            #     # TODO: check that later
+            #     lg.warn('skip sending to another customer: %r' % customer_idurl)
+            #     continue
             known_suppliers = contactsdb.suppliers(customer_idurl)
             if not known_suppliers or id_url.is_some_empty(known_suppliers):
                 if _Debug:
