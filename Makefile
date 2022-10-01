@@ -91,12 +91,6 @@ clean: pyclean docsclean
 	@echo "Cleanup current BitDust environment"
 	@rm -rf ${VENV}
 
-venv_off:
-	@echo "Creating new virtual environment in ${VENV}"
-	@virtualenv -p python2.7 ${VENV}
-	@$(PIP) install -U "pip>=7.0" -q
-	@$(PIP) install -r $(DEPS)
-
 
 
 test_tox: clean tox
