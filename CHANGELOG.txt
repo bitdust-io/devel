@@ -1,6 +1,27 @@
 Change Log
 ==========
 
+2022-10-01 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* added Layerfile for webapp.io CI/CD
+* use "supplier-file-modified" event in the service_shared_data()
+* auto-refreshing live status of the shared files to other authorized customers
+* increase timeout in packet_out()
+* compressed Blockchain Wallet static files
+* also added files from Optipoolware, TornadoWallet, WalletServer repositories
+* hard-code mining difficulty to 10
+* copied source files of the Bismuth project, started working with internal blockchain
+* make possible to set active/inactive state for a key
+* make possible to respond with multiple simillar Ack()/Fail() packets at once
+* cleanup empty doc text
+* few IDURL bug fixed
+* added api.share_info() method
+* updated api response messages
+* bug fix in api.file_info()
+* bug fix in gateway.py
+* bug fix in shared_access_coordinator()
+
+
 
 2022-07-22 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
