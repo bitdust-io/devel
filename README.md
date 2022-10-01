@@ -2,7 +2,7 @@
 
 [bitdust.io](https://bitdust.io)
 
-[![Build Status](https://travis-ci.com/bitdust-io/devel.svg?branch=master)](https://travis-ci.com/bitdust-io/devel)
+[![CircleCI Build Status](https://dl.circleci.com/status-badge/img/gh/bitdust-io/devel/tree/master.svg?style=svg)](https://dl.circleci.com/status-badge/redirect/gh/bitdust-io/devel/tree/master)
 
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
 
