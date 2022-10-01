@@ -2,7 +2,7 @@
 
 [bitdust.io](https://bitdust.io)
 
-[![CircleCI Build Status](https://dl.circleci.com/status-badge/img/gh/bitdust-io/devel/tree/master.svg?style=svg)](https://dl.circleci.com/status-badge/redirect/gh/bitdust-io/devel/tree/master)
+[![Regression Test](https://github.com/bitdust-io/devel/actions/workflows/pull_request.yml/badge.svg)](https://github.com/bitdust-io/devel/actions/workflows/pull_request.yml)
 
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
 
