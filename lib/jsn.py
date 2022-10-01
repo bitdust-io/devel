@@ -90,16 +90,32 @@ def dict_items_to_text(dct, encoding='utf-8', errors='strict'):
     Returns dict where all keys and values are converted to text strings.
     Only works for simple dicts - one level structure.
     """
-    # TODO: make it fully recursive... for example if list of lists is passed 
+    # TODO: make it fully recursive... for example if list of lists is passed
+    if strng.is_text(dct):
+        return dct
+    elif strng.is_bin(dct):
+        return dct.decode(encoding, errors=errors)
+    elif isinstance(dct, list):
+        return [dict_items_to_text(i) for i in dct]
+    elif isinstance(dct, tuple):
+        return tuple([dict_items_to_text(i) for i in dct])
+    elif isinstance(dct, dict):
+        return {strng.to_text(x): dict_items_to_text(y) for x, y in dct.items()}
+    if not isinstance(dct, dict):
+        return dct
     _d = {}
     for k in dct.keys():
         _v = dct[k]
-        if strng.is_bin(_v):
+        if strng.is_text(_v):
+            pass
+        elif strng.is_bin(_v):
             _v = _v.decode(encoding, errors=errors)
         elif isinstance(_v, list):
-            _v = [i.decode(encoding, errors=errors) if strng.is_bin(i) else i for i in _v]
+            _v = [dict_items_to_text(i) for i in _v]
         elif isinstance(_v, tuple):
-            _v = tuple([i.decode(encoding, errors=errors) if strng.is_bin(i) else i for i in _v])
+            _v = tuple([dict_items_to_text(i) for i in _v])
+        elif isinstance(_v, dict):
+            _v = {strng.to_text(x): dict_items_to_text(y) for x, y in _v.items()}
         _k = k
         if strng.is_bin(_k):
             _k = _k.decode(encoding, errors=errors)
@@ -110,7 +126,7 @@ def dict_items_to_text(dct, encoding='utf-8', errors='strict'):
 
 def pack_dict(dct, encoding='utf-8', errors='strict'):
     """
-    Creates another dict from input dict where types of keys and values are also present.  
+    Creates another dict from input dict where types of keys and values are also present.
     Keys can only be bin/text strings, integers, floats or None.
     Values can only be bin/text strings, integers, floats, None, lists or tuples.
     Result dict will always contain only text (unicode) keys and values or simple types like integer, float or None.

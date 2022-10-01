@@ -2323,7 +2323,7 @@ def shares_list(only_active=False, include_mine=True, include_granted=True):
                 'active': my_keys.is_active(key_id),
                 'key_id': key_id,
                 'alias': key_alias,
-                'label': my_keys.get_label(key_id),
+                'label': my_keys.get_label(key_id) or '',
                 'creator': creator_idurl.to_id(),
                 'suppliers': [],
                 'ecc_map': None,
@@ -2360,7 +2360,7 @@ def share_info(key_id):
             'active': False,
             'key_id': key_id,
             'alias': glob_id['key_alias'],
-            'label': my_keys.get_label(key_id),
+            'label': my_keys.get_label(key_id) or '',
             'creator': glob_id['idurl'].to_id(),
             'suppliers': [],
             'ecc_map': None,
@@ -2375,7 +2375,7 @@ def share_info(key_id):
             'active': my_keys.is_active(key_id),
             'key_id': key_id,
             'alias': glob_id['key_alias'],
-            'label': my_keys.get_label(key_id),
+            'label': my_keys.get_label(key_id) or '',
             'creator': glob_id['idurl'].to_id(),
             'suppliers': None,
             'ecc_map': None,
@@ -2673,7 +2673,7 @@ def groups_list(only_active=False, include_mine=True, include_granted=True):
             'group_key_id': group_key_id,
             'state': None,
             'alias': group_key_alias,
-            'label': my_keys.get_label(group_key_id),
+            'label': my_keys.get_label(group_key_id) or '',
             'active': False,
         }
         result.update({'group_key_info': my_keys.get_key_info(group_key_id), })
@@ -2763,7 +2763,7 @@ def group_info(group_key_id):
         'group_key_id': group_key_id,
         'state': None,
         'alias': my_keys.split_key_id(group_key_id)[0],
-        'label': my_keys.get_label(group_key_id),
+        'label': my_keys.get_label(group_key_id) or '',
         'active': False,
     }
     if not my_keys.is_key_registered(group_key_id):
@@ -4683,7 +4683,7 @@ def queue_peddlers_list():
 
 def events_list():
     """
-    Returns a list of all logged events since the start of the main process and the total number of occurrences of each event.
+    Returns an overall statistic of the all logged events since the start of the main process.
 
     ###### HTTP
         curl -X GET 'localhost:8180/event/list/v1'

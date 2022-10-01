@@ -58,7 +58,7 @@ from six.moves import range
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 16
 
 _PacketLogFileEnabled = False
@@ -682,9 +682,12 @@ class PacketOut(automat.Automat):
             os.close(fileno)
             self.filesize = len(self.packetdata)
             if self.filesize < 1024 * 10:
-                self.timeout = 10
+                if self.response_timeout:
+                    self.timeout = self.response_timeout
+                else:
+                    self.timeout = 30
             elif self.filesize > 1024 * 1024:
-                self.timeout = int(self.filesize / float(settings.SendingSpeedLimit()))
+                self.timeout = 5 + int(self.filesize / float(settings.SendingSpeedLimit()))
             else:
                 self.timeout = 300
         except:

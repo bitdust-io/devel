@@ -830,7 +830,7 @@ def get_label(key_id):
     """
     key_id = strng.to_text(key_id)
     if not is_key_registered(key_id):
-        return None
+        return ''
     return key_obj(key_id).label
 
 

@@ -93,7 +93,7 @@ def packet_in_callback(backupID, newpacket):
     global OnRestorePacketFunc
     SupplierNumber = newpacket.SupplierNumber()
     if _Debug:
-        lg.out(_DebugLevel, 'restore_monitor.packet_in_callback %s from suppier %s' % (backupID, SupplierNumber))
+        lg.out(_DebugLevel, 'restore_monitor.packet_in_callback %s from supplier %s' % (backupID, SupplierNumber))
     # want to count the data we restoring
     if SupplierNumber not in list(_WorkingRestoreProgress[backupID].keys()):
         _WorkingRestoreProgress[backupID][SupplierNumber] = 0
@@ -105,7 +105,7 @@ def packet_in_callback(backupID, newpacket):
 
 
 def extract_done(retcode, backupID, source_filename, output_location, callback_method):
-    lg.info('extract success of %r with result : %r' % (backupID, str(retcode)))
+    lg.info('extract success of %s with result : %s' % (backupID, str(retcode)))
     global OnRestoreDoneFunc
     _WorkingBackupIDs.pop(backupID, None)
     _WorkingRestoreProgress.pop(backupID, None)

@@ -61,6 +61,7 @@ _DebugLevel = 6
 
 #------------------------------------------------------------------------------
 
+import time
 import base64
 
 #------------------------------------------------------------------------------
@@ -206,6 +207,158 @@ def open_known_shares():
 
 #------------------------------------------------------------------------------
 
+def on_supplier_file_modified(evt):
+    key_id = global_id.MakeGlobalID(idurl=evt.data['customer_idurl'], key_alias=evt.data['key_alias'])
+    if _Debug:
+        lg.args(_DebugLevel, e=evt, d=evt.data, k=key_id)
+    if not my_keys.is_active(key_id):
+        return
+    active_share = get_active_share(key_id)
+    if not active_share:
+        lg.warn('supplier file was modified and key is active, but share %s is not known' % key_id)
+        return
+    if active_share.state == 'DISCONNECTED':
+        active_share.automat('restart')
+        return
+    if active_share.state != 'CONNECTED':
+        return
+    if evt.data['remote_path'] == settings.BackupIndexFileName():
+        active_share.automat('restart')
+    else:
+        supplier_idurl = evt.data['supplier_idurl']
+        sc = supplier_connector.by_idurl(
+            supplier_idurl,
+            customer_idurl=active_share.customer_idurl,
+        )
+        if sc is not None and sc.state == 'CONNECTED':
+            p2p_service.SendListFiles(
+                target_supplier=supplier_idurl,
+                customer_idurl=active_share.customer_idurl,
+                key_id=active_share.key_id,
+                timeout=20,
+                callbacks={
+                    commands.Files(): lambda r, i: on_list_files_response(r, i, active_share.customer_idurl, supplier_idurl, active_share.key_id),
+                    commands.Fail(): lambda r, i: on_list_files_failed(r, i, active_share.customer_idurl, supplier_idurl, active_share.key_id),
+                }
+            )
+
+
+def on_key_registered(evt):
+    if not evt.data['key_id'].startswith('share_'):
+        return
+    active_share = get_active_share(evt.data['key_id'])
+    if _Debug:
+        lg.args(_DebugLevel, e=evt, active_share=active_share)
+    if active_share:
+        active_share.automat('new-private-key-registered')
+        return
+    new_share = SharedAccessCoordinator(evt.data['key_id'], log_events=True, publish_events=False, )
+    new_share.add_connected_callback('key_registered' + strng.to_text(time.time()), lambda _id, _result: on_share_first_connected(evt.data['key_id'], _id, _result))
+    new_share.automat('new-private-key-registered')
+
+
+def on_key_erased(evt):
+    if not evt.data['key_id'].startswith('share_'):
+        return
+    from access import shared_access_coordinator
+    active_share = shared_access_coordinator.get_active_share(evt.data['key_id'])
+    if _Debug:
+        lg.args(_DebugLevel, e=evt, active_share=active_share)
+    if active_share:
+        active_share.automat('shutdown')
+
+
+def on_share_connected(evt):
+    if _Debug:
+        lg.args(_DebugLevel, e=evt)
+
+
+def on_share_first_connected(key_id, callback_id, result):
+    if not result:
+        return
+    active_share = get_active_share(key_id)
+    if _Debug:
+        lg.args(_DebugLevel, key_id=key_id, result=result, active_share=active_share)
+    if active_share:
+        active_share.remove_connected_callback(callback_id)
+        backup_fs.populate_shared_files(key_id=key_id)
+
+
+def on_supplier_modified(evt):
+    if _Debug:
+        lg.args(_DebugLevel, e=evt)
+    if evt.data['new_idurl']:
+        my_keys_to_be_republished = []
+        for key_id in my_keys.known_keys():
+            if not key_id.startswith('share_'):
+                continue
+            _glob_id = global_id.NormalizeGlobalID(key_id)
+            if _glob_id['idurl'].to_bin() == my_id.getIDURL().to_bin():
+                # only send public keys of my own shares
+                my_keys_to_be_republished.append(key_id)
+        for key_id in my_keys_to_be_republished:
+            d = key_ring.transfer_key(key_id, trusted_idurl=evt.data['new_idurl'], include_private=False, include_signature=False)
+            d.addErrback(lambda *a: lg.err('transfer key failed: %s' % str(*a)))
+
+
+def on_my_list_files_refreshed(evt):
+    if _Debug:
+        lg.args(_DebugLevel, e=evt)
+    for key_id in list_active_shares():
+        cur_share = get_active_share(key_id)
+        if not cur_share:
+            continue
+        if cur_share.state != 'CONNECTED':
+            continue
+        for supplier_idurl in cur_share.known_suppliers_list:
+            sc = supplier_connector.by_idurl(
+                supplier_idurl,
+                customer_idurl=cur_share.customer_idurl,
+            )
+            if sc is not None and sc.state == 'CONNECTED':
+                p2p_service.SendListFiles(
+                    target_supplier=supplier_idurl,
+                    customer_idurl=cur_share.customer_idurl,
+                    key_id=cur_share.key_id,
+                    timeout=20,
+                    callbacks={
+                        commands.Files(): lambda r, i: on_list_files_response(r, i, cur_share.customer_idurl, supplier_idurl, cur_share.key_id),
+                        commands.Fail(): lambda r, i: on_list_files_failed(r, i, cur_share.customer_idurl, supplier_idurl, cur_share.key_id),
+                    }
+                )
+
+def on_list_files_response(response, info, customer_idurl, supplier_idurl, key_id):
+    # TODO: remember the response and prevent sending ListFiles() too often
+    if _Debug:
+        lg.args(_DebugLevel, r=response, i=info, c=customer_idurl, s=supplier_idurl, k=key_id)
+
+def on_list_files_failed(response, info, customer_idurl, supplier_idurl, key_id):
+    if strng.to_text(response.Payload).count('key not registered'):
+        lg.warn('supplier %r of customer %r do not possess public key %r yet, sending it now' % (
+            supplier_idurl, customer_idurl, key_id, ))
+        result = key_ring.transfer_key(key_id, supplier_idurl, include_private=False, include_signature=False)
+        result.addCallback(lambda r: on_key_transfer_success(customer_idurl, supplier_idurl, key_id))
+        result.addErrback(lambda err: lg.err('failed sending key %r to %r : %r' % (key_id, supplier_idurl, err, )))
+    else:
+        lg.err('failed requesting ListFiles() with %r for customer %r from supplier %r: %r' % (
+            key_id, customer_idurl, supplier_idurl, strng.to_text(response.Payload), ))
+    return None
+
+def on_key_transfer_success(customer_idurl, supplier_idurl, key_id):
+    lg.info('public key %r shared to supplier %r of customer %r, now will send ListFiles()' % (key_id, supplier_idurl, customer_idurl))
+    p2p_service.SendListFiles(
+        target_supplier=supplier_idurl,
+        customer_idurl=customer_idurl,
+        key_id=key_id,
+        timeout=30,
+        callbacks={
+            commands.Files(): lambda r, i: on_list_files_response(r, i, customer_idurl, supplier_idurl, key_id),
+            commands.Fail(): lambda r, i: on_list_files_failed(r, i, customer_idurl, supplier_idurl, key_id),
+        }
+    )
+
+#------------------------------------------------------------------------------
+
 class SharedAccessCoordinator(automat.Automat):
     """
     This class implements all the functionality of the ``shared_access_coordinator()`` state machine.
@@ -255,7 +408,7 @@ class SharedAccessCoordinator(automat.Automat):
             'active': my_keys.is_active(self.key_id),
             'key_id': self.key_id,
             'alias': self.key_alias,
-            'label': my_keys.get_label(self.key_id),
+            'label': my_keys.get_label(self.key_id) or '',
             'creator': self.customer_idurl.to_id(),
             'suppliers': [id_url.idurl_to_id(s) for s in self.known_suppliers_list],
             'ecc_map': self.known_ecc_map,
@@ -463,7 +616,10 @@ class SharedAccessCoordinator(automat.Automat):
         """
         supplier_index_file_revision = self.received_index_file_revision.get(kwargs['supplier_idurl'])
         if supplier_index_file_revision:
-            if supplier_index_file_revision >= backup_fs.revision(customer_idurl=self.customer_idurl, key_alias=self.key_alias):
+            _rev = backup_fs.revision(customer_idurl=self.customer_idurl, key_alias=self.key_alias)
+            if _Debug:
+                lg.args(_DebugLevel, s=kwargs['supplier_idurl'], supplier_rev=supplier_index_file_revision, my_rev=_rev)
+            if supplier_index_file_revision >= _rev:
                 self.automat('index-up-to-date', supplier_idurl=kwargs['supplier_idurl'])
                 return
         self._do_send_index_file(kwargs['supplier_idurl'])
@@ -557,7 +713,7 @@ class SharedAccessCoordinator(automat.Automat):
                 customer_idurl=self.customer_idurl,
                 needed_bytes=0,  # we only want to read the data at the moment - requesting 0 bytes from the supplier
                 key_id=self.key_id,
-                queue_subscribe=False,
+                queue_subscribe=True,
             )
         if sc.state in ['CONNECTED', 'QUEUE?', ]:
             self.automat('supplier-connected', supplier_idurl=supplier_idurl)
@@ -656,6 +812,7 @@ class SharedAccessCoordinator(automat.Automat):
                 commands.Fail(): self._on_send_index_file_ack,
             },
         )
+        self.automat('index-sending', supplier_idurl=supplier_idurl)
         if _Debug:
             lg.args(_DebugLevel, pid=packetID, sz=len(data), supplier=supplier_idurl)
 

@@ -80,17 +80,17 @@ from lib import diskspace
 
 from contacts import contactsdb
 
-from userid import my_id
-from userid import id_url
-from userid import global_id
-
-from crypt import my_keys
+from stream import p2p_queue
 
 from p2p import commands
 from p2p import p2p_service
 from p2p import online_status
 
 from raid import eccmap
+
+from userid import id_url
+from userid import global_id
+from userid import my_id
 
 #------------------------------------------------------------------------------
 
@@ -160,6 +160,54 @@ def total_connectors():
 
 #------------------------------------------------------------------------------
 
+# def on_supplier_file_modified(event_info):
+#     if _Debug:
+#         lg.args(_DebugLevel, e=event_info)
+#     return True
+# 
+# 
+# def start_consumer(customer_id, supplier_id):
+#     supplier_queue_id = global_id.MakeGlobalQueueID(
+#         queue_alias='supplier-file-modified',
+#         owner_id=customer_id,
+#         supplier_id=supplier_id,
+#     )
+#     if not p2p_queue.is_queue_exist(supplier_queue_id):
+#         try:
+#             p2p_queue.open_queue(supplier_queue_id)
+#         except Exception as exc:
+#             lg.warn('failed to open queue %s : %s' % (supplier_queue_id, str(exc)))
+#     if not p2p_queue.is_queue_exist(supplier_queue_id):
+#         lg.err('queue %s not exist' % supplier_queue_id)
+#         return False
+#     if not p2p_queue.is_consumer_exists(customer_id):
+#         p2p_queue.add_consumer(customer_id)
+#     if not p2p_queue.is_callback_method_registered(consumer_id=customer_id, callback_method=on_supplier_file_modified):
+#         p2p_queue.add_callback_method(consumer_id=customer_id, callback_method=on_supplier_file_modified)
+#     if not p2p_queue.is_consumer_subscribed(customer_id, supplier_queue_id):
+#         p2p_queue.subscribe_consumer(customer_id, supplier_queue_id)
+#     if _Debug:
+#         lg.args(_DebugLevel, q=supplier_queue_id)
+#     return True
+# 
+# 
+# def stop_consumer(customer_id, supplier_id):
+#     supplier_queue_id = global_id.MakeGlobalQueueID(
+#         queue_alias='supplier-file-modified',
+#         owner_id=customer_id,
+#         supplier_id=supplier_id,
+#     )
+#     if p2p_queue.is_consumer_subscribed(customer_id, supplier_queue_id):
+#         p2p_queue.unsubscribe_consumer(customer_id, supplier_queue_id, remove_empty=True)
+#     if p2p_queue.is_callback_method_registered(consumer_id=customer_id, callback_method=on_supplier_file_modified):
+#         p2p_queue.remove_callback_method(consumer_id=customer_id, callback_method=on_supplier_file_modified)
+#     if p2p_queue.is_queue_exist(supplier_queue_id):
+#         p2p_queue.close_queue(supplier_queue_id, remove_empty_consumers=True, remove_empty_producers=True)
+#     if _Debug:
+#         lg.args(_DebugLevel, q=supplier_queue_id)
+#     return True
+
+#------------------------------------------------------------------------------
 
 class SupplierConnector(automat.Automat):
     """
@@ -174,10 +222,10 @@ class SupplierConnector(automat.Automat):
 
     def __init__(self, supplier_idurl, customer_idurl, needed_bytes,
                  key_id=None, queue_subscribe=True):
-        """
-        """
         self.supplier_idurl = supplier_idurl
+        self.supplier_id = self.supplier_idurl.to_id()
         self.customer_idurl = customer_idurl
+        self.customer_id = self.customer_idurl.to_id()
         self.needed_bytes = needed_bytes
         self.key_id = key_id
         self.queue_subscribe = queue_subscribe
@@ -434,14 +482,15 @@ class SupplierConnector(automat.Automat):
         Action method.
         """
         service_info = {}
-        my_customer_key_id = my_id.getGlobalID(key_alias='customer')
-        if my_keys.is_key_registered(my_customer_key_id):
-            service_info['customer_public_key'] = my_keys.get_key_info(
-                key_id=my_customer_key_id,
-                include_private=False,
-                include_signature=False,
-                generate_signature=False,
-            )
+        # TODO: re-think again about the customer key, do we really need it?
+        # my_customer_key_id = my_id.getGlobalID(key_alias='customer')
+        # if my_keys.is_key_registered(my_customer_key_id):
+        #     service_info['customer_public_key'] = my_keys.get_key_info(
+        #         key_id=my_customer_key_id,
+        #         include_private=False,
+        #         include_signature=False,
+        #         generate_signature=False,
+        #     )
         ecc_map = kwargs.get('ecc_map')
         if ecc_map:
             service_info['ecc_map'] = ecc_map
@@ -467,20 +516,20 @@ class SupplierConnector(automat.Automat):
             'items': [{
                 'scope': 'consumer',
                 'action': 'start',
-                'consumer_id': strng.to_text(my_id.getGlobalID()),
+                'consumer_id': self.customer_id,
             }, {
                 'scope': 'consumer',
                 'action': 'add_callback',
-                'consumer_id': strng.to_text(my_id.getGlobalID()),
-                'method': strng.to_text(my_id.getIDURL()),
+                'consumer_id': self.customer_id,
+                'method': self.customer_idurl,
             }, {
                 'scope': 'consumer',
                 'action': 'subscribe',
-                'consumer_id': strng.to_text(my_id.getGlobalID()),
+                'consumer_id': self.customer_id,
                 'queue_id': global_id.MakeGlobalQueueID(
                     queue_alias='supplier-file-modified',
-                    owner_id=my_id.getGlobalID(),
-                    supplier_id=global_id.MakeGlobalID(idurl=self.supplier_idurl),
+                    owner_id=self.customer_id,
+                    supplier_id=self.supplier_id,
                 ),
             }, ],
         }
@@ -503,21 +552,21 @@ class SupplierConnector(automat.Automat):
             'items': [{
                 'scope': 'consumer',
                 'action': 'unsubscribe',
-                'consumer_id': strng.to_text(my_id.getGlobalID()),
+                'consumer_id': self.customer_id,
                 'queue_id': global_id.MakeGlobalQueueID(
                     queue_alias='supplier-file-modified',
-                    owner_id=my_id.getGlobalID(),
-                    supplier_id=global_id.MakeGlobalID(idurl=self.supplier_idurl),
+                    owner_id=self.customer_id,
+                    supplier_id=self.supplier_id,
                 ),
             }, {
                 'scope': 'consumer',
                 'action': 'remove_callback',
-                'consumer_id': strng.to_text(my_id.getGlobalID()),
-                'method': strng.to_text(my_id.getIDURL()),
+                'consumer_id': self.customer_id,
+                'method': self.customer_id,
             }, {
                 'scope': 'consumer',
                 'action': 'stop',
-                'consumer_id': strng.to_text(my_id.getGlobalID()),
+                'consumer_id': self.customer_id,
             }, ],
         }
         p2p_service.SendCancelService(
@@ -525,7 +574,7 @@ class SupplierConnector(automat.Automat):
             service_name='service_p2p_notifications',
             json_payload=service_info,
             callbacks={
-                commands.Ack(): self._supplier_queue_acked,
+                commands.Ack(): self._supplier_queue_cancelled,
                 commands.Fail(): self._supplier_queue_failed,
             },
         )
@@ -606,15 +655,18 @@ class SupplierConnector(automat.Automat):
         self.automat('fail', response or None)
 
     def _supplier_queue_acked(self, response, info):
-        if _Debug:
-            lg.args(_DebugLevel, response=response, info=info)
         if not self.request_queue_packet_id:
             lg.warn('received "old" queue response : %r' % response)
             return
         if response.PacketID != self.request_queue_packet_id:
             lg.warn('received "unexpected" queue response : %r' % response)
             return
+        # start_consumer(self.customer_id, self.supplier_id)
         self.automat('queue-ack', response)
+
+    def _supplier_queue_cancelled(self, response, info):
+        # stop_consumer(self.customer_id, self.supplier_id)
+        self.automat('queue-stopped', response)
 
     def _supplier_queue_failed(self, response, info):
         if _Debug:
@@ -638,18 +690,19 @@ class SupplierConnector(automat.Automat):
             return
         service_info = {
             'needed_bytes': self.needed_bytes,
-            'customer_id': global_id.UrlToGlobalID(self.customer_idurl),
+            'customer_id': self.customer_id,
         }
-        my_customer_key_id = my_id.getGlobalID(key_alias='customer')
-        if my_keys.is_key_registered(my_customer_key_id):
-            service_info['customer_public_key'] = my_keys.get_key_info(
-                key_id=my_customer_key_id,
-                include_private=False,
-                include_signature=True,
-                generate_signature=True,
-            )
-        else:
-            lg.warn('my own customer key is not registered: %r' % my_customer_key_id)
+        # TODO: re-think again about the customer key, do we really need it?
+        # my_customer_key_id = my_id.getGlobalID(key_alias='customer')
+        # if my_keys.is_key_registered(my_customer_key_id):
+        #     service_info['customer_public_key'] = my_keys.get_key_info(
+        #         key_id=my_customer_key_id,
+        #         include_private=False,
+        #         include_signature=True,
+        #         generate_signature=True,
+        #     )
+        # else:
+        #     lg.warn('my own customer key is not registered: %r' % my_customer_key_id)
         if self.key_id:
             service_info['key_id'] = self.key_id
         self._last_known_ecc_map = ecc_map

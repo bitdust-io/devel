@@ -113,7 +113,7 @@ class CustomerAssistant(automat.Automat):
         self.customer_idurl = customer_idurl
         self.donated_bytes = accounting.get_customer_quota(self.customer_idurl) or 0
         name = "customer_%s_%s" % (
-            nameurl.GetName(self.customer_idurl),
+            self.customer_idurl.to_id(),
             diskspace.MakeStringFromBytes(self.donated_bytes).replace(' ', ''),
         )
         super(CustomerAssistant, self).__init__(
@@ -190,7 +190,9 @@ class CustomerAssistant(automat.Automat):
         """
         customer_key_id = my_keys.make_key_id(alias='customer', creator_idurl=self.customer_idurl)
         customer_key_id = my_keys.latest_key_id(customer_key_id)
-        if my_keys.is_key_registered(customer_key_id):
+        # if my_keys.is_key_registered(customer_key_id):
+        # TODO: re-think again about the customer key, do we really need it?
+        if False:
             list_files.send(
                 customer_idurl=self.customer_idurl,
                 packet_id='%s:%s' % (customer_key_id, packetid.UniqueID(), ),

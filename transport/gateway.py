@@ -694,7 +694,7 @@ def shutdown_all_inbox_packets():
 
 def packets_timeout_loop():
     global _PacketsTimeOutTask
-    delay = 10
+    delay = 30
     _PacketsTimeOutTask = reactor.callLater(delay, packets_timeout_loop)  # @UndefinedVariable
     for pkt_in in list(packet_in.inbox_items().values()):
         if pkt_in.is_timed_out():
@@ -759,19 +759,19 @@ def on_identity_received(newpacket, send_ack=True):
     idurl = newidentity.getIDURL()
     if not identitycache.HasKey(idurl):
         lg.info('received new identity %s rev %r' % (idurl, newidentity.getRevisionValue()))
-    if not identitycache.UpdateAfterChecking(idurl, newxml):
-        lg.warn("ERROR has non-Valid identity")
-        return False
     if my_id.isLocalIdentityReady():
         if newidentity.getPublicKey() == my_id.getLocalIdentity().getPublicKey():
             if newidentity.getRevisionValue() > my_id.getLocalIdentity().getRevisionValue():
                 lg.warn('received my own identity from another user, but with higher revision number')
                 reactor.callLater(0, my_id.rebuildLocalIdentity, new_revision=newidentity.getRevisionValue() + 1)  # @UndefinedVariable
                 return False
+    if not identitycache.UpdateAfterChecking(idurl, newxml):
+        lg.warn("ERROR has non-Valid identity")
+        return False
     latest_identity = id_url.get_latest_ident(newidentity.getPublicKey())
     if latest_identity:
         if latest_identity.getRevisionValue() > newidentity.getRevisionValue():
-            # check if received identity is the most recent revision number we every saw for that remote user
+            # check if received identity is the most recent revision number we ever saw for that remote user
             # in case we saw same identity with higher revision number need to reply with Fail packet and notify user
             # this may happen after identity restore - the user starts counting revision number from 0
             # but other nodes already store previous copies, user just need to jump to the most recent revision number
