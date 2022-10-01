@@ -214,7 +214,9 @@ def raidread(
             )
             if os.path.exists(FileName):
                 GoodDSegs += 1
-                moredata = open(FileName, "rb").read()
+                fin = open(FileName, "rb")
+                moredata = fin.read()
+                fin.close()
                 output.write(moredata)
         output.close()
 

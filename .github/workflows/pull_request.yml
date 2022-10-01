@@ -1,4 +1,4 @@
-name: Pull Request
+name: BitDust Regression Test
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     branches: [ "master" ]
 
 jobs:
-  build:
+  self_hosted:
 
     runs-on: self-hosted
 
@@ -20,6 +20,12 @@ jobs:
     - name: test_unit
       run: make test_unit
     
+    - name: regress_stop before
+      run: make regress_stop
+
+    - name: regress_clean before
+      run: make regress_clean
+
     - name: regress_prepare
       run: make regress_prepare
 
@@ -27,13 +33,4 @@ jobs:
       run: make regress_run_parallel
 
     - name: regress_report
-      run: make regress_report 1>regress_report.txt
-
-    - name: regress_stop
-      run: make regress_stop
-
-    - name: regress_clean
-      run: make regress_clean
-
-    - name: report
-      run: cat regress_report.txt
+      run: make regress_report
