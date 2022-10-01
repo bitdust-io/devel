@@ -1,0 +1,39 @@
+name: Pull Request
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build:
+
+    runs-on: self-hosted
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: venv
+      run: make clean venv
+
+    - name: test_unit
+      run: make test_unit
+    
+    - name: regress_prepare
+      run: make regress_prepare
+
+    - name: regress_run_parallel
+      run: make regress_run_parallel
+
+    - name: regress_report
+      run: make regress_report 1>regress_report.txt
+
+    - name: regress_stop
+      run: make regress_stop
+
+    - name: regress_clean
+      run: make regress_clean
+
+    - name: report
+      run: cat regress_report.txt
