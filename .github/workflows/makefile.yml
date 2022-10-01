@@ -1,0 +1,25 @@
+name: Makefile CI
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build:
+
+    runs-on: self-hosted
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Run regress_prepare
+      run: make regress_prepare
+
+    - name: Run regress_run_parallel
+      run: make regress_run_parallel
+
+    - name: Run regress_report
+      run: make regress_report
+
