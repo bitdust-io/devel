@@ -1212,7 +1212,6 @@ def _DoSection(args, context, callback):
     """
     {section foo}
     """
-
     block = args
     # If a section present and "true", push the dictionary onto the stack as the
     # new context, and show it

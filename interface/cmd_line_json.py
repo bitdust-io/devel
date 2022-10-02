@@ -156,7 +156,13 @@ def print_template(result, template):
     """
     Use json template to format the text and print to STDOUT.
     """
-    sys.stdout.write(template.expand(result))
+    try:
+        template.undefined_str = '?'
+        raw = template.expand(result)
+    except Exception as e:
+        print('failed to render output data: %r' % e)
+        return
+    sys.stdout.write(raw)
     sys.stdout.flush()
 
 
@@ -197,7 +203,7 @@ def call_websocket_method(method, **kwargs):
 
     def _on_result(resp):
         if _Debug:
-            print('call_websocket_method._on_result', method, kwargs)
+            print('call_websocket_method._on_result', method, kwargs, resp)
         try:
             websock.stop()
         except Exception as exc:

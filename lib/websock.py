@@ -52,7 +52,7 @@ from system import local_fs
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugAPIResponses = _Debug
 
 #------------------------------------------------------------------------------
@@ -211,7 +211,7 @@ def on_message(ws_inst, message):
     global _ResponseTimeoutTasks
     json_data = json.loads(message)
     if _Debug:
-        print('        on_message %d bytes' % len(message))
+        print('        on_message %d bytes:' % len(message), message)
     if 'payload' not in json_data:
         if _Debug:
             print('        no payload found in the response')

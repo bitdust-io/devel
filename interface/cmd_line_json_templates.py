@@ -182,7 +182,7 @@ TPL_STORAGE = tpl_4_items.format(
 TPL_AUTOMATS = tpl_4_items.format(
     tpl_status,
     tpl_execution,
-    ls('{index}: {repr} {.section timers}   timers: {@}{.end}\n'),
+    ls('{index}: {id}({state}) {.section timers}   timers: {@}{.end}\n'),
     tpl_errors)
 
 #------------------------------------------------------------------------------
