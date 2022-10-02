@@ -65,6 +65,7 @@ from twisted.web import iweb
 from twisted.web import client
 from twisted.web import http_headers
 from twisted.web.client import downloadPage, HTTPDownloader, Agent, _ReadBodyProtocol
+
 from twisted.web.http_headers import Headers
 
 from zope.interface import implementer
@@ -479,12 +480,18 @@ def downloadSSL(url, fileOrName, progress_func, certificates_filenames):
 
 #------------------------------------------------------------------------------
 
-
 # class ProxyClientFactory(client.HTTPClientFactory):
 # 
 #     def setURL(self, url):
 #         client.HTTPClientFactory.setURL(self, url)
 #         self.path = url
+
+class custom_ReadBodyProtocol(_ReadBodyProtocol):
+
+    def connectionLost(self, reason):
+        if self.deferred.called:
+            return
+        super(custom_ReadBodyProtocol, self).connectionLost(reason)
 
 
 def readBody(response):
@@ -496,7 +503,7 @@ def readBody(response):
 
     d = Deferred(cancel)
     d.addErrback(twisted_log.err)
-    protocol = _ReadBodyProtocol(response.code, response.phrase, d)
+    protocol = custom_ReadBodyProtocol(response.code, response.phrase, d)
 
     def getAbort():
         return getattr(protocol.transport, 'abortConnection', None)

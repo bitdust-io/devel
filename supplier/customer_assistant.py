@@ -58,7 +58,6 @@ from automats import automat
 
 from logs import lg
 
-from lib import nameurl
 from lib import packetid
 from lib import diskspace
 

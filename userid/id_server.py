@@ -454,12 +454,21 @@ font-family: "Tw Cen MT", "Century Gothic", Futura, Arial, sans-serif;}
 
 #------------------------------------------------------------------------------
 
-
 class WebRoot(resource.Resource):
 
     def getChild(self, path, request):
         if not path:
             return self
+        try:
+            path = strng.to_text(path)
+        except:
+            return resource.NoResource('Not found')
+        if not path.count('.xml'):
+            return resource.NoResource('Not found')
+        if path.count('.') != 1:
+            return resource.NoResource('Not found')
+        if path.count('/') or path.count('\\'):
+            return resource.NoResource('Not found')
         filepath = os.path.join(settings.IdentityServerDir(), strng.to_text(path))
         if os.path.isfile(filepath):
             return static.File(filepath)
