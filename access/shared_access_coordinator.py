@@ -211,6 +211,8 @@ def on_supplier_file_modified(evt):
     key_id = global_id.MakeGlobalID(idurl=evt.data['customer_idurl'], key_alias=evt.data['key_alias'])
     if _Debug:
         lg.args(_DebugLevel, e=evt, d=evt.data, k=key_id)
+    if not my_keys.is_key_registered(key_id):
+        return
     if not my_keys.is_active(key_id):
         return
     active_share = get_active_share(key_id)
