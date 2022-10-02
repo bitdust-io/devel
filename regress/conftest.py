@@ -247,14 +247,14 @@ def event_loop():
 #------------------------------------------------------------------------------
 
 @pytest.yield_fixture(scope='session', autouse=True)
-def global_wrapper(event_loop): 
-    print('\n\nPAUSE_BEFORE: %d' % PAUSE_BEFORE)
-    print('\n\nENV:\n%s' % pprint.pformat(dict(os.environ)))
-    print('\n\nALL NODES:\n%s' % pprint.pformat(ALL_NODES))
+def global_wrapper(event_loop):
+    verbose = VERBOSE
+    if verbose:
+        print('\n\nPAUSE_BEFORE: %d' % PAUSE_BEFORE)
+        print('\n\nENV:\n%s' % pprint.pformat(dict(os.environ)))
+        print('\n\nALL NODES:\n%s' % pprint.pformat(ALL_NODES))
 
     time.sleep(PAUSE_BEFORE)
-
-    verbose = VERBOSE
 
     _begin = time.time()
 
@@ -278,8 +278,6 @@ def global_wrapper(event_loop):
  
     yield
 
-    print('\nTest suite completed in %5.3f seconds\n' % (time.time() - _begin))
-
     # TODO: use ENV variables to control stop / coverage / report / cleanup
 
     # log_network_info_all_nodes(event_loop)
@@ -291,4 +289,4 @@ def global_wrapper(event_loop):
     # close_all_tunnels()
     # kill_all_nodes()
 
-    print('\nAll done in %5.3f seconds\n' % (time.time() - _begin))
+    print('\nTest suite %r completed in %5.3f seconds\n' % (TEST_NAME, time.time() - _begin, ))
