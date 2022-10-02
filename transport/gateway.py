@@ -816,7 +816,7 @@ def on_outbox_packet(outpacket, wide, callbacks, target=None, route=None, respon
     started_packets = packet_out.search_similar_packets(outpacket)
     if started_packets:
         for active_packet, _ in started_packets:
-            if active_packet.Command in [commands.Ack(), commands.Fail(), ]:
+            if active_packet.outpacket and active_packet.outpacket.Command in [commands.Ack(), commands.Fail(), ]:
                 continue
             if callbacks:
                 for command, cb in callbacks.items():

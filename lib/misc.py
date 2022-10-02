@@ -183,7 +183,7 @@ def TimeFromBackupID(backupID):
     try:
         return time.mktime(TimeStructFromVersion(backupID))
     except:
-        lg.exc()
+        lg.exc('backupID=%r' % backupID)
         return None
 
 
