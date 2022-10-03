@@ -102,25 +102,26 @@ def init(UI='', options=None, args=None, overDict=None, executablePath=None):
                                     lambda p, value, o, r: lg.set_debug_level(value))
 
     #---USE_TRAY_ICON---
-    if os.path.isfile(settings.LocalIdentityFilename()) and os.path.isfile(settings.KeyFileName()):
-        try:
-            from system.tray_icon import USE_TRAY_ICON
-            if bpio.Mac() or not bpio.isGUIpossible():
-                if _Debug:
-                    lg.out(_DebugLevel, '    GUI is not possible')
-                USE_TRAY_ICON = False
-            if USE_TRAY_ICON:
-                from twisted.internet import wxreactor
-                wxreactor.install()
-                if _Debug:
-                    lg.out(_DebugLevel, '    wxreactor installed')
-        except:
-            USE_TRAY_ICON = False
-            lg.exc()
-    else:
-        if _Debug:
-            lg.out(_DebugLevel, '    local identity or key file is not ready')
-        USE_TRAY_ICON = False
+#     if os.path.isfile(settings.LocalIdentityFilename()) and os.path.isfile(settings.KeyFileName()):
+#         try:
+#             from system.tray_icon import USE_TRAY_ICON
+#             if bpio.Mac() or not bpio.isGUIpossible():
+#                 if _Debug:
+#                     lg.out(_DebugLevel, '    GUI is not possible')
+#                 USE_TRAY_ICON = False
+#             if USE_TRAY_ICON:
+#                 from twisted.internet import wxreactor
+#                 wxreactor.install()
+#                 if _Debug:
+#                     lg.out(_DebugLevel, '    wxreactor installed')
+#         except:
+#             USE_TRAY_ICON = False
+#             lg.exc()
+#     else:
+#         if _Debug:
+#             lg.out(_DebugLevel, '    local identity or key file is not ready')
+#         USE_TRAY_ICON = False#         USE_TRAY_ICON = False
+    USE_TRAY_ICON = False
     if _Debug:
         lg.out(_DebugLevel, '    USE_TRAY_ICON=' + str(USE_TRAY_ICON))
     if USE_TRAY_ICON:
