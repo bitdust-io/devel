@@ -97,10 +97,10 @@ class CustomerService(LocalService):
         from storage import keys_synchronizer
         from crypt import my_keys
         from userid import my_id
-        customer_key_id = my_id.getGlobalID(key_alias='customer')
-        if not my_keys.is_key_registered(customer_key_id) and keys_synchronizer.is_synchronized():
-            lg.info('customer key was not found but we know that all keys are in sync, generate new key: %s' % customer_key_id)
-            my_keys.generate_key(customer_key_id, key_size=settings.getPrivateKeySize())
+        # customer_key_id = my_id.getGlobalID(key_alias='customer')
+        # if not my_keys.is_key_registered(customer_key_id) and keys_synchronizer.is_synchronized():
+        #     lg.info('customer key was not found but we know that all keys are in sync, generate new key: %s' % customer_key_id)
+        #     my_keys.generate_key(customer_key_id, key_size=settings.getPrivateKeySize())
 
     def _on_identity_url_changed(self, evt):
         from logs import lg

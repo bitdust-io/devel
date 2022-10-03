@@ -156,7 +156,7 @@ class BaseConfig(object):
         if s is None:
             return default
         try:
-            s = s.strip().strip('"')
+            s = str(s).strip().strip('"')
             return int(s)
         except ValueError:
             return default
@@ -168,7 +168,7 @@ class BaseConfig(object):
         data = self.getData(entryPath)
         if data is None:
             return default
-        return True if data.strip() in ['true', '1', 'on', ] else False
+        return True if str(data).strip() in ['True', 'true', '1', 'on', ] else False
 
     def setBool(self, entryPath, value):
         return self._set(entryPath, 'true' if value else 'false')
@@ -177,7 +177,7 @@ class BaseConfig(object):
         data = self.getData(entryPath)
         if data is None:
             return default
-        data = data.strip()
+        data = str(data).strip()
         if len(data) < 2:
             return default
         if not (data[0] == data[-1] == '"'):
