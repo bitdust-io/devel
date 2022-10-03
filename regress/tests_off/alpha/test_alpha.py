@@ -689,7 +689,7 @@ def scenario9():
     # remember list of existing keys on customer-rotated
     old_customer_keys = [k['key_id'] for k in kw.key_list_v1('customer-rotated')['result']]
     assert f'master${old_customer_global_id}' in old_customer_keys
-    assert f'customer${old_customer_global_id}' in old_customer_keys
+    # assert f'customer${old_customer_global_id}' in old_customer_keys
 
     old_proxy_info = {'idurl': old_proxy_idurl, 'sources': old_proxy_sources, 'global_id': old_proxy_global_id, }
     old_customer_info = {'idurl': old_customer_idurl, 'sources': old_customer_sources, 'global_id': old_customer_global_id, }
@@ -881,9 +881,9 @@ def scenario10_end(old_customer_rotated_info, old_customer_rotated_file_info, ol
     new_customer_keys = [k['key_id'] for k in kw.key_list_v1('customer-rotated')['result']]
     # assert len(old_customer_rotated_keys) == len(new_customer_keys)
     assert f'master${new_customer_global_id}' in new_customer_keys
-    assert f'customer${new_customer_global_id}' in new_customer_keys
+    # assert f'customer${new_customer_global_id}' in new_customer_keys
     assert f'master${old_customer_global_id}' not in new_customer_keys
-    assert f'customer${old_customer_global_id}' not in new_customer_keys
+    # assert f'customer${old_customer_global_id}' not in new_customer_keys
 
     # erase previous file on customer-rotated and prepare to download it again
     kw.service_info_v1('customer-rotated', 'service_shared_data', 'ON')
