@@ -348,10 +348,10 @@ class Initializer(automat.Automat):
         from crypt import key
         keyfilename = settings.KeyFileName()
         keyfilenamelocation = settings.KeyFileNameLocation()
-        if os.path.exists(keyfilenamelocation):
-            keyfilename = bpio.ReadTextFile(keyfilenamelocation)
-            if not os.path.exists(keyfilename):
-                keyfilename = settings.KeyFileName()
+        if os.path.isfile(keyfilenamelocation):
+            keyfilename_custom = bpio.ReadTextFile(keyfilenamelocation).strip()
+            if os.path.isfile(keyfilename_custom):
+                keyfilename = keyfilename_custom
         idfilename = settings.LocalIdentityFilename()
         if not os.path.exists(keyfilename) or not os.path.exists(idfilename):
             if _Debug:
