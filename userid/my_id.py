@@ -232,13 +232,16 @@ def loadLocalIdentity():
     global _LocalIdentity
     xmlid = ''
     lid_filename = bpio.portablePath(settings.LocalIdentityFilename())
-    if not os.path.isfile(settings.KeyFileName()):
+    key_filename = settings.KeyFileName()
+    if not os.path.isfile(key_filename):
         keyfilenamelocation = settings.KeyFileNameLocation()
-        if os.path.exists(keyfilenamelocation):
-            keyfilename = bpio.ReadTextFile(keyfilenamelocation)
-            if not os.path.exists(keyfilename):
-                lg.warn('not possible to load local identity because master key file does not exist')
-                return False
+        if not os.path.isfile(keyfilenamelocation):
+            lg.warn('not possible to load local identity because master key file does not exist at specified location')
+            return False
+        key_filename = bpio.ReadTextFile(keyfilenamelocation).strip()
+        if not os.path.isfile(key_filename):
+            lg.warn('not possible to load local identity because master key file does not exist at default location')
+            return False
     if os.path.exists(lid_filename):
         xmlid = bpio.ReadTextFile(lid_filename)
         if _Debug:

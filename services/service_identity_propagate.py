@@ -91,7 +91,7 @@ class IdentityPropagateService(LocalService):
         from userid import my_id
         from main.config import conf
         my_id.loadLocalIdentity()
-        if my_id._LocalIdentity is None:
+        if not my_id.isLocalIdentityReady():
             lg.warn('Loading local identity failed - need to create an identity first')
             return False
         from main import events

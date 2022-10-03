@@ -91,13 +91,13 @@ class Test(TestCase):
             pass
         automat.OpenLogFile('/tmp/.bitdust_tmp/logs/automats.log')
         self.my_current_key = None
-        fout = open('/tmp/_some_priv_key', 'w')
+        fout = open(settings.KeyFileName(), 'w')
         fout.write(_some_priv_key)
         fout.close()
         fout = open(settings.LocalIdentityFilename(), 'w')
         fout.write(_some_identity_xml)
         fout.close()
-        self.assertTrue(key.LoadMyKey(keyfilename='/tmp/_some_priv_key'))
+        self.assertTrue(key.LoadMyKey())
         self.assertTrue(my_id.loadLocalIdentity())
         my_id.init()
         try:
@@ -119,7 +119,6 @@ class Test(TestCase):
         key.ForgetMyKey()
         my_id.forgetLocalIdentity()
         settings.shutdown()
-        os.remove('/tmp/_some_priv_key')
         bpio.rmdir_recursive('/tmp/.bitdust_tmp')
         bpio.rmdir_recursive('/tmp/_some_folder')
         os.remove('/tmp/random_file')

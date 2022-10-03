@@ -78,6 +78,37 @@ _some_identity_xml = """<?xml version="1.0" encoding="utf-8"?>
 
 class Test(TestCase):
 
+    def setUp(self):
+        try:
+            bpio.rmdir_recursive('/tmp/.bitdust_tmp')
+        except Exception:
+            pass
+        lg.set_debug_level(30)
+        settings.init(base_dir='/tmp/.bitdust_tmp')
+        self.my_current_key = None
+        try:
+            os.makedirs('/tmp/.bitdust_tmp/metadata/')
+        except:
+            pass
+        try:
+            os.makedirs('/tmp/.bitdust_tmp/identitycache/')
+        except:
+            pass
+        fout = open(settings.KeyFileName(), 'w')
+        fout.write(_some_priv_key)
+        fout.close()
+        fout = open(settings.LocalIdentityFilename(), 'w')
+        fout.write(_some_identity_xml)
+        fout.close()
+        self.assertTrue(key.LoadMyKey())
+        self.assertTrue(my_id.loadLocalIdentity())
+
+    def tearDown(self):
+        key.ForgetMyKey()
+        my_id.forgetLocalIdentity()
+        settings.shutdown()
+        bpio.rmdir_recursive('/tmp/.bitdust_tmp')
+
     def test_sign_verify(self):
         lg.set_debug_level(30)
         key_id = 'some_key_abc$alice@127.0.0.1_8084'
@@ -117,13 +148,13 @@ class Test(TestCase):
             os.makedirs('/tmp/.bitdust_test_signed_key/metadata/')
         except:
             pass
-        fout = open('/tmp/_some_priv_key', 'w')
+        fout = open(settings.KeyFileName(), 'w')
         fout.write(_some_priv_key)
         fout.close()
         fout = open(settings.LocalIdentityFilename(), 'w')
         fout.write(_some_identity_xml)
         fout.close()
-        self.assertTrue(key.LoadMyKey(keyfilename='/tmp/_some_priv_key'))
+        self.assertTrue(key.LoadMyKey())
         self.assertTrue(my_id.loadLocalIdentity())
 
         key_id = 'some_key_abc$alice@127.0.0.1_8084'
@@ -138,5 +169,4 @@ class Test(TestCase):
         key.ForgetMyKey()
         my_id.forgetLocalIdentity()
         settings.shutdown()
-        os.remove('/tmp/_some_priv_key')
         bpio.rmdir_recursive('/tmp/.bitdust_test_signed_key')

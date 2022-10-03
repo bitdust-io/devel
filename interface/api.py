@@ -674,7 +674,7 @@ def identity_create(username, preferred_servers=[], join_network=False):
         if oldstate != newstate and newstate == 'DONE':
             my_id.loadLocalIdentity()
             if not my_id.isLocalIdentityReady():
-                return ERROR('identity creation failed, please try again later', api_method='identity_create')
+                return ERROR('identity create failed', api_method='identity_create')
             r = my_id.getLocalIdentity().serialize_json()
             r['xml'] = my_id.getLocalIdentity().serialize(as_text=True)
             if join_network:
@@ -775,7 +775,7 @@ def identity_recover(private_key_source, known_idurl=None, join_network=False):
         if newstate == 'RESTORED!':
             my_id.loadLocalIdentity()
             if not my_id.isLocalIdentityReady():
-                return ERROR('identity recovery FAILED', api_method='identity_recover')
+                return ERROR('identity recovery', api_method='identity_recover')
             r = my_id.getLocalIdentity().serialize_json()
             r['xml'] = my_id.getLocalIdentity().serialize(as_text=True)
             if join_network:
