@@ -231,14 +231,21 @@ def loadLocalIdentity():
     """
     global _LocalIdentity
     xmlid = ''
-    filename = bpio.portablePath(settings.LocalIdentityFilename())
-    if os.path.exists(filename):
-        xmlid = bpio.ReadTextFile(filename)
+    lid_filename = bpio.portablePath(settings.LocalIdentityFilename())
+    if not os.path.isfile(settings.KeyFileName()):
+        keyfilenamelocation = settings.KeyFileNameLocation()
+        if os.path.exists(keyfilenamelocation):
+            keyfilename = bpio.ReadTextFile(keyfilenamelocation)
+            if not os.path.exists(keyfilename):
+                lg.warn('not possible to load local identity because master key file does not exist')
+                return False
+    if os.path.exists(lid_filename):
+        xmlid = bpio.ReadTextFile(lid_filename)
         if _Debug:
-            lg.out(_DebugLevel, 'my_id.loadLocalIdentity %d bytes read from %s' % (len(xmlid), filename))
+            lg.out(_DebugLevel, 'my_id.loadLocalIdentity %d bytes read from %s' % (len(xmlid), lid_filename))
     if not xmlid:
         if _Debug:
-            lg.out(_DebugLevel, "my_id.loadLocalIdentity SKIPPED, local identity in %s is EMPTY !!!" % filename)
+            lg.out(_DebugLevel, "my_id.loadLocalIdentity SKIPPED, local identity in %s is EMPTY !!!" % lid_filename)
         return False
     lid = identity.identity(xmlsrc=xmlid)
     if not lid.isCorrect():
