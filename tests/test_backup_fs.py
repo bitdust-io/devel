@@ -75,13 +75,13 @@ class Test(TestCase):
             os.makedirs('/tmp/.bitdust_tmp/metadata/')
         except:
             pass
-        fout = open('/tmp/_some_priv_key', 'w')
+        fout = open(settings.KeyFileName(), 'w')
         fout.write(_some_priv_key)
         fout.close()
         fout = open(settings.LocalIdentityFilename(), 'w')
         fout.write(_some_identity_xml)
         fout.close()
-        self.assertTrue(key.LoadMyKey(keyfilename='/tmp/_some_priv_key'))
+        self.assertTrue(key.LoadMyKey())
         self.assertTrue(my_id.loadLocalIdentity())
         backup_fs.init()
 
@@ -90,7 +90,6 @@ class Test(TestCase):
         key.ForgetMyKey()
         my_id.forgetLocalIdentity()
         settings.shutdown()
-        os.remove('/tmp/_some_priv_key')
         bpio.rmdir_recursive('/tmp/.bitdust_tmp')
 
     def test_file_create(self):
