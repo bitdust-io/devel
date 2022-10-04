@@ -42,61 +42,56 @@ EVENTS:
     * :red:`stop`
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
-from __future__ import absolute_import
-from __future__ import print_function
+from __future__ import absolute_import, print_function
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 6
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 import sys
 
-#------------------------------------------------------------------------------
-
-from logs import lg
-
 from automats import automat
-
+from dht import dht_records, dht_service
+from logs import lg
 from main import settings
-
 from userid import my_id
 
-from dht import dht_service
-from dht import dht_records
+# ------------------------------------------------------------------------------
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def find_one(nickname, attempts=3, results_callback=None):
     if _Debug:
-        lg.out(_DebugLevel, 'nickname_observer.find_one %s %d' % (nickname, attempts))
+        lg.out(_DebugLevel, "nickname_observer.find_one %s %d" % (nickname, attempts))
     observer = NicknameObserver(
-        name='nickname_observer_%s' % nickname,
-        state='AT_STARTUP',
+        name="nickname_observer_%s" % nickname,
+        state="AT_STARTUP",
         debug_level=_DebugLevel,
         log_events=_Debug,
         log_transitions=_Debug,
     )
-    observer.automat('find-one', (nickname, attempts, results_callback))
+    observer.automat("find-one", (nickname, attempts, results_callback))
     return observer
 
 
 def observe_many(nickname, attempts=10, results_callback=None):
     if _Debug:
-        lg.out(_DebugLevel, 'nickname_observer.observe_many %s %d' % (nickname, attempts))
+        lg.out(_DebugLevel, "nickname_observer.observe_many %s %d" % (nickname, attempts))
     observer = NicknameObserver(
-        name='nickname_observer_%s' % nickname,
-        state='AT_STARTUP',
+        name="nickname_observer_%s" % nickname,
+        state="AT_STARTUP",
         debug_level=_DebugLevel,
         log_events=_Debug,
         log_transitions=_Debug,
     )
-    observer.automat('observe-many', (nickname, attempts, results_callback))
+    observer.automat("observe-many", (nickname, attempts, results_callback))
     return observer
 
 
@@ -105,9 +100,10 @@ def stop_all():
         if isinstance(a, NicknameObserver):
             if _Debug:
                 lg.out(_DebugLevel, 'nickname_observer.stop_all sends "stop" to %r' % a)
-            a.automat('stop')
+            a.automat("stop")
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 class NicknameObserver(automat.Automat):
@@ -128,64 +124,76 @@ class NicknameObserver(automat.Automat):
         self.result_callback = None
 
     def A(self, event, *args, **kwargs):
-        #---AT_STARTUP---
-        if self.state == 'AT_STARTUP':
-            if event == 'observe-many':
-                self.state = 'DHT_LOOP'
+        # ---AT_STARTUP---
+        if self.state == "AT_STARTUP":
+            if event == "observe-many":
+                self.state = "DHT_LOOP"
                 self.doInit(*args, **kwargs)
                 self.doDHTReadKey(*args, **kwargs)
-            elif event == 'find-one':
-                self.state = 'DHT_FIND'
+            elif event == "find-one":
+                self.state = "DHT_FIND"
                 self.doInit(*args, **kwargs)
                 self.doDHTReadKey(*args, **kwargs)
-        #---DHT_LOOP---
-        elif self.state == 'DHT_LOOP':
-            if event == 'stop':
-                self.state = 'STOPPED'
+        # ---DHT_LOOP---
+        elif self.state == "DHT_LOOP":
+            if event == "stop":
+                self.state = "STOPPED"
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'dht-read-failed' and self.isMoreAttemptsNeeded(*args, **kwargs):
+            elif event == "dht-read-failed" and self.isMoreAttemptsNeeded(
+                *args, **kwargs
+            ):
                 self.doNextKey(*args, **kwargs)
                 self.doDHTReadKey(*args, **kwargs)
-            elif event == 'dht-read-success' and not self.isMoreAttemptsNeeded(*args, **kwargs):
-                self.state = 'FINISHED'
+            elif event == "dht-read-success" and not self.isMoreAttemptsNeeded(
+                *args, **kwargs
+            ):
+                self.state = "FINISHED"
                 self.doReportNicknameExist(*args, **kwargs)
                 self.doReportFinished(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'dht-read-success' and self.isMoreAttemptsNeeded(*args, **kwargs):
+            elif event == "dht-read-success" and self.isMoreAttemptsNeeded(
+                *args, **kwargs
+            ):
                 self.doReportNicknameExist(*args, **kwargs)
                 self.doNextKey(*args, **kwargs)
                 self.doDHTReadKey(*args, **kwargs)
-            elif event == 'dht-read-failed' and not self.isMoreAttemptsNeeded(*args, **kwargs):
-                self.state = 'FINISHED'
+            elif event == "dht-read-failed" and not self.isMoreAttemptsNeeded(
+                *args, **kwargs
+            ):
+                self.state = "FINISHED"
                 self.doReportFinished(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-        #---DHT_FIND---
-        elif self.state == 'DHT_FIND':
-            if event == 'dht-read-success':
-                self.state = 'FOUND'
+        # ---DHT_FIND---
+        elif self.state == "DHT_FIND":
+            if event == "dht-read-success":
+                self.state = "FOUND"
                 self.doReportNicknameExist(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'dht-read-failed' and self.isMoreAttemptsNeeded(*args, **kwargs):
+            elif event == "dht-read-failed" and self.isMoreAttemptsNeeded(
+                *args, **kwargs
+            ):
                 self.doNextKey(*args, **kwargs)
                 self.doDHTReadKey(*args, **kwargs)
-            elif event == 'stop':
-                self.state = 'STOPPED'
+            elif event == "stop":
+                self.state = "STOPPED"
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'dht-read-failed' and not self.isMoreAttemptsNeeded(*args, **kwargs):
-                self.state = 'NOT_FOUND'
+            elif event == "dht-read-failed" and not self.isMoreAttemptsNeeded(
+                *args, **kwargs
+            ):
+                self.state = "NOT_FOUND"
                 self.doReportNicknameNotExist(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-        #---FOUND---
-        elif self.state == 'FOUND':
+        # ---FOUND---
+        elif self.state == "FOUND":
             pass
-        #---STOPPED---
-        elif self.state == 'STOPPED':
+        # ---STOPPED---
+        elif self.state == "STOPPED":
             pass
-        #---NOT_FOUND---
-        elif self.state == 'NOT_FOUND':
+        # ---NOT_FOUND---
+        elif self.state == "NOT_FOUND":
             pass
-        #---FINISHED---
-        elif self.state == 'FINISHED':
+        # ---FINISHED---
+        elif self.state == "FINISHED":
             pass
         return None
 
@@ -201,17 +209,17 @@ class NicknameObserver(automat.Automat):
         """
         self.nickname, self.attempts, self.result_callback = args[0]
         try:
-            nick, index = self.nickname.rsplit(':', 1)
+            nick, index = self.nickname.rsplit(":", 1)
             index = int(index)
         except:
-            nick = self.nickname.replace(':', '_')
+            nick = self.nickname.replace(":", "_")
             index = 0
         self.nickname = nick
         # self.key = nick + ':' + str(number)
         self.key = dht_service.make_key(
             key=self.nickname,
             index=index,
-            prefix='nickname',
+            prefix="nickname",
         )
 
     def doNextKey(self, *args, **kwargs):
@@ -221,7 +229,7 @@ class NicknameObserver(automat.Automat):
         try:
             key_info = dht_service.split_key(self.key)
             # nik, number = self.key.rsplit(':', 1)
-            index = int(key_info['index'])
+            index = int(key_info["index"])
             # number = int(number)
         except:
             lg.exc()
@@ -231,7 +239,7 @@ class NicknameObserver(automat.Automat):
         self.key = dht_service.make_key(
             key=self.nickname,
             index=index,
-            prefix='nickname',
+            prefix="nickname",
         )
         self.attempts -= 1
 
@@ -251,37 +259,47 @@ class NicknameObserver(automat.Automat):
         Action method.
         """
         if _Debug:
-            lg.out(_DebugLevel, 'nickname_observer.doReportNicknameExist : (%s, %s)' % (self.key, args[0], ))
+            lg.out(
+                _DebugLevel,
+                "nickname_observer.doReportNicknameExist : (%s, %s)"
+                % (
+                    self.key,
+                    args[0],
+                ),
+            )
         if self.result_callback is not None:
             try:
                 key_info = dht_service.split_key(self.key)
-                nick = key_info['key']
-                index = key_info['index']
+                nick = key_info["key"]
+                index = key_info["index"]
             except:
                 lg.exc()
                 nick = self.nickname
                 index = 0
             # nik, num = self.key.split(':')
             # num = int(num)
-            self.result_callback('exist', nick, index, *args, **kwargs)
+            self.result_callback("exist", nick, index, *args, **kwargs)
 
     def doReportNicknameNotExist(self, *args, **kwargs):
         """
         Action method.
         """
         if _Debug:
-            lg.out(_DebugLevel, 'nickname_observer.doReportNicknameNotExist : %s' % self.nickname)
+            lg.out(
+                _DebugLevel,
+                "nickname_observer.doReportNicknameNotExist : %s" % self.nickname,
+            )
         if self.result_callback is not None:
-            self.result_callback('not exist', self.nickname, -1, '')
+            self.result_callback("not exist", self.nickname, -1, "")
 
     def doReportFinished(self, *args, **kwargs):
         """
         Action method.
         """
         if _Debug:
-            lg.out(_DebugLevel, 'nickname_observer.doReportFinished')
+            lg.out(_DebugLevel, "nickname_observer.doReportFinished")
         if self.result_callback is not None:
-            self.result_callback('finished', '', -1, '')
+            self.result_callback("finished", "", -1, "")
 
     def doDestroyMe(self, *args, **kwargs):
         """
@@ -299,24 +317,25 @@ class NicknameObserver(automat.Automat):
             return
         self.dht_read_defer = None
         if not value:
-            self.automat('dht-read-failed')
+            self.automat("dht-read-failed")
             return
         try:
-            v = value['idurl']
+            v = value["idurl"]
         except:
-            lg.out(14, '%r' % value)
+            lg.out(14, "%r" % value)
             lg.exc()
-            self.automat('dht-read-failed')
+            self.automat("dht-read-failed")
             return
-        self.automat('dht-read-success', v)
+        self.automat("dht-read-success", v)
 
     def _dht_read_failed(self, x):
         if self.dht_read_defer is None:
             return
-        self.automat('dht-read-failed', x)
+        self.automat("dht-read-failed", x)
         self.dht_read_defer = None
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def main():
@@ -324,6 +343,7 @@ def main():
         print('usage: nickname_observer.py <"many"|"one"> <nickname> <attempts>')
         return
     from twisted.internet import reactor  # @UnresolvedImport
+
     lg.set_debug_level(24)
     settings.init()
     my_id.init()
@@ -331,9 +351,10 @@ def main():
 
     def _result(result, nickname):
         print(result, nickname)
-        if result == 'finished':
+        if result == "finished":
             reactor.stop()  # @UndefinedVariable
-    if sys.argv[1] == 'many':
+
+    if sys.argv[1] == "many":
         observe_many(sys.argv[2], int(sys.argv[3]), results_callback=_result)
     else:
         find_one(sys.argv[2], int(sys.argv[3]), _result)

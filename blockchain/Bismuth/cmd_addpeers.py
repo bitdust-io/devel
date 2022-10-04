@@ -14,11 +14,11 @@ if port is omitted, 5658 will be used.
 """
 
 
-import connections
 import json
-import socks
 import sys
 
+import connections
+import socks
 
 __version__ = "0.0.1"
 
@@ -37,14 +37,14 @@ def add_peers(peers: dict):
 
 if __name__ == "__main__":
     _, peers_string = sys.argv
-    peers = peers_string.split(',')
+    peers = peers_string.split(",")
     peers_dict = {}
     for peer in peers:
-        if ':' in peer:
-            ip, port = peer.split(':')
+        if ":" in peer:
+            ip, port = peer.split(":")
         else:
             ip = peer
-            port = '5658'
+            port = "5658"
         peers_dict[ip] = port
     res_as_dict = add_peers(peers_dict)
     print("Answer (-1 means busy testing peers):")

@@ -5,21 +5,29 @@ Used by mempool and poschain
 beware : module now shared by the wallet server.
 """
 
-import sqlite3
-import aiosqlite3
-# import aiosqlite as aiosqlite3
-import time
 import asyncio
 
+# import aiosqlite as aiosqlite3
+import time
 
-__version__ = '0.0.3'
+import aiosqlite3
+
+__version__ = "0.0.3"
 
 
 class SqliteBase:
     """
     Generic Sqlite storage backend.
     """
-    def __init__(self, verbose=False, db_path='./data/', db_name='posmempool.db', app_log=None, ram=False):
+
+    def __init__(
+        self,
+        verbose=False,
+        db_path="./data/",
+        db_name="posmempool.db",
+        app_log=None,
+        ram=False,
+    ):
         self.db_path = db_path + db_name
         self.db_name = db_name
         self.app_log = app_log
@@ -95,7 +103,9 @@ class SqliteBase:
                 # open
                 if self.verbose:
                     self.app_log.info("Opening async {} db".format(self.db_name))
-                self.async_db = await aiosqlite3.connect(self.db_path, loop=asyncio.get_event_loop())
+                self.async_db = await aiosqlite3.connect(
+                    self.db_path, loop=asyncio.get_event_loop()
+                )
                 cursor = await self.async_db.cursor()
                 await cursor.execute("PRAGMA case_sensitive_like = 1;")
                 await cursor.close()
@@ -117,7 +127,9 @@ class SqliteBase:
                 break
             except Exception as e:
                 self.app_log.warning("Database query: {} {}".format(sql, param))
-                self.app_log.warning("Database {} retry reason: {}".format(self.db_name, e))
+                self.app_log.warning(
+                    "Database {} retry reason: {}".format(self.db_name, e)
+                )
                 await asyncio.sleep(0.1)
                 max_tries -= 1
         if not max_tries:
@@ -140,7 +152,9 @@ class SqliteBase:
                 self.db.commit()
                 break
             except Exception as e:
-                self.app_log.warning("Database {} retry reason: {}".format(self.db_name, e))
+                self.app_log.warning(
+                    "Database {} retry reason: {}".format(self.db_name, e)
+                )
                 time.sleep(0.1)
 
     async def async_commit(self):
@@ -153,7 +167,9 @@ class SqliteBase:
                 await self.async_db.commit()
                 break
             except Exception as e:
-                self.app_log.warning("Database {} retry reason: {}".format(self.db_name, e))
+                self.app_log.warning(
+                    "Database {} retry reason: {}".format(self.db_name, e)
+                )
                 await asyncio.sleep(0.1)
 
     async def async_fetchone(self, sql, param=None, as_dict=False):
@@ -204,4 +220,3 @@ class SqliteBase:
             await self.async_db.close()
         if self.verbose:
             self.app_log.info("Closed async {} db".format(self.db_name))
-

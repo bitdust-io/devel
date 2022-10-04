@@ -16,19 +16,20 @@
 # limitations under the License.
 
 from __future__ import absolute_import
-import six
-
-from CodernityDB3.env import cdb_environment
-from CodernityDB3.database import PreconditionsException, RevConflict, Database
-# from database import Database
 
 from collections import defaultdict
 from functools import wraps
 from types import MethodType
 
+import six
+
+from CodernityDB3.database import Database, PreconditionsException, RevConflict
+from CodernityDB3.env import cdb_environment
+
+# from database import Database
+
 
 class th_safe_gen:
-
     def __init__(self, name, gen, l=None):
         self.lock = l
         self.__gen = gen
@@ -47,6 +48,7 @@ class th_safe_gen:
         def _inner(*args, **kwargs):
             res = method(*args, **kwargs)
             return th_safe_gen(index_name + "_" + meth_name, res, l)
+
         return _inner
 
 
@@ -55,40 +57,39 @@ def safe_wrapper(method, lock):
     def _inner(*args, **kwargs):
         with lock:
             return method(*args, **kwargs)
+
     return _inner
 
 
 class SafeDatabase(Database):
-
     def __init__(self, path, *args, **kwargs):
         super(SafeDatabase, self).__init__(path, *args, **kwargs)
-        self.indexes_locks = defaultdict(
-            lambda: cdb_environment['rlock_obj']())
-        self.close_open_lock = cdb_environment['rlock_obj']()
-        self.main_lock = cdb_environment['rlock_obj']()
+        self.indexes_locks = defaultdict(lambda: cdb_environment["rlock_obj"]())
+        self.close_open_lock = cdb_environment["rlock_obj"]()
+        self.main_lock = cdb_environment["rlock_obj"]()
         self.id_revs = {}
 
     def __patch_index_gens(self, name):
         ind = self.indexes_names[name]
-        for c in ('all', 'get_many'):
+        for c in ("all", "get_many"):
             m = getattr(ind, c)
             if getattr(ind, c + "_orig", None):
                 return
             m_fixed = th_safe_gen.wrapper(m, name, c, self.indexes_locks[name])
             setattr(ind, c, m_fixed)
-            setattr(ind, c + '_orig', m)
+            setattr(ind, c + "_orig", m)
 
     def __patch_index_methods(self, name):
         ind = self.indexes_names[name]
         lock = self.indexes_locks[name]
         for curr in dir(ind):
             meth = getattr(ind, curr)
-            if not curr.startswith('_') and isinstance(meth, MethodType):
+            if not curr.startswith("_") and isinstance(meth, MethodType):
                 setattr(ind, curr, safe_wrapper(meth, lock))
         stor = ind.storage
         for curr in dir(stor):
             meth = getattr(stor, curr)
-            if not curr.startswith('_') and isinstance(meth, MethodType):
+            if not curr.startswith("_") and isinstance(meth, MethodType):
                 setattr(stor, curr, safe_wrapper(meth, lock))
 
     def __patch_index(self, name):
@@ -100,14 +101,14 @@ class SafeDatabase(Database):
             self.close_open_lock.acquire()
             res = super(SafeDatabase, self).initialize(*args, **kwargs)
             for name in self.indexes_names.keys():
-                self.indexes_locks[name] = cdb_environment['rlock_obj']()
+                self.indexes_locks[name] = cdb_environment["rlock_obj"]()
             return res
 
     def open(self, *args, **kwargs):
         with self.close_open_lock:
             res = super(SafeDatabase, self).open(*args, **kwargs)
             for name in self.indexes_names.keys():
-                self.indexes_locks[name] = cdb_environment['rlock_obj']()
+                self.indexes_locks[name] = cdb_environment["rlock_obj"]()
                 self.__patch_index(name)
             return res
 
@@ -115,7 +116,7 @@ class SafeDatabase(Database):
         with self.close_open_lock:
             res = super(SafeDatabase, self).create(*args, **kwargs)
             for name in self.indexes_names.keys():
-                self.indexes_locks[name] = cdb_environment['rlock_obj']()
+                self.indexes_locks[name] = cdb_environment["rlock_obj"]()
                 self.__patch_index(name)
             return res
 
@@ -131,25 +132,23 @@ class SafeDatabase(Database):
         with self.main_lock:
             res = super(SafeDatabase, self).add_index(*args, **kwargs)
             if self.opened:
-                self.indexes_locks[res] = cdb_environment['rlock_obj']()
+                self.indexes_locks[res] = cdb_environment["rlock_obj"]()
                 self.__patch_index(res)
             return res
 
     def _single_update_index(self, index, data, db_data, doc_id):
         with self.indexes_locks[index.name]:
-            super(SafeDatabase, self)._single_update_index(
-                index, data, db_data, doc_id)
+            super(SafeDatabase, self)._single_update_index(index, data, db_data, doc_id)
 
     def _single_delete_index(self, index, data, doc_id, old_data):
         with self.indexes_locks[index.name]:
-            super(SafeDatabase, self)._single_delete_index(
-                index, data, doc_id, old_data)
+            super(SafeDatabase, self)._single_delete_index(index, data, doc_id, old_data)
 
     def edit_index(self, *args, **kwargs):
         with self.main_lock:
             res = super(SafeDatabase, self).edit_index(*args, **kwargs)
             if self.opened:
-                self.indexes_locks[res] = cdb_environment['rlock_obj']()
+                self.indexes_locks[res] = cdb_environment["rlock_obj"]()
                 self.__patch_index(res)
             return res
 
@@ -170,14 +169,12 @@ class SafeDatabase(Database):
         if key in self.indexes_locks:
             lock = self.indexes_locks[index.name + "reind"]
         else:
-            self.indexes_locks[index.name +
-                               "reind"] = cdb_environment['rlock_obj']()
+            self.indexes_locks[index.name + "reind"] = cdb_environment["rlock_obj"]()
             lock = self.indexes_locks[index.name + "reind"]
         self.main_lock.release()
         try:
             lock.acquire()
-            super(SafeDatabase, self).reindex_index(
-                index, *args, **kwargs)
+            super(SafeDatabase, self).reindex_index(index, *args, **kwargs)
         finally:
             lock.release()
 
@@ -196,11 +193,11 @@ class SafeDatabase(Database):
             self.main_lock.release()
 
     def _update_id_index(self, _rev, data):
-        with self.indexes_locks['id']:
+        with self.indexes_locks["id"]:
             return super(SafeDatabase, self)._update_id_index(_rev, data)
 
     def _delete_id_index(self, _id, _rev, data):
-        with self.indexes_locks['id']:
+        with self.indexes_locks["id"]:
             return super(SafeDatabase, self)._delete_id_index(_id, _rev, data)
 
     def _update_indexes(self, _rev, data):
@@ -219,8 +216,8 @@ class SafeDatabase(Database):
         return _id, new_rev
 
     def _delete_indexes(self, _id, _rev, data):
-        old_data = self.get('id', _id)
-        if old_data['_rev'] != _rev:
+        old_data = self.get("id", _id)
+        if old_data["_rev"] != _rev:
             raise RevConflict()
         with self.main_lock:
             self.id_revs[_id] = _rev

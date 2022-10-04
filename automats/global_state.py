@@ -34,40 +34,40 @@ It also remember the current ``global`` state of the program - this a stats of a
 
 from __future__ import absolute_import
 
-#------------------------------------------------------------------------------
-
+from automats import automat
 from logs import lg
 
-from automats import automat
+# ------------------------------------------------------------------------------
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 _StatesDict = {
-    'init at startup': 'beginning',
-    'init local': 'local settings initialization',
-    'init contacts': 'contacts initialization',
-    'init connection': 'initializing connections',
-    'init modules': 'starting modules',
-    'init install': 'preparing install section',
-    'network at startup': 'starting connection',
-    'network stun': 'detecting external IP address',
-    'network upnp': 'configuring UPnP',
-    'network connected': 'internet connection is fine',
-    'network disconnected': 'internet connection is not working',
-    'network network?': 'checking network interfaces',
-    'network google?': 'is www.google.com available?',
-    'p2p at startup': 'initial peer-to-peer state',
-    'p2p transports': 'starting network transports',
-    'p2p propagate': 'propagate my identity',
-    'p2p incomming?': 'waiting response from others',
-    'p2p connected': 'ready',
-    'p2p disconnected': 'starting disconnected',
+    "init at startup": "beginning",
+    "init local": "local settings initialization",
+    "init contacts": "contacts initialization",
+    "init connection": "initializing connections",
+    "init modules": "starting modules",
+    "init install": "preparing install section",
+    "network at startup": "starting connection",
+    "network stun": "detecting external IP address",
+    "network upnp": "configuring UPnP",
+    "network connected": "internet connection is fine",
+    "network disconnected": "internet connection is not working",
+    "network network?": "checking network interfaces",
+    "network google?": "is www.google.com available?",
+    "p2p at startup": "initial peer-to-peer state",
+    "p2p transports": "starting network transports",
+    "p2p propagate": "propagate my identity",
+    "p2p incomming?": "waiting response from others",
+    "p2p connected": "ready",
+    "p2p disconnected": "starting disconnected",
 }
 
-_GlobalState = 'AT_STARTUP'
+_GlobalState = "AT_STARTUP"
 _GlobalStateNotifyFunc = None
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 def set_global_state(st):
@@ -107,7 +107,7 @@ def get_global_state_label():
     """
     global _GlobalState
     global _StatesDict
-    return _StatesDict.get(_GlobalState.replace('_', ' ').lower(), '')
+    return _StatesDict.get(_GlobalState.replace("_", " ").lower(), "")
 
 
 def SetGlobalStateNotifyFunc(f):
@@ -124,4 +124,5 @@ def SetSingleStateNotifyFunc(f):
     """
     automat.SetStateChangedCallback(f)
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------

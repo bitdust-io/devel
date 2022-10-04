@@ -31,6 +31,7 @@ module:: service_p2p_hookups
 """
 
 from __future__ import absolute_import
+
 from services.local_service import LocalService
 
 
@@ -40,66 +41,73 @@ def create_service():
 
 class P2PHookupsService(LocalService):
 
-    service_name = 'service_p2p_hookups'
-    config_path = 'services/p2p-hookups/enabled'
+    service_name = "service_p2p_hookups"
+    config_path = "services/p2p-hookups/enabled"
 
     def dependent_on(self):
         from main import settings
+
         depends = [
-            'service_gateway',
-            'service_identity_propagate',
+            "service_gateway",
+            "service_identity_propagate",
         ]
         if settings.enableTCP():
-            depends.append('service_tcp_transport')
+            depends.append("service_tcp_transport")
         if settings.enableUDP():
-            depends.append('service_udp_transport')
+            depends.append("service_udp_transport")
         return depends
 
     def start(self):
         from twisted.internet.defer import Deferred
+
+        from main import events, listeners
+        from p2p import (
+            network_connector,
+            online_status,
+            p2p_connector,
+            p2p_service,
+            ratings,
+        )
         from transport import callback
-        from main import events
-        from main import listeners
-        from p2p import online_status
-        from p2p import p2p_service
-        from p2p import p2p_connector
-        from p2p import network_connector
-        from p2p import ratings
+
         p2p_service.init()
         online_status.init()
         ratings.init()
         self._starting_defer = Deferred()
-        p2p_connector.A('init')
-        p2p_connector.A().addStateChangedCallback(
-            self._on_p2p_connector_switched)
-        network_connector.A().addStateChangedCallback(
-            self._on_network_connector_switched)
+        p2p_connector.A("init")
+        p2p_connector.A().addStateChangedCallback(self._on_p2p_connector_switched)
+        network_connector.A().addStateChangedCallback(self._on_network_connector_switched)
         callback.append_inbox_callback(self._on_inbox_packet_received)
         callback.append_inbox_callback(p2p_service.inbox)
-        events.add_subscriber(self._on_identity_url_changed, 'identity-url-changed')
-        events.add_subscriber(self._on_my_identity_url_changed, 'my-identity-url-changed')
-        if listeners.is_populate_requered('online_status'):
-            listeners.populate_later().remove('online_status')
+        events.add_subscriber(self._on_identity_url_changed, "identity-url-changed")
+        events.add_subscriber(self._on_my_identity_url_changed, "my-identity-url-changed")
+        if listeners.is_populate_requered("online_status"):
+            listeners.populate_later().remove("online_status")
             online_status.populate_online_statuses()
         return True
 
     def stop(self):
-        from transport import callback
         from main import events
-        from p2p import online_status
-        from p2p import p2p_service
-        from p2p import p2p_connector
-        from p2p import network_connector
-        from p2p import ratings
-        events.remove_subscriber(self._on_my_identity_url_changed, 'my-identity-url-changed')
-        events.remove_subscriber(self._on_identity_url_changed, 'identity-url-changed')
+        from p2p import (
+            network_connector,
+            online_status,
+            p2p_connector,
+            p2p_service,
+            ratings,
+        )
+        from transport import callback
+
+        events.remove_subscriber(
+            self._on_my_identity_url_changed, "my-identity-url-changed"
+        )
+        events.remove_subscriber(self._on_identity_url_changed, "identity-url-changed")
         callback.remove_inbox_callback(self._on_inbox_packet_received)
         callback.remove_inbox_callback(p2p_service.inbox)
         if network_connector.A():
             network_connector.A().removeStateChangedCallback(
-                self._on_network_connector_switched)
-        p2p_connector.A().removeStateChangedCallback(
-            self._on_p2p_connector_switched)
+                self._on_network_connector_switched
+            )
+        p2p_connector.A().removeStateChangedCallback(self._on_p2p_connector_switched)
         ratings.shutdown()
         online_status.shutdown()
         p2p_connector.Destroy()
@@ -108,6 +116,7 @@ class P2PHookupsService(LocalService):
 
     def _on_inbox_packet_received(self, newpacket, info, status, error_message):
         from p2p import commands
+
         if newpacket.Command == commands.RequestService():
             return self._on_request_service_received(newpacket, info)
         elif newpacket.Command == commands.CancelService():
@@ -116,119 +125,172 @@ class P2PHookupsService(LocalService):
 
     def _on_request_service_received(self, newpacket, info):
         from twisted.internet.defer import Deferred
-        from logs import lg
+
         from lib import serialization
-        from services import driver
+        from logs import lg
         from p2p import p2p_service
+        from services import driver
         from transport import packet_out
+
         if len(newpacket.Payload) > 1024 * 10:
-            lg.warn('too long payload')
-            p2p_service.SendFail(newpacket, 'too long payload')
+            lg.warn("too long payload")
+            p2p_service.SendFail(newpacket, "too long payload")
             return True
         try:
-            json_payload = serialization.BytesToDict(newpacket.Payload, keys_to_text=True, values_to_text=True)
-            json_payload['name']
-            json_payload['payload']
+            json_payload = serialization.BytesToDict(
+                newpacket.Payload, keys_to_text=True, values_to_text=True
+            )
+            json_payload["name"]
+            json_payload["payload"]
         except:
-            lg.warn('json payload invalid')
-            p2p_service.SendFail(newpacket, 'json payload invalid')
+            lg.warn("json payload invalid")
+            p2p_service.SendFail(newpacket, "json payload invalid")
             return True
-        service_name = str(json_payload['name'])
-        lg.out(self.debug_level, "service_p2p_hookups.RequestService {%s} from %s" % (service_name, newpacket.OwnerID, ))
+        service_name = str(json_payload["name"])
+        lg.out(
+            self.debug_level,
+            "service_p2p_hookups.RequestService {%s} from %s"
+            % (
+                service_name,
+                newpacket.OwnerID,
+            ),
+        )
         if not driver.is_exist(service_name):
             lg.warn("got wrong payload in %s" % service_name)
-            p2p_service.SendFail(newpacket, 'service %s not exist' % service_name)
+            p2p_service.SendFail(newpacket, "service %s not exist" % service_name)
             return True
         if not driver.is_on(service_name):
-            p2p_service.SendFail(newpacket, 'service %s is off' % service_name)
+            p2p_service.SendFail(newpacket, "service %s is off" % service_name)
             return True
         try:
-            result = driver.request(service_name, json_payload['payload'], newpacket, info)
+            result = driver.request(
+                service_name, json_payload["payload"], newpacket, info
+            )
         except:
             lg.exc()
-            p2p_service.SendFail(newpacket, 'request processing failed with exception')
+            p2p_service.SendFail(newpacket, "request processing failed with exception")
             return True
         if not result:
-            lg.out(self.debug_level, "service_p2p_hookups._send_request_service SKIP request %s" % service_name)
+            lg.out(
+                self.debug_level,
+                "service_p2p_hookups._send_request_service SKIP request %s"
+                % service_name,
+            )
             return False
         if isinstance(result, Deferred):
-            lg.out(self.debug_level, "service_p2p_hookups._send_request_service fired delayed execution")
+            lg.out(
+                self.debug_level,
+                "service_p2p_hookups._send_request_service fired delayed execution",
+            )
         elif isinstance(result, packet_out.PacketOut):
-            lg.out(self.debug_level, "service_p2p_hookups._send_request_service outbox packet sent")
+            lg.out(
+                self.debug_level,
+                "service_p2p_hookups._send_request_service outbox packet sent",
+            )
         return True
 
     def _on_cancel_service_received(self, newpacket, info):
         from twisted.internet.defer import Deferred
-        from logs import lg
+
         from lib import serialization
-        from services import driver
+        from logs import lg
         from p2p import p2p_service
+        from services import driver
         from transport import packet_out
+
         if len(newpacket.Payload) > 1024 * 10:
-            p2p_service.SendFail(newpacket, 'too long payload')
+            p2p_service.SendFail(newpacket, "too long payload")
             return True
         try:
-            json_payload = serialization.BytesToDict(newpacket.Payload, keys_to_text=True, values_to_text=True)
-            json_payload['name']
-            json_payload['payload']
+            json_payload = serialization.BytesToDict(
+                newpacket.Payload, keys_to_text=True, values_to_text=True
+            )
+            json_payload["name"]
+            json_payload["payload"]
         except:
-            p2p_service.SendFail(newpacket, 'json payload invalid')
+            p2p_service.SendFail(newpacket, "json payload invalid")
             return True
-        service_name = json_payload['name']
-        lg.out(self.debug_level, "service_p2p_hookups.CancelService {%s} from %s" % (service_name, newpacket.OwnerID, ))
+        service_name = json_payload["name"]
+        lg.out(
+            self.debug_level,
+            "service_p2p_hookups.CancelService {%s} from %s"
+            % (
+                service_name,
+                newpacket.OwnerID,
+            ),
+        )
         if not driver.is_exist(service_name):
             lg.warn("got wrong payload in %s" % newpacket)
-            p2p_service.SendFail(newpacket, 'service %s not exist' % service_name)
+            p2p_service.SendFail(newpacket, "service %s not exist" % service_name)
             return True
         if not driver.is_on(service_name):
-            p2p_service.SendFail(newpacket, 'service %s is off' % service_name)
+            p2p_service.SendFail(newpacket, "service %s is off" % service_name)
             return True
         try:
-            result = driver.cancel(service_name, json_payload['payload'], newpacket, info)
+            result = driver.cancel(service_name, json_payload["payload"], newpacket, info)
         except:
             lg.exc()
-            p2p_service.SendFail(newpacket, 'request processing failed with exception')
+            p2p_service.SendFail(newpacket, "request processing failed with exception")
             return True
         if not result:
-            lg.out(self.debug_level, "service_p2p_hookups._send_cancel_service SKIP request %s" % service_name)
+            lg.out(
+                self.debug_level,
+                "service_p2p_hookups._send_cancel_service SKIP request %s" % service_name,
+            )
             return False
         if isinstance(result, Deferred):
-            lg.out(self.debug_level, "service_p2p_hookups._send_cancel_service fired delayed execution")
+            lg.out(
+                self.debug_level,
+                "service_p2p_hookups._send_cancel_service fired delayed execution",
+            )
         elif isinstance(result, packet_out.PacketOut):
-            lg.out(self.debug_level, "service_p2p_hookups._send_cancel_service outbox packet sent")
+            lg.out(
+                self.debug_level,
+                "service_p2p_hookups._send_cancel_service outbox packet sent",
+            )
         return True
 
     def _on_p2p_connector_switched(self, oldstate, newstate, evt, *args, **kwargs):
-        if newstate == 'INCOMMING?':
+        if newstate == "INCOMMING?":
             if self._starting_defer is not None:
                 self._starting_defer.callback(newstate)
                 self._starting_defer = None
 
     def _on_network_connector_switched(self, oldstate, newstate, evt, *args, **kwargs):
         from p2p import p2p_connector
+
         if oldstate != newstate:
-            if newstate == 'CONNECTED' or newstate == 'DISCONNECTED':
-                p2p_connector.A('network_connector.state', newstate)
+            if newstate == "CONNECTED" or newstate == "DISCONNECTED":
+                p2p_connector.A("network_connector.state", newstate)
 
     def _on_identity_url_changed(self, evt):
         from twisted.internet import reactor  # @UnresolvedImport
+
         from logs import lg
-        from userid import id_url
-        from userid import global_id
         from p2p import online_status
+        from userid import global_id, id_url
+
         for idurl, inst in online_status.online_statuses().items():
-            if idurl == id_url.field(evt.data['old_idurl']):
+            if idurl == id_url.field(evt.data["old_idurl"]):
                 idurl.refresh(replace_original=True)
                 inst.idurl.refresh(replace_original=True)
-                inst.name = 'online_%s' % global_id.UrlToGlobalID(idurl)
-                inst.automat('shook-up-hands')
-                reactor.callLater(0, inst.automat, 'ping-now')  # @UndefinedVariable
-                lg.info('found %r with rotated identity and refreshed: %r' % (inst, idurl, ))
+                inst.name = "online_%s" % global_id.UrlToGlobalID(idurl)
+                inst.automat("shook-up-hands")
+                reactor.callLater(0, inst.automat, "ping-now")  # @UndefinedVariable
+                lg.info(
+                    "found %r with rotated identity and refreshed: %r"
+                    % (
+                        inst,
+                        idurl,
+                    )
+                )
 
     def _on_my_identity_url_changed(self, evt):
         from services import driver
-        if driver.is_on('service_entangled_dht'):
+
+        if driver.is_on("service_entangled_dht"):
             from dht import dht_service
             from userid import my_id
+
             if my_id.getIDURL():
-                dht_service.set_node_data('idurl', my_id.getIDURL().to_text())
+                dht_service.set_node_data("idurl", my_id.getIDURL().to_text())

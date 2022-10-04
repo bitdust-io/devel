@@ -29,47 +29,43 @@
 
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
-import os
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 10
 _CryptoLog = None
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 try:
+    from Cryptodome.Cipher import PKCS1_OAEP
     from Cryptodome.PublicKey import RSA
     from Cryptodome.Signature import pkcs1_15
-    from Cryptodome.Cipher import PKCS1_OAEP
 except:
+    from Crypto.Cipher import PKCS1_OAEP  # @UnresolvedImport @Reimport
     from Crypto.PublicKey import RSA  # @UnresolvedImport @Reimport
     from Crypto.Signature import pkcs1_15  # @UnresolvedImport @Reimport
-    from Crypto.Cipher import PKCS1_OAEP  # @UnresolvedImport @Reimport
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
-from logs import lg
+from crypt import hashes, number
 
 from lib import strng
-
+from logs import lg
 from system import local_fs
 
-from crypt import hashes
-from crypt import number
+# ------------------------------------------------------------------------------
 
-#------------------------------------------------------------------------------
 
 class RSAKey(object):
-
     def __init__(self):
         self.keyObject = None
         self.local_key_id = None
-        self.label = ''
+        self.label = ""
         self.signed = None
         self.active = True
 
@@ -79,7 +75,7 @@ class RSAKey(object):
     def forget(self):
         self.keyObject = None
         self.local_key_id = None
-        self.label = ''
+        self.label = ""
         self.signed = None
         self.active = False
         # gc.collect()
@@ -90,20 +86,20 @@ class RSAKey(object):
 
     def generate(self, bits):
         if self.keyObject:
-            raise ValueError('key object already exist')
+            raise ValueError("key object already exist")
         self.keyObject = RSA.generate(bits)
         return True
 
     def isPublic(self):
         if not self.keyObject:
-            raise ValueError('key object is not exist')
+            raise ValueError("key object is not exist")
         if self.keyObject.has_private():
             return False
         return True
 
     def isPrivate(self):
         if not self.keyObject:
-            raise ValueError('key object is not exist')
+            raise ValueError("key object is not exist")
         if not self.keyObject.has_private():
             return False
         return True
@@ -115,79 +111,93 @@ class RSAKey(object):
 
     def fromDict(self, key_dict):
         if self.keyObject:
-            raise ValueError('key object already exist')
-        key_src = key_dict['body']
+            raise ValueError("key object already exist")
+        key_src = key_dict["body"]
         result = self.fromString(key_src)
         if result:
-            self.label = key_dict.get('label', '')
-            self.active = key_dict.get('active', True)
-            self.local_key_id = key_dict.get('local_key_id', None)
-            if 'signature' in key_dict and 'signature_pubkey' in key_dict:
-                self.signed = (key_dict['signature'], key_dict['signature_pubkey'], )
+            self.label = key_dict.get("label", "")
+            self.active = key_dict.get("active", True)
+            self.local_key_id = key_dict.get("local_key_id", None)
+            if "signature" in key_dict and "signature_pubkey" in key_dict:
+                self.signed = (
+                    key_dict["signature"],
+                    key_dict["signature_pubkey"],
+                )
         del key_src
         # gc.collect()
         return result
 
     def fromString(self, key_src):
         if self.keyObject:
-            raise ValueError('key object already exist')
+            raise ValueError("key object already exist")
         key_src = strng.to_bin(key_src)
         try:
             self.keyObject = RSA.import_key(key_src)  # @UndefinedVariable
         except:
             if _Debug:
-                lg.exc('key_src=%r' % key_src)
-            raise ValueError('failed to read key body')
+                lg.exc("key_src=%r" % key_src)
+            raise ValueError("failed to read key body")
         del key_src
         # gc.collect()
         return True
 
     def fromFile(self, keyfilename):
         if self.keyObject:
-            raise ValueError('key object already exist')
+            raise ValueError("key object already exist")
         key_src = local_fs.ReadTextFile(keyfilename)
         key_src = strng.to_bin(key_src)
         try:
             self.keyObject = RSA.import_key(key_src)  # @UndefinedVariable
         except:
             if _Debug:
-                lg.exc('key_src=%r' % key_src)
+                lg.exc("key_src=%r" % key_src)
         del key_src
         # gc.collect()
         return True
 
-    def toPrivateString(self, output_format='PEM'):
+    def toPrivateString(self, output_format="PEM"):
         if not self.keyObject:
-            raise ValueError('key object is not exist')
+            raise ValueError("key object is not exist")
         if not self.keyObject.has_private():
-            raise ValueError('this key contains only public component')
+            raise ValueError("this key contains only public component")
         return strng.to_text(self.keyObject.exportKey(format=output_format))
 
-    def toPublicString(self, output_format='OpenSSH'):
+    def toPublicString(self, output_format="OpenSSH"):
         if not self.keyObject:
-            raise ValueError('key object is not exist')
+            raise ValueError("key object is not exist")
         return strng.to_text(self.keyObject.publickey().exportKey(format=output_format))
 
-    def toDict(self, include_private=False, output_format_private='PEM', output_format_public='OpenSSH'):
+    def toDict(
+        self,
+        include_private=False,
+        output_format_private="PEM",
+        output_format_public="OpenSSH",
+    ):
         if not self.keyObject:
-            raise ValueError('key object is not exist')
+            raise ValueError("key object is not exist")
         if include_private and not self.keyObject.has_private():
-            raise ValueError('this key contains only public component')
+            raise ValueError("this key contains only public component")
         if include_private:
-            key_body = strng.to_text(self.keyObject.exportKey(format=output_format_private))
+            key_body = strng.to_text(
+                self.keyObject.exportKey(format=output_format_private)
+            )
         else:
-            key_body = strng.to_text(self.keyObject.publickey().exportKey(format=output_format_public))
+            key_body = strng.to_text(
+                self.keyObject.publickey().exportKey(format=output_format_public)
+            )
         key_dict = {
-            'body': key_body,
-            'local_key_id': self.local_key_id,
-            'label': self.label,
-            'active': self.active,
+            "body": key_body,
+            "local_key_id": self.local_key_id,
+            "label": self.label,
+            "active": self.active,
         }
         if self.isSigned():
-            key_dict.update({
-                'signature': self.signed[0],
-                'signature_pubkey': self.signed[1],
-            })
+            key_dict.update(
+                {
+                    "signature": self.signed[0],
+                    "signature_pubkey": self.signed[1],
+                }
+            )
         return key_dict
 
     def sign(self, message, as_digits=True):
@@ -195,9 +205,9 @@ class RSAKey(object):
         # if _CryptoLog is None:
         #     _CryptoLog = os.environ.get('CRYPTO_LOG') == '1'
         if not self.keyObject:
-            raise ValueError('key object is not exist')
+            raise ValueError("key object is not exist")
         if not strng.is_bin(message):
-            raise ValueError('message must be byte string')
+            raise ValueError("message must be byte string")
         h = hashes.sha1(message, return_object=True)
         signature_raw = pkcs1_15.new(self.keyObject).sign(h)
         if not as_digits:
@@ -220,17 +230,26 @@ class RSAKey(object):
         if signature_as_digits:
             signature_bytes = number.long_to_bytes(signature, blocksize=4)
         if not strng.is_bin(signature_bytes):
-            raise ValueError('signature must be byte string')
+            raise ValueError("signature must be byte string")
         if not strng.is_bin(message):
-            raise ValueError('message must be byte string')
+            raise ValueError("message must be byte string")
         h = hashes.sha1(message, return_object=True)
         result = False
         try:
             pkcs1_15.new(self.keyObject).verify(h, signature_bytes)
             result = True
-        except (ValueError, TypeError, ):
+        except (
+            ValueError,
+            TypeError,
+        ):
             # do not raise any exception... just return False
-            lg.exc('signature=%r message=%r' % (signature, message, ))
+            lg.exc(
+                "signature=%r message=%r"
+                % (
+                    signature,
+                    message,
+                )
+            )
         if _Debug:
             if _CryptoLog:
                 lg.args(_DebugLevel, result=result, signature=signature)
@@ -238,18 +257,17 @@ class RSAKey(object):
 
     def encrypt(self, private_message):
         if not self.keyObject:
-            raise ValueError('key object is not exist')
+            raise ValueError("key object is not exist")
         cipher = PKCS1_OAEP.new(self.keyObject)
         ciphertext = cipher.encrypt(private_message)
         return ciphertext
 
     def decrypt(self, encrypted_payload):
         if not self.keyObject:
-            raise ValueError('key object is not exist')
+            raise ValueError("key object is not exist")
         cipher = PKCS1_OAEP.new(self.keyObject)
         private_message = cipher.decrypt(encrypted_payload)
         return private_message
 
     def isSigned(self):
         return self.signed is not None
-

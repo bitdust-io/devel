@@ -25,6 +25,7 @@
 #
 
 from __future__ import absolute_import
+
 import os
 
 
@@ -37,6 +38,7 @@ def main():
         pass
 
     from main.bpmain import main
+
     ret = main(executable_path)
     return ret
 

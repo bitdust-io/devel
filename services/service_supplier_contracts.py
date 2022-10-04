@@ -31,6 +31,7 @@ module:: service_supplier_contracts
 """
 
 from __future__ import absolute_import
+
 from services.local_service import LocalService
 
 
@@ -40,13 +41,13 @@ def create_service():
 
 class SupplierContractsService(LocalService):
 
-    service_name = 'service_supplier_contracts'
-    config_path = 'services/supplier-contracts/enabled'
+    service_name = "service_supplier_contracts"
+    config_path = "services/supplier-contracts/enabled"
 
     def dependent_on(self):
         return [
-            'service_supplier',
-            'service_contract_chain',
+            "service_supplier",
+            "service_contract_chain",
         ]
 
     def installed(self):
@@ -54,23 +55,26 @@ class SupplierContractsService(LocalService):
         return False
 
     def start(self):
-        from main import events
-        from contacts import contactsdb
         from coins import supplier_contract_executor
+        from contacts import contactsdb
+        from main import events
+
         for customer_idurl in contactsdb.customers():
             supplier_contract_executor.init_contract(customer_idurl)
-        events.add_subscriber(self._on_customer_modified, 'customer-modified')
+        events.add_subscriber(self._on_customer_modified, "customer-modified")
         return True
 
     def stop(self):
-        from main import events
         from coins import supplier_contract_executor
-        events.remove_subscriber(self._on_customer_modified, 'customer-modified')
+        from main import events
+
+        events.remove_subscriber(self._on_customer_modified, "customer-modified")
         for customer_idurl in list(supplier_contract_executor.all_contracts.keys()):
             supplier_contract_executor.shutdown_contract(customer_idurl)
         return True
 
     def _on_customer_modified(self, evt):
         from coins import supplier_contract_executor
-        if evt.data.get('idurl'):
-            supplier_contract_executor.recheck_contract(evt.data['idurl'])
+
+        if evt.data.get("idurl"):
+            supplier_contract_executor.recheck_contract(evt.data["idurl"])

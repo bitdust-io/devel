@@ -1,33 +1,22 @@
 import os
 
-from twisted.trial.unittest import TestCase
 from twisted.internet import reactor  # @UnresolvedImport
-from twisted.internet.defer import Deferred
 from twisted.internet.base import DelayedCall
+from twisted.internet.defer import Deferred
+from twisted.trial.unittest import TestCase
+
 DelayedCall.debug = True
 
 
-from logs import lg
-
-from automats import automat
-
-from main import settings
-
-from system import bpio
-from system import local_fs
-from system import tmpfile
-
 from crypt import key
 
-from raid import eccmap
-from raid import raid_worker
-
-from storage import backup_tar
-from storage import backup
-from storage import restore_worker
-
+from automats import automat
+from logs import lg
+from main import settings
+from raid import eccmap, raid_worker
+from storage import backup, backup_tar, restore_worker
+from system import bpio, local_fs, tmpfile
 from userid import my_id
-
 
 _some_priv_key = """-----BEGIN RSA PRIVATE KEY-----
 MIIEowIBAAKCAQEA/ZsJKyCakqA8vO2r0CTOG0qE2l+4y1dIqh7VC0oaVkXy0Cim
@@ -77,41 +66,40 @@ _some_identity_xml = """<?xml version="1.0" encoding="utf-8"?>
 
 
 class Test(TestCase):
-
     def setUp(self):
         try:
-            bpio.rmdir_recursive('/tmp/.bitdust_tmp')
+            bpio.rmdir_recursive("/tmp/.bitdust_tmp")
         except Exception:
             pass
         lg.set_debug_level(30)
-        settings.init(base_dir='/tmp/.bitdust_tmp')
+        settings.init(base_dir="/tmp/.bitdust_tmp")
         try:
-            os.makedirs('/tmp/.bitdust_tmp/metadata')
+            os.makedirs("/tmp/.bitdust_tmp/metadata")
         except:
             pass
-        automat.OpenLogFile('/tmp/.bitdust_tmp/logs/automats.log')
+        automat.OpenLogFile("/tmp/.bitdust_tmp/logs/automats.log")
         self.my_current_key = None
-        fout = open(settings.KeyFileName(), 'w')
+        fout = open(settings.KeyFileName(), "w")
         fout.write(_some_priv_key)
         fout.close()
-        fout = open(settings.LocalIdentityFilename(), 'w')
+        fout = open(settings.LocalIdentityFilename(), "w")
         fout.write(_some_identity_xml)
         fout.close()
         self.assertTrue(key.LoadMyKey())
         self.assertTrue(my_id.loadLocalIdentity())
         my_id.init()
         try:
-            os.makedirs('/tmp/.bitdust_tmp/logs')
+            os.makedirs("/tmp/.bitdust_tmp/logs")
         except:
             pass
-        local_fs.WriteTextFile('/tmp/.bitdust_tmp/logs/parallelp.log', '')
-        tmpfile.init(temp_dir_path='/tmp/.bitdust_tmp/temp/')
-        os.makedirs('/tmp/.bitdust_tmp/backups/master$alice@127.0.0.1_8084/1/F1234')
+        local_fs.WriteTextFile("/tmp/.bitdust_tmp/logs/parallelp.log", "")
+        tmpfile.init(temp_dir_path="/tmp/.bitdust_tmp/temp/")
+        os.makedirs("/tmp/.bitdust_tmp/backups/master$alice@127.0.0.1_8084/1/F1234")
         try:
-            bpio.rmdir_recursive('/tmp/_some_folder', ignore_errors=True)
+            bpio.rmdir_recursive("/tmp/_some_folder", ignore_errors=True)
         except:
             pass
-        os.makedirs('/tmp/_some_folder')
+        os.makedirs("/tmp/_some_folder")
 
     def tearDown(self):
         automat.CloseLogFile()
@@ -119,57 +107,78 @@ class Test(TestCase):
         key.ForgetMyKey()
         my_id.forgetLocalIdentity()
         settings.shutdown()
-        bpio.rmdir_recursive('/tmp/.bitdust_tmp')
-        bpio.rmdir_recursive('/tmp/_some_folder')
-        os.remove('/tmp/random_file')
+        bpio.rmdir_recursive("/tmp/.bitdust_tmp")
+        bpio.rmdir_recursive("/tmp/_some_folder")
+        os.remove("/tmp/random_file")
 
     def test_backup_restore(self):
-        test_ecc_map = 'ecc/2x2'
+        test_ecc_map = "ecc/2x2"
         test_done = Deferred()
-        backupID = 'master$alice@127.0.0.1_8084:1/F1234'
-        outputLocation = '/tmp/'
-        with open('/tmp/_some_folder/random_file', 'wb') as fout:
+        backupID = "master$alice@127.0.0.1_8084:1/F1234"
+        outputLocation = "/tmp/"
+        with open("/tmp/_some_folder/random_file", "wb") as fout:
             fout.write(os.urandom(10))
             # fout.write(os.urandom(100*1024))
-        backupPipe = backup_tar.backuptardir_thread('/tmp/_some_folder/')
+        backupPipe = backup_tar.backuptardir_thread("/tmp/_some_folder/")
 
         def _extract_done(retcode, backupID, source_filename, output_location):
             assert retcode is True
-            print('file size is: %d bytes' % len(bpio.ReadBinaryFile('/tmp/random_file')))
-            assert bpio.ReadBinaryFile('/tmp/random_file') == bpio.ReadBinaryFile('/tmp/_some_folder/random_file')
-            reactor.callLater(0, raid_worker.A, 'shutdown')  # @UndefinedVariable
+            print("file size is: %d bytes" % len(bpio.ReadBinaryFile("/tmp/random_file")))
+            assert bpio.ReadBinaryFile("/tmp/random_file") == bpio.ReadBinaryFile(
+                "/tmp/_some_folder/random_file"
+            )
+            reactor.callLater(0, raid_worker.A, "shutdown")  # @UndefinedVariable
             reactor.callLater(0.5, test_done.callback, True)  # @UndefinedVariable
 
         def _restore_done(result, backupID, outfd, tarfilename, outputlocation):
-            assert result == 'done'
+            assert result == "done"
             d = backup_tar.extracttar_thread(tarfilename, outputlocation)
             d.addCallback(_extract_done, backupID, tarfilename, outputlocation)
             return d
 
         def _restore():
             outfd, outfilename = tmpfile.make(
-                'restore',
-                extension='.tar.gz',
-                prefix=backupID.replace('@', '_').replace('.', '_').replace('/', '_').replace(':', '_') + '_',
+                "restore",
+                extension=".tar.gz",
+                prefix=backupID.replace("@", "_")
+                .replace(".", "_")
+                .replace("/", "_")
+                .replace(":", "_")
+                + "_",
             )
-            r = restore_worker.RestoreWorker(backupID, outfd, KeyID=None, ecc_map=eccmap.eccmap(test_ecc_map))
-            r.MyDeferred.addCallback(_restore_done, backupID, outfd, outfilename, outputLocation)
-            r.automat('init')
+            r = restore_worker.RestoreWorker(
+                backupID, outfd, KeyID=None, ecc_map=eccmap.eccmap(test_ecc_map)
+            )
+            r.MyDeferred.addCallback(
+                _restore_done, backupID, outfd, outfilename, outputLocation
+            )
+            r.automat("init")
 
         def _bk_done(bid, result):
-            assert result == 'done'
+            assert result == "done"
 
         def _bk_closed(job):
             if False:
-                os.remove('/tmp/.bitdust_tmp/backups/master$alice@127.0.0.1_8084/1/F1234/0-1-Data')
-                os.remove('/tmp/.bitdust_tmp/backups/master$alice@127.0.0.1_8084/1/F1234/0-1-Parity')
+                os.remove(
+                    "/tmp/.bitdust_tmp/backups/master$alice@127.0.0.1_8084/1/F1234/0-1-Data"
+                )
+                os.remove(
+                    "/tmp/.bitdust_tmp/backups/master$alice@127.0.0.1_8084/1/F1234/0-1-Parity"
+                )
             reactor.callLater(0.5, _restore)  # @UndefinedVariable
 
-        reactor.callWhenRunning(raid_worker.A, 'init')  # @UndefinedVariable
+        reactor.callWhenRunning(raid_worker.A, "init")  # @UndefinedVariable
 
-        job = backup.backup(backupID, backupPipe, blockSize=1024*1024, ecc_map=eccmap.eccmap(test_ecc_map))
+        job = backup.backup(
+            backupID,
+            backupPipe,
+            blockSize=1024 * 1024,
+            ecc_map=eccmap.eccmap(test_ecc_map),
+        )
         job.finishCallback = _bk_done
-        job.addStateChangedCallback(lambda *a, **k: _bk_closed(job), oldstate=None, newstate='DONE')
-        reactor.callLater(0.5, job.automat, 'start')  # @UndefinedVariable
+        job.addStateChangedCallback(
+            lambda *a, **k: _bk_closed(job), oldstate=None, newstate="DONE"
+        )
+        reactor.callLater(0.5, job.automat, "start")  # @UndefinedVariable
 
         return test_done

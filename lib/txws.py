@@ -41,16 +41,14 @@ from __future__ import division
 
 __version__ = "0.7.1"
 
-import sys
-import six
-
 import array
-
-from base64 import b64encode, b64decode
+import sys
+from base64 import b64decode, b64encode
 from hashlib import md5, sha1
 from string import digits
 from struct import pack, unpack
 
+import six
 from twisted.internet.interfaces import ISSLTransport
 from twisted.protocols.policies import ProtocolWrapper, WrappingFactory
 from twisted.python import log
@@ -71,6 +69,7 @@ class WSException(Exception):
     If this class escapes txWS, then something stupid happened in multiple
     places.
     """
+
 
 # Flavors of WS supported here.
 # HYBI00  - Hixie-76, HyBi-00. Challenge/response after headers, very minimal
@@ -101,7 +100,7 @@ opcode_types = {
     0x2: NORMAL,
     0x8: CLOSE,
     0x9: PING,
-    0xa: PONG,
+    0xA: PONG,
 }
 
 encoders = {
@@ -114,6 +113,7 @@ decoders = {
 
 # Fake HTTP stuff, and a couple convenience methods for examining fake HTTP
 # headers.
+
 
 def http_headers(s):
     """
@@ -131,13 +131,17 @@ def http_headers(s):
 
     return d
 
+
 def is_websocket(headers):
     """
     Determine whether a given set of headers is asking for WebSockets.
     """
 
-    return ("upgrade" in headers.get("Connection", "").lower()
-            and headers.get("Upgrade").lower() == "websocket")
+    return (
+        "upgrade" in headers.get("Connection", "").lower()
+        and headers.get("Upgrade").lower() == "websocket"
+    )
+
 
 def is_hybi00(headers):
     """
@@ -149,7 +153,9 @@ def is_hybi00(headers):
 
     return "Sec-WebSocket-Key1" in headers and "Sec-WebSocket-Key2" in headers
 
+
 # Authentication for WS.
+
 
 def complete_hybi00(headers, challenge):
     """
@@ -166,6 +172,7 @@ def complete_hybi00(headers, challenge):
 
     return md5(nonce).digest()
 
+
 def make_accept(key):
     """
     Create an "accept" response for a given key.
@@ -176,13 +183,15 @@ def make_accept(key):
     guid = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 
     accept = "%s%s" % (key, guid)
-    hashed_bytes = sha1(accept.encode('utf-8')).digest()
+    hashed_bytes = sha1(accept.encode("utf-8")).digest()
 
-    return b64encode(hashed_bytes).strip().decode('utf-8')
+    return b64encode(hashed_bytes).strip().decode("utf-8")
+
 
 # Frame helpers.
 # Separated out to make unit testing a lot easier.
 # Frames are bonghits in newer WS versions, so helpers are appreciated.
+
 
 def make_hybi00_frame(buf):
     """
@@ -193,9 +202,10 @@ def make_hybi00_frame(buf):
     """
 
     if isinstance(buf, six.text_type):
-        buf = buf.encode('utf-8')
+        buf = buf.encode("utf-8")
 
     return six.b("\x00") + buf + six.b("\xff")
+
 
 def parse_hybi00_frames(buf):
     """
@@ -216,7 +226,7 @@ def parse_hybi00_frames(buf):
             break
         else:
             # Found a frame, put it in the list.
-            frame = buf[start + 1:end]
+            frame = buf[start + 1 : end]
             frames.append((NORMAL, frame))
             tail = end + 1
         start = buf.find(six.b("\x00"), end + 1)
@@ -224,6 +234,7 @@ def parse_hybi00_frames(buf):
     # Adjust the buffer and return.
     buf = buf[tail:]
     return frames, buf
+
 
 def mask(buf, key):
     """
@@ -239,6 +250,7 @@ def mask(buf, key):
         buf[i] ^= key[i % 4]
     return array_tostring(buf)
 
+
 def make_hybi07_frame(buf, opcode=0x1):
     """
     Make a HyBi-07 frame.
@@ -247,26 +259,35 @@ def make_hybi07_frame(buf, opcode=0x1):
     smallest possible lengths.
     """
 
-    if len(buf) > 0xffff:
-        length = b'\x7f' + pack(">Q", len(buf))
-    elif len(buf) > 0x7d:
-        length = b'\x7e' + pack(">H", len(buf))
+    if len(buf) > 0xFFFF:
+        length = b"\x7f" + pack(">Q", len(buf))
+    elif len(buf) > 0x7D:
+        length = b"\x7e" + pack(">H", len(buf))
     else:
         if six.PY2:
             length = chr(len(buf))
         else:
-            length = bytes([len(buf), ])
+            length = bytes(
+                [
+                    len(buf),
+                ]
+            )
 
     if isinstance(buf, six.text_type):
-        buf = buf.encode('utf-8')
+        buf = buf.encode("utf-8")
 
     # Always make a normal packet.
     if six.PY2:
         header = chr(0x80 | opcode)
     else:
-        header = bytes([0x80 | opcode, ])
+        header = bytes(
+            [
+                0x80 | opcode,
+            ]
+        )
 
     return header + length + buf
+
 
 def make_hybi07_frame_dwim(buf):
     """
@@ -279,7 +300,10 @@ def make_hybi07_frame_dwim(buf):
     elif isinstance(buf, six.text_type):
         return make_hybi07_frame(buf.encode("utf-8"), opcode=0x1)
     else:
-        raise TypeError("In binary support mode, frame data must be either str or unicode")
+        raise TypeError(
+            "In binary support mode, frame data must be either str or unicode"
+        )
+
 
 def parse_hybi07_frames(buf):
     """
@@ -309,7 +333,7 @@ def parse_hybi07_frames(buf):
 
         # Get the opcode, and translate it to a local enum which we actually
         # care about.
-        opcode = header & 0xf
+        opcode = header & 0xF
         try:
             opcode = opcode_types[opcode]
         except KeyError:
@@ -323,7 +347,7 @@ def parse_hybi07_frames(buf):
             length = ord(length)
 
         masked = length & 0x80
-        length &= 0x7f
+        length &= 0x7F
 
         # The offset we're gonna be using to walk through the frame. We use
         # this because the offset is variable depending on the length and
@@ -331,14 +355,14 @@ def parse_hybi07_frames(buf):
         offset = 2
 
         # Extra length fields.
-        if length == 0x7e:
+        if length == 0x7E:
             if len(buf) - start < 4:
                 break
 
-            length = buf[start + 2:start + 4]
+            length = buf[start + 2 : start + 4]
             length = unpack(">H", length)[0]
             offset += 2
-        elif length == 0x7f:
+        elif length == 0x7F:
             if len(buf) - start < 10:
                 break
 
@@ -347,7 +371,7 @@ def parse_hybi07_frames(buf):
             # fucking stupid, if you don't mind me saying so, and so we're
             # interpreting it as unsigned anyway. If you wanna send exabytes
             # of data down the wire, then go ahead!
-            length = buf[start + 2:start + 10]
+            length = buf[start + 2 : start + 10]
             length = unpack(">Q", length)[0]
             offset += 8
 
@@ -355,13 +379,13 @@ def parse_hybi07_frames(buf):
             if len(buf) - (start + offset) < 4:
                 break
 
-            key = buf[start + offset:start + offset + 4]
+            key = buf[start + offset : start + offset + 4]
             offset += 4
 
         if len(buf) - (start + offset) < length:
             break
 
-        data = buf[start + offset:start + offset + length]
+        data = buf[start + offset : start + offset + length]
 
         if masked:
             data = mask(data, key)
@@ -378,6 +402,7 @@ def parse_hybi07_frames(buf):
         start += offset + length
 
     return frames, buf[start:]
+
 
 class WebSocketProtocol(ProtocolWrapper):
     """
@@ -416,11 +441,11 @@ class WebSocketProtocol(ProtocolWrapper):
 
     def writeEncoded(self, data):
         if isinstance(data, six.text_type):
-            data = data.encode('utf-8')
+            data = data.encode("utf-8")
         self.transport.write(data)
 
     def writeEncodedSequence(self, sequence):
-        self.transport.writeSequence([ele.encode('utf-8') for ele in sequence])
+        self.transport.writeSequence([ele.encode("utf-8") for ele in sequence])
 
     def sendCommonPreamble(self):
         """
@@ -429,13 +454,15 @@ class WebSocketProtocol(ProtocolWrapper):
         This might go away in the future if WebSockets continue to diverge.
         """
 
-        self.writeEncodedSequence([
-            "HTTP/1.1 101 FYI I am not a webserver\r\n",
-            "Server: TwistedWebSocketWrapper/1.0\r\n",
-            "Date: %s\r\n" % datetimeToString(),
-            "Upgrade: WebSocket\r\n",
-            "Connection: Upgrade\r\n",
-        ])
+        self.writeEncodedSequence(
+            [
+                "HTTP/1.1 101 FYI I am not a webserver\r\n",
+                "Server: TwistedWebSocketWrapper/1.0\r\n",
+                "Date: %s\r\n" % datetimeToString(),
+                "Upgrade: WebSocket\r\n",
+                "Connection: Upgrade\r\n",
+            ]
+        )
 
     def sendHyBi00Preamble(self):
         """
@@ -446,14 +473,16 @@ class WebSocketProtocol(ProtocolWrapper):
 
         self.sendCommonPreamble()
 
-        self.writeEncodedSequence([
-            "Sec-WebSocket-Origin: %s\r\n" % self.origin,
-            "Sec-WebSocket-Location: %s://%s%s\r\n" % (protocol, self.host,
-                                                       self.location),
-            "WebSocket-Protocol: %s\r\n" % self.codec,
-            "Sec-WebSocket-Protocol: %s\r\n" % self.codec,
-            "\r\n",
-        ])
+        self.writeEncodedSequence(
+            [
+                "Sec-WebSocket-Origin: %s\r\n" % self.origin,
+                "Sec-WebSocket-Location: %s://%s%s\r\n"
+                % (protocol, self.host, self.location),
+                "WebSocket-Protocol: %s\r\n" % self.codec,
+                "Sec-WebSocket-Protocol: %s\r\n" % self.codec,
+                "\r\n",
+            ]
+        )
 
     def sendHyBi07Preamble(self):
         """
@@ -561,7 +590,7 @@ class WebSocketProtocol(ProtocolWrapper):
             protocols = self.headers["Sec-WebSocket-Protocol"]
 
         if isinstance(protocols, six.string_types):
-            protocols = [p.strip() for p in protocols.split(',')]
+            protocols = [p.strip() for p in protocols.split(",")]
 
             for protocol in protocols:
                 if protocol in encoders or protocol in decoders:
@@ -629,7 +658,7 @@ class WebSocketProtocol(ProtocolWrapper):
                 separator = six.b("\r\n")
                 if separator in self.buf:
                     request, chaff, self.buf = self.buf.partition(separator)
-                    request = request.decode('utf-8')
+                    request = request.decode("utf-8")
 
                     try:
                         verb, self.location, version = request.split(" ")
@@ -643,7 +672,7 @@ class WebSocketProtocol(ProtocolWrapper):
                 separator = six.b("\r\n\r\n")
                 if separator in self.buf:
                     head, chaff, self.buf = self.buf.partition(separator)
-                    head = head.decode('utf-8')
+                    head = head.decode("utf-8")
 
                     self.headers = http_headers(head)
                     # Validate headers. This will cause a state change.
@@ -655,7 +684,7 @@ class WebSocketProtocol(ProtocolWrapper):
                 # HyBi-00/Hixie-76.
                 if len(self.buf) >= 8:
                     challenge, self.buf = self.buf[:8], self.buf[8:]
-                    challenge = challenge.decode('utf-8')
+                    challenge = challenge.decode("utf-8")
 
                     response = complete_hybi00(self.headers, challenge)
                     self.sendHyBi00Preamble()
@@ -715,6 +744,7 @@ class WebSocketProtocol(ProtocolWrapper):
             self.writeEncoded(frame)
 
         self.loseConnection()
+
 
 class WebSocketFactory(WrappingFactory):
     """

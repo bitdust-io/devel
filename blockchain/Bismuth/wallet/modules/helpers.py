@@ -1,9 +1,8 @@
-import mimetypes
+import json
 import sys
 from os import path
-import aiohttp
-import json
 
+import aiohttp
 import cachetools.func
 import requests
 from bismuthclient.bismuthclient import BismuthClient

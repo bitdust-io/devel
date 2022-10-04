@@ -31,42 +31,41 @@ Checks that customer packets on the local disk still have good signatures and ar
 
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 8
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 import os
 import sys
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 try:
     from twisted.internet import reactor  # @UnresolvedImport
 except:
-    sys.exit('Error initializing twisted.internet.reactor in local_tester.py')
+    sys.exit("Error initializing twisted.internet.reactor in local_tester.py")
 
 from twisted.internet import threads
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 try:
     from logs import lg
 except:
     dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
-    sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..')))
-
-from system import bpio
+    sys.path.insert(0, os.path.abspath(os.path.join(dirpath, "..")))
 
 from main import settings
+from system import bpio
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 _TesterQueue = []
 _CurrentProcess = None
@@ -75,18 +74,19 @@ _LoopValidate = None
 _LoopUpdateCustomers = None
 _LoopSpaceTime = None
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
-TesterUpdateCustomers = 'update_customers'
-TesterValidate = 'validate'
-TesterSpaceTime = 'space_time'
+TesterUpdateCustomers = "update_customers"
+TesterValidate = "validate"
+TesterSpaceTime = "space_time"
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
 
 def init():
     global _Loop
     if _Debug:
-        lg.out(_DebugLevel, 'local_tester.init')
+        lg.out(_DebugLevel, "local_tester.init")
     _Loop = reactor.callLater(5, loop)  # @UndefinedVariable
 
 
@@ -94,7 +94,7 @@ def shutdown():
     global _Loop
     global _CurrentProcess
     if _Debug:
-        lg.out(_DebugLevel, 'local_tester.shutdown')
+        lg.out(_DebugLevel, "local_tester.shutdown")
 
     stop()
 
@@ -108,18 +108,22 @@ def shutdown():
         # for example write to local file some simple "marker"
         # bptester suppose to read that file every 1-2 seconds and check if "marker" is here
         if _Debug:
-            lg.out(_DebugLevel, 'local_tester.shutdown is killing bptester')
+            lg.out(_DebugLevel, "local_tester.shutdown is killing bptester")
 
-#------------------------------------------------------------------------------ 
+
+# ------------------------------------------------------------------------------
+
 
 def start():
     global _LoopValidate
     global _LoopUpdateCustomers
     global _LoopSpaceTime
     if _Debug:
-        lg.out(_DebugLevel, 'local_tester.start')
+        lg.out(_DebugLevel, "local_tester.start")
     _LoopValidate = reactor.callLater(0, loop_validate)  # @UndefinedVariable
-    _LoopUpdateCustomers = reactor.callLater(0, loop_update_customers)  # @UndefinedVariable
+    _LoopUpdateCustomers = reactor.callLater(
+        0, loop_update_customers
+    )  # @UndefinedVariable
     _LoopSpaceTime = reactor.callLater(0, loop_space_time)  # @UndefinedVariable
 
 
@@ -128,7 +132,7 @@ def stop():
     global _LoopUpdateCustomers
     global _LoopSpaceTime
     if _Debug:
-        lg.out(_DebugLevel, 'local_tester.stop')
+        lg.out(_DebugLevel, "local_tester.stop")
     if _LoopValidate:
         if _LoopValidate.active():
             _LoopValidate.cancel()
@@ -142,7 +146,9 @@ def stop():
             _LoopSpaceTime.cancel()
             _LoopSpaceTime = None
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def _pushTester(cmd):
     global _TesterQueue
@@ -159,20 +165,23 @@ def _popTester():
     del _TesterQueue[0]
     return cmd
 
-#-------------------------------------------------------------------------------
+
+# -------------------------------------------------------------------------------
+
 
 def on_thread_finished(ret, cmd):
     global _CurrentProcess
     _CurrentProcess = None
     if _Debug:
-        lg.out(_DebugLevel, 'local_tester.on_thread_finished %r with %r' % (cmd, ret))
+        lg.out(_DebugLevel, "local_tester.on_thread_finished %r with %r" % (cmd, ret))
 
 
 def run_in_thread(cmd):
     global _CurrentProcess
     from main import bptester
+
     if _CurrentProcess:
-        raise Exception('another thread already started')
+        raise Exception("another thread already started")
     _CurrentProcess = cmd
     command = {
         TesterUpdateCustomers: bptester.UpdateCustomers,
@@ -182,9 +191,11 @@ def run_in_thread(cmd):
     d = threads.deferToThread(command)  # @UndefinedVariable
     d.addBoth(on_thread_finished, cmd)
     if _Debug:
-        lg.out(_DebugLevel, 'local_tester.run_in_thread started %r' % cmd)
+        lg.out(_DebugLevel, "local_tester.run_in_thread started %r" % cmd)
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def alive():
     global _CurrentProcess
@@ -199,27 +210,36 @@ def loop():
         cmd = _popTester()
         if cmd:
             run_in_thread(cmd)
-    _Loop = reactor.callLater(settings.DefaultLocaltesterLoop(), loop)  # @UndefinedVariable
+    _Loop = reactor.callLater(
+        settings.DefaultLocaltesterLoop(), loop
+    )  # @UndefinedVariable
 
 
 def loop_validate():
     global _LoopValidate
     TestValid()
-    _LoopValidate = reactor.callLater(settings.DefaultLocaltesterValidateTimeout(), loop_validate)  # @UndefinedVariable
+    _LoopValidate = reactor.callLater(
+        settings.DefaultLocaltesterValidateTimeout(), loop_validate
+    )  # @UndefinedVariable
 
 
 def loop_update_customers():
     global _LoopUpdateCustomers
     TestUpdateCustomers()
-    _LoopUpdateCustomers = reactor.callLater(settings.DefaultLocaltesterUpdateCustomersTimeout(), loop_update_customers)  # @UndefinedVariable
+    _LoopUpdateCustomers = reactor.callLater(
+        settings.DefaultLocaltesterUpdateCustomersTimeout(), loop_update_customers
+    )  # @UndefinedVariable
 
 
 def loop_space_time():
     global _LoopSpaceTime
     TestSpaceTime()
-    _LoopSpaceTime = reactor.callLater(settings.DefaultLocaltesterSpaceTimeTimeout(), loop_space_time)  # @UndefinedVariable
+    _LoopSpaceTime = reactor.callLater(
+        settings.DefaultLocaltesterSpaceTimeTimeout(), loop_space_time
+    )  # @UndefinedVariable
 
-#-------------------------------------------------------------------------------
+
+# -------------------------------------------------------------------------------
 
 
 def TestUpdateCustomers():
@@ -233,7 +253,8 @@ def TestValid():
 def TestSpaceTime():
     _pushTester(TesterSpaceTime)
 
-#-------------------------------------------------------------------------------
+
+# -------------------------------------------------------------------------------
 
 if __name__ == "__main__":
     lg.set_debug_level(18)

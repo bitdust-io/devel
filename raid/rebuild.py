@@ -21,63 +21,81 @@
 # Please contact us if you have any questions at bitdust.io@gmail.com
 
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
+
 from six.moves import range
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Debug = False
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 import os
 import sys
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
-    sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..')))
-    sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..', '..')))
+    sys.path.insert(0, os.path.abspath(os.path.join(dirpath, "..")))
+    sys.path.insert(0, os.path.abspath(os.path.join(dirpath, "..", "..")))
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 import logs.lg
-
-import raid.read
 import raid.eccmap
+import raid.read
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
-def rebuild(backupID, blockNum, eccMap, availableSuppliers, remoteMatrix, localMatrix, localBackupsDir, threshold_control=None):
+
+def rebuild(
+    backupID,
+    blockNum,
+    eccMap,
+    availableSuppliers,
+    remoteMatrix,
+    localMatrix,
+    localBackupsDir,
+    threshold_control=None,
+):
     try:
         if _Debug:
-            with open('/tmp/raid.log', 'a') as logfile:
-                logfile.write(u'rebuild backupID=%r blockNum=%r eccMap=%r\n' % (backupID, blockNum, eccMap, ))
+            with open("/tmp/raid.log", "a") as logfile:
+                logfile.write(
+                    "rebuild backupID=%r blockNum=%r eccMap=%r\n"
+                    % (
+                        backupID,
+                        blockNum,
+                        eccMap,
+                    )
+                )
 
-        customer, _, localPath = backupID.rpartition(':')
-        if '$' not in customer:
-            customer = 'master$' + customer
+        customer, _, localPath = backupID.rpartition(":")
+        if "$" not in customer:
+            customer = "master$" + customer
         myeccmap = raid.eccmap.eccmap(eccMap)
         supplierCount = len(availableSuppliers)
         missingData = [0] * supplierCount
         missingParity = [0] * supplierCount
         reconstructedData = [0] * supplierCount
         reconstructedParity = [0] * supplierCount
-        remoteData = list(remoteMatrix['D'])
-        remoteParity = list(remoteMatrix['P'])
-        localData = list(localMatrix['D'])
-        localParity = list(localMatrix['P'])
-    
+        remoteData = list(remoteMatrix["D"])
+        remoteParity = list(remoteMatrix["P"])
+        localData = list(localMatrix["D"])
+        localParity = list(localMatrix["P"])
+
         def _build_raid_file_name(supplierNumber, dataOrParity):
             return os.path.join(
                 localBackupsDir,
                 customer,
                 localPath,
-                str(blockNum) + '-' + str(supplierNumber) + '-' + dataOrParity)
-    
+                str(blockNum) + "-" + str(supplierNumber) + "-" + dataOrParity,
+            )
+
         # This builds a list of missing pieces.
         # The file is missing if value in the corresponding cell
         # in the "remote" matrix (see ``p2p.backup_matrix``) is -1 or 0
@@ -98,11 +116,11 @@ def rebuild(backupID, blockNum, eccMap, availableSuppliers, remoteMatrix, localM
                 missingParity[supplierNum] = 1
 
         if _Debug:
-            with open('/tmp/raid.log', 'a') as logfile:
-                logfile.write(u'missingData=%r\n' % missingData)
-                logfile.write(u'missingParity=%r\n' % missingParity)
-                logfile.write(u'localData=%r\n' % localData)
-                logfile.write(u'localParity=%r\n' % localParity)
+            with open("/tmp/raid.log", "a") as logfile:
+                logfile.write("missingData=%r\n" % missingData)
+                logfile.write("missingParity=%r\n" % missingParity)
+                logfile.write("localData=%r\n" % localData)
+                logfile.write("localParity=%r\n" % localParity)
 
         # This made an attempt to rebuild the missing pieces
         # from pieces we have on hands.
@@ -113,20 +131,27 @@ def rebuild(backupID, blockNum, eccMap, availableSuppliers, remoteMatrix, localM
             madeProgress = False
             # will check all data packets we have
             for supplierNum in range(supplierCount):
-                dataFileName = _build_raid_file_name(supplierNum, 'Data')
+                dataFileName = _build_raid_file_name(supplierNum, "Data")
                 # if we do not have this item on hands - we will reconstruct it from other items
                 if localData[supplierNum] == 0:
-                    parityNum, parityMap = myeccmap.GetDataFixPath(localData, localParity, supplierNum)
+                    parityNum, parityMap = myeccmap.GetDataFixPath(
+                        localData, localParity, supplierNum
+                    )
                     if parityNum != -1:
                         rebuildFileList = []
-                        rebuildFileList.append(_build_raid_file_name(parityNum, 'Parity'))
+                        rebuildFileList.append(_build_raid_file_name(parityNum, "Parity"))
                         for supplierParity in parityMap:
                             if supplierParity != supplierNum:
-                                filename = _build_raid_file_name(supplierParity, 'Data')
+                                filename = _build_raid_file_name(supplierParity, "Data")
                                 if os.path.isfile(filename):
                                     rebuildFileList.append(filename)
                         # lg.out(10, '    rebuilding file %s from %d files' % (os.path.basename(dataFileName), len(rebuildFileList)))
-                        raid.read.RebuildOne(rebuildFileList, len(rebuildFileList), dataFileName, threshold_control=threshold_control)
+                        raid.read.RebuildOne(
+                            rebuildFileList,
+                            len(rebuildFileList),
+                            dataFileName,
+                            threshold_control=threshold_control,
+                        )
                     if os.path.exists(dataFileName):
                         localData[supplierNum] = 1
                         madeProgress = True
@@ -134,7 +159,9 @@ def rebuild(backupID, blockNum, eccMap, availableSuppliers, remoteMatrix, localM
                 # now we check again if we have the data on hand after rebuild at it is missing - send it
                 # but also check to not duplicate sending to this man
                 # now sending is separated, see the file data_sender.py
-                if localData[supplierNum] == 1 and missingData[supplierNum] == 1:  # and self.dataSent[supplierNum] == 0:
+                if (
+                    localData[supplierNum] == 1 and missingData[supplierNum] == 1
+                ):  # and self.dataSent[supplierNum] == 0:
                     # lg.out(10, '            rebuilt a new Data for supplier %d' % supplierNum)
                     newData = True
                     reconstructedData[supplierNum] = 1
@@ -142,7 +169,7 @@ def rebuild(backupID, blockNum, eccMap, availableSuppliers, remoteMatrix, localM
                     # self.dataSent[supplierNum] = 1
         # now with parities ...
         for supplierNum in range(supplierCount):
-            parityFileName = _build_raid_file_name(supplierNum, 'Parity')
+            parityFileName = _build_raid_file_name(supplierNum, "Parity")
             if localParity[supplierNum] == 0:
                 parityMap = myeccmap.ParityToData[supplierNum]
                 HaveAllData = True
@@ -153,16 +180,25 @@ def rebuild(backupID, blockNum, eccMap, availableSuppliers, remoteMatrix, localM
                 if HaveAllData:
                     rebuildFileList = []
                     for supplierParity in parityMap:
-                        filename = _build_raid_file_name(supplierParity, 'Data')  # ??? why not 'Parity'
+                        filename = _build_raid_file_name(
+                            supplierParity, "Data"
+                        )  # ??? why not 'Parity'
                         if os.path.isfile(filename):
                             rebuildFileList.append(filename)
                     # lg.out(10, '    rebuilding file %s from %d files' % (os.path.basename(parityFileName), len(rebuildFileList)))
-                    raid.read.RebuildOne(rebuildFileList, len(rebuildFileList), parityFileName, threshold_control=threshold_control)
+                    raid.read.RebuildOne(
+                        rebuildFileList,
+                        len(rebuildFileList),
+                        parityFileName,
+                        threshold_control=threshold_control,
+                    )
                     if os.path.exists(parityFileName):
                         # lg.out(10, '        Parity file %s found after rebuilding for supplier %d' % (os.path.basename(parityFileName), supplierNum))
                         localParity[supplierNum] = 1
             # so we have the parity on hand and it is missing - send it
-            if localParity[supplierNum] == 1 and missingParity[supplierNum] == 1:  # and self.paritySent[supplierNum] == 0:
+            if (
+                localParity[supplierNum] == 1 and missingParity[supplierNum] == 1
+            ):  # and self.paritySent[supplierNum] == 0:
                 # lg.out(10, '            rebuilt a new Parity for supplier %d' % supplierNum)
                 newData = True
                 reconstructedParity[supplierNum] = 1
@@ -171,10 +207,16 @@ def rebuild(backupID, blockNum, eccMap, availableSuppliers, remoteMatrix, localM
         # lg.out(14, 'block_rebuilder.AttemptRebuild END')
 
         if _Debug:
-            with open('/tmp/raid.log', 'a') as logfile:
-                logfile.write(u'newData=%r\n' % newData)
+            with open("/tmp/raid.log", "a") as logfile:
+                logfile.write("newData=%r\n" % newData)
 
-        return (newData, localData, localParity, reconstructedData, reconstructedParity, )
+        return (
+            newData,
+            localData,
+            localParity,
+            reconstructedData,
+            reconstructedParity,
+        )
 
     except:
         logs.lg.exc()

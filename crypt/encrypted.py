@@ -55,35 +55,28 @@ RAIDREAD:
     generate the read requests to get fetch the packets.
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 10
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 import base64
+from crypt import key, my_keys
 
-#------------------------------------------------------------------------------
-
+from lib import serialization, strng
 from logs import lg
+from userid import id_url, my_id
 
-from lib import strng
-from lib import serialization
+# ------------------------------------------------------------------------------
 
-from contacts import contactsdb
 
-from userid import my_id
-from userid import id_url
-
-from crypt import key
-from crypt import my_keys
-
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 class Block(object):
@@ -107,21 +100,21 @@ class Block(object):
     """
 
     def __init__(
-            self,
-            CreatorID=None,
-            BackupID='',
-            BlockNumber=0,
-            SessionKey='',
-            SessionKeyType=None,
-            LastBlock=True,
-            Data=b'',
-            EncryptKey=None,
-            DecryptKey=None,
-            EncryptedSessionKey=None,
-            EncryptedData=None,
-            Length=None,
-            Signature=None,
-        ):
+        self,
+        CreatorID=None,
+        BackupID="",
+        BlockNumber=0,
+        SessionKey="",
+        SessionKeyType=None,
+        LastBlock=True,
+        Data=b"",
+        EncryptKey=None,
+        DecryptKey=None,
+        EncryptedSessionKey=None,
+        EncryptedData=None,
+        Length=None,
+        Signature=None,
+    ):
         self.CreatorID = CreatorID
         if not self.CreatorID:
             self.CreatorID = my_id.getIDURL()
@@ -141,7 +134,9 @@ class Block(object):
             elif strng.is_text(EncryptKey):
                 self.EncryptedSessionKey = my_keys.encrypt(EncryptKey, SessionKey)
             elif strng.is_bin(EncryptKey):
-                self.EncryptedSessionKey = my_keys.encrypt(strng.to_text(EncryptKey), SessionKey)
+                self.EncryptedSessionKey = my_keys.encrypt(
+                    strng.to_text(EncryptKey), SessionKey
+                )
             else:
                 self.EncryptedSessionKey = key.EncryptLocalPublicKey(SessionKey)
         if EncryptedData and Length is not None:
@@ -149,7 +144,9 @@ class Block(object):
             self.EncryptedData = EncryptedData
         else:
             self.Length = len(Data)
-            self.EncryptedData = key.EncryptWithSessionKey(SessionKey, Data, session_key_type=self.SessionKeyType)
+            self.EncryptedData = key.EncryptWithSessionKey(
+                SessionKey, Data, session_key_type=self.SessionKeyType
+            )
         if Signature:
             self.Signature = Signature
         else:
@@ -157,11 +154,15 @@ class Block(object):
             self.Sign(signing_key=EncryptKey)
         self.DecryptKey = DecryptKey
         if _Debug:
-            lg.out(_DebugLevel, 'new data in %s' % self)
+            lg.out(_DebugLevel, "new data in %s" % self)
 
     def __repr__(self):
-        return 'encrypted{ BackupID=%s BlockNumber=%s Length=%s LastBlock=%s }' % (
-            str(self.BackupID), str(self.BlockNumber), str(self.Length), self.LastBlock)
+        return "encrypted{ BackupID=%s BlockNumber=%s Length=%s LastBlock=%s }" % (
+            str(self.BackupID),
+            str(self.BlockNumber),
+            str(self.Length),
+            self.LastBlock,
+        )
 
     def SessionKey(self):
         """
@@ -177,7 +178,9 @@ class Block(object):
         elif strng.is_text(self.DecryptKey):
             return my_keys.decrypt(self.DecryptKey, self.EncryptedSessionKey)
         elif strng.is_bin(self.DecryptKey):
-            return my_keys.decrypt(strng.to_text(self.DecryptKey), self.EncryptedSessionKey)
+            return my_keys.decrypt(
+                strng.to_text(self.DecryptKey), self.EncryptedSessionKey
+            )
         return key.DecryptLocalPrivateKey(self.EncryptedSessionKey)
 
     def GenerateHashBase(self):
@@ -185,8 +188,8 @@ class Block(object):
         Generate a single string with all data fields, used to create a hash
         for that ``encrypted_block``.
         """
-        sep = b'::::'
-        StringToHash = b''
+        sep = b"::::"
+        StringToHash = b""
         StringToHash += self.CreatorID.to_original()
         StringToHash += sep + strng.to_bin(self.BackupID)
         StringToHash += sep + strng.to_bin(str(self.BlockNumber))
@@ -238,7 +241,9 @@ class Block(object):
         if ConIdentity is None:
             lg.warn("could not get Identity so returning False")
             return False
-        result = key.Verify(ConIdentity, hashsrc, self.Signature)    # At block level only work on own stuff
+        result = key.Verify(
+            ConIdentity, hashsrc, self.Signature
+        )  # At block level only work on own stuff
         return result
 
     def Data(self):
@@ -247,8 +252,10 @@ class Block(object):
         ``EncryptedSessionKey``.
         """
         SessionKey = self.SessionKey()
-        ClearLongData = key.DecryptWithSessionKey(SessionKey, self.EncryptedData, session_key_type=self.SessionKeyType)
-        return ClearLongData[0:self.Length]    # remove padding
+        ClearLongData = key.DecryptWithSessionKey(
+            SessionKey, self.EncryptedData, session_key_type=self.SessionKeyType
+        )
+        return ClearLongData[0 : self.Length]  # remove padding
 
     def Serialize(self):
         """
@@ -256,42 +263,43 @@ class Block(object):
         object.
         """
         dct = {
-            'c': self.CreatorID.to_text(),
-            'b': self.BackupID,
-            'n': self.BlockNumber,
-            'e': self.LastBlock,
-            'k': strng.to_text(base64.b64encode(strng.to_bin(self.EncryptedSessionKey))),
-            't': self.SessionKeyType,
-            'l': self.Length,
-            'p': self.EncryptedData,
-            's': self.Signature,
+            "c": self.CreatorID.to_text(),
+            "b": self.BackupID,
+            "n": self.BlockNumber,
+            "e": self.LastBlock,
+            "k": strng.to_text(base64.b64encode(strng.to_bin(self.EncryptedSessionKey))),
+            "t": self.SessionKeyType,
+            "l": self.Length,
+            "p": self.EncryptedData,
+            "s": self.Signature,
         }
         if _Debug:
-            lg.out(_DebugLevel, 'encrypted.Serialize %s' % repr(dct)[:100])
-        return serialization.DictToBytes(dct, encoding='utf-8')
+            lg.out(_DebugLevel, "encrypted.Serialize %s" % repr(dct)[:100])
+        return serialization.DictToBytes(dct, encoding="utf-8")
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def Unserialize(data, decrypt_key=None):
     """
     A method to create a ``encrypted.Block`` instance from input string.
     """
-    dct = serialization.BytesToDict(data, keys_to_text=True, encoding='utf-8')
+    dct = serialization.BytesToDict(data, keys_to_text=True, encoding="utf-8")
     if _Debug:
-        lg.out(_DebugLevel, 'encrypted.Unserialize %s' % repr(dct)[:100])
+        lg.out(_DebugLevel, "encrypted.Unserialize %s" % repr(dct)[:100])
     try:
-        _c = dct['c']
-        _b = dct['b']
-        _n = dct['n']
-        _e = dct['e']
-        _k = dct['k']
-        _t = dct['t']
-        _l = dct['l']
-        _p = dct['p']
-        _s = dct['s']
+        _c = dct["c"]
+        _b = dct["b"]
+        _n = dct["n"]
+        _e = dct["e"]
+        _k = dct["k"]
+        _t = dct["t"]
+        _l = dct["l"]
+        _p = dct["p"]
+        _s = dct["s"]
     except Exception as exc:
-        lg.exc('data unserialize failed with %r: %r' % (exc, list(dct.keys())))
+        lg.exc("data unserialize failed with %r: %r" % (exc, list(dct.keys())))
         if _Debug:
             lg.out(_DebugLevel, repr(dct))
         return None

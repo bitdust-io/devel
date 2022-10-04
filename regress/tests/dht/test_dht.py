@@ -30,37 +30,41 @@ SCENARIO 6: users are able to use DHT network to store data
 """
 
 import os
-import pytest
 
-from testsupport import set_active_scenario  # @UnresolvedImport
 import keywords as kw  # @UnresolvedImport
+import pytest
 import scenarios  # @UnresolvedImport
+from testsupport import set_active_scenario  # @UnresolvedImport
 
 
 def test_dht():
-    if os.environ.get('RUN_TESTS', '1') == '0':
+    if os.environ.get("RUN_TESTS", "1") == "0":
         return pytest.skip()  # @UndefinedVariable
 
     prepare()
 
-    #--- SCENARIO 1: user can search another user by nickname
+    # --- SCENARIO 1: user can search another user by nickname
     scenarios.scenario1()
 
-    #--- SCENARIO 2: user is able to detect external IP
+    # --- SCENARIO 2: user is able to detect external IP
     scenarios.scenario2()
 
-    #--- SCENARIO 6: users are able to use DHT network to store data
+    # --- SCENARIO 6: users are able to use DHT network to store data
     scenarios.scenario6()
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def prepare():
-    set_active_scenario('PREPARE')
-    kw.wait_suppliers_connected(scenarios.CUSTOMERS_IDS_12, expected_min_suppliers=2, expected_max_suppliers=2)
-    kw.wait_service_state(scenarios.SUPPLIERS_IDS_12, 'service_supplier', 'ON')
-    kw.wait_service_state(scenarios.CUSTOMERS_IDS_12, 'service_customer', 'ON')
-    kw.wait_service_state(scenarios.CUSTOMERS_IDS_12, 'service_shared_data', 'ON')
+    set_active_scenario("PREPARE")
+    kw.wait_suppliers_connected(
+        scenarios.CUSTOMERS_IDS_12, expected_min_suppliers=2, expected_max_suppliers=2
+    )
+    kw.wait_service_state(scenarios.SUPPLIERS_IDS_12, "service_supplier", "ON")
+    kw.wait_service_state(scenarios.CUSTOMERS_IDS_12, "service_customer", "ON")
+    kw.wait_service_state(scenarios.CUSTOMERS_IDS_12, "service_shared_data", "ON")
     # kw.wait_service_state(scenarios.CUSTOMERS_IDS_12, 'service_personal_messages', 'ON')
-    kw.wait_service_state(scenarios.CUSTOMERS_IDS_12, 'service_private_groups', 'ON')
-    kw.wait_service_state(scenarios.CUSTOMERS_IDS_12, 'service_message_history', 'ON')
+    kw.wait_service_state(scenarios.CUSTOMERS_IDS_12, "service_private_groups", "ON")
+    kw.wait_service_state(scenarios.CUSTOMERS_IDS_12, "service_message_history", "ON")
     kw.wait_packets_finished(scenarios.CUSTOMERS_IDS_12 + scenarios.SUPPLIERS_IDS_12)

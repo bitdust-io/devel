@@ -31,31 +31,27 @@ changing identities sources and maintain a several "index" dictionaries
 to speed up processes.
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
+
 import os
 import time
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 10
 
-#------------------------------------------------------------------------------
-
-from logs import lg
-
-from system import bpio
-
-from main import settings
+# ------------------------------------------------------------------------------
 
 from lib import nameurl
+from logs import lg
+from main import settings
+from system import bpio
+from userid import id_url, identity
 
-from userid import identity
-from userid import id_url
-
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 # Dictionary cache of identities - lookup by primary url
 # global dictionary of identities in this file
@@ -70,7 +66,7 @@ _IPPort2IDURL = {}
 _LocalIPs = {}
 _IdentityCacheUpdatedCallbacks = []
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 def cache():
@@ -87,7 +83,8 @@ def cache_contacts():
     global _Contact2IDURL
     return _Contact2IDURL
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def init():
@@ -101,7 +98,7 @@ def init():
     id_cache_dir = settings.IdentityCacheDir()
     if not os.path.exists(id_cache_dir):
         if _Debug:
-            lg.out(_DebugLevel, 'identitydb.init create folder %r' % id_cache_dir)
+            lg.out(_DebugLevel, "identitydb.init create folder %r" % id_cache_dir)
         bpio._dir_make(id_cache_dir)
     # make sure to read and cache all known identities at startup
     for id_filename in os.listdir(id_cache_dir):
@@ -113,7 +110,8 @@ def shutdown():
     if _Debug:
         lg.out(_DebugLevel, "identitydb.shutdown")
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def clear(exclude_list=None):
@@ -147,7 +145,7 @@ def clear(exclude_list=None):
                 continue
         os.remove(path)
         if _Debug:
-            lg.out(_DebugLevel, 'identitydb.clear remove ' + path)
+            lg.out(_DebugLevel, "identitydb.clear remove " + path)
     fire_cache_updated_callbacks()
 
 
@@ -192,7 +190,7 @@ def idset(idurl, id_obj):
     idurl = id_url.to_original(idurl)
     if not has_idurl(idurl):
         if _Debug:
-            lg.out(_DebugLevel, 'identitydb.idset new identity: %r' % idurl)
+            lg.out(_DebugLevel, "identitydb.idset new identity: %r" % idurl)
     _IdentityCache[idurl] = id_obj
     _IdentityCacheModifiedTime[idurl] = time.time()
     identid = _IdentityCacheIDs.get(idurl, None)
@@ -219,7 +217,7 @@ def idset(idurl, id_obj):
     # TODO: when identity contacts changed - need to remove old items from _Contact2IDURL
     fire_cache_updated_callbacks(single_item=(identid, idurl, id_obj))
     if _Debug:
-        lg.out(_DebugLevel, 'identitydb.idset %r' % idurl)
+        lg.out(_DebugLevel, "identitydb.idset %r" % idurl)
     # now make sure we properly handle changes in the sources of that identity
     try:
         id_url.identity_cached(id_obj)
@@ -299,12 +297,17 @@ def get_ident(idurl):
     filename = os.path.join(settings.IdentityCacheDir(), partfilename)
     if not os.path.exists(filename):
         if _Debug:
-            lg.out(_DebugLevel, "identitydb.get_ident file %r not exist" % os.path.basename(filename))
+            lg.out(
+                _DebugLevel,
+                "identitydb.get_ident file %r not exist" % os.path.basename(filename),
+            )
         return None
     idxml = bpio.ReadTextFile(filename)
     if not idxml:
         if _Debug:
-            lg.out(_DebugLevel, "identitydb.get_ident %s not found" % nameurl.GetName(idurl))
+            lg.out(
+                _DebugLevel, "identitydb.get_ident %s not found" % nameurl.GetName(idurl)
+            )
         return None
     idobj = identity.identity(xmlsrc=idxml)
     idurl_orig = idobj.getIDURL()
@@ -369,7 +372,13 @@ def update(idurl, xml_src):
 
     new_idurl = newid.getIDURL(as_original=True)
     if idurl != new_idurl:
-        lg.warn('original IDURL is not matching, updated: %r -> %r' % (idurl, new_idurl, ))
+        lg.warn(
+            "original IDURL is not matching, updated: %r -> %r"
+            % (
+                idurl,
+                new_idurl,
+            )
+        )
         idurl = new_idurl
 
     filename = os.path.join(settings.IdentityCacheDir(), nameurl.UrlFilename(idurl))
@@ -380,12 +389,20 @@ def update(idurl, xml_src):
         if oldidentity.publickey != newid.publickey:
             if _Debug:
                 lg.args(_DebugLevel, old=oldidentity.publickey, new=newid.publickey)
-            lg.exc(exc_value=Exception("received public key from %s does not match with already cached identity" % idurl))
+            lg.exc(
+                exc_value=Exception(
+                    "received public key from %s does not match with already cached identity"
+                    % idurl
+                )
+            )
             return False
 
         if oldidentity.signature != newid.signature:
             if _Debug:
-                lg.out(_DebugLevel, 'identitydb.update have new data for %r' % nameurl.GetName(idurl))
+                lg.out(
+                    _DebugLevel,
+                    "identitydb.update have new data for %r" % nameurl.GetName(idurl),
+                )
         else:
             idset(idurl, newid)
             return True
@@ -456,7 +473,8 @@ def get_last_modified_time(idurl):
     idurl = id_url.to_original(idurl)
     return _IdentityCacheModifiedTime.get(idurl, None)
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def print_id(idurl):
@@ -493,7 +511,8 @@ def print_cache():
             lg.out(_DebugLevel, "---------------------")
         print_id(key)
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def AddCacheUpdatedCallback(cb):

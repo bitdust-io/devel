@@ -4,7 +4,6 @@ A Simple wrapper around BIP39 Mnemonic module to have a simple consistent interf
 
 from mnemonic import Mnemonic
 
-
 __version__ = "0.0.1"
 
 

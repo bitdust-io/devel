@@ -50,30 +50,32 @@ were we left off if a crash happened while we were waiting to send a block
 (most of the time is waiting so good chance).
 """
 
-#------------------------------------------------------------------------------ 
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
-import six
+
 from io import open
 
-#------------------------------------------------------------------------------
+import six
+
+# ------------------------------------------------------------------------------
 
 _Debug = False
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 import os
-import sys
 import platform
+import sys
 import tarfile
 import traceback
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
-AppData = ''
+AppData = ""
 _ExcludeFunction = None
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 if sys.version_info[0] == 3:
     text_type = str
@@ -82,7 +84,8 @@ else:
     text_type = unicode  # @UndefinedVariable
     binary_type = str
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
 
 def is_text(s):
     """
@@ -109,7 +112,7 @@ def is_string(s):
     return is_text(s) or is_bin(s)
 
 
-def to_text(s, encoding='utf-8', errors='strict'):
+def to_text(s, encoding="utf-8", errors="strict"):
     """
     If ``s`` is binary type - decode it to unicode - "text" type in Python3 terms.
     If ``s`` is not binary and not text calls `str(s)` to build text representation.
@@ -123,22 +126,24 @@ def to_text(s, encoding='utf-8', errors='strict'):
     return s.decode(encoding=encoding, errors=errors)
 
 
-def sharedPath(filename, subdir='logs'):
+def sharedPath(filename, subdir="logs"):
     global AppData
-    if AppData == '':
+    if AppData == "":
         curdir = os.getcwd()  # os.path.dirname(os.path.abspath(sys.executable))
-        if os.path.isfile(os.path.join(curdir, 'appdata')):
+        if os.path.isfile(os.path.join(curdir, "appdata")):
             try:
-                appdata = os.path.abspath(open(os.path.join(curdir, 'appdata'), 'rb').read().strip())
+                appdata = os.path.abspath(
+                    open(os.path.join(curdir, "appdata"), "rb").read().strip()
+                )
             except:
-                appdata = os.path.join(os.path.expanduser('~'), '.bitdust')
+                appdata = os.path.join(os.path.expanduser("~"), ".bitdust")
             if not os.path.isdir(appdata):
-                appdata = os.path.join(os.path.expanduser('~'), '.bitdust')
+                appdata = os.path.join(os.path.expanduser("~"), ".bitdust")
         else:
-            if sys.executable == 'android_python' or ('ANDROID_ARGUMENT' in os.environ):
-                appdata = '/storage/emulated/0/Android/data/org.bitdust_io.bitdust1/files/Documents/.bitdust'
+            if sys.executable == "android_python" or ("ANDROID_ARGUMENT" in os.environ):
+                appdata = "/storage/emulated/0/Android/data/org.bitdust_io.bitdust1/files/Documents/.bitdust"
             else:
-                appdata = os.path.join(os.path.expanduser('~'), '.bitdust')
+                appdata = os.path.join(os.path.expanduser("~"), ".bitdust")
         AppData = appdata
     return os.path.join(AppData, subdir, filename)
 
@@ -148,10 +153,10 @@ def logfilepath():
     A method to detect where is placed the log file for ``tar_file`` child
     process.
     """
-    return sharedPath('tar_file.log')
+    return sharedPath("tar_file.log")
 
 
-def printlog(txt, mode='a'):
+def printlog(txt, mode="a"):
     """
     Write a line to the log file.
     """
@@ -174,9 +179,11 @@ def printexc():
     Write exception info to the log file.
     """
     if _Debug:
-        printlog('\n' + traceback.format_exc() + '\n')
+        printlog("\n" + traceback.format_exc() + "\n")
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def LinuxExcludeFunction(source_path, tar_path):
     """
@@ -214,19 +221,21 @@ def WindowsExcludeFunction(source_path, tar_path):
     # TODO: - must do more smart checking
     # if source_path.lower().count(".bitdust"):
     #     return True
-    if (source_path.lower().find("local settings\\temp") != -1):
+    if source_path.lower().find("local settings\\temp") != -1:
         return True
     if not os.access(source_path, os.R_OK):
         return True
     return False  # don't exclude the file
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 _ExcludeFunction = LinuxExcludeFunction
-if platform.uname()[0] == 'Windows':
+if platform.uname()[0] == "Windows":
     _ExcludeFunction = WindowsExcludeFunction
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
 
 def writetar_filter(tarinfo, sourcepath):
     global _ExcludeFunction
@@ -234,20 +243,31 @@ def writetar_filter(tarinfo, sourcepath):
         return None
     return tarinfo
 
-#------------------------------------------------------------------------------
 
-def writetar(sourcepath, arcname=None, subdirs=True, compression='none', encoding=None, fileobj=None):
+# ------------------------------------------------------------------------------
+
+
+def writetar(
+    sourcepath,
+    arcname=None,
+    subdirs=True,
+    compression="none",
+    encoding=None,
+    fileobj=None,
+):
     """
     Create a tar archive from given ``sourcepath`` location.
     """
     global _ExcludeFunction
     if _Debug:
-        printlog('WRITE: %s arcname=%s, subdirs=%s, compression=%s, encoding=%s\n' % (
-            sourcepath, arcname, subdirs, compression, encoding))
+        printlog(
+            "WRITE: %s arcname=%s, subdirs=%s, compression=%s, encoding=%s\n"
+            % (sourcepath, arcname, subdirs, compression, encoding)
+        )
     if not fileobj:
         fileobj = sys.stdout
-    mode = 'w|'
-    if compression != 'none':
+    mode = "w|"
+    if compression != "none":
         mode += compression
     _, filename = os.path.split(sourcepath)
     if arcname is None:
@@ -255,7 +275,7 @@ def writetar(sourcepath, arcname=None, subdirs=True, compression='none', encodin
     else:
         arcname = to_text(arcname)
     # DEBUG: tar = tarfile.open('', mode, fileobj=open('out.tar', 'wb'), encoding=encoding)
-    tar = tarfile.open('', mode, fileobj=fileobj, encoding=encoding, bufsize=1024*1024)
+    tar = tarfile.open("", mode, fileobj=fileobj, encoding=encoding, bufsize=1024 * 1024)
     tar.add(
         name=sourcepath,
         arcname=arcname,
@@ -276,7 +296,9 @@ def writetar(sourcepath, arcname=None, subdirs=True, compression='none', encodin
     tar.close()
     return True
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def readtar(archivepath, outputdir, encoding=None):
     """
@@ -284,15 +306,15 @@ def readtar(archivepath, outputdir, encoding=None):
     folder.
     """
     if _Debug:
-        printlog('READ: %s to %s, encoding=%s\n' % (
-            archivepath, outputdir, encoding))
-    mode = 'r:*'
+        printlog("READ: %s to %s, encoding=%s\n" % (archivepath, outputdir, encoding))
+    mode = "r:*"
     tar = tarfile.open(archivepath, mode, encoding=encoding)
     tar.extractall(outputdir)
     tar.close()
     return True
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def main():
@@ -303,12 +325,13 @@ def main():
     """
     ostype = platform.uname()[0]
 
-    if ostype == 'Windows':
+    if ostype == "Windows":
         if six.PY3:
             sys.stdout = sys.stdout.buffer
         else:
             try:
                 import msvcrt
+
                 msvcrt.setmode(1, os.O_BINARY)  # @UndefinedVariable
             except:
                 pass
@@ -319,18 +342,20 @@ def main():
 
     if len(sys.argv) < 4:
         if _Debug:
-            printlog('tar_file.py extract <archive path> <output dir>\n')
-            printlog('tar_file.py <subdirs / nosubdirs> <"none" / "bz2" / "gz"> <folder/file path> [archive filename]\n')
+            printlog("tar_file.py extract <archive path> <output dir>\n")
+            printlog(
+                'tar_file.py <subdirs / nosubdirs> <"none" / "bz2" / "gz"> <folder/file path> [archive filename]\n'
+            )
         return 2
 
     try:
         cmd = sys.argv[1].strip().lower()
 
-        if cmd == 'extract':
+        if cmd == "extract":
             readtar(
                 archivepath=sys.argv[2],
                 outputdir=sys.argv[3],
-                encoding='utf-8',
+                encoding="utf-8",
             )
 
         else:
@@ -340,9 +365,9 @@ def main():
             writetar(
                 sourcepath=sys.argv[3],
                 arcname=arcname,
-                subdirs=True if cmd == 'subdirs' else False,
+                subdirs=True if cmd == "subdirs" else False,
                 compression=sys.argv[2],
-                encoding='utf-8',
+                encoding="utf-8",
             )
     except:
         printexc()
@@ -350,7 +375,8 @@ def main():
 
     return 0
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 if __name__ == "__main__":

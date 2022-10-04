@@ -14,5 +14,3 @@ tail -13 build.log
 echo "DONE!"
 
 exit 0
-
-

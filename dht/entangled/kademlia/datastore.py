@@ -2,8 +2,8 @@
 # datastore.py
 #
 # Copyright (C) 2007-2008 Francois Aucamp, Meraka Institute, CSIR
-# See AUTHORS for all authors and contact information. 
-# 
+# See AUTHORS for all authors and contact information.
+#
 # License: GNU Lesser General Public License, version 3 or later; see COPYING
 #          included in this archive for details.
 #
@@ -21,13 +21,12 @@ try:
 except ImportError:
     from collections import MutableMapping as DictMixin
 
-import sqlite3
-import os
 import json
+import os
+import sqlite3
 
 from . import constants  # @UnresolvedImport
 from . import encoding  # @UnresolvedImport
-
 
 try:
     buffer = buffer  # @UndefinedVariable
@@ -79,10 +78,17 @@ class DataStore(DictMixin):
         """
 
     def getItem(self, key):
-        """
-        """
+        """ """
 
-    def setItem(self, key, value, lastPublished, originallyPublished, originalPublisherID, **kwargs):
+    def setItem(
+        self,
+        key,
+        value,
+        lastPublished,
+        originallyPublished,
+        originalPublisherID,
+        **kwargs
+    ):
         """
         Set the value of the (key, value) pair identified by C{key}; this
         should set the "last published" value for the (key, value) pair to the
@@ -107,18 +113,14 @@ class DataStore(DictMixin):
         """
 
     def __iter__(self):
-        """
-        """
+        """ """
         return self
 
     def __next__(self):
-        """
-        """
+        """ """
 
     def __len__(self):
-        """
-        """
-
+        """ """
 
 
 class DictDataStore(DataStore):
@@ -163,7 +165,15 @@ class DictDataStore(DataStore):
         """
         return self._dict[key][2]
 
-    def setItem(self, key, value, lastPublished, originallyPublished, originalPublisherID, **kwargs):
+    def setItem(
+        self,
+        key,
+        value,
+        lastPublished,
+        originallyPublished,
+        originalPublisherID,
+        **kwargs
+    ):
         """
         Set the value of the (key, value) pair identified by C{key}; this
         should set the "last published" value for the (key, value) pair to the
@@ -198,13 +208,12 @@ class DictDataStore(DataStore):
         return result
 
 
-
 class SQLiteVersionedJsonDataStore(DataStore):
     """
     SQLite database-based datastore.
     """
 
-    def __init__(self, dbFile=':memory:'):
+    def __init__(self, dbFile=":memory:"):
         """
         @param dbFile: The name of the file containing the SQLite database; if
                        unspecified, an in-memory database is used.
@@ -213,21 +222,30 @@ class SQLiteVersionedJsonDataStore(DataStore):
         self.dbFile = dbFile
         createDB = not os.path.exists(dbFile)
         if _Debug:
-            print('[DHT DB] dbFile=%r   createDB=%r' % (dbFile, createDB, ))
+            print(
+                "[DHT DB] dbFile=%r   createDB=%r"
+                % (
+                    dbFile,
+                    createDB,
+                )
+            )
         self._db = sqlite3.connect(dbFile)
         self._db.isolation_level = None
         self._db.text_factory = encoding.to_text
         if createDB:
             self.create_table()
             if _Debug:
-                print('[DHT DB]  Created empty table for DHT records')
+                print("[DHT DB]  Created empty table for DHT records")
         self._cursor = self._db.cursor()
 
     def _dbQuery(self, key, columnName):
         try:
-            self._cursor.execute("SELECT %s FROM data WHERE key=:reqKey" % columnName, {
-                'reqKey': key,
-            })
+            self._cursor.execute(
+                "SELECT %s FROM data WHERE key=:reqKey" % columnName,
+                {
+                    "reqKey": key,
+                },
+            )
             row = self._cursor.fetchone()
             value = row[0]
         except:
@@ -236,17 +254,22 @@ class SQLiteVersionedJsonDataStore(DataStore):
             return value
 
     def __getitem__(self, key):
-        v = self._dbQuery(key, 'value')
+        v = self._dbQuery(key, "value")
         v = json.loads(v)
-        return v['d']
+        return v["d"]
 
     def __delitem__(self, key):
-        self._cursor.execute("DELETE FROM data WHERE key=:reqKey", {
-            'reqKey': key,
-        })
+        self._cursor.execute(
+            "DELETE FROM data WHERE key=:reqKey",
+            {
+                "reqKey": key,
+            },
+        )
 
     def create_table(self):
-        self._db.execute('CREATE TABLE data(key, value, lastPublished, originallyPublished, originalPublisherID, expireSeconds, revision)')
+        self._db.execute(
+            "CREATE TABLE data(key, value, lastPublished, originallyPublished, originalPublisherID, expireSeconds, revision)"
+        )
 
     def keys(self):
         """
@@ -265,7 +288,7 @@ class SQLiteVersionedJsonDataStore(DataStore):
         Get the time the C{(key, value)} pair identified by C{key} was last
         published.
         """
-        return int(self._dbQuery(key, 'lastPublished'))
+        return int(self._dbQuery(key, "lastPublished"))
 
     def originalPublisherID(self, key):
         """
@@ -277,78 +300,110 @@ class SQLiteVersionedJsonDataStore(DataStore):
         @return: Return the node ID of the original publisher of the
         C{(key, value)} pair identified by C{key}.
         """
-        return self._dbQuery(key, 'originalPublisherID')
+        return self._dbQuery(key, "originalPublisherID")
 
     def originalPublishTime(self, key):
         """
         Get the time the C{(key, value)} pair identified by C{key} was
         originally published.
         """
-        return int(self._dbQuery(key, 'originallyPublished'))
+        return int(self._dbQuery(key, "originallyPublished"))
 
     def expireSeconds(self, key):
-        """
-        """
-        return int(self._dbQuery(key, 'expireSeconds'))
+        """ """
+        return int(self._dbQuery(key, "expireSeconds"))
 
     def revision(self, key):
-        """
-        """
+        """ """
         try:
-            return int(self._dbQuery(key, 'revision'))
+            return int(self._dbQuery(key, "revision"))
         except KeyError:
             return 0
 
-    def setItem(self,
-                key,
-                value,
-                lastPublished,
-                originallyPublished,
-                originalPublisherID,
-                expireSeconds=constants.dataExpireSecondsDefaut,
-                **kwargs):
+    def setItem(
+        self,
+        key,
+        value,
+        lastPublished,
+        originallyPublished,
+        originalPublisherID,
+        expireSeconds=constants.dataExpireSecondsDefaut,
+        **kwargs
+    ):
         key_hex = encoding.to_text(key)
-        new_revision = kwargs.get('revision', None)
+        new_revision = kwargs.get("revision", None)
         if new_revision is None:
             new_revision = self.revision(key) + 1
-        self._cursor.execute("select key from data where key=:reqKey", {'reqKey': key_hex})
+        self._cursor.execute(
+            "select key from data where key=:reqKey", {"reqKey": key_hex}
+        )
         opID = originalPublisherID or None
         if self._cursor.fetchone() is None:
-            self._cursor.execute('INSERT INTO data(key, value, lastPublished, originallyPublished, originalPublisherID, expireSeconds, revision) VALUES (?, ?, ?, ?, ?, ?, ?)', (
-                key_hex,
-                json.dumps({'k': key_hex, 'd': value, 'v': PROTOCOL_VERSION, }, ),
-                lastPublished,
-                originallyPublished,
-                opID,
-                expireSeconds,
-                new_revision,
-            ))
+            self._cursor.execute(
+                "INSERT INTO data(key, value, lastPublished, originallyPublished, originalPublisherID, expireSeconds, revision) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (
+                    key_hex,
+                    json.dumps(
+                        {
+                            "k": key_hex,
+                            "d": value,
+                            "v": PROTOCOL_VERSION,
+                        },
+                    ),
+                    lastPublished,
+                    originallyPublished,
+                    opID,
+                    expireSeconds,
+                    new_revision,
+                ),
+            )
             if _Debug:
-                print('[DHT DB] %r setItem  stored new value for key [%s] with revision %d' % (self.dbFile, key, new_revision))
+                print(
+                    "[DHT DB] %r setItem  stored new value for key [%s] with revision %d"
+                    % (self.dbFile, key, new_revision)
+                )
         else:
-            self._cursor.execute('UPDATE data SET value=?, lastPublished=?, originallyPublished=?, originalPublisherID=?, expireSeconds=?, revision=? WHERE key=?', (
-                json.dumps({'k': key_hex, 'd': value, 'v': PROTOCOL_VERSION, }, ),
-                lastPublished,
-                originallyPublished,
-                opID,
-                expireSeconds,
-                new_revision,
-                key_hex,
-            ))
+            self._cursor.execute(
+                "UPDATE data SET value=?, lastPublished=?, originallyPublished=?, originalPublisherID=?, expireSeconds=?, revision=? WHERE key=?",
+                (
+                    json.dumps(
+                        {
+                            "k": key_hex,
+                            "d": value,
+                            "v": PROTOCOL_VERSION,
+                        },
+                    ),
+                    lastPublished,
+                    originallyPublished,
+                    opID,
+                    expireSeconds,
+                    new_revision,
+                    key_hex,
+                ),
+            )
             if _Debug:
-                print('[DHT DB] %r setItem  updated existing value for key [%s] with revision %d' % (self.dbFile, key, new_revision))
+                print(
+                    "[DHT DB] %r setItem  updated existing value for key [%s] with revision %d"
+                    % (self.dbFile, key, new_revision)
+                )
 
     def getItem(self, key):
         key_hex = key
         key_hex = encoding.to_text(key)
-        self._cursor.execute("SELECT * FROM data WHERE key=:reqKey", {
-            'reqKey': key_hex,
-        })
+        self._cursor.execute(
+            "SELECT * FROM data WHERE key=:reqKey",
+            {
+                "reqKey": key_hex,
+            },
+        )
 
         row = self._cursor.fetchone()
         if not row:
             if _Debug:
-                print('[DHT DB] %r getItem [%s]  return None : did not found key in dataStore' % (self.dbfile, key))
+                print(
+                    "[DHT DB] %r getItem [%s]  return None : did not found key in dataStore"
+                    % (self.dbfile, key)
+                )
             return None
 
         v = row[1]
@@ -356,11 +411,11 @@ class SQLiteVersionedJsonDataStore(DataStore):
             v = encoding.to_text(v)
 
         v = json.loads(v)
-        
+
         # TODO: check / verify v['k'] against key_hex
         # TODO: check / verify v['v'] against PROTOCOL_VERSION
 
-        value = v['d']
+        value = v["d"]
 
         key_orig = row[0]
 
@@ -379,7 +434,10 @@ class SQLiteVersionedJsonDataStore(DataStore):
         )
 
         if _Debug:
-            print('[DHT DB] %r getItem   found one record for key [%s], revision is %d' % (self.dbFile, key, row[6]))
+            print(
+                "[DHT DB] %r getItem   found one record for key [%s], revision is %d"
+                % (self.dbFile, key, row[6])
+            )
         return result
 
     def getAllItems(self):
@@ -393,21 +451,23 @@ class SQLiteVersionedJsonDataStore(DataStore):
                 v = encoding.to_text(v)
 
             v = json.loads(v)
-            
+
             # TODO: check / verify v['k'] against key_hex
             # TODO: check / verify v['v'] against PROTOCOL_VERSION
-    
-            value = v['d']
+
+            value = v["d"]
 
             _k = row[0]
             _opID = row[4] or None
 
-            items.append(dict(
-                value=value,
-                lastPublished=row[2],
-                originallyPublished=row[3],
-                originalPublisherID=_opID,
-                expireSeconds=row[5],
-                revision=row[6],
-            ))
+            items.append(
+                dict(
+                    value=value,
+                    lastPublished=row[2],
+                    originallyPublished=row[3],
+                    originalPublisherID=_opID,
+                    expireSeconds=row[5],
+                    revision=row[6],
+                )
+            )
         return items

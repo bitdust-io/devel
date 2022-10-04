@@ -13,10 +13,12 @@ def test_mempool(myserver, verbose=False):
     client = get_client(verbose=verbose)
     if verbose:
         print("Sending regtest_generate")
-    res = client.command(command="regtest_generate", options=[1])  # Mine a block so we have some funds
+    res = client.command(
+        command="regtest_generate", options=[1]
+    )  # Mine a block so we have some funds
     if verbose:
         print(f"Got res {res}")
-    data = '123456789012345678901234567890'
+    data = "123456789012345678901234567890"
     if verbose:
         print(f"Sending 1.0 to {client.address}, data {data}")
     client.send(recipient=client.address, amount=1.0, data=data)
@@ -35,24 +37,26 @@ def test_mempool(myserver, verbose=False):
 
 def test_mpget_json(myserver, verbose=False):
     client = get_client(verbose=verbose)
-    client.command(command="regtest_generate", options=[1])  # Mine a block so we have some funds
+    client.command(
+        command="regtest_generate", options=[1]
+    )  # Mine a block so we have some funds
     client.send(recipient=client.address, amount=1.0)  # Tries to send 1.0 to self
     data1 = client.command(command="mpget")
     data2 = client.command(command="mpgetjson")
     client.command(command="regtest_generate", options=[1])  # Mine next block
     sleep(1)
     # print("data1", data1[0][5])
-    pubkey = b64decode(data1[0][5]).decode('utf-8').replace("\n", "")
+    pubkey = b64decode(data1[0][5]).decode("utf-8").replace("\n", "")
     # print("pubkey", pubkey)
     # TODO: double check that output with stable release regnet
     # (precise pubkey format from mpgetjson)
     """
     Note: this comment seem tnot to be true anymore with the current stable reference. Double check.
-    mpgetjson seemed to send pubkey without boundaries, while other json answers gave the full string. 
+    mpgetjson seemed to send pubkey without boundaries, while other json answers gave the full string.
     Where is this used? can we harmonize with no risk?
     Did not change the behaviour to ensure compatibility if this is important.
     """
-    pubkey2 = b64decode(data2[0]['public_key']).decode('utf-8').replace("\n", "")
+    pubkey2 = b64decode(data2[0]["public_key"]).decode("utf-8").replace("\n", "")
     if verbose:
         # print("data2", data2)
         print("pubkey", pubkey)
@@ -60,12 +64,12 @@ def test_mpget_json(myserver, verbose=False):
         print("pubkey2", pubkey2)
     # i = pubkey.find(data2[0]['public_key'])
 
-    assert data1[0][0] == data2[0]['timestamp']
-    assert type(data2[0]['timestamp']) == str
-    assert data1[0][1] == data2[0]['address']
-    assert data1[0][2] == data2[0]['recipient']
-    assert data1[0][3] == data2[0]['amount']
-    assert data1[0][4] == data2[0]['signature']
+    assert data1[0][0] == data2[0]["timestamp"]
+    assert type(data2[0]["timestamp"]) == str
+    assert data1[0][1] == data2[0]["address"]
+    assert data1[0][2] == data2[0]["recipient"]
+    assert data1[0][3] == data2[0]["amount"]
+    assert data1[0][4] == data2[0]["signature"]
     # assert i > 0
     assert pubkey == pubkey2
     if verbose:

@@ -66,53 +66,47 @@ EVENTS:
     * :red:`restore-start`
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
+
 import sys
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 4
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 try:
-    from twisted.internet import reactor  # @UnresolvedImport
+    pass
 except:
-    sys.exit('Error initializing twisted.internet.reactor in installer.py')
+    sys.exit("Error initializing twisted.internet.reactor in installer.py")
 
-#------------------------------------------------------------------------------
-
-from logs import lg
+# ------------------------------------------------------------------------------
 
 from automats import automat
-
+from lib import misc, nameurl
+from logs import lg
+from main import initializer, settings
 from system import bpio
+from userid import id_registrator, id_restorer
 
-from main import settings
-
-from lib import misc
-from lib import nameurl
-
-from userid import id_registrator
-from userid import id_restorer
-
-from main import initializer
-
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Installer = None
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 def IsExist():
     global _Installer
     return _Installer is not None
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def A(event=None, *args, **kwargs):
     """
@@ -121,8 +115,8 @@ def A(event=None, *args, **kwargs):
     global _Installer
     if _Installer is None:
         _Installer = Installer(
-            name='installer',
-            state='AT_STARTUP',
+            name="installer",
+            state="AT_STARTUP",
             debug_level=_DebugLevel,
             log_events=_Debug,
             log_transitions=_DebugLevel,
@@ -131,7 +125,9 @@ def A(event=None, *args, **kwargs):
         _Installer.automat(event, *args, **kwargs)
     return _Installer
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 class Installer(automat.Automat):
     """
@@ -142,15 +138,19 @@ class Installer(automat.Automat):
 
     output = {}
     RECOVER_RESULTS = {
-        'remote_identity_not_valid': ('remote Identity is not valid', 'red'),
-        'invalid_identity_source': ('incorrect source of the Identity file', 'red'),
-        'invalid_identity_url': ('incorrect Identity file location', 'red'),
-        'remote_identity_bad_format': ('incorrect format of the Identity file', 'red'),
-        'incorrect_key': ('Private Key is not valid', 'red'),
-        'idurl_not_exist': ('Identity URL address not exist or not reachable at this moment', 'blue'),
-        'signing_error': ('unable to sign the local Identity file', 'red'),
-        'signature_not_match': ('remote Identity and Private Key did not match', 'red'),
-        'success': ('account restored!', 'green'), }
+        "remote_identity_not_valid": ("remote Identity is not valid", "red"),
+        "invalid_identity_source": ("incorrect source of the Identity file", "red"),
+        "invalid_identity_url": ("incorrect Identity file location", "red"),
+        "remote_identity_bad_format": ("incorrect format of the Identity file", "red"),
+        "incorrect_key": ("Private Key is not valid", "red"),
+        "idurl_not_exist": (
+            "Identity URL address not exist or not reachable at this moment",
+            "blue",
+        ),
+        "signing_error": ("unable to sign the local Identity file", "red"),
+        "signature_not_match": ("remote Identity and Private Key did not match", "red"),
+        "success": ("account restored!", "green"),
+    }
 
     def getOutput(self, state=None):
         if state is None:
@@ -162,135 +162,147 @@ class Installer(automat.Automat):
         self.flagCmdLine = False
 
     def state_changed(self, oldstate, newstate, event, *args, **kwargs):
-        initializer.A('installer.state', newstate)
+        initializer.A("installer.state", newstate)
 
     def A(self, event, *args, **kwargs):
-        #---AT_STARTUP---
-        if self.state == 'AT_STARTUP':
-            if event == 'init':
-                self.state = 'WHAT_TO_DO?'
-                self.flagCmdLine=False
-            elif event == 'register-cmd-line':
-                self.state = 'REGISTER'
-                self.flagCmdLine=True
+        # ---AT_STARTUP---
+        if self.state == "AT_STARTUP":
+            if event == "init":
+                self.state = "WHAT_TO_DO?"
+                self.flagCmdLine = False
+            elif event == "register-cmd-line":
+                self.state = "REGISTER"
+                self.flagCmdLine = True
                 self.doInit(*args, **kwargs)
-                id_registrator.A('start', *args, **kwargs)
-            elif event == 'recover-cmd-line':
-                self.state = 'RECOVER'
-                self.flagCmdLine=True
+                id_registrator.A("start", *args, **kwargs)
+            elif event == "recover-cmd-line":
+                self.state = "RECOVER"
+                self.flagCmdLine = True
                 self.doInit(*args, **kwargs)
-                id_restorer.A('start', *args, **kwargs)
-        #---WHAT_TO_DO?---
-        elif self.state == 'WHAT_TO_DO?':
-            if event == 'register-selected':
-                self.state = 'INPUT_NAME'
+                id_restorer.A("start", *args, **kwargs)
+        # ---WHAT_TO_DO?---
+        elif self.state == "WHAT_TO_DO?":
+            if event == "register-selected":
+                self.state = "INPUT_NAME"
                 self.doUpdate(*args, **kwargs)
-            elif event == 'recover-selected':
-                self.state = 'LOAD_KEY'
+            elif event == "recover-selected":
+                self.state = "LOAD_KEY"
                 self.doUpdate(*args, **kwargs)
-        #---INPUT_NAME---
-        elif self.state == 'INPUT_NAME':
-            if event == 'back':
-                self.state = 'WHAT_TO_DO?'
+        # ---INPUT_NAME---
+        elif self.state == "INPUT_NAME":
+            if event == "back":
+                self.state = "WHAT_TO_DO?"
                 self.doClearOutput(*args, **kwargs)
                 self.doUpdate(*args, **kwargs)
-            elif event == 'register-start' and self.isNameValid(*args, **kwargs):
-                self.state = 'REGISTER'
+            elif event == "register-start" and self.isNameValid(*args, **kwargs):
+                self.state = "REGISTER"
                 self.doClearOutput(*args, **kwargs)
                 self.doSaveName(*args, **kwargs)
-                id_registrator.A('start', *args, **kwargs)
+                id_registrator.A("start", *args, **kwargs)
                 self.doUpdate(*args, **kwargs)
-            elif event == 'register-start' and not self.isNameValid(*args, **kwargs):
+            elif event == "register-start" and not self.isNameValid(*args, **kwargs):
                 self.doClearOutput(*args, **kwargs)
                 self.doPrintIncorrectName(*args, **kwargs)
                 self.doUpdate(*args, **kwargs)
-            elif event == 'print':
+            elif event == "print":
                 self.doPrint(*args, **kwargs)
                 self.doUpdate(*args, **kwargs)
-        #---LOAD_KEY---
-        elif self.state == 'LOAD_KEY':
-            if event == 'back':
-                self.state = 'WHAT_TO_DO?'
+        # ---LOAD_KEY---
+        elif self.state == "LOAD_KEY":
+            if event == "back":
+                self.state = "WHAT_TO_DO?"
                 self.doClearOutput(*args, **kwargs)
                 self.doUpdate(*args, **kwargs)
-            elif event == 'load-from-file':
+            elif event == "load-from-file":
                 self.doReadKey(*args, **kwargs)
                 self.doUpdate(*args, **kwargs)
-            elif event == 'paste-from-clipboard':
+            elif event == "paste-from-clipboard":
                 self.doPasteKey(*args, **kwargs)
                 self.doUpdate(*args, **kwargs)
-            elif event == 'restore-start':
-                self.state = 'RECOVER'
+            elif event == "restore-start":
+                self.state = "RECOVER"
                 self.doClearOutput(*args, **kwargs)
-                id_restorer.A('start', *args, **kwargs)
+                id_restorer.A("start", *args, **kwargs)
                 self.doUpdate(*args, **kwargs)
-            elif event == 'print':
+            elif event == "print":
                 self.doPrint(*args, **kwargs)
                 self.doUpdate(*args, **kwargs)
-        #---REGISTER---
-        elif self.state == 'REGISTER':
-            if event == 'print':
+        # ---REGISTER---
+        elif self.state == "REGISTER":
+            if event == "print":
                 self.doPrint(*args, **kwargs)
                 self.doUpdate(*args, **kwargs)
-            elif ( event == 'id_registrator.state' and args[0] == 'FAILED' ) and not self.flagCmdLine:
-                self.state = 'INPUT_NAME'
+            elif (
+                event == "id_registrator.state" and args[0] == "FAILED"
+            ) and not self.flagCmdLine:
+                self.state = "INPUT_NAME"
                 self.doShowOutput(*args, **kwargs)
                 self.doUpdate(*args, **kwargs)
-            elif ( event == 'id_registrator.state' and args[0] == 'DONE' ) and not self.flagCmdLine:
-                self.state = 'AUTHORIZED'
+            elif (
+                event == "id_registrator.state" and args[0] == "DONE"
+            ) and not self.flagCmdLine:
+                self.state = "AUTHORIZED"
                 self.doPrepareSettings(*args, **kwargs)
                 self.doUpdate(*args, **kwargs)
-            elif ( event == 'id_registrator.state' and args[0] in [ 'DONE' , 'FAILED' ] ) and self.flagCmdLine:
-                self.state = 'DONE'
+            elif (
+                event == "id_registrator.state" and args[0] in ["DONE", "FAILED"]
+            ) and self.flagCmdLine:
+                self.state = "DONE"
                 self.doUpdate(*args, **kwargs)
-        #---AUTHORIZED---
-        elif self.state == 'AUTHORIZED':
-            if event == 'next':
-                self.state = 'WIZARD'
+        # ---AUTHORIZED---
+        elif self.state == "AUTHORIZED":
+            if event == "next":
+                self.state = "WIZARD"
                 self.doUpdate(*args, **kwargs)
-            elif event == 'print':
+            elif event == "print":
                 self.doPrint(*args, **kwargs)
                 self.doUpdate(*args, **kwargs)
-        #---RECOVER---
-        elif self.state == 'RECOVER':
-            if event == 'print':
+        # ---RECOVER---
+        elif self.state == "RECOVER":
+            if event == "print":
                 self.doPrint(*args, **kwargs)
                 self.doUpdate(*args, **kwargs)
-            elif ( event == 'id_restorer.state' and args[0] in [ 'RESTORED!' , 'FAILED' ] ) and self.flagCmdLine:
-                self.state = 'DONE'
+            elif (
+                event == "id_restorer.state" and args[0] in ["RESTORED!", "FAILED"]
+            ) and self.flagCmdLine:
+                self.state = "DONE"
                 self.doUpdate(*args, **kwargs)
-            elif ( event == 'id_restorer.state' and args[0] == 'RESTORED!' ) and not self.flagCmdLine:
-                self.state = 'RESTORED'
+            elif (
+                event == "id_restorer.state" and args[0] == "RESTORED!"
+            ) and not self.flagCmdLine:
+                self.state = "RESTORED"
                 self.doRestoreSettings(*args, **kwargs)
                 self.doUpdate(*args, **kwargs)
-            elif ( event == 'id_restorer.state' and args[0] == 'FAILED' ) and not self.flagCmdLine:
-                self.state = 'LOAD_KEY'
+            elif (
+                event == "id_restorer.state" and args[0] == "FAILED"
+            ) and not self.flagCmdLine:
+                self.state = "LOAD_KEY"
                 self.doUpdate(*args, **kwargs)
-        #---DONE---
-        elif self.state == 'DONE':
-            if event == 'print':
+        # ---DONE---
+        elif self.state == "DONE":
+            if event == "print":
                 self.doPrint(*args, **kwargs)
                 self.doUpdate(*args, **kwargs)
-        #---WIZARD---
-        elif self.state == 'WIZARD':
-            if event == 'print':
+        # ---WIZARD---
+        elif self.state == "WIZARD":
+            if event == "print":
                 self.doPrint(*args, **kwargs)
                 self.doUpdate(*args, **kwargs)
-            elif ( event == 'install_wizard.state' and args[0] == 'DONE' ):
-                self.state = 'DONE'
+            elif event == "install_wizard.state" and args[0] == "DONE":
+                self.state = "DONE"
                 self.doUpdate(*args, **kwargs)
-        #---RESTORED---
-        elif self.state == 'RESTORED':
-            if event == 'print':
+        # ---RESTORED---
+        elif self.state == "RESTORED":
+            if event == "print":
                 self.doPrint(*args, **kwargs)
                 self.doUpdate(*args, **kwargs)
-            elif event == 'next':
-                self.state = 'WIZARD'
+            elif event == "next":
+                self.state = "WIZARD"
                 self.doUpdate(*args, **kwargs)
         return None
 
     def isNameValid(self, *args, **kwargs):
-        if not misc.ValidUserName(args[0]['username']):
+        if not misc.ValidUserName(args[0]["username"]):
             return False
         return True
 
@@ -307,95 +319,103 @@ class Installer(automat.Automat):
     def doClearOutput(self, *args, **kwargs):
         # lg.out(4, 'installer.doClearOutput')
         for state in self.output.keys():
-            self.output[state] = {'data': [('', 'black')]}
+            self.output[state] = {"data": [("", "black")]}
 
     def doPrint(self, *args, **kwargs):
-        lg.out(8, 'installer.doPrint %s %s' % (self.state, str(*args, **kwargs)))
+        lg.out(8, "installer.doPrint %s %s" % (self.state, str(*args, **kwargs)))
         if self.state not in self.output:
-            self.output[self.state] = {'data': [('', 'black')]}
+            self.output[self.state] = {"data": [("", "black")]}
         if not args or args[0] is None:
-            self.output[self.state]['data'] = [('', 'black')]
+            self.output[self.state]["data"] = [("", "black")]
         else:
-            self.output[self.state]['data'].append(args[0])
+            self.output[self.state]["data"].append(args[0])
         if self.flagCmdLine:
-            ch = '+'
-            if args and args[0][1] == 'red':
-                ch = '!'
-            lg.out(0, '  %s %s' % (ch, args[0][0] if args else ''))
+            ch = "+"
+            if args and args[0][1] == "red":
+                ch = "!"
+            lg.out(0, "  %s %s" % (ch, args[0][0] if args else ""))
 
     def doShowOutput(self, *args, **kwargs):
         """
         Action method.
         """
-        if 'INPUT_NAME' not in self.output:
-            self.output['INPUT_NAME'] = {'data': [('', 'black')]}
-        self.output['INPUT_NAME']['data'] = self.output['REGISTER']['data']
+        if "INPUT_NAME" not in self.output:
+            self.output["INPUT_NAME"] = {"data": [("", "black")]}
+        self.output["INPUT_NAME"]["data"] = self.output["REGISTER"]["data"]
 
     def doPrintIncorrectName(self, *args, **kwargs):
-        text, color = ('incorrect user name', 'red')
+        text, color = ("incorrect user name", "red")
         if self.state not in self.output:
-            self.output[self.state] = {'data': [('', 'black')]}
-        self.output[self.state]['data'].append((text, color))
+            self.output[self.state] = {"data": [("", "black")]}
+        self.output[self.state]["data"].append((text, color))
         # lg.out(0, '  [%s]' % text)
 
     def doSaveName(self, *args, **kwargs):
-        settings.setPrivateKeySize(args[0]['pksize'])
-        bpio.WriteTextFile(settings.UserNameFilename(), args[0]['username'])
+        settings.setPrivateKeySize(args[0]["pksize"])
+        bpio.WriteTextFile(settings.UserNameFilename(), args[0]["username"])
 
     def doReadKey(self, *args, **kwargs):
         # keyfn = arg['keyfilename']
-        src = args[0]['keysrc']
-        lg.out(2, 'installer.doReadKey length=%s' % len(src))
+        src = args[0]["keysrc"]
+        lg.out(2, "installer.doReadKey length=%s" % len(src))
         # src = bpio.ReadBinaryFile(keyfn)
         if len(src) > 1024 * 10:
-            self.doPrint(('file is too big for private key', 'red'))
+            self.doPrint(("file is too big for private key", "red"))
             return
         try:
             lines = src.splitlines()
             idurl = lines[0].strip()
-            keysrc = '\n'.join(lines[1:])
+            keysrc = "\n".join(lines[1:])
             if idurl != nameurl.FilenameUrl(nameurl.UrlFilename(idurl)):
-                idurl = ''
+                idurl = ""
                 keysrc = src
         except:
             lg.exc()
-            idurl = ''
+            idurl = ""
             keysrc = src
         if self.state not in self.output:
-            self.output[self.state] = {'data': [('', 'black')]}
-        self.output[self.state] = {'data': [('', 'black')]}
-        self.output[self.state]['idurl'] = idurl
-        self.output[self.state]['keysrc'] = keysrc
-        if 'RECOVER' not in self.output:
-            self.output['RECOVER'] = {'data': [('', 'black')]}
+            self.output[self.state] = {"data": [("", "black")]}
+        self.output[self.state] = {"data": [("", "black")]}
+        self.output[self.state]["idurl"] = idurl
+        self.output[self.state]["keysrc"] = keysrc
+        if "RECOVER" not in self.output:
+            self.output["RECOVER"] = {"data": [("", "black")]}
         if keysrc and idurl:
-            self.output['RECOVER']['data'].append(('private key and IDURL was loaded', 'green'))
+            self.output["RECOVER"]["data"].append(
+                ("private key and IDURL was loaded", "green")
+            )
         elif not idurl and keysrc:
-            self.output['RECOVER']['data'].append(('private key was loaded, provide correct IDURL now', 'blue'))
+            self.output["RECOVER"]["data"].append(
+                ("private key was loaded, provide correct IDURL now", "blue")
+            )
 
     def doPasteKey(self, *args, **kwargs):
         src = misc.getClipboardText()
         try:
-            lines = src.split('\n')
+            lines = src.split("\n")
             idurl = lines[0]
-            keysrc = '\n'.join(lines[1:])
+            keysrc = "\n".join(lines[1:])
             if idurl != nameurl.FilenameUrl(nameurl.UrlFilename(idurl)):
-                idurl = ''
+                idurl = ""
                 keysrc = src
         except:
             lg.exc()
-            idurl = ''
+            idurl = ""
             keysrc = src
         if self.state not in self.output:
-            self.output[self.state] = {'data': [('', 'black')]}
-        self.output[self.state]['idurl'] = idurl
-        self.output[self.state]['keysrc'] = keysrc
-        if 'RECOVER' not in self.output:
-            self.output['RECOVER'] = {'data': [('', 'black')]}
+            self.output[self.state] = {"data": [("", "black")]}
+        self.output[self.state]["idurl"] = idurl
+        self.output[self.state]["keysrc"] = keysrc
+        if "RECOVER" not in self.output:
+            self.output["RECOVER"] = {"data": [("", "black")]}
         if keysrc and idurl:
-            self.output['RECOVER']['data'].append(('private key and IDURL was loaded', 'green'))
+            self.output["RECOVER"]["data"].append(
+                ("private key and IDURL was loaded", "green")
+            )
         elif not idurl and keysrc:
-            self.output['RECOVER']['data'].append(('private key was loaded, provide correct IDURL now', 'blue'))
+            self.output["RECOVER"]["data"].append(
+                ("private key was loaded, provide correct IDURL now", "blue")
+            )
 
     def doPrepareSettings(self, *args, **kwargs):
         """
@@ -406,6 +426,7 @@ class Installer(automat.Automat):
         """
         Action method.
         """
+
 
 #    def doIncreaseDebugLevel(self, *args, **kwargs):
 #        """

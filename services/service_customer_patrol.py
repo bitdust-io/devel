@@ -31,6 +31,7 @@ module:: service_customer_patrol
 """
 
 from __future__ import absolute_import
+
 from services.local_service import LocalService
 
 
@@ -40,31 +41,33 @@ def create_service():
 
 class CustomerPatrolService(LocalService):
 
-    service_name = 'service_customer_patrol'
-    config_path = 'services/customer-patrol/enabled'
+    service_name = "service_customer_patrol"
+    config_path = "services/customer-patrol/enabled"
 
     def dependent_on(self):
         return [
-            'service_supplier',
+            "service_supplier",
         ]
 
     def start(self):
-        from supplier import customers_rejector
         from main.config import conf
-        from supplier import local_tester
-        customers_rejector.A('restart')
-        conf().addConfigNotifier('services/supplier/donated-space', self._on_donated_space_modified)
+        from supplier import customers_rejector, local_tester
+
+        customers_rejector.A("restart")
+        conf().addConfigNotifier(
+            "services/supplier/donated-space", self._on_donated_space_modified
+        )
         local_tester.init()
         local_tester.start()
         return True
 
     def stop(self):
-        from supplier import customers_rejector
         from main.config import conf
-        from supplier import local_tester
+        from supplier import customers_rejector, local_tester
+
         local_tester.stop()
         local_tester.shutdown()
-        conf().removeConfigNotifier('services/supplier/donated-space')
+        conf().removeConfigNotifier("services/supplier/donated-space")
         customers_rejector.Destroy()
         return True
 
@@ -73,4 +76,5 @@ class CustomerPatrolService(LocalService):
 
     def _on_donated_space_modified(self, path, value, oldvalue, result):
         from supplier import customers_rejector
-        customers_rejector.A('restart')
+
+        customers_rejector.A("restart")

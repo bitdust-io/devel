@@ -33,7 +33,7 @@ instructions.
 
 
 def usage_text():
-    return '''usage: bitdust [options] [command] [arguments]
+    return """usage: bitdust [options] [command] [arguments]
 
 Commands:
   install
@@ -89,13 +89,14 @@ Commands:
   version
   help
   usage
-'''
+"""
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def help_text():
-    return '''usage: bitdust [options] [command] [arguments]
+    return """usage: bitdust [options] [command] [arguments]
 
 Commands:
   install               create virtual environment and deploy
@@ -250,13 +251,14 @@ Commands:
 
   usage                 print a brief list of available commands
 
-'''
+"""
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def schedule_format():
-    return '''
+    return """
 Schedule compact format:
 [mode].[interval].[time].[details]
 
@@ -282,11 +284,11 @@ some examples:
                           every day in each 4th week in 18:45
   m.5.12:34.JanJul        5th Jan and 5th July at 12:34
   c.300                   every 300 seconds (10 minutes)
-'''
+"""
 
 
 def settings_help():
-    return '''set [option] [value]
+    return """set [option] [value]
 
 examples:
   set donated 4GB                          set donated space
@@ -295,4 +297,4 @@ examples:
   set services/customer/suppliers-number   print number of your suppliers
   set list                                 list all available options
 
-'''
+"""

@@ -36,47 +36,53 @@ SCENARIO 20: customer-3 stopped and started again but still connected to the gro
 """
 
 import os
-import pytest
 
-from testsupport import set_active_scenario  # @UnresolvedImport
 import keywords as kw  # @UnresolvedImport
+import pytest
 import scenarios  # @UnresolvedImport
+from testsupport import set_active_scenario  # @UnresolvedImport
 
 
 def test_brokers():
-    if os.environ.get('RUN_TESTS', '1') == '0':
+    if os.environ.get("RUN_TESTS", "1") == "0":
         return pytest.skip()  # @UndefinedVariable
 
     prepare()
 
-    #--- SCENARIO 3: customer-1 send private message to customer-2
+    # --- SCENARIO 3: customer-1 send private message to customer-2
     scenarios.scenario3()
 
-    #--- SCENARIO 8: customer-3 receive all archived messages from message broker
+    # --- SCENARIO 8: customer-3 receive all archived messages from message broker
     scenarios.scenario8()
 
-    #--- SCENARIO 18: customer-2 sent message to the group but active broker-1 is offline
+    # --- SCENARIO 18: customer-2 sent message to the group but active broker-1 is offline
     scenarios.scenario18()
 
-    #--- SCENARIO 21: broker-1 was stopped and started again but disconnected from previous streams
+    # --- SCENARIO 21: broker-1 was stopped and started again but disconnected from previous streams
     scenarios.scenario21()
 
-    #--- SCENARIO 20: customer-3 stopped and started again but still connected to the group
+    # --- SCENARIO 20: customer-3 stopped and started again but still connected to the group
     scenarios.scenario20()
 
-    #--- SCENARIO 22: customer-1 group chat with customer-2 but broker-2 was restarted quickly
+    # --- SCENARIO 22: customer-1 group chat with customer-2 but broker-2 was restarted quickly
     scenarios.scenario22()
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def prepare():
-    set_active_scenario('PREPARE')
-    kw.wait_suppliers_connected(scenarios.CUSTOMERS_IDS_123, expected_min_suppliers=2, expected_max_suppliers=2)
-    kw.wait_service_state(scenarios.SUPPLIERS_IDS_12, 'service_supplier', 'ON')
-    kw.wait_service_state(scenarios.CUSTOMERS_IDS_123, 'service_customer', 'ON')
-    kw.wait_service_state(scenarios.CUSTOMERS_IDS_123, 'service_shared_data', 'ON')
+    set_active_scenario("PREPARE")
+    kw.wait_suppliers_connected(
+        scenarios.CUSTOMERS_IDS_123, expected_min_suppliers=2, expected_max_suppliers=2
+    )
+    kw.wait_service_state(scenarios.SUPPLIERS_IDS_12, "service_supplier", "ON")
+    kw.wait_service_state(scenarios.CUSTOMERS_IDS_123, "service_customer", "ON")
+    kw.wait_service_state(scenarios.CUSTOMERS_IDS_123, "service_shared_data", "ON")
     # kw.wait_service_state(scenarios.CUSTOMERS_IDS_123, 'service_personal_messages', 'ON')
-    kw.wait_service_state(scenarios.CUSTOMERS_IDS_123, 'service_private_groups', 'ON')
-    kw.wait_service_state(scenarios.CUSTOMERS_IDS_123, 'service_message_history', 'ON')
-    kw.wait_service_state(scenarios.BROKERS_IDS, 'service_message_broker', 'ON')
-    kw.wait_packets_finished(scenarios.CUSTOMERS_IDS_123 + scenarios.BROKERS_IDS + scenarios.SUPPLIERS_IDS_12)
+    kw.wait_service_state(scenarios.CUSTOMERS_IDS_123, "service_private_groups", "ON")
+    kw.wait_service_state(scenarios.CUSTOMERS_IDS_123, "service_message_history", "ON")
+    kw.wait_service_state(scenarios.BROKERS_IDS, "service_message_broker", "ON")
+    kw.wait_packets_finished(
+        scenarios.CUSTOMERS_IDS_123 + scenarios.BROKERS_IDS + scenarios.SUPPLIERS_IDS_12
+    )

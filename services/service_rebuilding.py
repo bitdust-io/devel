@@ -31,6 +31,7 @@ module:: service_rebuilding
 """
 
 from __future__ import absolute_import
+
 from services.local_service import LocalService
 
 
@@ -40,20 +41,22 @@ def create_service():
 
 class RebuildingService(LocalService):
 
-    service_name = 'service_rebuilding'
-    config_path = 'services/rebuilding/enabled'
+    service_name = "service_rebuilding"
+    config_path = "services/rebuilding/enabled"
 
     def dependent_on(self):
         return [
-            'service_data_motion',
+            "service_data_motion",
         ]
 
     def start(self):
         from storage import backup_rebuilder
-        backup_rebuilder.A('init')
+
+        backup_rebuilder.A("init")
         return True
 
     def stop(self):
         from storage import backup_rebuilder
+
         backup_rebuilder.Destroy()
         return True

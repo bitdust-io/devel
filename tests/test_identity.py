@@ -1,17 +1,11 @@
-from unittest import TestCase
 import os
+from crypt import key
+from unittest import TestCase
 
 from logs import lg
-
-from system import bpio
-
 from main import settings
-
-from crypt import key
-
+from system import bpio
 from userid import my_id
-
-
 
 _some_priv_key = """-----BEGIN RSA PRIVATE KEY-----
 MIIEowIBAAKCAQEA/ZsJKyCakqA8vO2r0CTOG0qE2l+4y1dIqh7VC0oaVkXy0Cim
@@ -61,23 +55,22 @@ _some_identity_xml = """<?xml version="1.0" encoding="utf-8"?>
 
 
 class Test(TestCase):
-
     def setUp(self):
         try:
-            bpio.rmdir_recursive('/tmp/.bitdust_tmp')
+            bpio.rmdir_recursive("/tmp/.bitdust_tmp")
         except Exception:
             pass
         lg.set_debug_level(30)
-        settings.init(base_dir='/tmp/.bitdust_tmp')
+        settings.init(base_dir="/tmp/.bitdust_tmp")
         self.my_current_key = None
         try:
-            os.makedirs('/tmp/.bitdust_tmp/metadata/')
+            os.makedirs("/tmp/.bitdust_tmp/metadata/")
         except:
             pass
-        fout = open(settings.KeyFileName(), 'w')
+        fout = open(settings.KeyFileName(), "w")
         fout.write(_some_priv_key)
         fout.close()
-        fout = open(settings.LocalIdentityFilename(), 'w')
+        fout = open(settings.LocalIdentityFilename(), "w")
         fout.write(_some_identity_xml)
         fout.close()
         self.assertTrue(key.LoadMyKey())
@@ -87,19 +80,23 @@ class Test(TestCase):
         key.ForgetMyKey()
         my_id.forgetLocalIdentity()
         settings.shutdown()
-        bpio.rmdir_recursive('/tmp/.bitdust_tmp')
+        bpio.rmdir_recursive("/tmp/.bitdust_tmp")
 
     def test_identity_valid(self):
         from userid import identity
+
         some_identity = identity.identity(xmlsrc=_some_identity_xml)
         self.assertTrue(some_identity.isCorrect())
         self.assertTrue(some_identity.Valid())
-        self.assertEqual(some_identity.getIDURL().to_bin(), b'http://127.0.0.1:8084/alice.xml')
-        self.assertEqual(some_identity.getIDURL().to_id(), 'alice@127.0.0.1_8084')
+        self.assertEqual(
+            some_identity.getIDURL().to_bin(), b"http://127.0.0.1:8084/alice.xml"
+        )
+        self.assertEqual(some_identity.getIDURL().to_id(), "alice@127.0.0.1_8084")
 
     def test_identity_not_valid(self):
         from userid import identity
-        _broken_identity_xml = _some_identity_xml.replace('alice', 'bob')
+
+        _broken_identity_xml = _some_identity_xml.replace("alice", "bob")
         broken_identity = identity.identity(xmlsrc=_broken_identity_xml)
         self.assertTrue(broken_identity.isCorrect())
         self.assertFalse(broken_identity.Valid())

@@ -40,35 +40,32 @@ EVENTS:
     * :red:`shutdown`
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Debug = True
 _DebugLevel = 6
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 import json
 
-#------------------------------------------------------------------------------
-
-from logs import lg
-
 from automats import automat
-
+from logs import lg
+from p2p import commands, p2p_service
 from transport import callback
 
-from p2p import p2p_service
-from p2p import commands
+# ------------------------------------------------------------------------------
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 _BroadcastListener = None
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 def A(event=None, *args, **kwargs):
@@ -80,12 +77,15 @@ def A(event=None, *args, **kwargs):
         return _BroadcastListener
     if _BroadcastListener is None:
         # set automat name and starting state here
-        _BroadcastListener = BroadcastListener('broadcast_listener', 'AT_STARTUP', _DebugLevel, _Debug)
+        _BroadcastListener = BroadcastListener(
+            "broadcast_listener", "AT_STARTUP", _DebugLevel, _Debug
+        )
     if event is not None:
         _BroadcastListener.automat(event, *args, **kwargs)
     return _BroadcastListener
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 class BroadcastListener(automat.Automat):
@@ -107,44 +107,44 @@ class BroadcastListener(automat.Automat):
         The state machine code, generated using `visio2python
         <https://bitdust.io/visio2python/>`_ tool.
         """
-        #--- AT_STARTUP
-        if self.state == 'AT_STARTUP':
-            if event == 'init':
-                self.state = 'OFFLINE'
+        # --- AT_STARTUP
+        if self.state == "AT_STARTUP":
+            if event == "init":
+                self.state = "OFFLINE"
                 self.doInit(*args, **kwargs)
-        #--- BROADCASTER?
-        elif self.state == 'BROADCASTER?':
-            if event == 'shutdown':
-                self.state = 'CLOSED'
+        # --- BROADCASTER?
+        elif self.state == "BROADCASTER?":
+            if event == "shutdown":
+                self.state = "CLOSED"
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'disconnect' or event == 'lookup-failed':
-                self.state = 'OFFLINE'
-            elif event == 'broadcaster-connected':
-                self.state = 'LISTENING'
+            elif event == "disconnect" or event == "lookup-failed":
+                self.state = "OFFLINE"
+            elif event == "broadcaster-connected":
+                self.state = "LISTENING"
                 self.doSetBroadcaster(*args, **kwargs)
-        #--- LISTENING
-        elif self.state == 'LISTENING':
-            if event == 'disconnect' or event == 'message-failed':
-                self.state = 'OFFLINE'
+        # --- LISTENING
+        elif self.state == "LISTENING":
+            if event == "disconnect" or event == "message-failed":
+                self.state = "OFFLINE"
                 self.doRemoveBroadcaster(*args, **kwargs)
-            elif event == 'shutdown':
-                self.state = 'CLOSED'
+            elif event == "shutdown":
+                self.state = "CLOSED"
                 self.doRemoveBroadcaster(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'outbound-message':
+            elif event == "outbound-message":
                 self.doSendMessageToBroadcaster(*args, **kwargs)
-            elif event == 'incoming-message':
+            elif event == "incoming-message":
                 self.doNotifyInputMessage(*args, **kwargs)
-        #--- OFFLINE
-        elif self.state == 'OFFLINE':
-            if event == 'connect':
-                self.state = 'BROADCASTER?'
+        # --- OFFLINE
+        elif self.state == "OFFLINE":
+            if event == "connect":
+                self.state = "BROADCASTER?"
                 self.doStartBroadcasterLookup(*args, **kwargs)
-            elif event == 'shutdown':
-                self.state = 'CLOSED'
+            elif event == "shutdown":
+                self.state = "CLOSED"
                 self.doDestroyMe(*args, **kwargs)
-        #--- CLOSED
-        elif self.state == 'CLOSED':
+        # --- CLOSED
+        elif self.state == "CLOSED":
             pass
         return None
 
@@ -160,10 +160,21 @@ class BroadcastListener(automat.Automat):
         Action method.
         """
         from broadcast import broadcasters_finder
+
         scope = args[0]
         if not scope:
             scope = []
-        broadcasters_finder.A('start', (self.automat, {'action': 'listen', 'scopes': json.dumps(scope), }, []))
+        broadcasters_finder.A(
+            "start",
+            (
+                self.automat,
+                {
+                    "action": "listen",
+                    "scopes": json.dumps(scope),
+                },
+                [],
+            ),
+        )
 
     def doSetBroadcaster(self, *args, **kwargs):
         """
@@ -182,8 +193,10 @@ class BroadcastListener(automat.Automat):
         Action method.
         """
         from broadcast import broadcast_service
+
         outpacket = broadcast_service.packet_for_broadcaster(
-            self.broadcaster_idurl, *args, **kwargs)
+            self.broadcaster_idurl, *args, **kwargs
+        )
         p2p_service.SendBroadcastMessage(outpacket)
 
     def doNotifyInputMessage(self, *args, **kwargs):
@@ -205,20 +218,23 @@ class BroadcastListener(automat.Automat):
         del _BroadcastListener
         _BroadcastListener = None
 
-    #-----------------------------------------------------------------------------
+    # -----------------------------------------------------------------------------
 
     def _on_inbox_packet(self, newpacket, info, status, error_message):
         if newpacket.Command == commands.Broadcast():
             from broadcast import broadcast_service
+
             msg = broadcast_service.read_message_from_packet(newpacket)
             if not msg:
-                lg.warn('not valid message in payload')
+                lg.warn("not valid message in payload")
                 return False
             if newpacket.CreatorID == self.broadcaster_idurl:
                 # message from broadcaster - process incoming broadcast
-                self.automat('incoming-message', (msg, newpacket))
+                self.automat("incoming-message", (msg, newpacket))
                 return True
             else:
-                lg.warn('received broadcast message from another broadcaster? : %s != %s' % (
-                    newpacket.CreatorID, self.broadcaster_idurl))
+                lg.warn(
+                    "received broadcast message from another broadcaster? : %s != %s"
+                    % (newpacket.CreatorID, self.broadcaster_idurl)
+                )
         return False

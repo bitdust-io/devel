@@ -16,12 +16,13 @@
 # limitations under the License.
 
 from __future__ import absolute_import
+
 from gevent.lock import RLock
 
 from CodernityDB3.env import cdb_environment
 
-cdb_environment['mode'] = "gevent"
-cdb_environment['rlock_obj'] = RLock
+cdb_environment["mode"] = "gevent"
+cdb_environment["rlock_obj"] = RLock
 
 
 # from CodernityDB3.database import Database

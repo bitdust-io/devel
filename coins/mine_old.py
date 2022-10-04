@@ -20,42 +20,36 @@
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
-from __future__ import absolute_import
-from __future__ import print_function
+from __future__ import absolute_import, print_function
+
 _Debug = False
 _DebugLevel = 10
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
-import time
+import hashlib
 import random
 import string
-import json
-import hashlib
+import time
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
-if __name__ == '__main__':
-    import sys
+if __name__ == "__main__":
     import os.path as _p
-    sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
+    import sys
 
-#------------------------------------------------------------------------------
+    sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), "..")))
 
-from logs import lg
+# ------------------------------------------------------------------------------
 
-
-from userid import my_id
-
-from crypt import key
-
-from lib import utime
 
 from coins import coins_io
+from lib import utime
+from userid import my_id
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 def init():
@@ -65,12 +59,19 @@ def init():
 def shutdown():
     pass
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def build_starter(length=5):
-    return (''.join(
-        [random.choice(string.uppercase + string.lowercase + string.digits)
-         for _ in range(length)])) + '_'
+    return (
+        "".join(
+            [
+                random.choice(string.uppercase + string.lowercase + string.digits)
+                for _ in range(length)
+            ]
+        )
+    ) + "_"
 
 
 def build_hash(payload):
@@ -102,15 +103,17 @@ def get_hash_difficulty(hexdigest, simplification=2):
     return difficulty - 1
 
 
-def work_with_known_difficulty(coin_json,
-                               difficulty,
-                               simplification=2,
-                               starter_length=10,
-                               starter_limit=99999,
-                               stop_marker=None,
-                               prev_hash=''):
-    coin_json['miner'] = {
-        'idurl': my_id.getIDURL().to_bin(),
+def work_with_known_difficulty(
+    coin_json,
+    difficulty,
+    simplification=2,
+    starter_length=10,
+    starter_limit=99999,
+    stop_marker=None,
+    prev_hash="",
+):
+    coin_json["miner"] = {
+        "idurl": my_id.getIDURL().to_bin(),
     }
     # data_dump = json.dumps(data)
     data_dump = coins_io.coin_to_string(coin_json)
@@ -130,21 +133,25 @@ def work_with_known_difficulty(coin_json,
         if on > starter_limit:
             starter = build_starter(starter_length)
             on = 0
-    coin_json['miner'].update({
-        'hash': hexdigest,
-        'prev': prev_hash,
-        'starter': starter + str(on),
-        'mined': utime.utcnow_to_sec1970(),
-    })
+    coin_json["miner"].update(
+        {
+            "hash": hexdigest,
+            "prev": prev_hash,
+            "starter": starter + str(on),
+            "mined": utime.utcnow_to_sec1970(),
+        }
+    )
     return coin_json
 
 
-def work_from_known_hash(coin_json,
-                         prev_hash,
-                         simplification=2,
-                         starter_length=10,
-                         starter_limit=99999,
-                         stop_marker=None):
+def work_from_known_hash(
+    coin_json,
+    prev_hash,
+    simplification=2,
+    starter_length=10,
+    starter_limit=99999,
+    stop_marker=None,
+):
     # data.update({'prev': prev_hash, })
     difficulty = get_hash_difficulty(prev_hash)
     complexity = get_hash_complexity(prev_hash, simplification)
@@ -161,11 +168,11 @@ def work_from_known_hash(coin_json,
         prev_hash=prev_hash,
     )
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 class MininigCounter(object):
-
     def __init__(self, max_counts, max_seconds):
         self.max_counts = max_counts
         self.max_seconds = max_seconds
@@ -184,15 +191,17 @@ class MininigCounter(object):
 def _test():
     try:
         for test_no in range(1, 21):
-            print('start test N', test_no)
+            print("start test N", test_no)
             start = time.time()
             mc = MininigCounter(10**7, 300)
             simplification = 2
             starter_length = 5
             starter_limit = 99999
             coins = 0
-            hexhash = ''
-            data = {'a': 'b', }
+            hexhash = ""
+            data = {
+                "a": "b",
+            }
             while True:
                 coin = work_from_known_hash(
                     data,
@@ -200,19 +209,20 @@ def _test():
                     simplification=simplification,
                     starter_length=starter_length,
                     starter_limit=starter_limit,
-                    stop_marker=mc.marker)
+                    stop_marker=mc.marker,
+                )
                 if not coin:
                     break
                 coins += 1
-                hexhash = coin['hash']
+                hexhash = coin["hash"]
                 print(coin)
 
-            print(coins, 'coins')
-            print('last hash:', hexhash)
-            print('complexity riched:', get_hash_complexity(hexhash, simplification))
-            print(time.time() - start, 'seconds')
-            print(mc.counts, 'iterations')
-            print('simplification:', simplification)
+            print(coins, "coins")
+            print("last hash:", hexhash)
+            print("complexity riched:", get_hash_complexity(hexhash, simplification))
+            print(time.time() - start, "seconds")
+            print(mc.counts, "iterations")
+            print("simplification:", simplification)
             print()
 
     except KeyboardInterrupt:

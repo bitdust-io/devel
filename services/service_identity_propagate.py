@@ -31,6 +31,7 @@ module:: service_identity_propagate
 """
 
 from __future__ import absolute_import
+
 from services.local_service import LocalService
 
 
@@ -40,30 +41,35 @@ def create_service():
 
 class IdentityPropagateService(LocalService):
 
-    service_name = 'service_identity_propagate'
-    config_path = 'services/identity-propagate/enabled'
+    service_name = "service_identity_propagate"
+    config_path = "services/identity-propagate/enabled"
 
     def dependent_on(self):
         return [
-            'service_gateway',
-            'service_tcp_connections',
+            "service_gateway",
+            "service_tcp_connections",
         ]
 
     def installed(self):
         from userid import my_id
+
         if not my_id.isLocalIdentityReady():
             return False
         return True
 
     def network_configuration(self):
         import re
+
         from main import config
-        known_identity_servers_str = str(config.conf().getData('services/identity-propagate/known-servers'))
+
+        known_identity_servers_str = str(
+            config.conf().getData("services/identity-propagate/known-servers")
+        )
         known_identity_servers = []
-        for id_server_str in re.split('\n|;|,| ', known_identity_servers_str):
+        for id_server_str in re.split("\n|;|,| ", known_identity_servers_str):
             if id_server_str.strip():
                 try:
-                    id_server = id_server_str.strip().split(':')
+                    id_server = id_server_str.strip().split(":")
                     id_server_host = id_server[0].strip()
                     id_server_http_port = int(id_server[1].strip())
                     if len(id_server) > 2:
@@ -72,15 +78,20 @@ class IdentityPropagateService(LocalService):
                         id_server_tcp_port = 6661
                 except:
                     continue
-                known_identity_servers.append({
-                    "host": id_server_host,
-                    "tcp_port": id_server_tcp_port,
-                    "http_port": id_server_http_port,
-                })
+                known_identity_servers.append(
+                    {
+                        "host": id_server_host,
+                        "tcp_port": id_server_tcp_port,
+                        "http_port": id_server_http_port,
+                    }
+                )
         if not known_identity_servers:
             from main import network_config
+
             default_network_config = network_config.read_network_config_file()
-            known_identity_servers = default_network_config['service_identity_propagate']['known_servers']
+            known_identity_servers = default_network_config["service_identity_propagate"][
+                "known_servers"
+            ]
         return {
             "known_servers": known_identity_servers,
             "whitelisted_servers": [],
@@ -88,35 +99,40 @@ class IdentityPropagateService(LocalService):
 
     def start(self):
         from logs import lg
-        from userid import my_id
         from main.config import conf
+        from userid import my_id
+
         my_id.loadLocalIdentity()
         if not my_id.isLocalIdentityReady():
-            lg.warn('Loading local identity failed - need to create an identity first')
+            lg.warn("Loading local identity failed - need to create an identity first")
             return False
+        from contacts import contactsdb, identitycache
         from main import events
-        from contacts import identitycache
-        from userid import known_servers
         from p2p import propagate
-        from contacts import contactsdb
+        from userid import known_servers
+
         identitycache.init()
         d = contactsdb.init()
         propagate.init()
-        conf().addConfigNotifier('services/identity-propagate/known-servers', self._on_known_servers_changed)
-        lg.info('known ID servers are : %r' % known_servers.by_host())
-        events.add_subscriber(self._on_local_identity_modified, 'local-identity-modified')
-        events.add_subscriber(self._on_my_identity_rotated, 'my-identity-rotated')
+        conf().addConfigNotifier(
+            "services/identity-propagate/known-servers", self._on_known_servers_changed
+        )
+        lg.info("known ID servers are : %r" % known_servers.by_host())
+        events.add_subscriber(self._on_local_identity_modified, "local-identity-modified")
+        events.add_subscriber(self._on_my_identity_rotated, "my-identity-rotated")
         return d
 
     def stop(self):
-        from main.config import conf
+        from contacts import contactsdb, identitycache
         from main import events
+        from main.config import conf
         from p2p import propagate
-        from contacts import contactsdb
-        from contacts import identitycache
-        events.remove_subscriber(self._on_my_identity_rotated, 'my-identity-rotated')
-        events.remove_subscriber(self._on_local_identity_modified, 'local-identity-modified')
-        conf().removeConfigNotifier('services/identity-propagate/known-servers')
+
+        events.remove_subscriber(self._on_my_identity_rotated, "my-identity-rotated")
+        events.remove_subscriber(
+            self._on_local_identity_modified, "local-identity-modified"
+        )
+        conf().removeConfigNotifier("services/identity-propagate/known-servers")
         propagate.shutdown()
         contactsdb.shutdown()
         identitycache.shutdown()
@@ -124,16 +140,22 @@ class IdentityPropagateService(LocalService):
 
     def _on_known_servers_changed(self, path, value, oldvalue, result):
         from userid import known_servers
+
         known_servers._KnownServers = None
 
     def _on_local_identity_modified(self, evt):
         from p2p import propagate
+
         propagate.update()
 
     def _on_my_identity_rotated(self, evt):
+        from contacts import contactsdb
         from logs import lg
         from p2p import propagate
-        from contacts import contactsdb
+
         known_remote_contacts = set(contactsdb.contacts_remote(include_all=True))
         propagate.startup_list().update(known_remote_contacts)
-        lg.warn('added %d known contacts to propagate startup list to be sent later' % len(known_remote_contacts))
+        lg.warn(
+            "added %d known contacts to propagate startup list to be sent later"
+            % len(known_remote_contacts)
+        )

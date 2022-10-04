@@ -30,13 +30,13 @@
 module:: known_nodes
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
 import re
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 def network_info():
@@ -45,8 +45,9 @@ def network_info():
     If file `~/.bitdust/metadata/networkconfig` exists - use it instead.
     """
     from main import network_config
+
     network_config = network_config.read_network_config_file()
-    return network_config['service_entangled_dht']
+    return network_config["service_entangled_dht"]
 
 
 def default_nodes():
@@ -54,9 +55,15 @@ def default_nodes():
     List of DHT nodes currently maintained : (host, UDP port number)
     """
     from lib import strng
+
     dht_seeds = []
-    for dht_seed in network_info()['known_nodes']:
-        dht_seeds.append((strng.to_bin(dht_seed['host']), dht_seed['udp_port'], ))
+    for dht_seed in network_info()["known_nodes"]:
+        dht_seeds.append(
+            (
+                strng.to_bin(dht_seed["host"]),
+                dht_seed["udp_port"],
+            )
+        )
     return dht_seeds
 
 
@@ -85,15 +92,22 @@ def nodes():
     This way you can create your own DHT network, inside BitDust, under your full control.
     """
 
-    from main import config
     from lib import strng
+    from main import config
 
     try:
-        overridden_dht_nodes_str = str(config.conf().getData('services/entangled-dht/known-nodes'))
+        overridden_dht_nodes_str = str(
+            config.conf().getData("services/entangled-dht/known-nodes")
+        )
     except:
-        overridden_dht_nodes_str = ''
+        overridden_dht_nodes_str = ""
 
-    if overridden_dht_nodes_str in ['genesis', 'root', b'genesis', b'root', ]:
+    if overridden_dht_nodes_str in [
+        "genesis",
+        "root",
+        b"genesis",
+        b"root",
+    ]:
         # "genesis" node must not connect anywhere
         return []
 
@@ -101,15 +115,20 @@ def nodes():
         return default_nodes()
 
     overridden_dht_nodes = []
-    for dht_node_str in re.split('\n|;|,| ', overridden_dht_nodes_str):
+    for dht_node_str in re.split("\n|;|,| ", overridden_dht_nodes_str):
         if dht_node_str.strip():
             try:
-                dht_node = dht_node_str.strip().split(':')
+                dht_node = dht_node_str.strip().split(":")
                 dht_node_host = strng.to_bin(dht_node[0].strip())
                 dht_node_port = int(dht_node[1].strip())
             except:
                 continue
-            overridden_dht_nodes.append((dht_node_host, dht_node_port, ))
+            overridden_dht_nodes.append(
+                (
+                    dht_node_host,
+                    dht_node_port,
+                )
+            )
 
     if overridden_dht_nodes:
         return overridden_dht_nodes

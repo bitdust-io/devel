@@ -16,9 +16,11 @@
 # limitations under the License.
 
 from __future__ import absolute_import
-from CodernityDB.database import Database
-import shutil
+
 import os
+import shutil
+
+from CodernityDB.database import Database
 
 
 def migrate(source, destination):
@@ -30,17 +32,20 @@ def migrate(source, destination):
     dbs.open()
     dbt.create()
     dbt.close()
-    for curr in os.listdir(os.path.join(dbs.path, '_indexes')):
-        if curr != '00id.py':
-            shutil.copyfile(os.path.join(dbs.path, '_indexes', curr),
-                            os.path.join(dbt.path, '_indexes', curr))
+    for curr in os.listdir(os.path.join(dbs.path, "_indexes")):
+        if curr != "00id.py":
+            shutil.copyfile(
+                os.path.join(dbs.path, "_indexes", curr),
+                os.path.join(dbt.path, "_indexes", curr),
+            )
     dbt.open()
-    for c in dbs.all('id'):
-        del c['_rev']
+    for c in dbs.all("id"):
+        del c["_rev"]
         dbt.insert(c)
     return True
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import sys
+
     migrate(sys.argv[1], sys.argv[2])

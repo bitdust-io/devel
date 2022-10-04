@@ -36,49 +36,52 @@ SCENARIO 23: customer-1 able to upload/download files when one supplier is down
 """
 
 import os
-import pytest
-
-from testsupport import set_active_scenario  # @UnresolvedImport
 
 import keywords as kw  # @UnresolvedImport
+import pytest
 import scenarios  # @UnresolvedImport
+from testsupport import set_active_scenario  # @UnresolvedImport
 
 
 def test_suppliers5():
-    if os.environ.get('RUN_TESTS', '1') == '0':
+    if os.environ.get("RUN_TESTS", "1") == "0":
         return pytest.skip()  # @UndefinedVariable
 
     prepare()
 
-    #--- SCENARIO 7: customer-1 upload/download with master key
+    # --- SCENARIO 7: customer-1 upload/download with master key
     customer_1_file_info = scenarios.scenario7()
 
-    #--- SCENARIO 4: customer-1 share files to customer-2
+    # --- SCENARIO 4: customer-1 share files to customer-2
     customer_1_shared_file_info, _ = scenarios.scenario4()
 
-    #--- SCENARIO 23: customer-1 able to upload/download files when one supplier is down
+    # --- SCENARIO 23: customer-1 able to upload/download files when one supplier is down
     scenarios.scenario23(customer_1_file_info, customer_1_shared_file_info)
 
-    #--- SCENARIO 14: customer-1 replace supplier at position 0 by random node
+    # --- SCENARIO 14: customer-1 replace supplier at position 0 by random node
     scenarios.scenario14(customer_1_file_info, customer_1_shared_file_info)
 
-    #--- SCENARIO 15: customer-1 switch supplier at position 1 to specific node
+    # --- SCENARIO 15: customer-1 switch supplier at position 1 to specific node
     scenarios.scenario15(customer_1_file_info, customer_1_shared_file_info)
 
-    #--- SCENARIO 16: customer-1 increase and decrease suppliers amount
+    # --- SCENARIO 16: customer-1 increase and decrease suppliers amount
     scenarios.scenario16()
 
 
+# ------------------------------------------------------------------------------
 
-#------------------------------------------------------------------------------
 
 def prepare():
-    set_active_scenario('PREPARE')
-    kw.wait_suppliers_connected(scenarios.CUSTOMERS_IDS_12, expected_min_suppliers=2, expected_max_suppliers=2)
-    kw.wait_service_state(scenarios.SUPPLIERS_IDS, 'service_supplier', 'ON')
-    kw.wait_service_state(scenarios.CUSTOMERS_IDS_12, 'service_customer', 'ON')
-    kw.wait_service_state(scenarios.CUSTOMERS_IDS_12, 'service_shared_data', 'ON')
+    set_active_scenario("PREPARE")
+    kw.wait_suppliers_connected(
+        scenarios.CUSTOMERS_IDS_12, expected_min_suppliers=2, expected_max_suppliers=2
+    )
+    kw.wait_service_state(scenarios.SUPPLIERS_IDS, "service_supplier", "ON")
+    kw.wait_service_state(scenarios.CUSTOMERS_IDS_12, "service_customer", "ON")
+    kw.wait_service_state(scenarios.CUSTOMERS_IDS_12, "service_shared_data", "ON")
     # kw.wait_service_state(scenarios.CUSTOMERS_IDS_12, 'service_personal_messages', 'ON')
-    kw.wait_service_state(scenarios.CUSTOMERS_IDS_12, 'service_private_groups', 'ON')
-    kw.wait_service_state(scenarios.CUSTOMERS_IDS_12, 'service_message_history', 'ON')
-    kw.wait_packets_finished(scenarios.PROXY_IDS + scenarios.CUSTOMERS_IDS_12 + scenarios.SUPPLIERS_IDS)
+    kw.wait_service_state(scenarios.CUSTOMERS_IDS_12, "service_private_groups", "ON")
+    kw.wait_service_state(scenarios.CUSTOMERS_IDS_12, "service_message_history", "ON")
+    kw.wait_packets_finished(
+        scenarios.PROXY_IDS + scenarios.CUSTOMERS_IDS_12 + scenarios.SUPPLIERS_IDS
+    )

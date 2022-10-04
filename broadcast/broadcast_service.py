@@ -30,67 +30,70 @@
 @author: Veselin
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
-from __future__ import absolute_import
-from __future__ import print_function
+from __future__ import absolute_import, print_function
+
 from six.moves import range
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Debug = True
 _DebugLevel = 6
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 # This is used to be able to execute this module directly from command line.
-if __name__ == '__main__':
-    import sys
+if __name__ == "__main__":
     import os.path as _p
-    sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
+    import sys
 
-#------------------------------------------------------------------------------
+    sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), "..")))
 
-import datetime
+# ------------------------------------------------------------------------------
+
+import json
 import random
 import string
-import json
-
-#------------------------------------------------------------------------------
-
-from logs import lg
+from crypt import key, signed
 
 from lib import utime
-
-from crypt import signed
-from crypt import key
-
+from logs import lg
 from p2p import commands
-
 from userid import my_id
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
+
+# ------------------------------------------------------------------------------
 
 
 def prepare_broadcast_message(owner, payload):
     tm = utime.utcnow_to_sec1970()
-    rnd = ''.join(random.choice(string.ascii_uppercase) for _ in range(4))
-    msgid = '%s:%s:%s' % (tm, rnd, owner)
+    rnd = "".join(random.choice(string.ascii_uppercase) for _ in range(4))
+    msgid = "%s:%s:%s" % (tm, rnd, owner)
     msg = [
-        ('owner', owner),
-        ('started', tm),
-        ('id', msgid),
-        ('payload', payload),
+        ("owner", owner),
+        ("started", tm),
+        ("id", msgid),
+        ("payload", payload),
     ]
     owner_sign = key.Sign(key.Hash(str(msg)))
     msg = {k: v for k, v in msg}
-    msg['owner_sign'] = owner_sign
+    msg["owner_sign"] = owner_sign
     return msg
 
 
 def verfify_broadcast_message(jmsg):
     s = set(jmsg.keys())
-    s = s.intersection(['owner', 'started', 'id', 'payload', ])
+    s = s.intersection(
+        [
+            "owner",
+            "started",
+            "id",
+            "payload",
+        ]
+    )
     if len(s) != 4:
         return False
     return True
@@ -107,58 +110,66 @@ def read_message_from_packet(newpacket):
 
 
 def packet_for_broadcaster(broadcaster_idurl, json_data):
-    if 'broadcaster' not in json_data:
-        json_data['broadcaster'] = broadcaster_idurl
-    return signed.Packet(commands.Broadcast(),
-                         json_data['owner'],
-                         my_id.getIDURL(),
-                         json_data['id'],
-                         json.dumps(json_data),
-                         broadcaster_idurl,)
+    if "broadcaster" not in json_data:
+        json_data["broadcaster"] = broadcaster_idurl
+    return signed.Packet(
+        commands.Broadcast(),
+        json_data["owner"],
+        my_id.getIDURL(),
+        json_data["id"],
+        json.dumps(json_data),
+        broadcaster_idurl,
+    )
 
 
 def packet_for_listener(listener_idurl, json_data):
     # if 'broadcaster' not in json_data:
-    json_data['broadcaster'] = my_id.getIDURL()
-    return signed.Packet(commands.Broadcast(),
-                         json_data['owner'],
-                         my_id.getIDURL(),
-                         json_data['id'],
-                         json.dumps(json_data),
-                         listener_idurl,)
+    json_data["broadcaster"] = my_id.getIDURL()
+    return signed.Packet(
+        commands.Broadcast(),
+        json_data["owner"],
+        my_id.getIDURL(),
+        json_data["id"],
+        json.dumps(json_data),
+        listener_idurl,
+    )
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def send_broadcast_message(payload):
-    from broadcast import broadcaster_node
-    from broadcast import broadcast_listener
+    from broadcast import broadcast_listener, broadcaster_node
+
     msg = prepare_broadcast_message(my_id.getIDURL(), payload)
     if broadcaster_node.A():
-        broadcaster_node.A('new-outbound-message', (msg, None))
+        broadcaster_node.A("new-outbound-message", (msg, None))
     elif broadcast_listener.A():
-        if broadcast_listener.A().state == 'OFFLINE':
-            broadcast_listener.A('connect')
-        broadcast_listener.A('outbound-message', msg)
+        if broadcast_listener.A().state == "OFFLINE":
+            broadcast_listener.A("connect")
+        broadcast_listener.A("outbound-message", msg)
     else:
-        lg.warn('nor broadcaster_node(), nor broadcast_listener() exists')
+        lg.warn("nor broadcaster_node(), nor broadcast_listener() exists")
         return None
     return msg
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def on_incoming_broadcast_message(json_msg):
-    lg.out(2, 'service_broadcasting._on_incoming_broadcast_message : %r' % json_msg)
+    lg.out(2, "service_broadcasting._on_incoming_broadcast_message : %r" % json_msg)
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def _test():
-    from coins import mine
-    print(prepare_broadcast_message(my_id.getIDURL(), {'test': 'okidoki'}))
 
-#------------------------------------------------------------------------------
+    print(prepare_broadcast_message(my_id.getIDURL(), {"test": "okidoki"}))
 
-if __name__ == '__main__':
+
+# ------------------------------------------------------------------------------
+
+if __name__ == "__main__":
     _test()

@@ -16,13 +16,13 @@
 # limitations under the License.
 
 from __future__ import absolute_import
-import six
+
+import io
+import marshal
 import os
 import struct
-import shutil
-import marshal
-import io
 
+import six
 
 try:
     from CodernityDB3 import __version__
@@ -80,7 +80,7 @@ class IU_Storage(object):
 
     __version__ = __version__
 
-    def __init__(self, db_path, name='main'):
+    def __init__(self, db_path, name="main"):
         if isinstance(db_path, bytes):
             db_path = db_path.decode()
         if isinstance(name, bytes):
@@ -93,28 +93,30 @@ class IU_Storage(object):
     def create(self):
         if os.path.exists(os.path.join(self.db_path, self.name + "_stor")):
             raise IOError("Storage already exists!")
-        with io.open(os.path.join(self.db_path, self.name + "_stor"), 'wb') as f:
+        with io.open(os.path.join(self.db_path, self.name + "_stor"), "wb") as f:
             if isinstance(self.__version__, six.text_type):
                 new_version = self.__version__.encode()
             else:
                 new_version = self.__version__
-            f.write(struct.pack(b'10s90s', new_version, b'|||||'))
+            f.write(struct.pack(b"10s90s", new_version, b"|||||"))
             f.close()
-        self._f = io.open(os.path.join(
-            self.db_path, self.name + "_stor"), 'r+b', buffering=0)
+        self._f = io.open(
+            os.path.join(self.db_path, self.name + "_stor"), "r+b", buffering=0
+        )
         self.flush()
         self._f.seek(0, 2)
 
     def open(self):
         if not os.path.exists(os.path.join(self.db_path, self.name + "_stor")):
             raise IOError("Storage doesn't exists!")
-        self._f = io.open(os.path.join(
-            self.db_path, self.name + "_stor"), 'r+b', buffering=0)
+        self._f = io.open(
+            os.path.join(self.db_path, self.name + "_stor"), "r+b", buffering=0
+        )
         self.flush()
         self._f.seek(0, 2)
 
     def destroy(self):
-        os.unlink(os.path.join(self.db_path, self.name + '_stor'))
+        os.unlink(os.path.join(self.db_path, self.name + "_stor"))
 
     def close(self):
         self._f.close()
@@ -143,9 +145,9 @@ class IU_Storage(object):
     def update(self, data):
         return self.save(data)
 
-    def get(self, start, size, status='c'):
+    def get(self, start, size, status="c"):
         # print('storage.get start=%r size=%r' % (start, size))
-        if status == 'd' or status == b'd':
+        if status == "d" or status == b"d":
             return None
         else:
             self._f.seek(start)

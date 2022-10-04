@@ -329,7 +329,7 @@ All your conversations are stored in a local SQLite3 database and are quickly se
 The service is under development.
 
 {services/my-data/enabled} remote files indexing
-The service synchronizes with my suppliers in real time and prepares the encrypted storage environment for other dependent network services. 
+The service synchronizes with my suppliers in real time and prepares the encrypted storage environment for other dependent network services.
 
 {services/my-ip-port/enabled} detect my external IP via other nodes
 The service relies on other nodes and uses the STUN protocol to recognize your public IP address when connecting to the network.
@@ -426,7 +426,7 @@ The `rebuilding` service will automatically download the available fragments fro
 Controls network connections and incoming data streams when downloading encrypted fragments from suppliers nodes.
 
 {services/shared-data/enabled} enable data sharing
-Makes possible decentralized sharing of encrypted files with other users. 
+Makes possible decentralized sharing of encrypted files with other users.
 
 {services/supplier/enabled} donate own disk space to people
 To make it possible to store any files on the network, some other nodes must already be connected and provide storage space.

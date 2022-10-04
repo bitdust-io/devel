@@ -46,35 +46,28 @@ EVENTS:
 
 from __future__ import absolute_import
 
-#------------------------------------------------------------------------------
-
-from logs import lg
-
 from automats import automat
-
-from main import settings
-from main import config
-
-from interface import api
-
 from contacts import contactsdb
-
+from interface import api
 from lib import utime
-
+from logs import lg
+from main import config, settings
 from p2p import ratings
-
 from storage import accounting
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
+
+# ------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 8
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _CustomersRejector = None
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 def A(event=None, *args, **kwargs):
@@ -84,7 +77,7 @@ def A(event=None, *args, **kwargs):
     global _CustomersRejector
     if _CustomersRejector is None:
         # set automat name and starting state here
-        _CustomersRejector = CustomersRejector('customers_rejector', 'READY', 4)
+        _CustomersRejector = CustomersRejector("customers_rejector", "READY", 4)
     if event is not None:
         _CustomersRejector.automat(event, *args, **kwargs)
     return _CustomersRejector
@@ -115,37 +108,37 @@ class CustomersRejector(automat.Automat):
         """
 
     def A(self, event, *args, **kwargs):
-        #---READY---
-        if self.state == 'READY':
-            if event == 'start' or event == 'restart':
-                self.state = 'CAPACITY?'
+        # ---READY---
+        if self.state == "READY":
+            if event == "start" or event == "restart":
+                self.state = "CAPACITY?"
                 self.doTestMyCapacity(*args, **kwargs)
-        #---CAPACITY?---
-        elif self.state == 'CAPACITY?':
-            if event == 'space-enough':
-                self.state = 'IDLE?'
+        # ---CAPACITY?---
+        elif self.state == "CAPACITY?":
+            if event == "space-enough":
+                self.state = "IDLE?"
                 self.doTestIdleDays(*args, **kwargs)
-            elif event == 'space-overflow':
-                self.state = 'REJECT!'
+            elif event == "space-overflow":
+                self.state = "REJECT!"
                 self.doRemoveCustomers(*args, **kwargs)
-        #---REJECT!---
-        elif self.state == 'REJECT!':
-            if event == 'restart':
-                self.state = 'CAPACITY?'
+        # ---REJECT!---
+        elif self.state == "REJECT!":
+            if event == "restart":
+                self.state = "CAPACITY?"
                 self.doTestMyCapacity(*args, **kwargs)
-            elif event == 'customers-rejected':
-                self.state = 'READY'
+            elif event == "customers-rejected":
+                self.state = "READY"
                 self.doRestartLocalTester(*args, **kwargs)
-        #---IDLE?---
-        elif self.state == 'IDLE?':
-            if event == 'found-idle-customers':
-                self.state = 'REJECT!'
+        # ---IDLE?---
+        elif self.state == "IDLE?":
+            if event == "found-idle-customers":
+                self.state = "REJECT!"
                 self.doRemoveCustomers(*args, **kwargs)
-            elif event == 'restart':
-                self.state = 'CAPACITY?'
+            elif event == "restart":
+                self.state = "CAPACITY?"
                 self.doTestMyCapacity(*args, **kwargs)
-            elif event == 'no-idle-customers':
-                self.state = 'READY'
+            elif event == "no-idle-customers":
+                self.state = "READY"
         return None
 
     def doTestMyCapacity(self, *args, **kwargs):
@@ -159,13 +152,15 @@ class CustomersRejector(automat.Automat):
         + ratio : currently used space compared to consumed space
         """
         if _Debug:
-            lg.out(_DebugLevel, 'customers_rejector.doTestMyCapacity')
+            lg.out(_DebugLevel, "customers_rejector.doTestMyCapacity")
         failed_customers = set()
         current_customers = contactsdb.customers()
         donated_bytes = settings.getDonatedBytes()
         space_dict, free_space = accounting.read_customers_quotas()
         used_dict = accounting.read_customers_usage()
-        unknown_customers, unused_quotas = accounting.validate_customers_quotas(space_dict, free_space)
+        unknown_customers, unused_quotas = accounting.validate_customers_quotas(
+            space_dict, free_space
+        )
         failed_customers.update(unknown_customers)
         for idurl in unknown_customers:
             space_dict.pop(idurl, None)
@@ -175,18 +170,22 @@ class CustomersRejector(automat.Automat):
         free_space = donated_bytes - consumed_bytes
         if consumed_bytes < donated_bytes and len(failed_customers) == 0:
             accounting.write_customers_quotas(space_dict, free_space)
-            lg.info('storage quota checks succeed, all customers are verified')
-            self.automat('space-enough')
+            lg.info("storage quota checks succeed, all customers are verified")
+            self.automat("space-enough")
             return
         if failed_customers:
             for idurl in failed_customers:
-                lg.warn('customer %r failed storage quota verification' % idurl)
+                lg.warn("customer %r failed storage quota verification" % idurl)
                 current_customers.remove(idurl)
-            self.automat('space-overflow', failed_customers)
+            self.automat("space-overflow", failed_customers)
             return
-        used_space_ratio_dict = accounting.calculate_customers_usage_ratio(space_dict, used_dict)
-        customers_sorted = sorted(current_customers,
-                                  key=lambda idurl: used_space_ratio_dict[idurl],)
+        used_space_ratio_dict = accounting.calculate_customers_usage_ratio(
+            space_dict, used_dict
+        )
+        customers_sorted = sorted(
+            current_customers,
+            key=lambda idurl: used_space_ratio_dict[idurl],
+        )
         while len(customers_sorted) > 0 and consumed_bytes > donated_bytes:
             idurl = customers_sorted.pop()
             allocated_bytes = int(space_dict[idurl])
@@ -194,35 +193,47 @@ class CustomersRejector(automat.Automat):
             space_dict.pop(idurl)
             failed_customers.add(idurl)
             current_customers.remove(idurl)
-            lg.warn('customer %r will be removed because of storage quota overflow' % idurl)
+            lg.warn(
+                "customer %r will be removed because of storage quota overflow" % idurl
+            )
         free_space = donated_bytes - consumed_bytes
-        self.automat('space-overflow', failed_customers)
+        self.automat("space-overflow", failed_customers)
 
     def doTestIdleDays(self, *args, **kwargs):
         """
         Action method.
         """
         dead_customers = []
-        customer_idle_days = config.conf().getInt('services/customer-patrol/customer-idle-days', 0)
+        customer_idle_days = config.conf().getInt(
+            "services/customer-patrol/customer-idle-days", 0
+        )
         if not customer_idle_days:
-            self.automat('no-idle-customers')
+            self.automat("no-idle-customers")
             return
         for customer_idurl in contactsdb.customers():
             connected_time = ratings.connected_time(customer_idurl.to_bin())
             if connected_time is None:
-                lg.warn('last connected_time for customer %r is unknown, rejecting customer' % customer_idurl)
+                lg.warn(
+                    "last connected_time for customer %r is unknown, rejecting customer"
+                    % customer_idurl
+                )
                 dead_customers.append(customer_idurl)
                 continue
             if utime.get_sec1970() - connected_time > customer_idle_days * 24 * 60 * 60:
-                lg.warn('customer %r connected last time %r seconds ago, rejecting customer' % (
-                    customer_idurl, utime.get_sec1970() - connected_time, ))
+                lg.warn(
+                    "customer %r connected last time %r seconds ago, rejecting customer"
+                    % (
+                        customer_idurl,
+                        utime.get_sec1970() - connected_time,
+                    )
+                )
                 dead_customers.append(customer_idurl)
         if dead_customers:
-            lg.warn('found idle customers: %r' % dead_customers)
-            self.automat('found-idle-customers', dead_customers)
+            lg.warn("found idle customers: %r" % dead_customers)
+            self.automat("found-idle-customers", dead_customers)
         else:
-            lg.info('all customers has some activity recently, no idle customers found')
-            self.automat('no-idle-customers')
+            lg.info("all customers has some activity recently, no idle customers found")
+            self.automat("no-idle-customers")
 
     def doRemoveCustomers(self, *args, **kwargs):
         """
@@ -231,11 +242,12 @@ class CustomersRejector(automat.Automat):
         removed_customers = args[0]
         for customer_idurl in removed_customers:
             api.customer_reject(customer_id=customer_idurl, erase_customer_key=True)
-        self.automat('customers-rejected', removed_customers)
+        self.automat("customers-rejected", removed_customers)
 
     def doRestartLocalTester(self, *args, **kwargs):
         """
         Action method.
         """
         from supplier import local_tester
+
         local_tester.TestSpaceTime()

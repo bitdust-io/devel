@@ -50,22 +50,22 @@ EVENTS:
 """
 
 from __future__ import absolute_import
+
 import sys
+
 try:
-    from twisted.internet import reactor  # @UnresolvedImport
+    pass
 except:
-    sys.exit('Error initializing twisted.internet.reactor in install_wizard.py')
+    sys.exit("Error initializing twisted.internet.reactor in install_wizard.py")
 
-from main import config
 from automats import automat
+from main import config, installer
 
-from main import installer
-
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _InstallWizard = None
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 def A(event=None, *args, **kwargs):
@@ -74,7 +74,7 @@ def A(event=None, *args, **kwargs):
     """
     global _InstallWizard
     if _InstallWizard is None:
-        _InstallWizard = InstallWizard('install_wizard', 'READY', 2)
+        _InstallWizard = InstallWizard("install_wizard", "READY", 2)
     if event is not None:
         _InstallWizard.automat(event, *args, **kwargs)
     return _InstallWizard
@@ -96,66 +96,66 @@ class InstallWizard(automat.Automat):
         self.log_events = True
         # TODO: we do not need 'READY' state now
         # because only have one page "STORAGE"
-        self.state = 'STORAGE'
+        self.state = "STORAGE"
 
     def state_changed(self, oldstate, newstate, event, *args, **kwargs):
-        if newstate == 'CONTACTS' and oldstate == 'STORAGE':
-            self.event('next', {})
+        if newstate == "CONTACTS" and oldstate == "STORAGE":
+            self.event("next", {})
             # TODO:
             # here just skip Contacts page!
             # we do not need that now, but can back to that soon when add chat
         # from main import control
         # control.request_update()
-        installer.A('install_wizard.state', newstate)
+        installer.A("install_wizard.state", newstate)
 
     def A(self, event, *args, **kwargs):
-        #---READY---
-        if self.state == 'READY':
-            if event == 'next':
-                self.state = 'STORAGE'
-            elif event == 'skip':
-                self.state = 'LAST_PAGE'
-        #---STORAGE---
-        elif self.state == 'STORAGE':
-            if event == 'next':
-                self.state = 'CONTACTS'
+        # ---READY---
+        if self.state == "READY":
+            if event == "next":
+                self.state = "STORAGE"
+            elif event == "skip":
+                self.state = "LAST_PAGE"
+        # ---STORAGE---
+        elif self.state == "STORAGE":
+            if event == "next":
+                self.state = "CONTACTS"
                 self.doSaveStorage(*args, **kwargs)
-            elif event == 'back':
-                self.state = 'READY'
-        #---CONTACTS---
-        elif self.state == 'CONTACTS':
-            if event == 'back':
-                self.state = 'STORAGE'
-            elif event == 'next':
-                self.state = 'LAST_PAGE'
+            elif event == "back":
+                self.state = "READY"
+        # ---CONTACTS---
+        elif self.state == "CONTACTS":
+            if event == "back":
+                self.state = "STORAGE"
+            elif event == "next":
+                self.state = "LAST_PAGE"
                 self.doSaveContacts(*args, **kwargs)
-        #---DONE---
-        elif self.state == 'DONE':
+        # ---DONE---
+        elif self.state == "DONE":
             pass
-        #---LAST_PAGE---
-        elif self.state == 'LAST_PAGE':
-            if event == 'next':
-                self.state = 'DONE'
-            elif event == 'back':
-                self.state = 'CONTACTS'
+        # ---LAST_PAGE---
+        elif self.state == "LAST_PAGE":
+            if event == "next":
+                self.state = "DONE"
+            elif event == "back":
+                self.state = "CONTACTS"
         return None
 
     def doSaveStorage(self, *args, **kwargs):
-        needed = args[0].get('needed', '')
-        donated = args[0].get('donated', '')
-        customersdir = args[0].get('customersdir', '')
-        localbackupsdir = args[0].get('localbackupsdir', '')
-        restoredir = args[0].get('restoredir', '')
+        needed = args[0].get("needed", "")
+        donated = args[0].get("donated", "")
+        customersdir = args[0].get("customersdir", "")
+        localbackupsdir = args[0].get("localbackupsdir", "")
+        restoredir = args[0].get("restoredir", "")
         if needed:
-            config.conf().setData('services/customer/needed-space', needed + ' MB')
+            config.conf().setData("services/customer/needed-space", needed + " MB")
         if donated:
-            config.conf().setData('services/supplier/donated-space', donated + ' MB')
+            config.conf().setData("services/supplier/donated-space", donated + " MB")
         if customersdir:
-            config.conf().setString('paths/customers', customersdir)
+            config.conf().setString("paths/customers", customersdir)
         if localbackupsdir:
-            config.conf().setString('paths/backups', localbackupsdir)
+            config.conf().setString("paths/backups", localbackupsdir)
         if restoredir:
-            config.conf().setString('paths/restore', restoredir)
+            config.conf().setString("paths/restore", restoredir)
 
     def doSaveContacts(self, *args, **kwargs):
         pass

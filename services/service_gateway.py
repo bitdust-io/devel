@@ -31,6 +31,7 @@ module:: service_gateway
 """
 
 from __future__ import absolute_import
+
 from services.local_service import LocalService
 
 
@@ -40,40 +41,40 @@ def create_service():
 
 class GatewayService(LocalService):
 
-    service_name = 'service_gateway'
-    config_path = 'services/gateway/enabled'
+    service_name = "service_gateway"
+    config_path = "services/gateway/enabled"
     start_suspended = True
 
     def dependent_on(self):
         return [
-            'service_network',
+            "service_network",
         ]
 
     def installed(self):
         from userid import my_id
+
         if not my_id.isLocalIdentityReady():
             return False
         return True
 
     def network_configuration(self):
         from crypt import key
+
         return {
-            'session_key_type': key.SessionKeyType(),
+            "session_key_type": key.SessionKeyType(),
         }
 
     def start(self):
-        from transport import packet_out
-        from transport import packet_in
-        from transport import gateway
+        from transport import gateway, packet_in, packet_out
+
         packet_out.init()
         packet_in.init()
         gateway.init()
         return True
 
     def stop(self):
-        from transport import packet_out
-        from transport import packet_in
-        from transport import gateway
+        from transport import gateway, packet_in, packet_out
+
         gateway.stop()
         gateway.shutdown()
         packet_out.shutdown()
@@ -82,10 +83,12 @@ class GatewayService(LocalService):
 
     def on_suspend(self, *args, **kwargs):
         from transport import gateway
+
         return gateway.stop()
 
     def on_resume(self, *args, **kwargs):
         from transport import gateway
-        if kwargs.get('cold_start') is True:
+
+        if kwargs.get("cold_start") is True:
             return gateway.cold_start()
         return gateway.start()

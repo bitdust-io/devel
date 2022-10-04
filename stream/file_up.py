@@ -52,60 +52,63 @@ EVENTS:
     * :red:`timeout`
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 8
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 import os
 import sys
 import time
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 try:
     from twisted.internet import reactor  # @UnresolvedImport
 except:
-    sys.exit('Error initializing twisted.internet.reactor in file_up.py')
+    sys.exit("Error initializing twisted.internet.reactor in file_up.py")
 
-#------------------------------------------------------------------------------
-
-from logs import lg
+# ------------------------------------------------------------------------------
 
 from automats import automat
-
-from lib import utime
-from lib import packetid
-from lib import nameurl
-
+from lib import nameurl, packetid, utime
+from logs import lg
+from main import settings
+from p2p import commands, p2p_service
+from stream import io_throttle
 from system import bpio
-
+from transport import packet_out
 from userid import global_id
 
-from main import settings
+# ------------------------------------------------------------------------------
 
-from p2p import p2p_service
-from p2p import commands
-
-from transport import packet_out
-
-from stream import io_throttle
-
-#------------------------------------------------------------------------------
 
 class FileUp(automat.Automat):
     """
     This class implements all the functionality of ``file_up()`` state machine.
     """
 
-    def __init__(self, parent, fileName, packetID, remoteID, ownerID, callOnAck=None, callOnFail=None,
-                 debug_level=_DebugLevel, log_events=_Debug, log_transitions=_Debug, publish_events=False, **kwargs):
+    def __init__(
+        self,
+        parent,
+        fileName,
+        packetID,
+        remoteID,
+        ownerID,
+        callOnAck=None,
+        callOnFail=None,
+        debug_level=_DebugLevel,
+        log_events=_Debug,
+        log_transitions=_Debug,
+        publish_events=False,
+        **kwargs
+    ):
         """
         Builds `file_up()` state machine.
         """
@@ -118,10 +121,15 @@ class FileUp(automat.Automat):
             self.fileSize = 0
         self.packetID = global_id.CanonicalID(packetID)
         parts = global_id.NormalizeGlobalID(packetID)
-        self.customerID = parts['customer']
-        self.remotePath = parts['path']
-        self.customerIDURL = parts['idurl']
-        customerGlobalID, remotePath, versionName, fileName = packetid.SplitVersionFilename(packetID)
+        self.customerID = parts["customer"]
+        self.remotePath = parts["path"]
+        self.customerIDURL = parts["idurl"]
+        (
+            customerGlobalID,
+            remotePath,
+            versionName,
+            fileName,
+        ) = packetid.SplitVersionFilename(packetID)
         self.backupID = packetid.MakeBackupID(customerGlobalID, remotePath, versionName)
         self.remoteID = remoteID
         self.ownerID = ownerID
@@ -129,11 +137,14 @@ class FileUp(automat.Automat):
         self.callOnFail = callOnFail
         self.sendTime = None
         self.ackTime = None
-        self.sendTimeout = 10 * 2 * (max(int(self.fileSize / settings.SendingSpeedLimit()), 5) + 5)  # maximum 5 seconds to get an Ack
-        self.result = ''
+        self.sendTimeout = (
+            10 * 2 * (max(int(self.fileSize / settings.SendingSpeedLimit()), 5) + 5)
+        )  # maximum 5 seconds to get an Ack
+        self.result = ""
         self.created = utime.get_sec1970()
         super(FileUp, self).__init__(
-            name="file_up_%s_%s/%s/%s" % (nameurl.GetName(self.remoteID), remotePath, versionName, fileName),
+            name="file_up_%s_%s/%s/%s"
+            % (nameurl.GetName(self.remoteID), remotePath, versionName, fileName),
             state="AT_STARTUP",
             debug_level=debug_level,
             log_events=log_events,
@@ -146,83 +157,93 @@ class FileUp(automat.Automat):
         """
         The state machine code, generated using `visio2python <http://bitdust.io/visio2python/>`_ tool.
         """
-        #---AT_STARTUP---
-        if self.state == 'AT_STARTUP':
-            if event == 'init':
-                self.state = 'IN_QUEUE'
+        # ---AT_STARTUP---
+        if self.state == "AT_STARTUP":
+            if event == "init":
+                self.state = "IN_QUEUE"
                 self.doInit(*args, **kwargs)
                 self.doQueueAppend(*args, **kwargs)
-        #---IN_QUEUE---
-        elif self.state == 'IN_QUEUE':
-            if event == 'stop':
-                self.state = 'STOPPED'
+        # ---IN_QUEUE---
+        elif self.state == "IN_QUEUE":
+            if event == "stop":
+                self.state = "STOPPED"
                 self.doQueueRemove(*args, **kwargs)
                 self.doReportStopped(*args, **kwargs)
                 self.doQueueNext(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'start':
-                self.state = 'UPLOADING'
+            elif event == "start":
+                self.state = "UPLOADING"
                 self.doSendData(*args, **kwargs)
-            elif event == 'file-not-exist':
-                self.state = 'NO_FILE'
+            elif event == "file-not-exist":
+                self.state = "NO_FILE"
                 self.doCancelPackets(*args, **kwargs)
                 self.doQueueRemove(*args, **kwargs)
                 self.doReportFailed(event, *args, **kwargs)
                 self.doQueueNext(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-        #---UPLOADING---
-        elif self.state == 'UPLOADING':
-            if event == 'stop':
-                self.state = 'STOPPED'
+        # ---UPLOADING---
+        elif self.state == "UPLOADING":
+            if event == "stop":
+                self.state = "STOPPED"
                 self.doCancelPackets(*args, **kwargs)
                 self.doQueueRemove(*args, **kwargs)
                 self.doReportStopped(*args, **kwargs)
                 self.doQueueNext(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'ack-received':
-                self.state = 'DELIVERED'
+            elif event == "ack-received":
+                self.state = "DELIVERED"
                 self.doQueueRemove(*args, **kwargs)
                 self.doReportDelivered(*args, **kwargs)
                 self.doQueueNext(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'timeout' or event == 'fail-received' or event == 'error' or event == 'sending-failed':
-                self.state = 'FAILED'
+            elif (
+                event == "timeout"
+                or event == "fail-received"
+                or event == "error"
+                or event == "sending-failed"
+            ):
+                self.state = "FAILED"
                 self.doCancelPackets(*args, **kwargs)
                 self.doQueueRemove(*args, **kwargs)
                 self.doReportFailed(event, *args, **kwargs)
                 self.doQueueNext(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'data-sent':
-                self.state = 'ACK?'
-        #---DELIVERED---
-        elif self.state == 'DELIVERED':
+            elif event == "data-sent":
+                self.state = "ACK?"
+        # ---DELIVERED---
+        elif self.state == "DELIVERED":
             pass
-        #---STOPPED---
-        elif self.state == 'STOPPED':
+        # ---STOPPED---
+        elif self.state == "STOPPED":
             pass
-        #---FAILED---
-        elif self.state == 'FAILED':
+        # ---FAILED---
+        elif self.state == "FAILED":
             pass
-        #---NO_FILE---
-        elif self.state == 'NO_FILE':
+        # ---NO_FILE---
+        elif self.state == "NO_FILE":
             pass
-        #---ACK?---
-        elif self.state == 'ACK?':
-            if event == 'stop':
-                self.state = 'STOPPED'
+        # ---ACK?---
+        elif self.state == "ACK?":
+            if event == "stop":
+                self.state = "STOPPED"
                 self.doCancelPackets(*args, **kwargs)
                 self.doQueueRemove(*args, **kwargs)
                 self.doReportStopped(*args, **kwargs)
                 self.doQueueNext(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'ack-received':
-                self.state = 'DELIVERED'
+            elif event == "ack-received":
+                self.state = "DELIVERED"
                 self.doQueueRemove(*args, **kwargs)
                 self.doReportDelivered(*args, **kwargs)
                 self.doQueueNext(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'error' or event == 'timeout' or event == 'fail-received' or event == 'sending-failed':
-                self.state = 'FAILED'
+            elif (
+                event == "error"
+                or event == "timeout"
+                or event == "fail-received"
+                or event == "sending-failed"
+            ):
+                self.state = "FAILED"
                 self.doCancelPackets(*args, **kwargs)
                 self.doQueueRemove(*args, **kwargs)
                 self.doReportFailed(event, *args, **kwargs)
@@ -234,16 +255,22 @@ class FileUp(automat.Automat):
         """
         Action method.
         """
-        io_throttle.PacketReport('send', self.remoteID, self.packetID, 'init')
+        io_throttle.PacketReport("send", self.remoteID, self.packetID, "init")
 
     def doQueueAppend(self, *args, **kwargs):
         """
         Action method.
         """
         if self.packetID in self.parent.fileSendQueue:
-            raise Exception('file %r already in uploading queue for %r' % (self.packetID, self.remoteID))
+            raise Exception(
+                "file %r already in uploading queue for %r"
+                % (self.packetID, self.remoteID)
+            )
         if self.packetID in self.parent.fileSendDict:
-            raise Exception('file %r already in uploading dict for %r' % (self.packetID, self.remoteID))
+            raise Exception(
+                "file %r already in uploading dict for %r"
+                % (self.packetID, self.remoteID)
+            )
         self.parent.fileSendQueue.append(self.packetID)
         self.parent.fileSendDict[self.packetID] = self
 
@@ -252,9 +279,15 @@ class FileUp(automat.Automat):
         Action method.
         """
         if self.packetID not in self.parent.fileSendDict:
-            raise Exception('file %r not found in uploading dict for %r' % (self.packetID, self.remoteID))
+            raise Exception(
+                "file %r not found in uploading dict for %r"
+                % (self.packetID, self.remoteID)
+            )
         if self.packetID not in self.parent.fileSendQueue:
-            raise Exception('file %r not found in uploading queue for %r' % (self.packetID, self.remoteID))
+            raise Exception(
+                "file %r not found in uploading queue for %r"
+                % (self.packetID, self.remoteID)
+            )
         self.parent.fileSendQueue.remove(self.packetID)
         del self.parent.fileSendDict[self.packetID]
 
@@ -264,7 +297,7 @@ class FileUp(automat.Automat):
         """
         payload = bpio.ReadBinaryFile(self.fileName)
         if not payload:
-            self.event('error', Exception('file %r reading error' % self.fileName))
+            self.event("error", Exception("file %r reading error" % self.fileName))
             return
         p2p_service.SendData(
             raw_data=payload,
@@ -287,9 +320,15 @@ class FileUp(automat.Automat):
         for pkt_out in packetsToCancel:
             if pkt_out.outpacket.Command == commands.Data():
                 if _Debug:
-                    lg.dbg(_DebugLevel, 'sending "cancel" to %s addressed to %s because downloading cancelled' % (
-                        pkt_out, pkt_out.remote_idurl, ))
-                pkt_out.automat('cancel')
+                    lg.dbg(
+                        _DebugLevel,
+                        'sending "cancel" to %s addressed to %s because downloading cancelled'
+                        % (
+                            pkt_out,
+                            pkt_out.remote_idurl,
+                        ),
+                    )
+                pkt_out.automat("cancel")
 
     def doQueueNext(self, *args, **kwargs):
         """
@@ -305,38 +344,50 @@ class FileUp(automat.Automat):
         self.parent.uploadingTimeoutCount = 0
         if self.callOnAck:
             newpacket = args[0]
-            reactor.callLater(0, self.callOnAck, newpacket, newpacket.OwnerID, self.packetID)  # @UndefinedVariable
+            reactor.callLater(
+                0, self.callOnAck, newpacket, newpacket.OwnerID, self.packetID
+            )  # @UndefinedVariable
 
     def doReportStopped(self, *args, **kwargs):
         """
         Action method.
         """
         if self.callOnFail:
-            reactor.callLater(0, self.callOnFail, self.remoteID, self.packetID, 'failed')  # @UndefinedVariable
+            reactor.callLater(
+                0, self.callOnFail, self.remoteID, self.packetID, "failed"
+            )  # @UndefinedVariable
 
     def doReportFailed(self, event, *args, **kwargs):
         """
         Action method.
         """
-        if event == 'fail-received':
+        if event == "fail-received":
             if self.callOnFail:
-                reactor.callLater(0, self.callOnFail, self.remoteID, self.packetID, 'failed')  # @UndefinedVariable
-        elif event == 'timeout':
+                reactor.callLater(
+                    0, self.callOnFail, self.remoteID, self.packetID, "failed"
+                )  # @UndefinedVariable
+        elif event == "timeout":
             self.parent.uploadingTimeoutCount += 1
             if self.callOnFail:
-                reactor.callLater(0, self.callOnFail, self.remoteID, self.packetID, 'timeout')  # @UndefinedVariable
-        elif event == 'sending-failed':
+                reactor.callLater(
+                    0, self.callOnFail, self.remoteID, self.packetID, "timeout"
+                )  # @UndefinedVariable
+        elif event == "sending-failed":
             if self.callOnFail:
-                reactor.callLater(0, self.callOnFail, self.remoteID, self.packetID, 'failed')  # @UndefinedVariable
+                reactor.callLater(
+                    0, self.callOnFail, self.remoteID, self.packetID, "failed"
+                )  # @UndefinedVariable
         else:
             if self.callOnFail:
-                reactor.callLater(0, self.callOnFail, self.remoteID, self.packetID, 'failed')  # @UndefinedVariable
+                reactor.callLater(
+                    0, self.callOnFail, self.remoteID, self.packetID, "failed"
+                )  # @UndefinedVariable
 
     def doDestroyMe(self, *args, **kwargs):
         """
         Remove all references to the state machine object to destroy it.
         """
-        io_throttle.PacketReport('send', self.remoteID, self.packetID, self.result)
+        io_throttle.PacketReport("send", self.remoteID, self.packetID, self.result)
         self.parent = None
         self.fileName = None
         self.fileSize = None
@@ -355,4 +406,3 @@ class FileUp(automat.Automat):
         self.result = None
         self.created = None
         self.destroy()
-

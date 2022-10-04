@@ -33,12 +33,12 @@ and it will do the job and than remember that size. Now you have a fast
 way to get the folder size, you can ask to scan same folder again.
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 12
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 import os
 import sys
@@ -46,22 +46,21 @@ import sys
 try:
     from twisted.internet import reactor  # @UnresolvedImport
 except:
-    sys.exit('Error initializing twisted.internet.reactor in dirsize.py')
+    sys.exit("Error initializing twisted.internet.reactor in dirsize.py")
 
 from twisted.internet import threads
 
-from logs import lg
-
 from lib import diskspace
-
+from logs import lg
 from system import bpio
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Jobs = {}
 _Dirs = {}
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
 
 def ask(dirpath, callback=None, arg=None):
     """
@@ -74,19 +73,19 @@ def ask(dirpath, callback=None, arg=None):
     global _Jobs
     global _Dirs
     if _Debug:
-        lg.out(_DebugLevel, 'dirsize.ask %s' % dirpath)
+        lg.out(_DebugLevel, "dirsize.ask %s" % dirpath)
     if dirpath in _Jobs:
-        return 'counting size'
+        return "counting size"
     if not os.path.isdir(dirpath):
-        _Dirs[dirpath] = 'not exist'
+        _Dirs[dirpath] = "not exist"
         if callback:
-            reactor.callLater(0, callback, 'not exist', arg)  # @UndefinedVariable
-        return 'not exist'
+            reactor.callLater(0, callback, "not exist", arg)  # @UndefinedVariable
+        return "not exist"
     d = threads.deferToThread(bpio.getDirectorySize, dirpath)
     d.addCallback(done, dirpath)
     _Jobs[dirpath] = (d, callback, arg)
-    _Dirs[dirpath] = 'counting size'
-    return 'counting size'
+    _Dirs[dirpath] = "counting size"
+    return "counting size"
 
 
 def done(size, dirpath):
@@ -96,7 +95,14 @@ def done(size, dirpath):
     global _Dirs
     global _Jobs
     if _Debug:
-        lg.out(_DebugLevel, 'dirsize.done %s %s' % (str(size), dirpath.decode(),))
+        lg.out(
+            _DebugLevel,
+            "dirsize.done %s %s"
+            % (
+                str(size),
+                dirpath.decode(),
+            ),
+        )
     _Dirs[dirpath] = str(size)
     try:
         _, cb, arg = _Jobs.pop(dirpath, (None, None, None))
@@ -106,7 +112,7 @@ def done(size, dirpath):
         lg.exc()
 
 
-def get(dirpath, default=''):
+def get(dirpath, default=""):
     """
     Only return directory size stored in memory - after previous calls to ``ask`` procedure.
     """
@@ -128,8 +134,8 @@ def getLabel(dirpath):
     A very smart way to show folder size - can change units, must use ``ask`` first.
     """
     global _Dirs
-    s = _Dirs.get(dirpath, '')
-    if s not in ['counting size', 'not exist']:
+    s = _Dirs.get(dirpath, "")
+    if s not in ["counting size", "not exist"]:
         try:
             return diskspace.MakeStringFromBytes(int(s))
         except:
@@ -143,19 +149,23 @@ def getInBytes(dirpath, default=-1):
     """
     return diskspace.GetBytesFromString(get(dirpath), default)
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def main():
     """
     Run the test - use command line to pass a location.
     """
+
     def _done(path, sz, *args, **kwargs):
         print(path, sz)
         reactor.stop()  # @UndefinedVariable
+
     bpio.init()
     ask(sys.argv[1], _done)
     reactor.run()  # @UndefinedVariable
+
 
 if __name__ == "__main__":
     main()

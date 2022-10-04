@@ -36,53 +36,45 @@ EVENTS:
     * :red:`stop`
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
-from io import BytesIO
-
-#------------------------------------------------------------------------------
 
 import os
-import sys
 import struct
+import sys
+from io import BytesIO
 
 from twisted.internet import reactor  # @UnresolvedImport
-from twisted.internet.protocol import ServerFactory
 from twisted.internet.defer import Deferred, DeferredList
+from twisted.internet.protocol import ServerFactory
 from twisted.protocols import basic
-from twisted.web import server, resource, static
+from twisted.web import resource, server, static
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
-if __name__ == '__main__':
+
+# ------------------------------------------------------------------------------
+
+if __name__ == "__main__":
     import os.path as _p
-    sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
-#------------------------------------------------------------------------------
+    sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), "..")))
 
-from logs import lg
-
-from system import bpio
-from system import tmpfile
+# ------------------------------------------------------------------------------
 
 from automats import automat
-
-from lib import strng
-from lib import nameurl
-from lib import misc
-from lib import net_misc
-
+from lib import misc, nameurl, net_misc, strng
+from logs import lg
 from main import settings
+from system import bpio, tmpfile
+from userid import identity, known_servers
 
-from userid import identity
-from userid import known_servers
-
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _IdServer = None
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 def A(event=None, *args, **kwargs):
@@ -93,8 +85,8 @@ def A(event=None, *args, **kwargs):
     if _IdServer is None:
         # set automat name and starting state here
         _IdServer = IdServer(
-            name='id_server',
-            state='AT_STARTUP',
+            name="id_server",
+            state="AT_STARTUP",
             debug_level=2,
             log_events=True,
             log_transitions=True,
@@ -119,48 +111,48 @@ class IdServer(automat.Automat):
         self.tcp_listener = None
         self.web_port = settings.IdentityWebPort()
         self.tcp_port = settings.IdentityServerPort()
-        self.hostname = ''
+        self.hostname = ""
 
     def A(self, event, *args, **kwargs):
-        #---AT_STARTUP---
-        if self.state == 'AT_STARTUP':
-            if event == 'init':
-                self.state = 'STOPPED'
+        # ---AT_STARTUP---
+        if self.state == "AT_STARTUP":
+            if event == "init":
+                self.state = "STOPPED"
                 self.doInit(*args, **kwargs)
-        #---LISTEN---
-        elif self.state == 'LISTEN':
-            if event == 'shutdown':
-                self.state = 'CLOSED'
+        # ---LISTEN---
+        elif self.state == "LISTEN":
+            if event == "shutdown":
+                self.state = "CLOSED"
                 self.doSetDown(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'incoming-identity-file':
+            elif event == "incoming-identity-file":
                 self.doCheckAndSaveIdentity(*args, **kwargs)
-            elif event == 'stop':
-                self.state = 'DOWN'
+            elif event == "stop":
+                self.state = "DOWN"
                 self.Restart = False
                 self.doSetDown(*args, **kwargs)
-        #---STOPPED---
-        elif self.state == 'STOPPED':
-            if event == 'start':
-                self.state = 'LISTEN'
+        # ---STOPPED---
+        elif self.state == "STOPPED":
+            if event == "start":
+                self.state = "LISTEN"
                 self.doSetUp(*args, **kwargs)
-            elif event == 'shutdown':
-                self.state = 'CLOSED'
+            elif event == "shutdown":
+                self.state = "CLOSED"
                 self.doDestroyMe(*args, **kwargs)
-        #---CLOSED---
-        elif self.state == 'CLOSED':
+        # ---CLOSED---
+        elif self.state == "CLOSED":
             pass
-        #---DOWN---
-        elif self.state == 'DOWN':
-            if event == 'server-down' and self.Restart:
-                self.state = 'LISTEN'
+        # ---DOWN---
+        elif self.state == "DOWN":
+            if event == "server-down" and self.Restart:
+                self.state = "LISTEN"
                 self.doSetUp(*args, **kwargs)
-            elif event == 'start':
+            elif event == "start":
                 self.Restart = True
-            elif event == 'server-down' and not self.Restart:
-                self.state = 'STOPPED'
-            elif event == 'shutdown':
-                self.state = 'CLOSED'
+            elif event == "server-down" and not self.Restart:
+                self.state = "STOPPED"
+            elif event == "shutdown":
+                self.state = "CLOSED"
                 self.doDestroyMe(*args, **kwargs)
         return None
 
@@ -175,28 +167,52 @@ class IdServer(automat.Automat):
         Action method.
         """
         self.hostname = settings.getIdServerHost()
-        if self.hostname == '':
-            self.hostname = strng.to_bin(misc.readExternalIP())  # bpio.ReadTextFile(settings.ExternalIPFilename())
-        if self.hostname == '':
+        if self.hostname == "":
+            self.hostname = strng.to_bin(
+                misc.readExternalIP()
+            )  # bpio.ReadTextFile(settings.ExternalIPFilename())
+        if self.hostname == "":
             self.hostname = net_misc.getLocalIp()
-        lg.out(4, 'id_server.doSetUp hostname=%s' % strng.to_text(self.hostname))
+        lg.out(4, "id_server.doSetUp hostname=%s" % strng.to_text(self.hostname))
         if not os.path.isdir(settings.IdentityServerDir()):
             os.makedirs(settings.IdentityServerDir())
-            lg.out(4, '            created a folder %s' % settings.IdentityServerDir())
+            lg.out(4, "            created a folder %s" % settings.IdentityServerDir())
         root = WebRoot()
-        root.putChild(b'', WebMainPage())
+        root.putChild(b"", WebMainPage())
         try:
-            self.tcp_listener = reactor.listenTCP(self.tcp_port, IdServerFactory())  # @UndefinedVariable
-            lg.out(4, "            identity server listen on TCP port %d started" % (self.tcp_port))
+            self.tcp_listener = reactor.listenTCP(
+                self.tcp_port, IdServerFactory()
+            )  # @UndefinedVariable
+            lg.out(
+                4,
+                "            identity server listen on TCP port %d started"
+                % (self.tcp_port),
+            )
         except:
-            lg.out(4, "id_server.set_up ERROR exception trying to listen on port " + str(self.tcp_port))
+            lg.out(
+                4,
+                "id_server.set_up ERROR exception trying to listen on port "
+                + str(self.tcp_port),
+            )
             lg.exc()
         try:
-            self.web_listener = reactor.listenTCP(self.web_port, server.Site(root))  # @UndefinedVariable
-            lg.out(4, "            have started web server at port %d   hostname=%s" % (
-                self.web_port, strng.to_text(self.hostname), ))
+            self.web_listener = reactor.listenTCP(
+                self.web_port, server.Site(root)
+            )  # @UndefinedVariable
+            lg.out(
+                4,
+                "            have started web server at port %d   hostname=%s"
+                % (
+                    self.web_port,
+                    strng.to_text(self.hostname),
+                ),
+            )
         except:
-            lg.out(4, "id_server.set_up ERROR exception trying to listen on port " + str(self.web_port))
+            lg.out(
+                4,
+                "id_server.set_up ERROR exception trying to listen on port "
+                + str(self.web_port),
+            )
             lg.exc()
 
     def doSetDown(self, *args, **kwargs):
@@ -217,7 +233,7 @@ class IdServer(automat.Automat):
             lg.out(4, "            stopped TCP listener")
         self.web_listener = None
         self.tcp_listener = None
-        DeferredList(shutlist).addBoth(lambda x: self.automat('server-down'))
+        DeferredList(shutlist).addBoth(lambda x: self.automat("server-down"))
 
     def doCheckAndSaveIdentity(self, *args, **kwargs):
         """
@@ -236,32 +252,31 @@ class IdServer(automat.Automat):
             args[0][-1].callback(True)
 
     def _save_identity(self, inputfilename):
-        """
-        """
+        """ """
         lg.out(6, "id_server._save_identity " + inputfilename)
         if os.path.getsize(inputfilename) > 50000:
             lg.warn("input file too big - ignoring ")
-            tmpfile.erase('idsrv', inputfilename, 'input file too big')
+            tmpfile.erase("idsrv", inputfilename, "input file too big")
             return
         newxml = bpio.ReadTextFile(inputfilename)
         if len(newxml.strip()) < 500:
             lg.warn("input file too small - ignoring ")
-            tmpfile.erase('idsrv', inputfilename, 'input file too small')
+            tmpfile.erase("idsrv", inputfilename, "input file too small")
             return
         try:
             newidentity = identity.identity(xmlsrc=newxml)
         except:
             lg.warn("input file is wrong - ignoring ")
-            tmpfile.erase('idsrv', inputfilename, 'input file is wrong')
+            tmpfile.erase("idsrv", inputfilename, "input file is wrong")
             return
-        tmpfile.erase('idsrv', inputfilename, 'id received')
+        tmpfile.erase("idsrv", inputfilename, "id received")
         if not newidentity.isCorrect():
             lg.warn("has non-Correct identity")
             return
         if not newidentity.Valid():
             lg.warn("has non-Valid identity")
             return
-        matchid = b''
+        matchid = b""
         for idurl_bin in newidentity.getSources(as_originals=True):
             protocol, host, port, filename = nameurl.UrlParse(idurl_bin)
             if strng.to_text(host) == strng.to_text(self.hostname):
@@ -269,7 +284,10 @@ class IdServer(automat.Automat):
                 matchid = idurl_bin
                 break
         if not matchid:
-            lg.warn("identity is not for this nameserver sources: %r" % newidentity.getSources(as_originals=True))
+            lg.warn(
+                "identity is not for this nameserver sources: %r"
+                % newidentity.getSources(as_originals=True)
+            )
             return
         protocol, host, port, filename = nameurl.UrlParse(matchid)
         name, justxml = filename.split(".")
@@ -288,10 +306,14 @@ class IdServer(automat.Automat):
                 lg.warn("identity name " + filename)
                 return
         localfilename = os.path.join(settings.IdentityServerDir(), filename)
-        oldxml = ''
+        oldxml = ""
         # need to make sure id was not already used by different key - which would mean someone is trying to steal identity
         if os.path.exists(localfilename):
-            lg.out(6, "id_server._save_identity was already an identity with this name " + localfilename)
+            lg.out(
+                6,
+                "id_server._save_identity was already an identity with this name "
+                + localfilename,
+            )
             oldxml = bpio.ReadTextFile(localfilename)
             oldidentity = identity.identity(xmlsrc=oldxml)
             if oldidentity.publickey != newidentity.publickey:
@@ -302,14 +324,14 @@ class IdServer(automat.Automat):
                 lg.out(6, "id_server._save_identity will save NEW Identity: " + filename)
             bpio.WriteTextFile(localfilename, newxml)
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 class IdServerProtocol(basic.Int32StringReceiver):
-
     def __init__(self):
-        self.fpath = None       # string with path/filename
-        self.fin = None         # integer file descriptor like os.open() returns
+        self.fpath = None  # string with path/filename
+        self.fin = None  # integer file descriptor like os.open() returns
         self.received = 0
 
     def disconnect(self):
@@ -322,8 +344,7 @@ class IdServerProtocol(basic.Int32StringReceiver):
                 lg.exc()
 
     def connectionMade(self):
-        """
-        """
+        """ """
 
     def stringReceived(self, data):
         try:
@@ -333,72 +354,75 @@ class IdServerProtocol(basic.Int32StringReceiver):
         except:
             self.disconnect()
             lg.exc()
-            lg.warn('incorrect data from %s\n' % str(self.transport.getPeer()))
+            lg.warn("incorrect data from %s\n" % str(self.transport.getPeer()))
             return
-        if command == b'a':
-            lg.warn('ignored incoming "abort" packet from %s' % str(self.transport.getPeer()))
+        if command == b"a":
+            lg.warn(
+                'ignored incoming "abort" packet from %s' % str(self.transport.getPeer())
+            )
             return
-        if command == b'h':
-            self.sendString(version + b'wid-server:' + strng.to_bin(A().hostname))
+        if command == b"h":
+            self.sendString(version + b"wid-server:" + strng.to_bin(A().hostname))
             return
-        if command != b'd':
+        if command != b"d":
             self.disconnect()
-            lg.warn('not a "data" packet from %s : %r' % (str(self.transport.getPeer()), data))
+            lg.warn(
+                'not a "data" packet from %s : %r' % (str(self.transport.getPeer()), data)
+            )
             return
         inp = BytesIO(payload)
         try:
-            file_id = int(struct.unpack('i', inp.read(4))[0])
-            file_size = int(struct.unpack('i', inp.read(4))[0])
+            file_id = int(struct.unpack("i", inp.read(4))[0])
+            file_size = int(struct.unpack("i", inp.read(4))[0])
         except:
             inp.close()
             self.disconnect()
             lg.exc()
-            lg.warn('wrong data from %s' % str(self.transport.getPeer()))
+            lg.warn("wrong data from %s" % str(self.transport.getPeer()))
             return
         if self.fin is None:
-            self.fin, self.fpath = tmpfile.make('idsrv', extension='.xml')
+            self.fin, self.fpath = tmpfile.make("idsrv", extension=".xml")
         inp_data = inp.read()
         inp.close()
         os.write(self.fin, inp_data)
         self.received += len(inp_data)
-        self.sendString(version + b'o' + struct.pack('i', file_id))
+        self.sendString(version + b"o" + struct.pack("i", file_id))
         if self.received == file_size:
             os.close(self.fin)
-            A('incoming-identity-file', self.fpath)
+            A("incoming-identity-file", self.fpath)
             self.fin = None
             self.fpath = None
 
     def connectionLost(self, reason):
-        """
-        """
+        """ """
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 class IdServerFactory(ServerFactory):
-
     def buildProtocol(self, addr):
         p = IdServerProtocol()
         p.factory = self
         return p
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 class WebMainPage(resource.Resource):
-
     def render_POST(self, request):
         inp = BytesIO(request.content.read())
-        fin, fpath = tmpfile.make('idsrv', extension='.xml')
+        fin, fpath = tmpfile.make("idsrv", extension=".xml")
         inp_data = inp.read()
         inp.close()
         os.write(fin, inp_data)
         os.close(fin)
-        A('incoming-identity-file', fpath)
-        return ''
+        A("incoming-identity-file", fpath)
+        return ""
 
     def render_GET(self, request):
-        src = '''<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+        src = """<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
 <html>
 <head>
 <title>Identities on %(hostname)s</title>
@@ -412,9 +436,11 @@ font-family: "Tw Cen MT", "Century Gothic", Futura, Arial, sans-serif;}
 <body>
 <div id="content">
 <h1 align=center>Identities on %(hostname)s</h1>
-''' % {'hostname': strng.to_text(A().hostname)}
-        src += '<table cellspacing=0 width=100% border=0><tr valign=top>\n'
-        src += '<td width=152px nowrap>\n'
+""" % {
+            "hostname": strng.to_text(A().hostname)
+        }
+        src += "<table cellspacing=0 width=100% border=0><tr valign=top>\n"
+        src += "<td width=152px nowrap>\n"
         HTDOCS_DIR = settings.IdentityServerDir()
         files = []
         if os.path.isdir(HTDOCS_DIR):
@@ -422,59 +448,70 @@ font-family: "Tw Cen MT", "Century Gothic", Futura, Arial, sans-serif;}
                 filepath = os.path.join(HTDOCS_DIR, filename)
                 if os.path.isdir(filepath):
                     continue
-                if not filename.endswith('.xml'):
+                if not filename.endswith(".xml"):
                     continue
                 files.append(filename)
         files.sort()
-        currentChar = ''
+        currentChar = ""
         charIndex = 0
         for filename in files:
             if filename[0] != currentChar:
                 currentChar = filename[0]
                 if charIndex % 4 == 3:
-                    src += '\n</td>\n<td width=152px nowrap>\n'
+                    src += "\n</td>\n<td width=152px nowrap>\n"
                 charIndex += 1
-                src += '\n<br>\n<h3>%s</h3>\n' % str(currentChar).upper()
-            url = '/' + filename
+                src += "\n<br>\n<h3>%s</h3>\n" % str(currentChar).upper()
+            url = "/" + filename
             name = filename[:-4]
-            src += '<p><a href="%s"><nobr>%s</nobr></a></p>\n' % (strng.to_text(url), strng.to_text(name))
-        src += '</td>\n</tr>\n</table>\n</td>\n</tr>\n<tr><td align=left>'
-        src += '<br><br><p>Total identities on "%s": %d</p><br><br>\n' % (strng.to_text(A().hostname), len(files))
-        src += '<p>Other known identity servers:\n'
+            src += '<p><a href="%s"><nobr>%s</nobr></a></p>\n' % (
+                strng.to_text(url),
+                strng.to_text(name),
+            )
+        src += "</td>\n</tr>\n</table>\n</td>\n</tr>\n<tr><td align=left>"
+        src += '<br><br><p>Total identities on "%s": %d</p><br><br>\n' % (
+            strng.to_text(A().hostname),
+            len(files),
+        )
+        src += "<p>Other known identity servers:\n"
         for idhost in sorted(known_servers.by_host().keys()):
             idport = known_servers.by_host()[idhost][0]
             if idport != 80:
-                idhost += b':%d' % idport
-            src += '<a href="http://%s/"><nobr>%s</nobr></a>&nbsp;&nbsp;\n' % (strng.to_text(idhost), strng.to_text(idhost))
-        src += '</p>'
-        src += '<!--CLIENT_HOST=%s:%s-->\n' % (request.client.host, request.client.port)
-        src += '</body>\n</html>'
+                idhost += b":%d" % idport
+            src += '<a href="http://%s/"><nobr>%s</nobr></a>&nbsp;&nbsp;\n' % (
+                strng.to_text(idhost),
+                strng.to_text(idhost),
+            )
+        src += "</p>"
+        src += "<!--CLIENT_HOST=%s:%s-->\n" % (request.client.host, request.client.port)
+        src += "</body>\n</html>"
         del files
         return strng.to_bin(src)
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 class WebRoot(resource.Resource):
-
     def getChild(self, path, request):
         if not path:
             return self
         try:
             path = strng.to_text(path)
         except:
-            return resource.NoResource('Not found')
-        if not path.count('.xml'):
-            return resource.NoResource('Not found')
-        if path.count('.') != 1:
-            return resource.NoResource('Not found')
-        if path.count('/') or path.count('\\'):
-            return resource.NoResource('Not found')
+            return resource.NoResource("Not found")
+        if not path.count(".xml"):
+            return resource.NoResource("Not found")
+        if path.count(".") != 1:
+            return resource.NoResource("Not found")
+        if path.count("/") or path.count("\\"):
+            return resource.NoResource("Not found")
         filepath = os.path.join(settings.IdentityServerDir(), strng.to_text(path))
         if os.path.isfile(filepath):
             return static.File(filepath)
-        return resource.NoResource('Not found')
+        return resource.NoResource("Not found")
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def main():
@@ -489,16 +526,18 @@ def main():
     else:
         tcp_port = settings.getIdServerTCPPort()
     lg.set_debug_level(20)
-    lg.out(2, 'starting ID server ...')
-    reactor.addSystemEventTrigger('before', 'shutdown',  # @UndefinedVariable
-                                  A().automat, 'shutdown')
-    reactor.callWhenRunning(A, 'init', (web_port, tcp_port))  # @UndefinedVariable
-    reactor.callLater(0, A, 'start')  # @UndefinedVariable
+    lg.out(2, "starting ID server ...")
+    reactor.addSystemEventTrigger(
+        "before", "shutdown", A().automat, "shutdown"  # @UndefinedVariable
+    )
+    reactor.callWhenRunning(A, "init", (web_port, tcp_port))  # @UndefinedVariable
+    reactor.callLater(0, A, "start")  # @UndefinedVariable
     reactor.run()  # @UndefinedVariable
     settings.shutdown()
-    lg.out(2, 'reactor stopped, EXIT')
+    lg.out(2, "reactor stopped, EXIT")
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 if __name__ == "__main__":
     main()

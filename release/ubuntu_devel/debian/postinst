@@ -57,7 +57,7 @@ A4ugWxAvW9Tt0sLmBj/W2pQmIyPLCm1SzDBPMlao+9+0EIwJkOr4VVUgC8DMIpuH
 =PUmG
 -----END PGP PUBLIC KEY BLOCK-----
 KEYDATA
-    fi    
+    fi
 
     if [ -x "`which update-menus 2>/dev/null`" ] ; then
         update-menus
@@ -70,12 +70,12 @@ KEYDATA
         mkdir -p /home/$INSTALLATOR/.config/autostart/
         cp /usr/share/bitdust/bitdust.desktop /home/$INSTALLATOR/.config/autostart/
         chown $INSTALLATOR:$INSTALLATOR /home/$INSTALLATOR/.config/autostart/bitdust.desktop
-    fi    
+    fi
 
     mkdir -p /home/$INSTALLATOR/.icons/
     cp /usr/share/icons/bitdust.png /home/$INSTALLATOR/.icons/
     chown $INSTALLATOR:$INSTALLATOR /home/$INSTALLATOR/.icons/bitdust.png
-    
+
     if [ -n "$INSTALLATOR" ]; then
         echo "restarting BitDust by user $INSTALLATOR"
         nohup su $INSTALLATOR -c "/usr/bin/bitdust restart" >/dev/null &
@@ -87,4 +87,3 @@ fi
 #DEBHELPER#
 
 exit 0
-

@@ -41,38 +41,30 @@ EVENTS:
     * :red:`users-not-found`
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Debug = True
 _DebugLevel = 6
 
-#------------------------------------------------------------------------------
-
-from logs import lg
+# ------------------------------------------------------------------------------
 
 from automats import automat
-
-from lib import strng
-
-from p2p import commands
-from p2p import p2p_service
-from p2p import lookup
-
 from contacts import identitycache
-
+from lib import strng
+from logs import lg
+from p2p import commands, lookup, p2p_service
+from transport import callback
 from userid import my_id
 
-from transport import callback
-
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _AccountantsFinder = None
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 def A(event=None, *args, **kwargs):
@@ -84,12 +76,15 @@ def A(event=None, *args, **kwargs):
         return _AccountantsFinder
     if _AccountantsFinder is None:
         # set automat name and starting state here
-        _AccountantsFinder = AccountantsFinder('accountants_finder', 'AT_STARTUP', _DebugLevel, _Debug)
+        _AccountantsFinder = AccountantsFinder(
+            "accountants_finder", "AT_STARTUP", _DebugLevel, _Debug
+        )
     if event is not None:
         _AccountantsFinder.automat(event, *args, **kwargs)
     return _AccountantsFinder
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 class AccountantsFinder(automat.Automat):
@@ -99,8 +94,8 @@ class AccountantsFinder(automat.Automat):
     """
 
     timers = {
-        'timer-3sec': (3.0, ['ACK?']),
-        'timer-10sec': (10.0, ['ACK?', 'SERVICE?']),
+        "timer-3sec": (3.0, ["ACK?"]),
+        "timer-10sec": (10.0, ["ACK?", "SERVICE?"]),
     }
 
     def init(self):
@@ -117,57 +112,61 @@ class AccountantsFinder(automat.Automat):
         The state machine code, generated using `visio2python
         <https://bitdust.io/visio2python/>`_ tool.
         """
-        if self.state == 'AT_STARTUP':
-            if event == 'init':
-                self.state = 'READY'
+        if self.state == "AT_STARTUP":
+            if event == "init":
+                self.state = "READY"
                 self.doInit(*args, **kwargs)
-        elif self.state == 'RANDOM_USER':
-            if event == 'shutdown':
-                self.state = 'CLOSED'
+        elif self.state == "RANDOM_USER":
+            if event == "shutdown":
+                self.state = "CLOSED"
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'found-one-user':
-                self.state = 'ACK?'
+            elif event == "found-one-user":
+                self.state = "ACK?"
                 self.doRememberUser(*args, **kwargs)
                 self.Attempts += 1
                 self.doSendMyIdentity(*args, **kwargs)
-            elif event == 'users-not-found':
-                self.state = 'READY'
+            elif event == "users-not-found":
+                self.state = "READY"
                 self.doNotifyLookupFailed(*args, **kwargs)
-        elif self.state == 'ACK?':
-            if event == 'shutdown':
-                self.state = 'CLOSED'
+        elif self.state == "ACK?":
+            if event == "shutdown":
+                self.state = "CLOSED"
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'ack-received':
-                self.state = 'SERVICE?'
+            elif event == "ack-received":
+                self.state = "SERVICE?"
                 self.doSendRequestService(*args, **kwargs)
-            elif event == 'timer-10sec' and self.Attempts < 5:
-                self.state = 'RANDOM_USER'
+            elif event == "timer-10sec" and self.Attempts < 5:
+                self.state = "RANDOM_USER"
                 self.doLookupRandomUser(*args, **kwargs)
-            elif event == 'timer-3sec':
+            elif event == "timer-3sec":
                 self.doSendMyIdentity(*args, **kwargs)
-        elif self.state == 'SERVICE?':
-            if event == 'shutdown':
-                self.state = 'CLOSED'
+        elif self.state == "SERVICE?":
+            if event == "shutdown":
+                self.state = "CLOSED"
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'service-accepted':
-                self.state = 'READY'
+            elif event == "service-accepted":
+                self.state = "READY"
                 self.doNotifyLookupSuccess(*args, **kwargs)
-            elif self.Attempts == 5 and (event == 'timer-10sec' or event == 'service-denied'):
-                self.state = 'READY'
+            elif self.Attempts == 5 and (
+                event == "timer-10sec" or event == "service-denied"
+            ):
+                self.state = "READY"
                 self.doNotifyLookupFailed(*args, **kwargs)
-            elif (event == 'timer-10sec' or event == 'service-denied') and self.Attempts < 5:
-                self.state = 'RANDOM_USER'
+            elif (
+                event == "timer-10sec" or event == "service-denied"
+            ) and self.Attempts < 5:
+                self.state = "RANDOM_USER"
                 self.doLookupRandomUser(*args, **kwargs)
-        elif self.state == 'READY':
-            if event == 'start':
-                self.state = 'RANDOM_USER'
+        elif self.state == "READY":
+            if event == "start":
+                self.state = "RANDOM_USER"
                 self.doSetNotifyCallback(*args, **kwargs)
                 self.Attempts = 0
                 self.doLookupRandomUser(*args, **kwargs)
-            elif event == 'shutdown':
-                self.state = 'CLOSED'
+            elif event == "shutdown":
+                self.state = "CLOSED"
                 self.doDestroyMe(*args, **kwargs)
-        elif self.state == 'CLOSED':
+        elif self.state == "CLOSED":
             pass
         return None
 
@@ -189,7 +188,7 @@ class AccountantsFinder(automat.Automat):
         """
         t = lookup.start()
         t.result_defer.addCallback(self._nodes_lookup_finished)
-        t.result_defer.addErrback(lambda err: self.automat('users-not-found'))
+        t.result_defer.addErrback(lambda err: self.automat("users-not-found"))
 
     def doRememberUser(self, *args, **kwargs):
         """
@@ -208,10 +207,13 @@ class AccountantsFinder(automat.Automat):
         Action method.
         """
         out_packet = p2p_service.SendRequestService(
-            self.target_idurl, 'service_accountant', json_payload=self.request_service_params, callbacks={
+            self.target_idurl,
+            "service_accountant",
+            json_payload=self.request_service_params,
+            callbacks={
                 commands.Ack(): self._node_acked,
                 commands.Fail(): self._node_failed,
-            }
+            },
         )
         self.requested_packet_id = out_packet.PacketID
 
@@ -220,7 +222,7 @@ class AccountantsFinder(automat.Automat):
         Action method.
         """
         if self.result_callback:
-            self.result_callback('accountant-connected', *args, **kwargs)
+            self.result_callback("accountant-connected", *args, **kwargs)
         self.result_callback = None
         self.request_service_params = None
 
@@ -229,9 +231,12 @@ class AccountantsFinder(automat.Automat):
         Action method.
         """
         if _Debug:
-            lg.out(_DebugLevel, 'accountants_finder.doNotifyLookupFailed, Attempts=%d' % self.Attempts)
+            lg.out(
+                _DebugLevel,
+                "accountants_finder.doNotifyLookupFailed, Attempts=%d" % self.Attempts,
+            )
         if self.result_callback:
-            self.result_callback('lookup-failed', *args, **kwargs)
+            self.result_callback("lookup-failed", *args, **kwargs)
         self.result_callback = None
         self.request_service_params = None
 
@@ -245,44 +250,56 @@ class AccountantsFinder(automat.Automat):
         del _AccountantsFinder
         _AccountantsFinder = None
 
-    #------------------------------------------------------------------------------
+    # ------------------------------------------------------------------------------
 
     def _inbox_packet_received(self, newpacket, info, status, error_message):
-        if newpacket.Command == commands.Ack() and \
-                newpacket.OwnerID == self.target_idurl and \
-                newpacket.PacketID.startswith('identity:') and \
-                self.state == 'ACK?':
-            self.automat('ack-received', self.target_idurl)
+        if (
+            newpacket.Command == commands.Ack()
+            and newpacket.OwnerID == self.target_idurl
+            and newpacket.PacketID.startswith("identity:")
+            and self.state == "ACK?"
+        ):
+            self.automat("ack-received", self.target_idurl)
             return True
         return False
 
     def _node_acked(self, response, info):
         if _Debug:
-            lg.out(_DebugLevel, 'accountants_finder._node_acked %r %r' % (response, info))
-        if not strng.to_text(response.Payload).startswith('accepted'):
+            lg.out(_DebugLevel, "accountants_finder._node_acked %r %r" % (response, info))
+        if not strng.to_text(response.Payload).startswith("accepted"):
             if _Debug:
-                lg.out(_DebugLevel, 'accountants_finder._node_acked with service denied %r %r' % (response, info))
-            self.automat('service-denied')
+                lg.out(
+                    _DebugLevel,
+                    "accountants_finder._node_acked with service denied %r %r"
+                    % (response, info),
+                )
+            self.automat("service-denied")
             return
         if _Debug:
-            lg.out(_DebugLevel, 'accountants_finder._node_acked !!!! accountant %s connected' % response.CreatorID)
-        self.automat('service-accepted', response.CreatorID)
+            lg.out(
+                _DebugLevel,
+                "accountants_finder._node_acked !!!! accountant %s connected"
+                % response.CreatorID,
+            )
+        self.automat("service-accepted", response.CreatorID)
 
     def _node_failed(self, response, info):
         if _Debug:
-            lg.out(_DebugLevel, 'accountants_finder._node_failed %r %r' % (response, info))
-        self.automat('service-denied')
+            lg.out(
+                _DebugLevel, "accountants_finder._node_failed %r %r" % (response, info)
+            )
+        self.automat("service-denied")
 
     def _nodes_lookup_finished(self, idurls):
         # TODO: this is still under construction - so I am using this node for tests
         # idurls = ['http://veselin-p2p.ru/bitdust_vps1000_k.xml', ]
         if _Debug:
-            lg.out(_DebugLevel, 'accountants_finder._nodes_lookup_finished : %r' % idurls)
+            lg.out(_DebugLevel, "accountants_finder._nodes_lookup_finished : %r" % idurls)
         for idurl in idurls:
             ident = identitycache.FromCache(idurl)
             remoteprotos = set(ident.getProtoOrder())
             myprotos = set(my_id.getLocalIdentity().getProtoOrder())
             if len(myprotos.intersection(remoteprotos)) > 0:
-                self.automat('found-one-user', idurl)
+                self.automat("found-one-user", idurl)
                 return
-        self.automat('users-not-found')
+        self.automat("users-not-found")

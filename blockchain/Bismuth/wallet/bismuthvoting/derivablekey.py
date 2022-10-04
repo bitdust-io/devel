@@ -5,17 +5,16 @@ A DerivableKey class for use with the Bismuth Governance Voting Protocol.
 import hmac
 from hashlib import sha256, sha512
 
+from bismuthvoting.bip39 import BIP39
+from coincurve import PrivateKey
 from Cryptodome.Cipher import AES
 from Cryptodome.Random import get_random_bytes
-from coincurve import PrivateKey
 from six import int2byte
-
-from bismuthvoting.bip39 import BIP39
 
 __version__ = "0.0.4"
 
 
-FIELD_ORDER = 2 ** 256
+FIELD_ORDER = 2**256
 
 
 # from ecdsa.ecdsa

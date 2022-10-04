@@ -80,66 +80,53 @@ EVENTS:
     * :red:`timer-5min`
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 8
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 import time
+from crypt import encrypted, key, signed
 
 from twisted.internet import reactor  # @UnresolvedImport
 
-#------------------------------------------------------------------------------
-
-from logs import lg
-
 from automats import automat
-
-from lib import nameurl
-
-from p2p import commands
-from p2p import online_status
-from p2p import p2p_service
-from p2p import propagate
-
-from system import bpio
-
-from userid import my_id
-from userid import global_id
-
 from contacts import contactsdb
-
-from main import settings
-from main import events
-
-from crypt import encrypted
-from crypt import signed
-from crypt import key
-
-from transport import packet_out
-
-from services import driver
-
 from customer import supplier_connector
+from lib import nameurl
+from logs import lg
+from main import events, settings
+from p2p import commands, online_status, p2p_service, propagate
+from services import driver
+from system import bpio
+from transport import packet_out
+from userid import global_id, my_id
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
+
+# ------------------------------------------------------------------------------
 
 _IndexSynchronizer = None
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
 
 def is_synchronized():
     if not A():
         return False
-    if A().state == 'IN_SYNC!':
+    if A().state == "IN_SYNC!":
         return True
-    if A().state in ['REQUEST?', 'SENDING', ]:
+    if A().state in [
+        "REQUEST?",
+        "SENDING",
+    ]:
         if A().last_time_in_sync > 0 and time.time() - A().last_time_in_sync < 30:
             return True
     return False
@@ -148,9 +135,14 @@ def is_synchronized():
 def is_synchronizing():
     if not A():
         return False
-    return A().state in ['REQUEST?', 'SENDING', ]
+    return A().state in [
+        "REQUEST?",
+        "SENDING",
+    ]
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def A(event=None, *args, **kwargs):
     """
@@ -161,8 +153,8 @@ def A(event=None, *args, **kwargs):
         return _IndexSynchronizer
     if _IndexSynchronizer is None:
         _IndexSynchronizer = IndexSynchronizer(
-            name='index_synchronizer',
-            state='AT_STARTUP',
+            name="index_synchronizer",
+            state="AT_STARTUP",
             debug_level=_DebugLevel,
             log_events=_Debug,
             log_transitions=_Debug,
@@ -171,7 +163,9 @@ def A(event=None, *args, **kwargs):
         _IndexSynchronizer.automat(event, *args, **kwargs)
     return _IndexSynchronizer
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 class IndexSynchronizer(automat.Automat):
     """
@@ -182,10 +176,10 @@ class IndexSynchronizer(automat.Automat):
     fast = False
 
     timers = {
-        'timer-1min': (60, ['NO_INFO']),
-        'timer-10sec': (10.0, ['REQUEST?']),
-        'timer-15sec': (15.0, ['REQUEST?', 'SENDING']),
-        'timer-5min': (300, ['IN_SYNC!']),
+        "timer-1min": (60, ["NO_INFO"]),
+        "timer-10sec": (10.0, ["REQUEST?"]),
+        "timer-15sec": (15.0, ["REQUEST?", "SENDING"]),
+        "timer-5min": (300, ["IN_SYNC!"]),
     }
 
     def init(self):
@@ -209,20 +203,30 @@ class IndexSynchronizer(automat.Automat):
         Method to catch the moment when index_synchronizer() state were
         changed.
         """
-        if newstate == 'IN_SYNC!':
+        if newstate == "IN_SYNC!":
             if A().last_time_in_sync > 0 and time.time() - A().last_time_in_sync < 30:
                 if _Debug:
-                    lg.dbg(_DebugLevel, 'backup index already synchronized %r seconds ago' % (time.time() - A().last_time_in_sync))
+                    lg.dbg(
+                        _DebugLevel,
+                        "backup index already synchronized %r seconds ago"
+                        % (time.time() - A().last_time_in_sync),
+                    )
             else:
                 if _Debug:
-                    lg.dbg(_DebugLevel, 'backup index just synchronized, sending "my-backup-index-synchronized" event')
-                events.send('my-backup-index-synchronized', data={})
+                    lg.dbg(
+                        _DebugLevel,
+                        'backup index just synchronized, sending "my-backup-index-synchronized" event',
+                    )
+                events.send("my-backup-index-synchronized", data={})
             self.last_time_in_sync = time.time()
             if self.PushAgain:
-                reactor.callLater(0, self.automat, 'instant')  # @UndefinedVariable
-        if newstate == 'NO_INFO' and oldstate in ['REQUEST?', 'SENDING', ]:
-            events.send('my-backup-index-out-of-sync', data={})
-        if newstate == 'NO_INFO':
+                reactor.callLater(0, self.automat, "instant")  # @UndefinedVariable
+        if newstate == "NO_INFO" and oldstate in [
+            "REQUEST?",
+            "SENDING",
+        ]:
+            events.send("my-backup-index-out-of-sync", data={})
+        if newstate == "NO_INFO":
             self.last_time_in_sync = -1
 
     def A(self, event, *args, **kwargs):
@@ -230,77 +234,94 @@ class IndexSynchronizer(automat.Automat):
         The state machine code, generated using `visio2python
         <https://bitdust.io/visio2python/>`_ tool.
         """
-        #---AT_STARTUP---
-        if self.state == 'AT_STARTUP':
-            if event == 'init':
-                self.state = 'NO_INFO'
+        # ---AT_STARTUP---
+        if self.state == "AT_STARTUP":
+            if event == "init":
+                self.state = "NO_INFO"
                 self.doInit(*args, **kwargs)
-        #---IN_SYNC!---
-        elif self.state == 'IN_SYNC!':
-            if event == 'shutdown':
-                self.state = 'CLOSED'
+        # ---IN_SYNC!---
+        elif self.state == "IN_SYNC!":
+            if event == "shutdown":
+                self.state = "CLOSED"
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'pull' or event == 'timer-5min':
-                self.state = 'REQUEST?'
+            elif event == "pull" or event == "timer-5min":
+                self.state = "REQUEST?"
                 self.doSuppliersRequestIndexFile(*args, **kwargs)
-            elif event == 'push' or ( event == 'instant' and self.PushAgain ):
-                self.state = 'SENDING'
+            elif event == "push" or (event == "instant" and self.PushAgain):
+                self.state = "SENDING"
                 self.doSuppliersSendIndexFile(*args, **kwargs)
-                self.PushAgain=False
-                self.PullAgain=False
-        #---REQUEST?---
-        elif self.state == 'REQUEST?':
-            if event == 'shutdown':
-                self.state = 'CLOSED'
+                self.PushAgain = False
+                self.PullAgain = False
+        # ---REQUEST?---
+        elif self.state == "REQUEST?":
+            if event == "shutdown":
+                self.state = "CLOSED"
                 self.doCancelRequests(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-            elif ( event == 'all-responded' or ( event == 'timer-15sec' and self.isSomeResponded(*args, **kwargs) ) ) and self.isVersionChanged(*args, **kwargs):
-                self.state = 'SENDING'
+            elif (
+                event == "all-responded"
+                or (event == "timer-15sec" and self.isSomeResponded(*args, **kwargs))
+            ) and self.isVersionChanged(*args, **kwargs):
+                self.state = "SENDING"
                 self.doCancelRequests(*args, **kwargs)
                 self.doSuppliersSendIndexFile(*args, **kwargs)
-                self.PushAgain=False
-                self.PullAgain=False
-            elif event == 'index-file-received':
+                self.PushAgain = False
+                self.PullAgain = False
+            elif event == "index-file-received":
                 self.doCheckVersion(*args, **kwargs)
-            elif ( event == 'all-responded' or ( event == 'timer-15sec' and self.isSomeResponded(*args, **kwargs) ) ) and not self.isVersionChanged(*args, **kwargs):
-                self.state = 'IN_SYNC!'
+            elif (
+                event == "all-responded"
+                or (event == "timer-15sec" and self.isSomeResponded(*args, **kwargs))
+            ) and not self.isVersionChanged(*args, **kwargs):
+                self.state = "IN_SYNC!"
                 self.doCancelRequests(*args, **kwargs)
-            elif event == 'timer-10sec' and not self.isSomeResponded(*args, **kwargs) and self.isAllTimedOut(*args, **kwargs):
-                self.state = 'NO_INFO'
+            elif (
+                event == "timer-10sec"
+                and not self.isSomeResponded(*args, **kwargs)
+                and self.isAllTimedOut(*args, **kwargs)
+            ):
+                self.state = "NO_INFO"
                 self.doCancelRequests(*args, **kwargs)
-        #---SENDING---
-        elif self.state == 'SENDING':
-            if event == 'shutdown':
-                self.state = 'CLOSED'
+        # ---SENDING---
+        elif self.state == "SENDING":
+            if event == "shutdown":
+                self.state = "CLOSED"
                 self.doCancelSendings(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'push':
-                self.PushAgain=True
-            elif event == 'timer-15sec' and not self.isSomeAcked(*args, **kwargs) and not self.PullAgain:
-                self.state = 'NO_INFO'
+            elif event == "push":
+                self.PushAgain = True
+            elif (
+                event == "timer-15sec"
+                and not self.isSomeAcked(*args, **kwargs)
+                and not self.PullAgain
+            ):
+                self.state = "NO_INFO"
                 self.doCancelSendings(*args, **kwargs)
-            elif ( event == 'all-acked' or ( event == 'timer-15sec' and self.isSomeAcked(*args, **kwargs) ) ) and not self.PullAgain:
-                self.state = 'IN_SYNC!'
+            elif (
+                event == "all-acked"
+                or (event == "timer-15sec" and self.isSomeAcked(*args, **kwargs))
+            ) and not self.PullAgain:
+                self.state = "IN_SYNC!"
                 self.doCancelSendings(*args, **kwargs)
-            elif event == 'pull':
-                self.PullAgain=True
-            elif ( event == 'all-acked' or event == 'timer-15sec' ) and self.PullAgain:
-                self.state = 'REQUEST?'
+            elif event == "pull":
+                self.PullAgain = True
+            elif (event == "all-acked" or event == "timer-15sec") and self.PullAgain:
+                self.state = "REQUEST?"
                 self.doCancelSendings(*args, **kwargs)
                 self.doSuppliersRequestIndexFile(*args, **kwargs)
-                self.PullAgain=False
-        #---NO_INFO---
-        elif self.state == 'NO_INFO':
-            if event == 'shutdown':
-                self.state = 'CLOSED'
+                self.PullAgain = False
+        # ---NO_INFO---
+        elif self.state == "NO_INFO":
+            if event == "shutdown":
+                self.state = "CLOSED"
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'push' or event == 'pull' or event == 'timer-1min':
-                self.state = 'REQUEST?'
+            elif event == "push" or event == "pull" or event == "timer-1min":
+                self.state = "REQUEST?"
                 self.doSuppliersRequestIndexFile(*args, **kwargs)
-                self.PushAgain=False
-                self.PullAgain=False
-        #---CLOSED---
-        elif self.state == 'CLOSED':
+                self.PushAgain = False
+                self.PullAgain = False
+        # ---CLOSED---
+        elif self.state == "CLOSED":
             pass
         return None
 
@@ -351,9 +372,10 @@ class IndexSynchronizer(automat.Automat):
         Action method.
         """
         if _Debug:
-            lg.out(_DebugLevel, 'index_synchronizer.doSuppliersRequestIndexFile')
-        if driver.is_on('service_backups'):
+            lg.out(_DebugLevel, "index_synchronizer.doSuppliersRequestIndexFile")
+        if driver.is_on("service_backups"):
             from storage import backup_fs
+
             self.current_local_revision = backup_fs.revision()
         else:
             self.current_local_revision = -1
@@ -372,7 +394,7 @@ class IndexSynchronizer(automat.Automat):
         Action method.
         """
         packetID = global_id.MakeGlobalID(
-            customer=my_id.getGlobalID(key_alias='master'),
+            customer=my_id.getGlobalID(key_alias="master"),
             path=settings.BackupIndexFileName(),
         )
         self.sending_suppliers.clear()
@@ -391,12 +413,18 @@ class IndexSynchronizer(automat.Automat):
         )
         Payload = b.Serialize()
         if _Debug:
-            lg.args(_DebugLevel, pid=packetID, sz=len(data), payload=len(Payload), length=b.Length)
+            lg.args(
+                _DebugLevel,
+                pid=packetID,
+                sz=len(data),
+                payload=len(Payload),
+                length=b.Length,
+            )
         for supplier_idurl in contactsdb.suppliers():
             if not supplier_idurl:
                 continue
             sc = supplier_connector.by_idurl(supplier_idurl)
-            if sc is None or sc.state != 'CONNECTED':
+            if sc is None or sc.state != "CONNECTED":
                 continue
             if online_status.isOffline(supplier_idurl):
                 continue
@@ -417,8 +445,10 @@ class IndexSynchronizer(automat.Automat):
                 if newpacket.PacketID not in self.outgoing_packets_ids:
                     self.outgoing_packets_ids.append(newpacket.PacketID)
             if _Debug:
-                lg.out(_DebugLevel, '    %s sending to %s' %
-                       (newpacket, nameurl.GetName(supplier_idurl)))
+                lg.out(
+                    _DebugLevel,
+                    "    %s sending to %s" % (newpacket, nameurl.GetName(supplier_idurl)),
+                )
 
     def doCancelSendings(self, *args, **kwargs):
         """
@@ -428,23 +458,24 @@ class IndexSynchronizer(automat.Automat):
             packetsToCancel = packet_out.search_by_packet_id(packet_id)
             for pkt_out in packetsToCancel:
                 if pkt_out.outpacket.Command == commands.Data():
-                    pkt_out.automat('cancel')
+                    pkt_out.automat("cancel")
 
     def doCancelRequests(self, *args, **kwargs):
         """
         Action method.
         """
-#         packetID = global_id.MakeGlobalID(
-#             customer=my_id.getGlobalID(key_alias='master'),
-#             path=settings.BackupIndexFileName(),
-#         )
-#         from transport import packet_out
-#         packetsToCancel = packet_out.search_by_packet_id(packetID)
-#         for pkt_out in packetsToCancel:
-#             if pkt_out.outpacket.Command == commands.Retrieve():
-#                 lg.warn('sending "cancel" to %s addressed to %s from index_synchronizer' % (
-#                     pkt_out, pkt_out.remote_idurl, ))
-#                 pkt_out.automat('cancel')
+
+    #         packetID = global_id.MakeGlobalID(
+    #             customer=my_id.getGlobalID(key_alias='master'),
+    #             path=settings.BackupIndexFileName(),
+    #         )
+    #         from transport import packet_out
+    #         packetsToCancel = packet_out.search_by_packet_id(packetID)
+    #         for pkt_out in packetsToCancel:
+    #             if pkt_out.outpacket.Command == commands.Retrieve():
+    #                 lg.warn('sending "cancel" to %s addressed to %s from index_synchronizer' % (
+    #                     pkt_out, pkt_out.remote_idurl, ))
+    #                 pkt_out.automat('cancel')
 
     def doCheckVersion(self, *args, **kwargs):
         """
@@ -468,19 +499,37 @@ class IndexSynchronizer(automat.Automat):
         if _Debug:
             lg.args(_DebugLevel, newpacket=newpacket, wrapped_packet=wrapped_packet)
         if not wrapped_packet or not wrapped_packet.Valid():
-            lg.err('incoming Data() is not valid')
+            lg.err("incoming Data() is not valid")
             return
         supplier_idurl = wrapped_packet.RemoteID
         from storage import backup_control
+
         supplier_revision = backup_control.IncomingSupplierBackupIndex(wrapped_packet)
         self.requesting_suppliers.discard(supplier_idurl)
         if supplier_revision is not None:
-            reactor.callLater(0, self.automat, 'index-file-received', (newpacket, supplier_revision, ))  # @UndefinedVariable
+            reactor.callLater(
+                0,
+                self.automat,
+                "index-file-received",
+                (
+                    newpacket,
+                    supplier_revision,
+                ),
+            )  # @UndefinedVariable
         if _Debug:
-            lg.out(_DebugLevel, 'index_synchronizer._on_supplier_response %s from %r, rev:%s, pending: %d, total: %d' % (
-                newpacket, supplier_idurl, supplier_revision, len(self.requesting_suppliers), self.requested_suppliers_number))
+            lg.out(
+                _DebugLevel,
+                "index_synchronizer._on_supplier_response %s from %r, rev:%s, pending: %d, total: %d"
+                % (
+                    newpacket,
+                    supplier_idurl,
+                    supplier_revision,
+                    len(self.requesting_suppliers),
+                    self.requested_suppliers_number,
+                ),
+            )
         if len(self.requesting_suppliers) == 0:
-            reactor.callLater(0, self.automat, 'all-responded')  # @UndefinedVariable
+            reactor.callLater(0, self.automat, "all-responded")  # @UndefinedVariable
 
     def _on_supplier_fail(self, newpacket, info):
         if _Debug:
@@ -488,10 +537,18 @@ class IndexSynchronizer(automat.Automat):
         supplier_idurl = newpacket.CreatorID
         self.requesting_suppliers.discard(supplier_idurl)
         if _Debug:
-            lg.out(_DebugLevel, 'index_synchronizer._on_supplier_fail %s from %r, pending: %d, total: %d' % (
-                newpacket, supplier_idurl, len(self.requesting_suppliers), self.requested_suppliers_number))
+            lg.out(
+                _DebugLevel,
+                "index_synchronizer._on_supplier_fail %s from %r, pending: %d, total: %d"
+                % (
+                    newpacket,
+                    supplier_idurl,
+                    len(self.requesting_suppliers),
+                    self.requested_suppliers_number,
+                ),
+            )
         if len(self.requesting_suppliers) == 0:
-            reactor.callLater(0, self.automat, 'all-responded')  # @UndefinedVariable
+            reactor.callLater(0, self.automat, "all-responded")  # @UndefinedVariable
 
     def _on_supplier_acked(self, newpacket, info):
         self.sending_suppliers.discard(newpacket.OwnerID)
@@ -501,16 +558,19 @@ class IndexSynchronizer(automat.Automat):
         if sc:
             sc.automat(newpacket.Command.lower(), newpacket)
         else:
-            lg.warn('did not found supplier connector for %r' % newpacket.OwnerID)
+            lg.warn("did not found supplier connector for %r" % newpacket.OwnerID)
         if _Debug:
-            lg.out(_DebugLevel, 'index_synchronizer._on_supplier_acked %s, pending: %d, total: %d' % (
-                newpacket, len(self.sending_suppliers), self.sent_suppliers_number))
+            lg.out(
+                _DebugLevel,
+                "index_synchronizer._on_supplier_acked %s, pending: %d, total: %d"
+                % (newpacket, len(self.sending_suppliers), self.sent_suppliers_number),
+            )
         if len(self.sending_suppliers) == 0:
-            reactor.callLater(0, self.automat, 'all-acked')  # @UndefinedVariable
+            reactor.callLater(0, self.automat, "all-acked")  # @UndefinedVariable
 
     def _do_retrieve(self, x=None):
         packetID = global_id.MakeGlobalID(
-            customer=my_id.getGlobalID(key_alias='master'),
+            customer=my_id.getGlobalID(key_alias="master"),
             path=settings.BackupIndexFileName(),
         )
         localID = my_id.getIDURL()
@@ -518,7 +578,7 @@ class IndexSynchronizer(automat.Automat):
             if not supplier_idurl:
                 continue
             sc = supplier_connector.by_idurl(supplier_idurl)
-            if sc is None or sc.state != 'CONNECTED':
+            if sc is None or sc.state != "CONNECTED":
                 continue
             if online_status.isOffline(supplier_idurl):
                 continue
@@ -527,16 +587,18 @@ class IndexSynchronizer(automat.Automat):
                 creatorID=localID,
                 packetID=packetID,
                 remoteID=supplier_idurl,
-                response_timeout=60*2,
+                response_timeout=60 * 2,
                 callbacks={
                     commands.Data(): self._on_supplier_response,
                     commands.Fail(): self._on_supplier_fail,
-                }
+                },
             )
             if pkt_out:
                 self.requesting_suppliers.add(supplier_idurl)
                 self.requested_suppliers_number += 1
                 self.requests_packets_sent.append((packetID, supplier_idurl))
             if _Debug:
-                lg.out(_DebugLevel, '    %s sending to %s' %
-                       (pkt_out, nameurl.GetName(supplier_idurl)))
+                lg.out(
+                    _DebugLevel,
+                    "    %s sending to %s" % (pkt_out, nameurl.GetName(supplier_idurl)),
+                )

@@ -47,91 +47,100 @@ EVENTS:
     * :red:`timer-1min`
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
-from __future__ import absolute_import
-from __future__ import print_function
+from __future__ import absolute_import, print_function
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 8
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 import os
 import sys
-import time
 import threading
+import time
 
 from six.moves import range
 
 try:
     from twisted.internet import reactor  # @UnresolvedImport
 except:
-    sys.exit('Error initializing twisted.internet.reactor in raid_worker.py')
+    sys.exit("Error initializing twisted.internet.reactor in raid_worker.py")
 
 from twisted.internet import threads
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import os.path as _p
-    sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
-#------------------------------------------------------------------------------
+    sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), "..")))
 
-from logs import lg
+# ------------------------------------------------------------------------------
 
 from automats import automat
-
+from logs import lg
+from raid import make, read, rebuild
 from system import bpio
 
-from raid import read
-from raid import make
-from raid import rebuild
-
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _MODULES = (
-    'raid.read',
-    'raid.make',
-    'raid.rebuild',
-    'raid.eccmap',
-    'raid.raidutils',
-    'logs.lg',
-    'os',
-    'sys',
-    'copy',
-    'array',
-    'traceback',
-    'six',
-    'io',
+    "raid.read",
+    "raid.make",
+    "raid.rebuild",
+    "raid.eccmap",
+    "raid.raidutils",
+    "logs.lg",
+    "os",
+    "sys",
+    "copy",
+    "array",
+    "traceback",
+    "six",
+    "io",
 )
 
 _VALID_TASKS = {
-    'make': (make.do_in_memory, (make.RoundupFile, make.ReadBinaryFile, make.WriteFile, make.ReadBinaryFileAsArray, )),
-    'read': (read.raidread, (read.RebuildOne, read.ReadBinaryFile, )),
-    'rebuild': (rebuild.rebuild, ()),
+    "make": (
+        make.do_in_memory,
+        (
+            make.RoundupFile,
+            make.ReadBinaryFile,
+            make.WriteFile,
+            make.ReadBinaryFileAsArray,
+        ),
+    ),
+    "read": (
+        read.raidread,
+        (
+            read.RebuildOne,
+            read.ReadBinaryFile,
+        ),
+    ),
+    "rebuild": (rebuild.rebuild, ()),
 }
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _RaidWorker = None
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 def add_task(cmd, params, callback):
     if _Debug:
         lg.args(_DebugLevel, cmd=cmd, params=params)
-    A('new-task', (cmd, params, callback))
+    A("new-task", (cmd, params, callback))
 
 
 def cancel_task(cmd, first_parameter):
     if not A():
         if _Debug:
-            lg.out(_DebugLevel, 'raid_worker.cancel_task SKIP _RaidWorker is not started')
+            lg.out(_DebugLevel, "raid_worker.cancel_task SKIP _RaidWorker is not started")
         return False
     task_id = None
     found = False
@@ -140,25 +149,34 @@ def cancel_task(cmd, first_parameter):
             try:
                 A().tasks.remove(t_id, t_cmd, t_params)
                 if _Debug:
-                    lg.out(_DebugLevel, 'raid_worker.cancel_task found pending task %r, canceling %r' % (t_id, first_parameter))
+                    lg.out(
+                        _DebugLevel,
+                        "raid_worker.cancel_task found pending task %r, canceling %r"
+                        % (t_id, first_parameter),
+                    )
             except:
-                lg.warn('failed removing pending task %d, %s' % (t_id, first_parameter))
+                lg.warn("failed removing pending task %d, %s" % (t_id, first_parameter))
             found = True
             break
     for task_id, task_data in A().activetasks.items():
         t_proc, t_cmd, t_params = task_data
         if cmd == t_cmd and first_parameter == t_params[0]:
             if _Debug:
-                lg.out(_DebugLevel, 'raid_worker.cancel_task found started task %r, aborting process %r' % (task_id, t_proc.tid))
+                lg.out(
+                    _DebugLevel,
+                    "raid_worker.cancel_task found started task %r, aborting process %r"
+                    % (task_id, t_proc.tid),
+                )
             A().processor.cancel(t_proc.tid)
             found = True
             break
     if not found:
-        lg.warn('task not found: %s %s' % (cmd, first_parameter))
+        lg.warn("task not found: %s %s" % (cmd, first_parameter))
         return False
     return True
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def A(event=None, *args, **kwargs):
@@ -168,12 +186,12 @@ def A(event=None, *args, **kwargs):
     global _RaidWorker
     if _RaidWorker is None:
         # small workaround to not create a new instance during shutdown process
-        if event is None or event != 'init':
+        if event is None or event != "init":
             return None
         # set automat name and starting state here
         _RaidWorker = RaidWorker(
-            name='raid_worker',
-            state='AT_STARTUP',
+            name="raid_worker",
+            state="AT_STARTUP",
             debug_level=_DebugLevel,
             log_events=_Debug,
             log_transitions=_Debug,
@@ -190,7 +208,7 @@ class RaidWorker(automat.Automat):
     """
 
     timers = {
-        'timer-1min': (60, ['READY']),
+        "timer-1min": (60, ["READY"]),
     }
 
     def init(self):
@@ -205,63 +223,71 @@ class RaidWorker(automat.Automat):
         self.callbacks = {}
 
     def A(self, event, *args, **kwargs):
-        #---AT_STARTUP---
-        if self.state == 'AT_STARTUP':
-            if event == 'init':
-                self.state = 'OFF'
+        # ---AT_STARTUP---
+        if self.state == "AT_STARTUP":
+            if event == "init":
+                self.state = "OFF"
                 self.doInit(*args, **kwargs)
-        #---OFF---
-        elif self.state == 'OFF':
-            if event == 'shutdown':
-                self.state = 'CLOSED'
+        # ---OFF---
+        elif self.state == "OFF":
+            if event == "shutdown":
+                self.state = "CLOSED"
                 self.doKillProcess(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'new-task':
+            elif event == "new-task":
                 self.doAddTask(*args, **kwargs)
                 self.doStartProcess(*args, **kwargs)
-            elif event == 'process-started' and self.isMoreTasks(*args, **kwargs):
-                self.state = 'WORK'
+            elif event == "process-started" and self.isMoreTasks(*args, **kwargs):
+                self.state = "WORK"
                 self.doStartTask(*args, **kwargs)
-            elif event == 'process-started' and not self.isMoreTasks(*args, **kwargs):
-                self.state = 'READY'
-        #---READY---
-        elif self.state == 'READY':
-            if event == 'new-task':
-                self.state = 'WORK'
+            elif event == "process-started" and not self.isMoreTasks(*args, **kwargs):
+                self.state = "READY"
+        # ---READY---
+        elif self.state == "READY":
+            if event == "new-task":
+                self.state = "WORK"
                 self.doAddTask(*args, **kwargs)
                 self.doStartTask(*args, **kwargs)
-            elif event == 'shutdown':
-                self.state = 'CLOSED'
+            elif event == "shutdown":
+                self.state = "CLOSED"
                 self.doKillProcess(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'timer-1min':
-                self.state = 'OFF'
+            elif event == "timer-1min":
+                self.state = "OFF"
                 self.doKillProcess(*args, **kwargs)
-        #---WORK---
-        elif self.state == 'WORK':
-            if event == 'new-task':
+        # ---WORK---
+        elif self.state == "WORK":
+            if event == "new-task":
                 self.doAddTask(*args, **kwargs)
                 self.doStartTask(*args, **kwargs)
-            elif event == 'shutdown':
-                self.state = 'CLOSED'
+            elif event == "shutdown":
+                self.state = "CLOSED"
                 self.doReportTasksFailed(*args, **kwargs)
                 self.doKillProcess(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'task-done' and self.isMoreTasks(*args, **kwargs):
+            elif event == "task-done" and self.isMoreTasks(*args, **kwargs):
                 self.doReportTaskDone(*args, **kwargs)
                 self.doPopTask(*args, **kwargs)
                 self.doStartTask(*args, **kwargs)
-            elif event == 'task-started' and self.isMoreTasks(*args, **kwargs):
+            elif event == "task-started" and self.isMoreTasks(*args, **kwargs):
                 self.doStartTask(*args, **kwargs)
-            elif event == 'task-done' and not self.isMoreActive(*args, **kwargs) and not self.isMoreTasks(*args, **kwargs):
-                self.state = 'READY'
+            elif (
+                event == "task-done"
+                and not self.isMoreActive(*args, **kwargs)
+                and not self.isMoreTasks(*args, **kwargs)
+            ):
+                self.state = "READY"
                 self.doReportTaskDone(*args, **kwargs)
                 self.doPopTask(*args, **kwargs)
-            elif event == 'task-done' and self.isMoreActive(*args, **kwargs) and not self.isMoreTasks(*args, **kwargs):
+            elif (
+                event == "task-done"
+                and self.isMoreActive(*args, **kwargs)
+                and not self.isMoreTasks(*args, **kwargs)
+            ):
                 self.doReportTaskDone(*args, **kwargs)
                 self.doPopTask(*args, **kwargs)
-        #---CLOSED---
-        elif self.state == 'CLOSED':
+        # ---CLOSED---
+        elif self.state == "CLOSED":
             pass
         return None
 
@@ -288,7 +314,9 @@ class RaidWorker(automat.Automat):
         """
         Action method.
         """
-        reactor.addSystemEventTrigger('after', 'shutdown', self._kill_processor)  # @UndefinedVariable
+        reactor.addSystemEventTrigger(
+            "after", "shutdown", self._kill_processor
+        )  # @UndefinedVariable
 
     def doStartProcess(self, *args, **kwargs):
         """
@@ -319,7 +347,7 @@ class RaidWorker(automat.Automat):
         #     from raid import worker
         #     self.processor = worker.Manager(ncpus=ncpus)
 
-        self.automat('process-started')
+        self.automat("process-started")
 
     def doKillProcess(self, *args, **kwargs):
         """
@@ -327,7 +355,7 @@ class RaidWorker(automat.Automat):
         """
         self._kill_processor()
         self.processor = None
-        self.automat('process-finished')
+        self.automat("process-finished")
 
     def doAddTask(self, *args, **kwargs):
         """
@@ -368,11 +396,19 @@ class RaidWorker(automat.Automat):
 
         self.activetasks[task_id] = (proc, cmd, params)
         if _Debug:
-            lg.out(_DebugLevel, 'raid_worker.doStartTask job_id=%r active=%d cpus=%d %s' % (
-                task_id, len(self.activetasks), self.processor.get_ncpus(), threading.currentThread().getName()))
+            lg.out(
+                _DebugLevel,
+                "raid_worker.doStartTask job_id=%r active=%d cpus=%d %s"
+                % (
+                    task_id,
+                    len(self.activetasks),
+                    self.processor.get_ncpus(),
+                    threading.currentThread().getName(),
+                ),
+            )
 
         # reactor.callLater(0, self.automat, 'task-started', task_id)  # @UndefinedVariable
-        self.automat('task-started', task_id)
+        self.automat("task-started", task_id)
 
     def doReportTaskDone(self, *args, **kwargs):
         """
@@ -383,12 +419,18 @@ class RaidWorker(automat.Automat):
         reactor.callLater(0, cb, cmd, params, result)  # @UndefinedVariable
         if result is not None:
             if _Debug:
-                lg.out(_DebugLevel, 'raid_worker.doReportTaskDone callbacks: %d tasks: %d active: %d' % (
-                    len(self.callbacks), len(self.tasks), len(self.activetasks)))
+                lg.out(
+                    _DebugLevel,
+                    "raid_worker.doReportTaskDone callbacks: %d tasks: %d active: %d"
+                    % (len(self.callbacks), len(self.tasks), len(self.activetasks)),
+                )
         else:
             if _Debug:
-                lg.out(_DebugLevel, 'raid_worker.doReportTaskDone result=None !!!!! callbacks: %d tasks: %d active: %d' % (
-                    len(self.callbacks), len(self.tasks), len(self.activetasks)))
+                lg.out(
+                    _DebugLevel,
+                    "raid_worker.doReportTaskDone result=None !!!!! callbacks: %d tasks: %d active: %d"
+                    % (len(self.callbacks), len(self.tasks), len(self.activetasks)),
+                )
 
     def doReportTasksFailed(self, *args, **kwargs):
         """
@@ -414,9 +456,21 @@ class RaidWorker(automat.Automat):
 
     def _job_done(self, task_id, cmd, params, result):
         if _Debug:
-            lg.out(_DebugLevel, 'raid_worker._job_done %r : %r active:%r cmd=%r params=%r %s' % (
-                task_id, result, list(self.activetasks.keys()), cmd, params, threading.currentThread().getName()))
-        reactor.callFromThread(self.automat, 'task-done', (task_id, cmd, params, result))  # @UndefinedVariable
+            lg.out(
+                _DebugLevel,
+                "raid_worker._job_done %r : %r active:%r cmd=%r params=%r %s"
+                % (
+                    task_id,
+                    result,
+                    list(self.activetasks.keys()),
+                    cmd,
+                    params,
+                    threading.currentThread().getName(),
+                ),
+            )
+        reactor.callFromThread(
+            self.automat, "task-done", (task_id, cmd, params, result)
+        )  # @UndefinedVariable
 
     # def _job_failed(self, task_id, cmd, params, err):
     #     lg.err('task %r FAILED : %r   active:%r cmd=%r params=%r' % (
@@ -427,14 +481,16 @@ class RaidWorker(automat.Automat):
         if self.processor:
             self.processor.destroy()
             if _Debug:
-                lg.out(_DebugLevel, 'raid_worker._kill_processor processor was destroyed')
+                lg.out(_DebugLevel, "raid_worker._kill_processor processor was destroyed")
 
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
 
 class RaidTask(object):
-
-    def __init__(self, task_id, worker_method, worker_args=None, on_success=None, on_fail=None):
+    def __init__(
+        self, task_id, worker_method, worker_args=None, on_success=None, on_fail=None
+    ):
         self.task_id = task_id
         self.result = None
         self._on_success = on_success
@@ -452,12 +508,16 @@ class RaidTask(object):
         time_running = time.time() - self._started
         if self._bytes_processed % 10000 == 0:
             if _Debug:
-                lg.args(_DebugLevel, bytes_processed=self._bytes_processed, time_running=time_running)
+                lg.args(
+                    _DebugLevel,
+                    bytes_processed=self._bytes_processed,
+                    time_running=time_running,
+                )
             time.sleep(0.01)
         return True
 
     def run(self):
-        args = self._worker_args + (self.threshold_control, )
+        args = self._worker_args + (self.threshold_control,)
         self.result = self._worker_method(*args)
         return self.result
 
@@ -472,18 +532,19 @@ class RaidTask(object):
     def stop(self):
         self._stopped = True
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 class RaidTaskInfo(object):
-
     def __init__(self, task_id):
         self.tid = task_id
 
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
 
 class ThreadedRaidProcessor(object):
-
     def __init__(self):
         self.latest_task_id = 0
         self.tasks = {}
@@ -492,7 +553,7 @@ class ThreadedRaidProcessor(object):
 
     def cancel(self, task_id):
         if task_id not in self.active_tasks:
-            lg.warn('can not cancel task %r, task was not found' % task_id)
+            lg.warn("can not cancel task %r, task was not found" % task_id)
             return
         self.active_tasks[task_id].stop()
 
@@ -506,7 +567,13 @@ class ThreadedRaidProcessor(object):
     def on_success(self, task_id, result, callback):
         ts = self.active_tasks.pop(task_id)
         if _Debug:
-            lg.args(_DebugLevel, task_id=task_id, result=result, bytes_processed=ts._bytes_processed, active_tasks=list(self.active_tasks.keys()))
+            lg.args(
+                _DebugLevel,
+                task_id=task_id,
+                result=result,
+                bytes_processed=ts._bytes_processed,
+                active_tasks=list(self.active_tasks.keys()),
+            )
         reactor.callLater(0, callback, result)  # @UndefinedVariable
         reactor.callLater(0, self.process)  # @UndefinedVariable
         return None
@@ -514,7 +581,13 @@ class ThreadedRaidProcessor(object):
     def on_fail(self, task_id, result, callback):
         ts = self.active_tasks.pop(task_id)
         if _Debug:
-            lg.args(_DebugLevel, task_id=task_id, result=result, bytes_processed=ts._bytes_processed, active_tasks=list(self.active_tasks.keys()))
+            lg.args(
+                _DebugLevel,
+                task_id=task_id,
+                result=result,
+                bytes_processed=ts._bytes_processed,
+                active_tasks=list(self.active_tasks.keys()),
+            )
         reactor.callLater(0, callback, result)  # @UndefinedVariable
         reactor.callLater(0, self.process)  # @UndefinedVariable
         return None
@@ -532,7 +605,7 @@ class ThreadedRaidProcessor(object):
     def submit(self, func, args=None, depfuncs=None, modules=None, callback=None):
         task_id = self.latest_task_id + 1
         if task_id in self.tasks:
-            raise Exception('another RaidTask already exists with task_id=%r' % task_id)
+            raise Exception("another RaidTask already exists with task_id=%r" % task_id)
         rt = RaidTask(
             task_id=task_id,
             worker_method=func,
@@ -547,17 +620,25 @@ class ThreadedRaidProcessor(object):
         reactor.callLater(0, self.process)  # @UndefinedVariable
         return RaidTaskInfo(task_id)
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def _read_done(cmd, taskdata, result):
-    lg.out(0, '_read_done %r %r %r' % (cmd, taskdata, result))
-    A('shutdown')
+    lg.out(0, "_read_done %r %r %r" % (cmd, taskdata, result))
+    A("shutdown")
     reactor.stop()  # @UndefinedVariable
 
 
 def _make_done(cmd, taskdata, result):
-    lg.out(0, '_make_done %r %r %r' % (cmd, taskdata, result))
-    reactor.callLater(0.5, add_task, 'read', ('/tmp/destination.txt', 'ecc/18x18', 'F12345678', '5', '/tmp/raidtest'), _read_done)  # @UndefinedVariable
+    lg.out(0, "_make_done %r %r %r" % (cmd, taskdata, result))
+    reactor.callLater(
+        0.5,
+        add_task,
+        "read",
+        ("/tmp/destination.txt", "ecc/18x18", "F12345678", "5", "/tmp/raidtest"),
+        _read_done,
+    )  # @UndefinedVariable
 
 
 def main():
@@ -566,14 +647,21 @@ def main():
     bpio.init()
     lg.set_debug_level(20)
 
-    os.system('rm -rf /tmp/raidtest')
-    os.system('mkdir -p /tmp/raidtest/F12345678')
-    open('/tmp/source.txt', 'w').write(base64.b64encode(os.urandom(1000)).decode())
+    os.system("rm -rf /tmp/raidtest")
+    os.system("mkdir -p /tmp/raidtest/F12345678")
+    open("/tmp/source.txt", "w").write(base64.b64encode(os.urandom(1000)).decode())
 
-    reactor.callWhenRunning(A, 'init')  # @UndefinedVariable
-    reactor.callLater(0.5, add_task, 'make', ('/tmp/source.txt', 'ecc/18x18', 'F12345678', '5', '/tmp/raidtest/F12345678'), _make_done)  # @UndefinedVariable
+    reactor.callWhenRunning(A, "init")  # @UndefinedVariable
+    reactor.callLater(
+        0.5,
+        add_task,
+        "make",
+        ("/tmp/source.txt", "ecc/18x18", "F12345678", "5", "/tmp/raidtest/F12345678"),
+        _make_done,
+    )  # @UndefinedVariable
 
     reactor.run()  # @UndefinedVariable
+
 
 if __name__ == "__main__":
     main()

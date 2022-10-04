@@ -32,8 +32,10 @@
 import array
 
 
-def build_parity(sds, iters, datasegments, myeccmap, paritysegments, threshold_control=None):
-    psds_list = {seg_num: array.array('i') for seg_num in range(myeccmap.paritysegments)}
+def build_parity(
+    sds, iters, datasegments, myeccmap, paritysegments, threshold_control=None
+):
+    psds_list = {seg_num: array.array("i") for seg_num in range(myeccmap.paritysegments)}
 
     for i in range(iters):
         parities = {seg_num: 0 for seg_num in range(myeccmap.paritysegments)}
@@ -50,7 +52,7 @@ def build_parity(sds, iters, datasegments, myeccmap, paritysegments, threshold_c
 
                 if threshold_control:
                     if not threshold_control(1):
-                        raise Exception('task cancelled')
+                        raise Exception("task cancelled")
 
         for PSegNum in range(myeccmap.paritysegments):
             psds_list[PSegNum].append(parities[PSegNum])
@@ -64,4 +66,4 @@ def build_parity(sds, iters, datasegments, myeccmap, paritysegments, threshold_c
 def chunks(l, n):
     """Yield successive n-sized chunks from l."""
     for i in range(0, len(l), n):
-        yield l[i:i + n]
+        yield l[i : i + n]

@@ -33,35 +33,36 @@ http://www.parallelpython.com - updates, documentation, examples and support
 forums
 """
 
-from __future__ import absolute_import
-from __future__ import print_function
+from __future__ import absolute_import, print_function
+
+import six.moves._thread
 from six import text_type as str
 from six.moves import range
-import six.moves._thread
 
 copyright = "Copyright (c) 2005-2009 Vitalii Vanovschi. All rights reserved"
 version = "1.5.7"
 
-import logging
 import getopt
-import sys
-import socket
-import random
-import string
-import time
+import logging
 import os
-
-from . import pptransport
-from . import ppauto
+import random
+import socket
+import string
+import sys
+import time
 
 from pp import Server  # @UnresolvedImport
+
+from . import ppauto, pptransport
 
 # compartibility with Python 2.6
 try:
     import hashlib
+
     sha_new = hashlib.sha1
 except ImportError:
     import sha
+
     sha_new = sha.new
 
 
@@ -70,12 +71,21 @@ class _NetworkServer(Server):
     Network Server Class.
     """
 
-    def __init__(self, ncpus="autodetect", interface="0.0.0.0",
-                 broadcast="255.255.255.255", port=None, secret=None,
-                 timeout=None, loglevel=logging.WARNING, restart=False,
-                 proto=0):
-        Server.__init__(self, ncpus, secret=secret, loglevel=loglevel,
-                        restart=restart, proto=proto)
+    def __init__(
+        self,
+        ncpus="autodetect",
+        interface="0.0.0.0",
+        broadcast="255.255.255.255",
+        port=None,
+        secret=None,
+        timeout=None,
+        loglevel=logging.WARNING,
+        restart=False,
+        proto=0,
+    ):
+        Server.__init__(
+            self, ncpus, secret=secret, loglevel=loglevel, restart=restart, proto=proto
+        )
         self.host = interface
         self.bcast = broadcast
         if port is not None:
@@ -87,11 +97,14 @@ class _NetworkServer(Server):
         self.last_con_time = time.time()
         self.ncon_lock = six.moves._thread.allocate_lock()
 
-        logging.debug("Strarting network server interface=%s port=%i"
-                      % (self.host, self.port))
+        logging.debug(
+            "Strarting network server interface=%s port=%i" % (self.host, self.port)
+        )
         if self.timeout is not None:
-            logging.debug("ppserver will exit in %i seconds if no "
-                          "connections with clients exist" % (self.timeout))
+            logging.debug(
+                "ppserver will exit in %i seconds if no "
+                "connections with clients exist" % (self.timeout)
+            )
             six.moves._thread.start_new_thread(self.check_timeout, ())
 
     def ncon_add(self, val):
@@ -113,8 +126,11 @@ class _NetworkServer(Server):
                 if idle_time < self.timeout:
                     time.sleep(self.timeout - idle_time)
                 else:
-                    logging.debug("exiting ppserver due to timeout (no client"
-                                  " connections in last %i sec)", self.timeout)
+                    logging.debug(
+                        "exiting ppserver due to timeout (no client"
+                        " connections in last %i sec)",
+                        self.timeout,
+                    )
                     os._exit(0)
             else:
                 time.sleep(self.timeout)
@@ -130,8 +146,11 @@ class _NetworkServer(Server):
             ssocket.bind((self.host, self.port))
             ssocket.listen(5)
         except socket.error:
-            logging.error("Cannot create socket with port " + str(self.port)
-                          + " (port is already in use)")
+            logging.error(
+                "Cannot create socket with port "
+                + str(self.port)
+                + " (port is already in use)"
+            )
 
         try:
             while True:
@@ -139,7 +158,7 @@ class _NetworkServer(Server):
                 (csocket, address) = ssocket.accept()
                 # now do something with the clientsocket
                 # in this case, we'll pretend this is a threaded server
-                six.moves._thread.start_new_thread(self.crun, (csocket, ))
+                six.moves._thread.start_new_thread(self.crun, (csocket,))
         except:
             logging.debug("Closing server socket")
             ssocket.close()
@@ -152,14 +171,14 @@ class _NetworkServer(Server):
         # send PP version
         mysocket.send(version)
         # generate a random string
-        srandom = "".join([random.choice(string.ascii_letters)
-                           for i in range(16)])
+        srandom = "".join([random.choice(string.ascii_letters) for i in range(16)])
         mysocket.send(srandom)
         answer = sha_new(srandom + self.secret).hexdigest()
         cleintanswer = mysocket.receive()
         if answer != cleintanswer:
-            logging.warning("Authentification failed, client host=%s, port=%i"
-                            % csocket.getpeername())
+            logging.warning(
+                "Authentification failed, client host=%s, port=%i" % csocket.getpeername()
+            )
             mysocket.send("FAILED")
             csocket.close()
             return
@@ -194,10 +213,10 @@ class _NetworkServer(Server):
         Initiaates auto-discovery mechanism.
         """
         discover = ppauto.Discover(self)
-        six.moves._thread.start_new_thread(discover.run,
-                                ((self.host, self.port),
-                                 (self.bcast, self.port)),
-                                )
+        six.moves._thread.start_new_thread(
+            discover.run,
+            ((self.host, self.port), (self.bcast, self.port)),
+        )
 
 
 def parse_config(file_loc):
@@ -208,8 +227,11 @@ def parse_config(file_loc):
     try:
         from configobj import ConfigObj
     except ImportError as ie:
-        print("ERROR: You must have configobj installed to use \
-configuration files. You can still use command line switches.", file=sys.stderr)
+        print(
+            "ERROR: You must have configobj installed to use \
+configuration files. You can still use command line switches.",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     if not os.access(file_loc, os.F_OK):
@@ -221,53 +243,52 @@ configuration files. You can still use command line switches.", file=sys.stderr)
     # try each config item and use the result if it exists. If it doesn't
     # then simply pass and move along
     try:
-        args['secret'] = config['general'].get('secret')
+        args["secret"] = config["general"].get("secret")
     except:
         pass
 
     try:
-        autodiscovery = config['network'].as_bool('autodiscovery')
+        autodiscovery = config["network"].as_bool("autodiscovery")
     except:
         pass
 
     try:
-        args['interface'] = config['network'].get('interface',
-                                                  default="0.0.0.0")
+        args["interface"] = config["network"].get("interface", default="0.0.0.0")
     except:
         pass
 
     try:
-        args['broadcast'] = config['network'].get('broadcast')
+        args["broadcast"] = config["network"].get("broadcast")
     except:
         pass
 
     try:
-        args['port'] = config['network'].as_int('port')
+        args["port"] = config["network"].as_int("port")
     except:
         pass
 
     try:
-        args['loglevel'] = config['general'].as_bool('debug')
+        args["loglevel"] = config["general"].as_bool("debug")
     except:
         pass
 
     try:
-        args['ncpus'] = config['general'].as_int('workers')
+        args["ncpus"] = config["general"].as_int("workers")
     except:
         pass
 
     try:
-        args['proto'] = config['general'].as_int('proto')
+        args["proto"] = config["general"].as_int("proto")
     except:
         pass
 
     try:
-        args['restart'] = config['general'].as_bool('restart')
+        args["restart"] = config["general"].as_bool("restart")
     except:
         pass
 
     try:
-        args['timeout'] = config['network'].as_int('timeout')
+        args["timeout"] = config["network"].as_int("timeout")
     except:
         pass
     # Return a tuple of the args dict and autodiscovery variable
@@ -279,16 +300,17 @@ def print_usage():
     Prints help.
     """
     print("Parallel Python Network Server (pp-" + version + ")")
-    print("Usage: ppserver.py [-hdar] [-n proto] [-c config_path]"\
-        " [-i interface] [-b broadcast] [-p port] [-w nworkers]"\
-        " [-s secret] [-t seconds]")
+    print(
+        "Usage: ppserver.py [-hdar] [-n proto] [-c config_path]"
+        " [-i interface] [-b broadcast] [-p port] [-w nworkers]"
+        " [-s secret] [-t seconds]"
+    )
     print()
     print("Options: ")
     print("-h                 : this help message")
     print("-d                 : debug")
     print("-a                 : enable auto-discovery service")
-    print("-r                 : restart worker process after each"\
-        " task completion")
+    print("-r                 : restart worker process after each" " task completion")
     print("-n proto           : protocol number for pickle module")
     print("-c path            : path to config file")
     print("-i interface       : interface to listen")
@@ -296,8 +318,7 @@ def print_usage():
     print("-p port            : port to listen")
     print("-w nworkers        : number of workers to start")
     print("-s secret          : secret for authentication")
-    print("-t seconds         : timeout to exit if no connections with "\
-        "clients exist")
+    print("-t seconds         : timeout to exit if no connections with " "clients exist")
     print()
     print("Due to the security concerns always use a non-trivial secret key.")
     print("Secret key set by -s switch will override secret key assigned by")
@@ -309,8 +330,7 @@ def print_usage():
 
 if __name__ == "__main__":
     try:
-        opts, args = getopt.getopt(sys.argv[1:],
-                                   "hdarn:c:b:i:p:w:s:t:", ["help"])
+        opts, args = getopt.getopt(sys.argv[1:], "hdarn:c:b:i:p:w:s:t:", ["help"])
     except getopt.GetoptError:
         print_usage()
         sys.exit(1)

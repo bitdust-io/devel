@@ -31,6 +31,7 @@ module:: service_message_history
 """
 
 from __future__ import absolute_import
+
 from services.local_service import LocalService
 
 
@@ -40,42 +41,41 @@ def create_service():
 
 class MessageHistoryService(LocalService):
 
-    service_name = 'service_message_history'
-    config_path = 'services/message-history/enabled'
+    service_name = "service_message_history"
+    config_path = "services/message-history/enabled"
 
     def dependent_on(self):
         return [
-            'service_my_data',
-            'service_private_messages',
+            "service_my_data",
+            "service_private_messages",
         ]
 
     def start(self):
-        from chat import message_database
-        from chat import message_keeper
-        from main import events
-        from main import listeners
+        from chat import message_database, message_keeper
+        from main import events, listeners
+
         message_database.init()
         message_keeper.init()
-        events.add_subscriber(self.on_key_registered, 'key-registered')
-        events.add_subscriber(self.on_key_renamed, 'key-renamed')
-        events.add_subscriber(self.on_key_generated, 'key-generated')
-        events.add_subscriber(self.on_key_erased, 'key-erased')
-        if listeners.is_populate_requered('conversation'):
-            listeners.populate_later().remove('conversation')
+        events.add_subscriber(self.on_key_registered, "key-registered")
+        events.add_subscriber(self.on_key_renamed, "key-renamed")
+        events.add_subscriber(self.on_key_generated, "key-generated")
+        events.add_subscriber(self.on_key_erased, "key-erased")
+        if listeners.is_populate_requered("conversation"):
+            listeners.populate_later().remove("conversation")
             message_database.populate_conversations()
-        if listeners.is_populate_requered('message'):
-            listeners.populate_later().remove('message')
+        if listeners.is_populate_requered("message"):
+            listeners.populate_later().remove("message")
             message_database.populate_messages()
         return True
 
     def stop(self):
-        from chat import message_database
-        from chat import message_keeper
+        from chat import message_database, message_keeper
         from main import events
-        events.remove_subscriber(self.on_key_erased, 'key-erased')
-        events.remove_subscriber(self.on_key_generated, 'key-generated')
-        events.remove_subscriber(self.on_key_renamed, 'key-renamed')
-        events.remove_subscriber(self.on_key_registered, 'key-registered')
+
+        events.remove_subscriber(self.on_key_erased, "key-erased")
+        events.remove_subscriber(self.on_key_generated, "key-generated")
+        events.remove_subscriber(self.on_key_renamed, "key-renamed")
+        events.remove_subscriber(self.on_key_registered, "key-registered")
         message_keeper.shutdown()
         message_database.shutdown()
         return True
@@ -84,25 +84,29 @@ class MessageHistoryService(LocalService):
         return True
 
     def on_key_generated(self, evt):
-        self.do_check_create_rename_key(evt.data['key_id'])
+        self.do_check_create_rename_key(evt.data["key_id"])
 
     def on_key_registered(self, evt):
-        self.do_check_create_rename_key(evt.data['key_id'])
+        self.do_check_create_rename_key(evt.data["key_id"])
 
     def on_key_renamed(self, evt):
-        self.do_check_create_rename_key(evt.data['new_key_id'])
+        self.do_check_create_rename_key(evt.data["new_key_id"])
 
     def on_key_erased(self, evt):
-        from main import listeners
         from crypt import my_keys
-        if evt.data['key_id'].startswith('group_'):
-            local_key_id = my_keys.get_local_key_id(evt.data['key_id'])
-            listeners.push_snapshot('conversation', snap_id=local_key_id, deleted=True)
+
+        from main import listeners
+
+        if evt.data["key_id"].startswith("group_"):
+            local_key_id = my_keys.get_local_key_id(evt.data["key_id"])
+            listeners.push_snapshot("conversation", snap_id=local_key_id, deleted=True)
 
     def do_check_create_rename_key(self, new_key_id):
-        from logs import lg
         from crypt import my_keys
+
         from chat import message_database
+        from logs import lg
+
         try:
             new_public_key = my_keys.get_public_key_raw(new_key_id)
         except:
@@ -114,7 +118,7 @@ class MessageHistoryService(LocalService):
             lg.exc()
             return
         if new_local_key_id is None:
-            lg.err('did not found local_key_id for %r' % new_key_id)
+            lg.err("did not found local_key_id for %r" % new_key_id)
             return
         message_database.check_create_rename_key(
             new_public_key=new_public_key,

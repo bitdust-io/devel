@@ -21,13 +21,13 @@
 # Please contact us if you have any questions at bitdust.io@gmail.com
 
 from __future__ import absolute_import
+
 import os
 import sys
 
 from twisted.internet import reactor  # @UnresolvedImport
-from twisted.internet.defer import Deferred
 
-sys.path.append(os.path.abspath('..'))
+sys.path.append(os.path.abspath(".."))
 
 from logs import lg
 
@@ -37,11 +37,17 @@ def main():
 
     # TEST
     import transport.gate
-    transport.gate.init(['tcp', ])
+
+    transport.gate.init(
+        [
+            "tcp",
+        ]
+    )
     import userid.propagate
+
     userid.propagate.SendServers()
     reactor.run()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

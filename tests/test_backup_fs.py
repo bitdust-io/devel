@@ -1,18 +1,12 @@
-from unittest import TestCase
 import os
+from crypt import key
+from unittest import TestCase
 
 from logs import lg
-
-from system import bpio
-
 from main import settings
-
-from crypt import key
-
 from storage import backup_fs
-
+from system import bpio
 from userid import my_id
-
 
 _some_priv_key = """-----BEGIN RSA PRIVATE KEY-----
 MIIEowIBAAKCAQEA/ZsJKyCakqA8vO2r0CTOG0qE2l+4y1dIqh7VC0oaVkXy0Cim
@@ -62,23 +56,22 @@ _some_identity_xml = """<?xml version="1.0" encoding="utf-8"?>
 
 
 class Test(TestCase):
-
     def setUp(self):
         try:
-            bpio.rmdir_recursive('/tmp/.bitdust_tmp')
+            bpio.rmdir_recursive("/tmp/.bitdust_tmp")
         except Exception:
             pass
         lg.set_debug_level(30)
-        settings.init(base_dir='/tmp/.bitdust_tmp')
+        settings.init(base_dir="/tmp/.bitdust_tmp")
         self.my_current_key = None
         try:
-            os.makedirs('/tmp/.bitdust_tmp/metadata/')
+            os.makedirs("/tmp/.bitdust_tmp/metadata/")
         except:
             pass
-        fout = open(settings.KeyFileName(), 'w')
+        fout = open(settings.KeyFileName(), "w")
         fout.write(_some_priv_key)
         fout.close()
-        fout = open(settings.LocalIdentityFilename(), 'w')
+        fout = open(settings.LocalIdentityFilename(), "w")
         fout.write(_some_identity_xml)
         fout.close()
         self.assertTrue(key.LoadMyKey())
@@ -90,13 +83,13 @@ class Test(TestCase):
         key.ForgetMyKey()
         my_id.forgetLocalIdentity()
         settings.shutdown()
-        bpio.rmdir_recursive('/tmp/.bitdust_tmp')
+        bpio.rmdir_recursive("/tmp/.bitdust_tmp")
 
     def test_file_create(self):
-        path = 'cat.jpeg'
+        path = "cat.jpeg"
         parent_path = os.path.dirname(path)
-        customer_idurl = 'http://127.0.0.1:8084/alice.xml'
-        key_alias = 'master'
+        customer_idurl = "http://127.0.0.1:8084/alice.xml"
+        key_alias = "master"
         id_iter_iterID = backup_fs.GetIteratorsByPath(
             parent_path,
             iter=backup_fs.fs(customer_idurl, key_alias),
@@ -111,16 +104,23 @@ class Test(TestCase):
             key_id=None,
         )
         self.assertEqual(newPathID, itemInfo.path_id)
-        self.assertEqual(itemInfo.name(), 'cat.jpeg')
-        self.assertEqual(itemInfo.key_alias(), 'master')
-        self.assertEqual(backup_fs.fs(customer_idurl, key_alias), {'cat.jpeg': int(newPathID), })
-        self.assertEqual(backup_fs.fsID(customer_idurl, key_alias)[int(newPathID)].name(), 'cat.jpeg')
+        self.assertEqual(itemInfo.name(), "cat.jpeg")
+        self.assertEqual(itemInfo.key_alias(), "master")
+        self.assertEqual(
+            backup_fs.fs(customer_idurl, key_alias),
+            {
+                "cat.jpeg": int(newPathID),
+            },
+        )
+        self.assertEqual(
+            backup_fs.fsID(customer_idurl, key_alias)[int(newPathID)].name(), "cat.jpeg"
+        )
 
     def test_file_create_with_key_alias(self):
-        key_id = 'share_abcd$alice@127.0.0.1_8084'
-        key_alias = key_id.split('$')[0]
-        customer_idurl = 'http://127.0.0.1:8084/alice.xml'
-        path = 'animals/dog.png'
+        key_id = "share_abcd$alice@127.0.0.1_8084"
+        key_alias = key_id.split("$")[0]
+        customer_idurl = "http://127.0.0.1:8084/alice.xml"
+        path = "animals/dog.png"
         parent_path = os.path.dirname(path)
         parentPathID, _, _, _ = backup_fs.AddDir(
             parent_path,
@@ -143,11 +143,22 @@ class Test(TestCase):
             key_id=key_id,
         )
         self.assertEqual(newPathID, itemInfo.path_id)
-        self.assertEqual(itemInfo.name(), 'dog.png')
-        self.assertEqual(itemInfo.key_alias(), 'share_abcd')
-        p1, p2 = newPathID.split('/')
-        self.assertEqual(backup_fs.fs(customer_idurl, key_alias), {'animals': {0: int(p1), 'dog.png': int(p2)}})
-        self.assertEqual(backup_fs.fsID(customer_idurl, key_alias)[int(p1)]['i'].name(), 'animals')
-        self.assertEqual(backup_fs.fsID(customer_idurl, key_alias)[int(p1)]['i'].key_id, key_id)
-        self.assertEqual(backup_fs.fsID(customer_idurl, key_alias)[int(p1)][int(p2)].name(), 'dog.png')
-        self.assertEqual(backup_fs.fsID(customer_idurl, key_alias)[int(p1)][int(p2)].key_id, key_id)
+        self.assertEqual(itemInfo.name(), "dog.png")
+        self.assertEqual(itemInfo.key_alias(), "share_abcd")
+        p1, p2 = newPathID.split("/")
+        self.assertEqual(
+            backup_fs.fs(customer_idurl, key_alias),
+            {"animals": {0: int(p1), "dog.png": int(p2)}},
+        )
+        self.assertEqual(
+            backup_fs.fsID(customer_idurl, key_alias)[int(p1)]["i"].name(), "animals"
+        )
+        self.assertEqual(
+            backup_fs.fsID(customer_idurl, key_alias)[int(p1)]["i"].key_id, key_id
+        )
+        self.assertEqual(
+            backup_fs.fsID(customer_idurl, key_alias)[int(p1)][int(p2)].name(), "dog.png"
+        )
+        self.assertEqual(
+            backup_fs.fsID(customer_idurl, key_alias)[int(p1)][int(p2)].key_id, key_id
+        )

@@ -30,28 +30,29 @@
 
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
-from io import open
-import six
-
-#------------------------------------------------------------------------------
 
 import os
 import platform
-
-#------------------------------------------------------------------------------
+from io import open
 
 from lib import strng
-
 from logs import lg
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
+
+# ------------------------------------------------------------------------------
+
+
+# ------------------------------------------------------------------------------
 
 _PlatformInfo = None
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
 
 def WriteBinaryFile(filename, data):
     """
@@ -63,7 +64,7 @@ def WriteBinaryFile(filename, data):
         _PlatformInfo = platform.uname()
     try:
         tmpfilename = filename + ".new"
-        f = open(tmpfilename, 'wb')
+        f = open(tmpfilename, "wb")
         bin_data = strng.to_bin(data)
         f.write(bin_data)
         f.flush()
@@ -72,11 +73,11 @@ def WriteBinaryFile(filename, data):
         f.close()
         # in Unix the rename will overwrite an existing file,
         # but in Windows it fails, so have to remove existing file first
-        if _PlatformInfo[0] == 'Windows' and os.path.exists(filename):
+        if _PlatformInfo[0] == "Windows" and os.path.exists(filename):
             os.remove(filename)
         os.rename(tmpfilename, filename)
     except:
-        lg.exc('file write failed: %r' % filename)
+        lg.exc("file write failed: %r" % filename)
         try:
             # make sure file gets closed
             f.close()
@@ -86,14 +87,14 @@ def WriteBinaryFile(filename, data):
     return True
 
 
-def AppendBinaryFile(filename, data, mode='a'):
+def AppendBinaryFile(filename, data, mode="a"):
     """
     Same as WriteBinaryFile but do not erase previous data in the file.
     TODO: this is not atomic right now
     """
     try:
         f = open(filename, mode)
-        if 'b' in mode:
+        if "b" in mode:
             bin_data = strng.to_bin(data)
             f.write(bin_data)
         else:
@@ -122,23 +123,24 @@ def ReadBinaryFile(filename, decode_encoding=None):
     - file is really empty
     """
     if not filename:
-        return b''
+        return b""
     if not os.path.isfile(filename):
-        return b''
+        return b""
     if not os.access(filename, os.R_OK):
-        return b''
+        return b""
     try:
-        infile = open(filename, mode='rb')
+        infile = open(filename, mode="rb")
         data = infile.read()
         if decode_encoding is not None:
             data = data.decode(decode_encoding)
         infile.close()
         return data
     except:
-        lg.exc('file read failed: %r' % filename)
-        return b''
+        lg.exc("file read failed: %r" % filename)
+        return b""
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def WriteTextFile(filepath, data):
@@ -146,7 +148,7 @@ def WriteTextFile(filepath, data):
     A smart way to write data into text file. Return True if success.
     This should be atomic operation - data is written to another temporary file and than renamed.
     """
-    temp_path = filepath + '.tmp'
+    temp_path = filepath + ".tmp"
     if os.path.exists(temp_path):
         if not os.access(temp_path, os.W_OK):
             return False
@@ -158,7 +160,7 @@ def WriteTextFile(filepath, data):
         except:
             lg.exc()
             return False
-    fout = open(temp_path, 'wt', encoding="utf-8")
+    fout = open(temp_path, "wt", encoding="utf-8")
     text_data = strng.to_text(data)
     fout.write(text_data)
     fout.flush()
@@ -167,7 +169,7 @@ def WriteTextFile(filepath, data):
     try:
         os.rename(temp_path, filepath)
     except:
-        lg.exc('file write failed: %r' % filepath)
+        lg.exc("file write failed: %r" % filepath)
         return False
     return True
 
@@ -177,24 +179,25 @@ def ReadTextFile(filename):
     Read text file and return its content.
     """
     if not filename:
-        return u''
+        return ""
     global _PlatformInfo
     if _PlatformInfo is None:
         _PlatformInfo = platform.uname()
     if not os.path.isfile(filename):
-        return u''
+        return ""
     if not os.access(filename, os.R_OK):
-        return u''
+        return ""
     try:
-        infile = open(filename, 'rt', encoding="utf-8")
+        infile = open(filename, "rt", encoding="utf-8")
         data = infile.read()
         infile.close()
         return strng.to_text(data)
     except:
-        lg.exc('file read failed: %r' % filename)
-    return u''
+        lg.exc("file read failed: %r" % filename)
+    return ""
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def RoundupFile(filename, stepsize):
@@ -213,10 +216,9 @@ def RoundupFile(filename, stepsize):
     increase = 0
     if mod > 0:
         increase = stepsize - mod
-        fil = open(filename, 'a')
-        fil.write(u' ' * increase)
+        fil = open(filename, "a")
+        fil.write(" " * increase)
         fil.flush()
         os.fsync(fil)
         fil.close()
     return increase
-

@@ -32,48 +32,44 @@ Our local key is always on hand.
 Main thing here is to be able to use public keys in contacts to verify packets.
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
-from __future__ import absolute_import
-from __future__ import print_function
+from __future__ import absolute_import, print_function
+
 from six.moves import range
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 4
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
+import gc
 import os
 import sys
-import gc
 import tempfile
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import os.path as _p
-    sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
-#------------------------------------------------------------------------------
+    sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), "..")))
+
+# ------------------------------------------------------------------------------
+
+from crypt import cipher, hashes, rsa_key
 
 from logs import lg
-
-from system import bpio
-from system import local_fs
-
 from main import settings
+from system import bpio, local_fs
 
-from crypt import rsa_key
-from crypt import hashes
-from crypt import cipher
-
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _MyKeyObject = None
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 def InitMyKey(keyfilename=None):
@@ -104,8 +100,8 @@ def InitMyKey(keyfilename=None):
 def isMyKeyExists(keyfilename=None):
     if keyfilename is None:
         keyfilename = settings.KeyFileName()
-    if os.path.exists(keyfilename + '_location'):
-        newkeyfilename = bpio.ReadTextFile(keyfilename + '_location').strip()
+    if os.path.exists(keyfilename + "_location"):
+        newkeyfilename = bpio.ReadTextFile(keyfilename + "_location").strip()
         if os.path.exists(newkeyfilename):
             keyfilename = newkeyfilename
     return os.path.exists(keyfilename)
@@ -115,8 +111,8 @@ def LoadMyKey(keyfilename=None):
     global _MyKeyObject
     if keyfilename is None:
         keyfilename = settings.KeyFileName()
-    if os.path.exists(keyfilename + '_location'):
-        newkeyfilename = bpio.ReadTextFile(keyfilename + '_location').strip()
+    if os.path.exists(keyfilename + "_location"):
+        newkeyfilename = bpio.ReadTextFile(keyfilename + "_location").strip()
         if os.path.exists(newkeyfilename):
             keyfilename = newkeyfilename
     if not os.path.exists(keyfilename):
@@ -124,10 +120,12 @@ def LoadMyKey(keyfilename=None):
     _MyKeyObject = rsa_key.RSAKey()
     _MyKeyObject.fromFile(keyfilename)
     if _Debug:
-        lg.out(_DebugLevel, 'key.InitMyKey loaded private key from %s' % (keyfilename))
+        lg.out(_DebugLevel, "key.InitMyKey loaded private key from %s" % (keyfilename))
     if not ValidateKey():
         if _Debug:
-            lg.out(_DebugLevel, 'key.InitMyKey  private key is not valid: %s' % (keyfilename))
+            lg.out(
+                _DebugLevel, "key.InitMyKey  private key is not valid: %s" % (keyfilename)
+            )
         return False
     return True
 
@@ -136,18 +134,18 @@ def GenerateNewKey(keyfilename=None):
     global _MyKeyObject
     if keyfilename is None:
         keyfilename = settings.KeyFileName()
-    if os.path.exists(keyfilename + '_location'):
-        newkeyfilename = bpio.ReadTextFile(keyfilename + '_location').strip()
+    if os.path.exists(keyfilename + "_location"):
+        newkeyfilename = bpio.ReadTextFile(keyfilename + "_location").strip()
         if os.path.exists(newkeyfilename):
             keyfilename = newkeyfilename
     if _Debug:
-        lg.out(_DebugLevel, 'key.InitMyKey generate new private key')
+        lg.out(_DebugLevel, "key.InitMyKey generate new private key")
     _MyKeyObject = rsa_key.RSAKey()
     _MyKeyObject.generate(settings.getPrivateKeySize())
     keystring = _MyKeyObject.toPrivateString()
     bpio.WriteTextFile(keyfilename, keystring)
     if _Debug:
-        lg.out(_DebugLevel, '    wrote %d bytes to %s' % (len(keystring), keyfilename))
+        lg.out(_DebugLevel, "    wrote %d bytes to %s" % (len(keystring), keyfilename))
     del keystring
     gc.collect()
 
@@ -174,14 +172,17 @@ def ForgetMyKey(keyfilename=None, erase_file=False, do_backup=False):
             if os.path.isfile(keyfilename):
                 current_pk_src = local_fs.ReadBinaryFile(keyfilename)
                 if current_pk_src:
-                    fd, fname = tempfile.mkstemp(prefix='mykeyfile_', dir=settings.MetaDataDir())
+                    fd, fname = tempfile.mkstemp(
+                        prefix="mykeyfile_", dir=settings.MetaDataDir()
+                    )
                     os.write(fd, current_pk_src)
                     os.close(fd)
-                    lg.info('created backup copy of my private key in the file : %r' % fname)
+                    lg.info(
+                        "created backup copy of my private key in the file : %r" % fname
+                    )
         if os.path.isfile(keyfilename):
             os.remove(keyfilename)
-            lg.info('local private key erased, deleted file : %r' % keyfilename)
-
+            lg.info("local private key erased, deleted file : %r" % keyfilename)
 
 
 def isMyKeyReady():
@@ -221,7 +222,8 @@ def MyPrivateKeyObject():
         InitMyKey()
     return _MyKeyObject
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def Sign(inp):
@@ -263,7 +265,8 @@ def Verify(ConIdentity, hashcode, signature):
     Result = VerifySignature(pubkey, hashcode, signature)
     return Result
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def HashMD5(inp, hexdigest=False):
@@ -295,14 +298,15 @@ def Hash(inp, hexdigest=False):
     """
     return HashSHA(inp, hexdigest=hexdigest)
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def SessionKeyType():
     """
     Which crypto is used for session key.
     """
-    return 'AES'
+    return "AES"
 
 
 def NewSessionKey(session_key_type):
@@ -311,7 +315,9 @@ def NewSessionKey(session_key_type):
     """
     return cipher.make_key(session_key_type)
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def EncryptWithSessionKey(session_key, inp, session_key_type):
     """
@@ -335,7 +341,9 @@ def DecryptWithSessionKey(session_key, inp, session_key_type):
     ret = cipher.decrypt_json(inp, session_key, session_key_type)
     return ret
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def EncryptOpenSSHPublicKey(pubkeystring, inp):
     """
@@ -356,7 +364,9 @@ def DecryptOpenSSHPrivateKey(privkeystring, inp):
     result = priv_key.decrypt(inp)
     return result
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def EncryptLocalPublicKey(inp):
     """
@@ -380,7 +390,8 @@ def DecryptLocalPrivateKey(inp):
     result = _MyKeyObject.decrypt(inp)
     return result
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def SpeedTest():
@@ -388,40 +399,46 @@ def SpeedTest():
     Some tests to check the performance.
     """
     import time
+
     dataSZ = 1024 * 640
     loops = 10
     packets = []
     dt = time.time()
-    print('encrypt %d pieces of %d bytes' % (loops, dataSZ))
+    print("encrypt %d pieces of %d bytes" % (loops, dataSZ))
     for i in range(loops):
         Data = os.urandom(dataSZ)
         SessionKey = NewSessionKey(session_key_type=SessionKeyType())
         EncryptedSessionKey = EncryptLocalPublicKey(SessionKey)
-        EncryptedData = EncryptWithSessionKey(SessionKey, Data, session_key_type=SessionKeyType())
+        EncryptedData = EncryptWithSessionKey(
+            SessionKey, Data, session_key_type=SessionKeyType()
+        )
         Signature = Sign(Hash(EncryptedData))
         packets.append((Data, len(Data), EncryptedSessionKey, EncryptedData, Signature))
-        print('.', end=' ')
-    print(time.time() - dt, 'seconds')
+        print(".", end=" ")
+    print(time.time() - dt, "seconds")
 
     dt = time.time()
-    print('decrypt now')
+    print("decrypt now")
     i = 0
     for Data, Length, EncryptedSessionKey, EncryptedData, Signature in packets:
         SessionKey = DecryptLocalPrivateKey(EncryptedSessionKey)
-        paddedData = DecryptWithSessionKey(SessionKey, EncryptedData, session_key_type=SessionKeyType())
+        paddedData = DecryptWithSessionKey(
+            SessionKey, EncryptedData, session_key_type=SessionKeyType()
+        )
         newData = paddedData[:Length]
         if not VerifySignature(MyPublicKey(), Hash(EncryptedData), Signature):
             raise Exception()
         if newData != Data:
             raise Exception
-        print('.', end=' ')
+        print(".", end=" ")
         # open(str(i), 'wb').write(EncryptedData)
         i += 1
-    print(time.time() - dt, 'seconds')
+    print(time.time() - dt, "seconds")
 
-#------------------------------------------------------------------------------
 
-if __name__ == '__main__':
+# ------------------------------------------------------------------------------
+
+if __name__ == "__main__":
     bpio.init()
     lg.set_debug_level(18)
     settings.init()

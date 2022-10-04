@@ -20,6 +20,7 @@
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
 
+
 def test_ok():
-    print('READY TO START')
+    print("READY TO START")
     assert True

@@ -1,13 +1,10 @@
+from crypt import cipher, rsa_key
 from unittest import TestCase
-
-from crypt import rsa_key
-from crypt import cipher
 
 
 class Test(TestCase):
-
     def test_generate_sign_verify(self):
-        msg = b'1234567890ABCDEFGH'
+        msg = b"1234567890ABCDEFGH"
         k1 = rsa_key.RSAKey()
         k1.generate(1024)
         sig = k1.sign(msg)
@@ -33,7 +30,7 @@ class Test(TestCase):
                     assert False, (k1.toPrivateString(), msg, sig)
 
     def test_signature_begins_with_zero_byte(self):
-        pk = '''-----BEGIN RSA PRIVATE KEY-----
+        pk = """-----BEGIN RSA PRIVATE KEY-----
 MIICXQIBAAKBgQDrwjGUyNKFsrZzyxlfdFkStPWokQsKqjlR77xre6shrRJxfbHm
 aweImvH9+x0on30ORLjk2PeVa2tp+z7hn35wS8VBx+lKOrCHDPPq5uZuNLD1KJHN
 slzWzCxnquHVbrbop533S90ZA4IEi5SP/NkPjv8O/dm2JQfZTBLnum7GeQIDAQAB
@@ -47,12 +44,12 @@ s/4aJN7W9cOjvpTzVZf94RvnIq88xQgPyb6yujR4DB9L6pWqSJ5bRUpd/QJBAPp0
 JrlFbdk7RWx614WPiTPDsnH1JiP3DoCEwfIa5yQej61ncL9soTV4e/hwX6hRkBd+
 Q17FbIFZQW5Ku6OLJpUCQQDuJl6KW8e5fXaaGlOP8R8N1oidSf5Sz2LM04GIi2Pa
 iDt483pngPnWcya4OTjsvJ74yPtkDlwXuA43PUah56LG
------END RSA PRIVATE KEY-----'''
+-----END RSA PRIVATE KEY-----"""
         k = rsa_key.RSAKey()
         k.fromString(pk)
-        msg = b'\xcf=8!7f\x85\x81\x05lc\xb1\xaas\x99\xda'
+        msg = b"\xcf=8!7f\x85\x81\x05lc\xb1\xaas\x99\xda"
         sig = k.sign(msg)
         assert k.verify(sig, msg)
         sig_raw = k.sign(msg, as_digits=False)
-        assert sig_raw[0:1] == b'\x00', sig_raw
+        assert sig_raw[0:1] == b"\x00", sig_raw
         assert k.verify(sig_raw, msg, signature_as_digits=False)

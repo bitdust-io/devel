@@ -44,36 +44,30 @@ EVENTS:
     * :red:`transport-initialized`
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 6
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 import platform
 
-#------------------------------------------------------------------------------
-
-from logs import lg
-
 from automats import automat
-
-from lib import misc
-from lib import nameurl
-from lib import strng
-
+from lib import misc, nameurl, strng
+from logs import lg
+from main import settings
+from transport import gateway
 from userid import my_id
 
-from main import settings
+# ------------------------------------------------------------------------------
 
-from transport import gateway
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 class NetworkTransport(automat.Automat):
@@ -92,8 +86,8 @@ class NetworkTransport(automat.Automat):
         self.options = {}
         automat.Automat.__init__(
             self,
-            name='%s_transport' % proto,
-            state='AT_STARTUP',
+            name="%s_transport" % proto,
+            state="AT_STARTUP",
             debug_level=_DebugLevel,
             log_events=_Debug,
             log_transitions=_Debug,
@@ -102,7 +96,9 @@ class NetworkTransport(automat.Automat):
     def call(self, method_name, *args):
         method = getattr(self.interface, method_name, None)
         if method is None:
-            raise Exception('method %s not found in %r transport' % (method_name, self.proto))
+            raise Exception(
+                "method %s not found in %r transport" % (method_name, self.proto)
+            )
             # lg.err('method %s not found in %r transport' % (method_name, self.proto))
             # return fail(Exception('Method %s not found in the transport %s interface' % (method_name, self.proto)))
         return method(*args)
@@ -130,87 +126,87 @@ class NetworkTransport(automat.Automat):
         gateway.on_transport_state_changed(self, curstate, curstate)
 
     def A(self, event, *args, **kwargs):
-        #---AT_STARTUP---
-        if self.state == 'AT_STARTUP':
-            if event == 'init':
-                self.state = 'INIT'
+        # ---AT_STARTUP---
+        if self.state == "AT_STARTUP":
+            if event == "init":
+                self.state = "INIT"
                 self.StartNow = False
                 self.StopNow = False
                 self.doInit(*args, **kwargs)
-        #---STARTING---
-        elif self.state == 'STARTING':
-            if event == 'shutdown':
-                self.state = 'CLOSED'
+        # ---STARTING---
+        elif self.state == "STARTING":
+            if event == "shutdown":
+                self.state = "CLOSED"
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'failed':
-                self.state = 'OFFLINE'
-            elif event == 'receiving-started' and not self.StopNow:
-                self.state = 'LISTENING'
+            elif event == "failed":
+                self.state = "OFFLINE"
+            elif event == "receiving-started" and not self.StopNow:
+                self.state = "LISTENING"
                 self.doSaveOptions(*args, **kwargs)
-            elif event == 'stop':
+            elif event == "stop":
                 self.StopNow = True
-            elif event == 'receiving-started' and self.StopNow:
-                self.state = 'STOPPING'
+            elif event == "receiving-started" and self.StopNow:
+                self.state = "STOPPING"
                 self.StopNow = False
                 self.doStop(*args, **kwargs)
-            elif event == 'restart':
+            elif event == "restart":
                 self.StopNow = True
                 self.StartNow = True
-        #---LISTENING---
-        elif self.state == 'LISTENING':
-            if event == 'shutdown':
-                self.state = 'CLOSED'
+        # ---LISTENING---
+        elif self.state == "LISTENING":
+            if event == "shutdown":
+                self.state = "CLOSED"
                 self.doStop(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'stop':
-                self.state = 'STOPPING'
+            elif event == "stop":
+                self.state = "STOPPING"
                 self.StopNow = False
                 self.doStop(*args, **kwargs)
-            elif event == 'restart':
-                self.state = 'STOPPING'
+            elif event == "restart":
+                self.state = "STOPPING"
                 self.StopNow = False
                 self.StartNow = True
                 self.doStop(*args, **kwargs)
-        #---OFFLINE---
-        elif self.state == 'OFFLINE':
-            if event == 'shutdown':
-                self.state = 'CLOSED'
+        # ---OFFLINE---
+        elif self.state == "OFFLINE":
+            if event == "shutdown":
+                self.state = "CLOSED"
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'start' or event == 'restart':
-                self.state = 'STARTING'
+            elif event == "start" or event == "restart":
+                self.state = "STARTING"
                 self.StopNow = False
                 self.StartNow = False
                 self.doStart(*args, **kwargs)
-        #---STOPPING---
-        elif self.state == 'STOPPING':
-            if event == 'shutdown':
-                self.state = 'CLOSED'
+        # ---STOPPING---
+        elif self.state == "STOPPING":
+            if event == "shutdown":
+                self.state = "CLOSED"
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'stopped' and not self.StartNow:
-                self.state = 'OFFLINE'
-            elif event == 'stopped' and self.StartNow:
-                self.state = 'STARTING'
+            elif event == "stopped" and not self.StartNow:
+                self.state = "OFFLINE"
+            elif event == "stopped" and self.StartNow:
+                self.state = "STARTING"
                 self.StartNow = False
                 self.doStart(*args, **kwargs)
-            elif event == 'start' or event == 'restart':
+            elif event == "start" or event == "restart":
                 self.StartNow = True
-        #---CLOSED---
-        elif self.state == 'CLOSED':
+        # ---CLOSED---
+        elif self.state == "CLOSED":
             pass
-        #---INIT---
-        elif self.state == 'INIT':
-            if event == 'shutdown':
-                self.state = 'CLOSED'
+        # ---INIT---
+        elif self.state == "INIT":
+            if event == "shutdown":
+                self.state = "CLOSED"
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'transport-initialized' and self.StartNow:
-                self.state = 'STARTING'
+            elif event == "transport-initialized" and self.StartNow:
+                self.state = "STARTING"
                 self.doCreateProxy(*args, **kwargs)
                 self.StartNow = False
                 self.doStart(*args, **kwargs)
-            elif event == 'transport-initialized' and not self.StartNow:
-                self.state = 'OFFLINE'
+            elif event == "transport-initialized" and not self.StartNow:
+                self.state = "OFFLINE"
                 self.doCreateProxy(*args, **kwargs)
-            elif event == 'start' or event == 'restart':
+            elif event == "start" or event == "restart":
                 self.StartNow = True
         return None
 
@@ -219,7 +215,7 @@ class NetworkTransport(automat.Automat):
         Action method.
         """
         if _Debug:
-            lg.out(8, 'network_transport.doInit : %s' % str(*args, **kwargs))
+            lg.out(8, "network_transport.doInit : %s" % str(*args, **kwargs))
         gateway.attach(self)
         try:
             listener, state_changed_callback = args[0]
@@ -232,29 +228,47 @@ class NetworkTransport(automat.Automat):
         """
         Action method.
         """
-        options = {'idurl': my_id.getIDURL(), }
-        id_contact = ''
-        default_host = ''
-        if self.proto == 'tcp':
+        options = {
+            "idurl": my_id.getIDURL(),
+        }
+        id_contact = ""
+        default_host = ""
+        if self.proto == "tcp":
             if not id_contact:
-                default_host = strng.to_bin(misc.readExternalIP()) + b':' + strng.to_bin(str(settings.getTCPPort()))
-            options['host'] = id_contact or default_host
-            options['tcp_port'] = settings.getTCPPort()
-        elif self.proto == 'udp':
+                default_host = (
+                    strng.to_bin(misc.readExternalIP())
+                    + b":"
+                    + strng.to_bin(str(settings.getTCPPort()))
+                )
+            options["host"] = id_contact or default_host
+            options["tcp_port"] = settings.getTCPPort()
+        elif self.proto == "udp":
             if not id_contact:
-                default_host = strng.to_bin(nameurl.GetName(my_id.getIDURL())) + b'@' + strng.to_bin(platform.node())
-            options['host'] = id_contact or default_host
-            options['dht_port'] = settings.getDHTPort()
-            options['udp_port'] = settings.getUDPPort()
-        elif self.proto == 'proxy':
+                default_host = (
+                    strng.to_bin(nameurl.GetName(my_id.getIDURL()))
+                    + b"@"
+                    + strng.to_bin(platform.node())
+                )
+            options["host"] = id_contact or default_host
+            options["dht_port"] = settings.getDHTPort()
+            options["udp_port"] = settings.getUDPPort()
+        elif self.proto == "proxy":
             pass
-        elif self.proto == 'http':
+        elif self.proto == "http":
             if not id_contact:
-                default_host = strng.to_bin(misc.readExternalIP()) + b':' + strng.to_bin(str(settings.getHTTPPort()))
-            options['host'] = id_contact or default_host
-            options['http_port'] = settings.getHTTPPort()
+                default_host = (
+                    strng.to_bin(misc.readExternalIP())
+                    + b":"
+                    + strng.to_bin(str(settings.getHTTPPort()))
+                )
+            options["host"] = id_contact or default_host
+            options["http_port"] = settings.getHTTPPort()
         if _Debug:
-            lg.out(8, 'network_transport.doStart connecting %s transport : %s' % (self.proto.upper(), options))
+            lg.out(
+                8,
+                "network_transport.doStart connecting %s transport : %s"
+                % (self.proto.upper(), options),
+            )
         self.interface.connect(options)
 
     def doStop(self, *args, **kwargs):
@@ -262,7 +276,11 @@ class NetworkTransport(automat.Automat):
         Action method.
         """
         if _Debug:
-            lg.out(8, 'network_transport.doStop disconnecting %s transport' % (self.proto.upper()))
+            lg.out(
+                8,
+                "network_transport.doStop disconnecting %s transport"
+                % (self.proto.upper()),
+            )
         self.interface.disconnect()
 
     def doCreateProxy(self, *args, **kwargs):
@@ -279,7 +297,7 @@ class NetworkTransport(automat.Automat):
         proto, self.host, self.options = args[0]
         proto = strng.to_text(proto)
         if proto != self.proto:
-            lg.warn('wrong protocol: %r' % proto)
+            lg.warn("wrong protocol: %r" % proto)
 
     def doDestroyMe(self, *args, **kwargs):
         """

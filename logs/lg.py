@@ -30,23 +30,25 @@
 module:: lg
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-#------------------------------------------------------------------------------
-
-import six
-import os
-import sys
-import time
 import datetime
-import threading
-import traceback
+import os
 import platform
+import sys
+import threading
+import time
+import traceback
 from io import open
 
-#------------------------------------------------------------------------------
+import six
+
+# ------------------------------------------------------------------------------
+
+
+# ------------------------------------------------------------------------------
 
 _GlobalDebugLevel = 0
 _LogLinesCounter = 0
@@ -73,14 +75,17 @@ _TimeTotalDict = {}
 _TimeDeltaDict = {}
 _TimeCountsDict = {}
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
 
 def fqn(o):
     return o.__module__ + "." + o.__name__
 
-#------------------------------------------------------------------------------
 
-def out(_DebugLevel, msg, nl='\n', log_name='stdout', showtime=False):
+# ------------------------------------------------------------------------------
+
+
+def out(_DebugLevel, msg, nl="\n", log_name="stdout", showtime=False):
     """
     Prints a text line to the log file or console.
 
@@ -113,46 +118,51 @@ def out(_DebugLevel, msg, nl='\n', log_name='stdout', showtime=False):
     if level % 2:
         level -= 1
     if level:
-        s = ' ' * level + s
+        s = " " * level + s
     if _IsAndroid is None:
-        _IsAndroid = (sys.executable == 'android_python' or ('ANDROID_ARGUMENT' in os.environ))
-    if ( _ShowTime and level > 0 ) or showtime:
-        tm_string = time.strftime('%H:%M:%S')
+        _IsAndroid = sys.executable == "android_python" or (
+            "ANDROID_ARGUMENT" in os.environ
+        )
+    if (_ShowTime and level > 0) or showtime:
+        tm_string = time.strftime("%H:%M:%S")
         if _LifeBeginsTime != 0:
             dt = time.time() - _LifeBeginsTime
             mn = dt // 60
             sc = dt - mn * 60
             if _GlobalDebugLevel >= 6:
-                tm_string += '/%02d:%06.3f' % (mn, sc)
+                tm_string += "/%02d:%06.3f" % (mn, sc)
             else:
-                tm_string += '/%02d:%02d' % (mn, sc)
+                tm_string += "/%02d:%02d" % (mn, sc)
         if _UseColors is None:
-            _UseColors = platform.uname()[0] != 'Windows' and os.environ.get('BITDUST_LOG_USE_COLORS', '1') != '0'
+            _UseColors = (
+                platform.uname()[0] != "Windows"
+                and os.environ.get("BITDUST_LOG_USE_COLORS", "1") != "0"
+            )
         if _UseColors:
-            tm_string = '\033[0;49;97m%s\033[0m' % tm_string
+            tm_string = "\033[0;49;97m%s\033[0m" % tm_string
         if level == 0:
-            tm_string += '  '
+            tm_string += "  "
         s = tm_string + s
     if is_debug(30):
         currentThreadName = threading.currentThread().getName()
-        s = s + ' {%s}' % currentThreadName.lower()
+        s = s + " {%s}" % currentThreadName.lower()
     if _InterceptedLogFile:
         if is_debug(level):
-            _InterceptedLogFile.write(log_name + ': ' + s + nl)
+            _InterceptedLogFile.write(log_name + ": " + s + nl)
             _InterceptedLogFile.flush()
         return
     if not _LogsEnabled:
         return
     if is_debug(level):
-        if log_name == 'stdout':
+        if log_name == "stdout":
             if _LogFile is not None:
                 o = s + nl
                 if sys.version_info[0] == 3:
                     if not isinstance(o, str):
-                        o = o.decode('utf-8')
+                        o = o.decode("utf-8")
                 else:
                     if not isinstance(o, unicode):  # @UndefinedVariable
-                        o = o.decode('utf-8')
+                        o = o.decode("utf-8")
                 try:
                     _LogFile.write(o)
                     _LogFile.flush()
@@ -161,30 +171,32 @@ def out(_DebugLevel, msg, nl='\n', log_name='stdout', showtime=False):
         else:
             if _LogFileName:
                 if log_name not in _AllLogFiles:
-                    filename = os.path.join(os.path.dirname(_LogFileName), log_name + '.log') 
+                    filename = os.path.join(
+                        os.path.dirname(_LogFileName), log_name + ".log"
+                    )
                     if not os.path.isdir(os.path.dirname(os.path.abspath(filename))):
                         os.makedirs(os.path.dirname(os.path.abspath(filename)))
-                    _AllLogFiles[log_name] = open(os.path.abspath(filename), 'w')
+                    _AllLogFiles[log_name] = open(os.path.abspath(filename), "w")
                 o = s + nl
                 if sys.version_info[0] == 3:
                     if not isinstance(o, str):
-                        o = o.decode('utf-8')
+                        o = o.decode("utf-8")
                 else:
                     if not isinstance(o, unicode):  # @UndefinedVariable
-                        o = o.decode('utf-8')
+                        o = o.decode("utf-8")
                 try:
                     _AllLogFiles[log_name].write(o)
                     _AllLogFiles[log_name].flush()
                 except:
                     pass
         if not _RedirectStdOut and not _RedirectStdErr and not _NoOutput:
-            if log_name == 'stdout':
+            if log_name == "stdout":
                 s = s + nl
                 try:
                     sys.stdout.write(s)
                 except:
                     try:
-                        sys.stdout.write(format_exception() + '\n\n' + s)
+                        sys.stdout.write(format_exception() + "\n\n" + s)
                     except:
                         # very bad stuff... we can't write anything to stdout?
                         pass
@@ -199,10 +211,10 @@ def out(_DebugLevel, msg, nl='\n', log_name='stdout', showtime=False):
 def dbg(_DebugLevel, message, *args, **kwargs):
     level = _DebugLevel
     cod = sys._getframe().f_back.f_code
-    modul = os.path.basename(cod.co_filename).replace('.py', '')
+    modul = os.path.basename(cod.co_filename).replace(".py", "")
     caller = cod.co_name
-    funcname = '%s.%s' % (modul, caller)
-    o = '%s %s' % (funcname, message)
+    funcname = "%s.%s" % (modul, caller)
+    o = "%s %s" % (funcname, message)
     out(level, o, showtime=True)
     return o
 
@@ -210,18 +222,21 @@ def dbg(_DebugLevel, message, *args, **kwargs):
 def args(_DebugLevel, *args, **kwargs):
     level = _DebugLevel
     cod = sys._getframe().f_back.f_code
-    modul = os.path.basename(cod.co_filename).replace('.py', '')
+    modul = os.path.basename(cod.co_filename).replace(".py", "")
     caller = cod.co_name
-    message = kwargs.pop('message', None)
+    message = kwargs.pop("message", None)
     funcargs = []
     for k, v in enumerate(args):
-        funcargs.append('%r' % v)
+        funcargs.append("%r" % v)
     for k in kwargs:
-        funcargs.append('%s=%r' % (k, kwargs.get(k)))
-    funcname = '%s.%s' % (modul, caller)
-    o = '%s(%s)' % (funcname, ', '.join(funcargs), )
+        funcargs.append("%s=%r" % (k, kwargs.get(k)))
+    funcname = "%s.%s" % (modul, caller)
+    o = "%s(%s)" % (
+        funcname,
+        ", ".join(funcargs),
+    )
     if message:
-        o += ' ' + message
+        o += " " + message
     out(level, o, showtime=True)
     return o
 
@@ -229,13 +244,24 @@ def args(_DebugLevel, *args, **kwargs):
 def info(message, level=2):
     global _UseColors
     if _UseColors is None:
-        _UseColors = platform.uname()[0] != 'Windows' and os.environ.get('BITDUST_LOG_USE_COLORS', '1') != '0'
+        _UseColors = (
+            platform.uname()[0] != "Windows"
+            and os.environ.get("BITDUST_LOG_USE_COLORS", "1") != "0"
+        )
     cod = sys._getframe().f_back.f_code
-    modul = os.path.basename(cod.co_filename).replace('.py', '')
+    modul = os.path.basename(cod.co_filename).replace(".py", "")
     caller = cod.co_name
-    output_string = 'INFO %s in %s.%s()' % (message, modul, caller, )
+    output_string = "INFO %s in %s.%s()" % (
+        message,
+        modul,
+        caller,
+    )
     if _UseColors:
-        output_string = '\033[0;49;92mINFO %s \033[0m\033[0;49;37min %s.%s()\033[0m' % (message, modul, caller, )
+        output_string = "\033[0;49;92mINFO %s \033[0m\033[0;49;37min %s.%s()\033[0m" % (
+            message,
+            modul,
+            caller,
+        )
     out(level, output_string, showtime=True)
     # out(level, output_string, log_name='info', showtime=True)
     return message
@@ -244,13 +270,24 @@ def info(message, level=2):
 def warn(message, level=2):
     global _UseColors
     if _UseColors is None:
-        _UseColors = platform.uname()[0] != 'Windows' and os.environ.get('BITDUST_LOG_USE_COLORS', '1') != '0'
+        _UseColors = (
+            platform.uname()[0] != "Windows"
+            and os.environ.get("BITDUST_LOG_USE_COLORS", "1") != "0"
+        )
     cod = sys._getframe().f_back.f_code
-    modul = os.path.basename(cod.co_filename).replace('.py', '')
+    modul = os.path.basename(cod.co_filename).replace(".py", "")
     caller = cod.co_name
-    output_string = 'WARNING %s in %s.%s()' % (message, modul, caller, )
+    output_string = "WARNING %s in %s.%s()" % (
+        message,
+        modul,
+        caller,
+    )
     if _UseColors:
-        output_string = '\033[0;35mWARNING %s \033[0m\033[0;49;37min %s.%s()\033[0m' % (message, modul, caller, )
+        output_string = "\033[0;35mWARNING %s \033[0m\033[0;49;37min %s.%s()\033[0m" % (
+            message,
+            modul,
+            caller,
+        )
     out(level, output_string, showtime=True)
     # out(level, output_string, log_name='warn', showtime=True)
     return message
@@ -259,53 +296,75 @@ def warn(message, level=2):
 def err(message, level=0):
     global _UseColors
     if _UseColors is None:
-        _UseColors = platform.uname()[0] != 'Windows' and os.environ.get('BITDUST_LOG_USE_COLORS', '1') != '0'
+        _UseColors = (
+            platform.uname()[0] != "Windows"
+            and os.environ.get("BITDUST_LOG_USE_COLORS", "1") != "0"
+        )
     cod = sys._getframe().f_back.f_code
-    modul = os.path.basename(cod.co_filename).replace('.py', '')
+    modul = os.path.basename(cod.co_filename).replace(".py", "")
     caller = cod.co_name
-    funcname = '%s.%s' % (modul, caller)
+    funcname = "%s.%s" % (modul, caller)
     if isinstance(message, Exception):
         message = str(message)
     if not isinstance(message, six.text_type):  # @UndefinedVariable
         message = str(message)
     if not message.count(funcname):
-        message = ' %s in %s()' % (message, funcname)
-    if not message.count('ERROR'):
-        message = 'ERROR ' + message
-    message = '%s%s   ' % ((' ' * (level + 11)), message)
+        message = " %s in %s()" % (message, funcname)
+    if not message.count("ERROR"):
+        message = "ERROR " + message
+    message = "%s%s   " % ((" " * (level + 11)), message)
     if _UseColors:
-        message = '\033[1;37;41m%s\033[0m' % message
+        message = "\033[1;37;41m%s\033[0m" % message
     out(level, message, showtime=True)
     # out(level, message, log_name='err', showtime=True)
     return message
 
 
-def exc(msg='', level=0, maxTBlevel=100, exc_info=None, exc_value=None, **kwargs):
+def exc(msg="", level=0, maxTBlevel=100, exc_info=None, exc_value=None, **kwargs):
     global _UseColors
     if _UseColors is None:
-        _UseColors = platform.uname()[0] != 'Windows' and os.environ.get('BITDUST_LOG_USE_COLORS', '1') != '0'
+        _UseColors = (
+            platform.uname()[0] != "Windows"
+            and os.environ.get("BITDUST_LOG_USE_COLORS", "1") != "0"
+        )
     if exc_value:
-        return exception(level, maxTBlevel, exc_info=('', exc_value, []), message=msg)
+        return exception(level, maxTBlevel, exc_info=("", exc_value, []), message=msg)
     return exception(level, maxTBlevel, exc_info, message=msg)
 
 
 def cb(result, *args, **kwargs):
-    _debug = kwargs.pop('debug', 0)
-    _debug_level = kwargs.pop('debug_level', 0)
-    _method = kwargs.pop('method', 'unknown')
+    _debug = kwargs.pop("debug", 0)
+    _debug_level = kwargs.pop("debug_level", 0)
+    _method = kwargs.pop("method", "unknown")
     if _debug and is_debug(_debug_level):
-        dbg(_debug_level, 'Deferred.callback() from "%s" method : args=%r  kwargs=%r' % (_method, args, kwargs, ))
+        dbg(
+            _debug_level,
+            'Deferred.callback() from "%s" method : args=%r  kwargs=%r'
+            % (
+                _method,
+                args,
+                kwargs,
+            ),
+        )
     return result
 
 
 def errback(err, *args, **kwargs):
-    _debug = kwargs.pop('debug', 0)
-    _debug_level = kwargs.pop('debug_level', 0)
-    _method = kwargs.pop('method', 'unknown')
-    _ignore = kwargs.pop('ignore', False)
+    _debug = kwargs.pop("debug", 0)
+    _debug_level = kwargs.pop("debug_level", 0)
+    _method = kwargs.pop("method", "unknown")
+    _ignore = kwargs.pop("ignore", False)
     if _debug and is_debug(_debug_level):
-        dbg(_debug_level, 'Deferred.errback() from "%s" method with %r : args=%r  kwargs=%r' % (
-            repr(err).replace('\n', ''), _method, args, kwargs, ))
+        dbg(
+            _debug_level,
+            'Deferred.errback() from "%s" method with %r : args=%r  kwargs=%r'
+            % (
+                repr(err).replace("\n", ""),
+                _method,
+                args,
+                kwargs,
+            ),
+        )
     if _ignore:
         return None
     return err
@@ -319,75 +378,82 @@ def exception(level, maxTBlevel, exc_info, message=None):
     global _StoreExceptionsEnabled
     global _UseColors
     if _UseColors is None:
-        _UseColors = platform.uname()[0] != 'Windows' and os.environ.get('BITDUST_LOG_USE_COLORS', '1') != '0'
+        _UseColors = (
+            platform.uname()[0] != "Windows"
+            and os.environ.get("BITDUST_LOG_USE_COLORS", "1") != "0"
+        )
     if message:
         m = message
         if _UseColors:
-            m = '\033[1;31m%s\033[0m' % m
+            m = "\033[1;31m%s\033[0m" % m
         out(level, m, showtime=True)
     if exc_info is None:
         exc_type, value, trbk = sys.exc_info()
     else:
         exc_type, value, trbk = exc_info
-    excArgs = ''
+    excArgs = ""
     if value:
         try:
             excArgs = value.__dict__["args"]
         except KeyError:
-            excArgs = ''
+            excArgs = ""
     if trbk:
         excTb = traceback.format_tb(trbk, maxTBlevel)
     else:
         excTb = []
     exc_name = exception_name(value, exc_type, excTb)
-    s = 'Exception: <' + exc_name + '>'
+    s = "Exception: <" + exc_name + ">"
     if _UseColors:
-        out(level, '\033[1;31m%s\033[0m' % (s.strip()), showtime=True)
+        out(level, "\033[1;31m%s\033[0m" % (s.strip()), showtime=True)
     else:
         out(level, s.strip(), showtime=True)
     if excArgs:
-        s += '  args:' + excArgs + '\n'
+        s += "  args:" + excArgs + "\n"
         if _UseColors:
-            out(level, '\033[1;31m  args: %s\033[0m' % excArgs)
+            out(level, "\033[1;31m  args: %s\033[0m" % excArgs)
         else:
-            out(level, '  args: %s' % excArgs)
-    s += '\n'
+            out(level, "  args: %s" % excArgs)
+    s += "\n"
     # excTb.reverse()
     for l in excTb:
-        s += l + '\n'
+        s += l + "\n"
         if _UseColors:
-            out(level, '\033[1;31m%s\033[0m' % (l.replace('\n', '')))
+            out(level, "\033[1;31m%s\033[0m" % (l.replace("\n", "")))
         else:
-            out(level, l.replace('\n', ''))
+            out(level, l.replace("\n", ""))
     if trbk:
         try:
             f_locals = str(repr(trbk.tb_next.tb_next.tb_frame.f_locals))
         except:
-            f_locals = ''
+            f_locals = ""
         if f_locals:
-            out(level, 'locals: %s' % f_locals[:1000])
-            s += '\nlocals: %s\n' % f_locals
+            out(level, "locals: %s" % f_locals[:1000])
+            s += "\nlocals: %s\n" % f_locals
     if _StoreExceptionsEnabled and _LogFileName:
         if message:
-            s = message + '\n' + s
-        s = '\n%s\n' % datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f") + s
-        exc_label = exc_name.lower().replace(' ', '_').replace('-', '_')[:80]
-        exc_label = ''.join([c for c in exc_label if c in '0123456789abcdefghijklmnopqrstuvwxyz_'])
-        exc_filename = os.path.join(os.path.dirname(_LogFileName), 'exception_' + exc_label + '.log')
+            s = message + "\n" + s
+        s = "\n%s\n" % datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f") + s
+        exc_label = exc_name.lower().replace(" ", "_").replace("-", "_")[:80]
+        exc_label = "".join(
+            [c for c in exc_label if c in "0123456789abcdefghijklmnopqrstuvwxyz_"]
+        )
+        exc_filename = os.path.join(
+            os.path.dirname(_LogFileName), "exception_" + exc_label + ".log"
+        )
         if os.path.isfile(exc_filename):
-            fout = open(exc_filename, 'ab')
+            fout = open(exc_filename, "ab")
         else:
-            fout = open(exc_filename, 'wb')
+            fout = open(exc_filename, "wb")
         if sys.version_info[0] == 3:
             if not isinstance(s, bytes):
-                s = s.encode('utf-8')
+                s = s.encode("utf-8")
         else:
             if not isinstance(s, str):
-                s = s.encode('utf-8')
-        s += b'\n==========================================================\n'
+                s = s.encode("utf-8")
+        s += b"\n==========================================================\n"
         fout.write(s)
         fout.close()
-        out(level, 'saved to: %s' % exc_filename)
+        out(level, "saved to: %s" % exc_filename)
     return s
 
 
@@ -402,13 +468,13 @@ def format_exception(maxTBlevel=100, exc_info=None):
     try:
         excArgs = value.__dict__["args"]
     except KeyError:
-        excArgs = ''
+        excArgs = ""
     excTb = traceback.format_tb(trbk, maxTBlevel)
-    tbstring = 'Exception: <' + exception_name(value, exc_type, excTb) + '>\n'
+    tbstring = "Exception: <" + exception_name(value, exc_type, excTb) + ">\n"
     if excArgs:
-        tbstring += '  args:' + excArgs + '\n'
+        tbstring += "  args:" + excArgs + "\n"
     for s in excTb:
-        tbstring += s + '\n'
+        tbstring += s + "\n"
     return tbstring
 
 
@@ -451,7 +517,7 @@ def set_debug_level(level):
     global _GlobalDebugLevel
     level = int(level)
     if _GlobalDebugLevel > level:
-        out(level, 'lg.SetDebug _GlobalDebugLevel=' + str(level))
+        out(level, "lg.SetDebug _GlobalDebugLevel=" + str(level))
     _GlobalDebugLevel = level
 
 
@@ -476,6 +542,7 @@ def get_loging_level(level):
         11... : NOTSET
     """
     import logging
+
     if level == 0:
         return logging.CRITICAL
     if level <= 2:
@@ -525,7 +592,7 @@ def out_globals(level, glob_dict):
         return
     keys = sorted(glob_dict.keys())
     for k in keys:
-        if k != '__builtins__':
+        if k != "__builtins__":
             out(level, "%s : %s" % (k, glob_dict[k]))
 
 
@@ -570,14 +637,17 @@ def print_total_time():
     for t in _TimeTotalDict.keys():
         total = _TimeTotalDict[t]
         counts = _TimeCountsDict[t]
-        out(2, 'total=%f sec. count=%d, avarage=%f: %s' % (total, counts, total / counts, t))
+        out(
+            2,
+            "total=%f sec. count=%d, avarage=%f: %s" % (total, counts, total / counts, t),
+        )
 
 
 def exception_hook(typ, value, traceback):
     """
     Callback function to print last exception.
     """
-    out(0, 'uncaught exception:')
+    out(0, "uncaught exception:")
     exc(exc_info=(typ, value, traceback))
 
 
@@ -593,9 +663,9 @@ def open_log_file(filename, append_mode=False):
         if not os.path.isdir(os.path.dirname(os.path.abspath(filename))):
             os.makedirs(os.path.dirname(os.path.abspath(filename)))
         if append_mode:
-            _LogFile = open(os.path.abspath(filename), 'a')
+            _LogFile = open(os.path.abspath(filename), "a")
         else:
-            _LogFile = open(os.path.abspath(filename), 'w')
+            _LogFile = open(os.path.abspath(filename), "w")
         _LogFileName = os.path.abspath(filename)
     except:
         _LogFile = None
@@ -620,13 +690,13 @@ def close_log_file():
     _AllLogFiles.clear()
 
 
-def open_intercepted_log_file(filename, mode='w'):
+def open_intercepted_log_file(filename, mode="w"):
     global _InterceptedLogFile
     if not _InterceptedLogFile:
         os.makedirs(os.path.dirname(os.path.abspath(filename)), exist_ok=True)
         _InterceptedLogFile = open(os.path.abspath(filename), mode)
     else:
-        warn('intercepted log file %r already opened' % _InterceptedLogFile)
+        warn("intercepted log file %r already opened" % _InterceptedLogFile)
 
 
 def close_intercepted_log_file():
@@ -792,72 +862,91 @@ def set_weblog_func(webstreamfunc):
     global _WebStreamFunc
     _WebStreamFunc = webstreamfunc
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 class STDOUT_redirected(object):
     """
     Emulate system STDOUT, useful to log any program output.
     """
+
     softspace = 0
 
-    def read(self): pass
+    def read(self):
+        pass
 
     def write(self, s):
         out(0, s.rstrip())
 
-    def flush(self): pass
+    def flush(self):
+        pass
 
-    def close(self): pass
+    def close(self):
+        pass
 
 
 class STDERR_redirected(object):
     """
     Emulate system STDERR, useful to log any program error.
     """
+
     softspace = 0
 
-    def read(self): pass
+    def read(self):
+        pass
 
     def write(self, s):
         err(s.rstrip(), level=0)
 
-    def flush(self): pass
+    def flush(self):
+        pass
 
-    def close(self): pass
+    def close(self):
+        pass
 
 
 class STDOUT_black_hole(object):
     """
     Useful to disable any output to STDOUT.
     """
+
     softspace = 0
 
-    def read(self): pass
+    def read(self):
+        pass
 
-    def write(self, s): pass
+    def write(self, s):
+        pass
 
-    def flush(self): pass
+    def flush(self):
+        pass
 
-    def close(self): pass
+    def close(self):
+        pass
 
 
 class STDERR_black_hole(object):
     """
     Useful to disable any errors output to STDERR.
     """
+
     softspace = 0
 
-    def read(self): pass
+    def read(self):
+        pass
 
-    def write(self, s): pass
+    def write(self, s):
+        pass
 
-    def flush(self): pass
+    def flush(self):
+        pass
 
-    def close(self): pass
+    def close(self):
+        pass
 
 
 class STDOUT_unbuffered(object):
-
     def __init__(self, stream):
         self.stream = stream
 
@@ -880,7 +969,6 @@ class STDOUT_unbuffered(object):
 
 
 class STDERR_unbuffered(object):
-
     def __init__(self, stream):
         self.stream = stream
 

@@ -2,6 +2,6 @@
 cd bin
 start bitdust.exe
 @echo.
-@echo starting BitDust 
+@echo starting BitDust
 @echo.
 pause

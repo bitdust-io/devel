@@ -31,6 +31,7 @@ module:: service_private_groups
 """
 
 from __future__ import absolute_import
+
 from services.local_service import LocalService
 
 
@@ -40,37 +41,37 @@ def create_service():
 
 class PrivateGroupsService(LocalService):
 
-    service_name = 'service_private_groups'
-    config_path = 'services/private-groups/enabled'
+    service_name = "service_private_groups"
+    config_path = "services/private-groups/enabled"
 
     def dependent_on(self):
         return [
-            'service_my_data',
-            'service_private_messages',
+            "service_my_data",
+            "service_private_messages",
         ]
 
     def start(self):
+        from access import group_member, groups
         from main import events
         from services import driver
-        from access import groups
-        from access import group_member
+
         groups.init()
-        events.add_subscriber(self._on_supplier_modified, 'supplier-modified')
-        events.add_subscriber(self._on_dht_layer_connected, 'dht-layer-connected')
-        if driver.is_on('service_entangled_dht'):
+        events.add_subscriber(self._on_supplier_modified, "supplier-modified")
+        events.add_subscriber(self._on_dht_layer_connected, "dht-layer-connected")
+        if driver.is_on("service_entangled_dht"):
             self._do_join_message_brokers_dht_layer()
         group_member.start_group_members()
-        events.add_subscriber(groups.on_identity_url_changed, 'identity-url-changed')
+        events.add_subscriber(groups.on_identity_url_changed, "identity-url-changed")
         return True
 
     def stop(self):
+        from access import group_member, groups
         from main import events
-        from access import groups
-        from access import group_member
-        events.remove_subscriber(groups.on_identity_url_changed, 'identity-url-changed')
+
+        events.remove_subscriber(groups.on_identity_url_changed, "identity-url-changed")
         group_member.shutdown_group_members()
-        events.remove_subscriber(self._on_dht_layer_connected, 'dht-layer-connected')
-        events.remove_subscriber(self._on_supplier_modified, 'supplier-modified')
+        events.remove_subscriber(self._on_dht_layer_connected, "dht-layer-connected")
+        events.remove_subscriber(self._on_supplier_modified, "supplier-modified")
         groups.shutdown()
         return True
 
@@ -79,11 +80,13 @@ class PrivateGroupsService(LocalService):
         return True
 
     def _do_join_message_brokers_dht_layer(self):
+        from dht import dht_records, dht_service, known_nodes
         from logs import lg
-        from dht import dht_service
-        from dht import dht_records
-        from dht import known_nodes
-        lg.info('going to join message brokers DHT layer: %d' % dht_records.LAYER_MESSAGE_BROKERS)
+
+        lg.info(
+            "going to join message brokers DHT layer: %d"
+            % dht_records.LAYER_MESSAGE_BROKERS
+        )
         known_seeds = known_nodes.nodes()
         dht_service.open_layer(
             seed_nodes=known_seeds,
@@ -93,24 +96,30 @@ class PrivateGroupsService(LocalService):
         )
 
     def _on_dht_layer_connected(self, evt):
-        if evt.data['layer_id'] == 0:
+        if evt.data["layer_id"] == 0:
             self._do_join_message_brokers_dht_layer()
 
     def _on_supplier_modified(self, evt):
-        from logs import lg
-        from access import key_ring
         from crypt import my_keys
-        from userid import global_id
-        from userid import my_id
-        if evt.data['new_idurl']:
+
+        from access import key_ring
+        from logs import lg
+        from userid import global_id, my_id
+
+        if evt.data["new_idurl"]:
             my_keys_to_be_republished = []
             for key_id in my_keys.known_keys():
-                if not key_id.startswith('group_'):
+                if not key_id.startswith("group_"):
                     continue
                 _glob_id = global_id.NormalizeGlobalID(key_id)
-                if _glob_id['idurl'] == my_id.getIDURL():
+                if _glob_id["idurl"] == my_id.getIDURL():
                     # only send public keys of my own groups
                     my_keys_to_be_republished.append(key_id)
             for group_key_id in my_keys_to_be_republished:
-                d = key_ring.transfer_key(group_key_id, trusted_idurl=evt.data['new_idurl'], include_private=False, include_signature=False)
-                d.addErrback(lambda *a: lg.err('transfer key failed: %s' % str(*a)))
+                d = key_ring.transfer_key(
+                    group_key_id,
+                    trusted_idurl=evt.data["new_idurl"],
+                    include_private=False,
+                    include_signature=False,
+                )
+                d.addErrback(lambda *a: lg.err("transfer key failed: %s" % str(*a)))

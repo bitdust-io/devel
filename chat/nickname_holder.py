@@ -46,36 +46,30 @@ EVENTS:
     * :red:`timer-5min`
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 10
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 import sys
 
-from logs import lg
-
 from automats import automat
-
+from dht import dht_records, dht_service
+from logs import lg
 from main import settings
+from userid import id_url, my_id
 
-from userid import my_id
-from userid import id_url
-
-from dht import dht_service
-from dht import dht_records
-
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _NicknameHolder = None
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 def A(event=None, *args, **kwargs):
@@ -88,8 +82,8 @@ def A(event=None, *args, **kwargs):
     if _NicknameHolder is None:
         # set automat name and starting state here
         _NicknameHolder = NicknameHolder(
-            name='nickname_holder',
-            state='AT_STARTUP',
+            name="nickname_holder",
+            state="AT_STARTUP",
             debug_level=_DebugLevel,
             log_events=_Debug,
             log_transitions=_Debug,
@@ -110,7 +104,8 @@ def Destroy():
     del _NicknameHolder
     _NicknameHolder = None
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 class NicknameHolder(automat.Automat):
@@ -120,7 +115,7 @@ class NicknameHolder(automat.Automat):
     """
 
     timers = {
-        'timer-5min': (300, ['READY']),
+        "timer-5min": (300, ["READY"]),
     }
 
     def init(self):
@@ -140,69 +135,69 @@ class NicknameHolder(automat.Automat):
         self.result_callbacks.remove(cb)
 
     def A(self, event, *args, **kwargs):
-        #---AT_STARTUP---
-        if self.state == 'AT_STARTUP':
-            if event == 'set':
-                self.state = 'DHT_READ'
+        # ---AT_STARTUP---
+        if self.state == "AT_STARTUP":
+            if event == "set":
+                self.state = "DHT_READ"
                 self.Attempts = 0
                 self.doSetNickname(*args, **kwargs)
                 self.doMakeKey(*args, **kwargs)
                 self.doDHTReadKey(*args, **kwargs)
-        #---READY---
-        elif self.state == 'READY':
-            if event == 'timer-5min':
-                self.state = 'DHT_READ'
+        # ---READY---
+        elif self.state == "READY":
+            if event == "timer-5min":
+                self.state = "DHT_READ"
                 self.doSetNickname(*args, **kwargs)
                 self.doMakeKey(*args, **kwargs)
                 self.doDHTReadKey(*args, **kwargs)
-            elif event == 'set':
-                self.state = 'DHT_ERASE'
+            elif event == "set":
+                self.state = "DHT_ERASE"
                 self.doDHTEraseKey(*args, **kwargs)
                 self.doSetNickname(*args, **kwargs)
-        #---DHT_READ---
-        elif self.state == 'DHT_READ':
-            if event == 'dht-read-success' and self.isMyOwnKey(*args, **kwargs):
-                self.state = 'READY'
+        # ---DHT_READ---
+        elif self.state == "DHT_READ":
+            if event == "dht-read-success" and self.isMyOwnKey(*args, **kwargs):
+                self.state = "READY"
                 self.doReportNicknameOwn(*args, **kwargs)
-            elif event == 'dht-read-failed':
-                self.state = 'DHT_WRITE'
+            elif event == "dht-read-failed":
+                self.state = "DHT_WRITE"
                 self.doDHTWriteKey(*args, **kwargs)
-            elif event == 'dht-read-success' and not self.isMyOwnKey(*args, **kwargs):
+            elif event == "dht-read-success" and not self.isMyOwnKey(*args, **kwargs):
                 self.doReportNicknameExist(*args, **kwargs)
                 self.doNextKey(*args, **kwargs)
                 self.doDHTReadKey(*args, **kwargs)
-            elif event == 'set':
+            elif event == "set":
                 self.doSetNickname(*args, **kwargs)
                 self.doMakeKey(*args, **kwargs)
                 self.doDHTReadKey(*args, **kwargs)
-        #---DHT_WRITE---
-        elif self.state == 'DHT_WRITE':
-            if event == 'dht-write-failed' and self.Attempts > 5:
-                self.state = 'READY'
+        # ---DHT_WRITE---
+        elif self.state == "DHT_WRITE":
+            if event == "dht-write-failed" and self.Attempts > 5:
+                self.state = "READY"
                 self.Attempts = 0
                 self.doReportNicknameFailed(*args, **kwargs)
-            elif event == 'dht-write-failed' and self.Attempts <= 5:
-                self.state = 'DHT_READ'
+            elif event == "dht-write-failed" and self.Attempts <= 5:
+                self.state = "DHT_READ"
                 self.Attempts += 1
                 self.doNextKey(*args, **kwargs)
                 self.doDHTReadKey(*args, **kwargs)
-            elif event == 'dht-write-success':
-                self.state = 'READY'
+            elif event == "dht-write-success":
+                self.state = "READY"
                 self.Attempts = 0
                 self.doReportNicknameRegistered(*args, **kwargs)
-            elif event == 'set':
-                self.state = 'DHT_READ'
+            elif event == "set":
+                self.state = "DHT_READ"
                 self.doSetNickname(*args, **kwargs)
                 self.doMakeKey(*args, **kwargs)
                 self.doDHTReadKey(*args, **kwargs)
-        #---DHT_ERASE---
-        elif self.state == 'DHT_ERASE':
-            if event == 'dht-erase-success' or event == 'dht-erase-failed':
-                self.state = 'DHT_READ'
+        # ---DHT_ERASE---
+        elif self.state == "DHT_ERASE":
+            if event == "dht-erase-success" or event == "dht-erase-failed":
+                self.state = "DHT_READ"
                 self.doMakeKey(*args, **kwargs)
                 self.doDHTReadKey(*args, **kwargs)
-            elif event == 'set':
-                self.state = 'DHT_READ'
+            elif event == "set":
+                self.state = "DHT_READ"
                 self.doSetNickname(*args, **kwargs)
                 self.doMakeKey(*args, **kwargs)
                 self.doDHTReadKey(*args, **kwargs)
@@ -227,7 +222,7 @@ class NicknameHolder(automat.Automat):
         self.key = dht_service.make_key(
             key=self.nickname,
             index=0,
-            prefix='nickname',
+            prefix="nickname",
         )
 
     def doNextKey(self, *args, **kwargs):
@@ -236,7 +231,7 @@ class NicknameHolder(automat.Automat):
         """
         try:
             key_info = dht_service.split_key(self.key)
-            index = int(key_info['index'])
+            index = int(key_info["index"])
         except:
             lg.exc()
             index = 0
@@ -244,7 +239,7 @@ class NicknameHolder(automat.Automat):
         self.key = dht_service.make_key(
             key=self.nickname,
             index=index,
-            prefix='nickname',
+            prefix="nickname",
         )
 
     def doDHTReadKey(self, *args, **kwargs):
@@ -266,7 +261,7 @@ class NicknameHolder(automat.Automat):
         """
         d = dht_records.set_nickname(self.key, my_id.getIDURL())
         d.addCallback(self._dht_write_result)
-        d.addErrback(lambda err: self.automat('dht-write-failed', err))
+        d.addErrback(lambda err: self.automat("dht-write-failed", err))
 
     def doDHTEraseKey(self, *args, **kwargs):
         """
@@ -274,86 +269,103 @@ class NicknameHolder(automat.Automat):
         """
         d = dht_service.delete_key(self.key)
         d.addCallback(self._dht_erase_result)
-        d.addErrback(lambda x: self.automat('dht-erase-failed'))
+        d.addErrback(lambda x: self.automat("dht-erase-failed"))
 
     def doReportNicknameOwn(self, *args, **kwargs):
         """
         Action method.
         """
         if _Debug:
-            lg.out(_DebugLevel, 'nickname_holder.doReportNicknameOwn : %s with %s' % (self.key, args[0], ))
+            lg.out(
+                _DebugLevel,
+                "nickname_holder.doReportNicknameOwn : %s with %s"
+                % (
+                    self.key,
+                    args[0],
+                ),
+            )
         for cb in self.result_callbacks:
-            cb('my own', self.key)
+            cb("my own", self.key)
 
     def doReportNicknameRegistered(self, *args, **kwargs):
         """
         Action method.
         """
         if _Debug:
-            lg.out(_DebugLevel, 'nickname_holder.doReportNicknameRegistered : %s' % self.key)
+            lg.out(
+                _DebugLevel, "nickname_holder.doReportNicknameRegistered : %s" % self.key
+            )
         for cb in self.result_callbacks:
-            cb('registered', self.key)
+            cb("registered", self.key)
 
     def doReportNicknameExist(self, *args, **kwargs):
         """
         Action method.
         """
         if _Debug:
-            lg.out(_DebugLevel, 'nickname_holder.doReportNicknameExist : %s' % self.key)
+            lg.out(_DebugLevel, "nickname_holder.doReportNicknameExist : %s" % self.key)
         for cb in self.result_callbacks:
-            cb('exist', self.key)
+            cb("exist", self.key)
 
     def doReportNicknameFailed(self, *args, **kwargs):
         """
         Action method.
         """
         if _Debug:
-            lg.out(_DebugLevel, 'nickname_holder.doReportNicknameFailed : %s with %s' % (
-                self.key, args[0] if args else None, ))
+            lg.out(
+                _DebugLevel,
+                "nickname_holder.doReportNicknameFailed : %s with %s"
+                % (
+                    self.key,
+                    args[0] if args else None,
+                ),
+            )
         for cb in self.result_callbacks:
-            cb('failed', self.key)
+            cb("failed", self.key)
 
     def _dht_read_result(self, value, key):
         self.dht_read_defer = None
         if not value:
-            self.automat('dht-read-failed')
+            self.automat("dht-read-failed")
             return
         try:
-            v = id_url.field(value['idurl'])
+            v = id_url.field(value["idurl"])
         except:
             if _Debug:
-                lg.out(_DebugLevel, '%r' % value)
+                lg.out(_DebugLevel, "%r" % value)
             lg.exc()
-            self.automat('dht-read-failed')
+            self.automat("dht-read-failed")
             return
-        self.automat('dht-read-success', v)
+        self.automat("dht-read-success", v)
 
     def _dht_read_failed(self, x):
         self.dht_read_defer = None
-        self.automat('dht-read-failed', x)
+        self.automat("dht-read-failed", x)
 
     def _dht_write_result(self, nodes):
         if len(nodes) > 0:
-            self.automat('dht-write-success')
+            self.automat("dht-write-success")
         else:
-            self.automat('dht-write-failed', nodes)
+            self.automat("dht-write-failed", nodes)
 
     def _dht_erase_result(self, result):
         if result is None:
-            self.automat('dht-erase-failed')
+            self.automat("dht-erase-failed")
         else:
-            self.automat('dht-erase-success')
+            self.automat("dht-erase-success")
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def main():
     from twisted.internet import reactor  # @UnresolvedImport
+
     lg.set_debug_level(24)
     settings.init()
     my_id.init()
     dht_service.init(settings.getDHTPort())
-    reactor.callWhenRunning(A, 'init', sys.argv[1])  # @UndefinedVariable
+    reactor.callWhenRunning(A, "init", sys.argv[1])  # @UndefinedVariable
     reactor.run()  # @UndefinedVariable
     settings.shutdown()
 

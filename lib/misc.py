@@ -33,49 +33,46 @@ TODO:
     Really need to do some refactoring here - too many things in one place.
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
-from __future__ import absolute_import
-from __future__ import print_function
-import six.moves.urllib.parse # @UnresolvedImport
-from six.moves import range  # @UnresolvedImport
+from __future__ import absolute_import, print_function
 
-#------------------------------------------------------------------------------
-
-import os
-import re
-import sys
-import time
-import math
-import random
 import base64
-import string
-import locale
+import functools
 import hashlib
+import locale
+import math
+import os
+import random
+import re
+import string
+import subprocess
+import sys
 import tempfile
 import textwrap
-import functools
-import subprocess
+import time
 
-#------------------------------------------------------------------------------
+import six.moves.urllib.parse  # @UnresolvedImport
+from six.moves import range  # @UnresolvedImport
 
-if __name__ == '__main__':
+# ------------------------------------------------------------------------------
+
+
+# ------------------------------------------------------------------------------
+
+if __name__ == "__main__":
     import os.path as _p
-    sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
-#------------------------------------------------------------------------------
+    sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), "..")))
 
+# ------------------------------------------------------------------------------
+
+from lib import packetid, strng
 from logs import lg
-
-from system import bpio
-from system import local_fs
-
 from main import settings
+from system import bpio, local_fs
 
-from lib import packetid
-from lib import strng
-
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 # if we come up with more valid transports,
 # we'll need to add them here
@@ -86,7 +83,7 @@ from lib import strng
 # more stable transports must be higher
 _AttenuationFactor = 2.0
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 
 def init():
@@ -95,9 +92,10 @@ def init():
 
     Can put here some minor things if needed.
     """
-    lg.out(4, 'misc.init')
+    lg.out(4, "misc.init")
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def readLocalIP():
@@ -122,7 +120,7 @@ def readSupplierData(supplier_idurl, filename, customer_idurl):
     """
     path = settings.SupplierPath(supplier_idurl, customer_idurl, filename)
     if not os.path.isfile(path):
-        return ''
+        return ""
     return bpio.ReadTextFile(path).strip()
 
 
@@ -136,7 +134,9 @@ def writeSupplierData(supplier_idurl, filename, data, customer_idurl):
     path = settings.SupplierPath(supplier_idurl, customer_idurl, filename)
     return bpio.WriteTextFile(path, data)
 
-#-------------------------------------------------------------------------------
+
+# -------------------------------------------------------------------------------
+
 
 def cmp(a, b):
     return (a > b) - (a < b)
@@ -153,22 +153,22 @@ def NewBackupID(time_st=None):
         time_st = time.localtime()
     ampm = time.strftime("%p", time_st)
     if not ampm:
-        lg.warn('time.strftime() returns empty string')
-        ampm = 'AM' if time.time() % 86400 < 43200 else 'PM'
+        lg.warn("time.strftime() returns empty string")
+        ampm = "AM" if time.time() % 86400 < 43200 else "PM"
     result = "F" + time.strftime("%Y%m%d%I%M%S", time_st) + ampm
     return result
 
 
 def TimeStructFromVersion(backupID):
     try:
-        if backupID.endswith('AM') or backupID.endswith('PM'):
+        if backupID.endswith("AM") or backupID.endswith("PM"):
             ampm = backupID[-2:]
-            st_time = list(time.strptime(backupID[1:-2], '%Y%m%d%I%M%S'))
+            st_time = list(time.strptime(backupID[1:-2], "%Y%m%d%I%M%S"))
         else:
-            i = backupID.rfind('M')
-            ampm = backupID[i - 1:i + 1]
-            st_time = list(time.strptime(backupID[1:i - 1], '%Y%m%d%I%M%S'))
-        if ampm == 'PM':
+            i = backupID.rfind("M")
+            ampm = backupID[i - 1 : i + 1]
+            st_time = list(time.strptime(backupID[1 : i - 1], "%Y%m%d%I%M%S"))
+        if ampm == "PM":
             st_time[3] += 12
         return tuple(st_time)
     except:
@@ -183,7 +183,7 @@ def TimeFromBackupID(backupID):
     try:
         return time.mktime(TimeStructFromVersion(backupID))
     except:
-        lg.exc('backupID=%r' % backupID)
+        lg.exc("backupID=%r" % backupID)
         return None
 
 
@@ -195,20 +195,20 @@ def modified_version(a):
     This method make a number for given BackupID - used to compare two BackupID's.
     """
     try:
-        if a.endswith('AM') or a.endswith('PM'):
+        if a.endswith("AM") or a.endswith("PM"):
             int_a = int(a[1:-2])
             int_b = 0
         else:
-            i = a.rfind('M')
-            int_a = int(a[1:i - 1])
-            int_b = int(a[i + 1:])
+            i = a.rfind("M")
+            int_a = int(a[1 : i - 1])
+            int_b = int(a[i + 1 :])
     except:
         lg.exc()
         return -1
     hour = a[-8:-6]
-    if a.endswith('PM') and hour != '12':
+    if a.endswith("PM") and hour != "12":
         int_a += 120000
-    elif a.endswith('AM') and hour == '12':
+    elif a.endswith("AM") and hour == "12":
         int_a -= 120000
     return int_a + int_b
 
@@ -247,7 +247,9 @@ def sorted_backup_ids(backupIds, reverse=False):
     """
     Sort a list of backupID's.
     """
-    sorted_ids = sorted(backupIds, key=functools.cmp_to_key(backup_id_compare), reverse=reverse)
+    sorted_ids = sorted(
+        backupIds, key=functools.cmp_to_key(backup_id_compare), reverse=reverse
+    )
     return sorted_ids
 
 
@@ -255,18 +257,22 @@ def sorted_versions(versions, reverse=False):
     """
     Sort a list of versions.
     """
-    sorted_versions_list = sorted(versions, key=functools.cmp_to_key(version_compare), reverse=reverse)
+    sorted_versions_list = sorted(
+        versions, key=functools.cmp_to_key(version_compare), reverse=reverse
+    )
     return sorted_versions_list
 
-#------------------------------------------------------------------------------
 
-def DigitsOnly(inpt, includes=''):
+# ------------------------------------------------------------------------------
+
+
+def DigitsOnly(inpt, includes=""):
     """
     Very basic method to convert string to number.
 
     This returns same string but with digits only.
     """
-    return ''.join([c for c in inpt if c in '0123456789' + includes])
+    return "".join([c for c in inpt if c in "0123456789" + includes])
 
 
 def IsDigitsOnly(inpt):
@@ -274,7 +280,7 @@ def IsDigitsOnly(inpt):
     Return True if ``input`` string contains only digits.
     """
     for c in inpt:
-        if c not in '0123456789':
+        if c not in "0123456789":
             return False
     return True
 
@@ -298,7 +304,9 @@ def ToFloat(inpt, default=0.0):
     except:
         return default
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def ValidKeyAlias(key_alias):
     if len(key_alias) > 50:
@@ -313,8 +321,8 @@ def ValidKeyAlias(key_alias):
             lg.warn("key_alias has illegal character at position: %d" % pos)
             return False
         pos += 1
-    if key_alias[0] not in set('abcdefghijklmnopqrstuvwxyz'):
-        lg.warn('key_alias not begins with letter')
+    if key_alias[0] not in set("abcdefghijklmnopqrstuvwxyz"):
+        lg.warn("key_alias not begins with letter")
         return False
     return True
 
@@ -335,8 +343,8 @@ def ValidUserName(username):
             lg.warn("username has illegal character at position: %d" % pos)
             return False
         pos += 1
-    if username[0] not in set('abcdefghijklmnopqrstuvwxyz'):
-        lg.warn('username not begins with letter')
+    if username[0] not in set("abcdefghijklmnopqrstuvwxyz"):
+        lg.warn("username not begins with letter")
         return False
     return True
 
@@ -359,25 +367,25 @@ def ValidEmail(email, full_check=True):
     """
     A method to validate typed email address.
     """
-    regexp = '^[\w\-\.\@]*$'
+    regexp = "^[\w\-\.\@]*$"
     if re.match(regexp, email) is None:
         return False
-    if email.startswith('.'):
+    if email.startswith("."):
         return False
-    if email.endswith('.'):
+    if email.endswith("."):
         return False
-    if email.startswith('-'):
+    if email.startswith("-"):
         return False
-    if email.endswith('-'):
+    if email.endswith("-"):
         return False
-    if email.startswith('@'):
+    if email.startswith("@"):
         return False
-    if email.endswith('@'):
+    if email.endswith("@"):
         return False
     if len(email) < 3:
         return False
     if full_check:
-        regexp2 = '^[\w\-\.]*\@[\w\-\.]*$'
+        regexp2 = "^[\w\-\.]*\@[\w\-\.]*$"
         if re.match(regexp2, email) is None:
             return False
     return True
@@ -387,7 +395,7 @@ def ValidPhone(value):
     """
     A method to validate typed phone number.
     """
-    regexp = '^[ \d\-\+]*$'
+    regexp = "^[ \d\-\+]*$"
     if re.match(regexp, value) is None:
         return False
     if len(value) < 5:
@@ -399,7 +407,7 @@ def ValidName(value):
     """
     A method to validate user name.
     """
-    regexp = '^[\w\-]*$'
+    regexp = "^[\w\-]*$"
     if re.match(regexp, value) is None:
         return False
     if len(value) > 100:
@@ -411,9 +419,11 @@ def MakeValidHTMLComment(text):
     """
     Keeps only ascii symbols of the string.
     """
-    ret = ''
+    ret = ""
     for c in text:
-        if c in set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-+*/=_()[]{}:;,.?!@#$%|~ "):
+        if c in set(
+            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-+*/=_()[]{}:;,.?!@#$%|~ "
+        ):
             ret += c
     return ret
 
@@ -442,7 +452,8 @@ def ValidateBitCoinAddress(strAddr):
     # if one of the character is not valid, the next ones are not tested.
     return all((char in CHARS_OK for char in strAddr[1:]))
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def RoundupFile(filename, stepsize):
@@ -453,10 +464,10 @@ def RoundupString(data, stepsize):
     size = len(data)
     mod = size % stepsize
     increase = 0
-    addon = ''
+    addon = ""
     if mod > 0:
         increase = stepsize - mod
-        addon = ' ' * increase
+        addon = " " * increase
     return data + addon
 
 
@@ -480,7 +491,9 @@ def Parity():
     """
     return "Parity"
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def pack_url_param(s):
     """
@@ -510,20 +523,24 @@ def unpack_url_param(s, default=None):
         lg.exc()
         return default
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def rndstr(length):
     """
     This generates a random string of given ``length`` - with only digits and letters.
     """
-    return ''.join([random.choice(string.letters + string.digits) for i in range(0, length)])  # @UndefinedVariable
+    return "".join(
+        [random.choice(string.letters + string.digits) for i in range(0, length)]
+    )  # @UndefinedVariable
 
 
 def stringToLong(s):
     """
     Not used.
     """
-    return int('\0' + s, 256)
+    return int("\0" + s, 256)
 
 
 def longToString(n):
@@ -531,7 +548,7 @@ def longToString(n):
     Not used.
     """
     s = n.tostring()
-    if s[0] == '\0' and s != '\0':
+    if s[0] == "\0" and s != "\0":
         s = s[1:]
     return s
 
@@ -541,16 +558,16 @@ def receiptIDstr(receipt_id):
     This method is used to make good string for receipt ID.
     """
     try:
-        return '%08d' % int(receipt_id)
+        return "%08d" % int(receipt_id)
     except:
         return str(receipt_id)
 
 
-def username2idurl(username, host='id.bitdust.io'):
+def username2idurl(username, host="id.bitdust.io"):
     """
     Creates an IDURL from given username, default identity server is used.
     """
-    return 'http://' + host + '/' + username + '.xml'
+    return "http://" + host + "/" + username + ".xml"
 
 
 def calculate_best_dimension(sz, maxsize=8):
@@ -561,13 +578,15 @@ def calculate_best_dimension(sz, maxsize=8):
     :param sz: number of items to be organized
     :param maxsize: the maximum width of the matrix.
     """
-    cached = {2: (2, 1),
-              4: (4, 1),
-              7: (4, 2),
-              13: (5, 3),
-              18: (6, 3),
-              26: (7, 4),
-              64: (8, 8)}.get(sz, None)
+    cached = {
+        2: (2, 1),
+        4: (4, 1),
+        7: (4, 2),
+        13: (5, 3),
+        18: (6, 3),
+        26: (7, 4),
+        64: (8, 8),
+    }.get(sz, None)
     if cached:
         return cached
     try:
@@ -616,10 +635,10 @@ def getDeltaTime(tm):
         #        tm = time.mktime(time.strptime(self.backupID, "F%Y%m%d%I%M%S%p"))
         dt = round(time.time() - tm)
         if dt > 2 * 60 * 60:
-            return round(dt / (60.0 * 60.0)), 'hours'
+            return round(dt / (60.0 * 60.0)), "hours"
         if dt > 60:
-            return round(dt / 60.0), 'minutes'
-        return dt, 'seconds'
+            return round(dt / 60.0), "minutes"
+        return dt, "seconds"
     except:
         return None, None
 
@@ -630,23 +649,23 @@ def getRealHost(host, port=None):
     """
     if isinstance(host, six.string_types):
         if port is not None:
-            host += ':' + str(port)
+            host += ":" + str(port)
     elif isinstance(host, tuple) and len(host) == 2:
-        host = host[0] + ':' + str(host[1])
+        host = host[0] + ":" + str(host[1])
     elif host is None:
-        host = 'None'
+        host = "None"
     else:
-        if getattr(host, 'host', None) is not None:
-            if getattr(host, 'port', None) is not None:
-                host = str(getattr(host, 'host')) + ':' + str(getattr(host, 'port'))
+        if getattr(host, "host", None) is not None:
+            if getattr(host, "port", None) is not None:
+                host = str(getattr(host, "host")) + ":" + str(getattr(host, "port"))
             else:
-                host = str(getattr(host, 'host'))
-        elif getattr(host, 'underlying', None) is not None:
-            host = str(getattr(host, 'underlying'))
+                host = str(getattr(host, "host"))
+        elif getattr(host, "underlying", None) is not None:
+            host = str(getattr(host, "underlying"))
         else:
             host = str(host)
             if port is not None:
-                host += ':' + str(port)
+                host += ":" + str(port)
     return host
 
 
@@ -655,7 +674,7 @@ def split_geom_string(geomstr):
     Split strings created with format "%dx%d+%d+%d" into 4 integers.
     """
     try:
-        r = re.split('\D+', geomstr, 4)
+        r = re.split("\D+", geomstr, 4)
         return int(r[0]), int(r[1]), int(r[2]), int(r[3])
     except:
         return None, None, None, None
@@ -667,16 +686,16 @@ def percent2string(percent, precis=3):
     precision to round the number.
     """
     s = float2str(round(percent, precis), mask=("%%3.%df" % (precis + 2)))
-    return s + '%'
+    return s + "%"
 
 
 def value2percent(value, total, precis=3):
     if not total:
-        return '0%'
+        return "0%"
     return percent2string(100.0 * (float(value) / float(total)), precis)
 
 
-def float2str(float_value, mask='%6.8f', no_trailing_zeros=True):
+def float2str(float_value, mask="%6.8f", no_trailing_zeros=True):
     """
     Some smart method to do simple operation - convert float value into string.
     """
@@ -686,7 +705,7 @@ def float2str(float_value, mask='%6.8f', no_trailing_zeros=True):
         return float_value
     s = mask % f
     if no_trailing_zeros:
-        s = s.rstrip('0').rstrip('.')
+        s = s.rstrip("0").rstrip(".")
     return s
 
 
@@ -701,54 +720,54 @@ def seconds_to_time_left_string(seconds):
     s = int(seconds)
     years = s // 31104000
     if years > 1:
-        return '%d years' % years
+        return "%d years" % years
     s = s - (years * 31104000)
     months = s // 2592000
     if years == 1:
-        r = 'one year'
+        r = "one year"
         if months > 0:
-            r += ' and %d months' % months
+            r += " and %d months" % months
         return r
     if months > 1:
-        return '%d months' % months
+        return "%d months" % months
     s = s - (months * 2592000)
     days = s // 86400
     if months == 1:
-        r = 'one month'
+        r = "one month"
         if days > 0:
-            r += ' and %d days' % days
+            r += " and %d days" % days
         return r
     if days > 1:
-        return '%d days' % days
+        return "%d days" % days
     s = s - (days * 86400)
     hours = s // 3600
     if days == 1:
-        r = 'one day'
+        r = "one day"
         if hours > 0:
-            r += ' and %d hours' % hours
+            r += " and %d hours" % hours
         return r
     s = s - (hours * 3600)
     minutes = s // 60
     seconds = s - (minutes * 60)
     if hours >= 6:
-        return '%d hours' % hours
+        return "%d hours" % hours
     if hours >= 1:
-        r = '%d hours' % hours
+        r = "%d hours" % hours
         if hours == 1:
-            r = 'one hour'
+            r = "one hour"
         if minutes > 0:
-            r += ' and %d minutes' % minutes
+            r += " and %d minutes" % minutes
         return r
     if minutes == 1:
-        r = 'one minute'
+        r = "one minute"
         if seconds > 0:
-            r += ' and %d seconds' % seconds
+            r += " and %d seconds" % seconds
         return r
     if minutes == 0:
-        return '%d seconds' % seconds
+        return "%d seconds" % seconds
     if seconds == 0:
-        return '%d minutes' % minutes
-    return '%d minutes and %d seconds' % (minutes, seconds)
+        return "%d minutes" % minutes
+    return "%d minutes and %d seconds" % (minutes, seconds)
 
 
 def unicode_to_str_safe(unicode_string, encodings=None):
@@ -759,22 +778,26 @@ def unicode_to_str_safe(unicode_string, encodings=None):
         return str(unicode_string)  # .decode('utf-8')
     except:
         try:
-            return six.text_type(unicode_string).encode(locale.getpreferredencoding(), errors='ignore')
+            return six.text_type(unicode_string).encode(
+                locale.getpreferredencoding(), errors="ignore"
+            )
         except:
             pass
     if encodings is None:
-        encodings = [locale.getpreferredencoding(), ]  # 'utf-8'
-    output = ''
+        encodings = [
+            locale.getpreferredencoding(),
+        ]  # 'utf-8'
+    output = ""
     for i in range(len(unicode_string)):
         unicode_char = unicode_string[i]
-        char = '?'
+        char = "?"
         try:
             char = unicode_char.encode(encodings[0])
             # print char, encodings[0]
         except:
             for encoding in encodings:
                 try:
-                    char = unicode_char.encode(encoding, errors='ignore')
+                    char = unicode_char.encode(encoding, errors="ignore")
                     # print char, encoding
                     break
                 except:
@@ -783,14 +806,14 @@ def unicode_to_str_safe(unicode_string, encodings=None):
     return output
 
 
-def wrap_long_string(longstring, width=40, wraptext='\n'):
+def wrap_long_string(longstring, width=40, wraptext="\n"):
     w = len(longstring)
     if w < width:
         return longstring
     return wraptext.join(textwrap.wrap(longstring, width))
 
 
-def cut_long_string(longstring, length=40, suffix=''):
+def cut_long_string(longstring, length=40, suffix=""):
     l = len(longstring)
     if l < length:
         return longstring
@@ -799,13 +822,15 @@ def cut_long_string(longstring, length=40, suffix=''):
 
 def isEnglishString(s):
     try:
-        s.decode('ascii')
+        s.decode("ascii")
     except UnicodeDecodeError:
         return False
     else:
         return True
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def getClipboardText():
     """
@@ -815,16 +840,18 @@ def getClipboardText():
         try:
             import win32clipboard  # @UnresolvedImport
             import win32con  # @UnresolvedImport
+
             win32clipboard.OpenClipboard()
             d = win32clipboard.GetClipboardData(win32con.CF_TEXT)
             win32clipboard.CloseClipboard()
-            return d.replace('\r\n', '\n')
+            return d.replace("\r\n", "\n")
         except:
             lg.exc()
-            return ''
+            return ""
     elif bpio.Linux():
         try:
             import wx
+
             # may crash, otherwise
             # this needs app.MainLoop() to be started
             if not wx.TheClipboard.IsOpened():  # @UndefinedVariable
@@ -835,13 +862,13 @@ def getClipboardText():
                 if success:
                     return do.GetText()
                 else:
-                    return ''
+                    return ""
             else:
-                return ''
+                return ""
         except:
-            return ''
+            return ""
     else:
-        return ''
+        return ""
 
 
 def setClipboardText(txt):
@@ -852,6 +879,7 @@ def setClipboardText(txt):
         try:
             import win32clipboard  # @UnresolvedImport
             import win32con  # @UnresolvedImport
+
             win32clipboard.OpenClipboard()
             win32clipboard.EmptyClipboard()
             win32clipboard.SetClipboardData(win32con.CF_TEXT, txt)
@@ -862,6 +890,7 @@ def setClipboardText(txt):
     elif bpio.Linux():
         try:
             import wx
+
             clipdata = wx.TextDataObject()  # @UndefinedVariable
             clipdata.SetText(txt)
             if wx.TheClipboard:  # @UndefinedVariable
@@ -876,12 +905,13 @@ def setClipboardText(txt):
             fd, fname = tempfile.mkstemp()
             os.write(fd, txt)
             os.close(fd)
-            os.system('cat %s | pbcopy' % fname)
+            os.system("cat %s | pbcopy" % fname)
             os.remove(fname)
         except:
             lg.exc()
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def encode64(s):
@@ -914,7 +944,8 @@ def file_hash(path):
         return None
     return get_hash(src)
 
-#-------------------------------------------------------------------------------
+
+# -------------------------------------------------------------------------------
 
 
 def time2daystring(tm=None):
@@ -925,7 +956,7 @@ def time2daystring(tm=None):
     tm_ = tm
     if tm_ is None:
         tm_ = time.time()
-    return time.strftime('%Y%m%d', time.localtime(tm_))
+    return time.strftime("%Y%m%d", time.localtime(tm_))
 
 
 def daystring2time(daystring):
@@ -933,7 +964,7 @@ def daystring2time(daystring):
     Reverse method for ``time2daystring``.
     """
     try:
-        t = time.strptime(daystring, '%Y%m%d')
+        t = time.strptime(daystring, "%Y%m%d")
     except:
         return None
     return time.mktime(t)
@@ -962,7 +993,9 @@ def str2gmtime(time_string, format):
     """
     return time.mktime(time.strptime(time_string, format))
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def ReadRepoLocation():
     """
@@ -970,27 +1003,28 @@ def ReadRepoLocation():
     "repository location".
     """
     if bpio.Linux() or bpio.Mac():
-        repo_file = os.path.join(bpio.getExecutableDir(), 'repo')
+        repo_file = os.path.join(bpio.getExecutableDir(), "repo")
         if os.path.isfile(repo_file):
             src = bpio.ReadTextFile(repo_file)
             if src:
                 try:
-                    return src.split('\n')[0].strip(), src.split('\n')[1].strip()
+                    return src.split("\n")[0].strip(), src.split("\n")[1].strip()
                 except:
                     lg.exc()
-        return 'sources', 'https://bitdust.io/download/'
+        return "sources", "https://bitdust.io/download/"
     src = strng.to_bin(bpio.ReadTextFile(settings.RepoFile())).strip()
     if not src:
         return settings.DefaultRepo(), settings.DefaultRepoURL(settings.DefaultRepo())
-    l = src.split('\n')
+    l = src.split("\n")
     if len(l) < 2:
         return settings.DefaultRepo(), settings.DefaultRepoURL(settings.DefaultRepo())
     return l[0], l[1]
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
-def DoRestart(param='', detach=False, std_out='/dev/null', std_err='/dev/null'):
+def DoRestart(param="", detach=False, std_out="/dev/null", std_err="/dev/null"):
     """
     A smart and portable way to restart a whole program.
     """
@@ -999,67 +1033,90 @@ def DoRestart(param='', detach=False, std_out='/dev/null', std_err='/dev/null'):
             # lg.out(2, "misc.DoRestart under Windows (Frozen), param=%s" % param)
             # lg.out(2, "misc.DoRestart sys.executable=" + sys.executable)
             # lg.out(2, "misc.DoRestart sys.argv=" + str(sys.argv))
-            starter_filepath = os.path.join(bpio.getExecutableDir(), settings.WindowsStarterFileName())
+            starter_filepath = os.path.join(
+                bpio.getExecutableDir(), settings.WindowsStarterFileName()
+            )
             if not os.path.isfile(starter_filepath):
                 # lg.out(2, "misc.DoRestart ERROR %s not found" % starter_filepath)
-                main_filepath = os.path.join(bpio.getExecutableDir(), settings.WindowsMainScriptFileName())
-                cmdargs = [os.path.basename(main_filepath), ]
-                if param != '':
+                main_filepath = os.path.join(
+                    bpio.getExecutableDir(), settings.WindowsMainScriptFileName()
+                )
+                cmdargs = [
+                    os.path.basename(main_filepath),
+                ]
+                if param != "":
                     cmdargs.append(param)
                 # lg.out(2, "misc.DoRestart cmdargs="+str(cmdargs))
-                return os.spawnve(os.P_DETACH, main_filepath, cmdargs, os.environ)  # @UndefinedVariable
-            cmdargs = [os.path.basename(starter_filepath), ]
-            if param != '':
+                return os.spawnve(
+                    os.P_DETACH, main_filepath, cmdargs, os.environ
+                )  # @UndefinedVariable
+            cmdargs = [
+                os.path.basename(starter_filepath),
+            ]
+            if param != "":
                 cmdargs.append(param)
             # lg.out(2, "misc.DoRestart cmdargs="+str(cmdargs))
-            return os.spawnve(os.P_DETACH, starter_filepath, cmdargs, os.environ)  # @UndefinedVariable
+            return os.spawnve(
+                os.P_DETACH, starter_filepath, cmdargs, os.environ
+            )  # @UndefinedVariable
 
         pypath = sys.executable
-        cmdargs = [sys.executable, ]
+        cmdargs = [
+            sys.executable,
+        ]
         cmdargs.append(sys.argv[0])
         cmdargs += sys.argv[1:]
-        if param != '' and not sys.argv.count(param):
+        if param != "" and not sys.argv.count(param):
             cmdargs.append(param)
-        if cmdargs.count('restart'):
-            cmdargs.remove('restart')
-        if cmdargs.count('detach'):
-            cmdargs.remove('detach')
-        if cmdargs.count('daemon'):
-            cmdargs.remove('daemon')
+        if cmdargs.count("restart"):
+            cmdargs.remove("restart")
+        if cmdargs.count("detach"):
+            cmdargs.remove("detach")
+        if cmdargs.count("daemon"):
+            cmdargs.remove("daemon")
         if detach:
             from system import child_process
+
             cmdargs = [strng.to_text(a) for a in cmdargs]
             return child_process.detach(cmdargs)
         return os.execvpe(pypath, cmdargs, os.environ)
 
     pypyth = sys.executable
-    cmdargs = [sys.executable, ]
-    if sys.argv[0] == '/usr/share/bitdust/bitdust.py':
-        cmdargs.append('/usr/bin/bitdust')
+    cmdargs = [
+        sys.executable,
+    ]
+    if sys.argv[0] == "/usr/share/bitdust/bitdust.py":
+        cmdargs.append("/usr/bin/bitdust")
     else:
         cmdargs.append(sys.argv[0])
     if param:
         cmdargs.append(param)
-    if cmdargs.count('restart'):
-        cmdargs.remove('restart')
-    if cmdargs.count('detach'):
-        cmdargs.remove('detach')
-    if cmdargs.count('daemon'):
-        cmdargs.remove('daemon')
+    if cmdargs.count("restart"):
+        cmdargs.remove("restart")
+    if cmdargs.count("detach"):
+        cmdargs.remove("detach")
+    if cmdargs.count("daemon"):
+        cmdargs.remove("daemon")
     pid = os.fork()
     if pid != 0:
         return None
     if detach:
         cmdargs[1] = os.path.abspath(cmdargs[1])
-        cmdargs.append('1>%s' % std_out)
-        cmdargs.append('2>%s' % std_err)
-        cmd = '/usr/bin/nohup ' + (' '.join(cmdargs)) + ' &'
-        BITDUST_COVERAGE_PROCESS_START = os.environ.get('COVERAGE_PROCESS_START')
+        cmdargs.append("1>%s" % std_out)
+        cmdargs.append("2>%s" % std_err)
+        cmd = "/usr/bin/nohup " + (" ".join(cmdargs)) + " &"
+        BITDUST_COVERAGE_PROCESS_START = os.environ.get("COVERAGE_PROCESS_START")
         if BITDUST_COVERAGE_PROCESS_START:
-            cmd = 'COVERAGE_PROCESS_START="%s" %s' % (BITDUST_COVERAGE_PROCESS_START, cmd, )
-        BITDUST_LOG_USE_COLORS = os.environ.get('BITDUST_LOG_USE_COLORS')
+            cmd = 'COVERAGE_PROCESS_START="%s" %s' % (
+                BITDUST_COVERAGE_PROCESS_START,
+                cmd,
+            )
+        BITDUST_LOG_USE_COLORS = os.environ.get("BITDUST_LOG_USE_COLORS")
         if BITDUST_LOG_USE_COLORS:
-            cmd = 'BITDUST_LOG_USE_COLORS="%s" %s' % (BITDUST_LOG_USE_COLORS, cmd, )
+            cmd = 'BITDUST_LOG_USE_COLORS="%s" %s' % (
+                BITDUST_LOG_USE_COLORS,
+                cmd,
+            )
         return os.system(cmd)
     return os.execvpe(pypyth, cmdargs, os.environ)
 
@@ -1072,12 +1129,14 @@ def ExplorePathInOS(filepath):
         if bpio.Windows():
             # os.startfile(filepath)
             if os.path.isfile(filepath):
-                subprocess.Popen(['explorer', '/select,', '%s' % (filepath.replace('/', '\\'))])
+                subprocess.Popen(
+                    ["explorer", "/select,", "%s" % (filepath.replace("/", "\\"))]
+                )
             else:
-                subprocess.Popen(['explorer', '%s' % (filepath.replace('/', '\\'))])
+                subprocess.Popen(["explorer", "%s" % (filepath.replace("/", "\\"))])
 
         elif bpio.Linux():
-            subprocess.Popen(['`which xdg-open`', filepath])
+            subprocess.Popen(["`which xdg-open`", filepath])
 
         elif bpio.Mac():
             subprocess.Popen(["open", "-R", filepath])
@@ -1085,12 +1144,15 @@ def ExplorePathInOS(filepath):
     except:
         try:
             import webbrowser
+
             webbrowser.open(filepath)
         except:
             lg.exc()
     return
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def LoopAttenuation(current_delay, go_faster, min_delay, max_delay):
     """
@@ -1118,10 +1180,11 @@ def LoopAttenuation(current_delay, go_faster, min_delay, max_delay):
             current_delay = max_delay
     return current_delay
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     lg.set_debug_level(10)
     bpio.init()
     init()

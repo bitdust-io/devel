@@ -4,40 +4,37 @@ Proof of concept Python/HTML Wallet for Bismuth, Tornado based
 Use --help command line switch to get usage.
 """
 
-import os.path
-
 # import re
 import json
+import os.path
+import socket
 
-# import logging
-# import random
-# import string
+# import unicodedata
+import subprocess
+import sys
+import webbrowser
 
 # import time
 # import datetime
 import tornado.escape
 import tornado.httpserver
 import tornado.ioloop
-import tornado.log
 import tornado.locks
 import tornado.options
 import tornado.web
 
-# import unicodedata
-import subprocess
-import webbrowser
-import sys
-import socket
-
-from tornado.options import define, options
-
 # from bismuthclient import bismuthapi
 from bismuthclient import bismuthclient
 from bismuthclient.bismuthutil import BismuthUtil
-from modules.basehandlers import BaseHandler, CrystalLoader
 from modules import helpers
+from modules.basehandlers import BaseHandler
 from modules.crystals import CrystalManager
-from modules import i18n  # helps pyinstaller, do not remove
+from tornado.options import define, options
+
+# import logging
+# import random
+# import string
+
 
 __version__ = "0.1.45"
 
@@ -62,8 +59,13 @@ define("lang", default="", help="Force a language: en,nl,ru...", type=str)
 define("maxa", default=10, help="maxa", type=int)
 define("romode", default=False, help="Read Only Mode - WIP", type=bool)
 define("nowallet", default=False, help="No Wallet Mode - WIP, do NOT use yet", type=bool)
-define("missing_address_route", default="/wallet/info", help="Route when no address is defined", type=str)
-define("app_title", default=u"Tornado Bismuth Wallet", help="Custom app title", type=str)
+define(
+    "missing_address_route",
+    default="/wallet/info",
+    help="Route when no address is defined",
+    type=str,
+)
+define("app_title", default="Tornado Bismuth Wallet", help="Custom app title", type=str)
 
 
 # Decorator to limit available methods when in read only mode
@@ -80,6 +82,7 @@ def write_protected(func):
             )
             return
         await func(obj, *args, **kwargs)
+
     return decorator
 
 
@@ -101,7 +104,7 @@ class Application(tornado.web.Application):
         if options.nowallet:
             print("No Wallet mode")
             bismuth_client.wallet_file = None
-            bismuth_client.address = 'FakeAddressMode'
+            bismuth_client.address = "FakeAddressMode"
         else:
             bismuth_client.load_multi_wallet("{}/wallet.json".format(wallet_dir))
         bismuth_client.set_alias_cache_file("{}/alias_cache.json".format(wallet_dir))
@@ -127,7 +130,7 @@ class Application(tornado.web.Application):
                 tornado.web.StaticFileHandler,
                 dict(path=static_path),
             ),
-            (r'/common/(.*)', tornado.web.StaticFileHandler, {'path': common_path}),
+            (r"/common/(.*)", tornado.web.StaticFileHandler, {"path": common_path}),
         ]
         # Parse crystals dir, import and plug handlers.
         self.crystals_manager = CrystalManager(init=options.crystals)
@@ -210,6 +213,7 @@ class TransactionsHandler(BaseHandler):
     def randhex(self, size):
         return ''.join(random.choices(string.ascii_lowercase + string.digits, k=size))
     """
+
     @write_protected
     async def send(self, params=None):
         _ = self.locale.translate
@@ -308,7 +312,9 @@ class TransactionsHandler(BaseHandler):
             if not BismuthUtil.valid_address(self.bismuth_vars["params"]["recipient"]):
                 await self.message_pop(
                     _("Error:") + " " + _("Bad address"),
-                    _("Recipient address '{}' seems invalid").format(self.bismuth_vars["params"]["recipient"]),
+                    _("Recipient address '{}' seems invalid").format(
+                        self.bismuth_vars["params"]["recipient"]
+                    ),
                     "warning",
                 )
                 return
@@ -348,9 +354,7 @@ class TransactionsHandler(BaseHandler):
             self.bismuth_vars["params"]["amount"] = self.get_argument(
                 "amount", "0.00000000"
             )
-            self.bismuth_vars["params"]["operation"] = self.get_argument(
-                "operation", ""
-            )
+            self.bismuth_vars["params"]["operation"] = self.get_argument("operation", "")
             self.bismuth_vars["params"]["data"] = self.get_argument("data", "")
             if self.bismuth_vars["params"][
                 "data"
@@ -367,7 +371,9 @@ class TransactionsHandler(BaseHandler):
             if not BismuthUtil.valid_address(self.bismuth_vars["params"]["recipient"]):
                 await self.message_pop(
                     _("Error:") + " " + _("Bad address"),
-                    _("Recipient address '{}' seems invalid").format(self.bismuth_vars["params"]["recipient"]),
+                    _("Recipient address '{}' seems invalid").format(
+                        self.bismuth_vars["params"]["recipient"]
+                    ),
                     "warning",
                 )
                 return
@@ -790,8 +796,8 @@ class WalletHandler(BaseHandler):
         else:
             # Ask for confirm
             signer = self.bismuth._wallet.get_ecdsa_key(privkey)
-            address = signer['address']
-            pubkey = signer['public_key']
+            address = signer["address"]
+            pubkey = signer["public_key"]
             # print(file_name)
             self.render(
                 "wallet_import_ecdsa1.html",
@@ -846,7 +852,9 @@ class WalletHandler(BaseHandler):
                 "message.html",
                 type="warning",
                 title=_("Error"),
-                message=_("Max of {} addresses reached.").format(self.settings["max_addresses"]),
+                message=_("Max of {} addresses reached.").format(
+                    self.settings["max_addresses"]
+                ),
                 bismuth=self.bismuth_vars,
             )
             return
@@ -961,9 +969,7 @@ class WalletHandler(BaseHandler):
                 )
                 return
             try:
-                self.bismuth._wallet.set_spend(
-                    spend_type, spend_value, password=password
-                )
+                self.bismuth._wallet.set_spend(spend_type, spend_value, password=password)
             except Exception as e:
                 self.render(
                     "message.html",

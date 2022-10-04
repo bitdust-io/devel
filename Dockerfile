@@ -64,4 +64,3 @@ RUN /root/.bitdust/venv/bin/pip install "coverage<5" coverage-enable-subprocess
 
 EXPOSE 22
 CMD ["/usr/sbin/sshd", "-D"]
-

@@ -17,8 +17,10 @@
 
 
 from __future__ import absolute_import
+
 import functools
 from random import choice
+
 from six.moves import range
 
 
@@ -55,7 +57,9 @@ def create_cache1lvl(lock_obj):
             wrapper.cache = cache
             wrapper.delete = delete
             return wrapper
+
         return decorating_function
+
     return cache1lvl
 
 
@@ -115,5 +119,7 @@ def create_cache2lvl(lock_obj):
             wrapper.delete = delete
             wrapper.cache_size = 0
             return wrapper
+
         return decorating_function
+
     return cache2lvl

@@ -31,6 +31,7 @@ module:: service_udp_transport
 """
 
 from __future__ import absolute_import
+
 from services.local_service import LocalService
 
 
@@ -40,49 +41,59 @@ def create_service():
 
 class UDPTransportService(LocalService):
 
-    service_name = 'service_udp_transport'
-    config_path = 'services/udp-transport/enabled'
-    proto = 'udp'
+    service_name = "service_udp_transport"
+    config_path = "services/udp-transport/enabled"
+    proto = "udp"
     stop_when_failed = True
 
     def dependent_on(self):
         return [
-            'service_udp_datagrams',
-            'service_my_ip_port',
-            'service_gateway',
+            "service_udp_datagrams",
+            "service_my_ip_port",
+            "service_gateway",
         ]
 
     def start(self):
         from twisted.internet import reactor  # @UnresolvedImport
         from twisted.internet.defer import Deferred
-        from transport.udp import udp_interface
-        from transport import network_transport
-        from transport import gateway
+
         from main.config import conf
+        from transport import gateway, network_transport
+        from transport.udp import udp_interface
+
         self.starting_deferred = Deferred()
-        self.transport = network_transport.NetworkTransport('udp', udp_interface.GateInterface())
+        self.transport = network_transport.NetworkTransport(
+            "udp", udp_interface.GateInterface()
+        )
         self.transport.automat(
-            'init', (gateway.listener(), self._on_transport_state_changed))
-        reactor.callLater(0, self.transport.automat, 'start')  # @UndefinedVariable
-        conf().addConfigNotifier('services/udp-transport/enabled',
-                           self._on_enabled_disabled)
-        conf().addConfigNotifier('services/udp-transport/receiving-enabled',
-                           self._on_receiving_enabled_disabled)
-        conf().addConfigNotifier('services/network/receive-limit',
-                           self._on_network_receive_limit_modified)
-        conf().addConfigNotifier('services/network/send-limit',
-                           self._on_network_send_limit_modified)
+            "init", (gateway.listener(), self._on_transport_state_changed)
+        )
+        reactor.callLater(0, self.transport.automat, "start")  # @UndefinedVariable
+        conf().addConfigNotifier(
+            "services/udp-transport/enabled", self._on_enabled_disabled
+        )
+        conf().addConfigNotifier(
+            "services/udp-transport/receiving-enabled",
+            self._on_receiving_enabled_disabled,
+        )
+        conf().addConfigNotifier(
+            "services/network/receive-limit", self._on_network_receive_limit_modified
+        )
+        conf().addConfigNotifier(
+            "services/network/send-limit", self._on_network_send_limit_modified
+        )
         return self.starting_deferred
 
     def stop(self):
         from main.config import conf
-        conf().removeConfigNotifier('services/udp-transport/enabled')
-        conf().removeConfigNotifier('services/udp-transport/receiving-enabled')
-        conf().removeConfigNotifier('services/network/receive-limit')
-        conf().removeConfigNotifier('services/network/send-limit')
+
+        conf().removeConfigNotifier("services/udp-transport/enabled")
+        conf().removeConfigNotifier("services/udp-transport/receiving-enabled")
+        conf().removeConfigNotifier("services/network/receive-limit")
+        conf().removeConfigNotifier("services/network/send-limit")
         t = self.transport
         self.transport = None
-        t.automat('shutdown')
+        t.automat("shutdown")
         return True
 
     def installed(self):
@@ -97,36 +108,63 @@ class UDPTransportService(LocalService):
 
     def _on_transport_state_changed(self, transport, oldstate, newstate):
         from logs import lg
-        lg.info('%s -> %s in %r  starting_deferred=%r' % (oldstate, newstate, transport, bool(self.starting_deferred)))
+
+        lg.info(
+            "%s -> %s in %r  starting_deferred=%r"
+            % (oldstate, newstate, transport, bool(self.starting_deferred))
+        )
         if self.starting_deferred:
-            if newstate in ['LISTENING', ] and oldstate != newstate:
+            if (
+                newstate
+                in [
+                    "LISTENING",
+                ]
+                and oldstate != newstate
+            ):
                 self.starting_deferred.callback(True)
                 self.starting_deferred = None
-            elif newstate in ['OFFLINE', ] and oldstate != newstate and oldstate not in ['INIT', ]:
+            elif (
+                newstate
+                in [
+                    "OFFLINE",
+                ]
+                and oldstate != newstate
+                and oldstate
+                not in [
+                    "INIT",
+                ]
+            ):
                 self.starting_deferred.errback(Exception(newstate))
                 self.starting_deferred = None
 
     def _on_enabled_disabled(self, path, value, oldvalue, result):
-        from p2p import network_connector
         from logs import lg
+        from p2p import network_connector
+
         lg.out(
-            2, 'service_udp_transport._on_enabled_disabled : %s->%s : %s' %
-            (oldvalue, value, path))
-        network_connector.A('reconnect')
+            2,
+            "service_udp_transport._on_enabled_disabled : %s->%s : %s"
+            % (oldvalue, value, path),
+        )
+        network_connector.A("reconnect")
 
     def _on_receiving_enabled_disabled(self, path, value, oldvalue, result):
-        from p2p import network_connector
         from logs import lg
-        lg.out(
-            2, 'service_udp_transport._on_receiving_enabled_disabled : %s->%s : %s' %
-            (oldvalue, value, path))
-        network_connector.A('reconnect')
+        from p2p import network_connector
 
-    def _on_network_receive_limit_modified(
-            self, path, value, oldvalue, result):
+        lg.out(
+            2,
+            "service_udp_transport._on_receiving_enabled_disabled : %s->%s : %s"
+            % (oldvalue, value, path),
+        )
+        network_connector.A("reconnect")
+
+    def _on_network_receive_limit_modified(self, path, value, oldvalue, result):
         from transport.udp import udp_stream
+
         udp_stream.set_global_input_limit_bytes_per_sec(int(value))
 
     def _on_network_send_limit_modified(self, path, value, oldvalue, result):
         from transport.udp import udp_stream
+
         udp_stream.set_global_output_limit_bytes_per_sec(int(value))

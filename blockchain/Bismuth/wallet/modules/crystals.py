@@ -13,12 +13,11 @@ import importlib.util
 import json
 import logging
 import sys
-from os import path, listdir
+from os import listdir, path
 
 from modules import helpers
-import tornado.autoreload
-from tornado.web import StaticFileHandler
 from modules.helpers import base_path
+from tornado.web import StaticFileHandler
 
 __version__ = "0.3"
 
@@ -49,9 +48,7 @@ class CrystalManager:
         self.available_crystals = self.get_available_crystals()
         if self.verbose:
             self.app_log.info(
-                "Available crystals: {}".format(
-                    ", ".join(self.available_crystals.keys())
-                )
+                "Available crystals: {}".format(", ".join(self.available_crystals.keys()))
             )
         self.loaded_crystals = collections.OrderedDict({})
         if init:
@@ -74,8 +71,7 @@ class CrystalManager:
         """Saves active state in the json dict for next run"""
         state_filename = path.join(helpers.get_private_dir(), "crystals.json")
         states = {
-            name: name in self.loaded_crystals
-            for name in self.available_crystals.keys()
+            name: name in self.loaded_crystals for name in self.available_crystals.keys()
         }
         try:
             with open(state_filename, "w") as f:
@@ -102,9 +98,7 @@ class CrystalManager:
         try:
             for possible in sorted(listdir(self.crystal_folder)):
                 location = path.join(self.crystal_folder, possible)
-                if path.isdir(location) and self.main_module + ".py" in listdir(
-                    location
-                ):
+                if path.isdir(location) and self.main_module + ".py" in listdir(location):
                     info = importlib.machinery.PathFinder().find_spec(
                         self.main_module, [location]
                     )
@@ -174,7 +168,9 @@ class CrystalManager:
                     "info": self.available_crystals[crystal_name]["info"],
                     "module": module,
                     "active": active,
-                    "icon": self.available_crystals[crystal_name]["about"].get("icon", False)
+                    "icon": self.available_crystals[crystal_name]["about"].get(
+                        "icon", False
+                    ),
                 }
                 if self.verbose:
                     self.app_log.info("Crystal '{}' loaded".format(crystal_name))
@@ -203,7 +199,7 @@ class CrystalManager:
             pass
 
     def get_handler(self, key):
-        """ get a tornado handler from a single (full) name"""
+        """get a tornado handler from a single (full) name"""
         crystal_info = self.loaded_crystals[key]
         handlers = []
         try:
@@ -267,9 +263,7 @@ class CrystalManager:
                         return
             except Exception as e:
                 self.app_log.warning(
-                    "Crystal '{}' exception '{}' on action '{}'".format(
-                        key, e, hook_name
-                    )
+                    "Crystal '{}' exception '{}' on action '{}'".format(key, e, hook_name)
                 )
 
     def execute_filter_hook(self, hook_name, hook_params, first_only=False):

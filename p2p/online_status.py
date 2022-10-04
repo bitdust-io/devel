@@ -63,59 +63,48 @@ EVENTS:
 """
 
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 14
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
-from twisted.internet.task import LoopingCall
 from twisted.internet.defer import Deferred
-
-#------------------------------------------------------------------------------
-
-from logs import lg
+from twisted.internet.task import LoopingCall
 
 from automats import automat
-
-from lib import strng
-from lib import utime
-
 from contacts import contactsdb
-
-from main import events
-from main import listeners
-
-from p2p import ratings
-from p2p import commands
-from p2p import handshaker
-
+from lib import strng, utime
+from logs import lg
+from main import events, listeners
+from p2p import commands, handshaker, ratings
 from transport import callback
+from userid import global_id, id_url, my_id
 
-from userid import my_id
-from userid import id_url
-from userid import global_id
+# ------------------------------------------------------------------------------
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 _StatusLabels = {
-    'CONNECTED': 'online',
-    'PING?': 'checking',
-    'OFFLINE': 'offline',
+    "CONNECTED": "online",
+    "PING?": "checking",
+    "OFFLINE": "offline",
 }
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _OnlineStatusDict = {}
 _ShutdownFlag = False
 _OfflineCheckTask = None
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
 
 def init():
     """
@@ -125,9 +114,11 @@ def init():
     global _OfflineCheckTask
     global _ShutdownFlag
     if _Debug:
-        lg.out(_DebugLevel, 'online_status.init')
+        lg.out(_DebugLevel, "online_status.init")
     _ShutdownFlag = False
-    callback.insert_inbox_callback(1, Inbox)  # try to not overwrite top callback in the list, but stay on top
+    callback.insert_inbox_callback(
+        1, Inbox
+    )  # try to not overwrite top callback in the list, but stay on top
     callback.add_queue_item_status_callback(OutboxStatus)
     _OfflineCheckTask = LoopingCall(RunOfflineChecks)
     _OfflineCheckTask.start(10, now=False)
@@ -141,7 +132,7 @@ def shutdown():
     global _ShutdownFlag
     global _OnlineStatusDict
     if _Debug:
-        lg.out(_DebugLevel, 'online_status.shutdown')
+        lg.out(_DebugLevel, "online_status.shutdown")
     handshaker.cancel_all()
     _OfflineCheckTask.stop()
     del _OfflineCheckTask
@@ -149,12 +140,13 @@ def shutdown():
     callback.remove_inbox_callback(Inbox)
     callback.remove_queue_item_status_callback(OutboxStatus)
     for o_status in list(_OnlineStatusDict.values()):
-        o_status.automat('shutdown')
+        o_status.automat("shutdown")
     _OnlineStatusDict.clear()
     _ShutdownFlag = True
 
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
 
 def online_statuses():
     global _OnlineStatusDict
@@ -172,12 +164,18 @@ def check_create(idurl, keep_alive=True):
         return False
     idurl = id_url.field(idurl)
     if idurl not in list(_OnlineStatusDict.keys()):
-        A(idurl, 'init', keep_alive=keep_alive)
+        A(idurl, "init", keep_alive=keep_alive)
         if _Debug:
-            lg.out(_DebugLevel, 'online_status.check_create instance for %r was not found, made a new with state OFFLINE' % idurl)
+            lg.out(
+                _DebugLevel,
+                "online_status.check_create instance for %r was not found, made a new with state OFFLINE"
+                % idurl,
+            )
     return True
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def on_ping_failed(err, idurl=None, channel=None):
     if _Debug:
@@ -196,23 +194,34 @@ def ping(idurl, channel=None, ack_timeout=15, ping_retries=0, keep_alive=False):
     result = Deferred()
     result.addErrback(on_ping_failed, idurl=idurl, channel=channel)
     if id_url.is_empty(idurl):
-        result.errback(Exception('empty idurl provided'))
+        result.errback(Exception("empty idurl provided"))
         return result
     if not id_url.is_cached(idurl):
         if _Debug:
-            lg.dbg(_DebugLevel, 'user identity %r not cached yet, executing clean handshake' % idurl)
+            lg.dbg(
+                _DebugLevel,
+                "user identity %r not cached yet, executing clean handshake" % idurl,
+            )
         return handshaker.ping(
             idurl=idurl,
             ack_timeout=ack_timeout,
             ping_retries=ping_retries,
-            channel=channel or 'clean_ping',
+            channel=channel or "clean_ping",
             keep_alive=keep_alive,
         )
     idurl = id_url.field(idurl)
     if not isKnown(idurl):
         if not check_create(idurl, keep_alive=keep_alive):
-            raise Exception('can not create instance')
-    A(idurl, 'ping-now', result, channel=channel, ack_timeout=ack_timeout, ping_retries=ping_retries, original_idurl=idurl.to_original())
+            raise Exception("can not create instance")
+    A(
+        idurl,
+        "ping-now",
+        result,
+        channel=channel,
+        ack_timeout=ack_timeout,
+        ping_retries=ping_retries,
+        original_idurl=idurl.to_original(),
+    )
     return result
 
 
@@ -220,34 +229,54 @@ def handshake(idurl, channel=None, ack_timeout=15, ping_retries=2, keep_alive=Fa
     """
     Immediately doing handshake with remote node by fetching remote identity file and then
     sending my own Identity() to remote peer and wait for an Ack() packet.
-    Returns Deferred object. 
+    Returns Deferred object.
     """
     idurl = strng.to_bin(idurl)
     if _Debug:
-        lg.args(_DebugLevel, idurl=idurl, keep_alive=keep_alive, channel=channel, ack_timeout=ack_timeout, ping_retries=ping_retries)
+        lg.args(
+            _DebugLevel,
+            idurl=idurl,
+            keep_alive=keep_alive,
+            channel=channel,
+            ack_timeout=ack_timeout,
+            ping_retries=ping_retries,
+        )
     result = Deferred()
     result.addErrback(on_ping_failed, idurl=idurl, channel=channel)
     if id_url.is_empty(idurl):
-        result.errback(Exception('empty idurl provided'))
+        result.errback(Exception("empty idurl provided"))
         return result
     if not id_url.is_cached(idurl):
         if _Debug:
-            lg.dbg(_DebugLevel, 'user identity %r not cached yet, executing clean handshake' % idurl)
+            lg.dbg(
+                _DebugLevel,
+                "user identity %r not cached yet, executing clean handshake" % idurl,
+            )
         return handshaker.ping(
             idurl=idurl,
             ack_timeout=ack_timeout,
             ping_retries=ping_retries,
-            channel=channel or 'clean_handshake',
+            channel=channel or "clean_handshake",
             keep_alive=keep_alive,
         )
     idurl = id_url.field(idurl)
     if not isKnown(idurl):
         if not check_create(idurl, keep_alive=keep_alive):
-            raise Exception('can not create instance')
-    A(idurl, 'handshake', result, channel=channel, ack_timeout=ack_timeout, ping_retries=ping_retries, original_idurl=idurl.to_original())
+            raise Exception("can not create instance")
+    A(
+        idurl,
+        "handshake",
+        result,
+        channel=channel,
+        ack_timeout=ack_timeout,
+        ping_retries=ping_retries,
+        original_idurl=idurl.to_original(),
+    )
     return result
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def isKnown(idurl):
     """
@@ -280,7 +309,10 @@ def isOnline(idurl):
     idurl = id_url.field(idurl)
     if not isKnown(idurl):
         return False
-    return A(idurl).state in ['CONNECTED', 'PING?', ]
+    return A(idurl).state in [
+        "CONNECTED",
+        "PING?",
+    ]
 
 
 def isOffline(idurl):
@@ -297,7 +329,7 @@ def isOffline(idurl):
     idurl = id_url.field(idurl)
     if not isKnown(idurl):
         return True
-    return A(idurl).state == 'OFFLINE'
+    return A(idurl).state == "OFFLINE"
 
 
 def isCheckingNow(idurl):
@@ -314,7 +346,7 @@ def isCheckingNow(idurl):
     idurl = id_url.field(idurl)
     if not isKnown(idurl):
         return False
-    return A(idurl).state == 'PING'
+    return A(idurl).state == "PING"
 
 
 def getInstance(idurl, autocreate=True):
@@ -331,7 +363,7 @@ def getInstance(idurl, autocreate=True):
     return A(idurl)
 
 
-def stateToLabel(state, default='?'):
+def stateToLabel(state, default="?"):
     global _StatusLabels
     return _StatusLabels.get(state, default)
 
@@ -359,14 +391,14 @@ def getStatusLabel(idurl):
     """
     global _ShutdownFlag
     if _ShutdownFlag:
-        return '?'
+        return "?"
     if id_url.is_empty(idurl):
-        return '?'
+        return "?"
     if not id_url.is_cached(idurl):
-        return '?'
+        return "?"
     idurl = id_url.field(idurl)
     if not isKnown(idurl):
-        return '?'
+        return "?"
     return stateToLabel(A(idurl).state)
 
 
@@ -420,9 +452,13 @@ def countOnlineAmong(idurls_list):
                 num += 1
     return num
 
-#------------------------------------------------------------------------------
 
-def add_online_status_listener_callback(idurl, callback_method, oldstate=None, newstate=None, callback_id=None):
+# ------------------------------------------------------------------------------
+
+
+def add_online_status_listener_callback(
+    idurl, callback_method, oldstate=None, newstate=None, callback_id=None
+):
     """
     Attach new listener callback to the corresponding ``online_contact()`` automat for node with ``idurl``.
     """
@@ -445,17 +481,28 @@ def remove_online_status_listener_callback(idurl, callback_method=None, callback
     online_status_instance = getInstance(idurl)
     if not online_status_instance:
         return False
-    return online_status_instance.removeStateChangedCallback(cb=callback_method, callback_id=callback_id) > 0
+    return (
+        online_status_instance.removeStateChangedCallback(
+            cb=callback_method, callback_id=callback_id
+        )
+        > 0
+    )
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def populate_online_statuses():
     for online_s in online_statuses().values():
-        listeners.push_snapshot('online_status', snap_id=online_s.idurl.to_text(), data=online_s.to_json())
+        listeners.push_snapshot(
+            "online_status", snap_id=online_s.idurl.to_text(), data=online_s.to_json()
+        )
 
-#------------------------------------------------------------------------------
 
-def OutboxStatus(pkt_out, status, error=''):
+# ------------------------------------------------------------------------------
+
+
+def OutboxStatus(pkt_out, status, error=""):
     """
     This method is called when raised a status report after sending a packet to
     remote peer.
@@ -469,17 +516,34 @@ def OutboxStatus(pkt_out, status, error=''):
         return False
     if pkt_out.outpacket.CreatorID.to_bin() != my_id.getIDURL().to_bin():
         return False
-    if status == 'finished':
-        if error == 'unanswered' and pkt_out.outpacket.Command == commands.Identity():
-            if pkt_out.outpacket.OwnerID == my_id.getIDURL() and pkt_out.outpacket.CreatorID == my_id.getIDURL():
+    if status == "finished":
+        if error == "unanswered" and pkt_out.outpacket.Command == commands.Identity():
+            if (
+                pkt_out.outpacket.OwnerID == my_id.getIDURL()
+                and pkt_out.outpacket.CreatorID == my_id.getIDURL()
+            ):
                 # if not handshaker.is_running(pkt_out.outpacket.RemoteID):
                 if _Debug:
-                    lg.dbg(_DebugLevel, 'ping packet %s addressed to %r was "unanswered"' % (pkt_out, pkt_out.outpacket.RemoteID, ))
+                    lg.dbg(
+                        _DebugLevel,
+                        'ping packet %s addressed to %r was "unanswered"'
+                        % (
+                            pkt_out,
+                            pkt_out.outpacket.RemoteID,
+                        ),
+                    )
     else:
         if _Debug:
-            lg.dbg(_DebugLevel, 'packet %s is "%s" with %s error: %r' % (pkt_out, status, pkt_out.outpacket, error))
+            lg.dbg(
+                _DebugLevel,
+                'packet %s is "%s" with %s error: %r'
+                % (pkt_out, status, pkt_out.outpacket, error),
+            )
     if pkt_out.outpacket.Command == commands.Identity():
-        if pkt_out.outpacket.OwnerID == my_id.getIDURL() and pkt_out.outpacket.CreatorID == my_id.getIDURL():
+        if (
+            pkt_out.outpacket.OwnerID == my_id.getIDURL()
+            and pkt_out.outpacket.CreatorID == my_id.getIDURL()
+        ):
             if handshaker.is_running(pkt_out.outpacket.RemoteID):
                 handshaker.on_identity_packet_outbox_status(pkt_out, status, error)
     return False
@@ -503,14 +567,14 @@ def Inbox(newpacket, info, status, message):
     if newpacket.RemoteID != my_id.getIDURL():
         return False
     check_create(newpacket.OwnerID)
-    A(newpacket.OwnerID, 'inbox-packet', (newpacket, info, status, message))
+    A(newpacket.OwnerID, "inbox-packet", (newpacket, info, status, message))
     return False
 
 
 def PacketSendingTimeout(remoteID, packetID):
     """
     Called from ``p2p.io_throttle`` when some packet is timed out.
- 
+
     Right now this do nothing, to be improved.
     """
     global _ShutdownFlag
@@ -520,31 +584,38 @@ def PacketSendingTimeout(remoteID, packetID):
         return False
     check_create(remoteID)
     # TODO: do something in that case ... send event "ping-now" ?
-    A(remoteID, 'sent-timeout', packetID)
+    A(remoteID, "sent-timeout", packetID)
     return True
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def RunOfflineChecks():
     for o_status in list(_OnlineStatusDict.values()):
-        if o_status.state != 'OFFLINE':
+        if o_status.state != "OFFLINE":
             # if user is online or checking: do nothing
             continue
         if not o_status.latest_check_time:
             # if no checks done yet but he is offline: ping user
-            o_status.automat('offline-check')
+            o_status.automat("offline-check")
             continue
         if utime.get_sec1970() - o_status.latest_check_time > 10 * 60:
             # user is offline and latest check was sent a while ago: lets try to ping user again
-            o_status.automat('offline-check')
+            o_status.automat("offline-check")
             continue
-        if o_status.latest_inbox_time and utime.get_sec1970() - o_status.latest_inbox_time < 60:
+        if (
+            o_status.latest_inbox_time
+            and utime.get_sec1970() - o_status.latest_inbox_time < 60
+        ):
             # user is offline, but we know that he was online recently: lets try to ping him again
-            o_status.automat('offline-check')
+            o_status.automat("offline-check")
             continue
     return True
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def A(idurl, event=None, *args, **kwargs):
     """
@@ -560,8 +631,8 @@ def A(idurl, event=None, *args, **kwargs):
             return None
         _OnlineStatusDict[idurl] = OnlineStatus(
             idurl=idurl,
-            name='online_%s' % global_id.UrlToGlobalID(idurl),
-            state='AT_STARTUP',
+            name="online_%s" % global_id.UrlToGlobalID(idurl),
+            state="AT_STARTUP",
             debug_level=_DebugLevel,
             log_events=False,
             log_transitions=_Debug,
@@ -570,7 +641,9 @@ def A(idurl, event=None, *args, **kwargs):
         _OnlineStatusDict[idurl].automat(event, *args, **kwargs)
     return _OnlineStatusDict[idurl]
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 class OnlineStatus(automat.Automat):
     """
@@ -578,11 +651,20 @@ class OnlineStatus(automat.Automat):
     """
 
     timers = {
-        'timer-1min': (60, ['CONNECTED']),
-        'timer-20sec': (20.0, ['PING?']),
-        }
+        "timer-1min": (60, ["CONNECTED"]),
+        "timer-20sec": (20.0, ["PING?"]),
+    }
 
-    def __init__(self, idurl, name, state, debug_level=0, log_events=False, log_transitions=False, **kwargs):
+    def __init__(
+        self,
+        idurl,
+        name,
+        state,
+        debug_level=0,
+        log_events=False,
+        log_transitions=False,
+        **kwargs
+    ):
         """
         Builds `online_status()` state machine.
         """
@@ -599,17 +681,21 @@ class OnlineStatus(automat.Automat):
             **kwargs
         )
         if _Debug:
-            lg.out(_DebugLevel, 'online_status.ContactStatus %s %s %s' % (name, state, idurl))
+            lg.out(
+                _DebugLevel, "online_status.ContactStatus %s %s %s" % (name, state, idurl)
+            )
 
     def to_json(self):
         j = super().to_json()
         glob_id = global_id.ParseIDURL(self.idurl)
-        j.update({
-            'idurl': self.idurl.to_text(),
-            'global_id': glob_id['customer'],
-            'idhost': glob_id['idhost'],
-            'username': glob_id['user'],
-        })
+        j.update(
+            {
+                "idurl": self.idurl.to_text(),
+                "global_id": glob_id["customer"],
+                "idhost": glob_id["idhost"],
+                "username": glob_id["user"],
+            }
+        )
         return j
 
     def init(self):
@@ -623,90 +709,110 @@ class OnlineStatus(automat.Automat):
         Method to catch the moment when `online_status()` state were changed.
         """
         if _Debug:
-            lg.out(_DebugLevel, '%s : [%s]->[%s]' % (self.name, oldstate, newstate))
-        if newstate == 'CONNECTED':
-            lg.info('remote node connected : %s' % self.idurl)
-            events.send('node-connected', data=dict(
-                global_id=self.idurl.to_id(),
-                idurl=self.idurl,
-                old_state=oldstate,
-                new_state=newstate,
-            ))
-            listeners.push_snapshot('online_status', snap_id=self.idurl.to_text(), data=self.to_json())
-        if newstate == 'OFFLINE' and oldstate != 'AT_STARTUP':
-            lg.info('remote node disconnected : %s' % self.idurl)
-            events.send('node-disconnected', data=dict(
-                global_id=self.idurl.to_id(),
-                idurl=self.idurl,
-                old_state=oldstate,
-                new_state=newstate,
-            ))
-            listeners.push_snapshot('online_status', snap_id=self.idurl.to_text(), data=self.to_json())
-        if newstate == 'PING?' and oldstate != 'AT_STARTUP':
-            listeners.push_snapshot('online_status', snap_id=self.idurl.to_text(), data=self.to_json())
+            lg.out(_DebugLevel, "%s : [%s]->[%s]" % (self.name, oldstate, newstate))
+        if newstate == "CONNECTED":
+            lg.info("remote node connected : %s" % self.idurl)
+            events.send(
+                "node-connected",
+                data=dict(
+                    global_id=self.idurl.to_id(),
+                    idurl=self.idurl,
+                    old_state=oldstate,
+                    new_state=newstate,
+                ),
+            )
+            listeners.push_snapshot(
+                "online_status", snap_id=self.idurl.to_text(), data=self.to_json()
+            )
+        if newstate == "OFFLINE" and oldstate != "AT_STARTUP":
+            lg.info("remote node disconnected : %s" % self.idurl)
+            events.send(
+                "node-disconnected",
+                data=dict(
+                    global_id=self.idurl.to_id(),
+                    idurl=self.idurl,
+                    old_state=oldstate,
+                    new_state=newstate,
+                ),
+            )
+            listeners.push_snapshot(
+                "online_status", snap_id=self.idurl.to_text(), data=self.to_json()
+            )
+        if newstate == "PING?" and oldstate != "AT_STARTUP":
+            listeners.push_snapshot(
+                "online_status", snap_id=self.idurl.to_text(), data=self.to_json()
+            )
 
     def A(self, event, *args, **kwargs):
         """
         The state machine code, generated using `visio2python <http://bitdust.io/visio2python/>`_ tool.
         """
-        #---AT_STARTUP---
-        if self.state == 'AT_STARTUP':
-            if event == 'init':
-                self.state = 'OFFLINE'
+        # ---AT_STARTUP---
+        if self.state == "AT_STARTUP":
+            if event == "init":
+                self.state = "OFFLINE"
                 self.doInit(*args, **kwargs)
-        #---PING?---
-        elif self.state == 'PING?':
-            if event == 'shutdown':
-                self.state = 'CLOSED'
+        # ---PING?---
+        elif self.state == "PING?":
+            if event == "shutdown":
+                self.state = "CLOSED"
                 self.doReportOffline(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'ping-failed' or event == 'timer-20sec':
-                self.state = 'OFFLINE'
+            elif event == "ping-failed" or event == "timer-20sec":
+                self.state = "OFFLINE"
                 self.doReportOffline(*args, **kwargs)
-            elif event == 'handshake' or event == 'ping-now':
+            elif event == "handshake" or event == "ping-now":
                 self.doSetCallback(*args, **kwargs)
-            elif event == 'inbox-packet' or event == 'ack-received' or event == 'shook-up-hands':
-                self.state = 'CONNECTED'
+            elif (
+                event == "inbox-packet"
+                or event == "ack-received"
+                or event == "shook-up-hands"
+            ):
+                self.state = "CONNECTED"
                 self.doRememberTime(*args, **kwargs)
                 self.doReportConnected(*args, **kwargs)
-        #---CONNECTED---
-        elif self.state == 'CONNECTED':
-            if event == 'ping-failed':
-                self.state = 'OFFLINE'
+        # ---CONNECTED---
+        elif self.state == "CONNECTED":
+            if event == "ping-failed":
+                self.state = "OFFLINE"
                 self.doReportOffline(*args, **kwargs)
-            elif event == 'shutdown':
-                self.state = 'CLOSED'
+            elif event == "shutdown":
+                self.state = "CLOSED"
                 self.doReportOffline(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'timer-1min' and not self.isRecentInbox(*args, **kwargs):
+            elif event == "timer-1min" and not self.isRecentInbox(*args, **kwargs):
                 self.doHandshake(event, *args, **kwargs)
-            elif event == 'handshake':
-                self.state = 'PING?'
+            elif event == "handshake":
+                self.state = "PING?"
                 self.doSetCallback(*args, **kwargs)
                 self.doHandshake(event, *args, **kwargs)
-            elif event == 'ping-now':
+            elif event == "ping-now":
                 self.doSetCallback(*args, **kwargs)
                 self.doReportAlreadyConnected(*args, **kwargs)
-            elif event == 'inbox-packet' or event == 'shook-up-hands' or event == 'ack-receieved':
+            elif (
+                event == "inbox-packet"
+                or event == "shook-up-hands"
+                or event == "ack-receieved"
+            ):
                 self.doRememberTime(*args, **kwargs)
-        #---OFFLINE---
-        elif self.state == 'OFFLINE':
-            if event == 'shutdown':
-                self.state = 'CLOSED'
+        # ---OFFLINE---
+        elif self.state == "OFFLINE":
+            if event == "shutdown":
+                self.state = "CLOSED"
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'handshake' or event == 'ping-now':
-                self.state = 'PING?'
+            elif event == "handshake" or event == "ping-now":
+                self.state = "PING?"
                 self.doSetCallback(*args, **kwargs)
                 self.doHandshake(event, *args, **kwargs)
-            elif event == 'inbox-packet' or event == 'shook-up-hands':
-                self.state = 'CONNECTED'
+            elif event == "inbox-packet" or event == "shook-up-hands":
+                self.state = "CONNECTED"
                 self.doRememberTime(*args, **kwargs)
                 self.doReportConnected(*args, **kwargs)
-            elif event == 'offline-check' or event == 'ack-received':
+            elif event == "offline-check" or event == "ack-received":
                 self.doRememberCheckTime(*args, **kwargs)
                 self.doHandshake(event, *args, **kwargs)
-        #---CLOSED---
-        elif self.state == 'CLOSED':
+        # ---CLOSED---
+        elif self.state == "CLOSED":
             pass
         return None
 
@@ -725,7 +831,7 @@ class OnlineStatus(automat.Automat):
         Action method.
         """
         self.handshake_callbacks = []
-        self.keep_alive = kwargs.get('keep_alive', True)
+        self.keep_alive = kwargs.get("keep_alive", True)
 
     def doSetCallback(self, *args, **kwargs):
         """
@@ -738,29 +844,29 @@ class OnlineStatus(automat.Automat):
         """
         Action method.
         """
-        channel = kwargs.get('channel', None)
-        ack_timeout = kwargs.get('ack_timeout', 15)
-        ping_retries = kwargs.get('ping_retries', 2)
-        original_idurl = kwargs.get('original_idurl', self.idurl.to_bin())
+        channel = kwargs.get("channel", None)
+        ack_timeout = kwargs.get("ack_timeout", 15)
+        ping_retries = kwargs.get("ping_retries", 2)
+        original_idurl = kwargs.get("original_idurl", self.idurl.to_bin())
         d = None
-        if event == 'ping-now':
+        if event == "ping-now":
             d = handshaker.ping(
                 idurl=original_idurl,
                 ack_timeout=ack_timeout,
                 ping_retries=ping_retries,
-                channel=channel or 'ping',
+                channel=channel or "ping",
                 cancel_running=True,
             )
-        elif event == 'handshake':
+        elif event == "handshake":
             d = handshaker.ping(
                 idurl=original_idurl,
                 ack_timeout=ack_timeout,
                 ping_retries=ping_retries,
                 force_cache=True,
-                channel=channel or 'handshake',
+                channel=channel or "handshake",
                 cancel_running=True,
             )
-        elif event == 'offline-ping':
+        elif event == "offline-ping":
             if self.keep_alive:
                 d = handshaker.ping(
                     idurl=original_idurl,
@@ -768,7 +874,7 @@ class OnlineStatus(automat.Automat):
                     cache_timeout=10,
                     ping_retries=ping_retries,
                     force_cache=True,
-                    channel='offline_ping',
+                    channel="offline_ping",
                 )
         else:
             if self.keep_alive:
@@ -778,7 +884,7 @@ class OnlineStatus(automat.Automat):
                     cache_timeout=10,
                     ping_retries=ping_retries,
                     force_cache=True,
-                    channel='idle_ping',
+                    channel="idle_ping",
                 )
         if d:
             d.addCallback(self._on_ping_success)
@@ -807,7 +913,12 @@ class OnlineStatus(automat.Automat):
         Action method.
         """
         if _Debug:
-            lg.args(_DebugLevel, idurl=self.idurl, keep_alive=self.keep_alive, handshake_callbacks=len(self.handshake_callbacks))
+            lg.args(
+                _DebugLevel,
+                idurl=self.idurl,
+                keep_alive=self.keep_alive,
+                handshake_callbacks=len(self.handshake_callbacks),
+            )
         for cb in self.handshake_callbacks:
             if isinstance(cb, Deferred):
                 if not cb.called:
@@ -820,13 +931,19 @@ class OnlineStatus(automat.Automat):
         """
         Action method.
         """
-        err = args[0] if (args and args[0]) else Exception('user is offline')
+        err = args[0] if (args and args[0]) else Exception("user is offline")
         try:
             err_msg = err.getErrorMessage()
         except:
             err_msg = repr(err)
         if _Debug:
-            lg.args(_DebugLevel, idurl=self.idurl, err=err_msg, keep_alive=self.keep_alive, handshake_callbacks=len(self.handshake_callbacks))
+            lg.args(
+                _DebugLevel,
+                idurl=self.idurl,
+                err=err_msg,
+                keep_alive=self.keep_alive,
+                handshake_callbacks=len(self.handshake_callbacks),
+            )
         for cb in self.handshake_callbacks:
             if isinstance(cb, Deferred):
                 if not cb.called:
@@ -841,7 +958,13 @@ class OnlineStatus(automat.Automat):
         """
         response = args[0] if (args and args[0]) else None
         if _Debug:
-            lg.args(_DebugLevel, idurl=self.idurl, response=response, keep_alive=self.keep_alive, handshake_callbacks=len(self.handshake_callbacks))
+            lg.args(
+                _DebugLevel,
+                idurl=self.idurl,
+                response=response,
+                keep_alive=self.keep_alive,
+                handshake_callbacks=len(self.handshake_callbacks),
+            )
         for cb in self.handshake_callbacks:
             if isinstance(cb, Deferred):
                 if not cb.called:
@@ -868,8 +991,21 @@ class OnlineStatus(automat.Automat):
         except:
             lg.exc()
         if _Debug:
-            lg.out(_DebugLevel, 'online_status._on_ping_success %r : %r' % (self.idurl, result, ))
-        self.automat('shook-up-hands', (response, info, ))
+            lg.out(
+                _DebugLevel,
+                "online_status._on_ping_success %r : %r"
+                % (
+                    self.idurl,
+                    result,
+                ),
+            )
+        self.automat(
+            "shook-up-hands",
+            (
+                response,
+                info,
+            ),
+        )
         return None
 
     def _on_ping_failed(self, err):
@@ -878,7 +1014,13 @@ class OnlineStatus(automat.Automat):
         except:
             msg = str(err)
         if _Debug:
-            lg.out(_DebugLevel, 'online_status._on_ping_failed %r : %s' % (self.idurl, msg, ))
-        self.automat('ping-failed', err)
+            lg.out(
+                _DebugLevel,
+                "online_status._on_ping_failed %r : %s"
+                % (
+                    self.idurl,
+                    msg,
+                ),
+            )
+        self.automat("ping-failed", err)
         return None
-

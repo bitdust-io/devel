@@ -31,6 +31,7 @@ module:: service_data_motion
 """
 
 from __future__ import absolute_import
+
 from services.local_service import LocalService
 
 
@@ -40,52 +41,61 @@ def create_service():
 
 class DataMotionService(LocalService):
 
-    service_name = 'service_data_motion'
-    config_path = 'services/data-motion/enabled'
+    service_name = "service_data_motion"
+    config_path = "services/data-motion/enabled"
 
     def dependent_on(self):
         return [
-            'service_employer',
+            "service_employer",
         ]
 
     def init(self, **kwargs):
         from main import events
-        events.add_subscriber(self._on_my_suppliers_all_hired, 'my-suppliers-all-hired')
-        events.add_subscriber(self._on_my_suppliers_yet_not_hired, 'my-suppliers-yet-not-hired')
+
+        events.add_subscriber(self._on_my_suppliers_all_hired, "my-suppliers-all-hired")
+        events.add_subscriber(
+            self._on_my_suppliers_yet_not_hired, "my-suppliers-yet-not-hired"
+        )
 
     def shutdown(self):
         from main import events
-        events.remove_subscriber(self._on_my_suppliers_yet_not_hired, 'my-suppliers-yet-not-hired')
-        events.remove_subscriber(self._on_my_suppliers_all_hired, 'my-suppliers-all-hired')
+
+        events.remove_subscriber(
+            self._on_my_suppliers_yet_not_hired, "my-suppliers-yet-not-hired"
+        )
+        events.remove_subscriber(
+            self._on_my_suppliers_all_hired, "my-suppliers-all-hired"
+        )
 
     def start(self):
-        from logs import lg
         from customer import fire_hire
+        from logs import lg
+
         if not fire_hire.IsAllHired():
-            lg.warn('service_data_motion() can not start right now, not all suppliers hired yet')
+            lg.warn(
+                "service_data_motion() can not start right now, not all suppliers hired yet"
+            )
             return False
         from main import events
-        from stream import io_throttle
-        from stream import data_sender
-        from stream import data_receiver
+        from stream import data_receiver, data_sender, io_throttle
+
         io_throttle.init()
         data_sender.SetShutdownFlag(False)
-        data_sender.A('init')
-        data_receiver.A('init')
-        events.add_subscriber(self._on_identity_url_changed, 'identity-url-changed')
-        events.add_subscriber(self._on_supplier_modified, 'supplier-modified')
+        data_sender.A("init")
+        data_receiver.A("init")
+        events.add_subscriber(self._on_identity_url_changed, "identity-url-changed")
+        events.add_subscriber(self._on_supplier_modified, "supplier-modified")
         return True
 
     def stop(self):
         from main import events
-        from stream import io_throttle
-        from stream import data_sender
-        from stream import data_receiver
-        events.remove_subscriber(self._on_supplier_modified, 'supplier-modified')
-        events.remove_subscriber(self._on_identity_url_changed, 'identity-url-changed')
-        data_receiver.A('shutdown')
+        from stream import data_receiver, data_sender, io_throttle
+
+        events.remove_subscriber(self._on_supplier_modified, "supplier-modified")
+        events.remove_subscriber(self._on_identity_url_changed, "identity-url-changed")
+        data_receiver.A("shutdown")
         data_sender.SetShutdownFlag(True)
-        data_sender.A('shutdown')
+        data_sender.A("shutdown")
         io_throttle.shutdown()
         return True
 
@@ -95,36 +105,55 @@ class DataMotionService(LocalService):
     def _on_my_suppliers_all_hired(self, evt):
         from logs import lg
         from services import driver
-        if driver.is_enabled('service_data_motion'):
-            if not driver.is_started('service_data_motion'):
+
+        if driver.is_enabled("service_data_motion"):
+            if not driver.is_started("service_data_motion"):
                 from customer import fire_hire
+
                 if fire_hire.IsAllHired():
-                    lg.info('all my suppliers are hired, starting service_data_motion()')
-                    driver.start_single('service_data_motion')
+                    lg.info("all my suppliers are hired, starting service_data_motion()")
+                    driver.start_single("service_data_motion")
 
     def _on_my_suppliers_yet_not_hired(self, evt):
         from logs import lg
         from services import driver
-        if driver.is_enabled('service_data_motion'):
-            if driver.is_started('service_data_motion'):
-                lg.info('my suppliers failed to hire, stopping service_data_motion()')
-                driver.stop_single('service_data_motion')
+
+        if driver.is_enabled("service_data_motion"):
+            if driver.is_started("service_data_motion"):
+                lg.info("my suppliers failed to hire, stopping service_data_motion()")
+                driver.stop_single("service_data_motion")
 
     def _on_identity_url_changed(self, evt):
         from logs import lg
-        from userid import id_url
         from stream import io_throttle
-        old_idurl = id_url.field(evt.data['old_idurl'])
-        for supplier_idurl, supplier_queue in io_throttle.throttle().supplierQueues.items():
+        from userid import id_url
+
+        old_idurl = id_url.field(evt.data["old_idurl"])
+        for (
+            supplier_idurl,
+            supplier_queue,
+        ) in io_throttle.throttle().supplierQueues.items():
             if old_idurl == supplier_idurl:
                 supplier_idurl.refresh()
-                lg.info('found supplier idurl rotated in io_throttle: %r -> %r' % (
-                    evt.data['old_idurl'], evt.data['new_idurl'], ))
+                lg.info(
+                    "found supplier idurl rotated in io_throttle: %r -> %r"
+                    % (
+                        evt.data["old_idurl"],
+                        evt.data["new_idurl"],
+                    )
+                )
             if old_idurl == supplier_queue.customerIDURL:
                 supplier_queue.customerIDURL.refresh()
-                lg.info('found customer idurl rotated in io_throttle %r supplier queue: %r -> %r' % (
-                    supplier_idurl, evt.data['old_idurl'], evt.data['new_idurl'], ))
+                lg.info(
+                    "found customer idurl rotated in io_throttle %r supplier queue: %r -> %r"
+                    % (
+                        supplier_idurl,
+                        evt.data["old_idurl"],
+                        evt.data["new_idurl"],
+                    )
+                )
 
     def _on_supplier_modified(self, evt):
         from stream import data_sender
-        data_sender.A('restart')
+
+        data_sender.A("restart")

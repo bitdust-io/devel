@@ -40,32 +40,33 @@ argument if you have "http" vs "ssh" or "tcp".
 This seems like trouble.
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
-from __future__ import absolute_import
-from __future__ import print_function
-
-#------------------------------------------------------------------------------
-
-import six
-import six.moves.urllib.request, six.moves.urllib.parse, six.moves.urllib.error  # @UnresolvedImport
-import six.moves.urllib.parse  # @UnresolvedImport
-from six.moves import range  # @UnresolvedImport
-
-#------------------------------------------------------------------------------
+from __future__ import absolute_import, print_function
 
 import re
 
-#------------------------------------------------------------------------------
+import six
+import six.moves.urllib.parse  # @UnresolvedImport
+from six.moves import range  # @UnresolvedImport
 
 from lib import strng
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
+
+# ------------------------------------------------------------------------------
+
+
+# ------------------------------------------------------------------------------
+
+
+# ------------------------------------------------------------------------------
 
 legalchars = "#.-_()ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
 legalset = set(legalchars)
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 def UrlParse(url):
@@ -75,28 +76,37 @@ def UrlParse(url):
         nameurl.UrlParse('http://id.bitdust.io/veselin.xml')
         ('http', 'id.bitdust.io', '', 'veselin.xml')
     """
-    if not url or (isinstance(url, six.string_types) and url in ['None', b'None', '', b'', ]):
-        return '', '', '', ''
+    if not url or (
+        isinstance(url, six.string_types)
+        and url
+        in [
+            "None",
+            b"None",
+            "",
+            b"",
+        ]
+    ):
+        return "", "", "", ""
     url = strng.to_bin(url)
     o = six.moves.urllib.parse.urlparse(url)
     proto = strng.to_bin(o.scheme.strip())
-    base = strng.to_bin(o.netloc).lstrip(b' /')
-    filename = strng.to_bin(o.path).lstrip(b' /')
+    base = strng.to_bin(o.netloc).lstrip(b" /")
+    filename = strng.to_bin(o.path).lstrip(b" /")
     if not base:
-        base = strng.to_bin(o.path).lstrip(b' /')
-        filename = b''
-    if base.find(b'/') < 0:
-        if base.find(b':') < 0:
+        base = strng.to_bin(o.path).lstrip(b" /")
+        filename = b""
+    if base.find(b"/") < 0:
+        if base.find(b":") < 0:
             host = base
-            port = b''
+            port = b""
         else:
-            host, port = base.split(b':', 1)
+            host, port = base.split(b":", 1)
     else:
-        host, tail = base.split(b'/', 1)
-        if host.find(b':') < 0:
-            port = b''
+        host, tail = base.split(b"/", 1)
+        if host.find(b":") < 0:
+            port = b""
         else:
-            host, port = host.split(b':', 1)
+            host, port = host.split(b":", 1)
         if not filename:
             filename = tail
     return (
@@ -113,24 +123,24 @@ def UrlParseFast(url):
         ( proto, host, port, path, filename )
     """
     url = strng.to_text(url)
-    proto, _, tail = url.partition('://')
-    head, _, filename = tail.rpartition('/')
-    host_port, _, path = head.partition('/')
-    host, _, port = host_port.partition(':')
+    proto, _, tail = url.partition("://")
+    head, _, filename = tail.rpartition("/")
+    host_port, _, path = head.partition("/")
+    host, _, port = host_port.partition(":")
     return proto, host, port, path, filename
 
 
-def UrlMake(protocol='', machine='', port='', filename='', parts=None):
+def UrlMake(protocol="", machine="", port="", filename="", parts=None):
     """
     Reverse method, create a URL from 4 pieces.
     """
     if parts is not None:
         protocol, machine, port, filename = parts
-    url = protocol + '://' + strng.to_text(machine)
+    url = protocol + "://" + strng.to_text(machine)
     if port:
-        url += ':' + strng.to_text(port)
+        url += ":" + strng.to_text(port)
     if filename:
-        url += '/' + filename
+        url += "/" + filename
     return strng.to_bin(url)
 
 
@@ -143,12 +153,21 @@ def UrlFilename(url):
     'http###id.bitdust.io#veselin.xml'
     """
     # TODO: switch all that to global ID format
-    if not url or (isinstance(url, six.string_types) and url in ['None', b'None', '', b'', ]):
+    if not url or (
+        isinstance(url, six.string_types)
+        and url
+        in [
+            "None",
+            b"None",
+            "",
+            b"",
+        ]
+    ):
         return None
     result = strng.to_text(url)
     result = result.replace("://", "###")
     result = result.replace("/", "#")
-    result = re.sub('(\:)(\d+)', '(#\g<2>#)', result)
+    result = re.sub("(\:)(\d+)", "(#\g<2>#)", result)
     result = result.lower()
     return result
 
@@ -158,10 +177,10 @@ def FilenameUrl(filename):
     A reverse method for ``UrlFilename()``.
     """
     src = filename.strip().lower()
-    if not src.startswith('http###'):
+    if not src.startswith("http###"):
         return None
-    src = re.sub('\(#(\d+)#\)', ':\g<1>', src)
-    src = 'http://' + src[7:].replace('#', '/')
+    src = re.sub("\(#(\d+)#\)", ":\g<1>", src)
+    src = "http://" + src[7:].replace("#", "/")
     return strng.to_bin(src)
 
 
@@ -175,22 +194,24 @@ def UrlFilenameHTML(url):
     """
     global legalset
     url = strng.to_text(url)
-    s = url.replace('http://', '')
-    o = ''
+    s = url.replace("http://", "")
+    o = ""
     for x in s:
-        if x not in legalset or x == '.' or x == ':' or x == '#':
-            o += '_'
+        if x not in legalset or x == "." or x == ":" or x == "#":
+            o += "_"
         else:
             o += x
     return o
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def IdContactSplit(contact):
     try:
-        return strng.to_text(contact).split('://')
+        return strng.to_text(contact).split("://")
     except:
-        return '', ''
+        return "", ""
 
 
 def GetName(url):
@@ -200,22 +221,40 @@ def GetName(url):
 
     nameurl.GetName('http://id.bitdust.io/kinggeorge.xml') 'kinggeorge'
     """
-    if not url or (isinstance(url, six.string_types) and url in ['None', b'None', '', b'', ]):
-        return ''
+    if not url or (
+        isinstance(url, six.string_types)
+        and url
+        in [
+            "None",
+            b"None",
+            "",
+            b"",
+        ]
+    ):
+        return ""
     url = strng.to_text(url)
-    if not url.endswith('.xml'):
+    if not url.endswith(".xml"):
         return url
-    return url[url.rfind("/") + 1:-4]  # return url[url.rfind("/")+1:url.rfind(".")]
+    return url[url.rfind("/") + 1 : -4]  # return url[url.rfind("/")+1:url.rfind(".")]
 
 
 def GetFileName(url):
     """
     Almost the same, but keeps the file extension.
     """
-    if not url or (isinstance(url, six.string_types) and url in ['None', b'None', '', b'', ]):
-        return ''
+    if not url or (
+        isinstance(url, six.string_types)
+        and url
+        in [
+            "None",
+            b"None",
+            "",
+            b"",
+        ]
+    ):
+        return ""
     url = strng.to_text(url)
-    return url[url.rfind("/") + 1:]
+    return url[url.rfind("/") + 1 :]
 
 
 def GetHost(url):
@@ -224,13 +263,15 @@ def GetHost(url):
     """
     return UrlParse(url)[1]
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def Quote(s):
     """
     A wrapper for built-in method ``urllib.quote()``.
     """
-    return six.moves.urllib.parse.quote(s, '')
+    return six.moves.urllib.parse.quote(s, "")
 
 
 def UnQuote(s):
@@ -240,7 +281,8 @@ def UnQuote(s):
     return six.moves.urllib.parse.unquote(s)
 
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
 
 def DjangoQuote(s):
     """
@@ -255,8 +297,8 @@ def DjangoQuote(s):
     for i in range(len(res)):
         c = res[i]
         if c in """:/_#?;@&=+$,"<>%\\""":
-            res[i] = '_%02X' % ord(c)
-    return ''.join(res)
+            res[i] = "_%02X" % ord(c)
+    return "".join(res)
 
 
 def DjangoUnQuote(s):
@@ -267,7 +309,7 @@ def DjangoUnQuote(s):
     """
     mychr = chr
     myatoi = int
-    lst = s.split('_')
+    lst = s.split("_")
     res = [lst[0]]
     myappend = res.append
     del lst[0]
@@ -276,12 +318,13 @@ def DjangoUnQuote(s):
             try:
                 myappend(mychr(myatoi(item[:2], 16)) + item[2:])
             except ValueError:
-                myappend('_' + item)
+                myappend("_" + item)
         else:
-            myappend('_' + item)
+            myappend("_" + item)
     return "".join(res)
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def main():
@@ -290,5 +333,6 @@ def main():
     """
     print(GetName(str(None)))
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

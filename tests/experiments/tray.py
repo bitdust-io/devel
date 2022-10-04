@@ -20,12 +20,12 @@
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
 from __future__ import absolute_import
-import wx
-import string
 
+import string
 import sys
-from six.moves import map
-from six.moves import range
+
+import wx
+from six.moves import map, range
 
 ID_ICON_TIMER = wx.NewId()
 
@@ -39,14 +39,16 @@ class IconBar:
     ##
     # \brief the constructor default left: red, default right: green
     #
-    def __init__(self, l_off=[128, 0, 0], l_on=[255, 0, 0], r_off=[0, 128, 0], r_on=[0, 255, 0]):
+    def __init__(
+        self, l_off=[128, 0, 0], l_on=[255, 0, 0], r_off=[0, 128, 0], r_on=[0, 255, 0]
+    ):
         self.s_line = "\xff\xff\xff" + "\0" * 45
         self.s_border = "\xff\xff\xff\0\0\0"
         self.s_point = "\0" * 3
-        self.sl_off = string.join(list(map(chr, l_off)), '') * 6
-        self.sl_on = string.join(list(map(chr, l_on)), '') * 6
-        self.sr_off = string.join(list(map(chr, r_off)), '') * 6
-        self.sr_on = string.join(list(map(chr, r_on)), '') * 6
+        self.sl_off = string.join(list(map(chr, l_off)), "") * 6
+        self.sl_on = string.join(list(map(chr, l_on)), "") * 6
+        self.sr_off = string.join(list(map(chr, r_off)), "") * 6
+        self.sr_on = string.join(list(map(chr, r_on)), "") * 6
 
     ##
     # \brief gets a new icon with 0 <= l,r <= 5
@@ -78,6 +80,7 @@ class IconBar:
         icon.CopyFromBitmap(bmp)
 
         return icon
+
 
 ##
 # The TaskBarIcon class
@@ -117,6 +120,7 @@ class MyTaskBarIcon(wx.TaskBarIcon):
             self.r += 1
             if self.r > 5:
                 self.r = 0
+
     ##
     # \brief sets the icon bar and a message
     #
@@ -124,6 +128,7 @@ class MyTaskBarIcon(wx.TaskBarIcon):
     def SetIconBar(self, l, r):
         icon = self.IconBar.Get(l, r)
         self.SetIcon(icon, "L:%d,R:%d" % (l, r))
+
 
 ##
 # The task bar application
@@ -136,13 +141,20 @@ class TaskBarApp(wx.Frame):
     # \brief the constructor
     #
     def __init__(self, parent, id, title):
-        wx.Frame.__init__(self, parent, -1, title, size=(1, 1),
-                          style=wx.FRAME_NO_TASKBAR | wx.NO_FULL_REPAINT_ON_RESIZE)
+        wx.Frame.__init__(
+            self,
+            parent,
+            -1,
+            title,
+            size=(1, 1),
+            style=wx.FRAME_NO_TASKBAR | wx.NO_FULL_REPAINT_ON_RESIZE,
+        )
 
         self.tbicon = MyTaskBarIcon(self)
         self.tbicon.SetIconTimer()
 
         self.Show(True)
+
 
 ##
 # The main application wx.App class
@@ -150,9 +162,8 @@ class TaskBarApp(wx.Frame):
 
 
 class MyApp(wx.App):
-
     def OnInit(self):
-        frame = TaskBarApp(None, -1, ' ')
+        frame = TaskBarApp(None, -1, " ")
         frame.Center(wx.BOTH)
         frame.Show(False)
         return True
@@ -165,5 +176,6 @@ def main(argv=None):
     app = MyApp(0)
     app.MainLoop()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

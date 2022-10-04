@@ -28,38 +28,48 @@ SCENARIO 12: customer-1 group chat with customer-2, but broker-rotated IDURL was
 """
 
 import os
-import pytest
-
-from testsupport import set_active_scenario  # @UnresolvedImport
 
 import keywords as kw  # @UnresolvedImport
+import pytest
 import scenarios
+from testsupport import set_active_scenario  # @UnresolvedImport
 
 
 def test_brokeridrotate():
-    if os.environ.get('RUN_TESTS', '1') == '0':
+    if os.environ.get("RUN_TESTS", "1") == "0":
         return pytest.skip()  # @UndefinedVariable
 
     prepare()
 
-    #--- SCENARIO 12 begin: customer-1 group chat with customer-2, but broker-rotated IDURL was rotated
+    # --- SCENARIO 12 begin: customer-1 group chat with customer-2, but broker-rotated IDURL was rotated
     old_customer_1_info_s12 = scenarios.scenario12_begin()
 
-    #--- SCENARIO 19: ID server id-dead is dead and broker-rotated has rotated identity
+    # --- SCENARIO 19: ID server id-dead is dead and broker-rotated has rotated identity
     scenarios.scenario19()
 
-    #--- SCENARIO 12 end: customer-1 group chat with customer-2, but broker-rotated IDURL was rotated
+    # --- SCENARIO 12 end: customer-1 group chat with customer-2, but broker-rotated IDURL was rotated
     scenarios.scenario12_end(old_customer_1_info_s12)
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def prepare():
-    set_active_scenario('PREPARE')
-    kw.wait_suppliers_connected(scenarios.CUSTOMERS_IDS_12, expected_min_suppliers=2, expected_max_suppliers=2)
-    kw.wait_service_state(scenarios.SUPPLIERS_IDS_12, 'service_supplier', 'ON')
-    kw.wait_service_state(scenarios.CUSTOMERS_IDS_12, 'service_customer', 'ON')
-    kw.wait_service_state(scenarios.CUSTOMERS_IDS_12, 'service_shared_data', 'ON')
+    set_active_scenario("PREPARE")
+    kw.wait_suppliers_connected(
+        scenarios.CUSTOMERS_IDS_12, expected_min_suppliers=2, expected_max_suppliers=2
+    )
+    kw.wait_service_state(scenarios.SUPPLIERS_IDS_12, "service_supplier", "ON")
+    kw.wait_service_state(scenarios.CUSTOMERS_IDS_12, "service_customer", "ON")
+    kw.wait_service_state(scenarios.CUSTOMERS_IDS_12, "service_shared_data", "ON")
     # kw.wait_service_state(scenarios.CUSTOMERS_IDS_12, 'service_personal_messages', 'ON')
-    kw.wait_service_state(scenarios.CUSTOMERS_IDS_12, 'service_private_groups', 'ON')
-    kw.wait_service_state(scenarios.CUSTOMERS_IDS_12, 'service_message_history', 'ON')
-    kw.wait_packets_finished(scenarios.CUSTOMERS_IDS_12 + scenarios.BROKERS_IDS + ['broker-rotated', ] + scenarios.SUPPLIERS_IDS_12)
+    kw.wait_service_state(scenarios.CUSTOMERS_IDS_12, "service_private_groups", "ON")
+    kw.wait_service_state(scenarios.CUSTOMERS_IDS_12, "service_message_history", "ON")
+    kw.wait_packets_finished(
+        scenarios.CUSTOMERS_IDS_12
+        + scenarios.BROKERS_IDS
+        + [
+            "broker-rotated",
+        ]
+        + scenarios.SUPPLIERS_IDS_12
+    )

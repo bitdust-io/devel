@@ -46,37 +46,38 @@
 #
 #
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
+
 from io import open
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Debug = False
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
+import array
+import copy
 import os
 import sys
-import copy
-import array
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
-    sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..')))
-    sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..', '..')))
+    sys.path.insert(0, os.path.abspath(os.path.join(dirpath, "..")))
+    sys.path.insert(0, os.path.abspath(os.path.join(dirpath, "..", "..")))
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 import logs.lg
-
 import raid.eccmap
 import raid.raidutils
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
 
 def RoundupFile(filename, stepsize):
     """
@@ -93,16 +94,16 @@ def RoundupFile(filename, stepsize):
     increase = 0
     if mod > 0:
         increase = stepsize - mod
-        f = open(filename, 'ab')
-        f.write(b' ' * increase)
+        f = open(filename, "ab")
+        f.write(b" " * increase)
         f.close()
 
 
 def ReadBinaryFile(filename):
     if not os.path.isfile(filename):
-        return b''
+        return b""
     if not os.access(filename, os.R_OK):
-        return b''
+        return b""
     f = open(filename, "rb")
     data = f.read()
     f.close()
@@ -116,32 +117,38 @@ def WriteFile(filename, data):
         binary_type = str
     s = data
     if not isinstance(s, binary_type):
-        s = s.encode('utf-8')
+        s = s.encode("utf-8")
     f = open(filename, "wb")
     f.write(s)
     f.close()
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def ReadBinaryFileAsArray(filename):
     if not os.path.isfile(filename):
-        return b''
+        return b""
     if not os.access(filename, os.R_OK):
-        return b''
+        return b""
 
-    with open(filename, mode='rb') as f:
-        values = array.array('i', f.read())
+    with open(filename, mode="rb") as f:
+        values = array.array("i", f.read())
 
     values.byteswap()
     return values
 
 
-def do_in_memory(filename, eccmapname, version, blockNumber, targetDir, threshold_control=None):
+def do_in_memory(
+    filename, eccmapname, version, blockNumber, targetDir, threshold_control=None
+):
     try:
         if _Debug:
-            with open('/tmp/raid.log', 'a') as logfile:
-                logfile.write(u'make filename=%s eccmapname=%s blockNumber=%s\n' % (repr(filename), eccmapname, blockNumber))
+            with open("/tmp/raid.log", "a") as logfile:
+                logfile.write(
+                    "make filename=%s eccmapname=%s blockNumber=%s\n"
+                    % (repr(filename), eccmapname, blockNumber)
+                )
         INTSIZE = 4
         myeccmap = raid.eccmap.eccmap(eccmapname)
         # any padding at end and block.Length fixes
@@ -153,9 +160,11 @@ def do_in_memory(filename, eccmapname, version, blockNumber, targetDir, threshol
 
         # dict of data segments
         sds = {}
-        for seg_num, chunk in enumerate(raid.raidutils.chunks(wholefile, int(seglength / 4))):
-            FileName = targetDir + '/' + str(blockNumber) + '-' + str(seg_num) + '-Data'
-            with open(FileName, mode='wb') as f:
+        for seg_num, chunk in enumerate(
+            raid.raidutils.chunks(wholefile, int(seglength / 4))
+        ):
+            FileName = targetDir + "/" + str(blockNumber) + "-" + str(seg_num) + "-Data"
+            with open(FileName, mode="wb") as f:
                 chunk_to_write = copy.copy(chunk)
                 chunk_to_write.byteswap()
                 sds[seg_num] = iter(chunk)
@@ -174,8 +183,8 @@ def do_in_memory(filename, eccmapname, version, blockNumber, targetDir, threshol
         parityNum = len(psds_list)
 
         for PSegNum, _ in psds_list.items():
-            FileName = targetDir + '/' + str(blockNumber) + '-' + str(PSegNum) + '-Parity'
-            with open(FileName, mode='wb') as f:
+            FileName = targetDir + "/" + str(blockNumber) + "-" + str(PSegNum) + "-Parity"
+            with open(FileName, mode="wb") as f:
                 f.write(psds_list[PSegNum])
 
         return dataNum, parityNum
@@ -191,7 +200,7 @@ def main():
         eccmapname=sys.argv[2],
         version=sys.argv[3],
         blockNumber=int(sys.argv[4]),
-        targetDir=sys.argv[5]
+        targetDir=sys.argv[5],
     )
 
 

@@ -48,11 +48,10 @@ Sample output:
 
 """
 
-import connections
 import json
-import socks
-import sys
 
+import connections
+import socks
 
 __version__ = "0.0.1"
 

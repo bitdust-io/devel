@@ -20,15 +20,16 @@
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _KnownServers = None
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
 
 def default_nodes():
     """
@@ -36,12 +37,13 @@ def default_nodes():
     """
     from lib import strng
     from main import network_config
+
     network_info = network_config.read_network_config_file()
     identity_servers = {}
-    for identity_server in network_info['service_identity_propagate']['known_servers']:
-        identity_servers[strng.to_bin(identity_server['host'])] = (
-            identity_server['http_port'],
-            identity_server.get('tcp_port', 6661),
+    for identity_server in network_info["service_identity_propagate"]["known_servers"]:
+        identity_servers[strng.to_bin(identity_server["host"])] = (
+            identity_server["http_port"],
+            identity_server.get("tcp_port", 6661),
         )
     return identity_servers
 
@@ -70,26 +72,28 @@ def by_host():
     Both ways you can create your own BitDust network, under your full control.
     """
     global _KnownServers
-    from main import config
     from lib import strng
+    from main import config
 
     if _KnownServers is not None:
         return _KnownServers
 
     try:
-        overridden_identity_servers_str = str(config.conf().getData('services/identity-propagate/known-servers'))
+        overridden_identity_servers_str = str(
+            config.conf().getData("services/identity-propagate/known-servers")
+        )
     except:
-        overridden_identity_servers_str = ''
+        overridden_identity_servers_str = ""
 
     if not overridden_identity_servers_str:
         _KnownServers = default_nodes()
         return _KnownServers
 
     overridden_identity_servers = {}
-    for id_server_str in overridden_identity_servers_str.split(','):
+    for id_server_str in overridden_identity_servers_str.split(","):
         if id_server_str.strip():
             try:
-                id_server = id_server_str.strip().split(':')
+                id_server = id_server_str.strip().split(":")
                 id_server_host = strng.to_bin(id_server[0].strip())
                 id_server_web_port = int(id_server[1].strip())
                 if len(id_server) > 2:
@@ -98,7 +102,10 @@ def by_host():
                     id_server_tcp_port = 6661
             except:
                 continue
-            overridden_identity_servers[id_server_host] = (id_server_web_port, id_server_tcp_port, )
+            overridden_identity_servers[id_server_host] = (
+                id_server_web_port,
+                id_server_tcp_port,
+            )
 
     if overridden_identity_servers:
         _KnownServers = overridden_identity_servers

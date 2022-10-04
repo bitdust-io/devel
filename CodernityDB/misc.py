@@ -16,8 +16,9 @@
 # limitations under the License.
 
 from __future__ import absolute_import
-from random import getrandbits, randrange
+
 import uuid
+from random import getrandbits, randrange
 
 
 class NONE:
@@ -26,6 +27,7 @@ class NONE:
     It's inteded to be None but different,
     for internal use only!
     """
+
     pass
 
 
@@ -34,4 +36,4 @@ def random_hex_32():
 
 
 def random_hex_4(*args, **kwargs):
-    return '%04x' % randrange(256 ** 2)
+    return "%04x" % randrange(256**2)

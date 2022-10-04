@@ -31,6 +31,7 @@ module:: service_blockchain
 """
 
 from __future__ import absolute_import
+
 from services.local_service import LocalService
 
 
@@ -40,12 +41,12 @@ def create_service():
 
 class BlockchainService(LocalService):
 
-    service_name = 'service_blockchain'
-    config_path = 'services/blockchain/enabled'
+    service_name = "service_blockchain"
+    config_path = "services/blockchain/enabled"
 
     def dependent_on(self):
         return [
-            'service_tcp_connections',
+            "service_tcp_connections",
         ]
 
     def installed(self):

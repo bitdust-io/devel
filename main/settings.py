@@ -34,51 +34,50 @@ TODO:
 need to move out user config stuff from that file
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
-from __future__ import absolute_import
-from __future__ import print_function
-
-#------------------------------------------------------------------------------
+from __future__ import absolute_import, print_function
 
 import os
-import sys
 import random
+import sys
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
-if __name__ == '__main__':
+
+# ------------------------------------------------------------------------------
+
+if __name__ == "__main__":
     import os.path as _p
-    sys.path.append(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..'))
 
-#------------------------------------------------------------------------------
+    sys.path.append(_p.join(_p.dirname(_p.abspath(sys.argv[0])), ".."))
+
+# ------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 4
 
-#------------------------------------------------------------------------------
-from logs import lg
-
-from system import bpio
-from system import deploy
-
 from lib import diskspace
 
+# ------------------------------------------------------------------------------
+from logs import lg
 from main import config
+from system import bpio, deploy
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _UserConfig = None  # user settings read from file .bitdust/metadata/userconfig
 _OverrideDict = {}  # list of values to replace some of user settings
 _InitDone = False
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _BandwidthLimit = None
 _BackupBlockSize = None
 _BackupMaxBlockSize = None
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
 
 def init(base_dir=None):
     """
@@ -98,7 +97,7 @@ def init(base_dir=None):
     _InitDone = True
     deploy.init_base_dir(base_dir)
     if _Debug:
-        lg.out(_DebugLevel, 'settings.init data folder location is %r' % BaseDir())
+        lg.out(_DebugLevel, "settings.init data folder location is %r" % BaseDir())
     _checkMetaDataDirectory()
     _checkConfigDirectory()
     _setUpDefaultSettings()
@@ -114,9 +113,11 @@ def shutdown():
     deploy.set_base_dir(None)
     config.shutdown()
 
-#------------------------------------------------------------------------------
-#---USER CONFIG----------------------------------------------------------------
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+# ---USER CONFIG----------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
 
 def override(key, value):
     """
@@ -127,7 +128,7 @@ def override(key, value):
     """
     global _OverrideDict
     if _Debug:
-        lg.out(_DebugLevel, 'settings.override %s=%s' % (key, value))
+        lg.out(_DebugLevel, "settings.override %s=%s" % (key, value))
     _OverrideDict[key] = value
 
 
@@ -141,62 +142,62 @@ def override_dict(d):
 
 def convert_key(key):
     # try:
-    key = key.replace('.', '/')
-    key = key.replace('-enable', '-enabled')
-    p = key.split('/')
+    key = key.replace(".", "/")
+    key = key.replace("-enable", "-enabled")
+    p = key.split("/")
     if len(p) == 1:
         return key
-    if len(p) >= 3 and p[2].startswith(p[1] + '-'):
-        p[2] = p[2].replace(p[1] + '-', '')
-    if len(p) >= 2 and p[1].startswith(p[0] + '-'):
-        p[1] = p[1].replace(p[0] + '-', '')
-    if p[0] == 'folder':
-        p[0] = 'paths'
-    elif p[0] == 'backup':
-        p[0] = 'services/backups'
-        if p[1] == 'private-key-size':
-            p[0] = 'personal'
-    elif p[0] == 'general':
-        p[0] = 'services/backups'
-        if p[1] == 'backups':
-            p[1] = 'max-copies'
-        elif p[1] == 'local-backups-enabled':
-            p[1] = 'keep-local-copies-enabled'
-    elif p[0] == 'id-server':
-        p[0] = 'services/identity-server'
-    elif p[0] == 'identity-server':
-        p[0] = 'services/identity-server'
-    elif p[0] == 'network':
-        p[0] = 'services/network'
-        if p[1] == 'dht-port':
-            p[0] = 'services/entangled-dht'
-            p[1] = 'udp-port'
-    elif p[0] == 'storage':
-        if p[1] == 'donated':
-            p[0] = 'services/supplier'
-            p[1] = 'donated-space'
-        elif p[1] == 'needed':
-            p[0] = 'services/customer'
-            p[1] = 'needed-space'
-        elif p[1] == 'suppliers':
-            p[0] = 'services/customer'
-            p[1] = 'suppliers-number'
-    elif p[0] == 'transport':
-        if p[1] == 'tcp':
-            p[0] = 'services'
-            p[1] = 'tcp-transport'
+    if len(p) >= 3 and p[2].startswith(p[1] + "-"):
+        p[2] = p[2].replace(p[1] + "-", "")
+    if len(p) >= 2 and p[1].startswith(p[0] + "-"):
+        p[1] = p[1].replace(p[0] + "-", "")
+    if p[0] == "folder":
+        p[0] = "paths"
+    elif p[0] == "backup":
+        p[0] = "services/backups"
+        if p[1] == "private-key-size":
+            p[0] = "personal"
+    elif p[0] == "general":
+        p[0] = "services/backups"
+        if p[1] == "backups":
+            p[1] = "max-copies"
+        elif p[1] == "local-backups-enabled":
+            p[1] = "keep-local-copies-enabled"
+    elif p[0] == "id-server":
+        p[0] = "services/identity-server"
+    elif p[0] == "identity-server":
+        p[0] = "services/identity-server"
+    elif p[0] == "network":
+        p[0] = "services/network"
+        if p[1] == "dht-port":
+            p[0] = "services/entangled-dht"
+            p[1] = "udp-port"
+    elif p[0] == "storage":
+        if p[1] == "donated":
+            p[0] = "services/supplier"
+            p[1] = "donated-space"
+        elif p[1] == "needed":
+            p[0] = "services/customer"
+            p[1] = "needed-space"
+        elif p[1] == "suppliers":
+            p[0] = "services/customer"
+            p[1] = "suppliers-number"
+    elif p[0] == "transport":
+        if p[1] == "tcp":
+            p[0] = "services"
+            p[1] = "tcp-transport"
             if len(p) > 2:
-                if p[2] == 'port':
-                    p[1] = 'tcp-connections'
-                    p[2] = 'tcp-port'
-        elif p[1] == 'udp':
-            p[0] = 'services'
-            p[1] = 'udp-transport'
+                if p[2] == "port":
+                    p[1] = "tcp-connections"
+                    p[2] = "tcp-port"
+        elif p[1] == "udp":
+            p[0] = "services"
+            p[1] = "udp-transport"
             if len(p) > 2:
-                if p[2] == 'port':
-                    p[1] = 'udp-datagrams'
-                    p[2] = 'udp-port'
-    key = '/'.join(p)
+                if p[2] == "port":
+                    p[1] = "udp-datagrams"
+                    p[2] = "udp-port"
+    key = "/".join(p)
     return key
 
 
@@ -204,48 +205,49 @@ def convert_key(key):
 Below is a set of global constants.
 """
 
-#------------------------------------------------------------------------------
-#--- LOGS --------------------------------------------------------------------
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# --- LOGS --------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
 
 def UpdateLogFilename():
     """
     A place to store logs from update porcess.
     """
-    return os.path.join(LogsDir(), 'software_update.log')
+    return os.path.join(LogsDir(), "software_update.log")
 
 
 def AutomatsLog():
     """
     All state machines logs in the main process is written here.
     """
-    return os.path.join(LogsDir(), 'automats.log')
+    return os.path.join(LogsDir(), "automats.log")
 
 
 def TransportLog():
     """
     Every x seconds will log stats about current transfers.
     """
-    return os.path.join(LogsDir(), 'transport.log')
+    return os.path.join(LogsDir(), "transport.log")
 
 
 def ParallelPLogFilename():
     """
     Log from parallelp workers goes here, raid code is executed inside child processes.
     """
-    return os.path.join(LogsDir(), 'parallelp.log')
+    return os.path.join(LogsDir(), "parallelp.log")
 
 
 def LocalTesterLogFilename():
     """
     A file name path where bptester.py will write its logs.
     """
-    return os.path.join(LogsDir(), 'bptester.log')
+    return os.path.join(LogsDir(), "bptester.log")
 
 
-#------------------------------------------------------------------------------
-#--- CONSTANTS (NUMBERS) ------------------------------------------------------
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# --- CONSTANTS (NUMBERS) ------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 def MinimumIdentitySources():
@@ -418,7 +420,7 @@ def DefaultEccMapName():
     This is a ecc map name used by default.
     Must comply with ``DefaultDesiredSuppliers()``.
     """
-    return 'ecc/2x2'
+    return "ecc/2x2"
 
 
 def DefaultDesiredSuppliers():
@@ -556,9 +558,10 @@ def MaxDeletedBackupIDsToKeep():
     """
     return 100
 
-#------------------------------------------------------------------------------
-#---CONSTANTS ( STRINGS ) -----------------------------------------------------
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+# ---CONSTANTS ( STRINGS ) -----------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 def ApplicationName():
@@ -566,7 +569,7 @@ def ApplicationName():
     May be one day we decide to do some rebranding - so this can be useful method. :-)
     But this is not used at the moment.
     """
-    return 'BitDust'
+    return "BitDust"
 
 
 def ListFilesFormat():
@@ -587,19 +590,19 @@ def DefaultRepo():
     be able to run different code in the network and so be able to test
     new features without any chances to broke the whole network.
     """
-    return 'stable'
+    return "stable"
 
 
-def DefaultRepoURL(repo='stable'):
+def DefaultRepoURL(repo="stable"):
     """
     Return a given repository location for Windows.
     """
-    if repo == 'stable':
-        return 'https://bitdust.io/repo/stable/'
-    elif repo == 'devel':
-        return 'https://bitdust.io/repo/devel/'
+    if repo == "stable":
+        return "https://bitdust.io/repo/stable/"
+    elif repo == "devel":
+        return "https://bitdust.io/repo/devel/"
     else:
-        return 'https://bitdust.io/repo/test/'
+        return "https://bitdust.io/repo/test/"
 
 
 def FilesDigestsFilename():
@@ -617,7 +620,7 @@ def FilesDigestsFilename():
     If some files were changed or new files added to the repo - it will update the local binaries from repo.
     The idea is to update only modified files when new release will be published.
     """
-    return 'files'
+    return "files"
 
 
 def CurrentVersionDigestsFilename():
@@ -635,7 +638,7 @@ def CurrentVersionDigestsFilename():
 
     The software check "checksum" file first and if it is not the same - further download "files".
     """
-    return 'checksum'
+    return "checksum"
 
 
 def LegalUsernameChars():
@@ -649,12 +652,15 @@ def LegalNickNameChars():
     """
     A set of correct chars that can be used for user account names.
     """
-    return set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.,{}[]()@!$^&*=+")
+    return set(
+        "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.,{}[]()@!$^&*=+"
+    )
 
 
-#------------------------------------------------------------------------------
-#--- FOLDERS ------------------------------------------------------------------
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# --- FOLDERS ------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
 
 def BaseDir():
     """
@@ -680,9 +686,9 @@ def DefaultRestoreDir():
     """
     Default location to place restored files and folders.
     """
-    if sys.executable == 'android_python' or ('ANDROID_ARGUMENT' in os.environ):
-        return '/storage/emulated/0/Android/data/org.bitdust_io.bitdust1/files/Downloads'
-    return os.path.expanduser('~')
+    if sys.executable == "android_python" or ("ANDROID_ARGUMENT" in os.environ):
+        return "/storage/emulated/0/Android/data/org.bitdust_io.bitdust1/files/Downloads"
+    return os.path.expanduser("~")
 
 
 def WindowsBinDir():
@@ -692,7 +698,7 @@ def WindowsBinDir():
     This is because Windows Vista and later not allow to write to
     "Program files" folder.
     """
-    return os.path.join(BaseDir(), 'bin')
+    return os.path.join(BaseDir(), "bin")
 
 
 def MetaDataDir():
@@ -703,7 +709,7 @@ def MetaDataDir():
 
 
 def ConfigDir():
-    return os.path.join(BaseDir(), 'config')
+    return os.path.join(BaseDir(), "config")
 
 
 def TempDir():
@@ -734,7 +740,7 @@ def IdentityCacheDir():
 
 
 def IdentityServerDir():
-    return os.path.join(BaseDir(), 'identityserver')
+    return os.path.join(BaseDir(), "identityserver")
 
 
 def DefaultBackupsDBDir():
@@ -752,7 +758,7 @@ def DefaultBackupsDBDir():
     This returns a default local folder location where those pieces is stored.
     User can configure that in the settings.
     """
-    return os.path.join(BaseDir(), 'backups')
+    return os.path.join(BaseDir(), "backups")
 
 
 def DefaultCustomersDir():
@@ -767,35 +773,35 @@ def DefaultMessagesDir():
     """
     A default folder to store sent/received messages.
     """
-    return os.path.join(BaseDir(), 'messages')
+    return os.path.join(BaseDir(), "messages")
 
 
 def DefaultMessagesHistoryDir():
     """
     A default folder to store sent/received messages.
     """
-    return os.path.join(BaseDir(), 'messages', 'history')
+    return os.path.join(BaseDir(), "messages", "history")
 
 
 def DefaultReceiptsDir():
     """
     A default folder to store receipts.
     """
-    return os.path.join(BaseDir(), 'receipts')
+    return os.path.join(BaseDir(), "receipts")
 
 
 def LogsDir():
     """
     Place for log files.
     """
-    return os.path.join(BaseDir(), 'logs')
+    return os.path.join(BaseDir(), "logs")
 
 
 def SuppliersDir():
     """
     Local folder location to keep suppliers info files.
     """
-    return os.path.join(BaseDir(), 'suppliers')
+    return os.path.join(BaseDir(), "suppliers")
 
 
 def BandwidthInDir():
@@ -816,47 +822,49 @@ def RatingsDir():
     """
     In that location BitDust software keeps a rating stats for known users.
     """
-    return os.path.join(BaseDir(), 'ratings')
+    return os.path.join(BaseDir(), "ratings")
 
 
 def ContractChainDir():
-    return os.path.join(BaseDir(), 'contracts')
+    return os.path.join(BaseDir(), "contracts")
 
 
 def ChatMessagesDir():
-    return os.path.join(BaseDir(), 'messages')
+    return os.path.join(BaseDir(), "messages")
 
 
 def ChatChannelsDir():
-    return os.path.join(BaseDir(), 'messages', 'channels')
+    return os.path.join(BaseDir(), "messages", "channels")
 
 
 def ChatHistoryDir():
-    return os.path.join(BaseDir(), 'messages', 'history')
+    return os.path.join(BaseDir(), "messages", "history")
 
 
 def KeyStoreDir():
-    return os.path.join(BaseDir(), 'keys')
+    return os.path.join(BaseDir(), "keys")
 
 
 def BlockchainDir():
-    return os.path.join(BaseDir(), 'blockchain')
+    return os.path.join(BaseDir(), "blockchain")
 
 
 def APICertificatesDir():
-    return os.path.join(BaseDir(), 'apicerts')
+    return os.path.join(BaseDir(), "apicerts")
 
 
 def ServicesDataDir():
-    return os.path.join(BaseDir(), 'servicedata')
+    return os.path.join(BaseDir(), "servicedata")
 
 
 def ServiceDir(service_name):
-    return os.path.join(ServicesDataDir(), service_name.replace('service_', ''))
+    return os.path.join(ServicesDataDir(), service_name.replace("service_", ""))
 
-#------------------------------------------------------------------------------
-#--- FILES --------------------------------------------------------------------
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+# --- FILES --------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
 
 def KeyFileName():
     """
@@ -874,7 +882,7 @@ def KeyFileNameLocation():
     But you must be sure that machine was switched off - the RAM is erased when power is off.
     This file keeps alternative location of your Private Key.
     """
-    return KeyFileName() + '_location'
+    return KeyFileName() + "_location"
 
 
 def CustomerIDsFilename():
@@ -951,18 +959,25 @@ def BackupIndexFileName():
     The file stores folder and files names and locations with path ID's and some extra info.
     Also this file is saved on suppliers in encrypted state.
     """
-    return 'index'
+    return "index"
 
 
-def BackupIndexFilePath(customer_idurl=None, key_alias='master'):
-    from userid import my_id
-    from userid import id_url
+def BackupIndexFilePath(customer_idurl=None, key_alias="master"):
+    from userid import id_url, my_id
+
     if customer_idurl is None:
         customer_idurl = my_id.getIDURL()
     customer_idurl = id_url.field(customer_idurl)
     customer_id = customer_idurl.to_id()
-    index_dir_path = os.path.join(ServiceDir('service_backups'), 'index')
-    index_file_path = os.path.join(index_dir_path, '%s$%s' % (key_alias, customer_id, ))
+    index_dir_path = os.path.join(ServiceDir("service_backups"), "index")
+    index_file_path = os.path.join(
+        index_dir_path,
+        "%s$%s"
+        % (
+            key_alias,
+            customer_id,
+        ),
+    )
     return index_file_path
 
 
@@ -977,11 +992,14 @@ def SupplierPath(supplier_idurl, customer_idurl, filename=None):
         - "disconnected" : date and time when this suppler was fired
         - "listfiles" : a list of our local files stored on his machine
     """
-    from userid import global_id
     from lib import nameurl
+    from userid import global_id
+
     customer = global_id.UrlToGlobalID(customer_idurl)
     if filename is not None:
-        return os.path.join(SuppliersDir(), customer, nameurl.UrlFilename(supplier_idurl), filename)
+        return os.path.join(
+            SuppliersDir(), customer, nameurl.UrlFilename(supplier_idurl), filename
+        )
     return os.path.join(SuppliersDir(), customer, nameurl.UrlFilename(supplier_idurl))
 
 
@@ -989,40 +1007,40 @@ def SupplierListFilesFilename(supplier_idurl, customer_idurl):
     """
     Return a "listfiles" file location for given supplier.
     """
-    return os.path.join(SupplierPath(supplier_idurl, customer_idurl), 'listfiles')
+    return os.path.join(SupplierPath(supplier_idurl, customer_idurl), "listfiles")
 
 
 def SupplierServiceFilename(supplier_idurl, customer_idurl):
     """
     Return a "service" file location for given supplier.
     """
-    return os.path.join(SupplierPath(supplier_idurl, customer_idurl), 'service')
+    return os.path.join(SupplierPath(supplier_idurl, customer_idurl), "service")
 
 
 def RepoFile():
     """
     A file to store info about currently used repository.
     """
-    return os.path.join(MetaDataDir(), 'repo')
+    return os.path.join(MetaDataDir(), "repo")
 
 
 def VersionNumberFile():
-    return os.path.join(bpio.getExecutableDir(), 'version')
+    return os.path.join(bpio.getExecutableDir(), "version")
 
 
 def CheckSumFile():
-    return os.path.join(bpio.getExecutableDir(), 'checksum')
+    return os.path.join(bpio.getExecutableDir(), "checksum")
 
 
 def CustomersSpaceFile():
     """
     This file keeps info about our customers - how many megabytes every guy takes from us.
     """
-    return os.path.join(MetaDataDir(), 'space')
+    return os.path.join(MetaDataDir(), "space")
 
 
 def CustomersUsedSpaceFile():
-    return os.path.join(MetaDataDir(), 'spaceused')
+    return os.path.join(MetaDataDir(), "spaceused")
 
 
 def BalanceFile():
@@ -1031,7 +1049,7 @@ def BalanceFile():
         - transferable funds
         - not transferable funds
     """
-    return os.path.join(MetaDataDir(), 'balance')
+    return os.path.join(MetaDataDir(), "balance")
 
 
 def CertificateFiles():
@@ -1039,45 +1057,48 @@ def CertificateFiles():
     The idea is to have a global certificate for BitDust server, just like
     https works.
     """
-    return [os.path.join(MetaDataDir(), 'bitdust.cer'),
-            os.path.join('.', 'bitdust.cer'),
-            os.path.join(bpio.getExecutableDir(), 'bitdust.cer'), ]
+    return [
+        os.path.join(MetaDataDir(), "bitdust.cer"),
+        os.path.join(".", "bitdust.cer"),
+        os.path.join(bpio.getExecutableDir(), "bitdust.cer"),
+    ]
 
 
 def DHTDBFile():
-    return os.path.join(MetaDataDir(), 'dhtdb')
+    return os.path.join(MetaDataDir(), "dhtdb")
 
 
 def FTPServerCredentialsFile():
-    return os.path.join(MetaDataDir(), 'ftpcredentials')
+    return os.path.join(MetaDataDir(), "ftpcredentials")
 
 
 def APIServerCertificateKeyFile():
-    return os.path.join(MetaDataDir(), 'apiservercertkey')
+    return os.path.join(MetaDataDir(), "apiservercertkey")
 
 
 def APIServerCertificateFile():
-    return os.path.join(MetaDataDir(), 'apiservercert')
+    return os.path.join(MetaDataDir(), "apiservercert")
 
 
 def APIClientCertificateKeyFile():
-    return os.path.join(MetaDataDir(), 'apiclientcertkey')
+    return os.path.join(MetaDataDir(), "apiclientcertkey")
 
 
 def APIClientCertificateFile():
-    return os.path.join(MetaDataDir(), 'apiclientcert')
+    return os.path.join(MetaDataDir(), "apiclientcert")
 
 
 def APISecretFile():
-    return os.path.join(MetaDataDir(), 'apisecret')
+    return os.path.join(MetaDataDir(), "apisecret")
 
 
 def ChatMessagesHistoryDatabaseFile():
-    return os.path.join(ChatMessagesDir(), 'message_v1.db')
+    return os.path.join(ChatMessagesDir(), "message_v1.db")
 
-#------------------------------------------------------------------------------
-#--- BINARY FILES -------------------------------------------------------------
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+# --- BINARY FILES -------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 def WindowsStarterFileName():
@@ -1085,14 +1106,14 @@ def WindowsStarterFileName():
     Return a file name of the Windows starter: "bitstarter.exe".
     Obsolete.
     """
-    return 'bitstarter.exe'
+    return "bitstarter.exe"
 
 
 def WindowsMainScriptFileName():
     """
     Return a file name of the root Windows executable script : "BitDustNode.exe".
     """
-    return 'BitDustNode.exe'
+    return "BitDustNode.exe"
 
 
 def getIconLaunchFilename():
@@ -1102,29 +1123,29 @@ def getIconLaunchFilename():
     For Windows platforms this should target to executable file to run
     when clicked on Desktop icon.
     """
-    return os.path.join(bpio.getExecutableDir(), 'bitdustnode.exe')
+    return os.path.join(bpio.getExecutableDir(), "bitdustnode.exe")
 
 
 def getIconLinkFilename():
     """
     A file name for Desktop icon for Windows users.
     """
-    return 'Data Haven .NET.lnk'
+    return "Data Haven .NET.lnk"
 
 
 def IconFilename():
     """
     Application icon file name.
     """
-    return 'desktop.ico'
+    return "desktop.ico"
 
 
 def StyleSheetsFilename():
-    return 'styles.css'
+    return "styles.css"
 
 
 def StyleSheetsPath():
-    return os.path.join(bpio.getExecutableDir(), 'html', StyleSheetsFilename())
+    return os.path.join(bpio.getExecutableDir(), "html", StyleSheetsFilename())
 
 
 def IconsFolderPath():
@@ -1134,25 +1155,26 @@ def IconsFolderPath():
     PREPRO: maybe we better use another name: "media", because we may
     need not only "icons" but also other data files
     """
-    return os.path.join(bpio.getExecutableDir(), 'icons')
+    return os.path.join(bpio.getExecutableDir(), "icons")
 
 
 def FontsFolderPath():
     """
     A folder name where application "fons" is stored.
     """
-    return os.path.join(bpio.getExecutableDir(), 'fonts')
+    return os.path.join(bpio.getExecutableDir(), "fonts")
 
 
 def FontImageFile():
     """
     A font to use to print text labels in the GUI.
     """
-    return os.path.join(FontsFolderPath(), 'Arial_Narrow.ttf')
+    return os.path.join(FontsFolderPath(), "Arial_Narrow.ttf")
 
-#------------------------------------------------------------------------------
-#---PORT NUMBERS---------------------------------------------------------------
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+# ---PORT NUMBERS---------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 def DefaultXMLRPCPort():
@@ -1266,16 +1288,19 @@ def DefaultWebTrafficPort():
     """
     return 9997
 
-#------------------------------------------------------------------------------
-#--- USER FOLDERS -------------------------------------------------------------
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+# --- USER FOLDERS -------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 def getCustomersFilesDir():
     """
     Alias to get a user donated location from settings.
     """
-    return config.conf().getString('paths/customers', default=DefaultCustomersDir()).strip()
+    return (
+        config.conf().getString("paths/customers", default=DefaultCustomersDir()).strip()
+    )
 
 
 def getCustomerFilesDir(idurl):
@@ -1284,6 +1309,7 @@ def getCustomerFilesDir(idurl):
     settings.
     """
     from userid import global_id
+
     return os.path.join(getCustomersFilesDir(), global_id.UrlToGlobalID(idurl))
 
 
@@ -1292,21 +1318,21 @@ def getLocalBackupsDir():
     Alias to get local backups folder from settings, see
     ``DefaultBackupsDBDir()``.
     """
-    return config.conf().getString('paths/backups', default=DefaultBackupsDBDir()).strip()
+    return config.conf().getString("paths/backups", default=DefaultBackupsDBDir()).strip()
 
 
 def getRestoreDir():
     """
     Alias for restore location, see ``DefaultRestoreDir()``.
     """
-    return config.conf().getString('paths/restore', default=DefaultRestoreDir()).strip()
+    return config.conf().getString("paths/restore", default=DefaultRestoreDir()).strip()
 
 
 def getReceiptsDir():
     """
     Alias to get from user config a folder location where receipts is stored.
     """
-    return config.conf().getString('paths/receipts', default=DefaultReceiptsDir()).strip()
+    return config.conf().getString("paths/receipts", default=DefaultReceiptsDir()).strip()
 
 
 def getTempDir():
@@ -1315,9 +1341,10 @@ def getTempDir():
     """
     return TempDir()
 
-#------------------------------------------------------------------------------
-#--- OS PROXY SERVER OPTIONS --------------------------------------------------
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+# --- OS PROXY SERVER OPTIONS --------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 def enableLocalProxy(enable=None):
@@ -1325,22 +1352,22 @@ def enableLocalProxy(enable=None):
     Enable/disable using of proxy server.
     """
     if enable is None:
-        return config.conf().getBool('services/network/proxy/enabled')
-    config.conf().setData('services/network/proxy/enabled', str(enable))
+        return config.conf().getBool("services/network/proxy/enabled")
+    config.conf().setData("services/network/proxy/enabled", str(enable))
 
 
 def getProxyHost():
     """
     Return proxy server host from settings.
     """
-    return config.conf().getData('services/network/proxy/host').strip()
+    return config.conf().getData("services/network/proxy/host").strip()
 
 
 def getProxyPort():
     """
     Return proxy server port number from settings.
     """
-    return config.conf().getData('services/network/proxy/port').strip()
+    return config.conf().getData("services/network/proxy/port").strip()
 
 
 def setProxySettings(d):
@@ -1348,16 +1375,20 @@ def setProxySettings(d):
     Set proxy settings via dictionary, see
     ``lib.net_misc.detect_proxy_settings`` for more details.
     """
-    if 'host' in d:
-        config.conf().setData('services/network/proxy/host', str(d.get('host', '')))
-    if 'port' in d:
-        config.conf().setData('services/network/proxy/port', str(d.get('port', '')))
-    if 'username' in d:
-        config.conf().setData('services/network/proxy.network-proxy-username', str(d.get('username', '')))
-    if 'password' in d:
-        config.conf().setData('services/network/proxy/password', str(d.get('password', '')))
-    if 'ssl' in d:
-        config.conf().setData('services/network/proxy/ssl', str(d.get('ssl', 'False')))
+    if "host" in d:
+        config.conf().setData("services/network/proxy/host", str(d.get("host", "")))
+    if "port" in d:
+        config.conf().setData("services/network/proxy/port", str(d.get("port", "")))
+    if "username" in d:
+        config.conf().setData(
+            "services/network/proxy.network-proxy-username", str(d.get("username", ""))
+        )
+    if "password" in d:
+        config.conf().setData(
+            "services/network/proxy/password", str(d.get("password", ""))
+        )
+    if "ssl" in d:
+        config.conf().setData("services/network/proxy/ssl", str(d.get("ssl", "False")))
 
 
 def getProxySettingsDict():
@@ -1365,11 +1396,12 @@ def getProxySettingsDict():
     Return a proxy settings from user config in dictionary.
     """
     return {
-        'host': config.conf().getData('services/network/proxy/host').strip(),
-        'port': config.conf().getData('services/network/proxy/port').strip(),
-        'username': config.conf().getData('services/network/proxy/username').strip(),
-        'password': config.conf().getData('services/network/proxy/password').strip(),
-        'ssl': config.conf().getData('services/network/proxy/ssl').strip(), }
+        "host": config.conf().getData("services/network/proxy/host").strip(),
+        "port": config.conf().getData("services/network/proxy/port").strip(),
+        "username": config.conf().getData("services/network/proxy/username").strip(),
+        "password": config.conf().getData("services/network/proxy/password").strip(),
+        "ssl": config.conf().getData("services/network/proxy/ssl").strip(),
+    }
 
 
 def update_proxy_settings():
@@ -1378,73 +1410,85 @@ def update_proxy_settings():
     proxy server settings.
     """
     from lib import net_misc
+
     net_misc.init()
     if enableLocalProxy():
-        if getProxyHost() == '' or getProxyPort() == '':
+        if getProxyHost() == "" or getProxyPort() == "":
             d = net_misc.detect_proxy_settings()
             # setProxySettings(d)
             # enableLocalProxy(d.get('host', '') != '')
             if _Debug:
-                lg.out(_DebugLevel, 'settings.update_proxy_settings : loaded from ENVIRONMENT')
+                lg.out(
+                    _DebugLevel,
+                    "settings.update_proxy_settings : loaded from ENVIRONMENT",
+                )
         else:
             d = getProxySettingsDict()
             if _Debug:
-                lg.out(_DebugLevel, 'settings.update_proxy_settings : loaded from settings')
+                lg.out(
+                    _DebugLevel, "settings.update_proxy_settings : loaded from settings"
+                )
         net_misc.set_proxy_settings(d)
         if _Debug:
-            lg.out(_DebugLevel, '    HOST:      ' + net_misc.get_proxy_host())
-            lg.out(_DebugLevel, '    PORT:      ' + str(net_misc.get_proxy_port()))
-            lg.out(_DebugLevel, '    USERNAME:  ' + net_misc.get_proxy_username())
-            lg.out(_DebugLevel, '    PASSWORD:  ' + ('*' * len(net_misc.get_proxy_password())))
-            lg.out(_DebugLevel, '    SSL:       ' + net_misc.get_proxy_ssl())
+            lg.out(_DebugLevel, "    HOST:      " + net_misc.get_proxy_host())
+            lg.out(_DebugLevel, "    PORT:      " + str(net_misc.get_proxy_port()))
+            lg.out(_DebugLevel, "    USERNAME:  " + net_misc.get_proxy_username())
+            lg.out(
+                _DebugLevel,
+                "    PASSWORD:  " + ("*" * len(net_misc.get_proxy_password())),
+            )
+            lg.out(_DebugLevel, "    SSL:       " + net_misc.get_proxy_ssl())
 
-#------------------------------------------------------------------------------
-#---OTHER USER CONFIGURATIONS--------------------------------------------------
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+# ---OTHER USER CONFIGURATIONS--------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 def getBandOutLimit():
     """
     This is a current outgoing bandwidth limit in bytes per second.
     """
-    return config.conf().getInt('services/network/send-limit', DefaultBandwidthOutLimit())
+    return config.conf().getInt("services/network/send-limit", DefaultBandwidthOutLimit())
 
 
 def getBandInLimit():
     """
     This is a current incoming bandwidth limit in bytes per second.
     """
-    return config.conf().getInt('services/network/receive-limit', DefaultBandwidthInLimit())
+    return config.conf().getInt(
+        "services/network/receive-limit", DefaultBandwidthInLimit()
+    )
 
 
 def enableIdServer(enable=None):
     if enable is None:
-        return config.conf().getBool('services/identity-server/enabled')
-    config.conf().setData('services/identity-server/enabled', str(enable))
+        return config.conf().getBool("services/identity-server/enabled")
+    config.conf().setData("services/identity-server/enabled", str(enable))
 
 
 def enableAPIAuthSecret(enable=None):
     if enable is None:
-        return config.conf().getBool('interface/api/auth-secret-enabled')
-    config.conf().setData('interface/api/auth-secret-enabled', str(enable))
+        return config.conf().getBool("interface/api/auth-secret-enabled")
+    config.conf().setData("interface/api/auth-secret-enabled", str(enable))
 
 
 def enableRESTHTTPServer(enable=None):
     if enable is None:
-        return config.conf().getBool('interface/api/rest-http-enabled')
-    config.conf().setData('interface/api/rest-http-enabled', str(enable))
+        return config.conf().getBool("interface/api/rest-http-enabled")
+    config.conf().setData("interface/api/rest-http-enabled", str(enable))
 
 
 def enableWebSocketServer(enable=None):
     if enable is None:
-        return config.conf().getBool('interface/api/web-socket-enabled')
-    config.conf().setData('interface/api/web-socket-enabled', str(enable))
+        return config.conf().getBool("interface/api/web-socket-enabled")
+    config.conf().setData("interface/api/web-socket-enabled", str(enable))
 
 
 def enableFTPServer(enable=None):
     if enable is None:
-        return config.conf().getBool('interface/ftp/enabled')
-    config.conf().setData('interface/ftp/enabled', str(enable))
+        return config.conf().getBool("interface/ftp/enabled")
+    config.conf().setData("interface/ftp/enabled", str(enable))
 
 
 def getIdServerHost():
@@ -1472,7 +1516,7 @@ def setIdServerTCPPort(tcp_port):
 
 
 def getRESTHTTPServerPort():
-    return config.conf().getInt('interface/api/rest-http-port', DefaultRESTHTTPPort())
+    return config.conf().getInt("interface/api/rest-http-port", DefaultRESTHTTPPort())
 
 
 def setRESTHTTPServerPort(rest_http_port):
@@ -1480,7 +1524,7 @@ def setRESTHTTPServerPort(rest_http_port):
 
 
 def getWebSocketServerPort():
-    return config.conf().getInt('interface/api/web-socket-port', DefaultWebSocketPort())
+    return config.conf().getInt("interface/api/web-socket-port", DefaultWebSocketPort())
 
 
 def setWebSocketServerPort(rest_http_port):
@@ -1488,7 +1532,7 @@ def setWebSocketServerPort(rest_http_port):
 
 
 def getFTPServerPort():
-    return config.conf().getInt('interface/ftp/port', DefaultFTPPort())
+    return config.conf().getInt("interface/ftp/port", DefaultFTPPort())
 
 
 def setFTPServerPort(ftp_port):
@@ -1499,11 +1543,11 @@ def getTransportPort(proto):
     """
     Get a port number for some tranports from user config.
     """
-    if proto == 'tcp':
+    if proto == "tcp":
         return getTCPPort()
-    if proto == 'udp':
+    if proto == "udp":
         return getUDPPort()
-    if proto == 'http':
+    if proto == "http":
         return getHTTPPort()
     raise
 
@@ -1515,8 +1559,8 @@ def enableTCP(enable=None):
     Note : transport_tcp is always available for identites to id server.
     """
     if enable is None:
-        return config.conf().getBool('services/tcp-transport/enabled')
-    config.conf().setData('services/tcp-transport/enabled', str(enable))
+        return config.conf().getBool("services/tcp-transport/enabled")
+    config.conf().setData("services/tcp-transport/enabled", str(enable))
 
 
 def enableTCPsending(enable=None):
@@ -1525,8 +1569,8 @@ def enableTCPsending(enable=None):
     state.
     """
     if enable is None:
-        return config.conf().getBool('services/tcp-transport/sending-enabled')
-    config.conf().setData('services/tcp-transport/sending-enabled', str(enable))
+        return config.conf().getBool("services/tcp-transport/sending-enabled")
+    config.conf().setData("services/tcp-transport/sending-enabled", str(enable))
 
 
 def enableTCPreceiving(enable=None):
@@ -1535,8 +1579,8 @@ def enableTCPreceiving(enable=None):
     state.
     """
     if enable is None:
-        return config.conf().getBool('services/tcp-transport/receiving-enabled')
-    config.conf().setData('services/tcp-transport/receiving-enabled', str(enable))
+        return config.conf().getBool("services/tcp-transport/receiving-enabled")
+    config.conf().setData("services/tcp-transport/receiving-enabled", str(enable))
 
 
 def getTCPPort():
@@ -1558,8 +1602,8 @@ def enableUDP(enable=None):
     Switch on/off transport_udp in the settings or get current state.
     """
     if enable is None:
-        return config.conf().getBool('services/udp-transport/enabled')
-    config.conf().setData('services/udp-transport/enabled', str(enable))
+        return config.conf().getBool("services/udp-transport/enabled")
+    config.conf().setData("services/udp-transport/enabled", str(enable))
 
 
 def enableUDPsending(enable=None):
@@ -1567,8 +1611,8 @@ def enableUDPsending(enable=None):
     Switch on/off sending over udp in the settings or get current state.
     """
     if enable is None:
-        return config.conf().getBool('services/udp-transport/sending-enabled')
-    config.conf().setData('services/udp-transport/sending-enabled', str(enable))
+        return config.conf().getBool("services/udp-transport/sending-enabled")
+    config.conf().setData("services/udp-transport/sending-enabled", str(enable))
 
 
 def enableUDPreceiving(enable=None):
@@ -1576,8 +1620,8 @@ def enableUDPreceiving(enable=None):
     Switch on/off receiving over udp in the settings or get current state.
     """
     if enable is None:
-        return config.conf().getBool('services/udp-transport/receiving-enabled')
-    config.conf().setData('services/udp-transport/receiving-enabled', str(enable))
+        return config.conf().getBool("services/udp-transport/receiving-enabled")
+    config.conf().setData("services/udp-transport/receiving-enabled", str(enable))
 
 
 def getUDPPort():
@@ -1606,8 +1650,8 @@ def enablePROXY(enable=None):
     Switch on/off transport_proxy in the settings or get its current state.
     """
     if enable is None:
-        return config.conf().getBool('services/proxy-transport/enabled')
-    config.conf().setData('services/proxy-transport/enabled', str(enable))
+        return config.conf().getBool("services/proxy-transport/enabled")
+    config.conf().setData("services/proxy-transport/enabled", str(enable))
 
 
 def enablePROXYsending(enable=None):
@@ -1616,8 +1660,8 @@ def enablePROXYsending(enable=None):
     state.
     """
     if enable is None:
-        return config.conf().getBool('services/proxy-transport/sending-enabled')
-    config.conf().setData('services/proxy-transport/sending-enabled', str(enable))
+        return config.conf().getBool("services/proxy-transport/sending-enabled")
+    config.conf().setData("services/proxy-transport/sending-enabled", str(enable))
 
 
 def enablePROXYreceiving(enable=None):
@@ -1626,8 +1670,8 @@ def enablePROXYreceiving(enable=None):
     state.
     """
     if enable is None:
-        return config.conf().getBool('services/proxy-transport/receiving-enabled')
-    config.conf().setData('services/proxy-transport/receiving-enabled', str(enable))
+        return config.conf().getBool("services/proxy-transport/receiving-enabled")
+    config.conf().setData("services/proxy-transport/receiving-enabled", str(enable))
 
 
 def enableHTTP(enable=None):
@@ -1635,8 +1679,8 @@ def enableHTTP(enable=None):
     Switch on/off transport_http in the settings or get current state.
     """
     if enable is None:
-        return config.conf().getBool('services/http-transport/enabled')
-    config.conf().setData('services/http-transport/enabled', str(enable))
+        return config.conf().getBool("services/http-transport/enabled")
+    config.conf().setData("services/http-transport/enabled", str(enable))
 
 
 def enableHTTPsending(enable=None):
@@ -1645,8 +1689,8 @@ def enableHTTPsending(enable=None):
     state.
     """
     if enable is None:
-        return config.conf().getBool('services/http-transport/sending-enabled')
-    config.conf().setData('services/http-transport/sending-enabled', str(enable))
+        return config.conf().getBool("services/http-transport/sending-enabled")
+    config.conf().setData("services/http-transport/sending-enabled", str(enable))
 
 
 def enableHTTPreceiving(enable=None):
@@ -1655,8 +1699,8 @@ def enableHTTPreceiving(enable=None):
     state.
     """
     if enable is None:
-        return config.conf().getBool('services/http-transport/receiving-enabled')
-    config.conf().setData('services/http-transport/receiving-enabled', str(enable))
+        return config.conf().getBool("services/http-transport/receiving-enabled")
+    config.conf().setData("services/http-transport/receiving-enabled", str(enable))
 
 
 def getHTTPPort():
@@ -1674,11 +1718,11 @@ def setHTTPPort(port):
 
 
 def getTransportPriority(proto):
-    return config.conf().getInt('services/%s-transport/priority' % proto, 1)
+    return config.conf().getInt("services/%s-transport/priority" % proto, 1)
 
 
 def setTransportPriority(proto, value):
-    return config.conf().setInt('services/%s-transport/priority' % proto, value)
+    return config.conf().setInt("services/%s-transport/priority" % proto, value)
 
 
 def setDHTPort(port):
@@ -1693,7 +1737,7 @@ def enableTransport(proto, enable=None):
     Return a current state of given network transport or set a new state.
     """
     # key = 'transport.transport-%s.transport-%s-enable' % (proto, proto)
-    key = 'services/%s-transport/enabled' % proto
+    key = "services/%s-transport/enabled" % proto
     if config.conf().getData(key) is None:
         return False
     if enable is None:
@@ -1721,7 +1765,7 @@ def transportReceivingIsEnabled(proto):
     Return True if receiving over given transport is switched on.
     """
     # key = 'transport.transport-%s.transport-%s-receiving-enable' % (proto, proto)
-    key = 'services/%s-transport/receiving-enabled' % proto
+    key = "services/%s-transport/receiving-enabled" % proto
     if config.conf().getData(key) is None:
         return False
     return config.conf().getBool(key)
@@ -1732,7 +1776,7 @@ def transportSendingIsEnabled(proto):
     Return True if sending over given transport is switched on.
     """
     # key = 'transport.transport-%s.transport-%s-sending-enable' % (proto, proto)
-    key = 'services/%s-transport/sending-enabled' % proto
+    key = "services/%s-transport/sending-enabled" % proto
     if config.conf().getData(key) is None:
         return False
     return config.conf().getBool(key)
@@ -1740,8 +1784,8 @@ def transportSendingIsEnabled(proto):
 
 def enableProxyServer(enable=None):
     if enable is None:
-        return config.conf().getBool('services/proxy-server/enabled')
-    config.conf().setData('services/proxy-server/enabled', str(enable))
+        return config.conf().getBool("services/proxy-server/enabled")
+    config.conf().setData("services/proxy-server/enabled", str(enable))
 
 
 def getDebugLevelStr():
@@ -1755,7 +1799,7 @@ def getDebugLevel():
     """
     Return current debug level.
     """
-    return config.conf().getInt('logs/debug-level', lg._GlobalDebugLevel)
+    return config.conf().getInt("logs/debug-level", lg._GlobalDebugLevel)
 
 
 def setDebugLevel(level):
@@ -1771,8 +1815,8 @@ def enableWebStream(enable=None):
     need to restart BitDust to take place changes.
     """
     if enable is None:
-        return config.conf().getBool('logs/stream-enabled')
-    config.conf().setData('logs/stream-enabled', str(enable))
+        return config.conf().getBool("logs/stream-enabled")
+    config.conf().setData("logs/stream-enabled", str(enable))
 
 
 def enableWebTraffic(enable=None):
@@ -1781,22 +1825,22 @@ def enableWebTraffic(enable=None):
     traffic, need to restart BitDust to take place changes.
     """
     if enable is None:
-        return config.conf().getBool('logs/traffic-enabled')
-    config.conf().setData('logs/traffic-enabled', str(enable))
+        return config.conf().getBool("logs/traffic-enabled")
+    config.conf().setData("logs/traffic-enabled", str(enable))
 
 
 def getWebStreamPort():
     """
     Get port number of HTTP server to print logs.
     """
-    return config.conf().getInt('logs/stream-port', DefaultWebLogPort())
+    return config.conf().getInt("logs/stream-port", DefaultWebLogPort())
 
 
 def getWebTrafficPort():
     """
     Get port number of HTTP server to print packets traffic.
     """
-    return config.conf().getInt('logs/traffic-port')
+    return config.conf().getInt("logs/traffic-port")
 
 
 def enableMemoryProfile(enable=None):
@@ -1805,8 +1849,8 @@ def enableMemoryProfile(enable=None):
     profiling.
     """
     if enable is None:
-        return config.conf().getBool('logs/memprofile-enabled')
-    return config.conf().setData('logs/memprofile-enabled', str(enable))
+        return config.conf().getBool("logs/memprofile-enabled")
+    return config.conf().setData("logs/memprofile-enabled", str(enable))
 
 
 def getECCSuppliersNumbers():
@@ -1821,14 +1865,14 @@ def getSuppliersNumberDesired():
     """
     Get suppliers number from user settings.
     """
-    return config.conf().getInt('services/customer/suppliers-number', -1)
+    return config.conf().getInt("services/customer/suppliers-number", -1)
 
 
 def getNeededString():
     """
     Get needed space in megabytes from user settings.
     """
-    return config.conf().getData('services/customer/needed-space')
+    return config.conf().getData("services/customer/needed-space")
 
 
 def getNeededBytes():
@@ -1839,7 +1883,7 @@ def getDonatedString():
     """
     Get donated space in megabytes from user settings.
     """
-    return config.conf().getData('services/supplier/donated-space')
+    return config.conf().getData("services/supplier/donated-space")
 
 
 def getDonatedBytes():
@@ -1851,7 +1895,7 @@ def getUpdatesMode():
     User can set different modes to update the BitDust software.
     """
     # TODO: remove this after get rid of webcontrol.py
-    return 'turn off updates'
+    return "turn off updates"
 
 
 def getUpdatesModeValues():
@@ -1860,23 +1904,24 @@ def getUpdatesModeValues():
     """
     # TODO: remove this after get rid of webcontrol.py
     return (
-        'install automatically',
-        'only notify',
-        'turn off updates', )
+        "install automatically",
+        "only notify",
+        "turn off updates",
+    )
 
 
 def getUpdatesSheduleData():
     """
     Return update schedule from settings.
     """
-    return config.conf().getData('updates/shedule')
+    return config.conf().getData("updates/shedule")
 
 
 def setUpdatesSheduleData(raw_shedule):
     """
     Set update schedule in the settings.
     """
-    config.conf().setData('updates/shedule', raw_shedule)
+    config.conf().setData("updates/shedule", raw_shedule)
 
 
 def getBackupsMaxCopies():
@@ -1886,14 +1931,14 @@ def getBackupsMaxCopies():
     The oldest copies (over that amount) will be removed from data base
     and remote suppliers.
     """
-    return config.conf().getInt('services/backups/max-copies', 2)
+    return config.conf().getInt("services/backups/max-copies", 2)
 
 
 def getBackupsKeepLocalCopies():
     """
     Return True if user wish to keep local backups.
     """
-    return config.conf().getBool('services/backups/keep-local-copies-enabled')
+    return config.conf().getBool("services/backups/keep-local-copies-enabled")
 
 
 def getGeneralWaitSuppliers():
@@ -1901,11 +1946,11 @@ def getGeneralWaitSuppliers():
     Return True if user want to be sure that suppliers are reliable enough
     before removing the local backups.
     """
-    return config.conf().getBool('services/backups/wait-suppliers-enabled')
+    return config.conf().getBool("services/backups/wait-suppliers-enabled")
 
 
 def getBackupBlockSizeStr():
-    return config.conf().getData('services/backups/block-size')
+    return config.conf().getData("services/backups/block-size")
 
 
 def getBackupBlockSize():
@@ -1916,7 +1961,7 @@ def getBackupBlockSize():
 
 
 def getBackupMaxBlockSizeStr():
-    return config.conf().getData('services/backups/max-block-size')
+    return config.conf().getData("services/backups/max-block-size")
 
 
 def getBackupMaxBlockSize():
@@ -1930,14 +1975,18 @@ def setBackupBlockSize(block_size):
     """
     Set current backup block size in the memory to have fast access.
     """
-    return config.conf().setData('services/backups/block-size', diskspace.MakeStringFromBytes(block_size))
+    return config.conf().setData(
+        "services/backups/block-size", diskspace.MakeStringFromBytes(block_size)
+    )
 
 
 def setBackupMaxBlockSize(block_size):
     """
     Set current maximum backup block size in the memory to have fast access.
     """
-    return config.conf().setData('services/backups/max-block-size', diskspace.MakeStringFromBytes(block_size))
+    return config.conf().setData(
+        "services/backups/max-block-size", diskspace.MakeStringFromBytes(block_size)
+    )
 
 
 def getPrivateKeySize():
@@ -1947,14 +1996,14 @@ def getPrivateKeySize():
     Other Private Keys also will be generated when necessary:
     for customer-supplier interactions, for private messages, for blockchain service, etc.
     """
-    return config.conf().getInt('personal/private-key-size')
+    return config.conf().getInt("personal/private-key-size")
 
 
 def setPrivateKeySize(pksize):
     """
     Set Private Key size in the settings.
     """
-    config.conf().setInt('personal/private-key-size', pksize)
+    config.conf().setInt("personal/private-key-size", pksize)
 
 
 def enableUPNP(enable=None):
@@ -1965,24 +2014,25 @@ def enableUPNP(enable=None):
     If ``enable`` is not None - rewrite current value in the settings.
     """
     if enable is None:
-        return config.conf().getBool('services/tcp-connections/upnp-enabled')
-    config.conf().setData('services/tcp-connections/upnp-enabled', str(enable))
+        return config.conf().getBool("services/tcp-connections/upnp-enabled")
+    config.conf().setData("services/tcp-connections/upnp-enabled", str(enable))
 
 
 def enableService(svc_name, enable=None):
     if enable is None:
-        return config.conf().getBool('services/%s/enabled' % svc_name)
-    config.conf().setBool('services/%s/enabled' % svc_name, enable)
+        return config.conf().getBool("services/%s/enabled" % svc_name)
+    config.conf().setBool("services/%s/enabled" % svc_name, enable)
 
 
 def enableBroadcastRouting(enable=None):
     if enable is None:
-        return config.conf().getBool('services/broadcasting/routing-enabled')
-    config.conf().setBool('services/broadcasting/routing-enabled', enable)
+        return config.conf().getBool("services/broadcasting/routing-enabled")
+    config.conf().setBool("services/broadcasting/routing-enabled", enable)
 
-#------------------------------------------------------------------------------
-#--- INITIALIZE BASE DIR ------------------------------------------------------
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+# --- INITIALIZE BASE DIR ------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 def RenameBaseDir(newdir):
@@ -1995,33 +2045,44 @@ def RenameBaseDir(newdir):
     olddir = deploy.current_base_dir()
     try:
         import shutil
+
         shutil.copytree(olddir, newdir)
     except:
         lg.exc()
         return False
     deploy.set_base_dir(newdir)
     if _Debug:
-        lg.out(_DebugLevel, 'settings.RenameBaseDir  directory was copied,  BaseDir=' + BaseDir())
+        lg.out(
+            _DebugLevel,
+            "settings.RenameBaseDir  directory was copied,  BaseDir=" + BaseDir(),
+        )
     pathfilename = BaseDirPathFileName()
     bpio.WriteTextFile(pathfilename, deploy.current_base_dir())
     if _Debug:
-        lg.out(_DebugLevel, 'settings.RenameBaseDir  BaseDir path was saved to ' + pathfilename)
+        lg.out(
+            _DebugLevel,
+            "settings.RenameBaseDir  BaseDir path was saved to " + pathfilename,
+        )
     logfilename = lg.log_filename()
     lg.close_log_file()
     lg.close_intercepted_log_file()
     try:
         bpio.rmdir_recursive(olddir, True)
         if _Debug:
-            lg.out(_DebugLevel, 'settings.RenameBaseDir  old directory was removed: ' + olddir)
+            lg.out(
+                _DebugLevel,
+                "settings.RenameBaseDir  old directory was removed: " + olddir,
+            )
     except:
         lg.exc()
     if logfilename:
         lg.open_log_file(logfilename, True)
     return True
 
-#------------------------------------------------------------------------------
-#--- USER SETTINGS VALIDATION -------------------------------------------------
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+# --- USER SETTINGS VALIDATION -------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 def _checkMetaDataDirectory():
@@ -2029,14 +2090,22 @@ def _checkMetaDataDirectory():
     Check that the __metadata__ directory exists.
     """
     if os.path.isfile(MetaDataDir()):
-        raise Exception('file already exist:' + MetaDataDir())
+        raise Exception("file already exist:" + MetaDataDir())
     if not os.path.exists(MetaDataDir()):
         if _Debug:
-            lg.out(_DebugLevel, 'settings._checkMetaDataDirectory want to create "metadata" folder in : ' + MetaDataDir())
+            lg.out(
+                _DebugLevel,
+                'settings._checkMetaDataDirectory want to create "metadata" folder in : '
+                + MetaDataDir(),
+            )
         bpio._dirs_make(MetaDataDir())
         return
     if _Debug:
-        lg.out(_DebugLevel, 'settings._checkMetaDataDirectory OK , folder already exist: ' + MetaDataDir())
+        lg.out(
+            _DebugLevel,
+            "settings._checkMetaDataDirectory OK , folder already exist: "
+            + MetaDataDir(),
+        )
 
 
 def _checkConfigDirectory():
@@ -2044,14 +2113,22 @@ def _checkConfigDirectory():
     Check that the __config__ directory exists.
     """
     if os.path.isfile(ConfigDir()):
-        raise Exception('file already exist:' + ConfigDir())
+        raise Exception("file already exist:" + ConfigDir())
     if not os.path.exists(ConfigDir()):
         if _Debug:
-            lg.out(_DebugLevel, 'settings._checkConfigDirectory want to create "config" folder in : ' + ConfigDir())
+            lg.out(
+                _DebugLevel,
+                'settings._checkConfigDirectory want to create "config" folder in : '
+                + ConfigDir(),
+            )
         bpio._dir_make(ConfigDir())
     else:
         if _Debug:
-            lg.out(_DebugLevel, 'settings._checkConfigDirectory OK , folder already exist: ' + ConfigDir())
+            lg.out(
+                _DebugLevel,
+                "settings._checkConfigDirectory OK , folder already exist: "
+                + ConfigDir(),
+            )
     config.init(ConfigDir())
 
 
@@ -2062,6 +2139,7 @@ def _setUpDefaultSettings():
     Every option must have a default value, howerver there are exceptions possible :-)
     """
     from main import config_defaults
+
     config_defaults.reset(config.conf())
 
 
@@ -2072,20 +2150,30 @@ def _checkRandomizePortNumbers():
     If it is not it will set random value in the range.
     """
     # 7000-8000 for tcp transport
-    if not config.conf().getOriginalData('services/tcp-connections/tcp-port'):
-        config.conf().setData('services/tcp-connections/tcp-port', str(random.randint(7001, 8000) - 1))
+    if not config.conf().getOriginalData("services/tcp-connections/tcp-port"):
+        config.conf().setData(
+            "services/tcp-connections/tcp-port", str(random.randint(7001, 8000) - 1)
+        )
     # 8000-9000 for udp transport
-    if not config.conf().getOriginalData('services/udp-datagrams/udp-port'):
-        config.conf().setData('services/udp-datagrams/udp-port', str(random.randint(8001, 9000) - 1))
+    if not config.conf().getOriginalData("services/udp-datagrams/udp-port"):
+        config.conf().setData(
+            "services/udp-datagrams/udp-port", str(random.randint(8001, 9000) - 1)
+        )
     # 9000-10000 for http transport
-    if not config.conf().getOriginalData('services/http-connections/http-port'):
-        config.conf().setData('services/http-connections/http-port', str(random.randint(9001, 10000) - 1))
+    if not config.conf().getOriginalData("services/http-connections/http-port"):
+        config.conf().setData(
+            "services/http-connections/http-port", str(random.randint(9001, 10000) - 1)
+        )
     # 10000-11000 for entangled dht
-    if not config.conf().getOriginalData('services/entangled-dht/udp-port'):
-        config.conf().setData('services/entangled-dht/udp-port', str(random.randint(10001, 11000) - 1))
+    if not config.conf().getOriginalData("services/entangled-dht/udp-port"):
+        config.conf().setData(
+            "services/entangled-dht/udp-port", str(random.randint(10001, 11000) - 1)
+        )
     # 11000-12000 for blockchain
-    if not config.conf().getOriginalData('services/blockchain/port'):
-        config.conf().setData('services/blockchain/port', str(random.randint(11001, 12000) - 1))
+    if not config.conf().getOriginalData("services/blockchain/port"):
+        config.conf().setData(
+            "services/blockchain/port", str(random.randint(11001, 12000) - 1)
+        )
 
 
 def _createNotExisingSettings():
@@ -2097,7 +2185,10 @@ def _createNotExisingSettings():
             value = config.conf().getDefaultValue(key)
             config.conf().setData(key, value)
             if _Debug:
-                lg.out(_DebugLevel, '    created option %s with default value : [%s]' % (key, value))
+                lg.out(
+                    _DebugLevel,
+                    "    created option %s with default value : [%s]" % (key, value),
+                )
             # print '    created option %s with default value : [%s]' % (key, value)
 
 
@@ -2107,48 +2198,56 @@ def _checkStaticDirectories():
     """
     if not os.path.exists(BaseDir()):
         if _Debug:
-            lg.out(_DebugLevel, 'settings.init want to create folder: ' + BaseDir())
+            lg.out(_DebugLevel, "settings.init want to create folder: " + BaseDir())
         os.makedirs(BaseDir())
     if not os.path.exists(TempDir()):
         if _Debug:
-            lg.out(_DebugLevel, 'settings.init want to create folder: ' + TempDir())
+            lg.out(_DebugLevel, "settings.init want to create folder: " + TempDir())
         os.makedirs(TempDir())
-#     if not os.path.exists(BandwidthInDir()):
-#         if _Debug:
-#             lg.out(_DebugLevel, 'settings.init want to create folder: ' + BandwidthInDir())
-#         os.makedirs(BandwidthInDir())
-#     if not os.path.exists(BandwidthOutDir()):
-#         if _Debug:
-#             lg.out(_DebugLevel, 'settings.init want to create folder: ' + BandwidthOutDir())
-#         os.makedirs(BandwidthOutDir())
+    #     if not os.path.exists(BandwidthInDir()):
+    #         if _Debug:
+    #             lg.out(_DebugLevel, 'settings.init want to create folder: ' + BandwidthInDir())
+    #         os.makedirs(BandwidthInDir())
+    #     if not os.path.exists(BandwidthOutDir()):
+    #         if _Debug:
+    #             lg.out(_DebugLevel, 'settings.init want to create folder: ' + BandwidthOutDir())
+    #         os.makedirs(BandwidthOutDir())
     if not os.path.exists(LogsDir()):
         if _Debug:
-            lg.out(_DebugLevel, 'settings.init want to create folder: ' + LogsDir())
+            lg.out(_DebugLevel, "settings.init want to create folder: " + LogsDir())
         os.makedirs(LogsDir())
     if not os.path.exists(IdentityCacheDir()):
         if _Debug:
-            lg.out(_DebugLevel, 'settings.init want to create folder: ' + IdentityCacheDir())
+            lg.out(
+                _DebugLevel, "settings.init want to create folder: " + IdentityCacheDir()
+            )
         os.makedirs(IdentityCacheDir())
     if not os.path.exists(SuppliersDir()):
         if _Debug:
-            lg.out(_DebugLevel, 'settings.init want to create folder: ' + SuppliersDir())
+            lg.out(_DebugLevel, "settings.init want to create folder: " + SuppliersDir())
         os.makedirs(SuppliersDir())
     if not os.path.exists(RatingsDir()):
         if _Debug:
-            lg.out(_DebugLevel, 'settings.init want to create folder: ' + RatingsDir())
+            lg.out(_DebugLevel, "settings.init want to create folder: " + RatingsDir())
         os.makedirs(RatingsDir())
     if not os.path.exists(KeyStoreDir()):
         if _Debug:
-            lg.out(_DebugLevel, 'settings.init want to create folder: ' + KeyStoreDir())
+            lg.out(_DebugLevel, "settings.init want to create folder: " + KeyStoreDir())
         os.makedirs(KeyStoreDir())
     if not os.path.exists(ChatChannelsDir()):
         if _Debug:
-            lg.out(_DebugLevel, 'settings.init want to create folder: ' + ChatChannelsDir())
+            lg.out(
+                _DebugLevel, "settings.init want to create folder: " + ChatChannelsDir()
+            )
         os.makedirs(ChatChannelsDir())
     if not os.path.exists(ChatHistoryDir()):
         if _Debug:
-            lg.out(_DebugLevel, 'settings.init want to create folder: ' + ChatHistoryDir())
+            lg.out(
+                _DebugLevel, "settings.init want to create folder: " + ChatHistoryDir()
+            )
         os.makedirs(ChatHistoryDir())
+
+
 #     if not os.path.exists(BlockchainDir()):
 #         if _Debug:
 #             lg.out(_DebugLevel, 'settings.init want to create folder: ' + BlockchainDir())
@@ -2159,39 +2258,49 @@ def _checkCustomDirectories():
     """
     Check existance of user configurable folders.
     """
-    if config.conf().getString('paths/customers', '') == '':
-        config.conf().setString('paths/customers', DefaultCustomersDir())
+    if config.conf().getString("paths/customers", "") == "":
+        config.conf().setString("paths/customers", DefaultCustomersDir())
     if not os.path.exists(getCustomersFilesDir()):
         if _Debug:
-            lg.out(_DebugLevel, 'settings.init want to create folder: ' + getCustomersFilesDir())
+            lg.out(
+                _DebugLevel,
+                "settings.init want to create folder: " + getCustomersFilesDir(),
+            )
         os.makedirs(getCustomersFilesDir())
-    if config.conf().getString('paths/backups', '') == '':
-        config.conf().setString('paths/backups', DefaultBackupsDBDir())
+    if config.conf().getString("paths/backups", "") == "":
+        config.conf().setString("paths/backups", DefaultBackupsDBDir())
     if not os.path.exists(getLocalBackupsDir()):
         if _Debug:
-            lg.out(_DebugLevel, 'settings.init want to create folder: ' + getLocalBackupsDir())
+            lg.out(
+                _DebugLevel,
+                "settings.init want to create folder: " + getLocalBackupsDir(),
+            )
         os.makedirs(getLocalBackupsDir())
-    if config.conf().getString('paths/receipts', '') == '':
-        config.conf().setString('paths/receipts', DefaultReceiptsDir())
+    if config.conf().getString("paths/receipts", "") == "":
+        config.conf().setString("paths/receipts", DefaultReceiptsDir())
     if not os.path.exists(getReceiptsDir()):
         if _Debug:
-            lg.out(_DebugLevel, 'settings.init want to create folder: ' + getReceiptsDir())
+            lg.out(
+                _DebugLevel, "settings.init want to create folder: " + getReceiptsDir()
+            )
         os.makedirs(getReceiptsDir())
-    if config.conf().getString('paths/restore', '') == '':
-        config.conf().setString('paths/restore', DefaultRestoreDir())
+    if config.conf().getString("paths/restore", "") == "":
+        config.conf().setString("paths/restore", DefaultRestoreDir())
 
-#-------------------------------------------------------------------------------
+
+# -------------------------------------------------------------------------------
+
 
 def main():
     lg.set_debug_level(24)
     init()
     try:
-        inp = sys.argv[1].rstrip('/')
+        inp = sys.argv[1].rstrip("/")
     except:
-        print('wrong input')
+        print("wrong input")
         return
     if not config.conf().exist(inp):
-        print('not exist')
+        print("not exist")
         return
     if not config.conf().hasChilds(inp):
         print(inp, config.conf().getData(inp))
@@ -2202,8 +2311,9 @@ def main():
         else:
             print(child, config.conf().getData(child))
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

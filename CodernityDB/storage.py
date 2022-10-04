@@ -16,12 +16,11 @@
 # limitations under the License.
 
 from __future__ import absolute_import
+
+import io
+import marshal
 import os
 import struct
-import shutil
-import marshal
-import io
-
 
 try:
     from CodernityDB import __version__
@@ -80,7 +79,7 @@ class IU_Storage(object):
 
     __version__ = __version__
 
-    def __init__(self, db_path, name='main'):
+    def __init__(self, db_path, name="main"):
         self.db_path = db_path
         self.name = name
         self._header_size = 100
@@ -88,24 +87,26 @@ class IU_Storage(object):
     def create(self):
         if os.path.exists(os.path.join(self.db_path, self.name + "_stor")):
             raise IOError("Storage already exists!")
-        with io.open(os.path.join(self.db_path, self.name + "_stor"), 'wb') as f:
-            f.write(struct.pack("10s90s", self.__version__, '|||||'))
+        with io.open(os.path.join(self.db_path, self.name + "_stor"), "wb") as f:
+            f.write(struct.pack("10s90s", self.__version__, "|||||"))
             f.close()
-        self._f = io.open(os.path.join(
-            self.db_path, self.name + "_stor"), 'r+b', buffering=0)
+        self._f = io.open(
+            os.path.join(self.db_path, self.name + "_stor"), "r+b", buffering=0
+        )
         self.flush()
         self._f.seek(0, 2)
 
     def open(self):
         if not os.path.exists(os.path.join(self.db_path, self.name + "_stor")):
             raise IOError("Storage doesn't exists!")
-        self._f = io.open(os.path.join(
-            self.db_path, self.name + "_stor"), 'r+b', buffering=0)
+        self._f = io.open(
+            os.path.join(self.db_path, self.name + "_stor"), "r+b", buffering=0
+        )
         self.flush()
         self._f.seek(0, 2)
 
     def destroy(self):
-        os.unlink(os.path.join(self.db_path, self.name + '_stor'))
+        os.unlink(os.path.join(self.db_path, self.name + "_stor"))
 
     def close(self):
         self._f.close()
@@ -133,8 +134,8 @@ class IU_Storage(object):
     def update(self, data):
         return self.save(data)
 
-    def get(self, start, size, status='c'):
-        if status == 'd':
+    def get(self, start, size, status="c"):
+        if status == "d":
             return None
         else:
             # print locals()

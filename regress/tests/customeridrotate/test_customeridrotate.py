@@ -34,44 +34,75 @@ SCENARIO 13: one of the suppliers of customer-1 has IDURL rotated
 """
 
 import os
-import pytest
-
-from testsupport import set_active_scenario  # @UnresolvedImport
 
 import keywords as kw  # @UnresolvedImport
+import pytest
 import scenarios
+from testsupport import set_active_scenario  # @UnresolvedImport
 
 
 def test_customeridrotate():
-    if os.environ.get('RUN_TESTS', '1') == '0':
+    if os.environ.get("RUN_TESTS", "1") == "0":
         return pytest.skip()  # @UndefinedVariable
 
     prepare()
 
-    #--- SCENARIO 10 begin: customer-rotated IDURL was rotated
+    # --- SCENARIO 10 begin: customer-rotated IDURL was rotated
     old_customer_rotated_file_info = scenarios.scenario10_begin()
 
-    #--- SCENARIO 11 begin: customer-1 talk to customer-rotated
+    # --- SCENARIO 11 begin: customer-1 talk to customer-rotated
     old_customer_1_info_s11 = scenarios.scenario11_begin()
 
-    #--- SCENARIO 9: ID server id-dead is dead
-    _, old_customer_rotated_info, _, _, old_customer_rotated_keys, _, new_customer_rotated_info, _, _ = scenarios.scenario9(target_nodes=['customer-rotated', ])
+    # --- SCENARIO 9: ID server id-dead is dead
+    (
+        _,
+        old_customer_rotated_info,
+        _,
+        _,
+        old_customer_rotated_keys,
+        _,
+        new_customer_rotated_info,
+        _,
+        _,
+    ) = scenarios.scenario9(
+        target_nodes=[
+            "customer-rotated",
+        ]
+    )
 
-    #--- SCENARIO 10 end: customer-rotated IDURL was rotated
-    scenarios.scenario10_end(old_customer_rotated_info, old_customer_rotated_file_info, old_customer_rotated_keys, new_customer_rotated_info)
+    # --- SCENARIO 10 end: customer-rotated IDURL was rotated
+    scenarios.scenario10_end(
+        old_customer_rotated_info,
+        old_customer_rotated_file_info,
+        old_customer_rotated_keys,
+        new_customer_rotated_info,
+    )
 
-    #--- SCENARIO 11 end: customer-1 talk to customer-rotated
-    scenarios.scenario11_end(old_customer_rotated_info, new_customer_rotated_info, old_customer_1_info_s11)
+    # --- SCENARIO 11 end: customer-1 talk to customer-rotated
+    scenarios.scenario11_end(
+        old_customer_rotated_info, new_customer_rotated_info, old_customer_1_info_s11
+    )
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def prepare():
-    set_active_scenario('PREPARE')
-    kw.wait_suppliers_connected(scenarios.CUSTOMERS_IDS_1, expected_min_suppliers=2, expected_max_suppliers=2)
-    kw.wait_service_state(scenarios.SUPPLIERS_IDS_12, 'service_supplier', 'ON')
-    kw.wait_service_state(scenarios.CUSTOMERS_IDS_1, 'service_customer', 'ON')
-    kw.wait_service_state(scenarios.CUSTOMERS_IDS_1, 'service_shared_data', 'ON')
+    set_active_scenario("PREPARE")
+    kw.wait_suppliers_connected(
+        scenarios.CUSTOMERS_IDS_1, expected_min_suppliers=2, expected_max_suppliers=2
+    )
+    kw.wait_service_state(scenarios.SUPPLIERS_IDS_12, "service_supplier", "ON")
+    kw.wait_service_state(scenarios.CUSTOMERS_IDS_1, "service_customer", "ON")
+    kw.wait_service_state(scenarios.CUSTOMERS_IDS_1, "service_shared_data", "ON")
     # kw.wait_service_state(scenarios.CUSTOMERS_IDS_1, 'service_personal_messages', 'ON')
-    kw.wait_service_state(scenarios.CUSTOMERS_IDS_1, 'service_private_groups', 'ON')
-    kw.wait_service_state(scenarios.CUSTOMERS_IDS_1 + ['customer-rotated', ], 'service_message_history', 'ON')
+    kw.wait_service_state(scenarios.CUSTOMERS_IDS_1, "service_private_groups", "ON")
+    kw.wait_service_state(
+        scenarios.CUSTOMERS_IDS_1
+        + [
+            "customer-rotated",
+        ],
+        "service_message_history",
+        "ON",
+    )
     kw.wait_packets_finished(scenarios.CUSTOMERS_IDS_1 + scenarios.SUPPLIERS_IDS_12)

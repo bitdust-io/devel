@@ -26,50 +26,51 @@
 
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
-import sys
 import json
+import sys
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Debug = False
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from lib import strng
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
-def dict_keys_to_text(dct, encoding='utf-8', errors='strict'):
+
+def dict_keys_to_text(dct, encoding="utf-8", errors="strict"):
     """
     Returns dict where all keys are converted to text strings.
     Only works for keys in a "root" level of the dict.
     """
     return {
-        (k.decode(encoding, errors=errors) if strng.is_bin(k) else k) : v
+        (k.decode(encoding, errors=errors) if strng.is_bin(k) else k): v
         for k, v in dct.items()
     }
 
 
-def dict_keys_to_bin(dct, encoding='utf-8', errors='strict'):
+def dict_keys_to_bin(dct, encoding="utf-8", errors="strict"):
     """
     Returns dict where all keys are converted to binary strings.
     Only works for keys in a "root" level of the dict.
     """
     return {
-        (k.encode(encoding, errors=errors) if strng.is_text(k) else k) : v
+        (k.encode(encoding, errors=errors) if strng.is_text(k) else k): v
         for k, v in dct.items()
     }
 
 
-def dict_values_to_text(dct, encoding='utf-8', errors='strict'):
+def dict_values_to_text(dct, encoding="utf-8", errors="strict"):
     """
     Returns dict where all values are converted to text strings.
     Can go recursively, but not super smart.
     If value is a list of dicts - will not be converted.
     """
-    # TODO: make it fully recursive... for example if list of lists is passed 
+    # TODO: make it fully recursive... for example if list of lists is passed
     _d = {}
     for k, v in dct.items():
         _v = v
@@ -80,12 +81,14 @@ def dict_values_to_text(dct, encoding='utf-8', errors='strict'):
         elif isinstance(_v, list):
             _v = [i.decode(encoding, errors=errors) if strng.is_bin(i) else i for i in _v]
         elif isinstance(_v, tuple):
-            _v = tuple([i.decode(encoding, errors=errors) if strng.is_bin(i) else i for i in _v])
+            _v = tuple(
+                [i.decode(encoding, errors=errors) if strng.is_bin(i) else i for i in _v]
+            )
         _d[k] = _v
     return _d
 
 
-def dict_items_to_text(dct, encoding='utf-8', errors='strict'):
+def dict_items_to_text(dct, encoding="utf-8", errors="strict"):
     """
     Returns dict where all keys and values are converted to text strings.
     Only works for simple dicts - one level structure.
@@ -122,9 +125,11 @@ def dict_items_to_text(dct, encoding='utf-8', errors='strict'):
         _d[_k] = _v
     return _d
 
-#------------------------------------------------------------------------------
 
-def pack_dict(dct, encoding='utf-8', errors='strict'):
+# ------------------------------------------------------------------------------
+
+
+def pack_dict(dct, encoding="utf-8", errors="strict"):
     """
     Creates another dict from input dict where types of keys and values are also present.
     Keys can only be bin/text strings, integers, floats or None.
@@ -136,41 +141,45 @@ def pack_dict(dct, encoding='utf-8', errors='strict'):
     _d = {}
     for k, v in dct.items():
         _k = k
-        _ktyp = 's'
+        _ktyp = "s"
         if strng.is_bin(_k):
             _k = _k.decode(encoding, errors=errors)
-            _ktyp = 'b'
+            _ktyp = "b"
         elif isinstance(_k, int):
-            _ktyp = 'i'
+            _ktyp = "i"
         elif isinstance(_k, float):
-            _ktyp = 'f'
+            _ktyp = "f"
         elif _k is None:
-            _ktyp = 'n'
+            _ktyp = "n"
         _v = v
-        _vtyp = 's'
+        _vtyp = "s"
         if strng.is_bin(_v):
             _v = _v.decode(encoding, errors=errors)
-            _vtyp = 'b'
+            _vtyp = "b"
         elif isinstance(_v, int):
-            _vtyp = 'i'
+            _vtyp = "i"
         elif isinstance(_v, float):
-            _vtyp = 'f'
+            _vtyp = "f"
         elif isinstance(_v, dict):
             _v = pack_dict(_v, encoding=encoding, errors=errors)
-            _vtyp = 'd'
+            _vtyp = "d"
         elif isinstance(_v, list):
-            _v = [pack_dict({'i': i}, encoding=encoding, errors=errors) for i in _v]
-            _vtyp = 'l'
+            _v = [pack_dict({"i": i}, encoding=encoding, errors=errors) for i in _v]
+            _vtyp = "l"
         elif isinstance(_v, tuple):
-            _v = [pack_dict({'i': i}, encoding=encoding, errors=errors) for i in _v]
-            _vtyp = 't'
+            _v = [pack_dict({"i": i}, encoding=encoding, errors=errors) for i in _v]
+            _vtyp = "t"
         elif _v is None:
-            _vtyp = 'n'
-        _d[_k] = (_ktyp, _vtyp, _v, )
+            _vtyp = "n"
+        _d[_k] = (
+            _ktyp,
+            _vtyp,
+            _v,
+        )
     return _d
 
 
-def unpack_dict(dct, encoding='utf-8', errors='strict'):
+def unpack_dict(dct, encoding="utf-8", errors="strict"):
     """
     Reverse operation of `pack_dict()` method - returns original dict with all keys and values of correct types.
     """
@@ -180,34 +189,47 @@ def unpack_dict(dct, encoding='utf-8', errors='strict'):
     for k, v in dct.items():
         _k = k
         if len(v) != 3:
-            raise ValueError('unpack failed, invalid value: %r' % v)
-        if v[0] == 'b':
+            raise ValueError("unpack failed, invalid value: %r" % v)
+        if v[0] == "b":
             _k = _k.encode(encoding, errors=errors)
         _v = v[2]
-        if v[1] == 'b':
+        if v[1] == "b":
             _v = _v.encode(encoding, errors=errors)
-        elif v[1] == 'd':
+        elif v[1] == "d":
             _v = unpack_dict(_v, encoding=encoding, errors=errors)
-        elif v[1] == 'l':
-            _v = [unpack_dict(i, encoding=encoding, errors=errors)['i'] for i in _v]
-        elif v[1] == 't':
-            _v = tuple([unpack_dict(i, encoding=encoding, errors=errors)['i'] for i in _v])
+        elif v[1] == "l":
+            _v = [unpack_dict(i, encoding=encoding, errors=errors)["i"] for i in _v]
+        elif v[1] == "t":
+            _v = tuple(
+                [unpack_dict(i, encoding=encoding, errors=errors)["i"] for i in _v]
+            )
         _d[_k] = _v
     return _d
 
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
-def dumps(obj, indent=None, separators=None, sort_keys=None, ensure_ascii=False, encoding='utf-8', 
-          keys_to_text=False, values_to_text=False, empty_result='{}', **kw):
+
+def dumps(
+    obj,
+    indent=None,
+    separators=None,
+    sort_keys=None,
+    ensure_ascii=False,
+    encoding="utf-8",
+    keys_to_text=False,
+    values_to_text=False,
+    empty_result="{}",
+    **kw
+):
     """
     Calls `json.dumps()` with parameters.
     Always translates every byte string json value into text using encoding.
     """
-    if obj is None or obj == '' or obj == b'':
+    if obj is None or obj == "" or obj == b"":
         return empty_result
 
-    enc_errors = kw.pop('errors', 'strict')
+    enc_errors = kw.pop("errors", "strict")
 
     def _to_text(v):
         if strng.is_bin(v):
@@ -248,21 +270,23 @@ def dumps(obj, indent=None, separators=None, sort_keys=None, ensure_ascii=False,
         if _Debug:
             import os
             import tempfile
-            fd, _ = tempfile.mkstemp(suffix='err', prefix='jsn_dumps_', text=True)
+
+            fd, _ = tempfile.mkstemp(suffix="err", prefix="jsn_dumps_", text=True)
             try:
                 os.write(fd, repr(obj))
             except:
                 try:
                     os.write(fd, strng.to_bin(repr(type(obj))))
                 except:
-                    os.write(fd, b'failed to serialize object')
+                    os.write(fd, b"failed to serialize object")
             os.close(fd)
         raise exc
 
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
-def loads(s, encoding='utf-8', keys_to_bin=False, **kw):
+
+def loads(s, encoding="utf-8", keys_to_bin=False, **kw):
     """
     Calls `json.loads()` with parameters.
     Always translates all json values into binary strings using encoding.
@@ -276,30 +300,31 @@ def loads(s, encoding='utf-8', keys_to_bin=False, **kw):
             if strng.is_text(dct[k]):
                 dct[k] = dct[k].encode(encoding)
         if keys_to_bin:
-            return {(k.encode(encoding) if strng.is_text(k) else k) : v for k, v in dct.items()}
+            return {
+                (k.encode(encoding) if strng.is_text(k) else k): v for k, v in dct.items()
+            }
         return dct
 
     try:
-        return json.loads(
-            s=s,
-            object_hook=_to_bin,
-            **kw
-        )
+        return json.loads(s=s, object_hook=_to_bin, **kw)
     except Exception as exc:
         if _Debug:
             try:
                 import os
                 import tempfile
-                fd, _ = tempfile.mkstemp(suffix='err', prefix='jsn_loads_', text=True)
+
+                fd, _ = tempfile.mkstemp(suffix="err", prefix="jsn_loads_", text=True)
                 os.write(fd, s)
                 os.close(fd)
             except:
                 pass
         raise exc
 
-#------------------------------------------------------------------------------
 
-def loads_text(s, encoding='utf-8', **kw):
+# ------------------------------------------------------------------------------
+
+
+def loads_text(s, encoding="utf-8", **kw):
     """
     Calls `json.loads()` with parameters.
     Always translates all json keys and values into unicode strings.
@@ -307,19 +332,22 @@ def loads_text(s, encoding='utf-8', **kw):
     if not s:
         return None
 
-    enc_errors = kw.pop('errors', 'strict')
+    enc_errors = kw.pop("errors", "strict")
 
     try:
         return json.loads(
             s=s,
-            object_hook=lambda itm: dict_items_to_text(itm, encoding=encoding, errors=enc_errors),
+            object_hook=lambda itm: dict_items_to_text(
+                itm, encoding=encoding, errors=enc_errors
+            ),
             **kw
         )
     except Exception as exc:
         if _Debug:
             import os
             import tempfile
-            fd, _ = tempfile.mkstemp(suffix='err', prefix='jsn_loads_', text=True)
+
+            fd, _ = tempfile.mkstemp(suffix="err", prefix="jsn_loads_", text=True)
             os.write(fd, s)
             os.close(fd)
         raise exc

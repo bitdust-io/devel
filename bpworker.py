@@ -26,18 +26,20 @@
 
 from __future__ import absolute_import
 
-import sys
 import os
+import platform
+import sys
 
 import six
-import platform
+
 ostype = platform.uname()[0]
-if ostype == 'Windows':
+if ostype == "Windows":
     if six.PY3:
         sys.stdout = sys.stdout.buffer
     else:
         try:
             import msvcrt
+
             msvcrt.setmode(1, os.O_BINARY)  # @UndefinedVariable
             msvcrt.setmode(2, os.O_BINARY)  # @UndefinedVariable
         except:
@@ -49,8 +51,9 @@ else:
 
 if __name__ == "__main__":
     try:
-        sys.path.append(os.path.abspath(os.path.join('.', 'parallelp', 'pp')))
+        sys.path.append(os.path.abspath(os.path.join(".", "parallelp", "pp")))
         from parallelp.pp.ppworker import _WorkerProcess
+
         wp = _WorkerProcess()
         wp.run()
     except Exception as exc:

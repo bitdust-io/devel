@@ -31,6 +31,7 @@ module:: service_shared_data
 """
 
 from __future__ import absolute_import
+
 from services.local_service import LocalService
 
 
@@ -40,44 +41,69 @@ def create_service():
 
 class SharedDataService(LocalService):
 
-    service_name = 'service_shared_data'
-    config_path = 'services/shared-data/enabled'
+    service_name = "service_shared_data"
+    config_path = "services/shared-data/enabled"
 
     def dependent_on(self):
         return [
-            'service_my_data',
+            "service_my_data",
         ]
 
     def start(self):
+        from access import shared_access_coordinator
         from main import events
         from transport import callback
-        from access import shared_access_coordinator
+
         callback.append_inbox_callback(self._on_inbox_packet_received)
-        events.add_subscriber(shared_access_coordinator.on_supplier_modified, 'supplier-modified')
-        events.add_subscriber(shared_access_coordinator.on_my_list_files_refreshed, 'my-list-files-refreshed')
-        events.add_subscriber(shared_access_coordinator.on_key_registered, 'key-registered')
-        events.add_subscriber(shared_access_coordinator.on_key_erased, 'key-erased')
-        events.add_subscriber(shared_access_coordinator.on_share_connected, 'share-connected')
-        events.add_subscriber(shared_access_coordinator.on_supplier_file_modified, 'supplier-file-modified')
+        events.add_subscriber(
+            shared_access_coordinator.on_supplier_modified, "supplier-modified"
+        )
+        events.add_subscriber(
+            shared_access_coordinator.on_my_list_files_refreshed,
+            "my-list-files-refreshed",
+        )
+        events.add_subscriber(
+            shared_access_coordinator.on_key_registered, "key-registered"
+        )
+        events.add_subscriber(shared_access_coordinator.on_key_erased, "key-erased")
+        events.add_subscriber(
+            shared_access_coordinator.on_share_connected, "share-connected"
+        )
+        events.add_subscriber(
+            shared_access_coordinator.on_supplier_file_modified, "supplier-file-modified"
+        )
         shared_access_coordinator.open_known_shares()
         return True
 
     def stop(self):
+        from access import shared_access_coordinator
         from main import events
         from transport import callback
-        from access import shared_access_coordinator
-        events.remove_subscriber(shared_access_coordinator.on_key_registered, 'key-registered')
-        events.remove_subscriber(shared_access_coordinator.on_key_erased, 'key-erased')
-        events.remove_subscriber(shared_access_coordinator.on_share_connected, 'share-connected')
-        events.remove_subscriber(shared_access_coordinator.on_my_list_files_refreshed, 'my-list-files-refreshed')
-        events.remove_subscriber(shared_access_coordinator.on_supplier_modified, 'supplier-modified')
-        events.remove_subscriber(shared_access_coordinator.on_supplier_file_modified, 'supplier-file-modified')
+
+        events.remove_subscriber(
+            shared_access_coordinator.on_key_registered, "key-registered"
+        )
+        events.remove_subscriber(shared_access_coordinator.on_key_erased, "key-erased")
+        events.remove_subscriber(
+            shared_access_coordinator.on_share_connected, "share-connected"
+        )
+        events.remove_subscriber(
+            shared_access_coordinator.on_my_list_files_refreshed,
+            "my-list-files-refreshed",
+        )
+        events.remove_subscriber(
+            shared_access_coordinator.on_supplier_modified, "supplier-modified"
+        )
+        events.remove_subscriber(
+            shared_access_coordinator.on_supplier_file_modified, "supplier-file-modified"
+        )
         callback.remove_inbox_callback(self._on_inbox_packet_received)
         return True
 
     def _on_inbox_packet_received(self, newpacket, info, status, error_message):
-        from p2p import commands
         from access import key_ring
+        from p2p import commands
+
         if newpacket.Command == commands.Files():
             return key_ring.on_files_received(newpacket, info)
         return False

@@ -1,17 +1,11 @@
-from unittest import TestCase
 import os
+from crypt import key, my_keys
+from unittest import TestCase
 
 from logs import lg
-
-from system import bpio
-
 from main import settings
-
-from crypt import key
-from crypt import my_keys
-
+from system import bpio
 from userid import my_id
-
 
 _sample_private_key = """-----BEGIN RSA PRIVATE KEY-----
 MIICWwIBAAKBgQDP7lJ67hcSnWSFFzQs14brEBzovQfyoa7mkb+YkI9EJ/hEAsL7
@@ -77,27 +71,26 @@ _some_identity_xml = """<?xml version="1.0" encoding="utf-8"?>
 
 
 class Test(TestCase):
-
     def setUp(self):
         try:
-            bpio.rmdir_recursive('/tmp/.bitdust_tmp')
+            bpio.rmdir_recursive("/tmp/.bitdust_tmp")
         except Exception:
             pass
         lg.set_debug_level(30)
-        settings.init(base_dir='/tmp/.bitdust_tmp')
+        settings.init(base_dir="/tmp/.bitdust_tmp")
         self.my_current_key = None
         try:
-            os.makedirs('/tmp/.bitdust_tmp/metadata/')
+            os.makedirs("/tmp/.bitdust_tmp/metadata/")
         except:
             pass
         try:
-            os.makedirs('/tmp/.bitdust_tmp/identitycache/')
+            os.makedirs("/tmp/.bitdust_tmp/identitycache/")
         except:
             pass
-        fout = open(settings.KeyFileName(), 'w')
+        fout = open(settings.KeyFileName(), "w")
         fout.write(_some_priv_key)
         fout.close()
-        fout = open(settings.LocalIdentityFilename(), 'w')
+        fout = open(settings.LocalIdentityFilename(), "w")
         fout.write(_some_identity_xml)
         fout.close()
         self.assertTrue(key.LoadMyKey())
@@ -107,66 +100,68 @@ class Test(TestCase):
         key.ForgetMyKey()
         my_id.forgetLocalIdentity()
         settings.shutdown()
-        bpio.rmdir_recursive('/tmp/.bitdust_tmp')
+        bpio.rmdir_recursive("/tmp/.bitdust_tmp")
 
     def test_sign_verify(self):
         lg.set_debug_level(30)
-        key_id = 'some_key_abc$alice@127.0.0.1_8084'
-        my_keys.erase_key(key_id, keys_folder='/tmp/')
-        my_keys.register_key(key_id, _sample_private_key, keys_folder='/tmp/')
+        key_id = "some_key_abc$alice@127.0.0.1_8084"
+        my_keys.erase_key(key_id, keys_folder="/tmp/")
+        my_keys.register_key(key_id, _sample_private_key, keys_folder="/tmp/")
         is_valid = my_keys.validate_key(my_keys.key_obj(key_id))
         if not is_valid:
             print(key_id)
             print(my_keys.get_private_key_raw(key_id))
         else:
-            my_keys.erase_key(key_id, keys_folder='/tmp/')
+            my_keys.erase_key(key_id, keys_folder="/tmp/")
         self.assertTrue(is_valid)
 
     def test_regression(self):
         lg.set_debug_level(30)
         for i in range(3):
-            key_id = 'test_key_%d$alice@127.0.0.1_8084' % i
-            my_keys.erase_key(key_id, keys_folder='/tmp/')
-            my_keys.generate_key(key_id, key_size=1024, keys_folder='/tmp/')
+            key_id = "test_key_%d$alice@127.0.0.1_8084" % i
+            my_keys.erase_key(key_id, keys_folder="/tmp/")
+            my_keys.generate_key(key_id, key_size=1024, keys_folder="/tmp/")
             is_valid = my_keys.validate_key(my_keys.key_obj(key_id))
             if not is_valid:
                 print(key_id)
                 print(my_keys.get_private_key_raw(key_id))
             else:
-                my_keys.erase_key(key_id, keys_folder='/tmp/')
+                my_keys.erase_key(key_id, keys_folder="/tmp/")
             self.assertTrue(is_valid)
 
     def test_signed_key(self):
         try:
-            bpio.rmdir_recursive('/tmp/.bitdust_test_signed_key')
+            bpio.rmdir_recursive("/tmp/.bitdust_test_signed_key")
         except Exception:
             pass
         lg.set_debug_level(30)
-        settings.init(base_dir='/tmp/.bitdust_test_signed_key')
+        settings.init(base_dir="/tmp/.bitdust_test_signed_key")
         self.my_current_key = None
         try:
-            os.makedirs('/tmp/.bitdust_test_signed_key/metadata/')
+            os.makedirs("/tmp/.bitdust_test_signed_key/metadata/")
         except:
             pass
-        fout = open(settings.KeyFileName(), 'w')
+        fout = open(settings.KeyFileName(), "w")
         fout.write(_some_priv_key)
         fout.close()
-        fout = open(settings.LocalIdentityFilename(), 'w')
+        fout = open(settings.LocalIdentityFilename(), "w")
         fout.write(_some_identity_xml)
         fout.close()
         self.assertTrue(key.LoadMyKey())
         self.assertTrue(my_id.loadLocalIdentity())
 
-        key_id = 'some_key_abc$alice@127.0.0.1_8084'
-        my_keys.erase_key(key_id, keys_folder='/tmp/')
-        my_keys.register_key(key_id, _sample_private_key, keys_folder='/tmp/')
+        key_id = "some_key_abc$alice@127.0.0.1_8084"
+        my_keys.erase_key(key_id, keys_folder="/tmp/")
+        my_keys.register_key(key_id, _sample_private_key, keys_folder="/tmp/")
         is_valid = my_keys.validate_key(my_keys.key_obj(key_id))
         self.assertTrue(is_valid)
         my_keys.sign_key(key_id)
-        signed_key_info = my_keys.get_key_info(key_id, include_private=True, include_signature=True)
+        signed_key_info = my_keys.get_key_info(
+            key_id, include_private=True, include_signature=True
+        )
         self.assertTrue(my_keys.verify_key_info_signature(signed_key_info))
 
         key.ForgetMyKey()
         my_id.forgetLocalIdentity()
         settings.shutdown()
-        bpio.rmdir_recursive('/tmp/.bitdust_test_signed_key')
+        bpio.rmdir_recursive("/tmp/.bitdust_test_signed_key")

@@ -43,40 +43,33 @@ if not - remove that customer and stop assistant
 
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 10
 
-#------------------------------------------------------------------------------
-
-from automats import automat
-
-from logs import lg
-
-from lib import packetid
-from lib import diskspace
-
-from main import settings
+# ------------------------------------------------------------------------------
 
 from crypt import my_keys
 
-from p2p import p2p_service
-from p2p import commands
-
+from automats import automat
+from lib import diskspace, packetid
+from logs import lg
+from main import settings
+from p2p import commands, p2p_service
+from storage import accounting
 from supplier import list_files
 
-from storage import accounting
-
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _CustomerAssistants = {}
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
 
 def assistants():
     global _CustomerAssistants
@@ -85,7 +78,9 @@ def assistants():
 
 def create(customer_idurl):
     if customer_idurl in assistants():
-        raise Exception('another CustomerAssistant instance for %s already exists' % customer_idurl)
+        raise Exception(
+            "another CustomerAssistant instance for %s already exists" % customer_idurl
+        )
     assistants()[customer_idurl] = CustomerAssistant(customer_idurl)
     return assistants()[customer_idurl]
 
@@ -93,7 +88,9 @@ def create(customer_idurl):
 def by_idurl(customer_idurl):
     return assistants().get(customer_idurl, None)
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 class CustomerAssistant(automat.Automat):
     """
@@ -101,8 +98,8 @@ class CustomerAssistant(automat.Automat):
     """
 
     timers = {
-        'timer-10sec': (10.0, ['PING?']),
-        'timer-5min': (300, ['CONNECTED']),
+        "timer-10sec": (10.0, ["PING?"]),
+        "timer-5min": (300, ["CONNECTED"]),
     }
 
     def __init__(self, customer_idurl):
@@ -113,11 +110,11 @@ class CustomerAssistant(automat.Automat):
         self.donated_bytes = accounting.get_customer_quota(self.customer_idurl) or 0
         name = "customer_%s_%s" % (
             self.customer_idurl.to_id(),
-            diskspace.MakeStringFromBytes(self.donated_bytes).replace(' ', ''),
+            diskspace.MakeStringFromBytes(self.donated_bytes).replace(" ", ""),
         )
         super(CustomerAssistant, self).__init__(
             name=name,
-            state='AT_STARTUP',
+            state="AT_STARTUP",
             debug_level=_DebugLevel,
             log_events=False,
             log_transitions=_Debug,
@@ -127,45 +124,45 @@ class CustomerAssistant(automat.Automat):
         """
         The state machine code, generated using `visio2python <https://bitdust.io/visio2python/>`_ tool.
         """
-        #---AT_STARTUP---
-        if self.state == 'AT_STARTUP':
-            if event == 'init':
-                self.state = 'OFFLINE'
+        # ---AT_STARTUP---
+        if self.state == "AT_STARTUP":
+            if event == "init":
+                self.state = "OFFLINE"
                 self.doInit(*args, **kwargs)
-        #---OFFLINE---
-        elif self.state == 'OFFLINE':
-            if event == 'shutdown':
-                self.state = 'CLOSED'
+        # ---OFFLINE---
+        elif self.state == "OFFLINE":
+            if event == "shutdown":
+                self.state = "CLOSED"
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'connect':
-                self.state = 'PING?'
+            elif event == "connect":
+                self.state = "PING?"
                 self.doSendMyIdentity(*args, **kwargs)
-            elif event == 'propagate':
-                self.state = 'PING?'
-        #---PING?---
-        elif self.state == 'PING?':
-            if event == 'shutdown':
-                self.state = 'CLOSED'
+            elif event == "propagate":
+                self.state = "PING?"
+        # ---PING?---
+        elif self.state == "PING?":
+            if event == "shutdown":
+                self.state = "CLOSED"
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'ack':
-                self.state = 'CONNECTED'
+            elif event == "ack":
+                self.state = "CONNECTED"
                 self.doSendHisFiles(*args, **kwargs)
-            elif event == 'timer-10sec' or event == 'disconnect' or event == 'fail':
-                self.state = 'OFFLINE'
-        #---CONNECTED---
-        elif self.state == 'CONNECTED':
-            if event == 'disconnect':
-                self.state = 'OFFLINE'
-            elif event == 'shutdown':
-                self.state = 'CLOSED'
+            elif event == "timer-10sec" or event == "disconnect" or event == "fail":
+                self.state = "OFFLINE"
+        # ---CONNECTED---
+        elif self.state == "CONNECTED":
+            if event == "disconnect":
+                self.state = "OFFLINE"
+            elif event == "shutdown":
+                self.state = "CLOSED"
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'timer-5min':
-                self.state = 'PING?'
+            elif event == "timer-5min":
+                self.state = "PING?"
                 self.doSendMyIdentity(*args, **kwargs)
-            elif event == 'propagate':
-                self.state = 'PING?'
-        #---CLOSED---
-        elif self.state == 'CLOSED':
+            elif event == "propagate":
+                self.state = "PING?"
+        # ---CLOSED---
+        elif self.state == "CLOSED":
             pass
         return None
 
@@ -178,40 +175,62 @@ class CustomerAssistant(automat.Automat):
         """
         Action method.
         """
-        p2p_service.SendIdentity(self.customer_idurl, wide=True, callbacks={
-            commands.Ack(): self._customer_acked,
-            commands.Fail(): self._customer_failed,
-        })
+        p2p_service.SendIdentity(
+            self.customer_idurl,
+            wide=True,
+            callbacks={
+                commands.Ack(): self._customer_acked,
+                commands.Fail(): self._customer_failed,
+            },
+        )
 
     def doSendHisFiles(self, *args, **kwargs):
         """
         Action method.
         """
-        customer_key_id = my_keys.make_key_id(alias='customer', creator_idurl=self.customer_idurl)
+        customer_key_id = my_keys.make_key_id(
+            alias="customer", creator_idurl=self.customer_idurl
+        )
         customer_key_id = my_keys.latest_key_id(customer_key_id)
         # if my_keys.is_key_registered(customer_key_id):
         # TODO: re-think again about the customer key, do we really need it?
         if False:
             list_files.send(
                 customer_idurl=self.customer_idurl,
-                packet_id='%s:%s' % (customer_key_id, packetid.UniqueID(), ),
+                packet_id="%s:%s"
+                % (
+                    customer_key_id,
+                    packetid.UniqueID(),
+                ),
                 format_type=settings.ListFilesFormat(),
                 key_id=customer_key_id,
                 remote_idurl=self.customer_idurl,  # send to the customer
             )
         else:
             # if "customer" key is not delivered to me yet, use his "master" key
-            customer_master_key_id = my_keys.latest_key_id(my_keys.make_key_id(alias='master', creator_idurl=self.customer_idurl))
+            customer_master_key_id = my_keys.latest_key_id(
+                my_keys.make_key_id(alias="master", creator_idurl=self.customer_idurl)
+            )
             if my_keys.is_key_registered(customer_master_key_id):
                 list_files.send(
                     customer_idurl=self.customer_idurl,
-                    packet_id='%s:%s' % (customer_master_key_id, packetid.UniqueID(), ),
+                    packet_id="%s:%s"
+                    % (
+                        customer_master_key_id,
+                        packetid.UniqueID(),
+                    ),
                     format_type=settings.ListFilesFormat(),
                     key_id=customer_master_key_id,
                     remote_idurl=self.customer_idurl,  # send to the customer
                 )
             else:
-                lg.err('key %s (and also %s) is not registered, not able to send customer files' % (customer_key_id, customer_master_key_id, ))
+                lg.err(
+                    "key %s (and also %s) is not registered, not able to send customer files"
+                    % (
+                        customer_key_id,
+                        customer_master_key_id,
+                    )
+                )
 
     def doDestroyMe(self, *args, **kwargs):
         """
@@ -222,13 +241,18 @@ class CustomerAssistant(automat.Automat):
 
     def _customer_acked(self, response, info):
         if _Debug:
-            lg.out(_DebugLevel, 'customer_assistant._customer_acked %r %r' % (response, info))
+            lg.out(
+                _DebugLevel, "customer_assistant._customer_acked %r %r" % (response, info)
+            )
         self.automat(response.Command.lower(), response)
 
     def _customer_failed(self, response, info):
         if _Debug:
-            lg.out(_DebugLevel, 'customer_assistant._customer_failed %r %r' % (response, info))
-        event_id = 'fail'
+            lg.out(
+                _DebugLevel,
+                "customer_assistant._customer_failed %r %r" % (response, info),
+            )
+        event_id = "fail"
         if response:
             event_id = response.Command.lower()
         self.automat(event_id, response)

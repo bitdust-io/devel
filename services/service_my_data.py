@@ -31,6 +31,7 @@ module:: service_my_data
 """
 
 from __future__ import absolute_import
+
 from services.local_service import SlowStartingLocalService
 
 
@@ -40,42 +41,52 @@ def create_service():
 
 class MyDataService(SlowStartingLocalService):
 
-    service_name = 'service_my_data'
-    config_path = 'services/my-data/enabled'
+    service_name = "service_my_data"
+    config_path = "services/my-data/enabled"
 
     last_time_keys_synchronized = None
 
     def dependent_on(self):
         return [
-            'service_keys_storage',
+            "service_keys_storage",
         ]
 
     def init(self, **kwargs):
         SlowStartingLocalService.init(self, **kwargs)
         from main import events
-        events.add_subscriber(self._on_my_storage_ready, 'my-storage-ready')
-        events.add_subscriber(self._on_my_storage_not_ready_yet, 'my-storage-not-ready-yet')
+
+        events.add_subscriber(self._on_my_storage_ready, "my-storage-ready")
+        events.add_subscriber(
+            self._on_my_storage_not_ready_yet, "my-storage-not-ready-yet"
+        )
 
     def shutdown(self):
         from main import events
-        events.remove_subscriber(self._on_my_storage_not_ready_yet, 'my-storage-not-ready-yet')
-        events.remove_subscriber(self._on_my_storage_ready, 'my-storage-ready')
+
+        events.remove_subscriber(
+            self._on_my_storage_not_ready_yet, "my-storage-not-ready-yet"
+        )
+        events.remove_subscriber(self._on_my_storage_ready, "my-storage-ready")
         SlowStartingLocalService.shutdown(self)
 
     def start(self):
         from logs import lg
         from main import listeners
-        from storage import keys_synchronizer
-        from storage import index_synchronizer
-        from storage import backup_fs
+        from storage import backup_fs, index_synchronizer, keys_synchronizer
+
         if keys_synchronizer.is_synchronized() and index_synchronizer.is_synchronized():
             self.confirm_service_started(result=True)
-            if listeners.is_populate_requered('private_file'):
-                listeners.populate_later().remove('private_file')
+            if listeners.is_populate_requered("private_file"):
+                listeners.populate_later().remove("private_file")
                 backup_fs.populate_private_files()
         else:
-            lg.warn('can not start service_my_data right now, keys_synchronizer.is_synchronized=%r index_synchronizer.is_synchronized=%r' % (
-                keys_synchronizer.is_synchronized(), index_synchronizer.is_synchronized()))
+            lg.warn(
+                "can not start service_my_data right now, keys_synchronizer.is_synchronized=%r index_synchronizer.is_synchronized=%r"
+                % (
+                    keys_synchronizer.is_synchronized(),
+                    index_synchronizer.is_synchronized(),
+                )
+            )
         return self.starting_deferred
 
     def stop(self):
@@ -89,22 +100,24 @@ class MyDataService(SlowStartingLocalService):
         from main import listeners
         from services import driver
         from storage import backup_fs
+
         if self.starting_deferred:
             self.confirm_service_started(result=True)
-            if listeners.is_populate_requered('private_file'):
-                listeners.populate_later().remove('private_file')
+            if listeners.is_populate_requered("private_file"):
+                listeners.populate_later().remove("private_file")
                 backup_fs.populate_private_files()
-        if driver.is_enabled('service_my_data'):
-            if not driver.is_started('service_my_data'):
-                lg.info('my storage is ready, starting service_my_data()')
-                driver.start_single('service_my_data')
+        if driver.is_enabled("service_my_data"):
+            if not driver.is_started("service_my_data"):
+                lg.info("my storage is ready, starting service_my_data()")
+                driver.start_single("service_my_data")
 
     def _on_my_storage_not_ready_yet(self, evt):
         from logs import lg
         from services import driver
+
         if self.starting_deferred:
-            self.confirm_service_started(result=Exception('my storage is not ready yet'))
-        if driver.is_enabled('service_my_data'):
-            if not driver.is_started('service_my_data'):
-                lg.info('my storage is not ready yet, stopping service_my_data()')
-                driver.stop_single('service_my_data')
+            self.confirm_service_started(result=Exception("my storage is not ready yet"))
+        if driver.is_enabled("service_my_data"):
+            if not driver.is_started("service_my_data"):
+                lg.info("my storage is not ready yet, stopping service_my_data()")
+                driver.stop_single("service_my_data")

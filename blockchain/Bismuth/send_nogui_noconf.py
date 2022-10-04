@@ -18,25 +18,24 @@ import base64
 import sys
 import time
 
-import socks
-from Cryptodome.Hash import SHA
-from Cryptodome.Signature import PKCS1_v1_5
-
-from bismuthclient import rpcconnections
 from bisbasic import essentials, options
 from bisbasic.essentials import fee_calculate
+from bismuthclient import rpcconnections
+from Cryptodome.Hash import SHA
+from Cryptodome.Signature import PKCS1_v1_5
 from polysign.signerfactory import SignerFactory
 
 
 def connect():
-    if 'regnet' in config.version:
+    if "regnet" in config.version:
         port = 3030
-    elif 'testnet' in config.version:
+    elif "testnet" in config.version:
         port = 2829
     else:
         port = 5658
 
     return rpcconnections.Connection(("127.0.0.1", int(port)))
+
 
 if __name__ == "__main__":
     config = options.Get()
@@ -52,20 +51,29 @@ if __name__ == "__main__":
     except:
         request_confirmation = False
 
-    key, public_key_readable, private_key_readable, encrypted, unlocked, public_key_b64encoded, address, keyfile = essentials.keys_load_new(wallet_file)
+    (
+        key,
+        public_key_readable,
+        private_key_readable,
+        encrypted,
+        unlocked,
+        public_key_b64encoded,
+        address,
+        keyfile,
+    ) = essentials.keys_load_new(wallet_file)
 
     if encrypted:
         key, private_key_readable = essentials.keys_unlock(private_key_readable)
 
-    print(f'Number of arguments: {len(sys.argv)} arguments.')
+    print(f"Number of arguments: {len(sys.argv)} arguments.")
     print(f'Argument list: {"".join(sys.argv)}')
-    print(f'Using address: {address}')
+    print(f"Using address: {address}")
 
     # get balance
 
     s = connect()
-    s._send ("balanceget")
-    s._send (address)  # change address here to view other people's transactions
+    s._send("balanceget")
+    s._send(address)  # change address here to view other people's transactions
     stats_account = s._receive()
     balance = stats_account[0]
 
@@ -102,7 +110,7 @@ if __name__ == "__main__":
     if request_confirmation:
         confirm = input("Confirm (y/n): ")
 
-        if confirm != 'y':
+        if confirm != "y":
             print("Transaction cancelled, user confirmation failed")
             exit(1)
 
@@ -113,9 +121,16 @@ if __name__ == "__main__":
         is_float = 0
         sys.exit(1)
 
-    timestamp = '%.2f' % (time.time() - 5) #remote proofing
+    timestamp = "%.2f" % (time.time() - 5)  # remote proofing
     # TODO: use transaction object, no dup code for buffer assembling
-    transaction = (str(timestamp), str(address), str(recipient_input), '%.8f' % float(amount_input), str(operation_input), str(openfield_input))  # this is signed
+    transaction = (
+        str(timestamp),
+        str(address),
+        str(recipient_input),
+        "%.8f" % float(amount_input),
+        str(operation_input),
+        str(openfield_input),
+    )  # this is signed
     # TODO: use polysign here
     h = SHA.new(str(transaction).encode("utf-8"))
     signer = PKCS1_v1_5.new(key)
@@ -136,14 +151,25 @@ if __name__ == "__main__":
             print("Mempool: Sending more than owned")
 
         else:
-            tx_submit = (str (timestamp), str (address), str (recipient_input), '%.8f' % float (amount_input), str (signature_enc.decode ("utf-8")), str (public_key_b64encoded.decode("utf-8")), str (operation_input), str (openfield_input))
+            tx_submit = (
+                str(timestamp),
+                str(address),
+                str(recipient_input),
+                "%.8f" % float(amount_input),
+                str(signature_enc.decode("utf-8")),
+                str(public_key_b64encoded.decode("utf-8")),
+                str(operation_input),
+                str(openfield_input),
+            )
             while True:
                 try:
                     s._send("mpinsert")
-                    s._send (tx_submit)
+                    s._send(tx_submit)
                     reply = s._receive()
-                    print ("Client: {}".format (reply))
-                    if reply != "*":  # response can be empty due to different timeout setting
+                    print("Client: {}".format(reply))
+                    if (
+                        reply != "*"
+                    ):  # response can be empty due to different timeout setting
                         break
                     else:
                         print("Connection cut, retrying")
@@ -151,7 +177,6 @@ if __name__ == "__main__":
                 except Exception as e:
                     print(f"A problem occurred: {e}, retrying")
                     s = connect()
-                    pass
     else:
         print("Invalid signature")
 

@@ -34,15 +34,16 @@ forums
 """
 
 from __future__ import absolute_import
+
 import six.moves._thread
 
 copyright = "Copyright (c) 2005-2009 Vitalii Vanovschi. All rights reserved"
 version = "1.5.7"
 
+import logging
 import socket
 import sys
 import time
-import logging
 
 # broadcast every 10 sec
 BROADCAST_INTERVAL = 10
@@ -78,13 +79,13 @@ class Discover(object):
         Sends a broadcast.
         """
         if self.isclient:
-            logging.debug("Client sends initial broadcast to (%s, %i)"
-                          % self.broadcast_addr)
+            logging.debug(
+                "Client sends initial broadcast to (%s, %i)" % self.broadcast_addr
+            )
             self.bsocket.sendto("C", self.broadcast_addr)
         else:
             while True:
-                logging.debug("Server sends broadcast to (%s, %i)"
-                              % self.broadcast_addr)
+                logging.debug("Server sends broadcast to (%s, %i)" % self.broadcast_addr)
                 self.bsocket.sendto("S", self.broadcast_addr)
                 time.sleep(BROADCAST_INTERVAL)
 
@@ -105,17 +106,24 @@ class Discover(object):
                 message, (host, port) = s.recvfrom(1024)
                 remote_address = (host, self.broadcast_addr[1])
                 hostid = host + ":" + six.text_type(self.broadcast_addr[1])
-                logging.debug("Discovered host (%s, %i) message=%c"
-                              % (remote_address + (message[0], )))
-                if not self.base.autopp_list.get(hostid, 0) and self.isclient \
-                        and message[0] == 'S':
-                    logging.debug("Connecting to host %s" % (hostid, ))
-                    six.moves._thread.start_new_thread(self.base.connect1,
-                                            remote_address + (False, ))
-                if not self.isclient and message[0] == 'C':
-                    logging.debug("Replying to host %s" % (hostid, ))
+                logging.debug(
+                    "Discovered host (%s, %i) message=%c"
+                    % (remote_address + (message[0],))
+                )
+                if (
+                    not self.base.autopp_list.get(hostid, 0)
+                    and self.isclient
+                    and message[0] == "S"
+                ):
+                    logging.debug("Connecting to host %s" % (hostid,))
+                    six.moves._thread.start_new_thread(
+                        self.base.connect1, remote_address + (False,)
+                    )
+                if not self.isclient and message[0] == "C":
+                    logging.debug("Replying to host %s" % (hostid,))
                     self.bsocket.sendto("S", self.broadcast_addr)
             except:
-                logging.error("An error has occured during execution of "
-                              "Discover.listen")
+                logging.error(
+                    "An error has occured during execution of " "Discover.listen"
+                )
                 sys.excepthook(*sys.exc_info())

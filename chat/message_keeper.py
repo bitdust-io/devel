@@ -29,60 +29,62 @@
 
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 10
 
-#------------------------------------------------------------------------------
-
-from logs import lg
-
-from interface import api_web_socket
+# ------------------------------------------------------------------------------
 
 from crypt import my_keys
 
-from contacts import identitycache
-
-from stream import message
-
 from chat import message_database
-
+from contacts import identitycache
+from interface import api_web_socket
+from logs import lg
+from stream import message
 from userid import global_id
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
 
 def init():
     if _Debug:
         lg.out(_DebugLevel, "message_keeper.init")
     message.consume_messages(
-        consumer_callback_id='message_keeper',
+        consumer_callback_id="message_keeper",
         callback=on_consume_user_messages,
         direction=None,
-        message_types=['private_message', 'group_message', ],
+        message_types=[
+            "private_message",
+            "group_message",
+        ],
         reset_callback=False,
     )
+
 
 def shutdown():
     if _Debug:
         lg.out(_DebugLevel, "message_keeper.shutdown")
-    message.clear_consumer_callbacks(consumer_callback_id='message_keeper')
+    message.clear_consumer_callbacks(consumer_callback_id="message_keeper")
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def on_consume_user_messages(json_messages):
     for json_message in json_messages:
         try:
-            msg_type = json_message.get('type', '')
-            packet_id = json_message['packet_id']
-            sender_id = json_message['from']
-            recipient_id = json_message['to']
-            direction = json_message['dir']
-            msg_data = json_message['data']
+            msg_type = json_message.get("type", "")
+            packet_id = json_message["packet_id"]
+            sender_id = json_message["from"]
+            recipient_id = json_message["to"]
+            direction = json_message["dir"]
+            msg_data = json_message["data"]
         except:
             lg.exc()
             continue
@@ -96,43 +98,78 @@ def on_consume_user_messages(json_messages):
         )
     return False
 
-#------------------------------------------------------------------------------
 
-def cache_message(data, message_id, sender_id, recipient_id, message_type=None, direction=None):
+# ------------------------------------------------------------------------------
+
+
+def cache_message(
+    data, message_id, sender_id, recipient_id, message_type=None, direction=None
+):
     if _Debug:
-        lg.args(_DebugLevel, message_id=message_id, sender_id=sender_id, recipient_id=recipient_id, message_type=message_type)
-    if message_type == 'private_message':
+        lg.args(
+            _DebugLevel,
+            message_id=message_id,
+            sender_id=sender_id,
+            recipient_id=recipient_id,
+            message_type=message_type,
+        )
+    if message_type == "private_message":
         if not my_keys.is_key_registered(sender_id):
             sender_idurl = global_id.glob2idurl(sender_id)
             known_ident = identitycache.FromCache(sender_idurl)
             if not known_ident:
-                lg.warn('sender identity %r was not cached, not possible to store message locally' % sender_idurl)
+                lg.warn(
+                    "sender identity %r was not cached, not possible to store message locally"
+                    % sender_idurl
+                )
                 return False
             if not my_keys.register_key(sender_id, known_ident.getPublicKey()):
-                lg.err('failed to register known public key of the sender: %r' % sender_id)
+                lg.err(
+                    "failed to register known public key of the sender: %r" % sender_id
+                )
                 return False
         if not my_keys.is_key_registered(recipient_id):
             recipient_idurl = global_id.glob2idurl(recipient_id)
             known_ident = identitycache.FromCache(recipient_idurl)
             if not known_ident:
-                lg.warn('recipient identity %r was not cached, not possible to store message locally' % recipient_idurl)
+                lg.warn(
+                    "recipient identity %r was not cached, not possible to store message locally"
+                    % recipient_idurl
+                )
                 return False
             if not my_keys.register_key(recipient_id, known_ident.getPublicKey()):
-                lg.err('failed to register known public key of the recipient: %r' % recipient_id)
+                lg.err(
+                    "failed to register known public key of the recipient: %r"
+                    % recipient_id
+                )
                 return False
-        return store_message(data, message_id, sender_id, recipient_id, message_type, direction)
+        return store_message(
+            data, message_id, sender_id, recipient_id, message_type, direction
+        )
 
-    if message_type == 'group_message' or message_type == 'personal_message':
+    if message_type == "group_message" or message_type == "personal_message":
         if not my_keys.is_key_registered(recipient_id):
-            lg.err('failed to cache %r because recipient key %r was not registered' % (message_type, recipient_id, ))
+            lg.err(
+                "failed to cache %r because recipient key %r was not registered"
+                % (
+                    message_type,
+                    recipient_id,
+                )
+            )
             return False
-        return store_message(data, message_id, sender_id, recipient_id, message_type, direction)
+        return store_message(
+            data, message_id, sender_id, recipient_id, message_type, direction
+        )
 
-    raise Exception('unexpected message type: %r' % message_type)
+    raise Exception("unexpected message type: %r" % message_type)
 
-#------------------------------------------------------------------------------
 
-def store_message(data, message_id, sender_id, recipient_id, message_type=None, direction=None):
+# ------------------------------------------------------------------------------
+
+
+def store_message(
+    data, message_id, sender_id, recipient_id, message_type=None, direction=None
+):
     message_json = message_database.insert_message(
         data=data,
         message_id=message_id,
@@ -142,10 +179,18 @@ def store_message(data, message_id, sender_id, recipient_id, message_type=None, 
         direction=direction,
     )
     if not message_json:
-        lg.warn('message %r was not stored' % message_id)
+        lg.warn("message %r was not stored" % message_id)
         return message_json
     api_web_socket.on_stream_message(message_json)
     if _Debug:
-        lg.out(_DebugLevel, 'message_keeper.store_message [%s]:%s from %r to %r' % (
-            message_type, message_id, sender_id, recipient_id, ))
+        lg.out(
+            _DebugLevel,
+            "message_keeper.store_message [%s]:%s from %r to %r"
+            % (
+                message_type,
+                message_id,
+                sender_id,
+                recipient_id,
+            ),
+        )
     return message_json

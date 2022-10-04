@@ -7,15 +7,15 @@ import json
 import os
 import random
 import shutil
+
 # import re
 import sys
 import threading
 from time import time
 
-import socks
-
 import connections
 import regnet
+import socks
 from essentials import most_common_dict, percentage_in
 
 __version__ = "0.0.19"
@@ -27,10 +27,32 @@ _LogStatusMessages = False
 class Peers:
     """The peers manager. A thread safe peers manager"""
 
-    __slots__ = ('app_log','config','logstats','node','peersync_lock','startup_time','reset_time','warning_list','stats',
-                 'connection_pool','peer_opinion_dict','consensus_percentage','consensus',
-                 'tried','peer_dict','peerfile','suggested_peerfile','banlist','whitelist','ban_threshold',
-                 'ip_to_mainnet', 'peers', 'accept_peers', 'peerlist_updated')
+    __slots__ = (
+        "app_log",
+        "config",
+        "logstats",
+        "node",
+        "peersync_lock",
+        "startup_time",
+        "reset_time",
+        "warning_list",
+        "stats",
+        "connection_pool",
+        "peer_opinion_dict",
+        "consensus_percentage",
+        "consensus",
+        "tried",
+        "peer_dict",
+        "peerfile",
+        "suggested_peerfile",
+        "banlist",
+        "whitelist",
+        "ban_threshold",
+        "ip_to_mainnet",
+        "peers",
+        "accept_peers",
+        "peerlist_updated",
+    )
 
     def __init__(self, app_log, config=None, logstats=True, node=None):
         self.app_log = app_log
@@ -64,7 +86,9 @@ class Peers:
             self.peerfile = "peers_test.txt"
             self.suggested_peerfile = "suggested_peers_test.txt"
 
-        if self.is_regnet:  # regnet won't use any peer, won't connect. Kept for compatibility
+        if (
+            self.is_regnet
+        ):  # regnet won't use any peer, won't connect. Kept for compatibility
             self.peerfile = regnet.REGNET_PEERS
             self.suggested_peerfile = regnet.REGNET_SUGGESTED_PEERS
 
@@ -145,9 +169,13 @@ class Peers:
                                 if versiongot == "*":
                                     raise ValueError("peer busy")
                                 if versiongot not in self.config.version_allow:
-                                    raise ValueError(f"cannot save {ip}, incompatible protocol version {versiongot} "
-                                                     f"not in {self.config.version_allow}")
-                                self.app_log.info(f"Inbound: Distant peer {ip}:{port} responding: {versiongot}")
+                                    raise ValueError(
+                                        f"cannot save {ip}, incompatible protocol version {versiongot} "
+                                        f"not in {self.config.version_allow}"
+                                    )
+                                self.app_log.info(
+                                    f"Inbound: Distant peer {ip}:{port} responding: {versiongot}"
+                                )
                             else:
                                 s.connect((ip, int(port)))
                         finally:
@@ -167,10 +195,12 @@ class Peers:
                     self.app_log.info(f"Inbound: Distant peer not connectible ({e})")
 
             if self.peerlist_updated:
-                self.app_log.warning(f"{file} peerlist updated ({len(peers_pairs)}) total")  # the whole dict is saved
+                self.app_log.warning(
+                    f"{file} peerlist updated ({len(peers_pairs)}) total"
+                )  # the whole dict is saved
                 with open(f"{file}.tmp", "w") as peer_file:
                     json.dump(peers_pairs, peer_file)
-                shutil.move(f"{file}.tmp",file)
+                shutil.move(f"{file}.tmp", file)
             else:
                 self.app_log.warning(f"{file} peerlist update skipped, no changes")
 
@@ -210,8 +240,10 @@ class Peers:
             # TODO: use a dict instead of several occurrences in a list
             for x in range(count):
                 self.warning_list.append(ip)
-            self.app_log.warning(f"Added {count} warning(s) to {ip}: {reason} "
-                                 f"({self.warning_list.count(ip)} / {self.ban_threshold})")
+            self.app_log.warning(
+                f"Added {count} warning(s) to {ip}: {reason} "
+                f"({self.warning_list.count(ip)} / {self.ban_threshold})"
+            )
             if self.warning_list.count(ip) >= self.ban_threshold:
                 self.banlist.append(ip)
                 self.app_log.warning(f"{ip} is banned: {reason}")
@@ -219,7 +251,7 @@ class Peers:
             else:
                 return False
 
-    def peers_get(self, peer_file=''):
+    def peers_get(self, peer_file=""):
         """Returns a peer_file from disk as a dict {ip:port}"""
         peer_dict = {}
         try:
@@ -266,21 +298,21 @@ class Peers:
         """Number of nodes in consensus"""
         return len(self.peer_opinion_dict)
 
-    def is_allowed(self, peer_ip, command=''):
+    def is_allowed(self, peer_ip, command=""):
         """Tells if the given peer is allowed for that command"""
         # TODO: more granularity here later
         # Always allow whitelisted ip to post as block
-        if 'block' == command and self.is_whitelisted(peer_ip):
+        if "block" == command and self.is_whitelisted(peer_ip):
             return True
         # always allowed commands, only required and non cpu intensive.
-        if command in ('portget',):
+        if command in ("portget",):
             return True
         # only allow local host for "stop" and addpeers command
-        if command in ('stop', 'addpeers'):
-            return peer_ip == '127.0.0.1'
+        if command in ("stop", "addpeers"):
+            return peer_ip == "127.0.0.1"
         return peer_ip in self.config.allowed or "any" in self.config.allowed
 
-    def is_whitelisted(self, peer_ip, command=''):
+    def is_whitelisted(self, peer_ip, command=""):
         # TODO: could be handled later on via "allowed" and rights.
         return peer_ip in self.whitelist or "127.0.0.1" == peer_ip
 
@@ -323,19 +355,27 @@ class Peers:
                 # Simplified the log, every peers then has a ok or ko status anyway.
                 for ip, port in data_dict.items():
                     if ip not in self.peer_dict:
-                        self.app_log.info(f"Outbound: {ip}:{port} is a new peer, saving if connectible")
+                        self.app_log.info(
+                            f"Outbound: {ip}:{port} is a new peer, saving if connectible"
+                        )
                         try:
                             s_purge = socks.socksocket()
                             s_purge.settimeout(5)
                             if self.config.tor:
-                                s_purge.setproxy(socks.PROXY_TYPE_SOCKS5, "127.0.0.1", 9050)
-                            s_purge.connect((ip, int(port)))  # save a new peer file with only active nodes
+                                s_purge.setproxy(
+                                    socks.PROXY_TYPE_SOCKS5, "127.0.0.1", 9050
+                                )
+                            s_purge.connect(
+                                (ip, int(port))
+                            )  # save a new peer file with only active nodes
                             s_purge.close()
                             # This only adds to our local dict, does not force save.
                             if ip not in self.peer_dict:
                                 total_added += 1
                                 self.peer_dict[ip] = port
-                                self.app_log.info(f"Inbound: Peer {ip}:{port} saved to local peers")
+                                self.app_log.info(
+                                    f"Inbound: Peer {ip}:{port} saved to local peers"
+                                )
                         except:
                             self.app_log.info("Not connectible")
                     else:
@@ -355,7 +395,9 @@ class Peers:
         try:
             if peer_ip not in self.peer_opinion_dict:
                 if consensus_blockheight < too_old:
-                    self.app_log.warning(f"{peer_ip} received block too old ({consensus_blockheight}) for consensus")
+                    self.app_log.warning(
+                        f"{peer_ip} received block too old ({consensus_blockheight}) for consensus"
+                    )
                     return
 
             self.app_log.info(f"Updating {peer_ip} in consensus")
@@ -363,10 +405,18 @@ class Peers:
 
             self.consensus = most_common_dict(self.peer_opinion_dict)
 
-            self.consensus_percentage = percentage_in(self.peer_opinion_dict[peer_ip],self.peer_opinion_dict.values())
+            self.consensus_percentage = percentage_in(
+                self.peer_opinion_dict[peer_ip], self.peer_opinion_dict.values()
+            )
 
-            if int(consensus_blockheight) > int(self.consensus) + 30 and self.consensus_percentage > 50 and len(self.peer_opinion_dict) > 10:
-                if self.warning(sdef, peer_ip, f"Consensus deviation too high, {peer_ip} banned", 10):
+            if (
+                int(consensus_blockheight) > int(self.consensus) + 30
+                and self.consensus_percentage > 50
+                and len(self.peer_opinion_dict) > 10
+            ):
+                if self.warning(
+                    sdef, peer_ip, f"Consensus deviation too high, {peer_ip} banned", 10
+                ):
                     return
 
         except Exception as e:
@@ -379,7 +429,9 @@ class Peers:
     def consensus_remove(self, peer_ip):
         if peer_ip in self.peer_opinion_dict:
             try:
-                self.app_log.info(f"Will remove {peer_ip} from consensus pool {self.peer_opinion_dict}")
+                self.app_log.info(
+                    f"Will remove {peer_ip} from consensus pool {self.peer_opinion_dict}"
+                )
                 self.peer_opinion_dict.pop(peer_ip)
             except:
                 raise
@@ -405,12 +457,14 @@ class Peers:
         if self.is_whitelisted(host):
             return True  # whitelisted peers are always connectible, without variability condition.
         # variability test.
-        c_class = '.'.join(host.split('.')[:-1]) + '.'
+        c_class = ".".join(host.split(".")[:-1]) + "."
         matching = [ip_port for ip_port in self.connection_pool if c_class in ip_port]
         # If we already have 2 peers from that C ip class in our connection pool, ignore.
         if len(matching) >= 2:
             # Temp debug
-            self.app_log.warning(f"Ignoring {host_port} since we already have 2 ips of that C Class in our pool.")
+            self.app_log.warning(
+                f"Ignoring {host_port} since we already have 2 ips of that C Class in our pool."
+            )
             return False
         # Else we can
         return True
@@ -430,11 +484,11 @@ class Peers:
         if tries <= 0:  # First time can be temp, retry again
             delay = 30
         elif tries == 1:  # second time, give it 5 minutes
-            delay = 5*60
+            delay = 5 * 60
         elif tries == 2:  # third time, give it 15 minutes
             delay = 15 * 60
         else:  # 30 minutes before trying again
-            delay = 30*60
+            delay = 30 * 60
         tries += 1
         if tries > 3:
             tries = 3
@@ -467,7 +521,7 @@ class Peers:
         Remove the older timeouts from the tried list.
         Keep the recent ones or we end up trying the first ones again and again
         """
-        limit = time() + 12*60  # matches 2.5 tries :)
+        limit = time() + 12 * 60  # matches 2.5 tries :)
         remove = [client for client in self.tried if self.tried[client][1] > limit]
         for client in remove:
             del self.tried[client]
@@ -483,38 +537,61 @@ class Peers:
 
                 if self.is_testnet:
                     port = 2829
-                if threading.active_count() / 3 < self.config.thread_limit and self.can_connect_to(host, port):
+                if (
+                    threading.active_count() / 3 < self.config.thread_limit
+                    and self.can_connect_to(host, port)
+                ):
                     self.app_log.info(f"Will attempt to connect to {host}:{port}")
                     self.add_try(host, port)
-                    t = threading.Thread(target=this_target, args=(host, port, node), name=f"out_{host}_{port}")  # threaded connectivity to nodes here
-                    self.app_log.info(f"---Starting a client thread {threading.currentThread()} ---")
+                    t = threading.Thread(
+                        target=this_target,
+                        args=(host, port, node),
+                        name=f"out_{host}_{port}",
+                    )  # threaded connectivity to nodes here
+                    self.app_log.info(
+                        f"---Starting a client thread {threading.currentThread()} ---"
+                    )
                     t.daemon = True
                     t.start()
 
             if len(self.peer_dict) < 6 and int(time() - self.startup_time) > 30:
                 # join in random peers after x seconds
-                self.app_log.warning("Not enough peers in consensus, joining in peers suggested by other nodes")
+                self.app_log.warning(
+                    "Not enough peers in consensus, joining in peers suggested by other nodes"
+                )
                 self.peer_dict.update(self.peers_get(self.suggested_peerfile))
 
-            if len(self.connection_pool) < self.config.nodes_ban_reset and int(time() - self.startup_time) > 15:
+            if (
+                len(self.connection_pool) < self.config.nodes_ban_reset
+                and int(time() - self.startup_time) > 15
+            ):
                 # do not reset before 30 secs have passed
-                self.app_log.warning(f"Only {len(self.connection_pool)} connections active, resetting banlist")
+                self.app_log.warning(
+                    f"Only {len(self.connection_pool)} connections active, resetting banlist"
+                )
                 del self.banlist[:]
                 self.banlist.extend(self.config.banlist)  # reset to config version
                 del self.warning_list[:]
 
             if len(self.connection_pool) < 10:
-                self.app_log.warning(f"Only {len(self.connection_pool)} connections active, "
-                                     f"resetting the connection history")
+                self.app_log.warning(
+                    f"Only {len(self.connection_pool)} connections active, "
+                    f"resetting the connection history"
+                )
                 # TODO: only reset large timeouts, or we end up trying the sames over and over if we never get to 10.
                 # self.
                 self.reset_tried()
 
-            if self.config.nodes_ban_reset <= len(self.banlist) and len(self.connection_pool) <= len(self.banlist) \
-                    and (time() - self.reset_time) > 60 * 10:
+            if (
+                self.config.nodes_ban_reset <= len(self.banlist)
+                and len(self.connection_pool) <= len(self.banlist)
+                and (time() - self.reset_time) > 60 * 10
+            ):
                 # do not reset too often. 10 minutes here
-                self.app_log.warning(f"Less active connections ({len(self.connection_pool)}) "
-                                     f"than banlist ({len(self.banlist)}), resetting banlist and tried list")
+                self.app_log.warning(
+                    f"Less active connections ({len(self.connection_pool)}) "
+                    f"than banlist ({len(self.banlist)}), resetting banlist and tried list"
+                )
                 del self.banlist[:]
                 self.banlist.extend(self.config.banlist)  # reset to config version
                 del self.warning_list[:]
@@ -552,8 +629,14 @@ class Peers:
         self.app_log.info(f"Status: Tried: {self.tried}")
         self.app_log.info(f"Status: Tried Count: {len(self.tried)}")
         self.app_log.info(f"Status: List of Outbound connections: {self.connection_pool}")
-        self.app_log.warning(f"Status: Number of Outbound connections: {len(self.connection_pool)}")
+        self.app_log.warning(
+            f"Status: Number of Outbound connections: {len(self.connection_pool)}"
+        )
         if self.consensus:  # once the consensus is filled
-            self.app_log.warning(f"Status: Consensus height: {self.consensus} = {self.consensus_percentage}%")
+            self.app_log.warning(
+                f"Status: Consensus height: {self.consensus} = {self.consensus_percentage}%"
+            )
             self.app_log.warning(f"Status: Last block opinion: {self.peer_opinion_dict}")
-            self.app_log.warning(f"Status: Total number of nodes: {len(self.peer_opinion_dict)}")
+            self.app_log.warning(
+                f"Status: Total number of nodes: {len(self.peer_opinion_dict)}"
+            )

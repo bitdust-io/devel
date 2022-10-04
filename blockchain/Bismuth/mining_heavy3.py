@@ -10,17 +10,17 @@ import mmap
 import os
 import struct
 import sys
-from hashlib import sha224
-from hmac_drbg import DRBG
-from quantizer import quantize_two, quantize_eight, quantize_ten
 from decimal import Decimal
+from hashlib import sha224
 
 import regnet
-
 from fork import Fork
+from hmac_drbg import DRBG
+from quantizer import quantize_ten
+
 fork = Fork()
 
-__version__ = '0.1.4'
+__version__ = "0.1.4"
 
 
 print("Mining_Heavy3 v{}".format(__version__))
@@ -35,7 +35,7 @@ heavy = True
 
 
 def read_int_from_map(map, index):
-    return struct.unpack('I', map[4 * index:4 * index + 4])[0]
+    return struct.unpack("I", map[4 * index : 4 * index + 4])[0]
 
 
 def anneal3(mmap, n):
@@ -45,17 +45,17 @@ def anneal3(mmap, n):
     :param n: a 224 = 7x32 bits
     :return:  56 char in hex encoding.
     """
-    h7 = n & 0xffffffff
+    h7 = n & 0xFFFFFFFF
     n = n >> 32
     index = ((h7 & ~0x7) % RND_LEN) * 4
     # f1 = struct.unpack('I', mmap[index:index + 4])[0]
-    value = h7 ^ struct.unpack('I', mmap[index:index + 4])[0]
+    value = h7 ^ struct.unpack("I", mmap[index : index + 4])[0]
     res = "{:08x}".format(value)
     for i in range(6):
         index += 4
-        h = n & 0xffffffff
+        h = n & 0xFFFFFFFF
         n = n >> 32
-        value = h ^ struct.unpack('I', mmap[index:index + 4])[0]
+        value = h ^ struct.unpack("I", mmap[index : index + 4])[0]
         res = "{:08x}".format(value) + res
     return res
 
@@ -72,7 +72,7 @@ def anneal3_regnet(mmap, n):
 
 
 def bin_convert(string):
-    return ''.join(format(ord(x), '8b').replace(' ', '0') for x in string)
+    return "".join(format(ord(x), "8b").replace(" ", "0") for x in string)
 
 
 def diffme_heavy3(pool_address, nonce, db_block_hash):
@@ -80,7 +80,7 @@ def diffme_heavy3(pool_address, nonce, db_block_hash):
     diff = 1
     diff_result = 0
     hash224 = sha224((pool_address + nonce + db_block_hash).encode("utf-8")).digest()
-    hash224 = int.from_bytes(hash224, 'big')
+    hash224 = int.from_bytes(hash224, "big")
     if heavy or (not is_regnet):
         annealed_sha = anneal3(MMAP, hash224)
     else:
@@ -93,8 +93,18 @@ def diffme_heavy3(pool_address, nonce, db_block_hash):
     return diff_result
 
 
-def check_block(block_height_new, miner_address, nonce, db_block_hash, diff0, received_timestamp, q_received_timestamp,
-                q_db_timestamp_last, peer_ip='N/A', app_log=None):
+def check_block(
+    block_height_new,
+    miner_address,
+    nonce,
+    db_block_hash,
+    diff0,
+    received_timestamp,
+    q_received_timestamp,
+    q_db_timestamp_last,
+    peer_ip="N/A",
+    app_log=None,
+):
     """
     Checks that the given block matches the mining algo.
 
@@ -119,46 +129,74 @@ def check_block(block_height_new, miner_address, nonce, db_block_hash, diff0, re
 
         real_diff = diffme_heavy3(miner_address, nonce, db_block_hash)
         diff_drop_time = Decimal(180)
-        mining_condition = bin_convert(db_block_hash)[0:int(diff0)]
+        mining_condition = bin_convert(db_block_hash)[0 : int(diff0)]
         # simplified comparison, no backwards mining
         if real_diff >= int(diff0):
             if app_log:
-                app_log.info("Difficulty requirement satisfied for block {} from {}. {} >= {}"
-                             .format(block_height_new, peer_ip, real_diff, int(diff0)))
+                app_log.info(
+                    "Difficulty requirement satisfied for block {} from {}. {} >= {}".format(
+                        block_height_new, peer_ip, real_diff, int(diff0)
+                    )
+                )
             diff_save = diff0
 
         elif Decimal(received_timestamp) > q_db_timestamp_last + Decimal(diff_drop_time):
             # uses block timestamp, don't merge with diff() for security reasons
             factor = 1
             time_difference = q_received_timestamp - q_db_timestamp_last
-            diff_dropped = quantize_ten(diff0) + quantize_ten(1) - quantize_ten(time_difference / diff_drop_time)
+            diff_dropped = (
+                quantize_ten(diff0)
+                + quantize_ten(1)
+                - quantize_ten(time_difference / diff_drop_time)
+            )
             # Emergency diff drop
-            if Decimal(received_timestamp) > q_db_timestamp_last + Decimal(2 * diff_drop_time):
+            if Decimal(received_timestamp) > q_db_timestamp_last + Decimal(
+                2 * diff_drop_time
+            ):
                 factor = 10
-                diff_dropped = quantize_ten(diff0) - quantize_ten(1) - quantize_ten(factor * (time_difference-2*diff_drop_time) / diff_drop_time)
+                diff_dropped = (
+                    quantize_ten(diff0)
+                    - quantize_ten(1)
+                    - quantize_ten(
+                        factor * (time_difference - 2 * diff_drop_time) / diff_drop_time
+                    )
+                )
 
             if diff_dropped < 10:
                 diff_dropped = 10
             if real_diff >= int(diff_dropped):
                 if app_log:
-                    app_log.info ("Readjusted difficulty requirement satisfied for block {} from {}, {} >= {} (factor {})"
-                                  .format(block_height_new, peer_ip, real_diff, int(diff_dropped), factor))
+                    app_log.info(
+                        "Readjusted difficulty requirement satisfied for block {} from {}, {} >= {} (factor {})".format(
+                            block_height_new,
+                            peer_ip,
+                            real_diff,
+                            int(diff_dropped),
+                            factor,
+                        )
+                    )
                 diff_save = diff0
                 # lie about what diff was matched not to mess up the diff algo
             else:
-                raise ValueError ("Readjusted difficulty too low for block {} from {}, {} should be at least {}"
-                                  .format(block_height_new, peer_ip, real_diff, diff_dropped))
+                raise ValueError(
+                    "Readjusted difficulty too low for block {} from {}, {} should be at least {}".format(
+                        block_height_new, peer_ip, real_diff, diff_dropped
+                    )
+                )
         else:
-            raise ValueError ("Difficulty {} too low for block {} from {}, should be at least {}"
-                              .format(real_diff, block_height_new, peer_ip, diff0))
+            raise ValueError(
+                "Difficulty {} too low for block {} from {}, should be at least {}".format(
+                    real_diff, block_height_new, peer_ip, diff0
+                )
+            )
         return diff_save
     except Exception as e:
-            # Left for edge cases debug
-            print("MH3 check block", e)
-            exc_type, exc_obj, exc_tb = sys.exc_info()
-            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-            print(exc_type, fname, exc_tb.tb_lineno)
-            raise
+        # Left for edge cases debug
+        print("MH3 check block", e)
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+        print(exc_type, fname, exc_tb.tb_lineno)
+        raise
 
 
 def create_heavy3a(file_name="heavy3a.bin"):
@@ -166,13 +204,15 @@ def create_heavy3a(file_name="heavy3a.bin"):
         print("Regnet, no heavy file")
         return
     print("Creating Junction Noise file, this usually takes a few minutes...")
-    gen = DRBG(b"Bismuth is a chemical element with symbol Bi and atomic number 83. It is a pentavalent post-transition metal and one of the pnictogens with chemical properties resembling its lighter homologs arsenic and antimony.")
+    gen = DRBG(
+        b"Bismuth is a chemical element with symbol Bi and atomic number 83. It is a pentavalent post-transition metal and one of the pnictogens with chemical properties resembling its lighter homologs arsenic and antimony."
+    )
     # Size in Gb - No more than 4Gb from a single seed
     GB = 1
     # Do not change chunk size, it would change the file content.
-    CHUNK_SIZE = 1024*4  # time 3m20.990s
+    CHUNK_SIZE = 1024 * 4  # time 3m20.990s
     COUNT = GB * 1024 * 1024 * 1024 // CHUNK_SIZE
-    with open(file_name, 'wb') as f:
+    with open(file_name, "wb") as f:
         for chunks in range(COUNT):
             f.write(gen.generate(CHUNK_SIZE))
 

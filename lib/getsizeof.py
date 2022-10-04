@@ -22,18 +22,20 @@
 # taken from:
 # http://code.activestate.com/recipes/577504/
 
-from __future__ import absolute_import
-from __future__ import print_function
-from sys import getsizeof, stderr
-from itertools import chain
+from __future__ import absolute_import, print_function
+
 from collections import deque
+from itertools import chain
+from sys import getsizeof
+
 from six.moves import map
+
 try:
     import reprlib
 except:
     pass
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 def total_size(o, handlers={}, verbose=False):
@@ -48,19 +50,20 @@ def total_size(o, handlers={}, verbose=False):
                     OtherContainerClass: OtherContainerClass.get_elements}
     """
     dict_handler = lambda d: chain.from_iterable(list(d.items()))
-    all_handlers = {tuple: iter,
-                    list: iter,
-                    deque: iter,
-                    dict: dict_handler,
-                    set: iter,
-                    frozenset: iter,
-                    }
-    all_handlers.update(handlers)     # user handlers take precedence
-    seen = set()                      # track which object id's have already been seen
-    default_size = getsizeof(0)       # estimate sizeof object without __sizeof__
+    all_handlers = {
+        tuple: iter,
+        list: iter,
+        deque: iter,
+        dict: dict_handler,
+        set: iter,
+        frozenset: iter,
+    }
+    all_handlers.update(handlers)  # user handlers take precedence
+    seen = set()  # track which object id's have already been seen
+    default_size = getsizeof(0)  # estimate sizeof object without __sizeof__
 
     def sizeof(o):
-        if id(o) in seen:       # do not double count the same object
+        if id(o) in seen:  # do not double count the same object
             return 0
         seen.add(id(o))
         s = getsizeof(o, default_size)
@@ -79,6 +82,6 @@ def total_size(o, handlers={}, verbose=False):
 
 ##### Example call #####
 
-if __name__ == '__main__':
-    d = dict(a=1, b=2, c=3, d=[4, 5, 6, 7], e='a string of chars')
+if __name__ == "__main__":
+    d = dict(a=1, b=2, c=3, d=[4, 5, 6, 7], e="a string of chars")
     print((total_size(d, verbose=True)))

@@ -2,8 +2,8 @@
 # contact.py
 #
 # Copyright (C) 2007-2008 Francois Aucamp, Meraka Institute, CSIR
-# See AUTHORS for all authors and contact information. 
-# 
+# See AUTHORS for all authors and contact information.
+#
 # License: GNU Lesser General Public License, version 3 or later; see COPYING
 #          included in this archive for details.
 #
@@ -55,8 +55,7 @@ class Contact(object):
         return str(self)
 
     def __str__(self):
-        return '<%s at %r:%d>' % (
-            self.id[:6], self.address, self.port)
+        return "<%s at %r:%d>" % (self.id[:6], self.address, self.port)
 
     def __getattr__(self, name):
         """
@@ -73,28 +72,39 @@ class Contact(object):
         This happens via this contact's C{_networkProtocol} object (i.e. the
         host Node's C{_protocol} object).
         """
+
         def _sendRPC(*args, **kwargs):
             return self._networkProtocol.sendRPC(self, name, args, **kwargs)
+
         return _sendRPC
 
 
 class LayeredContact(Contact):
-
     def __init__(self, id, ipAddress, udpPort, networkProtocol, firstComm=0, layerID=0):
         self.layerID = layerID
-        super(LayeredContact, self).__init__(id, ipAddress, udpPort, networkProtocol, firstComm)
+        super(LayeredContact, self).__init__(
+            id, ipAddress, udpPort, networkProtocol, firstComm
+        )
 
     def __str__(self):
-        return '<Contact(%d) %s at %r:%d>' % (
-             self.layerID, self.id[:6], self.address, self.port)
+        return "<Contact(%d) %s at %r:%d>" % (
+            self.layerID,
+            self.id[:6],
+            self.address,
+            self.port,
+        )
 
     def __getattr__(self, name):
         def _sendRPC(*args, **kwargs):
-            kwargs['layerID'] = self.layerID
+            kwargs["layerID"] = self.layerID
             if _Debug:
-                print('[DHT CONTACT]: %r sending RPC %r args=%r kwargs=%r' % (self, name, args, kwargs))
+                print(
+                    "[DHT CONTACT]: %r sending RPC %r args=%r kwargs=%r"
+                    % (self, name, args, kwargs)
+                )
             ret = self._networkProtocol.sendRPC(self, name, args, **kwargs)
             if _Debug:
-                print('[DHT CONTACT]: %r RPC result is %r' % (self, ret))
+                print("[DHT CONTACT]: %r RPC result is %r" % (self, ret))
             return ret
+
         return _sendRPC

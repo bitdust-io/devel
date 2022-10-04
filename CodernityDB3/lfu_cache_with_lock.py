@@ -17,18 +17,21 @@
 
 
 from __future__ import absolute_import
-import six
+
 import functools
+from collections import defaultdict
 from heapq import nsmallest
 from operator import itemgetter
-from collections import defaultdict
 
+import six
 
 try:
     from collections import Counter
 except ImportError:
+
     class Counter(dict):
-        'Mapping where default values are zero'
+        "Mapping where default values are zero"
+
         def __missing__(self, key):
             return 0
 
@@ -44,6 +47,7 @@ def create_cache1lvl(lock_obj):
         """
         modified version of http://code.activestate.com/recipes/498245/
         """
+
         def decorating_function(user_function):
             cache = {}
             use_count = Counter()
@@ -53,15 +57,17 @@ def create_cache1lvl(lock_obj):
             def wrapper(key, *args, **kwargs):
                 # print('lfu_cache_with_lock.1lvl.wrapper %r' % key)
                 if isinstance(key, six.text_type):
-                    key = key.encode()            
+                    key = key.encode()
                 try:
                     result = cache[key]
                 except KeyError:
                     with lock:
                         if len(cache) == maxsize:
-                            for k, _ in nsmallest(maxsize // 10 or 1,
-                                                  iter(use_count.items()),
-                                                  key=itemgetter(1)):
+                            for k, _ in nsmallest(
+                                maxsize // 10 or 1,
+                                iter(use_count.items()),
+                                key=itemgetter(1),
+                            ):
                                 del cache[k], use_count[k]
                         cache[key] = user_function(key, *args, **kwargs)
                         result = cache[key]
@@ -78,7 +84,7 @@ def create_cache1lvl(lock_obj):
             def delete(key):
                 # print('lfu_cache_with_lock.1lvl.delete %r' % key)
                 if isinstance(key, six.text_type):
-                    key = key.encode()            
+                    key = key.encode()
                 try:
                     del cache[key]
                     del use_count[key]
@@ -90,7 +96,9 @@ def create_cache1lvl(lock_obj):
             wrapper.cache = cache
             wrapper.delete = delete
             return wrapper
+
         return decorating_function
+
     return cache1lvl
 
 
@@ -99,6 +107,7 @@ def create_cache2lvl(lock_obj):
         """
         modified version of http://code.activestate.com/recipes/498245/
         """
+
         def decorating_function(user_function):
             cache = {}
             use_count = defaultdict(Counter)
@@ -109,17 +118,16 @@ def create_cache2lvl(lock_obj):
                 key = args[0]
                 # print('lfu_cache_with_lock.2lvl.delete %r' % key)
                 if isinstance(key, six.text_type):
-                    key = key.encode()            
+                    key = key.encode()
                 try:
                     result = cache[key][args[1]]
                 except KeyError:
                     with lock:
                         if wrapper.cache_size == maxsize:
                             to_delete = maxsize / 10 or 1
-                            for k1, k2, v in nsmallest(to_delete,
-                                                       twolvl_iterator(
-                                                           use_count),
-                                                       key=itemgetter(2)):
+                            for k1, k2, v in nsmallest(
+                                to_delete, twolvl_iterator(use_count), key=itemgetter(2)
+                            ):
                                 del cache[k1][k2], use_count[k1][k2]
                                 if not cache[k1]:
                                     del cache[k1]
@@ -143,7 +151,7 @@ def create_cache2lvl(lock_obj):
             def delete(key, *args):
                 # print('lfu_cache_with_lock.2lvl.delete %r' % key)
                 if isinstance(key, six.text_type):
-                    key = key.encode()            
+                    key = key.encode()
                 if args:
                     try:
                         del cache[key][args[0]]
@@ -169,5 +177,7 @@ def create_cache2lvl(lock_obj):
             wrapper.delete = delete
             wrapper.cache_size = 0
             return wrapper
+
         return decorating_function
+
     return cache2lvl

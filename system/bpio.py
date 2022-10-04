@@ -40,36 +40,36 @@ Most used method here is ``log`` - prints a log string.
 TODO: need to do some refactoring here
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
-from io import open
 
-#------------------------------------------------------------------------------
-
-import os
-import sys
-import imp
-import platform
 import glob
+import imp
+import os
+import platform
 import re
 import shutil
-
-#------------------------------------------------------------------------------
+import sys
+from io import open
 
 from lib import strng
-
 from logs import lg
-
 from system import local_fs
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
+
+# ------------------------------------------------------------------------------
+
+
+# ------------------------------------------------------------------------------
 
 LocaleInstalled = False
 PlatformInfo = None
 X11isRunning = None
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 def init():
@@ -106,18 +106,20 @@ def InstallLocale():
         return False
     try:
         import sys
+
         if sys.version_info[0] == 2:
             reload(sys)  # @UndefinedVariable
             if Windows():
                 if hasattr(sys, "setdefaultencoding"):
                     import locale
+
                     denc = locale.getpreferredencoding()
                     if not denc:
-                        sys.setdefaultencoding('UTF8')
+                        sys.setdefaultencoding("UTF8")
                     else:
                         sys.setdefaultencoding(denc)
             else:
-                sys.setdefaultencoding('UTF8')
+                sys.setdefaultencoding("UTF8")
         LocaleInstalled = True
     except:
         lg.exc()
@@ -131,8 +133,8 @@ def ostype():
     global PlatformInfo
     if PlatformInfo is None:
         PlatformInfo = list(platform.uname())
-        if sys.executable == 'android_python' or ('ANDROID_ARGUMENT' in os.environ):
-            PlatformInfo[0] = 'Android'
+        if sys.executable == "android_python" or ("ANDROID_ARGUMENT" in os.environ):
+            PlatformInfo[0] = "Android"
     return PlatformInfo[0]
 
 
@@ -154,9 +156,13 @@ def osinfo():
     if Android():
         try:
             u = platform.uname()
-            return '%s %s %s' % (strng.to_text(u[0]), strng.to_text(u[2]), strng.to_text(u[3]))
+            return "%s %s %s" % (
+                strng.to_text(u[0]),
+                strng.to_text(u[2]),
+                strng.to_text(u[3]),
+            )
         except:
-            return 'Android'
+            return "Android"
     return strng.to_text(platform.platform()).strip()
 
 
@@ -165,25 +171,26 @@ def osinfofull():
     Return detailed system info.
     """
     import pprint
-    o = ''
-    o += '=====================================================\n'
-    o += '=====================================================\n'
-    o += '=====================================================\n'
-    o += 'platform.uname(): ' + strng.to_text(platform.uname()) + '\n'
+
+    o = ""
+    o += "=====================================================\n"
+    o += "=====================================================\n"
+    o += "=====================================================\n"
+    o += "platform.uname(): " + strng.to_text(platform.uname()) + "\n"
     try:
-        o += '__file__: ' + strng.to_text(__file__) + '\n'
+        o += "__file__: " + strng.to_text(__file__) + "\n"
     except:
-        o += 'variable __file__ is not defined\n'
-    o += 'sys.executable: ' + sys.executable + '\n'
-    o += 'os.path.abspath("."): ' + os.path.abspath('.') + '\n'
-    o += 'os.path.abspath(sys.argv[0]): ' + os.path.abspath(sys.argv[0]) + '\n'
-    o += 'os.path.expanduser("~"): ' + os.path.expanduser('~') + '\n'
-    o += 'sys.argv: ' + pprint.pformat(sys.argv) + '\n'
-    o += 'sys.path:\n' + pprint.pformat(sys.path) + '\n'
-    o += 'os.environ:\n' + pprint.pformat(list(os.environ.items())) + '\n'
-    o += '=====================================================\n'
-    o += '=====================================================\n'
-    o += '=====================================================\n'
+        o += "variable __file__ is not defined\n"
+    o += "sys.executable: " + sys.executable + "\n"
+    o += 'os.path.abspath("."): ' + os.path.abspath(".") + "\n"
+    o += "os.path.abspath(sys.argv[0]): " + os.path.abspath(sys.argv[0]) + "\n"
+    o += 'os.path.expanduser("~"): ' + os.path.expanduser("~") + "\n"
+    o += "sys.argv: " + pprint.pformat(sys.argv) + "\n"
+    o += "sys.path:\n" + pprint.pformat(sys.path) + "\n"
+    o += "os.environ:\n" + pprint.pformat(list(os.environ.items())) + "\n"
+    o += "=====================================================\n"
+    o += "=====================================================\n"
+    o += "=====================================================\n"
     return o
 
 
@@ -191,7 +198,7 @@ def windows_version():
     """
     Useful to detect current Windows version: XP, Vista, 7 or 8.
     """
-    if getattr(sys, 'getwindowsversion', None) is not None:
+    if getattr(sys, "getwindowsversion", None) is not None:
         return sys.getwindowsversion()[0]  # @UndefinedVariable
     return 0
 
@@ -221,7 +228,7 @@ def Android():
     """
     Return True if running on Android inside Kivy.
     """
-    return ostype() == 'Android'
+    return ostype() == "Android"
 
 
 def isFrozen():
@@ -235,13 +242,14 @@ def isConsoled():
     """
     Return True if output can be sent to console.
     """
-    if getExecutableFilename().count('pythonw.exe'):
+    if getExecutableFilename().count("pythonw.exe"):
         return False
     if not sys.stdout:
         return False
     return True
 
-#-------------------------------------------------------------------------------
+
+# -------------------------------------------------------------------------------
 
 
 def list_dir_safe(dirpath):
@@ -269,7 +277,7 @@ def list_dir_recursive(dirpath):
     return r
 
 
-def traverse_dir_recursive(callback, basepath, relpath=''):
+def traverse_dir_recursive(callback, basepath, relpath=""):
     """
     Call ``callback`` method for every file and folder under ``basepath``.
 
@@ -278,7 +286,7 @@ def traverse_dir_recursive(callback, basepath, relpath=''):
     """
     for name in os.listdir(basepath):
         realpath = os.path.join(basepath, name)
-        subpath = name if relpath == '' else relpath + '/' + name
+        subpath = name if relpath == "" else relpath + "/" + name
         go_down = callback(realpath, subpath, name)
         if os.path.isdir(realpath) and go_down:
             traverse_dir_recursive(callback, realpath, subpath)
@@ -318,7 +326,13 @@ def rmdir_recursive(dirpath, ignore_errors=False, pre_callback=None):
                         os.remove(full_name)
                         counter += 1
                     except Exception as exc:
-                        lg.err('can not remove file %r : %r' % (full_name, exc, ))
+                        lg.err(
+                            "can not remove file %r : %r"
+                            % (
+                                full_name,
+                                exc,
+                            )
+                        )
                         continue
     if pre_callback:
         if not pre_callback(dirpath):
@@ -329,7 +343,13 @@ def rmdir_recursive(dirpath, ignore_errors=False, pre_callback=None):
         try:
             os.rmdir(dirpath)
         except Exception as exc:
-            lg.err('can not remove dir %r : %r' % (dirpath, exc, ))
+            lg.err(
+                "can not remove dir %r : %r"
+                % (
+                    dirpath,
+                    exc,
+                )
+            )
     return counter
 
 
@@ -344,7 +364,9 @@ def move_dir_recursive(src, dest, ignore=None):
             ignored = set()
         for f in files:
             if f not in ignored:
-                move_dir_recursive(os.path.join(src, f), os.path.join(dest, f), ignore=ignore)
+                move_dir_recursive(
+                    os.path.join(src, f), os.path.join(dest, f), ignore=ignore
+                )
     else:
         if os.path.isfile(src):
             shutil.copyfile(src, dest)
@@ -355,10 +377,11 @@ def getDirectorySize(directory, include_subfolders=True):
     Platform dependent way to calculate folder size.
     """
     if Windows():
-        import win32file  # @UnresolvedImport
-        import win32con  # @UnresolvedImport
         import pywintypes  # @UnresolvedImport
-        DIR_EXCLUDES = set(['.', '..'])
+        import win32con  # @UnresolvedImport
+        import win32file  # @UnresolvedImport
+
+        DIR_EXCLUDES = set([".", ".."])
         MASK = win32con.FILE_ATTRIBUTE_DIRECTORY | win32con.FILE_ATTRIBUTE_SYSTEM
         REQUIRED = win32con.FILE_ATTRIBUTE_DIRECTORY
         FindFilesW = win32file.FindFilesW
@@ -366,7 +389,7 @@ def getDirectorySize(directory, include_subfolders=True):
         def _get_dir_size(path):
             total_size = 0
             try:
-                items = FindFilesW(path + r'\*')
+                items = FindFilesW(path + r"\*")
             except pywintypes.error as ex:
                 return total_size
             for item in items:
@@ -374,8 +397,9 @@ def getDirectorySize(directory, include_subfolders=True):
                 if item[0] & MASK == REQUIRED and include_subfolders:
                     name = item[8]
                     if name not in DIR_EXCLUDES:
-                        total_size += _get_dir_size(path + '\\' + name)
+                        total_size += _get_dir_size(path + "\\" + name)
             return total_size
+
         return _get_dir_size(directory)
     dir_size = 0
     if not include_subfolders:
@@ -397,7 +421,9 @@ def getDirectorySize(directory, include_subfolders=True):
                         pass
     return dir_size
 
-#-------------------------------------------------------------------------------
+
+# -------------------------------------------------------------------------------
+
 
 def WriteBinaryFile(filename, data):
     return local_fs.WriteBinaryFile(filename=filename, data=data)
@@ -414,7 +440,8 @@ def WriteTextFile(filepath, data):
 def ReadTextFile(filename):
     return local_fs.ReadTextFile(filename=filename)
 
-#-------------------------------------------------------------------------------
+
+# -------------------------------------------------------------------------------
 
 
 def _pack_list(lst):
@@ -425,7 +452,7 @@ def _pack_list(lst):
     strings and not contain "\n".\ This is useful to store a list of
     users IDs in the local file.
     """
-    return strng.to_text(len(lst)) + u'\n' + u'\n'.join(lst)
+    return strng.to_text(len(lst)) + "\n" + "\n".join(lst)
 
 
 def _unpack_list(src):
@@ -445,7 +472,9 @@ def _unpack_list(src):
         return words, None
     res = words[1:]
     if len(res) < length:
-        res += [u'', ] * (length - len(res))
+        res += [
+            "",
+        ] * (length - len(res))
     elif len(res) > length:
         return res[:length], res[length:]
     return res, None
@@ -481,7 +510,9 @@ def _pack_dict(dictionary, sort=False):
         seq = sorted(dictionary.keys())
     else:
         seq = list(dictionary.keys())
-    return u'\n'.join([u'%s %s' % (k, strng.to_text(strng.to_text(dictionary[k]))) for k in seq])
+    return "\n".join(
+        ["%s %s" % (k, strng.to_text(strng.to_text(dictionary[k]))) for k in seq]
+    )
 
 
 def _unpack_dict_from_list(lines):
@@ -491,10 +522,10 @@ def _unpack_dict_from_list(lines):
     """
     dct = {}
     for line in lines:
-        words = line.split(u' ')
+        words = line.split(" ")
         if len(words) < 2:
             continue
-        dct[words[0]] = u' '.join(words[1:])
+        dct[words[0]] = " ".join(words[1:])
     return dct
 
 
@@ -502,7 +533,7 @@ def _unpack_dict(src):
     """
     The core method, creates dictionary from string.
     """
-    lines = strng.to_text(src).split(u'\n')
+    lines = strng.to_text(src).split("\n")
     return _unpack_dict_from_list(lines)
 
 
@@ -557,7 +588,8 @@ def _dir_remove(path):
     """
     rmdir_recursive(path)
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def backup_and_remove(path):
@@ -568,25 +600,28 @@ def backup_and_remove(path):
     to rename the original file, but also do some checking before. If
     file with ".backup" already exist it will try to remove it before.
     """
-    bkpath = path + '.backup'
+    bkpath = path + ".backup"
     if not os.path.exists(path):
         return
     if os.path.exists(bkpath):
         try:
             os.remove(bkpath)
         except:
-            lg.out(1, 'bpio.backup_and_remove ERROR can not remove file ' + bkpath)
+            lg.out(1, "bpio.backup_and_remove ERROR can not remove file " + bkpath)
             lg.exc()
     try:
         os.rename(path, bkpath)
     except:
-        lg.out(1, 'bpio.backup_and_remove ERROR can not rename file %s to %s' % (path, bkpath))
+        lg.out(
+            1,
+            "bpio.backup_and_remove ERROR can not rename file %s to %s" % (path, bkpath),
+        )
         lg.exc()
     if os.path.exists(path):
         try:
             os.remove(path)
         except:
-            lg.out(1, 'bpio.backup_and_remove ERROR can not remove file ' + path)
+            lg.out(1, "bpio.backup_and_remove ERROR can not remove file " + path)
             lg.exc()
 
 
@@ -597,7 +632,7 @@ def restore_and_remove(path, overwrite_existing=False):
     Just renames the file with ".backup" at the end to its 'true' name.
     This is reverse method to ``backup_and_remove``.
     """
-    bkpath = path + '.backup'
+    bkpath = path + ".backup"
     if not os.path.exists(bkpath):
         return
     if os.path.exists(path):
@@ -606,12 +641,15 @@ def restore_and_remove(path, overwrite_existing=False):
         try:
             os.remove(path)
         except:
-            lg.out(1, 'bpio.restore_and_remove ERROR can not remove file ' + path)
+            lg.out(1, "bpio.restore_and_remove ERROR can not remove file " + path)
             lg.exc()
     try:
         os.rename(bkpath, path)
     except:
-        lg.out(1, 'bpio.restore_and_remove ERROR can not rename file %s to %s' % (path, bkpath))
+        lg.out(
+            1,
+            "bpio.restore_and_remove ERROR can not rename file %s to %s" % (path, bkpath),
+        )
         lg.exc()
 
 
@@ -619,16 +657,17 @@ def remove_backuped_file(path):
     """
     Tries to remove the file with ".backup" at the end.
     """
-    bkpath = path + '.backup'
+    bkpath = path + ".backup"
     if not os.path.exists(bkpath):
         return
     try:
         os.remove(bkpath)
     except:
-        lg.out(1, 'bpio.remove_backuped_file ERROR can not remove file ' + bkpath)
+        lg.out(1, "bpio.remove_backuped_file ERROR can not remove file " + bkpath)
         lg.exc()
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def LowerPriority():
@@ -646,13 +685,15 @@ def LowerPriority():
         #   "Recipe 496767: Set Process Priority In Windows" on ActiveState
         #   http://code.activestate.com/recipes/496767/
         import win32api  # @UnresolvedImport
-        import win32process  # @UnresolvedImport
         import win32con  # @UnresolvedImport
+        import win32process  # @UnresolvedImport
+
         pid = win32api.GetCurrentProcessId()
         handle = win32api.OpenProcess(win32con.PROCESS_ALL_ACCESS, True, pid)
         win32process.SetPriorityClass(handle, win32process.BELOW_NORMAL_PRIORITY_CLASS)
     else:
         import os
+
         os.nice(20)
 
 
@@ -665,16 +706,19 @@ def HigherPriority():
         isWindows = True
     if isWindows:
         import win32api  # @UnresolvedImport
-        import win32process  # @UnresolvedImport
         import win32con  # @UnresolvedImport
+        import win32process  # @UnresolvedImport
+
         pid = win32api.GetCurrentProcessId()
         handle = win32api.OpenProcess(win32con.PROCESS_ALL_ACCESS, True, pid)
         win32process.SetPriorityClass(handle, win32process.REALTIME_PRIORITY_CLASS)
     else:
         import os
+
         os.nice(1)
 
-#-------------------------------------------------------------------------------
+
+# -------------------------------------------------------------------------------
 
 
 def shortPath(path):
@@ -691,6 +735,7 @@ def shortPath(path):
         return strng.to_text(path_)
     try:
         import win32api  # @UnresolvedImport
+
         spath = win32api.GetShortPathName(path_)
         return strng.to_text(spath)
     except:
@@ -710,6 +755,7 @@ def longPath(path):
         return strng.to_text(path_)
     try:
         import win32api  # @UnresolvedImport
+
         lpath = win32api.GetLongPathName(path_)
         return strng.to_text(lpath)
     except:
@@ -737,11 +783,11 @@ def remotePath(path):
     Simplify and clean "remote" path value.
     """
     p = strng.to_text(path)
-    if p == u'' or p == u'/':
+    if p == "" or p == "/":
         return p
-    p = p.lstrip(u'/').lstrip(u'\\')
-    if p.endswith(u'/') and len(p) > 1:
-        p = p.rstrip(u'/')
+    p = p.lstrip("/").lstrip("\\")
+    if p.endswith("/") and len(p) > 1:
+        p = p.rstrip("/")
     return p
 
 
@@ -756,23 +802,23 @@ def portablePath(path):
     - convert to unicode
     """
     path = strng.to_text(path)
-    if path == u'' or path == u'/':
+    if path == "" or path == "/":
         return path
-    if Windows() and len(path) == 2 and path[1] == u':':
+    if Windows() and len(path) == 2 and path[1] == ":":
         # "C:" -> "C:/"
-        path += u'/'
-    if path.count(u'~'):
+        path += "/"
+    if path.count("~"):
         path = os.path.expanduser(path)
     p = os.path.abspath(path)
     if Windows():
-        p = p.replace(u'\\', u'/')
+        p = p.replace("\\", "/")
         if len(p) >= 2:
-            if p[1] == u':':
+            if p[1] == ":":
                 p = p[0].lower() + p[1:]
-            elif p[:2] == u'//':
-                p = u'\\\\' + p[2:]
-    if p.endswith(u'/') and len(p) > 1:
-        p = p.rstrip(u'/')
+            elif p[:2] == "//":
+                p = "\\\\" + p[2:]
+    if p.endswith("/") and len(p) > 1:
+        p = p.rstrip("/")
     return p
 
 
@@ -815,12 +861,13 @@ def pathIsDir(localpath):
     if Linux():
         try:
             import stat
+
             st = os.path.stat(localpath)
             return stat.S_ISDIR(st.st_mode)
         except:
             return False
     # now we are in really big trouble
-    raise Exception('path is not exist: %s' % p)
+    raise Exception("path is not exist: %s" % p)
     return False
 
 
@@ -828,10 +875,10 @@ def pathIsDriveLetter(path):
     """
     Return True if ``path`` is a Windows drive letter.
     """
-    p = path.rstrip('/').rstrip('\\')
+    p = path.rstrip("/").rstrip("\\")
     if len(p) != 2:
         return False
-    if p[1] != ':':
+    if p[1] != ":":
         return False
     if not p[0].isalpha():
         return False
@@ -845,16 +892,17 @@ def pathIsNetworkLocation(path):
         >>> pathIsNetworkLocation(r'\\remote_machine')
         True
     """
-    p = path.rstrip('/').rstrip('\\')
+    p = path.rstrip("/").rstrip("\\")
     if len(p) < 3:
         return False
-    if not p.startswith('\\\\'):
+    if not p.startswith("\\\\"):
         return False
-    if p[2:].count('\\') or p[2:].count('/'):
+    if p[2:].count("\\") or p[2:].count("/"):
         return False
     return True
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def main_is_frozen():
@@ -863,9 +911,11 @@ def main_is_frozen():
 
     http://www.py2exe.org/index.cgi/HowToDetermineIfRunningFromExe
     """
-    return (hasattr(sys, "frozen") or       # new py2exe
-            hasattr(sys, "importers") or    # old py2exe
-            imp.is_frozen("__main__"))      # tools/freeze
+    return (
+        hasattr(sys, "frozen")
+        or hasattr(sys, "importers")  # new py2exe
+        or imp.is_frozen("__main__")  # old py2exe
+    )  # tools/freeze
 
 
 def isGUIpossible():
@@ -894,7 +944,8 @@ def X11_is_running():
     if X11isRunning is not None:
         return X11isRunning
     try:
-        from subprocess import Popen, PIPE
+        from subprocess import PIPE, Popen
+
         p = Popen(["xset", "-q"], stdout=PIPE, stderr=PIPE)
         p.communicate()
         result = p.returncode == 0
@@ -903,7 +954,8 @@ def X11_is_running():
     X11isRunning = result
     return X11isRunning
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def getExecutableDir():
@@ -950,9 +1002,10 @@ def getUserName():
             return getpass.getuser()
     except:
         pass
-    return os.path.basename(strng.to_text(os.path.expanduser('~')))
+    return os.path.basename(strng.to_text(os.path.expanduser("~")))
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def listHomeDirLinux():
@@ -962,7 +1015,7 @@ def listHomeDirLinux():
     if Windows():
         return []
     rootlist = []
-    homedir = os.path.expanduser('~')
+    homedir = os.path.expanduser("~")
     for dirname in os.listdir(homedir):
         if os.path.isdir(os.path.join(homedir, dirname)):
             rootlist.append(dirname)
@@ -982,7 +1035,10 @@ def listLocalDrivesWindows():
     try:
         import win32api  # @UnresolvedImport
         import win32file  # @UnresolvedImport
-        drives = (drive for drive in win32api.GetLogicalDriveStrings().split("\000") if drive)
+
+        drives = (
+            drive for drive in win32api.GetLogicalDriveStrings().split("\000") if drive
+        )
         for drive in drives:
             if win32file.GetDriveType(drive) == 3:
                 rootlist.append(drive)
@@ -998,12 +1054,13 @@ def listRemovableDrivesWindows():
     l = []
     try:
         import win32file  # @UnresolvedImport
+
         drivebits = win32file.GetLogicalDrives()
         for d in range(1, 26):
             mask = 1 << d
             if drivebits & mask:
                 # here if the drive is at least there
-                drname = '%c:\\' % chr(ord('A') + d)
+                drname = "%c:\\" % chr(ord("A") + d)
                 t = win32file.GetDriveType(drname)
                 if t == win32file.DRIVE_REMOVABLE:
                     l.append(drname)
@@ -1019,7 +1076,7 @@ def listRemovableDrivesLinux():
     The same idea with ``listRemovableDrivesWindows``.
     """
     try:
-        return [os.path.join('/media', x) for x in os.listdir('/media')]
+        return [os.path.join("/media", x) for x in os.listdir("/media")]
     except:
         return []
 
@@ -1044,19 +1101,19 @@ def listMountPointsLinux():
 
     Used to detect locations for donated space and local backups.
     """
-    mounts = os.popen('mount')
+    mounts = os.popen("mount")
     result = []
     if Linux():
-        mch = re.compile('^(.+?) on (.+?) type .+?$')
+        mch = re.compile("^(.+?) on (.+?) type .+?$")
     else:  # Mac
-        mch = re.compile('^(.+?) on (.+?).*?$')
+        mch = re.compile("^(.+?) on (.+?).*?$")
     # mo = re.match('^(.+?) on (.+?) type .+?$', line)
     for line in mounts.readlines():
         mo = mch.match(line)
         if mo:
             device = mo.group(1)
             mount_point = mo.group(2)
-            if device.startswith('/dev/'):
+            if device.startswith("/dev/"):
                 result.append(mount_point)
     return result
 
@@ -1070,7 +1127,8 @@ def getMountPointLinux(path):
         path = os.path.dirname(path)
     return path
 
-#-------------------------------------------------------------------------------
+
+# -------------------------------------------------------------------------------
 
 
 def find_process(applist):
@@ -1083,6 +1141,7 @@ def find_process(applist):
         return []
     try:
         import psutil
+
         pidsL = []
         for p in psutil.process_iter():
             try:
@@ -1093,11 +1152,11 @@ def find_process(applist):
             if p_pid == os.getpid():
                 continue
             try:
-                cmdline = ' '.join(p_cmdline)
+                cmdline = " ".join(p_cmdline)
             except:
                 continue
             for app in applist:
-                if app.startswith('regexp:'):
+                if app.startswith("regexp:"):
                     if re.match(app[7:], cmdline) is not None:
                         pidsL.append(p_pid)
                 else:
@@ -1144,7 +1203,7 @@ def list_processes_linux():
     ('6643', '/bin/bash')
     ('7451', '/usr/bin/python /usr/bin/ipython')
     """
-    for pid_path in glob.glob('/proc/[0-9]*'):
+    for pid_path in glob.glob("/proc/[0-9]*"):
         try:
             # cmdline represents the command whith which the process was started
             f = open("%s/cmdline" % pid_path)
@@ -1173,7 +1232,7 @@ def find_process_linux(applist):
         if pid == os.getpid():
             continue
         for app in applist:
-            if app.startswith('regexp:'):
+            if app.startswith("regexp:"):
                 if re.match(app[7:], cmdline) is not None:
                     pidsL.append(pid)
             else:
@@ -1189,6 +1248,7 @@ def find_process_win32(applist):
     pidsL = []
     try:
         import win32com.client  # @UnresolvedImport
+
         objWMI = win32com.client.GetObject("winmgmts:\\\\.\\root\\CIMV2")
         colProcs = objWMI.ExecQuery("SELECT * FROM Win32_Process")
         for Item in colProcs:
@@ -1199,7 +1259,7 @@ def find_process_win32(applist):
             if Item.CommandLine:
                 cmdline += Item.CommandLine.lower()
             for app in applist:
-                if app.startswith('regexp:'):
+                if app.startswith("regexp:"):
                     if re.match(app[7:], cmdline) is not None:
                         pidsL.append(pid)
                 else:
@@ -1216,6 +1276,7 @@ def kill_process_linux(pid):
     """
     try:
         import signal
+
         os.kill(pid, signal.SIGTERM)
     except:
         lg.exc()
@@ -1226,7 +1287,11 @@ def kill_process_win32(pid):
     Call to system Windows API ``TerminateProcess`` method.
     """
     try:
-        from win32api import TerminateProcess, OpenProcess, CloseHandle  # @UnresolvedImport
+        from win32api import (  # @UnresolvedImport
+            CloseHandle,
+            OpenProcess,
+            TerminateProcess,
+        )
     except:
         lg.exc()
         return False
@@ -1234,12 +1299,12 @@ def kill_process_win32(pid):
         PROCESS_TERMINATE = 1
         handle = OpenProcess(PROCESS_TERMINATE, False, pid)
     except:
-        lg.out(2, 'bpio.kill_process_win32 can not open process %d' % pid)
+        lg.out(2, "bpio.kill_process_win32 can not open process %d" % pid)
         return False
     try:
         TerminateProcess(handle, -1)
     except:
-        lg.out(2, 'bpio.kill_process_win32 can not terminate process %d' % pid)
+        lg.out(2, "bpio.kill_process_win32 can not terminate process %d" % pid)
         return False
     try:
         CloseHandle(handle)
@@ -1248,26 +1313,32 @@ def kill_process_win32(pid):
         return False
     return True
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def find_main_process(pid_file_path=None, extra_lookups=[], check_processid_file=True):
     if Android():
         return []
     q = [
-        'bitdustnode.exe',
-        'BitDustNode.exe',
-        'BitDustConsole.exe',
+        "bitdustnode.exe",
+        "BitDustNode.exe",
+        "BitDustConsole.exe",
         # 'bitdust.py',
     ]
-    if os.environ.get('BITDUST_IN_DOCKER') == '1':
-        q.extend([
-            'regexp:^.*python.*bitdust.py.*?$',
-        ])
+    if os.environ.get("BITDUST_IN_DOCKER") == "1":
+        q.extend(
+            [
+                "regexp:^.*python.*bitdust.py.*?$",
+            ]
+        )
     else:
-        q.extend([
-            'regexp:^.*(?<!\/root\/\.bitdust\/venv\/bin\/)python.*bitdust.py.*?$',
-            'regexp:^.*(?<!\/root\/\.bitdust\/venv\/bin\/)Python.*bitdust.py.*?$',
-        ])
+        q.extend(
+            [
+                "regexp:^.*(?<!\/root\/\.bitdust\/venv\/bin\/)python.*bitdust.py.*?$",
+                "regexp:^.*(?<!\/root\/\.bitdust\/venv\/bin\/)Python.*bitdust.py.*?$",
+            ]
+        )
     q += extra_lookups
     appList = find_process(q)
     if not appList:
@@ -1277,7 +1348,8 @@ def find_main_process(pid_file_path=None, extra_lookups=[], check_processid_file
     try:
         if not pid_file_path:
             from main import settings
-            pid_file_path = os.path.join(settings.MetaDataDir(), 'processid')
+
+            pid_file_path = os.path.join(settings.MetaDataDir(), "processid")
         processid = int(ReadTextFile(pid_file_path))
     except:
         processid = None
@@ -1285,28 +1357,35 @@ def find_main_process(pid_file_path=None, extra_lookups=[], check_processid_file
         return appList
     if processid not in appList:
         return []
-    return [processid, ]
+    return [
+        processid,
+    ]
 
 
 def lookup_main_process():
     q = [
-        'bitdustnode.exe',
-        'BitDustNode.exe',
-        'BitDustConsole.exe',
-        'bpmain.py',
+        "bitdustnode.exe",
+        "BitDustNode.exe",
+        "BitDustConsole.exe",
+        "bpmain.py",
     ]
-    if os.environ.get('BITDUST_IN_DOCKER') == '1':
-        q.extend([
-            'regexp:^.*python.*bitdust.py.*?$',
-        ])
+    if os.environ.get("BITDUST_IN_DOCKER") == "1":
+        q.extend(
+            [
+                "regexp:^.*python.*bitdust.py.*?$",
+            ]
+        )
     else:
-        q.extend([
-            'regexp:^.*(?<!\/root\/\.bitdust\/venv\/bin\/)python.*bitdust.py.*?$',
-            'regexp:^.*(?<!\/root\/\.bitdust\/venv\/bin\/)Python.*bitdust.py.*?$',
-        ])
+        q.extend(
+            [
+                "regexp:^.*(?<!\/root\/\.bitdust\/venv\/bin\/)python.*bitdust.py.*?$",
+                "regexp:^.*(?<!\/root\/\.bitdust\/venv\/bin\/)Python.*bitdust.py.*?$",
+            ]
+        )
     return find_process(q)
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def detect_number_of_cpu_cores():
@@ -1316,7 +1395,7 @@ def detect_number_of_cpu_cores():
     # for Linux, Unix and MacOS
     if hasattr(os, "sysconf"):
         if "SC_NPROCESSORS_ONLN" in os.sysconf_names:
-            #Linux and Unix
+            # Linux and Unix
             ncpus = os.sysconf("SC_NPROCESSORS_ONLN")
             if isinstance(ncpus, int) and ncpus > 0:
                 return ncpus

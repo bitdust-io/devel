@@ -16,12 +16,13 @@
 # limitations under the License.
 
 from __future__ import absolute_import
+
 from threading import RLock
 
 from CodernityDB.env import cdb_environment
 
-cdb_environment['mode'] = "threads"
-cdb_environment['rlock_obj'] = RLock
+cdb_environment["mode"] = "threads"
+cdb_environment["rlock_obj"] = RLock
 
 
 from .database_safe_shared import SafeDatabase
@@ -34,4 +35,5 @@ class ThreadSafeDatabase(SafeDatabase):
     on different methods / different indexes etc. It's completely different
     implementation of locking than SuperThreadSafe one.
     """
+
     pass

@@ -23,10 +23,9 @@ __all__ = ["HAVE_SSL", "ssl", "SSLError", "SSLWantReadError", "SSLWantWriteError
 
 try:
     import ssl
-    from ssl import SSLError
-    from ssl import SSLWantReadError
-    from ssl import SSLWantWriteError
-    if hasattr(ssl, 'SSLContext') and hasattr(ssl.SSLContext, 'check_hostname'):
+    from ssl import SSLError, SSLWantReadError, SSLWantWriteError
+
+    if hasattr(ssl, "SSLContext") and hasattr(ssl.SSLContext, "check_hostname"):
         HAVE_CONTEXT_CHECK_HOSTNAME = True
     else:
         HAVE_CONTEXT_CHECK_HOSTNAME = False

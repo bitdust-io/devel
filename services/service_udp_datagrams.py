@@ -31,6 +31,7 @@ module:: service_udp_datagrams
 """
 
 from __future__ import absolute_import
+
 from services.local_service import LocalService
 
 
@@ -40,22 +41,25 @@ def create_service():
 
 class UDPDatagramsService(LocalService):
 
-    service_name = 'service_udp_datagrams'
-    config_path = 'services/udp-datagrams/enabled'
+    service_name = "service_udp_datagrams"
+    config_path = "services/udp-datagrams/enabled"
     start_suspended = True
 
     def dependent_on(self):
         return [
-            'service_network',
+            "service_network",
         ]
 
     def start(self):
-        from logs import lg
         from lib import udp
+        from logs import lg
         from main import settings
         from main.config import conf
+
         udp_port = settings.getUDPPort()
-        conf().addConfigNotifier('services/udp-datagrams/udp-port', self._on_udp_port_modified)
+        conf().addConfigNotifier(
+            "services/udp-datagrams/udp-port", self._on_udp_port_modified
+        )
         if not udp.proto(udp_port):
             try:
                 udp.listen(udp_port)
@@ -68,24 +72,27 @@ class UDPDatagramsService(LocalService):
         from lib import udp
         from main import settings
         from main.config import conf
+
         udp_port = settings.getUDPPort()
         if udp.proto(udp_port):
             udp.close(udp_port)
-        conf().removeConfigNotifier('services/udp-datagrams/udp-port')
+        conf().removeConfigNotifier("services/udp-datagrams/udp-port")
         return True
 
     def on_suspend(self, *args, **kwargs):
         from lib import udp
         from main import settings
+
         udp_port = settings.getUDPPort()
         if udp.proto(udp_port):
             udp.close(udp_port)
         return True
 
     def on_resume(self, *args, **kwargs):
-        from logs import lg
         from lib import udp
+        from logs import lg
         from main import settings
+
         udp_port = settings.getUDPPort()
         if not udp.proto(udp_port):
             try:
@@ -96,4 +103,5 @@ class UDPDatagramsService(LocalService):
 
     def _on_udp_port_modified(self, path, value, oldvalue, result):
         from p2p import network_connector
-        network_connector.A('reconnect')
+
+        network_connector.A("reconnect")

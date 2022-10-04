@@ -40,19 +40,20 @@ MacOS: /Users/$USER/.bitdust
 
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 import os
-import sys
 import platform
+import sys
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _BaseDirPath = None
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
-def print_text(msg, nl='\n'):
+
+def print_text(msg, nl="\n"):
     """
     Send some output to the console.
     """
@@ -104,24 +105,27 @@ def default_base_dir_portable():
     """
     if platform.uname()[0] == "Windows":
         # TODO: move somewhere on Win10 ...
-        return os.path.join(os.path.expanduser('~'), '.bitdust')
+        return os.path.join(os.path.expanduser("~"), ".bitdust")
 
     elif platform.uname()[0] == "Linux":
-        if 'ANDROID_ARGUMENT' in os.environ:
+        if "ANDROID_ARGUMENT" in os.environ:
             # We are on Android, it must be in /storage/emulated/0/.bitdust/
             # I also tried /data/user/0/org.kivy.bitdust/files/app/.bitdust/ but then I can't browse files from other apps
             # return os.path.join(os.environ.get('ANDROID_APP_PATH'), '.bitdust')
-            return os.path.join('/storage/emulated/0/Android/data/org.bitdust_io.bitdust1/files/Documents', '.bitdust')
+            return os.path.join(
+                "/storage/emulated/0/Android/data/org.bitdust_io.bitdust1/files/Documents",
+                ".bitdust",
+            )
 
         # This should be okay : /home/veselin/.bitdust/
-        return os.path.join(os.path.expanduser('~'), '.bitdust')
+        return os.path.join(os.path.expanduser("~"), ".bitdust")
 
     elif platform.uname()[0] == "Darwin":
         # This should be okay : /Users/veselin/.bitdust/
-        return os.path.join(os.path.expanduser('~'), '.bitdust')
+        return os.path.join(os.path.expanduser("~"), ".bitdust")
 
     # otherwise just default : ".bitdust/" in user root folder
-    return os.path.join(os.path.expanduser('~'), '.bitdust')
+    return os.path.join(os.path.expanduser("~"), ".bitdust")
 
 
 def init_base_dir(base_dir=None):
@@ -165,7 +169,9 @@ def init_base_dir(base_dir=None):
     # /..
     #   /.bitdust - data files
     #   /bitdust  - binary files
-    path1 = str(os.path.abspath(os.path.join(get_executable_location(), '..', '.bitdust')))
+    path1 = str(
+        os.path.abspath(os.path.join(get_executable_location(), "..", ".bitdust"))
+    )
     # and default path will have lower priority
     path2 = default_path
 
@@ -187,15 +193,20 @@ def init_base_dir(base_dir=None):
         return _BaseDirPath
 
     # if we did not found our key - use default path, new copy of BitDust
-    if not os.access(os.path.join(current_base_dir(), "metadata", "mykeyfile"), os.R_OK) or \
-        not os.access(os.path.join(current_base_dir(), "metadata", "mykeyfile_location"), os.R_OK):
+    if not os.access(
+        os.path.join(current_base_dir(), "metadata", "mykeyfile"), os.R_OK
+    ) or not os.access(
+        os.path.join(current_base_dir(), "metadata", "mykeyfile_location"), os.R_OK
+    ):
         _BaseDirPath = path2
         if not os.path.exists(_BaseDirPath):
             os.makedirs(_BaseDirPath, 0o777)
         return _BaseDirPath
 
     # if we did not found our identity - use default path, new copy of BitDust
-    if not os.access(os.path.join(current_base_dir(), "metadata", "localidentity"), os.R_OK):
+    if not os.access(
+        os.path.join(current_base_dir(), "metadata", "localidentity"), os.R_OK
+    ):
         _BaseDirPath = path2
         if not os.path.exists(_BaseDirPath):
             os.makedirs(_BaseDirPath)
@@ -204,11 +215,13 @@ def init_base_dir(base_dir=None):
     # seems we found needed files in a path1 - lets use this as a base dir
     return _BaseDirPath
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def run(args):
     """
-    Creates virtual environment 
+    Creates virtual environment
     """
     status = 1
     on_windows = platform.uname()[0] == "Windows"
@@ -217,59 +230,73 @@ def run(args):
     source_dir = get_executable_location()
     init_base_dir()
     base_dir = current_base_dir()
-    if on_windows and os.path.isfile(os.path.join(base_dir, 'shortpath.txt')):
-        base_dir = open(os.path.join(base_dir, 'shortpath.txt')).read().strip()
-    venv_path = os.path.join(base_dir, 'venv')
-    if len(args) > 1 and not os.path.exists(args[1]) and os.path.isdir(os.path.dirname(args[1])):
+    if on_windows and os.path.isfile(os.path.join(base_dir, "shortpath.txt")):
+        base_dir = open(os.path.join(base_dir, "shortpath.txt")).read().strip()
+    venv_path = os.path.join(base_dir, "venv")
+    if (
+        len(args) > 1
+        and not os.path.exists(args[1])
+        and os.path.isdir(os.path.dirname(args[1]))
+    ):
         venv_path = args[1]
-    pip_bin = '{}/bin/pip'.format(venv_path)
-    script_path = os.path.join(base_dir, 'bitdust')
+    pip_bin = "{}/bin/pip".format(venv_path)
+    script_path = os.path.join(base_dir, "bitdust")
 
     if os.path.exists(venv_path):
-        print_text('\n***** Clean up existing Python virtual environment in "%s"' % venv_path)
+        print_text(
+            '\n***** Clean up existing Python virtual environment in "%s"' % venv_path
+        )
         if on_windows:
             status = os.system('rmdir /S /Q "{}"'.format(venv_path))
         else:
-            status = os.system('rm -rf {}'.format(venv_path))
+            status = os.system("rm -rf {}".format(venv_path))
         if status != 0:
-            print_text('\n***** Clean up of existing virtual environment files failed!\n')
+            print_text("\n***** Clean up of existing virtual environment files failed!\n")
             return status
 
     current_python = sys.executable
-    print_text('\n***** Current Python executable is {}'.format(current_python))
+    print_text("\n***** Current Python executable is {}".format(current_python))
 
     print_text('\n***** Create fresh virtual environment in "%s"' % venv_path)
-    make_venv_cmd = 'virtualenv -p {} {}'.format(current_python, venv_path)
+    make_venv_cmd = "virtualenv -p {} {}".format(current_python, venv_path)
     if on_windows:
-        python_exe = '"%s"' % os.path.join(base_dir, 'python', 'python.exe')
+        python_exe = '"%s"' % os.path.join(base_dir, "python", "python.exe")
         if not os.path.exists(python_exe):
             python_exe = current_python
-        make_venv_cmd = "{} -m virtualenv --system-site-packages {}".format(python_exe, venv_path)
+        make_venv_cmd = "{} -m virtualenv --system-site-packages {}".format(
+            python_exe, venv_path
+        )
     if on_mac:
-        make_venv_cmd = "{} -m virtualenv --clear --always-copy {}".format(current_python, venv_path)
+        make_venv_cmd = "{} -m virtualenv --clear --always-copy {}".format(
+            current_python, venv_path
+        )
 
     print_text('\n***** Executing "{}"'.format(make_venv_cmd))
     status = os.system(make_venv_cmd)
     if on_mac and status != 0:
-        make_venv_cmd = 'virtualenv -p {} {}'.format(current_python, venv_path)
+        make_venv_cmd = "virtualenv -p {} {}".format(current_python, venv_path)
         status = os.system(make_venv_cmd)
     if on_linux and status != 0:
         make_venv_cmd = "{} -m pip install -q virtualenv".format(current_python)
         status = os.system(make_venv_cmd)
-        make_venv_cmd = "{} -m virtualenv --clear --always-copy {}".format(current_python, venv_path)
+        make_venv_cmd = "{} -m virtualenv --clear --always-copy {}".format(
+            current_python, venv_path
+        )
         status = os.system(make_venv_cmd)
 
     if status != 0:
-        print_text('\n***** Failed to create virtual environment, please check/install virtualenv package\n')
-        print_text('\n***** Please try to install virtualenv package manually:\n')
-        print_text('    {} -m pip install virtualenv\n\n'.format(current_python))
+        print_text(
+            "\n***** Failed to create virtual environment, please check/install virtualenv package\n"
+        )
+        print_text("\n***** Please try to install virtualenv package manually:\n")
+        print_text("    {} -m pip install virtualenv\n\n".format(current_python))
         return status
 
     if on_windows or on_mac:
         pass
     else:
         print_text('\n***** Installing/Upgrading pip in "%s"' % venv_path)
-        status = os.system('{} install -U pip'.format(pip_bin))
+        status = os.system("{} install -U pip".format(pip_bin))
         if status != 0:
             # print_text('\n***** Failed to install latest pip version, please check/install latest pip version manually\n')
             # return status
@@ -277,50 +304,70 @@ def run(args):
 
     if on_mac:
         print_text('\n***** Updating setuptools version in "%s"' % venv_path)
-        status = os.system('{} install setuptools'.format(pip_bin))
+        status = os.system("{} install setuptools".format(pip_bin))
         if status != 0:
-            print_text('\n***** Failed to install/upgrade setuptools, please check/install setuptools manually\n')
+            print_text(
+                "\n***** Failed to install/upgrade setuptools, please check/install setuptools manually\n"
+            )
             return status
 
-    requirements_txt = os.path.join(source_dir, 'requirements.txt')
+    requirements_txt = os.path.join(source_dir, "requirements.txt")
     print_text('\n***** Installing BitDust requirements from "%s"' % (requirements_txt))
     requirements_cmd = '{} install -q -r "{}"'.format(pip_bin, requirements_txt)
     if on_windows:
-        venv_python_path = os.path.join(base_dir, 'venv', 'Scripts', 'python.exe')
-        requirements_cmd = '{} -m pip install -q -r "{}"'.format(venv_python_path, requirements_txt)
+        venv_python_path = os.path.join(base_dir, "venv", "Scripts", "python.exe")
+        requirements_cmd = '{} -m pip install -q -r "{}"'.format(
+            venv_python_path, requirements_txt
+        )
     if on_mac:
-        venv_python_path = os.path.join(base_dir, 'venv', 'bin', 'python')
-        requirements_cmd = '{} -m pip install -q -r "{}"'.format(venv_python_path, requirements_txt)
+        venv_python_path = os.path.join(base_dir, "venv", "bin", "python")
+        requirements_cmd = '{} -m pip install -q -r "{}"'.format(
+            venv_python_path, requirements_txt
+        )
 
     print_text('\n***** Executing "{}"'.format(requirements_cmd))
     status = os.system(requirements_cmd)
     if status != 0:
         # TODO: try to detect package manager on target OS and give more correct info: debian/mandrake/OSX
         depends = [
-            'gcc',
-            'build-essential',
-            'libssl-dev',
-            'libffi-dev',
-            'python3-dev',
-            'python3-virtualenv',
+            "gcc",
+            "build-essential",
+            "libssl-dev",
+            "libffi-dev",
+            "python3-dev",
+            "python3-virtualenv",
         ]
-        print_text('\n***** Please try to install those binary packages manually:\n')
-        print_text('    %s\n\n' % (' '.join(depends)))
+        print_text("\n***** Please try to install those binary packages manually:\n")
+        print_text("    %s\n\n" % (" ".join(depends)))
         return status
 
-    script = u"#!/bin/sh\n"
-    script += u'# This is a short shell script to create an alias in OS for BitDust software.\n'
-    script += u'# NOTICE: BitDust software do not require root permissions to run, please start it as normal user.\n\n'
-    script += u'{}/bin/python {}/bitdust.py "$@"\n\n'.format(venv_path, source_dir)
-    fil = open(script_path, mode='w')
+    script = "#!/bin/sh\n"
+    script += (
+        "# This is a short shell script to create an alias in OS for BitDust software.\n"
+    )
+    script += "# NOTICE: BitDust software do not require root permissions to run, please start it as normal user.\n\n"
+    script += '{}/bin/python {}/bitdust.py "$@"\n\n'.format(venv_path, source_dir)
+    fil = open(script_path, mode="w")
     fil.write(script)
     fil.close()
     os.chmod(script_path, 0o775)
 
-    print_text('\n***** BitDust environment files created successfully in {}\n'.format(base_dir))
-    print_text('To create system-wide shell command you can add folder {} to your PATH, or create a symbolic link:\n'.format(script_path))
-    print_text('    sudo ln -s -f {} /usr/local/bin/bitdust\n\n'.format(script_path))
-    print_text('To run BitDust without system-wide alias use that executable file:\n\n    {}\n\n'.format(script_path))
-    print_text('Learn more about how to use the software via command line:\n\n    bitdust help\n\n')
-    print_text('Welcome to BitDust!\n\n')
+    print_text(
+        "\n***** BitDust environment files created successfully in {}\n".format(base_dir)
+    )
+    print_text(
+        "To create system-wide shell command you can add folder {} to your PATH, or create a symbolic link:\n".format(
+            script_path
+        )
+    )
+    print_text("    sudo ln -s -f {} /usr/local/bin/bitdust\n\n".format(script_path))
+    print_text(
+        "To run BitDust without system-wide alias use that executable file:\n\n    {}\n\n".format(
+            script_path
+        )
+    )
+    print_text(
+        "Learn more about how to use the software via command line:\n\n    bitdust help\n\n"
+    )
+    print_text("Welcome to BitDust!\n\n")
     return 0

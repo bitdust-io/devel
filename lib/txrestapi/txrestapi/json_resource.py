@@ -1,18 +1,15 @@
-import re
 import json
+import re
 import time
-import six
-
-from six import PY2, b
-
 from functools import wraps
 
-from twisted.web.resource import Resource
-from twisted.web.server import NOT_DONE_YET
+import six
+from six import PY2, b
 from twisted.internet.defer import Deferred
 from twisted.python import log as twlog
 from twisted.python.failure import Failure
-
+from twisted.web.resource import Resource
+from twisted.web.server import NOT_DONE_YET
 
 _Debug = False
 
@@ -30,14 +27,16 @@ def _to_json(output_object):
         json.dumps(
             output_object,
             indent=2,
-            separators=(',', ': '),
+            separators=(",", ": "),
             sort_keys=True,
             default=_to_text,
-        ) + '\n').encode()
+        )
+        + "\n"
+    ).encode()
 
 
 class _JsonResource(Resource):
-    _result = ''
+    _result = ""
     isLeaf = True
 
     def __init__(self, result, executed, *args, **kwargs):
@@ -50,23 +49,29 @@ class _JsonResource(Resource):
         Those headers will allow you to call API methods from web browsers, they require CORS:
             https://en.wikipedia.org/wiki/Cross-origin_resource_sharing
         """
-        request.responseHeaders.addRawHeader(b('content-type'), b('application/json'))
-        allow_origin = 'localhost'
+        request.responseHeaders.addRawHeader(b("content-type"), b("application/json"))
+        allow_origin = "localhost"
         if _Debug:
-            allow_origin = 'http://localhost:8080'
+            allow_origin = "http://localhost:8080"
         if True:
             # TODO: !!! Find a solution here to protect API from non-bitdust UI apps !!!
-            allow_origin = '*'
-        request.responseHeaders.addRawHeader(b('Access-Control-Allow-Origin'), b(allow_origin))
-        request.responseHeaders.addRawHeader(b('Access-Control-Allow-Methods'), b('GET, POST, PUT, DELETE'))
-        request.responseHeaders.addRawHeader(b('Access-Control-Allow-Headers'), b('x-prototype-version,x-requested-with'))
-        request.responseHeaders.addRawHeader(b('Access-Control-Max-Age'), b('2520'))
+            allow_origin = "*"
+        request.responseHeaders.addRawHeader(
+            b("Access-Control-Allow-Origin"), b(allow_origin)
+        )
+        request.responseHeaders.addRawHeader(
+            b("Access-Control-Allow-Methods"), b("GET, POST, PUT, DELETE")
+        )
+        request.responseHeaders.addRawHeader(
+            b("Access-Control-Allow-Headers"), b("x-prototype-version,x-requested-with")
+        )
+        request.responseHeaders.addRawHeader(b("Access-Control-Max-Age"), b("2520"))
         return request
 
     def render(self, request):
         self._setHeaders(request)
         # this will just add one extra field to the response to populate how fast that API call was processed
-        self._result['execution'] = '%3.6f' % (time.time() - self._executed)
+        self._result["execution"] = "%3.6f" % (time.time() - self._executed)
         return _to_json(self._result)
 
 
@@ -82,13 +87,13 @@ class _DelayedJsonResource(_JsonResource):
 
     def _cb(self, result, request):
         if _Debug:
-            twlog.msg('txrestapi callback with json result: %r' % result)
+            twlog.msg("txrestapi callback with json result: %r" % result)
         self._setHeaders(request)
-        result['execution'] = '%3.6f' % (time.time() - self._executed)
+        result["execution"] = "%3.6f" % (time.time() - self._executed)
         raw = _to_json(result)
         if not request.channel:
             if _Debug:
-                twlog.err('REST API connection channel already closed')
+                twlog.err("REST API connection channel already closed")
             return None
         request.write(raw)
         request.finish()
@@ -96,14 +101,22 @@ class _DelayedJsonResource(_JsonResource):
 
     def _eb(self, err, request):
         if _Debug:
-            twlog.err('txrestapi error : %r' % err)
+            twlog.err("txrestapi error : %r" % err)
         self._setHeaders(request)
-        execution = '%3.6f' % (time.time() - self._executed)
+        execution = "%3.6f" % (time.time() - self._executed)
         err_msg = err.getErrorMessage() if isinstance(err, Failure) else str(err)
-        raw = _to_json(dict(status='ERROR', execution=execution, errors=[err_msg, ]))
+        raw = _to_json(
+            dict(
+                status="ERROR",
+                execution=execution,
+                errors=[
+                    err_msg,
+                ],
+            )
+        )
         if not request.channel:
             if _Debug:
-                twlog.err('REST API connection channel already closed')
+                twlog.err("REST API connection channel already closed")
             return None
         request.write(raw)
         request.finish()
@@ -124,7 +137,12 @@ def maybeResource(f):
 
         except Exception as exc:
             return _JsonResource(
-                result=dict(status='ERROR', errors=[str(exc), ]),
+                result=dict(
+                    status="ERROR",
+                    errors=[
+                        str(exc),
+                    ],
+                ),
                 executed=_executed,
             )
 
@@ -167,14 +185,14 @@ class JsonAPIResource(Resource):
         Resource.__init__(self, *args, **kwargs)
 
     def _get_callback(self, request):
-        path_to_check = getattr(request, '_remaining_path', request.path)
+        path_to_check = getattr(request, "_remaining_path", request.path)
         if not isinstance(path_to_check, six.text_type):
             path_to_check = path_to_check.decode()
         for m, r, cb in self._registry:
-            if m == request.method or m == b('ALL'):
+            if m == request.method or m == b("ALL"):
                 result = r.search(path_to_check)
                 if result:
-                    request._remaining_path = path_to_check[result.span()[1]:]
+                    request._remaining_path = path_to_check[result.span()[1] :]
                     return cb, result.groupdict()
         return None, None
 
@@ -204,7 +222,15 @@ class JsonAPIResource(Resource):
             callback, args = self._get_callback(request)
             self.log_request(request, callback, args)
             if callback is None:
-                return _JsonResource(dict(status='ERROR', errors=['path %r not found' % name, ]), time.time())
+                return _JsonResource(
+                    dict(
+                        status="ERROR",
+                        errors=[
+                            "path %r not found" % name,
+                        ],
+                    ),
+                    time.time(),
+                )
             else:
                 return maybeResource(callback)(request, **args)
         else:

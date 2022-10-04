@@ -1,8 +1,8 @@
-import tarfile
 import glob
 import os
+import tarfile
 
-types = ['*.db-wal', '*.db-shm']
+types = ["*.db-wal", "*.db-shm"]
 for t in types:
     for f in glob.glob(t):
         os.remove(f)

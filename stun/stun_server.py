@@ -32,46 +32,41 @@ EVENTS:
     * :red:`stop`
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-#------------------------------------------------------------------------------
-
-import os
 import sys
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
-if __name__ == '__main__':
+
+# ------------------------------------------------------------------------------
+
+if __name__ == "__main__":
     import os.path as _p
-    sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
-#------------------------------------------------------------------------------
+    sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), "..")))
+
+# ------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 10
 
-#------------------------------------------------------------------------------
-
-from logs import lg
-
-from system import bpio
-
-from main import settings
+# ------------------------------------------------------------------------------
 
 from automats import automat
-
-from lib import net_misc
-from lib import udp
-
 from dht import dht_service
+from lib import net_misc, udp
+from logs import lg
+from main import settings
+from system import bpio
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _StunServer = None
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 def A(event=None, *args, **kwargs):
@@ -82,8 +77,8 @@ def A(event=None, *args, **kwargs):
     if _StunServer is None:
         # set automat name and starting state here
         _StunServer = StunServer(
-            name='stun_server',
-            state='AT_STARTUP',
+            name="stun_server",
+            state="AT_STARTUP",
             debug_level=_DebugLevel,
             log_events=_Debug,
             log_transitions=_Debug,
@@ -117,22 +112,22 @@ class StunServer(automat.Automat):
         self.listen_port = None
 
     def A(self, event, *args, **kwargs):
-        #---AT_STARTUP---
-        if self.state == 'AT_STARTUP':
-            if event == 'start':
-                self.state = 'LISTEN'
+        # ---AT_STARTUP---
+        if self.state == "AT_STARTUP":
+            if event == "start":
+                self.state = "LISTEN"
                 self.doInit(*args, **kwargs)
-        #---LISTEN---
-        elif self.state == 'LISTEN':
-            if event == 'stop':
-                self.state = 'STOPPED'
+        # ---LISTEN---
+        elif self.state == "LISTEN":
+            if event == "stop":
+                self.state = "STOPPED"
                 self.doStop(*args, **kwargs)
-            elif event == 'datagram-received' and self.isSTUN(*args, **kwargs):
+            elif event == "datagram-received" and self.isSTUN(*args, **kwargs):
                 self.doSendYourIPPort(*args, **kwargs)
-        #---STOPPED---
-        elif self.state == 'STOPPED':
-            if event == 'start':
-                self.state = 'LISTEN'
+        # ---STOPPED---
+        elif self.state == "STOPPED":
+            if event == "start":
+                self.state = "LISTEN"
                 self.doInit(*args, **kwargs)
 
     def isSTUN(self, *args, **kwargs):
@@ -153,15 +148,15 @@ class StunServer(automat.Automat):
         self.listen_port = args[0]
         if udp.proto(self.listen_port):
             udp.proto(self.listen_port).add_callback(self._datagramReceived)
-            lg.info('callback added to listen on UDP port %d' % self.listen_port)
+            lg.info("callback added to listen on UDP port %d" % self.listen_port)
         else:
-            lg.err('udp port %s is not opened' % self.listen_port)
+            lg.err("udp port %s is not opened" % self.listen_port)
         # try:
         #     externalPort = int(bpio.ReadTextFile(settings.ExternalUDPPortFilename()))
         # except:
         #     lg.exc()
         externalPort = self.listen_port
-        dht_service.set_node_data('stun_port', externalPort)
+        dht_service.set_node_data("stun_port", externalPort)
 
     def doStop(self, *args, **kwargs):
         """
@@ -170,7 +165,7 @@ class StunServer(automat.Automat):
         if udp.proto(self.listen_port):
             udp.proto(self.listen_port).remove_callback(self._datagramReceived)
         else:
-            lg.err('udp port %s is not opened' % self.listen_port)
+            lg.err("udp port %s is not opened" % self.listen_port)
 
     def doSendYourIPPort(self, *args, **kwargs):
         """
@@ -184,19 +179,23 @@ class StunServer(automat.Automat):
         youripport = net_misc.pack_address((address[0], address[1]))
         udp.send_command(self.listen_port, udp.CMD_MYIPPORT, youripport, address)
         if _Debug:
-            lg.out(_DebugLevel, 'stun_server.doSendYourIPPort [%s] to %s' % (
-                youripport, address))
+            lg.out(
+                _DebugLevel,
+                "stun_server.doSendYourIPPort [%s] to %s" % (youripport, address),
+            )
 
     def _datagramReceived(self, datagram, address):
-        """
-        """
-        self.automat('datagram-received', (datagram, address))
+        """ """
+        self.automat("datagram-received", (datagram, address))
         return False
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def main():
     from twisted.internet import reactor  # @UnresolvedImport
+
     lg.set_debug_level(24)
     bpio.init()
     settings.init()
@@ -211,14 +210,15 @@ def main():
     udp.listen(udp_port)
 
     def _go(live_nodes):
-        A('start', udp_port)
+        A("start", udp_port)
 
     d.addCallback(_go)
     reactor.run()  # @UndefinedVariable
     settings.shutdown()
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

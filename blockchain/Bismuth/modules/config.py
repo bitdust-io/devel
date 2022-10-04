@@ -1,6 +1,5 @@
-import sys
 import os.path as path
-
+import sys
 
 __version__ = "0.0.5"
 
@@ -74,7 +73,7 @@ class Get:
         self.genesis_conf = "3b9ca99a7804015f8eaebb78d4b50570bd8337e8a8196343dbbb59c4"
         # print(self.__dict__)
 
-    def read(self, filename='config.txt', custom_filename='config_custom.txt'):
+    def read(self, filename="config.txt", custom_filename="config_custom.txt"):
         # first of all, load from default config so we have all needed params
         self.load_file(filename)
         # then override with optional custom config

@@ -30,28 +30,27 @@
 module:: network_config
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
 import os
 
-#------------------------------------------------------------------------------
-
-from system import bpio
-from system import local_fs
-
 from lib import serialization
-
 from main import settings
+from system import bpio, local_fs
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
+
+# ------------------------------------------------------------------------------
+
 
 def find_network_config_file():
-    networks_json_path = os.path.join(settings.MetaDataDir(), 'networkconfig')
+    networks_json_path = os.path.join(settings.MetaDataDir(), "networkconfig")
     if not os.path.isfile(networks_json_path):
         # use hard-coded default_network.json file from the repository root
-        networks_json_path = os.path.join(bpio.getExecutableDir(), 'default_network.json')
+        networks_json_path = os.path.join(bpio.getExecutableDir(), "default_network.json")
     return networks_json_path
 
 

@@ -38,45 +38,45 @@ Examples::
 You can translate values from Kb to Mb or create a good looking string from bytes number.
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Suffixes = {
-    '': 1.0,
-    'bytes': 1.0,
-    'b': 1.0,
-    'B': 1.0,
-    'K': 1024.0,
-    'k': 1024.0,
-    'KB': 1024.0,
-    'Kb': 1024.0,
-    'kb': 1024.0,
-    'Kilobytes': 1024.0,
-    'kilobytes': 1024.0,
-    'm': 1024.0 * 1024.0,
-    'M': 1024.0 * 1024.0,
-    'MB': 1024.0 * 1024.0,
-    'Mb': 1024.0 * 1024.0,
-    'mb': 1024.0 * 1024.0,
-    'Megabytes': 1024.0 * 1024.0,
-    'megabytes': 1024.0 * 1024.0,
-    'G': 1024.0 * 1024.0 * 1024.0,
-    'GB': 1024.0 * 1024.0 * 1024.0,
-    'Gb': 1024.0 * 1024.0 * 1024.0,
-    'g': 1024.0 * 1024.0 * 1024.0,
-    'gb': 1024.0 * 1024.0 * 1024.0,
-    'Gigabytes': 1024.0 * 1024.0 * 1024.0,
-    'gigabytes': 1024.0 * 1024.0 * 1024.0,
+    "": 1.0,
+    "bytes": 1.0,
+    "b": 1.0,
+    "B": 1.0,
+    "K": 1024.0,
+    "k": 1024.0,
+    "KB": 1024.0,
+    "Kb": 1024.0,
+    "kb": 1024.0,
+    "Kilobytes": 1024.0,
+    "kilobytes": 1024.0,
+    "m": 1024.0 * 1024.0,
+    "M": 1024.0 * 1024.0,
+    "MB": 1024.0 * 1024.0,
+    "Mb": 1024.0 * 1024.0,
+    "mb": 1024.0 * 1024.0,
+    "Megabytes": 1024.0 * 1024.0,
+    "megabytes": 1024.0 * 1024.0,
+    "G": 1024.0 * 1024.0 * 1024.0,
+    "GB": 1024.0 * 1024.0 * 1024.0,
+    "Gb": 1024.0 * 1024.0 * 1024.0,
+    "g": 1024.0 * 1024.0 * 1024.0,
+    "gb": 1024.0 * 1024.0 * 1024.0,
+    "Gigabytes": 1024.0 * 1024.0 * 1024.0,
+    "gigabytes": 1024.0 * 1024.0 * 1024.0,
 }
 
-_SuffixLabels = ['bytes', 'Kb', 'Mb', 'Gb']
+_SuffixLabels = ["bytes", "Kb", "Mb", "Gb"]
 
 _MultiDict = {
-    'Kb': 1024.0,
-    'Mb': 1024.0 * 1024.0,
-    'Gb': 1024.0 * 1024.0 * 1024.0,
+    "Kb": 1024.0,
+    "Mb": 1024.0 * 1024.0,
+    "Gb": 1024.0 * 1024.0 * 1024.0,
 }
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 class DiskSpace:
@@ -88,11 +88,11 @@ class DiskSpace:
     in this module.
     """
 
-    def __init__(self, v=None, s='0Mb'):
+    def __init__(self, v=None, s="0Mb"):
         if v is None:
             self.v = s
-            if self.getSZ() not in ['Kb', 'Mb', 'Gb']:
-                self.addSZ('Mb')
+            if self.getSZ() not in ["Kb", "Mb", "Gb"]:
+                self.addSZ("Mb")
         else:
             self.v = str(self.getValueBest(v))
         self.b = self.getValue() * _MultiDict[self.getSZ()]
@@ -121,25 +121,25 @@ class DiskSpace:
 
     def getValueKb(self):
         sz = self.getSZ()
-        if sz == 'Gb':
+        if sz == "Gb":
             return round(self.getValue() * 1024.0 * 1024.0, 2)
-        elif sz == 'Mb':
+        elif sz == "Mb":
             return round(self.getValue() * 1024.0, 2)
         return self.getValue()
 
     def getValueMb(self):
         sz = self.getSZ().lower()
-        if sz == 'Kb':
+        if sz == "Kb":
             return round(self.getValue() / 1024.0, 2)
-        elif sz == 'Gb':
+        elif sz == "Gb":
             return round(self.getValue() * 1024.0, 2)
         return self.getValue()
 
     def getValueGb(self):
         sz = self.getSZ()
-        if sz == 'Kb':
+        if sz == "Kb":
             return round(self.getValue() / (1024.0 * 1024.0), 2)
-        elif sz == 'Mb':
+        elif sz == "Mb":
             return round(self.getValue() / 1024.0, 2)
         return self.getValue()
 
@@ -148,15 +148,15 @@ class DiskSpace:
             v = value
         else:
             v = self.getValueBytes()
-        if v > _MultiDict['Gb']:
-            res = round(v / _MultiDict['Gb'], 2)
-            sz = 'Gb'
-        elif v > _MultiDict['Mb']:
-            res = round(v / _MultiDict['Mb'], 2)
-            sz = 'Mb'
+        if v > _MultiDict["Gb"]:
+            res = round(v / _MultiDict["Gb"], 2)
+            sz = "Gb"
+        elif v > _MultiDict["Mb"]:
+            res = round(v / _MultiDict["Mb"], 2)
+            sz = "Mb"
         else:
-            res = round(v / _MultiDict['Kb'], 2)
-            sz = 'Kb'
+            res = round(v / _MultiDict["Kb"], 2)
+            sz = "Kb"
         return str(res) + sz
 
 
@@ -200,8 +200,8 @@ def MakeString(value, suf):
     if not SuffixIsCorrect(suf):
         return str(value)
     if round(float(value)) == float(value):
-        return str(int(float(value))) + ' ' + suf
-    return str(value) + ' ' + suf
+        return str(int(float(value))) + " " + suf
+    return str(value) + " " + suf
 
 
 def SplitString(s):
@@ -210,8 +210,8 @@ def SplitString(s):
 
     from diskspace import * SplitString("342.67Mb") (342.67, 'Mb')
     """
-    num = s.rstrip('bytesBYTESgmkGMK ')
-    suf = s.lstrip('0123456789., ').strip()
+    num = s.rstrip("bytesBYTESgmkGMK ")
+    suf = s.lstrip("0123456789., ").strip()
     try:
         num = float(num)
     except:
@@ -239,18 +239,18 @@ def MakeStringFromBytes(value):
         v = float(value)
     except:
         return value
-    if v > _Suffixes['GB']:
-        res = round(v / _Suffixes['GB'], 2)
-        sz = 'GB'
-    elif v > _Suffixes['MB']:
-        res = round(v / _Suffixes['MB'], 2)
-        sz = 'MB'
-    elif v > _Suffixes['KB']:
-        res = round(v / _Suffixes['KB'], 2)
-        sz = 'KB'
+    if v > _Suffixes["GB"]:
+        res = round(v / _Suffixes["GB"], 2)
+        sz = "GB"
+    elif v > _Suffixes["MB"]:
+        res = round(v / _Suffixes["MB"], 2)
+        sz = "MB"
+    elif v > _Suffixes["KB"]:
+        res = round(v / _Suffixes["KB"], 2)
+        sz = "KB"
     else:
         res = int(v)
-        sz = 'bytes'
+        sz = "bytes"
     return MakeString(res, sz)
 
 

@@ -19,19 +19,18 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
-from __future__ import absolute_import
-from __future__ import print_function
+from __future__ import absolute_import, print_function
+
 import os
-import sys
 import os.path as _p
-sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
-from logs import lg
-from system import bpio
-from p2p import p2p_service
-from main import settings
+import sys
+
+sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), "..")))
 from lib import nameurl
+from main import settings
+from p2p import p2p_service
 
 custdir = settings.getCustomersFilesDir()
-ownerdir = os.path.join(custdir, nameurl.UrlFilename('http://megafaq.ru/e_vps1004.xml'))
+ownerdir = os.path.join(custdir, nameurl.UrlFilename("http://megafaq.ru/e_vps1004.xml"))
 plaintext = p2p_service.TreeSummary(ownerdir)
 print(plaintext)

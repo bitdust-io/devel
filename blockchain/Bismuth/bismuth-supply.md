@@ -66,7 +66,7 @@ The hn rewards are actually paid infinitely. Means, after 10.000.000 blocks, the
 
 The plot is created by this [script](supply_calc.py) and therefore shows the actual mining reward of the actual block (it gets it by asking [bismuth.online API](http://bismuth.online/api/stats/latestblock)). From this block and time mined, the script calculates the estimated time, when for example block 10.000.000 is mined.
 
-As we can see here, the reward will last for about ... a long time. 
+As we can see here, the reward will last for about ... a long time.
 
 
 ### What does this now mean for the supply?
@@ -83,22 +83,22 @@ So, around summer 2112 (arr, another rough estimation), the BIS-supply will be a
 
 ## Conclusion
 
-Yes, we have unlimited supply. 
+Yes, we have unlimited supply.
 
 Yes, we already had discussed this and we think, we still have some years, where BIS will grow (in code and community) until we have to make a decission.
 
 **But as a holder, you told us other numbers!**
 
-Yes, we did. We apologize for that and as said, since that, we have spoken a lot about supply. 
+Yes, we did. We apologize for that and as said, since that, we have spoken a lot about supply.
 
-To make it clear, we came down from **110 Mio BIS in 203x**, we actually go the road to **100 Mio BIS in 212x**. 
+To make it clear, we came down from **110 Mio BIS in 203x**, we actually go the road to **100 Mio BIS in 212x**.
 But this is not the final word on this topic. We already have ideas how to go on, but no decission yet. We are not in a rush to decide it and the last time, we overall did not well, calculating and double checking everything.
 
 Here a table for quick overview:
 
 | Block | Supply | Milestone |
 | ------------- | ------------- | ------------- |
-| 7100000  | 61602918  | POW-rewards end approx 2030 | 
+| 7100000  | 61602918  | POW-rewards end approx 2030 |
 | 10000000  | 63922918  | Mined approx 2036  |
 | 20000000  | 71922918  | Mined approx 2055  |
 | 30000000  | 79922918  | Mined approx 2074  |

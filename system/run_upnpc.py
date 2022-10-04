@@ -30,78 +30,79 @@
 module:: run_upnpc
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
-from __future__ import absolute_import
-from __future__ import print_function
+from __future__ import absolute_import, print_function
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 6
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 import os
-import sys
-import re
 import random
+import re
+import sys
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 if __name__ == "__main__":
     import os.path as _p
-    sys.path.append(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..'))
 
-#------------------------------------------------------------------------------
+    sys.path.append(_p.join(_p.dirname(_p.abspath(sys.argv[0])), ".."))
+
+# ------------------------------------------------------------------------------
 
 from logs import lg
-
+from main import settings
 from system import bpio
 
-from main import settings
-
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _CurrentProcess = None
 _MyPortMapping = {}
 _LastUpdateResultDict = {}
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 
 def init():
     global _MyPortMapping
     if _Debug:
-        lg.out(_DebugLevel, 'run_upnpc.init ')
+        lg.out(_DebugLevel, "run_upnpc.init ")
 
 
 def shutdown():
     global _CurrentProcess
     if _Debug:
-        lg.out(_DebugLevel, 'run_upnpc.shutdown')
+        lg.out(_DebugLevel, "run_upnpc.shutdown")
     if _CurrentProcess is not None:
         if _Debug:
-            lg.out(_DebugLevel, '    going to kill _CurrentProcess=%s' % _CurrentProcess)
+            lg.out(_DebugLevel, "    going to kill _CurrentProcess=%s" % _CurrentProcess)
         try:
             _CurrentProcess.kill()
             if _Debug:
-                lg.out(_DebugLevel, '    killed')
+                lg.out(_DebugLevel, "    killed")
         except:
             lg.exc()
     else:
         if _Debug:
-            lg.out(_DebugLevel, '    not started')
+            lg.out(_DebugLevel, "    not started")
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def execute_in_shell(cmdargs, base_dir=None):
     global _CurrentProcess
-    from system import nonblocking
     import subprocess
+
+    from system import nonblocking
+
     if _Debug:
-        lg.out(_DebugLevel, 'run_upnpc.execute_in_shell: "%s"' % (' '.join(cmdargs)))
+        lg.out(_DebugLevel, 'run_upnpc.execute_in_shell: "%s"' % (" ".join(cmdargs)))
     in_shell = True
     if bpio.Mac():
         in_shell = False
@@ -110,17 +111,23 @@ def execute_in_shell(cmdargs, base_dir=None):
         shell=in_shell,
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,)
+        stderr=subprocess.STDOUT,
+    )
     out_data = _CurrentProcess.communicate()[0]
     returncode = _CurrentProcess.returncode
     if _Debug:
-        lg.out(_DebugLevel, 'run_upnpc.execute_in_shell returned: %s and %d bytes output' % (returncode, len(out_data)))
+        lg.out(
+            _DebugLevel,
+            "run_upnpc.execute_in_shell returned: %s and %d bytes output"
+            % (returncode, len(out_data)),
+        )
     if returncode > 0:
         if _Debug:
-            lg.out(_DebugLevel, '\n' + out_data)
+            lg.out(_DebugLevel, "\n" + out_data)
     return (out_data, returncode)  # _CurrentProcess
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 # Windows: executable file "upnpc.exe" must be in same folder or system sub folder
 # Ubuntu: miniupnpc must be installed, https://launchpad.net/ubuntu/+source/miniupnpc
@@ -129,34 +136,40 @@ def execute_in_shell(cmdargs, base_dir=None):
 def run(args_list, base_dir=None, callback=None):
     # TODO: Currently disabled
     return None
-    
+
     global _CurrentProcess
     if _CurrentProcess is not None:
-        lg.warn('only one process at once')
+        lg.warn("only one process at once")
         return None
 
     if bpio.Windows():
-        cmdargs = ['upnpc-static.exe', ]
+        cmdargs = [
+            "upnpc-static.exe",
+        ]
     elif bpio.Linux():
-        cmdargs = ['upnpc', ]
+        cmdargs = [
+            "upnpc",
+        ]
     elif bpio.Mac():
-        cmdargs = ['upnpc', ]
+        cmdargs = [
+            "upnpc",
+        ]
     else:
         return None
 
     if bpio.Windows():
         # if we run windows binaries - upnpc-static.exe can be in the system sub folder
         if not os.path.isfile(cmdargs[0]):
-            if os.path.isfile(os.path.join('system', cmdargs[0])):
-                cmdargs[0] = os.path.join('system', cmdargs[0])
+            if os.path.isfile(os.path.join("system", cmdargs[0])):
+                cmdargs[0] = os.path.join("system", cmdargs[0])
             else:
-                lg.warn('can not find executable file ' + cmdargs[0])
+                lg.warn("can not find executable file " + cmdargs[0])
                 return None
 
     cmdargs += args_list
 
     if _Debug:
-        lg.out(_DebugLevel, 'run_upnpc.run is going to execute: %s' % cmdargs)
+        lg.out(_DebugLevel, "run_upnpc.run is going to execute: %s" % cmdargs)
 
     try:
         out_data, returncode = execute_in_shell(cmdargs)
@@ -165,16 +178,21 @@ def run(args_list, base_dir=None, callback=None):
         return None
 
     if _Debug:
-        lg.out(_DebugLevel, '    %s finished with return code: %s' % (str(_CurrentProcess), str(returncode)))
+        lg.out(
+            _DebugLevel,
+            "    %s finished with return code: %s"
+            % (str(_CurrentProcess), str(returncode)),
+        )
     _CurrentProcess = None
 
     return out_data
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def info():
-    cmd_out = run(('-l',))
+    cmd_out = run(("-l",))
     if cmd_out is None:
         return None, None, None
     regexp1 = "^\s*(\d+)\s*(\w+)\s*(\d+)->(\d+\.\d+\.\d+\.\d+):(\d+)\s+(.+)$"
@@ -192,19 +210,20 @@ def info():
             continue
     search_local_ip = re.search(regexp2, cmd_out, re.MULTILINE)
     search_external_ip = re.search(regexp3, cmd_out, re.MULTILINE)
-    local_ip = ''
-    external_ip = ''
+    local_ip = ""
+    external_ip = ""
     if search_local_ip is not None:
         local_ip = search_local_ip.group(1)
     if search_external_ip is not None:
         external_ip = search_external_ip.group(1)
     return local_ip, external_ip, l
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def lst():
-    cmd_out = run(('-l',))
+    cmd_out = run(("-l",))
     if cmd_out is None:
         return None
     regexp1 = "^\s*(\d+)\s*(\w+)\s*(\d+)->(\d+\.\d+\.\d+\.\d+):(\d+)\s+(.+)$"
@@ -221,40 +240,46 @@ def lst():
             continue
     return l
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def add(port, proto):
     global _MyPortMapping
     # cmd_out = run(('-r', str(port), str(proto)))
-    cmd_out = run(('-e', '"BitDust TCP on port %s"' % (port), '-r', str(port), str(proto)))
+    cmd_out = run(
+        ("-e", '"BitDust TCP on port %s"' % (port), "-r", str(port), str(proto))
+    )
     if cmd_out is None:
         return None
     _MyPortMapping[str(port)] = str(proto)
     return cmd_out
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def dlt(port, proto):
     global _MyPortMapping
-    cmd_out = run(('-d', str(port), str(proto)))
+    cmd_out = run(("-d", str(port), str(proto)))
     if cmd_out is None:
         return None
-    _MyPortMapping.pop(str(port), '')
+    _MyPortMapping.pop(str(port), "")
     return cmd_out
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def clear():
-    s = ''
+    s = ""
     l = lst()
     for i in l:
-        s += str(dlt(i[0], i[2])) + '\n'
+        s += str(dlt(i[0], i[2])) + "\n"
     return s
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def update(requested_port, attempt=0, new_port=-1):
@@ -263,41 +288,58 @@ def update(requested_port, attempt=0, new_port=-1):
     port = requested_port
     requested_port_busy = False
     if _Debug:
-        lg.out(_DebugLevel, 'run_upnpc.update %s attempt=%s new_port=%s' % (str(port), str(attempt), str(new_port)))
+        lg.out(
+            _DebugLevel,
+            "run_upnpc.update %s attempt=%s new_port=%s"
+            % (str(port), str(attempt), str(new_port)),
+        )
 
     local_ip, external_ip, port_map = info()
 
     if local_ip is None or external_ip is None or port_map is None:
-        _LastUpdateResultDict[port] = 'upnp-not-found'
-        return 'upnp-not-found', port
+        _LastUpdateResultDict[port] = "upnp-not-found"
+        return "upnp-not-found", port
 
     local_ports = {}
     for i in port_map:
         if str(i[0]).strip() == str(requested_port):
             requested_port_busy = True
-        if i[1] == local_ip and (str(i[3]).find('libminiupnpc') >= 0 or str(i[3]).find('BitDust') >= 0):
+        if i[1] == local_ip and (
+            str(i[3]).find("libminiupnpc") >= 0 or str(i[3]).find("BitDust") >= 0
+        ):
             local_ports[i[0]] = (i[2], i[3])
 
     if _Debug:
-        lg.out(_DebugLevel, 'run_upnpc.update requested_port_busy=%s local_ports=%s' % (
-            requested_port_busy, str(list(local_ports.keys()))))
+        lg.out(
+            _DebugLevel,
+            "run_upnpc.update requested_port_busy=%s local_ports=%s"
+            % (requested_port_busy, str(list(local_ports.keys()))),
+        )
 
     if int(port) in list(local_ports.keys()):
-        _MyPortMapping[str(port)] = 'TCP'
+        _MyPortMapping[str(port)] = "TCP"
         if _Debug:
-            lg.out(_DebugLevel, 'run_upnpc.update PORT %s mapped SUCCESSFULLY!!! all port maps: %s' % (str(port), str(list(_MyPortMapping.keys()))))
-        _LastUpdateResultDict[port] = 'upnp-done'
-        return 'upnp-done', port
+            lg.out(
+                _DebugLevel,
+                "run_upnpc.update PORT %s mapped SUCCESSFULLY!!! all port maps: %s"
+                % (str(port), str(list(_MyPortMapping.keys()))),
+            )
+        _LastUpdateResultDict[port] = "upnp-done"
+        return "upnp-done", port
 
     if int(new_port) > 0 and int(new_port) in list(local_ports.keys()):
-        _MyPortMapping[str(new_port)] = 'TCP'
+        _MyPortMapping[str(new_port)] = "TCP"
         if _Debug:
-            lg.out(_DebugLevel, 'run_upnpc.update NEW PORT %s mapped SUCCESSFULLY!!! all port maps: %s' % (str(port), str(list(_MyPortMapping.keys()))))
-        _LastUpdateResultDict[new_port] = 'upnp-done'
-        return 'upnp-done', new_port
+            lg.out(
+                _DebugLevel,
+                "run_upnpc.update NEW PORT %s mapped SUCCESSFULLY!!! all port maps: %s"
+                % (str(port), str(list(_MyPortMapping.keys()))),
+            )
+        _LastUpdateResultDict[new_port] = "upnp-done"
+        return "upnp-done", new_port
 
     if attempt == 0:
-        add(port, 'TCP')
+        add(port, "TCP")
 
     elif attempt == 1:
         closest_port = -1
@@ -308,71 +350,74 @@ def update(requested_port, attempt=0, new_port=-1):
                 closest_value = v
                 closest_port = p
         if closest_port >= 0:
-            dlt(closest_port, 'TCP')
+            dlt(closest_port, "TCP")
             if requested_port_busy:
                 new_port = int(port) + random.randint(1, 100)
-                add(new_port, 'TCP')
+                add(new_port, "TCP")
                 port = new_port
                 new_port = -1
             else:
-                add(port, 'TCP')
+                add(port, "TCP")
         else:
             new_port = int(port) + random.randint(1, 100)
-            add(new_port, 'TCP')
+            add(new_port, "TCP")
             port = new_port
             new_port = -1
 
     else:
-        _LastUpdateResultDict[port] = 'upnp-error'
-        return 'upnp-error', port
+        _LastUpdateResultDict[port] = "upnp-error"
+        return "upnp-error", port
 
     result, port = update(port, attempt + 1, new_port)
     _LastUpdateResultDict[port] = result
     return result, port
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def last_result(proto):
     global _LastUpdateResultDict
-    return _LastUpdateResultDict.get(proto, 'upnp-no-info')
+    return _LastUpdateResultDict.get(proto, "upnp-no-info")
 
-#-------------------------------------------------------------------------------
+
+# -------------------------------------------------------------------------------
 
 
 def main():
     import pprint
+
     lg.set_debug_level(14)
-    if sys.argv.count('list'):
+    if sys.argv.count("list"):
         maps = lst()
         for itm in maps:
             pprint.pprint(itm)
-    elif sys.argv.count('info'):
+    elif sys.argv.count("info"):
         locip, extip, maps = info()
         pprint.pprint(locip)
         pprint.pprint(extip)
         for itm in maps:
             pprint.pprint(itm)
-    elif sys.argv.count('add'):
-        print(add(sys.argv[2], 'TCP'))
-    elif sys.argv.count('del'):
-        print(dlt(sys.argv[2], 'TCP'))
-    elif sys.argv.count('update'):
+    elif sys.argv.count("add"):
+        print(add(sys.argv[2], "TCP"))
+    elif sys.argv.count("del"):
+        print(dlt(sys.argv[2], "TCP"))
+    elif sys.argv.count("update"):
         bpio.init()
         settings.init()
         init()
         pprint.pprint(update(sys.argv[2]))
         settings.shutdown()
-    elif sys.argv.count('clear'):
+    elif sys.argv.count("clear"):
         print(clear())
     else:
-        print('usage:')
-        print('run_upnpc.py info')
-        print('run_upnpc.py list')
-        print('run_upnpc.py add [port]')
-        print('run_upnpc.py del [port]')
-        print('run_upnpc.py update [port]')
-        print('run_upnpc.py clear')
+        print("usage:")
+        print("run_upnpc.py info")
+        print("run_upnpc.py list")
+        print("run_upnpc.py add [port]")
+        print("run_upnpc.py del [port]")
+        print("run_upnpc.py update [port]")
+        print("run_upnpc.py clear")
 
 
 if __name__ == "__main__":

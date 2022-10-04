@@ -17,38 +17,38 @@
 
 
 from __future__ import absolute_import
+
+import codecs
+import hashlib
+import io
+import marshal
+import os
+import shutil
+import struct
+
 import six
 
-from CodernityDB3.index import (Index,
-                               IndexException,
-                               DocIdNotFound,
-                               ElemNotFound,
-                               TryReindexException,
-                               IndexPreconditionsException)
-
-import os
-import hashlib
-import marshal
-import io
-import struct
-import shutil
-import codecs
-
-from CodernityDB3.storage import IU_Storage, DummyStorage
-
 from CodernityDB3.env import cdb_environment
+from CodernityDB3.index import (
+    DocIdNotFound,
+    ElemNotFound,
+    Index,
+    IndexException,
+    IndexPreconditionsException,
+    TryReindexException,
+)
+from CodernityDB3.storage import DummyStorage, IU_Storage
 
-if cdb_environment.get('rlock_obj'):
+if cdb_environment.get("rlock_obj"):
     from CodernityDB3 import patch
-    patch.patch_cache_rr(cdb_environment['rlock_obj'])
 
-from CodernityDB3.rr_cache import cache1lvl
-
+    patch.patch_cache_rr(cdb_environment["rlock_obj"])
 
 from CodernityDB3.misc import random_hex_32
+from CodernityDB3.rr_cache import cache1lvl
 
 try:
-    from CodernityDB3 import __version__
+    pass
 except ImportError:
     from .__init__ import __version__
 
@@ -60,7 +60,15 @@ class IU_HashIndex(Index):
     That design is because main index logic should be always in database not in custom user indexes.
     """
 
-    def __init__(self, db_path, name, entry_line_format='<32s{key}IIcI', hash_lim=0xfffff, storage_class=None, key_format='c'):
+    def __init__(
+        self,
+        db_path,
+        name,
+        entry_line_format="<32s{key}IIcI",
+        hash_lim=0xFFFFF,
+        storage_class=None,
+        key_format="c",
+    ):
         """
         The index is capable to solve conflicts by `Separate chaining`
         :param db_path: database path
@@ -81,8 +89,8 @@ class IU_HashIndex(Index):
         if isinstance(name, six.text_type):
             name = name.encode()
 
-        if key_format and '{key}' in entry_line_format:
-            entry_line_format = entry_line_format.replace('{key}', key_format)
+        if key_format and "{key}" in entry_line_format:
+            entry_line_format = entry_line_format.replace("{key}", key_format)
         super(IU_HashIndex, self).__init__(db_path, name)
         self.hash_lim = hash_lim
         if not storage_class:
@@ -103,7 +111,8 @@ class IU_HashIndex(Index):
         self.bucket_struct = struct.Struct(self.bucket_line_format)
         self.entry_struct = struct.Struct(self.entry_line_format)
         self.data_start = (
-            self.hash_lim + 1) * self.bucket_line_size + self._start_ind + 2
+            (self.hash_lim + 1) * self.bucket_line_size + self._start_ind + 2
+        )
 
     def _fix_params(self):
         super(IU_HashIndex, self)._fix_params()
@@ -112,29 +121,34 @@ class IU_HashIndex(Index):
         self.bucket_struct = struct.Struct(self.bucket_line_format)
         self.entry_struct = struct.Struct(self.entry_line_format)
         self.data_start = (
-            self.hash_lim + 1) * self.bucket_line_size + self._start_ind + 2
+            (self.hash_lim + 1) * self.bucket_line_size + self._start_ind + 2
+        )
 
     def open_index(self):
-        if not os.path.isfile(os.path.join(self.db_path, self.name + '_buck')):
+        if not os.path.isfile(os.path.join(self.db_path, self.name + "_buck")):
             raise IndexException("Doesn't exists")
         self.buckets = io.open(
-            os.path.join(self.db_path, self.name + "_buck"), 'r+b', buffering=0)
+            os.path.join(self.db_path, self.name + "_buck"), "r+b", buffering=0
+        )
         self._fix_params()
         self._open_storage()
 
     def create_index(self):
-        if os.path.isfile(os.path.join(self.db_path, self.name + '_buck')):
-            raise IndexException('Already exists')
-        with io.open(os.path.join(self.db_path, self.name + "_buck"), 'w+b') as f:
-            props = dict(name=self.name,
-                         bucket_line_format=self.bucket_line_format,
-                         entry_line_format=self.entry_line_format,
-                         hash_lim=self.hash_lim,
-                         version=self.__version__,
-                         storage_class=self.storage_class)
+        if os.path.isfile(os.path.join(self.db_path, self.name + "_buck")):
+            raise IndexException("Already exists")
+        with io.open(os.path.join(self.db_path, self.name + "_buck"), "w+b") as f:
+            props = dict(
+                name=self.name,
+                bucket_line_format=self.bucket_line_format,
+                entry_line_format=self.entry_line_format,
+                hash_lim=self.hash_lim,
+                version=self.__version__,
+                storage_class=self.storage_class,
+            )
             f.write(marshal.dumps(props))
         self.buckets = io.open(
-            os.path.join(self.db_path, self.name + "_buck"), 'r+b', buffering=0)
+            os.path.join(self.db_path, self.name + "_buck"), "r+b", buffering=0
+        )
         self._create_storage()
 
     def destroy(self):
@@ -157,7 +171,7 @@ class IU_HashIndex(Index):
     #     self.buckets.flush()
     #     self.buckets.close()
     #     self.storage.close()
-#    @lfu_cache(100)
+    #    @lfu_cache(100)
     def _find_key(self, key):
         """
         Find the key position
@@ -175,18 +189,26 @@ class IU_HashIndex(Index):
         if curr_data:
             location = self.bucket_struct.unpack(curr_data)[0]
             if not location:
-                return None, None, 0, 0, 'u'
+                return None, None, 0, 0, "u"
             found_at, doc_id, l_key, start, size, status, _next = self._locate_key(
-                key, location)
-            if status == b'd' or status == 'd':  # when first record from many is deleted
+                key, location
+            )
+            if status == b"d" or status == "d":  # when first record from many is deleted
                 while True:
-                    found_at, doc_id, l_key, start, size, status, _next = self._locate_key(
-                        key, _next)
-                    if status != b'd' and status != 'd':
+                    (
+                        found_at,
+                        doc_id,
+                        l_key,
+                        start,
+                        size,
+                        status,
+                        _next,
+                    ) = self._locate_key(key, _next)
+                    if status != b"d" and status != "d":
                         break
             return doc_id, l_key, start, size, status
         else:
-            return None, None, 0, 0, 'u'
+            return None, None, 0, 0, "u"
 
     def _find_key_many(self, key, limit=1, offset=0):
         # print('IU_HashIndex._find_key_many %r' % key)
@@ -205,11 +227,12 @@ class IU_HashIndex(Index):
                 break
             try:
                 found_at, doc_id, l_key, start, size, status, _next = self._locate_key(
-                    key, location)
+                    key, location
+                )
             except IndexException:
                 break
             else:
-                if status != b'd' and status != 'd':
+                if status != b"d" and status != "d":
                     if l_key == key:  # in case of hash function conflicts
                         offset -= 1
                 location = _next
@@ -218,11 +241,12 @@ class IU_HashIndex(Index):
                 break
             try:
                 found_at, doc_id, l_key, start, size, status, _next = self._locate_key(
-                    key, location)
+                    key, location
+                )
             except IndexException:
                 break
             else:
-                if status != b'd' and status != 'd':
+                if status != b"d" and status != "d":
                     if l_key == key:  # in case of hash function conflicts
                         yield doc_id, start, size, status
                         limit -= 1
@@ -234,7 +258,11 @@ class IU_HashIndex(Index):
             key = str(key)
         if isinstance(key, six.text_type):
             key = key.encode()
-        pos = abs(int(hashlib.md5(key).hexdigest(), 16) & self.hash_lim) * self.bucket_line_size + self._start_ind
+        pos = (
+            abs(int(hashlib.md5(key).hexdigest(), 16) & self.hash_lim)
+            * self.bucket_line_size
+            + self._start_ind
+        )
         # pos = abs(hash(key) & self.hash_lim) * self.bucket_line_size + self._start_ind
         # print('IU_HashIndex._calculate_position hash_lim=%r bucket_line_size=%r _start_ind=%r  %r -> %r' % (
         #     self.hash_lim, self.bucket_line_size, self._start_ind, key, pos))
@@ -263,8 +291,7 @@ class IU_HashIndex(Index):
                 # print('IU_HashIndex._locate_key key=%r %r doc_id=%r l_key=%r start=%r size=%r status=%r _next=%r' % (key, self.name, doc_id, l_key, start, size, status, _next))
             except struct.error:
                 # print('ElemNotFound 1')
-                raise ElemNotFound(
-                    "Not found")  # not found but might be also broken
+                raise ElemNotFound("Not found")  # not found but might be also broken
             if l_key == key:
                 break
             else:
@@ -276,7 +303,7 @@ class IU_HashIndex(Index):
                     location = _next  # go to next record
         return location, doc_id, l_key, start, size, status, _next
 
-#    @lfu_cache(100)
+    #    @lfu_cache(100)
     def _locate_doc_id(self, doc_id, key, start):
         """
         Locate position of the doc_id, it will iterate using `next` field in record
@@ -297,17 +324,17 @@ class IU_HashIndex(Index):
             self.buckets.seek(location)
             data = self.buckets.read(self.entry_line_size)
             try:
-                l_doc_id, l_key, start, size, status, _next = self.entry_struct.unpack(data)
+                l_doc_id, l_key, start, size, status, _next = self.entry_struct.unpack(
+                    data
+                )
             except:
-                raise DocIdNotFound(
-                    "Doc_id %r for %r not found" % (doc_id, key))
+                raise DocIdNotFound("Doc_id %r for %r not found" % (doc_id, key))
             if l_doc_id == doc_id and l_key == key:  # added for consistency
                 break
             else:
                 if not _next:
                     # not found
-                    raise DocIdNotFound(
-                        "Doc_id %r for %r not found" % (doc_id, key))
+                    raise DocIdNotFound("Doc_id %r for %r not found" % (doc_id, key))
                 else:
                     location = _next  # go to next record
         return location, doc_id, l_key, start, size, status, _next
@@ -325,12 +352,20 @@ class IU_HashIndex(Index):
             data = self.buckets.read(self.entry_line_size)
             # todo, maybe partial read there...
             doc_id, l_key, start, size, status, _next = self.entry_struct.unpack(data)
-            if not _next or (status == b'd' or status == 'd'):
-                return self.buckets.tell() - self.entry_line_size, doc_id, l_key, start, size, status, _next
+            if not _next or (status == b"d" or status == "d"):
+                return (
+                    self.buckets.tell() - self.entry_line_size,
+                    doc_id,
+                    l_key,
+                    start,
+                    size,
+                    status,
+                    _next,
+                )
             else:
                 location = _next  # go to next record
 
-    def update(self, doc_id, key, u_start=0, u_size=0, u_status='o'):
+    def update(self, doc_id, key, u_start=0, u_size=0, u_status="o"):
         # print('IU_HashIndex.update %r' % key)
         # Fix types
         if isinstance(doc_id, six.text_type):
@@ -348,20 +383,19 @@ class IU_HashIndex(Index):
             location = self.bucket_struct.unpack(curr_data)[0]
         else:
             raise ElemNotFound("Location %r not found" % doc_id)
-        found_at, _doc_id, _key, start, size, status, _next = self._locate_doc_id(doc_id, key, location)
+        found_at, _doc_id, _key, start, size, status, _next = self._locate_doc_id(
+            doc_id, key, location
+        )
         self.buckets.seek(found_at)
-        self.buckets.write(self.entry_struct.pack(doc_id,
-                                                  key,
-                                                  u_start,
-                                                  u_size,
-                                                  u_status,
-                                                  _next))
+        self.buckets.write(
+            self.entry_struct.pack(doc_id, key, u_start, u_size, u_status, _next)
+        )
         self.flush()
         self._find_key.delete(key)
         self._locate_doc_id.delete(doc_id)
         return True
 
-    def insert(self, doc_id, key, start, size, status='o'):
+    def insert(self, doc_id, key, start, size, status="o"):
         # print('IU_HashIndex.insert %r' % key)
         # Fix types
         if isinstance(doc_id, six.text_type):
@@ -383,33 +417,36 @@ class IU_HashIndex(Index):
         if location:
             # last key with that hash
             try:
-                found_at, _doc_id, _key, _start, _size, _status, _next = self._locate_doc_id(doc_id, key, location)
+                (
+                    found_at,
+                    _doc_id,
+                    _key,
+                    _start,
+                    _size,
+                    _status,
+                    _next,
+                ) = self._locate_doc_id(doc_id, key, location)
             except DocIdNotFound:
-                found_at, _doc_id, _key, _start, _size, _status, _next = self._find_place(location)
+                found_at, _doc_id, _key, _start, _size, _status, _next = self._find_place(
+                    location
+                )
                 self.buckets.seek(0, 2)
                 wrote_at = self.buckets.tell()
-                self.buckets.write(self.entry_struct.pack(doc_id,
-                                                          key,
-                                                          start,
-                                                          size,
-                                                          status,
-                                                          _next))
-#                self.flush()
+                self.buckets.write(
+                    self.entry_struct.pack(doc_id, key, start, size, status, _next)
+                )
+                #                self.flush()
                 self.buckets.seek(found_at)
-                self.buckets.write(self.entry_struct.pack(_doc_id,
-                                                          _key,
-                                                          _start,
-                                                          _size,
-                                                          _status,
-                                                          wrote_at))
+                self.buckets.write(
+                    self.entry_struct.pack(
+                        _doc_id, _key, _start, _size, _status, wrote_at
+                    )
+                )
             else:
                 self.buckets.seek(found_at)
-                self.buckets.write(self.entry_struct.pack(doc_id,
-                                                          key,
-                                                          start,
-                                                          size,
-                                                          status,
-                                                          _next))
+                self.buckets.write(
+                    self.entry_struct.pack(doc_id, key, start, size, status, _next)
+                )
             self.flush()
             self._locate_doc_id.delete(doc_id)
             self._find_key.delete(_key)
@@ -426,13 +463,10 @@ class IU_HashIndex(Index):
                 self.buckets.seek(self.data_start)
                 wrote_at = self.buckets.tell()
 
-            self.buckets.write(self.entry_struct.pack(doc_id,
-                                                      key,
-                                                      start,
-                                                      size,
-                                                      status,
-                                                      0))
-#            self.flush()
+            self.buckets.write(
+                self.entry_struct.pack(doc_id, key, start, size, status, 0)
+            )
+            #            self.flush()
             self._find_key.delete(key)
             self.buckets.seek(start_position)
             self.buckets.write(self.bucket_struct.pack(wrote_at))
@@ -457,26 +491,30 @@ class IU_HashIndex(Index):
             if not curr_data:
                 break
             try:
-                doc_id, key, start, size, status, _next = self.entry_struct.unpack(curr_data)
+                doc_id, key, start, size, status, _next = self.entry_struct.unpack(
+                    curr_data
+                )
                 # print('hash_index.all while offset doc_id=%r key=%r start=%r size=%r status=%r next=%r' % (doc_id, key, start, size, status, _next))
             except IndexException as exc:
                 # print('IndexException while offset: %r' % exc)
                 break
             else:
-                if status != b'd' and status != 'd':
+                if status != b"d" and status != "d":
                     offset -= 1
         while limit:
             curr_data = self.buckets.read(self.entry_line_size)
             if not curr_data:
                 break
             try:
-                doc_id, key, start, size, status, _next = self.entry_struct.unpack(curr_data)
+                doc_id, key, start, size, status, _next = self.entry_struct.unpack(
+                    curr_data
+                )
                 # print('hash_index.all while limit doc_id=%r key=%r start=%r size=%r status=%r next=%r' % (doc_id, key, start, size, status, _next))
             except IndexException:
                 # print('IndexException while limit: %r' % exc)
                 break
             else:
-                if status != b'd' and status != 'd':
+                if status != b"d" and status != "d":
                     yield doc_id, key, start, size, status
                     limit -= 1
 
@@ -492,12 +530,9 @@ class IU_HashIndex(Index):
             if data:
                 doc_id, l_key, start, size, status, _next = self.entry_struct.unpack(data)
                 self.buckets.seek(pos_prev)
-                self.buckets.write(self.entry_struct.pack(doc_id,
-                                                          l_key,
-                                                          start,
-                                                          size,
-                                                          status,
-                                                          pos_next))
+                self.buckets.write(
+                    self.entry_struct.pack(doc_id, l_key, start, size, status, pos_next)
+                )
                 self.flush()
         if pos_next:
             self.buckets.seek(pos_next)
@@ -505,12 +540,9 @@ class IU_HashIndex(Index):
             if data:
                 doc_id, l_key, start, size, status, _next = self.entry_struct.unpack(data)
                 self.buckets.seek(pos_next)
-                self.buckets.write(self.entry_struct.pack(doc_id,
-                                                          l_key,
-                                                          start,
-                                                          size,
-                                                          status,
-                                                          _next))
+                self.buckets.write(
+                    self.entry_struct.pack(doc_id, l_key, start, size, status, _next)
+                )
                 self.flush()
         return
 
@@ -532,14 +564,11 @@ class IU_HashIndex(Index):
             # after adding new index to database without reindex
             # print("failed to delete doc_id=%r  key=%r" % (doc_id, key))
             raise TryReindexException()
-        found_at, _doc_id, _key, start, size, status, _next = self._locate_doc_id(doc_id, key, location)
+        found_at, _doc_id, _key, start, size, status, _next = self._locate_doc_id(
+            doc_id, key, location
+        )
         self.buckets.seek(found_at)
-        self.buckets.write(self.entry_struct.pack(doc_id,
-                                                  key,
-                                                  start,
-                                                  size,
-                                                  b'd',
-                                                  _next))
+        self.buckets.write(self.entry_struct.pack(doc_id, key, start, size, b"d", _next))
         self.flush()
         # self._fix_link(_key, _prev, _next)
         self._find_key.delete(key)
@@ -552,7 +581,8 @@ class IU_HashIndex(Index):
             hash_lim = self.hash_lim
 
         compact_ind = self.__class__(
-            self.db_path, self.name + '_compact', hash_lim=hash_lim)
+            self.db_path, self.name + "_compact", hash_lim=hash_lim
+        )
         compact_ind.create_index()
 
         gen = self.all()
@@ -571,10 +601,14 @@ class IU_HashIndex(Index):
         original_name = self.name
         # os.unlink(os.path.join(self.db_path, self.name + "_buck"))
         self.close_index()
-        shutil.move(os.path.join(compact_ind.db_path, compact_ind.
-                                 name + "_buck"), os.path.join(self.db_path, self.name + "_buck"))
-        shutil.move(os.path.join(compact_ind.db_path, compact_ind.
-                                 name + "_stor"), os.path.join(self.db_path, self.name + "_stor"))
+        shutil.move(
+            os.path.join(compact_ind.db_path, compact_ind.name + "_buck"),
+            os.path.join(self.db_path, self.name + "_buck"),
+        )
+        shutil.move(
+            os.path.join(compact_ind.db_path, compact_ind.name + "_stor"),
+            os.path.join(self.db_path, self.name + "_stor"),
+        )
         # self.name = original_name
         self.open_index()  # reload...
         self.name = original_name
@@ -585,11 +619,11 @@ class IU_HashIndex(Index):
 
     def make_key(self, key):
         if isinstance(key, six.text_type):
-            return codecs.encode(key, 'utf-8')
+            return codecs.encode(key, "utf-8")
         return key
 
     def make_key_value(self, data):
-        return b'1', data
+        return b"1", data
 
     def _clear_cache(self):
         self._find_key.clear()
@@ -616,15 +650,19 @@ class IU_UniqueHashIndex(IU_HashIndex):
         if isinstance(name, six.text_type):
             name = name.encode()
 
-        if 'key' in kwargs:
+        if "key" in kwargs:
             raise IndexPreconditionsException(
-                "UniqueHashIndex doesn't accept key parameter'")
-        super(IU_UniqueHashIndex, self).__init__(db_path, name,
-                                                 entry_line_format, *args, **kwargs)
-        self.create_key = random_hex_32  # : set the function to create random key when no _id given
+                "UniqueHashIndex doesn't accept key parameter'"
+            )
+        super(IU_UniqueHashIndex, self).__init__(
+            db_path, name, entry_line_format, *args, **kwargs
+        )
+        self.create_key = (
+            random_hex_32  # : set the function to create random key when no _id given
+        )
         # self.entry_struct=struct.Struct(entry_line_format)
 
-#    @lfu_cache(100)
+    #    @lfu_cache(100)
     def _find_key(self, key):
         """
         Find the key position
@@ -642,7 +680,8 @@ class IU_UniqueHashIndex(IU_HashIndex):
         if curr_data:
             location = self.bucket_struct.unpack(curr_data)[0]
             found_at, l_key, rev, start, size, status, _next = self._locate_key(
-                key, location)
+                key, location
+            )
 
             # Fix types
             if isinstance(l_key, bytes):
@@ -654,7 +693,7 @@ class IU_UniqueHashIndex(IU_HashIndex):
 
             return l_key, rev, start, size, status
         else:
-            return None, None, 0, 0, 'u'
+            return None, None, 0, 0, "u"
 
     def _find_key_many(self, *args, **kwargs):
         raise NotImplementedError()
@@ -675,12 +714,19 @@ class IU_UniqueHashIndex(IU_HashIndex):
             self.buckets.seek(location)
             data = self.buckets.read(self.entry_line_size)
             # todo, maybe partial read there...
-            l_key, rev, start, size, status, _next = self.entry_struct.unpack(
-                data)
+            l_key, rev, start, size, status, _next = self.entry_struct.unpack(data)
             if l_key == key:
                 raise IndexException("The %r key already exists" % key)
-            if not _next or (status == b'd' or status == 'd'):
-                return self.buckets.tell() - self.entry_line_size, l_key, rev, start, size, status, _next
+            if not _next or (status == b"d" or status == "d"):
+                return (
+                    self.buckets.tell() - self.entry_line_size,
+                    l_key,
+                    rev,
+                    start,
+                    size,
+                    status,
+                    _next,
+                )
             else:
                 location = _next  # go to next record
 
@@ -718,9 +764,17 @@ class IU_UniqueHashIndex(IU_HashIndex):
                     raise ElemNotFound("Location %r not found" % key)
                 else:
                     location = _next  # go to next record
-        return self.buckets.tell() - self.entry_line_size, l_key, rev, start, size, status, _next
+        return (
+            self.buckets.tell() - self.entry_line_size,
+            l_key,
+            rev,
+            start,
+            size,
+            status,
+            _next,
+        )
 
-    def update(self, key, rev, u_start=0, u_size=0, u_status='o'):
+    def update(self, key, rev, u_start=0, u_size=0, u_status="o"):
         # print('IU_UniqueHashIndex.update %r' % key)
         # Fix types
         if isinstance(key, six.text_type):
@@ -739,24 +793,20 @@ class IU_UniqueHashIndex(IU_HashIndex):
             location = self.bucket_struct.unpack(curr_data)[0]
         else:
             raise ElemNotFound("Location %r not found" % key)
-        found_at, _key, _rev, start, size, status, _next = self._locate_key(
-            key, location)
+        found_at, _key, _rev, start, size, status, _next = self._locate_key(key, location)
         if u_start == 0:
             u_start = start
         if u_size == 0:
             u_size = size
         self.buckets.seek(found_at)
-        self.buckets.write(self.entry_struct.pack(key,
-                                                  rev,
-                                                  u_start,
-                                                  u_size,
-                                                  u_status,
-                                                  _next))
+        self.buckets.write(
+            self.entry_struct.pack(key, rev, u_start, u_size, u_status, _next)
+        )
         self.flush()
         self._find_key.delete(key)
         return True
 
-    def insert(self, key, rev, start, size, status='o'):
+    def insert(self, key, rev, start, size, status="o"):
         # print('IU_UniqueHashIndex.insert %r' % key)
         # Fix types
         if isinstance(key, six.text_type):
@@ -778,7 +828,8 @@ class IU_UniqueHashIndex(IU_HashIndex):
         if location:
             # last key with that hash
             found_at, _key, _rev, _start, _size, _status, _next = self._find_place(
-                location, key)
+                location, key
+            )
             self.buckets.seek(0, 2)
             wrote_at = self.buckets.tell()
 
@@ -787,21 +838,15 @@ class IU_UniqueHashIndex(IU_HashIndex):
                 self.buckets.seek(self.data_start)
                 wrote_at = self.buckets.tell()
 
-            self.buckets.write(self.entry_struct.pack(key,
-                                                      rev,
-                                                      start,
-                                                      size,
-                                                      status,
-                                                      _next))
+            self.buckets.write(
+                self.entry_struct.pack(key, rev, start, size, status, _next)
+            )
 
-#            self.flush()
+            #            self.flush()
             self.buckets.seek(found_at)
-            self.buckets.write(self.entry_struct.pack(_key,
-                                                      _rev,
-                                                      _start,
-                                                      _size,
-                                                      _status,
-                                                      wrote_at))
+            self.buckets.write(
+                self.entry_struct.pack(_key, _rev, _start, _size, _status, wrote_at)
+            )
             self.flush()
             self._find_key.delete(_key)
             # self._locate_key.delete(_key)
@@ -816,12 +861,7 @@ class IU_UniqueHashIndex(IU_HashIndex):
                 self.buckets.seek(self.data_start)
                 wrote_at = self.buckets.tell()
 
-            self.buckets.write(self.entry_struct.pack(key,
-                                                      rev,
-                                                      start,
-                                                      size,
-                                                      status,
-                                                      0))
+            self.buckets.write(self.entry_struct.pack(key, rev, start, size, status, 0))
 
             self.buckets.seek(start_position)
             self.buckets.write(self.bucket_struct.pack(wrote_at))
@@ -836,12 +876,14 @@ class IU_UniqueHashIndex(IU_HashIndex):
             if not curr_data:
                 break
             try:
-                doc_id, rev, start, size, status, next = self.entry_struct.unpack(curr_data)
+                doc_id, rev, start, size, status, next = self.entry_struct.unpack(
+                    curr_data
+                )
                 # print('IU_UniqueHashIndex.all while offset %r doc_id=%r rev=%r start=%r size=%r status=%r next=%r' % (self.name, doc_id, rev, start, size, status, next))
             except IndexException:
                 break
             else:
-                if status != b'd' and status != 'd':
+                if status != b"d" and status != "d":
                     offset -= 1
 
         while limit:
@@ -849,12 +891,14 @@ class IU_UniqueHashIndex(IU_HashIndex):
             if not curr_data:
                 break
             try:
-                doc_id, rev, start, size, status, next = self.entry_struct.unpack(curr_data)
+                doc_id, rev, start, size, status, next = self.entry_struct.unpack(
+                    curr_data
+                )
                 # print('IU_UniqueHashIndex.all while limit %r doc_id=%r rev=%r start=%r size=%r status=%r next=%r' % (self.name, doc_id, rev, start, size, status, next))
             except IndexException:
                 break
             else:
-                if status != b'd' and status != 'd':
+                if status != b"d" and status != "d":
                     if isinstance(rev, six.binary_type):
                         rev = rev.decode()
                     if isinstance(doc_id, six.binary_type):
@@ -869,21 +913,20 @@ class IU_UniqueHashIndex(IU_HashIndex):
         # Fix types
         if isinstance(key, six.text_type):
             key = key.encode()
-        self.update(key, '00000000', start, size, b'd')
+        self.update(key, "00000000", start, size, b"d")
 
     def make_key_value(self, data):
-        _id = data['_id']
+        _id = data["_id"]
         try:
-            _id = data['_id']
+            _id = data["_id"]
             if isinstance(_id, six.text_type):
                 _id = _id.encode()
         except:
-            raise IndexPreconditionsException(
-                "_id must be valid string/bytes object")
+            raise IndexPreconditionsException("_id must be valid string/bytes object")
         if not isinstance(_id, bytes) or len(_id) != 32:
             raise IndexPreconditionsException("Invalid _id type or lenght")
-        del data['_id']
-        del data['_rev']
+        del data["_id"]
+        del data["_rev"]
         return _id, data
 
     def destroy(self):
@@ -923,9 +966,12 @@ class IU_UniqueHashIndex(IU_HashIndex):
 
 class DummyHashIndex(IU_HashIndex):
     def __init__(self, db_path, name, entry_line_format="<32s4sIIcI", *args, **kwargs):
-        super(DummyHashIndex, self).__init__(db_path, name,
-                                             entry_line_format, *args, **kwargs)
-        self.create_key = random_hex_32  # : set the function to create random key when no _id given
+        super(DummyHashIndex, self).__init__(
+            db_path, name, entry_line_format, *args, **kwargs
+        )
+        self.create_key = (
+            random_hex_32  # : set the function to create random key when no _id given
+        )
         # self.entry_struct=struct.Struct(entry_line_format)
 
     def update(self, *args, **kwargs):
@@ -947,7 +993,7 @@ class DummyHashIndex(IU_HashIndex):
         pass
 
     def make_key_value(self, data):
-        return '1', {'_': 1}
+        return "1", {"_": 1}
 
     def destroy(self):
         pass
@@ -977,7 +1023,7 @@ class IU_MultiHashIndex(IU_HashIndex):
     def __init__(self, *args, **kwargs):
         super(IU_MultiHashIndex, self).__init__(*args, **kwargs)
 
-    def insert(self, doc_id, key, start, size, status='o'):
+    def insert(self, doc_id, key, start, size, status="o"):
         if isinstance(key, (list, tuple)):
             key = set(key)
         elif not isinstance(key, set):
@@ -987,7 +1033,7 @@ class IU_MultiHashIndex(IU_HashIndex):
             ins(doc_id, curr_key, start, size, status)
         return True
 
-    def update(self, doc_id, key, u_start, u_size, u_status='o'):
+    def update(self, doc_id, key, u_start, u_size, u_status="o"):
         if isinstance(key, (list, tuple)):
             key = set(key)
         elif not isinstance(key, set):
@@ -1020,6 +1066,7 @@ class HashIndex(IU_HashIndex):
     """
     That class is designed to be used in custom indexes.
     """
+
     pass
 
 
@@ -1027,6 +1074,7 @@ class UniqueHashIndex(IU_UniqueHashIndex):
     """
     That class is designed to be used in custom indexes. It's designed to be **id** index.
     """
+
     pass
 
 

@@ -46,45 +46,41 @@ EVENTS:
     * :red:`timer-30sec`
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Debug = True
 _DebugLevel = 6
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
-if __name__ == '__main__':
-    import sys
+if __name__ == "__main__":
     import os.path as _p
-    sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
+    import sys
 
-#------------------------------------------------------------------------------
+    sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), "..")))
 
-from logs import lg
+# ------------------------------------------------------------------------------
 
 from automats import automat
-
+from coins import coins_io, contract_chain_node
 from lib import nameurl
-
+from logs import lg
+from p2p import commands, p2p_service
 from storage import accounting
-
 from userid import my_id
 
-from p2p import commands
-from p2p import p2p_service
+# ------------------------------------------------------------------------------
 
-from coins import coins_io
-from coins import contract_chain_node
+_ActiveSupplierContracts = (
+    dict()
+)  # provides SupplierContractExecutor object by customer idurl
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
-_ActiveSupplierContracts = dict()  # provides SupplierContractExecutor object by customer idurl
-
-#------------------------------------------------------------------------------
 
 def all_contracts():
     global _ActiveSupplierContracts
@@ -94,10 +90,10 @@ def all_contracts():
 def init_contract(customer_idurl):
     global _ActiveSupplierContracts
     if customer_idurl in _ActiveSupplierContracts:
-        lg.warn('contract with customer %s already started' % customer_idurl)
+        lg.warn("contract with customer %s already started" % customer_idurl)
         return _ActiveSupplierContracts[customer_idurl]
     cce = SupplierContractExecutor(customer_idurl)
-    cce.automat('init')
+    cce.automat("init")
     _ActiveSupplierContracts[customer_idurl] = cce
     return _ActiveSupplierContracts[customer_idurl]
 
@@ -105,9 +101,9 @@ def init_contract(customer_idurl):
 def shutdown_contract(customer_idurl):
     global _ActiveSupplierContracts
     if customer_idurl not in _ActiveSupplierContracts:
-        lg.warn('no contract started for given customer')
+        lg.warn("no contract started for given customer")
         return False
-    _ActiveSupplierContracts[customer_idurl].automat('shutdown')
+    _ActiveSupplierContracts[customer_idurl].automat("shutdown")
     _ActiveSupplierContracts.pop(customer_idurl)
     return True
 
@@ -123,9 +119,11 @@ def recheck_contract(customer_idurl):
     contract_executor = get_contract(customer_idurl)
     if contract_executor is None:
         contract_executor = init_contract(customer_idurl)
-    contract_executor.automat('recheck')
+    contract_executor.automat("recheck")
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 class SupplierContractExecutor(automat.Automat):
     """
@@ -133,14 +131,14 @@ class SupplierContractExecutor(automat.Automat):
     """
 
     timers = {
-        'timer-1min': (60, ['READ_CHAIN?']),
-        'timer-30sec': (30.0, ['CUSTOMER_SIGN?']),
+        "timer-1min": (60, ["READ_CHAIN?"]),
+        "timer-30sec": (30.0, ["CUSTOMER_SIGN?"]),
     }
 
     def __init__(self, customer_idurl):
         self.customer_idurl = customer_idurl
-        name = 'supplier_executor_%s' % nameurl.GetName(self.customer_idurl)
-        automat.Automat.__init__(self, name, 'AT_STARTUP', _DebugLevel, _Debug)
+        name = "supplier_executor_%s" % nameurl.GetName(self.customer_idurl)
+        automat.Automat.__init__(self, name, "AT_STARTUP", _DebugLevel, _Debug)
 
     def init(self):
         """
@@ -153,81 +151,81 @@ class SupplierContractExecutor(automat.Automat):
         """
         The state machine code, generated using `visio2python <https://bitdust.io/visio2python/>`_ tool.
         """
-        #---AT_STARTUP---
-        if self.state == 'AT_STARTUP':
-            if event == 'init':
-                self.state = 'READ_CHAIN?'
+        # ---AT_STARTUP---
+        if self.state == "AT_STARTUP":
+            if event == "init":
+                self.state = "READ_CHAIN?"
                 self.doRequestCoins(*args, **kwargs)
-        #---MY_COIN!---
-        elif self.state == 'MY_COIN!':
-            if event == 'shutdown':
-                self.state = 'CLOSED'
+        # ---MY_COIN!---
+        elif self.state == "MY_COIN!":
+            if event == "shutdown":
+                self.state = "CLOSED"
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'coin-failed':
-                self.state = 'UNCLEAR'
-            elif event == 'coin-sent':
-                self.state = 'CUSTOMER_COIN?'
-        #---CUSTOMER_COIN?---
-        elif self.state == 'CUSTOMER_COIN?':
-            if event == 'shutdown':
-                self.state = 'CLOSED'
+            elif event == "coin-failed":
+                self.state = "UNCLEAR"
+            elif event == "coin-sent":
+                self.state = "CUSTOMER_COIN?"
+        # ---CUSTOMER_COIN?---
+        elif self.state == "CUSTOMER_COIN?":
+            if event == "shutdown":
+                self.state = "CLOSED"
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'coin-published':
-                self.state = 'ACTIVE'
+            elif event == "coin-published":
+                self.state = "ACTIVE"
                 self.doSchedulePayment(*args, **kwargs)
-            elif event == 'payment-timeout':
-                self.state = 'FINISHED'
+            elif event == "payment-timeout":
+                self.state = "FINISHED"
                 self.doRemoveCustomer(*args, **kwargs)
-        #---ACTIVE---
-        elif self.state == 'ACTIVE':
-            if event == 'shutdown':
-                self.state = 'CLOSED'
+        # ---ACTIVE---
+        elif self.state == "ACTIVE":
+            if event == "shutdown":
+                self.state = "CLOSED"
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'time-to-charge':
-                self.state = 'MY_COIN!'
+            elif event == "time-to-charge":
+                self.state = "MY_COIN!"
                 self.doSendNextCoin(*args, **kwargs)
-        #---CLOSED---
-        elif self.state == 'CLOSED':
+        # ---CLOSED---
+        elif self.state == "CLOSED":
             pass
-        #---FINISHED---
-        elif self.state == 'FINISHED':
-            if event == 'shutdown':
-                self.state = 'CLOSED'
+        # ---FINISHED---
+        elif self.state == "FINISHED":
+            if event == "shutdown":
+                self.state = "CLOSED"
                 self.doDestroyMe(*args, **kwargs)
-        #---UNCLEAR---
-        elif self.state == 'UNCLEAR':
-            if event == 'shutdown':
-                self.state = 'CLOSED'
+        # ---UNCLEAR---
+        elif self.state == "UNCLEAR":
+            if event == "shutdown":
+                self.state = "CLOSED"
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'recheck':
-                self.state = 'READ_CHAIN?'
+            elif event == "recheck":
+                self.state = "READ_CHAIN?"
                 self.doRequestCoins(*args, **kwargs)
-        #---READ_CHAIN?---
-        elif self.state == 'READ_CHAIN?':
-            if event == 'shutdown':
-                self.state = 'CLOSED'
+        # ---READ_CHAIN?---
+        elif self.state == "READ_CHAIN?":
+            if event == "shutdown":
+                self.state = "CLOSED"
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'chain-2-state':
-                self.state = 'ACTIVE'
+            elif event == "chain-2-state":
+                self.state = "ACTIVE"
                 self.doSchedulePayment(*args, **kwargs)
-            elif event == 'timer-1min' or event == 'query-failed':
-                self.state = 'UNCLEAR'
-            elif event == 'chain-empty':
-                self.state = 'CUSTOMER_SIGN?'
+            elif event == "timer-1min" or event == "query-failed":
+                self.state = "UNCLEAR"
+            elif event == "chain-empty":
+                self.state = "CUSTOMER_SIGN?"
                 self.doRequestCustomerSignature(*args, **kwargs)
-            elif event == 'chain-1-state':
-                self.state = 'CUSTOMER_COIN?'
-            elif event == 'chain-closed':
-                self.state = 'FINISHED'
-        #---CUSTOMER_SIGN?---
-        elif self.state == 'CUSTOMER_SIGN?':
-            if event == 'timer-30sec':
-                self.state = 'UNCLEAR'
-            elif event == 'contract-signed':
-                self.state = 'MY_COIN!'
+            elif event == "chain-1-state":
+                self.state = "CUSTOMER_COIN?"
+            elif event == "chain-closed":
+                self.state = "FINISHED"
+        # ---CUSTOMER_SIGN?---
+        elif self.state == "CUSTOMER_SIGN?":
+            if event == "timer-30sec":
+                self.state = "UNCLEAR"
+            elif event == "contract-signed":
+                self.state = "MY_COIN!"
                 self.doSendFirstCoin(*args, **kwargs)
-            elif event == 'shutdown':
-                self.state = 'CLOSED'
+            elif event == "shutdown":
+                self.state = "CLOSED"
                 self.doDestroyMe(*args, **kwargs)
         return None
 
@@ -237,7 +235,7 @@ class SupplierContractExecutor(automat.Automat):
         """
         if not coins:
             return False
-        # TODO: 
+        # TODO:
         return True
 
     def isChainClosed(self, coins):
@@ -246,7 +244,7 @@ class SupplierContractExecutor(automat.Automat):
         """
         if not coins:
             return False
-        # TODO: 
+        # TODO:
         return True
 
     def isMyCoinExist(self, coins):
@@ -255,7 +253,7 @@ class SupplierContractExecutor(automat.Automat):
         """
         if not coins:
             return False
-        # TODO: 
+        # TODO:
         return True
 
     def doRequestCoins(self, *args, **kwargs):
@@ -263,7 +261,7 @@ class SupplierContractExecutor(automat.Automat):
         Action method.
         """
         contract_chain_node.get_coins_by_chain(
-            chain='supplier_customer',
+            chain="supplier_customer",
             provider_idurl=my_id.getIDURL(),
             consumer_idurl=self.customer_idurl,
         ).addCallbacks(
@@ -283,14 +281,16 @@ class SupplierContractExecutor(automat.Automat):
             self.current_duration,
             bytes_allocated,
         )
-        coin_json_sined = coins_io.add_signature(coin_json, 'creator')
+        coin_json_sined = coins_io.add_signature(coin_json, "creator")
         p2p_service.SendCoin(
             self.customer_idurl,
-            [coin_json_sined, ],
+            [
+                coin_json_sined,
+            ],
             callbacks={
                 commands.Ack(): self._on_signature_ack,
                 commands.Fail(): self._on_signature_fail,
-            }
+            },
         )
 
     def doSendFirstCoin(self, *args, **kwargs):
@@ -298,9 +298,7 @@ class SupplierContractExecutor(automat.Automat):
         Action method.
         """
         coin_json = args[0]
-        contract_chain_node.send_to_miner(
-            [coin_json, ],
-        ).addCallbacks(
+        contract_chain_node.send_to_miner([coin_json,],).addCallbacks(
             self._on_coin_mined,
             self._on_coin_failed,
         )
@@ -328,25 +326,27 @@ class SupplierContractExecutor(automat.Automat):
 
     def _on_query_result(self, coins):
         if _Debug:
-            lg.out(_DebugLevel, 'supplier_contract_executor._on_coins_received %s' % coins)
+            lg.out(
+                _DebugLevel, "supplier_contract_executor._on_coins_received %s" % coins
+            )
         if coins is None:
-            self.automat('query-failed', [])
+            self.automat("query-failed", [])
             return
         if len(coins) == 0:
-            self.automat('chain-empty', [])
+            self.automat("chain-empty", [])
             return
         if len(coins) % 2 == 1:
-            self.automat('chain-1-state', coins)
+            self.automat("chain-1-state", coins)
             return
         if len(coins) % 2 == 0:
-            self.automat('chain-2-state', coins)
+            self.automat("chain-2-state", coins)
             return
-        self.automat('query-failed', coins)
+        self.automat("query-failed", coins)
 
     def _on_query_failed(self, fails):
         if _Debug:
             lg.warn(str(fails))
-        self.automat('query-failed', fails)
+        self.automat("query-failed", fails)
 
     def _on_signature_ack(self, response, info):
         pass

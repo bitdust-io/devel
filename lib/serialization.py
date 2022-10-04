@@ -20,32 +20,40 @@
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-#------------------------------------------------------------------------------
+from lib import jsn, strng
 
-from lib import jsn
-from lib import strng
+# ------------------------------------------------------------------------------
 
-#------------------------------------------------------------------------------
 
-def DictToBytes(dct, encoding='latin1', errors='strict', keys_to_text=False, values_to_text=False, pack_types=False):
+# ------------------------------------------------------------------------------
+
+
+def DictToBytes(
+    dct,
+    encoding="latin1",
+    errors="strict",
+    keys_to_text=False,
+    values_to_text=False,
+    pack_types=False,
+):
     """
     Calls `json.dupms()` method for input dict to build bytes output.
     Uses encoding to decode every byte string to text and ensure ascii output.
     If `keys_to_text` is True it will also convert dict keys from binary strings to text strings.
     If `values_to_text` is True it will also convert dict values from binary strings to text strings.
     Another smart feature is `pack_types` - it will remember types of keys and values in the input dict.
-    Respective feature `unpack_types` of `BytesToDict()` method can be used to "extract" exactly same dict from bytes. 
-    Can be used to serialize dictionaries of mixed types - with binary and text values.   
+    Respective feature `unpack_types` of `BytesToDict()` method can be used to "extract" exactly same dict from bytes.
+    Can be used to serialize dictionaries of mixed types - with binary and text values.
     """
 
     result = strng.to_bin(
         jsn.dumps(
             jsn.pack_dict(dct, encoding=encoding, errors=errors) if pack_types else dct,
-            separators=(',', ':'),
+            separators=(",", ":"),
             indent=None,
             sort_keys=True,
             ensure_ascii=True,
@@ -59,13 +67,20 @@ def DictToBytes(dct, encoding='latin1', errors='strict', keys_to_text=False, val
     return result
 
 
-def BytesToDict(inp, encoding='latin1', errors='strict', keys_to_text=False, values_to_text=False, unpack_types=False):
+def BytesToDict(
+    inp,
+    encoding="latin1",
+    errors="strict",
+    keys_to_text=False,
+    values_to_text=False,
+    unpack_types=False,
+):
     """
     A smart way to extract input bytes into python dictionary object.
     All input bytes will be decoded into text and then loaded via `json.loads()` method.
     Finally every text key and value in result dict will be encoded back to bytes if `values_to_text` is False.
     Smart feature `unpack_types` can be used to "extract" real types of keys and values from input bytes.
-    Can be used to extract dictionaries of mixed types - binary and text values.   
+    Can be used to extract dictionaries of mixed types - binary and text values.
     """
     if not inp:
         return {}
@@ -73,7 +88,9 @@ def BytesToDict(inp, encoding='latin1', errors='strict', keys_to_text=False, val
     if values_to_text:
         return jsn.loads_text(_t, encoding=encoding)
     if unpack_types:
-        return jsn.unpack_dict(jsn.loads(_t, encoding=encoding), encoding=encoding, errors=errors)
+        return jsn.unpack_dict(
+            jsn.loads(_t, encoding=encoding), encoding=encoding, errors=errors
+        )
     if keys_to_text:
         return jsn.dict_keys_to_text(jsn.loads(_t, encoding=encoding))
     return jsn.loads(_t, encoding=encoding)

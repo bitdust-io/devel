@@ -26,11 +26,11 @@
 
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 import sys
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 if sys.version_info[0] == 3:
     text_type = str
@@ -39,7 +39,8 @@ else:
     text_type = unicode  # @UndefinedVariable
     binary_type = str
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
 
 def is_text(s):
     """
@@ -65,9 +66,11 @@ def is_string(s):
     """
     return is_text(s) or is_bin(s)
 
-#------------------------------------------------------------------------------
 
-def to_text(s, encoding='utf-8', errors='strict'):
+# ------------------------------------------------------------------------------
+
+
+def to_text(s, encoding="utf-8", errors="strict"):
     """
     If ``s`` is binary type - decode it to unicode - "text" type in Python3 terms.
     If ``s`` is not binary and not text calls `str(s)` to build text representation.
@@ -75,13 +78,13 @@ def to_text(s, encoding='utf-8', errors='strict'):
     if s is None:
         return s
     if not is_string(s):
-        s = '{0}'.format(s)
+        s = "{0}".format(s)
     if is_text(s):
         return s
     return s.decode(encoding=encoding, errors=errors)
 
 
-def to_bin(s, encoding='utf-8', errors='strict'):
+def to_bin(s, encoding="utf-8", errors="strict"):
     """
     If ``s`` is unicode ("text" type in Python3 terms) - encode it to utf-8, otherwise return ``s``.
     If ``s`` is not binary and not text calls `str(s)` to build text representation,
@@ -90,7 +93,7 @@ def to_bin(s, encoding='utf-8', errors='strict'):
     if s is None:
         return s
     if not is_string(s):
-        s = '{0}'.format(s)
+        s = "{0}".format(s)
     if is_bin(s):
         return s
     return s.encode(encoding=encoding, errors=errors)

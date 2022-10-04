@@ -31,90 +31,114 @@
 """
 
 from __future__ import absolute_import
+
 import os
-import sys
 import subprocess
+import sys
 
 try:
     from twisted.internet import reactor  # @UnresolvedImport
 except:
-    sys.exit('Error initializing twisted.internet.reactor in child_process.py')
+    sys.exit("Error initializing twisted.internet.reactor in child_process.py")
 
 from twisted.internet import protocol
 
-#------------------------------------------------------------------------------
-
 from logs import lg
+from system import bpio, nonblocking
 
-from system import bpio
-from system import nonblocking
+# ------------------------------------------------------------------------------
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 class ChildProcessProtocol(protocol.ProcessProtocol):
-
     def __init__(self, name):
         self.name = name
 
     def errReceived(self, inp):
         for line in inp.splitlines():
-            lg.out(2, '[%s]: %s' % (self.name, line))
+            lg.out(2, "[%s]: %s" % (self.name, line))
 
     def processEnded(self, reason):
-        lg.out(2, 'child process [%s] FINISHED' % self.name)
+        lg.out(2, "child process [%s] FINISHED" % self.name)
 
-#------------------------------------------------------------------------------
 
-def run(child_name, params=[], base_dir='.', process_protocol=None):
+# ------------------------------------------------------------------------------
+
+
+def run(child_name, params=[], base_dir=".", process_protocol=None):
     """
     This is another portable solution to execute a process.
     """
     if bpio.isFrozen() and bpio.Windows():
-        progpath = os.path.abspath(os.path.join(base_dir, child_name + '.exe'))
+        progpath = os.path.abspath(os.path.join(base_dir, child_name + ".exe"))
         executable = progpath
         cmdargs = [progpath]
         cmdargs.extend(params)
     else:
-        progpath = os.path.abspath(os.path.join(base_dir, child_name + '.py'))
+        progpath = os.path.abspath(os.path.join(base_dir, child_name + ".py"))
         executable = sys.executable
         cmdargs = [executable, progpath]
         cmdargs.extend(params)
     if not os.path.isfile(executable):
-        lg.out(1, 'child_process.run ERROR %s not found' % executable)
+        lg.out(1, "child_process.run ERROR %s not found" % executable)
         return None
     if not os.path.isfile(progpath):
-        lg.out(1, 'child_process.run ERROR %s not found' % progpath)
+        lg.out(1, "child_process.run ERROR %s not found" % progpath)
         return None
-    lg.out(6, 'child_process.run: "%s"' % (' '.join(cmdargs)))
+    lg.out(6, 'child_process.run: "%s"' % (" ".join(cmdargs)))
 
     if bpio.Windows():
         from twisted.internet import _dumbwin32proc
-        real_CreateProcess = _dumbwin32proc.win32process.CreateProcess  # @UndefinedVariable
 
-        def fake_createprocess(_appName, _commandLine, _processAttributes,
-                               _threadAttributes, _bInheritHandles, creationFlags,
-                               _newEnvironment, _currentDirectory, startupinfo):
+        real_CreateProcess = (
+            _dumbwin32proc.win32process.CreateProcess
+        )  # @UndefinedVariable
+
+        def fake_createprocess(
+            _appName,
+            _commandLine,
+            _processAttributes,
+            _threadAttributes,
+            _bInheritHandles,
+            creationFlags,
+            _newEnvironment,
+            _currentDirectory,
+            startupinfo,
+        ):
             import win32con  # @UnresolvedImport
+
             flags = win32con.CREATE_NO_WINDOW
-            return real_CreateProcess(_appName, _commandLine,
-                                      _processAttributes, _threadAttributes,
-                                      _bInheritHandles, flags, _newEnvironment,
-                                      _currentDirectory, startupinfo)
-        setattr(_dumbwin32proc.win32process, 'CreateProcess', fake_createprocess)
+            return real_CreateProcess(
+                _appName,
+                _commandLine,
+                _processAttributes,
+                _threadAttributes,
+                _bInheritHandles,
+                flags,
+                _newEnvironment,
+                _currentDirectory,
+                startupinfo,
+            )
+
+        setattr(_dumbwin32proc.win32process, "CreateProcess", fake_createprocess)
 
     if process_protocol is None:
         process_protocol = ChildProcessProtocol(child_name)
     try:
-        Process = reactor.spawnProcess(process_protocol, executable, cmdargs, path=base_dir)  # @UndefinedVariable
+        Process = reactor.spawnProcess(
+            process_protocol, executable, cmdargs, path=base_dir
+        )  # @UndefinedVariable
     except:
-        lg.out(1, 'child_process.run ERROR executing: %s' % str(cmdargs))
+        lg.out(1, "child_process.run ERROR executing: %s" % str(cmdargs))
         lg.exc()
         return None
 
     if bpio.Windows():
-        setattr(_dumbwin32proc.win32process, 'CreateProcess', real_CreateProcess)
+        setattr(_dumbwin32proc.win32process, "CreateProcess", real_CreateProcess)
 
-    lg.out(6, 'child_process.run [%s] pid=%d' % (child_name, Process.pid))
+    lg.out(6, "child_process.run [%s] pid=%d" % (child_name, Process.pid))
     return Process
 
 
@@ -123,8 +147,12 @@ def kill_process(process):
     Send signal "KILL" to the given ``process``.
     """
     try:
-        process.signalProcess('KILL')
-        lg.out(6, 'child_process.kill_process sent signal "KILL" to the process %d' % process.pid)
+        process.signalProcess("KILL")
+        lg.out(
+            6,
+            'child_process.kill_process sent signal "KILL" to the process %d'
+            % process.pid,
+        )
     except:
         return False
     return True
@@ -136,13 +164,14 @@ def kill_child(child_name):
     tries to kill it.
     """
     killed = False
-    for pid in bpio.find_process([child_name + '.']):
+    for pid in bpio.find_process([child_name + "."]):
         bpio.kill_process(pid)
-        lg.out(6, 'child_process.kill_child pid %d' % pid)
+        lg.out(6, "child_process.kill_child pid %d" % pid)
         killed = True
     return killed
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def pipe(cmdargs):
@@ -156,6 +185,7 @@ def pipe(cmdargs):
     try:
         if bpio.Windows():
             import win32process  # @UnresolvedImport
+
             p = nonblocking.Popen(
                 cmdargs,
                 shell=True,
@@ -175,7 +205,7 @@ def pipe(cmdargs):
                 universal_newlines=False,
             )
     except:
-        lg.out(1, 'child_process.pipe ERROR executing: %s' + str(cmdargs))
+        lg.out(1, "child_process.pipe ERROR executing: %s" + str(cmdargs))
         lg.exc()
         return None
     return p
@@ -186,6 +216,7 @@ def detach(cmdargs):
     try:
         if bpio.Windows():
             import win32process  # @UnresolvedImport
+
             p = nonblocking.Popen(
                 cmdargs,
                 shell=False,
@@ -193,7 +224,8 @@ def detach(cmdargs):
                 # stdout=subprocess.PIPE,
                 # stderr=subprocess.PIPE,
                 universal_newlines=False,
-                creationflags=win32process.CREATE_NO_WINDOW | win32process.DETACHED_PROCESS,
+                creationflags=win32process.CREATE_NO_WINDOW
+                | win32process.DETACHED_PROCESS,
                 close_fds=True,
             )
         else:
@@ -207,7 +239,7 @@ def detach(cmdargs):
                 close_fds=True,
             )
     except:
-        lg.out(1, 'child_process.detach ERROR executing: %s' + str(cmdargs))
+        lg.out(1, "child_process.detach ERROR executing: %s" + str(cmdargs))
         lg.exc()
         return None
     return p

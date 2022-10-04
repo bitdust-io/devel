@@ -24,77 +24,78 @@
 #
 #
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
-from __future__ import absolute_import
-from __future__ import print_function
-from io import BytesIO
-
-#------------------------------------------------------------------------------
+from __future__ import absolute_import, print_function
 
 import sys
 import time
+from io import BytesIO
 
 from twisted.internet import reactor  # @UnresolvedImport
-from twisted.internet import protocol
-from twisted.internet import task
+from twisted.internet import protocol, task
 from twisted.internet.defer import DeferredList
 
-#------------------------------------------------------------------------------
-
 from lib import strng
-
 from logs import lg
-
 from system import bpio
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
+
+# ------------------------------------------------------------------------------
+
+
+# ------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 12
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Listeners = {}
 _LastDatagramReceivedTime = 0
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
-CMD_PING = b'p'
-CMD_GREETING = b'g'
-CMD_DATA = b'd'
-CMD_ACK = b'k'
-CMD_ALIVE = b'a'
-CMD_STUN = b's'
-CMD_MYIPPORT = b'm'
+CMD_PING = b"p"
+CMD_GREETING = b"g"
+CMD_DATA = b"d"
+CMD_ACK = b"k"
+CMD_ALIVE = b"a"
+CMD_STUN = b"s"
+CMD_MYIPPORT = b"m"
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
 
 def listen(port, proto=None):
     if port in list(listeners().keys()):
-        lg.warn('already started on port %d' % port)
+        lg.warn("already started on port %d" % port)
         if _Debug:
-            lg.out(6, '            %s' % str(list(listeners().keys())))
+            lg.out(6, "            %s" % str(list(listeners().keys())))
         return listeners()[port]
     if proto is None:
-        listeners()[port] = reactor.listenUDP(port, CommandsProtocol())  # @UndefinedVariable
+        listeners()[port] = reactor.listenUDP(
+            port, CommandsProtocol()
+        )  # @UndefinedVariable
     else:
         listeners()[port] = reactor.listenUDP(port, proto)  # @UndefinedVariable
     listeners()[port].port = port
     if _Debug:
-        lg.out(6, 'udp.listen on port %d started' % port)
+        lg.out(6, "udp.listen on port %d started" % port)
     return listeners()[port]
 
 
 def port_closed(x):
     if _Debug:
-        lg.out(6, 'udp.port_closed   listeners: %d' % (len(listeners())))
+        lg.out(6, "udp.port_closed   listeners: %d" % (len(listeners())))
     return x
 
 
 def close(port):
     if _Debug:
-        lg.out(6, 'udp.close  %r' % port)
+        lg.out(6, "udp.close  %r" % port)
     l = listeners().pop(port)
     l.protocol.disconnect()
     d = l.stopListening()
@@ -103,7 +104,7 @@ def close(port):
     if d:
         d.addCallback(port_closed)
     if _Debug:
-        lg.out(6, 'udp.close  STOP listener on UDP port %d' % port)
+        lg.out(6, "udp.close  STOP listener on UDP port %d" % port)
     return d
 
 
@@ -115,10 +116,11 @@ def close_all():
         if d:
             shutlist.append(d)
     if _Debug:
-        lg.out(6, 'udp.close_all  %d UDP listeners were closed' % len(shutlist))
+        lg.out(6, "udp.close_all  %d UDP listeners were closed" % len(shutlist))
     return DeferredList(shutlist)
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def listeners():
@@ -137,13 +139,14 @@ def listener(port):
         return None
     return listeners()[port]
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def send_command(from_port, command, data, address):
     p = proto(from_port)
     if not p:
-        lg.warn('port %d is not opened to listen' % from_port)
+        lg.warn("port %d is not opened to listen" % from_port)
         return False
     result = p.sendCommand(command, data, address)
     p = None
@@ -154,11 +157,11 @@ def get_last_datagram_time():
     global _LastDatagramReceivedTime
     return _LastDatagramReceivedTime
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 class BasicProtocol(protocol.DatagramProtocol):
-
     def __init__(self):
         self.port = None
         self.callbacks = []
@@ -167,21 +170,20 @@ class BasicProtocol(protocol.DatagramProtocol):
         self.bytes_out = 0
 
     def __del__(self):
-        """
-        """
+        """ """
 
     def insert_callback(self, index, cb):
         self.callbacks.insert(index, cb)
 
     def add_callback(self, cb):
         if cb in self.callbacks:
-            lg.warn('Callback method %s already registered' % cb)
+            lg.warn("Callback method %s already registered" % cb)
         else:
             self.callbacks.append(cb)
 
     def remove_callback(self, cb):
         if cb not in self.callbacks:
-            lg.warn('Callback method %s not registered' % cb)
+            lg.warn("Callback method %s not registered" % cb)
         else:
             self.callbacks.remove(cb)
 
@@ -208,26 +210,24 @@ class BasicProtocol(protocol.DatagramProtocol):
         return True
 
     def startProtocol(self):
-        """
-        """
+        """ """
         if _Debug:
-            lg.out(6, 'udp.startProtocol %r' % self)
+            lg.out(6, "udp.startProtocol %r" % self)
 
     def stopProtocol(self):
-        """
-        """
+        """ """
         if _Debug:
-            lg.out(6, 'udp.stopProtocol %r' % self)
+            lg.out(6, "udp.stopProtocol %r" % self)
         self.port = None
         self.callbacks = []
 
     def disconnect(self):
-        """
-        """
+        """ """
         self.stopping = True
         self.callbacks = []
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 class CommandsProtocol(BasicProtocol):
@@ -253,7 +253,7 @@ class CommandsProtocol(BasicProtocol):
         * 'm' = ``MYIPPORT``    response to ``STUN`` packet, payload will contain IP:PORT of remote peer
     """
 
-    SoftwareVersion = b'1'
+    SoftwareVersion = b"1"
 
     def __init__(self):
         self.command_filter_callback = None
@@ -280,11 +280,14 @@ class CommandsProtocol(BasicProtocol):
             return
         if version != self.SoftwareVersion:
             inp.close()
-            lg.warn('different software version: %s' % version)
+            lg.warn("different software version: %s" % version)
             return
         if _Debug:
-            lg.out(_DebugLevel, '<<< [%s] (%d bytes) from %s, total %d bytes received' % (
-                command, datagramsz, str(address), self.bytes_in))
+            lg.out(
+                _DebugLevel,
+                "<<< [%s] (%d bytes) from %s, total %d bytes received"
+                % (command, datagramsz, str(address), self.bytes_in),
+            )
         # self.bytes_in += datagramsz
         handled = False
         try:
@@ -306,8 +309,11 @@ class CommandsProtocol(BasicProtocol):
             outp.write(strng.to_bin(command))
             outp.write(strng.to_bin(data))
             if _Debug:
-                lg.out(_DebugLevel, '>>> [%s] (%d bytes) to %s, total %d bytes sent' % (
-                    command, payloadsz + 2, address, self.bytes_out))
+                lg.out(
+                    _DebugLevel,
+                    ">>> [%s] (%d bytes) to %s, total %d bytes sent"
+                    % (command, payloadsz + 2, address, self.bytes_out),
+                )
             result = self.sendDatagram(outp.getvalue(), address)
         except:
             outp.close()
@@ -317,7 +323,9 @@ class CommandsProtocol(BasicProtocol):
         self.bytes_out += payloadsz + 2
         return result
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def main():
     bpio.init()
@@ -325,26 +333,26 @@ def main():
     listnport = int(sys.argv[1])
 
     def received(dgrm, addr):
-        send_command(listnport, CMD_ALIVE, 'ok', addr)
+        send_command(listnport, CMD_ALIVE, "ok", addr)
 
     def go(x, port):
-        print('go', x)
+        print("go", x)
         l = listen(port)
         l.protocol.add_callback(received)
 
     def restart(port):
-        print('restart')
+        print("restart")
         if listener(port):
             close(port).addCallback(go, port)
         else:
             go(None, port)
 
     def ping(fromport, toaddr):
-        print('ping')
-        send_command(fromport, CMD_PING, b'ping', toaddr)
+        print("ping")
+        send_command(fromport, CMD_PING, b"ping", toaddr)
 
     if len(sys.argv) > 2:
-        addr = sys.argv[2].split(':')
+        addr = sys.argv[2].split(":")
         addr = (addr[0], int(addr[1]))
         listen(listnport)
         task.LoopingCall(ping, listnport, addr).start(1, False)
@@ -354,6 +362,7 @@ def main():
         # task.LoopingCall(restart, listnport).start(5)
 
     reactor.run()  # @UndefinedVariable
+
 
 if __name__ == "__main__":
     main()

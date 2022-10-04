@@ -31,6 +31,7 @@ module:: service_private_messages
 """
 
 from __future__ import absolute_import
+
 from services.local_service import LocalService
 
 
@@ -40,37 +41,39 @@ def create_service():
 
 class PrivateMessagesService(LocalService):
 
-    service_name = 'service_private_messages'
-    config_path = 'services/private-messages/enabled'
+    service_name = "service_private_messages"
+    config_path = "services/private-messages/enabled"
     start_suspended = True
 
     def dependent_on(self):
         return [
-            'service_keys_registry',
-            'service_entangled_dht',
+            "service_keys_registry",
+            "service_entangled_dht",
         ]
 
     def start(self):
-        from main import events
-        from transport import callback
-        from stream import message
         from chat import nickname_holder
+        from main import events
+        from stream import message
+        from transport import callback
+
         message.init()
-        nickname_holder.A('set')
+        nickname_holder.A("set")
         callback.append_inbox_callback(self._on_inbox_packet_received)
-        events.add_subscriber(self._on_identity_url_changed, 'identity-url-changed')
-        events.add_subscriber(self._on_user_connected, 'node-connected')
-        events.add_subscriber(self._on_user_disconnected, 'node-disconnected')
+        events.add_subscriber(self._on_identity_url_changed, "identity-url-changed")
+        events.add_subscriber(self._on_user_connected, "node-connected")
+        events.add_subscriber(self._on_user_disconnected, "node-disconnected")
         return True
 
     def stop(self):
-        from main import events
-        from transport import callback
-        from stream import message
         from chat import nickname_holder
-        events.remove_subscriber(self._on_user_connected, 'node-connected')
-        events.remove_subscriber(self._on_user_disconnected, 'node-disconnected')
-        events.remove_subscriber(self._on_identity_url_changed, 'identity-url-changed')
+        from main import events
+        from stream import message
+        from transport import callback
+
+        events.remove_subscriber(self._on_user_connected, "node-connected")
+        events.remove_subscriber(self._on_user_disconnected, "node-disconnected")
+        events.remove_subscriber(self._on_identity_url_changed, "identity-url-changed")
         callback.remove_inbox_callback(self._on_inbox_packet_received)
         nickname_holder.Destroy()
         message.shutdown()
@@ -81,50 +84,67 @@ class PrivateMessagesService(LocalService):
 
     def on_resume(self, *args, **kwargs):
         from chat import nickname_holder
-        nickname_holder.A('set')
+
+        nickname_holder.A("set")
         return True
 
     def _on_inbox_packet_received(self, newpacket, info, status, error_message):
         from p2p import commands
         from stream import message
+
         if newpacket.Command != commands.Message():
             return False
         return message.on_incoming_message(newpacket, info, status, error_message)
 
     def _on_identity_url_changed(self, evt):
-        from logs import lg
         from contacts import contactsdb
+        from logs import lg
         from userid import id_url
-        old_idurl = id_url.field(evt.data['old_idurl'])
-        new_idurl = id_url.field(evt.data['new_idurl'])
+
+        old_idurl = id_url.field(evt.data["old_idurl"])
+        new_idurl = id_url.field(evt.data["new_idurl"])
         contacts_changed = False
         for idurl, alias in list(contactsdb.correspondents()):
             if old_idurl.to_bin() == id_url.field(idurl).to_bin():
                 contactsdb.remove_correspondent(idurl)
                 contactsdb.add_correspondent(new_idurl.to_bin(), alias)
                 contacts_changed = True
-                lg.info('found correspondent idurl was rotated : %r -> %r' % (old_idurl, new_idurl, ))
+                lg.info(
+                    "found correspondent idurl was rotated : %r -> %r"
+                    % (
+                        old_idurl,
+                        new_idurl,
+                    )
+                )
         if contacts_changed:
             contactsdb.save_correspondents()
 
     def _on_user_connected(self, evt):
-        from main import events
         from contacts import contactsdb
-        if contactsdb.is_correspondent(evt.data['idurl']):
-            events.send('friend-connected', data=dict(
-                idurl=evt.data['idurl'],
-                global_id=evt.data['global_id'],
-                old_state=evt.data['old_state'],
-                new_state=evt.data['new_state'],
-            ))
+        from main import events
+
+        if contactsdb.is_correspondent(evt.data["idurl"]):
+            events.send(
+                "friend-connected",
+                data=dict(
+                    idurl=evt.data["idurl"],
+                    global_id=evt.data["global_id"],
+                    old_state=evt.data["old_state"],
+                    new_state=evt.data["new_state"],
+                ),
+            )
 
     def _on_user_disconnected(self, evt):
-        from main import events
         from contacts import contactsdb
-        if contactsdb.is_correspondent(evt.data['idurl']):
-            events.send('friend-disconnected', data=dict(
-                idurl=evt.data['idurl'],
-                global_id=evt.data['global_id'],
-                old_state=evt.data['old_state'],
-                new_state=evt.data['new_state'],
-            ))
+        from main import events
+
+        if contactsdb.is_correspondent(evt.data["idurl"]):
+            events.send(
+                "friend-disconnected",
+                data=dict(
+                    idurl=evt.data["idurl"],
+                    global_id=evt.data["global_id"],
+                    old_state=evt.data["old_state"],
+                    new_state=evt.data["new_state"],
+                ),
+            )

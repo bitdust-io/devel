@@ -20,16 +20,15 @@
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
 
-from __future__ import absolute_import
-from __future__ import print_function
+from __future__ import absolute_import, print_function
+
 import os
 import sys
 
 from twisted.internet import reactor  # @UnresolvedImport
-from twisted.internet.defer import Deferred
 
-sys.path.append(os.path.abspath('.'))
-sys.path.append(os.path.abspath('..'))
+sys.path.append(os.path.abspath("."))
+sys.path.append(os.path.abspath(".."))
 
 from logs import lg
 
@@ -43,23 +42,27 @@ def main():
     tasks = {}
 
     def _cb(cmd, taskdata, result):
-        print('DONE!', cmd, taskdata, result)
+        print("DONE!", cmd, taskdata, result)
         tasks.pop(taskdata[3])
         if len(tasks) == 0:
             reactor.stop()
         else:
-            print(len(tasks), 'more')
+            print(len(tasks), "more")
 
     def _add(blocknum):
         tasks[blocknum] = (sys.argv[1], sys.argv[2], sys.argv[3], blocknum, sys.argv[5])
-        raid_worker.A('new-task',
-                      ('make', (sys.argv[1], sys.argv[2], sys.argv[3], blocknum, sys.argv[5]),
-                       _cb))
+        raid_worker.A(
+            "new-task",
+            ("make", (sys.argv[1], sys.argv[2], sys.argv[3], blocknum, sys.argv[5]), _cb),
+        )
+
     from system import bpio
+
     bpio.init()
     lg.set_debug_level(20)
     from raid import raid_worker
-    reactor.callWhenRunning(raid_worker.A, 'init')
+
+    reactor.callWhenRunning(raid_worker.A, "init")
     start_block_num = int(sys.argv[4])
     reactor.callLater(0.01, _add, start_block_num)
     reactor.callLater(0.02, _add, start_block_num + 1)
@@ -69,5 +72,5 @@ def main():
     reactor.run()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -31,6 +31,7 @@ module:: service_http_transport
 """
 
 from __future__ import absolute_import
+
 from services.local_service import LocalService
 
 
@@ -40,9 +41,9 @@ def create_service():
 
 class HTTPTransportService(LocalService):
 
-    service_name = 'service_http_transport'
-    config_path = 'services/http-transport/enabled'
-    proto = 'http'
+    service_name = "service_http_transport"
+    config_path = "services/http-transport/enabled"
+    proto = "http"
 
     def enabled(self):
         # TODO: development just started... service disabled at the moment
@@ -50,8 +51,8 @@ class HTTPTransportService(LocalService):
 
     def dependent_on(self):
         return [
-            'service_http_connections',
-            'service_gateway',
+            "service_http_connections",
+            "service_gateway",
         ]
 
     def installed(self):
@@ -61,51 +62,75 @@ class HTTPTransportService(LocalService):
     def start(self):
         from twisted.internet import reactor  # @UnresolvedImport
         from twisted.internet.defer import Deferred
-        from transport.http import http_interface
-        from transport import network_transport
-        from transport import gateway
+
         from main.config import conf
+        from transport import gateway, network_transport
+        from transport.http import http_interface
+
         self.starting_deferred = Deferred()
-        self.transport = network_transport.NetworkTransport('http', http_interface.GateInterface())
-        self.transport.automat('init',
-                               (gateway.listener(), self._on_transport_state_changed))
-        reactor.callLater(0, self.transport.automat, 'start')  # @UndefinedVariable
-        conf().addConfigNotifier('services/http-transport/enabled',
-                           self._on_enabled_disabled)
-        conf().addConfigNotifier('services/http-transport/receiving-enabled',
-                           self._on_receiving_enabled_disabled)
+        self.transport = network_transport.NetworkTransport(
+            "http", http_interface.GateInterface()
+        )
+        self.transport.automat(
+            "init", (gateway.listener(), self._on_transport_state_changed)
+        )
+        reactor.callLater(0, self.transport.automat, "start")  # @UndefinedVariable
+        conf().addConfigNotifier(
+            "services/http-transport/enabled", self._on_enabled_disabled
+        )
+        conf().addConfigNotifier(
+            "services/http-transport/receiving-enabled",
+            self._on_receiving_enabled_disabled,
+        )
         return self.starting_deferred
 
     def stop(self):
         from main.config import conf
-        conf().removeConfigNotifier('services/http-transport/enabled')
-        conf().removeConfigNotifier('services/http-transport/receiving-enabled')
+
+        conf().removeConfigNotifier("services/http-transport/enabled")
+        conf().removeConfigNotifier("services/http-transport/receiving-enabled")
         t = self.transport
         self.transport = None
-        t.automat('shutdown')
+        t.automat("shutdown")
         return True
 
     def _on_transport_state_changed(self, transport, oldstate, newstate):
         from logs import lg
-        lg.info('%s -> %s in %r  starting_deferred=%r' % (oldstate, newstate, transport, bool(self.starting_deferred)))
+
+        lg.info(
+            "%s -> %s in %r  starting_deferred=%r"
+            % (oldstate, newstate, transport, bool(self.starting_deferred))
+        )
         if self.starting_deferred:
-            if newstate in ['LISTENING', ]:
+            if newstate in [
+                "LISTENING",
+            ]:
                 self.starting_deferred.callback(newstate)
                 self.starting_deferred = None
-            elif newstate in ['OFFLINE', ]:
+            elif newstate in [
+                "OFFLINE",
+            ]:
                 self.starting_deferred.errback(Exception(newstate))
                 self.starting_deferred = None
 
     def _on_enabled_disabled(self, path, value, oldvalue, result):
-        from p2p import network_connector
         from logs import lg
-        lg.out(2, 'service_http_transport._on_enabled_disabled : %s->%s : %s' % (
-            oldvalue, value, path))
-        network_connector.A('reconnect')
+        from p2p import network_connector
+
+        lg.out(
+            2,
+            "service_http_transport._on_enabled_disabled : %s->%s : %s"
+            % (oldvalue, value, path),
+        )
+        network_connector.A("reconnect")
 
     def _on_receiving_enabled_disabled(self, path, value, oldvalue, result):
-        from p2p import network_connector
         from logs import lg
-        lg.out(2, 'service_http_transport._on_receiving_enabled_disabled : %s->%s : %s' % (
-            oldvalue, value, path))
-        network_connector.A('reconnect')
+        from p2p import network_connector
+
+        lg.out(
+            2,
+            "service_http_transport._on_receiving_enabled_disabled : %s->%s : %s"
+            % (oldvalue, value, path),
+        )
+        network_connector.A("reconnect")

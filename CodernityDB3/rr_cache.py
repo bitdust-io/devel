@@ -16,9 +16,11 @@
 # limitations under the License.
 
 from __future__ import absolute_import
-import six
+
 import functools
 from random import choice
+
+import six
 from six.moves import range
 
 
@@ -30,7 +32,7 @@ def cache1lvl(maxsize=100):
         def wrapper(key, *args, **kwargs):
             # print('rr_cache.1lvl.wrapper %r %r' % (user_function, key))
             if isinstance(key, six.text_type):
-                key = key.encode()            
+                key = key.encode()
             try:
                 result = cache1lvl[key]
                 # print('rr_cache.1lvl.wrapper found result')
@@ -48,7 +50,7 @@ def cache1lvl(maxsize=100):
         def delete(key):
             # print('rr_cache.1lvl.delete %r %r' % (user_function, key))
             if isinstance(key, six.text_type):
-                key = key.encode()            
+                key = key.encode()
             try:
                 del cache1lvl[key]
                 return True
@@ -59,6 +61,7 @@ def cache1lvl(maxsize=100):
         wrapper.cache = cache1lvl
         wrapper.delete = delete
         return wrapper
+
     return decorating_function
 
 
@@ -68,11 +71,11 @@ def cache2lvl(maxsize=100):
 
         @functools.wraps(user_function)
         def wrapper(*args, **kwargs):
-#            return user_function(*args, **kwargs)
+            #            return user_function(*args, **kwargs)
             key = args[0]
             # print('rr_cache.2lvl.wrapper %r %r' % (user_function, key))
             if isinstance(key, six.text_type):
-                key = key.encode()            
+                key = key.encode()
             try:
                 result = cache[key][args[1]]
                 # print('rr_cache.2lvl.wrapper found result')
@@ -101,7 +104,7 @@ def cache2lvl(maxsize=100):
         def delete(key, inner_key=None):
             # print('rr_cache.2lvl.delete %r %r' % (user_function, key))
             if isinstance(key, six.text_type):
-                key = key.encode()            
+                key = key.encode()
             if inner_key:
                 try:
                     del cache[key][inner_key]
@@ -124,4 +127,5 @@ def cache2lvl(maxsize=100):
         wrapper.delete = delete
         wrapper.cache_size = 0
         return wrapper
+
     return decorating_function

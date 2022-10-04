@@ -31,6 +31,7 @@ module:: service_personal_messages
 """
 
 from __future__ import absolute_import
+
 from services.local_service import LocalService
 
 
@@ -40,14 +41,14 @@ def create_service():
 
 class PersonalMessagesService(LocalService):
 
-    service_name = 'service_personal_messages'
-    config_path = 'services/personal-messages/enabled'
+    service_name = "service_personal_messages"
+    config_path = "services/personal-messages/enabled"
 
     personal_group_key_id = None
 
     def dependent_on(self):
         return [
-            'service_private_groups',
+            "service_private_groups",
         ]
 
     def installed(self):
@@ -55,34 +56,47 @@ class PersonalMessagesService(LocalService):
         return False
 
     def start(self):
+        from crypt import my_keys
+
         from twisted.internet import reactor  # @UnresolvedImport
         from twisted.internet.defer import Deferred
+
+        from access import groups
         from logs import lg
         from main import settings
-        from access import groups
-        from crypt import my_keys
         from userid import my_id
+
         self.starting_deferred = Deferred()
-        self.starting_deferred.addErrback(lambda err: lg.warn('service %r was not started: %r' % (
-            self.service_name, err.getErrorMessage() if err else 'unknown reason')))
-        self.personal_group_key_id = my_keys.make_key_id(alias='person', creator_glob_id=my_id.getGlobalID())
+        self.starting_deferred.addErrback(
+            lambda err: lg.warn(
+                "service %r was not started: %r"
+                % (self.service_name, err.getErrorMessage() if err else "unknown reason")
+            )
+        )
+        self.personal_group_key_id = my_keys.make_key_id(
+            alias="person", creator_glob_id=my_id.getGlobalID()
+        )
 
         # TODO: needs more work, service_private_groups() must be reliable first
         return True
 
         if not my_keys.is_key_registered(self.personal_group_key_id):
             self.personal_group_key_id = groups.create_new_group(
-                label='my personal messages',
+                label="my personal messages",
                 creator_id=my_id.getGlobalID(),
                 key_size=settings.getPrivateKeySize(),
-                group_alias='person',
+                group_alias="person",
                 with_group_info=True,
             )
             if self.personal_group_key_id is None:
-                lg.err('failed creating "personal" message group, service_personal_messages() can not be started')
+                lg.err(
+                    'failed creating "personal" message group, service_personal_messages() can not be started'
+                )
                 if self.starting_deferred:
                     if not self.starting_deferred.called:
-                        self.starting_deferred.errback(Exception('failed creating "personal" message group'))
+                        self.starting_deferred.errback(
+                            Exception('failed creating "personal" message group')
+                        )
                 return self.starting_deferred
         d = groups.send_group_pub_key_to_suppliers(self.personal_group_key_id)
         d.addCallback(lambda results: self._do_join_my_personal_group())
@@ -92,13 +106,17 @@ class PersonalMessagesService(LocalService):
 
     def stop(self):
         from interface import api
+
         # api.group_leave(self.personal_group_key_id, erase_key=False)
         return True
 
     def _do_join_my_personal_group(self):
-        from logs import lg
         from interface import api
-        lg.info('about to join my personal message group: %r' % self.personal_group_key_id)
+        from logs import lg
+
+        lg.info(
+            "about to join my personal message group: %r" % self.personal_group_key_id
+        )
         api.group_join(self.personal_group_key_id)
         if self.starting_deferred:
             if not self.starting_deferred.called:

@@ -33,11 +33,11 @@ Also you can subscribe to given event and receive notifications.
 TODO: need to store events on the local HDD
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 12
@@ -45,7 +45,7 @@ _DebugLevel = 12
 _EventLogFileEnabled = True
 _EventLogUseColors = None
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 import os
 import sys
@@ -53,62 +53,68 @@ import sys
 try:
     from twisted.internet import reactor  # @UnresolvedImport
 except:
-    sys.exit('Error initializing twisted.internet.reactor in events.py')
+    sys.exit("Error initializing twisted.internet.reactor in events.py")
 
 from twisted.internet.defer import Deferred  # @UnresolvedImport
 
-#------------------------------------------------------------------------------
-
+from lib import utime
 from logs import lg
 
-from lib import utime
+# ------------------------------------------------------------------------------
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 MAX_PENDING_EVENTS_PER_CONSUMER = 100
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Subscribers = {}
 _ConsumersCallbacks = {}
 _EventQueuePerConsumer = {}
 _EventsCount = {}
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
 
 def subscribers():
     global _Subscribers
     return _Subscribers
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def init():
     if _Debug:
-        lg.out(_DebugLevel, 'events.init')
+        lg.out(_DebugLevel, "events.init")
     add_subscriber(push_event)
 
 
 def shutdown():
     if _Debug:
-        lg.out(_DebugLevel, 'events.shutdown')
+        lg.out(_DebugLevel, "events.shutdown")
     clear_subscribers()
     subscribers().clear()
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 class Event(object):
-
     def __init__(self, event_id, data=None, created=None):
         self.event_id = event_id
         self.data = data
         self.created = created or utime.get_sec1970()
 
     def __repr__(self):
-        return '<Event({})>'.format(self.event_id)
+        return "<Event({})>".format(self.event_id)
 
-#------------------------------------------------------------------------------
 
-def add_subscriber(subscriber_callback, event_id='*'):
+# ------------------------------------------------------------------------------
+
+
+def add_subscriber(subscriber_callback, event_id="*"):
     """
     subscriber_callback(evt)
     """
@@ -118,9 +124,9 @@ def add_subscriber(subscriber_callback, event_id='*'):
     return True
 
 
-def remove_subscriber(subscriber_callback, event_id='*'):
+def remove_subscriber(subscriber_callback, event_id="*"):
     removed = False
-    if event_id == '*':
+    if event_id == "*":
         for event_id, subscriber_callbacks in subscribers().items():
             if subscriber_callback in subscriber_callbacks:
                 subscribers()[event_id].remove(subscriber_callback)
@@ -133,16 +139,18 @@ def remove_subscriber(subscriber_callback, event_id='*'):
     return removed
 
 
-def clear_subscribers(event_id='*'):
+def clear_subscribers(event_id="*"):
     removed = False
     for _event_id, subscriber_callbacks in subscribers().items():
-        if _event_id == event_id or event_id == '*':
+        if _event_id == event_id or event_id == "*":
             for _cb in list(subscriber_callbacks):
                 subscribers()[_event_id].remove(_cb)
                 removed = True
     return removed
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def dispatch(evt):
     global _EventLogFileEnabled
@@ -160,8 +168,8 @@ def dispatch(evt):
                 lg.exc()
                 continue
             handled += 1
-    if '*' in subscribers():
-        for subscriber_callback in subscribers()['*']:
+    if "*" in subscribers():
+        for subscriber_callback in subscribers()["*"]:
             try:
                 subscriber_callback(evt)
             except:
@@ -170,21 +178,39 @@ def dispatch(evt):
             handled += 1
     if _EventLogFileEnabled:
         if _EventLogUseColors is None:
-            _EventLogUseColors = os.environ.get('BITDUST_LOG_USE_COLORS', '1') != '0'
+            _EventLogUseColors = os.environ.get("BITDUST_LOG_USE_COLORS", "1") != "0"
         if _EventLogUseColors:
-            lg.out(2, '\033[0;49;91m%s\033[0m  %r' % (evt.event_id, str(evt.data)), log_name='event', showtime=True)
+            lg.out(
+                2,
+                "\033[0;49;91m%s\033[0m  %r" % (evt.event_id, str(evt.data)),
+                log_name="event",
+                showtime=True,
+            )
         else:
-            lg.out(2, '%s  %r' % (evt.event_id, str(evt.data)), log_name='event', showtime=True)
+            lg.out(
+                2,
+                "%s  %r" % (evt.event_id, str(evt.data)),
+                log_name="event",
+                showtime=True,
+            )
     if _Debug:
         if not handled:
             lg.warn('event "{}" was not handled'.format(evt.event_id))
         else:
             if _EventLogUseColors:
-                lg.out(_DebugLevel, '\033[0;49;36mevents.dispatch "{}" was handled by {} subscribers\033[0m'.format(
-                    evt.event_id, handled))
+                lg.out(
+                    _DebugLevel,
+                    '\033[0;49;36mevents.dispatch "{}" was handled by {} subscribers\033[0m'.format(
+                        evt.event_id, handled
+                    ),
+                )
             else:
-                lg.out(_DebugLevel, 'events.dispatch "{}" was handled by {} subscribers'.format(
-                    evt.event_id, handled))
+                lg.out(
+                    _DebugLevel,
+                    'events.dispatch "{}" was handled by {} subscribers'.format(
+                        evt.event_id, handled
+                    ),
+                )
     return handled
 
 
@@ -196,7 +222,8 @@ def send(event_id, data=None, created=None, fast=False):
         reactor.callLater(0, dispatch, evt)  # @UndefinedVariable
     return evt
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def event_queue():
@@ -215,8 +242,11 @@ def consume_events(consumer_id):
     d = Deferred()
     consumers_callbacks()[consumer_id].append(d)
     if _Debug:
-        lg.out(_DebugLevel, 'events.consume_events added callback for consumer "%s", %d total callbacks' % (
-            consumer_id, len(consumers_callbacks()[consumer_id])))
+        lg.out(
+            _DebugLevel,
+            'events.consume_events added callback for consumer "%s", %d total callbacks'
+            % (consumer_id, len(consumers_callbacks()[consumer_id])),
+        )
     reactor.callLater(0, pop_event)  # @UndefinedVariable
     return d
 
@@ -225,15 +255,20 @@ def push_event(event_object):
     for consumer_id in consumers_callbacks().keys():
         if consumer_id not in event_queue():
             event_queue()[consumer_id] = []
-        event_queue()[consumer_id].append({
-            'type': 'event',
-            'id': event_object.event_id,
-            'data': event_object.data,
-            'time': event_object.created,
-        })
+        event_queue()[consumer_id].append(
+            {
+                "type": "event",
+                "id": event_object.event_id,
+                "data": event_object.data,
+                "time": event_object.created,
+            }
+        )
         if _Debug:
-            lg.out(_DebugLevel, 'events.push_event "%s" for consumer "%s", %d pending events' % (
-                event_object.event_id, consumer_id, len(event_queue()[consumer_id])))
+            lg.out(
+                _DebugLevel,
+                'events.push_event "%s" for consumer "%s", %d pending events'
+                % (event_object.event_id, consumer_id, len(event_queue()[consumer_id])),
+            )
     reactor.callLater(0, pop_event)  # @UndefinedVariable
 
 
@@ -243,37 +278,56 @@ def pop_event():
             continue
         registered_callbacks = consumers_callbacks()[consumer_id]
         pending_messages = event_queue()[consumer_id]
-        if len(registered_callbacks) == 0 and len(pending_messages) > MAX_PENDING_EVENTS_PER_CONSUMER:
+        if (
+            len(registered_callbacks) == 0
+            and len(pending_messages) > MAX_PENDING_EVENTS_PER_CONSUMER
+        ):
             consumers_callbacks().pop(consumer_id)
             event_queue().pop(consumer_id)
             if _Debug:
-                lg.out(_DebugLevel, 'events.pop_event STOPPED consumer "%s", too many pending messages but no callbacks' % consumer_id)
+                lg.out(
+                    _DebugLevel,
+                    'events.pop_event STOPPED consumer "%s", too many pending messages but no callbacks'
+                    % consumer_id,
+                )
             continue
         for consumer_callback in registered_callbacks:
             if not consumer_callback:
                 if _Debug:
-                    lg.out(_DebugLevel, 'events.pop_event %d events waiting consuming by "%s", no callback yet' % (
-                        len(event_queue()[consumer_id]), consumer_id))
+                    lg.out(
+                        _DebugLevel,
+                        'events.pop_event %d events waiting consuming by "%s", no callback yet'
+                        % (len(event_queue()[consumer_id]), consumer_id),
+                    )
                 continue
             if consumer_callback.called:
                 if _Debug:
-                    lg.out(_DebugLevel, 'events.pop_event %d events waiting consuming by "%s", callback state is "called"' % (
-                        len(event_queue()[consumer_id]), consumer_id))
+                    lg.out(
+                        _DebugLevel,
+                        'events.pop_event %d events waiting consuming by "%s", callback state is "called"'
+                        % (len(event_queue()[consumer_id]), consumer_id),
+                    )
                 continue
             consumer_callback.callback(pending_messages)
             event_queue()[consumer_id] = []
             if _Debug:
-                lg.out(_DebugLevel, 'events.pop_event %d events consumed by "%s"' % (len(pending_messages), consumer_id))
+                lg.out(
+                    _DebugLevel,
+                    'events.pop_event %d events consumed by "%s"'
+                    % (len(pending_messages), consumer_id),
+                )
         consumers_callbacks()[consumer_id] = []
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def count(event_id=None):
     global _EventsCount
-    if 'my-identity-rotated' not in _EventsCount:
-        _EventsCount['my-identity-rotated'] = 0
-    if 'identity-rotated' not in _EventsCount:
-        _EventsCount['identity-rotated'] = 0
+    if "my-identity-rotated" not in _EventsCount:
+        _EventsCount["my-identity-rotated"] = 0
+    if "identity-rotated" not in _EventsCount:
+        _EventsCount["identity-rotated"] = 0
     if event_id is None:
         return _EventsCount
     return _EventsCount.get(event_id, 0)

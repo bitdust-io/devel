@@ -28,59 +28,55 @@ Manages currently restoring backups.
 
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-#------------------------------------------------------------------------------ 
+# ------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 8
 
-#------------------------------------------------------------------------------ 
+# ------------------------------------------------------------------------------
 
 import os
 
-#------------------------------------------------------------------------------
-
-from logs import lg
-
-from main import events
-
 from lib import misc
-
+from logs import lg
+from main import events
+from storage import backup_control, backup_matrix, backup_tar
 from system import tmpfile
-
-from storage import backup_tar
-from storage import backup_matrix
-from storage import backup_control
-
 from userid import global_id
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
+
+# ------------------------------------------------------------------------------
 
 _WorkingBackupIDs = {}
 _WorkingRestoreProgress = {}
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 OnRestorePacketFunc = None
 OnRestoreDoneFunc = None
 OnRestoreBlockFunc = None
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 def init():
     if _Debug:
-        lg.out(_DebugLevel, 'restore_monitor.init')
+        lg.out(_DebugLevel, "restore_monitor.init")
 
 
 def shutdown():
     if _Debug:
-        lg.out(_DebugLevel, 'restore_monitor.shutdown')
+        lg.out(_DebugLevel, "restore_monitor.shutdown")
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def block_restored_callback(backupID, block):
     global OnRestoreBlockFunc
@@ -93,7 +89,11 @@ def packet_in_callback(backupID, newpacket):
     global OnRestorePacketFunc
     SupplierNumber = newpacket.SupplierNumber()
     if _Debug:
-        lg.out(_DebugLevel, 'restore_monitor.packet_in_callback %s from supplier %s' % (backupID, SupplierNumber))
+        lg.out(
+            _DebugLevel,
+            "restore_monitor.packet_in_callback %s from supplier %s"
+            % (backupID, SupplierNumber),
+        )
     # want to count the data we restoring
     if SupplierNumber not in list(_WorkingRestoreProgress[backupID].keys()):
         _WorkingRestoreProgress[backupID][SupplierNumber] = 0
@@ -105,44 +105,50 @@ def packet_in_callback(backupID, newpacket):
 
 
 def extract_done(retcode, backupID, source_filename, output_location, callback_method):
-    lg.info('extract success of %s with result : %s' % (backupID, str(retcode)))
+    lg.info("extract success of %s with result : %s" % (backupID, str(retcode)))
     global OnRestoreDoneFunc
     _WorkingBackupIDs.pop(backupID, None)
     _WorkingRestoreProgress.pop(backupID, None)
-    tmpfile.throw_out(source_filename, 'file extracted')
+    tmpfile.throw_out(source_filename, "file extracted")
     if OnRestoreDoneFunc is not None:
-        OnRestoreDoneFunc(backupID, 'restore done')
+        OnRestoreDoneFunc(backupID, "restore done")
     if callback_method:
         try:
-            callback_method(backupID, 'restore done')
+            callback_method(backupID, "restore done")
         except:
             lg.exc()
-    events.send('restore-done', data=dict(
-        backup_id=backupID,
-        output_location=output_location,
-    ))
+    events.send(
+        "restore-done",
+        data=dict(
+            backup_id=backupID,
+            output_location=output_location,
+        ),
+    )
     return retcode
 
 
 def extract_failed(err, backupID, source_filename, output_location, callback_method):
-    lg.err('extract failed of %s with: %s' % (backupID, str(err)))
+    lg.err("extract failed of %s with: %s" % (backupID, str(err)))
     global OnRestoreDoneFunc
     _WorkingBackupIDs.pop(backupID, None)
     _WorkingRestoreProgress.pop(backupID, None)
-    tmpfile.throw_out(source_filename, 'file extract failed')
+    tmpfile.throw_out(source_filename, "file extract failed")
     if OnRestoreDoneFunc is not None:
-        OnRestoreDoneFunc(backupID, 'extract failed')    
+        OnRestoreDoneFunc(backupID, "extract failed")
     if callback_method:
         try:
-            callback_method(backupID, 'extract failed')
+            callback_method(backupID, "extract failed")
         except:
             lg.exc()
-    events.send('restore-failed', data=dict(
-        backup_id=backupID,
-        output_location=output_location,
-        reason='extracting file failed',
-        error=str(err),
-    ))
+    events.send(
+        "restore-failed",
+        data=dict(
+            backup_id=backupID,
+            output_location=output_location,
+            reason="extracting file failed",
+            error=str(err),
+        ),
+    )
     return err
 
 
@@ -150,22 +156,26 @@ def restore_done(result, backupID, outfd, tarfilename, outputlocation, callback_
     global _WorkingBackupIDs
     global _WorkingRestoreProgress
     global OnRestoreDoneFunc
-    if result == 'done':
-        lg.info('restore success of %s with result=%s' % (backupID, result))
+    if result == "done":
+        lg.info("restore success of %s with result=%s" % (backupID, result))
     else:
-        lg.err('restore failed of %s with result=%s' % (backupID, result))
+        lg.err("restore failed of %s with result=%s" % (backupID, result))
     try:
         os.close(outfd)
     except:
         lg.exc()
-    if result == 'done':
+    if result == "done":
         d = backup_tar.extracttar_thread(tarfilename, outputlocation)
-        d.addCallback(extract_done, backupID, tarfilename, outputlocation, callback_method)
-        d.addErrback(extract_failed, backupID, tarfilename, outputlocation, callback_method)
+        d.addCallback(
+            extract_done, backupID, tarfilename, outputlocation, callback_method
+        )
+        d.addErrback(
+            extract_failed, backupID, tarfilename, outputlocation, callback_method
+        )
         return d
     _WorkingBackupIDs.pop(backupID, None)
     _WorkingRestoreProgress.pop(backupID, None)
-    tmpfile.throw_out(tarfilename, 'restore ' + result)
+    tmpfile.throw_out(tarfilename, "restore " + result)
     if OnRestoreDoneFunc is not None:
         OnRestoreDoneFunc(backupID, result)
     if callback_method:
@@ -175,28 +185,37 @@ def restore_done(result, backupID, outfd, tarfilename, outputlocation, callback_
             lg.exc()
     return result
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def Start(backupID, outputLocation, callback=None, keyID=None):
     if _Debug:
-        lg.out(_DebugLevel, 'restore_monitor.Start %s to %s' % (backupID, outputLocation))
+        lg.out(_DebugLevel, "restore_monitor.Start %s to %s" % (backupID, outputLocation))
     global _WorkingBackupIDs
     global _WorkingRestoreProgress
     if backupID in list(_WorkingBackupIDs.keys()):
         return _WorkingBackupIDs[backupID]
     outfd, outfilename = tmpfile.make(
-        'restore',
-        extension='.tar.gz',
-        prefix=backupID.replace('@', '_').replace('.', '_').replace('/', '_').replace(':', '_') + '_',
+        "restore",
+        extension=".tar.gz",
+        prefix=backupID.replace("@", "_")
+        .replace(".", "_")
+        .replace("/", "_")
+        .replace(":", "_")
+        + "_",
     )
     from storage import restore_worker
+
     r = restore_worker.RestoreWorker(backupID, outfd, KeyID=keyID)
-    r.MyDeferred.addCallback(restore_done, backupID, outfd, outfilename, outputLocation, callback)
+    r.MyDeferred.addCallback(
+        restore_done, backupID, outfd, outfilename, outputLocation, callback
+    )
     r.set_block_restored_callback(block_restored_callback)
     r.set_packet_in_callback(packet_in_callback)
     _WorkingBackupIDs[backupID] = r
     _WorkingRestoreProgress[backupID] = {}
-    r.automat('init')
+    r.automat("init")
     return r
 
 
@@ -204,15 +223,16 @@ def Abort(backupID):
     global _WorkingBackupIDs
     global _WorkingRestoreProgress
     if backupID not in list(_WorkingBackupIDs.keys()):
-        lg.warn('%s not found in working list' % backupID)
+        lg.warn("%s not found in working list" % backupID)
         return False
     r = _WorkingBackupIDs[backupID]
-    r.automat('abort', 'abort')
+    r.automat("abort", "abort")
     if _Debug:
-        lg.out(_DebugLevel, 'restore_monitor.Abort %s' % backupID)
+        lg.out(_DebugLevel, "restore_monitor.Abort %s" % backupID)
     return True
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def GetWorkingIDs():
@@ -250,7 +270,7 @@ def FindWorking(pathID=None, customer=None):
             if backupID.count(pathID):
                 result.add(backupID)
         if customer:
-            if backupID.count(customer + ':'):
+            if backupID.count(customer + ":"):
                 result.add(backupID)
     return list(result)
 
@@ -259,21 +279,24 @@ def GetBackupStatusInfo(backupID, item_info, item_name, parent_path_existed=None
     _, percent, weakBlock, weakPercent = backup_matrix.GetBackupRemoteStats(backupID)
     totalNumberOfFiles, maxBlockNum, statsArray = backup_matrix.GetBackupStats(backupID)
     ret = {
-        'state': 'ready',
-        'delivered': misc.percent2string(percent),
-        'reliable': misc.percent2string(weakPercent),
-        'fragments': totalNumberOfFiles,
-        'weak_block': weakBlock,
-        'max_block': maxBlockNum,
-        'suppliers': [{
-            'stored': misc.percent2string(i[0]),
-            'fragments': i[1],
-        } for i in statsArray],
+        "state": "ready",
+        "delivered": misc.percent2string(percent),
+        "reliable": misc.percent2string(weakPercent),
+        "fragments": totalNumberOfFiles,
+        "weak_block": weakBlock,
+        "max_block": maxBlockNum,
+        "suppliers": [
+            {
+                "stored": misc.percent2string(i[0]),
+                "fragments": i[1],
+            }
+            for i in statsArray
+        ],
     }
     backupObj = backup_control.GetRunningBackupObject(backupID)
     if backupObj:
-        ret['state'] = 'uploading'
-        ret['progress'] = misc.percent2string(backupObj.progress())
+        ret["state"] = "uploading"
+        ret["progress"] = misc.percent2string(backupObj.progress())
         return ret
     elif IsWorking(backupID):
         restoreObj = GetWorkingRestoreObject(backupID)
@@ -283,7 +306,7 @@ def GetBackupStatusInfo(backupID, item_info, item_name, parent_path_existed=None
             percent = 0.0
             if maxBlockNum > 0:
                 percent = 100.0 * currentBlock / maxBlockNum
-            ret['state'] = 'downloading'
-            ret['progress'] = misc.percent2string(percent)
+            ret["state"] = "downloading"
+            ret["progress"] = misc.percent2string(percent)
             return ret
     return ret

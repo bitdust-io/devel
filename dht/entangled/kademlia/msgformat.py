@@ -2,8 +2,8 @@
 # msgformat.py
 #
 # Copyright (C) 2007-2008 Francois Aucamp, Meraka Institute, CSIR
-# See AUTHORS for all authors and contact information. 
-# 
+# See AUTHORS for all authors and contact information.
+#
 # License: GNU Lesser General Public License, version 3 or later; see COPYING
 #          included in this archive for details.
 #
@@ -15,6 +15,7 @@
 # may be created by processing this file with epydoc: http://epydoc.sf.net
 
 from __future__ import absolute_import
+
 from six.moves import range
 
 from . import msgtypes  # @UnresolvedImport
@@ -57,25 +58,41 @@ class DefaultFormat(MessageTranslator):
     """
     The default on-the-wire message format for this library.
     """
+
     typeRequest, typeResponse, typeError = list(range(3))
     headerType, headerMsgID, headerNodeID, headerPayload, headerArgs = list(range(5))
 
     def fromPrimitive(self, msgPrimitive):
         msgType = msgPrimitive[self.headerType]
         if msgType == self.typeRequest:
-            msg = msgtypes.RequestMessage(msgPrimitive[self.headerNodeID], msgPrimitive[self.headerPayload], msgPrimitive[self.headerArgs], msgPrimitive[self.headerMsgID])
+            msg = msgtypes.RequestMessage(
+                msgPrimitive[self.headerNodeID],
+                msgPrimitive[self.headerPayload],
+                msgPrimitive[self.headerArgs],
+                msgPrimitive[self.headerMsgID],
+            )
         elif msgType == self.typeResponse:
-            msg = msgtypes.ResponseMessage(msgPrimitive[self.headerMsgID], msgPrimitive[self.headerNodeID], msgPrimitive[self.headerPayload])
+            msg = msgtypes.ResponseMessage(
+                msgPrimitive[self.headerMsgID],
+                msgPrimitive[self.headerNodeID],
+                msgPrimitive[self.headerPayload],
+            )
         elif msgType == self.typeError:
-            msg = msgtypes.ErrorMessage(msgPrimitive[self.headerMsgID], msgPrimitive[self.headerNodeID], msgPrimitive[self.headerPayload], msgPrimitive[self.headerArgs])
+            msg = msgtypes.ErrorMessage(
+                msgPrimitive[self.headerMsgID],
+                msgPrimitive[self.headerNodeID],
+                msgPrimitive[self.headerPayload],
+                msgPrimitive[self.headerArgs],
+            )
         else:
             # Unknown message, no payload
-            msg = msgtypes.Message(msgPrimitive[self.headerMsgID], msgPrimitive[self.headerNodeID])
+            msg = msgtypes.Message(
+                msgPrimitive[self.headerMsgID], msgPrimitive[self.headerNodeID]
+            )
         return msg
 
     def toPrimitive(self, message):
-        msg = {self.headerMsgID: message.id,
-               self.headerNodeID: message.nodeID}
+        msg = {self.headerMsgID: message.id, self.headerNodeID: message.nodeID}
         if isinstance(message, msgtypes.RequestMessage):
             msg[self.headerType] = self.typeRequest
             msg[self.headerPayload] = message.request
@@ -92,30 +109,64 @@ class DefaultFormat(MessageTranslator):
 
 class MultiLayerFormat(MessageTranslator):
     typeRequest, typeResponse, typeError, typeQuestion = list(range(4))
-    headerType, headerMsgID, headerNodeID, headerPayload, headerArgs, headerLayer = list(range(6))
+    headerType, headerMsgID, headerNodeID, headerPayload, headerArgs, headerLayer = list(
+        range(6)
+    )
 
     def fromPrimitive(self, msgPrimitive):
         msgType = msgPrimitive[self.headerType]
         if msgType == self.typeRequest:
-            layerID = msgPrimitive[self.headerLayer] if self.headerLayer in msgPrimitive else 0
-            msg = msgtypes.RequestMessage(msgPrimitive[self.headerNodeID], msgPrimitive[self.headerPayload], msgPrimitive[self.headerArgs], msgPrimitive[self.headerMsgID], layerID=layerID)
+            layerID = (
+                msgPrimitive[self.headerLayer] if self.headerLayer in msgPrimitive else 0
+            )
+            msg = msgtypes.RequestMessage(
+                msgPrimitive[self.headerNodeID],
+                msgPrimitive[self.headerPayload],
+                msgPrimitive[self.headerArgs],
+                msgPrimitive[self.headerMsgID],
+                layerID=layerID,
+            )
         elif msgType == self.typeResponse:
-            layerID = msgPrimitive[self.headerLayer] if self.headerLayer in msgPrimitive else 0
-            msg = msgtypes.ResponseMessage(msgPrimitive[self.headerMsgID], msgPrimitive[self.headerNodeID], msgPrimitive[self.headerPayload], layerID=layerID)
+            layerID = (
+                msgPrimitive[self.headerLayer] if self.headerLayer in msgPrimitive else 0
+            )
+            msg = msgtypes.ResponseMessage(
+                msgPrimitive[self.headerMsgID],
+                msgPrimitive[self.headerNodeID],
+                msgPrimitive[self.headerPayload],
+                layerID=layerID,
+            )
         elif msgType == self.typeError:
-            layerID = msgPrimitive[self.headerLayer] if self.headerLayer in msgPrimitive else 0
-            msg = msgtypes.ErrorMessage(msgPrimitive[self.headerMsgID], msgPrimitive[self.headerNodeID], msgPrimitive[self.headerPayload], msgPrimitive[self.headerArgs], layerID=layerID)
+            layerID = (
+                msgPrimitive[self.headerLayer] if self.headerLayer in msgPrimitive else 0
+            )
+            msg = msgtypes.ErrorMessage(
+                msgPrimitive[self.headerMsgID],
+                msgPrimitive[self.headerNodeID],
+                msgPrimitive[self.headerPayload],
+                msgPrimitive[self.headerArgs],
+                layerID=layerID,
+            )
         elif msgType == self.typeQuestion:
-            layerID = msgPrimitive[self.headerLayer] if self.headerLayer in msgPrimitive else 0
-            msg = msgtypes.QuestionMessage(msgPrimitive[self.headerNodeID], msgPrimitive[self.headerPayload], msgPrimitive[self.headerArgs], msgPrimitive[self.headerMsgID], layerID=layerID)
+            layerID = (
+                msgPrimitive[self.headerLayer] if self.headerLayer in msgPrimitive else 0
+            )
+            msg = msgtypes.QuestionMessage(
+                msgPrimitive[self.headerNodeID],
+                msgPrimitive[self.headerPayload],
+                msgPrimitive[self.headerArgs],
+                msgPrimitive[self.headerMsgID],
+                layerID=layerID,
+            )
         else:
             # Unknown message, no payload
-            msg = msgtypes.Message(msgPrimitive[self.headerMsgID], msgPrimitive[self.headerNodeID])
+            msg = msgtypes.Message(
+                msgPrimitive[self.headerMsgID], msgPrimitive[self.headerNodeID]
+            )
         return msg
 
     def toPrimitive(self, message):
-        msg = {self.headerMsgID: message.id,
-               self.headerNodeID: message.nodeID}
+        msg = {self.headerMsgID: message.id, self.headerNodeID: message.nodeID}
         if isinstance(message, msgtypes.RequestMessage):
             msg[self.headerType] = self.typeRequest
             msg[self.headerPayload] = message.request

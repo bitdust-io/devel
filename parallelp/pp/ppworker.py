@@ -33,19 +33,20 @@ http://www.parallelpython.com - updates, documentation, examples and support
 forums
 """
 
-from __future__ import absolute_import
-from __future__ import print_function
-import six
+from __future__ import absolute_import, print_function
+
 from io import BytesIO
+
+import six
 
 copyright = "Copyright (c) 2005-2009 Vitalii Vanovschi. All rights reserved"
 version = "1.5.7"
 
 _Debug = False
 
-import sys
-import os
 import json
+import os
+import sys
 import traceback
 
 from . import pptransport
@@ -53,7 +54,7 @@ from . import pptransport
 
 def import_module(name):
     mod = __import__(name)
-    components = name.split('.')
+    components = name.split(".")
     for comp in components[1:]:
         mod = getattr(mod, comp)
     return mod
@@ -61,24 +62,23 @@ def import_module(name):
 
 def preprocess(msg):
     try:
-        fname, fsources, imports = json.loads(msg)['v']
-        fobjs = [compile(fsource, '<string>', 'exec') for fsource in fsources]
+        fname, fsources, imports = json.loads(msg)["v"]
+        fobjs = [compile(fsource, "<string>", "exec") for fsource in fsources]
         for module in imports:
             try:
-                globals()[module.split('.')[0]] = __import__(module)
+                globals()[module.split(".")[0]] = __import__(module)
             except:
                 if _Debug:
-                    open('/tmp/raid.log', 'a').write(u'%s\n' % traceback.format_exc())
+                    open("/tmp/raid.log", "a").write("%s\n" % traceback.format_exc())
                 # print("An error has occured during the module import")
                 sys.excepthook(*sys.exc_info())
         return fname, fobjs
     except Exception as exc:
         if _Debug:
-            open('/tmp/raid.log', 'a').write(u'%s\n%s\n' % (traceback.format_exc(), msg))            
+            open("/tmp/raid.log", "a").write("%s\n%s\n" % (traceback.format_exc(), msg))
 
 
 class _WorkerProcess(object):
-
     def __init__(self):
         self.hashmap = {}
         self.e = sys.__stderr__
@@ -108,7 +108,7 @@ class _WorkerProcess(object):
                         #       "function import")
                         sys.excepthook(*sys.exc_info())
 
-                __args = json.loads(__sargs)['v']
+                __args = json.loads(__sargs)["v"]
 
                 __f = locals()[__fname]
                 try:
@@ -118,17 +118,25 @@ class _WorkerProcess(object):
                     sys.excepthook(*sys.exc_info())
                     __result = None
 
-                __sresult = json.dumps({'v': (__result, self.sout.getvalue().decode('latin1')), })
+                __sresult = json.dumps(
+                    {
+                        "v": (__result, self.sout.getvalue().decode("latin1")),
+                    }
+                )
 
                 self.t.send(__sresult)
                 self.sout.truncate(0)
         except:
             # print("Fatal error has occured during the function execution")
             if _Debug:
-                open('/tmp/raid.log', 'a').write(u'%s\n' % traceback.format_exc())
+                open("/tmp/raid.log", "a").write("%s\n" % traceback.format_exc())
             sys.excepthook(*sys.exc_info())
             __result = None
-            __sresult = json.dumps({'v': (__result, self.sout.getvalue().decode('latin1')), })
+            __sresult = json.dumps(
+                {
+                    "v": (__result, self.sout.getvalue().decode("latin1")),
+                }
+            )
 
             self.t.send(__sresult)
 

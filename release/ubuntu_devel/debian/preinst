@@ -8,10 +8,10 @@ if [ "$1" = install ] ; then
     if [ -n "$SUDO_USER" ]; then
         BD_DIR="/home/$SUDO_USER/.bitdust"
         # TODO prompt user to enter destination location for sources and data files?
-        # i think default should be ".bitdust" in home folder: 
+        # i think default should be ".bitdust" in home folder:
         # ~/.bitdust
         #           /src - repo
-        #           /metadata 
+        #           /metadata
         #           /backups
         #           ...
         echo "BitDust will be installed in $BD_DIR by user $SUDO_USER, remember this in /usr/share/bitdust"
@@ -30,6 +30,3 @@ fi
 #DEBHELPER#
 
 exit 0
-
-
-

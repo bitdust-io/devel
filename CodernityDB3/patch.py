@@ -17,6 +17,7 @@
 
 
 from __future__ import absolute_import
+
 from CodernityDB3.misc import NONE
 
 
@@ -39,12 +40,12 @@ def patch_cache_lfu(lock_obj):
        It's internal CodernityDB mechanizm, it will be called when needed
 
     """
-    from . import lfu_cache
-    from . import lfu_cache_with_lock
+    from . import lfu_cache, lfu_cache_with_lock
+
     lfu_lock1lvl = lfu_cache_with_lock.create_cache1lvl(lock_obj)
     lfu_lock2lvl = lfu_cache_with_lock.create_cache2lvl(lock_obj)
-    __patch(lfu_cache, 'cache1lvl', lfu_lock1lvl)
-    __patch(lfu_cache, 'cache2lvl', lfu_lock2lvl)
+    __patch(lfu_cache, "cache1lvl", lfu_lock1lvl)
+    __patch(lfu_cache, "cache2lvl", lfu_lock2lvl)
 
 
 def patch_cache_rr(lock_obj):
@@ -56,12 +57,12 @@ def patch_cache_rr(lock_obj):
        It's internal CodernityDB mechanizm, it will be called when needed
 
     """
-    from . import rr_cache
-    from . import rr_cache_with_lock
+    from . import rr_cache, rr_cache_with_lock
+
     rr_lock1lvl = rr_cache_with_lock.create_cache1lvl(lock_obj)
     rr_lock2lvl = rr_cache_with_lock.create_cache2lvl(lock_obj)
-    __patch(rr_cache, 'cache1lvl', rr_lock1lvl)
-    __patch(rr_cache, 'cache2lvl', rr_lock2lvl)
+    __patch(rr_cache, "cache1lvl", rr_lock1lvl)
+    __patch(rr_cache, "cache2lvl", rr_lock2lvl)
 
 
 def patch_flush_fsync(db_obj):
@@ -88,13 +89,14 @@ def patch_flush_fsync(db_obj):
         def _inner():
             ind_obj.orig_flush()
             ind_obj.fsync()
+
         return _inner
 
     for index in db_obj.indexes:
-        setattr(index, 'orig_flush', index.flush)
-        setattr(index, 'flush', always_fsync(index))
+        setattr(index, "orig_flush", index.flush)
+        setattr(index, "flush", always_fsync(index))
 
-    setattr(db_obj, 'orig_flush', db_obj.flush)
-    setattr(db_obj, 'flush', always_fsync(db_obj))
+    setattr(db_obj, "orig_flush", db_obj.flush)
+    setattr(db_obj, "flush", always_fsync(db_obj))
 
     return

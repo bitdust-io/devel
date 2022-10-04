@@ -31,6 +31,7 @@ module:: service_data_disintegration
 """
 
 from __future__ import absolute_import
+
 from services.local_service import LocalService
 
 
@@ -40,20 +41,22 @@ def create_service():
 
 class DataDisintegrationService(LocalService):
 
-    service_name = 'service_data_disintegration'
-    config_path = 'services/data-disintegration/enabled'
+    service_name = "service_data_disintegration"
+    config_path = "services/data-disintegration/enabled"
 
     def dependent_on(self):
         return [
-            'service_keys_registry',
+            "service_keys_registry",
         ]
 
     def start(self):
         from raid import raid_worker
-        raid_worker.A('init')
+
+        raid_worker.A("init")
         return True
 
     def stop(self):
         from raid import raid_worker
-        raid_worker.A('shutdown')
+
+        raid_worker.A("shutdown")
         return True

@@ -20,18 +20,20 @@
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
 
-from __future__ import absolute_import
-from __future__ import print_function
-import os
+from __future__ import absolute_import, print_function
+
 import sys
 import time
+
 from six.moves import range
+
 # import timeit
 # import platform
 
 
 def _qpc():
     from ctypes import byref, c_int64, windll
+
     val = c_int64()
     windll.Kernel32.QueryPerformanceCounter(byref(val))
     return val.value
@@ -49,6 +51,7 @@ def init():
     _InitTime = time.time()
     # time.clock()
     from ctypes import byref, c_int64, windll
+
     time_start = c_int64()
     freq = c_int64()
     windll.Kernel32.QueryPerformanceCounter(byref(time_start))
@@ -62,6 +65,7 @@ def _time_windows():
     global _TimeStart
     global _Frequency
     from ctypes import byref, c_int64, windll
+
     time_now = c_int64()
     windll.Kernel32.QueryPerformanceCounter(byref(time_now))
     return _InitTime + ((_TimeStart - time_now.value) / _Frequency)
@@ -75,11 +79,11 @@ else:
     # On most other platforms the best timer is time.time()
     _time = time.time
 
-print('%f' % (time.time() - _time()))
+print("%f" % (time.time() - _time()))
 
 for j in range(10):
     c = 0
     for i in range(9999999):
         c = i / float(i + 1)
-        if str(i).count('0') == 6 and int(str(i)[0]) % 5:
-            print('%f' % (time.time() - _time()))
+        if str(i).count("0") == 6 and int(str(i)[0]) % 5:
+            print("%f" % (time.time() - _time()))

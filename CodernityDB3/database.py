@@ -15,45 +15,39 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import absolute_import
-from __future__ import print_function
-import six
-import os
-import io
+from __future__ import absolute_import, print_function
+
 import codecs
+import collections
+import io
+import os
+import warnings
 from inspect import getsource
-
-# for custom indexes
-from CodernityDB3.storage import Storage, IU_Storage
-from CodernityDB3.hash_index import (
-    HashIndex,
-    IU_UniqueHashIndex,
-    IU_HashIndex,
-    UniqueHashIndex)
-# normal imports
-
-from CodernityDB3.index import (
-    ElemNotFound,
-    DocIdNotFound,
-    IndexException,
-    Index,
-    TryReindexException,
-    ReindexException,
-    IndexNotFoundException,
-    IndexConflict)
-
-from CodernityDB3.misc import NONE
-
-from CodernityDB3.env import cdb_environment
-
 from random import randrange
 
-import warnings
-import collections
-import codecs
+import six
+
+from CodernityDB3.env import cdb_environment
+from CodernityDB3.index import (
+    DocIdNotFound,
+    ElemNotFound,
+    Index,
+    IndexConflict,
+    IndexException,
+    IndexNotFoundException,
+    ReindexException,
+    TryReindexException,
+)
+from CodernityDB3.misc import NONE
+
+# for custom indexes
+
+# normal imports
 
 
-def header_for_indexes(index_name, index_class, db_custom="", ind_custom="", classes_code=""):
+def header_for_indexes(
+    index_name, index_class, db_custom="", ind_custom="", classes_code=""
+):
     return """# %s
 # %s
 
@@ -80,7 +74,13 @@ from hashlib import md5
 
 # index code start
 
-""" % (index_name, index_class, db_custom, ind_custom, classes_code)
+""" % (
+        index_name,
+        index_class,
+        db_custom,
+        ind_custom,
+        classes_code,
+    )
 
 
 class DatabaseException(Exception):
@@ -142,14 +142,14 @@ class Database(object):
                 raise RevConflict()
             rev_num += 1
             if rev_num > 65025:
-            # starting the counter from 0 again
+                # starting the counter from 0 again
                 rev_num = 0
             rnd = randrange(65536)
             return "%04x%04x" % (rev_num, rnd)
         else:
             # new rev
-            rnd = randrange(256 ** 2)
-            return '0001%04x' % rnd
+            rnd = randrange(256**2)
+            return "0001%04x" % rnd
 
     def __not_opened(self):
         if not self.opened:
@@ -173,20 +173,25 @@ class Database(object):
         Then it will build real index file, save it in ``_indexes`` directory.
         """
         code = getsource(index.__class__)
-        if not code.startswith('c'):  # fix for indented index codes
+        if not code.startswith("c"):  # fix for indented index codes
             import textwrap
+
             code = textwrap.dedent(code)
         index._order = i
-        cls_code = getattr(index, 'classes_code', [])
+        cls_code = getattr(index, "classes_code", [])
         classes_code = ""
         for curr in cls_code:
-            classes_code += getsource(curr) + '\n\n'
-        with io.FileIO(os.path.join(p, "%.2d%s" % (i, index.name) + '.py'), 'w') as f:
-            f.write(header_for_indexes(index.name,
-                                       index.__class__.__name__,
-                                       getattr(self, 'custom_header', ''),
-                                       getattr(index, 'custom_header', ''),
-                                       classes_code).encode())
+            classes_code += getsource(curr) + "\n\n"
+        with io.FileIO(os.path.join(p, "%.2d%s" % (i, index.name) + ".py"), "w") as f:
+            f.write(
+                header_for_indexes(
+                    index.name,
+                    index.__class__.__name__,
+                    getattr(self, "custom_header", ""),
+                    getattr(index, "custom_header", ""),
+                    classes_code,
+                ).encode()
+            )
             f.write(code.encode())
         return True
 
@@ -201,48 +206,55 @@ class Database(object):
         :param ind: index name (will be joined with *p*)
         :returns: new index object
         """
-        with io.FileIO(os.path.join(p, ind), 'r') as f:
+        with io.FileIO(os.path.join(p, ind), "r") as f:
             name = f.readline()[2:].strip()
             _class = f.readline()[2:].strip()
             code = f.read()
         try:
-            obj = compile(code, '<Index: %s' % os.path.join(p, ind), 'exec')
+            obj = compile(code, "<Index: %s" % os.path.join(p, ind), "exec")
             exec(obj, globals())
             ind_obj = globals()[_class.decode()](self.path, name, **ind_kwargs)
             ind_obj._order = int(ind[:2])
         except:
             ind_path = os.path.join(p, ind)
-            os.rename(ind_path, ind_path + '_broken')  # rename it instead of removing
-#            os.unlink(os.path.join(p, ind))
-            warnings.warn("Fatal error in index, saved as %s" % (ind_path + '_broken', ))
+            os.rename(ind_path, ind_path + "_broken")  # rename it instead of removing
+            #            os.unlink(os.path.join(p, ind))
+            warnings.warn("Fatal error in index, saved as %s" % (ind_path + "_broken",))
             raise
         else:
             return ind_obj
 
     def __check_if_index_unique(self, name, num):
-        indexes = os.listdir(os.path.join(self.path, '_indexes'))
+        indexes = os.listdir(os.path.join(self.path, "_indexes"))
         if any((x for x in indexes if x[2:-3] == name and x[:2] != str(num))):
             raise IndexConflict("Already exists")
 
     def __write_index(self, new_index, number=0, edit=False, ind_kwargs=None):
         if ind_kwargs is None:
             ind_kwargs = {}
-        p = os.path.join(self.path, '_indexes')
+        p = os.path.join(self.path, "_indexes")
         if isinstance(new_index, str) and not new_index.startswith("path:"):
-            if len(new_index.splitlines()) < 4 or new_index.splitlines()[3] != '# inserted automatically':
+            if (
+                len(new_index.splitlines()) < 4
+                or new_index.splitlines()[3] != "# inserted automatically"
+            ):
                 from .indexcreator import Parser
+
                 par = Parser()
                 # s = par.parse(new_index).splitlines()
                 custom_imports, s = par.parse(new_index)
                 s = s.splitlines()
                 name = s[0][2:]
                 c = s[1][2:]
-                comented = ['\n\n#SIMPLIFIED CODE']
+                comented = ["\n\n#SIMPLIFIED CODE"]
                 list([comented.append("#" + x) for x in new_index.splitlines()])
-                comented.append('#SIMPLIFIED CODE END\n\n')
+                comented.append("#SIMPLIFIED CODE END\n\n")
 
-                s = header_for_indexes(
-                    name, c, ind_custom=custom_imports) + "\n".join(s[2:]) + "\n".join(comented)
+                s = (
+                    header_for_indexes(name, c, ind_custom=custom_imports)
+                    + "\n".join(s[2:])
+                    + "\n".join(comented)
+                )
                 new_index = s
             else:
                 name = new_index.splitlines()[0][2:]
@@ -251,31 +263,34 @@ class Database(object):
             if name in self.indexes_names and not edit:
                 raise IndexConflict("Already exists")
             if edit:
-                previous_index = [x for x in os.listdir(p) if x.endswith(
-                    '.py') and x[2:-3] == name]
+                previous_index = [
+                    x for x in os.listdir(p) if x.endswith(".py") and x[2:-3] == name
+                ]
                 if not previous_index:
                     raise PreconditionsException(
-                        "Can't edit index that's not yet in database")
+                        "Can't edit index that's not yet in database"
+                    )
                 number = int(previous_index[0][:2])
-            if number == 0 and not edit and not name == 'id':
-                raise PreconditionsException(
-                    "Id index must be the first added")
+            if number == 0 and not edit and not name == "id":
+                raise PreconditionsException("Id index must be the first added")
             ind_path = "%.2d%s" % (number, name)
             if not edit:
                 self.__check_if_index_unique(name, number)
 
-            ind_path_f = os.path.join(p, ind_path + '.py')
+            ind_path_f = os.path.join(p, ind_path + ".py")
             if os.path.exists(ind_path_f):
-                os.rename(ind_path_f, ind_path_f + '_last')  # save last working index code
-            with io.FileIO(ind_path_f, 'w') as f:
-                f.write(codecs.encode(new_index, 'utf-8'))
+                os.rename(
+                    ind_path_f, ind_path_f + "_last"
+                )  # save last working index code
+            with io.FileIO(ind_path_f, "w") as f:
+                f.write(codecs.encode(new_index, "utf-8"))
 
-            ind_obj = self._read_index_single(p, ind_path + '.py')
+            ind_obj = self._read_index_single(p, ind_path + ".py")
 
         elif isinstance(new_index, str) and new_index.startswith("path:"):
             path = new_index[5:]
-            if not path.endswith('.py'):
-                path += '.py'
+            if not path.endswith(".py"):
+                path += ".py"
             ind_obj = self._read_index_single(p, path, ind_kwargs)
             name = ind_obj.name
             if name in self.indexes_names and not edit:
@@ -285,33 +300,37 @@ class Database(object):
             # it will allow to control the index object on the DB side
             ind = new_index
             init_arguments = new_index.__class__.__init__.__code__.co_varnames[
-                3:]  # ignore self, path and name
+                3:
+            ]  # ignore self, path and name
             for curr in init_arguments:
-                if curr not in ('args', 'kwargs'):
+                if curr not in ("args", "kwargs"):
                     v = getattr(ind, curr, NONE())
                     if not isinstance(v, NONE):
                         ind_kwargs[curr] = v
             if edit:
                 # code duplication...
-                previous_index = [x for x in os.listdir(p) if x.endswith(
-                    '.py') and x[2:-3] == ind.name]
+                previous_index = [
+                    x for x in os.listdir(p) if x.endswith(".py") and x[2:-3] == ind.name
+                ]
                 if not previous_index:
                     raise PreconditionsException(
-                        "Can't edit index that's not yet in database")
+                        "Can't edit index that's not yet in database"
+                    )
                 number = int(previous_index[0][:2])
             if ind.name in self.indexes_names and not edit:
                 raise IndexConflict("Already exists")
-            if number == 0 and not edit and not ind.name == 'id':
-                raise PreconditionsException(
-                    "Id index must be the first added")
+            if number == 0 and not edit and not ind.name == "id":
+                raise PreconditionsException("Id index must be the first added")
             if not edit:
                 self.__check_if_index_unique(ind.name, number)
             self._add_single_index(p, number, ind)
             ind_path = "%.2d%s" % (number, ind.name)
-            ind_obj = self._read_index_single(p, ind_path + '.py', ind_kwargs)
+            ind_obj = self._read_index_single(p, ind_path + ".py", ind_kwargs)
             name = ind_obj.name
         else:
-            raise PreconditionsException("Argument must be Index instance, path to index_file or valid string index format")
+            raise PreconditionsException(
+                "Argument must be Index instance, path to index_file or valid string index format"
+            )
         return ind_obj, name
 
     def add_index(self, new_index, create=True, ind_kwargs=None):
@@ -327,10 +346,10 @@ class Database(object):
 
         if ind_kwargs is None:
             ind_kwargs = {}
-        p = os.path.join(self.path, '_indexes')
+        p = os.path.join(self.path, "_indexes")
         if not os.path.exists(p):
             self.initialize()
-        current = sorted([x for x in os.listdir(p) if x.endswith('.py')])
+        current = sorted([x for x in os.listdir(p) if x.endswith(".py")])
         if current:
             last = int(current[-1][:2])  # may crash... ignore
             _next = last + 1
@@ -343,10 +362,10 @@ class Database(object):
         if create:
             if self.exists():  # no need te create if database doesn't exists'
                 ind_obj.create_index()
-        if name == 'id':
+        if name == "id":
             self.__set_main_storage()
             self.__compat_things()
-        for patch in getattr(ind_obj, 'patchers', ()):  # index can patch db object
+        for patch in getattr(ind_obj, "patchers", ()):  # index can patch db object
             patch(self)
         return name
 
@@ -379,10 +398,10 @@ class Database(object):
 
         :param string index_name: index name to restore
         """
-        ind_path = os.path.join(self.path, '_indexes')
+        ind_path = os.path.join(self.path, "_indexes")
         if index_name in self.indexes_names:  # then it's working index.
             ind = self.indexes_names[index_name]
-            full_name = '%.2d%s.py' % (ind._order, index_name)
+            full_name = "%.2d%s.py" % (ind._order, index_name)
         else:
             indexes = os.listdir(ind_path)
             full_name = next((x for x in indexes if x[2:-3] == index_name))
@@ -393,11 +412,11 @@ class Database(object):
             raise DatabaseException("No previous copy found for %s" % index_name)
         correct_last_path = last_path[:-5]  # remove _last from name
         os.rename(last_path, correct_last_path)
-#        ind_data = open(last_path, 'r')
-        p = 'path:%s' % os.path.split(correct_last_path)[1]
+        #        ind_data = open(last_path, 'r')
+        p = "path:%s" % os.path.split(correct_last_path)[1]
         return self.edit_index(p, reindex, ind_kwargs)
 
-    def get_index_code(self, index_name, code_switch='All'):
+    def get_index_code(self, index_name, code_switch="All"):
         """
         It will return full index code from index file.
 
@@ -405,43 +424,42 @@ class Database(object):
         """
         if not index_name in self.indexes_names:
             self.__not_opened()
-            raise IndexNotFoundException(
-                "Index `%s` doesn't exists" % index_name)
+            raise IndexNotFoundException("Index `%s` doesn't exists" % index_name)
         ind = self.indexes_names[index_name]
         name = "%.2d%s" % (ind._order, index_name)
-        name += '.py'
-        with io.FileIO(os.path.join(self.path, '_indexes', name), 'r') as f:
+        name += ".py"
+        with io.FileIO(os.path.join(self.path, "_indexes", name), "r") as f:
             co = f.read()
-            if code_switch == 'All':
-                return str(co, 'utf-8')
+            if code_switch == "All":
+                return str(co, "utf-8")
 
-            if code_switch == 'S':
+            if code_switch == "S":
                 try:
-                    ind = co.index(b'#SIMPLIFIED CODE')
+                    ind = co.index(b"#SIMPLIFIED CODE")
                 except ValueError:
-                    return u" "
+                    return " "
                 else:
                     s = co[ind:]
                     l = s.splitlines()[1:-2]
                     ll = [x[1:] for x in l]
-                    return str(b'\n'.join(ll), 'utf-8')
-            if code_switch == 'P':
+                    return str(b"\n".join(ll), "utf-8")
+            if code_switch == "P":
                 try:
-                    ind = co.index(b'#SIMPLIFIED CODE')
+                    ind = co.index(b"#SIMPLIFIED CODE")
                 except ValueError:
-                    return str(co, 'utf-8')
+                    return str(co, "utf-8")
                 else:
-                    return str(co[:ind], 'utf-8')
+                    return str(co[:ind], "utf-8")
 
-        return u""  # shouldn't happen
+        return ""  # shouldn't happen
 
     def __set_main_storage(self):
         """
         Sets database main storage (from the **id** index)
         """
         try:
-            self.storage = self.indexes_names['id'].storage
-            self.id_ind = self.indexes_names['id']
+            self.storage = self.indexes_names["id"].storage
+            self.id_ind = self.indexes_names["id"]
         except KeyError:
             # when opening / initializing DB without `id` index
             # happens mostly on server side
@@ -467,7 +485,7 @@ class Database(object):
         if makedir:
             if not self.path:
                 raise PreconditionsException("No path specified")
-            p = os.path.join(self.path, '_indexes')
+            p = os.path.join(self.path, "_indexes")
             if os.path.exists(p):
                 raise DatabaseConflict("Cant't create because already exists")
             os.makedirs(p)
@@ -482,11 +500,12 @@ class Database(object):
         if self.path:
             if not os.path.exists(self.path):
                 self.initialize(self.path)
-        if not 'id' in self.indexes_names and with_id_index:
+        if not "id" in self.indexes_names and with_id_index:
             import CodernityDB3.hash_index
-            if not 'db_path' in index_kwargs:
-                index_kwargs['db_path'] = self.path
-            index_kwargs['name'] = 'id'
+
+            if not "db_path" in index_kwargs:
+                index_kwargs["db_path"] = self.path
+            index_kwargs["name"] = "id"
             id_ind = CodernityDB3.hash_index.UniqueHashIndex(**index_kwargs)
             self.add_index(id_ind, create=False)
             # del CodernityDB3.index
@@ -495,17 +514,18 @@ class Database(object):
                 index.create_index()
             except IndexException:
                 raise DatabaseConflict(
-                    "Already exists (detected on index=%s)" % index.name)
+                    "Already exists (detected on index=%s)" % index.name
+                )
         return True
 
     def _read_indexes(self):
         """
         Read all known indexes from ``_indexes``
         """
-        p = os.path.join(self.path, '_indexes')
+        p = os.path.join(self.path, "_indexes")
         for ind in os.listdir(p):
-            if ind.endswith('.py'):
-                self.add_index('path:' + ind, create=False)
+            if ind.endswith(".py"):
+                self.add_index("path:" + ind, create=False)
 
     def __compat_things(self):
         """
@@ -514,12 +534,15 @@ class Database(object):
         # patch for rev size change
         if not self.id_ind:
             return
-        if self.id_ind.entry_line_format[4:6] == '4s':
+        if self.id_ind.entry_line_format[4:6] == "4s":
             # rev compatibility...
-            warnings.warn("Your database is using old rev mechanizm \
+            warnings.warn(
+                "Your database is using old rev mechanizm \
 for ID index. You should update that index \
-(CodernityDB3.migrate.migrate).")
+(CodernityDB3.migrate.migrate)."
+            )
             from .misc import random_hex_4
+
             self.create_new_rev = random_hex_4
 
     def create(self, path=None, **kwargs):
@@ -553,7 +576,7 @@ for ID index. You should update that index \
         if not path:
             return False
         if os.path.exists(path):
-            return os.path.exists(os.path.join(path, '_indexes'))
+            return os.path.exists(os.path.join(path, "_indexes"))
         return False
 
     def open(self, path=None):
@@ -564,7 +587,7 @@ for ID index. You should update that index \
         """
         if self.opened is True:
             raise DatabaseConflict("Already opened")
-#        else:
+        #        else:
         if path:
             self.path = path
         if not self.path:
@@ -575,7 +598,7 @@ for ID index. You should update that index \
         self.id_ind = None
         self.indexes_names = {}
         self._read_indexes()
-        if not 'id' in self.indexes_names:
+        if not "id" in self.indexes_names:
             raise PreconditionsException("There must be `id` index!")
         for index in self.indexes:
             index.open_index()
@@ -614,7 +637,7 @@ for ID index. You should update that index \
                 self.destroy_index(index)
             except:
                 pass
-        if getattr(self, 'id_ind', None) is not None:
+        if getattr(self, "id_ind", None) is not None:
             self.id_ind.destroy()  # now destroy id index
         # remove all files in db directory
         for root, dirs, files in os.walk(self.path, topdown=False):
@@ -638,14 +661,22 @@ for ID index. You should update that index \
         try:
             old_should_index = index.make_key_value(db_data)
         except Exception as ex:
-            warnings.warn("""Problem during update for `%s`, ex = `%s`, you should check index code.""" % (index.name, ex), RuntimeWarning)
+            warnings.warn(
+                """Problem during update for `%s`, ex = `%s`, you should check index code."""
+                % (index.name, ex),
+                RuntimeWarning,
+            )
             old_should_index = None
         if old_should_index:
             old_key, old_value = old_should_index
             try:
                 new_should_index = index.make_key_value(data)
             except Exception as ex:
-                warnings.warn("""Problem during update for `%s`, ex = `%r`, you should check index code.""" % (index.name, ex), RuntimeWarning)
+                warnings.warn(
+                    """Problem during update for `%s`, ex = `%r`, you should check index code."""
+                    % (index.name, ex),
+                    RuntimeWarning,
+                )
                 new_should_index = None
             if new_should_index:
                 new_key, new_value = new_should_index
@@ -657,8 +688,10 @@ for ID index. You should update that index \
                         index.update_with_storage(doc_id, new_key, new_value)
                     except (ElemNotFound, DocIdNotFound):
                         # element should be in index but isn't
-                        #(propably added new index without reindex)
-                        warnings.warn("""Reindex might be required for index %s""" % index.name)
+                        # (propably added new index without reindex)
+                        warnings.warn(
+                            """Reindex might be required for index %s""" % index.name
+                        )
             else:
                 index.delete(doc_id, old_key)
         else:  # not previously indexed
@@ -670,8 +703,8 @@ for ID index. You should update that index \
         """
         _id, value = self.id_ind.make_key_value(data)
         # print('_update_id_index', _id, value)
-        db_data = self.get('id', _id)
-        if db_data['_rev'] != _rev:
+        db_data = self.get("id", _id)
+        if db_data["_rev"] != _rev:
             raise RevConflict()
         new_rev = self.create_new_rev(_rev)
         # storage = self.storage
@@ -701,7 +734,11 @@ for ID index. You should update that index \
         try:
             should_index = index.make_key_value(data)
         except Exception as ex:
-            warnings.warn("""Problem during insert for `%s`, ex = `%r`, you should check index code.""" % (index.name, ex), RuntimeWarning)
+            warnings.warn(
+                """Problem during insert for `%s`, ex = `%r`, you should check index code."""
+                % (index.name, ex),
+                RuntimeWarning,
+            )
             should_index = None
         # print('_single_insert_index %r %r %r' % (index, should_index, doc_id))
         if should_index:
@@ -720,7 +757,7 @@ for ID index. You should update that index \
         Performs insert on **id** index.
         """
         _id, value = self.id_ind.make_key_value(data)  # may be improved
-#        storage = self.storage
+        #        storage = self.storage
         # start, size = storage.insert(value)
         # self.id_ind.insert(_id, _rev, start, size)
         self.id_ind.insert_with_storage(_id, _rev, value)
@@ -768,8 +805,8 @@ for ID index. You should update that index \
         """
         Performs delete operation on all indexes in order
         """
-        old_data = self.get('id', _id)
-        if old_data['_rev'] != _rev:
+        old_data = self.get("id", _id)
+        if old_data["_rev"] != _rev:
             raise RevConflict()
         for index in self.indexes[1:]:
             self._single_delete_index(index, data, _id, old_data)
@@ -788,12 +825,14 @@ for ID index. You should update that index \
             index = self.indexes_names[index]
         elif not index in self.indexes:
             self.__not_opened()
-            raise PreconditionsException("Argument must be Index instance or valid string index format")
-        if index.name == 'id':
+            raise PreconditionsException(
+                "Argument must be Index instance or valid string index format"
+            )
+        if index.name == "id":
             self.__not_opened()
             raise PreconditionsException("Id index cannot be destroyed")
-        full_file = "%.2d%s" % (index._order, index.name) + '.py'
-        p = os.path.join(self.path, '_indexes', full_file)
+        full_file = "%.2d%s" % (index._order, index.name) + ".py"
+        p = os.path.join(self.path, "_indexes", full_file)
         os.unlink(p)
         index.destroy()
         del self.indexes_names[index.name]
@@ -814,10 +853,11 @@ for ID index. You should update that index \
             index = self.indexes_names[index]
         elif not index in self.indexes:
             self.__not_opened()
-            raise PreconditionsException("Argument must be Index instance or valid string index format")
-        if getattr(index, 'compacting', False):
-            raise ReindexException(
-                "The index=%s is still compacting" % index.name)
+            raise PreconditionsException(
+                "Argument must be Index instance or valid string index format"
+            )
+        if getattr(index, "compacting", False):
+            raise ReindexException("The index=%s is still compacting" % index.name)
         index.compacting = True
         index.compact()
         del index.compacting
@@ -831,9 +871,10 @@ for ID index. You should update that index \
 
     def _single_reindex_index(self, index, data):
         doc_id, rev, start, size, status = self.id_ind.get(
-            data['_id'])  # it's cached so it's ok
+            data["_id"]
+        )  # it's cached so it's ok
         # print(status)
-        if status != b'd' and status != b'u' and status != 'd' and status != 'u':
+        if status != b"d" and status != b"u" and status != "d" and status != "u":
             self._single_insert_index(index, data, doc_id)
 
     def reindex_index(self, index):
@@ -851,15 +892,16 @@ for ID index. You should update that index \
             index = self.indexes_names[index]
         elif not index in self.indexes:
             self.__not_opened()
-            raise PreconditionsException("Argument must be Index instance or valid string index format")
-        if index.name == 'id':
+            raise PreconditionsException(
+                "Argument must be Index instance or valid string index format"
+            )
+        if index.name == "id":
             self.__not_opened()
             raise PreconditionsException("Id index cannot be reindexed")
-        if getattr(index, 'reindexing', False):
-            raise ReindexException(
-                "The index=%s is still reindexing" % index.name)
+        if getattr(index, "reindexing", False):
+            raise ReindexException("The index=%s is still reindexing" % index.name)
 
-        all_iter = self.all('id')
+        all_iter = self.all("id")
         index.reindexing = True
         index.destroy()
         index.create_index()
@@ -887,25 +929,24 @@ for ID index. You should update that index \
 
         :param data: data to insert
         """
-        if '_rev' in data:
+        if "_rev" in data:
             self.__not_opened()
-            raise PreconditionsException(
-                "Can't add record with forbidden fields")
+            raise PreconditionsException("Can't add record with forbidden fields")
         _rev = self.create_new_rev()
-        if not '_id' in data:
+        if not "_id" in data:
             try:
                 _id = self.id_ind.create_key()
             except:
                 self.__not_opened()
                 raise DatabaseException("No id?")
         else:
-            _id = data['_id']
+            _id = data["_id"]
         assert _id is not None
-        data['_rev'] = _rev  # for make_key_value compat with update / delete
-        data['_id'] = _id
+        data["_rev"] = _rev  # for make_key_value compat with update / delete
+        data["_id"] = _id
         # print('database.insert %r %r' % (_id, _rev))
         self._insert_indexes(_rev, data)
-        ret = {'_id': _id, '_rev': _rev}
+        ret = {"_id": _id, "_rev": _rev}
         data.update(ret)
         return ret
 
@@ -918,23 +959,22 @@ for ID index. You should update that index \
 
         :param data: data to update
         """
-        if not '_rev' in data or not '_id' in data:
+        if not "_rev" in data or not "_id" in data:
             self.__not_opened()
             raise PreconditionsException("Can't update without _rev or _id")
-        _rev = data['_rev']
+        _rev = data["_rev"]
         try:
             # _rev = codecs.encode(_rev)
             pass
         except:
             self.__not_opened()
-            raise PreconditionsException(
-                "`_rev` must be valid bytes object")
+            raise PreconditionsException("`_rev` must be valid bytes object")
         _id, new_rev = self._update_indexes(_rev, data)
         if isinstance(_id, six.binary_type):
             _id = _id.decode()
         if isinstance(new_rev, six.binary_type):
             new_rev = new_rev.decode()
-        ret = {'_id': _id, '_rev': new_rev}
+        ret = {"_id": _id, "_rev": new_rev}
         data.update(ret)
         return ret
 
@@ -953,41 +993,51 @@ for ID index. You should update that index \
         #     raise DatabaseException, "Invalid index name"
         # print('database.get %r key=%r' % (index_name, key))
         if isinstance(key, six.text_type):
-            key = codecs.encode(key, 'utf-8')
+            key = codecs.encode(key, "utf-8")
         try:
             ind = self.indexes_names[index_name]
         except KeyError:
             self.__not_opened()
-            raise IndexNotFoundException(
-                "Index `%s` doesn't exists" % index_name)
+            raise IndexNotFoundException("Index `%s` doesn't exists" % index_name)
         try:
             l_key, _unk, start, size, status = ind.get(key)
         except ElemNotFound as ex:
             raise RecordNotFound(ex)
         if not start and not size:
             raise RecordNotFound("Not found")
-        elif status == b'd' or status == 'd':
+        elif status == b"d" or status == "d":
             raise RecordDeleted("Deleted")
         if with_storage and size:
             storage = ind.storage
             data = storage.get(start, size, status)
         else:
             data = {}
-        if with_doc and index_name != 'id':
+        if with_doc and index_name != "id":
             storage = ind.storage
-            doc = self.get('id', l_key, False)
+            doc = self.get("id", l_key, False)
             if data:
-                data['doc'] = doc
+                data["doc"] = doc
             else:
-                data = {'doc': doc}
-        data['_id'] = l_key
-        if index_name == 'id':
-            data['_rev'] = _unk
+                data = {"doc": doc}
+        data["_id"] = l_key
+        if index_name == "id":
+            data["_rev"] = _unk
         else:
-            data['key'] = _unk
+            data["key"] = _unk
         return data
 
-    def get_many(self, index_name, key=None, limit=-1, offset=0, with_doc=False, with_storage=True, start=None, end=None, **kwargs):
+    def get_many(
+        self,
+        index_name,
+        key=None,
+        limit=-1,
+        offset=0,
+        with_doc=False,
+        with_storage=True,
+        start=None,
+        end=None,
+        **kwargs
+    ):
         """
         Allows to get **multiple** data for given ``key`` for *Hash based indexes*.
         Also allows get **range** queries for *Tree based indexes* with ``start`` and ``end`` arguments.
@@ -1003,15 +1053,14 @@ for ID index. You should update that index \
 
         :returns: iterator over records
         """
-        if index_name == 'id':
+        if index_name == "id":
             self.__not_opened()
             raise PreconditionsException("Can't get many from `id`")
         try:
             ind = self.indexes_names[index_name]
         except KeyError:
             self.__not_opened()
-            raise IndexNotFoundException(
-                "Index `%s` doesn't exists" % index_name)
+            raise IndexNotFoundException("Index `%s` doesn't exists" % index_name)
         storage = ind.storage
         if start is None and end is None:
             gen = ind.get_many(key, limit, offset)
@@ -1029,14 +1078,14 @@ for ID index. You should update that index \
                     data = {}
                 doc_id = ind_data[0]
                 if with_doc:
-                    doc = self.get('id', doc_id, False)
+                    doc = self.get("id", doc_id, False)
                     if data:
-                        data['doc'] = doc
+                        data["doc"] = doc
                     else:
-                        data = {'doc': doc}
-                data['_id'] = doc_id
+                        data = {"doc": doc}
+                data["_id"] = doc_id
                 if key is None:
-                    data['key'] = ind_data[1]
+                    data["key"] = ind_data[1]
                 yield data
 
     def all(self, index_name, limit=-1, offset=0, with_doc=False, with_storage=True):
@@ -1053,8 +1102,7 @@ for ID index. You should update that index \
             ind = self.indexes_names[index_name]
         except KeyError:
             self.__not_opened()
-            raise IndexNotFoundException(
-                "Index `%s` doesn't exists" % index_name)
+            raise IndexNotFoundException("Index `%s` doesn't exists" % index_name)
         storage = ind.storage
         gen = ind.all(limit, offset)
         while True:
@@ -1064,22 +1112,22 @@ for ID index. You should update that index \
             except StopIteration:
                 break
             else:
-                if index_name == 'id':
+                if index_name == "id":
                     if with_storage and size:
                         data = storage.get(start, size, status)
                     else:
                         data = {}
-                    data['_id'] = doc_id
-                    data['_rev'] = unk
+                    data["_id"] = doc_id
+                    data["_rev"] = unk
                 else:
                     data = {}
                     if with_storage and size:
-                        data['value'] = storage.get(start, size, status)
-                    data['key'] = unk
-                    data['_id'] = doc_id
+                        data["value"] = storage.get(start, size, status)
+                    data["key"] = unk
+                    data["_id"] = doc_id
                     if with_doc:
-                        doc = self.get('id', doc_id, False)
-                        data['doc'] = doc
+                        doc = self.get("id", doc_id, False)
+                        data["doc"] = doc
                 yield data
 
     def run(self, index_name, target_funct, *args, **kwargs):
@@ -1099,8 +1147,7 @@ for ID index. You should update that index \
             ind = self.indexes_names[index_name]
         except KeyError:
             self.__not_opened()
-            raise IndexNotFoundException(
-                "Index `%s` doesn't exists" % index_name)
+            raise IndexNotFoundException("Index `%s` doesn't exists" % index_name)
         try:
             funct = getattr(ind, "run_" + target_funct)
         except AttributeError:
@@ -1122,8 +1169,8 @@ for ID index. You should update that index \
 
 
         """
-        kwargs['with_storage'] = False
-        kwargs['with_doc'] = False
+        kwargs["with_storage"] = False
+        kwargs["with_doc"] = False
         iter_ = target_funct(*args, **kwargs)
         i = 0
         while True:
@@ -1142,16 +1189,15 @@ for ID index. You should update that index \
 
         :param data: data to delete
         """
-        if not '_rev' in data or not '_id' in data:
+        if not "_rev" in data or not "_id" in data:
             raise PreconditionsException("Can't delete without _rev or _id")
-        _id = data['_id']
-        _rev = data['_rev']
+        _id = data["_id"]
+        _rev = data["_rev"]
         try:
             pass
         except:
-            raise PreconditionsException(
-                "`_id` and `_rev` must be valid bytes object")
-        data['_deleted'] = True
+            raise PreconditionsException("`_id` and `_rev` must be valid bytes object")
+        data["_deleted"] = True
         self._delete_indexes(_id, _rev, data)
         return True
 
@@ -1199,8 +1245,10 @@ for ID index. You should update that index \
         if not self.path:
             return 0
         return sum(
-            os.path.getsize(os.path.join(dirpath, filename)) for dirpath, dirnames,
-            filenames in os.walk(self.path) for filename in filenames)
+            os.path.getsize(os.path.join(dirpath, filename))
+            for dirpath, dirnames, filenames in os.walk(self.path)
+            for filename in filenames
+        )
 
     def get_index_details(self, name):
         """
@@ -1229,8 +1277,8 @@ for ID index. You should update that index \
         :returns: database details
         """
         props = {}
-        props['path'] = self.path
-        props['size'] = self.__get_size()
-        props['indexes'] = list(self.indexes_names.keys())
-        props['cdb_environment'] = cdb_environment
+        props["path"] = self.path
+        props["size"] = self.__get_size()
+        props["indexes"] = list(self.indexes_names.keys())
+        props["cdb_environment"] = cdb_environment
         return props

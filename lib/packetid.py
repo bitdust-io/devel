@@ -56,15 +56,16 @@ See module ``p2p.backup_fs`` to learn how Path ID is generated from file or fold
 """
 
 from __future__ import absolute_import
-import time
-import re
-import random
 
-#------------------------------------------------------------------------------
+import random
+import re
+import time
+
+# ------------------------------------------------------------------------------
 
 _LastUniqueNumber = 0
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 def UniqueID():
@@ -82,7 +83,9 @@ def UniqueID():
     return str(int(random.getrandbits(8))) + str(_LastUniqueNumber)
 
 
-def MakePacketID(backupID, blockNumber, supplierNumber, dataORparity, normalize_key_alias=True):
+def MakePacketID(
+    backupID, blockNumber, supplierNumber, dataORparity, normalize_key_alias=True
+):
     """
     Create a full packet ID from backup ID and other parts
     Such call:
@@ -94,12 +97,19 @@ def MakePacketID(backupID, blockNumber, supplierNumber, dataORparity, normalize_
         'master$alice@idhost.org:0/0/1/0/F20131120053803PM/1234-63-Data'
     """
     if normalize_key_alias:
-        if '$' not in backupID:
-            backupID = 'master$' + backupID
-    return '%s/%d-%d-%s' % (backupID, blockNumber, supplierNumber, dataORparity, )
+        if "$" not in backupID:
+            backupID = "master$" + backupID
+    return "%s/%d-%d-%s" % (
+        backupID,
+        blockNumber,
+        supplierNumber,
+        dataORparity,
+    )
 
 
-def MakeBackupID(customer=None, path_id='0', version=None, normalize_key_alias=True, key_alias=None):
+def MakeBackupID(
+    customer=None, path_id="0", version=None, normalize_key_alias=True, key_alias=None
+):
     """
     Run:
 
@@ -112,15 +122,16 @@ def MakeBackupID(customer=None, path_id='0', version=None, normalize_key_alias=T
     if normalize_key_alias:
         if not customer:
             from userid import my_id
-            customer = my_id.getGlobalID(key_alias=key_alias or 'master')
+
+            customer = my_id.getGlobalID(key_alias=key_alias or "master")
     if customer:
-        if '$' not in customer and normalize_key_alias:
-            customer = '{}${}'.format(key_alias or 'master', customer)
+        if "$" not in customer and normalize_key_alias:
+            customer = "{}${}".format(key_alias or "master", customer)
         if version:
-            return '{}:{}/{}'.format(customer, path_id, version)
-        return '{}:{}'.format(customer, path_id)
+            return "{}:{}/{}".format(customer, path_id, version)
+        return "{}:{}".format(customer, path_id)
     if version:
-        return '{}/{}'.format(path_id, version)
+        return "{}/{}".format(path_id, version)
     return path_id
 
 
@@ -133,12 +144,12 @@ def Valid(packetID):
         0/1/2
 
     """
-    user, _, shortPacketID = packetID.rpartition(':')
+    user, _, shortPacketID = packetID.rpartition(":")
     if user:
         return False
-    head, x, tail = shortPacketID.rpartition('/')
-    pathID = ''
-    version = ''
+    head, x, tail = shortPacketID.rpartition("/")
+    pathID = ""
+    version = ""
     if not x and not head:
         # this seems to be a shortest pathID: 0, 1, 2, ...
         try:
@@ -146,10 +157,10 @@ def Valid(packetID):
         except:
             return False
         pathID = tail
-    if tail.endswith('-Data') or tail.endswith('-Parity'):
+    if tail.endswith("-Data") or tail.endswith("-Parity"):
         if not IsPacketNameCorrect(tail):
             return False
-        pathID, _, version = head.rpartition('/')
+        pathID, _, version = head.rpartition("/")
     else:
         pathID = shortPacketID
         if IsCanonicalVersion(tail):
@@ -170,16 +181,16 @@ def Split(packetID, normalize_key_alias=True):
         ('master$alice@idhost.org', '0/0/1/0/F20131120053803PM', 0, 1, 'Data')
     """
     try:
-        backupID, _, fileName = packetID.rpartition('/')
-        blockNum, supplierNum, dataORparity = fileName.split('-')
+        backupID, _, fileName = packetID.rpartition("/")
+        blockNum, supplierNum, dataORparity = fileName.split("-")
         blockNum = int(blockNum)
         supplierNum = int(supplierNum)
-        customerGlobalID, _, remotePathWithVersion = backupID.rpartition(':')
+        customerGlobalID, _, remotePathWithVersion = backupID.rpartition(":")
     except:
         return None, None, None, None, None
     if normalize_key_alias:
-        if '$' not in customerGlobalID:
-            customerGlobalID = 'master$' + customerGlobalID
+        if "$" not in customerGlobalID:
+            customerGlobalID = "master$" + customerGlobalID
     return customerGlobalID, remotePathWithVersion, blockNum, supplierNum, dataORparity
 
 
@@ -191,17 +202,17 @@ def SplitFull(packetID, normalize_key_alias=True):
         ('master$alice@idhost.org', '0/0/1/0', 'F20131120053803PM', 0, 1, 'Data')
     """
     try:
-        backupID, _, fileName = packetID.rpartition('/')
-        pathID, _, versionName = backupID.rpartition('/')
-        blockNum, supplierNum, dataORparity = fileName.split('-')
+        backupID, _, fileName = packetID.rpartition("/")
+        pathID, _, versionName = backupID.rpartition("/")
+        blockNum, supplierNum, dataORparity = fileName.split("-")
         blockNum = int(blockNum)
         supplierNum = int(supplierNum)
-        customerGlobalID, _, remotePath = pathID.rpartition(':')
+        customerGlobalID, _, remotePath = pathID.rpartition(":")
     except:
         return None, None, None, None, None, None
     if normalize_key_alias:
-        if '$' not in customerGlobalID:
-            customerGlobalID = 'master$' + customerGlobalID
+        if "$" not in customerGlobalID:
+            customerGlobalID = "master$" + customerGlobalID
     return customerGlobalID, remotePath, versionName, blockNum, supplierNum, dataORparity
 
 
@@ -213,14 +224,14 @@ def SplitVersionFilename(packetID, normalize_key_alias=True):
         ('master$alice@idhost.org', '0/0/1/0', 'F20131120053803PM', '0-1-Data')
     """
     try:
-        backupID, _, fileName = packetID.rpartition('/')
-        pathID, _, versionName = backupID.rpartition('/')
-        customerGlobalID, _, remotePath = pathID.rpartition(':')
+        backupID, _, fileName = packetID.rpartition("/")
+        pathID, _, versionName = backupID.rpartition("/")
+        customerGlobalID, _, remotePath = pathID.rpartition(":")
     except:
         return None, None, None, None
     if normalize_key_alias:
-        if '$' not in customerGlobalID:
-            customerGlobalID = 'master$' + customerGlobalID
+        if "$" not in customerGlobalID:
+            customerGlobalID = "master$" + customerGlobalID
     return customerGlobalID, remotePath, versionName, fileName
 
 
@@ -232,13 +243,13 @@ def SplitBackupID(backupID, normalize_key_alias=True):
         ('master$alice@idhost.org', '0/0/1/0', 'F20131120053803PM')
     """
     try:
-        pathID, _, versionName = backupID.rpartition('/')
-        customerGlobalID, _, pathID = pathID.rpartition(':')
+        pathID, _, versionName = backupID.rpartition("/")
+        customerGlobalID, _, pathID = pathID.rpartition(":")
     except:
         return None, None, None
     if normalize_key_alias:
-        if '$' not in customerGlobalID:
-            customerGlobalID = 'master$' + customerGlobalID
+        if "$" not in customerGlobalID:
+            customerGlobalID = "master$" + customerGlobalID
     return customerGlobalID, pathID, versionName
 
 
@@ -250,14 +261,14 @@ def SplitBackupIDFull(backupID, normalize_key_alias=True):
         ('share_1234', 'alice@idhost.org', '0/0/1/0', 'F20131120053803PM')
     """
     try:
-        pathID, _, versionName = backupID.rpartition('/')
-        customerGlobalID, _, pathID = pathID.rpartition(':')
-        keyAlias, _, customerGlobalID = customerGlobalID.partition('$')
+        pathID, _, versionName = backupID.rpartition("/")
+        customerGlobalID, _, pathID = pathID.rpartition(":")
+        keyAlias, _, customerGlobalID = customerGlobalID.partition("$")
     except:
         return None, None, None, None
     if normalize_key_alias:
         if not keyAlias:
-            keyAlias = 'master'
+            keyAlias = "master"
     return keyAlias, customerGlobalID, pathID, versionName
 
 
@@ -269,12 +280,12 @@ def SplitPacketID(packetID, normalize_key_alias=True):
         ('master$alice@idhost.org', '0/0/1/0/F20131120053803PM/1-2-Data')
     """
     try:
-        customerGlobalID, _, dataID = packetID.rpartition(':')
+        customerGlobalID, _, dataID = packetID.rpartition(":")
     except:
         return None, None
     if normalize_key_alias:
-        if '$' not in customerGlobalID:
-            customerGlobalID = 'master$' + customerGlobalID
+        if "$" not in customerGlobalID:
+            customerGlobalID = "master$" + customerGlobalID
     return customerGlobalID, dataID
 
 
@@ -286,12 +297,12 @@ def SplitKeyOwnerData(packetID):
         ('abcd', 'alice@idhost.org', '0/0/1/0/F20131120053803PM/1-2-Data')
     """
     try:
-        fullGlobalID, _, dataID = packetID.rpartition(':')
+        fullGlobalID, _, dataID = packetID.rpartition(":")
     except:
         return None, None
-    if '$' not in fullGlobalID:
-        fullGlobalID = 'master$' + fullGlobalID
-    keyAlias, _, customerID = fullGlobalID.partition('$')
+    if "$" not in fullGlobalID:
+        fullGlobalID = "master$" + fullGlobalID
+    keyAlias, _, customerID = fullGlobalID.partition("$")
     return keyAlias, customerID, dataID
 
 
@@ -299,7 +310,7 @@ def IsCanonicalVersion(versionName):
     """
     Check given ``versionName`` to have a valid format.
     """
-    return re.match('^F\d+?(AM|PM)\d*?$', versionName) is not None
+    return re.match("^F\d+?(AM|PM)\d*?$", versionName) is not None
 
 
 def IsPacketNameCorrect(fileName):
@@ -307,7 +318,7 @@ def IsPacketNameCorrect(fileName):
     Check the ``fileName`` (this is a last 3 parts of packet ID) to have a
     valid format.
     """
-    return re.match('^\d+?\-\d+?\-(Data|Parity)$', fileName) is not None
+    return re.match("^\d+?\-\d+?\-(Data|Parity)$", fileName) is not None
 
 
 def IsPathIDCorrect(pathID, customer_id_mandatory=False):
@@ -320,7 +331,7 @@ def IsPathIDCorrect(pathID, customer_id_mandatory=False):
         return False
     if customer_id_mandatory:
         try:
-            user, _, host = customerGlobalID.rpartition('@')
+            user, _, host = customerGlobalID.rpartition("@")
         except:
             return False
         if not user:
@@ -328,7 +339,7 @@ def IsPathIDCorrect(pathID, customer_id_mandatory=False):
         if not host:
             return False
     # TODO: more strict validation
-    return remotePath.replace('/', '').isdigit()
+    return remotePath.replace("/", "").isdigit()
 
 
 def IsBackupIDCorrect(backupID, customer_id_mandatory=False):
@@ -337,7 +348,7 @@ def IsBackupIDCorrect(backupID, customer_id_mandatory=False):
 
         alice@idhost.org:0/0/1/0/F20131120053803PM.
     """
-    pathID, _, version = backupID.rpartition('/')
+    pathID, _, version = backupID.rpartition("/")
     if not IsCanonicalVersion(version):
         return False
     if not IsPathIDCorrect(pathID, customer_id_mandatory=customer_id_mandatory):
@@ -355,10 +366,11 @@ def IsGlobalPathCorrect(globPath, customer_id_mandatory=False):
     customerGlobalID, remotePath = SplitPacketID(globPath)
     if customer_id_mandatory:
         from userid import global_id
+
         return global_id.IsValidGlobalUser(customerGlobalID)
     if not remotePath:
         return False
-    parts = remotePath.split('/')
+    parts = remotePath.split("/")
     if len(parts) > 50:
         return False
     # TODO: more strict validation
@@ -384,14 +396,14 @@ def KeyAlias(inp, normalize_key_alias=True):
     if not inp:
         return None
     customerGlobalID = inp
-    if ':' in inp:
+    if ":" in inp:
         try:
-            customerGlobalID, _, _ = inp.partition(':')
+            customerGlobalID, _, _ = inp.partition(":")
         except:
             return None
-    if '$' not in customerGlobalID and normalize_key_alias:
-        customerGlobalID = 'master$' + customerGlobalID
-    keyAlias, _, _ = customerGlobalID.partition('$')
+    if "$" not in customerGlobalID and normalize_key_alias:
+        customerGlobalID = "master$" + customerGlobalID
+    keyAlias, _, _ = customerGlobalID.partition("$")
     return str(keyAlias)
 
 
@@ -399,13 +411,15 @@ def CustomerIDURL(backupID, as_field=True):
     """
     A wrapper for ``Split()`` method to get customer idurl from backup ID.
     """
-    user, _, _ = backupID.strip().rpartition(':')
+    user, _, _ = backupID.strip().rpartition(":")
     if not user:
         from userid import my_id
+
         if as_field:
             return my_id.getIDURL()
         return my_id.getIDURL().to_bin()
     from userid import global_id
+
     return global_id.GlobalUserToIDURL(user, as_field=as_field)
 
 
@@ -413,9 +427,9 @@ def RemotePath(backupID):
     """
     A wrapper for ``Split()`` method to get only remote_path from backup ID.
     """
-    _, _, remote_path = backupID.strip().rpartition(':')
+    _, _, remote_path = backupID.strip().rpartition(":")
     if not remote_path:
-        return ''
+        return ""
     return remote_path
 
 
@@ -455,10 +469,10 @@ def parentPathsList(ID):
 
     ['0', '0/0', '0/0/1', '0/0/1/0', '0/0/1/0/F20131120053803PM', '0/0/1/0/F20131120053803PM/0-1-Data']
     """
-    path = ''
-    for word in ID.split('/'):
+    path = ""
+    for word in ID.split("/"):
         if path:
-            path += '/'
+            path += "/"
         path += word
         yield path
 
@@ -471,15 +485,17 @@ def LatestBackupID(backupID):
     if not backupID:
         return backupID
     from userid import global_id
+
     glob_id = global_id.ParseGlobalID(backupID, as_field=True)
-    if not glob_id['idurl']:
+    if not glob_id["idurl"]:
         from logs import lg
-        lg.err('invalid backupID: %r' % backupID)
+
+        lg.err("invalid backupID: %r" % backupID)
         return backupID
     return global_id.MakeGlobalID(
-        key_id=glob_id['key_id'],
-        path=glob_id['path'],
-        version=glob_id['version'],
+        key_id=glob_id["key_id"],
+        path=glob_id["path"],
+        version=glob_id["version"],
     )
 
 
@@ -487,14 +503,14 @@ def MakeQueueMessagePacketID(queue_id, unique_id):
     """
     Prepare text string to be used as PacketID when sending queue message.
     """
-    return 'queue_{}_{}'.format(queue_id, unique_id)
+    return "queue_{}_{}".format(queue_id, unique_id)
 
 
 def SplitQueueMessagePacketID(packet_id):
     """
     Extract `queue_id` and `unique_id` from PacketID expecting to have queue_message format.
     """
-    if packet_id.startswith('queue_'):
+    if packet_id.startswith("queue_"):
         packet_id = packet_id[6:]
-    queue_id, _, unique_id = packet_id.rpartition('_')
+    queue_id, _, unique_id = packet_id.rpartition("_")
     return queue_id, unique_id

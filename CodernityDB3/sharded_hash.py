@@ -17,14 +17,15 @@
 
 
 from __future__ import absolute_import
+
+import uuid
+from random import getrandbits
+
 import six
 
-from CodernityDB3.hash_index import UniqueHashIndex, HashIndex
-from CodernityDB3.sharded_index import ShardedIndex
+from CodernityDB3.hash_index import HashIndex, UniqueHashIndex
 from CodernityDB3.index import IndexPreconditionsException
-
-from random import getrandbits
-import uuid
+from CodernityDB3.sharded_index import ShardedIndex
 
 
 class IU_ShardedUniqueHashIndex(ShardedIndex):
@@ -35,11 +36,10 @@ from CodernityDB3.sharded_index import ShardedIndex
 """
 
     def __init__(self, db_path, name, *args, **kwargs):
-        if kwargs.get('sh_nums', 0) > 255:
+        if kwargs.get("sh_nums", 0) > 255:
             raise IndexPreconditionsException("Too many shards")
-        kwargs['ind_class'] = UniqueHashIndex
-        super(IU_ShardedUniqueHashIndex, self).__init__(db_path,
-                                                        name, *args, **kwargs)
+        kwargs["ind_class"] = UniqueHashIndex
+        super(IU_ShardedUniqueHashIndex, self).__init__(db_path, name, *args, **kwargs)
         self.patchers.append(self.wrap_insert_id_index)
 
     @staticmethod
@@ -56,10 +56,10 @@ from CodernityDB3.sharded_index import ShardedIndex
             start, size = storage.insert(value)
             db_obj.id_ind.insert(_id, _rev, start, size)
             return _id
+
         if not clean:
-            if hasattr(db_obj, '_insert_id_index_orig'):
-                raise IndexPreconditionsException(
-                    "Already patched, something went wrong")
+            if hasattr(db_obj, "_insert_id_index_orig"):
+                raise IndexPreconditionsException("Already patched, something went wrong")
             setattr(db_obj, "_insert_id_index_orig", db_obj._insert_id_index)
             setattr(db_obj, "_insert_id_index", _insert_id_index)
         else:
@@ -72,7 +72,7 @@ from CodernityDB3.sharded_index import ShardedIndex
         if trg >= self.sh_nums:
             trg = 0
         self.last_used = trg
-        h = '%02x%30s' % (trg, h[2:])
+        h = "%02x%30s" % (trg, h[2:])
         return h
 
     def delete(self, key, *args, **kwargs):
@@ -110,7 +110,7 @@ from CodernityDB3.sharded_index import ShardedIndex
 class ShardedUniqueHashIndex(IU_ShardedUniqueHashIndex):
 
     # allow unique hash to be used directly
-    custom_header = 'from CodernityDB3.sharded_hash import IU_ShardedUniqueHashIndex'
+    custom_header = "from CodernityDB3.sharded_hash import IU_ShardedUniqueHashIndex"
 
     pass
 
@@ -120,9 +120,8 @@ class IU_ShardedHashIndex(ShardedIndex):
     custom_header = """from CodernityDB3.sharded_index import ShardedIndex"""
 
     def __init__(self, db_path, name, *args, **kwargs):
-        kwargs['ind_class'] = HashIndex
-        super(IU_ShardedHashIndex, self).__init__(db_path, name, *
-                                                  args, **kwargs)
+        kwargs["ind_class"] = HashIndex
+        super(IU_ShardedHashIndex, self).__init__(db_path, name, *args, **kwargs)
 
     def calculate_shard(self, key):
         """

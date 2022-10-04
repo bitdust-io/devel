@@ -1,21 +1,12 @@
 import os
-
+from crypt import key, signed
 from unittest import TestCase
 
-from logs import lg
-
-from system import bpio
-
-from main import settings
-
-from crypt import key
-from crypt import signed
-
 from contacts import identitycache
-
-from userid import identity
-from userid import my_id
-
+from logs import lg
+from main import settings
+from system import bpio
+from userid import identity, my_id
 
 _some_priv_key = """-----BEGIN RSA PRIVATE KEY-----
 MIIEowIBAAKCAQEA/ZsJKyCakqA8vO2r0CTOG0qE2l+4y1dIqh7VC0oaVkXy0Cim
@@ -111,41 +102,41 @@ _another_identity_xml = """<?xml version="1.0" encoding="utf-8"?>
 </identity>"""
 
 
-
 class Test(TestCase):
-
     def setUp(self):
         try:
-            bpio.rmdir_recursive('/tmp/.bitdust_tmp')
+            bpio.rmdir_recursive("/tmp/.bitdust_tmp")
         except Exception:
             pass
         lg.set_debug_level(30)
-        settings.init(base_dir='/tmp/.bitdust_tmp')
+        settings.init(base_dir="/tmp/.bitdust_tmp")
         self.my_current_key = None
         try:
-            os.makedirs('/tmp/.bitdust_tmp/metadata/')
+            os.makedirs("/tmp/.bitdust_tmp/metadata/")
         except:
             pass
         try:
-            os.makedirs('/tmp/.bitdust_tmp/identitycache/')
+            os.makedirs("/tmp/.bitdust_tmp/identitycache/")
         except:
             pass
-        fout = open(settings.KeyFileName(), 'w')
+        fout = open(settings.KeyFileName(), "w")
         fout.write(_some_priv_key)
         fout.close()
-        fout = open(settings.LocalIdentityFilename(), 'w')
+        fout = open(settings.LocalIdentityFilename(), "w")
         fout.write(_some_identity_xml)
         fout.close()
         self.assertTrue(key.LoadMyKey())
         self.assertTrue(my_id.loadLocalIdentity())
         self.bob_ident = identity.identity(xmlsrc=_another_identity_xml)
-        identitycache.UpdateAfterChecking(idurl=self.bob_ident.getIDURL(), xml_src=_another_identity_xml)
+        identitycache.UpdateAfterChecking(
+            idurl=self.bob_ident.getIDURL(), xml_src=_another_identity_xml
+        )
 
     def tearDown(self):
         key.ForgetMyKey()
         my_id.forgetLocalIdentity()
         settings.shutdown()
-        bpio.rmdir_recursive('/tmp/.bitdust_tmp')
+        bpio.rmdir_recursive("/tmp/.bitdust_tmp")
 
     def test_signed_packet(self):
         key.InitMyKey()
@@ -154,10 +145,10 @@ class Test(TestCase):
         for i in range(attempts):
             data1 = os.urandom(payload_size)
             p1 = signed.Packet(
-                'Data',
+                "Data",
                 my_id.getIDURL(),
                 my_id.getIDURL(),
-                'SomeID',
+                "SomeID",
                 data1,
                 self.bob_ident.getIDURL(),
             )

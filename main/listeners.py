@@ -29,57 +29,60 @@
 
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 12
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 import sys
 
 try:
     from twisted.internet import reactor  # @UnresolvedImport
 except:
-    sys.exit('Error initializing twisted.internet.reactor in listeners.py')
+    sys.exit("Error initializing twisted.internet.reactor in listeners.py")
 
-#------------------------------------------------------------------------------
-
-from logs import lg
+# ------------------------------------------------------------------------------
 
 from lib import utime
+from logs import lg
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Listeners = {}
 _ModelsToBePopulated = []
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
 
 def listeners():
     global _Listeners
     return _Listeners
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def init():
     if _Debug:
-        lg.out(_DebugLevel, 'listeners.init')
+        lg.out(_DebugLevel, "listeners.init")
 
 
 def shutdown():
     if _Debug:
-        lg.out(_DebugLevel, 'listeners.shutdown')
+        lg.out(_DebugLevel, "listeners.shutdown")
     clear_listeners()
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 class Snapshot(object):
-
     def __init__(self, model_name, snap_id=None, data=None, created=None, deleted=False):
         self.model_name = model_name
         self.snap_id = snap_id
@@ -88,22 +91,24 @@ class Snapshot(object):
         self.deleted = deleted
 
     def __repr__(self):
-        return '<{}:{}>'.format(self.model_name, self.snap_id)
+        return "<{}:{}>".format(self.model_name, self.snap_id)
 
     def to_json(self):
         j = {
-            'name': self.model_name,
-            'id': self.snap_id,
-            'data': self.data,
-            'created': self.created,
+            "name": self.model_name,
+            "id": self.snap_id,
+            "data": self.data,
+            "created": self.created,
         }
         if self.deleted:
-            j['deleted'] = utime.get_sec1970()
+            j["deleted"] = utime.get_sec1970()
         return j
 
-#------------------------------------------------------------------------------
 
-def add_listener(listener_callback, model_name='*'):
+# ------------------------------------------------------------------------------
+
+
+def add_listener(listener_callback, model_name="*"):
     """
     listener_callback(snapshot_object)
     """
@@ -115,9 +120,9 @@ def add_listener(listener_callback, model_name='*'):
     return True
 
 
-def remove_listener(listener_callback, model_name='*'):
+def remove_listener(listener_callback, model_name="*"):
     removed = False
-    if model_name == '*':
+    if model_name == "*":
         for model_name, listeners_callbacks in listeners().items():
             if listener_callback in listeners_callbacks:
                 listeners()[model_name].remove(listener_callback)
@@ -137,17 +142,19 @@ def remove_listener(listener_callback, model_name='*'):
     return removed
 
 
-def clear_listeners(model_name='*'):
+def clear_listeners(model_name="*"):
     removed = False
     for _model_name, listener_callbacks in listeners().items():
-        if _model_name == model_name or model_name == '*':
+        if _model_name == model_name or model_name == "*":
             for _cb in list(listener_callbacks):
                 listeners()[_model_name].remove(_cb)
                 removed = True
     listeners().clear()
     return removed
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def dispatch_snapshot(snap):
     handled = 0
@@ -159,8 +166,8 @@ def dispatch_snapshot(snap):
                 lg.exc()
                 continue
             handled += 1
-    if '*' in listeners():
-        for listener_callback in listeners()['*']:
+    if "*" in listeners():
+        for listener_callback in listeners()["*"]:
             try:
                 listener_callback(snap)
             except:
@@ -171,17 +178,25 @@ def dispatch_snapshot(snap):
         lg.args(_DebugLevel, handled=handled, snap=snap)
     return handled
 
-#------------------------------------------------------------------------------
 
-def push_snapshot(model_name, snap_id=None, data=None, created=None, deleted=False, fast=False):
-    snap = Snapshot(model_name, snap_id=snap_id, data=data, created=created, deleted=deleted)
+# ------------------------------------------------------------------------------
+
+
+def push_snapshot(
+    model_name, snap_id=None, data=None, created=None, deleted=False, fast=False
+):
+    snap = Snapshot(
+        model_name, snap_id=snap_id, data=data, created=created, deleted=deleted
+    )
     if fast:
         dispatch_snapshot(snap)
     else:
         reactor.callLater(0, dispatch_snapshot, snap)  # @UndefinedVariable
     return snap
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def populate_later(model_name=None):
     global _ModelsToBePopulated

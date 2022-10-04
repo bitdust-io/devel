@@ -31,6 +31,7 @@ module:: service_broadcasting
 """
 
 from __future__ import absolute_import
+
 from services.local_service import LocalService
 
 
@@ -40,17 +41,19 @@ def create_service():
 
 class BroadcastingService(LocalService):
 
-    service_name = 'service_broadcasting'
-    config_path = 'services/broadcasting/enabled'
+    service_name = "service_broadcasting"
+    config_path = "services/broadcasting/enabled"
 
-    scope = []  # set to [idurl1,idurl2,...] to receive only messages broadcasted from certain nodes
+    scope = (
+        []
+    )  # set to [idurl1,idurl2,...] to receive only messages broadcasted from certain nodes
     # TODO: need to be able dynamically add/remove scope after start of the service
     # for now let's just listen for all broadcast messages (global scope)
 
     def dependent_on(self):
         return [
-            'service_p2p_hookups',
-            'service_nodes_lookup',
+            "service_p2p_hookups",
+            "service_nodes_lookup",
         ]
 
     def installed(self):
@@ -59,132 +62,186 @@ class BroadcastingService(LocalService):
 
     def start(self):
         from twisted.internet.defer import Deferred
-        from broadcast import broadcasters_finder
-        from broadcast import broadcaster_node
-        from broadcast import broadcast_listener
-        from broadcast import broadcast_service
-        from main.config import conf
+
+        from broadcast import (
+            broadcast_listener,
+            broadcast_service,
+            broadcaster_node,
+            broadcasters_finder,
+        )
         from main import settings
+        from main.config import conf
+
         self.starting_deferred = Deferred()
-        broadcasters_finder.A('init')
+        broadcasters_finder.A("init")
         if settings.enableBroadcastRouting():
-            broadcaster_node.A('init', broadcast_service.on_incoming_broadcast_message)
+            broadcaster_node.A("init", broadcast_service.on_incoming_broadcast_message)
             broadcaster_node.A().addStateChangedCallback(
-                self._on_broadcaster_node_switched)
+                self._on_broadcaster_node_switched
+            )
         else:
-            broadcast_listener.A('init', broadcast_service.on_incoming_broadcast_message)
+            broadcast_listener.A("init", broadcast_service.on_incoming_broadcast_message)
             broadcast_listener.A().addStateChangedCallback(
-                self._on_broadcast_listener_switched)
-            broadcast_listener.A('connect', self.scope)
+                self._on_broadcast_listener_switched
+            )
+            broadcast_listener.A("connect", self.scope)
         conf().addConfigNotifier(
-            'services/broadcasting/routing-enabled',
-            self._on_broadcast_routing_enabled_disabled
+            "services/broadcasting/routing-enabled",
+            self._on_broadcast_routing_enabled_disabled,
         )
         return self.starting_deferred
 
     def stop(self):
-        from broadcast import broadcaster_node
-        from broadcast import broadcasters_finder
-        from broadcast import broadcast_listener
+        from broadcast import broadcast_listener, broadcaster_node, broadcasters_finder
         from main.config import conf
-        broadcasters_finder.A('shutdown')
+
+        broadcasters_finder.A("shutdown")
         if broadcaster_node.A() is not None:
             broadcaster_node.A().removeStateChangedCallback(
-                self._on_broadcaster_node_switched)
-            broadcaster_node.A('shutdown')
+                self._on_broadcaster_node_switched
+            )
+            broadcaster_node.A("shutdown")
         if broadcast_listener.A() is not None:
             broadcast_listener.A().removeStateChangedCallback(
-                self._on_broadcast_listener_switched)
-            broadcast_listener.A('shutdown')
-        conf().removeConfigNotifier('services/broadcasting/routing-enabled')
+                self._on_broadcast_listener_switched
+            )
+            broadcast_listener.A("shutdown")
+        conf().removeConfigNotifier("services/broadcasting/routing-enabled")
         return True
 
     def request(self, json_payload, newpacket, info):
         from logs import lg
-        from p2p import p2p_service
         from main import settings
+        from p2p import p2p_service
+
         # words = newpacket.Payload.split(' ')
         try:
-            mode = json_payload['action']
+            mode = json_payload["action"]
         except:
             lg.exc()
-            return p2p_service.SendFail(newpacket, 'invalid payload')
-        if mode != 'route' and mode != 'listen':
-            lg.out(8, "service_broadcasting.request DENIED, wrong mode provided : %s" % mode)
-            return p2p_service.SendFail(newpacket, 'invalid request')
+            return p2p_service.SendFail(newpacket, "invalid payload")
+        if mode != "route" and mode != "listen":
+            lg.out(
+                8, "service_broadcasting.request DENIED, wrong mode provided : %s" % mode
+            )
+            return p2p_service.SendFail(newpacket, "invalid request")
         if not settings.enableBroadcastRouting():
             lg.out(8, "service_broadcasting.request DENIED, broadcast routing disabled")
-            return p2p_service.SendFail(newpacket, 'broadcast routing disabled')
+            return p2p_service.SendFail(newpacket, "broadcast routing disabled")
         from broadcast import broadcaster_node
+
         if not broadcaster_node.A():
             lg.out(8, "service_broadcasting.request DENIED, broadcast routing disabled")
-            return p2p_service.SendFail(newpacket, 'broadcast routing disabled')
-        if broadcaster_node.A().state not in ['BROADCASTING', 'OFFLINE', 'BROADCASTERS?', ]:
-            lg.out(8, "service_broadcasting.request DENIED, current state is : %s" % broadcaster_node.A().state)
-            return p2p_service.SendFail(newpacket, 'currently not broadcasting')
-        if mode == 'route':
-            broadcaster_node.A('new-broadcaster-connected', newpacket.OwnerID)
+            return p2p_service.SendFail(newpacket, "broadcast routing disabled")
+        if broadcaster_node.A().state not in [
+            "BROADCASTING",
+            "OFFLINE",
+            "BROADCASTERS?",
+        ]:
+            lg.out(
+                8,
+                "service_broadcasting.request DENIED, current state is : %s"
+                % broadcaster_node.A().state,
+            )
+            return p2p_service.SendFail(newpacket, "currently not broadcasting")
+        if mode == "route":
+            broadcaster_node.A("new-broadcaster-connected", newpacket.OwnerID)
             lg.out(8, "service_broadcasting.request ACCEPTED, mode: %s" % mode)
-            return p2p_service.SendAck(newpacket, 'accepted')
-        if mode == 'listen':
+            return p2p_service.SendAck(newpacket, "accepted")
+        if mode == "listen":
             # TODO: fix!!!
             # broadcaster_node.A().add_listener(newpacket.OwnerID, ' '.join(words[2:]))
             lg.out(8, "service_broadcasting.request ACCEPTED, mode: %s" % mode)
-            return p2p_service.SendAck(newpacket, 'accepted')
-        return p2p_service.SendAck(newpacket, 'bad request')
+            return p2p_service.SendAck(newpacket, "accepted")
+        return p2p_service.SendAck(newpacket, "bad request")
 
     def health_check(self):
         from broadcast import broadcaster_node
-        return broadcaster_node.A().state in ['BROADCASTING', ]
+
+        return broadcaster_node.A().state in [
+            "BROADCASTING",
+        ]
 
     def _on_broadcast_routing_enabled_disabled(self, path, value, oldvalue, result):
+        from broadcast import broadcast_listener, broadcast_service, broadcaster_node
         from logs import lg
-        from broadcast import broadcaster_node
-        from broadcast import broadcast_listener
-        from broadcast import broadcast_service
-        lg.out(2, 'service_broadcasting._on_broadcast_routing_enabled_disabled : %s->%s : %s' % (
-            oldvalue, value, path))
+
+        lg.out(
+            2,
+            "service_broadcasting._on_broadcast_routing_enabled_disabled : %s->%s : %s"
+            % (oldvalue, value, path),
+        )
         if not value:
             if broadcaster_node.A() is not None:
                 broadcaster_node.A().removeStateChangedCallback(
-                    self._on_broadcaster_node_switched)
-                broadcaster_node.A('shutdown')
-            broadcast_listener.A('init', broadcast_service.on_incoming_broadcast_message)
+                    self._on_broadcaster_node_switched
+                )
+                broadcaster_node.A("shutdown")
+            broadcast_listener.A("init", broadcast_service.on_incoming_broadcast_message)
             broadcast_listener.A().addStateChangedCallback(
-                self._on_broadcast_listener_switched)
-            broadcast_listener.A('connect', self.scope)
+                self._on_broadcast_listener_switched
+            )
+            broadcast_listener.A("connect", self.scope)
         else:
             if broadcast_listener.A() is not None:
                 broadcast_listener.A().removeStateChangedCallback(
-                    self._on_broadcast_listener_switched)
-                broadcast_listener.A('shutdown')
-            broadcaster_node.A('init', broadcast_service.on_incoming_broadcast_message)
+                    self._on_broadcast_listener_switched
+                )
+                broadcast_listener.A("shutdown")
+            broadcaster_node.A("init", broadcast_service.on_incoming_broadcast_message)
             broadcaster_node.A().addStateChangedCallback(
-                self._on_broadcaster_node_switched)
+                self._on_broadcaster_node_switched
+            )
 
     def _on_broadcast_listener_switched(self, oldstate, newstate, evt, *args, **kwargs):
-        from logs import lg
         from twisted.internet import reactor  # @UnresolvedImport
+
         from broadcast import broadcast_listener
+        from logs import lg
+
         if self.starting_deferred:
-            if newstate in ['LISTENING', 'OFFLINE', ]:
+            if newstate in [
+                "LISTENING",
+                "OFFLINE",
+            ]:
                 self.starting_deferred.callback(newstate)
                 self.starting_deferred = None
-        if newstate == 'OFFLINE':
-            reactor.callLater(60, broadcast_listener.A, 'connect', self.scope)  # @UndefinedVariable
-            lg.out(8, 'service_broadcasting._on_broadcast_listener_switched will try to connect again after 1 minute')
+        if newstate == "OFFLINE":
+            reactor.callLater(
+                60, broadcast_listener.A, "connect", self.scope
+            )  # @UndefinedVariable
+            lg.out(
+                8,
+                "service_broadcasting._on_broadcast_listener_switched will try to connect again after 1 minute",
+            )
 
     def _on_broadcaster_node_switched(self, oldstate, newstate, evt, *args, **kwargs):
-        from logs import lg
         from twisted.internet import reactor  # @UnresolvedImport
+
         from broadcast import broadcaster_node
+        from logs import lg
+
         if self.starting_deferred:
-            if newstate in ['BROADCASTING', ] and newstate != oldstate:
+            if (
+                newstate
+                in [
+                    "BROADCASTING",
+                ]
+                and newstate != oldstate
+            ):
                 self.starting_deferred.callback(newstate)
                 self.starting_deferred = None
-            elif newstate in ['OFFLINE', ] and newstate != oldstate:
+            elif (
+                newstate
+                in [
+                    "OFFLINE",
+                ]
+                and newstate != oldstate
+            ):
                 self.starting_deferred.errback(Exception(newstate))
                 self.starting_deferred = None
+
+
 #         if newstate == 'OFFLINE' and oldstate != 'AT_STARTUP':
 #             reactor.callLater(60, broadcaster_node.A, 'reconnect')  # @UndefinedVariable
 #             lg.out(8, 'service_broadcasting._on_broadcaster_node_switched will try to reconnect again after 1 minute')

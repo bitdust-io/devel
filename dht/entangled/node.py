@@ -2,8 +2,8 @@
 # node.py
 #
 # Copyright (C) 2007-2008 Francois Aucamp, Meraka Institute, CSIR
-# See AUTHORS for all authors and contact information. 
-# 
+# See AUTHORS for all authors and contact information.
+#
 # License: GNU Lesser General Public License, version 3 or later; see COPYING
 #          included in this archive for details.
 #
@@ -14,13 +14,12 @@
 # The docstrings in this module contain epytext markup; API documentation
 # may be created by processing this file with epydoc: http://epydoc.sf.net
 
-from __future__ import absolute_import
-from __future__ import print_function
-from io import open
-import six
+from __future__ import absolute_import, print_function
 
 import hashlib
+from io import open
 
+import six
 from twisted.internet import defer
 
 from .kademlia.node import Node  # @UnresolvedImport
@@ -35,10 +34,17 @@ class EntangledNode(Node):
     standard, but useful) RPCs defined.
     """
 
-    def __init__(self, udpPort=4000, dataStore=None, routingTable=None, networkProtocol=None, **kwargs):
+    def __init__(
+        self,
+        udpPort=4000,
+        dataStore=None,
+        routingTable=None,
+        networkProtocol=None,
+        **kwargs
+    ):
         Node.__init__(self, udpPort, dataStore, routingTable, networkProtocol, **kwargs)
         self.invalidKeywords = []
-        self.keywordSplitters = ['_', '.', '/']
+        self.keywordSplitters = ["_", ".", "/"]
 
     def searchForKeywords(self, keywords):
         """
@@ -49,7 +55,7 @@ class EntangledNode(Node):
         """
         if isinstance(keywords, six.string_types):
             for splitter in self.keywordSplitters:
-                keywords = keywords.replace(splitter, ' ')
+                keywords = keywords.replace(splitter, " ")
             keywords = keywords.lower().split()
 
         keyword = None
@@ -124,7 +130,9 @@ class EntangledNode(Node):
         # Prepare a deferred result for this operation
         outerDf = defer.Deferred()
 
-        kwIndex = [-1]  # using a list for this counter because Python doesn't allow binding a new value to a name in an enclosing (non-global) scope
+        kwIndex = [
+            -1
+        ]  # using a list for this counter because Python doesn't allow binding a new value to a name in an enclosing (non-global) scope
 
         # ...and now update the inverted indexes (or add them, if they don't exist yet)
         def addToInvertedIndex(results):
@@ -149,7 +157,7 @@ class EntangledNode(Node):
                     df = defer.Deferred()
                     df.callback({kwKey: self._dataStore[kwKey]})
                 else:
-                    df = self._iterativeFind(kwKey, rpc='findValue')
+                    df = self._iterativeFind(kwKey, rpc="findValue")
                 df.addCallback(addToInvertedIndex)
             else:
                 # We're done. Let the caller of the parent method know
@@ -193,7 +201,9 @@ class EntangledNode(Node):
         # Prepare a deferred result for this operation
         outerDf = defer.Deferred()
 
-        kwIndex = [-1]  # using a list for this counter because Python doesn't allow binding a new value to a name in an enclosing (non-global) scope
+        kwIndex = [
+            -1
+        ]  # using a list for this counter because Python doesn't allow binding a new value to a name in an enclosing (non-global) scope
 
         # ...and now update the inverted indexes (or ignore them, if they don't exist yet)
         def removeFromInvertedIndex(results):
@@ -223,7 +233,7 @@ class EntangledNode(Node):
                     df = defer.Deferred()
                     df.callback({kwKey: self._dataStore[kwKey]})
                 else:
-                    df = self._iterativeFind(kwKey, rpc='findValue')
+                    df = self._iterativeFind(kwKey, rpc="findValue")
                 df.addCallback(removeFromInvertedIndex)
             else:
                 # We're done. Let the caller of the parent method know
@@ -253,7 +263,7 @@ class EntangledNode(Node):
         # Delete our own copy of the data
         if key in self._dataStore:
             del self._dataStore[key]
-        df = self._iterativeFind(key, rpc='delete')
+        df = self._iterativeFind(key, rpc="delete")
         return df
 
     @rpcmethod
@@ -285,10 +295,14 @@ class EntangledNode(Node):
         keywordKeys = []
         splitText = text.lower()
         for splitter in self.keywordSplitters:
-            splitText = splitText.replace(splitter, ' ')
+            splitText = splitText.replace(splitter, " ")
         for keyword in splitText.split():
             # Only consider keywords with 3 or more letters
-            if len(keyword) >= 3 and keyword != text and keyword not in self.invalidKeywords:
+            if (
+                len(keyword) >= 3
+                and keyword != text
+                and keyword not in self.invalidKeywords
+            ):
                 h = hashlib.sha1()
                 h.update(keyword)
                 key = h.digest()
@@ -296,30 +310,35 @@ class EntangledNode(Node):
         return keywordKeys
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
+    import sys
+
     import twisted.internet.reactor
     from kademlia.datastore import SQLiteVersionedJsonDataStore  # @UnresolvedImport
-    import sys
-    import os
+
     if len(sys.argv) < 2:
-        print('Usage:\n%s UDP_PORT  [KNOWN_NODE_IP  KNOWN_NODE_PORT]' % sys.argv[0])
-        print('or:\n%s UDP_PORT  [FILE_WITH_KNOWN_NODES]' % sys.argv[0])
-        print('\nIf a file is specified, it should containg one IP address and UDP port\nper line, seperated by a space.')
+        print("Usage:\n%s UDP_PORT  [KNOWN_NODE_IP  KNOWN_NODE_PORT]" % sys.argv[0])
+        print("or:\n%s UDP_PORT  [FILE_WITH_KNOWN_NODES]" % sys.argv[0])
+        print(
+            "\nIf a file is specified, it should containg one IP address and UDP port\nper line, seperated by a space."
+        )
         sys.exit(1)
     try:
         int(sys.argv[1])
     except ValueError:
-        print('\nUDP_PORT must be an integer value.\n')
-        print('Usage:\n%s UDP_PORT  [KNOWN_NODE_IP  KNOWN_NODE_PORT]' % sys.argv[0])
-        print('or:\n%s UDP_PORT  [FILE_WITH_KNOWN_NODES]' % sys.argv[0])
-        print('\nIf a file is specified, it should contain one IP address and UDP port\nper line, seperated by a space.')
+        print("\nUDP_PORT must be an integer value.\n")
+        print("Usage:\n%s UDP_PORT  [KNOWN_NODE_IP  KNOWN_NODE_PORT]" % sys.argv[0])
+        print("or:\n%s UDP_PORT  [FILE_WITH_KNOWN_NODES]" % sys.argv[0])
+        print(
+            "\nIf a file is specified, it should contain one IP address and UDP port\nper line, seperated by a space."
+        )
         sys.exit(1)
 
     if len(sys.argv) == 4:
         knownNodes = [(sys.argv[2], int(sys.argv[3]))]
     elif len(sys.argv) == 3:
         knownNodes = []
-        f = open(sys.argv[2], 'r')
+        f = open(sys.argv[2], "r")
         lines = f.readlines()
         f.close()
         for line in lines:
@@ -330,8 +349,8 @@ if __name__ == '__main__':
 
     # if os.path.isfile('/tmp/dbFile%s.db' % sys.argv[1]):
     #     os.remove('/tmp/dbFile%s.db' % sys.argv[1])
-    dataStore = SQLiteVersionedJsonDataStore(dbFile='/tmp/dbFile%s.db' % sys.argv[1])
+    dataStore = SQLiteVersionedJsonDataStore(dbFile="/tmp/dbFile%s.db" % sys.argv[1])
     node = EntangledNode(udpPort=int(sys.argv[1]), dataStore=dataStore)
-    #node = EntangledNode( udpPort=int(sys.argv[1]) )
+    # node = EntangledNode( udpPort=int(sys.argv[1]) )
     node.joinNetwork(knownNodes)
     twisted.internet.reactor.run()  # @UndefinedVariable

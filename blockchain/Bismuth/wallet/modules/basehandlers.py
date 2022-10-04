@@ -1,19 +1,19 @@
 # import html
 import logging
 import sys
-from tornado import locale
-from tornado.web import RequestHandler, StaticFileHandler
-from tornado.template import Loader, Template
 from os import path
 
 # from time import time
 # from modules.helpers import base_path
 from modules.i18n import (
-    get_spend_type,
     get_flag_from_locale,
     get_label_from_locale,
     get_locales_list,
+    get_spend_type,
 )
+from tornado import locale
+from tornado.template import Loader, Template
+from tornado.web import RequestHandler, StaticFileHandler
 
 
 class BaseHandler(RequestHandler):
@@ -112,7 +112,8 @@ class BaseHandler(RequestHandler):
         """
         self.require_setting("static_path", "static_url")
         static_handler_class = self.settings.get(
-            "static_handler_class", StaticFileHandler)
+            "static_handler_class", StaticFileHandler
+        )
         if getattr(self, "include_host", False):
             base = self.request.protocol + "://" + self.request.host
         else:
@@ -152,13 +153,15 @@ class BaseHandler(RequestHandler):
         crystals = self.application.crystals_manager.get_loaded_crystals()
         crystal_names = [name.split("_")[1] for name in crystals.keys()]
         self.bismuth_vars["crystals"] = crystal_names
-        self.bismuth_vars["crystals_icons"] = [crystals[name].get("icon", False) for name in crystals.keys()]
+        self.bismuth_vars["crystals_icons"] = [
+            crystals[name].get("icon", False) for name in crystals.keys()
+        ]
 
     # This could be static, but its easier to let it there so the template have direct access.
     def bool2str(self, a_boolean, iftrue, iffalse):
         return iftrue if a_boolean else iffalse
 
-    """    
+    """
     def html_entity_decode(self, text: str) -> str:
         text = html.unescape(text)
         text = text.replace("&lt;", "<").replace("&gt;", ">")
@@ -285,8 +288,7 @@ class CrystalHandler(BaseHandler):
 
 
 class CrystalLoader(Loader):
-    """A template loader that loads from several root directory to account for crystals and base template.
-    """
+    """A template loader that loads from several root directory to account for crystals and base template."""
 
     def __init__(self, root_directory, fallback_directory, **kwargs):
         super(Loader, self).__init__(**kwargs)

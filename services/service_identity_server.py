@@ -31,6 +31,7 @@ module:: service_identity_server
 """
 
 from __future__ import absolute_import
+
 from services.local_service import LocalService
 
 
@@ -40,15 +41,15 @@ def create_service():
 
 class IdentityServerService(LocalService):
 
-    service_name = 'service_identity_server'
-    config_path = 'services/identity-server/enabled'
+    service_name = "service_identity_server"
+    config_path = "services/identity-server/enabled"
 
     def init(self):
         self.log_events = True
 
     def dependent_on(self):
         return [
-            'service_tcp_connections',
+            "service_tcp_connections",
         ]
 
     def installed(self):
@@ -56,17 +57,26 @@ class IdentityServerService(LocalService):
 
     def enabled(self):
         from main import settings
+
         return settings.enableIdServer()
 
     def start(self):
-        from userid import id_server
         from main import settings
-        id_server.A('init', (settings.getIdServerWebPort(), settings.getIdServerTCPPort(), ))
-        id_server.A('start')
+        from userid import id_server
+
+        id_server.A(
+            "init",
+            (
+                settings.getIdServerWebPort(),
+                settings.getIdServerTCPPort(),
+            ),
+        )
+        id_server.A("start")
         return True
 
     def stop(self):
         from userid import id_server
-        id_server.A('stop')
-        id_server.A('shutdown')
+
+        id_server.A("stop")
+        id_server.A("shutdown")
         return True

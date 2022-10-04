@@ -31,6 +31,7 @@ module:: service_ip_port_responder
 """
 
 from __future__ import absolute_import
+
 from services.local_service import LocalService
 
 
@@ -40,42 +41,46 @@ def create_service():
 
 class IPPortResponderService(LocalService):
 
-    service_name = 'service_ip_port_responder'
-    config_path = 'services/ip-port-responder/enabled'
+    service_name = "service_ip_port_responder"
+    config_path = "services/ip-port-responder/enabled"
     start_suspended = True
 
     def dependent_on(self):
         return [
-            'service_udp_datagrams',
-            'service_entangled_dht',
+            "service_udp_datagrams",
+            "service_entangled_dht",
         ]
 
     def start(self):
-        from stun import stun_server
-        from main import settings
         from lib import udp
         from logs import lg
+        from main import settings
+        from stun import stun_server
+
         if not udp.proto(settings.getUDPPort()):
-            lg.warn('udp port %s is not opened yet' % settings.getUDPPort())
+            lg.warn("udp port %s is not opened yet" % settings.getUDPPort())
             return False
         udp_port = int(settings.getUDPPort())
-        stun_server.A('start', udp_port)
+        stun_server.A("start", udp_port)
         return True
 
     def stop(self):
         from stun import stun_server
-        stun_server.A('stop')
+
+        stun_server.A("stop")
         stun_server.Destroy()
         return True
 
     def on_suspend(self, *args, **kwargs):
         from stun import stun_server
-        stun_server.A('stop')
+
+        stun_server.A("stop")
         return True
 
     def on_resume(self, *args, **kwargs):
-        from stun import stun_server
         from main import settings
+        from stun import stun_server
+
         udp_port = int(settings.getUDPPort())
-        stun_server.A('start', udp_port)
+        stun_server.A("start", udp_port)
         return True

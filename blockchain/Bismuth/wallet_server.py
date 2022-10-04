@@ -17,24 +17,24 @@ import time
 from logging.handlers import RotatingFileHandler
 
 import aioprocessing
+
+# Bismuth specific modules
+import modules.config as config
 import psutil
 import tornado.gen
 import tornado.log
 import tornado.util
+from modules.ledgerbase import LedgerBase
+from modules.node_interface import NodeInterface
+
+# from modules.helpers import *
+from modules.sqlitebase import SqliteBase
 from tornado.ioloop import IOLoop
 from tornado.iostream import StreamClosedError
 from tornado.options import define, options
 from tornado.tcpserver import TCPServer
 
-# Bismuth specific modules
-import modules.config as config
-# from modules.helpers import *
-from modules.sqlitebase import SqliteBase
-from modules.ledgerbase import LedgerBase
-from modules.node_interface import NodeInterface
-
-
-__version__ = '0.1.22'
+__version__ = "0.1.22"
 
 
 # Server
@@ -43,8 +43,9 @@ __version__ = '0.1.22'
 
 class WalletServer(TCPServer):
     """Tornado asynchronous TCP server."""
+
     clients = set()
-    status_dict = {'version': __version__}
+    status_dict = {"version": __version__}
     node_interface = None
 
     async def handle_stream(self, stream, address):
@@ -54,27 +55,47 @@ class WalletServer(TCPServer):
         global MAX_CLIENTS
         ip, fileno = address
         if len(self.clients) >= MAX_CLIENTS:
-            access_log.info("Reached {} max clients, denying connection for {}.".format(MAX_CLIENTS, ip))
+            access_log.info(
+                "Reached {} max clients, denying connection for {}.".format(
+                    MAX_CLIENTS, ip
+                )
+            )
             return
         WalletServer.clients.add(address)
-        access_log.info("Incoming connection from {}:{} - {} Total Clients".format(ip, fileno, len(self.clients)))
+        access_log.info(
+            "Incoming connection from {}:{} - {} Total Clients".format(
+                ip, fileno, len(self.clients)
+            )
+        )
         while not stop_event.is_set():
             try:
                 # print("waiting for command")
                 await self.command(stream, ip)
             except StreamClosedError:
                 WalletServer.clients.remove(address)
-                access_log.info("Client {}:{} left  - {} Total Clients".format(ip, fileno, len(self.clients)))
+                access_log.info(
+                    "Client {}:{} left  - {} Total Clients".format(
+                        ip, fileno, len(self.clients)
+                    )
+                )
                 break
             except ValueError:
                 WalletServer.clients.remove(address)
                 if options.verbose:
-                    access_log.info("Client {}:{} Rejected  - {} Total Clients".format(ip, fileno, len(self.clients)))
+                    access_log.info(
+                        "Client {}:{} Rejected  - {} Total Clients".format(
+                            ip, fileno, len(self.clients)
+                        )
+                    )
                 stream.close()
                 break
             except tornado.util.TimeoutError:
                 WalletServer.clients.remove(address)
-                access_log.info("Client {}:{} Timeout  - {} Total Clients".format(ip, fileno, len(self.clients)))
+                access_log.info(
+                    "Client {}:{} Timeout  - {} Total Clients".format(
+                        ip, fileno, len(self.clients)
+                    )
+                )
                 try:
                     stream.close()
                 except Exception:
@@ -82,8 +103,10 @@ class WalletServer(TCPServer):
                 break
             except Exception as e:
                 what = str(e)
-                if 'OK' not in what:
-                    app_log.error("handle_stream {} for ip {}:{}".format(what, ip, fileno))
+                if "OK" not in what:
+                    app_log.error(
+                        "handle_stream {} for ip {}:{}".format(what, ip, fileno)
+                    )
                     await asyncio.sleep(1)
 
     @staticmethod
@@ -95,11 +118,17 @@ class WalletServer(TCPServer):
         :return:
         """
         try:
-            header = await tornado.gen.with_timeout(datetime.timedelta(seconds=35), stream.read_bytes(10),
-                                                    quiet_exceptions=tornado.iostream.StreamClosedError)
+            header = await tornado.gen.with_timeout(
+                datetime.timedelta(seconds=35),
+                stream.read_bytes(10),
+                quiet_exceptions=tornado.iostream.StreamClosedError,
+            )
             data_len = int(header)
-            data = await tornado.gen.with_timeout(datetime.timedelta(seconds=10), stream.read_bytes(data_len),
-                                                  quiet_exceptions=tornado.iostream.StreamClosedError)
+            data = await tornado.gen.with_timeout(
+                datetime.timedelta(seconds=10),
+                stream.read_bytes(data_len),
+                quiet_exceptions=tornado.iostream.StreamClosedError,
+            )
             data = json.loads(data.decode("utf-8"))
             return data
         except Exception as e:
@@ -119,7 +148,7 @@ class WalletServer(TCPServer):
         try:
             data = str(json.dumps(data))
             header = str(len(data)).encode("utf-8").zfill(10)
-            full = header + data.encode('utf-8')
+            full = header + data.encode("utf-8")
             await stream.write(full)
         except Exception as e:
             app_log.error("_send {} for ip {}".format(str(e), ip))
@@ -180,14 +209,22 @@ class WalletServer(TCPServer):
         while not stop_event.is_set():
             try:
                 app_log.info("STATUS: {} Connected clients.".format(len(self.clients)))
-                self.status_dict['clients'] = len(self.clients)
-                self.status_dict['max_clients'] = MAX_CLIENTS
+                self.status_dict["clients"] = len(self.clients)
+                self.status_dict["max_clients"] = MAX_CLIENTS
                 if process:
                     of = len(process.open_files())
                     fd = process.num_fds()
                     co = len(process.connections(kind="tcp4"))
-                    self.status_dict['of'], self.status_dict['fd'], self.status_dict['co'] = of, fd, co
-                    app_log.info("STATUS: {} Open files, {} connections, {} FD used.".format(of, co, fd))
+                    (
+                        self.status_dict["of"],
+                        self.status_dict["fd"],
+                        self.status_dict["co"],
+                    ) = (of, fd, co)
+                    app_log.info(
+                        "STATUS: {} Open files, {} connections, {} FD used.".format(
+                            of, co, fd
+                        )
+                    )
 
                 await asyncio.sleep(30)
             except Exception as e:
@@ -198,7 +235,7 @@ async def getrights(ip):
     global app_log
     global CONFIG
     try:
-        result = ['none']
+        result = ["none"]
         if ip in CONFIG.allowed:
             result.append("admin")
         return result
@@ -211,12 +248,18 @@ def start_server(port):
     global stop_event
     global PORT
     global CONFIG
-    mempool = SqliteBase(options.verbose, db_path=CONFIG.mempool_path.replace("mempool.db", ""),
-                         db_name='mempool.db', app_log=app_log)
-    db_name = 'ledger.db'
+    mempool = SqliteBase(
+        options.verbose,
+        db_path=CONFIG.mempool_path.replace("mempool.db", ""),
+        db_name="mempool.db",
+        app_log=app_log,
+    )
+    db_name = "ledger.db"
     if CONFIG.testnet:
-        db_name = 'test.db'
-    ledger = LedgerBase(options.verbose, db_path=CONFIG.db_path+'/', db_name=db_name, app_log=app_log)
+        db_name = "test.db"
+    ledger = LedgerBase(
+        options.verbose, db_path=CONFIG.db_path + "/", db_name=db_name, app_log=app_log
+    )
 
     node_interface = NodeInterface(mempool, ledger, CONFIG, app_log=app_log)
     server = WalletServer()
@@ -256,7 +299,7 @@ def start_server(port):
 
 if __name__ == "__main__":
     CONFIG = config.Get()
-    CONFIG.read('wallet_server.txt', 'wallet_server_custom.txt')
+    CONFIG.read("wallet_server.txt", "wallet_server_custom.txt")
     #
     is_testnet = CONFIG.testnet
     PORT = CONFIG.port
@@ -278,7 +321,9 @@ if __name__ == "__main__":
 
     if not os.path.isfile(CONFIG.mempool_path):
         print("mempool.db not found at {}".format(CONFIG.mempool_path))
-        print("Please edit node's config.txt, check mempool_ram_conf=False and restart node.")
+        print(
+            "Please edit node's config.txt, check mempool_ram_conf=False and restart node."
+        )
         sys.exit()
 
     start_time = time.time()
@@ -297,7 +342,7 @@ if __name__ == "__main__":
     logfile = os.path.abspath("wallet_app.log")
     # Rotate log after reaching 512K, keep 5 old copies.
     rotateHandler = RotatingFileHandler(logfile, "a", 512 * 1024, 10)
-    formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+    formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
     rotateHandler.setFormatter(formatter)
     app_log.addHandler(rotateHandler)
 
@@ -305,15 +350,17 @@ if __name__ == "__main__":
     tornado.log.enable_pretty_logging()
     logfile2 = os.path.abspath("wallet_access.log")
     rotateHandler2 = RotatingFileHandler(logfile2, "a", 512 * 1024, 10)
-    formatter2 = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+    formatter2 = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
     rotateHandler2.setFormatter(formatter2)
     access_log.addHandler(rotateHandler2)
 
     app_log.warning("Testnet: {}".format(is_testnet))
     # fail safe
     if is_testnet and int(CONFIG.node_port) != 2829:
-        app_log.warning("Testnet is active, but node_port set to {} instead of 2829. "
-                        "Make sure!".format(CONFIG.node_port))
+        app_log.warning(
+            "Testnet is active, but node_port set to {} instead of 2829. "
+            "Make sure!".format(CONFIG.node_port)
+        )
         time.sleep(2)
 
     if os.name == "posix":
@@ -330,6 +377,8 @@ if __name__ == "__main__":
     else:
         process = None
 
-    app_log.info("Wallet Server {} Starting on port {}.".format(__version__, options.port))
+    app_log.info(
+        "Wallet Server {} Starting on port {}.".format(__version__, options.port)
+    )
 
     start_server(options.port)

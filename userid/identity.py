@@ -127,49 +127,43 @@ But 1000 servers owned and maintained by 1000 people in 100 different countries 
 So more distribution of ID servers we will have in BitDust - more secured and protected network will become.
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
-from __future__ import absolute_import
-from __future__ import print_function
+from __future__ import absolute_import, print_function
+
 from six.moves import range  # @UnresolvedImport
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 10
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 import os
 import sys
-
-from xml.dom import minidom, Node
+from xml.dom import Node, minidom
 from xml.dom.minidom import getDOMImplementation
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 try:
     from logs import lg
 except:
     dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
-    sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..')))
+    sys.path.insert(0, os.path.abspath(os.path.join(dirpath, "..")))
     from logs import lg
 
-#------------------------------------------------------------------------------
-
-from main import settings
-
-from system import bpio
-
-from lib import strng
-from lib import nameurl
+# ------------------------------------------------------------------------------
 
 from crypt import key
 
-from userid import global_id
-from userid import id_url
+from lib import nameurl, strng
+from main import settings
+from system import bpio
+from userid import global_id, id_url
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 default_identity_src = """<?xml version="1.0" encoding="ISO-8859-1"?>
 <identity>
@@ -185,7 +179,7 @@ default_identity_src = """<?xml version="1.0" encoding="ISO-8859-1"?>
   <signature></signature>
 </identity>"""
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 class identity(object):
@@ -204,29 +198,32 @@ class identity(object):
     * publickey : the public part of user's key, string in twisted.conch.ssh format
     * signature : digital signature to protect the file
     """
-    sources = []        # list of URLs, first is primary URL and name
-    contacts = []       # list of ways to contact this identity
-    certificates = []   # signatures by identity servers
-    scrubbers = []      # list of URLs for people allowed to scrub
-    postage = b'1'      # a price for message delivery if not on correspondents list
-    date = b''          # date
-    version = b''       # version string
-    revision = b'0'     # revision number, every time my id were modified this value will be increased by 1
-    publickey = b''     # string in twisted.conch.ssh format
-    signature = b''     # digital signature
 
-    def __init__(self,
-                 sources=[],
-                 contacts=[],
-                 certificates=[],
-                 scrubbers=[],
-                 postage=b'1',
-                 date=b'',
-                 version=b'',
-                 revision=b'0',
-                 publickey=b'',
-                 xmlsrc=None,
-                 filename=b''):
+    sources = []  # list of URLs, first is primary URL and name
+    contacts = []  # list of ways to contact this identity
+    certificates = []  # signatures by identity servers
+    scrubbers = []  # list of URLs for people allowed to scrub
+    postage = b"1"  # a price for message delivery if not on correspondents list
+    date = b""  # date
+    version = b""  # version string
+    revision = b"0"  # revision number, every time my id were modified this value will be increased by 1
+    publickey = b""  # string in twisted.conch.ssh format
+    signature = b""  # digital signature
+
+    def __init__(
+        self,
+        sources=[],
+        contacts=[],
+        certificates=[],
+        scrubbers=[],
+        postage=b"1",
+        date=b"",
+        version=b"",
+        revision=b"0",
+        publickey=b"",
+        xmlsrc=None,
+        filename=b"",
+    ):
 
         self.sources = []
         if sources:
@@ -243,7 +240,7 @@ class identity(object):
         if publickey:
             self.sign()
         else:
-            self.signature = b''
+            self.signature = b""
             # no point in signing if no public key listed, probably about to unserialize something
 
         if xmlsrc is not None:
@@ -256,22 +253,30 @@ class identity(object):
             self.default()
 
     def __repr__(self, *args, **kwargs):
-        return object.__repr__(self, *args, **kwargs) + '[%s]' % self.makehash(hexdigest=True)
+        return object.__repr__(self, *args, **kwargs) + "[%s]" % self.makehash(
+            hexdigest=True
+        )
 
     def clear_data(self):
         """
         Erase all fields data, clear identity.
         """
-        self.sources = []       # list of URLs for fetching this identiy, first is primary URL and name - called IDURL
-        self.certificates = []  # identity servers each sign the source they are with - hash just (IDURL + publickey)
-        self.publickey = b''    # string
-        self.contacts = []      # list of ways to contact this identity
-        self.scrubbers = []     # list of URLs for people allowed to scrub
-        self.date = b''         # date
-        self.postage = b'1'     # postage price for message delivery if not on correspondents list
-        self.version = b''      # version string
-        self.signature = b''    # digital signature
-        self.revision = b'0'    # revision number
+        self.sources = (
+            []
+        )  # list of URLs for fetching this identiy, first is primary URL and name - called IDURL
+        self.certificates = (
+            []
+        )  # identity servers each sign the source they are with - hash just (IDURL + publickey)
+        self.publickey = b""  # string
+        self.contacts = []  # list of ways to contact this identity
+        self.scrubbers = []  # list of URLs for people allowed to scrub
+        self.date = b""  # date
+        self.postage = (
+            b"1"  # postage price for message delivery if not on correspondents list
+        )
+        self.version = b""  # version string
+        self.signature = b""  # digital signature
+        self.revision = b"0"  # revision number
 
     def default(self):
         """
@@ -280,7 +285,7 @@ class identity(object):
         global default_identity_src
         self.unserialize(default_identity_src)
 
-    #------------------------------------------------------------------------------
+    # ------------------------------------------------------------------------------
 
     def isCorrect(self):
         """
@@ -298,29 +303,29 @@ class identity(object):
             return False
         original_sources = self.getSources(as_originals=True)
         if len(set(original_sources)) != len(self.sources):
-            lg.warn('original identity sources are duplicated: %r' % original_sources)
+            lg.warn("original identity sources are duplicated: %r" % original_sources)
             return False
         if len(original_sources) > settings.MaximumIdentitySources():
-            lg.warn('too much sources')
+            lg.warn("too much sources")
             return False
         if len(original_sources) < settings.MinimumIdentitySources():
-            lg.warn('too few sources')
+            lg.warn("too few sources")
             return False
         try:
             int(self.revision)
         except:
-            lg.warn('identity revision: %s' % self.revision)
+            lg.warn("identity revision: %s" % self.revision)
             return False
         names = set()
         for source in original_sources:
             if not source:
-                lg.warn('found empty source')
+                lg.warn("found empty source")
                 return False
             proto, host, port, filename = nameurl.UrlParse(source)
-            if filename.count('/'):
+            if filename.count("/"):
                 lg.warn("incorrect identity name: %s" % filename)
                 return False
-            name, justxml = filename.split('.')
+            name, justxml = filename.split(".")
             names.add(name)
             # SECURITY check that name is simple
             if justxml != "xml":
@@ -337,7 +342,7 @@ class identity(object):
                     lg.warn("incorrect identity name: %s" % filename)
                     return False
         if len(names) > 1:
-            lg.warn('names are not consistent: %s' % str(names))
+            lg.warn("names are not consistent: %s" % str(names))
             return False
         return True
 
@@ -351,14 +356,14 @@ class identity(object):
         maybe don't need to change anything for now.
         Don't include certificate - so identity server can just add it.
         """
-        sep = b'-'
-        hsh = b''
+        sep = b"-"
+        hsh = b""
         hsh += sep + sep.join(map(lambda s: s.original(), self.sources))
         hsh += sep + sep.join(self.contacts)
         # hsh += sep + sep.join(self.certificates)
         hsh += sep + sep.join(self.scrubbers)
         hsh += sep + self.postage
-        hsh += sep + self.date.replace(b' ', b'_')
+        hsh += sep + self.date.replace(b" ", b"_")
         hsh += sep + self.version
         hsh += sep + self.revision
         # lg.out(12, "identity.makehash: %r" % hsh)
@@ -391,7 +396,7 @@ class identity(object):
         )
         return result
 
-    #------------------------------------------------------------------------------
+    # ------------------------------------------------------------------------------
 
     def encrypt(self, inp):
         """
@@ -410,11 +415,12 @@ class identity(object):
         if callable(private_key):
             return private_key(inp)
         from crypt import my_keys
+
         if my_keys.is_valid_key_id(private_key):
             return my_keys.decrypt(private_key, inp)
         return key.DecryptOpenSSHPrivateKey(private_key, inp)
 
-    #------------------------------------------------------------------------------
+    # ------------------------------------------------------------------------------
 
     def unserialize(self, xmlsrc):
         """
@@ -440,16 +446,16 @@ class identity(object):
         This loads data from Python dictionary.
         """
         self.clear_data()
-        self.setSources(json_data['sources'])
-        self.setContacts(json_data['contacts'])
-        self.setCertificates(json_data['certificates'])
-        self.setScrubbers(json_data['scrubbers'])
-        self.setDate(json_data['date'])
-        self.setPostage(json_data['postage'])
-        self.setVersion(json_data['version'])
-        self.setRevision(json_data['version'])
-        self.setPublicKey(json_data['publickey'])
-        self.setSignature(json_data['signature'])
+        self.setSources(json_data["sources"])
+        self.setContacts(json_data["contacts"])
+        self.setCertificates(json_data["certificates"])
+        self.setScrubbers(json_data["scrubbers"])
+        self.setDate(json_data["date"])
+        self.setPostage(json_data["postage"])
+        self.setVersion(json_data["version"])
+        self.setRevision(json_data["version"])
+        self.setPublicKey(json_data["publickey"])
+        self.setSignature(json_data["signature"])
 
     def serialize(self, as_text=False):
         """
@@ -474,19 +480,19 @@ class identity(object):
         Used to represent identity in API methods.
         """
         return {
-            'name': self.getIDName(),
-            'idurl': strng.to_text(self.getIDURL().original()),
-            'global_id': global_id.MakeGlobalID(idurl=self.getIDURL().original()),
-            'sources': [strng.to_text(i) for i in self.getSources(as_originals=True)],
-            'contacts': [strng.to_text(i) for i in self.getContacts()],
-            'certificates': [strng.to_text(i) for i in self.certificates],
-            'scrubbers': [strng.to_text(i) for i in self.scrubbers],
-            'postage': strng.to_text(self.postage),
-            'date': strng.to_text(self.date),
-            'version': strng.to_text(self.version),
-            'revision': strng.to_text(self.revision),
-            'publickey': strng.to_text(self.publickey),
-            'signature': strng.to_text(self.signature),
+            "name": self.getIDName(),
+            "idurl": strng.to_text(self.getIDURL().original()),
+            "global_id": global_id.MakeGlobalID(idurl=self.getIDURL().original()),
+            "sources": [strng.to_text(i) for i in self.getSources(as_originals=True)],
+            "contacts": [strng.to_text(i) for i in self.getContacts()],
+            "certificates": [strng.to_text(i) for i in self.certificates],
+            "scrubbers": [strng.to_text(i) for i in self.scrubbers],
+            "postage": strng.to_text(self.postage),
+            "date": strng.to_text(self.date),
+            "version": strng.to_text(self.version),
+            "revision": strng.to_text(self.revision),
+            "publickey": strng.to_text(self.publickey),
+            "signature": strng.to_text(self.signature),
         }
 
     def toxml(self):
@@ -495,58 +501,58 @@ class identity(object):
         """
         impl = getDOMImplementation()
 
-        doc = impl.createDocument(None, 'identity', None)
+        doc = impl.createDocument(None, "identity", None)
         root = doc.documentElement
 
-        sources = doc.createElement('sources')
+        sources = doc.createElement("sources")
         root.appendChild(sources)
         for source in self.sources:
-            n = doc.createElement('source')
+            n = doc.createElement("source")
             n.appendChild(doc.createTextNode(strng.to_text(source.original())))
             sources.appendChild(n)
 
-        contacts = doc.createElement('contacts')
+        contacts = doc.createElement("contacts")
         root.appendChild(contacts)
         for contact in self.contacts:
-            n = doc.createElement('contact')
+            n = doc.createElement("contact")
             n.appendChild(doc.createTextNode(strng.to_text(contact)))
             contacts.appendChild(n)
 
-        certificates = doc.createElement('certificates')
+        certificates = doc.createElement("certificates")
         root.appendChild(certificates)
         for certificate in self.certificates:
-            n = doc.createElement('certificate')
+            n = doc.createElement("certificate")
             n.appendChild(doc.createTextNode(strng.to_text(certificate)))
             certificates.appendChild(n)
 
-        scrubbers = doc.createElement('scrubbers')
+        scrubbers = doc.createElement("scrubbers")
         root.appendChild(scrubbers)
         for scrubber in self.scrubbers:
-            n = doc.createElement('scrubber')
+            n = doc.createElement("scrubber")
             n.appendChild(doc.createTextNode(strng.to_text(scrubber)))
             scrubbers.appendChild(n)
 
-        postage = doc.createElement('postage')
+        postage = doc.createElement("postage")
         postage.appendChild(doc.createTextNode(strng.to_text(self.postage)))
         root.appendChild(postage)
 
-        date = doc.createElement('date')
+        date = doc.createElement("date")
         date.appendChild(doc.createTextNode(strng.to_text(self.date)))
         root.appendChild(date)
 
-        version = doc.createElement('version')
+        version = doc.createElement("version")
         version.appendChild(doc.createTextNode(strng.to_text(self.version)))
         root.appendChild(version)
 
-        revision = doc.createElement('revision')
+        revision = doc.createElement("revision")
         revision.appendChild(doc.createTextNode(strng.to_text(self.revision)))
         root.appendChild(revision)
 
-        publickey = doc.createElement('publickey')
+        publickey = doc.createElement("publickey")
         publickey.appendChild(doc.createTextNode(strng.to_text(self.publickey)))
         root.appendChild(publickey)
 
-        signature = doc.createElement('signature')
+        signature = doc.createElement("signature")
         signature.appendChild(doc.createTextNode(strng.to_text(self.signature)))
         root.appendChild(signature)
 
@@ -563,58 +569,66 @@ class identity(object):
             for xsection in root_node.childNodes:
                 if xsection.nodeType != Node.ELEMENT_NODE:
                     continue
-                if xsection.tagName == 'sources':
+                if xsection.tagName == "sources":
                     for xsources in xsection.childNodes:
                         for xsource in xsources.childNodes:
-                            if (xsource.nodeType == Node.TEXT_NODE):
-                                self.sources.append(id_url.ID_URL_FIELD(xsource.wholeText.strip()))
+                            if xsource.nodeType == Node.TEXT_NODE:
+                                self.sources.append(
+                                    id_url.ID_URL_FIELD(xsource.wholeText.strip())
+                                )
                                 break
-                elif xsection.tagName == 'contacts':
+                elif xsection.tagName == "contacts":
                     for xcontacts in xsection.childNodes:
                         for xcontact in xcontacts.childNodes:
-                            if (xcontact.nodeType == Node.TEXT_NODE):
-                                self.contacts.append(strng.to_bin(xcontact.wholeText.strip()))
+                            if xcontact.nodeType == Node.TEXT_NODE:
+                                self.contacts.append(
+                                    strng.to_bin(xcontact.wholeText.strip())
+                                )
                                 break
-                elif xsection.tagName == 'certificates':
+                elif xsection.tagName == "certificates":
                     for xcertificates in xsection.childNodes:
                         for xcertificate in xcertificates.childNodes:
-                            if (xcertificate.nodeType == Node.TEXT_NODE):
-                                self.certificates.append(strng.to_bin(xcertificate.wholeText.strip()))
+                            if xcertificate.nodeType == Node.TEXT_NODE:
+                                self.certificates.append(
+                                    strng.to_bin(xcertificate.wholeText.strip())
+                                )
                                 break
-                elif xsection.tagName == 'scrubbers':
+                elif xsection.tagName == "scrubbers":
                     for xscrubbers in xsection.childNodes:
                         for xscrubber in xscrubbers.childNodes:
-                            if (xscrubber.nodeType == Node.TEXT_NODE):
-                                self.scrubbers.append(strng.to_bin(xscrubber.wholeText.strip()))
+                            if xscrubber.nodeType == Node.TEXT_NODE:
+                                self.scrubbers.append(
+                                    strng.to_bin(xscrubber.wholeText.strip())
+                                )
                                 break
-                elif xsection.tagName == 'postage':
+                elif xsection.tagName == "postage":
                     for xpostage in xsection.childNodes:
-                        if (xpostage.nodeType == Node.TEXT_NODE):
+                        if xpostage.nodeType == Node.TEXT_NODE:
                             self.postage = strng.to_bin(xpostage.wholeText.strip())
                             break
-                elif xsection.tagName == 'date':
+                elif xsection.tagName == "date":
                     for xkey in xsection.childNodes:
-                        if (xkey.nodeType == Node.TEXT_NODE):
+                        if xkey.nodeType == Node.TEXT_NODE:
                             self.date = strng.to_bin(xkey.wholeText.strip())
                             break
-                elif xsection.tagName == 'version':
+                elif xsection.tagName == "version":
                     for xkey in xsection.childNodes:
-                        if (xkey.nodeType == Node.TEXT_NODE):
+                        if xkey.nodeType == Node.TEXT_NODE:
                             self.version = strng.to_bin(xkey.wholeText.strip())
                             break
-                elif xsection.tagName == 'revision':
+                elif xsection.tagName == "revision":
                     for xkey in xsection.childNodes:
-                        if (xkey.nodeType == Node.TEXT_NODE):
+                        if xkey.nodeType == Node.TEXT_NODE:
                             self.revision = strng.to_bin(xkey.wholeText.strip())
                             break
-                elif xsection.tagName == 'publickey':
+                elif xsection.tagName == "publickey":
                     for xkey in xsection.childNodes:
-                        if (xkey.nodeType == Node.TEXT_NODE):
+                        if xkey.nodeType == Node.TEXT_NODE:
                             self.publickey = strng.to_bin(xkey.wholeText.strip())
                             break
-                elif xsection.tagName == 'signature':
+                elif xsection.tagName == "signature":
                     for xkey in xsection.childNodes:
-                        if (xkey.nodeType == Node.TEXT_NODE):
+                        if xkey.nodeType == Node.TEXT_NODE:
                             self.signature = strng.to_bin(xkey.wholeText.strip())
                             break
         except:
@@ -622,7 +636,7 @@ class identity(object):
             return False
         return True
 
-    #------------------------------------------------------------------------------
+    # ------------------------------------------------------------------------------
 
     def getSources(self, as_fields=True, as_originals=False):
         """
@@ -661,7 +675,7 @@ class identity(object):
         """
         protocol, host, port, filename = nameurl.UrlParse(self.getIDURL(index))
         if port:
-            host += ':' + str(port)
+            host += ":" + str(port)
         return host
 
     def getContacts(self):
@@ -724,17 +738,17 @@ class identity(object):
             return default
         return host
 
-    def getContactIndex(self, proto='', host='', contact=''):
+    def getContactIndex(self, proto="", host="", contact=""):
         """
         Search a first contact with given conditions.
         """
         for i in range(0, len(self.contacts)):
             c = strng.to_bin(self.contacts[i])
             if proto:
-                if c.find(strng.to_bin(proto) + b'://') == 0:
+                if c.find(strng.to_bin(proto) + b"://") == 0:
                     return i
             if host:
-                if c.find(b'://' + strng.to_bin(host)) == 0:
+                if c.find(b"://" + strng.to_bin(host)) == 0:
                     return i
             if contact:
                 if c == strng.to_bin(contact):
@@ -748,7 +762,7 @@ class identity(object):
         Return None if not found a contact.
         """
         for contact in self.contacts:
-            if contact.startswith(strng.to_bin(proto) + b'://'):
+            if contact.startswith(strng.to_bin(proto) + b"://"):
                 return contact
         return None
 
@@ -766,11 +780,10 @@ class identity(object):
         return orderL
 
     def getContactsAsTuples(self, as_text=False):
-        """
-        """
+        """ """
         result = []
         for c in self.contacts:
-            proto, host = c.split(b'://')
+            proto, host = c.split(b"://")
             if as_text:
                 result.append((strng.to_text(proto), strng.to_text(host)))
             else:
@@ -818,7 +831,7 @@ class identity(object):
             host = self.getProtoHost(proto)
             if host:
                 return host
-        return self.getProtoHost('tcp')
+        return self.getProtoHost("tcp")
 
     def getDateStr(self):
         """
@@ -847,11 +860,10 @@ class identity(object):
         """
         return int(self.revision)
 
-    #------------------------------------------------------------------------------
+    # ------------------------------------------------------------------------------
 
     def setSources(self, sources_list):
-        """
-        """
+        """ """
         self.sources = []
         for source in sources_list:
             s = id_url.field(source)
@@ -859,15 +871,13 @@ class identity(object):
             self.sources.append(s)
 
     def setContacts(self, contacts_list):
-        """
-        """
+        """ """
         self.contacts = []
         for cont in contacts_list:
             self.contacts.append(strng.to_bin(cont))
 
     def setContactsFromDict(self, contacts_dict, contacts_order=None):
-        """
-        """
+        """ """
         if contacts_order is None:
             contacts_order = list(contacts_dict.keys())
         for proto in contacts_order:
@@ -918,13 +928,11 @@ class identity(object):
         self.contacts[index] = strng.to_bin(url).strip()
 
     def setPublicKey(self, pub_key_raw):
-        """
-        """
+        """ """
         self.publickey = strng.to_bin(pub_key_raw)
 
     def setSignature(self, signature_raw):
-        """
-        """
+        """ """
         self.signature = strng.to_bin(signature_raw)
 
     def setCertificates(self, certificates_list):
@@ -944,26 +952,22 @@ class identity(object):
             self.scrubbers.append(strng.to_bin(scrub))
 
     def setDate(self, date_string):
-        """
-        """
+        """ """
         self.date = strng.to_bin(date_string)
 
     def setPostage(self, postage_value):
-        """
-        """
+        """ """
         self.postage = strng.to_bin(str(postage_value))
 
     def setVersion(self, version_string):
-        """
-        """
+        """ """
         self.version = strng.to_bin(version_string).strip()
 
     def setRevision(self, revision):
-        """
-        """
+        """ """
         self.revision = strng.to_bin(str(revision))
 
-    #------------------------------------------------------------------------------
+    # ------------------------------------------------------------------------------
 
     def clearContacts(self):
         """
@@ -976,7 +980,7 @@ class identity(object):
         Remove all contacts with given ``proto``.
         """
         for contact in self.contacts:
-            if contact.find(strng.to_bin(proto) + b'://') == 0:
+            if contact.find(strng.to_bin(proto) + b"://") == 0:
                 self.contacts.remove(contact)
 
     def pushProtoContact(self, proto):
@@ -1009,20 +1013,22 @@ class identity(object):
         self.contacts.insert(0, contact)
 
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
+
 
 def test1():
     """
     Some tests.
     """
     from userid import my_id
+
     myidentity = my_id.getLocalIdentity()
-    print('getIP =', myidentity.getIP())
+    print("getIP =", myidentity.getIP())
     if myidentity.Valid():
         print("myidentity is Valid!!!!")
     else:
         print("myidentity is not Valid")
-        my_id.saveLocalIdentity()            # sign and save
+        my_id.saveLocalIdentity()  # sign and save
         raise Exception("myidentity is not Valid")
     print("myidentity.contacts")
     print(myidentity.contacts)
@@ -1037,7 +1043,7 @@ def test1():
     print("identity.main serialize:\n", myidentity.serialize())
     for index in range(myidentity.getContactsNumber()):
         proto, host, port, filename = myidentity.getContactParts(index)
-        print('[%s] [%s] [%s] [%s]' % (proto, host, port, filename))
+        print("[%s] [%s] [%s] [%s]" % (proto, host, port, filename))
 
 
 def test2():
@@ -1045,26 +1051,30 @@ def test2():
     More tests.
     """
     from userid import my_id
+
     ident = my_id.buildDefaultIdentity()
     print(ident.serialize())
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def main():
     """
     This should print a current identity or create a new one.
     """
-    settings.init(base_dir='/tmp/fake_id')
+    settings.init(base_dir="/tmp/fake_id")
     from userid import my_id
+
     my_id.loadLocalIdentity()
     if my_id.isLocalIdentityReady():
         my_id.getLocalIdentity().sign()
         print(my_id.getLocalIdentity().serialize())
-        print('Valid is: ', my_id.getLocalIdentity().Valid())
+        print("Valid is: ", my_id.getLocalIdentity().Valid())
     else:
         if not key.InitMyKey():
             key.GenerateNewKey()
-        ipaddr = '127.0.0.1'
+        ipaddr = "127.0.0.1"
         if len(sys.argv) > 2:
             ipaddr = sys.argv[2]
         rev = 0
@@ -1073,10 +1083,14 @@ def main():
         idurls = []
         if len(sys.argv) > 4:
             idurls = sys.argv[4:]
-        my_id.setLocalIdentity(my_id.buildDefaultIdentity(name=sys.argv[1], ip=ipaddr, idurls=idurls, revision=rev))
+        my_id.setLocalIdentity(
+            my_id.buildDefaultIdentity(
+                name=sys.argv[1], ip=ipaddr, idurls=idurls, revision=rev
+            )
+        )
         my_id.saveLocalIdentity()
         print(my_id.getLocalIdentity().serialize())
-        print('Valid is: ', my_id.getLocalIdentity().Valid())
+        print("Valid is: ", my_id.getLocalIdentity().Valid())
         my_id._LocalIdentity = None
         my_id.loadLocalIdentity()
     settings.shutdown()
@@ -1088,6 +1102,7 @@ def update():
     Also will test rebuilding of the identity
     """
     from userid import my_id
+
     bpio.init()
     settings.init()
     src = bpio.ReadTextFile(settings.LocalIdentityFilename())
@@ -1100,10 +1115,10 @@ def update():
     settings.shutdown()
 
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     lg.set_debug_level(18)
     main()
     # update()

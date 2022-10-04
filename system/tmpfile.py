@@ -32,16 +32,16 @@ placed in the BitDust data directory. All files are divided into several
 sub folders.
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 10
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 import os
 import tempfile
@@ -49,65 +49,52 @@ import time
 
 from twisted.internet import task  # @UnresolvedImport
 
-#------------------------------------------------------------------------------
-
 from logs import lg
-
 from system import bpio
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
+
+# ------------------------------------------------------------------------------
 
 _TempDirPath = None
 _FilesDict = {}
 _CollectorTask = None
 _SubDirs = {
-
-    'outbox': 60 * 60 * 1,
+    "outbox": 60 * 60 * 1,
     # hold onto outbox files 1 hour
     # so we can handle resends if contact is off-line
-
-    'tcp-in': 60 * 10,
+    "tcp-in": 60 * 10,
     # 10 minutes for incoming tcp files
-
-    'udp-in': 60 * 10,
+    "udp-in": 60 * 10,
     # 10 minutes for incoming udp files
-
-    'proxy-in': 60 * 10,
+    "proxy-in": 60 * 10,
     # 10 minutes for incoming proxy files
-
-    'proxy-out': 60 * 10,
+    "proxy-out": 60 * 10,
     # 10 minutes for outgoing proxy files
-
-    'propagate': 60 * 10,
+    "propagate": 60 * 10,
     # propagate happens often enough,
     # 10 minutes should be enough
-
-    'backup': 60 * 10,
+    "backup": 60 * 10,
     # 10 minutes for backup files
-
-    'restore': 0,
+    "restore": 0,
     # never remove files during restore process, they must be cleaned afterwards
-
-    'raid': 60 * 10,
+    "raid": 60 * 10,
     # 10 minutes for backup files
-
-    'idsrv': 60,
+    "idsrv": 60,
     # 1 minute for incoming xml identity files
-
-    'error': 60 * 60 * 24 * 30,
+    "error": 60 * 60 * 24 * 30,
     # store errors for one month
-
-    'all': 0,
+    "all": 0,
     # other files. do not know when to remove
     # they can be even in another location
     # use register(name, filename)
-
 }
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
-def init(temp_dir_path=''):
+def init(temp_dir_path=""):
     """
     Must be called before all other things here.
 
@@ -117,18 +104,18 @@ def init(temp_dir_path=''):
     - starts collector task to call method ``collect()`` every 5 minutes
     """
     if _Debug:
-        lg.out(_DebugLevel, 'tmpfile.init')
+        lg.out(_DebugLevel, "tmpfile.init")
     global _TempDirPath
     global _SubDirs
     global _FilesDict
     global _CollectorTask
 
     if _TempDirPath is None:
-        if temp_dir_path != '':
+        if temp_dir_path != "":
             _TempDirPath = temp_dir_path
         else:
             os_temp_dir = tempfile.gettempdir()
-            temp_dir = os.path.join(os_temp_dir, 'bitdust')
+            temp_dir = os.path.join(os_temp_dir, "bitdust")
 
             if not os.path.exists(temp_dir):
                 try:
@@ -138,18 +125,18 @@ def init(temp_dir_path=''):
                     temp_dir = os_temp_dir
 
             if not os.access(temp_dir, os.W_OK):
-                lg.out(2, 'tmpfile.init ERROR no write permissions to ' + temp_dir)
+                lg.out(2, "tmpfile.init ERROR no write permissions to " + temp_dir)
                 temp_dir = os_temp_dir
 
             _TempDirPath = temp_dir
-        lg.out(6, 'tmpfile.init  _TempDirPath=' + _TempDirPath)
+        lg.out(6, "tmpfile.init  _TempDirPath=" + _TempDirPath)
 
     for name in _SubDirs.keys():
         if not os.path.exists(subdir(name)):
             try:
                 os.makedirs(subdir(name))
             except:
-                lg.out(2, 'tmpfile.init ERROR can not create ' + subdir(name))
+                lg.out(2, "tmpfile.init ERROR can not create " + subdir(name))
                 lg.exc()
 
     for name in _SubDirs.keys():
@@ -168,7 +155,7 @@ def shutdown():
     Do not need to remove any files here, just stop the collector task.
     """
     if _Debug:
-        lg.out(_DebugLevel, 'tmpfile.shutdown')
+        lg.out(_DebugLevel, "tmpfile.shutdown")
     global _CollectorTask
     if _CollectorTask is not None:
         _CollectorTask.stop()
@@ -195,11 +182,11 @@ def register(filepath):
     subdir, _ = os.path.split(filepath)
     name = os.path.basename(subdir)
     if name not in list(_FilesDict.keys()):
-        name = 'all'
+        name = "all"
     _FilesDict[name][filepath] = time.time()
 
 
-def make(name, extension='', prefix='', close_fd=False):
+def make(name, extension="", prefix="", close_fd=False):
     """
     Make a new binary file under sub folder ``name`` and return a tuple of it's file
     descriptor and path.
@@ -215,41 +202,41 @@ def make(name, extension='', prefix='', close_fd=False):
     if _TempDirPath is None:
         init()
     if name not in list(_FilesDict.keys()):
-        name = 'all'
+        name = "all"
     try:
         fd, filename = tempfile.mkstemp(extension, prefix, subdir(name))
         _FilesDict[name][filename] = time.time()
     except:
-        lg.out(1, 'tmpfile.make ERROR creating file in sub folder ' + name)
+        lg.out(1, "tmpfile.make ERROR creating file in sub folder " + name)
         lg.exc()
-        return None, ''
+        return None, ""
     if close_fd:
         os.close(fd)
     if _Debug:
-        lg.out(_DebugLevel, 'tmpfile.make ' + filename)
+        lg.out(_DebugLevel, "tmpfile.make " + filename)
     return fd, filename
 
 
-def make_dir(name, extension='', prefix=''):
+def make_dir(name, extension="", prefix=""):
     global _TempDirPath
     global _FilesDict
     if _TempDirPath is None:
         init()
     if name not in list(_FilesDict.keys()):
-        name = 'all'
+        name = "all"
     try:
         dirname = tempfile.mkdtemp(extension, prefix, subdir(name))
         _FilesDict[name][dirname] = time.time()
     except:
-        lg.out(1, 'tmpfile.make_dir ERROR creating folder in ' + name)
+        lg.out(1, "tmpfile.make_dir ERROR creating folder in " + name)
         lg.exc()
         return None
     if _Debug:
-        lg.out(_DebugLevel, 'tmpfile.make_dir ' + dirname)
+        lg.out(_DebugLevel, "tmpfile.make_dir " + dirname)
     return dirname
 
 
-def erase(name, filename, why='no reason'):
+def erase(name, filename, why="no reason"):
     """
     However you can remove not needed file immediately, this is a good way
     also.
@@ -264,22 +251,26 @@ def erase(name, filename, why='no reason'):
             pass
             # lg.warn('we do not know about item [%s] in sub folder %s, we tried because %s' % (filename, name, why))
     else:
-        lg.warn('we do not know sub folder: %s, we tried because %s' % (name, why))
+        lg.warn("we do not know sub folder: %s, we tried because %s" % (name, why))
 
     if not os.path.exists(filename):
-        lg.warn('[%s] not exist' % filename)
+        lg.warn("[%s] not exist" % filename)
         return
 
     if os.path.isfile(filename):
         if not os.access(filename, os.W_OK):
-            lg.warn('[%s] no write permissions' % filename)
+            lg.warn("[%s] no write permissions" % filename)
             return
         try:
             os.remove(filename)
             if _Debug:
                 lg.out(_DebugLevel, 'tmpfile.erase [%s] : "%s"' % (filename, why))
         except:
-            lg.out(2, 'tmpfile.erase ERROR can not remove [%s], we tried because %s' % (filename, why))
+            lg.out(
+                2,
+                "tmpfile.erase ERROR can not remove [%s], we tried because %s"
+                % (filename, why),
+            )
 
     elif os.path.isdir(filename):
         bpio.rmdir_recursive(filename, ignore_errors=True)
@@ -287,10 +278,10 @@ def erase(name, filename, why='no reason'):
             lg.out(_DebugLevel, 'tmpfile.erase recursive [%s] : "%s"' % (filename, why))
 
     else:
-        raise Exception('path [%s] not exist' % filename)
+        raise Exception("path [%s] not exist" % filename)
 
 
-def throw_out(filepath, why='dont know'):
+def throw_out(filepath, why="dont know"):
     """
     A more smart way to remove not needed temporary file, accept a full
     ``filepath``.
@@ -307,7 +298,7 @@ def collect():
     Removes old temporary files.
     """
     if _Debug:
-        lg.out(_DebugLevel - 4, 'tmpfile.collect')
+        lg.out(_DebugLevel - 4, "tmpfile.collect")
     global _FilesDict
     global _SubDirs
     erase_list = []
@@ -315,7 +306,7 @@ def collect():
         # for data and parity files we have special rules
         # we do not want to remove Data or Parity here.
         # backup_monitor should take care of this.
-        if name == 'data-par':
+        if name == "data-par":
             continue
 
         else:
@@ -330,10 +321,10 @@ def collect():
                     erase_list.append((name, filename))
 
     for name, filename in erase_list:
-        erase(name, filename, 'collected')
+        erase(name, filename, "collected")
 
     if _Debug:
-        lg.out(_DebugLevel - 4, 'tmpfile.collect %d files erased' % len(erase_list))
+        lg.out(_DebugLevel - 4, "tmpfile.collect %d files erased" % len(erase_list))
 
     del erase_list
 
@@ -347,7 +338,7 @@ def startup_clean():
     global _TempDirPath
     global _SubDirs
     if _Debug:
-        lg.out(_DebugLevel - 4, 'tmpfile.startup_clean in %s' % _TempDirPath)
+        lg.out(_DebugLevel - 4, "tmpfile.startup_clean in %s" % _TempDirPath)
     if _TempDirPath is None:
         return
     counter = 0
@@ -361,7 +352,7 @@ def startup_clean():
         # for data and parity files we have special rules
         # we do not want to remove Data or Parity here.
         # backup_monitor should take care of this.
-        if name == 'data-par':
+        if name == "data-par":
             pass
 
         else:
@@ -373,26 +364,28 @@ def startup_clean():
                 if os.path.isfile(filepath):
                     filetime = os.stat(filepath).st_ctime
                     if time.time() - filetime > lifetime:
-                        erase(name, filepath, 'startup cleaning')
+                        erase(name, filepath, "startup cleaning")
                         counter += 1
                         if counter > limit_counts:
                             break
                 elif os.path.isdir(filepath):
-                    erase(name, filepath, 'startup cleaning')
+                    erase(name, filepath, "startup cleaning")
                     counter += 1
                     if counter > limit_counts:
                         break
                 else:
-                    raise Exception('path %s not exist' % filepath)
-
-#------------------------------------------------------------------------------
+                    raise Exception("path %s not exist" % filepath)
 
 
-if __name__ == '__main__':
+# ------------------------------------------------------------------------------
+
+
+if __name__ == "__main__":
     lg.set_debug_level(18)
     init()
-    fd, filename = make('raid')
-    os.write(fd, 'TEST FILE')
+    fd, filename = make("raid")
+    os.write(fd, "TEST FILE")
     os.close(fd)
     from twisted.internet import reactor  # @UnresolvedImport
+
     reactor.run()  # @UndefinedVariable

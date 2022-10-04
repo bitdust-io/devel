@@ -34,40 +34,36 @@ This is similar to well-known "blockchain" technology where every block is linke
 
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Debug = True
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
-import os
 import json
-from collections import OrderedDict
-from hashlib import md5
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
-if __name__ == '__main__':
-    import sys
+if __name__ == "__main__":
     import os.path as _p
-    sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
+    import sys
 
-#------------------------------------------------------------------------------
+    sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), "..")))
 
-from logs import lg
-
-from lib import utime
+# ------------------------------------------------------------------------------
 
 from crypt import key
 
+from lib import utime
+from logs import lg
 from userid import my_id
 
+# ------------------------------------------------------------------------------
 
-#------------------------------------------------------------------------------
 
 def storage_contract_open(customer_idurl, duration, amount, price=1.0, trustee=None):
     """
@@ -101,7 +97,7 @@ def storage_contract_accept(prev_coin_json):
     return {
         "miner": {
             # populate previous hash from existing coin
-            "prev": prev_coin_json['miner']['hash'],
+            "prev": prev_coin_json["miner"]["hash"],
         },
         "payload": {
             "accepted": utime.utcnow_to_sec1970(),
@@ -113,7 +109,7 @@ def storage_contract_continue(prev_coin_json, duration):
     return {
         "miner": {
             # populate previous hash from existing coin
-            "prev": prev_coin_json['miner']['hash'],
+            "prev": prev_coin_json["miner"]["hash"],
         },
         "payload": {
             "extended": utime.utcnow_to_sec1970(),
@@ -125,31 +121,30 @@ def storage_contract_continue(prev_coin_json, duration):
 def add_signature(coin_json, role):
     _coin = coin_json.copy()
     _coin[role] = {
-        'idurl': my_id.getIDURL().to_bin(),
-        'pubkey': key.MyPublicKey(),
+        "idurl": my_id.getIDURL().to_bin(),
+        "pubkey": key.MyPublicKey(),
     }
     coin_hash = get_coin_hash(_coin)
-    _coin[role]['signature'] = key.Sign(coin_hash)
+    _coin[role]["signature"] = key.Sign(coin_hash)
     return _coin
 
 
 def verify_signature(coin_json, role):
-    signature = coin_json[role]['signature']
-    coin_json[role]['signature'] = ''
+    signature = coin_json[role]["signature"]
+    coin_json[role]["signature"] = ""
     # role_data = coin_json[role].copy()
     # signature = role_data.pop('signature')
     # _coin = dict(coin_json).c
     coin_hash = get_coin_hash(coin_json)
-    coin_json[role]['signature'] = signature
-    return key.VerifySignature(coin_json[role]['pubkey'], coin_hash, signature)
+    coin_json[role]["signature"] = signature
+    return key.VerifySignature(coin_json[role]["pubkey"], coin_hash, signature)
 
 
 def set_prev_hash(coin_json, prev_hash):
-    if 'miner' not in coin_json:
-        coin_json['miner'] = {}
-    coin_json['miner']['prev'] = prev_hash
+    if "miner" not in coin_json:
+        coin_json["miner"] = {}
+    coin_json["miner"]["prev"] = prev_hash
     return coin_json
-
 
 
 # def signed_coin(coin_json):
@@ -167,6 +162,7 @@ def set_prev_hash(coin_json, prev_hash):
 def coin_to_string(coin_json):
     return json.dumps(coin_json, sort_keys=True)
 
+
 def coins_to_string(coins_list):
     return json.dumps(coins_list, sort_keys=True)
 
@@ -182,6 +178,8 @@ def get_coin_hash(coin_json):
 
 def get_coin_base(coin_json):
     return coin_json
+
+
 #     bcoin = coin_json.copy()
 #     bcoin.pop('creator')
 #     bcoin.pop('signature')
@@ -189,11 +187,14 @@ def get_coin_base(coin_json):
 #     return bcoin
 
 
-def bought_storage(partner, ):
+def bought_storage(
+    partner,
+):
     pass
 
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
 
 def read_query_from_packet(newpacket):
     try:
@@ -214,19 +215,21 @@ def read_coins_from_packet(newpacket):
     # TODO: verify all input coins here
     return coins_list
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def validate_coin(coin_json):
     # TODO: validate sub-fields, hashes, query on DB, etc.
     # if 'miner' not in coin_json:
     #     return False
-    if 'creator' not in coin_json:
+    if "creator" not in coin_json:
         return False
-    if 'signature' not in coin_json['creator']:
+    if "signature" not in coin_json["creator"]:
         return False
     # if 'signer' not in coin_json:
     #     return False
-    if 'payload' not in coin_json:
+    if "payload" not in coin_json:
         return False
     return True
 
@@ -237,9 +240,10 @@ def verify_coin(coin_json, role):
     #     return False
     return True
 
-#------------------------------------------------------------------------------
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def _test():

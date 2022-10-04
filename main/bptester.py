@@ -36,43 +36,46 @@ In case some of customers do not play fair - need to stop this.:
     * check all packets to be valid
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Debug = False
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 import os
 import sys
 import time
 from io import open
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
-AppData = ''
+AppData = ""
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
-def sharedPath(filename, subdir='logs'):
+
+def sharedPath(filename, subdir="logs"):
     global AppData
-    if AppData == '':
+    if AppData == "":
         curdir = os.getcwd()  # os.path.dirname(os.path.abspath(sys.executable))
-        if os.path.isfile(os.path.join(curdir, 'appdata')):
+        if os.path.isfile(os.path.join(curdir, "appdata")):
             try:
-                appdata = os.path.abspath(open(os.path.join(curdir, 'appdata'), 'rb').read().strip())
+                appdata = os.path.abspath(
+                    open(os.path.join(curdir, "appdata"), "rb").read().strip()
+                )
             except:
-                appdata = os.path.join(os.path.expanduser('~'), '.bitdust')
+                appdata = os.path.join(os.path.expanduser("~"), ".bitdust")
             if not os.path.isdir(appdata):
-                appdata = os.path.join(os.path.expanduser('~'), '.bitdust')
+                appdata = os.path.join(os.path.expanduser("~"), ".bitdust")
         else:
-            if sys.executable == 'android_python' or ('ANDROID_ARGUMENT' in os.environ):
-                appdata = '/storage/emulated/0/Android/data/org.bitdust_io.bitdust1/files/Documents/.bitdust'
+            if sys.executable == "android_python" or ("ANDROID_ARGUMENT" in os.environ):
+                appdata = "/storage/emulated/0/Android/data/org.bitdust_io.bitdust1/files/Documents/.bitdust"
             else:
-                appdata = os.path.join(os.path.expanduser('~'), '.bitdust')
+                appdata = os.path.join(os.path.expanduser("~"), ".bitdust")
         AppData = appdata
     return os.path.join(AppData, subdir, filename)
 
@@ -85,7 +88,7 @@ def logfilepath():
     has permissions for, Such as the customer data directory.  Possibly
     move to temp directory?
     """
-    return sharedPath('bptester.log')
+    return sharedPath("bptester.log")
 
 
 def printlog(txt):
@@ -99,30 +102,26 @@ def printlog(txt):
         else:
             if not isinstance(txt, unicode):  # @UndefinedVariable
                 txt = txt.decode()
-        lf = open(logfilepath(), 'a')
-        lf.write(txt + '\n')
+        lf = open(logfilepath(), "a")
+        lf.write(txt + "\n")
         lf.close()
     except:
         pass
 
-#------------------------------------------------------------------------------
 
-from logs import lg
-
-from system import bpio
-
-from lib import misc
+# ------------------------------------------------------------------------------
 
 from crypt import signed
 
-from storage import accounting
-
+from lib import misc
+from logs import lg
 from main import settings
+from storage import accounting
+from system import bpio
+from userid import global_id, id_url
 
-from userid import global_id
-from userid import id_url
+# -------------------------------------------------------------------------------
 
-#-------------------------------------------------------------------------------
 
 def SpaceTime():
     """
@@ -132,37 +131,39 @@ def SpaceTime():
     old.
     """
     if _Debug:
-        printlog('SpaceTime %r' % time.strftime("%a, %d %b %Y %H:%M:%S +0000"))
+        printlog("SpaceTime %r" % time.strftime("%a, %d %b %Y %H:%M:%S +0000"))
     space, _ = accounting.read_customers_quotas()
     if space is None:
         if _Debug:
-            printlog('SpaceTime ERROR customers quotas file can not be read or it is empty, skip')
+            printlog(
+                "SpaceTime ERROR customers quotas file can not be read or it is empty, skip"
+            )
         return False
     customers_dir = settings.getCustomersFilesDir()
     if not os.path.exists(customers_dir):
         if _Debug:
-            printlog('SpaceTime ERROR customers folder not exist: %r' % customers_dir)
+            printlog("SpaceTime ERROR customers folder not exist: %r" % customers_dir)
         return False
     remove_list = {}
     used_space = accounting.read_customers_usage()
     for customer_filename in os.listdir(customers_dir):
         onecustdir = os.path.join(customers_dir, customer_filename)
         if not os.path.isdir(onecustdir):
-            remove_list[onecustdir] = 'is not a folder'
+            remove_list[onecustdir] = "is not a folder"
             continue
         # idurl = nameurl.FilenameUrl(customer_filename)
         idurl = global_id.GlobalUserToIDURL(customer_filename)
         if idurl is None:
-            remove_list[onecustdir] = 'wrong folder name'
+            remove_list[onecustdir] = "wrong folder name"
             continue
         curspace = space.get(idurl.to_bin(), None)
         if curspace is None:
-            remove_list[onecustdir] = 'not found in space file'
+            remove_list[onecustdir] = "not found in space file"
             continue
         try:
             maxspaceV = int(curspace)
         except:
-            remove_list[onecustdir] = 'wrong space value'
+            remove_list[onecustdir] = "wrong space value"
             continue
         timedict = {}
         sizedict = {}
@@ -177,12 +178,14 @@ def SpaceTime():
 
         for key_alias in os.listdir(onecustdir):
             if not misc.ValidKeyAlias(key_alias):
-                remove_list[onecustdir] = 'invalid key alias'
+                remove_list[onecustdir] = "invalid key alias"
                 continue
             okekeydir = os.path.join(onecustdir, key_alias)
             bpio.traverse_dir_recursive(cb, okekeydir)
             currentV = 0
-            for path in sorted(list(timedict.keys()), key=lambda x: timedict[x], reverse=True):
+            for path in sorted(
+                list(timedict.keys()), key=lambda x: timedict[x], reverse=True
+            ):
                 filesize = sizedict.get(path, 0)
                 currentV += filesize
                 if currentV < maxspaceV:
@@ -190,10 +193,13 @@ def SpaceTime():
                 try:
                     os.remove(path)
                     if _Debug:
-                        printlog('SpaceTime %r file removed (cur:%s, max: %s)' % (path, str(currentV), str(maxspaceV)))
+                        printlog(
+                            "SpaceTime %r file removed (cur:%s, max: %s)"
+                            % (path, str(currentV), str(maxspaceV))
+                        )
                 except:
                     if _Debug:
-                        printlog('SpaceTime ERROR removing %r' % path)
+                        printlog("SpaceTime ERROR removing %r" % path)
                 # time.sleep(0.01)
 
         used_space[idurl.to_bin()] = str(currentV)
@@ -206,8 +212,13 @@ def SpaceTime():
             if latest_customer_idurl_bin != customer_idurl_bin:
                 used_space[latest_customer_idurl_bin] = used_space.pop(customer_idurl_bin)
                 if _Debug:
-                    printlog('found customer idurl rotated in customer usage dictionary : %r -> %r' % (
-                        latest_customer_idurl_bin, customer_idurl_bin, ))
+                    printlog(
+                        "found customer idurl rotated in customer usage dictionary : %r -> %r"
+                        % (
+                            latest_customer_idurl_bin,
+                            customer_idurl_bin,
+                        )
+                    )
 
     for path in remove_list.keys():
         if not os.path.exists(path):
@@ -216,10 +227,10 @@ def SpaceTime():
             try:
                 bpio._dir_remove(path)
                 if _Debug:
-                    printlog('SpaceTime %r dir removed (%s)' % (path, remove_list[path]))
+                    printlog("SpaceTime %r dir removed (%s)" % (path, remove_list[path]))
             except:
                 if _Debug:
-                    printlog('SpaceTime ERROR removing %r' % path)
+                    printlog("SpaceTime ERROR removing %r" % path)
             continue
         try:
             if not os.access(path, os.W_OK):
@@ -229,17 +240,19 @@ def SpaceTime():
         try:
             os.remove(path)
             if _Debug:
-                printlog('SpaceTime %r file removed (%s)' % (path, remove_list[path]))
+                printlog("SpaceTime %r file removed (%s)" % (path, remove_list[path]))
         except:
             if _Debug:
-                printlog('SpaceTime ERROR removing %r' % path)
+                printlog("SpaceTime ERROR removing %r" % path)
     del remove_list
 
     accounting.update_customers_usage(used_space)
 
     return True
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def UpdateCustomers():
     """
@@ -248,28 +261,28 @@ def UpdateCustomers():
     space, _ = accounting.read_customers_quotas()
     if space is None:
         if _Debug:
-            printlog('UpdateCustomers ERROR space file can not be read')
+            printlog("UpdateCustomers ERROR space file can not be read")
         return False
     customers_dir = settings.getCustomersFilesDir()
     if not os.path.exists(customers_dir):
         if _Debug:
-            printlog('UpdateCustomers ERROR customers folder not exist')
+            printlog("UpdateCustomers ERROR customers folder not exist")
         return False
 
     remove_list = {}
     for customer_filename in os.listdir(customers_dir):
         onecustdir = os.path.join(customers_dir, customer_filename)
         if not os.path.isdir(onecustdir):
-            remove_list[onecustdir] = 'is not a folder'
+            remove_list[onecustdir] = "is not a folder"
             continue
         # idurl = nameurl.FilenameUrl(customer_filename)
         idurl = global_id.GlobalUserToIDURL(customer_filename)
         if idurl is None:
-            remove_list[onecustdir] = 'wrong folder name'
+            remove_list[onecustdir] = "wrong folder name"
             continue
         curspace = space.get(idurl.to_bin(), None)
         if curspace is None:
-            remove_list[onecustdir] = 'is not a customer'
+            remove_list[onecustdir] = "is not a customer"
             continue
 
     for path in remove_list.keys():
@@ -279,10 +292,16 @@ def UpdateCustomers():
             try:
                 bpio._dir_remove(path)
                 if _Debug:
-                    printlog('UpdateCustomers %r folder removed (%s)' % (path, remove_list[path], ))
+                    printlog(
+                        "UpdateCustomers %r folder removed (%s)"
+                        % (
+                            path,
+                            remove_list[path],
+                        )
+                    )
             except:
                 if _Debug:
-                    printlog('UpdateCustomers ERROR removing %r' % path)
+                    printlog("UpdateCustomers ERROR removing %r" % path)
             continue
         try:
             if not os.access(path, os.W_OK):
@@ -292,15 +311,22 @@ def UpdateCustomers():
         try:
             os.remove(path)
             if _Debug:
-                printlog('UpdateCustomers %r file removed (%s)' % (path, remove_list[path], ))
+                printlog(
+                    "UpdateCustomers %r file removed (%s)"
+                    % (
+                        path,
+                        remove_list[path],
+                    )
+                )
         except:
             if _Debug:
-                printlog('UpdateCustomers ERROR removing %r' % path)
+                printlog("UpdateCustomers ERROR removing %r" % path)
     if _Debug:
-        printlog('UpdateCustomers %r' % time.strftime("%a, %d %b %Y %H:%M:%S +0000"))
+        printlog("UpdateCustomers %r" % time.strftime("%a, %d %b %Y %H:%M:%S +0000"))
     return True
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def Validate():
@@ -308,7 +334,7 @@ def Validate():
     Check all packets to be valid.
     """
     if _Debug:
-        printlog('Validate %r' % time.strftime("%a, %d %b %Y %H:%M:%S +0000"))
+        printlog("Validate %r" % time.strftime("%a, %d %b %Y %H:%M:%S +0000"))
     customers_dir = settings.getCustomersFilesDir()
     if not os.path.exists(customers_dir):
         return False
@@ -330,32 +356,32 @@ def Validate():
                     try:
                         os.remove(path)  # if is is no good it is of no use to anyone
                         if _Debug:
-                            printlog('Validate %r removed (empty file)' % path)
+                            printlog("Validate %r removed (empty file)" % path)
                     except:
                         if _Debug:
-                            printlog('Validate ERROR removing %r' % path)
+                            printlog("Validate ERROR removing %r" % path)
                         return False
                 p = signed.Unserialize(packetsrc)
                 if p is None:
                     try:
                         os.remove(path)  # if is is no good it is of no use to anyone
                         if _Debug:
-                            printlog('Validate %r removed (unserialize error)' % path)
+                            printlog("Validate %r removed (unserialize error)" % path)
                     except:
                         if _Debug:
-                            printlog('Validate ERROR removing %r')
+                            printlog("Validate ERROR removing %r")
                         return False
                 result = p.Valid()
-                packetsrc = ''
+                packetsrc = ""
                 del p
                 if not result:
                     try:
                         os.remove(path)  # if is is no good it is of no use to anyone
                         if _Debug:
-                            printlog('Validate %r removed (invalid packet)' % path)
+                            printlog("Validate %r removed (invalid packet)" % path)
                     except:
                         if _Debug:
-                            printlog('Validate ERROR removing %r' % path)
+                            printlog("Validate ERROR removing %r" % path)
                         return False
                 time.sleep(0.1)
                 return False
@@ -364,7 +390,8 @@ def Validate():
 
     return True
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def main():
@@ -380,20 +407,21 @@ def main():
     lg.set_debug_level(0)
     id_url.init()
     commands = {
-        'update_customers': UpdateCustomers,
-        'validate': Validate,
-        'space_time': SpaceTime,
+        "update_customers": UpdateCustomers,
+        "validate": Validate,
+        "space_time": SpaceTime,
     }
     cmd = commands.get(sys.argv[1], None)
     if not cmd:
         if _Debug:
-            printlog('ERROR wrong command: %r' % sys.argv)
+            printlog("ERROR wrong command: %r" % sys.argv)
         return
     cmd()
     settings.shutdown()
     id_url.shutdown()
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 if __name__ == "__main__":
     main()

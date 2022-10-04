@@ -31,6 +31,7 @@ module:: service_customer
 """
 
 from __future__ import absolute_import
+
 from services.local_service import LocalService
 
 
@@ -40,16 +41,17 @@ def create_service():
 
 class CustomerService(LocalService):
 
-    service_name = 'service_customer'
-    config_path = 'services/customer/enabled'
+    service_name = "service_customer"
+    config_path = "services/customer/enabled"
 
     def dependent_on(self):
         return [
-            'service_data_disintegration',
+            "service_data_disintegration",
         ]
 
     def installed(self):
         from userid import my_id
+
         if not my_id.isLocalIdentityReady():
             return False
         return True
@@ -57,76 +59,111 @@ class CustomerService(LocalService):
     def start(self):
         from contacts import contactsdb
         from customer import supplier_connector
-        from userid import my_id
         from main import events
+        from userid import my_id
+
         for _, supplier_idurl in enumerate(contactsdb.suppliers()):
-            if supplier_idurl and not supplier_connector.by_idurl(supplier_idurl, customer_idurl=my_id.getIDURL()):
+            if supplier_idurl and not supplier_connector.by_idurl(
+                supplier_idurl, customer_idurl=my_id.getIDURL()
+            ):
                 supplier_connector.create(
                     supplier_idurl=supplier_idurl,
                     customer_idurl=my_id.getIDURL(),
                 )
-        events.add_subscriber(self._on_my_keys_synchronized, 'my-keys-synchronized')
-        events.add_subscriber(self._on_identity_url_changed, 'identity-url-changed')
+        events.add_subscriber(self._on_my_keys_synchronized, "my-keys-synchronized")
+        events.add_subscriber(self._on_identity_url_changed, "identity-url-changed")
         # TODO: read from dht and connect to other suppliers - from other customers who shared data to me
         return True
 
     def stop(self):
         from twisted.internet import reactor  # @UnresolvedImport
+
         from customer import supplier_connector
-        from userid import my_id
         from main import events
-        events.remove_subscriber(self._on_identity_url_changed, 'identity-url-changed')
-        events.remove_subscriber(self._on_my_keys_synchronized, 'my-keys-synchronized')
+        from userid import my_id
+
+        events.remove_subscriber(self._on_identity_url_changed, "identity-url-changed")
+        events.remove_subscriber(self._on_my_keys_synchronized, "my-keys-synchronized")
         for sc in supplier_connector.connectors(my_id.getIDURL()).values():
-            reactor.callLater(0, sc.automat, 'shutdown')  # @UndefinedVariable
+            reactor.callLater(0, sc.automat, "shutdown")  # @UndefinedVariable
         # TODO: disconnect other suppliers
         return True
 
     def health_check(self):
         from customer import supplier_connector
         from userid import my_id
+
         for sc in supplier_connector.connectors(my_id.getIDURL()).values():
             # at least one supplier must be online to consider my customer service to be healthy
-            if sc.state in ['CONNECTED', ]:
+            if sc.state in [
+                "CONNECTED",
+            ]:
                 return True
         return False
 
     def _on_my_keys_synchronized(self, evt):
         from logs import lg
-        from main import settings
-        from storage import keys_synchronizer
-        from crypt import my_keys
         from userid import my_id
+
         # customer_key_id = my_id.getGlobalID(key_alias='customer')
         # if not my_keys.is_key_registered(customer_key_id) and keys_synchronizer.is_synchronized():
         #     lg.info('customer key was not found but we know that all keys are in sync, generate new key: %s' % customer_key_id)
         #     my_keys.generate_key(customer_key_id, key_size=settings.getPrivateKeySize())
 
     def _on_identity_url_changed(self, evt):
-        from logs import lg
-        from userid import id_url
         from contacts import contactsdb
         from customer import supplier_connector
-        old_idurl = id_url.field(evt.data['old_idurl'])
-        for customer_idurl, suppliers_list in contactsdb.all_suppliers(as_dict=True).items():
+        from logs import lg
+        from userid import id_url
+
+        old_idurl = id_url.field(evt.data["old_idurl"])
+        for customer_idurl, suppliers_list in contactsdb.all_suppliers(
+            as_dict=True
+        ).items():
             if old_idurl == customer_idurl:
                 customer_idurl.refresh()
-                lg.info('found customer family idurl rotated : %r -> %r' % (
-                    evt.data['old_idurl'], evt.data['new_idurl'], ))
+                lg.info(
+                    "found customer family idurl rotated : %r -> %r"
+                    % (
+                        evt.data["old_idurl"],
+                        evt.data["new_idurl"],
+                    )
+                )
             for supplier_pos, supplier_idurl in enumerate(suppliers_list):
                 if old_idurl == supplier_idurl:
                     supplier_idurl.refresh()
-                    lg.info('found supplier idurl rotated for customer family %r at position %r : %r -> %r' % (
-                        customer_idurl, supplier_pos, evt.data['old_idurl'], evt.data['new_idurl'], ))
-            for customer_idurl, sc_dict in supplier_connector.connectors(as_dict=True).items():
+                    lg.info(
+                        "found supplier idurl rotated for customer family %r at position %r : %r -> %r"
+                        % (
+                            customer_idurl,
+                            supplier_pos,
+                            evt.data["old_idurl"],
+                            evt.data["new_idurl"],
+                        )
+                    )
+            for customer_idurl, sc_dict in supplier_connector.connectors(
+                as_dict=True
+            ).items():
                 if old_idurl == customer_idurl:
                     customer_idurl.refresh()
-                    lg.info('found customer idurl rotated in supplier_connector.connectors() : %r -> %r' % (
-                        evt.data['old_idurl'], evt.data['new_idurl'], ))
+                    lg.info(
+                        "found customer idurl rotated in supplier_connector.connectors() : %r -> %r"
+                        % (
+                            evt.data["old_idurl"],
+                            evt.data["new_idurl"],
+                        )
+                    )
                 for supplier_idurl, sc in sc_dict.items():
                     if old_idurl == supplier_idurl:
                         supplier_idurl.refresh()
                         sc.customer_idurl.refresh()
                         sc.supplier_idurl.refresh()
-                        lg.info('found supplier idurl rotated in %r for customer %r : %r -> %r' % (
-                            sc, customer_idurl, evt.data['old_idurl'], evt.data['new_idurl'], ))
+                        lg.info(
+                            "found supplier idurl rotated in %r for customer %r : %r -> %r"
+                            % (
+                                sc,
+                                customer_idurl,
+                                evt.data["old_idurl"],
+                                evt.data["new_idurl"],
+                            )
+                        )

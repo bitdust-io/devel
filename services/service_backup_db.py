@@ -31,6 +31,7 @@ module:: service_backup_db
 """
 
 from __future__ import absolute_import
+
 from services.local_service import LocalService
 
 
@@ -40,29 +41,34 @@ def create_service():
 
 class BackupDBService(LocalService):
 
-    service_name = 'service_backup_db'
-    config_path = 'services/backup-db/enabled'
+    service_name = "service_backup_db"
+    config_path = "services/backup-db/enabled"
 
     def dependent_on(self):
         return [
-            'service_list_files',
-            'service_data_motion',
+            "service_list_files",
+            "service_data_motion",
         ]
 
     def start(self):
-        from storage import backup_fs
-        from storage import index_synchronizer
+        from storage import backup_fs, index_synchronizer
+
         backup_fs.init()
-        index_synchronizer.A('init')
+        index_synchronizer.A("init")
         return True
 
     def stop(self):
-        from storage import backup_fs
-        from storage import index_synchronizer
-        index_synchronizer.A('shutdown')
+        from storage import backup_fs, index_synchronizer
+
+        index_synchronizer.A("shutdown")
         backup_fs.shutdown()
         return True
 
     def health_check(self):
         from storage import index_synchronizer
-        return index_synchronizer.A().state in ['IN_SYNC!', 'SENDING', 'REQUEST?', ]
+
+        return index_synchronizer.A().state in [
+            "IN_SYNC!",
+            "SENDING",
+            "REQUEST?",
+        ]

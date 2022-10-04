@@ -31,6 +31,7 @@ module:: service_customer_contracts
 """
 
 from __future__ import absolute_import
+
 from services.local_service import LocalService
 
 
@@ -40,13 +41,13 @@ def create_service():
 
 class CustomerContractsService(LocalService):
 
-    service_name = 'service_customer_contracts'
-    config_path = 'services/customer-contracts/enabled'
+    service_name = "service_customer_contracts"
+    config_path = "services/customer-contracts/enabled"
 
     def dependent_on(self):
         return [
-            'service_customer',
-            'service_contract_chain',
+            "service_customer",
+            "service_contract_chain",
         ]
 
     def installed(self):
@@ -54,18 +55,20 @@ class CustomerContractsService(LocalService):
         return False
 
     def start(self):
-        from main import events
-        from contacts import contactsdb
         from coins import customer_contract_executor
+        from contacts import contactsdb
+        from main import events
+
         for supplier_idurl in contactsdb.suppliers():
             customer_contract_executor.init_contract(supplier_idurl)
-        events.add_subscriber(self._on_supplier_modified, 'supplier-modified')
+        events.add_subscriber(self._on_supplier_modified, "supplier-modified")
         return True
 
     def stop(self):
-        from main import events
         from coins import customer_contract_executor
-        events.remove_subscriber(self._on_supplier_modified, 'supplier-modified')
+        from main import events
+
+        events.remove_subscriber(self._on_supplier_modified, "supplier-modified")
         for supplier_idurl in list(customer_contract_executor.all_contracts.keys()):
             customer_contract_executor.shutdown_contract(supplier_idurl)
         return True
@@ -75,7 +78,8 @@ class CustomerContractsService(LocalService):
 
     def _on_supplier_modified(self, evt):
         from coins import customer_contract_executor
-        if evt.data['old_idurl']:
-            customer_contract_executor.recheck_contract(evt.data['old_idurl'])
-        if evt.data['new_idurl']:
-            customer_contract_executor.recheck_contract(evt.data['new_idurl'])
+
+        if evt.data["old_idurl"]:
+            customer_contract_executor.recheck_contract(evt.data["old_idurl"])
+        if evt.data["new_idurl"]:
+            customer_contract_executor.recheck_contract(evt.data["new_idurl"])

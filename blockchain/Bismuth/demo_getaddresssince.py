@@ -25,11 +25,11 @@ eg:
 No proper error checking.
 """
 
-import connections
 import json
-import socks
 import sys
 
+import connections
+import socks
 
 __version__ = "0.0.2"
 
@@ -53,6 +53,10 @@ def get_address_since(since, min_conf, address):
 
 if __name__ == "__main__":
     _, since, min_conf, address = sys.argv
-    print("api_getaddresssince since {} minconf={} for address {}".format(since, min_conf, address))
+    print(
+        "api_getaddresssince since {} minconf={} for address {}".format(
+            since, min_conf, address
+        )
+    )
     res_as_native_dict = get_address_since(since, min_conf, address)
     print(json.dumps(res_as_native_dict))

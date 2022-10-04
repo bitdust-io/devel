@@ -1,21 +1,12 @@
-from unittest import TestCase
 import os
+from crypt import encrypted, key, signed
+from unittest import TestCase
 
-from system import bpio
-
+from lib import jsn, serialization
 from logs import lg
-
 from main import settings
-
-from lib import jsn
-from lib import serialization
-
-from crypt import key
-from crypt import signed
-from crypt import encrypted
-
+from system import bpio
 from userid import my_id
-
 
 _some_priv_key = """-----BEGIN RSA PRIVATE KEY-----
 MIIEowIBAAKCAQEA/ZsJKyCakqA8vO2r0CTOG0qE2l+4y1dIqh7VC0oaVkXy0Cim
@@ -65,27 +56,26 @@ _some_identity_xml = """<?xml version="1.0" encoding="utf-8"?>
 
 
 class Test(TestCase):
-
     def setUp(self):
         try:
-            bpio.rmdir_recursive('/tmp/.bitdust_tmp')
+            bpio.rmdir_recursive("/tmp/.bitdust_tmp")
         except Exception:
             pass
         lg.set_debug_level(30)
-        settings.init(base_dir='/tmp/.bitdust_tmp')
+        settings.init(base_dir="/tmp/.bitdust_tmp")
         self.my_current_key = None
         try:
-            os.makedirs('/tmp/.bitdust_tmp/metadata/')
+            os.makedirs("/tmp/.bitdust_tmp/metadata/")
         except:
             pass
         try:
-            os.makedirs('/tmp/.bitdust_tmp/logs/')
+            os.makedirs("/tmp/.bitdust_tmp/logs/")
         except:
             pass
-        fout = open(settings.KeyFileName(), 'w')
+        fout = open(settings.KeyFileName(), "w")
         fout.write(_some_priv_key)
         fout.close()
-        fout = open(settings.LocalIdentityFilename(), 'w')
+        fout = open(settings.LocalIdentityFilename(), "w")
         fout.write(_some_identity_xml)
         fout.close()
         self.assertTrue(key.LoadMyKey())
@@ -95,34 +85,42 @@ class Test(TestCase):
         key.ForgetMyKey()
         my_id.forgetLocalIdentity()
         settings.shutdown()
-        bpio.rmdir_recursive('/tmp/.bitdust_tmp')
+        bpio.rmdir_recursive("/tmp/.bitdust_tmp")
 
     def test_jsn(self):
         data1 = os.urandom(1024)
-        dct1 = {'d': {'data': data1, }, }
-        raw = jsn.dumps(dct1, encoding='latin1')
-        dct2 = jsn.loads(raw, encoding='latin1')
-        data2 = dct2['d']['data']
+        dct1 = {
+            "d": {
+                "data": data1,
+            },
+        }
+        raw = jsn.dumps(dct1, encoding="latin1")
+        dct2 = jsn.loads(raw, encoding="latin1")
+        data2 = dct2["d"]["data"]
         self.assertEqual(data1, data2)
 
     def test_serialization(self):
         data1 = os.urandom(1024)
-        dct1 = {'d': {'data': data1, }, }
-        raw = serialization.DictToBytes(dct1, encoding='latin1')
-        dct2 = serialization.BytesToDict(raw, encoding='latin1')
-        data2 = dct2['d']['data']
+        dct1 = {
+            "d": {
+                "data": data1,
+            },
+        }
+        raw = serialization.DictToBytes(dct1, encoding="latin1")
+        dct2 = serialization.BytesToDict(raw, encoding="latin1")
+        data2 = dct2["d"]["data"]
         self.assertEqual(data1, data2)
 
     def test_signed_packet(self):
         key.InitMyKey()
         data1 = os.urandom(1024)
         p1 = signed.Packet(
-            'Data',
+            "Data",
             my_id.getIDURL(),
             my_id.getIDURL(),
-            'SomeID',
+            "SomeID",
             data1,
-            'RemoteID:abc',
+            "RemoteID:abc",
         )
         self.assertTrue(p1.Valid())
         raw1 = p1.Serialize()
@@ -139,7 +137,7 @@ class Test(TestCase):
         data1 = os.urandom(1024)
         b1 = encrypted.Block(
             CreatorID=my_id.getIDURL(),
-            BackupID='BackupABC',
+            BackupID="BackupABC",
             BlockNumber=123,
             SessionKey=key.NewSessionKey(session_key_type=key.SessionKeyType()),
             SessionKeyType=key.SessionKeyType(),

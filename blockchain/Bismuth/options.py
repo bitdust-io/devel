@@ -1,4 +1,3 @@
-import os
 import json
 import os.path as path
 from sys import exit
@@ -71,7 +70,7 @@ class Get:
 
     def load_file(self, filename):
         if not path.isfile(filename):
-            filename = path.join('blockchain', 'Bismuth', filename)
+            filename = path.join("blockchain", "Bismuth", filename)
         # print("Loading",filename)
         with open(filename) as fp:
             for line in fp:
@@ -116,7 +115,7 @@ class Get:
 
         # print(self.__dict__)
 
-    def read(self, filename='config.txt', custom_filename='config_custom.txt'):
+    def read(self, filename="config.txt", custom_filename="config_custom.txt"):
         # first of all, load from default config so we have all needed params
         self.load_file(filename)
         # then override with optional custom config

@@ -19,13 +19,12 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
-from __future__ import absolute_import
-from __future__ import print_function
-import sys
-import os
+from __future__ import absolute_import, print_function
+
 import re
+import sys
 import time
-import pprint
+
 from six.moves import range
 
 h1 = open(sys.argv[1]).read().splitlines()
@@ -34,13 +33,13 @@ h1times = {}
 h2times = {}
 
 for commit1 in h1:
-    dt1 = re.search('\[(.+?)\]', commit1)
+    dt1 = re.search("\[(.+?)\]", commit1)
     if dt1:
         dt1 = time.mktime(time.strptime(dt1.group(1)[:-6]))
         h1times[dt1] = commit1
 
 for commit2 in h2:
-    dt2 = re.search('\[(.+?)\]', commit2)
+    dt2 = re.search("\[(.+?)\]", commit2)
     if dt2:
         dt2 = time.mktime(time.strptime(dt2.group(1)[:-6]))
         h2times[dt2] = commit2
@@ -52,7 +51,7 @@ tcurr = time.time()
 
 parts = {}
 parts[-1] = []
-parts[-1].append((tcurr, '123456 [date] !!! NOT PUBLISHED YET !!!'))
+parts[-1].append((tcurr, "123456 [date] !!! NOT PUBLISHED YET !!!"))
 
 for i in range(len(h2sorted)):
     dt2 = h2sorted[i]
@@ -68,12 +67,18 @@ for i in range(len(h2sorted)):
 for i in sorted(list(parts.keys()), reverse=False):
     commits = parts[i]
     headcommit = commits.pop(0)
-    print('[%s]' % time.asctime(time.localtime(headcommit[0])))
-    print(re.match('\w+? \[.+?\] (.+?)$', headcommit[1]).group(1))
-    print('\n%s Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)\n' % (time.strftime('%Y-%m-%d', time.localtime(headcommit[0]))))
+    print("[%s]" % time.asctime(time.localtime(headcommit[0])))
+    print(re.match("\w+? \[.+?\] (.+?)$", headcommit[1]).group(1))
+    print(
+        "\n%s Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)\n"
+        % (time.strftime("%Y-%m-%d", time.localtime(headcommit[0])))
+    )
     for dt, commit in commits:
-        print('* %s' % (
-            # time.strftime('%c', time.localtime(dt)),
-            re.match('\w+? \[.+?\] (.+?)$', commit).group(1),
-        ))
+        print(
+            "* %s"
+            % (
+                # time.strftime('%c', time.localtime(dt)),
+                re.match("\w+? \[.+?\] (.+?)$", commit).group(1),
+            )
+        )
     print()

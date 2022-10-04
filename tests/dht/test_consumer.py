@@ -1,23 +1,27 @@
+import optparse
 import os
 import time
-import optparse
 
 from twisted.internet import reactor
 from twisted.internet.defer import DeferredList
 
+from dht import dht_service
 from logs import lg
 from main import settings
-from dht import dht_service
 
 parser = optparse.OptionParser()
-parser.add_option("-s", "--start", dest="start", type="int", help="start position", default=1)
+parser.add_option(
+    "-s", "--start", dest="start", type="int", help="start position", default=1
+)
 parser.add_option("-e", "--end", dest="end", type="int", help="end position", default=3)
-parser.add_option("-l", "--layer", dest="layer", type="int", help="layer number", default=0)
+parser.add_option(
+    "-l", "--layer", dest="layer", type="int", help="layer number", default=0
+)
 (options, args) = parser.parse_args()
 
 
 def connected(nodes, seeds=[]):
-    print('connected:', nodes, seeds)
+    print("connected:", nodes, seeds)
     if options.layer != 0:
         dht_service.connect(seeds, layer_id=options.layer).addBoth(layer_connected)
     else:
@@ -25,30 +29,31 @@ def connected(nodes, seeds=[]):
 
 
 def layer_connected(nodes):
-    print('layer_connected:', nodes)
+    print("layer_connected:", nodes)
     run()
 
 
 def run():
-    print('run')
+    print("run")
 
     def callback(*args, **kwargs):
-        print('callback', args)
+        print("callback", args)
         d = args[0]
         if not isinstance(d, dict):
-            print('NOT FOUND')
+            print("NOT FOUND")
             return
-        assert isinstance(d, dict), 'result value is not dictionary, key-value not found'
+        assert isinstance(d, dict), "result value is not dictionary, key-value not found"
         assert len(d) == 1
         k, v = d.popitem()
-        assert k.replace('key', '') == v.replace('value', '')
+        assert k.replace("key", "") == v.replace("value", "")
 
     def errback(*args, **kwargs):
         import traceback
+
         traceback.print_exc()
 
     def callback_dfl(*args):
-        print('callback_dfl', args)
+        print("callback_dfl", args)
         reactor.stop()  # @UndefinedVariable
 
     errback_dfl = errback
@@ -67,7 +72,7 @@ def run():
         dfl.addErrback(errback_dfl)
 
     except Exception as exc:
-        print('ERROR in run()', exc)
+        print("ERROR in run()", exc)
         reactor.stop()  # @UndefinedVariable
 
 
@@ -80,8 +85,8 @@ def main():
     dht_service.init(udp_port=14441, open_layers=connect_layers)
     seeds = []
 
-    for seed_env in os.environ.get('DHT_SEEDS').split(','):
-        seed = seed_env.split(':')
+    for seed_env in os.environ.get("DHT_SEEDS").split(","):
+        seed = seed_env.split(":")
         seeds.append((seed[0], int(seed[1])))
 
     dht_service.connect(seeds).addBoth(connected, seeds=seeds)
@@ -89,5 +94,5 @@ def main():
     settings.shutdown()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

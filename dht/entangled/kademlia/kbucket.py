@@ -2,8 +2,8 @@
 # kbucket.py
 #
 # Copyright (C) 2007-2008 Francois Aucamp, Meraka Institute, CSIR
-# See AUTHORS for all authors and contact information. 
-# 
+# See AUTHORS for all authors and contact information.
+#
 # License: GNU Lesser General Public License, version 3 or later; see COPYING
 #          included in this archive for details.
 #
@@ -15,10 +15,10 @@
 # may be created by processing this file with epydoc: http://epydoc.sf.net
 
 from __future__ import absolute_import
+
 import six
 
 from . import constants  # @UnresolvedImport
-
 
 _Debug = False
 
@@ -30,8 +30,7 @@ class BucketFull(Exception):
 
 
 class KBucket(object):
-    """ Description - later
-    """
+    """Description - later"""
 
     def __init__(self, rangeMin, rangeMax):
         """
@@ -49,7 +48,11 @@ class KBucket(object):
         return str(self)
 
     def __str__(self):
-        return '<KBucket %d %r to %r>' % (len(self._contacts), self.rangeMin, self.rangeMax)
+        return "<KBucket %d %r to %r>" % (
+            len(self._contacts),
+            self.rangeMin,
+            self.rangeMax,
+        )
 
     def addContact(self, contact):
         """
@@ -69,11 +72,13 @@ class KBucket(object):
             self._contacts.remove(contact)
             self._contacts.append(contact)
             if _Debug:
-                print('[DHT KBUCKET]    moved contact to the end of the bucket %r' % contact)
+                print(
+                    "[DHT KBUCKET]    moved contact to the end of the bucket %r" % contact
+                )
         elif len(self._contacts) < constants.k:
             self._contacts.append(contact)
             if _Debug:
-                print('[DHT KBUCKET]    added new contact %r' % contact)
+                print("[DHT KBUCKET]    added new contact %r" % contact)
         else:
             raise BucketFull("No space in bucket to insert contact")
 
@@ -145,7 +150,7 @@ class KBucket(object):
         """
         self._contacts.remove(contact)
         if _Debug:
-            print('[DHT KBUCKET]    removed contact %r' % contact)
+            print("[DHT KBUCKET]    removed contact %r" % contact)
 
     def keyInRange(self, key):
         """

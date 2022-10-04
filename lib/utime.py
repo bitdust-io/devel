@@ -28,9 +28,10 @@ module:: utime
 
 
 from __future__ import absolute_import
-import time
-import datetime
+
 import calendar
+import datetime
+import time
 
 
 def utc_timestamp(d):
@@ -83,5 +84,5 @@ def make_timestamp():
     time_st = time.localtime()
     ampm = time.strftime("%p", time_st)
     if not ampm:
-        ampm = 'AM' if time.time() % 86400 < 43200 else 'PM'
+        ampm = "AM" if time.time() % 86400 < 43200 else "PM"
     return time.strftime("%Y%m%d%I%M%S", time_st) + ampm

@@ -21,18 +21,20 @@
 # Please contact us if you have any questions at bitdust.io@gmail.com
 
 from __future__ import absolute_import
-import os
+
 import sys
 
-#------------------------------------------------------------------------------
-#--- win32com patch ---
+# ------------------------------------------------------------------------------
+# --- win32com patch ---
 try:
     try:
         import py2exe.mf as modulefinder
     except ImportError:
         import modulefinder
-    import win32com
     import sys
+
+    import win32com
+
     for p in win32com.__path__[1:]:
         modulefinder.AddPackagePath("win32com", p)
     for extra in ["win32com.shell"]:  # ,"win32com.mapi"
@@ -43,127 +45,121 @@ try:
 except ImportError:
     pass
 
-modulefinder.AddPackagePath('django', 'util')
+modulefinder.AddPackagePath("django", "util")
 
-#------------------------------------------------------------------------------
-
-from distutils.core import setup
-import py2exe
-import twisted.web.resource as resource
-import optparse
-import zope
-import zope.interface
-import zope.interface.adapter
+# ------------------------------------------------------------------------------
 
 import pprint
+from distutils.core import setup
+
 pprint.pprint(sys.path)
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 packages = [
-    'encodings',
+    "encodings",
     "django",
     "sqlite3",
-    'email',
-    'web',
-    'unittest',
+    "email",
+    "web",
+    "unittest",
 ]
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 includes = [
-    'django.*',
-    'django.template.loaders.filesystem',
-    'django.template.loaders.app_directories',
-    'django.middleware.common',
-    'django.contrib.sessions.middleware',
-    'django.contrib.auth.middleware',
-    'django.middleware.doc',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.sessions.backends.db',
-    'django.contrib.sites',
-    'django.contrib.admin',
-    'django.core.cache.backends',
-    'django.db.backends.sqlite3.base',
-    'django.db.backends.sqlite3.introspection',
-    'django.db.backends.sqlite3.creation',
-    'django.db.backends.sqlite3.client',
-    'django.template.defaulttags',
-    'django.template.defaultfilters',
-    'django.template.loader_tags',
-    'django.contrib.admin.views.main',
-    'django.core.context_processors',
-    'django.contrib.auth.views',
-    'django.contrib.auth.backends',
-    'django.views.static',
-    'django.contrib.admin.templatetags.admin_list',
-    'django.contrib.admin.templatetags.admin_modify',
-    'django.contrib.admin.templatetags.log',
-    'django.conf.urls.shortcut',
-    'django.views.defaults',
-    'django.core.cache.backends.locmem',
-    'django.templatetags.i18n',
-    'django.views.i18n',
-    'email',
-    'email.mime.audio',
-    'email.mime.base',
-    'email.mime.image',
-    'email.mime.message',
-    'email.mime.multipart',
-    'email.mime.nonmultipart',
-    'email.mime.text',
-    'email.charset',
-    'email.encoders',
-    'email.errors',
-    'email.feedparser',
-    'email.generator',
-    'email.header',
-    'email.iterators',
-    'email.message',
-    'email.parser',
-    'email.utils',
-    'email.base64mime',
-    'email.quoprimime',
-    'encodings',
-    'encodings.*',
-    'twisted.web.resource',
-    'optparse',
-    'services.*',
-    'Cookie',
-    'htmlentitydefs',
-    'difflib',
-    'web.asite.*',
-    'web.customerapp.*',
-    'web.friendapp.*',
-    'web.identityapp.*',
-    'web.jqchatapp.*',
-    'web.myfilesapp.*',
-    'web.setupapp.*',
-    'web.supplierapp.*',
+    "django.*",
+    "django.template.loaders.filesystem",
+    "django.template.loaders.app_directories",
+    "django.middleware.common",
+    "django.contrib.sessions.middleware",
+    "django.contrib.auth.middleware",
+    "django.middleware.doc",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.sessions.backends.db",
+    "django.contrib.sites",
+    "django.contrib.admin",
+    "django.core.cache.backends",
+    "django.db.backends.sqlite3.base",
+    "django.db.backends.sqlite3.introspection",
+    "django.db.backends.sqlite3.creation",
+    "django.db.backends.sqlite3.client",
+    "django.template.defaulttags",
+    "django.template.defaultfilters",
+    "django.template.loader_tags",
+    "django.contrib.admin.views.main",
+    "django.core.context_processors",
+    "django.contrib.auth.views",
+    "django.contrib.auth.backends",
+    "django.views.static",
+    "django.contrib.admin.templatetags.admin_list",
+    "django.contrib.admin.templatetags.admin_modify",
+    "django.contrib.admin.templatetags.log",
+    "django.conf.urls.shortcut",
+    "django.views.defaults",
+    "django.core.cache.backends.locmem",
+    "django.templatetags.i18n",
+    "django.views.i18n",
+    "email",
+    "email.mime.audio",
+    "email.mime.base",
+    "email.mime.image",
+    "email.mime.message",
+    "email.mime.multipart",
+    "email.mime.nonmultipart",
+    "email.mime.text",
+    "email.charset",
+    "email.encoders",
+    "email.errors",
+    "email.feedparser",
+    "email.generator",
+    "email.header",
+    "email.iterators",
+    "email.message",
+    "email.parser",
+    "email.utils",
+    "email.base64mime",
+    "email.quoprimime",
+    "encodings",
+    "encodings.*",
+    "twisted.web.resource",
+    "optparse",
+    "services.*",
+    "Cookie",
+    "htmlentitydefs",
+    "difflib",
+    "web.asite.*",
+    "web.customerapp.*",
+    "web.friendapp.*",
+    "web.identityapp.*",
+    "web.jqchatapp.*",
+    "web.myfilesapp.*",
+    "web.setupapp.*",
+    "web.supplierapp.*",
 ]
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 excludes = [
-    '__pypy__.builders',
-    'ICCProfile',
-    '_imaging_gif',
-    '_imagingagg',
-    'DLFCN',
-    'PAM',
-    'PyQt4',
-    'PyQt4.QtCore',
-    'PyQt4.QtGui',
-    'Tkinter',
-    '_ssl',
-    '_tkinter',
-    'cherrypy',
-    'difflib',
-    'dl',
-    'doctest',
-    'dowser',
+    "__pypy__.builders",
+    "ICCProfile",
+    "_imaging_gif",
+    "_imagingagg",
+    "DLFCN",
+    "PAM",
+    "PyQt4",
+    "PyQt4.QtCore",
+    "PyQt4.QtGui",
+    "Tkinter",
+    "_ssl",
+    "_tkinter",
+    "cherrypy",
+    "difflib",
+    "dl",
+    "doctest",
+    "dowser",
     # 'email.Generator',
     # 'email.Iterators',
     # 'email.Utils',
@@ -172,103 +168,92 @@ excludes = [
     # 'email.MIMEMultipart',
     # 'email.MIMEText',
     # 'email.base64MIME',
-    'guppy',
-    'guppy.heapy.RM',
-    'hotshot',
-    'hotshot.stats',
-    'lib.dowser',
-    'paste',
-    'pip',
-    'pyreadline',
-    'qtrayicon',
-    'reprlib',
-    'resource',
-    'shadow',
-    'spwd',
-    'twisted.internet._sigchld',
-    'twisted.python._epoll',
-    'twisted.python.sendmsg',
-    'twisted.python._initgroups',
-    'wx.Timer',
-    'http.client',
-    'urllib.parse',
-    '_scproxy',
-    'gmpy',
-    'Carbon',
-    'Carbon.Files',
-    '_sysconfigdata',
-    'queue',
+    "guppy",
+    "guppy.heapy.RM",
+    "hotshot",
+    "hotshot.stats",
+    "lib.dowser",
+    "paste",
+    "pip",
+    "pyreadline",
+    "qtrayicon",
+    "reprlib",
+    "resource",
+    "shadow",
+    "spwd",
+    "twisted.internet._sigchld",
+    "twisted.python._epoll",
+    "twisted.python.sendmsg",
+    "twisted.python._initgroups",
+    "wx.Timer",
+    "http.client",
+    "urllib.parse",
+    "_scproxy",
+    "gmpy",
+    "Carbon",
+    "Carbon.Files",
+    "_sysconfigdata",
+    "queue",
 ]
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
-ignores = [
-]
+ignores = []
 
-#------------------------------------------------------------------------------
-#--- SETUP --------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# --- SETUP --------------------------------------------------------------------
 
 setup(
-
-    name='BitDust',
-
-    description='BitDust',
-
-    version=open('release/version').read().strip(),
-
+    name="BitDust",
+    description="BitDust",
+    version=open("release/version").read().strip(),
     console=[
         {
-            'script': 'bitdust.py',
-            'icon_resources': [(1, "icons/tray_icon.ico")],
+            "script": "bitdust.py",
+            "icon_resources": [(1, "icons/tray_icon.ico")],
         },
         {
-            'script': 'bpcmd.py',
-            'icon_resources': [(1, "icons/tray_icon.ico")],
+            "script": "bpcmd.py",
+            "icon_resources": [(1, "icons/tray_icon.ico")],
         },
         {
-            'script': 'bppipe.py',
-            'icon_resources': [(1, "icons/tray_icon.ico")],
+            "script": "bppipe.py",
+            "icon_resources": [(1, "icons/tray_icon.ico")],
         },
         {
-            'script': 'bptester.py',
-            'icon_resources': [(1, "icons/tray_icon.ico")],
+            "script": "bptester.py",
+            "icon_resources": [(1, "icons/tray_icon.ico")],
         },
         {
-            'script': 'bpworker.py',
-            'icon_resources': [(1, "icons/tray_icon.ico")],
-            'unbuffered': True,
+            "script": "bpworker.py",
+            "icon_resources": [(1, "icons/tray_icon.ico")],
+            "unbuffered": True,
         },
         {
-            'script': 'manage.py',
-            'icon_resources': [(1, "icons/tray_icon.ico")],
+            "script": "manage.py",
+            "icon_resources": [(1, "icons/tray_icon.ico")],
         },
     ],
-
     # windows = [
-
-    #{
+    # {
     #    'script': 'bitdust.py',
     #    'icon_resources': [(1, "icons/tray_icon.ico")],
-    #},
-
+    # },
     # {
     #     'script': 'bpgui.py',
     #     'icon_resources': [(1, "icons/tray_icon.ico")],
     # },
-
     # ],
-
     options={
-        'py2exe': {
-            'packages': packages,
-            'includes': includes,
-            'excludes': excludes,
-            'ignores': ignores,
-            'ascii': 1,
-            'optimize': 2,
-            'skip_archive': 1,
-            'dist_dir': 'release/windows/build',
+        "py2exe": {
+            "packages": packages,
+            "includes": includes,
+            "excludes": excludes,
+            "ignores": ignores,
+            "ascii": 1,
+            "optimize": 2,
+            "skip_archive": 1,
+            "dist_dir": "release/windows/build",
         },
     },
-
 )

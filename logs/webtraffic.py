@@ -34,18 +34,19 @@ using local HTML server.
 """
 
 from __future__ import absolute_import
+
 import sys
 
 try:
     from twisted.internet import reactor  # @UnresolvedImport
 except:
-    sys.exit('Error initializing twisted.internet.reactor in trafficstats.py')
+    sys.exit("Error initializing twisted.internet.reactor in trafficstats.py")
 
-from twisted.web import server, resource
+from twisted.web import resource, server
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
-#(total bytes, finished packets, failed packets, total packets)
+# (total bytes, finished packets, failed packets, total packets)
 _InboxPacketsCount = 0
 _InboxByIDURL = {}
 _InboxByHost = {}
@@ -62,13 +63,14 @@ _WebListener = None
 
 _DefaultReloadTimeout = 600
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 
-def init(root=None, path='traffic', port=9997):
+def init(root=None, path="traffic", port=9997):
     global _WebListener
     if root is not None:
         from transport import callback
+
         callback.append_inbox_callback(inbox)
         callback.add_finish_file_sending_callback(outbox)
         root.putChild(path, TrafficPage())
@@ -76,15 +78,17 @@ def init(root=None, path='traffic', port=9997):
     if _WebListener:
         return
     root = resource.Resource()
-    root.putChild('', TrafficPage())
+    root.putChild("", TrafficPage())
     site = server.Site(root)
     try:
         _WebListener = reactor.listenTCP(port, site)
     except:
         from logs import lg
+
         lg.exc()
         return
     from transport import callback
+
     callback.append_inbox_callback(inbox)
     callback.add_finish_file_sending_callback(outbox)
 
@@ -159,13 +163,13 @@ def inbox(newpacket, info, status, error_message):
 
     byts = len(newpacket)
     idurl = newpacket.CreatorID
-    host = '%s://%s' % (info.proto, info.host)
+    host = "%s://%s" % (info.proto, info.host)
     typ = newpacket.Command
 
     if idurl not in _InboxByIDURL:
         _InboxByIDURL[idurl] = [0, 0, 0, 0]
     _InboxByIDURL[idurl][0] += byts
-    if status == 'finished':
+    if status == "finished":
         _InboxByIDURL[idurl][1] += 1
     else:
         _InboxByIDURL[idurl][2] += 1
@@ -174,7 +178,7 @@ def inbox(newpacket, info, status, error_message):
     if host not in _InboxByHost:
         _InboxByHost[host] = [0, 0, 0, 0]
     _InboxByHost[host][0] += byts
-    if status == 'finished':
+    if status == "finished":
         _InboxByHost[host][1] += 1
     else:
         _InboxByHost[host][2] += 1
@@ -183,7 +187,7 @@ def inbox(newpacket, info, status, error_message):
     if info.proto not in _InboxByProto:
         _InboxByProto[info.proto] = [0, 0, 0, 0]
     _InboxByProto[info.proto][0] += byts
-    if status == 'finished':
+    if status == "finished":
         _InboxByProto[info.proto][1] += 1
     else:
         _InboxByProto[info.proto][2] += 1
@@ -192,7 +196,7 @@ def inbox(newpacket, info, status, error_message):
     if typ not in _InboxByType:
         _InboxByType[typ] = [0, 0, 0, 0]
     _InboxByType[typ][0] += byts
-    if status == 'finished':
+    if status == "finished":
         _InboxByType[typ][1] += 1
     else:
         _InboxByType[typ][2] += 1
@@ -211,13 +215,13 @@ def outbox(pkt_out, item, status, size, error_message):
 
     byts = pkt_out.filesize
     idurl = pkt_out.remote_idurl
-    host = '%s://%s' % (item.proto, item.host)
+    host = "%s://%s" % (item.proto, item.host)
     typ = pkt_out.outpacket.Command
 
     if idurl not in _OutboxByIDURL:
         _OutboxByIDURL[idurl] = [0, 0, 0, 0]
     _OutboxByIDURL[idurl][0] += byts
-    if status == 'finished':
+    if status == "finished":
         _OutboxByIDURL[idurl][1] += 1
     else:
         _OutboxByIDURL[idurl][2] += 1
@@ -226,7 +230,7 @@ def outbox(pkt_out, item, status, size, error_message):
     if host not in _OutboxByHost:
         _OutboxByHost[host] = [0, 0, 0, 0]
     _OutboxByHost[host][0] += byts
-    if status == 'finished':
+    if status == "finished":
         _OutboxByHost[host][1] += 1
     else:
         _OutboxByHost[host][2] += 1
@@ -235,7 +239,7 @@ def outbox(pkt_out, item, status, size, error_message):
     if item.proto not in _OutboxByProto:
         _OutboxByProto[item.proto] = [0, 0, 0, 0]
     _OutboxByProto[item.proto][0] += byts
-    if status == 'finished':
+    if status == "finished":
         _OutboxByProto[item.proto][1] += 1
     else:
         _OutboxByProto[item.proto][2] += 1
@@ -244,7 +248,7 @@ def outbox(pkt_out, item, status, size, error_message):
     if typ not in _OutboxByType:
         _OutboxByType[typ] = [0, 0, 0, 0]
     _OutboxByType[typ][0] += byts
-    if status == 'finished':
+    if status == "finished":
         _OutboxByType[typ][1] += 1
     else:
         _OutboxByType[typ][2] += 1
@@ -253,11 +257,12 @@ def outbox(pkt_out, item, status, size, error_message):
     _OutboxPacketsCount += 1
     return False
 
-#-------------------------------------------------------------------------------
+
+# -------------------------------------------------------------------------------
 
 
 class TrafficPage(resource.Resource):
-    header_html = '''<html><head>
+    header_html = """<html><head>
 <meta http-equiv="refresh" content="%(reload)s">
 <title>Traffic</title></head>
 <body bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#0000FF">
@@ -284,7 +289,7 @@ class TrafficPage(resource.Resource):
 <td>total packets
 <td>finished packets
 <td>failed packets
-'''
+"""
 
     def render(self, request):
         global _InboxPacketsCount
@@ -296,65 +301,113 @@ class TrafficPage(resource.Resource):
         global _OutboxByHost
         global _OutboxByProto
 
-        direction = request.args.get('dir', [''])[0]
-        if direction not in ('in', 'out'):
-            direction = 'in'
-        typ = request.args.get('type', [''])[0]
-        if typ not in ('idurl', 'host', 'proto', 'type'):
-            typ = 'idurl'
-        reloadS = request.args.get('reload', [''])[0]
+        direction = request.args.get("dir", [""])[0]
+        if direction not in ("in", "out"):
+            direction = "in"
+        typ = request.args.get("type", [""])[0]
+        if typ not in ("idurl", "host", "proto", "type"):
+            typ = "idurl"
+        reloadS = request.args.get("reload", [""])[0]
         try:
             reloadV = int(reloadS)
         except:
             reloadV = _DefaultReloadTimeout
 
-        d = {'type': typ, 'reload': str(reloadV), 'dir': direction, 'baseurl': request.path}
+        d = {
+            "type": typ,
+            "reload": str(reloadV),
+            "dir": direction,
+            "baseurl": request.path,
+        }
         out = self.header_html % d
-        if direction == 'in':
-            if typ == 'idurl':
+        if direction == "in":
+            if typ == "idurl":
                 for i, v in _InboxByIDURL.items():
                     out += '<tr><td><a href="%s">%s</a><td>%d<td>%d<td>%d<td>%d\n' % (
-                        i, i, v[0], v[3], v[1], v[2])
-            elif typ == 'host':
+                        i,
+                        i,
+                        v[0],
+                        v[3],
+                        v[1],
+                        v[2],
+                    )
+            elif typ == "host":
                 for i, v in _InboxByHost.items():
-                    out += '<tr><td>%s<td>%d<td>%d<td>%d<td>%d\n' % (
-                        i, v[0], v[3], v[1], v[2])
-            elif typ == 'proto':
+                    out += "<tr><td>%s<td>%d<td>%d<td>%d<td>%d\n" % (
+                        i,
+                        v[0],
+                        v[3],
+                        v[1],
+                        v[2],
+                    )
+            elif typ == "proto":
                 for i, v in _InboxByProto.items():
-                    out += '<tr><td>%s<td>%d<td>%d<td>%d<td>%d\n' % (
-                        i, v[0], v[3], v[1], v[2])
-            elif typ == 'type':
+                    out += "<tr><td>%s<td>%d<td>%d<td>%d<td>%d\n" % (
+                        i,
+                        v[0],
+                        v[3],
+                        v[1],
+                        v[2],
+                    )
+            elif typ == "type":
                 for i, v in _InboxByType.items():
-                    out += '<tr><td>%s<td>%d<td>%d<td>%d<td>%d\n' % (
-                        i, v[0], v[3], v[1], v[2])
+                    out += "<tr><td>%s<td>%d<td>%d<td>%d<td>%d\n" % (
+                        i,
+                        v[0],
+                        v[3],
+                        v[1],
+                        v[2],
+                    )
         else:
-            if typ == 'idurl':
+            if typ == "idurl":
                 for i, v in _OutboxByIDURL.items():
                     out += '<tr><td><a href="%s">%s</a><td>%d<td>%d<td>%d<td>%d\n' % (
-                        i, i, v[0], v[3], v[1], v[2])
-            elif typ == 'host':
+                        i,
+                        i,
+                        v[0],
+                        v[3],
+                        v[1],
+                        v[2],
+                    )
+            elif typ == "host":
                 for i, v in _OutboxByHost.items():
-                    out += '<tr><td>%s<td>%d<td>%d<td>%d<td>%d\n' % (
-                        i, v[0], v[3], v[1], v[2])
-            elif typ == 'proto':
+                    out += "<tr><td>%s<td>%d<td>%d<td>%d<td>%d\n" % (
+                        i,
+                        v[0],
+                        v[3],
+                        v[1],
+                        v[2],
+                    )
+            elif typ == "proto":
                 for i, v in _OutboxByProto.items():
-                    out += '<tr><td>%s<td>%d<td>%d<td>%d<td>%d\n' % (
-                        i, v[0], v[3], v[1], v[2])
-            elif typ == 'type':
+                    out += "<tr><td>%s<td>%d<td>%d<td>%d<td>%d\n" % (
+                        i,
+                        v[0],
+                        v[3],
+                        v[1],
+                        v[2],
+                    )
+            elif typ == "type":
                 for i, v in _OutboxByType.items():
-                    out += '<tr><td>%s<td>%d<td>%d<td>%d<td>%d\n' % (
-                        i, v[0], v[3], v[1], v[2])
+                    out += "<tr><td>%s<td>%d<td>%d<td>%d<td>%d\n" % (
+                        i,
+                        v[0],
+                        v[3],
+                        v[1],
+                        v[2],
+                    )
 
-        out += '</table>'
-        if direction == 'in':
-            out += '<p>total income packets: %d</p>' % _InboxPacketsCount
+        out += "</table>"
+        if direction == "in":
+            out += "<p>total income packets: %d</p>" % _InboxPacketsCount
         else:
-            out += '<p>total outgoing packets: %d</p>' % _OutboxPacketsCount
-        out += '</body></html>'
+            out += "<p>total outgoing packets: %d</p>" % _OutboxPacketsCount
+        out += "</body></html>"
 
         return out
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 if __name__ == "__main__":
     init()

@@ -31,6 +31,7 @@ module:: service_nodes_lookup
 """
 
 from __future__ import absolute_import
+
 from services.local_service import LocalService
 
 
@@ -40,8 +41,8 @@ def create_service():
 
 class NodesLookupService(LocalService):
 
-    service_name = 'service_nodes_lookup'
-    config_path = 'services/nodes-lookup/enabled'
+    service_name = "service_nodes_lookup"
+    config_path = "services/nodes-lookup/enabled"
 
     def dependent_on(self):
         # TODO:
@@ -49,12 +50,13 @@ class NodesLookupService(LocalService):
         # it can be hard-coded list of nodes, a blockchain, some broadcasting solution, etc...
         # then we redefine that logic in lookup_method and observe_method
         return [
-            'service_entangled_dht',
-            'service_p2p_hookups',
+            "service_entangled_dht",
+            "service_p2p_hookups",
         ]
 
     def start(self):
         from p2p import lookup
+
         lookup.init(
             lookup_method=lookup.lookup_in_dht,
             observe_method=lookup.observe_dht_node,
@@ -65,5 +67,6 @@ class NodesLookupService(LocalService):
 
     def stop(self):
         from p2p import lookup
+
         lookup.shutdown()
         return True

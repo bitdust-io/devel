@@ -15,30 +15,29 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 """
 
-from __future__ import absolute_import
-from __future__ import print_function
+from __future__ import absolute_import, print_function
+
 import os
 
 # Windows
-if os.name == 'nt':
+if os.name == "nt":
     import msvcrt
 
 # Posix (Linux, OS X)
 else:
+    import atexit
     import sys
     import termios
-    import atexit
     from select import select
 
 
 class KBHit:
-
     def __init__(self):
         """
         Creates a KBHit object that you can call to do various keyboard things.
         """
 
-        if os.name == 'nt':
+        if os.name == "nt":
             pass
 
         else:
@@ -49,8 +48,7 @@ class KBHit:
             self.old_term = termios.tcgetattr(self.fd)
 
             # New terminal setting unbuffered
-            self.new_term[3] = (
-                self.new_term[3] & ~termios.ICANON & ~termios.ECHO)
+            self.new_term[3] = self.new_term[3] & ~termios.ICANON & ~termios.ECHO
             termios.tcsetattr(self.fd, termios.TCSAFLUSH, self.new_term)
 
             # Support normal-terminal reset at exit
@@ -62,7 +60,7 @@ class KBHit:
 
         On Windows this is a no-op.
         """
-        if os.name == 'nt':
+        if os.name == "nt":
             pass
 
         else:
@@ -75,10 +73,10 @@ class KBHit:
         Should not be called in the same program as getarrow().
         """
 
-        s = ''
+        s = ""
 
-        if os.name == 'nt':
-            return msvcrt.getch().decode('utf-8')
+        if os.name == "nt":
+            return msvcrt.getch().decode("utf-8")
 
         else:
             return sys.stdin.read(1)
@@ -95,7 +93,7 @@ class KBHit:
         Should not be called in the same program as getch().
         """
 
-        if os.name == 'nt':
+        if os.name == "nt":
             msvcrt.getch()  # skip 0xE0
             c = msvcrt.getch()
             vals = [72, 77, 80, 75]
@@ -104,13 +102,13 @@ class KBHit:
             c = sys.stdin.read(3)[2]
             vals = [65, 67, 66, 68]
 
-        return vals.index(ord(c.decode('utf-8')))
+        return vals.index(ord(c.decode("utf-8")))
 
     def kbhit(self):
         """
         Returns True if keyboard character was hit, False otherwise.
         """
-        if os.name == 'nt':
+        if os.name == "nt":
             return msvcrt.kbhit()
 
         else:
@@ -123,13 +121,13 @@ if __name__ == "__main__":
 
     kb = KBHit()
 
-    print('Hit any key, or ESC to exit')
+    print("Hit any key, or ESC to exit")
 
     while True:
         if kb.kbhit():
             c = kb.getch()
             if ord(c) == 27:  # ESC
                 break
-            print(ord(c), end=' ')
+            print(ord(c), end=" ")
 
     kb.set_normal_term()

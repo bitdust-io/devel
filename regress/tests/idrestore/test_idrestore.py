@@ -26,34 +26,40 @@ SCENARIO 17: customer-restore recover identity from customer-2
 """
 
 import os
-import pytest
 
-from testsupport import set_active_scenario  # @UnresolvedImport
 import keywords as kw  # @UnresolvedImport
+import pytest
 import scenarios  # @UnresolvedImport
+from testsupport import set_active_scenario  # @UnresolvedImport
 
 
 def test_idrestore():
-    if os.environ.get('RUN_TESTS', '1') == '0':
+    if os.environ.get("RUN_TESTS", "1") == "0":
         return pytest.skip()  # @UndefinedVariable
 
     prepare()
 
-    #--- SCENARIO 4: customer-1 share files to customer-2
+    # --- SCENARIO 4: customer-1 share files to customer-2
     customer_1_shared_file_info, customer_2_shared_file_info = scenarios.scenario4()
 
-    #--- SCENARIO 17: customer-2 went offline and customer-restore recover identity from customer-2
+    # --- SCENARIO 17: customer-2 went offline and customer-restore recover identity from customer-2
     scenarios.scenario17(customer_1_shared_file_info, customer_2_shared_file_info)
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def prepare():
-    set_active_scenario('PREPARE')
-    kw.wait_suppliers_connected(scenarios.CUSTOMERS_IDS_12, expected_min_suppliers=2, expected_max_suppliers=2)
-    kw.wait_service_state(scenarios.SUPPLIERS_IDS_12, 'service_supplier', 'ON')
-    kw.wait_service_state(scenarios.CUSTOMERS_IDS_12, 'service_customer', 'ON')
-    kw.wait_service_state(scenarios.CUSTOMERS_IDS_12, 'service_shared_data', 'ON')
+    set_active_scenario("PREPARE")
+    kw.wait_suppliers_connected(
+        scenarios.CUSTOMERS_IDS_12, expected_min_suppliers=2, expected_max_suppliers=2
+    )
+    kw.wait_service_state(scenarios.SUPPLIERS_IDS_12, "service_supplier", "ON")
+    kw.wait_service_state(scenarios.CUSTOMERS_IDS_12, "service_customer", "ON")
+    kw.wait_service_state(scenarios.CUSTOMERS_IDS_12, "service_shared_data", "ON")
     # kw.wait_service_state(scenarios.CUSTOMERS_IDS_12, 'service_personal_messages', 'ON')
-    kw.wait_service_state(scenarios.CUSTOMERS_IDS_12, 'service_private_groups', 'ON')
-    kw.wait_service_state(scenarios.CUSTOMERS_IDS_12, 'service_message_history', 'ON')
-    kw.wait_packets_finished(scenarios.PROXY_IDS + scenarios.CUSTOMERS_IDS_12 + scenarios.SUPPLIERS_IDS_12)
+    kw.wait_service_state(scenarios.CUSTOMERS_IDS_12, "service_private_groups", "ON")
+    kw.wait_service_state(scenarios.CUSTOMERS_IDS_12, "service_message_history", "ON")
+    kw.wait_packets_finished(
+        scenarios.PROXY_IDS + scenarios.CUSTOMERS_IDS_12 + scenarios.SUPPLIERS_IDS_12
+    )

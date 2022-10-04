@@ -20,187 +20,284 @@
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
 
-import os
-import pytest
-import time
 import asyncio
-import pprint
 import json
+import os
+import pprint
+import time
 
-#------------------------------------------------------------------------------
-
+import pytest
 import testsupport as tsup  # @UnresolvedImport
 from testsupport import info, warn
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
+
+# ------------------------------------------------------------------------------
 
 VERBOSE = False
 
-TEST_NAME = os.environ['TEST_NAME']
+TEST_NAME = os.environ["TEST_NAME"]
 
-CONF = json.loads(open(f'/app/tests/{TEST_NAME}/conf.json', 'r').read())
+CONF = json.loads(open(f"/app/tests/{TEST_NAME}/conf.json", "r").read())
 
 PAUSE_BEFORE = 0  # int(os.environ.get('PAUSE_BEFORE', CONF.get('pause_before', '0')))
 
-ALL_NODES = list(CONF['containers'].keys())
+ALL_NODES = list(CONF["containers"].keys())
 
 ALL_ROLES = {}
-for container in CONF['containers'].values():
-    role = container['node']['role']
+for container in CONF["containers"].values():
+    role = container["node"]["role"]
     if role not in ALL_ROLES:
         ALL_ROLES[role] = []
-    ALL_ROLES[role].append(container['node'])
+    ALL_ROLES[role].append(container["node"])
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
 
 def open_all_tunnels(event_loop):
     _begin = time.time()
-    info('\nStarting all SSH tunnels\n')
-    event_loop.run_until_complete(asyncio.gather(*[
-        tsup.open_one_tunnel_async(node, 9000+pos, event_loop) for pos, node in enumerate(ALL_NODES)
-    ]))
-    warn('\nAll SSH tunnels opened in %5.3f seconds\n' % (time.time() - _begin))
+    info("\nStarting all SSH tunnels\n")
+    event_loop.run_until_complete(
+        asyncio.gather(
+            *[
+                tsup.open_one_tunnel_async(node, 9000 + pos, event_loop)
+                for pos, node in enumerate(ALL_NODES)
+            ]
+        )
+    )
+    warn("\nAll SSH tunnels opened in %5.3f seconds\n" % (time.time() - _begin))
 
 
 def clean_all_nodes(event_loop, skip_checks=False, verbose=False):
     _begin = time.time()
-    info('\nCleaning all nodes')
-    event_loop.run_until_complete(asyncio.gather(*[
-        tsup.clean_one_node_async(node, event_loop=event_loop, verbose=verbose) for node in ALL_NODES
-    ]))
-    event_loop.run_until_complete(asyncio.gather(*[
-        tsup.clean_one_customer_async(node['name'], event_loop=event_loop, verbose=verbose) for node in ALL_ROLES['customer']
-    ]))
-    warn('\n\nAll nodes cleaned in %5.3f seconds\n' % (time.time() - _begin))
+    info("\nCleaning all nodes")
+    event_loop.run_until_complete(
+        asyncio.gather(
+            *[
+                tsup.clean_one_node_async(node, event_loop=event_loop, verbose=verbose)
+                for node in ALL_NODES
+            ]
+        )
+    )
+    event_loop.run_until_complete(
+        asyncio.gather(
+            *[
+                tsup.clean_one_customer_async(
+                    node["name"], event_loop=event_loop, verbose=verbose
+                )
+                for node in ALL_ROLES["customer"]
+            ]
+        )
+    )
+    warn("\n\nAll nodes cleaned in %5.3f seconds\n" % (time.time() - _begin))
 
 
 def start_all_nodes(event_loop, verbose=False):
     _begin = time.time()
     if verbose:
-        warn('\nStarting BitDust nodes\n')
+        warn("\nStarting BitDust nodes\n")
 
-    for number, dhtseed in enumerate(ALL_ROLES.get('dht-seed', [])):
+    for number, dhtseed in enumerate(ALL_ROLES.get("dht-seed", [])):
         # first seed to be started immediately, all other seeds must wait a bit before start
-        tsup.start_one_dht_seed(dhtseed, wait_seconds=(3 if number > 0 else 0), verbose=verbose)
+        tsup.start_one_dht_seed(
+            dhtseed, wait_seconds=(3 if number > 0 else 0), verbose=verbose
+        )
     if verbose:
-        info('ALL DHT SEEDS STARTED\n')
+        info("ALL DHT SEEDS STARTED\n")
 
-    event_loop.run_until_complete(asyncio.gather(*[
-        tsup.start_one_identity_server_async(idsrv, event_loop) for idsrv in ALL_ROLES.get('identity-server', [])
-    ]))
+    event_loop.run_until_complete(
+        asyncio.gather(
+            *[
+                tsup.start_one_identity_server_async(idsrv, event_loop)
+                for idsrv in ALL_ROLES.get("identity-server", [])
+            ]
+        )
+    )
     if verbose:
-        info(f'ALL ID SERVERS STARTED\n')
+        info(f"ALL ID SERVERS STARTED\n")
 
-    event_loop.run_until_complete(asyncio.gather(*[
-        tsup.start_one_stun_server_async(stunsrv, event_loop) for stunsrv in ALL_ROLES.get('stun-server', [])
-    ]))
+    event_loop.run_until_complete(
+        asyncio.gather(
+            *[
+                tsup.start_one_stun_server_async(stunsrv, event_loop)
+                for stunsrv in ALL_ROLES.get("stun-server", [])
+            ]
+        )
+    )
     if verbose:
-        info(f'ALL STUN SERVERS STARTED\n')
+        info(f"ALL STUN SERVERS STARTED\n")
 
-    event_loop.run_until_complete(asyncio.gather(*[
-        tsup.start_one_proxy_server_async(proxy_server, event_loop) for proxy_server in ALL_ROLES.get('proxy-server', [])
-    ]))
+    event_loop.run_until_complete(
+        asyncio.gather(
+            *[
+                tsup.start_one_proxy_server_async(proxy_server, event_loop)
+                for proxy_server in ALL_ROLES.get("proxy-server", [])
+            ]
+        )
+    )
     if verbose:
-        info(f'ALL PROXY SERVERS STARTED\n')
+        info(f"ALL PROXY SERVERS STARTED\n")
 
-    event_loop.run_until_complete(asyncio.gather(*[
-        tsup.start_one_supplier_async(supplier, event_loop) for supplier in ALL_ROLES.get('supplier', [])
-    ]))
+    event_loop.run_until_complete(
+        asyncio.gather(
+            *[
+                tsup.start_one_supplier_async(supplier, event_loop)
+                for supplier in ALL_ROLES.get("supplier", [])
+            ]
+        )
+    )
     if verbose:
-        info(f'ALL SUPPLIERS STARTED\n')
+        info(f"ALL SUPPLIERS STARTED\n")
 
-    event_loop.run_until_complete(asyncio.gather(*[
-        tsup.start_one_message_broker_async(message_broker, event_loop) for message_broker in ALL_ROLES.get('message-broker', [])
-    ]))
+    event_loop.run_until_complete(
+        asyncio.gather(
+            *[
+                tsup.start_one_message_broker_async(message_broker, event_loop)
+                for message_broker in ALL_ROLES.get("message-broker", [])
+            ]
+        )
+    )
     if verbose:
-        info(f'ALL MESSAGE BROKERS STARTED\n')
+        info(f"ALL MESSAGE BROKERS STARTED\n")
 
-    event_loop.run_until_complete(asyncio.gather(*[
-        tsup.start_one_customer_async(customer, event_loop, sleep_before_start=i*3) for i, customer in enumerate(ALL_ROLES.get('customer', []))
-    ]))
+    event_loop.run_until_complete(
+        asyncio.gather(
+            *[
+                tsup.start_one_customer_async(
+                    customer, event_loop, sleep_before_start=i * 3
+                )
+                for i, customer in enumerate(ALL_ROLES.get("customer", []))
+            ]
+        )
+    )
     if verbose:
-        info(f'ALL CUSTOMERS STARTED\n')
+        info(f"ALL CUSTOMERS STARTED\n")
 
-    warn('ALL NODES STARTED in %5.3f seconds\n' % (time.time() - _begin))
+    warn("ALL NODES STARTED in %5.3f seconds\n" % (time.time() - _begin))
 
 
 def stop_all_nodes(event_loop, verbose=False):
     _begin = time.time()
     if verbose:
-        warn('\nstop all nodes\n')
+        warn("\nstop all nodes\n")
 
     if verbose:
-        info('customers: %r' % ALL_ROLES.get('customer', []))
-    event_loop.run_until_complete(asyncio.gather(*[
-        tsup.stop_daemon_async(customer['name'], event_loop, skip_checks=True, verbose=verbose) for customer in ALL_ROLES.get('customer', [])
-    ]))
+        info("customers: %r" % ALL_ROLES.get("customer", []))
+    event_loop.run_until_complete(
+        asyncio.gather(
+            *[
+                tsup.stop_daemon_async(
+                    customer["name"], event_loop, skip_checks=True, verbose=verbose
+                )
+                for customer in ALL_ROLES.get("customer", [])
+            ]
+        )
+    )
     if verbose:
-        info(f'ALL CUSTOMERS STOPPED\n')
+        info(f"ALL CUSTOMERS STOPPED\n")
 
     if verbose:
-        info('message-brokers: %r' % ALL_ROLES.get('message-broker', []))
-    event_loop.run_until_complete(asyncio.gather(*[
-        tsup.stop_daemon_async(message_broker['name'], event_loop, verbose=verbose) for message_broker in ALL_ROLES.get('message-broker', [])
-    ]))
+        info("message-brokers: %r" % ALL_ROLES.get("message-broker", []))
+    event_loop.run_until_complete(
+        asyncio.gather(
+            *[
+                tsup.stop_daemon_async(
+                    message_broker["name"], event_loop, verbose=verbose
+                )
+                for message_broker in ALL_ROLES.get("message-broker", [])
+            ]
+        )
+    )
     if verbose:
-        info(f'ALL MESSAGE BROKERS STOPPED\n')
+        info(f"ALL MESSAGE BROKERS STOPPED\n")
 
     if verbose:
-        info('suppliers: %r' % ALL_ROLES.get('supplier', []))
-    event_loop.run_until_complete(asyncio.gather(*[
-        tsup.stop_daemon_async(supplier['name'], event_loop, verbose=verbose) for supplier in ALL_ROLES.get('supplier', [])
-    ]))
+        info("suppliers: %r" % ALL_ROLES.get("supplier", []))
+    event_loop.run_until_complete(
+        asyncio.gather(
+            *[
+                tsup.stop_daemon_async(supplier["name"], event_loop, verbose=verbose)
+                for supplier in ALL_ROLES.get("supplier", [])
+            ]
+        )
+    )
     if verbose:
-        info(f'ALL SUPPLIERS STOPPED\n')
+        info(f"ALL SUPPLIERS STOPPED\n")
 
     if verbose:
-        info('proxy-servers: %r' % ALL_ROLES.get('proxy-server', []))
-    event_loop.run_until_complete(asyncio.gather(*[
-        tsup.stop_daemon_async(proxy_server['name'], event_loop, verbose=verbose) for proxy_server in ALL_ROLES.get('proxy-server', [])
-    ]))
+        info("proxy-servers: %r" % ALL_ROLES.get("proxy-server", []))
+    event_loop.run_until_complete(
+        asyncio.gather(
+            *[
+                tsup.stop_daemon_async(proxy_server["name"], event_loop, verbose=verbose)
+                for proxy_server in ALL_ROLES.get("proxy-server", [])
+            ]
+        )
+    )
     if verbose:
-        info(f'ALL PROXY SERVERS STOPPED\n')
+        info(f"ALL PROXY SERVERS STOPPED\n")
 
     if verbose:
-        info('stun-servers: %r' % ALL_ROLES.get('stun-server', []))
-    event_loop.run_until_complete(asyncio.gather(*[
-        tsup.stop_daemon_async(stunsrv['name'], event_loop, verbose=verbose) for stunsrv in ALL_ROLES.get('stun-server', [])
-    ]))
+        info("stun-servers: %r" % ALL_ROLES.get("stun-server", []))
+    event_loop.run_until_complete(
+        asyncio.gather(
+            *[
+                tsup.stop_daemon_async(stunsrv["name"], event_loop, verbose=verbose)
+                for stunsrv in ALL_ROLES.get("stun-server", [])
+            ]
+        )
+    )
     if verbose:
-        info(f'ALL STUN SERVERS STOPPED\n')
+        info(f"ALL STUN SERVERS STOPPED\n")
 
     if verbose:
-        info('identity-servers: %r' % ALL_ROLES.get('identity-server', []))
-    event_loop.run_until_complete(asyncio.gather(*[
-        tsup.stop_daemon_async(idsrv['name'], event_loop, verbose=verbose) for idsrv in ALL_ROLES.get('identity-server', [])
-    ]))
+        info("identity-servers: %r" % ALL_ROLES.get("identity-server", []))
+    event_loop.run_until_complete(
+        asyncio.gather(
+            *[
+                tsup.stop_daemon_async(idsrv["name"], event_loop, verbose=verbose)
+                for idsrv in ALL_ROLES.get("identity-server", [])
+            ]
+        )
+    )
     if verbose:
-        info(f'ALL ID SERVERS STOPPED\n')
+        info(f"ALL ID SERVERS STOPPED\n")
 
     if verbose:
-        info('dht-seeds: %r' % ALL_ROLES.get('dht-seed', []))
-    event_loop.run_until_complete(asyncio.gather(*[
-        tsup.stop_daemon_async(dhtseed['name'], event_loop, verbose=verbose) for dhtseed in ALL_ROLES.get('dht-seed', [])
-    ]))
+        info("dht-seeds: %r" % ALL_ROLES.get("dht-seed", []))
+    event_loop.run_until_complete(
+        asyncio.gather(
+            *[
+                tsup.stop_daemon_async(dhtseed["name"], event_loop, verbose=verbose)
+                for dhtseed in ALL_ROLES.get("dht-seed", [])
+            ]
+        )
+    )
     if verbose:
-        info('ALL DHT SEEDS STOPPED\n')
+        info("ALL DHT SEEDS STOPPED\n")
 
-    warn('\nALL NODES STOPPED in %5.3f seconds\n' % (time.time() - _begin))
+    warn("\nALL NODES STOPPED in %5.3f seconds\n" % (time.time() - _begin))
 
 
 def log_network_info_all_nodes(event_loop):
     _begin = time.time()
-    info('\nget network info from all nodes\n')
-    event_loop.run_until_complete(asyncio.gather(*[
-        tsup.log_network_info_one_node_async(node, event_loop) for node in ALL_NODES
-    ]))
+    info("\nget network info from all nodes\n")
+    event_loop.run_until_complete(
+        asyncio.gather(
+            *[
+                tsup.log_network_info_one_node_async(node, event_loop)
+                for node in ALL_NODES
+            ]
+        )
+    )
 
 
 def kill_all_nodes():
     for node in ALL_NODES:
-        info('Shutdown %s' % node)
-        tsup.run_ssh_command_and_wait(node, 'pkill -e sshd')
-    warn('All nodes stopped')
+        info("Shutdown %s" % node)
+        tsup.run_ssh_command_and_wait(node, "pkill -e sshd")
+    warn("All nodes stopped")
 
 
 def report_all_nodes(event_loop):
@@ -214,68 +311,81 @@ def report_all_nodes(event_loop):
     #     print('\n\nDHT records on [%s]:' % node)
     #     keywords.dht_db_dump_v1(node)
 
-    print('\n\nEXCEPTIONS:')
-    failed = False 
+    print("\n\nEXCEPTIONS:")
+    failed = False
     for node in ALL_NODES:
         failed = failed or tsup.print_exceptions_one_node(node)
 
-    print('\n\nREPORT:')
+    print("\n\nREPORT:")
     for node in ALL_NODES:
         tsup.report_one_node(node)
 
-    assert not failed, 'found some critical errors'
+    assert not failed, "found some critical errors"
 
 
 def collect_coverage_all_nodes(event_loop, verbose=False):
     _begin = time.time()
     if verbose:
-        info('\nCollecting coverage from all nodes')
-    event_loop.run_until_complete(asyncio.gather(*[
-        tsup.collect_coverage_one_node_async(node, event_loop=event_loop, verbose=verbose) for node in ALL_NODES
-    ]))
+        info("\nCollecting coverage from all nodes")
+    event_loop.run_until_complete(
+        asyncio.gather(
+            *[
+                tsup.collect_coverage_one_node_async(
+                    node, event_loop=event_loop, verbose=verbose
+                )
+                for node in ALL_NODES
+            ]
+        )
+    )
     if verbose:
-        warn('\n\nAll coverage files received in  %5.3f seconds\n' % (time.time() - _begin))
+        warn(
+            "\n\nAll coverage files received in  %5.3f seconds\n" % (time.time() - _begin)
+        )
 
-#------------------------------------------------------------------------------
 
-@pytest.yield_fixture(scope='session')
+# ------------------------------------------------------------------------------
+
+
+@pytest.yield_fixture(scope="session")
 def event_loop():
     loop = asyncio.get_event_loop()
     yield loop
     loop.close()
 
-#------------------------------------------------------------------------------
 
-@pytest.yield_fixture(scope='session', autouse=True)
+# ------------------------------------------------------------------------------
+
+
+@pytest.yield_fixture(scope="session", autouse=True)
 def global_wrapper(event_loop):
     verbose = VERBOSE
     if verbose:
-        print('\n\nPAUSE_BEFORE: %d' % PAUSE_BEFORE)
-        print('\n\nENV:\n%s' % pprint.pformat(dict(os.environ)))
-        print('\n\nALL NODES:\n%s' % pprint.pformat(ALL_NODES))
+        print("\n\nPAUSE_BEFORE: %d" % PAUSE_BEFORE)
+        print("\n\nENV:\n%s" % pprint.pformat(dict(os.environ)))
+        print("\n\nALL NODES:\n%s" % pprint.pformat(ALL_NODES))
 
     time.sleep(PAUSE_BEFORE)
 
     _begin = time.time()
 
-    if os.environ.get('OPEN_TUNNELS', '1') == '1':
+    if os.environ.get("OPEN_TUNNELS", "1") == "1":
         open_all_tunnels(event_loop)
 
-    if os.environ.get('STOP_NODES', '0') == '1':
+    if os.environ.get("STOP_NODES", "0") == "1":
         stop_all_nodes(event_loop, verbose=False)
 
-    if os.environ.get('CLEAN_NODES', '0') == '1':
+    if os.environ.get("CLEAN_NODES", "0") == "1":
         clean_all_nodes(event_loop, skip_checks=True, verbose=verbose)
 
-    if os.environ.get('START_NODES', '1') == '1':
+    if os.environ.get("START_NODES", "1") == "1":
         try:
             start_all_nodes(event_loop, verbose=verbose)
         except Exception as exc:
             report_all_nodes(event_loop)
             raise exc
 
-    print('\nTest network prepared in %5.3f seconds\n' % (time.time() - _begin))
- 
+    print("\nTest network prepared in %5.3f seconds\n" % (time.time() - _begin))
+
     yield
 
     # TODO: use ENV variables to control stop / coverage / report / cleanup
@@ -289,4 +399,10 @@ def global_wrapper(event_loop):
     # close_all_tunnels()
     # kill_all_nodes()
 
-    print('\nTest suite %r completed in %5.3f seconds\n' % (TEST_NAME, time.time() - _begin, ))
+    print(
+        "\nTest suite %r completed in %5.3f seconds\n"
+        % (
+            TEST_NAME,
+            time.time() - _begin,
+        )
+    )

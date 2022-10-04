@@ -29,85 +29,84 @@
 
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
+
 import base64
 
 try:
-    from Cryptodome.Cipher import AES
-    from Cryptodome.Cipher import DES3
-    from Cryptodome.Util import Padding
+    from Cryptodome.Cipher import AES, DES3
     from Cryptodome.Random import get_random_bytes
+    from Cryptodome.Util import Padding
 except:
     from Crypto.Cipher import AES  # @UnresolvedImport @Reimport
     from Crypto.Cipher import DES3  # @UnresolvedImport @Reimport
-    from Crypto.Util import Padding  # @UnresolvedImport @Reimport
     from Crypto.Random import get_random_bytes  # @UnresolvedImport @Reimport
+    from Crypto.Util import Padding  # @UnresolvedImport @Reimport
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from lib import serialization
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
-def encrypt_json(raw_data, secret_bytes_key, cipher_type='AES'):
+
+def encrypt_json(raw_data, secret_bytes_key, cipher_type="AES"):
     # TODO: add salt to raw_data
     padded_data = Padding.pad(
         data_to_pad=raw_data,
         block_size=AES.block_size,
     )
-    if cipher_type == 'AES':
+    if cipher_type == "AES":
         cipher = AES.new(
             key=secret_bytes_key,
             mode=AES.MODE_CBC,
         )
-    elif cipher_type == 'DES3':
+    elif cipher_type == "DES3":
         cipher = DES3.new(
             key=secret_bytes_key,
             mode=DES3.MODE_CBC,
         )
     else:
-        raise Exception('unsupported cipher type')
+        raise Exception("unsupported cipher type")
     ct_bytes = cipher.encrypt(padded_data)
     dct = {
-        'iv': base64.b64encode(cipher.iv).decode('utf-8'),
-        'ct': base64.b64encode(ct_bytes).decode('utf-8'),
+        "iv": base64.b64encode(cipher.iv).decode("utf-8"),
+        "ct": base64.b64encode(ct_bytes).decode("utf-8"),
     }
-    encrypted_data = serialization.DictToBytes(dct, encoding='utf-8')
+    encrypted_data = serialization.DictToBytes(dct, encoding="utf-8")
     return encrypted_data
 
 
-def decrypt_json(encrypted_data, secret_bytes_key, cipher_type='AES'):
+def decrypt_json(encrypted_data, secret_bytes_key, cipher_type="AES"):
     dct = serialization.BytesToDict(
         encrypted_data,
-        encoding='utf-8',
+        encoding="utf-8",
         keys_to_text=True,
         values_to_text=True,
     )
-    if cipher_type == 'AES':
+    if cipher_type == "AES":
         cipher = AES.new(
             key=secret_bytes_key,
             mode=AES.MODE_CBC,
-            iv=base64.b64decode(dct['iv'].encode('utf-8')),
+            iv=base64.b64decode(dct["iv"].encode("utf-8")),
         )
-    elif cipher_type == 'DES3':
+    elif cipher_type == "DES3":
         cipher = DES3.new(
             key=secret_bytes_key,
             mode=DES3.MODE_CBC,
-            iv=base64.b64decode(dct['iv'].encode('utf-8')),
+            iv=base64.b64decode(dct["iv"].encode("utf-8")),
         )
     else:
-        raise Exception('unsupported cipher type')
-    padded_data = cipher.decrypt(
-        base64.b64decode(dct['ct'].encode('utf-8'))
-    )
-    if cipher_type == 'AES':
+        raise Exception("unsupported cipher type")
+    padded_data = cipher.decrypt(base64.b64decode(dct["ct"].encode("utf-8")))
+    if cipher_type == "AES":
         raw_data = Padding.unpad(
             padded_data=padded_data,
             block_size=AES.block_size,
         )
-    elif cipher_type == 'DES3':
+    elif cipher_type == "DES3":
         raw_data = Padding.unpad(
             padded_data=padded_data,
             block_size=DES3.block_size,
@@ -115,14 +114,16 @@ def decrypt_json(encrypted_data, secret_bytes_key, cipher_type='AES'):
     # TODO: remove salt from raw_data
     return raw_data
 
-#------------------------------------------------------------------------------
 
-def make_key(cipher_type='AES'):
-    if cipher_type == 'AES':
+# ------------------------------------------------------------------------------
+
+
+def make_key(cipher_type="AES"):
+    if cipher_type == "AES":
         return get_random_bytes(AES.block_size)
-    elif cipher_type == 'DES3':
+    elif cipher_type == "DES3":
         return get_random_bytes(DES3.block_size)
-    raise Exception('unsupported cipher type')
+    raise Exception("unsupported cipher type")
 
 
 def generate_secret_text(size):

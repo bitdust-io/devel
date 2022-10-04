@@ -17,19 +17,14 @@
 
 
 from __future__ import absolute_import
-import os
+
 import marshal
-
-import struct
-import shutil
-
-from CodernityDB3.storage import IU_Storage, DummyStorage
+import os
 
 try:
     from CodernityDB3 import __version__
 except ImportError:
     from .__init__ import __version__
-
 
 import io
 
@@ -72,9 +67,7 @@ class Index(object):
 
     custom_header = ""  # : use it for imports required by your index
 
-    def __init__(self,
-                 db_path,
-                 name):
+    def __init__(self, db_path, name):
         if isinstance(name, bytes):
             name = name.decode()
         if isinstance(db_path, bytes):
@@ -85,10 +78,11 @@ class Index(object):
         self.db_path = db_path
 
     def open_index(self):
-        if not os.path.isfile(os.path.join(self.db_path, self.name + '_buck')):
+        if not os.path.isfile(os.path.join(self.db_path, self.name + "_buck")):
             raise IndexException("Doesn't exists")
         self.buckets = io.open(
-            os.path.join(self.db_path, self.name + "_buck"), 'r+b', buffering=0)
+            os.path.join(self.db_path, self.name + "_buck"), "r+b", buffering=0
+        )
         self._fix_params()
         self._open_storage()
 
@@ -165,7 +159,7 @@ class Index(object):
 
     def destroy(self, *args, **kwargs):
         self._close()
-        bucket_file = os.path.join(self.db_path, self.name + '_buck')
+        bucket_file = os.path.join(self.db_path, self.name + "_buck")
         os.unlink(bucket_file)
         self._destroy_storage()
         self._find_key.clear()

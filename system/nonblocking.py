@@ -32,26 +32,23 @@ some extended functionality. Can read/write from pipe without blocking
 the main thread.
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-#------------------------------------------------------------------------------
-
 import os
-import sys
-import errno
-import time
-import subprocess
-import traceback
 import platform
+import subprocess
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
+
+# ------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 10
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 PIPE = subprocess.PIPE
 
@@ -60,23 +57,24 @@ PIPE_EMPTY = 0
 PIPE_READY2READ = 1
 PIPE_CLOSED = 2
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
-if getattr(subprocess, 'mswindows', None) or platform.uname()[0] == "Windows":
+if getattr(subprocess, "mswindows", None) or platform.uname()[0] == "Windows":
+    import msvcrt
+
+    from win32api import CloseHandle, OpenProcess, TerminateProcess  # @UnresolvedImport
     from win32file import ReadFile, WriteFile  # @UnresolvedImport
     from win32pipe import PeekNamedPipe  # @UnresolvedImport
-    from win32api import TerminateProcess, OpenProcess, CloseHandle  # @UnresolvedImport
-    import msvcrt
 else:
-    import select
     import fcntl  # @UnresolvedImport
+    import select
     import signal
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from logs import lg
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 class Popen(subprocess.Popen):
@@ -86,26 +84,50 @@ class Popen(subprocess.Popen):
     Added some wrappers and platform specific code. Most important
     method added is ``make_nonblocking``.
     """
-    err_report = ''
 
-    def __init__(self, args, bufsize=0, executable=None,
-                 stdin=None, stdout=None, stderr=None,
-                 preexec_fn=None, close_fds=False, shell=False,
-                 cwd=None, env=None, universal_newlines=False,
-                 startupinfo=None, creationflags=0):
+    err_report = ""
+
+    def __init__(
+        self,
+        args,
+        bufsize=0,
+        executable=None,
+        stdin=None,
+        stdout=None,
+        stderr=None,
+        preexec_fn=None,
+        close_fds=False,
+        shell=False,
+        cwd=None,
+        env=None,
+        universal_newlines=False,
+        startupinfo=None,
+        creationflags=0,
+    ):
 
         self.args = args
-        subprocess.Popen.__init__(self,
-                                  args, bufsize, executable,
-                                  stdin, stdout, stderr,
-                                  preexec_fn, close_fds, shell,
-                                  cwd, env, universal_newlines,
-                                  startupinfo, creationflags)
+        subprocess.Popen.__init__(
+            self,
+            args,
+            bufsize,
+            executable,
+            stdin,
+            stdout,
+            stderr,
+            preexec_fn,
+            close_fds,
+            shell,
+            cwd,
+            env,
+            universal_newlines,
+            startupinfo,
+            creationflags,
+        )
         if _Debug:
-            lg.out(_DebugLevel, 'nonblocking.Popen created')
-            lg.out(_DebugLevel, '    stdin=%r' % self.stdin)
-            lg.out(_DebugLevel, '    stdout=%r' % self.stdout)
-            lg.out(_DebugLevel, '    stderr=%r' % self.stderr)
+            lg.out(_DebugLevel, "nonblocking.Popen created")
+            lg.out(_DebugLevel, "    stdin=%r" % self.stdin)
+            lg.out(_DebugLevel, "    stdout=%r" % self.stdout)
+            lg.out(_DebugLevel, "    stderr=%r" % self.stderr)
 
     def __del__(self):
         try:
@@ -113,21 +135,21 @@ class Popen(subprocess.Popen):
         except:
             pass
         if _Debug:
-            lg.out(_DebugLevel, 'nonblocking.Popen closed')
+            lg.out(_DebugLevel, "nonblocking.Popen closed")
 
     def returncode(self):
         return self.returncode
 
     def recv(self, maxsize=None):
-        r = self._recv('stdout', maxsize)
+        r = self._recv("stdout", maxsize)
         if r is None:
-            return ''
+            return ""
         return r
 
     def recv_err(self, maxsize=None):
-        return self._recv('stderr', maxsize)
+        return self._recv("stderr", maxsize)
 
-    def send_recv(self, input='', maxsize=None):
+    def send_recv(self, input="", maxsize=None):
         return self.send(input), self.recv(maxsize), self.recv_err(maxsize)
 
     def get_conn_maxsize(self, which, maxsize):
@@ -142,24 +164,23 @@ class Popen(subprocess.Popen):
         setattr(self, which, None)
 
     def state(self):
-        return self._state('stdout')
+        return self._state("stdout")
 
     def make_nonblocking(self):
         """
         Under Linux use built-in method ``fcntl.fcntl`` to make the pipe
         read/write non blocking.
         """
-        if getattr(subprocess, 'mswindows', None) or platform.uname()[0] == "Windows":
+        if getattr(subprocess, "mswindows", None) or platform.uname()[0] == "Windows":
             return
-        conn, maxsize = self.get_conn_maxsize('stdout', None)
+        conn, maxsize = self.get_conn_maxsize("stdout", None)
         if conn is None:
             return
         flags = fcntl.fcntl(conn, fcntl.F_GETFL)
         if not conn.closed:
             fcntl.fcntl(conn, fcntl.F_SETFL, flags | os.O_NONBLOCK)
 
-
-    if getattr(subprocess, 'mswindows', None) or platform.uname()[0] == "Windows":
+    if getattr(subprocess, "mswindows", None) or platform.uname()[0] == "Windows":
 
         def send(self, input):
             if not self.stdin:
@@ -218,8 +239,8 @@ class Popen(subprocess.Popen):
             except:
                 pass
 
-
     else:
+
         def send(self, input):
             if not self.stdin:
                 return None
@@ -282,11 +303,13 @@ def ExecuteString(execstr):
     """
     try:
         import win32process  # @UnresolvedImport
+
         return Popen(
             execstr,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            creationflags=win32process.CREATE_NO_WINDOW,)
+            creationflags=win32process.CREATE_NO_WINDOW,
+        )
     except:
         return None

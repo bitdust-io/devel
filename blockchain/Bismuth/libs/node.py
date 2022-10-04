@@ -1,7 +1,7 @@
-import threading
+import platform
 import queue
 import sys
-import platform
+import threading
 
 
 class Node:
@@ -68,7 +68,11 @@ class Node:
         self.ledger_temp = None
         self.hyper_temp = None
         self.q = queue.Queue()
-        self.py_version= int(str(sys.version_info.major) + str(sys.version_info.minor) + str(sys.version_info.micro))
+        self.py_version = int(
+            str(sys.version_info.major)
+            + str(sys.version_info.minor)
+            + str(sys.version_info.micro)
+        )
 
         self.keys = None
         self.linux = self.platform()

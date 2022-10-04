@@ -60,52 +60,42 @@ EVENTS:
     * :red:`timer-1sec`
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
+
 from six.moves import range
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 12
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 import os
 import sys
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 try:
     from twisted.internet import reactor  # @UnresolvedImport
 except:
-    sys.exit('Error initializing twisted.internet.reactor in backup_rebuilder.py')
+    sys.exit("Error initializing twisted.internet.reactor in backup_rebuilder.py")
 
-#------------------------------------------------------------------------------
-
-from logs import lg
-
-from lib import packetid
+# ------------------------------------------------------------------------------
 
 from automats import automat
-
-from system import bpio
-
-from main import settings
-
 from contacts import contactsdb
-
-from userid import my_id
-from userid import global_id
-from userid import id_url
-
-from raid import eccmap
-from raid import raid_worker
-
+from lib import packetid
+from logs import lg
+from main import settings
+from raid import eccmap, raid_worker
 from services import driver
+from system import bpio
+from userid import global_id, id_url, my_id
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _BackupRebuilder = None
 _StoppedFlag = True
@@ -114,7 +104,7 @@ _BackupIDsExclude = set()
 _BackupIDsQueue = []
 _BlockRebuildersQueue = []
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 def A(event=None, *args, **kwargs):
@@ -124,8 +114,8 @@ def A(event=None, *args, **kwargs):
     global _BackupRebuilder
     if _BackupRebuilder is None:
         _BackupRebuilder = BackupRebuilder(
-            name='backup_rebuilder',
-            state='STOPPED',
+            name="backup_rebuilder",
+            state="STOPPED",
             debug_level=_DebugLevel,
             log_events=_Debug,
             log_transitions=_Debug,
@@ -155,25 +145,27 @@ class BackupRebuilder(automat.Automat):
     fast = False
 
     timers = {
-        'timer-1sec': (1.0, ['REQUEST']),
+        "timer-1sec": (1.0, ["REQUEST"]),
     }
 
     def init(self):
         """
         Initialize needed variables.
         """
-        self.currentBackupID = None             # currently working on this backup
-        self.currentCustomerIDURL = None        # stored by this customer
+        self.currentBackupID = None  # currently working on this backup
+        self.currentCustomerIDURL = None  # stored by this customer
         # list of missing blocks we work on for current backup
         self.workingBlocksQueue = []
         self.backupsWasRebuilt = []
         self.missingPackets = 0
         self.log_transitions = _Debug
         from stream import data_sender
+
         data_sender.A().addStateChangedCallback(self._on_data_sender_state_changed)
 
     def shutdown(self):
         from stream import data_sender
+
         data_sender.A().removeStateChangedCallback(self._on_data_sender_state_changed)
 
     def state_changed(self, oldstate, newstate, event, *args, **kwargs):
@@ -183,76 +175,148 @@ class BackupRebuilder(automat.Automat):
         Need to notify backup_monitor() machine about my new state.
         """
         # global_state.set_global_state('REBUILD ' + newstate)
-        if newstate in ['NEXT_BACKUP', 'REQUEST', 'REBUILDING', ]:
-            if event != 'instant':
-                self.automat('instant')
+        if newstate in [
+            "NEXT_BACKUP",
+            "REQUEST",
+            "REBUILDING",
+        ]:
+            if event != "instant":
+                self.automat("instant")
             else:
-                if oldstate == 'DONE':
-                    self.automat('instant')
-        elif newstate == 'DONE' or newstate == 'STOPPED':
-            if driver.is_on('service_backups'):
+                if oldstate == "DONE":
+                    self.automat("instant")
+        elif newstate == "DONE" or newstate == "STOPPED":
+            if driver.is_on("service_backups"):
                 from storage import backup_monitor
-                backup_monitor.A('backup_rebuilder.state', newstate)
+
+                backup_monitor.A("backup_rebuilder.state", newstate)
 
     def A(self, event, *args, **kwargs):
-        #---STOPPED---
-        if self.state == 'STOPPED':
-            if event == 'init':
+        # ---STOPPED---
+        if self.state == "STOPPED":
+            if event == "init":
                 self.doClearStoppedFlag(*args, **kwargs)
-            elif event == 'start':
-                self.state = 'NEXT_BACKUP'
+            elif event == "start":
+                self.state = "NEXT_BACKUP"
                 self.doClearStoppedFlag(*args, **kwargs)
-        #---NEXT_BACKUP---
-        elif self.state == 'NEXT_BACKUP':
-            if event == 'instant' and not self.isMoreBackups(*args, **kwargs) and not self.isStopped(*args, **kwargs):
-                self.state = 'DONE'
-            elif event == 'instant' and self.isStopped(*args, **kwargs):
-                self.state = 'STOPPED'
-            elif event == 'instant' and not self.isStopped(*args, **kwargs) and self.isMoreBackups(*args, **kwargs):
-                self.state = 'PREPARE'
+        # ---NEXT_BACKUP---
+        elif self.state == "NEXT_BACKUP":
+            if (
+                event == "instant"
+                and not self.isMoreBackups(*args, **kwargs)
+                and not self.isStopped(*args, **kwargs)
+            ):
+                self.state = "DONE"
+            elif event == "instant" and self.isStopped(*args, **kwargs):
+                self.state = "STOPPED"
+            elif (
+                event == "instant"
+                and not self.isStopped(*args, **kwargs)
+                and self.isMoreBackups(*args, **kwargs)
+            ):
+                self.state = "PREPARE"
                 self.doOpenNextBackup(*args, **kwargs)
                 self.doScanBrokenBlocks(*args, **kwargs)
-        #---REQUEST---
-        elif self.state == 'REQUEST':
-            if ( event == 'timer-1sec' or event == 'inbox-data-packet' or event == 'requests-sent' or event == 'found-missing' ) and self.isChanceToRebuild(*args, **kwargs) and not self.isStopped(*args, **kwargs):
-                self.state = 'REBUILDING'
+        # ---REQUEST---
+        elif self.state == "REQUEST":
+            if (
+                (
+                    event == "timer-1sec"
+                    or event == "inbox-data-packet"
+                    or event == "requests-sent"
+                    or event == "found-missing"
+                )
+                and self.isChanceToRebuild(*args, **kwargs)
+                and not self.isStopped(*args, **kwargs)
+            ):
+                self.state = "REBUILDING"
                 self.doAttemptRebuild(*args, **kwargs)
-            elif ( ( event == 'found-missing' and not self.isChanceToRebuild(*args, **kwargs) ) or ( event == 'no-requests' or ( ( event == 'timer-1sec' or event == 'inbox-data-packet' ) and self.isRequestQueueEmpty(*args, **kwargs) and not self.isMissingPackets(*args, **kwargs) ) ) ) and not self.isStopped(*args, **kwargs):
-                self.state = 'DONE'
+            elif (
+                (event == "found-missing" and not self.isChanceToRebuild(*args, **kwargs))
+                or (
+                    event == "no-requests"
+                    or (
+                        (event == "timer-1sec" or event == "inbox-data-packet")
+                        and self.isRequestQueueEmpty(*args, **kwargs)
+                        and not self.isMissingPackets(*args, **kwargs)
+                    )
+                )
+            ) and not self.isStopped(*args, **kwargs):
+                self.state = "DONE"
                 self.doCloseThisBackup(*args, **kwargs)
-            elif ( ( event == 'instant' or event == 'timer-1sec' or event == 'requests-sent' or event == 'no-requests' or event == 'found-missing' ) and self.isStopped(*args, **kwargs) ) or ( event == 'timer-1sec' and self.isRequestQueueEmpty(*args, **kwargs) and not self.isChanceToRebuild(*args, **kwargs) and not self.isStopped(*args, **kwargs) ):
-                self.state = 'STOPPED'
+            elif (
+                (
+                    event == "instant"
+                    or event == "timer-1sec"
+                    or event == "requests-sent"
+                    or event == "no-requests"
+                    or event == "found-missing"
+                )
+                and self.isStopped(*args, **kwargs)
+            ) or (
+                event == "timer-1sec"
+                and self.isRequestQueueEmpty(*args, **kwargs)
+                and not self.isChanceToRebuild(*args, **kwargs)
+                and not self.isStopped(*args, **kwargs)
+            ):
+                self.state = "STOPPED"
                 self.doCloseThisBackup(*args, **kwargs)
-        #---PREPARE---
-        elif self.state == 'PREPARE':
-            if event == 'backup-ready' and ( not self.isMoreBackups(*args, **kwargs) and not self.isMoreBlocks(*args, **kwargs) ):
-                self.state = 'DONE'
+        # ---PREPARE---
+        elif self.state == "PREPARE":
+            if event == "backup-ready" and (
+                not self.isMoreBackups(*args, **kwargs)
+                and not self.isMoreBlocks(*args, **kwargs)
+            ):
+                self.state = "DONE"
                 self.doCloseThisBackup(*args, **kwargs)
-            elif ( event == 'instant' or event == 'backup-ready' ) and self.isStopped(*args, **kwargs):
-                self.state = 'STOPPED'
+            elif (event == "instant" or event == "backup-ready") and self.isStopped(
+                *args, **kwargs
+            ):
+                self.state = "STOPPED"
                 self.doCloseThisBackup(*args, **kwargs)
-            elif ( event == 'instant' or event == 'backup-ready' ) and not self.isStopped(*args, **kwargs) and self.isMoreBlocks(*args, **kwargs):
-                self.state = 'REQUEST'
+            elif (
+                (event == "instant" or event == "backup-ready")
+                and not self.isStopped(*args, **kwargs)
+                and self.isMoreBlocks(*args, **kwargs)
+            ):
+                self.state = "REQUEST"
                 self.doRequestAvailablePieces(*args, **kwargs)
-            elif event == 'backup-ready' and not self.isStopped(*args, **kwargs) and not self.isMoreBlocks(*args, **kwargs) and self.isMoreBackups(*args, **kwargs):
-                self.state = 'NEXT_BACKUP'
+            elif (
+                event == "backup-ready"
+                and not self.isStopped(*args, **kwargs)
+                and not self.isMoreBlocks(*args, **kwargs)
+                and self.isMoreBackups(*args, **kwargs)
+            ):
+                self.state = "NEXT_BACKUP"
                 self.doCloseThisBackup(*args, **kwargs)
-        #---REBUILDING---
-        elif self.state == 'REBUILDING':
-            if event == 'rebuilding-finished' and not self.isStopped(*args, **kwargs) and not self.isMoreBlocks(*args, **kwargs):
-                self.state = 'PREPARE'
+        # ---REBUILDING---
+        elif self.state == "REBUILDING":
+            if (
+                event == "rebuilding-finished"
+                and not self.isStopped(*args, **kwargs)
+                and not self.isMoreBlocks(*args, **kwargs)
+            ):
+                self.state = "PREPARE"
                 self.doScanBrokenBlocks(*args, **kwargs)
-            elif ( event == 'instant' or event == 'rebuilding-finished' ) and self.isStopped(*args, **kwargs):
-                self.state = 'STOPPED'
+            elif (
+                event == "instant" or event == "rebuilding-finished"
+            ) and self.isStopped(*args, **kwargs):
+                self.state = "STOPPED"
                 self.doCloseThisBackup(*args, **kwargs)
                 self.doKillRebuilders(*args, **kwargs)
-            elif event == 'rebuilding-finished' and not self.isStopped(*args, **kwargs) and self.isMoreBlocks(*args, **kwargs):
-                self.state = 'REQUEST'
+            elif (
+                event == "rebuilding-finished"
+                and not self.isStopped(*args, **kwargs)
+                and self.isMoreBlocks(*args, **kwargs)
+            ):
+                self.state = "REQUEST"
                 self.doRequestAvailablePieces(*args, **kwargs)
-        #---DONE---
-        elif self.state == 'DONE':
-            if event == 'start' or ( event == 'instant' and self.isSomeRebuilts(*args, **kwargs) ):
-                self.state = 'NEXT_BACKUP'
+        # ---DONE---
+        elif self.state == "DONE":
+            if event == "start" or (
+                event == "instant" and self.isSomeRebuilts(*args, **kwargs)
+            ):
+                self.state = "NEXT_BACKUP"
                 self.doClearStoppedFlag(*args, **kwargs)
         return None
 
@@ -296,16 +360,14 @@ class BackupRebuilder(automat.Automat):
         Condition method.
         """
         from storage import backup_matrix
+
         # start checking in reverse order, see below for explanation
         for blockIndex in range(len(self.workingBlocksQueue) - 1, -1, -1):
             blockNumber = self.workingBlocksQueue[blockIndex]
             if eccmap.Current().CanMakeProgress(
-                backup_matrix.GetLocalDataArray(
-                    self.currentBackupID,
-                    blockNumber),
-                backup_matrix.GetLocalParityArray(
-                    self.currentBackupID,
-                    blockNumber)):
+                backup_matrix.GetLocalDataArray(self.currentBackupID, blockNumber),
+                backup_matrix.GetLocalParityArray(self.currentBackupID, blockNumber),
+            ):
                 return True
         return False
 
@@ -314,6 +376,7 @@ class BackupRebuilder(automat.Automat):
         Condition method.
         """
         from stream import io_throttle
+
         for supplierNum in range(contactsdb.num_suppliers()):
             supplierID = contactsdb.supplier(supplierNum)
             if io_throttle.HasBackupIDInRequestQueue(supplierID, self.currentBackupID):
@@ -330,17 +393,22 @@ class BackupRebuilder(automat.Automat):
         more_backups.difference_update(_BackupIDsExclude)
         # check it, may be we already fixed all things
         if len(more_backups) == 0:
-            self.automat('backup-ready')
+            self.automat("backup-ready")
             if _Debug:
-                lg.out(_DebugLevel, 'backup_rebuilder.doOpenNextBackup SKIP, queue is empty')
+                lg.out(
+                    _DebugLevel, "backup_rebuilder.doOpenNextBackup SKIP, queue is empty"
+                )
             return
         # take a first backup from queue to work on it
         self.currentBackupID = list(more_backups)[0]
         # _BackupIDsQueue.pop(self.currentBackupID)
         self.currentCustomerIDURL = packetid.CustomerIDURL(self.currentBackupID)
         if _Debug:
-            lg.out(_DebugLevel, 'backup_rebuilder.doOpenNextBackup %s started, queue length: %d' % (
-                self.currentBackupID, len(_BackupIDsQueue)))
+            lg.out(
+                _DebugLevel,
+                "backup_rebuilder.doOpenNextBackup %s started, queue length: %d"
+                % (self.currentBackupID, len(_BackupIDsQueue)),
+            )
 
     def doCloseThisBackup(self, *args, **kwargs):
         """
@@ -350,12 +418,16 @@ class BackupRebuilder(automat.Automat):
         global _BackupIDsExclude
         self.workingBlocksQueue = []
         if _Debug:
-            lg.out(_DebugLevel, 'backup_rebuilder.doCloseThisBackup %s about to finish, queue length: %d' % (
-                self.currentBackupID, len(_BackupIDsQueue)))
+            lg.out(
+                _DebugLevel,
+                "backup_rebuilder.doCloseThisBackup %s about to finish, queue length: %d"
+                % (self.currentBackupID, len(_BackupIDsQueue)),
+            )
         if self.currentBackupID:
             RemoveBackupToWork(self.currentBackupID)
             # clear requesting queue from previous task
             from stream import io_throttle
+
             io_throttle.DeleteBackupRequests(self.currentBackupID)
         self.currentBackupID = None
         self.currentCustomerIDURL = None
@@ -367,26 +439,27 @@ class BackupRebuilder(automat.Automat):
         # if remote data structure is not exist for this backup - create it
         # this mean this is only local backup!
         from storage import backup_matrix
+
         if self.currentBackupID not in backup_matrix.remote_files():
             backup_matrix.remote_files()[self.currentBackupID] = {}
             # we create empty remote info for every local block
             # range(0) should return []
             for blockNum in range(
-                backup_matrix.local_max_block_numbers().get(
-                    self.currentBackupID, -1) + 1):
-                backup_matrix.remote_files()[
-                    self.currentBackupID][blockNum] = {
-                    'D': [0] * contactsdb.num_suppliers(),
-                    'P': [0] * contactsdb.num_suppliers()}
+                backup_matrix.local_max_block_numbers().get(self.currentBackupID, -1) + 1
+            ):
+                backup_matrix.remote_files()[self.currentBackupID][blockNum] = {
+                    "D": [0] * contactsdb.num_suppliers(),
+                    "P": [0] * contactsdb.num_suppliers(),
+                }
         # detect missing blocks from remote info
         self.workingBlocksQueue = backup_matrix.ScanMissingBlocks(self.currentBackupID)
         # find the correct max block number for this backup
         # we can have remote and local files
         # will take biggest block number from both
         backupMaxBlock = max(
-            backup_matrix.remote_max_block_numbers().get(
-                self.currentBackupID, -1), backup_matrix.local_max_block_numbers().get(
-                self.currentBackupID, -1))
+            backup_matrix.remote_max_block_numbers().get(self.currentBackupID, -1),
+            backup_matrix.local_max_block_numbers().get(self.currentBackupID, -1),
+        )
         # now need to remember this biggest block number
         # remote info may have less blocks - need to create empty info for
         # missing blocks
@@ -394,16 +467,21 @@ class BackupRebuilder(automat.Automat):
             if blockNum in backup_matrix.remote_files()[self.currentBackupID]:
                 continue
             backup_matrix.remote_files()[self.currentBackupID][blockNum] = {
-                'D': [0] * contactsdb.num_suppliers(),
-                'P': [0] * contactsdb.num_suppliers()}
+                "D": [0] * contactsdb.num_suppliers(),
+                "P": [0] * contactsdb.num_suppliers(),
+            }
         # clear requesting queue, remove old packets for this backup, we will
         # send them again
         from stream import io_throttle
+
         io_throttle.DeleteBackupRequests(self.currentBackupID)
         if _Debug:
-            lg.out(_DebugLevel, 'backup_rebuilder.doScanBrokenBlocks for %s : %s' % (
-                self.currentBackupID, str(self.workingBlocksQueue)))
-        self.automat('backup-ready')
+            lg.out(
+                _DebugLevel,
+                "backup_rebuilder.doScanBrokenBlocks for %s : %s"
+                % (self.currentBackupID, str(self.workingBlocksQueue)),
+            )
+        self.automat("backup-ready")
 
     def doRequestAvailablePieces(self, *args, **kwargs):
         """
@@ -417,7 +495,7 @@ class BackupRebuilder(automat.Automat):
         """
         self.blocksSucceed = []
         if len(self.workingBlocksQueue) == 0:
-            self.automat('rebuilding-finished')
+            self.automat("rebuilding-finished")
             return
         # rebuild the backup blocks in reverse order, take last blocks first
         # in such way we can propagate information about how big is the whole backup as soon as possible!
@@ -430,8 +508,8 @@ class BackupRebuilder(automat.Automat):
         """
         Action method.
         """
-        lg.warn('aborting raid worker for rebuilding %s' % self.currentBackupID)
-        raid_worker.cancel_task('rebuild', self.currentBackupID)
+        lg.warn("aborting raid worker for rebuilding %s" % self.currentBackupID)
+        raid_worker.cancel_task("rebuild", self.currentBackupID)
 
     def doClearStoppedFlag(self, *args, **kwargs):
         """
@@ -440,34 +518,49 @@ class BackupRebuilder(automat.Automat):
         self.backupsWasRebuilt = []
         ClearStoppedFlag()
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
 
-    def _on_data_sender_state_changed(self, oldstate, newstate, event_string, *args, **kwargs):
-        if oldstate == 'SCAN_BLOCKS' and newstate == 'READY':
-            if event_string == 'scan-done' and args and isinstance(args[0], int):
+    def _on_data_sender_state_changed(
+        self, oldstate, newstate, event_string, *args, **kwargs
+    ):
+        if oldstate == "SCAN_BLOCKS" and newstate == "READY":
+            if event_string == "scan-done" and args and isinstance(args[0], int):
                 if args[0] > 0:
                     if _Debug:
-                        lg.out(_DebugLevel, 'backup_rebuilder.BackupRebuilder._on_data_sender_state_changed is going to rebuild more')
-                    self.automat('start')
+                        lg.out(
+                            _DebugLevel,
+                            "backup_rebuilder.BackupRebuilder._on_data_sender_state_changed is going to rebuild more",
+                        )
+                    self.automat("start")
 
     def _request_files(self):
         from storage import backup_matrix
-        from stream import io_throttle
-        from stream import data_sender
+        from stream import data_sender, io_throttle
+
         self.missingPackets = 0
         # here we want to request some packets before we start working to
         # rebuild the missed blocks
-        availableSuppliers = backup_matrix.GetActiveArray(customer_idurl=self.currentCustomerIDURL)
+        availableSuppliers = backup_matrix.GetActiveArray(
+            customer_idurl=self.currentCustomerIDURL
+        )
         # remember how many requests we did on this iteration
         total_requests_count = 0
         # at the moment I do download everything I have available and needed
-        if id_url.is_some_empty(contactsdb.suppliers(customer_idurl=self.currentCustomerIDURL)):
+        if id_url.is_some_empty(
+            contactsdb.suppliers(customer_idurl=self.currentCustomerIDURL)
+        ):
             if _Debug:
-                lg.out(_DebugLevel, 'backup_rebuilder._request_files SKIP - empty supplier')
-            self.automat('no-requests')
+                lg.out(
+                    _DebugLevel, "backup_rebuilder._request_files SKIP - empty supplier"
+                )
+            self.automat("no-requests")
             return
-        for supplierNum in range(contactsdb.num_suppliers(customer_idurl=self.currentCustomerIDURL)):
-            supplierID = contactsdb.supplier(supplierNum, customer_idurl=self.currentCustomerIDURL)
+        for supplierNum in range(
+            contactsdb.num_suppliers(customer_idurl=self.currentCustomerIDURL)
+        ):
+            supplierID = contactsdb.supplier(
+                supplierNum, customer_idurl=self.currentCustomerIDURL
+            )
             if not supplierID:
                 continue
             requests_count = 0
@@ -482,13 +575,17 @@ class BackupRebuilder(automat.Automat):
                 if requests_count > 16:
                     break
                 remoteData = backup_matrix.GetRemoteDataArray(
-                    self.currentBackupID, blockNum)
+                    self.currentBackupID, blockNum
+                )
                 remoteParity = backup_matrix.GetRemoteParityArray(
-                    self.currentBackupID, blockNum)
+                    self.currentBackupID, blockNum
+                )
                 localData = backup_matrix.GetLocalDataArray(
-                    self.currentBackupID, blockNum)
+                    self.currentBackupID, blockNum
+                )
                 localParity = backup_matrix.GetLocalParityArray(
-                    self.currentBackupID, blockNum)
+                    self.currentBackupID, blockNum
+                )
                 if supplierNum >= len(remoteData) or supplierNum >= len(remoteParity):
                     break
                 if supplierNum >= len(localData) or supplierNum >= len(localParity):
@@ -497,11 +594,14 @@ class BackupRebuilder(automat.Automat):
                 # but we do not have it on hand - do request
                 if localData[supplierNum] == 0:
                     PacketID = packetid.MakePacketID(
-                        self.currentBackupID, blockNum, supplierNum, 'Data')
+                        self.currentBackupID, blockNum, supplierNum, "Data"
+                    )
                     if remoteData[supplierNum] == 1:
                         if availableSuppliers[supplierNum]:
                             # if supplier is not alive - we can't request from him
-                            if not io_throttle.HasPacketInRequestQueue(supplierID, PacketID):
+                            if not io_throttle.HasPacketInRequestQueue(
+                                supplierID, PacketID
+                            ):
                                 customer, remotePath = packetid.SplitPacketID(PacketID)
                                 filename = os.path.join(
                                     settings.getLocalBackupsDir(),
@@ -524,15 +624,17 @@ class BackupRebuilder(automat.Automat):
                 else:
                     # but if local Data already exists, but was not sent - do it now
                     if remoteData[supplierNum] != 1:
-                        data_sender.A('new-data')
+                        data_sender.A("new-data")
                 # same for Parity
                 if localParity[supplierNum] == 0:
                     PacketID = packetid.MakePacketID(
-                        self.currentBackupID, blockNum, supplierNum, 'Parity')
+                        self.currentBackupID, blockNum, supplierNum, "Parity"
+                    )
                     if remoteParity[supplierNum] == 1:
                         if availableSuppliers[supplierNum]:
                             if not io_throttle.HasPacketInRequestQueue(
-                                    supplierID, PacketID):
+                                supplierID, PacketID
+                            ):
                                 customer, remotePath = packetid.SplitPacketID(PacketID)
                                 filename = os.path.join(
                                     settings.getLocalBackupsDir(),
@@ -553,26 +655,43 @@ class BackupRebuilder(automat.Automat):
                 else:
                     # but if local Parity already exists, but was not sent - do it now
                     if remoteParity[supplierNum] != 1:
-                        data_sender.A('new-data')
+                        data_sender.A("new-data")
             total_requests_count += requests_count
         if total_requests_count > 0:
             if _Debug:
-                lg.out(_DebugLevel, 'backup_rebuilder._request_files : %d chunks requested' % total_requests_count)
-            self.automat('requests-sent', total_requests_count)
+                lg.out(
+                    _DebugLevel,
+                    "backup_rebuilder._request_files : %d chunks requested"
+                    % total_requests_count,
+                )
+            self.automat("requests-sent", total_requests_count)
         else:
             if self.missingPackets:
                 if _Debug:
-                    lg.out(_DebugLevel, 'backup_rebuilder._request_files : found %d missing packets' % self.missingPackets)
-                self.automat('found-missing')
+                    lg.out(
+                        _DebugLevel,
+                        "backup_rebuilder._request_files : found %d missing packets"
+                        % self.missingPackets,
+                    )
+                self.automat("found-missing")
             else:
                 if _Debug:
-                    lg.out(_DebugLevel, 'backup_rebuilder._request_files : nothing was requested')
-                self.automat('no-requests')
+                    lg.out(
+                        _DebugLevel,
+                        "backup_rebuilder._request_files : nothing was requested",
+                    )
+                self.automat("no-requests")
 
     def _file_received(self, newpacket, state):
-        if state in ['in queue', 'shutdown', 'exist', 'failed', 'cancelled', ]:
+        if state in [
+            "in queue",
+            "shutdown",
+            "exist",
+            "failed",
+            "cancelled",
+        ]:
             return
-        if state != 'received':
+        if state != "received":
             lg.warn("incorrect state [%s] for packet %s" % (str(state), str(newpacket)))
             return
         if not newpacket.Valid():
@@ -586,7 +705,7 @@ class BackupRebuilder(automat.Automat):
         filename = os.path.join(settings.getLocalBackupsDir(), customer, remotePath)
         if os.path.isfile(filename):
             lg.warn("found existed file" + filename)
-            self.automat('inbox-data-packet', packetID)
+            self.automat("inbox-data-packet", packetID)
             return
             # try:
             #     os.remove(filename)
@@ -603,22 +722,37 @@ class BackupRebuilder(automat.Automat):
             lg.err("failed writing " + filename)
             return
         from storage import backup_matrix
+
         backup_matrix.LocalFileReport(packetID)
         if _Debug:
-            lg.out(_DebugLevel, "backup_rebuilder._file_received and wrote to " + filename)
-        self.automat('inbox-data-packet', packetID)
+            lg.out(
+                _DebugLevel, "backup_rebuilder._file_received and wrote to " + filename
+            )
+        self.automat("inbox-data-packet", packetID)
 
     def _start_one_block(self):
         from storage import backup_matrix
+
         if self.blockIndex < 0:
             if _Debug:
-                lg.out(_DebugLevel, 'backup_rebuilder._start_one_block finish all blocks blockIndex=%d' % self.blockIndex)
+                lg.out(
+                    _DebugLevel,
+                    "backup_rebuilder._start_one_block finish all blocks blockIndex=%d"
+                    % self.blockIndex,
+                )
             reactor.callLater(0, self._finish_rebuilding)  # @UndefinedVariable
             return
         BlockNumber = self.workingBlocksQueue[self.blockIndex]
         if _Debug:
-            lg.out(_DebugLevel, 'backup_rebuilder._start_one_block %d to rebuild, blockIndex=%d, other blocks: %s' % (
-                BlockNumber, self.blockIndex, str(self.workingBlocksQueue), ))
+            lg.out(
+                _DebugLevel,
+                "backup_rebuilder._start_one_block %d to rebuild, blockIndex=%d, other blocks: %s"
+                % (
+                    BlockNumber,
+                    self.blockIndex,
+                    str(self.workingBlocksQueue),
+                ),
+            )
         task_params = (
             self.currentBackupID,
             BlockNumber,
@@ -628,16 +762,30 @@ class BackupRebuilder(automat.Automat):
             backup_matrix.GetLocalMatrix(self.currentBackupID, BlockNumber),
             settings.getLocalBackupsDir(),
         )
-        raid_worker.add_task('rebuild', task_params, lambda cmd, params, result: self._block_finished(result, params))
+        raid_worker.add_task(
+            "rebuild",
+            task_params,
+            lambda cmd, params, result: self._block_finished(result, params),
+        )
 
     def _block_finished(self, result, params):
         if not result:
             if _Debug:
-                lg.out(_DebugLevel, 'backup_rebuilder._block_finished FAILED, blockIndex=%d' % self.blockIndex)
+                lg.out(
+                    _DebugLevel,
+                    "backup_rebuilder._block_finished FAILED, blockIndex=%d"
+                    % self.blockIndex,
+                )
             reactor.callLater(0, self._finish_rebuilding)  # @UndefinedVariable
             return
         try:
-            newData, localData, localParity, reconstructedData, reconstructedParity = result
+            (
+                newData,
+                localData,
+                localParity,
+                reconstructedData,
+                reconstructedParity,
+            ) = result
             _backupID = params[0]
             _blockNumber = params[1]
         except:
@@ -645,17 +793,26 @@ class BackupRebuilder(automat.Automat):
             reactor.callLater(0, self._finish_rebuilding)  # @UndefinedVariable
             return
         if _Debug:
-            lg.out(_DebugLevel, 'backup_rebuilder._block_finished   backupID=%r  blockNumber=%r  newData=%r' % (
-                _backupID, _blockNumber, newData))
+            lg.out(
+                _DebugLevel,
+                "backup_rebuilder._block_finished   backupID=%r  blockNumber=%r  newData=%r"
+                % (_backupID, _blockNumber, newData),
+            )
         if _Debug:
-            lg.out(_DebugLevel, '        localData=%r  localParity=%r' % (localData, localParity))
+            lg.out(
+                _DebugLevel,
+                "        localData=%r  localParity=%r" % (localData, localParity),
+            )
         err = False
         if newData:
             from storage import backup_matrix
             from stream import data_sender
+
             count = 0
             customer_idurl = packetid.CustomerIDURL(_backupID)
-            for supplierNum in range(contactsdb.num_suppliers(customer_idurl=customer_idurl)):
+            for supplierNum in range(
+                contactsdb.num_suppliers(customer_idurl=customer_idurl)
+            ):
                 try:
                     localData[supplierNum]
                     localParity[supplierNum]
@@ -663,28 +820,41 @@ class BackupRebuilder(automat.Automat):
                     reconstructedParity[supplierNum]
                 except:
                     err = True
-                    lg.err('invalid result from the task: %s' % repr(params))
+                    lg.err("invalid result from the task: %s" % repr(params))
                     if _Debug:
-                        lg.out(_DebugLevel, 'result is %s' % repr(result))
+                        lg.out(_DebugLevel, "result is %s" % repr(result))
                     break
                 if localData[supplierNum] == 1 and reconstructedData[supplierNum] == 1:
-                    backup_matrix.LocalFileReport(None, _backupID, _blockNumber, supplierNum, 'Data')
+                    backup_matrix.LocalFileReport(
+                        None, _backupID, _blockNumber, supplierNum, "Data"
+                    )
                     count += 1
-                if localParity[supplierNum] == 1 and reconstructedParity[supplierNum] == 1:
-                    backup_matrix.LocalFileReport(None, _backupID, _blockNumber, supplierNum, 'Parity')
+                if (
+                    localParity[supplierNum] == 1
+                    and reconstructedParity[supplierNum] == 1
+                ):
+                    backup_matrix.LocalFileReport(
+                        None, _backupID, _blockNumber, supplierNum, "Parity"
+                    )
                     count += 1
             if err:
-                lg.err('seems suppliers were changed, stop rebuilding')
+                lg.err("seems suppliers were changed, stop rebuilding")
                 reactor.callLater(0, self._finish_rebuilding)  # @UndefinedVariable
                 return
             self.blocksSucceed.append(_blockNumber)
-            data_sender.A('new-data')
+            data_sender.A("new-data")
             if _Debug:
-                lg.out(_DebugLevel, '        !!!!!! %d NEW DATA segments reconstructed, blockIndex=%d' % (
-                    count, self.blockIndex, ))
+                lg.out(
+                    _DebugLevel,
+                    "        !!!!!! %d NEW DATA segments reconstructed, blockIndex=%d"
+                    % (
+                        count,
+                        self.blockIndex,
+                    ),
+                )
         else:
             if _Debug:
-                lg.out(_DebugLevel, '        NO CHANGES, blockIndex=%d' % self.blockIndex)
+                lg.out(_DebugLevel, "        NO CHANGES, blockIndex=%d" % self.blockIndex)
         self.blockIndex -= 1
         reactor.callLater(0, self._start_one_block)  # @UndefinedVariable
 
@@ -693,17 +863,21 @@ class BackupRebuilder(automat.Automat):
             if blockNum in self.workingBlocksQueue:
                 self.workingBlocksQueue.remove(blockNum)
             else:
-                lg.warn('block %d not present in workingBlocksQueue')
+                lg.warn("block %d not present in workingBlocksQueue")
         if _Debug:
-            lg.out(_DebugLevel, 'backup_rebuilder._finish_rebuilding succeed:%s working:%s' % (
-                str(self.blocksSucceed), str(self.workingBlocksQueue)))
+            lg.out(
+                _DebugLevel,
+                "backup_rebuilder._finish_rebuilding succeed:%s working:%s"
+                % (str(self.blocksSucceed), str(self.workingBlocksQueue)),
+            )
         if len(self.blocksSucceed):
             self.backupsWasRebuilt.append(self.currentBackupID)
         self.blocksSucceed = []
-        self.automat('rebuilding-finished')
+        self.automat("rebuilding-finished")
 
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
 
 def AddBackupsToWork(backupIDs):
     """
@@ -714,7 +888,11 @@ def AddBackupsToWork(backupIDs):
     global _BackupIDsQueue
     _BackupIDsQueue.extend(backupIDs)
     if _Debug:
-        lg.out(_DebugLevel, 'backup_rebuilder.AddBackupsToWork %s added, queue length: %d' % (backupIDs, len(_BackupIDsQueue)))
+        lg.out(
+            _DebugLevel,
+            "backup_rebuilder.AddBackupsToWork %s added, queue length: %d"
+            % (backupIDs, len(_BackupIDsQueue)),
+        )
 
 
 def RemoveBackupToWork(backupID):
@@ -725,11 +903,17 @@ def RemoveBackupToWork(backupID):
     if backupID in _BackupIDsQueue:
         _BackupIDsQueue.remove(backupID)
         if _Debug:
-            lg.out(_DebugLevel, 'backup_rebuilder.RemoveBackupToWork %s removed, queue length: %d' % (
-                backupID, len(_BackupIDsQueue)))
+            lg.out(
+                _DebugLevel,
+                "backup_rebuilder.RemoveBackupToWork %s removed, queue length: %d"
+                % (backupID, len(_BackupIDsQueue)),
+            )
     else:
         if _Debug:
-            lg.out(_DebugLevel, 'backup_rebuilder.RemoveBackupToWork %s not in the queue' % backupID)
+            lg.out(
+                _DebugLevel,
+                "backup_rebuilder.RemoveBackupToWork %s not in the queue" % backupID,
+            )
 
 
 def BlockBackup(backupID):
@@ -737,7 +921,7 @@ def BlockBackup(backupID):
     _BackupIDsExclude.add(backupID)
     if A():
         if A().currentBackupID == backupID:
-            lg.info('going to stop currently running rebuilding %r' % backupID)
+            lg.info("going to stop currently running rebuilding %r" % backupID)
             SetStoppedFlag()
 
 
@@ -759,7 +943,9 @@ def RemoveAllBackupsToWork():
     current_queue_length = len(_BackupIDsQueue)
     _BackupIDsQueue = []
     if _Debug:
-        lg.out(_DebugLevel, 'RemoveAllBackupsToWork %d items cleaned' % current_queue_length)
+        lg.out(
+            _DebugLevel, "RemoveAllBackupsToWork %d items cleaned" % current_queue_length
+        )
 
 
 def SetStoppedFlag():
@@ -769,7 +955,7 @@ def SetStoppedFlag():
     """
     global _StoppedFlag
     _StoppedFlag = True
-    A('instant')
+    A("instant")
 
 
 def ClearStoppedFlag():

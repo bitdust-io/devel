@@ -1,5 +1,4 @@
-six
+aiohttp
 pytest
 requests
-aiohttp
-
+six

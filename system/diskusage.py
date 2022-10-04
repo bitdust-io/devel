@@ -33,27 +33,25 @@ Need to be sure user have enough free space on the disk and able to
 donate previously specified amount of space.
 """
 
-from __future__ import absolute_import
-from __future__ import print_function
+from __future__ import absolute_import, print_function
+
+import glob
 import os
 import time
-import glob
-
-#------------------------------------------------------------------------------
 
 from lib import diskspace
-
 from main import settings
-
 from system import bpio
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
+
+# ------------------------------------------------------------------------------
 
 if bpio.Windows():
-    import win32api  # @UnresolvedImport
     import win32file  # @UnresolvedImport
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 def GetWinDriveSpace(drive):
@@ -64,14 +62,21 @@ def GetWinDriveSpace(drive):
     (None, None). Call system method ``win32file.GetDiskFreeSpace``.
     """
     try:
-        sectorsPerCluster, bytesPerSector, numFreeClusters, totalNumClusters = win32file.GetDiskFreeSpace(drive + ":\\")
+        (
+            sectorsPerCluster,
+            bytesPerSector,
+            numFreeClusters,
+            totalNumClusters,
+        ) = win32file.GetDiskFreeSpace(drive + ":\\")
         sectorsPerCluster = int(sectorsPerCluster)
         bytesPerSector = int(bytesPerSector)
         numFreeClusters = int(numFreeClusters)
         totalNumClusters = int(totalNumClusters)
     except:
         return None, None
-    return float(numFreeClusters * sectorsPerCluster * bytesPerSector), float(totalNumClusters * sectorsPerCluster * bytesPerSector)
+    return float(numFreeClusters * sectorsPerCluster * bytesPerSector), float(
+        totalNumClusters * sectorsPerCluster * bytesPerSector
+    )
 
 
 def GetLinuxDriveSpace(path):
@@ -90,6 +95,8 @@ def GetLinuxDriveSpace(path):
         return free, total
     except:
         return None, None
+
+
 #    if free > total:
 #        return total, free
 #    else:
@@ -102,7 +109,7 @@ def GetDriveSpace(path):
     """
     if bpio.Windows():
         drive = os.path.abspath(path)[0]
-        if os.path.isdir(drive + ':'):
+        if os.path.isdir(drive + ":"):
             # the drive the data directory is on, ie C
             return GetWinDriveSpace(drive)
         else:
@@ -126,7 +133,12 @@ def SumFileSizes(fileList):
     return fileSizeTotal
 
 
-def GetOurTempFileSizeTotal(tempDirectory, masks=['*', ]):
+def GetOurTempFileSizeTotal(
+    tempDirectory,
+    masks=[
+        "*",
+    ],
+):
     """
     Not used right now.
 
@@ -166,7 +178,8 @@ def GetDirectorySize(directoryPath):
     """
     return bpio.getDirectorySize(directoryPath) / (1024 * 1024)
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def main():
@@ -187,11 +200,25 @@ def main():
 
     print("data dir =", dataDir)
     print("tep dir =", tempDir)
-    print("data dir: " + str(dataDriveFreeSpace / (1024 * 1024)) + "MB free/" + str(dataDriveTotalSpace / (1024 * 1024)) + "MB total")
-    print("temp dir: " + str(tempDriveFreeSpace / (1024 * 1024)) + "MB free/" + str(tempDriveTotalSpace / (1024 * 1024)) + "MB total")
+    print(
+        "data dir: "
+        + str(dataDriveFreeSpace / (1024 * 1024))
+        + "MB free/"
+        + str(dataDriveTotalSpace / (1024 * 1024))
+        + "MB total"
+    )
+    print(
+        "temp dir: "
+        + str(tempDriveFreeSpace / (1024 * 1024))
+        + "MB free/"
+        + str(tempDriveTotalSpace / (1024 * 1024))
+        + "MB total"
+    )
 
     print(time.time())
-    print("our temp files: " + str(GetOurTempFileSizeTotal(tempDir) / (1024 * 1024)) + "MB")
+    print(
+        "our temp files: " + str(GetOurTempFileSizeTotal(tempDir) / (1024 * 1024)) + "MB"
+    )
     print(time.time())
 
     GetDirectorySize(dataDir)
@@ -206,5 +233,5 @@ def main():
     print(OkToShareSpace(12345678))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

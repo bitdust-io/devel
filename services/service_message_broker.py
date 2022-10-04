@@ -31,6 +31,7 @@ module:: service_message_broker
 """
 
 from __future__ import absolute_import
+
 from services.local_service import LocalService
 
 
@@ -40,40 +41,46 @@ def create_service():
 
 class MessageBrokerService(LocalService):
 
-    service_name = 'service_message_broker'
-    config_path = 'services/message-broker/enabled'
+    service_name = "service_message_broker"
+    config_path = "services/message-broker/enabled"
     data_dir_required = True
 
     last_time_keys_synchronized = None
 
     def dependent_on(self):
         return [
-            'service_private_messages',
-            'service_data_disintegration',
+            "service_private_messages",
+            "service_data_disintegration",
         ]
 
     def attached_dht_layers(self):
         from dht import dht_records
-        return [dht_records.LAYER_MESSAGE_BROKERS, ]
+
+        return [
+            dht_records.LAYER_MESSAGE_BROKERS,
+        ]
 
     def start(self):
         from main import events
         from stream import message_peddler
-        message_peddler.A('start')
+
+        message_peddler.A("start")
         self._do_connect_message_brokers_dht_layer()
-        events.add_subscriber(self._on_dht_layer_connected, 'dht-layer-connected')
-        events.add_subscriber(self._on_my_identity_url_changed, 'my-identity-url-changed')
+        events.add_subscriber(self._on_dht_layer_connected, "dht-layer-connected")
+        events.add_subscriber(self._on_my_identity_url_changed, "my-identity-url-changed")
         return True
 
     def stop(self):
-        from dht import dht_service
-        from dht import dht_records
+        from dht import dht_records, dht_service
         from main import events
         from stream import message_peddler
-        events.remove_subscriber(self._on_my_identity_url_changed, 'my-identity-url-changed')
-        events.remove_subscriber(self._on_dht_layer_connected, 'dht-layer-connected')
+
+        events.remove_subscriber(
+            self._on_my_identity_url_changed, "my-identity-url-changed"
+        )
+        events.remove_subscriber(self._on_dht_layer_connected, "dht-layer-connected")
         dht_service.suspend(layer_id=dht_records.LAYER_MESSAGE_BROKERS)
-        message_peddler.A('stop')
+        message_peddler.A("stop")
         return True
 
     def health_check(self):
@@ -81,33 +88,37 @@ class MessageBrokerService(LocalService):
 
     def request(self, json_payload, newpacket, info):
         from twisted.internet.defer import Deferred
+
         from logs import lg
         from p2p import p2p_service
         from stream import message_peddler
         from userid import id_url
+
         result = Deferred()
         try:
-            action = json_payload['action']
+            action = json_payload["action"]
         except:
             lg.exc()
-            return p2p_service.SendFail(newpacket, 'invalid payload')
+            return p2p_service.SendFail(newpacket, "invalid payload")
         # TODO: validate signature and the key
-        if action == 'queue-connect' or action == 'queue-connect-follow':
+        if action == "queue-connect" or action == "queue-connect-follow":
             try:
-                queue_id = json_payload.get('queue_id')
-                consumer_id = json_payload.get('consumer_id')
-                producer_id = json_payload.get('producer_id')
-                group_key = json_payload.get('group_key')
-                position = int(json_payload.get('position', -1))
-                archive_folder_path = json_payload.get('archive_folder_path', None)
-                last_sequence_id = json_payload.get('last_sequence_id', -1)
-                known_brokers = json_payload.get('known_brokers', {}) or {}
-                known_brokers = {int(k): id_url.field(v) for k,v in known_brokers.items()}
+                queue_id = json_payload.get("queue_id")
+                consumer_id = json_payload.get("consumer_id")
+                producer_id = json_payload.get("producer_id")
+                group_key = json_payload.get("group_key")
+                position = int(json_payload.get("position", -1))
+                archive_folder_path = json_payload.get("archive_folder_path", None)
+                last_sequence_id = json_payload.get("last_sequence_id", -1)
+                known_brokers = json_payload.get("known_brokers", {}) or {}
+                known_brokers = {
+                    int(k): id_url.field(v) for k, v in known_brokers.items()
+                }
             except:
                 lg.warn("wrong payload: %r" % json_payload)
-                return p2p_service.SendFail(newpacket, 'wrong payload')
+                return p2p_service.SendFail(newpacket, "wrong payload")
             message_peddler.A(
-                event='connect' if action == 'queue-connect' else 'follow',
+                event="connect" if action == "queue-connect" else "follow",
                 queue_id=queue_id,
                 consumer_id=consumer_id,
                 producer_id=producer_id,
@@ -119,18 +130,21 @@ class MessageBrokerService(LocalService):
                 request_packet=newpacket,
                 result_defer=result,
             )
-        elif action == 'broker-verify':
+        elif action == "broker-verify":
             try:
-                customer_id = json_payload['customer_id']
-                broker_id = json_payload['broker_id']
-                position = json_payload['position']
-                known_streams = json_payload['streams']
-                known_brokers = {int(k): id_url.field(v) for k,v in json_payload['known_brokers'].items()}
+                customer_id = json_payload["customer_id"]
+                broker_id = json_payload["broker_id"]
+                position = json_payload["position"]
+                known_streams = json_payload["streams"]
+                known_brokers = {
+                    int(k): id_url.field(v)
+                    for k, v in json_payload["known_brokers"].items()
+                }
             except:
                 lg.warn("wrong payload: %r" % json_payload)
-                return p2p_service.SendFail(newpacket, 'wrong payload')
+                return p2p_service.SendFail(newpacket, "wrong payload")
             message_peddler.A(
-                event='broker-reconnect',
+                event="broker-reconnect",
                 customer_id=customer_id,
                 broker_id=broker_id,
                 position=position,
@@ -141,28 +155,30 @@ class MessageBrokerService(LocalService):
             )
         else:
             lg.warn("wrong action request" % newpacket.Payload)
-            return p2p_service.SendFail(newpacket, 'wrong action request')
+            return p2p_service.SendFail(newpacket, "wrong action request")
         return result
 
     def cancel(self, json_payload, newpacket, info):
         from twisted.internet.defer import Deferred
+
         from logs import lg
         from p2p import p2p_service
         from stream import message_peddler
+
         try:
-            action = json_payload['action']
-            queue_id = json_payload.get('queue_id', None)
-            consumer_id = json_payload['consumer_id']
-            producer_id = json_payload['producer_id']
-            group_key = json_payload['group_key']
+            action = json_payload["action"]
+            queue_id = json_payload.get("queue_id", None)
+            consumer_id = json_payload["consumer_id"]
+            producer_id = json_payload["producer_id"]
+            group_key = json_payload["group_key"]
         except:
             lg.warn("wrong payload: %r" % json_payload)
-            return p2p_service.SendFail(newpacket, 'wrong payload')
+            return p2p_service.SendFail(newpacket, "wrong payload")
         # TODO: validate signature and the key
         result = Deferred()
-        if action == 'queue-disconnect':
+        if action == "queue-disconnect":
             message_peddler.A(
-                event='disconnect',
+                event="disconnect",
                 queue_id=queue_id,
                 consumer_id=consumer_id,
                 producer_id=producer_id,
@@ -172,14 +188,13 @@ class MessageBrokerService(LocalService):
             )
         else:
             lg.warn("wrong action request" % newpacket.Payload)
-            return p2p_service.SendFail(newpacket, 'wrong action request')
+            return p2p_service.SendFail(newpacket, "wrong action request")
         return result
 
     def _do_connect_message_brokers_dht_layer(self):
+        from dht import dht_records, dht_service, known_nodes
         from logs import lg
-        from dht import dht_service
-        from dht import dht_records
-        from dht import known_nodes
+
         known_seeds = known_nodes.nodes()
         d = dht_service.open_layer(
             layer_id=dht_records.LAYER_MESSAGE_BROKERS,
@@ -191,24 +206,30 @@ class MessageBrokerService(LocalService):
         d.addErrback(lambda *args: lg.err(str(args)))
 
     def _on_message_brokers_dht_layer_connected(self, ok):
+        from dht import dht_records, dht_service
         from logs import lg
-        from dht import dht_service
-        from dht import dht_records
         from userid import my_id
-        lg.info('connected to DHT layer for message brokers: %r' % ok)
+
+        lg.info("connected to DHT layer for message brokers: %r" % ok)
         if my_id.getIDURL():
-            dht_service.set_node_data('idurl', my_id.getIDURL().to_text(), layer_id=dht_records.LAYER_MESSAGE_BROKERS)
+            dht_service.set_node_data(
+                "idurl",
+                my_id.getIDURL().to_text(),
+                layer_id=dht_records.LAYER_MESSAGE_BROKERS,
+            )
         return ok
 
     def _on_dht_layer_connected(self, evt):
         from dht import dht_records
-        if evt.data['layer_id'] == 0:
+
+        if evt.data["layer_id"] == 0:
             self._do_connect_message_brokers_dht_layer()
-        elif evt.data['layer_id'] == dht_records.LAYER_MESSAGE_BROKERS:
+        elif evt.data["layer_id"] == dht_records.LAYER_MESSAGE_BROKERS:
             self._on_message_brokers_dht_layer_connected(True)
 
     def _on_my_identity_url_changed(self, evt):
         from stream import message_peddler
-        message_peddler.A('stop')
+
+        message_peddler.A("stop")
         message_peddler.close_all_streams()
         message_peddler.check_rotate_queues()

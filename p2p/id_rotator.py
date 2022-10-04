@@ -51,49 +51,48 @@ EVENTS:
     * :red:`run`
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 10
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
-if __name__ == '__main__':
-    import sys as _s, os.path as _p
-    _s.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(_s.argv[0])), '..')))
+if __name__ == "__main__":
+    import os.path as _p
+    import sys as _s
 
-#------------------------------------------------------------------------------
+    _s.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(_s.argv[0])), "..")))
+
+# ------------------------------------------------------------------------------
 
 import random
 
-from twisted.internet.defer import Deferred, DeferredList, CancelledError  # @UnresolvedImport
-
-#------------------------------------------------------------------------------
-
-from logs import lg
+from twisted.internet.defer import (  # @UnresolvedImport
+    CancelledError,
+    Deferred,
+    DeferredList,
+)
 
 from automats import automat
+from lib import nameurl, net_misc, strng
+from logs import lg
+from main import config, settings
+from userid import identity, known_servers, my_id
 
-from lib import net_misc
-from lib import nameurl
-from lib import strng
+# ------------------------------------------------------------------------------
 
-from main import config
-from main import settings
 
-from userid import identity
-from userid import known_servers
-from userid import my_id
-
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _IdRotator = None
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
 
 def check():
     """
@@ -101,7 +100,7 @@ def check():
     """
     result_defer = Deferred()
     ir = IdRotator()
-    ir.automat('check', result_defer=result_defer)
+    ir.automat("check", result_defer=result_defer)
     return result_defer
 
 
@@ -115,17 +114,28 @@ def run(preferred_servers={}, force=False):
     """
     result_defer = Deferred()
     ir = IdRotator()
-    ir.automat('run', result_defer=result_defer, preferred_servers=preferred_servers, force=force)
+    ir.automat(
+        "run", result_defer=result_defer, preferred_servers=preferred_servers, force=force
+    )
     return result_defer
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 class IdRotator(automat.Automat):
     """
     This class implements all the functionality of ``id_rotator()`` state machine.
     """
 
-    def __init__(self, debug_level=_DebugLevel, log_events=_Debug, log_transitions=_Debug, publish_events=True, **kwargs):
+    def __init__(
+        self,
+        debug_level=_DebugLevel,
+        log_events=_Debug,
+        log_transitions=_Debug,
+        publish_events=True,
+        **kwargs
+    ):
         """
         Builds `id_rotator()` state machine.
         """
@@ -149,66 +159,74 @@ class IdRotator(automat.Automat):
         """
         The state machine code, generated using `visio2python <http://bitdust.io/visio2python/>`_ tool.
         """
-        #---AT_STARTUP---
-        if self.state == 'AT_STARTUP':
-            if event == 'run' or event == 'check':
-                self.state = 'ID_SERVERS?'
+        # ---AT_STARTUP---
+        if self.state == "AT_STARTUP":
+            if event == "run" or event == "check":
+                self.state = "ID_SERVERS?"
                 self.doInit(event, *args, **kwargs)
                 self.doPingMyIDServers(*args, **kwargs)
-        #---ID_SERVERS?---
-        elif self.state == 'ID_SERVERS?':
-            if event == 'ping-failed':
-                self.state = 'FAILED'
+        # ---ID_SERVERS?---
+        elif self.state == "ID_SERVERS?":
+            if event == "ping-failed":
+                self.state = "FAILED"
                 self.doReportFailed(event, *args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'ping-done' and ( self.isChecking(*args, **kwargs) or self.isHealthy(*args, **kwargs) ):
-                self.state = 'DONE'
+            elif event == "ping-done" and (
+                self.isChecking(*args, **kwargs) or self.isHealthy(*args, **kwargs)
+            ):
+                self.state = "DONE"
                 self.doReportDone(event, *args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'ping-done' and not self.isChecking(*args, **kwargs) and not self.isHealthy(*args, **kwargs):
-                self.state = 'NEW_SOURCE!'
+            elif (
+                event == "ping-done"
+                and not self.isChecking(*args, **kwargs)
+                and not self.isHealthy(*args, **kwargs)
+            ):
+                self.state = "NEW_SOURCE!"
                 self.doSelectNewIDServer(*args, **kwargs)
-        #---NEW_SOURCE!---
-        elif self.state == 'NEW_SOURCE!':
-            if event == 'found-new-id-source':
-                self.state = 'MY_ID_ROTATE'
+        # ---NEW_SOURCE!---
+        elif self.state == "NEW_SOURCE!":
+            if event == "found-new-id-source":
+                self.state = "MY_ID_ROTATE"
                 self.doRebuildMyIdentity(*args, **kwargs)
-            elif event == 'no-id-servers-found' or event == 'auto-rotate-disabled':
-                self.state = 'FAILED'
+            elif event == "no-id-servers-found" or event == "auto-rotate-disabled":
+                self.state = "FAILED"
                 self.doReportFailed(event, *args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-        #---MY_ID_ROTATE---
-        elif self.state == 'MY_ID_ROTATE':
-            if event == 'my-id-updated':
-                self.state = 'SEND_ID'
+        # ---MY_ID_ROTATE---
+        elif self.state == "MY_ID_ROTATE":
+            if event == "my-id-updated":
+                self.state = "SEND_ID"
                 self.doSendMyIdentity(*args, **kwargs)
-            elif event == 'need-more-sources':
-                self.state = 'NEW_SOURCE!'
+            elif event == "need-more-sources":
+                self.state = "NEW_SOURCE!"
                 self.doSelectNewIDServer(*args, **kwargs)
-        #---SEND_ID---
-        elif self.state == 'SEND_ID':
-            if event == 'my-id-sent':
-                self.state = 'REQUEST_ID'
+        # ---SEND_ID---
+        elif self.state == "SEND_ID":
+            if event == "my-id-sent":
+                self.state = "REQUEST_ID"
                 self.doRequestMyIdentity(*args, **kwargs)
-            elif event == 'my-id-failed':
-                self.state = 'FAILED'
+            elif event == "my-id-failed":
+                self.state = "FAILED"
                 self.doReportFailed(event, *args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-        #---REQUEST_ID---
-        elif self.state == 'REQUEST_ID':
-            if event == 'my-id-exist' and self.isMyIdentityValid(*args, **kwargs):
-                self.state = 'DONE'
+        # ---REQUEST_ID---
+        elif self.state == "REQUEST_ID":
+            if event == "my-id-exist" and self.isMyIdentityValid(*args, **kwargs):
+                self.state = "DONE"
                 self.doReportDone(event, *args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'id-server-failed' or ( event == 'my-id-exist' and not self.isMyIdentityValid(*args, **kwargs) ):
-                self.state = 'FAILED'
+            elif event == "id-server-failed" or (
+                event == "my-id-exist" and not self.isMyIdentityValid(*args, **kwargs)
+            ):
+                self.state = "FAILED"
                 self.doReportFailed(event, *args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-        #---DONE---
-        elif self.state == 'DONE':
+        # ---DONE---
+        elif self.state == "DONE":
             pass
-        #---FAILED---
-        elif self.state == 'FAILED':
+        # ---FAILED---
+        elif self.state == "FAILED":
             pass
         return None
 
@@ -238,39 +256,51 @@ class IdRotator(automat.Automat):
         """
         Action method.
         """
-        self.result_defer = kwargs.get('result_defer')
+        self.result_defer = kwargs.get("result_defer")
         self.check_only = False
-        if event == 'check':
+        if event == "check":
             self.check_only = True
         self.alive_idurls = []
         self.old_sources = my_id.getLocalIdentity().getSources(as_originals=True)
         self.known_servers = known_servers.by_host()
-        self.preferred_servers = kwargs.get('preferred_servers', {})
+        self.preferred_servers = kwargs.get("preferred_servers", {})
         self.possible_sources = []
         if _Debug:
             lg.args(_DebugLevel, preferred_servers=self.preferred_servers)
-        self.force = kwargs.get('force', False)
-        self.new_revision = kwargs.get('new_revision')
+        self.force = kwargs.get("force", False)
+        self.new_revision = kwargs.get("new_revision")
         self.rotated = False
         if not self.preferred_servers:
             try:
-                for srv in strng.to_text(config.conf().getData('services/identity-propagate/known-servers')).split(','):
+                for srv in strng.to_text(
+                    config.conf().getData("services/identity-propagate/known-servers")
+                ).split(","):
                     if srv.strip():
-                        parts = srv.strip().split(':')
+                        parts = srv.strip().split(":")
                         if len(parts) == 2:
                             host, web_port = parts
                             tcp_port = settings.IdentityServerPort()
                         else:
                             host, web_port, tcp_port = parts
-                        self.preferred_servers[host] = (int(web_port), int(tcp_port), )
+                        self.preferred_servers[host] = (
+                            int(web_port),
+                            int(tcp_port),
+                        )
             except:
                 lg.exc()
-        self.preferred_servers = {strng.to_bin(k): v for k,v in self.preferred_servers.items()}
+        self.preferred_servers = {
+            strng.to_bin(k): v for k, v in self.preferred_servers.items()
+        }
         self.current_servers = []
         for idurl in my_id.getLocalIdentity().getSources(as_originals=True):
             self.current_servers.append(strng.to_bin(nameurl.GetHost(idurl)))
         if _Debug:
-            lg.args(_DebugLevel, known_servers=self.known_servers, preferred_servers=self.preferred_servers, current_servers=self.current_servers)
+            lg.args(
+                _DebugLevel,
+                known_servers=self.known_servers,
+                preferred_servers=self.preferred_servers,
+                current_servers=self.current_servers,
+            )
 
     def doPingMyIDServers(self, *args, **kwargs):
         """
@@ -282,8 +312,10 @@ class IdRotator(automat.Automat):
         """
         Action method.
         """
-        if not self.force and not config.conf().getBool('services/identity-propagate/automatic-rotate-enabled'):
-            self.automat('auto-rotate-disabled')
+        if not self.force and not config.conf().getBool(
+            "services/identity-propagate/automatic-rotate-enabled"
+        ):
+            self.automat("auto-rotate-disabled")
             return
 
         target_servers = self.preferred_servers
@@ -295,68 +327,95 @@ class IdRotator(automat.Automat):
                 target_servers.pop(current_server)
 
         if not target_servers:
-            self.automat('no-id-servers-found')
+            self.automat("no-id-servers-found")
             return
 
-        target_servers = {strng.to_bin(k): v for k,v in target_servers.items()}
+        target_servers = {strng.to_bin(k): v for k, v in target_servers.items()}
         target_hosts = list(target_servers.keys())
         random.shuffle(target_hosts)
         if _Debug:
-            lg.args(_DebugLevel, target_hosts=target_hosts, current_servers=self.current_servers, target_servers=target_servers)
+            lg.args(
+                _DebugLevel,
+                target_hosts=target_hosts,
+                current_servers=self.current_servers,
+                target_servers=target_servers,
+            )
 
         def _new_idurl_exist(idsrc, new_idurl, pos):
             if _Debug:
-                lg.out(_DebugLevel, 'id_rotator.doSelectNewIDServer._new_idurl_exist %r already with same name' % new_idurl)
+                lg.out(
+                    _DebugLevel,
+                    "id_rotator.doSelectNewIDServer._new_idurl_exist %r already with same name"
+                    % new_idurl,
+                )
             latest_revision = my_id.getLocalIdentity().getRevisionValue()
             try:
                 existing_identity_with_same_name = identity.identity(xmlsrc=idsrc)
                 if not existing_identity_with_same_name.isCorrect():
-                    raise Exception('remote identity not correct at position %r' % pos)
+                    raise Exception("remote identity not correct at position %r" % pos)
                 if not existing_identity_with_same_name.Valid():
-                    raise Exception('remote identity not valid at position %r' % pos)
+                    raise Exception("remote identity not valid at position %r" % pos)
             except:
                 lg.exc()
                 if pos + 1 >= len(target_hosts):
-                    self.automat('no-id-servers-found')
+                    self.automat("no-id-servers-found")
                 else:
                     _ping_one_server(pos + 1)
                 return
-            if existing_identity_with_same_name.getPublicKey() == my_id.getLocalIdentity().getPublicKey():
+            if (
+                existing_identity_with_same_name.getPublicKey()
+                == my_id.getLocalIdentity().getPublicKey()
+            ):
                 if latest_revision <= existing_identity_with_same_name.getRevisionValue():
-                    self.new_revision = max(self.new_revision or -1, existing_identity_with_same_name.getRevisionValue() + 1)
-                lg.info('found my own identity on "old" ID server and will re-use that source again: %r' % new_idurl)
+                    self.new_revision = max(
+                        self.new_revision or -1,
+                        existing_identity_with_same_name.getRevisionValue() + 1,
+                    )
+                lg.info(
+                    'found my own identity on "old" ID server and will re-use that source again: %r'
+                    % new_idurl
+                )
                 if new_idurl not in self.possible_sources:
                     self.possible_sources.append(new_idurl)
-                self.automat('found-new-id-source', new_idurl)
+                self.automat("found-new-id-source", new_idurl)
                 return
 
             if pos + 1 >= len(target_hosts):
-                self.automat('no-id-servers-found')
+                self.automat("no-id-servers-found")
             else:
                 _ping_one_server(pos + 1)
 
         def _new_idurl_not_exist(err, new_idurl):
-            lg.info('found new identity source available to use: %r' % new_idurl)
+            lg.info("found new identity source available to use: %r" % new_idurl)
             if new_idurl not in self.possible_sources:
                 self.possible_sources.append(new_idurl)
-            self.automat('found-new-id-source', new_idurl)
+            self.automat("found-new-id-source", new_idurl)
 
         def _server_replied(htmlsrc, host, pos):
             if _Debug:
-                lg.out(_DebugLevel, 'id_rotator.doSelectNewIDServer._server_replied %r' % host)
+                lg.out(
+                    _DebugLevel,
+                    "id_rotator.doSelectNewIDServer._server_replied %r" % host,
+                )
             webport, _ = target_servers[host]
             if webport == 80:
-                webport = ''
-            new_idurl = nameurl.UrlMake('http', strng.to_text(host), webport, my_id.getIDName() + '.xml')
+                webport = ""
+            new_idurl = nameurl.UrlMake(
+                "http", strng.to_text(host), webport, my_id.getIDName() + ".xml"
+            )
             d = net_misc.getPageTwisted(new_idurl, timeout=10)
             d.addCallback(_new_idurl_exist, new_idurl, pos)
             d.addErrback(_new_idurl_not_exist, new_idurl)
 
         def _server_failed(err, host, pos):
             if _Debug:
-                lg.out(_DebugLevel, 'id_rotator.doSelectNewIDServer._server_failed %r with %r' % (host, err))
+                lg.out(
+                    _DebugLevel,
+                    "id_rotator.doSelectNewIDServer._server_failed %r with %r"
+                    % (host, err),
+                )
             if pos + 1 >= len(target_hosts):
-                self.automat('no-id-servers-found')
+                self.automat("no-id-servers-found")
             else:
                 _ping_one_server(pos + 1)
 
@@ -364,12 +423,18 @@ class IdRotator(automat.Automat):
             host = target_hosts[pos]
             webport, tcpport = target_servers[host]
             if webport == 80:
-                webport = ''
+                webport = ""
             tcpport = int(tcpport)
-            server_url = nameurl.UrlMake('http', strng.to_text(host), webport, '')
+            server_url = nameurl.UrlMake("http", strng.to_text(host), webport, "")
             if _Debug:
-                lg.out(_DebugLevel, 'id_rotator.doSelectNewIDServer._ping_one_server at %s known tcp port is %d' % (
-                    server_url, tcpport, ))
+                lg.out(
+                    _DebugLevel,
+                    "id_rotator.doSelectNewIDServer._ping_one_server at %s known tcp port is %d"
+                    % (
+                        server_url,
+                        tcpport,
+                    ),
+                )
             d = net_misc.getPageTwisted(server_url, timeout=10)
             d.addCallback(_server_replied, host, pos)
             d.addErrback(_server_failed, host, pos)
@@ -382,18 +447,25 @@ class IdRotator(automat.Automat):
         """
         min_servers = max(
             settings.MinimumIdentitySources(),
-            config.conf().getInt('services/identity-propagate/min-servers') or settings.MinimumIdentitySources(),
+            config.conf().getInt("services/identity-propagate/min-servers")
+            or settings.MinimumIdentitySources(),
         )
         max_servers = min(
             settings.MaximumIdentitySources(),
-            config.conf().getInt('services/identity-propagate/max-servers') or settings.MaximumIdentitySources(),
+            config.conf().getInt("services/identity-propagate/max-servers")
+            or settings.MaximumIdentitySources(),
         )
         current_sources = my_id.getLocalIdentity().getSources(as_originals=True)
         current_contacts = list(my_id.getLocalIdentity().getContacts())
         new_sources = []
         new_idurl = strng.to_bin(args[0])
         if _Debug:
-            lg.args(_DebugLevel, current_sources=current_sources, alive_idurls=self.alive_idurls, new_idurl=new_idurl, )
+            lg.args(
+                _DebugLevel,
+                current_sources=current_sources,
+                alive_idurls=self.alive_idurls,
+                new_idurl=new_idurl,
+            )
         # first get rid of "dead" sources
         for current_idurl in current_sources:
             if current_idurl not in self.alive_idurls:
@@ -408,24 +480,34 @@ class IdRotator(automat.Automat):
         if new_idurl and new_idurl not in new_sources:
             new_sources.append(new_idurl)
         if _Debug:
-            lg.args(_DebugLevel, new_sources=new_sources, min_servers=min_servers, max_servers=max_servers)
+            lg.args(
+                _DebugLevel,
+                new_sources=new_sources,
+                min_servers=min_servers,
+                max_servers=max_servers,
+            )
         if len(new_sources) > max_servers:
             all_new_sources = list(new_sources)
-            new_sources = new_sources[max(0, len(new_sources) - max_servers):]
-            lg.warn('skip %d identity sources, require maximum %d sources' % (
-                len(all_new_sources)-len(new_sources), max_servers, ))
+            new_sources = new_sources[max(0, len(new_sources) - max_servers) :]
+            lg.warn(
+                "skip %d identity sources, require maximum %d sources"
+                % (
+                    len(all_new_sources) - len(new_sources),
+                    max_servers,
+                )
+            )
         if len(new_sources) < min_servers:
-            additional_sources = self.possible_sources[:min_servers-len(new_sources)]
+            additional_sources = self.possible_sources[: min_servers - len(new_sources)]
             if additional_sources:
-                lg.warn('additional sources to be used: %r' % additional_sources)
+                lg.warn("additional sources to be used: %r" % additional_sources)
                 new_sources.extend(additional_sources)
         unique_sources = []
         for idurl_bin in new_sources:
             if strng.to_bin(idurl_bin) not in unique_sources:
                 unique_sources.append(strng.to_bin(idurl_bin))
         if len(unique_sources) < min_servers:
-            lg.warn('not enough identity sources, need to rotate again')
-            self.automat('need-more-sources')
+            lg.warn("not enough identity sources, need to rotate again")
+            self.automat("need-more-sources")
             return
         contacts_changed = False
         id_changed = my_id.rebuildLocalIdentity(
@@ -442,34 +524,39 @@ class IdRotator(automat.Automat):
                     break
         self.rotated = True
         if _Debug:
-            lg.args(_DebugLevel, new_sources=new_sources, contacts_changed=contacts_changed, id_changed=id_changed)
-        self.automat('my-id-updated', (contacts_changed, id_changed))
+            lg.args(
+                _DebugLevel,
+                new_sources=new_sources,
+                contacts_changed=contacts_changed,
+                id_changed=id_changed,
+            )
+        self.automat("my-id-updated", (contacts_changed, id_changed))
 
     def doSendMyIdentity(self, *args, **kwargs):
         """
         Action method.
         """
         d = self._do_send_my_identity()
-        d.addCallback(lambda results: self.automat('my-id-sent', results))
-        d.addErrback(lambda err: self.automat('my-id-failed', err))
+        d.addCallback(lambda results: self.automat("my-id-sent", results))
+        d.addErrback(lambda err: self.automat("my-id-failed", err))
 
     def doRequestMyIdentity(self, *args, **kwargs):
         """
         Action method.
         """
         if _Debug:
-            lg.out(_DebugLevel, 'id_rotator.doRequestMyIdentity')
+            lg.out(_DebugLevel, "id_rotator.doRequestMyIdentity")
 
         def _cb(results):
             if _Debug:
                 lg.args(_DebugLevel, results=results)
             # TODO: validate my identity in all responses
-            self.automat('my-id-exist', results)
+            self.automat("my-id-exist", results)
             return results
 
         def _eb(err):
             lg.err(err)
-            self.automat('my-id-not-exist', err)
+            self.automat("my-id-not-exist", err)
             if err.type == CancelledError:
                 return None
             return err
@@ -487,10 +574,15 @@ class IdRotator(automat.Automat):
         """
         if not self.result_defer:
             return
-        if event == 'ping-done':
+        if event == "ping-done":
             self.result_defer.callback((self._is_healthy(args[0]), False))
-        elif event == 'my-id-exist':
-            self.result_defer.callback((True, self.rotated, ))
+        elif event == "my-id-exist":
+            self.result_defer.callback(
+                (
+                    True,
+                    self.rotated,
+                )
+            )
             # if self.rotated:
             #     events.send('my-identity-rotate-complete', data=dict())
 
@@ -499,15 +591,19 @@ class IdRotator(automat.Automat):
         Action method.
         """
         result = args[0] if args else None
-        lg.warn('id_rotator finished with failed result %r : %r' % (event, result))
+        lg.warn("id_rotator finished with failed result %r : %r" % (event, result))
         if not self.result_defer:
             return
-        if event == 'auto-rotate-disabled':
-            self.result_defer.errback(Exception('identity not healthy, but automatic rotate disabled'))
+        if event == "auto-rotate-disabled":
+            self.result_defer.errback(
+                Exception("identity not healthy, but automatic rotate disabled")
+            )
             return
-        if event == 'no-id-servers-found':
-            lg.warn('no more available identity servers found')
-            self.result_defer.errback(Exception('no more available identity servers found'))
+        if event == "no-id-servers-found":
+            lg.warn("no more available identity servers found")
+            self.result_defer.errback(
+                Exception("no more available identity servers found")
+            )
             return
         lg.err(result)
         self.result_defer.errback(result)
@@ -542,14 +638,22 @@ class IdRotator(automat.Automat):
                 unique_idurls.append(idurl)
         min_servers = max(
             settings.MinimumIdentitySources(),
-            config.conf().getInt('services/identity-propagate/min-servers') or settings.MinimumIdentitySources(),
+            config.conf().getInt("services/identity-propagate/min-servers")
+            or settings.MinimumIdentitySources(),
         )
         max_servers = min(
             settings.MaximumIdentitySources(),
-            config.conf().getInt('services/identity-propagate/max-servers') or settings.MaximumIdentitySources(),
+            config.conf().getInt("services/identity-propagate/max-servers")
+            or settings.MaximumIdentitySources(),
         )
         if _Debug:
-            lg.args(_DebugLevel, min_servers=min_servers, max_servers=max_servers, ping_results=ping_results, unique_idurls=unique_idurls)
+            lg.args(
+                _DebugLevel,
+                min_servers=min_servers,
+                max_servers=max_servers,
+                ping_results=ping_results,
+                unique_idurls=unique_idurls,
+            )
         if len(unique_idurls) != len(ping_results):
             return False
         if len(unique_idurls) < min_servers:
@@ -559,8 +663,7 @@ class IdRotator(automat.Automat):
         return True
 
     def _do_check_ping_results(self, ping_results):
-        """
-        """
+        """ """
         self.alive_idurls = []
         my_sources = my_id.getLocalIdentity().getSources(as_originals=True)
         local_revision = my_id.getLocalIdentity().getRevisionValue()
@@ -575,9 +678,9 @@ class IdRotator(automat.Automat):
             try:
                 remote_ident = identity.identity(xmlsrc=remote_identity_src)
                 if not remote_ident.isCorrect():
-                    raise Exception('remote identity not correct at position %r' % pos)
+                    raise Exception("remote identity not correct at position %r" % pos)
                 if not remote_ident.Valid():
-                    raise Exception('remote identity not valid at position %r' % pos)
+                    raise Exception("remote identity not valid at position %r" % pos)
                 if latest_revision == -1:
                     latest_revision = remote_ident.getRevisionValue()
                 if latest_revision <= remote_ident.getRevisionValue():
@@ -591,7 +694,11 @@ class IdRotator(automat.Automat):
         if not self.new_revision:
             self.new_revision = max(local_revision, latest_revision) + 1
         if _Debug:
-            lg.args(_DebugLevel, new_revision=self.new_revision, alive_idurls=self.alive_idurls)
+            lg.args(
+                _DebugLevel,
+                new_revision=self.new_revision,
+                alive_idurls=self.alive_idurls,
+            )
 
         if not self.alive_idurls or not list(filter(None, self.alive_idurls)):
             # so all my id sources are down
@@ -602,7 +709,7 @@ class IdRotator(automat.Automat):
             self._fallback_and_ping_my_servers()
             return
 
-        self.automat('ping-done', self.alive_idurls)
+        self.automat("ping-done", self.alive_idurls)
 
     def _do_send_my_identity(self):
         """
@@ -612,7 +719,9 @@ class IdRotator(automat.Automat):
         payload = my_id.getLocalIdentity().serialize(as_text=False)
         dlist = []
         if _Debug:
-            lg.out(_DebugLevel, 'id_rotator._do_send_my_identity my_sources=%r' % my_sources)
+            lg.out(
+                _DebugLevel, "id_rotator._do_send_my_identity my_sources=%r" % my_sources
+            )
         for idurl_bin in my_sources:
             _, host, _webport, filename = nameurl.UrlParse(idurl_bin)
             webport = None
@@ -622,12 +731,20 @@ class IdRotator(automat.Automat):
                 webport = int(self.known_servers[host][0])
             if not webport:
                 webport = _webport
-            url = net_misc.pack_address((host, webport, ), proto='http')
-            dlist.append(net_misc.http_post_data(
-                url=url,
-                data=payload,
-                connectTimeout=15,
-            ))
+            url = net_misc.pack_address(
+                (
+                    host,
+                    webport,
+                ),
+                proto="http",
+            )
+            dlist.append(
+                net_misc.http_post_data(
+                    url=url,
+                    data=payload,
+                    connectTimeout=15,
+                )
+            )
             if _Debug:
                 lg.args(_DebugLevel, url=url, filename=filename, size=len(payload))
         return DeferredList(dlist, fireOnOneCallback=True)
@@ -640,7 +757,7 @@ class IdRotator(automat.Automat):
             dl.append(d)
         d = DeferredList(dl, consumeErrors=True)
         d.addCallback(self._do_check_ping_results)
-        d.addErrback(lambda err: self.automat('ping-failed', err))
+        d.addErrback(lambda err: self.automat("ping-failed", err))
 
     def _fallback_and_ping_my_servers(self):
         """
@@ -650,7 +767,7 @@ class IdRotator(automat.Automat):
         id_servers = []
         for idurl_bin in my_sources:
             proto, host, port, _ = nameurl.UrlParse(idurl_bin)
-            id_servers.append(nameurl.UrlMake(proto, host, port, ''))
+            id_servers.append(nameurl.UrlMake(proto, host, port, ""))
         if _Debug:
             lg.args(_DebugLevel, id_servers=id_servers)
         dl = []
@@ -658,34 +775,44 @@ class IdRotator(automat.Automat):
             d = net_misc.getPageTwisted(url, timeout=5)
             dl.append(d)
         d = DeferredList(dl, consumeErrors=True)
-        d.addCallback(lambda result: self.automat('ping-done', []))
+        d.addCallback(lambda result: self.automat("ping-done", []))
         d.addErrback(self._fallback_check_network_connected)
 
     def _fallback_check_network_connected(self, err):
         if _Debug:
             lg.args(_DebugLevel, err)
         from p2p import network_connector
-        if network_connector.A().state != 'CONNECTED':
-            self.automat('ping-failed', err)
-        else:
-            self.automat('ping-done', [])
 
-#------------------------------------------------------------------------------
+        if network_connector.A().state != "CONNECTED":
+            self.automat("ping-failed", err)
+        else:
+            self.automat("ping-done", [])
+
+
+# ------------------------------------------------------------------------------
+
 
 def main():
     from system import bpio
+
     bpio.init()
     settings.init()
     lg.set_debug_level(20)
     from twisted.internet import reactor  # @UnresolvedImport
+
     ir = IdRotator()
-    ir.addStateChangedCallback(lambda *a: reactor.stop(), oldstate=None, newstate='DONE')  # @UndefinedVariable
-    ir.addStateChangedCallback(lambda *a: reactor.stop(), oldstate=None, newstate='FAILED')  # @UndefinedVariable
-    reactor.callWhenRunning(ir.automat, 'run')  # @UndefinedVariable
+    ir.addStateChangedCallback(
+        lambda *a: reactor.stop(), oldstate=None, newstate="DONE"
+    )  # @UndefinedVariable
+    ir.addStateChangedCallback(
+        lambda *a: reactor.stop(), oldstate=None, newstate="FAILED"
+    )  # @UndefinedVariable
+    reactor.callWhenRunning(ir.automat, "run")  # @UndefinedVariable
     reactor.run()  # @UndefinedVariable
     settings.shutdown()
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 if __name__ == "__main__":
     main()

@@ -20,67 +20,61 @@
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
 
-from __future__ import absolute_import
-from __future__ import print_function
-import os
+from __future__ import absolute_import, print_function
+
 import sys
 
 from twisted.internet import reactor  # @UnresolvedImport
 from twisted.internet.defer import Deferred
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import os.path as _p
-    sys.path.insert(
-        0, _p.abspath(
-            _p.join(
-                _p.dirname(
-                    _p.abspath(
-                        sys.argv[0])), '..')))
 
-#------------------------------------------------------------------------------
+    sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), "..")))
+
+# ------------------------------------------------------------------------------
+
+from crypt import signed
 
 from logs import lg
-from userid import my_id
-from lib import misc
-from main import settings
-from lib import nameurl
-from lib import udp
-from system import bpio
 from p2p import commands
-from crypt import signed
-from dht import dht_service
-from transport.udp import udp_node
-from transport.udp import udp_session
+from system import bpio
 from transport import gateway
+from transport.udp import udp_node, udp_session
+from userid import my_id
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 def main():
     lg.set_debug_level(18)
     lg.life_begins()
     from crypt import key
+
     key.InitMyKey()
     from contacts import identitycache
+
     identitycache.init()
     from system import tmpfile
+
     tmpfile.init()
     from services import driver
-    driver.disabled_services().add('service_tcp_connections')
-    driver.disabled_services().add('service_p2p_hookups')
-    driver.disabled_services().add('service_nodes_lookup')
-    driver.disabled_services().add('service_identity_propagate')
-    driver.disabled_services().add('service_ip_port_responder')
+
+    driver.disabled_services().add("service_tcp_connections")
+    driver.disabled_services().add("service_p2p_hookups")
+    driver.disabled_services().add("service_nodes_lookup")
+    driver.disabled_services().add("service_identity_propagate")
+    driver.disabled_services().add("service_ip_port_responder")
     driver.init()
     driver.enabled_services().clear()
-    driver.enabled_services().add('service_udp_transport')
-    driver.enabled_services().add('service_udp_datagrams')
-    driver.enabled_services().add('service_my_ip_port')
-    driver.enabled_services().add('service_gateway')
-    driver.enabled_services().add('service_entangled_dht')
-    driver.enabled_services().add('service_network')
+    driver.enabled_services().add("service_udp_transport")
+    driver.enabled_services().add("service_udp_datagrams")
+    driver.enabled_services().add("service_my_ip_port")
+    driver.enabled_services().add("service_gateway")
+    driver.enabled_services().add("service_entangled_dht")
+    driver.enabled_services().add("service_network")
     driver.start()
     # options = { 'idurl': my_id.getIDURL(),}
     # options['host'] = nameurl.GetName(my_id.getIDURL())+'@'+'somehost.org'
@@ -90,12 +84,12 @@ def main():
     # dht_service.init(settings.getDHTPort())
     # dht_service.connect()
     # udp_node.A('go-online', options)
-    reactor.addSystemEventTrigger('before', 'shutdown', gateway.shutdown)
+    reactor.addSystemEventTrigger("before", "shutdown", gateway.shutdown)
     gateway.init()
     gateway.start()
 
     def _ok_to_send(transport, oldstate, newstate):
-        if newstate != 'LISTENING':
+        if newstate != "LISTENING":
             return
         # [filename] [peer idurl]
         if len(sys.argv) >= 3:
@@ -106,49 +100,56 @@ def main():
                 reconnect = False
                 if not sess:
                     reconnect = True
-                    print('sessions', list(udp_session.sessions_by_peer_id().keys()))
+                    print("sessions", list(udp_session.sessions_by_peer_id().keys()))
                     print([s.peer_id for s in list(udp_session.sessions().values())])
                 else:
-                    if sess.state != 'CONNECTED':
-                        print('state: ', sess.state)
+                    if sess.state != "CONNECTED":
+                        print("state: ", sess.state)
                         reconnect = True
                 if reconnect:
-                    print('reconnect', sess)
+                    print("reconnect", sess)
                     udp_session.add_pending_outbox_file(
-                        sys.argv[1] + '.signed', sys.argv[2], 'descr', Deferred(), False)
-                    udp_node.A('connect', sys.argv[2])
+                        sys.argv[1] + ".signed", sys.argv[2], "descr", Deferred(), False
+                    )
+                    udp_node.A("connect", sys.argv[2])
                 reactor.callLater(0.5, _try_reconnect)
 
             def _try_connect():
-                if udp_node.A().state == 'LISTEN':
-                    print('connect')
+                if udp_node.A().state == "LISTEN":
+                    print("connect")
                     gateway.stop_packets_timeout_loop()
                     udp_session.add_pending_outbox_file(
-                        sys.argv[1] + '.signed', sys.argv[2], 'descr', Deferred(), False)
-                    udp_node.A('connect', sys.argv[2])
+                        sys.argv[1] + ".signed", sys.argv[2], "descr", Deferred(), False
+                    )
+                    udp_node.A("connect", sys.argv[2])
                     reactor.callLater(5, _try_reconnect)
                 else:
                     reactor.callLater(1, _try_connect)
+
             # _try_connect()
 
             def _send(c):
                 from transport.udp import udp_stream
+
                 for idurl in sys.argv[2:]:
-                    print('_send', list(udp_stream.streams().keys()))
-                    p = signed.Packet(commands.Data(),
-                                      my_id.getIDURL(),
-                                      my_id.getIDURL(),
-                                      'packet%d' % c,
-                                      bpio.ReadBinaryFile(sys.argv[1]),
-                                      idurl)
+                    print("_send", list(udp_stream.streams().keys()))
+                    p = signed.Packet(
+                        commands.Data(),
+                        my_id.getIDURL(),
+                        my_id.getIDURL(),
+                        "packet%d" % c,
+                        bpio.ReadBinaryFile(sys.argv[1]),
+                        idurl,
+                    )
                     gateway.outbox(p)
                 if c > 1:
                     reactor.callLater(0.01, _send, c - 1)
+
             reactor.callLater(0, _send, 15)
 
     gateway.add_transport_state_changed_callback(_ok_to_send)
     reactor.run()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

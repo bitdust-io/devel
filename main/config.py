@@ -30,39 +30,40 @@
 module:: config
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
+
 from io import open
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 10
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 import os
-import sys
 import re
+import sys
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 if __name__ == "__main__":
     import os.path as _p
-    sys.path.append(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..'))
 
-#------------------------------------------------------------------------------
+    sys.path.append(_p.join(_p.dirname(_p.abspath(sys.argv[0])), ".."))
+
+# ------------------------------------------------------------------------------
 
 from lib import strng
-
 from logs import lg
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Config = None
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 def init(configDir):
@@ -70,30 +71,32 @@ def init(configDir):
     if _Config is None:
         _Config = DetailedConfig(configDir)
         if _Debug:
-            lg.out(_DebugLevel, 'config.init     at %s' % configDir)
+            lg.out(_DebugLevel, "config.init     at %s" % configDir)
     else:
-        lg.warn('already called, was set up in %s' % _Config.getConfigDir())
+        lg.warn("already called, was set up in %s" % _Config.getConfigDir())
 
 
 def shutdown():
     if _Debug:
-        lg.out(_DebugLevel, 'config.shutdown')
+        lg.out(_DebugLevel, "config.shutdown")
     global _Config
     if _Config:
         del _Config
         _Config = None
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def conf():
     global _Config
     return _Config
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 class BaseConfig(object):
-
     def __init__(self, configDir):
         self.configDir = configDir
 
@@ -129,11 +132,12 @@ class BaseConfig(object):
     def listAllEntries(self):
         try:
             from system import bpio
+
             l = []
             abspth = bpio.portablePath(os.path.abspath(self.getConfigDir()))
             for subpath in bpio.list_dir_recursive(abspth):
                 path = bpio.portablePath(subpath)
-                l.append(path.replace(abspth, '').strip('/'))
+                l.append(path.replace(abspth, "").strip("/"))
             return l
         except:
             lg.exc()
@@ -168,10 +172,20 @@ class BaseConfig(object):
         data = self.getData(entryPath)
         if data is None:
             return default
-        return True if str(data).strip() in ['True', 'true', '1', 'on', ] else False
+        return (
+            True
+            if str(data).strip()
+            in [
+                "True",
+                "true",
+                "1",
+                "on",
+            ]
+            else False
+        )
 
     def setBool(self, entryPath, value):
-        return self._set(entryPath, 'true' if value else 'false')
+        return self._set(entryPath, "true" if value else "false")
 
     def getString(self, entryPath, default=None):
         data = self.getData(entryPath)
@@ -188,13 +202,13 @@ class BaseConfig(object):
             i = 0
             while i < len(data):
                 c = data[i]
-                if c == '\\':
+                if c == "\\":
                     out.append(data[i + 1])
                     i += 2
                 else:
                     out.append(c)
                     i += 1
-            return ''.join(out)
+            return "".join(out)
         except IndexError:
             return default
 
@@ -202,23 +216,23 @@ class BaseConfig(object):
         out = ['"']
         for x in value:
             if x in '\\"':
-                out.append('\\')
+                out.append("\\")
             out.append(x)
         out.append('"')
-        return self._set(entryPath, ''.join(out))
+        return self._set(entryPath, "".join(out))
 
     def _mkdir(self, dpath):
         if os.path.isfile(dpath):
             self._unlink(dpath)
         if not os.path.isdir(dpath):
             try:
-                if sys.platform == 'win32':
+                if sys.platform == "win32":
                     os.makedirs(dpath)
                 else:
                     os.makedirs(dpath, 0o700)
                 return True
             except OSError:
-                lg.exc('error creating directory: %s' % dpath)
+                lg.exc("error creating directory: %s" % dpath)
                 return False
         return True
 
@@ -226,7 +240,7 @@ class BaseConfig(object):
         try:
             return os.listdir(dpath)
         except OSError:
-            lg.exc('error listing dir: %s' % dpath)
+            lg.exc("error listing dir: %s" % dpath)
             return []
 
     def _unlink(self, fpath):
@@ -237,7 +251,7 @@ class BaseConfig(object):
                 os.unlink(fpath)
             return True
         except OSError:
-            lg.exc('error unlinking: %s' % fpath)
+            lg.exc("error unlinking: %s" % fpath)
             return False
 
     def _rmrf(self, fpath):
@@ -254,12 +268,12 @@ class BaseConfig(object):
     def _validateElemList(self, elemList):
         for x in elemList:
             assert x.strip() == x
-            assert '\\' not in x
-            assert '/' not in x
-            assert x not in ('.', '..')
+            assert "\\" not in x
+            assert "/" not in x
+            assert x not in (".", "..")
 
     def _parseEntryPath(self, entryPath):
-        elemList = entryPath.split('/')
+        elemList = entryPath.split("/")
         if elemList and (not elemList[0]):
             del elemList[0]
         if elemList:
@@ -273,17 +287,17 @@ class BaseConfig(object):
         if os.path.isdir(fpath):
             out = []
             for x in self._listdir(fpath):
-                childPath = '/'.join(elemList + [x])
+                childPath = "/".join(elemList + [x])
                 out.append(childPath)
             return out
         elif os.path.isfile(fpath):
             data = None
             try:
-                f = open(fpath, 'rb')
+                f = open(fpath, "rb")
                 data = strng.to_text(f.read())
                 f.close()
             except (OSError, IOError):
-                lg.exc('error reading from file: %s' % fpath)
+                lg.exc("error reading from file: %s" % fpath)
             return data
         return None
 
@@ -297,15 +311,16 @@ class BaseConfig(object):
         fpath = os.path.join(dpath, elemList[-1])
         s = strng.to_bin(data)
         try:
-            f = open(fpath, 'wb')
+            f = open(fpath, "wb")
             f.write(s)
             f.close()
             return True
         except (OSError, IOError):
-            lg.exc('error writing to file: %s' % fpath)
+            lg.exc("error writing to file: %s" % fpath)
         return False
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 class DefaultsConfig(BaseConfig):
@@ -328,11 +343,11 @@ class DefaultsConfig(BaseConfig):
     def getOriginalData(self, entryPath):
         return BaseConfig.getData(self, entryPath)
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 class NotifiableConfig(DefaultsConfig):
-
     def __init__(self, configDir):
         super(NotifiableConfig, self).__init__(configDir)
         self.callbacks = {}
@@ -370,15 +385,16 @@ class NotifiableConfig(DefaultsConfig):
                     cb(entryPath, newValue, oldValue, result)
         return result
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 class FixedTypesConfig(NotifiableConfig):
-
     def __init__(self, configDir):
         super(FixedTypesConfig, self).__init__(configDir)
         try:
             from main import config_types
+
             self._types = config_types.defaults()
             self._labels = config_types.labels()
         except:
@@ -402,101 +418,143 @@ class FixedTypesConfig(NotifiableConfig):
 
     def getTypeMetaInfo(self, entryPath):
         from main import config_types
+
         typ = self.getType(entryPath)
         if not typ:
             return {}
-        if typ in [config_types.TYPE_STRING,
-                   config_types.TYPE_TEXT,
-                   config_types.TYPE_UNDEFINED,
-                   config_types.TYPE_PASSWORD,
-                   config_types.TYPE_INTEGER,
-                   config_types.TYPE_BOOLEAN, ]:
+        if typ in [
+            config_types.TYPE_STRING,
+            config_types.TYPE_TEXT,
+            config_types.TYPE_UNDEFINED,
+            config_types.TYPE_PASSWORD,
+            config_types.TYPE_INTEGER,
+            config_types.TYPE_BOOLEAN,
+        ]:
             return {}
         if typ == config_types.TYPE_POSITIVE_INTEGER:
-            return {'min': 0, }
+            return {
+                "min": 0,
+            }
         if typ == config_types.TYPE_PORT_NUMBER:
-            return {'min': 1, 'max': 65535, }
+            return {
+                "min": 1,
+                "max": 65535,
+            }
         if typ == config_types.TYPE_NON_ZERO_POSITIVE_INTEGER:
-            return {'min': 1, }
-        if typ in [config_types.TYPE_FOLDER_PATH, config_types.TYPE_FILE_PATH, ]:
+            return {
+                "min": 1,
+            }
+        if typ in [
+            config_types.TYPE_FOLDER_PATH,
+            config_types.TYPE_FILE_PATH,
+        ]:
             # TODO: to be decided later
             return {}
         elif typ == config_types.TYPE_COMBO_BOX:
-            if entryPath == 'services/customer/suppliers-number':
+            if entryPath == "services/customer/suppliers-number":
                 from raid import eccmap
-                return {'possible_values': eccmap.SuppliersNumbers(), }
+
+                return {
+                    "possible_values": eccmap.SuppliersNumbers(),
+                }
             else:
-                raise TypeError('unexpected option type for %r' % entryPath)
+                raise TypeError("unexpected option type for %r" % entryPath)
         return {}
 
     def getValueOfType(self, entryPath):
         from main import config_types
+
         typ = self.getType(entryPath)
         value = None
-        if not typ or typ in [config_types.TYPE_STRING,
-                              config_types.TYPE_TEXT,
-                              config_types.TYPE_UNDEFINED, ]:
+        if not typ or typ in [
+            config_types.TYPE_STRING,
+            config_types.TYPE_TEXT,
+            config_types.TYPE_UNDEFINED,
+        ]:
             value = self.getData(entryPath)
-        elif typ in [config_types.TYPE_BOOLEAN, ]:
+        elif typ in [
+            config_types.TYPE_BOOLEAN,
+        ]:
             value = self.getBool(entryPath)
-        elif typ in [config_types.TYPE_INTEGER,
-                     config_types.TYPE_POSITIVE_INTEGER,
-                     config_types.TYPE_NON_ZERO_POSITIVE_INTEGER,
-                     config_types.TYPE_PORT_NUMBER, ]:
+        elif typ in [
+            config_types.TYPE_INTEGER,
+            config_types.TYPE_POSITIVE_INTEGER,
+            config_types.TYPE_NON_ZERO_POSITIVE_INTEGER,
+            config_types.TYPE_PORT_NUMBER,
+        ]:
             value = self.getInt(entryPath)
-        elif typ in [config_types.TYPE_FOLDER_PATH,
-                     config_types.TYPE_FILE_PATH,
-                     config_types.TYPE_PASSWORD, ]:
-            value = self.getString(entryPath) or ''
-            if typ in [config_types.TYPE_FOLDER_PATH, ]:
+        elif typ in [
+            config_types.TYPE_FOLDER_PATH,
+            config_types.TYPE_FILE_PATH,
+            config_types.TYPE_PASSWORD,
+        ]:
+            value = self.getString(entryPath) or ""
+            if typ in [
+                config_types.TYPE_FOLDER_PATH,
+            ]:
                 if value:
                     from system import bpio
+
                     if bpio.Windows():
-                        if not value.endswith(u'/') and not value.endswith(u'\\'):
-                            value = value + u'\\'
-                    elif not value.endswith(u'/'):
-                        value = value + u'/'
+                        if not value.endswith("/") and not value.endswith("\\"):
+                            value = value + "\\"
+                    elif not value.endswith("/"):
+                        value = value + "/"
         elif typ == config_types.TYPE_COMBO_BOX:
-            if entryPath == 'services/customer/suppliers-number':
+            if entryPath == "services/customer/suppliers-number":
                 value = self.getInt(entryPath)
             else:
-                raise TypeError('unexpected option type for %r' % entryPath)
+                raise TypeError("unexpected option type for %r" % entryPath)
         else:
             value = self.getData(entryPath)
         return value
 
     def setValueOfType(self, entryPath, value):
         from main import config_types
+
         typ = self.getType(entryPath)
-        if not typ or typ in [config_types.TYPE_STRING,
-                              config_types.TYPE_TEXT,
-                              config_types.TYPE_UNDEFINED, ]:
+        if not typ or typ in [
+            config_types.TYPE_STRING,
+            config_types.TYPE_TEXT,
+            config_types.TYPE_UNDEFINED,
+        ]:
             self.setData(entryPath, strng.text_type(value))
-        elif typ in [config_types.TYPE_BOOLEAN, ]:
+        elif typ in [
+            config_types.TYPE_BOOLEAN,
+        ]:
             if strng.is_string(value):
-                vl = strng.to_text(value).strip().lower() in ['true', '1', 'on', ]
+                vl = strng.to_text(value).strip().lower() in [
+                    "true",
+                    "1",
+                    "on",
+                ]
             else:
                 vl = bool(value)
             self.setBool(entryPath, vl)
-        elif typ in [config_types.TYPE_INTEGER,
-                     config_types.TYPE_POSITIVE_INTEGER,
-                     config_types.TYPE_NON_ZERO_POSITIVE_INTEGER,
-                     config_types.TYPE_PORT_NUMBER, ]:
+        elif typ in [
+            config_types.TYPE_INTEGER,
+            config_types.TYPE_POSITIVE_INTEGER,
+            config_types.TYPE_NON_ZERO_POSITIVE_INTEGER,
+            config_types.TYPE_PORT_NUMBER,
+        ]:
             self.setInt(entryPath, int(value))
-        elif typ in [config_types.TYPE_FOLDER_PATH,
-                     config_types.TYPE_FILE_PATH,
-                     config_types.TYPE_PASSWORD, ]:
+        elif typ in [
+            config_types.TYPE_FOLDER_PATH,
+            config_types.TYPE_FILE_PATH,
+            config_types.TYPE_PASSWORD,
+        ]:
             self.setString(entryPath, value)
         elif typ == config_types.TYPE_COMBO_BOX:
-            if entryPath == 'services/customer/suppliers-number':
+            if entryPath == "services/customer/suppliers-number":
                 value = self.setInt(entryPath, int(value))
             else:
-                raise TypeError('unexpected option type for %r' % entryPath)
+                raise TypeError("unexpected option type for %r" % entryPath)
         else:
             self.setData(entryPath, strng.text_type(value))
         return True
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 class CachedConfig(FixedTypesConfig):
@@ -533,7 +591,8 @@ class CachedConfig(FixedTypesConfig):
         """
         # TODO
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 class DetailedConfig(CachedConfig):
@@ -546,55 +605,56 @@ class DetailedConfig(CachedConfig):
         super(DetailedConfig, self).__init__(configDir)
         try:
             from main import config_details
+
             self._load_details(config_details.raw())
         except:
             lg.exc()
 
     def _load_details(self, src):
-        """
-        """
-        current_option = ''
+        """ """
+        current_option = ""
         for line in src.splitlines():
             if not line.strip():
                 continue
-            ro = re.match('^\[(.+?)\](.*?)$', line)
+            ro = re.match("^\[(.+?)\](.*?)$", line)
             if ro:
                 self._read_only[ro.group(1).strip()] = True
-                line = line.replace('[', '{').replace(']', '}')
-            r = re.match('^\{(.+?)\}(.*?)$', line)
+                line = line.replace("[", "{").replace("]", "}")
+            r = re.match("^\{(.+?)\}(.*?)$", line)
             if r:
                 current_option = r.group(1).strip()
                 self._labels[current_option] = r.group(2).strip()
             else:
                 if current_option:
                     if current_option not in self._infos:
-                        self._infos[current_option] = ''
-                    self._infos[current_option] += line.strip() + '\n'
+                        self._infos[current_option] = ""
+                    self._infos[current_option] += line.strip() + "\n"
 
     def getLabel(self, entryPath):
-        return self._labels.get(entryPath, '') or entryPath.split('/')[-1]
+        return self._labels.get(entryPath, "") or entryPath.split("/")[-1]
 
     def getInfo(self, entryPath):
-        return (self._infos.get(entryPath, '') or '').strip(' \n\t')
+        return (self._infos.get(entryPath, "") or "").strip(" \n\t")
 
     def getReadOnly(self, entryPath):
         return self._read_only.get(entryPath, False) or False
 
     def toJson(self, entryPath, include_info=True):
         result = {
-            'key': entryPath,
-            'value': self.getValueOfType(entryPath),
-            'type': self.getTypeLabel(entryPath),
-            'label': self.getLabel(entryPath),
-            'readonly': self.getReadOnly(entryPath),
-            'default': self.getDefaultValue(entryPath),
+            "key": entryPath,
+            "value": self.getValueOfType(entryPath),
+            "type": self.getTypeLabel(entryPath),
+            "label": self.getLabel(entryPath),
+            "readonly": self.getReadOnly(entryPath),
+            "default": self.getDefaultValue(entryPath),
         }
         if include_info:
-            result['info'] = self.getInfo(entryPath)
+            result["info"] = self.getInfo(entryPath)
         result.update(self.getTypeMetaInfo(entryPath))
         return result
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def main():
@@ -602,18 +662,20 @@ def main():
     Read settings from 'config' file and prints values from your queries to stdout.
     """
     from logs import lg
+
     lg.set_debug_level(24)
     from main import settings
+
     settings.init()
     init(settings.ConfigDir())
-    print(conf().listEntries(''))
+    print(conf().listEntries(""))
     try:
-        inp = sys.argv[1].rstrip('/')
+        inp = sys.argv[1].rstrip("/")
     except:
-        print('wrong input')
+        print("wrong input")
         return
     if not conf().exist(inp):
-        print('not exist')
+        print("not exist")
         return
     if not conf().hasChilds(inp):
         print(inp, conf().getData(inp))
@@ -625,6 +687,7 @@ def main():
             print(child, conf().getData(child))
     settings.shutdown()
     return
+
 
 #    last = ''
 #    for entry in sorted(conf()._types.keys()):
@@ -638,9 +701,9 @@ def main():
 #            print parent
 #            last = parent
 #        print ' ' * (last.count(' ') + 1) * 2, key, '\t\t\t\t', conf().get_type_label(entry).upper()
-    # print '\n'.join(map(lambda x: "    '%s':\t\t\tNode," % x, sorted(conf().listAllEntries())))
-    # s = conf().getData('details')
-    # conf()._load_details(s)
+# print '\n'.join(map(lambda x: "    '%s':\t\t\tNode," % x, sorted(conf().listAllEntries())))
+# s = conf().getData('details')
+# conf()._load_details(s)
 
 
 if __name__ == "__main__":

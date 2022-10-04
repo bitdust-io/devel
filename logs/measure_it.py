@@ -30,19 +30,20 @@
 module:: measure_it
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-from six.moves import range
-
 import time
 
-#------------------------------------------------------------------------------
+from six.moves import range
+
+# ------------------------------------------------------------------------------
 
 _CallsIndex = {}
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
 
 def init():
     pass
@@ -54,24 +55,24 @@ def shutdown():
 
 
 def make_fqn(callabl, *args, **kwargs):
-    fqn = ''
+    fqn = ""
     nm = callabl.__class__.__name__
-    if nm == 'function' or nm == 'instancemethod':
-        fqn = '{}.{}'.format(callabl.__module__, callabl.__name__)
-    elif nm == 'LoopingCall':
-        fqn = '{}.{}'.format(callabl.f.__module__, callabl.f.__name__)
-    elif nm == 'method':
-        fqn = '{}.{}'.format(callabl.__func__.__module__, callabl.__func__.__name__)
+    if nm == "function" or nm == "instancemethod":
+        fqn = "{}.{}".format(callabl.__module__, callabl.__name__)
+    elif nm == "LoopingCall":
+        fqn = "{}.{}".format(callabl.f.__module__, callabl.f.__name__)
+    elif nm == "method":
+        fqn = "{}.{}".format(callabl.__func__.__module__, callabl.__func__.__name__)
     else:
-        raise Exception('unexpected callable type: %r' % callabl)
-    if fqn == 'transport.gateway._call':
-        fqn += '.' + args[0]
-    elif fqn == 'automats.automat.timerEvent':
-        fqn += '.' + callabl.a[0]
-    elif fqn == 'automats.automat.event':
-        fqn += '.' + args[0]
-    elif fqn == 'automats.automat.automat':
-        fqn += '.' + args[0]
+        raise Exception("unexpected callable type: %r" % callabl)
+    if fqn == "transport.gateway._call":
+        fqn += "." + args[0]
+    elif fqn == "automats.automat.timerEvent":
+        fqn += "." + callabl.a[0]
+    elif fqn == "automats.automat.event":
+        fqn += "." + args[0]
+    elif fqn == "automats.automat.automat":
+        fqn += "." + args[0]
     return fqn
 
 
@@ -79,15 +80,23 @@ def top_calls(top_size=5):
     global _CallsIndex
     keys = list(_CallsIndex.keys())
     keys.sort(key=lambda cb: -_CallsIndex[cb][1])
-    s = '    cumulative time:\n'
+    s = "    cumulative time:\n"
     for i in range(0, min(top_size, len(_CallsIndex))):
         cb = keys[i]
-        s += '        %f sec. with %d calls : %s\n' % (_CallsIndex[cb][1], _CallsIndex[cb][0], cb)
+        s += "        %f sec. with %d calls : %s\n" % (
+            _CallsIndex[cb][1],
+            _CallsIndex[cb][0],
+            cb,
+        )
     keys.sort(key=lambda cb: -_CallsIndex[cb][0])
-    s += '    number of calls:\n'
+    s += "    number of calls:\n"
     for i in range(0, min(top_size, len(_CallsIndex))):
         cb = keys[i]
-        s += '        %f sec. with %d calls : %s\n' % (_CallsIndex[cb][1], _CallsIndex[cb][0], cb)
+        s += "        %f sec. with %d calls : %s\n" % (
+            _CallsIndex[cb][1],
+            _CallsIndex[cb][0],
+            cb,
+        )
     return s
 
 

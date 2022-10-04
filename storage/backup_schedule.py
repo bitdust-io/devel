@@ -37,44 +37,49 @@ many things was changed since that moment, so need to put some work here
 """
 
 from __future__ import absolute_import
-from logs import lg
-import six
+
 from io import open
 
-#------------------------------------------------------------------------------
+import six
+
+from logs import lg
+
+# ------------------------------------------------------------------------------
 
 _SheduledTasks = {}
 _UsingGUI = False
 _GuiStatusClearPageData = None
 _GuiBackupUpdate = None
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 def init(usingGui=False):
     global _UsingGUI
     _UsingGUI = usingGui
-    lg.out(4, 'backup_schedule.init ')
+    lg.out(4, "backup_schedule.init ")
     loop()
 
 
 def shutdown():
-    lg.out(4, 'backup_schedule.shutdown ')
+    lg.out(4, "backup_schedule.shutdown ")
     global _SheduledTasks
     for dirName, task in _SheduledTasks.items():
         try:
             task.cancel()
         except:
-            lg.out(1, 'backup_schedule.shutdown ERROR can not stop task for ' + str(dirName))
+            lg.out(
+                1, "backup_schedule.shutdown ERROR can not stop task for " + str(dirName)
+            )
             lg.exc()
-        lg.out(4, 'backup_schedule.shutdown canceled: ' + str(dirName))
+        lg.out(4, "backup_schedule.shutdown canceled: " + str(dirName))
 
 
 def loop():
-    lg.out(8, 'backup_schedule.loop ')
-    #debugWrite("in loop about to run at "+str(time.asctime(time.localtime(time.time()))))
+    lg.out(8, "backup_schedule.loop ")
+    # debugWrite("in loop about to run at "+str(time.asctime(time.localtime(time.time()))))
     # run()
-    #debugWrite("in loop finished run, setting callLater")
+    # debugWrite("in loop finished run, setting callLater")
     # reactor.callLater(timeout(), loop)
 
 
@@ -215,16 +220,17 @@ def task(dirName=None):
 
 def next(dirName):
     global _SheduledTasks
-#    lastRunId, lastRunSize, lastRunStatus, lastRunStart, lastRunFinish = backup_db.GetLastRunInfo(dirName)
-#    schedule_type, schedule_time, schedule_interval, interval_details = backup_db.GetSchedule(dirName)
+    #    lastRunId, lastRunSize, lastRunStatus, lastRunStart, lastRunFinish = backup_db.GetLastRunInfo(dirName)
+    #    schedule_type, schedule_time, schedule_interval, interval_details = backup_db.GetSchedule(dirName)
     schedule = None  # backup_db.GetSchedule(dirName)
     if schedule is None:
         return None
 
-#    lg.out(8, 'backup_schedule.next dirName=%s type=%s, time=%s, interval=%s, details=%s' % (str(dirName), schedule_type, schedule_time, schedule_interval, interval_details))
-#    lg.out(8, 'backup_schedule.next %s %s' % (str(dirName), schedule))
+    #    lg.out(8, 'backup_schedule.next dirName=%s type=%s, time=%s, interval=%s, details=%s' % (str(dirName), schedule_type, schedule_time, schedule_interval, interval_details))
+    #    lg.out(8, 'backup_schedule.next %s %s' % (str(dirName), schedule))
 
     return schedule.next_time()
+
 
 #    next_start = None
 #    if schedule_type == 'none':
@@ -271,7 +277,9 @@ def next(dirName):
 #    return next_start
 
 
-def debugWrite(debugtext):  # useful when debugging this module, otherwise don't use (leave False)
+def debugWrite(
+    debugtext,
+):  # useful when debugging this module, otherwise don't use (leave False)
     if False:
         debugFile = open("scheduledebug.txt", "a")
         debugFile.write(debugtext + "\r\n")
@@ -311,7 +319,7 @@ def debugWrite(debugtext):  # useful when debugging this module, otherwise don't
 # def format():
 #    return '''
 # Schedule compact format:
-#[mode].[interval].[time].[details]
+# [mode].[interval].[time].[details]
 #
 # mode:
 #  n-none, h-hourly, d-daily, w-weekly, m-monthly
@@ -385,7 +393,7 @@ def debugWrite(debugtext):  # useful when debugging this module, otherwise don't
 #        'details':      str(t[3]), }
 
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 
 # def main():
@@ -399,6 +407,6 @@ def debugWrite(debugtext):  # useful when debugging this module, otherwise don't
 #    print unpack('h.1')
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     lg.set_debug_level(12)
     # main()

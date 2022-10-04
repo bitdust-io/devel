@@ -20,6 +20,4 @@ It's CodernityDB environment.
 Handles internal informations.'
 """
 
-cdb_environment = {
-    'mode': 'normal'
-}
+cdb_environment = {"mode": "normal"}

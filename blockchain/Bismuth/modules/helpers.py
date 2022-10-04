@@ -8,12 +8,11 @@ Mainly from bismuth core code
 import re
 from decimal import Decimal
 
-
 __version__ = "0.0.4"
 
-DECIMAL_ZERO_2DP = Decimal('0.00')
-DECIMAL_ZERO_8DP = Decimal('0.00000000')
-DECIMAL_ZERO_10DP = Decimal('0.0000000000')
+DECIMAL_ZERO_2DP = Decimal("0.00")
+DECIMAL_ZERO_8DP = Decimal("0.00000000")
+DECIMAL_ZERO_10DP = Decimal("0.0000000000")
 
 
 def quantize_two(value):
@@ -35,11 +34,11 @@ def quantize_ten(value):
 
 
 def replace_regex(string, replace):
-    replaced_string = re.sub(r'^{}'.format(replace), "", string)
+    replaced_string = re.sub(r"^{}".format(replace), "", string)
     return replaced_string
 
 
-def fee_calculate(openfield, operation='', block=0):
+def fee_calculate(openfield, operation="", block=0):
     # block var will be removed after HF
     fee = Decimal("0.01") + (Decimal(len(openfield)) / Decimal("100000"))  # 0.01 dust
     if operation == "token:issue":
