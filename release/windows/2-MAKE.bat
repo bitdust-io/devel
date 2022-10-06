@@ -60,4 +60,4 @@ xcopy ..\..\raid\rebuild.py                     bin\raid\ /Y /Q
 @echo.
 
 
-pause 
+pause

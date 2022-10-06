@@ -43,17 +43,17 @@ EVENTS:
     * :red:`timer-2min`
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 from six.moves import range
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Debug = True
 _DebugLevel = 6
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 import random
 import string
@@ -63,14 +63,15 @@ from twisted.internet import reactor  # @UnresolvedImport
 from twisted.internet import threads
 from twisted.internet.defer import Deferred
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     import sys
     import os.path as _p
+
     sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -87,11 +88,11 @@ from transport import callback
 
 from coins import coins_io
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _CoinsMiner = None
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 def A(event=None, *args, **kwargs):
@@ -108,7 +109,8 @@ def A(event=None, *args, **kwargs):
         _CoinsMiner.automat(event, *args, **kwargs)
     return _CoinsMiner
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 class CoinsMiner(automat.Automat):
@@ -147,12 +149,12 @@ class CoinsMiner(automat.Automat):
         The state machine code, generated using `visio2python
         <https://bitdust.io/visio2python/>`_ tool.
         """
-        #---AT_STARTUP---
+        # ---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'STOPPED'
                 self.doInit(*args, **kwargs)
-        #---READY---
+        # ---READY---
         elif self.state == 'READY':
             if event == 'stop':
                 self.state = 'STOPPED'
@@ -164,7 +166,7 @@ class CoinsMiner(automat.Automat):
                 self.doStartMining(*args, **kwargs)
             elif event == 'new-data-received' and not self.isDecideOK(*args, **kwargs):
                 self.doSendFail(*args, **kwargs)
-        #---MINING---
+        # ---MINING---
         elif self.state == 'MINING':
             if event == 'stop':
                 self.state = 'STOPPED'
@@ -183,7 +185,7 @@ class CoinsMiner(automat.Automat):
                 self.doStopMining(*args, **kwargs)
                 self.doSendFail(*args, **kwargs)
                 self.doPullInputData(*args, **kwargs)
-        #---STOPPED---
+        # ---STOPPED---
         elif self.state == 'STOPPED':
             if event == 'start':
                 self.state = 'ACCOUNTANTS?'
@@ -191,7 +193,7 @@ class CoinsMiner(automat.Automat):
             elif event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(*args, **kwargs)
-        #---PUBLISH_COIN---
+        # ---PUBLISH_COIN---
         elif self.state == 'PUBLISH_COIN':
             if event == 'stop':
                 self.state = 'STOPPED'
@@ -207,11 +209,11 @@ class CoinsMiner(automat.Automat):
                 self.doContinueMining(*args, **kwargs)
             elif event == 'new-data-received':
                 self.doPushInputData(*args, **kwargs)
-            elif event == 'cancel' or ( event == 'coin-rejected' and not self.isDecideOK(*args, **kwargs) ):
+            elif event == 'cancel' or (event == 'coin-rejected' and not self.isDecideOK(*args, **kwargs)):
                 self.state = 'READY'
                 self.doSendFail(*args, **kwargs)
                 self.doPullInputData(*args, **kwargs)
-        #---ACCOUNTANTS?---
+        # ---ACCOUNTANTS?---
         elif self.state == 'ACCOUNTANTS?':
             if event == 'accountant-connected' and not self.isMoreNeeded(*args, **kwargs):
                 self.state = 'READY'
@@ -225,9 +227,9 @@ class CoinsMiner(automat.Automat):
             elif event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'stop' or event == 'cancel' or event == 'timer-2min' or ( event == 'lookup-failed' and not self.isAnyAccountants(*args, **kwargs) ):
+            elif event == 'stop' or event == 'cancel' or event == 'timer-2min' or (event == 'lookup-failed' and not self.isAnyAccountants(*args, **kwargs)):
                 self.state = 'STOPPED'
-        #---CLOSED---
+        # ---CLOSED---
         elif self.state == 'CLOSED':
             pass
         return None
@@ -290,6 +292,7 @@ class CoinsMiner(automat.Automat):
             self.automat('accountant-connected', '')
             return
         from coins import accountants_finder
+
         accountants_finder.A('start', (self.automat, 'read'))
 
     def doPushInputData(self, *args, **kwargs):
@@ -328,7 +331,9 @@ class CoinsMiner(automat.Automat):
         if self.offline_mode:
             self.automat('coin-confirmed')
             return
-        coins = [args[0], ]
+        coins = [
+            args[0],
+        ]
         if _Debug:
             lg.out(_DebugLevel, 'coins_miner.doSendCoinToAccountants: %s' % coins)
         for idurl in self.connected_accountants:
@@ -366,7 +371,7 @@ class CoinsMiner(automat.Automat):
             del _CoinsMiner
             _CoinsMiner = None
 
-    #------------------------------------------------------------------------------
+    # ------------------------------------------------------------------------------
 
     def _on_inbox_packet(self, newpacket, info, status, error_message):
         if newpacket.Command == commands.Coin():
@@ -409,9 +414,7 @@ class CoinsMiner(automat.Automat):
         return False
 
     def _build_starter(self, length):
-        return (''.join(
-            [random.choice(string.uppercase + string.lowercase + string.digits)  # @UndefinedVariable
-                for _ in range(length)])) + '_'
+        return (''.join([random.choice(string.uppercase + string.lowercase + string.digits) for _ in range(length)])) + '_'  # @UndefinedVariable
 
     def _build_hash(self, payload):
         return hashlib.sha1(payload).hexdigest()
@@ -458,11 +461,13 @@ class CoinsMiner(automat.Automat):
             if on > starter_limit:
                 starter = self._build_starter(starter_length)
                 on = 0
-        coin_json['miner'].update({
-            'hash': hexdigest,
-            'starter': starter + str(on),
-            'mined': utime.utcnow_to_sec1970(),
-        })
+        coin_json['miner'].update(
+            {
+                'hash': hexdigest,
+                'starter': starter + str(on),
+                'mined': utime.utcnow_to_sec1970(),
+            }
+        )
         return coin_json
 
     def _start(self, coin_json):
@@ -475,10 +480,11 @@ class CoinsMiner(automat.Automat):
             complexity += 1
             if _Debug:
                 lg.out(_DebugLevel, 'coins_miner.found golden coin, step up complexity: %s' % complexity)
-        return threads.deferToThread(self._mine, coin_json, complexity,
-                                     self.simplification, self.starter_length, self.starter_limit)
+        return threads.deferToThread(self._mine, coin_json, complexity, self.simplification, self.starter_length, self.starter_limit)
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def start_offline_job(coin):
     result = Deferred()
@@ -495,7 +501,9 @@ def start_offline_job(coin):
 
     return result
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def _test():
     lg.set_debug_level(20)
@@ -504,5 +512,5 @@ def _test():
     reactor.run()  # @UndefinedVariable
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     _test()

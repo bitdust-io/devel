@@ -63,19 +63,19 @@ Different networks provides various functions, something more than just transfer
 Some of them uses DHT to store data on nodes - we can use that stuff also.
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 from io import open
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 10
 
 _PacketLogFileEnabled = False
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 import os
 import time
@@ -85,14 +85,15 @@ from twisted.web import xmlrpc
 from twisted.internet import reactor  # @UnresolvedImport
 from twisted.internet.defer import Deferred, maybeDeferred, succeed, fail
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     import sys
     import os.path as _p
+
     sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -108,6 +109,7 @@ from system import bpio
 from system import tmpfile
 
 from main import settings
+
 # from main import control
 from main import config
 from main import events
@@ -125,7 +127,7 @@ from userid import identity
 from userid import id_url
 from userid import my_id
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _AvailableTransports = {}
 _TransportsDict = {}
@@ -140,7 +142,8 @@ _TransportStateChangedCallbacksList = []
 _TransportLogFile = None
 _TransportLogFilename = None
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
 
 def init():
     global _LocalListener
@@ -175,7 +178,9 @@ def shutdown():
         close_transport_log()
     _PacketLogFileEnabled = False
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def transport(proto):
     global _TransportsDict
@@ -217,7 +222,9 @@ def last_inbox_time():
     global _LastInboxPacketTime
     return _LastInboxPacketTime
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def start():
     if _Debug:
@@ -262,7 +269,9 @@ def cold_start():
     reactor.callLater(5, packets_timeout_loop)  # @UndefinedVariable
     return result
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def stop():
     if _Debug:
@@ -285,7 +294,9 @@ def stop():
     callback.remove_outbox_filter_callback(on_outbox_packet)
     return result
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def verify():
     ordered_list = list(transports().keys())
@@ -339,7 +350,8 @@ def verify():
 
     return resulted
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def attach(transport_instance):
@@ -367,7 +379,8 @@ def detach(transport_instance):
     if _Debug:
         lg.out(4, 'gateway.detach : %r' % transport_instance)
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def inbox(info):
@@ -384,23 +397,23 @@ def inbox(info):
       to dispatch it to right place(s).
     """
     global _LastInboxPacketTime
-#     if _DoingShutdown:
-#         if _Debug:
-#             lg.out(_DebugLevel, "gateway.inbox ignoring input since _DoingShutdown ")
-#         return None
+    #     if _DoingShutdown:
+    #         if _Debug:
+    #             lg.out(_DebugLevel, "gateway.inbox ignoring input since _DoingShutdown ")
+    #         return None
     if _Debug:
-        lg.out(_DebugLevel, "gateway.inbox [%s]" % info.filename)
+        lg.out(_DebugLevel, 'gateway.inbox [%s]' % info.filename)
 
-    if info.filename == "" or not os.path.exists(info.filename):
-        lg.err("bad filename=" + info.filename)
+    if info.filename == '' or not os.path.exists(info.filename):
+        lg.err('bad filename=' + info.filename)
         return None
     try:
         data = bpio.ReadBinaryFile(info.filename)
     except:
-        lg.err("gateway.inbox ERROR reading file " + info.filename)
+        lg.err('gateway.inbox ERROR reading file ' + info.filename)
         return None
     if len(data) == 0:
-        lg.err("gateway.inbox ERROR zero byte file from %s://%s" % (info.proto, info.host))
+        lg.err('gateway.inbox ERROR zero byte file from %s://%s' % (info.proto, info.host))
         return None
     if callback.run_finish_file_receiving_callbacks(info, data):
         lg.warn('incoming data of %d bytes was filtered out in file receiving callbacks' % len(data))
@@ -408,11 +421,11 @@ def inbox(info):
     try:
         newpacket = signed.Unserialize(data)
     except:
-        lg.err("gateway.inbox ERROR during Unserialize data from %s://%s" % (info.proto, info.host))
+        lg.err('gateway.inbox ERROR during Unserialize data from %s://%s' % (info.proto, info.host))
         lg.exc()
         return None
     if newpacket is None:
-        lg.warn("newpacket from %s://%s is None" % (info.proto, info.host))
+        lg.warn('newpacket from %s://%s is None' % (info.proto, info.host))
         return None
     # newpacket.Valid() will be called later in the flow in packet_in.handle() method
     try:
@@ -426,29 +439,43 @@ def inbox(info):
         Signature = newpacket.Signature
         packet_sz = len(data)
     except:
-        lg.err("gateway.inbox ERROR during Unserialize data from %s://%s" % (info.proto, info.host))
-        lg.err("data length=" + str(len(data)))
+        lg.err('gateway.inbox ERROR during Unserialize data from %s://%s' % (info.proto, info.host))
+        lg.err('data length=' + str(len(data)))
         lg.exc()
         return None
     _LastInboxPacketTime = time.time()
     if _Debug:
-        lg.out(_DebugLevel - 2, "gateway.inbox [%s] signed by %s|%s (for %s) from %s://%s" % (
-            Command,
-            nameurl.GetName(OwnerID),
-            nameurl.GetName(CreatorID),
-            nameurl.GetName(RemoteID),
-            info.proto, info.host))
+        lg.out(
+            _DebugLevel - 2,
+            'gateway.inbox [%s] signed by %s|%s (for %s) from %s://%s'
+            % (Command, nameurl.GetName(OwnerID), nameurl.GetName(CreatorID), nameurl.GetName(RemoteID), info.proto, info.host),
+        )
     if _PacketLogFileEnabled:
-        lg.out(0, '                \033[1;49;92mINBOX %s(%s) %s %s for %s\033[0m' % (
-            newpacket.Command, newpacket.PacketID,
-            global_id.UrlToGlobalID(newpacket.OwnerID),
-            global_id.UrlToGlobalID(newpacket.CreatorID),
-            global_id.UrlToGlobalID(newpacket.RemoteID),
-        ), log_name='packet', showtime=True)
+        lg.out(
+            0,
+            '                \033[1;49;92mINBOX %s(%s) %s %s for %s\033[0m'
+            % (
+                newpacket.Command,
+                newpacket.PacketID,
+                global_id.UrlToGlobalID(newpacket.OwnerID),
+                global_id.UrlToGlobalID(newpacket.CreatorID),
+                global_id.UrlToGlobalID(newpacket.RemoteID),
+            ),
+            log_name='packet',
+            showtime=True,
+        )
     return newpacket
 
 
-def outbox(outpacket, wide=False, callbacks={}, target=None, route=None, response_timeout=None, keep_alive=True, ):
+def outbox(
+    outpacket,
+    wide=False,
+    callbacks={},
+    target=None,
+    route=None,
+    response_timeout=None,
+    keep_alive=True,
+):
     """
     Sends `packet` to the network.
 
@@ -473,21 +500,32 @@ def outbox(outpacket, wide=False, callbacks={}, target=None, route=None, respons
         `packet_out.PacketOut` object if packet was sent
     """
     if _Debug:
-        lg.out(_DebugLevel, "gateway.outbox [%s] signed by %s|%s to %s (%s), wide=%s" % (
-            outpacket.Command,
-            nameurl.GetName(outpacket.OwnerID),
-            nameurl.GetName(outpacket.CreatorID),
-            nameurl.GetName(outpacket.RemoteID),
-            nameurl.GetName(target),
-            wide,
-        ))
+        lg.out(
+            _DebugLevel,
+            'gateway.outbox [%s] signed by %s|%s to %s (%s), wide=%s'
+            % (
+                outpacket.Command,
+                nameurl.GetName(outpacket.OwnerID),
+                nameurl.GetName(outpacket.CreatorID),
+                nameurl.GetName(outpacket.RemoteID),
+                nameurl.GetName(target),
+                wide,
+            ),
+        )
     if _PacketLogFileEnabled:
-        lg.out(0, '\033[1;49;96mOUTBOX %s(%s) %s %s to %s\033[0m' % (
-            outpacket.Command, outpacket.PacketID,
-            global_id.UrlToGlobalID(outpacket.OwnerID),
-            global_id.UrlToGlobalID(outpacket.CreatorID),
-            global_id.UrlToGlobalID(outpacket.RemoteID),
-        ), log_name='packet', showtime=True)
+        lg.out(
+            0,
+            '\033[1;49;96mOUTBOX %s(%s) %s %s to %s\033[0m'
+            % (
+                outpacket.Command,
+                outpacket.PacketID,
+                global_id.UrlToGlobalID(outpacket.OwnerID),
+                global_id.UrlToGlobalID(outpacket.CreatorID),
+                global_id.UrlToGlobalID(outpacket.RemoteID),
+            ),
+            log_name='packet',
+            showtime=True,
+        )
     return callback.run_outbox_filter_callbacks(
         outpacket,
         wide=wide,
@@ -498,7 +536,9 @@ def outbox(outpacket, wide=False, callbacks={}, target=None, route=None, respons
         keep_alive=keep_alive,
     )
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def make_transfer_ID():
     """
@@ -510,7 +550,9 @@ def make_transfer_ID():
     _LastTransferID += 1
     return _LastTransferID
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def connect_to(proto, host):
     if not is_ready():
@@ -624,7 +666,9 @@ def find_active_stream(proto, stream_id=None, transfer_id=None):
         return None
     return transport(proto).call('find_stream', stream_id=stream_id, transfer_id=transfer_id)
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def cancel_input_file(transferID, why=None):
     pkt_in = packet_in.get(transferID)
@@ -655,7 +699,8 @@ def cancel_outbox_file_by_transfer_id(transferID, why=None):
     pkt_out.automat('cancel', why)
     return True
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def current_bytes_sent():
@@ -673,7 +718,8 @@ def current_bytes_received():
         res[pkt_in.transfer_id] = pkt_in.size
     return res
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def shutdown_all_outbox_packets():
@@ -689,7 +735,8 @@ def shutdown_all_inbox_packets():
     for pkt_in in list(packet_in.inbox_items().values()):
         pkt_in.event('cancel', 'shutdown')
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def packets_timeout_loop():
@@ -715,7 +762,8 @@ def stop_packets_timeout_loop():
             _PacketsTimeOutTask.cancel()
         _PacketsTimeOutTask = None
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def monitoring():
@@ -730,11 +778,11 @@ def monitoring():
             dt = time.time() - lg.when_life_begins()
             mn = dt // 60
             sc = dt - mn * 60
-            transport_log().write(u'%02d:%02d    in: %s   out: %s\n' % (
-                mn, sc, list_pkt_in, list_pkt_out))
+            transport_log().write(u'%02d:%02d    in: %s   out: %s\n' % (mn, sc, list_pkt_in, list_pkt_out))
             transport_log().flush()
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def on_file_received(info, data):
@@ -766,7 +814,7 @@ def on_identity_received(newpacket, send_ack=True):
                 reactor.callLater(0, my_id.rebuildLocalIdentity, new_revision=newidentity.getRevisionValue() + 1)  # @UndefinedVariable
                 return False
     if not identitycache.UpdateAfterChecking(idurl, newxml):
-        lg.warn("ERROR has non-Valid identity")
+        lg.warn('ERROR has non-Valid identity')
         return False
     latest_identity = id_url.get_latest_ident(newidentity.getPublicKey())
     if latest_identity:
@@ -775,8 +823,14 @@ def on_identity_received(newpacket, send_ack=True):
             # in case we saw same identity with higher revision number need to reply with Fail packet and notify user
             # this may happen after identity restore - the user starts counting revision number from 0
             # but other nodes already store previous copies, user just need to jump to the most recent revision number
-            lg.warn('received new identity with out-dated revision number %d from %r, known revision is %d' % (
-                newidentity.getRevisionValue(), idurl, latest_identity.getRevisionValue(), ))
+            lg.warn(
+                'received new identity with out-dated revision number %d from %r, known revision is %d'
+                % (
+                    newidentity.getRevisionValue(),
+                    idurl,
+                    latest_identity.getRevisionValue(),
+                )
+            )
             lg.warn('received identity: %r' % newxml)
             lg.warn('known identity: %r' % latest_identity.serialize())
             ident_packet = signed.Packet(
@@ -792,21 +846,27 @@ def on_identity_received(newpacket, send_ack=True):
     # Now that we have ID we can check the packet
     if not newpacket.Valid():
         # If not valid do nothing
-        lg.warn("not Valid packet from %s" % idurl)
+        lg.warn('not Valid packet from %s' % idurl)
         return False
     if not send_ack:
         if _Debug:
-            lg.dbg(_DebugLevel, "%s  idurl=%s  remoteID=%r  skip sending Ack()" % (
-                newpacket.PacketID, idurl, newpacket.RemoteID))
+            lg.dbg(_DebugLevel, '%s  idurl=%s  remoteID=%r  skip sending Ack()' % (newpacket.PacketID, idurl, newpacket.RemoteID))
         return True
     if newpacket.OwnerID == idurl:
         if _Debug:
-            lg.dbg(_DebugLevel, "%s  idurl=%s  remoteID=%r  sending wide Ack()" % (
-                newpacket.PacketID, idurl, newpacket.RemoteID))
+            lg.dbg(_DebugLevel, '%s  idurl=%s  remoteID=%r  sending wide Ack()' % (newpacket.PacketID, idurl, newpacket.RemoteID))
     else:
         if _Debug:
-            lg.dbg(_DebugLevel, "%s  idurl=%s  remoteID=%r  but packet ownerID=%s   sending wide Ack()" % (
-                newpacket.PacketID, idurl, newpacket.RemoteID, newpacket.OwnerID, ))
+            lg.dbg(
+                _DebugLevel,
+                '%s  idurl=%s  remoteID=%r  but packet ownerID=%s   sending wide Ack()'
+                % (
+                    newpacket.PacketID,
+                    idurl,
+                    newpacket.RemoteID,
+                    newpacket.OwnerID,
+                ),
+            )
     # wide=True : a small trick to respond to all known contacts of the remote user
     reactor.callLater(0, p2p_service.SendAck, newpacket, wide=True)  # @UndefinedVariable
     return True
@@ -816,7 +876,10 @@ def on_outbox_packet(outpacket, wide, callbacks, target=None, route=None, respon
     started_packets = packet_out.search_similar_packets(outpacket)
     if started_packets:
         for active_packet, _ in started_packets:
-            if active_packet.outpacket and active_packet.outpacket.Command in [commands.Ack(), commands.Fail(), ]:
+            if active_packet.outpacket and active_packet.outpacket.Command in [
+                commands.Ack(),
+                commands.Fail(),
+            ]:
                 continue
             if callbacks:
                 for command, cb in callbacks.items():
@@ -831,9 +894,9 @@ def on_outbox_packet(outpacket, wide, callbacks, target=None, route=None, respon
 def on_transport_state_changed(transport, oldstate, newstate):
     global _TransportStateChangedCallbacksList
     if _Debug:
-        lg.out(_DebugLevel - 2, 'gateway.on_transport_state_changed in %r : %s->%s' % (
-            transport, oldstate, newstate))
+        lg.out(_DebugLevel - 2, 'gateway.on_transport_state_changed in %r : %s->%s' % (transport, oldstate, newstate))
     from p2p import network_connector
+
     if network_connector.A():
         network_connector.A('network-transport-state-changed', transport)
     for cb in _TransportStateChangedCallbacksList:
@@ -842,10 +905,13 @@ def on_transport_state_changed(transport, oldstate, newstate):
 
 def on_transport_initialized(proto, xmlrpcurl=None):
     transport(proto).automat('transport-initialized', xmlrpcurl)
-    events.send('gateway-transport-initialized', data=dict(
-        proto=proto,
-        rpc_url=xmlrpcurl,
-    ))
+    events.send(
+        'gateway-transport-initialized',
+        data=dict(
+            proto=proto,
+            rpc_url=xmlrpcurl,
+        ),
+    )
     return True
 
 
@@ -853,11 +919,14 @@ def on_receiving_started(proto, host, options_modified=None):
     if _Debug:
         lg.out(_DebugLevel - 2, 'gateway.on_receiving_started %r host=%r' % (proto.upper(), host))
     transport(proto).automat('receiving-started', (proto, host, options_modified))
-    events.send('gateway-receiving-started', data=dict(
-        proto=proto,
-        host=host,
-        options=options_modified,
-    ))
+    events.send(
+        'gateway-receiving-started',
+        data=dict(
+            proto=proto,
+            host=host,
+            options=options_modified,
+        ),
+    )
     return True
 
 
@@ -865,10 +934,13 @@ def on_receiving_failed(proto, error_code=None):
     if _Debug:
         lg.out(_DebugLevel - 2, 'gateway.on_receiving_failed %s    error=[%s]' % (proto.upper(), str(error_code)))
     transport(proto).automat('failed')
-    events.send('gateway-receiving-failed', data=dict(
-        proto=proto,
-        error=error_code,
-    ))
+    events.send(
+        'gateway-receiving-failed',
+        data=dict(
+            proto=proto,
+            error=error_code,
+        ),
+    )
     return True
 
 
@@ -877,10 +949,13 @@ def on_disconnected(proto, result=None):
         lg.out(_DebugLevel - 2, 'gateway.on_disconnected %s    result=%s' % (proto.upper(), str(result)))
     if proto in transports():
         transport(proto).automat('stopped')
-    events.send('gateway-disconnected', data=dict(
-        proto=proto,
-        result=result,
-    ))
+    events.send(
+        'gateway-disconnected',
+        data=dict(
+            proto=proto,
+            result=result,
+        ),
+    )
     return True
 
 
@@ -913,20 +988,29 @@ def on_register_file_sending(proto, host, receiver_idurl, filename, size=0, desc
     """
     if _Debug:
         lg.out(_DebugLevel, 'gateway.on_register_file_sending %s %s to %r' % (filename, description, receiver_idurl))
-#     if id_url.field(receiver_idurl).to_bin() == my_id.getIDURL().to_bin():
-#         pkt_out, work_item = packet_out.search(proto, host, filename)
-#     else:
-#         pkt_out, work_item = packet_out.search(proto, host, filename, remote_idurl=receiver_idurl)
+    #     if id_url.field(receiver_idurl).to_bin() == my_id.getIDURL().to_bin():
+    #         pkt_out, work_item = packet_out.search(proto, host, filename)
+    #     else:
+    #         pkt_out, work_item = packet_out.search(proto, host, filename, remote_idurl=receiver_idurl)
     pkt_out, work_item = packet_out.search(proto, host, filename)
     if pkt_out is None:
-        lg.warn('skip register file sending, packet_out not found: %r %r %r %r' % (
-                proto, host, os.path.basename(filename), receiver_idurl, ))
+        lg.warn(
+            'skip register file sending, packet_out not found: %r %r %r %r'
+            % (
+                proto,
+                host,
+                os.path.basename(filename),
+                receiver_idurl,
+            )
+        )
         return None
     transfer_id = make_transfer_ID()
     if _Debug:
-        lg.out(_DebugLevel, '... OUT ... %s (%d) send {%s} via [%s] to %s at %s' % (
-            pkt_out.description, transfer_id, os.path.basename(filename), proto,
-            nameurl.GetName(receiver_idurl), host))
+        lg.out(
+            _DebugLevel,
+            '... OUT ... %s (%d) send {%s} via [%s] to %s at %s'
+            % (pkt_out.description, transfer_id, os.path.basename(filename), proto, nameurl.GetName(receiver_idurl), host),
+        )
     pkt_out.automat('register-item', (proto, host, filename, transfer_id))
     # control.request_update([('stream', transfer_id)])
     return transfer_id
@@ -949,12 +1033,18 @@ def on_unregister_file_sending(transfer_id, status, bytes_sent, error_message=No
     # control.request_update([('stream', transfer_id)])
     if status == 'finished':
         if _Debug:
-            lg.out(_DebugLevel, '>>> OUT >>> %s (%d) [%s://%s] %s with %d bytes' % (
-                pkt_out.description, transfer_id, work_item.proto, work_item.host, status.upper(), bytes_sent))
+            lg.out(
+                _DebugLevel,
+                '>>> OUT >>> %s (%d) [%s://%s] %s with %d bytes'
+                % (pkt_out.description, transfer_id, work_item.proto, work_item.host, status.upper(), bytes_sent),
+            )
     else:
         if _Debug:
-            lg.out(_DebugLevel, '>>> OUT >>> %s (%d) [%s://%s] %s : %s' % (
-                pkt_out.description, transfer_id, work_item.proto, work_item.host, str(status).upper(), error_message))
+            lg.out(
+                _DebugLevel,
+                '>>> OUT >>> %s (%d) [%s://%s] %s : %s'
+                % (pkt_out.description, transfer_id, work_item.proto, work_item.host, str(status).upper(), error_message),
+            )
     return True
 
 
@@ -962,15 +1052,32 @@ def on_cancelled_file_sending(proto, host, filename, size, description='', error
     pkt_out, work_item = packet_out.search(proto, host, filename)
     if pkt_out is None:
         if _Debug:
-            lg.out(_DebugLevel, 'gateway.on_cancelled_file_sending packet_out %s %s %s not found - IT IS OK' % (
-                proto, host, os.path.basename(filename)))
+            lg.out(_DebugLevel, 'gateway.on_cancelled_file_sending packet_out %s %s %s not found - IT IS OK' % (proto, host, os.path.basename(filename)))
         return True
-    pkt_out.automat('item-cancelled', (proto, host, filename, size, description, error_message, ))
+    pkt_out.automat(
+        'item-cancelled',
+        (
+            proto,
+            host,
+            filename,
+            size,
+            description,
+            error_message,
+        ),
+    )
     # if pkt_out.outpacket:
     #     control.request_update([('packet', pkt_out.outpacket.PacketID)])
     if _Debug:
-        lg.out(_DebugLevel, '>>> OUT >>>  {%s} CANCELLED via [%s] to %s : %s' % (
-            os.path.basename(filename), proto, host, error_message, ))
+        lg.out(
+            _DebugLevel,
+            '>>> OUT >>>  {%s} CANCELLED via [%s] to %s : %s'
+            % (
+                os.path.basename(filename),
+                proto,
+                host,
+                error_message,
+            ),
+        )
     return True
 
 
@@ -985,9 +1092,10 @@ def on_register_file_receiving(proto, host, sender_idurl, filename, size=0):
     """
     transfer_id = make_transfer_ID()
     if _Debug:
-        lg.out(_DebugLevel, '... IN ... %d receive {%s} via [%s] from %s at %s' % (
-            transfer_id, os.path.basename(filename), proto,
-            nameurl.GetName(sender_idurl), host))
+        lg.out(
+            _DebugLevel,
+            '... IN ... %d receive {%s} via [%s] from %s at %s' % (transfer_id, os.path.basename(filename), proto, nameurl.GetName(sender_idurl), host),
+        )
     incoming_packet = packet_in.create(transfer_id)
     incoming_packet.event('register-item', (proto, host, sender_idurl, filename, size))
     # control.request_update([('stream', transfer_id)])
@@ -1004,16 +1112,15 @@ def on_unregister_file_receiving(transfer_id, status, bytes_received, error_mess
         return False
     if _Debug:
         if status == 'finished':
-            lg.out(_DebugLevel, '<<< IN <<< (%d) [%s://%s] %s with %d bytes' % (
-                transfer_id, pkt_in.proto, pkt_in.host, status.upper(), bytes_received))
+            lg.out(_DebugLevel, '<<< IN <<< (%d) [%s://%s] %s with %d bytes' % (transfer_id, pkt_in.proto, pkt_in.host, status.upper(), bytes_received))
         else:
-            lg.out(_DebugLevel, '<<< IN <<< (%d) [%s://%s] %s : %s' % (
-                transfer_id, pkt_in.proto, pkt_in.host, status.upper(), error_message))
+            lg.out(_DebugLevel, '<<< IN <<< (%d) [%s://%s] %s : %s' % (transfer_id, pkt_in.proto, pkt_in.host, status.upper(), error_message))
     pkt_in.automat('unregister-item', (status, bytes_received, error_message))
     # control.request_update([('stream', transfer_id)])
     return True
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def add_transport_state_changed_callback(cb):
@@ -1027,7 +1134,8 @@ def remove_transport_state_changed_callback(cb):
     if cb in _TransportStateChangedCallbacksList:
         _TransportStateChangedCallbacksList.remove(cb)
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def open_transport_log(filename):
@@ -1056,10 +1164,11 @@ def transport_log():
     global _TransportLogFile
     return _TransportLogFile
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
-class TransportGateLocalProxy():
+class TransportGateLocalProxy:
     """
     A class to handle calls from transport plug-ins in the main thread.
     """
@@ -1085,7 +1194,7 @@ class TransportGateLocalProxy():
         m = self.methods.get(method)
         if not m:
             lg.warn('unsupported method: %s' % method)
-            from twisted.python.failure import Failure
+
             return fail(Exception('unsupported method: %s' % method))
         _d = Deferred()
 
@@ -1099,7 +1208,8 @@ class TransportGateLocalProxy():
         reactor.callLater(0, _call, method)  # @UndefinedVariable
         return _d
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 class TransportGateXMLRPCServer(xmlrpc.XMLRPC):
@@ -1129,31 +1239,32 @@ class TransportGateXMLRPCServer(xmlrpc.XMLRPC):
         try:
             return self.methods[procedurePath]
         except KeyError as e:
-            raise xmlrpc.NoSuchFunction(self.NOT_FOUND,
-                                        "procedure %s not found: %s" % (procedurePath, e))
+            raise xmlrpc.NoSuchFunction(self.NOT_FOUND, 'procedure %s not found: %s' % (procedurePath, e))
 
     def listProcedures(self):
         return list(self.methods.keys())
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def parseCommandLine():
     oparser = optparse.OptionParser()
-    oparser.add_option("-d", "--debug", dest="debug", type="int", help="set debug level")
+    oparser.add_option('-d', '--debug', dest='debug', type='int', help='set debug level')
     oparser.set_default('debug', 10)
-    oparser.add_option("-t", "--tcpport", dest="tcpport", type="int", help="specify port for TCP transport")
+    oparser.add_option('-t', '--tcpport', dest='tcpport', type='int', help='specify port for TCP transport')
     oparser.set_default('tcpport', settings.getTCPPort())
-    oparser.add_option("-u", "--udpport", dest="udpport", type="int", help="specify port for UDP transport")
+    oparser.add_option('-u', '--udpport', dest='udpport', type='int', help='specify port for UDP transport')
     oparser.set_default('udpport', settings.getUDPPort())
-    oparser.add_option("-p", "--dhtport", dest="dhtport", type="int", help="specify UDP port for DHT network")
+    oparser.add_option('-p', '--dhtport', dest='dhtport', type='int', help='specify UDP port for DHT network')
     oparser.set_default('dhtport', settings.getDHTPort())
-    oparser.add_option("-s", "--packetsize", dest="packetsize", type="int", help="set size of UDP datagrams")
+    oparser.add_option('-s', '--packetsize', dest='packetsize', type='int', help='set size of UDP datagrams')
     oparser.set_default('packetsize', 480)
     (options, args) = oparser.parse_args()
     return options, args
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def main():
@@ -1164,6 +1275,7 @@ def main():
     my_id.init()
     identitycache.init()
     from crypt import key
+
     key.InitMyKey()
     (options, args) = parseCommandLine()
     settings.override('transport.transport-tcp.transport-tcp-port', options.tcpport)
@@ -1173,8 +1285,10 @@ def main():
     tmpfile.init()
     if True:
         import lib.udp
+
         lib.udp.listen(options.udpport)
         import dht.dht_service
+
         dht.dht_service.init(options.dhtport)
     reactor.addSystemEventTrigger('before', 'shutdown', shutdown)  # @UndefinedVariable
     init()
@@ -1195,12 +1309,14 @@ def main():
             outbox(p, wide=True)
             lg.out(2, 'OUTBOX %d : %r' % (globals()['num_out'], p))
             globals()['num_out'] += 1
+
         old_state_changed = transport('udp').state_changed
 
         def new_state_changed(oldstate, newstate, event, *args, **kwargs):
             old_state_changed(oldstate, newstate, event, *args, **kwargs)
             if newstate == 'LISTENING':
                 reactor.callLater(1, _s)  # @UndefinedVariable
+
         transport('udp').state_changed = new_state_changed
         # t = task.LoopingCall(_s)
         # reactor.callLater(5, t.start, 60, True)
@@ -1209,7 +1325,8 @@ def main():
     reactor.run()  # @UndefinedVariable
     settings.shutdown()
 
-#------------------------------------------------------------------------------
 
-if __name__ == "__main__":
+# ------------------------------------------------------------------------------
+
+if __name__ == '__main__':
     main()

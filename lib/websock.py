@@ -30,32 +30,33 @@
 module:: websock
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 import os
 import time
 import json
+
 try:
     from queue import Queue, Empty
 except:
     from Queue import Queue, Empty  # @UnresolvedImport
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from twisted.internet import reactor  # @UnresolvedImport
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from lib import websocket
 
 from system import local_fs
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Debug = True
 _DebugAPIResponses = _Debug
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _APISecretFilePath = None
 _WebSocketApp = None
@@ -70,7 +71,8 @@ _CallbacksQueue = {}
 _RegisteredCallbacks = {}
 _ResponseTimeoutTasks = {}
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
 
 def start(callbacks={}, api_secret_filepath=None):
     global _APISecretFilePath
@@ -112,13 +114,22 @@ def stop():
                 print('cleaned unfinished call', json_data)
         except Empty:
             break
-    _WebSocketQueue.put_nowait((None, None, None, None, ))
+    _WebSocketQueue.put_nowait(
+        (
+            None,
+            None,
+            None,
+            None,
+        )
+    )
     if ws():
         if _Debug:
             print('websocket already closed')
         ws().close()
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def ws():
     global _WebSocketApp
@@ -154,7 +165,9 @@ def registered_callbacks():
     global _RegisteredCallbacks
     return _RegisteredCallbacks
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def on_open(ws_inst):
     global _WebSocketReady
@@ -170,7 +183,14 @@ def on_open(ws_inst):
     if cb:
         reactor.callFromThread(cb, ws_inst)  # @UndefinedVariable
     for json_data, cb, tm, timeout in _PendingCalls:
-        ws_queue().put_nowait((json_data, cb, tm, timeout, ))
+        ws_queue().put_nowait(
+            (
+                json_data,
+                cb,
+                tm,
+                timeout,
+            )
+        )
     _PendingCalls.clear()
 
 
@@ -237,7 +257,12 @@ def on_message(ws_inst, message):
             return
         result_callback = _CallbacksQueue.pop(call_id, None)
         if _DebugAPIResponses:
-            print('WS API Response {} : {}'.format(call_id, json_data['payload']['response'], ))
+            print(
+                'WS API Response {} : {}'.format(
+                    call_id,
+                    json_data['payload']['response'],
+                )
+            )
         if result_callback:
             reactor.callFromThread(result_callback, json_data)  # @UndefinedVariable
         return True
@@ -267,18 +292,24 @@ def on_request_timeout(call_id):
     global _ResponseTimeoutTasks
     if _Debug:
         print('on_request_timeout', call_id)
-    # timeout_task = 
+    # timeout_task =
     _ResponseTimeoutTasks.pop(call_id, None)
     # if timeout_task:
     #     if not timeout_task.called:
     #         timeout_task.cancel()
     res_cb = _CallbacksQueue.pop(call_id, None)
     if _DebugAPIResponses:
-        print('WS API Request TIMEOUT {}'.format(call_id, ))
+        print(
+            'WS API Request TIMEOUT {}'.format(
+                call_id,
+            )
+        )
     if res_cb:
         reactor.callFromThread(res_cb, Exception('request timeout'))  # @UndefinedVariable
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def requests_thread(active_queue):
     global _LastCallID
@@ -319,7 +350,14 @@ def requests_thread(active_queue):
             if dt < 0:
                 res_cb = _CallbacksQueue.pop(call_id, None)
                 if _DebugAPIResponses:
-                    print('\n    WS API Request already TIMED OUT {} : now={} tm={} timeout={}'.format(call_id, now, tm, timeout, ))
+                    print(
+                        '\n    WS API Request already TIMED OUT {} : now={} tm={} timeout={}'.format(
+                            call_id,
+                            now,
+                            tm,
+                            timeout,
+                        )
+                    )
                 on_fail(Exception('request timeout'), res_cb)
             else:
                 _ResponseTimeoutTasks[call_id] = reactor.callLater(dt, on_request_timeout, call_id)  # @UndefinedVariable
@@ -334,7 +372,7 @@ def websocket_thread():
     websocket.enableTrace(False)
     while is_started():
         _WebSocketClosed = False
-        ws_url = "ws://localhost:8280/"
+        ws_url = 'ws://localhost:8280/'
         if _APISecretFilePath:
             if os.path.isfile(_APISecretFilePath):
                 api_secret = local_fs.ReadTextFile(_APISecretFilePath)
@@ -344,10 +382,10 @@ def websocket_thread():
             print('websocket_thread() ws_url=%r' % ws_url)
         _WebSocketApp = websocket.WebSocketApp(
             ws_url,
-            on_message = on_message,
-            on_error = on_error,
-            on_close = on_close,
-            on_open = on_open,
+            on_message=on_message,
+            on_error=on_error,
+            on_close=on_close,
+            on_open=on_open,
         )
         try:
             ws().run_forever(ping_interval=10)
@@ -364,7 +402,9 @@ def websocket_thread():
         time.sleep(1)
     _WebSocketApp = None
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def verify_state():
     global _WebSocketReady
@@ -386,7 +426,9 @@ def verify_state():
         return 'connecting'
     return 'not-started'
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def ws_call(json_data, cb=None, timeout=None):
     global _PendingCalls
@@ -394,7 +436,14 @@ def ws_call(json_data, cb=None, timeout=None):
     if _Debug:
         print('ws_call', st)
     if st == 'ready':
-        ws_queue().put_nowait((json_data, cb, time.time(), timeout, ))
+        ws_queue().put_nowait(
+            (
+                json_data,
+                cb,
+                time.time(),
+                timeout,
+            )
+        )
         return True
     if st == 'closed':
         if cb:
@@ -403,7 +452,14 @@ def ws_call(json_data, cb=None, timeout=None):
     if st == 'connecting':
         if _Debug:
             print('web socket still connecting, remember pending request')
-        _PendingCalls.append((json_data, cb, time.time(), timeout, ))
+        _PendingCalls.append(
+            (
+                json_data,
+                cb,
+                time.time(),
+                timeout,
+            )
+        )
         return True
     if st == 'not-started':
         if _Debug:

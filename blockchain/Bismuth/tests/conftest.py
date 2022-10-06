@@ -12,13 +12,13 @@ import pytest
 # REGNET_PARAM = "regnet"
 
 # Regnet on V2 DB
-REGNET_PARAM = "regnet2"
+REGNET_PARAM = 'regnet2'
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope='session')
 def myserver():
     chdir('..')
-    p = Popen(["python3", "node.py", REGNET_PARAM])
+    p = Popen(['python3', 'node.py', REGNET_PARAM])
     chdir('tests')
     # TODO: Since this time may be dependent on run and hardware,
     # have a way to know when the regnet node is up and ready instead of blind wait.

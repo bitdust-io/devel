@@ -28,47 +28,38 @@
 
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 4
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
-import os
 import sys
-import base64
 
-from twisted.internet.defer import Deferred, fail
+from twisted.internet.defer import Deferred
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     import os.path as _p
+
     sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
-from logs import lg
 
 from lib import strng
 
-from contacts import contactsdb
-from contacts import identitycache
-
-from main import events
-
-from p2p import online_status
 
 from userid import global_id
 from userid import id_url
-from userid import my_id
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 # def do_add(idurl, result_defer, alias):
 #     added = False
@@ -97,14 +88,13 @@ from userid import my_id
 #                 ),
 #                 result_defer.callback(),
 #             ])
-# 
+#
 #     if _Debug:
 #         d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='api.friend_add')
 #     d.addErrback(result_defer)
 #     if added:
 #         return OK(message='new friend has been added', api_method='friend_add')
 #     return OK(message='this friend has been already added', api_method='friend_add')
-
 
 
 def add_friend(trusted_user_id, alias='', share_person_key=True):
@@ -117,12 +107,12 @@ def add_friend(trusted_user_id, alias='', share_person_key=True):
 
     ret = Deferred()
 
+
 #     if id_url.is_cached(idurl):
 #         _add(idurl, ret)
 #         return ret
-# 
+#
 #     d = identitycache.immediatelyCaching(idurl)
 #     d.addErrback(lambda *args: ret.callback(ERROR('failed caching user identity')))
 #     d.addCallback(lambda *args: _add(idurl, ret))
 #     return ret
-    

@@ -38,11 +38,11 @@ EVENTS:
     * :red:`timer-30sec`
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 import os
 import sys
@@ -50,7 +50,7 @@ import time
 
 from twisted.internet import reactor  # @UnresolvedImport
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -60,17 +60,17 @@ from lib import udp
 
 from automats import automat
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 14
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 MIN_PROCESS_SESSIONS_DELAY = 0.001
 MAX_PROCESS_SESSIONS_DELAY = 1.0
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _SessionsDict = {}
 _SessionsDictByPeerAddress = {}
@@ -81,7 +81,7 @@ _PendingOutboxFiles = []
 _ProcessSessionsTask = None
 _ProcessSessionsDelay = MIN_PROCESS_SESSIONS_DELAY
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 def sessions():
@@ -103,7 +103,8 @@ def pending_outbox_files():
     global _PendingOutboxFiles
     return _PendingOutboxFiles
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def create(node, peer_address, peer_id=None):
@@ -114,12 +115,16 @@ def create(node, peer_address, peer_id=None):
     try:
         sessions_by_peer_address()[peer_address].append(s)
     except:
-        sessions_by_peer_address()[peer_address] = [s, ]
+        sessions_by_peer_address()[peer_address] = [
+            s,
+        ]
     if peer_id:
         try:
             sessions_by_peer_id()[peer_id].append(s)
         except:
-            sessions_by_peer_id()[peer_id] = [s, ]
+            sessions_by_peer_id()[peer_id] = [
+                s,
+            ]
     return s
 
 
@@ -143,8 +148,7 @@ def close(peer_address):
 def add_pending_outbox_file(filename, host, description='', result_defer=None, keep_alive=True):
     pending_outbox_files().append((filename, host, description, result_defer, keep_alive, time.time()))
     if _Debug:
-        lg.out(_DebugLevel, 'udp_session.add_pending_outbox_file %s for %s : %s' % (
-            os.path.basename(filename), host, description))
+        lg.out(_DebugLevel, 'udp_session.add_pending_outbox_file %s for %s : %s' % (os.path.basename(filename), host, description))
 
 
 def remove_pending_outbox_file(host, filename):
@@ -164,22 +168,20 @@ def remove_pending_outbox_file(host, filename):
 
 def report_and_remove_pending_outbox_files_to_host(remote_host, error_message):
     from transport.udp import udp_interface
+
     global _PendingOutboxFiles
     i = 0
     while i < len(_PendingOutboxFiles):
-        filename, host, description, result_defer, keep_alive, tm = _PendingOutboxFiles[
-            i]
+        filename, host, description, result_defer, keep_alive, tm = _PendingOutboxFiles[i]
         if host != remote_host:
             i += 1
             continue
         try:
-            udp_interface.interface_cancelled_file_sending(
-                remote_host, filename, 0, description, error_message).addErrback(lambda err: lg.exc(err))
+            udp_interface.interface_cancelled_file_sending(remote_host, filename, 0, description, error_message).addErrback(lambda err: lg.exc(err))
         except Exception as exc:
             lg.warn(str(exc))
         if result_defer:
-            result_defer.callback(
-                ((filename, description), 'failed', error_message))
+            result_defer.callback(((filename, description), 'failed', error_message))
         _PendingOutboxFiles.pop(i)
 
 
@@ -205,11 +207,13 @@ def process_sessions(sessions_to_process=None):
             _ProcessSessionsDelay = MIN_PROCESS_SESSIONS_DELAY
         else:
             _ProcessSessionsDelay = misc.LoopAttenuation(
-                _ProcessSessionsDelay, has_activity,
-                MIN_PROCESS_SESSIONS_DELAY, MAX_PROCESS_SESSIONS_DELAY,)
+                _ProcessSessionsDelay,
+                has_activity,
+                MIN_PROCESS_SESSIONS_DELAY,
+                MAX_PROCESS_SESSIONS_DELAY,
+            )
         # attenuation
-        _ProcessSessionsTask = reactor.callLater(  # @UndefinedVariable
-            _ProcessSessionsDelay, process_sessions)
+        _ProcessSessionsTask = reactor.callLater(_ProcessSessionsDelay, process_sessions)  # @UndefinedVariable
 
 
 def stop_process_sessions():
@@ -219,7 +223,8 @@ def stop_process_sessions():
             _ProcessSessionsTask.cancel()
         _ProcessSessionsTask = None
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 class UDPSession(automat.Automat):
@@ -246,6 +251,7 @@ class UDPSession(automat.Automat):
 
     def __init__(self, node, peer_address, peer_id=None):
         from transport.udp import udp_file_queue
+
         self.node = node
         self.peer_address = peer_address
         self.peer_id = peer_id
@@ -253,12 +259,13 @@ class UDPSession(automat.Automat):
         self.bytes_sent = 0
         self.bytes_received = 0
         self.file_queue = udp_file_queue.FileQueue(self)
-        name = 'udp_session[%s:%d:%s]' % (
-            self.peer_address[0], self.peer_address[1], str(self.peer_id))
+        name = 'udp_session[%s:%d:%s]' % (self.peer_address[0], self.peer_address[1], str(self.peer_id))
         automat.Automat.__init__(self, name, 'AT_STARTUP', debug_level=_DebugLevel, log_events=_Debug)
 
     def is_connected(self):
-        return self.state in ['CONNECTED', ]
+        return self.state in [
+            'CONNECTED',
+        ]
 
     def get_proto(self):
         return 'udp'
@@ -288,11 +295,10 @@ class UDPSession(automat.Automat):
 
     def send_packet(self, command, payload):
         self.bytes_sent += len(payload)
-        return udp.send_command(self.node.listen_port, command,
-                                payload, self.peer_address)
+        return udp.send_command(self.node.listen_port, command, payload, self.peer_address)
 
     def A(self, event, *args, **kwargs):
-        #---AT_STARTUP---
+        # ---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'PING'
@@ -301,15 +307,15 @@ class UDPSession(automat.Automat):
                 self.doPing(*args, **kwargs)
             elif event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doErrMsg(event,self.msg('MSG_4', *args, **kwargs))
+                self.doErrMsg(event, self.msg('MSG_4', *args, **kwargs))
                 self.doClosePendingFiles(*args, **kwargs)
                 self.doNotifyDisconnected(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-        #---CONNECTED---
+        # ---CONNECTED---
         elif self.state == 'CONNECTED':
-            if event == 'shutdown' or ( event == 'timer-10sec' and not self.isSessionActive(*args, **kwargs) ):
+            if event == 'shutdown' or (event == 'timer-10sec' and not self.isSessionActive(*args, **kwargs)):
                 self.state = 'CLOSED'
-                self.doErrMsg(event,self.msg('MSG_1', *args, **kwargs))
+                self.doErrMsg(event, self.msg('MSG_1', *args, **kwargs))
                 self.doClosePendingFiles(*args, **kwargs)
                 self.doNotifyDisconnected(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
@@ -324,7 +330,7 @@ class UDPSession(automat.Automat):
                 self.doGreeting(*args, **kwargs)
             elif event == 'send-keep-alive' or event == 'timer-10sec':
                 self.doAlive(*args, **kwargs)
-        #---PING---
+        # ---PING---
         elif self.state == 'PING':
             if event == 'timer-1sec':
                 self.doStartRTT(*args, **kwargs)
@@ -342,18 +348,18 @@ class UDPSession(automat.Automat):
                 self.doGreeting(*args, **kwargs)
             elif event == 'shutdown' or event == 'timer-20sec':
                 self.state = 'CLOSED'
-                self.doErrMsg(event,self.msg('MSG_3', *args, **kwargs))
+                self.doErrMsg(event, self.msg('MSG_3', *args, **kwargs))
                 self.doClosePendingFiles(*args, **kwargs)
                 self.doNotifyDisconnected(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-        #---GREETING---
+        # ---GREETING---
         elif self.state == 'GREETING':
             if event == 'timer-1sec':
                 self.doStartRTT(*args, **kwargs)
                 self.doGreeting(*args, **kwargs)
             elif event == 'shutdown' or event == 'timer-30sec':
                 self.state = 'CLOSED'
-                self.doErrMsg(event,self.msg('MSG_2', *args, **kwargs))
+                self.doErrMsg(event, self.msg('MSG_2', *args, **kwargs))
                 self.doClosePendingFiles(*args, **kwargs)
                 self.doNotifyDisconnected(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
@@ -372,7 +378,7 @@ class UDPSession(automat.Automat):
                 self.doAcceptGreeting(*args, **kwargs)
                 self.doFinishRTT(*args, **kwargs)
                 self.doAlive(*args, **kwargs)
-        #---CLOSED---
+        # ---CLOSED---
         elif self.state == 'CLOSED':
             pass
         return None
@@ -382,35 +388,35 @@ class UDPSession(automat.Automat):
         Condition method.
         """
         command = args[0][0][0]
-        return (command == udp.CMD_DATA or command == udp.CMD_ACK)
+        return command == udp.CMD_DATA or command == udp.CMD_ACK
 
     def isPing(self, *args, **kwargs):
         """
         Condition method.
         """
         command = args[0][0][0]
-        return (command == udp.CMD_PING)
+        return command == udp.CMD_PING
 
     def isGreeting(self, *args, **kwargs):
         """
         Condition method.
         """
         command = args[0][0][0]
-        return (command == udp.CMD_GREETING)
+        return command == udp.CMD_GREETING
 
     def isAlive(self, *args, **kwargs):
         """
         Condition method.
         """
         command = args[0][0][0]
-        return (command == udp.CMD_ALIVE)
+        return command == udp.CMD_ALIVE
 
-#    def isGreetingOrAlive(self, *args, **kwargs):
-#        """
-#        Condition method.
-#        """
-#        command = arg[0][0]
-#        return ( command == udp.CMD_ALIVE or command == udp.CMD_GREETING)
+    #    def isGreetingOrAlive(self, *args, **kwargs):
+    #        """
+    #        Condition method.
+    #        """
+    #        command = arg[0][0]
+    #        return ( command == udp.CMD_ALIVE or command == udp.CMD_GREETING)
 
     def isSessionActive(self, *args, **kwargs):
         """
@@ -428,9 +434,9 @@ class UDPSession(automat.Automat):
         """
         Action method.
         """
-#        if udp_stream._Debug:
-#            if not (self.peer_address.count('37.18.255.42') or self.peer_address.count('37.18.255.38')):
-#                return
+        #        if udp_stream._Debug:
+        #            if not (self.peer_address.count('37.18.255.42') or self.peer_address.count('37.18.255.38')):
+        #                return
         # rtt_id_out = self._rtt_start('PING')
         udp.send_command(
             self.node.listen_port,
@@ -446,14 +452,13 @@ class UDPSession(automat.Automat):
         Action method.
         """
         # rtt_id_out = self._rtt_start('GREETING')
-        payload = "%s %s %s %s" % (
-            str(self.node.my_id), str(self.node.my_idurl),
-            str(self.peer_rtt_id), str(self.my_rtt_id),)
-        udp.send_command(
-            self.node.listen_port,
-            udp.CMD_GREETING,
-            strng.to_bin(payload),
-            self.peer_address)
+        payload = '%s %s %s %s' % (
+            str(self.node.my_id),
+            str(self.node.my_idurl),
+            str(self.peer_rtt_id),
+            str(self.my_rtt_id),
+        )
+        udp.send_command(self.node.listen_port, udp.CMD_GREETING, strng.to_bin(payload), self.peer_address)
         # print 'doGreeting', self.peer_rtt_id, self.my_rtt_id
         self.peer_rtt_id = '0'
         self.my_rtt_id = '0'
@@ -462,11 +467,7 @@ class UDPSession(automat.Automat):
         """
         Action method.
         """
-        udp.send_command(
-            self.node.listen_port,
-            udp.CMD_ALIVE,
-            strng.to_bin(self.peer_rtt_id),
-            self.peer_address)
+        udp.send_command(self.node.listen_port, udp.CMD_ALIVE, strng.to_bin(self.peer_rtt_id), self.peer_address)
         # print 'doAlive', self.peer_rtt_id
         self.peer_rtt_id = '0'
 
@@ -505,35 +506,24 @@ class UDPSession(automat.Automat):
         first_greeting = False
         if self.peer_id:
             if new_peer_id != self.peer_id:
-                lg.warn(
-                    'session: %s,  peer_id from GREETING is different: %s' %
-                    (self, new_peer_id))
+                lg.warn('session: %s,  peer_id from GREETING is different: %s' % (self, new_peer_id))
         else:
-            lg.out(
-                _DebugLevel,
-                'udp_session.doAcceptGreeting detected peer id : %s for session %s' %
-                (new_peer_id,
-                 self.peer_address))
+            lg.out(_DebugLevel, 'udp_session.doAcceptGreeting detected peer id : %s for session %s' % (new_peer_id, self.peer_address))
             self.peer_id = new_peer_id
-            self.name = 'udp_session[%s:%d:%s]' % (
-                self.peer_address[0], self.peer_address[1], str(self.peer_id))
+            self.name = 'udp_session[%s:%d:%s]' % (self.peer_address[0], self.peer_address[1], str(self.peer_id))
             first_greeting = True
             try:
                 sessions_by_peer_id()[self.peer_id].append(self)
             except:
-                sessions_by_peer_id()[self.peer_id] = [self, ]
+                sessions_by_peer_id()[self.peer_id] = [
+                    self,
+                ]
         if self.peer_idurl:
             if new_peer_idurl != self.peer_idurl:
-                lg.warn(
-                    'session: %s,  peer_idurl from GREETING is different: %s' %
-                    (self, new_peer_idurl))
+                lg.warn('session: %s,  peer_idurl from GREETING is different: %s' % (self, new_peer_idurl))
         else:
             if _Debug:
-                lg.out(
-                    _DebugLevel,
-                    'udp_session.doAcceptGreeting detected peer idurl : %s for session %s' %
-                    (new_peer_idurl,
-                     self.peer_address))
+                lg.out(_DebugLevel, 'udp_session.doAcceptGreeting detected peer idurl : %s for session %s' % (new_peer_idurl, self.peer_address))
             self.peer_idurl = new_peer_idurl
             first_greeting = True
         if first_greeting:
@@ -541,15 +531,11 @@ class UDPSession(automat.Automat):
                 if self.id == s.id:
                     continue
                 if self.peer_id == s.peer_id:
-                    lg.warn(
-                        'got GREETING from another address, close session %s' %
-                        s)
+                    lg.warn('got GREETING from another address, close session %s' % s)
                     s.automat('shutdown')
                     continue
                 if self.peer_idurl == s.peer_idurl:
-                    lg.warn(
-                        'got GREETING from another idurl, close session %s' %
-                        s)
+                    lg.warn('got GREETING from another idurl, close session %s' % s)
                     s.automat('shutdown')
                     continue
 
@@ -577,12 +563,13 @@ class UDPSession(automat.Automat):
             self.file_queue.on_received_data_packet(payload)
         elif command == udp.CMD_ACK:
             self.file_queue.on_received_ack_packet(payload)
-#        elif command == udp.CMD_PING:
-#            pass
-#        elif command == udp.CMD_ALIVE:
-#            pass
-#        elif command == udp.CMD_GREETING:
-#            pass
+
+    #        elif command == udp.CMD_PING:
+    #            pass
+    #        elif command == udp.CMD_ALIVE:
+    #            pass
+    #        elif command == udp.CMD_GREETING:
+    #            pass
 
     def doNotifyConnected(self, *args, **kwargs):
         """
@@ -611,13 +598,10 @@ class UDPSession(automat.Automat):
                 outgoings += 1
                 # small trick to speed up service packets - they have a high
                 # priority
-                if description.startswith(
-                        'Identity') or description.startswith('Ack'):
-                    self.file_queue.insert_outbox_file(
-                        filename, description, result_defer, keep_alive)
+                if description.startswith('Identity') or description.startswith('Ack'):
+                    self.file_queue.insert_outbox_file(filename, description, result_defer, keep_alive)
                 else:
-                    self.file_queue.append_outbox_file(
-                        filename, description, result_defer, keep_alive)
+                    self.file_queue.append_outbox_file(filename, description, result_defer, keep_alive)
                 _PendingOutboxFiles.pop(i)
                 # print 'pop'
             else:
@@ -632,8 +616,7 @@ class UDPSession(automat.Automat):
         """
         Action method.
         """
-        report_and_remove_pending_outbox_files_to_host(
-            self.peer_id, self.error_message)
+        report_and_remove_pending_outbox_files_to_host(self.peer_id, self.error_message)
         self.file_queue.report_failed_inbox_files(self.error_message)
         self.file_queue.report_failed_outbox_files(self.error_message)
         self.file_queue.report_failed_outbox_queue(self.error_message)
@@ -672,10 +655,7 @@ class UDPSession(automat.Automat):
         for rtt_id in to_remove:
             # print 'doFinishAllRTTs closed', rtt_id
             del self.rtts[rtt_id]
-            lg.out(
-                _DebugLevel,
-                'udp_session.doFinishAllRTTs: %r' %
-                good_rtts)  # print self.rtts.keys()
+            lg.out(_DebugLevel, 'udp_session.doFinishAllRTTs: %r' % good_rtts)  # print self.rtts.keys()
 
     def doErrMsg(self, event, *args, **kwargs):
         """
@@ -746,19 +726,17 @@ class UDPSession(automat.Automat):
         # print 'rtt finish', rtt_id_in, self.peer_id
         if rtt_id_in == '0' or rtt_id_in not in self.rtts:
             return
-#             or rtt_id_in not in self.rtts:
-#            for rtt_id in self.rtts.keys():
-#                if self.rtts[rtt_id][1] == -1:
-#                    rtt = self.rtts[rtt_id][1] - self.rtts[rtt_id][0]
-#                    del self.rtts[rtt_id]
-#                        lg.out(_DebugLevel, 'udp_session._rtt_finish removed not finished RTT %s:%r' % (
-#                        rtt_id, rtt))
-#                    return
-#            lg.warn('rtt %s not found in %s' % (rtt_id_in, self))
-#            return
+        #             or rtt_id_in not in self.rtts:
+        #            for rtt_id in self.rtts.keys():
+        #                if self.rtts[rtt_id][1] == -1:
+        #                    rtt = self.rtts[rtt_id][1] - self.rtts[rtt_id][0]
+        #                    del self.rtts[rtt_id]
+        #                        lg.out(_DebugLevel, 'udp_session._rtt_finish removed not finished RTT %s:%r' % (
+        #                        rtt_id, rtt))
+        #                    return
+        #            lg.warn('rtt %s not found in %s' % (rtt_id_in, self))
+        #            return
         self.rtts[rtt_id_in][1] = time.time()
         rtt = self.rtts[rtt_id_in][1] - self.rtts[rtt_id_in][0]
         if _Debug:
-            lg.out(
-                _DebugLevel, 'udp_session._rtt_finish registered RTT %s  %r' %
-                (rtt_id_in, rtt))
+            lg.out(_DebugLevel, 'udp_session._rtt_finish registered RTT %s  %r' % (rtt_id_in, rtt))

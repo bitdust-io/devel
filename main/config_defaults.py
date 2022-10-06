@@ -151,7 +151,7 @@ def reset(conf_obj):
     conf_obj.setDefaultValue('services/identity-propagate/min-servers', 2)
     conf_obj.setDefaultValue('services/identity-propagate/max-servers', 5)
     conf_obj.setDefaultValue('services/identity-propagate/automatic-rotate-enabled', 'true')
-    conf_obj.setDefaultValue('services/identity-propagate/health-check-interval-seconds', 60*5)
+    conf_obj.setDefaultValue('services/identity-propagate/health-check-interval-seconds', 60 * 5)
 
     conf_obj.setDefaultValue('services/ip-port-responder/enabled', 'true')
 
@@ -247,4 +247,3 @@ def reset(conf_obj):
     conf_obj.setDefaultValue('services/udp-transport/receiving-enabled', 'true')
     conf_obj.setDefaultValue('services/udp-transport/sending-enabled', 'true')
     conf_obj.setDefaultValue('services/udp-transport/priority', 20)
-

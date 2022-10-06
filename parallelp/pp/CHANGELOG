@@ -1,6 +1,6 @@
 pp-1.5.7:
     1) Added ppworker restart after task completion functionality
-    2) Added pickle protocol option  
+    2) Added pickle protocol option
     3) Merges patch for Python 2.6 compatibility (contributed by mrtss)
     4) Merged patch for config file support (contributed by stevemilner)
     5) Documentation has been moved to doc folder.
@@ -10,7 +10,7 @@ pp-1.5.6
     2) Merged new code quality improvement patches (contributed by stevemilner)
 
 pp-1.5.5
-    1) Fixed bug which caused segmentation fault when calling destroy() method. 
+    1) Fixed bug which caused segmentation fault when calling destroy() method.
     2) Merged performance and quality improvement patches (contributed by stevemilner)
 
 pp-1.5.4

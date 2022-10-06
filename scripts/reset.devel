@@ -8,4 +8,3 @@ git config --global user.email "veselin@vps"
 git config --global user.name "Veselin VPS"
 git status
 cd ..
-

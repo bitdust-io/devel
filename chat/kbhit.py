@@ -32,7 +32,6 @@ else:
 
 
 class KBHit:
-
     def __init__(self):
         """
         Creates a KBHit object that you can call to do various keyboard things.
@@ -49,8 +48,7 @@ class KBHit:
             self.old_term = termios.tcgetattr(self.fd)
 
             # New terminal setting unbuffered
-            self.new_term[3] = (
-                self.new_term[3] & ~termios.ICANON & ~termios.ECHO)
+            self.new_term[3] = self.new_term[3] & ~termios.ICANON & ~termios.ECHO
             termios.tcsetattr(self.fd, termios.TCSAFLUSH, self.new_term)
 
             # Support normal-terminal reset at exit
@@ -119,7 +117,7 @@ class KBHit:
 
 
 # Test
-if __name__ == "__main__":
+if __name__ == '__main__':
 
     kb = KBHit()
 

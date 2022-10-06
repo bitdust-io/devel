@@ -32,27 +32,27 @@ EVENTS:
     * :red:`stop`
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
-import os
 import sys
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     import os.path as _p
+
     sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 10
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -67,11 +67,11 @@ from lib import udp
 
 from dht import dht_service
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _StunServer = None
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 def A(event=None, *args, **kwargs):
@@ -117,19 +117,19 @@ class StunServer(automat.Automat):
         self.listen_port = None
 
     def A(self, event, *args, **kwargs):
-        #---AT_STARTUP---
+        # ---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'start':
                 self.state = 'LISTEN'
                 self.doInit(*args, **kwargs)
-        #---LISTEN---
+        # ---LISTEN---
         elif self.state == 'LISTEN':
             if event == 'stop':
                 self.state = 'STOPPED'
                 self.doStop(*args, **kwargs)
             elif event == 'datagram-received' and self.isSTUN(*args, **kwargs):
                 self.doSendYourIPPort(*args, **kwargs)
-        #---STOPPED---
+        # ---STOPPED---
         elif self.state == 'STOPPED':
             if event == 'start':
                 self.state = 'LISTEN'
@@ -184,19 +184,20 @@ class StunServer(automat.Automat):
         youripport = net_misc.pack_address((address[0], address[1]))
         udp.send_command(self.listen_port, udp.CMD_MYIPPORT, youripport, address)
         if _Debug:
-            lg.out(_DebugLevel, 'stun_server.doSendYourIPPort [%s] to %s' % (
-                youripport, address))
+            lg.out(_DebugLevel, 'stun_server.doSendYourIPPort [%s] to %s' % (youripport, address))
 
     def _datagramReceived(self, datagram, address):
-        """
-        """
+        """ """
         self.automat('datagram-received', (datagram, address))
         return False
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def main():
     from twisted.internet import reactor  # @UnresolvedImport
+
     lg.set_debug_level(24)
     bpio.init()
     settings.init()
@@ -217,7 +218,8 @@ def main():
     reactor.run()  # @UndefinedVariable
     settings.shutdown()
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 if __name__ == '__main__':

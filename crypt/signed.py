@@ -42,23 +42,23 @@ Packet Fields are all strings (no integers, objects, etc)
     - Signature : signature on Hash is always by CreatorID
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 from __future__ import print_function
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 10
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 import sys
 
 from twisted.internet import threads
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -79,7 +79,8 @@ from crypt import key
 from userid import my_id
 from userid import id_url
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
 
 class Packet(object):
     """
@@ -96,7 +97,18 @@ class Packet(object):
     make all network working.
     """
 
-    def __init__(self, Command, OwnerID, CreatorID, PacketID, Payload, RemoteID, KeyID=None, Date=None, Signature=None, ):
+    def __init__(
+        self,
+        Command,
+        OwnerID,
+        CreatorID,
+        PacketID,
+        Payload,
+        RemoteID,
+        KeyID=None,
+        Date=None,
+        Signature=None,
+    ):
         """
         Init all fields and sign the packet.
         """
@@ -110,7 +122,7 @@ class Packet(object):
         # on the local machine.  Can be used for filenames, and to prevent duplicates.
         self.PacketID = strng.to_text(PacketID)
         # create a string to remember current world time
-        self.Date = strng.to_text(Date or utime.sec1970_to_datetime_utc().strftime("%Y/%m/%d %I:%M:%S %p"))
+        self.Date = strng.to_text(Date or utime.sec1970_to_datetime_utc().strftime('%Y/%m/%d %I:%M:%S %p'))
         # datetime.datetime.now().strftime("%Y/%m/%d %I:%M:%S %p")
         # main body of binary data
         self.Payload = strng.to_bin(Payload)
@@ -133,10 +145,7 @@ class Packet(object):
         args = '%s(%s)' % (str(self.Command), str(self.PacketID))
         if _Debug:
             if lg.is_debug(_DebugLevel):
-                args += ' %s|%s for %s' % (
-                    nameurl.GetName(self.OwnerID),
-                    nameurl.GetName(self.CreatorID),
-                    nameurl.GetName(self.RemoteID))
+                args += ' %s|%s for %s' % (nameurl.GetName(self.OwnerID), nameurl.GetName(self.CreatorID), nameurl.GetName(self.RemoteID))
         return 'signed{%s}' % args
 
     def Sign(self):
@@ -174,13 +183,13 @@ class Packet(object):
         except Exception as exc:
             lg.exc()
             raise exc
-#         if _Debug:
-#             if _LogSignVerify:
-#                 try:
-#                     from main import settings
-#                     open(os.path.join(settings.LogsDir(), 'crypt.log'), 'wb').write(b'\nGenerateHashBase:\n' + stufftosum + b'\n\n')
-#                 except:
-#                     lg.exc()
+        #         if _Debug:
+        #             if _LogSignVerify:
+        #                 try:
+        #                     from main import settings
+        #                     open(os.path.join(settings.LogsDir(), 'crypt.log'), 'wb').write(b'\nGenerateHashBase:\n' + stufftosum + b'\n\n')
+        #                 except:
+        #                     lg.exc()
         return stufftosum
 
     def GenerateHash(self):
@@ -199,17 +208,17 @@ class Packet(object):
         #     signature = key.Sign(_hash_base)
         # else:
         #     signature = my_keys.sign(self.KeyID, _hash_base)
-#         if _Debug:
-#             if _LogSignVerify:
-#                 try:
-#                     from main import settings
-#                     try:
-#                         from Cryptodome.Util import number
-#                     except:
-#                         from Crypto.Util import number  # @UnresolvedImport @Reimport
-#                     open(os.path.join(settings.LogsDir(), 'crypt.log'), 'wb').write(b'\GenerateSignature:\n' + strng.to_bin(number.long_to_bytes(signature)) + b'\n\n')
-#                 except:
-#                     lg.exc()
+        #         if _Debug:
+        #             if _LogSignVerify:
+        #                 try:
+        #                     from main import settings
+        #                     try:
+        #                         from Cryptodome.Util import number
+        #                     except:
+        #                         from Crypto.Util import number  # @UnresolvedImport @Reimport
+        #                     open(os.path.join(settings.LogsDir(), 'crypt.log'), 'wb').write(b'\GenerateSignature:\n' + strng.to_bin(number.long_to_bytes(signature)) + b'\n\n')
+        #                 except:
+        #                     lg.exc()
         return signature
 
     def SignatureChecksOut(self, raise_signature_invalid=False):
@@ -230,30 +239,30 @@ class Packet(object):
             # CreatorIdentity = OwnerIdentity
             if raise_signature_invalid:
                 raise Exception('can not verify signed packet, unknown identity %r' % self.CreatorID)
-            lg.err("could not get Identity for %r so returning False" % self.CreatorID)
+            lg.err('could not get Identity for %r so returning False' % self.CreatorID)
             return False
 
-#         if _Debug:
-#             if _LogSignVerify:
-#                 try:
-#                     from main import settings
-#                     try:
-#                         from Cryptodome.Util import number
-#                     except:
-#                         from Crypto.Util import number  # @UnresolvedImport @Reimport
-#                     open(os.path.join(settings.LogsDir(), 'crypt.log'), 'wb').write(b'\SignatureChecksOut:\n' + strng.to_bin(number.long_to_bytes(self.Signature)) + b'\n\n')
-#                 except:
-#                     lg.exc()
+        #         if _Debug:
+        #             if _LogSignVerify:
+        #                 try:
+        #                     from main import settings
+        #                     try:
+        #                         from Cryptodome.Util import number
+        #                     except:
+        #                         from Crypto.Util import number  # @UnresolvedImport @Reimport
+        #                     open(os.path.join(settings.LogsDir(), 'crypt.log'), 'wb').write(b'\SignatureChecksOut:\n' + strng.to_bin(number.long_to_bytes(self.Signature)) + b'\n\n')
+        #                 except:
+        #                     lg.exc()
 
         Result = key.Verify(CreatorIdentity, self.GenerateHash(), self.Signature)
 
-#         if _Debug:
-#             if _LogSignVerify:
-#                 try:
-#                     from main import settings
-#                     open(os.path.join(settings.LogsDir(), 'crypt.log'), 'wb').write(b'\Result:' + strng.to_bin(str(Result)) + b'\n\n')
-#                 except:
-#                     lg.exc()
+        #         if _Debug:
+        #             if _LogSignVerify:
+        #                 try:
+        #                     from main import settings
+        #                     open(os.path.join(settings.LogsDir(), 'crypt.log'), 'wb').write(b'\Result:' + strng.to_bin(str(Result)) + b'\n\n')
+        #                 except:
+        #                     lg.exc()
 
         return Result
 
@@ -275,10 +284,10 @@ class Packet(object):
         """
         if not self.Ready():
             if _Debug:
-                lg.out(_DebugLevel, "signed.Valid packet is not ready yet " + str(self))
+                lg.out(_DebugLevel, 'signed.Valid packet is not ready yet ' + str(self))
             return False
         if not commands.IsCommand(self.Command):
-            lg.warn("signed.Valid bad Command " + str(self.Command))
+            lg.warn('signed.Valid bad Command ' + str(self.Command))
             return False
         if not self.SignatureChecksOut(raise_signature_invalid=raise_signature_invalid):
             if raise_signature_invalid:
@@ -288,15 +297,13 @@ class Packet(object):
                 owner_xml = contactsdb.get_contact_identity(self.OwnerID)
                 if owner_xml:
                     owner_xml = owner_xml.serialize(as_text=True)
-                raise Exception('signature is not valid for %r:\n\n%r\n\ncreator:\n\n%r\n\nowner:\n\n%r' % (
-                    self, self.Serialize(), creator_xml, owner_xml))
-            lg.warn("signed.Valid Signature IS NOT VALID!!!")
+                raise Exception('signature is not valid for %r:\n\n%r\n\ncreator:\n\n%r\n\nowner:\n\n%r' % (self, self.Serialize(), creator_xml, owner_xml))
+            lg.warn('signed.Valid Signature IS NOT VALID!!!')
             return False
         return True
 
     def BackupID(self):
-        """
-        """
+        """ """
         backupID, _, _ = self.PacketID.rpartition('/')
         return backupID
 
@@ -333,7 +340,7 @@ class Packet(object):
             'r': self.RemoteID.original(),
             'k': self.KeyID,
             's': self.Signature,
-        }        
+        }
         src = serialization.DictToBytes(dct, encoding='latin1')
         # if _Debug:
         #     lg.out(_DebugLevel, 'signed.Serialize %d bytes %s(%s) %s/%s/%s KeyID=%s\n%r' % (
@@ -399,7 +406,8 @@ def Unserialize(data):
         )
     except:
         if _Debug:
-            lg.args(_DebugLevel,
+            lg.args(
+                _DebugLevel,
                 Command=Command,
                 OwnerID=OwnerID,
                 CreatorID=CreatorID,
@@ -442,17 +450,20 @@ def MakePacketDeferred(Command, OwnerID, CreatorID, PacketID, Payload, RemoteID)
     """
     return threads.deferToThread(MakePacket, Command, OwnerID, CreatorID, PacketID, Payload, RemoteID)
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 if __name__ == '__main__':
     bpio.init()
     lg.set_debug_level(18)
     from main import settings
+
     settings.init()
     key.InitMyKey()
     from userid import identity
     from contacts import identitycache
+
     if len(sys.argv) > 2:
         creator_ident = identity.identity(xmlsrc=bpio.ReadTextFile(sys.argv[2]))
         identitycache.UpdateAfterChecking(idurl=creator_ident.getIDURL(), xml_src=creator_ident.serialize())

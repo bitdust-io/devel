@@ -20,22 +20,22 @@ import socks
 import sys
 
 
-__version__ = "0.0.1"
+__version__ = '0.0.1'
 
 
 def add_peers(peers: dict):
     s = socks.socksocket()
     s.settimeout(10)
-    s.connect(("127.0.0.1", 5658))
+    s.connect(('127.0.0.1', 5658))
     # Command first
-    connections.send(s, "addpeers")
+    connections.send(s, 'addpeers')
     # addpeers expects a string, that is a json encoded dict.
     connections.send(s, json.dumps(peers))
     res = connections.receive(s)
     return res
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     _, peers_string = sys.argv
     peers = peers_string.split(',')
     peers_dict = {}
@@ -47,5 +47,5 @@ if __name__ == "__main__":
             port = '5658'
         peers_dict[ip] = port
     res_as_dict = add_peers(peers_dict)
-    print("Answer (-1 means busy testing peers):")
+    print('Answer (-1 means busy testing peers):')
     print(json.dumps(res_as_dict, indent=2))

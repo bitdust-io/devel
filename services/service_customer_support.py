@@ -55,6 +55,7 @@ class CustomerSupportService(LocalService):
         from supplier import customer_assistant
         from contacts import contactsdb
         from transport import callback
+
         for customer_idurl in contactsdb.customers():
             if id_url.is_cached(customer_idurl):
                 if customer_idurl and not customer_assistant.by_idurl(customer_idurl):
@@ -70,6 +71,7 @@ class CustomerSupportService(LocalService):
         from main import events
         from supplier import customer_assistant
         from transport import callback
+
         callback.remove_inbox_callback(self._on_inbox_packet_received)
         callback.remove_outbox_callback(self._on_outbox_packet_sent)
         events.remove_subscriber(self._on_identity_url_changed, 'identity-url-changed')
@@ -85,6 +87,7 @@ class CustomerSupportService(LocalService):
         from p2p import commands
         from contacts import contactsdb
         from supplier import customer_assistant
+
         if pkt_out.outpacket.Command == commands.Identity():
             if contactsdb.is_customer(pkt_out.outpacket.RemoteID):
                 ca = customer_assistant.by_idurl(pkt_out.outpacket.RemoteID)
@@ -97,6 +100,7 @@ class CustomerSupportService(LocalService):
         from p2p import commands
         from contacts import contactsdb
         from supplier import customer_assistant
+
         if newpacket.Command in [commands.Ack(), commands.Fail()]:
             if contactsdb.is_customer(newpacket.OwnerID):
                 ca = customer_assistant.by_idurl(newpacket.OwnerID)
@@ -110,9 +114,16 @@ class CustomerSupportService(LocalService):
         from logs import lg
         from userid import id_url
         from supplier import customer_assistant
+
         for customer_idurl, ca in customer_assistant.assistants().items():
             if customer_idurl == id_url.field(evt.data['old_idurl']):
                 customer_idurl.refresh(replace_original=True)
                 ca.customer_idurl.refresh(replace_original=True)
-                lg.info('found %r to be refreshed after rotated identity: %r' % (ca, customer_idurl, ))
+                lg.info(
+                    'found %r to be refreshed after rotated identity: %r'
+                    % (
+                        ca,
+                        customer_idurl,
+                    )
+                )
                 reactor.callLater(0, ca.automat, 'connect')  # @UndefinedVariable

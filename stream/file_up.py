@@ -52,29 +52,29 @@ EVENTS:
     * :red:`timeout`
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 8
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 import os
 import sys
 import time
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 try:
     from twisted.internet import reactor  # @UnresolvedImport
 except:
     sys.exit('Error initializing twisted.internet.reactor in file_up.py')
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -97,15 +97,29 @@ from transport import packet_out
 
 from stream import io_throttle
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
 
 class FileUp(automat.Automat):
     """
     This class implements all the functionality of ``file_up()`` state machine.
     """
 
-    def __init__(self, parent, fileName, packetID, remoteID, ownerID, callOnAck=None, callOnFail=None,
-                 debug_level=_DebugLevel, log_events=_Debug, log_transitions=_Debug, publish_events=False, **kwargs):
+    def __init__(
+        self,
+        parent,
+        fileName,
+        packetID,
+        remoteID,
+        ownerID,
+        callOnAck=None,
+        callOnFail=None,
+        debug_level=_DebugLevel,
+        log_events=_Debug,
+        log_transitions=_Debug,
+        publish_events=False,
+        **kwargs
+    ):
         """
         Builds `file_up()` state machine.
         """
@@ -133,8 +147,8 @@ class FileUp(automat.Automat):
         self.result = ''
         self.created = utime.get_sec1970()
         super(FileUp, self).__init__(
-            name="file_up_%s_%s/%s/%s" % (nameurl.GetName(self.remoteID), remotePath, versionName, fileName),
-            state="AT_STARTUP",
+            name='file_up_%s_%s/%s/%s' % (nameurl.GetName(self.remoteID), remotePath, versionName, fileName),
+            state='AT_STARTUP',
             debug_level=debug_level,
             log_events=log_events,
             log_transitions=log_transitions,
@@ -146,13 +160,13 @@ class FileUp(automat.Automat):
         """
         The state machine code, generated using `visio2python <http://bitdust.io/visio2python/>`_ tool.
         """
-        #---AT_STARTUP---
+        # ---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'IN_QUEUE'
                 self.doInit(*args, **kwargs)
                 self.doQueueAppend(*args, **kwargs)
-        #---IN_QUEUE---
+        # ---IN_QUEUE---
         elif self.state == 'IN_QUEUE':
             if event == 'stop':
                 self.state = 'STOPPED'
@@ -170,7 +184,7 @@ class FileUp(automat.Automat):
                 self.doReportFailed(event, *args, **kwargs)
                 self.doQueueNext(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-        #---UPLOADING---
+        # ---UPLOADING---
         elif self.state == 'UPLOADING':
             if event == 'stop':
                 self.state = 'STOPPED'
@@ -194,19 +208,19 @@ class FileUp(automat.Automat):
                 self.doDestroyMe(*args, **kwargs)
             elif event == 'data-sent':
                 self.state = 'ACK?'
-        #---DELIVERED---
+        # ---DELIVERED---
         elif self.state == 'DELIVERED':
             pass
-        #---STOPPED---
+        # ---STOPPED---
         elif self.state == 'STOPPED':
             pass
-        #---FAILED---
+        # ---FAILED---
         elif self.state == 'FAILED':
             pass
-        #---NO_FILE---
+        # ---NO_FILE---
         elif self.state == 'NO_FILE':
             pass
-        #---ACK?---
+        # ---ACK?---
         elif self.state == 'ACK?':
             if event == 'stop':
                 self.state = 'STOPPED'
@@ -287,8 +301,14 @@ class FileUp(automat.Automat):
         for pkt_out in packetsToCancel:
             if pkt_out.outpacket.Command == commands.Data():
                 if _Debug:
-                    lg.dbg(_DebugLevel, 'sending "cancel" to %s addressed to %s because downloading cancelled' % (
-                        pkt_out, pkt_out.remote_idurl, ))
+                    lg.dbg(
+                        _DebugLevel,
+                        'sending "cancel" to %s addressed to %s because downloading cancelled'
+                        % (
+                            pkt_out,
+                            pkt_out.remote_idurl,
+                        ),
+                    )
                 pkt_out.automat('cancel')
 
     def doQueueNext(self, *args, **kwargs):
@@ -355,4 +375,3 @@ class FileUp(automat.Automat):
         self.result = None
         self.created = None
         self.destroy()
-

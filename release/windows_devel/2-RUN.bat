@@ -13,7 +13,7 @@ sleep 2
 
 @echo.
 @echo [ replacing files ]
-rmdir "%USERPROFILE%\.bitdust\bin" /S /Q 
+rmdir "%USERPROFILE%\.bitdust\bin" /S /Q
 mkdir "%USERPROFILE%\.bitdust\bin"
 xcopy "bin\*" "%USERPROFILE%\.bitdust\bin\" /E /R /H /Y /Q
 cd "%USERPROFILE%\.bitdust\bin\"

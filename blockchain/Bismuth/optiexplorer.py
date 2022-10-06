@@ -10,9 +10,10 @@ from tornado.ioloop import IOLoop
 
 import sqlite3, time, essentials
 from flask import Flask, render_template
+
 app = Flask(__name__)
 
-key, public_key_readable, private_key_readable, _, _, public_key_hashed, address, keyfile = essentials.keys_load ("privkey.der", "pubkey.der")
+key, public_key_readable, private_key_readable, _, _, public_key_hashed, address, keyfile = essentials.keys_load('privkey.der', 'pubkey.der')
 
 # load config
 
@@ -21,7 +22,7 @@ try:
     lines = [line.rstrip('\n') for line in open('pool.txt')]
     for line in lines:
         try:
-            if "m_timeout=" in line:
+            if 'm_timeout=' in line:
                 m_timeout = int(line.split('=')[1])
         except Exception as e:
             m_timeout = 5
@@ -31,7 +32,7 @@ except Exception as e:
 
 # load config
 
-#@app.route('/static/<filename>')
+# @app.route('/static/<filename>')
 # def server_static(filename):
 # return static_file(filename, root='static/')
 
@@ -53,7 +54,7 @@ def main():
     o = oldies.cursor()
 
     addresses = []
-    for row in s.execute("SELECT * FROM shares"):
+    for row in s.execute('SELECT * FROM shares'):
         shares_address = row[0]
         shares_value = row[1]
         shares_timestamp = row[2]
@@ -73,33 +74,29 @@ def main():
     data_wcount = []
 
     for x in addresses:
-        s.execute(
-            "SELECT sum(shares) FROM shares WHERE address = ? AND paid != 1", (x,))
+        s.execute('SELECT sum(shares) FROM shares WHERE address = ? AND paid != 1', (x,))
         shares_sum = s.fetchone()[0]
         if shares_sum == None:
             shares_sum = 0
             continue
         output_shares.append(shares_sum)
 
-        s.execute(
-            "SELECT timestamp FROM shares WHERE address = ? ORDER BY timestamp ASC LIMIT 1", (x,))
+        s.execute('SELECT timestamp FROM shares WHERE address = ? ORDER BY timestamp ASC LIMIT 1', (x,))
         shares_timestamp = s.fetchone()[0]
         output_timestamps.append(float(shares_timestamp))
 
-        s.execute(
-            "SELECT * FROM shares WHERE address = ? ORDER BY timestamp DESC LIMIT 1", (x,))
+        s.execute('SELECT * FROM shares WHERE address = ? ORDER BY timestamp DESC LIMIT 1', (x,))
         shares_last = s.fetchone()
-        #mrate = shares_last[4]
+        # mrate = shares_last[4]
         mname = shares_last[7]  # last worker
 
-        s.execute("SELECT DISTINCT name FROM shares WHERE address = ?", (x,))
+        s.execute('SELECT DISTINCT name FROM shares WHERE address = ?', (x,))
         shares_names = s.fetchall()
 
         nrate = []
         ncount = []
         for n in shares_names:
-            s.execute(
-                "SELECT * FROM shares WHERE address = ? AND name = ? ORDER BY timestamp DESC LIMIT 1", (x, n[0]))
+            s.execute('SELECT * FROM shares WHERE address = ? AND name = ? ORDER BY timestamp DESC LIMIT 1', (x, n[0]))
             names_last = s.fetchone()
             t1 = time.time()
             t2 = float(names_last[2])
@@ -143,7 +140,7 @@ def main():
     data_tHash = []
     data_twcount = []
 
-    for row in c.execute("SELECT * FROM transactions WHERE address = ? AND CAST(timestamp AS INTEGER) >= ? AND reward != 0", (address,) + (block_threshold,)):
+    for row in c.execute('SELECT * FROM transactions WHERE address = ? AND CAST(timestamp AS INTEGER) >= ? AND reward != 0', (address,) + (block_threshold,)):
         data_block.append(row[0])
         data_reward.append(row[9])
         reward_list.append(float(row[9]))
@@ -185,31 +182,27 @@ def main():
     data_blockheight = []
     data_ptime = []
 
-    for row in c.execute("SELECT * FROM transactions WHERE address = ? and openfield = ? ORDER BY timestamp DESC LIMIT 80", (address,) + ("pool",)):
+    for row in c.execute('SELECT * FROM transactions WHERE address = ? and openfield = ? ORDER BY timestamp DESC LIMIT 80', (address,) + ('pool',)):
         data_paddress.append(row[3])
         data_bismuthreward.append(row[4])
         data_blockheight.append(row[0])
-        data_ptime.append(format(time.strftime(
-            "%Y/%m/%d,%H:%M:%S", time.gmtime(float(row[1])))))
+        data_ptime.append(format(time.strftime('%Y/%m/%d,%H:%M:%S', time.gmtime(float(row[1])))))
 
     conn.close()
     shares.close()
     oldies.close()
 
-    return render_template("index.html",
-                           recentminers=zip(
-                               data_addres, data_shares, data_mrate, data_mname, data_wcount),
-                           bpstats=zip(data_block, data_reward, data_tShares,
-                                       data_rewardps, data_tReward, data_tHash, data_twcount),
-                           payouts=zip(data_addres, data_bismuthreward,
-                                       data_blockheight, data_ptime),
-                           payoutsfees=zip(data_pendingaddress,
-                                           data_pendingreward)
-                           )
+    return render_template(
+        'index.html',
+        recentminers=zip(data_addres, data_shares, data_mrate, data_mname, data_wcount),
+        bpstats=zip(data_block, data_reward, data_tShares, data_rewardps, data_tReward, data_tHash, data_twcount),
+        payouts=zip(data_addres, data_bismuthreward, data_blockheight, data_ptime),
+        payoutsfees=zip(data_pendingaddress, data_pendingreward),
+    )
 
 
-if __name__ == "__main__":
-    #app.run(host='0.0.0.0', port=9080, debug=True)
-	http_server = HTTPServer(WSGIContainer(app))
-	http_server.listen(9080)
-	IOLoop.instance().start()
+if __name__ == '__main__':
+    # app.run(host='0.0.0.0', port=9080, debug=True)
+    http_server = HTTPServer(WSGIContainer(app))
+    http_server.listen(9080)
+    IOLoop.instance().start()

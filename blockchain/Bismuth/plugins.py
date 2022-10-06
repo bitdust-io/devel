@@ -24,22 +24,21 @@ class PluginManager:
     A simple plugin manager
     """
 
-    def __init__(self, app_log=None, main_module: str='__init__', plugin_folder: str='./plugins', config=None,
-                 verbose: bool=True, init: bool=False):
+    def __init__(self, app_log=None, main_module: str = '__init__', plugin_folder: str = './plugins', config=None, verbose: bool = True, init: bool = False):
         if app_log:
             self.app_log = app_log
         else:
             logging.basicConfig(level=logging.DEBUG)
             self.app_log = logging
         self.config = config
-        self.base_folder = config.ledger_path.replace("static/ledger.db", "")
+        self.base_folder = config.ledger_path.replace('static/ledger.db', '')
         # path of mempool, colored.json and related files.
         self.plugin_folder = plugin_folder
         self.main_module = main_module
         self.verbose = verbose
         self.available_plugins = self.get_available_plugins()
         if self.verbose:
-            self.app_log.info("Available plugins: {}".format(', '.join(self.available_plugins.keys())))
+            self.app_log.info('Available plugins: {}'.format(', '.join(self.available_plugins.keys())))
         self.loaded_plugins = collections.OrderedDict({})
         if init:
             self.init()
@@ -64,11 +63,7 @@ class PluginManager:
                 location = os.path.join(self.plugin_folder, possible)
                 if os.path.isdir(location) and self.main_module + '.py' in os.listdir(location):
                     info = importlib.machinery.PathFinder().find_spec(self.main_module, [location])
-                    plugins[possible] = {
-                        'name': possible,
-                        'info': info,
-                        'autoload': True  # Todo
-                    }
+                    plugins[possible] = {'name': possible, 'info': info, 'autoload': True}  # Todo
         except Exception as e:
             self.app_log.info("Can't list plugins from '{}'.".format(self.plugin_folder))
         # TODO: sort by name or priority, add json specs file.
@@ -89,11 +84,7 @@ class PluginManager:
                 spec = self.available_plugins[plugin_name]['info']
                 module = importlib.util.module_from_spec(spec)
                 spec.loader.exec_module(module)
-                self.loaded_plugins[plugin_name] = {
-                    'name': plugin_name,
-                    'info': self.available_plugins[plugin_name]['info'],
-                    'module': module
-                }
+                self.loaded_plugins[plugin_name] = {'name': plugin_name, 'info': self.available_plugins[plugin_name]['info'], 'module': module}
                 if self.verbose:
                     self.app_log.info("Plugin '{}' loaded".format(plugin_name))
             else:
@@ -128,7 +119,7 @@ class PluginManager:
         for key, plugin_info in self.loaded_plugins.items():
             try:
                 module = plugin_info['module']
-                hook_func_name = "action_{}".format(hook_name)
+                hook_func_name = 'action_{}'.format(hook_name)
                 if hasattr(module, hook_func_name):
                     hook_func = getattr(module, hook_func_name)
                     hook_func(hook_params)
@@ -148,14 +139,13 @@ class PluginManager:
             for key, plugin_info in self.loaded_plugins.items():
                 try:
                     module = plugin_info['module']
-                    hook_func_name = "filter_{}".format(hook_name)
+                    hook_func_name = 'filter_{}'.format(hook_name)
                     if hasattr(module, hook_func_name):
                         hook_func = getattr(module, hook_func_name)
                         hook_params = hook_func(hook_params)
                         for nkey in hook_params_keys:
                             if nkey not in hook_params.keys():
-                                msg = "Function '{}' in plugin '{}' is missing '{}' in the dict it returns".format(
-                                    hook_func_name, plugin_info['name'], nkey)
+                                msg = "Function '{}' in plugin '{}' is missing '{}' in the dict it returns".format(hook_func_name, plugin_info['name'], nkey)
                                 self.app_log.error(msg)
                                 raise Exception(msg)
                             if first_only:
@@ -169,6 +159,6 @@ class PluginManager:
             return hook_params
 
 
-if __name__ == "__main__":
-    print("This is Bismuth core plugin module.")
-    print("See https://github.com/bismuthfoundation/BismuthPlugins for compatible plugins and doc.")
+if __name__ == '__main__':
+    print('This is Bismuth core plugin module.')
+    print('See https://github.com/bismuthfoundation/BismuthPlugins for compatible plugins and doc.')

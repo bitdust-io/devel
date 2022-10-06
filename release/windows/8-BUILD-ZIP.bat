@@ -2,7 +2,7 @@
 
 @echo.
 @echo [ clear working space ]
-if exist bitdust.zip del bitdust.zip 
+if exist bitdust.zip del bitdust.zip
 if exist portable\NUL rmdir /S /Q portable
 mkdir portable
 

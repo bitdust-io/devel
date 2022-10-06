@@ -30,59 +30,95 @@
 module:: coins_index
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 import six
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Debug = True
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
-import os
 
 from hashlib import md5
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     import sys
     import os.path as _p
+
     sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from logs import lg
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 if six.PY2:
     from CodernityDB.hash_index import HashIndex
     from CodernityDB.tree_index import TreeBasedIndex
 else:
     from CodernityDB3.hash_index import HashIndex
-    from CodernityDB3.tree_index import TreeBasedIndex    
+    from CodernityDB3.tree_index import TreeBasedIndex
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
 
 def definitions():
     return [
-        ('creator', Creator, ),
-        ('signer', Signer, ),
-        ('miner', Miner, ),
-        ('hash', HashID, ),
-        ('prev', PrevHashID, ),
-        ('time_created', TimeCreated, ),
-        ('time_signed', TimeSigned, ),
-        ('time_mined', TimeMined, ),
-        ('supplier', Supplier, ),
-        ('customer', Customer, ),
-        ('supplier_customer', SupplierCustomer, ),
+        (
+            'creator',
+            Creator,
+        ),
+        (
+            'signer',
+            Signer,
+        ),
+        (
+            'miner',
+            Miner,
+        ),
+        (
+            'hash',
+            HashID,
+        ),
+        (
+            'prev',
+            PrevHashID,
+        ),
+        (
+            'time_created',
+            TimeCreated,
+        ),
+        (
+            'time_signed',
+            TimeSigned,
+        ),
+        (
+            'time_mined',
+            TimeMined,
+        ),
+        (
+            'supplier',
+            Supplier,
+        ),
+        (
+            'customer',
+            Customer,
+        ),
+        (
+            'supplier_customer',
+            SupplierCustomer,
+        ),
     ]
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def make_custom_header():
     src = '\n'
@@ -92,7 +128,9 @@ def make_custom_header():
     src += 'from coins.coins_index import BaseTimeIndex\n'
     return src
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 class BaseHashIndex(HashIndex):
     role = None
@@ -109,7 +147,12 @@ class BaseHashIndex(HashIndex):
     def make_key_value(self, data):
         try:
             return self.transform_key(data[self.role][self.field]), None
-        except (AttributeError, ValueError, KeyError, IndexError, ):
+        except (
+            AttributeError,
+            ValueError,
+            KeyError,
+            IndexError,
+        ):
             return None
         except Exception:
             lg.exc()
@@ -117,14 +160,17 @@ class BaseHashIndex(HashIndex):
     def make_key(self, key):
         return self.transform_key(key)
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 class BaseMD5Index(BaseHashIndex):
-
     def transform_key(self, key):
         return md5(key).digest()
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 class BaseChainIndex(HashIndex):
     producer_role = None
@@ -141,7 +187,12 @@ class BaseChainIndex(HashIndex):
                 data['payload'][self.consumer_role],
             )
             return md5(chain_id).digest(), None
-        except (AttributeError, ValueError, KeyError, IndexError, ):
+        except (
+            AttributeError,
+            ValueError,
+            KeyError,
+            IndexError,
+        ):
             return None
         except Exception:
             lg.exc()
@@ -149,7 +200,9 @@ class BaseChainIndex(HashIndex):
     def make_key(self, key):
         return md5(key).digest()
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 class BaseTimeIndex(TreeBasedIndex):
     role = None
@@ -162,7 +215,11 @@ class BaseTimeIndex(TreeBasedIndex):
     def make_key_value(self, data):
         try:
             return data[self.role]['time'], None
-        except (ValueError, KeyError, IndexError, ):
+        except (
+            ValueError,
+            KeyError,
+            IndexError,
+        ):
             return None
         except Exception:
             lg.exc()
@@ -170,67 +227,89 @@ class BaseTimeIndex(TreeBasedIndex):
     def make_key(self, key):
         return key
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 class Creator(BaseMD5Index):
     role = 'creator'
     field = 'idurl'
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 class Signer(BaseMD5Index):
     role = 'signer'
     field = 'idurl'
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 class Miner(BaseMD5Index):
     role = 'miner'
     field = 'idurl'
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 class Supplier(BaseMD5Index):
     role = 'payload'
     field = 'supplier'
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 class Customer(BaseMD5Index):
     role = 'payload'
     field = 'customer'
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 class HashID(BaseHashIndex):
     role = 'miner'
     field = 'hash'
     key_format = '40s'
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 class PrevHashID(BaseHashIndex):
     role = 'miner'
     field = 'prev'
     key_format = '40s'
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 class SupplierCustomer(BaseChainIndex):
     producer_role = 'supplier'
     consumer_role = 'customer'
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 class TimeCreated(BaseTimeIndex):
     role = 'creator'
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 class TimeSigned(BaseTimeIndex):
     role = 'signer'
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 class TimeMined(BaseTimeIndex):
     role = 'miner'

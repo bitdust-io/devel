@@ -38,8 +38,8 @@ from __future__ import print_function
 import six
 from io import BytesIO
 
-copyright = "Copyright (c) 2005-2009 Vitalii Vanovschi. All rights reserved"
-version = "1.5.7"
+copyright = 'Copyright (c) 2005-2009 Vitalii Vanovschi. All rights reserved'
+version = '1.5.7'
 
 _Debug = False
 
@@ -74,11 +74,10 @@ def preprocess(msg):
         return fname, fobjs
     except Exception as exc:
         if _Debug:
-            open('/tmp/raid.log', 'a').write(u'%s\n%s\n' % (traceback.format_exc(), msg))            
+            open('/tmp/raid.log', 'a').write(u'%s\n%s\n' % (traceback.format_exc(), msg))
 
 
 class _WorkerProcess(object):
-
     def __init__(self):
         self.hashmap = {}
         self.e = sys.__stderr__
@@ -118,7 +117,11 @@ class _WorkerProcess(object):
                     sys.excepthook(*sys.exc_info())
                     __result = None
 
-                __sresult = json.dumps({'v': (__result, self.sout.getvalue().decode('latin1')), })
+                __sresult = json.dumps(
+                    {
+                        'v': (__result, self.sout.getvalue().decode('latin1')),
+                    }
+                )
 
                 self.t.send(__sresult)
                 self.sout.truncate(0)
@@ -128,12 +131,16 @@ class _WorkerProcess(object):
                 open('/tmp/raid.log', 'a').write(u'%s\n' % traceback.format_exc())
             sys.excepthook(*sys.exc_info())
             __result = None
-            __sresult = json.dumps({'v': (__result, self.sout.getvalue().decode('latin1')), })
+            __sresult = json.dumps(
+                {
+                    'v': (__result, self.sout.getvalue().decode('latin1')),
+                }
+            )
 
             self.t.send(__sresult)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     sys.path.append(os.path.dirname(__file__))
     wp = _WorkerProcess()
     wp.run()

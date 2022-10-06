@@ -33,6 +33,7 @@ import sys
 
 try:
     import locale
+
     locale.setlocale(locale.LC_CTYPE, 'en_US.UTF-8')
 except:
     pass
@@ -52,6 +53,7 @@ def main():
         dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
         sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..')))
         from distutils.sysconfig import get_python_lib
+
         sys.path.append(os.path.join(get_python_lib(), 'bitdust'))
         try:
             from main.bpmain import main
@@ -69,5 +71,5 @@ def main():
     return ret
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

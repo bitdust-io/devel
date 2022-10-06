@@ -40,32 +40,32 @@ argument if you have "http" vs "ssh" or "tcp".
 This seems like trouble.
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 from __future__ import print_function
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 import six
-import six.moves.urllib.request, six.moves.urllib.parse, six.moves.urllib.error  # @UnresolvedImport
+import six.moves.urllib.parse  # @UnresolvedImport
 import six.moves.urllib.parse  # @UnresolvedImport
 from six.moves import range  # @UnresolvedImport
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 import re
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from lib import strng
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
-legalchars = "#.-_()ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+legalchars = '#.-_()ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
 legalset = set(legalchars)
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 def UrlParse(url):
@@ -75,7 +75,16 @@ def UrlParse(url):
         nameurl.UrlParse('http://id.bitdust.io/veselin.xml')
         ('http', 'id.bitdust.io', '', 'veselin.xml')
     """
-    if not url or (isinstance(url, six.string_types) and url in ['None', b'None', '', b'', ]):
+    if not url or (
+        isinstance(url, six.string_types)
+        and url
+        in [
+            'None',
+            b'None',
+            '',
+            b'',
+        ]
+    ):
         return '', '', '', ''
     url = strng.to_bin(url)
     o = six.moves.urllib.parse.urlparse(url)
@@ -143,11 +152,20 @@ def UrlFilename(url):
     'http###id.bitdust.io#veselin.xml'
     """
     # TODO: switch all that to global ID format
-    if not url or (isinstance(url, six.string_types) and url in ['None', b'None', '', b'', ]):
+    if not url or (
+        isinstance(url, six.string_types)
+        and url
+        in [
+            'None',
+            b'None',
+            '',
+            b'',
+        ]
+    ):
         return None
     result = strng.to_text(url)
-    result = result.replace("://", "###")
-    result = result.replace("/", "#")
+    result = result.replace('://', '###')
+    result = result.replace('/', '#')
     result = re.sub('(\:)(\d+)', '(#\g<2>#)', result)
     result = result.lower()
     return result
@@ -184,7 +202,9 @@ def UrlFilenameHTML(url):
             o += x
     return o
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def IdContactSplit(contact):
     try:
@@ -200,22 +220,40 @@ def GetName(url):
 
     nameurl.GetName('http://id.bitdust.io/kinggeorge.xml') 'kinggeorge'
     """
-    if not url or (isinstance(url, six.string_types) and url in ['None', b'None', '', b'', ]):
+    if not url or (
+        isinstance(url, six.string_types)
+        and url
+        in [
+            'None',
+            b'None',
+            '',
+            b'',
+        ]
+    ):
         return ''
     url = strng.to_text(url)
     if not url.endswith('.xml'):
         return url
-    return url[url.rfind("/") + 1:-4]  # return url[url.rfind("/")+1:url.rfind(".")]
+    return url[url.rfind('/') + 1 : -4]  # return url[url.rfind("/")+1:url.rfind(".")]
 
 
 def GetFileName(url):
     """
     Almost the same, but keeps the file extension.
     """
-    if not url or (isinstance(url, six.string_types) and url in ['None', b'None', '', b'', ]):
+    if not url or (
+        isinstance(url, six.string_types)
+        and url
+        in [
+            'None',
+            b'None',
+            '',
+            b'',
+        ]
+    ):
         return ''
     url = strng.to_text(url)
-    return url[url.rfind("/") + 1:]
+    return url[url.rfind('/') + 1 :]
 
 
 def GetHost(url):
@@ -224,7 +262,9 @@ def GetHost(url):
     """
     return UrlParse(url)[1]
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def Quote(s):
     """
@@ -240,7 +280,8 @@ def UnQuote(s):
     return six.moves.urllib.parse.unquote(s)
 
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
 
 def DjangoQuote(s):
     """
@@ -279,9 +320,10 @@ def DjangoUnQuote(s):
                 myappend('_' + item)
         else:
             myappend('_' + item)
-    return "".join(res)
+    return ''.join(res)
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def main():
@@ -289,6 +331,7 @@ def main():
     I used this place for tests.
     """
     print(GetName(str(None)))
+
 
 if __name__ == '__main__':
     main()

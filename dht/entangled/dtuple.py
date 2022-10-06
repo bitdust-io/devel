@@ -2,8 +2,8 @@
 # dtuple.py
 #
 # Copyright (C) 2007-2008 Francois Aucamp, Meraka Institute, CSIR
-# See AUTHORS for all authors and contact information. 
-# 
+# See AUTHORS for all authors and contact information.
+#
 # License: GNU Lesser General Public License, version 3 or later; see COPYING
 #          included in this archive for details.
 #
@@ -117,7 +117,7 @@ class DistributedTupleSpacePeer(EntangledNode):
                 df = self.iterativeStore(mainKey, tupleValue, originalPublisherID=originalPublisherID)
                 df.addCallback(putToSearchIndexes)
                 # ...and now make it searchable, by writing the subtuples
-                #df = self._addToInvertedIndexes(subtupleKeys, mainKey)
+                # df = self._addToInvertedIndexes(subtupleKeys, mainKey)
             return df
 
         df = self._findKeyForTemplate(dTuple, True)
@@ -159,69 +159,69 @@ class DistributedTupleSpacePeer(EntangledNode):
         df.addCallback(addListener)
         return outerDf
 
-#    def get(self, template):
-#        """ Reads and removes (consumes) a tuple from the tuple space.
-#
-#        @type template: tuple
-#
-#        @note: This method is generally called "in" in tuple space literature,
-#               but is renamed to "get" in this implementation to avoid
-#               a conflict with the Python C{in} keyword.
-#        """
-#        outerDf = defer.Deferred()
-#
-#        mainTupleKey = []
-#        def retrieveTupleValue(tupleKey):
-#            if tupleKey == None:
-#                # No tuple was found
-#                return None
-#            else:
-#                mainTupleKey.append(tupleKey)
-#                #TODO: kademlia is going to replicate the un-updated inverted index; stop that from happening!!
-#                _df = self.iterativeFindValue(tupleKey)
-#                _df.addCallback(returnTuple)
-#                return _df
-#
-#        def returnTuple(value):
-#            if type(value) == dict:
-#                # tuple was found
-#                tupleValue = value[mainTupleKey[0]]
-#                # Remove the tuple itself from the DHT
-#                self.iterativeDelete(mainTupleKey[0])
-#                # Un-serialize the tuple...
-#                dTuple = cPickle.loads(tupleValue)
-#                # ...now remove all inverted index entries of the tuple, and return
-#                subtupleKeys = self._keywordHashesFromTuple(dTuple)
-#                self._removeFromInvertedIndexes(subtupleKeys, mainTupleKey[0])
-#                return dTuple
-#            else:
-#                # tuple was not found
-#                return None
-#
-#
-#        def addListener(result):
-#            if result == None:
-#                # The tuple does not exist (yet) - add a listener for it
-#                h = hashlib.sha1()
-#                listenerKey = 'listener:' + cPickle.dumps(template)
-#                h.update(listenerKey)
-#                listenerKey = h.digest()
-#                # Extract "listener keywords" from the template
-#                subtupleKeys = self._keywordHashesFromTemplate(template, True)
-#                # ...now write the listener tuple(s) to the DHT Tuple Space
-#                if subtupleKeys == None:
-#                    # Deterministic template; all values are fully specified
-#                    self.iterativeStore(listenerKey, self.id + listenerKey)
-#                else:
-#                    self._addToInvertedIndexes(subtupleKeys, self.id + listenerKey)
-#                self._blockingGetRequests[listenerKey] = outerDf
-#            else:
-#                outerDf.callback(result)
-#
-#        df = self._findKeyForTemplate(template)
-#        df.addCallback(retrieveTupleValue)
-#        df.addCallback(addListener)
-#        return outerDf
+    #    def get(self, template):
+    #        """ Reads and removes (consumes) a tuple from the tuple space.
+    #
+    #        @type template: tuple
+    #
+    #        @note: This method is generally called "in" in tuple space literature,
+    #               but is renamed to "get" in this implementation to avoid
+    #               a conflict with the Python C{in} keyword.
+    #        """
+    #        outerDf = defer.Deferred()
+    #
+    #        mainTupleKey = []
+    #        def retrieveTupleValue(tupleKey):
+    #            if tupleKey == None:
+    #                # No tuple was found
+    #                return None
+    #            else:
+    #                mainTupleKey.append(tupleKey)
+    #                #TODO: kademlia is going to replicate the un-updated inverted index; stop that from happening!!
+    #                _df = self.iterativeFindValue(tupleKey)
+    #                _df.addCallback(returnTuple)
+    #                return _df
+    #
+    #        def returnTuple(value):
+    #            if type(value) == dict:
+    #                # tuple was found
+    #                tupleValue = value[mainTupleKey[0]]
+    #                # Remove the tuple itself from the DHT
+    #                self.iterativeDelete(mainTupleKey[0])
+    #                # Un-serialize the tuple...
+    #                dTuple = cPickle.loads(tupleValue)
+    #                # ...now remove all inverted index entries of the tuple, and return
+    #                subtupleKeys = self._keywordHashesFromTuple(dTuple)
+    #                self._removeFromInvertedIndexes(subtupleKeys, mainTupleKey[0])
+    #                return dTuple
+    #            else:
+    #                # tuple was not found
+    #                return None
+    #
+    #
+    #        def addListener(result):
+    #            if result == None:
+    #                # The tuple does not exist (yet) - add a listener for it
+    #                h = hashlib.sha1()
+    #                listenerKey = 'listener:' + cPickle.dumps(template)
+    #                h.update(listenerKey)
+    #                listenerKey = h.digest()
+    #                # Extract "listener keywords" from the template
+    #                subtupleKeys = self._keywordHashesFromTemplate(template, True)
+    #                # ...now write the listener tuple(s) to the DHT Tuple Space
+    #                if subtupleKeys == None:
+    #                    # Deterministic template; all values are fully specified
+    #                    self.iterativeStore(listenerKey, self.id + listenerKey)
+    #                else:
+    #                    self._addToInvertedIndexes(subtupleKeys, self.id + listenerKey)
+    #                self._blockingGetRequests[listenerKey] = outerDf
+    #            else:
+    #                outerDf.callback(result)
+    #
+    #        df = self._findKeyForTemplate(template)
+    #        df.addCallback(retrieveTupleValue)
+    #        df.addCallback(addListener)
+    #        return outerDf
 
     def getIfExists(self, template, getListenerTuple=False):
         """
@@ -529,7 +529,7 @@ class DistributedTupleSpacePeer(EntangledNode):
         for element in template:
             # See the description in _keywordHashesFromTuple() for how these "keyword" subtuples are constructed
             # if element != None:
-                # This element in the template describes the element's value or type
+            # This element in the template describes the element's value or type
             if not isinstance(element, type) and element is not None:
                 deterministicElementCount += 1
             subtuple = (tupleLength, i, element)
@@ -562,6 +562,7 @@ class DistributedTupleSpacePeer(EntangledNode):
 
 if __name__ == '__main__':
     import sys
+
     if len(sys.argv) < 2:
         print('Usage:\n%s UDP_PORT  [KNOWN_NODE_IP  KNOWN_NODE_PORT]' % sys.argv[0])
         print('or:\n%s UDP_PORT  [FILE_WITH_KNOWN_NODES]' % sys.argv[0])

@@ -55,6 +55,7 @@ class ContractChainService(LocalService):
     def start(self):
         from twisted.internet.defer import Deferred
         from coins import contract_chain_consumer
+
         self.starting_deferred = Deferred()
         contract_chain_consumer.A('init')
         contract_chain_consumer.A().addStateChangedCallback(self._on_contract_chain_state_changed)
@@ -63,6 +64,7 @@ class ContractChainService(LocalService):
 
     def stop(self):
         from coins import contract_chain_consumer
+
         contract_chain_consumer.A().removeStateChangedCallback(self._on_contract_chain_state_changed)
         contract_chain_consumer.A('stop')
         contract_chain_consumer.A('shutdown')
@@ -70,13 +72,20 @@ class ContractChainService(LocalService):
 
     def health_check(self):
         from coins import contract_chain_consumer
-        return contract_chain_consumer.A().state in ['CONNECTED', ]
+
+        return contract_chain_consumer.A().state in [
+            'CONNECTED',
+        ]
 
     def _on_contract_chain_state_changed(self, oldstate, newstate, event_string, *args, **kwargs):
         if self.starting_deferred:
-            if newstate in ['CONNECTED', ] and oldstate not in ['AT_STARTUP', ]:
+            if newstate in ['CONNECTED',] and oldstate not in [
+                'AT_STARTUP',
+            ]:
                 self.starting_deferred.callback(True)
                 self.starting_deferred = None
-            elif newstate in ['DISCONNECTED', ] and oldstate not in ['AT_STARTUP', ]:
+            elif newstate in ['DISCONNECTED',] and oldstate not in [
+                'AT_STARTUP',
+            ]:
                 self.starting_deferred.errback(Exception(newstate))
                 self.starting_deferred = None

@@ -2,8 +2,8 @@
 # encoding.py
 #
 # Copyright (C) 2007-2008 Francois Aucamp, Meraka Institute, CSIR
-# See AUTHORS for all authors and contact information. 
-# 
+# See AUTHORS for all authors and contact information.
+#
 # License: GNU Lesser General Public License, version 3 or later; see COPYING
 #          included in this archive for details.
 #
@@ -31,7 +31,6 @@ else:
 
 
 _Debug = False
-
 
 
 def is_text(s):
@@ -156,7 +155,7 @@ class Bencode(Encoding):
         @return: The encoded data
         @rtype: str
         """
-        
+
         def _e():
             if data is None:
                 return b'i0e'  # return 0
@@ -193,13 +192,17 @@ class Bencode(Encoding):
         try:
             ret = _e()
             if _Debug:
-                print('[DHT ENCODING]         encode  %r  into  %d bytes' % (type(data), len(ret), ))
+                print(
+                    '[DHT ENCODING]         encode  %r  into  %d bytes'
+                    % (
+                        type(data),
+                        len(ret),
+                    )
+                )
             return ret
         except Exception as exc:
             if _Debug:
                 print('[DHT ENCODING]         encode failed with: %r' % exc)
-
-
 
     def decode(self, data, encoding=None):
         """
@@ -217,12 +220,17 @@ class Bencode(Encoding):
         try:
             ret, endPos = self._decodeRecursive(data, encoding=encoding)
             if _Debug:
-                print('[DHT ENCODING]         decode %r  endPos=%d' % (type(ret), endPos, ))
+                print(
+                    '[DHT ENCODING]         decode %r  endPos=%d'
+                    % (
+                        type(ret),
+                        endPos,
+                    )
+                )
             return ret
         except Exception as exc:
             if _Debug:
                 print('[DHT ENCODING]         decode failed with: %r' % exc)
-
 
     @staticmethod
     def _decodeRecursive(data, startIndex=0, encoding=None):
@@ -231,28 +239,28 @@ class Bencode(Encoding):
 
         Do not call this; use C{decode()} instead
         """
-        if data[startIndex:startIndex+1] == b'i':
+        if data[startIndex : startIndex + 1] == b'i':
             endPos = data[startIndex:].find(b'e') + startIndex
-            return (int(to_text(data[startIndex + 1:endPos]) or '0'), endPos + 1)
-        elif data[startIndex:startIndex+1] == b'l':
+            return (int(to_text(data[startIndex + 1 : endPos]) or '0'), endPos + 1)
+        elif data[startIndex : startIndex + 1] == b'l':
             startIndex += 1
             decodedList = []
-            while data[startIndex:startIndex+1] != b'e':
+            while data[startIndex : startIndex + 1] != b'e':
                 listData, startIndex = Bencode._decodeRecursive(data, startIndex, encoding=encoding)
                 decodedList.append(listData)
             return (decodedList, startIndex + 1)
-        elif data[startIndex:startIndex+1] == b'd':
+        elif data[startIndex : startIndex + 1] == b'd':
             startIndex += 1
             decodedDict = {}
-            while data[startIndex:startIndex+1] != b'e':
+            while data[startIndex : startIndex + 1] != b'e':
                 key, startIndex = Bencode._decodeRecursive(data, startIndex, encoding=encoding)
                 value, startIndex = Bencode._decodeRecursive(data, startIndex, encoding=encoding)
                 decodedDict[key] = value
             return (decodedDict, startIndex)
-        elif data[startIndex:startIndex+1] == b'f':
+        elif data[startIndex : startIndex + 1] == b'f':
             # This (float data type) is a non-standard extension to the original Bencode algorithm
             endPos = data[startIndex:].find(b'e') + startIndex
-            return (float(to_text(data[startIndex + 1:endPos]) or '0'), endPos + 1)
+            return (float(to_text(data[startIndex + 1 : endPos]) or '0'), endPos + 1)
         else:
             splitPos = data[startIndex:].find(b':') + startIndex
             length = int(to_text(data[startIndex:splitPos]) or '0')

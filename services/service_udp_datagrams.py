@@ -54,6 +54,7 @@ class UDPDatagramsService(LocalService):
         from lib import udp
         from main import settings
         from main.config import conf
+
         udp_port = settings.getUDPPort()
         conf().addConfigNotifier('services/udp-datagrams/udp-port', self._on_udp_port_modified)
         if not udp.proto(udp_port):
@@ -68,6 +69,7 @@ class UDPDatagramsService(LocalService):
         from lib import udp
         from main import settings
         from main.config import conf
+
         udp_port = settings.getUDPPort()
         if udp.proto(udp_port):
             udp.close(udp_port)
@@ -77,6 +79,7 @@ class UDPDatagramsService(LocalService):
     def on_suspend(self, *args, **kwargs):
         from lib import udp
         from main import settings
+
         udp_port = settings.getUDPPort()
         if udp.proto(udp_port):
             udp.close(udp_port)
@@ -86,6 +89,7 @@ class UDPDatagramsService(LocalService):
         from logs import lg
         from lib import udp
         from main import settings
+
         udp_port = settings.getUDPPort()
         if not udp.proto(udp_port):
             try:
@@ -96,4 +100,5 @@ class UDPDatagramsService(LocalService):
 
     def _on_udp_port_modified(self, path, value, oldvalue, result):
         from p2p import network_connector
+
         network_connector.A('reconnect')

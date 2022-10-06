@@ -9,7 +9,7 @@ del advinstaller\output\*   /Q /F
 set /p VER= <..\version
 @echo.
 @echo [ updating version number : %VER% ]
-C:\work\soft\AdvancedInstaller\bin\x86\AdvancedInstaller.com /edit advinstaller\bitdust.aip /SetVersion "%VER%" 
+C:\work\soft\AdvancedInstaller\bin\x86\AdvancedInstaller.com /edit advinstaller\bitdust.aip /SetVersion "%VER%"
 
 
 @echo.

@@ -40,20 +40,20 @@ EVENTS:
     * :red:`start`
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 10
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 import os
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -82,7 +82,8 @@ from storage import backup
 from userid import global_id
 from userid import my_id
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
 
 class ArchiveWriter(automat.Automat):
     """
@@ -95,8 +96,8 @@ class ArchiveWriter(automat.Automat):
         """
         self.local_data_callback = local_data_callback
         super(ArchiveWriter, self).__init__(
-            name="archive_writer",
-            state="AT_STARTUP",
+            name='archive_writer',
+            state='AT_STARTUP',
             debug_level=debug_level,
             log_events=log_events,
             log_transitions=log_transitions,
@@ -108,13 +109,13 @@ class ArchiveWriter(automat.Automat):
         """
         The state machine code, generated using `visio2python <http://bitdust.io/visio2python/>`_ tool.
         """
-        #---AT_STARTUP---
+        # ---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'start':
                 self.state = 'DHT_READ?'
                 self.doInit(*args, **kwargs)
                 self.doDHTReadSuppliers(*args, **kwargs)
-        #---DHT_READ?---
+        # ---DHT_READ?---
         elif self.state == 'DHT_READ?':
             if event == 'dht-read-success':
                 self.state = 'BACKUP'
@@ -123,7 +124,7 @@ class ArchiveWriter(automat.Automat):
                 self.state = 'FAILED'
                 self.doReportFailed(event, *args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-        #---BACKUP---
+        # ---BACKUP---
         elif self.state == 'BACKUP':
             if event == 'backup-done':
                 self.state = 'SENDING'
@@ -136,7 +137,7 @@ class ArchiveWriter(automat.Automat):
                 self.state = 'FAILED'
                 self.doReportFailed(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-        #---SENDING---
+        # ---SENDING---
         elif self.state == 'SENDING':
             if event == 'packets-delivered':
                 self.state = 'DONE'
@@ -149,10 +150,10 @@ class ArchiveWriter(automat.Automat):
                 self.state = 'FAILED'
                 self.doReportFailed(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-        #---DONE---
+        # ---DONE---
         elif self.state == 'DONE':
             pass
-        #---FAILED---
+        # ---FAILED---
         elif self.state == 'FAILED':
             pass
         return None
@@ -222,8 +223,7 @@ class ArchiveWriter(automat.Automat):
         Action method.
         """
         if _Debug:
-            lg.args(_DebugLevel, backup_job=self.backup_job, backup_max_block_num=self.backup_max_block_num,
-                    packets_out=list(self.packets_out.values()))
+            lg.args(_DebugLevel, backup_job=self.backup_job, backup_max_block_num=self.backup_max_block_num, packets_out=list(self.packets_out.values()))
         if self.backup_job:
             # backup is not finished yet
             return
@@ -239,7 +239,13 @@ class ArchiveWriter(automat.Automat):
         for block_num in self.packets_out.keys():
             block_packets_failed = list(self.packets_out[block_num].values()).count(False)
             if block_packets_failed > self.correctable_errors * 2:  # because each packet also have Parity()
-                lg.err('all packets for block %d are sent, but too many errors: %d' % (block_num, block_packets_failed, ))
+                lg.err(
+                    'all packets for block %d are sent, but too many errors: %d'
+                    % (
+                        block_num,
+                        block_packets_failed,
+                    )
+                )
                 self.automat('sending-failed')
                 return
         self.automat('packets-delivered')
@@ -302,7 +308,7 @@ class ArchiveWriter(automat.Automat):
             pipe=backupPipe,
             blockResultCallback=self._on_archive_backup_block_result,
             finishCallback=self._on_archive_backup_done,
-            blockSize=1024*1024*10,
+            blockSize=1024 * 1024 * 10,
             sourcePath=local_path,
             keyID=self.group_key_id,
             ecc_map=eccmap.eccmap(self.ecc_map),
@@ -328,11 +334,20 @@ class ArchiveWriter(automat.Automat):
                 failed_supliers += 1
                 lg.warn('unknown supplier supplier_num=%d' % supplier_num)
                 continue
-            for dataORparity in ('Data', 'Parity', ):
+            for dataORparity in (
+                'Data',
+                'Parity',
+            ):
                 packet_id = packetid.MakePacketID(backup_id, block_num, supplier_num, dataORparity)
-                packet_filename = os.path.join(archive_snapshot_dir, '%d-%d-%s' % (
-                    block_num, supplier_num, dataORparity,
-                ))
+                packet_filename = os.path.join(
+                    archive_snapshot_dir,
+                    '%d-%d-%s'
+                    % (
+                        block_num,
+                        supplier_num,
+                        dataORparity,
+                    ),
+                )
                 if not os.path.isfile(packet_filename):
                     lg.err('%s is not a file' % packet_filename)
                     continue
@@ -356,7 +371,13 @@ class ArchiveWriter(automat.Automat):
                 )
         if failed_supliers > self.correctable_errors:
             self.block_failed = True
-            lg.err('too many failed suppliers %d in block %d' % (failed_supliers, block_num, ))
+            lg.err(
+                'too many failed suppliers %d in block %d'
+                % (
+                    failed_supliers,
+                    block_num,
+                )
+            )
 
     def _on_read_queue_owner_suppliers_success(self, dht_value):
         # TODO: add more validations of dht_value

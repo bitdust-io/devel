@@ -16,10 +16,10 @@ class SimpleCookieJar(object):
                 simpleCookie = Cookie.SimpleCookie(set_cookie.encode('ascii', 'ignore'))
 
             for k, v in simpleCookie.items():
-                domain = v.get("domain")
+                domain = v.get('domain')
                 if domain:
-                    if not domain.startswith("."):
-                        domain = "." + domain
+                    if not domain.startswith('.'):
+                        domain = '.' + domain
                     cookie = self.jar.get(domain) if self.jar.get(domain) else Cookie.SimpleCookie()
                     cookie.update(simpleCookie)
                     self.jar[domain.lower()] = cookie
@@ -32,15 +32,15 @@ class SimpleCookieJar(object):
                 simpleCookie = Cookie.SimpleCookie(set_cookie.encode('ascii', 'ignore'))
 
             for k, v in simpleCookie.items():
-                domain = v.get("domain")
+                domain = v.get('domain')
                 if domain:
-                    if not domain.startswith("."):
-                        domain = "." + domain
+                    if not domain.startswith('.'):
+                        domain = '.' + domain
                     self.jar[domain.lower()] = simpleCookie
 
     def get(self, host):
         if not host:
-            return ""
+            return ''
 
         cookies = []
         for domain, simpleCookie in self.jar.items():
@@ -48,5 +48,4 @@ class SimpleCookieJar(object):
             if host.endswith(domain) or host == domain[1:]:
                 cookies.append(self.jar.get(domain))
 
-        return "; ".join(filter(None, ["%s=%s" % (k, v.value) for cookie in filter(None, sorted(cookies)) for k, v in
-                                       sorted(cookie.items())]))
+        return '; '.join(filter(None, ['%s=%s' % (k, v.value) for cookie in filter(None, sorted(cookies)) for k, v in sorted(cookie.items())]))

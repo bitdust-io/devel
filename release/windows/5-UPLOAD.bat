@@ -17,4 +17,4 @@ rsync -rptgoE --delete --force -z --compress-level=9 -h --progress -vv --stats -
 @echo [DONE]
 
 
-pause 
+pause

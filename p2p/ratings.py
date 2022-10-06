@@ -25,19 +25,19 @@
 #
 #
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 import os
 import sys
 import time
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 14
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 try:
     from twisted.internet import reactor  # @UnresolvedImport
@@ -56,14 +56,14 @@ from main import settings
 
 from contacts import contactsdb
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 _LoopCountRatingsTask = None
 _IndexMonth = {}
 _IndexTotal = {}
 _InitDone = False
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 
 def init():
@@ -91,11 +91,11 @@ def run():
         from lib import maths
     except:
         lg.exc()
-        
+
     stop()
     interval = maths.interval_to_next_hour()
     # debug
-    #interval = 5
+    # interval = 5
     reactor.callLater(interval, start)  # @UndefinedVariable
     if _Debug:
         lg.out(_DebugLevel, 'ratings.run will start after %s minutes' % str(interval / 60.0))
@@ -207,6 +207,7 @@ def increase_rating(idurl, alive_state):
 def rate_all_users():
     from p2p import online_status
     from p2p import p2p_connector
+
     if not p2p_connector.A():
         lg.warn('ratings update skipped, p2p_connector() is not running')
         return
@@ -224,15 +225,20 @@ def rate_all_users():
         month_percent = 100.0 * float(malive) / float(mall)
         total_percent = 100.0 * float(talive) / float(tall)
         if _Debug:
-            lg.out(_DebugLevel, '[%6.2f%%: %s/%s] in %s and [%6.2f%%: %s/%s] total - %s' % (
-                month_percent,
-                malive,
-                mall,
-                monthStr,
-                total_percent,
-                talive,
-                tall,
-                nameurl.GetName(idurl),))
+            lg.out(
+                _DebugLevel,
+                '[%6.2f%%: %s/%s] in %s and [%6.2f%%: %s/%s] total - %s'
+                % (
+                    month_percent,
+                    malive,
+                    mall,
+                    monthStr,
+                    total_percent,
+                    talive,
+                    tall,
+                    nameurl.GetName(idurl),
+                ),
+            )
     read_index()
 
 
@@ -272,7 +278,7 @@ def read_all_monthly_ratings(idurl):
 def read_index(monthstr=None):
     global _IndexMonth
     global _IndexTotal
-    #out(4, 'ratings.read_index')
+    # out(4, 'ratings.read_index')
     if monthstr is None:
         monthstr = time.strftime('%m%y')
     _IndexMonth.clear()
@@ -285,7 +291,7 @@ def read_index(monthstr=None):
         total = read_total_rating_dict(idurl)
         _IndexMonth[idurl] = {'all': '0', 'alive': '0'} if month is None else month
         _IndexTotal[idurl] = {'all': '0', 'alive': '0'} if total is None else total
-        #out(4, '    [%s]: %s, %s' % (nameurl.GetName(idurl), _IndexMonth[idurl], _IndexTotal[idurl]))
+        # out(4, '    [%s]: %s, %s' % (nameurl.GetName(idurl), _IndexMonth[idurl], _IndexTotal[idurl]))
 
 
 def month(idurl):
@@ -314,11 +320,12 @@ def total_percent(idurl):
         return 0.0
 
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 
 def main():
     pass
+
 
 if __name__ == '__main__':
     main()

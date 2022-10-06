@@ -43,9 +43,9 @@ except:
 
 from twisted.web import server, resource
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
-#(total bytes, finished packets, failed packets, total packets)
+# (total bytes, finished packets, failed packets, total packets)
 _InboxPacketsCount = 0
 _InboxByIDURL = {}
 _InboxByHost = {}
@@ -62,13 +62,14 @@ _WebListener = None
 
 _DefaultReloadTimeout = 600
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 
 def init(root=None, path='traffic', port=9997):
     global _WebListener
     if root is not None:
         from transport import callback
+
         callback.append_inbox_callback(inbox)
         callback.add_finish_file_sending_callback(outbox)
         root.putChild(path, TrafficPage())
@@ -82,9 +83,11 @@ def init(root=None, path='traffic', port=9997):
         _WebListener = reactor.listenTCP(port, site)
     except:
         from logs import lg
+
         lg.exc()
         return
     from transport import callback
+
     callback.append_inbox_callback(inbox)
     callback.add_finish_file_sending_callback(outbox)
 
@@ -253,7 +256,8 @@ def outbox(pkt_out, item, status, size, error_message):
     _OutboxPacketsCount += 1
     return False
 
-#-------------------------------------------------------------------------------
+
+# -------------------------------------------------------------------------------
 
 
 class TrafficPage(resource.Resource):
@@ -313,37 +317,29 @@ class TrafficPage(resource.Resource):
         if direction == 'in':
             if typ == 'idurl':
                 for i, v in _InboxByIDURL.items():
-                    out += '<tr><td><a href="%s">%s</a><td>%d<td>%d<td>%d<td>%d\n' % (
-                        i, i, v[0], v[3], v[1], v[2])
+                    out += '<tr><td><a href="%s">%s</a><td>%d<td>%d<td>%d<td>%d\n' % (i, i, v[0], v[3], v[1], v[2])
             elif typ == 'host':
                 for i, v in _InboxByHost.items():
-                    out += '<tr><td>%s<td>%d<td>%d<td>%d<td>%d\n' % (
-                        i, v[0], v[3], v[1], v[2])
+                    out += '<tr><td>%s<td>%d<td>%d<td>%d<td>%d\n' % (i, v[0], v[3], v[1], v[2])
             elif typ == 'proto':
                 for i, v in _InboxByProto.items():
-                    out += '<tr><td>%s<td>%d<td>%d<td>%d<td>%d\n' % (
-                        i, v[0], v[3], v[1], v[2])
+                    out += '<tr><td>%s<td>%d<td>%d<td>%d<td>%d\n' % (i, v[0], v[3], v[1], v[2])
             elif typ == 'type':
                 for i, v in _InboxByType.items():
-                    out += '<tr><td>%s<td>%d<td>%d<td>%d<td>%d\n' % (
-                        i, v[0], v[3], v[1], v[2])
+                    out += '<tr><td>%s<td>%d<td>%d<td>%d<td>%d\n' % (i, v[0], v[3], v[1], v[2])
         else:
             if typ == 'idurl':
                 for i, v in _OutboxByIDURL.items():
-                    out += '<tr><td><a href="%s">%s</a><td>%d<td>%d<td>%d<td>%d\n' % (
-                        i, i, v[0], v[3], v[1], v[2])
+                    out += '<tr><td><a href="%s">%s</a><td>%d<td>%d<td>%d<td>%d\n' % (i, i, v[0], v[3], v[1], v[2])
             elif typ == 'host':
                 for i, v in _OutboxByHost.items():
-                    out += '<tr><td>%s<td>%d<td>%d<td>%d<td>%d\n' % (
-                        i, v[0], v[3], v[1], v[2])
+                    out += '<tr><td>%s<td>%d<td>%d<td>%d<td>%d\n' % (i, v[0], v[3], v[1], v[2])
             elif typ == 'proto':
                 for i, v in _OutboxByProto.items():
-                    out += '<tr><td>%s<td>%d<td>%d<td>%d<td>%d\n' % (
-                        i, v[0], v[3], v[1], v[2])
+                    out += '<tr><td>%s<td>%d<td>%d<td>%d<td>%d\n' % (i, v[0], v[3], v[1], v[2])
             elif typ == 'type':
                 for i, v in _OutboxByType.items():
-                    out += '<tr><td>%s<td>%d<td>%d<td>%d<td>%d\n' % (
-                        i, v[0], v[3], v[1], v[2])
+                    out += '<tr><td>%s<td>%d<td>%d<td>%d<td>%d\n' % (i, v[0], v[3], v[1], v[2])
 
         out += '</table>'
         if direction == 'in':
@@ -354,8 +350,9 @@ class TrafficPage(resource.Resource):
 
         return out
 
-#------------------------------------------------------------------------------
 
-if __name__ == "__main__":
+# ------------------------------------------------------------------------------
+
+if __name__ == '__main__':
     init()
     reactor.run()

@@ -37,9 +37,10 @@ def main():
         pass
 
     from main.bpmain import main
+
     ret = main(executable_path)
     return ret
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

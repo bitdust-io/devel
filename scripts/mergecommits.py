@@ -22,10 +22,8 @@
 from __future__ import absolute_import
 from __future__ import print_function
 import sys
-import os
 import re
 import time
-import pprint
 from six.moves import range
 
 h1 = open(sys.argv[1]).read().splitlines()
@@ -72,8 +70,11 @@ for i in sorted(list(parts.keys()), reverse=False):
     print(re.match('\w+? \[.+?\] (.+?)$', headcommit[1]).group(1))
     print('\n%s Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)\n' % (time.strftime('%Y-%m-%d', time.localtime(headcommit[0]))))
     for dt, commit in commits:
-        print('* %s' % (
-            # time.strftime('%c', time.localtime(dt)),
-            re.match('\w+? \[.+?\] (.+?)$', commit).group(1),
-        ))
+        print(
+            '* %s'
+            % (
+                # time.strftime('%c', time.localtime(dt)),
+                re.match('\w+? \[.+?\] (.+?)$', commit).group(1),
+            )
+        )
     print()

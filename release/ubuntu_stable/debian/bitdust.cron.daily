@@ -135,7 +135,7 @@ clean_sources_lists() {
 
   find_apt_sources
 
-  rm -f "$APT_SOURCESDIR/bitdust.list" 
+  rm -f "$APT_SOURCESDIR/bitdust.list"
 }
 
 handle_distro_upgrade() {
@@ -180,7 +180,7 @@ if [ "$repo_reenable_on_distupgrade" = "true" ]; then
   handle_distro_upgrade
 fi
 
-apt-get update -o Dir::Etc::sourcelist="sources.list.d/bitdust.list" -o Dir::Etc::sourceparts="-" 
+apt-get update -o Dir::Etc::sourcelist="sources.list.d/bitdust.list" -o Dir::Etc::sourceparts="-"
 apt-get install bitdust
 
 exit 0

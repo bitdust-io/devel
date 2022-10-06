@@ -31,44 +31,43 @@
 
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 from __future__ import print_function
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Debug = True
 _DebugLevel = 8
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 import os
 import sys
 import time
 import base64
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 try:
     from twisted.internet import reactor  # @UnresolvedImport
 except:
     sys.exit('Error initializing twisted.internet.reactor in tcp_node.py')
 
-from twisted.internet import protocol
-from twisted.internet.defer import Deferred,succeed
-from twisted.internet.error import CannotListenError
+from twisted.internet.defer import Deferred
 from twisted.web.client import HTTPClientFactory
 from twisted.web import server, resource
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     import os.path as _p
+
     sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
     sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..', '..')))
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -86,7 +85,7 @@ from userid import my_id
 
 from main import settings
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Outbox = {}
 _Contacts = {}
@@ -98,7 +97,7 @@ _PingDelayDict = {}
 _ConnectionsDict = {}
 _CurrentDelay = 5
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 # def init(receiving=True, sending_port=None):
@@ -119,7 +118,8 @@ _CurrentDelay = 5
 #     stop_sending()
 #     stop_receiving()
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
 
 def start_sending(port):
     global _ServerListener
@@ -151,7 +151,9 @@ def stop_sending():
     _ServerListener = None
     return d
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def send_file(idurl, filename):
     lg.out(12, 'http_node.send to %s %s' % (idurl, filename))
@@ -159,17 +161,20 @@ def send_file(idurl, filename):
     if idurl not in _Outbox:
         _Outbox[idurl] = []
     _Outbox[idurl].append(filename)
-    #we want to keep only 10 last files.
+    # we want to keep only 10 last files.
     if len(_Outbox[idurl]) > 10:
         lostedfilename = _Outbox[idurl].pop(0)
         lg.warn('losted: "%s"' % lostedfilename)
+
+
 #         transport_control.sendStatusReport(
 #             'unknown',
 #             lostedfilename,
 #             'failed',
 #             'http',)
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
 
 class SenderServer(resource.Resource):
     isLeaf = True
@@ -194,29 +199,33 @@ class SenderServer(resource.Resource):
             src64 = base64.b64encode(src)
             r += src64 + '\n'
             lg.out(12, 'http_node.SenderServer.render sent %s to %s' % (filename, idurl))
-            #TODO request.getPeer()
-#             transport_control.sendStatusReport(
-#                 request.getClient(),
-#                 filename,
-#                 'finished',
-#                 'http',)
+            # TODO request.getPeer()
+        #             transport_control.sendStatusReport(
+        #                 request.getClient(),
+        #                 filename,
+        #                 'finished',
+        #                 'http',)
         _Outbox.pop(idurl, None)
         return r
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 class TransportHTTPClientFactory(HTTPClientFactory):
     pass
+
 
 class TransportHTTPProxyClientFactory(HTTPClientFactory):
     def setURL(self, url):
         HTTPClientFactory.setURL(self, url)
         self.path = url
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 class Receiver(object):
-
     def loop(self):
         global _ReceivingLoop
         global _Contacts
@@ -255,16 +264,16 @@ class Receiver(object):
                     lg.out(14, 'http_node.receive.success ERROR in base64.b64decode()')
                     decrease_receiving_delay(idurl)
                     continue
-                fd, filename = tmpfile.make("http-in", extension='.http')
+                fd, filename = tmpfile.make('http-in', extension='.http')
                 os.write(fd, part)
                 os.close(fd)
                 decrease_receiving_delay(idurl)
-#                 transport_control.receiveStatusReport(
-#                     filename,
-#                     'finished',
-#                     'http',
-#                     host+':'+port,)
-#             transport_control.log('http', 'finish connection with %s:%s ' % (host, port))
+        #                 transport_control.receiveStatusReport(
+        #                     filename,
+        #                     'finished',
+        #                     'http',
+        #                     host+':'+port,)
+        #             transport_control.log('http', 'finish connection with %s:%s ' % (host, port))
         conn.disconnect()
         # TODO: keep it opened!
         _ConnectionsDict.pop(idurl, None)
@@ -281,25 +290,40 @@ class Receiver(object):
         url = b'http://' + host + b':' + strng.to_bin(str(port))
 
         if net_misc.proxy_is_on():
-            f = TransportHTTPProxyClientFactory(url, method='POST', headers={
-                'User-Agent': 'BitDust transport_http', 'idurl': my_id.getIDURL(), } )
+            f = TransportHTTPProxyClientFactory(
+                url,
+                method='POST',
+                headers={
+                    'User-Agent': 'BitDust transport_http',
+                    'idurl': my_id.getIDURL(),
+                },
+            )
             conn = reactor.connectTCP(net_misc.get_proxy_host(), int(net_misc.get_proxy_port()), f)
         else:
-            f = TransportHTTPClientFactory(url, method='POST', headers={
-                'User-Agent': 'BitDust transport_http', 'idurl': my_id.getIDURL(), } )
+            f = TransportHTTPClientFactory(
+                url,
+                method='POST',
+                headers={
+                    'User-Agent': 'BitDust transport_http',
+                    'idurl': my_id.getIDURL(),
+                },
+            )
             conn = reactor.connectTCP(host, int(port), f)
 
         f.deferred.addCallback(self.on_ping_success, idurl, host, port, conn)
         f.deferred.addErrback(self.on_ping_failed, idurl, host, port, conn)
         return conn
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def decrease_receiving_delay(idurl):
     global _PingDelayDict
     global _CurrentDelay
     lg.out(14, 'http_node.decrease_receiving_delay ' + idurl)
     _PingDelayDict[idurl] = _CurrentDelay
+
 
 def increase_receiving_delay(idurl):
     global _PingDelayDict
@@ -311,7 +335,9 @@ def increase_receiving_delay(idurl):
         lg.out(14, 'http_node.increase_receiving_delay   %s for %s' % (str(d), idurl))
         _PingDelayDict[idurl] *= 2
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def start_receiving():
     global _Receiver
@@ -336,7 +362,9 @@ def stop_receiving():
     del _ReceivingLoop
     _ReceivingLoop = None
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def push_contact(idurl):
     global _Contacts
@@ -365,7 +393,9 @@ def push_contact(idurl):
             lg.out(_DebugLevel, 'http_node.add_contact UPDATED "%s" on %s:%s' % (idurl, host, port))
     return idurl
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def do_update_contacts():
     global _Contacts
@@ -380,28 +410,36 @@ def do_update_contacts():
         latest_identity = identitycache.GetLatest(idurl)
         if isinstance(latest_identity, Deferred):
             latest_identity.addCallback(lambda src: push_contact(idurl))
-            latest_identity.addErrback(lambda err: lg.out(
-                _DebugLevel, 'http_node.update_contacts "%s" failed to cache' % idurl) if _Debug else None)
+            latest_identity.addErrback(lambda err: lg.out(_DebugLevel, 'http_node.update_contacts "%s" failed to cache' % idurl) if _Debug else None)
         else:
             push_contact(idurl)
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def on_contacts_changed(oldlist, newlist):
     do_update_contacts()
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def usage():
-    print('''usage:
+    print(
+        '''usage:
 http_node.py send [server_port] [to idurl] [filename]
 http_node.py receive
-''')
+'''
+    )
+
 
 def main():
     import logging
+
     logging.basicConfig(level=logging.DEBUG)
     from twisted.internet.defer import setDebugging
+
     setDebugging(True)
     # from twisted.python import log as twisted_log
     # twisted_log.startLogging(sys.stdout)
@@ -411,8 +449,8 @@ def main():
 
     if sys.argv.count('receive'):
         start_receiving()
-#         global _Contacts
-#         _Contacts['http://p2p-id.ru/veselin.xml'] = ('127.0.0.1', 9122)
+    #         global _Contacts
+    #         _Contacts['http://p2p-id.ru/veselin.xml'] = ('127.0.0.1', 9122)
 
     elif sys.argv.count('send'):
         start_sending(port=int(sys.argv[2]))
@@ -425,7 +463,8 @@ def main():
     reactor.run()  # @UndefinedVariable
     settings.shutdown()
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 if __name__ == '__main__':

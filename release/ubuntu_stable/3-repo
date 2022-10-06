@@ -22,4 +22,3 @@ rm -f bitdust-stable_*
 echo "DONE!!! stable repo updated!"
 
 exit 0
-

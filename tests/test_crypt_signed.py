@@ -111,9 +111,7 @@ _another_identity_xml = """<?xml version="1.0" encoding="utf-8"?>
 </identity>"""
 
 
-
 class Test(TestCase):
-
     def setUp(self):
         try:
             bpio.rmdir_recursive('/tmp/.bitdust_tmp')

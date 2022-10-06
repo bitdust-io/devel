@@ -48,19 +48,19 @@ cp debian/preinst workspace/debian
 cp debian/postinst workspace/debian
 cp debian/prerm workspace/debian
 cp debian/copyright workspace/debian
-cp debian/bitdust.cron.daily workspace/debian 
-# cp debian/bitdust.cron.hourly workspace/debian 
-cp debian/bitdust-stable.menu workspace/shortcuts 
+cp debian/bitdust.cron.daily workspace/debian
+# cp debian/bitdust.cron.hourly workspace/debian
+cp debian/bitdust-stable.menu workspace/shortcuts
 
 echo "prepare project files"
 cp debian/bitdust.1 workspace/doc
 cp debian/bitdust workspace/bin
 cp debian/bitdust.xpm workspace/pixmaps
 cp debian/bitdust.png workspace/pixmaps
-cp debian/bitdust.list workspace/apt 
+cp debian/bitdust.list workspace/apt
 cp debian/bitdust.desktop workspace/shortcuts
 cp -T debian/bitdust-autostart.desktop workspace/autostart/bitdust.desktop
-cp -T debian/bitdust.default workspace/default/bitdust-update 
+cp -T debian/bitdust.default workspace/default/bitdust-update
 
 echo "build sources"
 ../sources/0-build
@@ -89,4 +89,3 @@ chmod 0755 workspace/debian/bitdust.cron.daily
 echo "DONE!"
 
 exit 0
-

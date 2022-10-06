@@ -47,4 +47,3 @@ Then you create a python file which actually suppose to orchestrate and test Bit
 
         PYTHON_VERSION=3.6 make prepare
         make run_log/new_regression_group
-

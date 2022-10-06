@@ -39,21 +39,21 @@ EVENTS:
     * :red:`timer-1min`
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Debug = True
 _DebugLevel = 6
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from twisted.internet import reactor  # @UnresolvedImport
 from twisted.python.failure import Failure
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -63,11 +63,11 @@ from p2p import lookup
 from p2p import p2p_service
 from p2p import p2p_service_seeker
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _ContractChainConsumer = None
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 def A(event=None, *args, **kwargs):
@@ -84,7 +84,9 @@ def A(event=None, *args, **kwargs):
         _ContractChainConsumer.automat(event, *args, **kwargs)
     return _ContractChainConsumer
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 class ContractChainConsumer(automat.Automat):
     """
@@ -107,7 +109,7 @@ class ContractChainConsumer(automat.Automat):
         """
         The state machine code, generated using `visio2python <https://bitdust.io/visio2python/>`_ tool.
         """
-        #---MINER?---
+        # ---MINER?---
         if self.state == 'MINER?':
             if event == 'shutdown':
                 self.state = 'CLOSED'
@@ -118,12 +120,12 @@ class ContractChainConsumer(automat.Automat):
                 self.state = 'DISCONNECTED'
                 self.doDisconnectAccountants(*args, **kwargs)
                 self.doDisconnectMiner(*args, **kwargs)
-        #---AT_STARTUP---
+        # ---AT_STARTUP---
         elif self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'DISCONNECTED'
                 self.doInit(*args, **kwargs)
-        #---ACCOUNTANTS?---
+        # ---ACCOUNTANTS?---
         elif self.state == 'ACCOUNTANTS?':
             if event == 'shutdown':
                 self.state = 'CLOSED'
@@ -134,7 +136,7 @@ class ContractChainConsumer(automat.Automat):
             elif event == 'accountants-connected':
                 self.state = 'MINER?'
                 self.doConnectMiner(*args, **kwargs)
-        #---DISCONNECTED---
+        # ---DISCONNECTED---
         elif self.state == 'DISCONNECTED':
             if event == 'start':
                 self.state = 'ACCOUNTANTS?'
@@ -142,7 +144,7 @@ class ContractChainConsumer(automat.Automat):
             elif event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(*args, **kwargs)
-        #---CONNECTED---
+        # ---CONNECTED---
         elif self.state == 'CONNECTED':
             if event == 'shutdown':
                 self.state = 'CLOSED'
@@ -151,7 +153,7 @@ class ContractChainConsumer(automat.Automat):
                 self.state = 'DISCONNECTED'
                 self.doDisconnectAccountants(*args, **kwargs)
                 self.doDisconnectMiner(*args, **kwargs)
-        #---CLOSED---
+        # ---CLOSED---
         elif self.state == 'CLOSED':
             pass
         return None
@@ -200,7 +202,7 @@ class ContractChainConsumer(automat.Automat):
         del _ContractChainConsumer
         _ContractChainConsumer = None
 
-    #------------------------------------------------------------------------------
+    # ------------------------------------------------------------------------------
 
     def _on_accountant_lookup_finished(self, idurl):
         if self.state != 'ACCOUNTANTS?':
@@ -229,8 +231,11 @@ class ContractChainConsumer(automat.Automat):
         if self.accountant_lookups >= 10:  # TODO: read from settings.
             if len(self.connected_accountants) >= 1:  # TODO: read from settings: min accountants
                 if _Debug:
-                    lg.out(_DebugLevel, 'contract_chain_consumer._lookup_next_accountant FAILED after %d retries, but %d accountants connected' % (
-                        self.accountant_lookups, len(self.connected_accountants)))
+                    lg.out(
+                        _DebugLevel,
+                        'contract_chain_consumer._lookup_next_accountant FAILED after %d retries, but %d accountants connected'
+                        % (self.accountant_lookups, len(self.connected_accountants)),
+                    )
                 self.automat('accountants-connected')
                 return
             if _Debug:
@@ -241,7 +246,9 @@ class ContractChainConsumer(automat.Automat):
         p2p_service_seeker.connect_random_node(
             'service_accountant',
             lookup_method=lookup.random_merchant,
-            service_params={'action': 'read', },
+            service_params={
+                'action': 'read',
+            },
             exclude_nodes=self.connected_accountants,
         ).addBoth(self._on_accountant_lookup_finished)
 

@@ -55,4 +55,3 @@ https://github.com/bismuthfoundation/BismuthAPI
 
 ## Bismuth plugins
 https://github.com/bismuthfoundation/BismuthPlugins
-

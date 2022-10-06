@@ -33,11 +33,13 @@ import dowser  # @UnresolvedImport
 
 
 def start(port):
-    cherrypy.config.update({
-        'environment': 'embedded',
-        'server.socket_port': port,
-        'server.socket_host': '0.0.0.0',
-    })
+    cherrypy.config.update(
+        {
+            'environment': 'embedded',
+            'server.socket_port': port,
+            'server.socket_host': '0.0.0.0',
+        }
+    )
     cherrypy.tree.mount(dowser.Root())
 
     # cherrypy.server.quickstart()
@@ -48,10 +50,10 @@ def stop():
     cherrypy.engine.exit()
 
 
-#from twisted.web.wsgi import WSGIResource
-#from twisted.internet import reactor  # @UnresolvedImport
+# from twisted.web.wsgi import WSGIResource
+# from twisted.internet import reactor  # @UnresolvedImport
 #
-#from dozer import Dozer
+# from dozer import Dozer
 #
 # def application(environ, start_response):
 #    start_response('200 OK', [('Content-type', 'text/plain')])

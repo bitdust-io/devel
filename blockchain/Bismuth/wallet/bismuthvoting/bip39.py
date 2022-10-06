@@ -5,15 +5,15 @@ A Simple wrapper around BIP39 Mnemonic module to have a simple consistent interf
 from mnemonic import Mnemonic
 
 
-__version__ = "0.0.1"
+__version__ = '0.0.1'
 
 
-DEFAULT_PASSPHRASE = "BismuthGVP"
+DEFAULT_PASSPHRASE = 'BismuthGVP'
 
 
 class BIP39:
     def __init__(self, entropy: bytes = None):
-        self.mnemonic = Mnemonic("english")
+        self.mnemonic = Mnemonic('english')
         self.entropy = entropy
 
     def to_mnemonic(self) -> str:
@@ -26,10 +26,10 @@ class BIP39:
 
     @classmethod
     def check(cls, mnemonic: str) -> bool:
-        return Mnemonic("english").check(mnemonic)
+        return Mnemonic('english').check(mnemonic)
 
     @staticmethod
-    def from_mnemonic(mnemonic: str) -> "BIP39":
-        mnemo = Mnemonic("english")
+    def from_mnemonic(mnemonic: str) -> 'BIP39':
+        mnemo = Mnemonic('english')
         entropy = mnemo.to_entropy(mnemonic)
         return BIP39(entropy)

@@ -11,7 +11,7 @@ mkdir build
 @echo.
 @echo [ doing "git pull" in root ]
 pushd ..\..
-git pull 
+git pull
 popd
 
 
@@ -29,6 +29,4 @@ popd
 @echo [ build DONE ]
 @echo.
 
-pause 
-
-
+pause

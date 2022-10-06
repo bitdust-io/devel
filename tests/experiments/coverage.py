@@ -21,7 +21,6 @@
 # Please contact us if you have any questions at bitdust.io@gmail.com
 
 from __future__ import absolute_import
-from twisted.internet.defer import Deferred
 from twisted.internet import reactor  # @UnresolvedImport
 
 try:
@@ -29,25 +28,27 @@ try:
 except:
     import sys
     import os.path as _p
+
     sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 from logs import lg
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 def run_tests():
     from interface import api
+
     reactor.callLater(15, api.ping, 'http://p2p-id.ru/atg314.xml')
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def main():
     from interface import api
-    from main import settings
     from main import bpmain
     from system import bpio
-    from services import driver
+
     lg.open_log_file('test_api.log')
     lg.set_debug_level(20)
     lg.life_begins()
@@ -59,8 +60,10 @@ def main():
     bpmain.run_twisted_reactor()
     bpmain.shutdown()
 
+
 if __name__ == '__main__':
     import coverage
+
     cov = coverage.Coverage()
     cov.start()
     main()

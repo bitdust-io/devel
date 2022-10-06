@@ -39,24 +39,24 @@ EVENTS:
     * :red:`start`
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 10
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 import os
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from twisted.internet import reactor  # @UnresolvedImport
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -65,11 +65,9 @@ from automats import automat
 from lib import packetid
 from lib import serialization
 
-from main import settings
 
 from system import tmpfile
 from system import local_fs
-from system import bpio
 
 from crypt import my_keys
 
@@ -92,7 +90,8 @@ from storage import backup_tar
 from userid import global_id
 from userid import my_id
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
 
 class ArchiveReader(automat.Automat):
     """
@@ -104,8 +103,8 @@ class ArchiveReader(automat.Automat):
         Builds `archive_reader()` state machine.
         """
         super(ArchiveReader, self).__init__(
-            name="archive_reader",
-            state="AT_STARTUP",
+            name='archive_reader',
+            state='AT_STARTUP',
             debug_level=debug_level,
             log_events=log_events,
             log_transitions=log_transitions,
@@ -117,7 +116,7 @@ class ArchiveReader(automat.Automat):
         """
         The state machine code, generated using `visio2python <http://bitdust.io/visio2python/>`_ tool.
         """
-        #---AT_STARTUP---
+        # ---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'start' and not self.isMyOwnArchive(*args, **kwargs):
                 self.state = 'DHT_READ?'
@@ -127,7 +126,7 @@ class ArchiveReader(automat.Automat):
                 self.state = 'LIST_FILES?'
                 self.doInit(*args, **kwargs)
                 self.doRequestMyListFiles(*args, **kwargs)
-        #---DHT_READ?---
+        # ---DHT_READ?---
         elif self.state == 'DHT_READ?':
             if event == 'dht-read-success':
                 self.state = 'LIST_FILES?'
@@ -136,7 +135,7 @@ class ArchiveReader(automat.Automat):
                 self.state = 'FAILED'
                 self.doReportFailed(event, *args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-        #---LIST_FILES?---
+        # ---LIST_FILES?---
         elif self.state == 'LIST_FILES?':
             if event == 'list-files-collected':
                 self.state = 'RESTORE'
@@ -145,7 +144,7 @@ class ArchiveReader(automat.Automat):
                 self.state = 'FAILED'
                 self.doReportFailed(event, *args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-        #---RESTORE---
+        # ---RESTORE---
         elif self.state == 'RESTORE':
             if event == 'extract-all-done':
                 self.state = 'DONE'
@@ -157,10 +156,10 @@ class ArchiveReader(automat.Automat):
                 self.doDestroyMe(*args, **kwargs)
             elif event == 'restore-done':
                 self.doExtractArchive(*args, **kwargs)
-        #---DONE---
+        # ---DONE---
         elif self.state == 'DONE':
             pass
-        #---FAILED---
+        # ---FAILED---
         elif self.state == 'FAILED':
             pass
         return None
@@ -287,7 +286,9 @@ class ArchiveReader(automat.Automat):
             outpacket = p2p_service.SendListFiles(
                 target_supplier=supplier_idurl,
                 key_id=self.group_key_id,
-                query_items=[self.queue_alias, ],
+                query_items=[
+                    self.queue_alias,
+                ],
                 timeout=30,
                 callbacks={
                     commands.Fail(): lambda resp, info: self._on_list_files_failed(supplier_pos),
@@ -334,7 +335,12 @@ class ArchiveReader(automat.Automat):
                 continue
             if self.end_sequence_id is not None and self.end_sequence_id < snapshot_sequence_id:
                 continue
-            snapshot_sequence_ids.append((snapshot_sequence_id, backup_id, ))
+            snapshot_sequence_ids.append(
+                (
+                    snapshot_sequence_id,
+                    backup_id,
+                )
+            )
         snapshot_sequence_ids.sort(key=lambda item: int(item[0]))
         if _Debug:
             lg.args(_DebugLevel, snapshot_sequence_ids=snapshot_sequence_ids)
@@ -398,8 +404,7 @@ class ArchiveReader(automat.Automat):
             lg.warn('skip ListFiles() response, requested_list_files object is empty')
             return
         if self.requested_list_files.get(supplier_num) is not None:
-            lg.warn('skip ListFiles() response, supplier record at position %d already set to %r' % (
-                supplier_num, self.requested_list_files.get(supplier_num)))
+            lg.warn('skip ListFiles() response, supplier record at position %d already set to %r' % (supplier_num, self.requested_list_files.get(supplier_num)))
             return
         self.requested_list_files[supplier_num] = True
         lst = list(self.requested_list_files.values())
@@ -426,8 +431,7 @@ class ArchiveReader(automat.Automat):
             lg.warn('skip ListFiles() response, requested_list_files object is empty')
             return
         if self.requested_list_files.get(supplier_num) is not None:
-            lg.warn('skip ListFiles() response, supplier record at position %d already set to %r' % (
-                supplier_num, self.requested_list_files.get(supplier_num)))
+            lg.warn('skip ListFiles() response, supplier record at position %d already set to %r' % (supplier_num, self.requested_list_files.get(supplier_num)))
             return
         self.requested_list_files[supplier_num] = False
         lst = list(self.requested_list_files.values())
@@ -474,9 +478,22 @@ class ArchiveReader(automat.Automat):
         except:
             lg.exc()
         if result == 'done':
-            lg.info('archive %r restore success from %r' % (backup_id, tarfilename, ))
+            lg.info(
+                'archive %r restore success from %r'
+                % (
+                    backup_id,
+                    tarfilename,
+                )
+            )
         else:
-            lg.err('archive %r restore failed from %r with : %r' % (backup_id, tarfilename, result, ))
+            lg.err(
+                'archive %r restore failed from %r with : %r'
+                % (
+                    backup_id,
+                    tarfilename,
+                    result,
+                )
+            )
         if result != 'done':
             tmpfile.throw_out(tarfilename, 'restore ' + result)
             self.automat('restore-failed', backup_id=backup_id, tarfilename=tarfilename)
@@ -485,7 +502,13 @@ class ArchiveReader(automat.Automat):
         return
 
     def _on_restore_failed(self, err, backupID, outfd, tarfilename, backup_index):
-        lg.err('archive %r restore failed with : %r' % (backupID, err, ))
+        lg.err(
+            'archive %r restore failed with : %r'
+            % (
+                backupID,
+                err,
+            )
+        )
         try:
             os.close(outfd)
         except:
@@ -513,7 +536,14 @@ class ArchiveReader(automat.Automat):
                         continue
                 self.extracted_messages.append(archive_message)
         if _Debug:
-            lg.dbg(_DebugLevel, 'archive snapshot %r extracted successfully to %r, extracted %d archive messages so far' % (
-                source_filename, output_location, len(self.extracted_messages), ))
-        self._do_restore_next_backup(backup_index+1)
+            lg.dbg(
+                _DebugLevel,
+                'archive snapshot %r extracted successfully to %r, extracted %d archive messages so far'
+                % (
+                    source_filename,
+                    output_location,
+                    len(self.extracted_messages),
+                ),
+            )
+        self._do_restore_next_backup(backup_index + 1)
         return retcode

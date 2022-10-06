@@ -80,16 +80,16 @@ Single command should make it for you, all required files will be generated in `
 
 
 Last step to make BitDust software ready is to make a short alias in your OS, then you can just type `bitdust` in command line to fast access the program:
-        
+
         sudo ln -s -f /home/<user>/.bitdust/bitdust /usr/local/bin/bitdust
-        
+
 
 4. Run BitDust
 
 Start using the software by creating an identity for your device in BitDust network:
-       
+
         bitdust id create <some nick name>
-       
+
 
 I recommend you to create another copy of your Private Key in a safe place to be able to recover your data in the future. You can do it with such command:
 
@@ -106,7 +106,7 @@ Type this command to read more info about BitDust commands:
 To run the software type:
 
         bitdust
-        
+
 
 Start as background process:
 
@@ -114,7 +114,7 @@ Start as background process:
 
 
 To get some more insights or just to know how to start playing with software
-you can visit [BitDust Commands](https://bitdust.io/commands.html) page. 
+you can visit [BitDust Commands](https://bitdust.io/commands.html) page.
 
 To get more info about API methods available go to [BitDust API](https://bitdust.io/api.html) page.
 
@@ -159,5 +159,3 @@ Feedback
 
 You can contact [BitDust contributors](https://github.com/bitdust-io) on GitHub if you have any questions or ideas.
 Welcome to the future!
-
-                                

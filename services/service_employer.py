@@ -57,10 +57,12 @@ class EmployerService(LocalService):
         from raid import eccmap
         from services import driver
         from customer import fire_hire
+
         self.starting_deferred = Deferred()
-        self.starting_deferred.addErrback(lambda err: lg.warn('service %r was not started: %r' % (
-            self.service_name, err.getErrorMessage() if err else 'unknown reason')))
-        self.all_suppliers_hired_event_sent = False 
+        self.starting_deferred.addErrback(
+            lambda err: lg.warn('service %r was not started: %r' % (self.service_name, err.getErrorMessage() if err else 'unknown reason'))
+        )
+        self.all_suppliers_hired_event_sent = False
         if driver.is_on('service_entangled_dht'):
             self._do_join_suppliers_dht_layer()
         eccmap.Update()
@@ -82,6 +84,7 @@ class EmployerService(LocalService):
         from main.config import conf
         from main import events
         from customer import fire_hire
+
         fire_hire.A().removeStateChangedCallback(self._on_fire_hire_ready)
         events.remove_subscriber(self._on_dht_layer_connected, 'dht-layer-connected')
         events.remove_subscriber(self._on_supplier_modified, 'supplier-modified')
@@ -94,16 +97,19 @@ class EmployerService(LocalService):
         from raid import eccmap
         from contacts import contactsdb
         from userid import id_url
+
         missed_suppliers = id_url.empty_count(contactsdb.suppliers())
-        # to have that service running minimum amount of suppliers must be already in the family 
+        # to have that service running minimum amount of suppliers must be already in the family
         return missed_suppliers <= eccmap.Current().CorrectableErrors
 
     def _do_cleanup_dht_suppliers(self, use_cache=True):
         from logs import lg
         from services import driver
+
         if driver.is_on('service_entangled_dht'):
             from dht import dht_relations
             from userid import my_id
+
             d = dht_relations.read_customer_suppliers(my_id.getIDURL(), use_cache=use_cache)
             d.addCallback(self._on_my_dht_relations_discovered)
             d.addErrback(self._on_my_dht_relations_failed)
@@ -114,6 +120,7 @@ class EmployerService(LocalService):
         from logs import lg
         from main import events
         from customer import fire_hire
+
         if fire_hire.IsAllHired():
             self._do_cleanup_dht_suppliers()
             if not self.all_suppliers_hired_event_sent:
@@ -135,6 +142,7 @@ class EmployerService(LocalService):
         from p2p import p2p_service
         from raid import eccmap
         from userid import my_id
+
         p2p_service.SendContacts(
             remote_idurl=supplier_idurl,
             json_payload={
@@ -152,6 +160,7 @@ class EmployerService(LocalService):
         from dht import dht_service
         from dht import dht_records
         from dht import known_nodes
+
         lg.info('going to join suppliers DHT layer: %d' % dht_records.LAYER_SUPPLIERS)
         known_seeds = known_nodes.nodes()
         dht_service.open_layer(
@@ -169,6 +178,7 @@ class EmployerService(LocalService):
         from logs import lg
         from customer import fire_hire
         from raid import eccmap
+
         lg.info('my desired suppliers number changed')
         eccmap.Update()
         self._do_check_all_hired()
@@ -178,6 +188,7 @@ class EmployerService(LocalService):
     def _on_needed_space_modified(self, path, value, oldvalue, result):
         from logs import lg
         from customer import fire_hire
+
         lg.info('my needed space value modified')
         self._do_check_all_hired()
         fire_hire.ClearLastFireTime()
@@ -193,6 +204,7 @@ class EmployerService(LocalService):
         from userid import id_url
         from crypt import my_keys
         from logs import lg
+
         if not (dht_result and isinstance(dht_result, dict) and len(dht_result.get('suppliers', [])) > 0):
             lg.warn('no dht records found for my customer family')
             return
@@ -228,6 +240,7 @@ class EmployerService(LocalService):
 
     def _on_my_dht_relations_failed(self, err):
         from logs import lg
+
         lg.err(err)
 
     def _on_dht_layer_connected(self, evt):

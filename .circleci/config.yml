@@ -3,7 +3,7 @@ executors:
   my-custom-executor:
     docker:
       - image: cimg/python:3.8.12
-      
+
 jobs:
   bitdust-job:
 

@@ -1255,7 +1255,7 @@ Change Log
 * added test for search users
 * made regression test setup more reliable
 * do not load all local keys at startup
-* reading remote matrix for shared files to be able to show availability  
+* reading remote matrix for shared files to be able to show availability
 * updated online_status() automat : reduce amount of "ping" packets sent to offline users
 * added /config/tree/v1 endpoint
 * improved config/*/v1 and service/list/v1 endpoints
@@ -1339,7 +1339,7 @@ Change Log
 * get rid of data_sender.log
 * all suppliers must be already hired before you start uploading
 * few more py3 bug fixes
-* more stability in service_shared_data() 
+* more stability in service_shared_data()
 
 
 
@@ -1577,7 +1577,7 @@ Change Log
 2018-01-14 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * added id server blog.bitdust.io, removed id server whmcs.whois.ai
-* fixed DHT init/connect scripts, 
+* fixed DHT init/connect scripts,
 * limit twisted and django versions in requirements, set --index-url=https://pypi.python.org/simple/ in deployment script
 * proper handling customer location of ".bitdust" folder
 
@@ -1769,13 +1769,13 @@ Change Log
 * made upgrade on stun client - multiple stun requests at same time to increase performance
 * changed user settings engine, now it is splited on single files in sub folder: .bitdust/config/
 * many fixes in GUI and command line interface
-* hash method was changed from MD5 to SHA1 
+* hash method was changed from MD5 to SHA1
 * added a small feature - can request a single random packet for given backup from GUI
 
 
 2014-10-21 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
-* fixed messages - p2p chat is working now! 
+* fixed messages - p2p chat is working now!
 * did small fixes in: GUI, DHT code, API
 * changed UDP PING timeout again, from 1 minute to 30 seconds
 
@@ -1815,7 +1815,5 @@ Change Log
 2014-08-20 Veselin Penev <veselin@bitdust.io>
 
 * start tracking of change log history
-* prepared a Demo version with GUI interface 
+* prepared a Demo version with GUI interface
 * new tray icons for Microsoft Windows
-
-

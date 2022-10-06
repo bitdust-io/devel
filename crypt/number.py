@@ -29,22 +29,27 @@
 
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 import sys
 import struct
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 if sys.version_info[0] == 2:
+
     def b(s):
         return s
-else:
-    def b(s):
-        return s.encode("latin-1") # utf-8 would cause some side-effects we don't want
 
-#------------------------------------------------------------------------------
+else:
+
+    def b(s):
+        return s.encode('latin-1')  # utf-8 would cause some side-effects we don't want
+
+
+# ------------------------------------------------------------------------------
+
 
 def long_to_bytes(n, blocksize=0):
     """long_to_bytes(n:long, blocksize:int) : string
@@ -59,7 +64,7 @@ def long_to_bytes(n, blocksize=0):
     n = int(n)
     pack = struct.pack
     while n > 0:
-        s = pack('>I', n & 0xffffffff) + s
+        s = pack('>I', n & 0xFFFFFFFF) + s
         n = n >> 32
     # strip off leading zeros
     for i in range(len(s)):
@@ -87,9 +92,9 @@ def bytes_to_long(s):
     unpack = struct.unpack
     length = len(s)
     if length % 4:
-        extra = (4 - length % 4)
+        extra = 4 - length % 4
         s = b('\000') * extra + s
         length = length + extra
     for i in range(0, length, 4):
-        acc = (acc << 32) + unpack('>I', s[i:i+4])[0]
+        acc = (acc << 32) + unpack('>I', s[i : i + 4])[0]
     return acc

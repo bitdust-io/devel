@@ -33,7 +33,7 @@ Uses wxPython to show tray icon for BitDust. This is working inside
 ``bpmain`` process, uses wxreactor to connect with main Twisted loop.
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 from __future__ import print_function
@@ -41,7 +41,7 @@ import os
 import sys
 import platform
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 USE_TRAY_ICON = True
 LABEL = 'BitDust'
@@ -76,7 +76,7 @@ _PopUpIconsDict = {
     'shutdown': 'shutdown24x24.png',
 }
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 def icons_dict():
@@ -88,7 +88,8 @@ def popup_icons_dict():
     global _PopUpIconsDict
     return _PopUpIconsDict
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def shutdown():
@@ -133,7 +134,6 @@ def init(icons_path, icons_files=None):
         return item
 
     class MyTaskBarIcon(wx.TaskBarIcon):
-
         def __init__(self, icons_path, current_icon_name=None):
             super(MyTaskBarIcon, self).__init__()
             self.icons_path = icons_path
@@ -196,7 +196,6 @@ def init(icons_path, icons_files=None):
             self.RemoveIcon()
 
     class MyApp(wx.App):
-
         def __init__(self, icons_path):
             self.icons_path = icons_path
             wx.App.__init__(self, False)
@@ -242,7 +241,8 @@ def main_porcess_stopped():
         del _IconObject
         _IconObject = None
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def control(cmd):
@@ -271,7 +271,10 @@ def restore_icon():
 
 def state_changed(network, p2p):
     # print 'state_changed', network, p2p
-    if [network, p2p, ].count('CONNECTED') == 2:
+    if [
+        network,
+        p2p,
+    ].count('CONNECTED') == 2:
         set_icon('connected')
         return
     # if network == 'DISCONNECTED':
@@ -290,9 +293,11 @@ def SetControlFunc(f):
     global _ControlFunc
     _ControlFunc = f
 
-#------------------------------------------------------------------------------
 
-if __name__ == "__main__":
+# ------------------------------------------------------------------------------
+
+if __name__ == '__main__':
+
     def test_control(cmd):
         print('test_control', cmd)
         if cmd == 'exit':
@@ -302,8 +307,10 @@ if __name__ == "__main__":
             # sys.exit()
 
     from twisted.internet import wxreactor
+
     wxreactor.install()
     from twisted.internet import reactor  # @UnresolvedImport
+
     init(sys.argv[1])
     SetControlFunc(test_control)
     reactor.run()

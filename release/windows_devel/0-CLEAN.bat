@@ -14,7 +14,7 @@ rm -rf advinstaller\bitdust-cache\
 
 @echo.
 @echo [ clear portable files ]
-if exist bitdust-development.zip del bitdust-development.zip 
+if exist bitdust-development.zip del bitdust-development.zip
 if exist portable\NUL rmdir /S /Q portable
 mkdir portable
 

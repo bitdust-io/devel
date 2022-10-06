@@ -5,7 +5,6 @@ from crypt import cipher
 
 
 class Test(TestCase):
-
     def test_generate_sign_verify(self):
         msg = b'1234567890ABCDEFGH'
         k1 = rsa_key.RSAKey()

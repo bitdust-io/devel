@@ -27,7 +27,7 @@ mkdir upload
 
 @echo.
 @echo [ clear portable folder ]
-if exist bitdust-testing.zip del bitdust-testing.zip 
+if exist bitdust-testing.zip del bitdust-testing.zip
 if exist portable\NUL rmdir /S /Q portable
 mkdir portable
 

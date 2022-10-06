@@ -77,24 +77,24 @@ And remote node should declare that as well to confirm this, this is sort of "po
 """
 
 from __future__ import absolute_import
+
 _Debug = False
 _DebugLevel = 14
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 import datetime
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
-from coins import mine
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _CoinsMinerNode = None
 _MyStartedContracts = []
 _MyFinishedContracts = []
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 def node():
@@ -111,7 +111,8 @@ def finished_contracts():
     global _MyFinishedContracts
     return _MyFinishedContracts
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def init():
@@ -128,7 +129,8 @@ def shutdown():
     del _CoinsMinerNode
     _CoinsMinerNode = None
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def inbox_packet(newpacket, info, status, error_message):
@@ -138,7 +140,8 @@ def inbox_packet(newpacket, info, status, error_message):
         return False
     return node().inbox_packet(newpacket, info)
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def start_contract(typ, partner):
@@ -165,24 +168,25 @@ def finish_contract(typ, partner, **kwargs):
         setattr(found, key, value)
     finished_contracts().append(found)
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 class Contract(object):
-
     def __init__(self, **kwargs):
         for key, value in kwargs.items():
             setattr(self, key, value)
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 class CoinsMinerNode(object):
-
     def inbox_packet(self, newpacket, info):
         return False
 
     def mine_and_send(self, data):
         from transport import gateway
+
         outpacket = ''
         gateway.outbox(outpacket)

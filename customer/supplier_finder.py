@@ -40,16 +40,16 @@ EVENTS:
     * :red:`users-not-found`
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 10
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -66,12 +66,13 @@ from contacts import contactsdb
 from userid import my_id
 from userid import id_url
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _SupplierFinder = None
 _SuppliersToHire = []
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
 
 def AddSupplierToHire(idurl):
     global _SuppliersToHire
@@ -90,7 +91,8 @@ def InsertSupplierToHire(idurl):
         if _Debug:
             lg.dbg(_DebugLevel, 'added %r as a FIRST supplier candidate' % idurl)
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def A(event=None, *args, **kwargs):
@@ -131,20 +133,20 @@ class SupplierFinder(automat.Automat):
         self.target_idurl = None
 
     def A(self, event, *args, **kwargs):
-        #---AT_STARTUP---
+        # ---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'start' and not self.isSomeCandidatesListed(*args, **kwargs):
                 self.state = 'RANDOM_USER'
-                self.Attempts=0
+                self.Attempts = 0
                 self.doInit(*args, **kwargs)
                 self.doDHTFindRandomUser(*args, **kwargs)
             elif event == 'start' and self.isSomeCandidatesListed(*args, **kwargs):
                 self.state = 'ACK?'
                 self.doInit(*args, **kwargs)
                 self.doPopCandidate(*args, **kwargs)
-                self.Attempts=1
+                self.Attempts = 1
                 self.doSendMyIdentity(*args, **kwargs)
-        #---RANDOM_USER---
+        # ---RANDOM_USER---
         elif self.state == 'RANDOM_USER':
             if event == 'users-not-found':
                 self.state = 'FAILED'
@@ -154,40 +156,40 @@ class SupplierFinder(automat.Automat):
                 self.state = 'ACK?'
                 self.doCleanPrevUser(*args, **kwargs)
                 self.doRememberUser(*args, **kwargs)
-                self.Attempts+=1
+                self.Attempts += 1
                 self.doSendMyIdentity(*args, **kwargs)
-        #---ACK?---
+        # ---ACK?---
         elif self.state == 'ACK?':
-            if self.Attempts==5 and ( event == 'timer-10sec' or event == 'ping-failed' ):
+            if self.Attempts == 5 and (event == 'timer-10sec' or event == 'ping-failed'):
                 self.state = 'FAILED'
                 self.doDestroyMe(*args, **kwargs)
                 self.doReportFailed(*args, **kwargs)
-            elif ( event == 'ping-failed' or event == 'timer-10sec' ) and self.Attempts<5:
+            elif (event == 'ping-failed' or event == 'timer-10sec') and self.Attempts < 5:
                 self.state = 'RANDOM_USER'
                 self.doDHTFindRandomUser(*args, **kwargs)
             elif event == 'ack-received':
                 self.state = 'SERVICE?'
                 self.doSupplierConnect(*args, **kwargs)
-        #---SERVICE?---
+        # ---SERVICE?---
         elif self.state == 'SERVICE?':
             if event == 'supplier-connected':
                 self.state = 'DONE'
                 self.doDestroyMe(*args, **kwargs)
                 self.doReportDone(*args, **kwargs)
-            elif self.Attempts<5 and event == 'supplier-not-connected':
+            elif self.Attempts < 5 and event == 'supplier-not-connected':
                 self.state = 'RANDOM_USER'
                 self.doDHTFindRandomUser(*args, **kwargs)
-            elif event == 'timer-30sec' and self.Attempts<5:
+            elif event == 'timer-30sec' and self.Attempts < 5:
                 self.state = 'RANDOM_USER'
                 self.doDHTFindRandomUser(*args, **kwargs)
-            elif self.Attempts==5 and ( event == 'timer-30sec' or event == 'supplier-not-connected' ):
+            elif self.Attempts == 5 and (event == 'timer-30sec' or event == 'supplier-not-connected'):
                 self.state = 'FAILED'
                 self.doDestroyMe(*args, **kwargs)
                 self.doReportFailed(*args, **kwargs)
-        #---FAILED---
+        # ---FAILED---
         elif self.state == 'FAILED':
             pass
-        #---DONE---
+        # ---DONE---
         elif self.state == 'DONE':
             pass
         return None
@@ -230,6 +232,7 @@ class SupplierFinder(automat.Automat):
         from customer import supplier_connector
         from customer import fire_hire
         from raid import eccmap
+
         position = self.family_position
         if position is None or position == -1:
             lg.warn('position for new supplier is unknown, will "guess"')
@@ -269,6 +272,7 @@ class SupplierFinder(automat.Automat):
         Action method.
         """
         from customer import supplier_connector
+
         if id_url.is_cached(self.target_idurl):
             sc = supplier_connector.by_idurl(self.target_idurl)
             if sc:
@@ -293,14 +297,14 @@ class SupplierFinder(automat.Automat):
                 self.target_idurl = id_url.field(idurl)
                 _SuppliersToHire.remove(idurl)
                 break
-        lg.info('populate supplier %r from "hire" list, %d more in the list' % (
-            self.target_idurl, len(_SuppliersToHire)))
+        lg.info('populate supplier %r from "hire" list, %d more in the list' % (self.target_idurl, len(_SuppliersToHire)))
 
     def doReportDone(self, *args, **kwargs):
         """
         Action method.
         """
         from customer import fire_hire
+
         fire_hire.A('supplier-connected', *args, **kwargs)
 
     def doReportFailed(self, *args, **kwargs):
@@ -308,6 +312,7 @@ class SupplierFinder(automat.Automat):
         Action method.
         """
         from customer import fire_hire
+
         fire_hire.A('search-failed', *args, **kwargs)
 
     def doDestroyMe(self, *args, **kwargs):
@@ -315,6 +320,7 @@ class SupplierFinder(automat.Automat):
         Remove all references to the state machine object to destroy it.
         """
         from customer import supplier_connector
+
         global _SupplierFinder
         del _SupplierFinder
         _SupplierFinder = None
@@ -325,7 +331,7 @@ class SupplierFinder(automat.Automat):
             self.target_idurl = None
         self.destroy()
 
-    #------------------------------------------------------------------------------
+    # ------------------------------------------------------------------------------
 
     def _nodes_lookup_finished(self, idurls):
         if _Debug:
@@ -336,10 +342,10 @@ class SupplierFinder(automat.Automat):
             return
         found_idurl = None
         for idurl in idurls:
-#             if id_url.is_in(idurl, contactsdb.suppliers(), as_field=True):
-#                 if _Debug:
-#                     lg.out('    skip %r because already my supplier' % idurl)
-#                 continue
+            #             if id_url.is_in(idurl, contactsdb.suppliers(), as_field=True):
+            #                 if _Debug:
+            #                     lg.out('    skip %r because already my supplier' % idurl)
+            #                 continue
             ident = identitycache.FromCache(idurl)
             remoteprotos = set(ident.getProtoOrder())
             myprotos = set(my_id.getLocalIdentity().getProtoOrder())
@@ -360,7 +366,10 @@ class SupplierFinder(automat.Automat):
     def _supplier_connector_state(self, supplier_idurl, newstate, **kwargs):
         if id_url.field(supplier_idurl) != self.target_idurl:
             return
-        if newstate in ['DISCONNECTED', 'NO_SERVICE', ]:
+        if newstate in [
+            'DISCONNECTED',
+            'NO_SERVICE',
+        ]:
             self.automat('supplier-not-connected')
             return
         if newstate != 'CONNECTED':

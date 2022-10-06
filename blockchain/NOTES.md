@@ -92,4 +92,3 @@ Now you have two Bismuth addresses and you can use them to mine coins. One of th
 	cp miner.example.txt miner.txt
         # update miner.txt with the second address from your Web-based Crypto Wallet
         ~/.bitdust/venv/bin/python optihash.py 1
-

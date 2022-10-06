@@ -51,12 +51,14 @@ class GatewayService(LocalService):
 
     def installed(self):
         from userid import my_id
+
         if not my_id.isLocalIdentityReady():
             return False
         return True
 
     def network_configuration(self):
         from crypt import key
+
         return {
             'session_key_type': key.SessionKeyType(),
         }
@@ -65,6 +67,7 @@ class GatewayService(LocalService):
         from transport import packet_out
         from transport import packet_in
         from transport import gateway
+
         packet_out.init()
         packet_in.init()
         gateway.init()
@@ -74,6 +77,7 @@ class GatewayService(LocalService):
         from transport import packet_out
         from transport import packet_in
         from transport import gateway
+
         gateway.stop()
         gateway.shutdown()
         packet_out.shutdown()
@@ -82,10 +86,12 @@ class GatewayService(LocalService):
 
     def on_suspend(self, *args, **kwargs):
         from transport import gateway
+
         return gateway.stop()
 
     def on_resume(self, *args, **kwargs):
         from transport import gateway
+
         if kwargs.get('cold_start') is True:
             return gateway.cold_start()
         return gateway.start()
