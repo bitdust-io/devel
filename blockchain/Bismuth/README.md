@@ -19,14 +19,14 @@ Bismuth Readme
 ### Hypernodes website:
 * https://hypernodes.bismuth.live
 
-### Related repositories: 
+### Related repositories:
 * https://github.com/maccaspacca
 * https://github.com/EggPool
 * https://github.com/hclivess
 
 ### Links:
 
-Bismuth Foundation: 
+Bismuth Foundation:
 * https://github.com/bismuthfoundation
 
 ### Social:

@@ -31,5 +31,4 @@ xcopy Microsoft.VC90.CRT\* starter\ /Y /Q
 @echo [ DONE ]
 @echo.
 
-pause 
-
+pause

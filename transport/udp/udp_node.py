@@ -43,17 +43,17 @@ EVENTS:
     * :red:`timer-1sec`
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 import time
 
 from twisted.internet import reactor  # @UnresolvedImport
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -72,16 +72,16 @@ from services import driver
 from transport.udp import udp_connector
 from transport.udp import udp_session
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 18
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _UDPNode = None
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 def A(event=None, *args, **kwargs):
@@ -133,14 +133,20 @@ class UDPNode(automat.Automat):
         self.options = {}
         if driver.is_on('service_my_ip_port'):
             from stun import stun_client
+
             self.my_address = stun_client.A().getMyExternalAddress()
         self.notified = False
         self.IncomingPosition = -1
 
     def A(self, event, *args, **kwargs):
-        #---LISTEN---
+        # ---LISTEN---
         if self.state == 'LISTEN':
-            if event == 'datagram-received' and self.isPacketValid(*args, **kwargs) and not self.isStun(*args, **kwargs) and not self.isKnownPeer(*args, **kwargs):
+            if (
+                event == 'datagram-received'
+                and self.isPacketValid(*args, **kwargs)
+                and not self.isStun(*args, **kwargs)
+                and not self.isKnownPeer(*args, **kwargs)
+            ):
                 self.doStartNewSession(*args, **kwargs)
             elif event == 'go-offline':
                 self.state = 'DISCONNECTING'
@@ -162,7 +168,7 @@ class UDPNode(automat.Automat):
                 self.doStartStunClient(*args, **kwargs)
             elif event == 'timer-1sec':
                 self.doDHTReadNextIncoming(*args, **kwargs)
-        #---AT_STARTUP---
+        # ---AT_STARTUP---
         elif self.state == 'AT_STARTUP':
             if event == 'go-online' and not self.isKnowMyAddress(*args, **kwargs):
                 self.state = 'STUN'
@@ -174,7 +180,7 @@ class UDPNode(automat.Automat):
                 self.GoOn = False
                 self.doInit(*args, **kwargs)
                 self.doDHTWtiteMyAddress(*args, **kwargs)
-        #---STUN---
+        # ---STUN---
         elif self.state == 'STUN':
             if event == 'stun-success':
                 self.state = 'WRITE_MY_IP'
@@ -187,14 +193,14 @@ class UDPNode(automat.Automat):
                 self.state = 'OFFLINE'
                 self.doUpdateMyAddress(*args, **kwargs)
                 self.doNotifyFailed(*args, **kwargs)
-        #---OFFLINE---
+        # ---OFFLINE---
         elif self.state == 'OFFLINE':
             if event == 'go-online':
                 self.state = 'STUN'
                 self.doStartStunClient(*args, **kwargs)
             elif event == 'go-offline':
                 self.doNotifyDisconnected(*args, **kwargs)
-        #---WRITE_MY_IP---
+        # ---WRITE_MY_IP---
         elif self.state == 'WRITE_MY_IP':
             if event == 'go-offline':
                 self.state = 'DISCONNECTING'
@@ -210,7 +216,7 @@ class UDPNode(automat.Automat):
             elif event == 'dht-write-success':
                 self.state = 'LISTEN'
                 self.doDHTReadNextIncoming(*args, **kwargs)
-        #---DISCONNECTING---
+        # ---DISCONNECTING---
         elif self.state == 'DISCONNECTING':
             if event == 'go-online':
                 self.GoOn = True
@@ -236,6 +242,7 @@ class UDPNode(automat.Automat):
             return False
         if driver.is_on('service_my_ip_port'):
             from stun import stun_client
+
             if address in stun_client.A().stun_servers:
                 return True
         active_sessions = udp_session.get(address)
@@ -251,8 +258,7 @@ class UDPNode(automat.Automat):
         if udp_connector.get(user_id) is not None:
             return True
         if _Debug:
-            lg.out(_DebugLevel, 'udp_node.isKnownUser %s not found in %s' % (
-                user_id, list(udp_session.sessions_by_peer_id().keys())))
+            lg.out(_DebugLevel, 'udp_node.isKnownUser %s not found in %s' % (user_id, list(udp_session.sessions_by_peer_id().keys())))
         return False
 
     def isKnowMyAddress(self, *args, **kwargs):
@@ -285,6 +291,7 @@ class UDPNode(automat.Automat):
         """
         from transport.udp import udp_interface
         from transport.udp import udp_stream
+
         self.options = args[0]
         self.my_idurl = strng.to_text(self.options['idurl'])
         self.listen_port = int(self.options['udp_port'])
@@ -303,6 +310,7 @@ class UDPNode(automat.Automat):
         """
         if driver.is_on('service_my_ip_port'):
             from stun import stun_client
+
             stun_client.A('start', self._stun_finished)
         else:
             self.automat('stun-success', ('unknown', misc.readExternalIP() or '127.0.0.1', settings.getUDPPort()))
@@ -325,10 +333,7 @@ class UDPNode(automat.Automat):
             lg.exc()
             return
         if _Debug:
-            lg.out(
-                _DebugLevel,
-                'udp_node.doStartNewSession wants to start a new session with UNKNOWN peer at %s' %
-                str(address))
+            lg.out(_DebugLevel, 'udp_node.doStartNewSession wants to start a new session with UNKNOWN peer at %s' % str(address))
         s = udp_session.create(self, address)
         s.automat('init')
         s.automat('datagram-received', *args, **kwargs)
@@ -339,9 +344,7 @@ class UDPNode(automat.Automat):
         """
         if self.my_address is None:
             if _Debug:
-                lg.out(
-                    _DebugLevel,
-                    'dp_node.doCheckAndStartNewSession SKIP because my_address is None')
+                lg.out(_DebugLevel, 'dp_node.doCheckAndStartNewSession SKIP because my_address is None')
             return
         incoming_str = args[0]
         if incoming_str is None:
@@ -359,18 +362,32 @@ class UDPNode(automat.Automat):
         active_sessions = udp_session.get(incoming_user_address)
         if active_sessions:
             if _Debug:
-                lg.out(_DebugLevel, 'udp_node.doCheckAndStartNewSessions SKIP because found existing by address %s : %s' % (
-                    incoming_user_address, active_sessions, ))
+                lg.out(
+                    _DebugLevel,
+                    'udp_node.doCheckAndStartNewSessions SKIP because found existing by address %s : %s'
+                    % (
+                        incoming_user_address,
+                        active_sessions,
+                    ),
+                )
             return
         active_sessions = udp_session.get_by_peer_id(incoming_user_id)
         if active_sessions:
             if _Debug:
-                lg.out(_DebugLevel, 'udp_node.doCheckAndStartNewSession SKIP because found existing by peer id %s : %s' % (
-                    incoming_user_id, active_sessions, ))
+                lg.out(
+                    _DebugLevel,
+                    'udp_node.doCheckAndStartNewSession SKIP because found existing by peer id %s : %s'
+                    % (
+                        incoming_user_id,
+                        active_sessions,
+                    ),
+                )
             return
         if _Debug:
-            lg.out(_DebugLevel, 'udp_node.doCheckAndStartNewSession wants to start a new session with incoming peer %s at %s' % (
-                incoming_user_id, incoming_user_address))
+            lg.out(
+                _DebugLevel,
+                'udp_node.doCheckAndStartNewSession wants to start a new session with incoming peer %s at %s' % (incoming_user_id, incoming_user_address),
+            )
         s = udp_session.create(self, incoming_user_address, incoming_user_id)
         s.automat('init')
 
@@ -387,8 +404,7 @@ class UDPNode(automat.Automat):
         if _Debug:
             lg.out(4, 'udp_node.doUpdateMyAddress typ=[%s]' % typ)
             if self.my_address:
-                lg.out(4, '    old=%s new=%s' %
-                       (str(self.my_address), str(new_addr)))
+                lg.out(4, '    old=%s new=%s' % (str(self.my_address), str(new_addr)))
             else:
                 lg.out(4, '    new=%s' % str(new_addr))
         self.my_address = new_addr
@@ -432,19 +448,17 @@ class UDPNode(automat.Automat):
         Action method.
         """
         from transport.udp import udp_stream
+
         lg.out(
-            12, 'udp_node.doDisconnect going to close %d sessions and %d connectors' %
-            (len(
-                list(udp_session.sessions().values())), len(
-                list(udp_connector.connectors().values()))))
+            12,
+            'udp_node.doDisconnect going to close %d sessions and %d connectors'
+            % (len(list(udp_session.sessions().values())), len(list(udp_connector.connectors().values()))),
+        )
         udp_stream.stop_process_streams()
         udp_session.stop_process_sessions()
         for s in udp_session.sessions().values():
             if _Debug:
-                lg.out(
-                    _DebugLevel,
-                    'udp_node.doShutdown sends "shutdown" to %s' %
-                    s)
+                lg.out(_DebugLevel, 'udp_node.doShutdown sends "shutdown" to %s' % s)
             s.automat('shutdown')
         for c in udp_connector.connectors().values():
             c.automat('abort')
@@ -455,6 +469,7 @@ class UDPNode(automat.Automat):
         Action method.
         """
         from transport.udp import udp_interface
+
         self.notified = False
         udp_interface.interface_disconnected(args[0])
 
@@ -463,24 +478,23 @@ class UDPNode(automat.Automat):
         Action method.
         """
         from transport.udp import udp_interface
+
         if not self.notified:
             udp_interface.interface_receiving_started(self.my_id, self.options)
             self.notified = True
             if _Debug:
-                lg.out(
-                    4, 'udp_node.doNotifyConnected my host is %s' %
-                    self.my_id)
+                lg.out(4, 'udp_node.doNotifyConnected my host is %s' % self.my_id)
 
     def doNotifyFailed(self, *args, **kwargs):
         """
         Action method.
         """
         from transport.udp import udp_interface
+
         udp_interface.interface_receiving_failed('state is %s' % self.state)
 
     def _datagram_received(self, datagram, address):
-        """
-        """
+        """ """
         # lg.out(18, '-> [%s] (%d bytes) from %s' % (command, len(payload), str(address)))
         active_sessions = udp_session.get(address)
         if active_sessions:
@@ -503,19 +517,13 @@ class UDPNode(automat.Automat):
             addr = value[dht_service.key_to_hash(key)].strip('\n').strip()
         except:
             if _Debug:
-                lg.out(
-                    4,
-                    'udp_node._got_my_address ERROR   wrong key in response: %r' %
-                    value)
+                lg.out(4, 'udp_node._got_my_address ERROR   wrong key in response: %r' % value)
                 lg.exc()
             self.automat('dht-write-failed')
             return
         if addr != '%s:%d' % (self.my_address[0], self.my_address[1]):
             if _Debug:
-                lg.out(
-                    4,
-                    'udp_node._got_my_address ERROR   value not fit: %r' %
-                    value)
+                lg.out(4, 'udp_node._got_my_address ERROR   value not fit: %r' % value)
             self.automat('dht-write-failed')
             return
         self.automat('dht-write-success')
@@ -532,34 +540,21 @@ class UDPNode(automat.Automat):
     def _got_my_incoming(self, value, key, position):
         if not isinstance(value, dict):
             if _Debug:
-                lg.out(
-                    _DebugLevel,
-                    'udp_node._got_my_incoming no incoming at position: %d' %
-                    position)
+                lg.out(_DebugLevel, 'udp_node._got_my_incoming no incoming at position: %d' % position)
             self.automat('dht-read-result', None)
             return
         try:
             myincoming = value[dht_service.key_to_hash(key)]
         except:
             if _Debug:
-                lg.out(
-                    _DebugLevel,
-                    'udp_node._got_my_incoming ERROR reading my incoming at position: %d\n%r' %
-                    (position,
-                     value))
+                lg.out(_DebugLevel, 'udp_node._got_my_incoming ERROR reading my incoming at position: %d\n%r' % (position, value))
             self.automat('dht-read-result', None)
             return
         if _Debug:
-            lg.out(
-                _DebugLevel,
-                'udp_node._got_my_incoming found one: %r' %
-                myincoming)
+            lg.out(_DebugLevel, 'udp_node._got_my_incoming found one: %r' % myincoming)
         self.automat('dht-read-result', myincoming)
 
     def _failed_my_incoming(self, err, key, position):
         if _Debug:
-            lg.out(
-                _DebugLevel,
-                'udp_node._got_my_incoming incoming empty: %s' %
-                str(position))
+            lg.out(_DebugLevel, 'udp_node._got_my_incoming incoming empty: %s' % str(position))
         self.automat('dht-read-result', None)

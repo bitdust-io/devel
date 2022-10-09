@@ -29,20 +29,20 @@
 
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 10
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from twisted.internet.defer import Deferred, DeferredList  # @UnresolvedImport
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -57,7 +57,8 @@ from userid import id_url
 
 from contacts import identitycache
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
 
 def read_customer_suppliers(customer_idurl, as_fields=True, use_cache=True):
     if as_fields:
@@ -83,7 +84,7 @@ def read_customer_suppliers(customer_idurl, as_fields=True, use_cache=True):
                         one_supplier_story.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='read_customer_suppliers._do_identity_cache')
                     all_stories.append(one_supplier_story)
         _customer_idurl = id_url.to_bin(ret['customer_idurl'])
-        if _customer_idurl and ( not id_url.is_cached(_customer_idurl) or not identitycache.HasFile(_customer_idurl) ):
+        if _customer_idurl and (not id_url.is_cached(_customer_idurl) or not identitycache.HasFile(_customer_idurl)):
             one_customer_story = identitycache.immediatelyCaching(_customer_idurl)
             if _Debug:
                 one_customer_story.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='read_customer_suppliers._do_identity_cache')
@@ -134,14 +135,16 @@ def read_customer_suppliers(customer_idurl, as_fields=True, use_cache=True):
             lg.exc()
             result.callback(ret)
             return ret
-        ret.update({
-            'suppliers': _suppliers_list,
-            'ecc_map': _ecc_map,
-            'customer_idurl': _customer_idurl,
-            'revision': _revision,
-            'publisher_idurl': _publisher_idurl,
-            'timestamp': _timestamp,
-        })
+        ret.update(
+            {
+                'suppliers': _suppliers_list,
+                'ecc_map': _ecc_map,
+                'customer_idurl': _customer_idurl,
+                'revision': _revision,
+                'publisher_idurl': _publisher_idurl,
+                'timestamp': _timestamp,
+            }
+        )
         return _do_identity_cache(ret)
 
     def _do_save_customer_suppliers(id_cached_result, ret):
@@ -153,15 +156,23 @@ def read_customer_suppliers(customer_idurl, as_fields=True, use_cache=True):
                     if supplier_idurl and id_url.is_cached(supplier_idurl):
                         contactsdb.add_supplier_meta_info(
                             supplier_idurl=supplier_idurl,
-                            info={'ecc_map': ret['ecc_map'], },
+                            info={
+                                'ecc_map': ret['ecc_map'],
+                            },
                             customer_idurl=ret['customer_idurl'],
                         )
         else:
             if _Debug:
                 lg.out(_DebugLevel, 'dht_relations._do_save_customer_suppliers SKIP processing my own suppliers')
         if _Debug:
-            lg.out(_DebugLevel, 'dht_relations._do_save_customer_suppliers  OK  for %r  returned %d suppliers' % (
-                ret['customer_idurl'], len(ret['suppliers']), ))
+            lg.out(
+                _DebugLevel,
+                'dht_relations._do_save_customer_suppliers  OK  for %r  returned %d suppliers'
+                % (
+                    ret['customer_idurl'],
+                    len(ret['suppliers']),
+                ),
+            )
         result.callback(ret)
         return ret
 
@@ -171,21 +182,33 @@ def read_customer_suppliers(customer_idurl, as_fields=True, use_cache=True):
         except:
             msg = str(err).replace('Exception:', '')
         if _Debug:
-            lg.out(_DebugLevel, 'dht_relations.read_customer_suppliers ERROR %r  failed with %r' % (
-                customer_idurl, msg, ))
+            lg.out(
+                _DebugLevel,
+                'dht_relations.read_customer_suppliers ERROR %r  failed with %r'
+                % (
+                    customer_idurl,
+                    msg,
+                ),
+            )
         result.errback(err)
         return None
 
     customer_idurl_bin = id_url.to_bin(customer_idurl)
-#     if customer_idurl_bin in rotated_idurls:
-#         rotated_idurls.remove(customer_idurl_bin)
+    #     if customer_idurl_bin in rotated_idurls:
+    #         rotated_idurls.remove(customer_idurl_bin)
     d = dht_records.get_suppliers(customer_idurl_bin, return_details=True, use_cache=use_cache)
     d.addCallback(_do_verify, customer_idurl_bin)
     d.addErrback(_on_error)
     return result
 
 
-def write_customer_suppliers(customer_idurl, suppliers_list, ecc_map=None, revision=None, publisher_idurl=None, ):
+def write_customer_suppliers(
+    customer_idurl,
+    suppliers_list,
+    ecc_map=None,
+    revision=None,
+    publisher_idurl=None,
+):
     customer_idurl = id_url.field(customer_idurl)
     publisher_idurl = id_url.field(publisher_idurl)
     if customer_idurl == my_id.getIDURL():
@@ -201,9 +224,19 @@ def write_customer_suppliers(customer_idurl, suppliers_list, ecc_map=None, revis
         publisher_idurl=publisher_idurl,
     )
 
-#------------------------------------------------------------------------------
 
-def read_customer_message_brokers(customer_idurl, positions=[0, ], return_details=True, as_fields=True, use_cache=True):
+# ------------------------------------------------------------------------------
+
+
+def read_customer_message_brokers(
+    customer_idurl,
+    positions=[
+        0,
+    ],
+    return_details=True,
+    as_fields=True,
+    use_cache=True,
+):
     if _Debug:
         lg.args(_DebugLevel, customer_idurl=customer_idurl, use_cache=use_cache, positions=positions)
     if as_fields:
@@ -215,13 +248,15 @@ def read_customer_message_brokers(customer_idurl, positions=[0, ], return_detail
     def _on_borker_identity_cache_failed(err, position, broker_result):
         if _Debug:
             lg.args(_DebugLevel, position=position, err=err)
-        broker_result.callback({
-            'timestamp': None,
-            'revision': 0,
-            'customer_idurl': customer_idurl,
-            'broker_idurl': None,
-            'position': position,
-        })
+        broker_result.callback(
+            {
+                'timestamp': None,
+                'revision': 0,
+                'customer_idurl': customer_idurl,
+                'broker_idurl': None,
+                'position': position,
+            }
+        )
         return None
 
     def _do_broker_identity_cache(dht_record, position, broker_result):
@@ -263,22 +298,22 @@ def read_customer_message_brokers(customer_idurl, positions=[0, ], return_detail
             lg.args(_DebugLevel, p=position, b=_broker_idurl, r=_revision)
         if as_fields:
             if _customer_idurl != customer_idurl:
-                lg.err('wrong customer idurl %r in message broker DHT record for %r at position %d' % (
-                    _customer_idurl, customer_idurl, position))
+                lg.err('wrong customer idurl %r in message broker DHT record for %r at position %d' % (_customer_idurl, customer_idurl, position))
                 broker_result.callback(ret)
                 return ret
         if position != _position:
-            lg.err('wrong position value %d in message broker DHT record for %r at position %d' % (
-                _position, customer_idurl, position))
+            lg.err('wrong position value %d in message broker DHT record for %r at position %d' % (_position, customer_idurl, position))
             broker_result.callback(ret)
             return ret
-        ret.update({
-            'customer_idurl': _customer_idurl,
-            'broker_idurl': _broker_idurl,
-            'position': _position,
-            'revision': _revision,
-            'timestamp': _timestamp,
-        })
+        ret.update(
+            {
+                'customer_idurl': _customer_idurl,
+                'broker_idurl': _broker_idurl,
+                'position': _position,
+                'revision': _revision,
+                'timestamp': _timestamp,
+            }
+        )
         _do_broker_identity_cache(ret, position, broker_result)
         return None
 
@@ -288,8 +323,15 @@ def read_customer_message_brokers(customer_idurl, positions=[0, ], return_detail
         except:
             msg = str(err).replace('Exception:', '')
         if _Debug:
-            lg.out(_DebugLevel, 'dht_relations.read_customer_message_brokers ERROR %r at position %d failed with %r' % (
-                customer_idurl, position, msg, ))
+            lg.out(
+                _DebugLevel,
+                'dht_relations.read_customer_message_brokers ERROR %r at position %d failed with %r'
+                % (
+                    customer_idurl,
+                    position,
+                    msg,
+                ),
+            )
         broker_result.errback(err)
         return None
 

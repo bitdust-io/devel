@@ -40,17 +40,18 @@ MacOS: /Users/$USER/.bitdust
 
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 import os
 import sys
 import platform
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _BaseDirPath = None
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
 
 def print_text(msg, nl='\n'):
     """
@@ -79,7 +80,7 @@ def appdata_location_file_path():
     folder file "appdata" can be created and it will keep the path to
     the data folder.
     """
-    return os.path.join(get_executable_location(), "appdata")
+    return os.path.join(get_executable_location(), 'appdata')
 
 
 def current_base_dir():
@@ -102,11 +103,11 @@ def default_base_dir_portable():
     """
     A portable method to get the default data folder location.
     """
-    if platform.uname()[0] == "Windows":
+    if platform.uname()[0] == 'Windows':
         # TODO: move somewhere on Win10 ...
         return os.path.join(os.path.expanduser('~'), '.bitdust')
 
-    elif platform.uname()[0] == "Linux":
+    elif platform.uname()[0] == 'Linux':
         if 'ANDROID_ARGUMENT' in os.environ:
             # We are on Android, it must be in /storage/emulated/0/.bitdust/
             # I also tried /data/user/0/org.kivy.bitdust/files/app/.bitdust/ but then I can't browse files from other apps
@@ -116,7 +117,7 @@ def default_base_dir_portable():
         # This should be okay : /home/veselin/.bitdust/
         return os.path.join(os.path.expanduser('~'), '.bitdust')
 
-    elif platform.uname()[0] == "Darwin":
+    elif platform.uname()[0] == 'Darwin':
         # This should be okay : /Users/veselin/.bitdust/
         return os.path.join(os.path.expanduser('~'), '.bitdust')
 
@@ -148,7 +149,7 @@ def init_base_dir(base_dir=None):
     appdata_path = appdata_location_file_path()
     if os.path.isfile(appdata_path):
         if os.path.isfile(appdata_path) and os.access(appdata_path, os.R_OK):
-            infile = open(appdata_path, "r")
+            infile = open(appdata_path, 'r')
             path = infile.read().strip()
             infile.close()
             if path:
@@ -180,22 +181,23 @@ def init_base_dir(base_dir=None):
         _BaseDirPath = default_path
 
     # if we did not found "metadata" subfolder - use default path, new copy of BitDust
-    if not os.path.isdir(os.path.join(current_base_dir(), "metadata")):
+    if not os.path.isdir(os.path.join(current_base_dir(), 'metadata')):
         _BaseDirPath = path2
         if not os.path.exists(_BaseDirPath):
             os.makedirs(_BaseDirPath)
         return _BaseDirPath
 
     # if we did not found our key - use default path, new copy of BitDust
-    if not os.access(os.path.join(current_base_dir(), "metadata", "mykeyfile"), os.R_OK) or \
-        not os.access(os.path.join(current_base_dir(), "metadata", "mykeyfile_location"), os.R_OK):
+    if not os.access(os.path.join(current_base_dir(), 'metadata', 'mykeyfile'), os.R_OK) or not os.access(
+        os.path.join(current_base_dir(), 'metadata', 'mykeyfile_location'), os.R_OK
+    ):
         _BaseDirPath = path2
         if not os.path.exists(_BaseDirPath):
             os.makedirs(_BaseDirPath, 0o777)
         return _BaseDirPath
 
     # if we did not found our identity - use default path, new copy of BitDust
-    if not os.access(os.path.join(current_base_dir(), "metadata", "localidentity"), os.R_OK):
+    if not os.access(os.path.join(current_base_dir(), 'metadata', 'localidentity'), os.R_OK):
         _BaseDirPath = path2
         if not os.path.exists(_BaseDirPath):
             os.makedirs(_BaseDirPath)
@@ -204,16 +206,18 @@ def init_base_dir(base_dir=None):
     # seems we found needed files in a path1 - lets use this as a base dir
     return _BaseDirPath
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def run(args):
     """
-    Creates virtual environment 
+    Creates virtual environment
     """
     status = 1
-    on_windows = platform.uname()[0] == "Windows"
-    on_mac = platform.uname()[0] == "Darwin"
-    on_linux = platform.uname()[0] == "Linux"
+    on_windows = platform.uname()[0] == 'Windows'
+    on_mac = platform.uname()[0] == 'Darwin'
+    on_linux = platform.uname()[0] == 'Linux'
     source_dir = get_executable_location()
     init_base_dir()
     base_dir = current_base_dir()
@@ -244,9 +248,9 @@ def run(args):
         python_exe = '"%s"' % os.path.join(base_dir, 'python', 'python.exe')
         if not os.path.exists(python_exe):
             python_exe = current_python
-        make_venv_cmd = "{} -m virtualenv --system-site-packages {}".format(python_exe, venv_path)
+        make_venv_cmd = '{} -m virtualenv --system-site-packages {}'.format(python_exe, venv_path)
     if on_mac:
-        make_venv_cmd = "{} -m virtualenv --clear --always-copy {}".format(current_python, venv_path)
+        make_venv_cmd = '{} -m virtualenv --clear --always-copy {}'.format(current_python, venv_path)
 
     print_text('\n***** Executing "{}"'.format(make_venv_cmd))
     status = os.system(make_venv_cmd)
@@ -254,9 +258,9 @@ def run(args):
         make_venv_cmd = 'virtualenv -p {} {}'.format(current_python, venv_path)
         status = os.system(make_venv_cmd)
     if on_linux and status != 0:
-        make_venv_cmd = "{} -m pip install -q virtualenv".format(current_python)
+        make_venv_cmd = '{} -m pip install -q virtualenv'.format(current_python)
         status = os.system(make_venv_cmd)
-        make_venv_cmd = "{} -m virtualenv --clear --always-copy {}".format(current_python, venv_path)
+        make_venv_cmd = '{} -m virtualenv --clear --always-copy {}'.format(current_python, venv_path)
         status = os.system(make_venv_cmd)
 
     if status != 0:
@@ -308,7 +312,7 @@ def run(args):
         print_text('    %s\n\n' % (' '.join(depends)))
         return status
 
-    script = u"#!/bin/sh\n"
+    script = u'#!/bin/sh\n'
     script += u'# This is a short shell script to create an alias in OS for BitDust software.\n'
     script += u'# NOTICE: BitDust software do not require root permissions to run, please start it as normal user.\n\n'
     script += u'{}/bin/python {}/bitdust.py "$@"\n\n'.format(venv_path, source_dir)

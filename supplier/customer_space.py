@@ -28,26 +28,26 @@
 
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 6
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 import os
 import time
 import base64
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from twisted.internet import reactor  # @UnresolvedImport
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -83,12 +83,13 @@ from userid import global_id
 from userid import id_url
 from userid import my_id
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _SupplierFileModifiedLatest = {}
 _SupplierFileModifiedNotifyTasks = {}
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
 
 def register_customer_key(customer_public_key_id, customer_public_key):
     """
@@ -112,7 +113,9 @@ def register_customer_key(customer_public_key_id, customer_public_key):
     lg.info('new customer public key registered: %r' % customer_public_key_id)
     return True
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def verify_ownership(newpacket, raise_exception=False):
     """
@@ -160,7 +163,10 @@ def verify_ownership(newpacket, raise_exception=False):
         if _Debug:
             lg.dbg(_DebugLevel, 'non-authorized user is trying to store data on the supplier')
         return None, None
-    if newpacket.Command in [commands.DeleteFile(), commands.DeleteBackup(), ]:
+    if newpacket.Command in [
+        commands.DeleteFile(),
+        commands.DeleteBackup(),
+    ]:
         if owner_idurl == creator_idurl:
             if contactsdb.is_customer(creator_idurl):
                 if _Debug:
@@ -192,7 +198,9 @@ def verify_ownership(newpacket, raise_exception=False):
     # this way customer can make virtual location available for other user but in read-only mode
     raise Exception('scenario not implemented yet, received %r' % newpacket)
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def make_filename(customerGlobID, filePath, keyAlias=None):
     keyAlias = keyAlias or 'master'
@@ -225,7 +233,7 @@ def make_valid_filename(customerIDURL, glob_path):
     filePath = glob_path['path']
     customerGlobID = glob_path['customer']
     if not customerGlobID:
-        lg.warn("customer id is empty: %r" % glob_path)
+        lg.warn('customer id is empty: %r' % glob_path)
         return ''
     if filePath != settings.BackupIndexFileName():
         if not packetid.Valid(filePath):  # SECURITY
@@ -240,7 +248,9 @@ def make_valid_filename(customerIDURL, glob_path):
     filename = make_filename(customerGlobID, filePath, keyAlias)
     return filename
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def do_notify_supplier_file_modified(key_alias, remote_path, action, customer_idurl, authorized_idurl):
     global _SupplierFileModifiedNotifyTasks
@@ -256,14 +266,17 @@ def do_notify_supplier_file_modified(key_alias, remote_path, action, customer_id
                 current_task.cancel()
             _SupplierFileModifiedNotifyTasks.pop(task_id)
         _SupplierFileModifiedLatest[task_id] = time.time()
-        events.send('supplier-file-modified', data=dict(
-            action=action,
-            remote_path=remote_path,
-            key_alias=key_alias,
-            authorized_idurl=authorized_idurl,
-            customer_idurl=customer_idurl,
-            supplier_idurl=my_id.getIDURL(),
-        ))
+        events.send(
+            'supplier-file-modified',
+            data=dict(
+                action=action,
+                remote_path=remote_path,
+                key_alias=key_alias,
+                authorized_idurl=authorized_idurl,
+                customer_idurl=customer_idurl,
+                supplier_idurl=my_id.getIDURL(),
+            ),
+        )
         return
     new_delay = latest_event_time + 60 + 1 - time.time()
     if _Debug:
@@ -273,26 +286,29 @@ def do_notify_supplier_file_modified(key_alias, remote_path, action, customer_id
             current_task.cancel()
         _SupplierFileModifiedNotifyTasks.pop(task_id)
     _SupplierFileModifiedNotifyTasks[task_id] = reactor.callLater(  # @UndefinedVariable
-        new_delay, do_notify_supplier_file_modified, key_alias, remote_path, action, customer_idurl, authorized_idurl)
+        new_delay, do_notify_supplier_file_modified, key_alias, remote_path, action, customer_idurl, authorized_idurl
+    )
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def on_data(newpacket):
     if id_url.is_the_same(newpacket.OwnerID, my_id.getIDURL()):
         # this Data belong to us, SKIP
         return False
-#     if not contactsdb.is_customer(newpacket.OwnerID):
-#         # SECURITY
-#         # TODO: process files from another customer : glob_path['idurl']
-#         lg.warn("skip, %s not a customer, packetID=%s" % (newpacket.OwnerID, newpacket.PacketID))
-#         # p2p_service.SendFail(newpacket, 'not a customer')
-#         return False
+    #     if not contactsdb.is_customer(newpacket.OwnerID):
+    #         # SECURITY
+    #         # TODO: process files from another customer : glob_path['idurl']
+    #         lg.warn("skip, %s not a customer, packetID=%s" % (newpacket.OwnerID, newpacket.PacketID))
+    #         # p2p_service.SendFail(newpacket, 'not a customer')
+    #         return False
     glob_path = global_id.ParseGlobalID(newpacket.PacketID)
     if not glob_path['path']:
         # backward compatible check
         glob_path = global_id.ParseGlobalID(my_id.getGlobalID('master') + ':' + newpacket.PacketID)
     if not glob_path['path']:
-        lg.err("got incorrect PacketID")
+        lg.err('got incorrect PacketID')
         # p2p_service.SendFail(newpacket, 'incorrect path')
         return False
     remote_path = glob_path['path']
@@ -300,12 +316,12 @@ def on_data(newpacket):
     customer_idurl, authorized_idurl = verify_ownership(newpacket)
     if authorized_idurl is None or customer_idurl is None:
         if _Debug:
-            lg.dbg(_DebugLevel, "ownership verification failed for %r" % newpacket)
+            lg.dbg(_DebugLevel, 'ownership verification failed for %r' % newpacket)
         # p2p_service.SendFail(newpacket, 'ownership verification failed')
         return False
     filename = make_valid_filename(newpacket.OwnerID, glob_path)
     if not filename:
-        lg.warn("got empty filename, bad customer or wrong packetID?")
+        lg.warn('got empty filename, bad customer or wrong packetID?')
         # p2p_service.SendFail(newpacket, 'empty filename')
         return False
     dirname = os.path.dirname(filename)
@@ -313,7 +329,7 @@ def on_data(newpacket):
         try:
             bpio._dirs_make(dirname)
         except:
-            lg.err("can not create sub dir %s" % dirname)
+            lg.err('can not create sub dir %s' % dirname)
             p2p_service.SendFail(newpacket, 'write error', remote_idurl=authorized_idurl)
             return False
     new_data = newpacket.Serialize()
@@ -322,7 +338,7 @@ def on_data(newpacket):
     space_dict, _ = accounting.read_customers_quotas()
     known_customers_quoats = list(space_dict.keys())
     if id_url.is_not_in(customer_idurl, known_customers_quoats, as_field=False, as_bin=True):
-        lg.err("customer space is broken, no info about donated space can be found for %s" % newpacket)
+        lg.err('customer space is broken, no info about donated space can be found for %s' % newpacket)
         p2p_service.SendFail(newpacket, 'customer space is broken, no info found about donated space', remote_idurl=authorized_idurl)
         return False
     used_space_dict = accounting.read_customers_usage()
@@ -332,7 +348,7 @@ def on_data(newpacket):
             bytes_used_by_customer = int(used_space_dict[customer_idurl.to_bin()])
             bytes_donated_to_customer = int(space_dict[customer_idurl.to_bin()])
             if bytes_donated_to_customer - bytes_used_by_customer < len(new_data):
-                lg.warn("no free space left for customer data for %s" % customer_idurl)
+                lg.warn('no free space left for customer data for %s' % customer_idurl)
                 p2p_service.SendFail(newpacket, 'no free space left for customer data', remote_idurl=authorized_idurl)
                 return False
         except:
@@ -347,7 +363,7 @@ def on_data(newpacket):
                 data_changed = False
     if data_changed:
         if not bpio.WriteBinaryFile(filename, new_data):
-            lg.err("can not write to %s" % str(filename))
+            lg.err('can not write to %s' % str(filename))
             p2p_service.SendFail(newpacket, 'write error', remote_idurl=authorized_idurl)
             return False
     # Here Data() packet was stored as it is on supplier node (current machine)
@@ -378,7 +394,7 @@ def on_retrieve(newpacket):
         # backward compatible check
         glob_path = global_id.ParseGlobalID(my_id.getGlobalID('master') + ':' + newpacket.PacketID)
     if not glob_path['path']:
-        lg.err("got incorrect PacketID")
+        lg.err('got incorrect PacketID')
         p2p_service.SendFail(newpacket, 'incorrect path', remote_idurl=newpacket.CreatorID)
         return False
     if not glob_path['idurl']:
@@ -415,37 +431,37 @@ def on_retrieve(newpacket):
     if not filename:
         filename = make_valid_filename(glob_path['idurl'], glob_path)
         # if True:
-            # TODO: settings.getCustomersDataSharingEnabled() and
-            # SECURITY
-            # TODO: add more validations for receiver idurl
-            # recipient_idurl = glob_path['idurl']
-            # filename = make_valid_filename(glob_path['idurl'], glob_path)
+        # TODO: settings.getCustomersDataSharingEnabled() and
+        # SECURITY
+        # TODO: add more validations for receiver idurl
+        # recipient_idurl = glob_path['idurl']
+        # filename = make_valid_filename(glob_path['idurl'], glob_path)
     if not filename:
-        lg.warn("had empty filename")
+        lg.warn('had empty filename')
         p2p_service.SendFail(newpacket, 'empty filename', remote_idurl=recipient_idurl)
         return False
     if not os.path.exists(filename):
-        lg.warn("did not found requested file locally : %s" % filename)
+        lg.warn('did not found requested file locally : %s' % filename)
         p2p_service.SendFail(newpacket, 'did not found requested file locally', remote_idurl=recipient_idurl)
         return False
     if not os.access(filename, os.R_OK):
-        lg.warn("no read access to requested packet %s" % filename)
+        lg.warn('no read access to requested packet %s' % filename)
         p2p_service.SendFail(newpacket, 'failed reading requested file', remote_idurl=recipient_idurl)
         return False
     data = bpio.ReadBinaryFile(filename)
     if not data:
-        lg.warn("empty data on disk %s" % filename)
+        lg.warn('empty data on disk %s' % filename)
         p2p_service.SendFail(newpacket, 'empty data on disk', remote_idurl=recipient_idurl)
         return False
     stored_packet = signed.Unserialize(data)
     sz = len(data)
     del data
     if stored_packet is None:
-        lg.warn("Unserialize failed, not Valid packet %s" % filename)
+        lg.warn('Unserialize failed, not Valid packet %s' % filename)
         p2p_service.SendFail(newpacket, 'unserialize failed', remote_idurl=recipient_idurl)
         return False
     if not stored_packet.Valid():
-        lg.warn("Stored packet is not Valid %s" % filename)
+        lg.warn('Stored packet is not Valid %s' % filename)
         p2p_service.SendFail(newpacket, 'stored packet is not valid', remote_idurl=recipient_idurl)
         return False
     if stored_packet.Command != commands.Data():
@@ -469,17 +485,17 @@ def on_retrieve(newpacket):
         lg.args(_DebugLevel, file_size=sz, payload_size=len(payload), fn=filename, recipient=recipient_idurl)
     if recipient_idurl == stored_packet.OwnerID:
         if _Debug:
-            lg.dbg(_DebugLevel, 'from request %r : sending %r back to owner: %s' % (
-                newpacket, stored_packet, recipient_idurl))
+            lg.dbg(_DebugLevel, 'from request %r : sending %r back to owner: %s' % (newpacket, stored_packet, recipient_idurl))
         gateway.outbox(routed_packet)
         return True
     if _Debug:
-        lg.dbg(_DebugLevel, 'from request %r : returning data owned by %s to %s' % (
-            newpacket, stored_packet.OwnerID, recipient_idurl))
+        lg.dbg(_DebugLevel, 'from request %r : returning data owned by %s to %s' % (newpacket, stored_packet.OwnerID, recipient_idurl))
     gateway.outbox(routed_packet)
     return True
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def on_list_files(newpacket):
     json_query = {}
@@ -489,7 +505,11 @@ def on_list_files(newpacket):
         json_query = j
     except:
         if strng.to_text(newpacket.Payload) == settings.ListFilesFormat():
-            json_query = {'items': ['*', ], }
+            json_query = {
+                'items': [
+                    '*',
+                ],
+            }
     if json_query is None:
         lg.exc('unrecognized ListFiles() query received')
         return False
@@ -518,13 +538,17 @@ def on_list_files(newpacket):
         lg.args(_DebugLevel, r=newpacket.OwnerID, c=customer_idurl, k=key_id, pid=newpacket.PacketID)
     return True
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def on_delete_file(newpacket):
     # TODO: call verify_ownership()
     # SECURITY
     if not newpacket.Payload:
-        ids = [newpacket.PacketID, ]
+        ids = [
+            newpacket.PacketID,
+        ]
     else:
         ids = strng.to_text(newpacket.Payload).split('\n')
     filescount = 0
@@ -536,7 +560,7 @@ def on_delete_file(newpacket):
         if not glob_path['customer']:
             glob_path = global_id.ParseGlobalID(customer_id + ':' + pcktID)
         if not glob_path['path']:
-            lg.err("got incorrect PacketID")
+            lg.err('got incorrect PacketID')
             p2p_service.SendFail(newpacket, 'incorrect path')
             return False
         if customer_id != glob_path['customer']:
@@ -548,7 +572,7 @@ def on_delete_file(newpacket):
         # SECURITY
         filename = make_valid_filename(newpacket.OwnerID, glob_path)
         if not filename:
-            lg.warn("got empty filename, bad customer or wrong packetID?")
+            lg.warn('got empty filename, bad customer or wrong packetID?')
             p2p_service.SendFail(newpacket, 'not a customer, or file not found')
             return False
         if os.path.isfile(filename):
@@ -564,12 +588,11 @@ def on_delete_file(newpacket):
             except:
                 lg.exc()
         else:
-            lg.warn("path was not found %s" % filename)
+            lg.warn('path was not found %s' % filename)
         do_notify_supplier_file_modified(glob_path['key_alias'], glob_path['path'], 'delete', newpacket.OwnerID, newpacket.CreatorID)
     p2p_service.SendAck(newpacket)
     if _Debug:
-        lg.dbg(_DebugLevel, "from [%s] with %d IDs, %d files and %d folders were removed" % (
-            newpacket.OwnerID, len(ids), filescount, dirscount))
+        lg.dbg(_DebugLevel, 'from [%s] with %d IDs, %d files and %d folders were removed' % (newpacket.OwnerID, len(ids), filescount, dirscount))
     return True
 
 
@@ -577,7 +600,9 @@ def on_delete_backup(newpacket):
     # TODO: call verify_ownership()
     # SECURITY
     if not newpacket.Payload:
-        ids = [newpacket.PacketID, ]
+        ids = [
+            newpacket.PacketID,
+        ]
     else:
         ids = strng.to_text(newpacket.Payload).split('\n')
     count = 0
@@ -589,7 +614,7 @@ def on_delete_backup(newpacket):
         if not glob_path['customer']:
             glob_path = global_id.ParseGlobalID(customer_id + ':' + bkpID)
         if not glob_path['path']:
-            lg.err("got incorrect BackupID")
+            lg.err('got incorrect BackupID')
             p2p_service.SendFail(newpacket, 'incorrect backupID')
             return False
         if customer_id != glob_path['customer']:
@@ -599,7 +624,7 @@ def on_delete_backup(newpacket):
         # TODO: process requests from another customer
         filename = make_valid_filename(newpacket.OwnerID, glob_path)
         if not filename:
-            lg.warn("got empty filename, bad customer or wrong packetID?")
+            lg.warn('got empty filename, bad customer or wrong packetID?')
             p2p_service.SendFail(newpacket, 'not a customer, or file not found')
             return False
         if os.path.isdir(filename):
@@ -615,15 +640,16 @@ def on_delete_backup(newpacket):
             except:
                 lg.exc()
         else:
-            lg.warn("path not found %s" % filename)
+            lg.warn('path not found %s' % filename)
         do_notify_supplier_file_modified(glob_path['key_alias'], glob_path['path'], 'delete', newpacket.OwnerID, newpacket.CreatorID)
     p2p_service.SendAck(newpacket)
     if _Debug:
-        lg.dbg(_DebugLevel, "from [%s] with %d IDs, %d were removed" % (
-            newpacket.OwnerID, len(ids), count))
+        lg.dbg(_DebugLevel, 'from [%s] with %d IDs, %d were removed' % (newpacket.OwnerID, len(ids), count))
     return True
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def on_customer_accepted(evt):
     customer_idurl = id_url.field(evt.data.get('idurl'))
@@ -707,7 +733,9 @@ def on_customer_terminated(evt):
         lg.args(_DebugLevel, c=customer_glob_id, q=queue_id)
     return True
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def on_identity_url_changed(evt):
     old_idurl = id_url.field(evt.data['old_idurl'])
@@ -717,8 +745,13 @@ def on_identity_url_changed(evt):
         if old_idurl == customer_idurl:
             customer_idurl.refresh()
             contacts_changed = True
-            lg.info('found customer idurl rotated : %r -> %r' % (
-                evt.data['old_idurl'], evt.data['new_idurl'], ))
+            lg.info(
+                'found customer idurl rotated : %r -> %r'
+                % (
+                    evt.data['old_idurl'],
+                    evt.data['new_idurl'],
+                )
+            )
     if contacts_changed:
         contactsdb.save_customers()
     # update meta info for that customer
@@ -731,8 +764,13 @@ def on_identity_url_changed(evt):
                 if latest_customer_idurl_bin != customer_idurl_bin:
                     all_meta_info[latest_customer_idurl_bin] = all_meta_info.pop(customer_idurl_bin)
                     meta_info_changed = True
-                    lg.info('found customer idurl rotated in customers meta info : %r -> %r' % (
-                        latest_customer_idurl_bin, customer_idurl_bin, ))
+                    lg.info(
+                        'found customer idurl rotated in customers meta info : %r -> %r'
+                        % (
+                            latest_customer_idurl_bin,
+                            customer_idurl_bin,
+                        )
+                    )
     if meta_info_changed:
         contactsdb.write_customers_meta_info_all(all_meta_info)
     # update customer idurl in "space" file
@@ -745,8 +783,13 @@ def on_identity_url_changed(evt):
                 if latest_customer_idurl_bin != customer_idurl_bin:
                     space_dict[latest_customer_idurl_bin] = space_dict.pop(customer_idurl_bin)
                     space_changed = True
-                    lg.info('found customer idurl rotated in customer quotas dictionary : %r -> %r' % (
-                        latest_customer_idurl_bin, customer_idurl_bin, ))
+                    lg.info(
+                        'found customer idurl rotated in customer quotas dictionary : %r -> %r'
+                        % (
+                            latest_customer_idurl_bin,
+                            customer_idurl_bin,
+                        )
+                    )
     if space_changed:
         accounting.write_customers_quotas(space_dict, free_space)
     # rename customer folder where I store all his files
@@ -758,7 +801,13 @@ def on_identity_url_changed(evt):
     if os.path.isdir(old_owner_dir):
         try:
             bpio.move_dir_recursive(old_owner_dir, new_owner_dir)
-            lg.info('copied %r into %r' % (old_owner_dir, new_owner_dir, ))
+            lg.info(
+                'copied %r into %r'
+                % (
+                    old_owner_dir,
+                    new_owner_dir,
+                )
+            )
             if os.path.exists(old_owner_dir):
                 bpio._dir_remove(old_owner_dir)
                 lg.warn('removed %r' % old_owner_dir)

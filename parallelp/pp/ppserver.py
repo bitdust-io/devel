@@ -39,8 +39,8 @@ from six import text_type as str
 from six.moves import range
 import six.moves._thread
 
-copyright = "Copyright (c) 2005-2009 Vitalii Vanovschi. All rights reserved"
-version = "1.5.7"
+copyright = 'Copyright (c) 2005-2009 Vitalii Vanovschi. All rights reserved'
+version = '1.5.7'
 
 import logging
 import getopt
@@ -59,9 +59,11 @@ from pp import Server  # @UnresolvedImport
 # compartibility with Python 2.6
 try:
     import hashlib
+
     sha_new = hashlib.sha1
 except ImportError:
     import sha
+
     sha_new = sha.new
 
 
@@ -70,12 +72,19 @@ class _NetworkServer(Server):
     Network Server Class.
     """
 
-    def __init__(self, ncpus="autodetect", interface="0.0.0.0",
-                 broadcast="255.255.255.255", port=None, secret=None,
-                 timeout=None, loglevel=logging.WARNING, restart=False,
-                 proto=0):
-        Server.__init__(self, ncpus, secret=secret, loglevel=loglevel,
-                        restart=restart, proto=proto)
+    def __init__(
+        self,
+        ncpus='autodetect',
+        interface='0.0.0.0',
+        broadcast='255.255.255.255',
+        port=None,
+        secret=None,
+        timeout=None,
+        loglevel=logging.WARNING,
+        restart=False,
+        proto=0,
+    ):
+        Server.__init__(self, ncpus, secret=secret, loglevel=loglevel, restart=restart, proto=proto)
         self.host = interface
         self.bcast = broadcast
         if port is not None:
@@ -87,11 +96,9 @@ class _NetworkServer(Server):
         self.last_con_time = time.time()
         self.ncon_lock = six.moves._thread.allocate_lock()
 
-        logging.debug("Strarting network server interface=%s port=%i"
-                      % (self.host, self.port))
+        logging.debug('Strarting network server interface=%s port=%i' % (self.host, self.port))
         if self.timeout is not None:
-            logging.debug("ppserver will exit in %i seconds if no "
-                          "connections with clients exist" % (self.timeout))
+            logging.debug('ppserver will exit in %i seconds if no ' 'connections with clients exist' % (self.timeout))
             six.moves._thread.start_new_thread(self.check_timeout, ())
 
     def ncon_add(self, val):
@@ -113,8 +120,7 @@ class _NetworkServer(Server):
                 if idle_time < self.timeout:
                     time.sleep(self.timeout - idle_time)
                 else:
-                    logging.debug("exiting ppserver due to timeout (no client"
-                                  " connections in last %i sec)", self.timeout)
+                    logging.debug('exiting ppserver due to timeout (no client' ' connections in last %i sec)', self.timeout)
                     os._exit(0)
             else:
                 time.sleep(self.timeout)
@@ -130,8 +136,7 @@ class _NetworkServer(Server):
             ssocket.bind((self.host, self.port))
             ssocket.listen(5)
         except socket.error:
-            logging.error("Cannot create socket with port " + str(self.port)
-                          + " (port is already in use)")
+            logging.error('Cannot create socket with port ' + str(self.port) + ' (port is already in use)')
 
         try:
             while True:
@@ -139,9 +144,9 @@ class _NetworkServer(Server):
                 (csocket, address) = ssocket.accept()
                 # now do something with the clientsocket
                 # in this case, we'll pretend this is a threaded server
-                six.moves._thread.start_new_thread(self.crun, (csocket, ))
+                six.moves._thread.start_new_thread(self.crun, (csocket,))
         except:
-            logging.debug("Closing server socket")
+            logging.debug('Closing server socket')
             ssocket.close()
 
     def crun(self, csocket):
@@ -152,32 +157,30 @@ class _NetworkServer(Server):
         # send PP version
         mysocket.send(version)
         # generate a random string
-        srandom = "".join([random.choice(string.ascii_letters)
-                           for i in range(16)])
+        srandom = ''.join([random.choice(string.ascii_letters) for i in range(16)])
         mysocket.send(srandom)
         answer = sha_new(srandom + self.secret).hexdigest()
         cleintanswer = mysocket.receive()
         if answer != cleintanswer:
-            logging.warning("Authentification failed, client host=%s, port=%i"
-                            % csocket.getpeername())
-            mysocket.send("FAILED")
+            logging.warning('Authentification failed, client host=%s, port=%i' % csocket.getpeername())
+            mysocket.send('FAILED')
             csocket.close()
             return
         else:
-            mysocket.send("OK")
+            mysocket.send('OK')
 
         ctype = mysocket.receive()
-        logging.debug("Control message received: " + ctype)
+        logging.debug('Control message received: ' + ctype)
         self.ncon_add(1)
         try:
-            if ctype == "STAT":
+            if ctype == 'STAT':
                 # reset time at each new connection
-                self.get_stats()["local"].time = 0.0
+                self.get_stats()['local'].time = 0.0
                 mysocket.send(str(self.get_ncpus()))
                 while True:
                     mysocket.receive()
-                    mysocket.send(str(self.get_stats()["local"].time))
-            elif ctype == "EXEC":
+                    mysocket.send(str(self.get_stats()['local'].time))
+            elif ctype == 'EXEC':
                 while True:
                     sfunc = mysocket.receive()
                     sargs = mysocket.receive()
@@ -185,7 +188,7 @@ class _NetworkServer(Server):
                     sresult = fun(True)
                     mysocket.send(sresult)
         except:
-            logging.debug("Closing client socket")
+            logging.debug('Closing client socket')
             csocket.close()
             self.ncon_add(-1)
 
@@ -194,10 +197,10 @@ class _NetworkServer(Server):
         Initiaates auto-discovery mechanism.
         """
         discover = ppauto.Discover(self)
-        six.moves._thread.start_new_thread(discover.run,
-                                ((self.host, self.port),
-                                 (self.bcast, self.port)),
-                                )
+        six.moves._thread.start_new_thread(
+            discover.run,
+            ((self.host, self.port), (self.bcast, self.port)),
+        )
 
 
 def parse_config(file_loc):
@@ -208,12 +211,15 @@ def parse_config(file_loc):
     try:
         from configobj import ConfigObj
     except ImportError as ie:
-        print("ERROR: You must have configobj installed to use \
-configuration files. You can still use command line switches.", file=sys.stderr)
+        print(
+            'ERROR: You must have configobj installed to use \
+configuration files. You can still use command line switches.',
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     if not os.access(file_loc, os.F_OK):
-        print("ERROR: Can not access %s." % arg, file=sys.stderr)
+        print('ERROR: Can not access %s.' % arg, file=sys.stderr)
         sys.exit(1)
 
     # Load the configuration file
@@ -231,8 +237,7 @@ configuration files. You can still use command line switches.", file=sys.stderr)
         pass
 
     try:
-        args['interface'] = config['network'].get('interface',
-                                                  default="0.0.0.0")
+        args['interface'] = config['network'].get('interface', default='0.0.0.0')
     except:
         pass
 
@@ -278,39 +283,34 @@ def print_usage():
     """
     Prints help.
     """
-    print("Parallel Python Network Server (pp-" + version + ")")
-    print("Usage: ppserver.py [-hdar] [-n proto] [-c config_path]"\
-        " [-i interface] [-b broadcast] [-p port] [-w nworkers]"\
-        " [-s secret] [-t seconds]")
+    print('Parallel Python Network Server (pp-' + version + ')')
+    print('Usage: ppserver.py [-hdar] [-n proto] [-c config_path]' ' [-i interface] [-b broadcast] [-p port] [-w nworkers]' ' [-s secret] [-t seconds]')
     print()
-    print("Options: ")
-    print("-h                 : this help message")
-    print("-d                 : debug")
-    print("-a                 : enable auto-discovery service")
-    print("-r                 : restart worker process after each"\
-        " task completion")
-    print("-n proto           : protocol number for pickle module")
-    print("-c path            : path to config file")
-    print("-i interface       : interface to listen")
-    print("-b broadcast       : broadcast address for auto-discovery service")
-    print("-p port            : port to listen")
-    print("-w nworkers        : number of workers to start")
-    print("-s secret          : secret for authentication")
-    print("-t seconds         : timeout to exit if no connections with "\
-        "clients exist")
+    print('Options: ')
+    print('-h                 : this help message')
+    print('-d                 : debug')
+    print('-a                 : enable auto-discovery service')
+    print('-r                 : restart worker process after each' ' task completion')
+    print('-n proto           : protocol number for pickle module')
+    print('-c path            : path to config file')
+    print('-i interface       : interface to listen')
+    print('-b broadcast       : broadcast address for auto-discovery service')
+    print('-p port            : port to listen')
+    print('-w nworkers        : number of workers to start')
+    print('-s secret          : secret for authentication')
+    print('-t seconds         : timeout to exit if no connections with ' 'clients exist')
     print()
-    print("Due to the security concerns always use a non-trivial secret key.")
-    print("Secret key set by -s switch will override secret key assigned by")
-    print("pp_secret variable in .pythonrc.py")
+    print('Due to the security concerns always use a non-trivial secret key.')
+    print('Secret key set by -s switch will override secret key assigned by')
+    print('pp_secret variable in .pythonrc.py')
     print()
-    print("Please visit http://www.parallelpython.com for extended up-to-date")
-    print("documentation, examples and support forums")
+    print('Please visit http://www.parallelpython.com for extended up-to-date')
+    print('documentation, examples and support forums')
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     try:
-        opts, args = getopt.getopt(sys.argv[1:],
-                                   "hdarn:c:b:i:p:w:s:t:", ["help"])
+        opts, args = getopt.getopt(sys.argv[1:], 'hdarn:c:b:i:p:w:s:t:', ['help'])
     except getopt.GetoptError:
         print_usage()
         sys.exit(1)
@@ -319,31 +319,31 @@ if __name__ == "__main__":
     autodiscovery = False
 
     for opt, arg in opts:
-        if opt in ("-h", "--help"):
+        if opt in ('-h', '--help'):
             print_usage()
             sys.exit()
-        elif opt == "-c":
+        elif opt == '-c':
             args, autodiscovery = parse_config(arg)
-        elif opt == "-d":
-            args["loglevel"] = logging.DEBUG
-        elif opt == "-i":
-            args["interface"] = arg
-        elif opt == "-s":
-            args["secret"] = arg
-        elif opt == "-p":
-            args["port"] = int(arg)
-        elif opt == "-w":
-            args["ncpus"] = int(arg)
-        elif opt == "-a":
+        elif opt == '-d':
+            args['loglevel'] = logging.DEBUG
+        elif opt == '-i':
+            args['interface'] = arg
+        elif opt == '-s':
+            args['secret'] = arg
+        elif opt == '-p':
+            args['port'] = int(arg)
+        elif opt == '-w':
+            args['ncpus'] = int(arg)
+        elif opt == '-a':
             autodiscovery = True
-        elif opt == "-r":
-            args["restart"] = True
-        elif opt == "-b":
-            args["broadcast"] = arg
-        elif opt == "-n":
-            args["proto"] = int(arg)
-        elif opt == "-t":
-            args["timeout"] = int(arg)
+        elif opt == '-r':
+            args['restart'] = True
+        elif opt == '-b':
+            args['broadcast'] = arg
+        elif opt == '-n':
+            args['proto'] = int(arg)
+        elif opt == '-t':
+            args['timeout'] = int(arg)
 
     server = _NetworkServer(**args)
     if autodiscovery:

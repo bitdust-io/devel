@@ -1,12 +1,11 @@
 #!/usr/bin/env python
 
 from __future__ import absolute_import
-USERS={'admin': 'admin', 
-        'user': 'user',
-        'test': 'eW91IGFyZSBjcmF6eQo='}
+
+USERS = {'admin': 'admin', 'user': 'user', 'test': 'eW91IGFyZSBjcmF6eQo='}
 
 """
-Twisted SSL webserver with basic authentication using plain in-memory passwords. 
+Twisted SSL webserver with basic authentication using plain in-memory passwords.
 The first argument is the path of the directory to serve; if not provided then the current folder is used (".").
 
 INSTALL DEPENDENCIES:
@@ -20,7 +19,7 @@ GENERATE SSL CERTIFICATES:
     openssl req -new -x509 -key privkey.pem -out cacert.pem -days 9999
 
 USAGE:
-    Requires running as root (normal users cannot bind to ports below 1024); 
+    Requires running as root (normal users cannot bind to ports below 1024);
     login with test_user/test_password
 
     sudo python twisted-web-ssl.py     # serve the current folder
@@ -39,16 +38,16 @@ from twisted.cred.checkers import InMemoryUsernamePasswordDatabaseDontUse
 from twisted.python.log import startLogging
 
 startLogging(sys.stdout)
-home_dir = os.path.expanduser("~")
+home_dir = os.path.expanduser('~')
 
 sslContext = ssl.DefaultOpenSSLContextFactory(
     os.path.join(home_dir, '.ssl/privkey.pem'),
     os.path.join(home_dir, '.ssl/cacert.pem'),
 )
 
+
 @implementer(IRealm)
 class SimpleRealm(object):
-
     def __init__(self, path):
         self.path = path
 
@@ -64,15 +63,12 @@ def main(root):
     log.startLogging(sys.stdout)
     checkers = [InMemoryUsernamePasswordDatabaseDontUse(**USERS)]
 
-    wrapper = guard.HTTPAuthSessionWrapper(
-        Portal(SimpleRealm(root), checkers),
-        [guard.DigestCredentialFactory('md5', 'whatever.com')])
+    wrapper = guard.HTTPAuthSessionWrapper(Portal(SimpleRealm(root), checkers), [guard.DigestCredentialFactory('md5', 'whatever.com')])
 
-    reactor.listenSSL(443, server.Site(resource=wrapper),
-                      contextFactory=sslContext)
+    reactor.listenSSL(443, server.Site(resource=wrapper), contextFactory=sslContext)
     reactor.run()
 
 
 if __name__ == '__main__':
-    root = sys.argv[1] if len(sys.argv) > 1  else '.'
+    root = sys.argv[1] if len(sys.argv) > 1 else '.'
     main(root)

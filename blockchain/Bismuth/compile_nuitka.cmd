@@ -19,4 +19,3 @@ copy config.txt dist\config.txt
 
 "C:\Program Files (x86)\Inno Setup 5\iscc" /q "setup.iss"
 pause
-

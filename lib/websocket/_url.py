@@ -27,7 +27,7 @@ import struct
 from six.moves.urllib.parse import urlparse
 
 
-__all__ = ["parse_url", "get_proxy_info"]
+__all__ = ['parse_url', 'get_proxy_info']
 
 
 def parse_url(url):
@@ -37,43 +37,43 @@ def parse_url(url):
 
     url: url string.
     """
-    if ":" not in url:
-        raise ValueError("url is invalid")
+    if ':' not in url:
+        raise ValueError('url is invalid')
 
-    scheme, url = url.split(":", 1)
+    scheme, url = url.split(':', 1)
 
-    parsed = urlparse(url, scheme="ws")
+    parsed = urlparse(url, scheme='ws')
     if parsed.hostname:
         hostname = parsed.hostname
     else:
-        raise ValueError("hostname is invalid")
+        raise ValueError('hostname is invalid')
     port = 0
     if parsed.port:
         port = parsed.port
 
     is_secure = False
-    if scheme == "ws":
+    if scheme == 'ws':
         if not port:
             port = 80
-    elif scheme == "wss":
+    elif scheme == 'wss':
         is_secure = True
         if not port:
             port = 443
     else:
-        raise ValueError("scheme %s is invalid" % scheme)
+        raise ValueError('scheme %s is invalid' % scheme)
 
     if parsed.path:
         resource = parsed.path
     else:
-        resource = "/"
+        resource = '/'
 
     if parsed.query:
-        resource += "?" + parsed.query
+        resource += '?' + parsed.query
 
     return hostname, port, resource, is_secure
 
 
-DEFAULT_NO_PROXY_HOST = ["localhost", "127.0.0.1"]
+DEFAULT_NO_PROXY_HOST = ['localhost', '127.0.0.1']
 
 
 def _is_ip_address(addr):
@@ -87,7 +87,7 @@ def _is_ip_address(addr):
 
 def _is_subnet_address(hostname):
     try:
-        addr, netmask = hostname.split("/")
+        addr, netmask = hostname.split('/')
         return _is_ip_address(addr) and 0 <= int(netmask) < 32
     except ValueError:
         return False
@@ -102,9 +102,9 @@ def _is_address_in_network(ip, net):
 
 def _is_no_proxy_host(hostname, no_proxy):
     if not no_proxy:
-        v = os.environ.get("no_proxy", "").replace(" ", "")
+        v = os.environ.get('no_proxy', '').replace(' ', '')
         if v:
-            no_proxy = v.split(",")
+            no_proxy = v.split(',')
     if not no_proxy:
         no_proxy = DEFAULT_NO_PROXY_HOST
 
@@ -116,9 +116,7 @@ def _is_no_proxy_host(hostname, no_proxy):
     return False
 
 
-def get_proxy_info(
-        hostname, is_secure, proxy_host=None, proxy_port=0, proxy_auth=None,
-        no_proxy=None, proxy_type='http'):
+def get_proxy_info(hostname, is_secure, proxy_host=None, proxy_port=0, proxy_auth=None, no_proxy=None, proxy_type='http'):
     """
     try to retrieve proxy host and port from environment
     if not provided in options.
@@ -150,9 +148,9 @@ def get_proxy_info(
         auth = proxy_auth
         return proxy_host, port, auth
 
-    env_keys = ["http_proxy"]
+    env_keys = ['http_proxy']
     if is_secure:
-        env_keys.insert(0, "https_proxy")
+        env_keys.insert(0, 'https_proxy')
 
     for key in env_keys:
         value = os.environ.get(key, None)

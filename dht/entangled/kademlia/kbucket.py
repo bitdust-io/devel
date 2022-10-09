@@ -2,8 +2,8 @@
 # kbucket.py
 #
 # Copyright (C) 2007-2008 Francois Aucamp, Meraka Institute, CSIR
-# See AUTHORS for all authors and contact information. 
-# 
+# See AUTHORS for all authors and contact information.
+#
 # License: GNU Lesser General Public License, version 3 or later; see COPYING
 #          included in this archive for details.
 #
@@ -30,8 +30,7 @@ class BucketFull(Exception):
 
 
 class KBucket(object):
-    """ Description - later
-    """
+    """Description - later"""
 
     def __init__(self, rangeMin, rangeMax):
         """
@@ -75,7 +74,7 @@ class KBucket(object):
             if _Debug:
                 print('[DHT KBUCKET]    added new contact %r' % contact)
         else:
-            raise BucketFull("No space in bucket to insert contact")
+            raise BucketFull('No space in bucket to insert contact')
 
     def getContact(self, contactID):
         """

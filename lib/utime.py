@@ -81,7 +81,7 @@ def make_timestamp():
     Returns text string based on current time.
     """
     time_st = time.localtime()
-    ampm = time.strftime("%p", time_st)
+    ampm = time.strftime('%p', time_st)
     if not ampm:
         ampm = 'AM' if time.time() % 86400 < 43200 else 'PM'
-    return time.strftime("%Y%m%d%I%M%S", time_st) + ampm
+    return time.strftime('%Y%m%d%I%M%S', time_st) + ampm

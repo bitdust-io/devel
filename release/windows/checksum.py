@@ -41,7 +41,7 @@ def mkinfo(dirpath):
     return r
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     if len(sys.argv) < 3:
         print('checksum.py [source folder path] [output file]')
     else:

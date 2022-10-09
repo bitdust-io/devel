@@ -52,6 +52,7 @@ class SharedDataService(LocalService):
         from main import events
         from transport import callback
         from access import shared_access_coordinator
+
         callback.append_inbox_callback(self._on_inbox_packet_received)
         events.add_subscriber(shared_access_coordinator.on_supplier_modified, 'supplier-modified')
         events.add_subscriber(shared_access_coordinator.on_my_list_files_refreshed, 'my-list-files-refreshed')
@@ -66,6 +67,7 @@ class SharedDataService(LocalService):
         from main import events
         from transport import callback
         from access import shared_access_coordinator
+
         events.remove_subscriber(shared_access_coordinator.on_key_registered, 'key-registered')
         events.remove_subscriber(shared_access_coordinator.on_key_erased, 'key-erased')
         events.remove_subscriber(shared_access_coordinator.on_share_connected, 'share-connected')
@@ -78,6 +80,7 @@ class SharedDataService(LocalService):
     def _on_inbox_packet_received(self, newpacket, info, status, error_message):
         from p2p import commands
         from access import key_ring
+
         if newpacket.Command == commands.Files():
             return key_ring.on_files_received(newpacket, info)
         return False

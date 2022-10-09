@@ -35,7 +35,7 @@ HTML server.
 
 from __future__ import absolute_import
 from six.moves import range
-import six.moves.urllib.request, six.moves.urllib.parse, six.moves.urllib.error
+import six.moves.urllib.parse
 
 import sys
 import base64
@@ -48,7 +48,7 @@ except:
 
 from twisted.web import server, resource
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 myweblistener = None
 default_level = 6
@@ -115,7 +115,7 @@ level2color = {
     23: '#D0D0D0',
 }
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 def init(port=9999):
@@ -123,6 +123,7 @@ def init(port=9999):
     if myweblistener:
         return
     from logs import lg
+
     root = RootResource()
     site = server.Site(root)
     try:
@@ -140,7 +141,8 @@ def shutdown():
         del myweblistener
         myweblistener = None
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def log(level, s):
@@ -155,14 +157,14 @@ def log(level, s):
     numlines += 1
     lineindex += 1
     while numlines > maxlines:
-        logtext = logtext[logtext.find('\n') + 1:]
+        logtext = logtext[logtext.find('\n') + 1 :]
         numlines -= 1
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 class LogPage(resource.Resource):
-
     def __init__(self, parent):
         self.parent = parent
         resource.Resource.__init__(self)
@@ -195,12 +197,12 @@ class LogPage(resource.Resource):
             line = all_lines[lineindex]
             t = line.split('|')
             try:
-                #lineindex = int(t[0])
+                # lineindex = int(t[0])
                 level = int(t[1])
                 timestr = t[2]
                 s = ''.join(t[3:])
             except:
-                #lineindex = 0
+                # lineindex = 0
                 level = 0
                 timestr = ''
                 s = line
@@ -263,18 +265,19 @@ class LogPage(resource.Resource):
 
         return out + '</pre></body></html>'
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 class RootResource(resource.Resource):
-
     def __init__(self):
         resource.Resource.__init__(self)
         logpage = LogPage(self)
         self.putChild('', logpage)
 
-#------------------------------------------------------------------------------
 
-if __name__ == "__main__":
+# ------------------------------------------------------------------------------
+
+if __name__ == '__main__':
     init(int(sys.argv[1]))
     reactor.run()

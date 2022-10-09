@@ -31,15 +31,15 @@ import socks
 import sys
 
 
-__version__ = "0.0.2"
+__version__ = '0.0.2'
 
 
 def get_address_since(since, min_conf, address):
     s = socks.socksocket()
     s.settimeout(10)
-    s.connect(("127.0.0.1", 5658))
+    s.connect(('127.0.0.1', 5658))
     # Command first
-    connections.send(s, "api_getaddresssince")
+    connections.send(s, 'api_getaddresssince')
     # Then last block (will not be included in results
     connections.send(s, int(since))
     # min confirmations
@@ -51,8 +51,8 @@ def get_address_since(since, min_conf, address):
     return res
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     _, since, min_conf, address = sys.argv
-    print("api_getaddresssince since {} minconf={} for address {}".format(since, min_conf, address))
+    print('api_getaddresssince since {} minconf={} for address {}'.format(since, min_conf, address))
     res_as_native_dict = get_address_since(since, min_conf, address)
     print(json.dumps(res_as_native_dict))

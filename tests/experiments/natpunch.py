@@ -23,16 +23,14 @@
 
 from __future__ import absolute_import
 from __future__ import print_function
-import os
 import sys
-import random
 
 from twisted.internet import reactor  # @UnresolvedImport
-from twisted.internet.defer import Deferred, DeferredList
 from six.moves import range
 
 if __name__ == '__main__':
     import os.path as _p
+
     sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
 from logs import lg
@@ -40,7 +38,7 @@ from logs import lg
 from system import bpio
 from lib import udp
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 def listen(local_port, servers, incomings_filename):
@@ -54,6 +52,7 @@ def listen(local_port, servers, incomings_filename):
             for inc in incomings:
                 udp.send_command(local_port, udp.CMD_PING, 'ping', inc)
         reactor.callLater(5, _loop)
+
     for srv in servers:
         udp.send_command(local_port, udp.CMD_PING, 'ping', srv)
     _loop()
@@ -64,6 +63,7 @@ def connect(local_port, remote_ip, servers, min_port, max_port):
         for port_num in range(min_port, max_port + 1):
             udp.send_command(local_port, udp.CMD_PING, 'ping', (remote_ip, port_num))
         reactor.callLater(5, _loop)
+
     for srv in servers:
         udp.send_command(local_port, udp.CMD_PING, 'ping', srv)
     _loop()
@@ -135,6 +135,7 @@ def main():
         connect(port_num, remote_ip, servers, min_port, max_port)
 
     reactor.run()
+
 
 if __name__ == '__main__':
     main()

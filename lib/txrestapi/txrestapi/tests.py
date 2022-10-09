@@ -1,8 +1,7 @@
-__package__="txrestapi"
+__package__ = 'txrestapi'
 
 from six import PY2, b
 
-import txrestapi  # @UnresolvedImport
 import re
 import json
 import base64
@@ -90,8 +89,10 @@ class APIResourceTest(unittest.TestCase):
 
     def test_callback(self):
         marker = object()
+
         def cb(request):
             return marker
+
         r = self.test_class()
         r.register(b('GET'), b('regex'), cb)
         req = getRequest(b('GET'), b('regex'))
@@ -101,8 +102,10 @@ class APIResourceTest(unittest.TestCase):
     def test_longerpath(self):
         marker = object()
         r = self.test_class()
+
         def cb(request):
             return marker
+
         r.register(b('GET'), b('/regex/a/b/c'), cb)
         req = getRequest(b('GET'), b('/regex/a/b/c'))
         result = r.getChild(b('regex'), req)
@@ -110,8 +113,10 @@ class APIResourceTest(unittest.TestCase):
 
     def test_args(self):
         r = self.test_class()
+
         def cb(request, **kwargs):
             return kwargs
+
         r.register(b('GET'), b('/(?P<a>[^/]*)/a/(?P<b>[^/]*)/c'), cb)
         req = getRequest(b('GET'), b('/regex/a/b/c'))
         result = r.getChild(b('regex'), req)
@@ -119,11 +124,14 @@ class APIResourceTest(unittest.TestCase):
 
     def test_order(self):
         r = self.test_class()
+
         def cb1(request, **kwargs):
-            kwargs.update({'cb1':True})
+            kwargs.update({'cb1': True})
             return kwargs
+
         def cb(request, **kwargs):
             return kwargs
+
         # Register two regexes that will match
         r.register(b('GET'), b('/(?P<a>[^/]*)/a/(?P<b>[^/]*)/c'), cb1)
         r.register(b('GET'), b('/(?P<a>[^/]*)/a/(?P<b>[^/]*)'), cb)
@@ -141,9 +149,16 @@ class APIResourceTest(unittest.TestCase):
 
     def test_all(self):
         r = self.test_class()
-        def get_cb(r): return b('GET')
-        def put_cb(r): return b('PUT')
-        def all_cb(r): return b('ALL')
+
+        def get_cb(r):
+            return b('GET')
+
+        def put_cb(r):
+            return b('PUT')
+
+        def all_cb(r):
+            return b('ALL')
+
         r.register(b('GET'), b('^path'), get_cb)
         r.register(b('ALL'), b('^path'), all_cb)
         r.register(b('PUT'), b('^path'), put_cb)
@@ -151,18 +166,31 @@ class APIResourceTest(unittest.TestCase):
         for method in (b('GET'), b('PUT'), b('ALL')):
             req = getRequest(method, b('path'))
             result = r.getChild(b('path'), req)
-            self.assertEqual(result.render(req), b('ALL') if method==b('PUT') else method)
+            self.assertEqual(result.render(req), b('ALL') if method == b('PUT') else method)
 
- 
+
 class JSONAPIResourceTest(APIResourceTest):
- 
+
     test_class = JsonAPIResource
- 
+
     def test_all(self):
         r = self.test_class()
-        def get_cb(r): return {'method': b('GET'), }
-        def put_cb(r): return {'method': b('PUT'), }
-        def all_cb(r): return {'method': b('ALL'), }
+
+        def get_cb(r):
+            return {
+                'method': b('GET'),
+            }
+
+        def put_cb(r):
+            return {
+                'method': b('PUT'),
+            }
+
+        def all_cb(r):
+            return {
+                'method': b('ALL'),
+            }
+
         r.register(b('GET'), b('^path'), get_cb)
         r.register(b('ALL'), b('^path'), all_cb)
         r.register(b('PUT'), b('^path'), put_cb)
@@ -170,12 +198,16 @@ class JSONAPIResourceTest(APIResourceTest):
         for method in (b('GET'), b('PUT'), b('ALL')):
             req = getRequest(method, b('path'))
             result = r.getChild(b('path'), req)
-            self.assertEqual(json.loads(result.render(req))['method'], b('ALL') if method==b('PUT') else method)
+            self.assertEqual(json.loads(result.render(req))['method'], b('ALL') if method == b('PUT') else method)
 
     def test_args(self):
         r = self.test_class()
+
         def cb(request, **kwargs):
-            return {'kwargs': kwargs, }
+            return {
+                'kwargs': kwargs,
+            }
+
         r.register(b('GET'), b('/(?P<a>[^/]*)/a/(?P<b>[^/]*)/c'), cb)
         req = getRequest(b('GET'), b('/regex/a/b/c'))
         result = r.getChild(b('regex'), req)
@@ -183,8 +215,12 @@ class JSONAPIResourceTest(APIResourceTest):
 
     def test_callback(self):
         marker = base64.b64encode(os.urandom(20))
+
         def cb(request):
-            return {'marker': marker, }
+            return {
+                'marker': marker,
+            }
+
         r = self.test_class()
         r.register(b('GET'), b('regex'), cb)
         req = getRequest(b('GET'), b('regex'))
@@ -194,8 +230,12 @@ class JSONAPIResourceTest(APIResourceTest):
     def test_longerpath(self):
         marker = base64.b64encode(os.urandom(20))
         r = self.test_class()
+
         def cb(request):
-            return {'marker': marker, }
+            return {
+                'marker': marker,
+            }
+
         r.register(b('GET'), b('/regex/a/b/c'), cb)
         req = getRequest(b('GET'), b('/regex/a/b/c'))
         result = r.getChild(b('regex'), req)
@@ -206,17 +246,22 @@ class JSONAPIResourceTest(APIResourceTest):
         r.register(b('GET'), b('^/(?P<a>[^/]*)/a/(?P<b>[^/]*)$'), None)
         req = getRequest(b('GET'), b('/definitely/not/a/match'))
         result = r.getChild(b('regex'), req)
-        self.assertEqual(json.loads(result.render(req))['errors'], ["path 'regex' not found", ])
+        self.assertEqual(
+            json.loads(result.render(req))['errors'],
+            [
+                "path 'regex' not found",
+            ],
+        )
 
 
 class TestResource(Resource):
     isLeaf = True
+
     def render(self, request):
         return b('aresource')
 
 
 class TestAPI(APIResource):
-
     @GET(b('^/(?P<a>test[^/]*)/?'))
     def _on_test_get(self, request, a):
         return b('GET %s') % a
@@ -232,7 +277,7 @@ class TestAPI(APIResource):
 
 class DecoratorsTest(unittest.TestCase):
     def _listen(self, site):
-        return reactor.listenTCP(0, site, interface="127.0.0.1")  # @UndefinedVariable
+        return reactor.listenTCP(0, site, interface='127.0.0.1')  # @UndefinedVariable
 
     def setUp(self):
         r = TestAPI()
@@ -244,7 +289,7 @@ class DecoratorsTest(unittest.TestCase):
         return self.port.stopListening()
 
     def getURL(self, path):
-        return b("http://127.0.0.1:%d/%s" % (self.portno, path))
+        return b('http://127.0.0.1:%d/%s' % (self.portno, path))
 
     @inlineCallbacks
     def test_get(self):
@@ -267,6 +312,7 @@ class DecoratorsTest(unittest.TestCase):
 
 def test_suite():
     import unittest as ut
+
     suite = unittest.TestSuite()
     suite.addTest(ut.makeSuite(DecoratorsTest))
     suite.addTest(ut.makeSuite(APIResourceTest))

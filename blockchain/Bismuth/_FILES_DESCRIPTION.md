@@ -32,7 +32,7 @@ Initialization of classes commonly used by node (Node, Client, Logger, Keys), wh
 
 ## commands.py  (*script*)
 Command line interface to node commands. Undocumented.
-Better refer to the dedicated API repo. 
+Better refer to the dedicated API repo.
 
 ## connections.py (*module*)
 Low level protocol functions, header + json over raw socket.  
@@ -154,5 +154,3 @@ Proof of concept asyncio GUI wallet.
 
 ## worker.py (*module*)
 Outgoing traffic thread node module.
-
-

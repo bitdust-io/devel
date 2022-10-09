@@ -32,31 +32,32 @@ Our local key is always on hand.
 Main thing here is to be able to use public keys in contacts to verify packets.
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 from __future__ import print_function
 from six.moves import range
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 4
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 import os
 import sys
 import gc
 import tempfile
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     import os.path as _p
+
     sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -69,11 +70,11 @@ from crypt import rsa_key
 from crypt import hashes
 from crypt import cipher
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _MyKeyObject = None
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 def InitMyKey(keyfilename=None):
@@ -183,7 +184,6 @@ def ForgetMyKey(keyfilename=None, erase_file=False, do_backup=False):
             lg.info('local private key erased, deleted file : %r' % keyfilename)
 
 
-
 def isMyKeyReady():
     """
     Check if the Key is already loaded into memory.
@@ -221,7 +221,8 @@ def MyPrivateKeyObject():
         InitMyKey()
     return _MyKeyObject
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def Sign(inp):
@@ -263,7 +264,8 @@ def Verify(ConIdentity, hashcode, signature):
     Result = VerifySignature(pubkey, hashcode, signature)
     return Result
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def HashMD5(inp, hexdigest=False):
@@ -295,7 +297,8 @@ def Hash(inp, hexdigest=False):
     """
     return HashSHA(inp, hexdigest=hexdigest)
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def SessionKeyType():
@@ -311,7 +314,9 @@ def NewSessionKey(session_key_type):
     """
     return cipher.make_key(session_key_type)
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def EncryptWithSessionKey(session_key, inp, session_key_type):
     """
@@ -335,7 +340,9 @@ def DecryptWithSessionKey(session_key, inp, session_key_type):
     ret = cipher.decrypt_json(inp, session_key, session_key_type)
     return ret
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def EncryptOpenSSHPublicKey(pubkeystring, inp):
     """
@@ -356,7 +363,9 @@ def DecryptOpenSSHPrivateKey(privkeystring, inp):
     result = priv_key.decrypt(inp)
     return result
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def EncryptLocalPublicKey(inp):
     """
@@ -380,7 +389,8 @@ def DecryptLocalPrivateKey(inp):
     result = _MyKeyObject.decrypt(inp)
     return result
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def SpeedTest():
@@ -388,6 +398,7 @@ def SpeedTest():
     Some tests to check the performance.
     """
     import time
+
     dataSZ = 1024 * 640
     loops = 10
     packets = []
@@ -419,7 +430,8 @@ def SpeedTest():
         i += 1
     print(time.time() - dt, 'seconds')
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     bpio.init()

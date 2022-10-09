@@ -5,7 +5,6 @@ import subprocess
 
 
 class TestMakeRead(TestCase):
-
     def setUp(self):
         t = time.time()
 

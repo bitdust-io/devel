@@ -30,28 +30,28 @@
 
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 from io import open
-import six
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 import os
 import platform
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from lib import strng
 
 from logs import lg
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _PlatformInfo = None
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
 
 def WriteBinaryFile(filename, data):
     """
@@ -62,7 +62,7 @@ def WriteBinaryFile(filename, data):
     if _PlatformInfo is None:
         _PlatformInfo = platform.uname()
     try:
-        tmpfilename = filename + ".new"
+        tmpfilename = filename + '.new'
         f = open(tmpfilename, 'wb')
         bin_data = strng.to_bin(data)
         f.write(bin_data)
@@ -138,7 +138,8 @@ def ReadBinaryFile(filename, decode_encoding=None):
         lg.exc('file read failed: %r' % filename)
         return b''
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def WriteTextFile(filepath, data):
@@ -158,7 +159,7 @@ def WriteTextFile(filepath, data):
         except:
             lg.exc()
             return False
-    fout = open(temp_path, 'wt', encoding="utf-8")
+    fout = open(temp_path, 'wt', encoding='utf-8')
     text_data = strng.to_text(data)
     fout.write(text_data)
     fout.flush()
@@ -186,7 +187,7 @@ def ReadTextFile(filename):
     if not os.access(filename, os.R_OK):
         return u''
     try:
-        infile = open(filename, 'rt', encoding="utf-8")
+        infile = open(filename, 'rt', encoding='utf-8')
         data = infile.read()
         infile.close()
         return strng.to_text(data)
@@ -194,7 +195,8 @@ def ReadTextFile(filename):
         lg.exc('file read failed: %r' % filename)
     return u''
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def RoundupFile(filename, stepsize):
@@ -219,4 +221,3 @@ def RoundupFile(filename, stepsize):
         os.fsync(fil)
         fil.close()
     return increase
-

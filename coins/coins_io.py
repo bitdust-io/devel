@@ -34,29 +34,27 @@ This is similar to well-known "blockchain" technology where every block is linke
 
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Debug = True
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
-import os
 import json
-from collections import OrderedDict
-from hashlib import md5
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     import sys
     import os.path as _p
+
     sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -67,7 +65,8 @@ from crypt import key
 from userid import my_id
 
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
 
 def storage_contract_open(customer_idurl, duration, amount, price=1.0, trustee=None):
     """
@@ -81,43 +80,43 @@ def storage_contract_open(customer_idurl, duration, amount, price=1.0, trustee=N
     + price: 1.0 by default
     """
     return {
-        "miner": {
-            "prev": "",
+        'miner': {
+            'prev': '',
         },
-        "payload": {
-            "type": "storage",
-            "amount": amount,
-            "duration": duration,
-            "customer": customer_idurl,
-            "supplier": my_id.getIDURL(),
-            "trustee": trustee,
-            "started": utime.utcnow_to_sec1970(),
-            "price": price,
+        'payload': {
+            'type': 'storage',
+            'amount': amount,
+            'duration': duration,
+            'customer': customer_idurl,
+            'supplier': my_id.getIDURL(),
+            'trustee': trustee,
+            'started': utime.utcnow_to_sec1970(),
+            'price': price,
         },
     }
 
 
 def storage_contract_accept(prev_coin_json):
     return {
-        "miner": {
+        'miner': {
             # populate previous hash from existing coin
-            "prev": prev_coin_json['miner']['hash'],
+            'prev': prev_coin_json['miner']['hash'],
         },
-        "payload": {
-            "accepted": utime.utcnow_to_sec1970(),
+        'payload': {
+            'accepted': utime.utcnow_to_sec1970(),
         },
     }
 
 
 def storage_contract_continue(prev_coin_json, duration):
     return {
-        "miner": {
+        'miner': {
             # populate previous hash from existing coin
-            "prev": prev_coin_json['miner']['hash'],
+            'prev': prev_coin_json['miner']['hash'],
         },
-        "payload": {
-            "extended": utime.utcnow_to_sec1970(),
-            "duration": duration,
+        'payload': {
+            'extended': utime.utcnow_to_sec1970(),
+            'duration': duration,
         },
     }
 
@@ -151,7 +150,6 @@ def set_prev_hash(coin_json, prev_hash):
     return coin_json
 
 
-
 # def signed_coin(coin_json):
 #     scoin = {
 #         "creator": my_id.getIDURL(),
@@ -166,6 +164,7 @@ def set_prev_hash(coin_json, prev_hash):
 
 def coin_to_string(coin_json):
     return json.dumps(coin_json, sort_keys=True)
+
 
 def coins_to_string(coins_list):
     return json.dumps(coins_list, sort_keys=True)
@@ -182,6 +181,8 @@ def get_coin_hash(coin_json):
 
 def get_coin_base(coin_json):
     return coin_json
+
+
 #     bcoin = coin_json.copy()
 #     bcoin.pop('creator')
 #     bcoin.pop('signature')
@@ -189,11 +190,14 @@ def get_coin_base(coin_json):
 #     return bcoin
 
 
-def bought_storage(partner, ):
+def bought_storage(
+    partner,
+):
     pass
 
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
 
 def read_query_from_packet(newpacket):
     try:
@@ -214,7 +218,9 @@ def read_coins_from_packet(newpacket):
     # TODO: verify all input coins here
     return coins_list
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def validate_coin(coin_json):
     # TODO: validate sub-fields, hashes, query on DB, etc.
@@ -237,15 +243,16 @@ def verify_coin(coin_json, role):
     #     return False
     return True
 
-#------------------------------------------------------------------------------
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def _test():
     pass
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     lg.set_debug_level(20)
     _test()

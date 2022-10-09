@@ -52,7 +52,7 @@
 # we get too many errors at the same time.  We reduce this danger if
 # we fix the one we can fix fastest first.
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 from __future__ import print_function
@@ -60,36 +60,37 @@ import six
 from io import open
 from six.moves import range
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Debug = False
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 import os
 import sys
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
     sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..')))
     sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..', '..')))
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 import logs.lg
 
 import raid.eccmap
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
 
 def ReadBinaryFile(filename):
     if not os.path.isfile(filename):
         return ''
     if not os.access(filename, os.R_OK):
         return ''
-    f = open(filename, "rb")
+    f = open(filename, 'rb')
     data = f.read()
     f.close()
     return data
@@ -101,7 +102,7 @@ def RebuildOne(inlist, listlen, outfilename, threshold_control=None):
     raidreads = [''] * listlen
     for filenum in range(listlen):
         try:
-            raidfiles[filenum] = open(inlist[filenum], "rb")
+            raidfiles[filenum] = open(inlist[filenum], 'rb')
         except:
             logs.lg.exc()
             for f in raidfiles:
@@ -111,7 +112,7 @@ def RebuildOne(inlist, listlen, outfilename, threshold_control=None):
                     pass
             return False
 
-    rebuildfile = open(outfilename, "wb")
+    rebuildfile = open(outfilename, 'wb')
     progress = 0
     while True:
         for k in range(listlen):
@@ -122,10 +123,14 @@ def RebuildOne(inlist, listlen, outfilename, threshold_control=None):
         while i < len(raidreads[0]):
             xor = 0
             for j in range(listlen):
-                b1 = ord(raidreads[j][i:i+1])
+                b1 = ord(raidreads[j][i : i + 1])
                 xor = xor ^ b1
             if six.PY3:
-                out_byte = bytes([xor, ])
+                out_byte = bytes(
+                    [
+                        xor,
+                    ]
+                )
             else:
                 out_byte = chr(xor)
             rebuildfile.write(out_byte)
@@ -142,8 +147,7 @@ def RebuildOne(inlist, listlen, outfilename, threshold_control=None):
 
     if _Debug:
         with open('/tmp/raid.log', 'a') as logfile:
-            logfile.write(u'raidread.RebuildOne inlist=%d listlen=%d outfilename=%r progress=%d\n' % (
-                len(inlist), listlen, outfilename, progress))
+            logfile.write(u'raidread.RebuildOne inlist=%d listlen=%d outfilename=%r progress=%d\n' % (len(inlist), listlen, outfilename, progress))
     return True
 
 
@@ -157,19 +161,21 @@ def RebuildOne(inlist, listlen, outfilename, threshold_control=None):
 
 
 def raidread(
-        OutputFileName,
-        eccmapname,
-        version,
-        blockNumber,
-        data_parity_dir,
-        threshold_control=None,
-    ):
+    OutputFileName,
+    eccmapname,
+    version,
+    blockNumber,
+    data_parity_dir,
+    threshold_control=None,
+):
     try:
         if _Debug:
             open('/tmp/raid.log', 'a').write(u'raidread OutputFileName=%s blockNumber=%s eccmapname=%s\n' % (repr(OutputFileName), blockNumber, eccmapname))
 
         myeccmap = raid.eccmap.eccmap(eccmapname)
-        GoodFiles = ['', ] * (myeccmap.datasegments + myeccmap.paritysegments)
+        GoodFiles = [
+            '',
+        ] * (myeccmap.datasegments + myeccmap.paritysegments)
         MakingProgress = 1
         while MakingProgress == 1:
             MakingProgress = 0
@@ -205,7 +211,7 @@ def raidread(
         GoodFiles = []
         #  Count up the good segments and combine
         GoodDSegs = 0
-        output = open(OutputFileName, "wb")
+        output = open(OutputFileName, 'wb')
         for DSegNum in range(myeccmap.datasegments):
             FileName = os.path.join(
                 data_parity_dir,
@@ -214,7 +220,7 @@ def raidread(
             )
             if os.path.exists(FileName):
                 GoodDSegs += 1
-                fin = open(FileName, "rb")
+                fin = open(FileName, 'rb')
                 moredata = fin.read()
                 fin.close()
                 output.write(moredata)
@@ -230,8 +236,8 @@ def raidread(
 
 
 def main():
-    if (len(sys.argv) < 3):
-        print("raidread needs an output filename and eccmap name")
+    if len(sys.argv) < 3:
+        print('raidread needs an output filename and eccmap name')
         sys.exit(2)
 
     OutputFileName = sys.argv[1]
@@ -240,11 +246,11 @@ def main():
     block_number = sys.argv[4]
     data_parity_dir = sys.argv[5]
 
-    print("raidread is starting with")
+    print('raidread is starting with')
     print(OutputFileName)
     print(eccmapname)
     raidread(OutputFileName, eccmapname, version, block_number, data_parity_dir)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

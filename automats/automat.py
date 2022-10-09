@@ -66,7 +66,7 @@ of Information Technologies, Mechanics and Optics, Programming Technologies Depa
 `Page <http://is.ifmo.ru/english>`_.
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 import sys
@@ -75,15 +75,15 @@ import traceback
 from io import open
 
 from twisted.internet import reactor  # @UnresolvedImport
-from twisted.internet.task import LoopingCall  #@UnresolvedImport
-from twisted.internet.defer import Deferred, fail  #@UnresolvedImport
+from twisted.internet.task import LoopingCall  # @UnresolvedImport
+from twisted.internet.defer import Deferred, fail  # @UnresolvedImport
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 10
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _LogFile = None  # : This is to have a separated Log file for state machines logs
 _LogFilename = None
@@ -94,14 +94,14 @@ _LifeBeginsTime = 0
 _GlobalLogEvents = False
 _GlobalLogTransitions = False
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Counter = 0  # : Increment by one for every new object, the idea is to keep unique ID's in the index
 _Index = {}  # : Index dictionary, unique id (string) to index (int)
 _Objects = {}  # : Objects dictionary to store all state machines objects
 _StateChangedCallback = None  # : Called when some state were changed
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 def get_new_index():
@@ -214,11 +214,17 @@ def communicate(index, event, *args, **kwargs):
     if not A:
         return fail(Exception('state machine with index %d not exist' % index))
     d = Deferred()
-    args = tuple(list(args) + [d, ])
+    args = tuple(
+        list(args)
+        + [
+            d,
+        ]
+    )
     A.automat(event, *args, **kwargs)
     return d
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def SetStateChangedCallback(cb):
@@ -313,7 +319,8 @@ def SetGlobalLogTransitions(value=False):
     global _GlobalLogTransitions
     _GlobalLogTransitions = value
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 class Automat(object):
@@ -370,17 +377,17 @@ class Automat(object):
     """
 
     def __init__(
-            self,
-            name,
-            state,
-            debug_level=_DebugLevel,
-            log_events=_Debug,
-            log_transitions=_Debug,
-            publish_events=False,
-            publish_event_state_not_changed=False,
-            publish_fast=True,
-            **kwargs
-        ):
+        self,
+        name,
+        state,
+        debug_level=_DebugLevel,
+        log_events=_Debug,
+        log_transitions=_Debug,
+        publish_events=False,
+        publish_event_state_not_changed=False,
+        publish_fast=True,
+        **kwargs
+    ):
         self.id, self.index = create_index(name)
         self.name = name
         self.state = state
@@ -393,8 +400,7 @@ class Automat(object):
         try:
             self.init(**kwargs)
         except Exception as exc:
-            self.exc(msg='Exception in {}:{} automat init(), state is {}: {}'.format(
-                self.id, self.name, self.state, exc))
+            self.exc(msg='Exception in {}:{} automat init(), state is {}: {}'.format(self.id, self.name, self.state, exc))
             raise exc
         self.startTimers()
         self.register()
@@ -402,8 +408,7 @@ class Automat(object):
         self.publish_event_state_not_changed = publish_event_state_not_changed
         self.publish_fast = publish_fast
         if _GlobalLogTransitions or self.log_transitions:
-            self.log(self.debug_level, 'CREATED AUTOMAT with index %d, total running %d' % (
-                self.index, len(objects())))
+            self.log(self.debug_level, 'CREATED AUTOMAT with index %d, total running %d' % (self.index, len(objects())))
 
     def __del__(self):
         """
@@ -425,8 +430,7 @@ class Automat(object):
             erase_index(automatid)
         if _GlobalLogTransitions or self.log_transitions:
             if _LogFile:
-                self.log(debug_level, 'DESTROYED AUTOMAT with index %d, total running %d' % (
-                    index, len(objects())))
+                self.log(debug_level, 'DESTROYED AUTOMAT with index %d, total running %d' % (index, len(objects())))
 
     def __repr__(self):
         """
@@ -512,7 +516,12 @@ class Automat(object):
         d = Deferred()
         if not args:
             args = tuple()
-        args = tuple(list(args) + [d, ])
+        args = tuple(
+            list(args)
+            + [
+                d,
+            ]
+        )
         self.automat(event_string, args)
         return d
 
@@ -542,27 +551,41 @@ class Automat(object):
         global _StateChangedCallback
         if _GlobalLogEvents or self.log_events:
             if self.log_events or not event.startswith('timer-'):
-                self.log(self.debug_level, '%s fired with event "%s"' % (repr(self), event, ))
+                self.log(
+                    self.debug_level,
+                    '%s fired with event "%s"'
+                    % (
+                        repr(self),
+                        event,
+                    ),
+                )
         old_state = self.state
         if self.post:
             try:
                 new_state = self.A(event, *args, **kwargs)
             except Exception as exc:
-                self.exc(msg='Exception in {}:{} automat, state is {}, event="{}" : {}'.format(
-                    self.id, self.name, self.state, event, exc))
+                self.exc(msg='Exception in {}:{} automat, state is {}, event="{}" : {}'.format(self.id, self.name, self.state, event, exc))
                 return self
             self.state = new_state
         else:
             try:
                 self.A(event, *args, **kwargs)
             except Exception as exc:
-                self.exc(msg='Exception in {}:{} automat, state is {}, event="{}" : {}'.format(
-                    self.id, self.name, self.state, event, exc))
+                self.exc(msg='Exception in {}:{} automat, state is {}, event="{}" : {}'.format(self.id, self.name, self.state, event, exc))
                 return self
             new_state = self.state
         if old_state != new_state:
             if _GlobalLogTransitions or self.log_transitions:
-                self.log(self.debug_level, '%s(%s): (%s)->(%s)' % (repr(self), event, old_state, new_state, ))
+                self.log(
+                    self.debug_level,
+                    '%s(%s): (%s)->(%s)'
+                    % (
+                        repr(self),
+                        event,
+                        old_state,
+                        new_state,
+                    ),
+                )
             self.stopTimers()
             self.state_changed(old_state, new_state, event, *args, **kwargs)
             if self.publish_events:
@@ -672,7 +695,14 @@ class Automat(object):
                 self.log(0, msg)
             self.log(0, e)
         if _LogExceptionsHandler is not None:
-            _LogExceptionsHandler(msg=msg, exc_info=(exc_type, exc_value, exc_traceback, ))
+            _LogExceptionsHandler(
+                msg=msg,
+                exc_info=(
+                    exc_type,
+                    exc_value,
+                    exc_traceback,
+                ),
+            )
 
     def log(self, level, text):
         """
@@ -686,7 +716,10 @@ class Automat(object):
         global _LifeBeginsTime
         global _LogOutputHandler
         if not text.startswith(self.name):
-            text = '%s(): %s' % (self.name, text, )
+            text = '%s(): %s' % (
+                self.name,
+                text,
+            )
         if _LogOutputHandler is not None:
             _LogOutputHandler(level, text)
         else:
@@ -702,7 +735,7 @@ class Automat(object):
                     dt = time.time() - _LifeBeginsTime
                     mn = dt // 60
                     sc = dt - mn * 60
-                    tm_str += ('/%02d:%02d.%02d' % (mn, sc, (sc - int(sc)) * 100))
+                    tm_str += '/%02d:%02d.%02d' % (mn, sc, (sc - int(sc)) * 100)
                 s = tm_str + s
                 if sys.version_info[0] == 3:
                     if not isinstance(s, str):
@@ -734,11 +767,19 @@ class Automat(object):
             machineB.addStateChangedCallback(method_B)
 
         """
-        key = (oldstate, newstate, )
+        key = (
+            oldstate,
+            newstate,
+        )
         if key not in self._state_callbacks:
             self._state_callbacks[key] = []
         if cb not in self._state_callbacks[key]:
-            self._state_callbacks[key].append((callback_id, cb, ))
+            self._state_callbacks[key].append(
+                (
+                    callback_id,
+                    cb,
+                )
+            )
         return True
 
     def removeStateChangedCallback(self, cb=None, callback_id=None):
@@ -768,7 +809,10 @@ class Automat(object):
         the moment when state gets changed.
         """
         for key in list(self._state_callbacks.keys()):
-            if key == (oldstate, newstate, ):
+            if key == (
+                oldstate,
+                newstate,
+            ):
                 self._state_callbacks.pop(key)
                 break
 
@@ -805,7 +849,7 @@ class Automat(object):
 
     def pushEvent(self, oldstate, newstate, event_string, publisher=None):
         """
-        Can be used to 
+        Can be used to
         """
         state_snapshot = dict(
             index=self.index,
@@ -822,4 +866,5 @@ class Automat(object):
                 reactor.callLater(0, publisher, state_snapshot)  # @UndefinedVariable
             return
         from main import events
+
         events.send('state-changed', data=state_snapshot, fast=self.publish_fast)

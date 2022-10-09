@@ -41,16 +41,16 @@ EVENTS:
     * :red:`users-not-found`
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Debug = True
 _DebugLevel = 6
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -68,11 +68,11 @@ from userid import my_id
 
 from transport import callback
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _AccountantsFinder = None
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 def A(event=None, *args, **kwargs):
@@ -89,7 +89,8 @@ def A(event=None, *args, **kwargs):
         _AccountantsFinder.automat(event, *args, **kwargs)
     return _AccountantsFinder
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 class AccountantsFinder(automat.Automat):
@@ -208,10 +209,13 @@ class AccountantsFinder(automat.Automat):
         Action method.
         """
         out_packet = p2p_service.SendRequestService(
-            self.target_idurl, 'service_accountant', json_payload=self.request_service_params, callbacks={
+            self.target_idurl,
+            'service_accountant',
+            json_payload=self.request_service_params,
+            callbacks={
                 commands.Ack(): self._node_acked,
                 commands.Fail(): self._node_failed,
-            }
+            },
         )
         self.requested_packet_id = out_packet.PacketID
 
@@ -245,13 +249,15 @@ class AccountantsFinder(automat.Automat):
         del _AccountantsFinder
         _AccountantsFinder = None
 
-    #------------------------------------------------------------------------------
+    # ------------------------------------------------------------------------------
 
     def _inbox_packet_received(self, newpacket, info, status, error_message):
-        if newpacket.Command == commands.Ack() and \
-                newpacket.OwnerID == self.target_idurl and \
-                newpacket.PacketID.startswith('identity:') and \
-                self.state == 'ACK?':
+        if (
+            newpacket.Command == commands.Ack()
+            and newpacket.OwnerID == self.target_idurl
+            and newpacket.PacketID.startswith('identity:')
+            and self.state == 'ACK?'
+        ):
             self.automat('ack-received', self.target_idurl)
             return True
         return False

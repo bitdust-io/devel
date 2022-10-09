@@ -8,13 +8,11 @@ mkdir bin
 
 @echo.
 @echo [ copy files from local development repo ]
-xcopy ..\windows_devel\bin\*      bin\      /E /R /H /Y /Q 
+xcopy ..\windows_devel\bin\*      bin\      /E /R /H /Y /Q
 
 
 @echo.
 @echo [ create DONE ]
 @echo.
 
-pause 
-
-
+pause

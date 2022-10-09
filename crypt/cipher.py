@@ -29,7 +29,7 @@
 
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 import base64
@@ -45,11 +45,12 @@ except:
     from Crypto.Util import Padding  # @UnresolvedImport @Reimport
     from Crypto.Random import get_random_bytes  # @UnresolvedImport @Reimport
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from lib import serialization
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
 
 def encrypt_json(raw_data, secret_bytes_key, cipher_type='AES'):
     # TODO: add salt to raw_data
@@ -99,9 +100,7 @@ def decrypt_json(encrypted_data, secret_bytes_key, cipher_type='AES'):
         )
     else:
         raise Exception('unsupported cipher type')
-    padded_data = cipher.decrypt(
-        base64.b64decode(dct['ct'].encode('utf-8'))
-    )
+    padded_data = cipher.decrypt(base64.b64decode(dct['ct'].encode('utf-8')))
     if cipher_type == 'AES':
         raw_data = Padding.unpad(
             padded_data=padded_data,
@@ -115,7 +114,9 @@ def decrypt_json(encrypted_data, secret_bytes_key, cipher_type='AES'):
     # TODO: remove salt from raw_data
     return raw_data
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def make_key(cipher_type='AES'):
     if cipher_type == 'AES':

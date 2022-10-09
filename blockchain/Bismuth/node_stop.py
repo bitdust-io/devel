@@ -1,5 +1,6 @@
-import socks, connections, time, sys, json
+import socks, connections
 import options
+
 config = options.Get()
 config.read()
 version = config.version
@@ -7,24 +8,24 @@ version = config.version
 s = socks.socksocket()
 
 port = 5658
-if "testnet" in version:
+if 'testnet' in version:
     port = 2829
-    print("tesnet mode")
-elif "regnet" in version:
+    print('tesnet mode')
+elif 'regnet' in version:
     is_regnet = True
-    print("Regtest mode")
+    print('Regtest mode')
     port = 3030
 
 
 while True:
     try:
-        s.connect(("127.0.0.1", port))
+        s.connect(('127.0.0.1', port))
 
-        print("Sending stop command...")
-        connections.send(s, "stop")
-        print("Stop command delivered.")
+        print('Sending stop command...')
+        connections.send(s, 'stop')
+        print('Stop command delivered.')
         break
     except:
-        print("Cannot reach node, retrying...")
+        print('Cannot reach node, retrying...')
 
 s.close()

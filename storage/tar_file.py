@@ -50,17 +50,17 @@ were we left off if a crash happened while we were waiting to send a block
 (most of the time is waiting so good chance).
 """
 
-#------------------------------------------------------------------------------ 
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 import six
 from io import open
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Debug = False
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 import os
 import sys
@@ -68,12 +68,12 @@ import platform
 import tarfile
 import traceback
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 AppData = ''
 _ExcludeFunction = None
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 if sys.version_info[0] == 3:
     text_type = str
@@ -82,7 +82,8 @@ else:
     text_type = unicode  # @UndefinedVariable
     binary_type = str
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
 
 def is_text(s):
     """
@@ -176,7 +177,9 @@ def printexc():
     if _Debug:
         printlog('\n' + traceback.format_exc() + '\n')
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def LinuxExcludeFunction(source_path, tar_path):
     """
@@ -214,19 +217,21 @@ def WindowsExcludeFunction(source_path, tar_path):
     # TODO: - must do more smart checking
     # if source_path.lower().count(".bitdust"):
     #     return True
-    if (source_path.lower().find("local settings\\temp") != -1):
+    if source_path.lower().find('local settings\\temp') != -1:
         return True
     if not os.access(source_path, os.R_OK):
         return True
     return False  # don't exclude the file
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 _ExcludeFunction = LinuxExcludeFunction
 if platform.uname()[0] == 'Windows':
     _ExcludeFunction = WindowsExcludeFunction
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
 
 def writetar_filter(tarinfo, sourcepath):
     global _ExcludeFunction
@@ -234,7 +239,9 @@ def writetar_filter(tarinfo, sourcepath):
         return None
     return tarinfo
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def writetar(sourcepath, arcname=None, subdirs=True, compression='none', encoding=None, fileobj=None):
     """
@@ -242,8 +249,7 @@ def writetar(sourcepath, arcname=None, subdirs=True, compression='none', encodin
     """
     global _ExcludeFunction
     if _Debug:
-        printlog('WRITE: %s arcname=%s, subdirs=%s, compression=%s, encoding=%s\n' % (
-            sourcepath, arcname, subdirs, compression, encoding))
+        printlog('WRITE: %s arcname=%s, subdirs=%s, compression=%s, encoding=%s\n' % (sourcepath, arcname, subdirs, compression, encoding))
     if not fileobj:
         fileobj = sys.stdout
     mode = 'w|'
@@ -255,7 +261,7 @@ def writetar(sourcepath, arcname=None, subdirs=True, compression='none', encodin
     else:
         arcname = to_text(arcname)
     # DEBUG: tar = tarfile.open('', mode, fileobj=open('out.tar', 'wb'), encoding=encoding)
-    tar = tarfile.open('', mode, fileobj=fileobj, encoding=encoding, bufsize=1024*1024)
+    tar = tarfile.open('', mode, fileobj=fileobj, encoding=encoding, bufsize=1024 * 1024)
     tar.add(
         name=sourcepath,
         arcname=arcname,
@@ -276,7 +282,9 @@ def writetar(sourcepath, arcname=None, subdirs=True, compression='none', encodin
     tar.close()
     return True
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def readtar(archivepath, outputdir, encoding=None):
     """
@@ -284,15 +292,15 @@ def readtar(archivepath, outputdir, encoding=None):
     folder.
     """
     if _Debug:
-        printlog('READ: %s to %s, encoding=%s\n' % (
-            archivepath, outputdir, encoding))
+        printlog('READ: %s to %s, encoding=%s\n' % (archivepath, outputdir, encoding))
     mode = 'r:*'
     tar = tarfile.open(archivepath, mode, encoding=encoding)
     tar.extractall(outputdir)
     tar.close()
     return True
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def main():
@@ -309,6 +317,7 @@ def main():
         else:
             try:
                 import msvcrt
+
                 msvcrt.setmode(1, os.O_BINARY)  # @UndefinedVariable
             except:
                 pass
@@ -350,8 +359,9 @@ def main():
 
     return 0
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

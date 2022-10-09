@@ -50,19 +50,24 @@ class ProxyServerService(LocalService):
 
     def enabled(self):
         from main import settings
+
         if settings.transportIsEnabled('proxy'):
             return False
         return settings.enableProxyServer()
 
     def attached_dht_layers(self):
         from dht import dht_records
-        return [dht_records.LAYER_PROXY_ROUTERS, ]
+
+        return [
+            dht_records.LAYER_PROXY_ROUTERS,
+        ]
 
     def start(self):
         from logs import lg
         from services import driver
         from main import events
         from transport.proxy import proxy_router
+
         proxy_router.A('init')
         proxy_router.A('start')
         if driver.is_on('service_entangled_dht'):
@@ -76,23 +81,41 @@ class ProxyServerService(LocalService):
         from services import driver
         from main import events
         from transport.proxy import proxy_router
+
         events.remove_subscriber(self._on_dht_layer_connected, 'dht-layer-connected')
         proxy_router.A('stop')
         proxy_router.A('shutdown')
         if driver.is_on('service_entangled_dht'):
             from dht import dht_service
             from dht import dht_records
+
             dht_service.suspend(layer_id=dht_records.LAYER_PROXY_ROUTERS)
         return True
 
     def request(self, json_payload, newpacket, info):
         from transport.proxy import proxy_router
-        proxy_router.A('request-route-received', (json_payload, newpacket, info, ))
+
+        proxy_router.A(
+            'request-route-received',
+            (
+                json_payload,
+                newpacket,
+                info,
+            ),
+        )
         return True
 
     def cancel(self, json_payload, newpacket, info):
         from transport.proxy import proxy_router
-        proxy_router.A('cancel-route-received', (json_payload, newpacket, info, ))
+
+        proxy_router.A(
+            'cancel-route-received',
+            (
+                json_payload,
+                newpacket,
+                info,
+            ),
+        )
         return True
 
     def _do_connect_proxy_routers_dht_layer(self):
@@ -100,6 +123,7 @@ class ProxyServerService(LocalService):
         from dht import dht_service
         from dht import dht_records
         from dht import known_nodes
+
         known_seeds = known_nodes.nodes()
         d = dht_service.connect(
             seed_nodes=known_seeds,
@@ -114,13 +138,15 @@ class ProxyServerService(LocalService):
         from dht import dht_service
         from dht import dht_records
         from userid import my_id
+
         lg.info('connected to DHT layer for proxy routers: %r' % ok)
         if my_id.getIDURL():
             dht_service.set_node_data('idurl', my_id.getIDURL().to_text(), layer_id=dht_records.LAYER_PROXY_ROUTERS)
-        return 
+        return
 
     def _on_dht_layer_connected(self, evt):
         from dht import dht_records
+
         if evt.data['layer_id'] == 0:
             self._do_connect_proxy_routers_dht_layer()
         elif evt.data['layer_id'] == dht_records.LAYER_PROXY_ROUTERS:

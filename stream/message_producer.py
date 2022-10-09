@@ -39,20 +39,20 @@ EVENTS:
     * :red:`shutdown`
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 10
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from twisted.internet.defer import Deferred
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -72,7 +72,7 @@ from access import groups
 
 from p2p import p2p_service_seeker
 
-from stream import message 
+from stream import message
 
 from crypt import my_keys
 
@@ -80,12 +80,13 @@ from userid import global_id
 from userid import id_url
 from userid import my_id
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _ActiveMessageProducers = {}
 _ActiveMessageProducersByIDURL = {}
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
 
 def register_message_producer(A):
     global _ActiveMessageProducers
@@ -114,7 +115,9 @@ def unregister_message_producer(A):
             lg.warn('message_producer() instance not found for customer %r' % A.group_creator_idurl)
     _ActiveMessageProducers.pop(A.group_key_id, None)
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def list_active_message_producers():
     global _ActiveMessageProducers
@@ -139,7 +142,9 @@ def find_active_message_producers(group_creator_idurl):
             result.append(A)
     return result
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def start_message_producers():
     started = 0
@@ -151,7 +156,11 @@ def start_message_producers():
         if not existing_message_producer:
             existing_message_producer = MessageProducer(group_key_id)
             existing_message_producer.automat('init')
-        if existing_message_producer.state in ['DHT_READ?', 'BROKER?', 'CONNECTED', ]:
+        if existing_message_producer.state in [
+            'DHT_READ?',
+            'BROKER?',
+            'CONNECTED',
+        ]:
             continue
         existing_message_producer.automat('connect')
         started += 1
@@ -169,7 +178,9 @@ def shutdown_message_producers():
         stopped += 1
     return stopped
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def do_send_message(active_message_producer, data, result_defer):
     if _Debug:
@@ -179,7 +190,7 @@ def do_send_message(active_message_producer, data, result_defer):
     return None
 
 
-def do_start_message_producer(group_key_id, data, result_defer): 
+def do_start_message_producer(group_key_id, data, result_defer):
     active_message_producer = get_active_message_producer(group_key_id)
     if _Debug:
         lg.args(_DebugLevel, active_message_producer=active_message_producer)
@@ -220,7 +231,9 @@ def push_message(group_key_id, data):
     do_start_message_producer(group_key_id, data, ret)
     return ret
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 class MessageProducer(automat.Automat):
     """
@@ -238,8 +251,8 @@ class MessageProducer(automat.Automat):
         self.group_creator_idurl = self.group_glob_id['idurl']
         self.active_broker_id = None
         super(MessageProducer, self).__init__(
-            name="message_producer_%s" % self.group_creator_id,
-            state="AT_STARTUP",
+            name='message_producer_%s' % self.group_creator_id,
+            state='AT_STARTUP',
             debug_level=debug_level,
             log_events=log_events,
             log_transitions=log_transitions,
@@ -249,12 +262,14 @@ class MessageProducer(automat.Automat):
 
     def to_json(self):
         j = super().to_json()
-        j.update({
-            'group_key_id': self.group_key_id,
-            'label': my_keys.get_label(self.group_key_id) or '',
-            'creator': self.group_creator_idurl,
-            'active_broker_id': self.active_broker_id,
-        })
+        j.update(
+            {
+                'group_key_id': self.group_key_id,
+                'label': my_keys.get_label(self.group_key_id) or '',
+                'creator': self.group_creator_idurl,
+                'active_broker_id': self.active_broker_id,
+            }
+        )
         return j
 
     def init(self):
@@ -264,15 +279,13 @@ class MessageProducer(automat.Automat):
         """
 
     def register(self):
-        """
-        """
+        """ """
         automat_index = automat.Automat.register(self)
         register_message_producer(self)
         return automat_index
 
     def unregister(self):
-        """
-        """
+        """ """
         unregister_message_producer(self)
         return automat.Automat.unregister(self)
 
@@ -291,12 +304,12 @@ class MessageProducer(automat.Automat):
         """
         The state machine code, generated using `visio2python <http://bitdust.io/visio2python/>`_ tool.
         """
-        #---AT_STARTUP---
+        # ---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'DISCONNECTED'
                 self.doInit(*args, **kwargs)
-        #---DISCONNECTED---
+        # ---DISCONNECTED---
         elif self.state == 'DISCONNECTED':
             if event == 'disconnect' or event == 'shutdown':
                 self.state = 'CLOSED'
@@ -304,7 +317,7 @@ class MessageProducer(automat.Automat):
             elif event == 'connect':
                 self.state = 'DHT_READ?'
                 self.doDHTReadBrokers(*args, **kwargs)
-        #---DHT_READ?---
+        # ---DHT_READ?---
         elif self.state == 'DHT_READ?':
             if event == 'disconnect' or event == 'brokers-not-found':
                 self.state = 'DISCONNECTED'
@@ -315,7 +328,7 @@ class MessageProducer(automat.Automat):
             elif event == 'brokers-found':
                 self.state = 'BROKER?'
                 self.doConnectFirstBroker(*args, **kwargs)
-        #---BROKER?---
+        # ---BROKER?---
         elif self.state == 'BROKER?':
             if event == 'disconnect' or event == 'broker-failed':
                 self.state = 'DISCONNECTED'
@@ -327,7 +340,7 @@ class MessageProducer(automat.Automat):
             elif event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(*args, **kwargs)
-        #---CONNECTED---
+        # ---CONNECTED---
         elif self.state == 'CONNECTED':
             if event == 'shutdown':
                 self.state = 'CLOSED'
@@ -337,10 +350,9 @@ class MessageProducer(automat.Automat):
                 self.doReportDisconnected(event, *args, **kwargs)
             elif event == 'push-message':
                 self.doSendMessageToBroker(*args, **kwargs)
-        #---CLOSED---
+        # ---CLOSED---
         elif self.state == 'CLOSED':
             pass
-
 
     def doInit(self, *args, **kwargs):
         """
@@ -369,7 +381,9 @@ class MessageProducer(automat.Automat):
         existing_brokers = args[0]
         if _Debug:
             lg.args(_DebugLevel, existing_brokers=existing_brokers)
-        known_brokers = [None, ] * groups.REQUIRED_BROKERS_COUNT
+        known_brokers = [
+            None,
+        ] * groups.REQUIRED_BROKERS_COUNT
         top_broker_pos = None
         top_broker_idurl = None
         for broker_pos in range(groups.REQUIRED_BROKERS_COUNT):
@@ -385,11 +399,25 @@ class MessageProducer(automat.Automat):
             except IndexError:
                 broker_idurl = None
             if not broker_idurl:
-                lg.warn('broker is empty for %r at position %d' % (self.group_key_id, broker_pos, ))
+                lg.warn(
+                    'broker is empty for %r at position %d'
+                    % (
+                        self.group_key_id,
+                        broker_pos,
+                    )
+                )
                 continue
             known_brokers[broker_pos] = broker_idurl
             if _Debug:
-                lg.dbg(_DebugLevel, 'found broker %r at position %r for %r' % (broker_idurl, broker_pos, self.group_key_id, ))
+                lg.dbg(
+                    _DebugLevel,
+                    'found broker %r at position %r for %r'
+                    % (
+                        broker_idurl,
+                        broker_pos,
+                        self.group_key_id,
+                    ),
+                )
             if top_broker_pos is None:
                 top_broker_pos = broker_pos
                 top_broker_idurl = broker_idurl

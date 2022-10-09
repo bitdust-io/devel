@@ -44,7 +44,7 @@ def build_parity(sds, iters, datasegments, myeccmap, paritysegments, threshold_c
             for PSegNum in Map:
                 if PSegNum > paritysegments:
                     myeccmap.check()
-                    raise Exception("eccmap error")
+                    raise Exception('eccmap error')
 
                 parities[PSegNum] = parities[PSegNum] ^ b
 
@@ -64,4 +64,4 @@ def build_parity(sds, iters, datasegments, myeccmap, paritysegments, threshold_c
 def chunks(l, n):
     """Yield successive n-sized chunks from l."""
     for i in range(0, len(l), n):
-        yield l[i:i + n]
+        yield l[i : i + n]

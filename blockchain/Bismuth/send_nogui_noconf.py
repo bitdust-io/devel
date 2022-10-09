@@ -18,7 +18,6 @@ import base64
 import sys
 import time
 
-import socks
 from Cryptodome.Hash import SHA
 from Cryptodome.Signature import PKCS1_v1_5
 
@@ -36,16 +35,17 @@ def connect():
     else:
         port = 5658
 
-    return rpcconnections.Connection(("127.0.0.1", int(port)))
+    return rpcconnections.Connection(('127.0.0.1', int(port)))
 
-if __name__ == "__main__":
+
+if __name__ == '__main__':
     config = options.Get()
     config.read()
 
     try:
         wallet_file = sys.argv[5]
     except:
-        wallet_file = input("Path to wallet: ")
+        wallet_file = input('Path to wallet: ')
 
     try:
         request_confirmation = sys.argv[6]
@@ -64,46 +64,46 @@ if __name__ == "__main__":
     # get balance
 
     s = connect()
-    s._send ("balanceget")
-    s._send (address)  # change address here to view other people's transactions
+    s._send('balanceget')
+    s._send(address)  # change address here to view other people's transactions
     stats_account = s._receive()
     balance = stats_account[0]
 
-    print("Transaction address: %s" % address)
-    print("Transaction address balance: %s" % balance)
+    print('Transaction address: %s' % address)
+    print('Transaction address balance: %s' % balance)
 
     try:
         amount_input = sys.argv[1]
     except IndexError:
-        amount_input = input("Amount: ")
+        amount_input = input('Amount: ')
 
     try:
         recipient_input = sys.argv[2]
     except IndexError:
-        recipient_input = input("Recipient: ")
+        recipient_input = input('Recipient: ')
 
     if not SignerFactory.address_is_valid(recipient_input):
-        print("Wrong address format")
+        print('Wrong address format')
         sys.exit(1)
 
     try:
         operation_input = sys.argv[3]
     except IndexError:
-        operation_input = ""
+        operation_input = ''
 
     try:
         openfield_input = sys.argv[4]
     except IndexError:
-        openfield_input = ""
+        openfield_input = ''
 
     fee = fee_calculate(openfield_input)
-    print("Fee: %s" % fee)
+    print('Fee: %s' % fee)
 
     if request_confirmation:
-        confirm = input("Confirm (y/n): ")
+        confirm = input('Confirm (y/n): ')
 
         if confirm != 'y':
-            print("Transaction cancelled, user confirmation failed")
+            print('Transaction cancelled, user confirmation failed')
             exit(1)
 
     try:
@@ -113,11 +113,18 @@ if __name__ == "__main__":
         is_float = 0
         sys.exit(1)
 
-    timestamp = '%.2f' % (time.time() - 5) #remote proofing
+    timestamp = '%.2f' % (time.time() - 5)  # remote proofing
     # TODO: use transaction object, no dup code for buffer assembling
-    transaction = (str(timestamp), str(address), str(recipient_input), '%.8f' % float(amount_input), str(operation_input), str(openfield_input))  # this is signed
+    transaction = (
+        str(timestamp),
+        str(address),
+        str(recipient_input),
+        '%.8f' % float(amount_input),
+        str(operation_input),
+        str(openfield_input),
+    )  # this is signed
     # TODO: use polysign here
-    h = SHA.new(str(transaction).encode("utf-8"))
+    h = SHA.new(str(transaction).encode('utf-8'))
     signer = PKCS1_v1_5.new(key)
     signature = signer.sign(h)
     signature_enc = base64.b64encode(signature)
@@ -130,29 +137,37 @@ if __name__ == "__main__":
 
     if verifier.verify(h, signature):
         if float(amount_input) < 0:
-            print("Signature OK, but cannot use negative amounts")
+            print('Signature OK, but cannot use negative amounts')
 
         elif float(amount_input) + float(fee) > float(balance):
-            print("Mempool: Sending more than owned")
+            print('Mempool: Sending more than owned')
 
         else:
-            tx_submit = (str (timestamp), str (address), str (recipient_input), '%.8f' % float (amount_input), str (signature_enc.decode ("utf-8")), str (public_key_b64encoded.decode("utf-8")), str (operation_input), str (openfield_input))
+            tx_submit = (
+                str(timestamp),
+                str(address),
+                str(recipient_input),
+                '%.8f' % float(amount_input),
+                str(signature_enc.decode('utf-8')),
+                str(public_key_b64encoded.decode('utf-8')),
+                str(operation_input),
+                str(openfield_input),
+            )
             while True:
                 try:
-                    s._send("mpinsert")
-                    s._send (tx_submit)
+                    s._send('mpinsert')
+                    s._send(tx_submit)
                     reply = s._receive()
-                    print ("Client: {}".format (reply))
-                    if reply != "*":  # response can be empty due to different timeout setting
+                    print('Client: {}'.format(reply))
+                    if reply != '*':  # response can be empty due to different timeout setting
                         break
                     else:
-                        print("Connection cut, retrying")
+                        print('Connection cut, retrying')
 
                 except Exception as e:
-                    print(f"A problem occurred: {e}, retrying")
+                    print(f'A problem occurred: {e}, retrying')
                     s = connect()
-                    pass
     else:
-        print("Invalid signature")
+        print('Invalid signature')
 
     s.close()

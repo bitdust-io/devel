@@ -36,16 +36,16 @@ Various methods to keep track of:
     + consumed space
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 4
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 import os
 import math
@@ -55,7 +55,6 @@ from logs import lg
 from system import bpio
 from system import diskusage
 
-from lib import diskspace
 from lib import misc
 from lib import strng
 from lib import jsn
@@ -68,25 +67,26 @@ from userid import id_url
 
 from storage import backup_fs
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 def init():
     if _Debug:
         lg.out(_DebugLevel, 'accounting.init')
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def read_customers_quotas():
     space_dict = bpio._read_dict(settings.CustomersSpaceFile(), {})
     free_space = int(space_dict.pop('free', 0))
-    space_dict = {id_url.field(k).to_bin() : v for k, v in space_dict.items()}
+    space_dict = {id_url.field(k).to_bin(): v for k, v in space_dict.items()}
     return space_dict, free_space
 
 
 def write_customers_quotas(new_space_dict, free_space):
-    space_dict = {id_url.field(k).to_text() : v for k, v in new_space_dict.items()}
+    space_dict = {id_url.field(k).to_text(): v for k, v in new_space_dict.items()}
     space_dict['free'] = free_space
     return bpio._write_dict(settings.CustomersSpaceFile(), space_dict)
 
@@ -101,9 +101,12 @@ def get_customer_quota(customer_idurl):
 
 def check_create_customers_quotas(donated_bytes=None):
     if not os.path.isfile(settings.CustomersSpaceFile()):
-        bpio._write_dict(settings.CustomersSpaceFile(), {
-            'free': donated_bytes or settings.getDonatedBytes(),
-        })
+        bpio._write_dict(
+            settings.CustomersSpaceFile(),
+            {
+                'free': donated_bytes or settings.getDonatedBytes(),
+            },
+        )
         lg.info('created a new customers quotas file: %s' % settings.CustomersSpaceFile())
         return True
     return False
@@ -141,16 +144,18 @@ def validate_customers_quotas(space_dict=None, free_space=None):
             unused_quotas.add(idurl)
     return unknown_customers, unused_quotas
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def read_customers_usage():
     usage_dict = jsn.dict_keys_to_bin(bpio._read_dict(settings.CustomersUsedSpaceFile(), {}))
-    usage_dict = {id_url.field(k).to_bin() : v for k, v in usage_dict.items()}
+    usage_dict = {id_url.field(k).to_bin(): v for k, v in usage_dict.items()}
     return usage_dict
 
 
 def update_customers_usage(new_space_usage_dict):
-    usage_dict = {id_url.field(k).to_bin() : v for k, v in new_space_usage_dict.items()}
+    usage_dict = {id_url.field(k).to_bin(): v for k, v in new_space_usage_dict.items()}
     return bpio._write_dict(settings.CustomersUsedSpaceFile(), jsn.dict_keys_to_text(usage_dict))
 
 
@@ -176,7 +181,8 @@ def calculate_customers_usage_ratio(space_dict=None, used_dict=None):
         used_space_ratio_dict[idurl.to_bin()] = ratio
     return used_space_ratio_dict
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def report_consumed_storage():
@@ -256,16 +262,16 @@ def report_donated_storage():
     # r['used_str'] = diskspace.MakeStringFromBytes(r['used'])
     # r['consumed_str'] = diskspace.MakeStringFromBytes(r['consumed'])
     if r['donated'] != r['free'] + r['consumed']:
-        r['errors'].append('total consumed %d and known free %d (%d total) bytes not match with donated %d bytes' % (
-            r['consumed'], r['free'],
-            r['consumed'] + r['free'], r['donated']))
+        r['errors'].append(
+            'total consumed %d and known free %d (%d total) bytes not match with donated %d bytes'
+            % (r['consumed'], r['free'], r['consumed'] + r['free'], r['donated'])
+        )
     if r['used'] > r['donated']:
         r['errors'].append('total space used by customers exceed the donated limit')
     if len(space_dict) > 0:
         r['errors'].append('found %d incorrect records of consumed space' % len(space_dict))
     if r['real'] != r['used']:
-        r['errors'].append('current info needs update, known size is %d bytes but real is %d bytes' % (
-            r['used'], r['real']))
+        r['errors'].append('current info needs update, known size is %d bytes but real is %d bytes' % (r['used'], r['real']))
     old_customers_used = 0
     old_customers_real = 0
     for idurl in used_space_dict.keys():
@@ -275,13 +281,15 @@ def report_donated_storage():
         except:
             r['errors'].append('incorrect value of used space for customer %r' % idurl)
             continue
-        r['old_customers'].append({
-            'idurl': strng.to_text(idurl),
-            'used': used,
-            # 'used_str': diskspace.MakeStringFromBytes(used_space_dict[idurl]),
-            'real': real,
-            # 'real_str': diskspace.MakeStringFromBytes(real),
-        })
+        r['old_customers'].append(
+            {
+                'idurl': strng.to_text(idurl),
+                'used': used,
+                # 'used_str': diskspace.MakeStringFromBytes(used_space_dict[idurl]),
+                'real': real,
+                # 'real_str': diskspace.MakeStringFromBytes(real),
+            }
+        )
         old_customers_used += used
         old_customers_real += real
     r['old_customers_used'] = old_customers_used

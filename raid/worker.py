@@ -1,4 +1,4 @@
-    #!/usr/bin/env python
+#!/usr/bin/env python
 # rebuild.py
 #
 # Copyright (C) 2008 Stanislav Evseev, Veselin Penev  https://bitdust.io
@@ -20,17 +20,17 @@
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 import six
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 6
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 import os
 import time
@@ -41,19 +41,19 @@ from collections import OrderedDict
 
 from threading import Thread, Lock
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from logs import lg
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _WorkerQueue = multiprocessing.Queue()
 _WorkerLock = Lock()
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
 
 class my_decorator_class(object):
-
     def __init__(self, target):
         self.target = target
 
@@ -111,7 +111,6 @@ def func_thread(tasks, pool):
 
 
 class Task(object):
-
     def __init__(self, task_id):
         self.task_id = task_id
         if _Debug:
@@ -123,7 +122,6 @@ class Task(object):
 
 
 class Manager(object):
-
     def __init__(self, ncpus):
         self._ncpus = ncpus
 
@@ -136,8 +134,10 @@ class Manager(object):
         multiprocessing.util.log_to_stderr(multiprocessing.util.SUBDEBUG)
 
         from system import bpio
+
         if bpio.Windows():
             from system import deploy
+
             deploy.init_base_dir()
             venv_python_path = os.path.join(deploy.current_base_dir(), 'venv', 'Scripts', 'BitDustNode.exe')
             lg.info('will use %s as multiprocessing executable' % venv_python_path)

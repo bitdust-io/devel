@@ -4,7 +4,7 @@
 set /p VER= <..\version
 xcopy ..\version   bin\     /Y /Q
 
-@echo. 
+@echo.
 @echo [ update version number ( %VER% ) in binaries ]
 set FILEDESCR=/s desc "BitDust project"
 set BUILDINFO=/s pb "Built by Veselin Penev"
@@ -31,4 +31,4 @@ xcopy files bin\  /Y /Q
 @echo.
 
 
-pause 
+pause

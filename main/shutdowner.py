@@ -53,14 +53,13 @@ EVENTS:
 from __future__ import absolute_import
 import six
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 6
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
-import os
 import sys
 
 try:
@@ -70,7 +69,7 @@ except:
 
 from twisted.internet.defer import DeferredList
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -79,11 +78,11 @@ from automats import automat
 from main import initializer
 from main import settings
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Shutdowner = None
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 def shutdown(x=None):
@@ -94,10 +93,11 @@ def shutdown(x=None):
     Calls method ``shutdown()`` in other modules.
     """
     if _Debug:
-        lg.out(_DebugLevel, "shutdowner.shutdown " + str(x))
+        lg.out(_DebugLevel, 'shutdowner.shutdown ' + str(x))
     dl = []
     try:
         from services import driver
+
         # from main import control
         from main import events
         from main import listeners
@@ -110,11 +110,13 @@ def shutdown(x=None):
         from updates import git_proc
         from interface import api_rest_http_server
         from interface import api_web_socket
+
         # from interface import ftp_server
         from contacts import identitydb
         from crypt import my_keys
         from userid import id_url
         from userid import my_id
+
         my_keys.shutdown()
         my_id.shutdown()
         identitydb.shutdown()
@@ -157,7 +159,9 @@ def shutdown(x=None):
     # TODO: rework all shutdown() methods to return deferred objects
     return DeferredList(dl)
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def A(event=None, *args, **kwargs):
     global _Shutdowner
@@ -175,7 +179,9 @@ def A(event=None, *args, **kwargs):
         _Shutdowner.event(event, *args, **kwargs)
     return _Shutdowner
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 class Shutdowner(automat.Automat):
     """
@@ -195,13 +201,13 @@ class Shutdowner(automat.Automat):
         initializer.A('shutdowner.state', newstate)
 
     def A(self, event, *args, **kwargs):
-        #---AT_STARTUP---
+        # ---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'INIT'
                 self.flagApp = False
                 self.flagReactor = False
-        #---INIT---
+        # ---INIT---
         elif self.state == 'INIT':
             if event == 'stop':
                 self.doSaveParam(*args, **kwargs)
@@ -216,7 +222,7 @@ class Shutdowner(automat.Automat):
                 self.doShutdown(*args, **kwargs)
             elif event == 'ready' and not self.flagReactor and not self.flagApp:
                 self.state = 'READY'
-        #---READY---
+        # ---READY---
         elif self.state == 'READY':
             if event == 'stop':
                 self.state = 'STOPPING'
@@ -226,7 +232,7 @@ class Shutdowner(automat.Automat):
                 self.doDestroyMe(*args, **kwargs)
             elif event == 'block':
                 self.state = 'BLOCKED'
-        #---BLOCKED---
+        # ---BLOCKED---
         elif self.state == 'BLOCKED':
             if event == 'stop':
                 self.doSaveParam(*args, **kwargs)
@@ -241,10 +247,10 @@ class Shutdowner(automat.Automat):
             elif event == 'unblock' and self.flagReactor:
                 self.state = 'FINISHED'
                 self.doDestroyMe(*args, **kwargs)
-        #---FINISHED---
+        # ---FINISHED---
         elif self.state == 'FINISHED':
             pass
-        #---STOPPING---
+        # ---STOPPING---
         elif self.state == 'STOPPING':
             if event == 'reactor-stopped':
                 self.state = 'FINISHED'
@@ -285,22 +291,25 @@ class Shutdowner(automat.Automat):
         _Shutdowner = None
         self.destroy()
         if _Debug:
-            lg.out(_DebugLevel, 'shutdowner.doDestroyMe %d machines left in memory:\n        %s' % (
-                len(automat.objects()), '\n        '.join(
-                    ['%d: %r' % (k, automat.by_index(k)) for k in automat.objects().keys()])))
+            lg.out(
+                _DebugLevel,
+                'shutdowner.doDestroyMe %d machines left in memory:\n        %s'
+                % (len(automat.objects()), '\n        '.join(['%d: %r' % (k, automat.by_index(k)) for k in automat.objects().keys()])),
+            )
 
         if self.enableMemoryProfile:
             try:
                 from guppy import hpy  # @UnresolvedImport
+
                 hp = hpy()
                 hp.setrelheap()
                 if _Debug:
-                    lg.out(_DebugLevel, 'hp.heap():\n'+str(hp.heap()))
-                    lg.out(_DebugLevel, 'hp.heap().byrcs:\n'+str(hp.heap().byrcs))
-                    lg.out(_DebugLevel, 'hp.heap().byvia:\n'+str(hp.heap().byvia))
+                    lg.out(_DebugLevel, 'hp.heap():\n' + str(hp.heap()))
+                    lg.out(_DebugLevel, 'hp.heap().byrcs:\n' + str(hp.heap().byrcs))
+                    lg.out(_DebugLevel, 'hp.heap().byvia:\n' + str(hp.heap().byvia))
             except:
                 if _Debug:
-                    lg.out(_DebugLevel, "guppy package is not installed")
+                    lg.out(_DebugLevel, 'guppy package is not installed')
 
     def _shutdown_restart(self, param=''):
         """
@@ -308,11 +317,12 @@ class Shutdowner(automat.Automat):
         program.
         """
         if _Debug:
-            lg.out(_DebugLevel, "shutdowner.shutdown_restart param=%s" % param)
+            lg.out(_DebugLevel, 'shutdowner.shutdown_restart param=%s' % param)
 
         def do_restart(param):
             from lib import misc
             from system import bpio
+
             settings.init()
             # appdata = settings.BaseDir()
             detach = False
@@ -328,7 +338,7 @@ class Shutdowner(automat.Automat):
 
         def shutdown_finished(x, param):
             if _Debug:
-                lg.out(_DebugLevel, "shutdowner.shutdown_finished want to stop the reactor")
+                lg.out(_DebugLevel, 'shutdowner.shutdown_finished want to stop the reactor')
             reactor.addSystemEventTrigger('after', 'shutdown', do_restart, param)  # @UndefinedVariable
             reactor.stop()  # @UndefinedVariable
 
@@ -341,11 +351,11 @@ class Shutdowner(automat.Automat):
         the program.
         """
         if _Debug:
-            lg.out(_DebugLevel, "shutdowner.shutdown_exit")
+            lg.out(_DebugLevel, 'shutdowner.shutdown_exit')
 
         def shutdown_reactor_stop(x=None):
             if _Debug:
-                lg.out(_DebugLevel, "shutdowner.shutdown_reactor_stop want to stop the reactor")
+                lg.out(_DebugLevel, 'shutdowner.shutdown_reactor_stop want to stop the reactor')
             reactor.stop()  # @UndefinedVariable
 
         d = shutdown(x)

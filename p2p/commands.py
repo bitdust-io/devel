@@ -43,12 +43,13 @@ These are the valid values for the command field of a packet:
     - Coin/Ack                  (for contracts publishing/management)
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 P2PCommandAcks = None
 RelayCommands = None
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
 
 def init():
     """
@@ -63,44 +64,112 @@ def init():
     # No Ack for Fail
     P2PCommandAcks[Fail()] = []
     # Ack Data with Ack or Fail unless it is our data coming back (would be only after Retrieve)
-    P2PCommandAcks[Data()] = [Ack(), Fail(), ]
+    P2PCommandAcks[Data()] = [
+        Ack(),
+        Fail(),
+    ]
     # Ack Retrieve with Data or Fail
-    P2PCommandAcks[Retrieve()] = [Data(), Fail(), ]
+    P2PCommandAcks[Retrieve()] = [
+        Data(),
+        Fail(),
+    ]
     # Ack ListFiles with Files
-    P2PCommandAcks[ListFiles()] = [Files(), Fail(), ]
+    P2PCommandAcks[ListFiles()] = [
+        Files(),
+        Fail(),
+    ]
     # Ack Files with Ack or Fail
-    P2PCommandAcks[Files()] = [Ack(), Fail(), ]
+    P2PCommandAcks[Files()] = [
+        Ack(),
+        Fail(),
+    ]
     # If identity comes in and no interested party then transport sends an Ack
-    P2PCommandAcks[Identity()] = [Ack(), Fail(), ]
+    P2PCommandAcks[Identity()] = [
+        Ack(),
+        Fail(),
+    ]
     # Ack with Ack (maybe should be Files)
-    P2PCommandAcks[DeleteFile()] = [Ack(), Fail(), ]
+    P2PCommandAcks[DeleteFile()] = [
+        Ack(),
+        Fail(),
+    ]
     # Ack with Ack (maybe should be Files)
-    P2PCommandAcks[DeleteBackup()] = [Ack(), Fail(), ]
+    P2PCommandAcks[DeleteBackup()] = [
+        Ack(),
+        Fail(),
+    ]
     # Ack with Ack or Fail, but also Message() packet may have no ack when sending back archived messages
-    P2PCommandAcks[Message()] = [Ack(), Fail(), ]
+    P2PCommandAcks[Message()] = [
+        Ack(),
+        Fail(),
+    ]
     # Ack with Ack or Fail
-    P2PCommandAcks[Receipt()] = [Ack(), Fail(), ]
-    P2PCommandAcks[Correspondent()] = [Correspondent(), Fail(), ]
+    P2PCommandAcks[Receipt()] = [
+        Ack(),
+        Fail(),
+    ]
+    P2PCommandAcks[Correspondent()] = [
+        Correspondent(),
+        Fail(),
+    ]
     # RequestService must receive back Ack or Fail
-    P2PCommandAcks[RequestService()] = [Ack(), Fail(), ]
+    P2PCommandAcks[RequestService()] = [
+        Ack(),
+        Fail(),
+    ]
     # CancelService must receive back Ack or Fail
-    P2PCommandAcks[CancelService()] = [Ack(), Fail(), ]
+    P2PCommandAcks[CancelService()] = [
+        Ack(),
+        Fail(),
+    ]
     P2PCommandAcks[Broadcast()] = []
     P2PCommandAcks[Relay()] = []
     P2PCommandAcks[RelayIn()] = []
-    P2PCommandAcks[RelayOut()] = [RelayAck(), RelayFail(), ]
+    P2PCommandAcks[RelayOut()] = [
+        RelayAck(),
+        RelayFail(),
+    ]
     P2PCommandAcks[RelayAck()] = []
     P2PCommandAcks[RelayFail()] = []
-    P2PCommandAcks[Coin()] = [Ack(), Fail(), ]
-    P2PCommandAcks[RetrieveCoin()] = [Coin(), Fail(), ]
-    P2PCommandAcks[Key()] = [Ack(), Fail(), ]
-    P2PCommandAcks[AuditKey()] = [Ack(), Fail(), ]
-    P2PCommandAcks[Event()] = [Ack(), Fail(), ]
-    P2PCommandAcks[Contacts()] = [Contacts(), Ack(), Fail(), ]
+    P2PCommandAcks[Coin()] = [
+        Ack(),
+        Fail(),
+    ]
+    P2PCommandAcks[RetrieveCoin()] = [
+        Coin(),
+        Fail(),
+    ]
+    P2PCommandAcks[Key()] = [
+        Ack(),
+        Fail(),
+    ]
+    P2PCommandAcks[AuditKey()] = [
+        Ack(),
+        Fail(),
+    ]
+    P2PCommandAcks[Event()] = [
+        Ack(),
+        Fail(),
+    ]
+    P2PCommandAcks[Contacts()] = [
+        Contacts(),
+        Ack(),
+        Fail(),
+    ]
     # pre-define a set of commands for filtering out routed traffic
-    RelayCommands = set([RelayIn(), RelayOut(), RelayAck(), RelayFail(), Relay(), ])
+    RelayCommands = set(
+        [
+            RelayIn(),
+            RelayOut(),
+            RelayAck(),
+            RelayFail(),
+            Relay(),
+        ]
+    )
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+
 
 def IsCommand(com):
     """
@@ -139,14 +208,15 @@ def IsRelay(com):
         init()
     return com in RelayCommands
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def Ack():
     """
     Response packet for some request.
     """
-    return "Ack"
+    return 'Ack'
 
 
 def Fail():
@@ -154,41 +224,41 @@ def Fail():
     Used to report an error in response, for example when requested file is not
     found on remote machine.
     """
-    return "Fail"
+    return 'Fail'
 
 
 def Identity():
     """
     Packet containing peer identity file.
     """
-    return "Identity"
+    return 'Identity'
 
 
 def RequestService():
-    return "RequestService"
+    return 'RequestService'
 
 
 def CancelService():
-    return "CancelService"
+    return 'CancelService'
 
 
 def Key():
-    return "Key"
+    return 'Key'
 
 
 def AuditKey():
-    return "AuditKey"
+    return 'AuditKey'
 
 
 def Event():
-    return "Event"
+    return 'Event'
 
 
 def Data():
     """
     Data packet, may be Data, Parity, Backup database, may be more.
     """
-    return "Data"
+    return 'Data'
 
 
 def Retrieve():
@@ -196,56 +266,56 @@ def Retrieve():
     Used to request some data from supplier.
     """
     # TODO: rename to RetrieveData
-    return "Retrieve"
+    return 'Retrieve'
 
 
 def Relay():
     """
     Used by proxy transport to route packets in/out via third node.
     """
-    return "Relay"
+    return 'Relay'
 
 
 def RelayIn():
     """
     Used by proxy transport to route packets in/out via third node.
     """
-    return "RelayIn"
+    return 'RelayIn'
 
 
 def RelayOut():
     """
     Used by proxy transport to route packets in/out via third node.
     """
-    return "RelayOut"
+    return 'RelayOut'
 
 
 def RelayAck():
     """
     Used by proxy transport to route packets in/out via third node.
     """
-    return "RelayAck"
+    return 'RelayAck'
 
 
 def RelayFail():
     """
     Used by proxy transport to route packets in/out via third node.
     """
-    return "RelayFail"
+    return 'RelayFail'
 
 
 def ListFiles():
     """
     Response from remote peer with a list of my files stored on his machine.
     """
-    return "ListFiles"
+    return 'ListFiles'
 
 
 def Files():
     """
     Request a list of my files from remote peer.
     """
-    return "Files"
+    return 'Files'
 
 
 def Contacts():
@@ -255,21 +325,21 @@ def Contacts():
     Can also be an empty packet with a request to provide some other contacts
     from remote peer.
     """
-    return "Contacts"
+    return 'Contacts'
 
 
 def DeleteFile():
     """
     Request to delete a single file or list of my files from remote machine.
     """
-    return "DeleteFile"
+    return 'DeleteFile'
 
 
 def DeleteBackup():
     """
     Request to delete whole backup or list of backups from remote machine.
     """
-    return "DeleteBackup"
+    return 'DeleteBackup'
 
 
 def Transfer():
@@ -277,7 +347,7 @@ def Transfer():
     Transfer funds to remote peer.
     """
     # TODO: something for the future :)
-    return "Transfer"
+    return 'Transfer'
 
 
 def Receipt():
@@ -285,7 +355,7 @@ def Receipt():
     Some billing report.
     """
     # TODO: something for the future :)
-    return "Receipt"
+    return 'Receipt'
 
 
 def Message():
@@ -293,7 +363,7 @@ def Message():
     An encrypted message from one peer to another.
     Can be on of the types: "private_message", "queue_message", "queue_message_replica", "group_message"
     """
-    return "Message"
+    return 'Message'
 
 
 def Correspondent():
@@ -301,7 +371,7 @@ def Correspondent():
     Remote user should send you this to be included in your correspondents
     (friends) list.
     """
-    return "Correspondent"
+    return 'Correspondent'
 
 
 def Broadcast():
@@ -310,14 +380,14 @@ def Broadcast():
     It is used to broadcast "crypto-coins" between peers.
     """
     # TODO: something for the future :)
-    return "Broadcast"
+    return 'Broadcast'
 
 
 def Coin():
     # TODO: something for the future :)
-    return "Coin"
+    return 'Coin'
 
 
 def RetrieveCoin():
     # TODO: something for the future :)
-    return "RetrieveCoin"
+    return 'RetrieveCoin'

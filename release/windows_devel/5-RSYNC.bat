@@ -14,5 +14,5 @@ ssh veselin@bitdust.io "rsync -rptgoE --delete --force -h --progress -vv --stats
 @echo.
 @echo [ devel repository UPDATED ]
 
-  
+
 pause

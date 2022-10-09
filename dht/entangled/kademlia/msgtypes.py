@@ -2,8 +2,8 @@
 # msgtypes.py
 #
 # Copyright (C) 2007-2008 Francois Aucamp, Meraka Institute, CSIR
-# See AUTHORS for all authors and contact information. 
-# 
+# See AUTHORS for all authors and contact information.
+#
 # License: GNU Lesser General Public License, version 3 or later; see COPYING
 #          included in this archive for details.
 #
@@ -24,7 +24,7 @@ from . import encoding  # @UnresolvedImport
 
 
 class Message(object):
-    """ Base class for messages - all "unknown" messages use this class """
+    """Base class for messages - all "unknown" messages use this class"""
 
     def __init__(self, rpcID, nodeID):
         self.id = encoding.to_text(rpcID)
@@ -50,8 +50,7 @@ class RequestMessage(Message):
         self.layerID = layerID
 
     def __str__(self):
-        return '<RequestMessage(%d) %s %s with %r>' % (
-            self.layerID, self.id[:6], self.nodeID[:6], self.args)
+        return '<RequestMessage(%d) %s %s with %r>' % (self.layerID, self.id[:6], self.nodeID[:6], self.args)
 
 
 class QuestionMessage(Message):
@@ -70,8 +69,7 @@ class QuestionMessage(Message):
         self.layerID = layerID
 
     def __str__(self):
-        return '<QuestionMessage(%d) %s %s with %r>' % (
-            self.layerID, self.id[:6], self.nodeID[:6], self.args)
+        return '<QuestionMessage(%d) %s %s with %r>' % (self.layerID, self.id[:6], self.nodeID[:6], self.args)
 
 
 class ResponseMessage(Message):
@@ -85,8 +83,7 @@ class ResponseMessage(Message):
         self.layerID = layerID
 
     def __str__(self):
-        return '<ResponseMessage(%d) %s %s with %r>' % (
-            self.layerID, self.id[:6], self.nodeID[:6], self.response)
+        return '<ResponseMessage(%d) %s %s with %r>' % (self.layerID, self.id[:6], self.nodeID[:6], self.response)
 
 
 class ErrorMessage(ResponseMessage):
@@ -104,5 +101,4 @@ class ErrorMessage(ResponseMessage):
                 self.exceptionType = self.exceptionType.decode()
 
     def __str__(self):
-        return '<ErrorMessage(%d) %s %s with %r>' % (
-            self.layerID, self.id[:6], self.nodeID[:6], self.exceptionType)
+        return '<ErrorMessage(%d) %s %s with %r>' % (self.layerID, self.id[:6], self.nodeID[:6], self.exceptionType)

@@ -23,7 +23,7 @@ Deploy and Run BitDust software locally on your machine:
 
 Make sure the unit tests pass:
 
-    make test_unit 
+    make test_unit
 
 
 Run regression tests via Docker:

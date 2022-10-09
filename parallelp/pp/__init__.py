@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#__init__.py
+# __init__.py
 #
 # Parallel Python Software: http://www.parallelpython.com
 # Copyright (c) 2005-2009, Vitalii Vanovschi
@@ -36,8 +36,10 @@ forums
 
 from __future__ import absolute_import
 from __future__ import print_function
+
 # from six import text_type as str
 from six.moves import range
+
 # import six.moves.cPickle as pickle
 import six.moves._thread
 from io import TextIOWrapper
@@ -56,8 +58,8 @@ import traceback
 from . import pptransport
 from . import ppauto
 
-copyright = "Copyright (c) 2005-2009 Vitalii Vanovschi. All rights reserved"
-version = "1.5.7"
+copyright = 'Copyright (c) 2005-2009 Vitalii Vanovschi. All rights reserved'
+version = '1.5.7'
 
 # reconnect persistent rworkers in 5 sec
 _RECONNECT_WAIT_TIME = 5
@@ -71,6 +73,7 @@ except NameError:
 _USE_SUBPROCESS = False
 try:
     import subprocess
+
     _USE_SUBPROCESS = True
 except ImportError:
     import popen2
@@ -81,8 +84,7 @@ class _Task(object):
     Class describing single task (job)
     """
 
-    def __init__(self, server, tid, callback=None,
-                 callbackargs=(), group='default'):
+    def __init__(self, server, tid, callback=None, callbackargs=(), group='default'):
         """
         Initializes the task.
         """
@@ -152,7 +154,7 @@ class _Task(object):
             self.result = None
         self.unpickled = True
         if self.callback:
-            args = self.callbackargs + (self.result, )
+            args = self.callbackargs + (self.result,)
             self.callback(*args)
 
 
@@ -160,6 +162,7 @@ class _Worker(object):
     """
     Local worker class.
     """
+
     command = [sys.executable, '-u', 'bpworker.py']
 
     def __init__(self, restart_on_free, pickle_proto):
@@ -175,8 +178,9 @@ class _Worker(object):
         Starts local worker.
         """
         if _USE_SUBPROCESS:
-            if sys.platform.startswith("win"):
+            if sys.platform.startswith('win'):
                 import win32process  # @UnresolvedImport
+
                 my_env = os.environ
                 my_env['PYTHONIOENCODING'] = 'latin1'
                 proc = subprocess.Popen(
@@ -262,9 +266,8 @@ class _RWorker(pptransport.CSocketTransport):
         self.port = port
         self.secret = secret
         self.address = (host, port)
-        self.id = host + ":" + six.text_type(port)
-        logging.info("Creating Rworker id=%s persistent=%s"
-                     % (self.id, persistent))
+        self.id = host + ':' + six.text_type(port)
+        logging.info('Creating Rworker id=%s persistent=%s' % (self.id, persistent))
         self.connect(message)
         self.is_free = True
 
@@ -283,8 +286,7 @@ class _RWorker(pptransport.CSocketTransport):
                 pptransport.SocketTransport.__init__(self)
                 self._connect(self.host, self.port)
                 if not self.authenticate(self.secret):
-                    logging.error("Authentication failed for host=%s, port=%s"
-                                  % (self.host, self.port))
+                    logging.error('Authentication failed for host=%s, port=%s' % (self.host, self.port))
                     return False
                 if message:
                     self.send(message)
@@ -292,12 +294,9 @@ class _RWorker(pptransport.CSocketTransport):
                 return True
             except:
                 if not self.persistent:
-                    logging.info("Deleting from queue Rworker %s"
-                                 % (self.id, ))
+                    logging.info('Deleting from queue Rworker %s' % (self.id,))
                     return False
-                logging.info("Failed to reconnect with "
-                             "(host=%s, port=%i), will try again in %i s"
-                             % (self.host, self.port, _RECONNECT_WAIT_TIME))
+                logging.info('Failed to reconnect with ' '(host=%s, port=%i), will try again in %i s' % (self.host, self.port, _RECONNECT_WAIT_TIME))
                 time.sleep(_RECONNECT_WAIT_TIME)
 
 
@@ -321,8 +320,7 @@ class Template(object):
     Template class.
     """
 
-    def __init__(self, job_server, func, depfuncs=(), modules=(),
-                 callback=None, callbackargs=(), group='default', globals=None):
+    def __init__(self, job_server, func, depfuncs=(), modules=(), callback=None, callbackargs=(), group='default', globals=None):
         """
         Creates Template instance.
 
@@ -352,9 +350,7 @@ class Template(object):
         """
         Submits function with *arg arguments to the execution queue.
         """
-        return self.job_server.submit(self.func, args, self.depfuncs,
-                                      self.modules, self.callback, self.callbackargs,
-                                      self.group, self.globals)
+        return self.job_server.submit(self.func, args, self.depfuncs, self.modules, self.callback, self.callbackargs, self.group, self.globals)
 
 
 class Server(object):
@@ -363,11 +359,9 @@ class Server(object):
     """
 
     default_port = 60000
-    default_secret = "epo20pdosl;dksldkmm"
+    default_secret = 'epo20pdosl;dksldkmm'
 
-    def __init__(self, ncpus="autodetect", ppservers=(), secret=None,
-                 loglevel=logging.WARNING, logstream=sys.stderr, logfile=None,
-                 restart=False, proto=0):
+    def __init__(self, ncpus='autodetect', ppservers=(), secret=None, loglevel=logging.WARNING, logstream=sys.stderr, logfile=None, restart=False, proto=0):
         """
         Creates Server instance.
 
@@ -391,10 +385,10 @@ class Server(object):
         """
 
         if not isinstance(ppservers, tuple):
-            raise TypeError("ppservers argument must be a tuple")
+            raise TypeError('ppservers argument must be a tuple')
 
         self.__initlog(loglevel, logstream=logstream, logfile=logfile)
-        logging.info("Creating server instance (pp-" + version + ")" + repr(self))
+        logging.info('Creating server instance (pp-' + version + ')' + repr(self))
         self.__tid = 0
         self.__active_tasks = 0
         self.__active_tasks_lock = six.moves._thread.allocate_lock()
@@ -418,53 +412,50 @@ class Server(object):
         # add local directory and sys.path to PYTHONPATH
         pythondirs = [os.getcwd()] + sys.path
 
-        if "PYTHONPATH" in os.environ and os.environ["PYTHONPATH"]:
-            pythondirs += os.environ["PYTHONPATH"].split(os.pathsep)
-        os.environ["PYTHONPATH"] = os.pathsep.join(set(pythondirs))
+        if 'PYTHONPATH' in os.environ and os.environ['PYTHONPATH']:
+            pythondirs += os.environ['PYTHONPATH'].split(os.pathsep)
+        os.environ['PYTHONPATH'] = os.pathsep.join(set(pythondirs))
 
         atexit.register(self.destroy)
-        self.__stats = {"local": _Statistics(0)}
+        self.__stats = {'local': _Statistics(0)}
         self.set_ncpus(ncpus)
 
         self.ppservers = []
         self.auto_ppservers = []
 
         for ppserver in ppservers:
-            ppserver = ppserver.split(":")
+            ppserver = ppserver.split(':')
             host = ppserver[0]
             if len(ppserver) > 1:
                 port = int(ppserver[1])
             else:
                 port = Server.default_port
-            if host.find("*") == -1:
+            if host.find('*') == -1:
                 self.ppservers.append((host, port))
             else:
-                if host == "*":
-                    host = "*.*.*.*"
-                interface = host.replace("*", "0")
-                broadcast = host.replace("*", "255")
-                self.auto_ppservers.append(((interface, port),
-                                            (broadcast, port)))
+                if host == '*':
+                    host = '*.*.*.*'
+                interface = host.replace('*', '0')
+                broadcast = host.replace('*', '255')
+                self.auto_ppservers.append(((interface, port), (broadcast, port)))
         self.__stats_lock = six.moves._thread.allocate_lock()
         if secret is not None:
             # if not isinstance(secret, bytes):
             #     raise TypeError("secret must be of a string type")
             # self.secret = str(secret)
             self.secret = six.text_type(secret)
-#         elif hasattr(user, "pp_secret"):
-#             secret = user["pp_secret"]
-#             if not isinstance(secret, bytes):
-#                 raise TypeError("secret must be of a string type")
-#             self.secret = str(secret)
+        #         elif hasattr(user, "pp_secret"):
+        #             secret = user["pp_secret"]
+        #             if not isinstance(secret, bytes):
+        #                 raise TypeError("secret must be of a string type")
+        #             self.secret = str(secret)
         else:
             self.secret = Server.default_secret
         self.__connect()
         self.__creation_time = time.time()
-        logging.info("pp local server started with %d workers"
-                     % (self.__ncpus, ))
+        logging.info('pp local server started with %d workers' % (self.__ncpus,))
 
-    def submit(self, func, args=(), depfuncs=(), modules=(),
-               callback=None, callbackargs=(), group='default', globals=None):
+    def submit(self, func, args=(), depfuncs=(), modules=(), callback=None, callbackargs=(), group='default', globals=None):
         """
         Submits function to the execution queue.
 
@@ -483,36 +474,33 @@ class Server(object):
         """
         # perform some checks for frequent mistakes
         if self.__exiting:
-            raise RuntimeError("Cannot submit jobs: server"
-                               " instance has been destroyed")
+            raise RuntimeError('Cannot submit jobs: server' ' instance has been destroyed')
 
         if not isinstance(args, tuple):
-            raise TypeError("args argument must be a tuple")
+            raise TypeError('args argument must be a tuple')
 
         if not isinstance(depfuncs, tuple):
-            raise TypeError("depfuncs argument must be a tuple")
+            raise TypeError('depfuncs argument must be a tuple')
 
         if not isinstance(modules, tuple):
-            raise TypeError("modules argument must be a tuple")
+            raise TypeError('modules argument must be a tuple')
 
         if not isinstance(callbackargs, tuple):
-            raise TypeError("callbackargs argument must be a tuple")
+            raise TypeError('callbackargs argument must be a tuple')
 
         for module in modules:
             if not isinstance(module, six.string_types):
-                raise TypeError("modules argument must be a list of strings")
+                raise TypeError('modules argument must be a list of strings')
 
         tid = self.__gentid()
 
         if globals:
-            modules += tuple(self.__find_modules("", globals))
+            modules += tuple(self.__find_modules('', globals))
             modules = tuple(set(modules))
-            self.__logger.info("Task %i will autoimport next modules: %s" %
-                               (tid, six.text_type(modules)))
+            self.__logger.info('Task %i will autoimport next modules: %s' % (tid, six.text_type(modules)))
             for object1 in globals.values():
-                if isinstance(object1, types.FunctionType) \
-                        or isinstance(object1, type):
-                    depfuncs += (object1, )
+                if isinstance(object1, types.FunctionType) or isinstance(object1, type):
+                    depfuncs += (object1,)
 
         task = _Task(self, tid, callback, callbackargs, group)
 
@@ -522,7 +510,7 @@ class Server(object):
 
         # if the function is a method of a class add self to the arguments list
         if isinstance(func, types.MethodType) and func.__self__ is not None:
-            args = (func.__self__, ) + args
+            args = (func.__self__,) + args
 
         # if there is an instance of a user defined class in the arguments add
         # whole class to dependancies
@@ -535,18 +523,21 @@ class Server(object):
         # function to dependancies
         for arg in args:
             if isinstance(arg, types.FunctionType):
-                depfuncs += (arg, )
+                depfuncs += (arg,)
 
-        sfunc = self.__dumpsfunc((func, ) + depfuncs, modules)
+        sfunc = self.__dumpsfunc((func,) + depfuncs, modules)
         # sargs = pickle.dumps(args, self.__pickle_proto)
-        sargs = json.dumps({'v': args, })
+        sargs = json.dumps(
+            {
+                'v': args,
+            }
+        )
 
         self.__queue_lock.acquire()
         self.__queue.append((task, sfunc, sargs))
         self.__queue_lock.release()
 
-        self.__logger.info("Task %i submited, function='%s'" %
-                           (tid, func.__name__))
+        self.__logger.info("Task %i submited, function='%s'" % (tid, func.__name__))
         self.__scheduler()
         return task
 
@@ -573,10 +564,10 @@ class Server(object):
 
                     nworker = _Worker(self.__restart_on_free, self.__pickle_proto)
                     self.__workers.append(nworker)
-                    self.__logger.info("Started new worker, new process %i created" % (nworker.pid))
+                    self.__logger.info('Started new worker, new process %i created' % (nworker.pid))
 
                     worker.t.exiting = True
-                    if sys.platform.startswith("win"):
+                    if sys.platform.startswith('win'):
                         os.popen('TASKKILL /PID ' + six.text_type(worker.pid) + ' /F')
                     else:
                         try:
@@ -586,7 +577,7 @@ class Server(object):
                             pass
 
                     self.__workers.remove(worker)
-                    self.__logger.info("Running task %i cancelled, process %i killed" % (taskID, wtask.worker_pid))
+                    self.__logger.info('Running task %i cancelled, process %i killed' % (taskID, wtask.worker_pid))
                     break
 
         else:
@@ -604,7 +595,7 @@ class Server(object):
                     break
             self.__waittasks_lock.release()
 
-            self.__logger.info("Scheduled task %i cancelled" % taskID)
+            self.__logger.info('Scheduled task %i cancelled' % taskID)
 
         self.__scheduler()
 
@@ -631,25 +622,25 @@ class Server(object):
         """
         return self.__ncpus
 
-    def set_ncpus(self, ncpus="autodetect"):
+    def set_ncpus(self, ncpus='autodetect'):
         """
         Sets the number of local worker processes (ppworkers)
 
         ncpus - the number of worker processes, if parammeter is omitted
                 it will be set to the number of processors in the system
         """
-        if ncpus == "autodetect":
+        if ncpus == 'autodetect':
             ncpus = self.__detect_ncpus()
         if not isinstance(ncpus, int):
             raise TypeError("ncpus must have 'int' type")
         if ncpus < 0:
-            raise ValueError("ncpus must be an integer > 0")
+            raise ValueError('ncpus must be an integer > 0')
         if ncpus > len(self.__workers):
             try:
                 self.__workers.extend([_Worker(self.__restart_on_free, self.__pickle_proto) for x in range(ncpus - len(self.__workers))])
             except:
                 traceback.print_exc()
-        self.__stats["local"].ncpus = ncpus
+        self.__stats['local'].ncpus = ncpus
         self.__ncpus = ncpus
 
     def get_active_nodes(self):
@@ -660,8 +651,7 @@ class Server(object):
         """
         active_nodes = {}
         for node, stat in self.__stats.items():
-            if node == "local" or node in self.autopp_list \
-                    and self.autopp_list[node]:
+            if node == 'local' or node in self.autopp_list and self.autopp_list[node]:
                 active_nodes[node] = stat.ncpus
         return active_nodes
 
@@ -672,7 +662,7 @@ class Server(object):
         for node, stat in self.__stats.items():
             if stat.rworker:
                 try:
-                    stat.rworker.send("TIME")
+                    stat.rworker.send('TIME')
                     stat.time = float(stat.rworker.receive())
                 except:
                     self.__accurate_stats = False
@@ -686,24 +676,29 @@ class Server(object):
         Useful for benchmarking on clusters
         """
 
-        print("Job execution statistics:")
+        print('Job execution statistics:')
         walltime = time.time() - self.__creation_time
         statistics = list(self.get_stats().items())
         totaljobs = 0.0
         for ppserver, stat in statistics:
             totaljobs += stat.njobs
-        print(" job count | % of all jobs | job time sum | " \
-            "time per job | job server")
+        print(' job count | % of all jobs | job time sum | ' 'time per job | job server')
         for ppserver, stat in statistics:
             if stat.njobs:
-                print("    %6i |        %6.2f |     %8.4f |  %11.6f | %s" \
-                    % (stat.njobs, 100.0 * stat.njobs / totaljobs, stat.time,
-                       stat.time / stat.njobs, ppserver, ))
-        print("Time elapsed since server creation", walltime)
+                print(
+                    '    %6i |        %6.2f |     %8.4f |  %11.6f | %s'
+                    % (
+                        stat.njobs,
+                        100.0 * stat.njobs / totaljobs,
+                        stat.time,
+                        stat.time / stat.njobs,
+                        ppserver,
+                    )
+                )
+        print('Time elapsed since server creation', walltime)
 
         if not self.__accurate_stats:
-            print("WARNING: statistics provided above is not accurate" \
-                  " due to job rescheduling")
+            print('WARNING: statistics provided above is not accurate' ' due to job rescheduling')
         print()
 
     # all methods below are for internal use only
@@ -721,7 +716,7 @@ class Server(object):
         self.__queue.append((task, sfunc, sargs))
         self.__queue_lock.release()
 
-        self.__logger.info("Task %i inserted" % (task.tid, ))
+        self.__logger.info('Task %i inserted' % (task.tid,))
         self.__scheduler()
         return task
 
@@ -730,32 +725,36 @@ class Server(object):
         Conects to a remote ppserver specified by host and port.
         """
         try:
-            rworker = _RWorker(host, port, self.secret, "STAT", persistent)
+            rworker = _RWorker(host, port, self.secret, 'STAT', persistent)
             ncpus = int(rworker.receive())
-            hostid = host + ":" + six.text_type(port)
+            hostid = host + ':' + six.text_type(port)
             self.__stats[hostid] = _Statistics(ncpus, rworker)
 
             for x in range(ncpus):
-                rworker = _RWorker(host, port, self.secret, "EXEC", persistent)
+                rworker = _RWorker(host, port, self.secret, 'EXEC', persistent)
                 self.__update_active_rworkers(rworker.id, 1)
                 # append is atomic - no need to lock self.__rworkers
                 self.__rworkers.append(rworker)
             # creating reserved rworkers
             for x in range(ncpus):
-                rworker = _RWorker(host, port, self.secret, "EXEC", persistent)
+                rworker = _RWorker(host, port, self.secret, 'EXEC', persistent)
                 self.__update_active_rworkers(rworker.id, 1)
                 self.__rworkers_reserved.append(rworker)
             # creating reserved4 rworkers
             for x in range(ncpus * 0):
-                rworker = _RWorker(host, port, self.secret, "EXEC", persistent)
-#                    self.__update_active_rworkers(rworker.id, 1)
+                rworker = _RWorker(host, port, self.secret, 'EXEC', persistent)
+                #                    self.__update_active_rworkers(rworker.id, 1)
                 self.__rworkers_reserved4.append(rworker)
-            logging.info("Connected to ppserver (host=%s, port=%i) \
-                    with %i workers" % (host, port, ncpus))
+            logging.info(
+                'Connected to ppserver (host=%s, port=%i) \
+                    with %i workers'
+                % (host, port, ncpus)
+            )
             self.__scheduler()
         except:
             pass
-#            sys.excepthook(*sys.exc_info())
+
+    #            sys.excepthook(*sys.exc_info())
 
     def __connect(self):
         """
@@ -773,18 +772,18 @@ class Server(object):
         Detects the number of effective CPUs in the system.
         """
         # for Linux, Unix and MacOS
-        if hasattr(os, "sysconf"):
-            if "SC_NPROCESSORS_ONLN" in os.sysconf_names:
-                #Linux and Unix
-                ncpus = os.sysconf("SC_NPROCESSORS_ONLN")
+        if hasattr(os, 'sysconf'):
+            if 'SC_NPROCESSORS_ONLN' in os.sysconf_names:
+                # Linux and Unix
+                ncpus = os.sysconf('SC_NPROCESSORS_ONLN')
                 if isinstance(ncpus, int) and ncpus > 0:
                     return ncpus
             else:
                 # MacOS X
-                return int(os.popen2("sysctl -n hw.ncpu")[1].read())  # @UndefinedVariable
+                return int(os.popen2('sysctl -n hw.ncpu')[1].read())  # @UndefinedVariable
         # for Windows
-        if "NUMBER_OF_PROCESSORS" in os.environ:
-            ncpus = int(os.environ["NUMBER_OF_PROCESSORS"])
+        if 'NUMBER_OF_PROCESSORS' in os.environ:
+            ncpus = int(os.environ['NUMBER_OF_PROCESSORS'])
             if ncpus > 0:
                 return ncpus
         # return the default value
@@ -815,9 +814,11 @@ class Server(object):
             # self.__sfuncHM[hashs] = pickle.dumps(
             #     (funcs[0].__name__, sources, modules),
             #     self.__pickle_proto)
-            self.__sfuncHM[hashs] = json.dumps({
-                'v': (funcs[0].__name__, sources, modules),
-            })
+            self.__sfuncHM[hashs] = json.dumps(
+                {
+                    'v': (funcs[0].__name__, sources, modules),
+                }
+            )
         return self.__sfuncHM[hashs]
 
     def __find_modules(self, prefix, dict):
@@ -826,12 +827,10 @@ class Server(object):
         """
         modules = []
         for name, object in dict.items():
-            if isinstance(object, types.ModuleType) \
-                    and name not in ("__builtins__", "pp"):
-                if object.__name__ == prefix + name or prefix == "":
+            if isinstance(object, types.ModuleType) and name not in ('__builtins__', 'pp'):
+                if object.__name__ == prefix + name or prefix == '':
                     modules.append(object.__name__)
-                    modules.extend(self.__find_modules(
-                        object.__name__ + ".", object.__dict__))
+                    modules.extend(self.__find_modules(object.__name__ + '.', object.__dict__))
         return modules
 
     def __scheduler(self):
@@ -848,12 +847,12 @@ class Server(object):
                         worker.is_free = False
                         break
                 else:
-                    self.__logger.error("There are no free workers left")
-                    raise RuntimeError("Error: No free workers")
+                    self.__logger.error('There are no free workers left')
+                    raise RuntimeError('Error: No free workers')
                 self.__add_to_active_tasks(1)
                 try:
-                    self.__stats["local"].njobs += 1
-                    six.moves._thread.start_new_thread(self.__run, task + (worker, ))
+                    self.__stats['local'].njobs += 1
+                    six.moves._thread.start_new_thread(self.__run, task + (worker,))
                 except:
                     pass
                 for i in range(len(self.__waittasks)):
@@ -866,7 +865,7 @@ class Server(object):
                         rworker.is_free = False
                         task = self.__queue.pop(0)
                         self.__stats[rworker.id].njobs += 1
-                        six.moves._thread.start_new_thread(self.__rrun, task + (rworker, ))
+                        six.moves._thread.start_new_thread(self.__rrun, task + (rworker,))
                         break
                 else:
                     if len(self.__queue) > self.__ncpus:
@@ -875,8 +874,7 @@ class Server(object):
                                 rworker.is_free = False
                                 task = self.__queue.pop(0)
                                 self.__stats[rworker.id].njobs += 1
-                                six.moves._thread.start_new_thread(self.__rrun,
-                                                        task + (rworker, ))
+                                six.moves._thread.start_new_thread(self.__rrun, task + (rworker,))
                                 break
                         else:
                             break
@@ -888,8 +886,7 @@ class Server(object):
                                         rworker.is_free = False
                                         task = self.__queue.pop(0)
                                         self.__stats[rworker.id].njobs += 1
-                                        six.moves._thread.start_new_thread(self.__rrun,
-                                                                task + (rworker, ))
+                                        six.moves._thread.start_new_thread(self.__rrun, task + (rworker,))
                                         break
                     else:
                         break
@@ -906,14 +903,14 @@ class Server(object):
             sourcelines = inspect.getsourcelines(func)[0]
             # remove indentation from the first line
             sourcelines[0] = sourcelines[0].lstrip()
-            self.__sourcesHM[hashf] = "".join(sourcelines)
+            self.__sourcesHM[hashf] = ''.join(sourcelines)
         return self.__sourcesHM[hashf]
 
     def __rrun(self, job, sfunc, sargs, rworker):
         """
         Runs a job remotelly.
         """
-        self.__logger.info("Task (remote) %i started" % (job.tid, ))
+        self.__logger.info('Task (remote) %i started' % (job.tid,))
 
         try:
             rworker.send(sfunc)
@@ -921,12 +918,11 @@ class Server(object):
             sresult = rworker.receive()
             rworker.is_free = True
         except:
-            self.__logger.info("Task %i failed due to broken network "
-                               "connection - rescheduling" % (job.tid, ))
+            self.__logger.info('Task %i failed due to broken network ' 'connection - rescheduling' % (job.tid,))
             self.insert(sfunc, sargs, job)
             self.__scheduler()
             self.__update_active_rworkers(rworker.id, -1)
-            if rworker.connect("EXEC"):
+            if rworker.connect('EXEC'):
                 self.__update_active_rworkers(rworker.id, 1)
                 self.__scheduler()
             return
@@ -939,7 +935,7 @@ class Server(object):
             self.__waittasks.remove(job)
             self.__waittasks_lock.release()
 
-        self.__logger.info("Task (remote) %i ended" % (job.tid, ))
+        self.__logger.info('Task (remote) %i ended' % (job.tid,))
         self.__scheduler()
 
     def __run(self, job, sfunc, sargs, worker):
@@ -949,7 +945,7 @@ class Server(object):
 
         if self.__exiting:
             return
-        self.__logger.info("Task %i started" % (job.tid, ))
+        self.__logger.info('Task %i started' % (job.tid,))
 
         start_time = time.time()
 
@@ -977,8 +973,8 @@ class Server(object):
 
         self.__add_to_active_tasks(-1)
         if not self.__exiting:
-            self.__stat_add_time("local", time.time() - start_time)
-        self.__logger.info("Task %i ended" % (job.tid, ))
+            self.__stat_add_time('local', time.time() - start_time)
+        self.__logger.info('Task %i ended' % (job.tid,))
         self.__scheduler()
 
     def __add_to_active_tasks(self, num):
@@ -1035,7 +1031,7 @@ class Server(object):
 
         for worker in self.__workers:
             worker.t.exiting = True
-            if sys.platform.startswith("win"):
+            if sys.platform.startswith('win'):
                 os.popen('TASKKILL /PID ' + six.text_type(worker.pid) + ' /F')
             else:
                 try:
@@ -1043,5 +1039,6 @@ class Server(object):
                     os.waitpid(worker.pid, 0)
                 except:
                     pass
+
 
 # Parallel Python Software: http://www.parallelpython.com

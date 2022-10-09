@@ -46,37 +46,38 @@
 #
 #
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 from io import open
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Debug = False
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 import os
 import sys
 import copy
 import array
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
     sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..')))
     sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..', '..')))
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 import logs.lg
 
 import raid.eccmap
 import raid.raidutils
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
 
 def RoundupFile(filename, stepsize):
     """
@@ -103,7 +104,7 @@ def ReadBinaryFile(filename):
         return b''
     if not os.access(filename, os.R_OK):
         return b''
-    f = open(filename, "rb")
+    f = open(filename, 'rb')
     data = f.read()
     f.close()
     return data
@@ -117,11 +118,12 @@ def WriteFile(filename, data):
     s = data
     if not isinstance(s, binary_type):
         s = s.encode('utf-8')
-    f = open(filename, "wb")
+    f = open(filename, 'wb')
     f.write(s)
     f.close()
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def ReadBinaryFileAsArray(filename):
@@ -186,14 +188,8 @@ def do_in_memory(filename, eccmapname, version, blockNumber, targetDir, threshol
 
 
 def main():
-    do_in_memory(
-        filename=sys.argv[1],
-        eccmapname=sys.argv[2],
-        version=sys.argv[3],
-        blockNumber=int(sys.argv[4]),
-        targetDir=sys.argv[5]
-    )
+    do_in_memory(filename=sys.argv[1], eccmapname=sys.argv[2], version=sys.argv[3], blockNumber=int(sys.argv[4]), targetDir=sys.argv[5])
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

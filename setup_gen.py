@@ -1,19 +1,30 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
-from pkgversion import list_requirements, pep440_version, write_setup_py
+from pkgversion import list_requirements, write_setup_py
 from setuptools import find_packages
 
 write_setup_py(
     name='bitdust',
     version='0.0.1',
-    description="BitDust is a decentralized on-line storage network for safe, independent and private communications.",
+    description='BitDust is a decentralized on-line storage network for safe, independent and private communications.',
     long_description=open('README.md').read(),
-    author="Veselin Penev",
+    author='Veselin Penev',
     author_email='bitdust.io@gmail.com',
     url='https://github.com/bitdust-io/public.git',
     install_requires=list_requirements('requirements.txt'),
-    packages=find_packages(exclude=['deploy*', 'icons*', 'release*', 'scripts*', 'devops*', 'regress*', 'requirements*', 'venv*', ]),
+    packages=find_packages(
+        exclude=[
+            'deploy*',
+            'icons*',
+            'release*',
+            'scripts*',
+            'devops*',
+            'regress*',
+            'requirements*',
+            'venv*',
+        ]
+    ),
     tests_require=[],
     include_package_data=True,
     zip_safe=False,
@@ -47,5 +58,5 @@ write_setup_py(
         'Topic :: System :: Filesystems',
         'Topic :: System :: System Shells',
         'Topic :: Utilities',
-    ]
+    ],
 )

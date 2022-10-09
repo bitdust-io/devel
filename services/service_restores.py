@@ -50,10 +50,12 @@ class RestoreMonitorService(LocalService):
 
     def start(self):
         from storage import restore_monitor
+
         restore_monitor.init()
         return True
 
     def stop(self):
         from storage import restore_monitor
+
         restore_monitor.shutdown()
         return True

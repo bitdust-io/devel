@@ -25,7 +25,6 @@ import os
 import sys
 
 from twisted.internet import reactor  # @UnresolvedImport
-from twisted.internet.defer import Deferred
 
 sys.path.append(os.path.abspath('..'))
 
@@ -37,8 +36,14 @@ def main():
 
     # TEST
     import transport.gate
-    transport.gate.init(['tcp', ])
+
+    transport.gate.init(
+        [
+            'tcp',
+        ]
+    )
     import userid.propagate
+
     userid.propagate.SendServers()
     reactor.run()
 

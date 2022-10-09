@@ -51,22 +51,21 @@ Sample output:
 import connections
 import json
 import socks
-import sys
 
 
-__version__ = "0.0.1"
+__version__ = '0.0.1'
 
 
 def get_status():
     s = socks.socksocket()
     s.settimeout(10)
-    s.connect(("127.0.0.1", 5658))
+    s.connect(('127.0.0.1', 5658))
     # Command first
-    connections.send(s, "statusjson")  # despite the name, it returns a dict
+    connections.send(s, 'statusjson')  # despite the name, it returns a dict
     res = connections.receive(s)
     return res
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     res_as_json = get_status()
     print(json.dumps(res_as_json, indent=2))

@@ -44,20 +44,20 @@ EVENTS:
     * :red:`transport-initialized`
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 6
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 import platform
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -73,7 +73,7 @@ from main import settings
 
 from transport import gateway
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 class NetworkTransport(automat.Automat):
@@ -130,14 +130,14 @@ class NetworkTransport(automat.Automat):
         gateway.on_transport_state_changed(self, curstate, curstate)
 
     def A(self, event, *args, **kwargs):
-        #---AT_STARTUP---
+        # ---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'INIT'
                 self.StartNow = False
                 self.StopNow = False
                 self.doInit(*args, **kwargs)
-        #---STARTING---
+        # ---STARTING---
         elif self.state == 'STARTING':
             if event == 'shutdown':
                 self.state = 'CLOSED'
@@ -156,7 +156,7 @@ class NetworkTransport(automat.Automat):
             elif event == 'restart':
                 self.StopNow = True
                 self.StartNow = True
-        #---LISTENING---
+        # ---LISTENING---
         elif self.state == 'LISTENING':
             if event == 'shutdown':
                 self.state = 'CLOSED'
@@ -171,7 +171,7 @@ class NetworkTransport(automat.Automat):
                 self.StopNow = False
                 self.StartNow = True
                 self.doStop(*args, **kwargs)
-        #---OFFLINE---
+        # ---OFFLINE---
         elif self.state == 'OFFLINE':
             if event == 'shutdown':
                 self.state = 'CLOSED'
@@ -181,7 +181,7 @@ class NetworkTransport(automat.Automat):
                 self.StopNow = False
                 self.StartNow = False
                 self.doStart(*args, **kwargs)
-        #---STOPPING---
+        # ---STOPPING---
         elif self.state == 'STOPPING':
             if event == 'shutdown':
                 self.state = 'CLOSED'
@@ -194,10 +194,10 @@ class NetworkTransport(automat.Automat):
                 self.doStart(*args, **kwargs)
             elif event == 'start' or event == 'restart':
                 self.StartNow = True
-        #---CLOSED---
+        # ---CLOSED---
         elif self.state == 'CLOSED':
             pass
-        #---INIT---
+        # ---INIT---
         elif self.state == 'INIT':
             if event == 'shutdown':
                 self.state = 'CLOSED'
@@ -232,7 +232,9 @@ class NetworkTransport(automat.Automat):
         """
         Action method.
         """
-        options = {'idurl': my_id.getIDURL(), }
+        options = {
+            'idurl': my_id.getIDURL(),
+        }
         id_contact = ''
         default_host = ''
         if self.proto == 'tcp':

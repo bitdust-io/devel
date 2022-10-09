@@ -1,6 +1,6 @@
 Visit http://www.parallelpython.com for up-to-date documentation, examples and support forums
 
-INSTALATION: 
+INSTALATION:
     python setup.py install
 
 LOCAL DOCUMENTATION:

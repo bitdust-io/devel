@@ -19,23 +19,24 @@ Copyright (C) 2010 Hiroki Ohtani(liris)
     Boston, MA 02110-1335  USA
 
 """
-__all__ = ["HAVE_SSL", "ssl", "SSLError", "SSLWantReadError", "SSLWantWriteError"]
+__all__ = ['HAVE_SSL', 'ssl', 'SSLError', 'SSLWantReadError', 'SSLWantWriteError']
 
 try:
     import ssl
     from ssl import SSLError
     from ssl import SSLWantReadError
     from ssl import SSLWantWriteError
+
     if hasattr(ssl, 'SSLContext') and hasattr(ssl.SSLContext, 'check_hostname'):
         HAVE_CONTEXT_CHECK_HOSTNAME = True
     else:
         HAVE_CONTEXT_CHECK_HOSTNAME = False
-        if hasattr(ssl, "match_hostname"):
+        if hasattr(ssl, 'match_hostname'):
             from ssl import match_hostname
         else:
             from backports.ssl_match_hostname import match_hostname
-        __all__.append("match_hostname")
-    __all__.append("HAVE_CONTEXT_CHECK_HOSTNAME")
+        __all__.append('match_hostname')
+    __all__.append('HAVE_CONTEXT_CHECK_HOSTNAME')
 
     HAVE_SSL = True
 except ImportError:

@@ -22,16 +22,17 @@
 
 from __future__ import absolute_import
 from __future__ import print_function
-import os
 import sys
 import time
 from six.moves import range
+
 # import timeit
 # import platform
 
 
 def _qpc():
     from ctypes import byref, c_int64, windll
+
     val = c_int64()
     windll.Kernel32.QueryPerformanceCounter(byref(val))
     return val.value
@@ -49,6 +50,7 @@ def init():
     _InitTime = time.time()
     # time.clock()
     from ctypes import byref, c_int64, windll
+
     time_start = c_int64()
     freq = c_int64()
     windll.Kernel32.QueryPerformanceCounter(byref(time_start))
@@ -62,12 +64,13 @@ def _time_windows():
     global _TimeStart
     global _Frequency
     from ctypes import byref, c_int64, windll
+
     time_now = c_int64()
     windll.Kernel32.QueryPerformanceCounter(byref(time_now))
     return _InitTime + ((_TimeStart - time_now.value) / _Frequency)
 
 
-if sys.platform == "win32":
+if sys.platform == 'win32':
     # On Windows, the best timer is time.clock()
     _time = _time_windows
     init()

@@ -55,27 +55,26 @@ RAIDREAD:
     generate the read requests to get fetch the packets.
 """
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 10
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 import base64
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 from logs import lg
 
 from lib import strng
 from lib import serialization
 
-from contacts import contactsdb
 
 from userid import my_id
 from userid import id_url
@@ -83,7 +82,7 @@ from userid import id_url
 from crypt import key
 from crypt import my_keys
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 class Block(object):
@@ -107,21 +106,21 @@ class Block(object):
     """
 
     def __init__(
-            self,
-            CreatorID=None,
-            BackupID='',
-            BlockNumber=0,
-            SessionKey='',
-            SessionKeyType=None,
-            LastBlock=True,
-            Data=b'',
-            EncryptKey=None,
-            DecryptKey=None,
-            EncryptedSessionKey=None,
-            EncryptedData=None,
-            Length=None,
-            Signature=None,
-        ):
+        self,
+        CreatorID=None,
+        BackupID='',
+        BlockNumber=0,
+        SessionKey='',
+        SessionKeyType=None,
+        LastBlock=True,
+        Data=b'',
+        EncryptKey=None,
+        DecryptKey=None,
+        EncryptedSessionKey=None,
+        EncryptedData=None,
+        Length=None,
+        Signature=None,
+    ):
         self.CreatorID = CreatorID
         if not self.CreatorID:
             self.CreatorID = my_id.getIDURL()
@@ -160,8 +159,7 @@ class Block(object):
             lg.out(_DebugLevel, 'new data in %s' % self)
 
     def __repr__(self):
-        return 'encrypted{ BackupID=%s BlockNumber=%s Length=%s LastBlock=%s }' % (
-            str(self.BackupID), str(self.BlockNumber), str(self.Length), self.LastBlock)
+        return 'encrypted{ BackupID=%s BlockNumber=%s Length=%s LastBlock=%s }' % (str(self.BackupID), str(self.BlockNumber), str(self.Length), self.LastBlock)
 
     def SessionKey(self):
         """
@@ -230,15 +228,15 @@ class Block(object):
         Not used at the moment.
         """
         if not self.Ready():
-            lg.warn("block is not ready yet " + str(self))
+            lg.warn('block is not ready yet ' + str(self))
             return False
         # TODO: make possible to verify signature using `signing_key`
         hashsrc = self.GenerateHash()
         ConIdentity = my_id.getLocalIdentity()
         if ConIdentity is None:
-            lg.warn("could not get Identity so returning False")
+            lg.warn('could not get Identity so returning False')
             return False
-        result = key.Verify(ConIdentity, hashsrc, self.Signature)    # At block level only work on own stuff
+        result = key.Verify(ConIdentity, hashsrc, self.Signature)  # At block level only work on own stuff
         return result
 
     def Data(self):
@@ -248,7 +246,7 @@ class Block(object):
         """
         SessionKey = self.SessionKey()
         ClearLongData = key.DecryptWithSessionKey(SessionKey, self.EncryptedData, session_key_type=self.SessionKeyType)
-        return ClearLongData[0:self.Length]    # remove padding
+        return ClearLongData[0 : self.Length]  # remove padding
 
     def Serialize(self):
         """
@@ -270,7 +268,8 @@ class Block(object):
             lg.out(_DebugLevel, 'encrypted.Serialize %s' % repr(dct)[:100])
         return serialization.DictToBytes(dct, encoding='utf-8')
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def Unserialize(data, decrypt_key=None):

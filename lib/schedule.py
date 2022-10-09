@@ -48,15 +48,9 @@ from logs import lg
 from lib import misc
 from lib import maths
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
-all_types = {
-    '0': 'none',
-    '1': 'hourly',
-    '2': 'daily',
-    '3': 'weekly',
-    '4': 'monthly',
-    '5': 'continuously'}
+all_types = {'0': 'none', '1': 'hourly', '2': 'daily', '3': 'weekly', '4': 'monthly', '5': 'continuously'}
 
 all_labels = {
     'n': 'none',
@@ -64,7 +58,8 @@ all_labels = {
     'd': 'daily',
     'w': 'weekly',
     'm': 'monthly',
-    'c': 'continuously', }
+    'c': 'continuously',
+}
 
 
 class Schedule:
@@ -72,16 +67,17 @@ class Schedule:
     types = all_types
     labels = all_labels
 
-    def __init__(self,
-                 typ=None,
-                 daytime=None,
-                 interval=None,
-                 details=None,
-                 lasttime=None,
-                 from_tupple=None,
-                 from_string=None,
-                 from_dict=None,
-                 ):
+    def __init__(
+        self,
+        typ=None,
+        daytime=None,
+        interval=None,
+        details=None,
+        lasttime=None,
+        from_tupple=None,
+        from_string=None,
+        from_dict=None,
+    ):
         self.type = str(typ)
         if self.type in ['0', '1', '2', '3', '4', '5']:
             self.type = self.types.get(self.type, 'none')
@@ -102,8 +98,7 @@ class Schedule:
                 self.from_dict(self.blank_dict(self.type))
 
     def __repr__(self):
-        return 'Schedule(%s, %s, %s, %s, %s)' % (
-            self.type, self.daytime, self.interval, self.details, self.lasttime)
+        return 'Schedule(%s, %s, %s, %s, %s)' % (self.type, self.daytime, self.interval, self.details, self.lasttime)
 
     def blank_dict(self, type):
         d = {'type': type}
@@ -135,7 +130,7 @@ class Schedule:
         elif type == 'monthly':
             d['interval'] = '1'
             d['daytime'] = '12:00:00'
-            #d['details'] = 'January February March April May June July August September October November December'
+            # d['details'] = 'January February March April May June July August September October November December'
             d['details'] = '1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31'
             d['lasttime'] = ''
         return d
@@ -198,11 +193,17 @@ class Schedule:
 
             # every N seconds
             elif self.type == 'continuously':
-                return maths.shedule_continuously(lasttime, int(self.interval),)
+                return maths.shedule_continuously(
+                    lasttime,
+                    int(self.interval),
+                )
 
             # every N hours, exactly when hour begins, minutes and seconds are 0
             elif self.type == 'hourly':
-                return maths.shedule_next_hourly(lasttime, int(self.interval),)
+                return maths.shedule_next_hourly(
+                    lasttime,
+                    int(self.interval),
+                )
 
             # every N days, at given time
             elif self.type == 'daily':
@@ -310,14 +311,11 @@ class Schedule:
                 return 'every %s days, at %s' % (self.interval, self.daytime)
         if self.type == 'weekly':
             if self.interval == '1':
-                return 'every week, at %s, in %s' % (
-                    self.daytime, self.details.strip().replace(' ', ','))
+                return 'every week, at %s, in %s' % (self.daytime, self.details.strip().replace(' ', ','))
             else:
-                return 'every %s weeks, at %s, in %s' % (
-                    self.interval, self.daytime, self.details.strip().replace(' ', ', '))
+                return 'every %s weeks, at %s, in %s' % (self.interval, self.daytime, self.details.strip().replace(' ', ', '))
         if self.type == 'monthly':
-            return 'in day %s of %s, at %s' % (
-                self.interval, self.details.strip().replace(' ', ', '), self.daytime)
+            return 'in day %s of %s, at %s' % (self.interval, self.details.strip().replace(' ', ', '), self.daytime)
         return 'incorrect schedule type'
 
     def html_description(self):
@@ -337,14 +335,11 @@ class Schedule:
                 return 'every <b>%s</b> days, at <b>%s</b>' % (self.interval, self.daytime)
         if self.type == 'weekly':
             if self.interval == '1':
-                return 'every week, at <b>%s</b>, in <b>%s</b>' % (
-                    self.daytime, self.details.strip().replace(' ', ','))
+                return 'every week, at <b>%s</b>, in <b>%s</b>' % (self.daytime, self.details.strip().replace(' ', ','))
             else:
-                return 'every <b>%s</b> weeks, at <b>%s</b>, in <b>%s</b>' % (
-                    self.interval, self.daytime, self.details.strip().replace(' ', ', '))
+                return 'every <b>%s</b> weeks, at <b>%s</b>, in <b>%s</b>' % (self.interval, self.daytime, self.details.strip().replace(' ', ', '))
         if self.type == 'monthly':
-            return 'in <b>%s</b> dates of every <b>%s</b> month, at <b>%s</b>' % (
-                self.details.strip().replace(' ', ', '), self.interval, self.daytime)
+            return 'in <b>%s</b> dates of every <b>%s</b> month, at <b>%s</b>' % (self.details.strip().replace(' ', ', '), self.interval, self.daytime)
         return 'incorrect schedule type'
 
     def html_next_start(self):
@@ -361,7 +356,8 @@ class Schedule:
             return ''
         return 'next execution expected at <b>%s</b>' % nextString
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def format():
@@ -395,11 +391,7 @@ some examples:
 
 
 def default_dict():
-    return {'type': 'daily',
-            'daytime': '12:00:00',
-            'interval': '1',
-            'details': '',
-            'lasttime': ''}
+    return {'type': 'daily', 'daytime': '12:00:00', 'interval': '1', 'details': '', 'lasttime': ''}
 
 
 def default():
@@ -409,7 +401,8 @@ def default():
 def empty():
     return Schedule('none', '', '', '')
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 
 
 def from_compact_string(s):
@@ -443,7 +436,7 @@ def from_compact_string(s):
         return None
     sh_details_new = ''
     for i in range(len(sh_details) / 3):
-        label = sh_details[i * 3:i * 3 + 3]
+        label = sh_details[i * 3 : i * 3 + 3]
         if sh_type == 'weekly' and not label in calendar.day_abbr:
             lg.warn('incorrect schedule details: ' + s)
             return None

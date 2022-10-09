@@ -50,10 +50,12 @@ class DataDisintegrationService(LocalService):
 
     def start(self):
         from raid import raid_worker
+
         raid_worker.A('init')
         return True
 
     def stop(self):
         from raid import raid_worker
+
         raid_worker.A('shutdown')
         return True
