@@ -29,35 +29,18 @@ for container_name, container_info in conf['containers'].items():
     container_ports = '%s:%s' % ((int(container_ports[0]) + ports_offset), container_ports[1])
     container_links = container_info.get('links')
     container_volumes = container_info.get('volumes')
-    container_src = '''
-  %s:
-    image: %s
-    ports:
-      - "%s"''' % (
-        container_name,
-        container_image,
-        container_ports,
-    )
+    container_src = '\n  %s:\n    image: %s\n    ports:\n      - "%s"' % (container_name, container_image, container_ports)
     if container_volumes:
         container_volumes_src = ''
         for volume in container_volumes:
-            container_volumes_src += '\n      - %s' % volume
-        # container_volumes_src +=  '\n      - ./bash_history.txt:/root/.bash_history'
-        container_src += (
-            '''
-    volumes:%s'''
-            % container_volumes_src
-        )
+            container_volumes_src +=  '\n      - %s' % volume
+        container_src += '\n    volumes:%s' % container_volumes_src
     if container_links:
         container_links_src = ''
         for link in container_links:
-            container_links_src += '\n      - %s' % link
-        container_src += (
-            '''
-    links:%s'''
-            % container_links_src
-        )
-    all_containers_src += container_src + '\n'
+            container_links_src +=  '\n      - %s' % link
+        container_src += '\n    links:%s' % container_links_src
+    all_containers_src += (container_src + '\n')
 
 docker_compose_template = open('docker-compose.template').read()
 docker_compose_src = docker_compose_template.format(
