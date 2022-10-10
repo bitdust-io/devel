@@ -8,6 +8,7 @@ exclude: |
       .mypy_cache|
       .tox|
       .venv|
+      venv|
       _build|
       buck-out|
       build|
@@ -22,20 +23,7 @@ repos:
         args: [--markdown-linebreak-ext=md]
       - id: end-of-file-fixer
       - id: double-quote-string-fixer
-      - id: check-json
-      - id: check-toml
-      - id: check-yaml
-      - id: pretty-format-json
-        exclude: package(-lock)?\.json
-        args:
-          - --autofix
       - id: requirements-txt-fixer
-
-  - repo: https://github.com/psf/black
-    rev: 22.8.0
-    hooks:
-      - id: black
-        args: [--config=bitdust-precommit.toml]
 
   - repo: https://github.com/hadialqattan/pycln
     rev: v2.1.1
