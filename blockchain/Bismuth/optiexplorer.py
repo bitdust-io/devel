@@ -10,9 +10,10 @@ from tornado.ioloop import IOLoop
 
 import sqlite3, time, essentials
 from flask import Flask, render_template
+
 app = Flask(__name__)
 
-key, public_key_readable, private_key_readable, _, _, public_key_hashed, address, keyfile = essentials.keys_load ('privkey.der', 'pubkey.der')
+key, public_key_readable, private_key_readable, _, _, public_key_hashed, address, keyfile = essentials.keys_load('privkey.der', 'pubkey.der')
 
 # load config
 
@@ -73,21 +74,18 @@ def main():
     data_wcount = []
 
     for x in addresses:
-        s.execute(
-            'SELECT sum(shares) FROM shares WHERE address = ? AND paid != 1', (x,))
+        s.execute('SELECT sum(shares) FROM shares WHERE address = ? AND paid != 1', (x,))
         shares_sum = s.fetchone()[0]
         if shares_sum == None:
             shares_sum = 0
             continue
         output_shares.append(shares_sum)
 
-        s.execute(
-            'SELECT timestamp FROM shares WHERE address = ? ORDER BY timestamp ASC LIMIT 1', (x,))
+        s.execute('SELECT timestamp FROM shares WHERE address = ? ORDER BY timestamp ASC LIMIT 1', (x,))
         shares_timestamp = s.fetchone()[0]
         output_timestamps.append(float(shares_timestamp))
 
-        s.execute(
-            'SELECT * FROM shares WHERE address = ? ORDER BY timestamp DESC LIMIT 1', (x,))
+        s.execute('SELECT * FROM shares WHERE address = ? ORDER BY timestamp DESC LIMIT 1', (x,))
         shares_last = s.fetchone()
         #mrate = shares_last[4]
         mname = shares_last[7]  # last worker
@@ -98,8 +96,7 @@ def main():
         nrate = []
         ncount = []
         for n in shares_names:
-            s.execute(
-                'SELECT * FROM shares WHERE address = ? AND name = ? ORDER BY timestamp DESC LIMIT 1', (x, n[0]))
+            s.execute('SELECT * FROM shares WHERE address = ? AND name = ? ORDER BY timestamp DESC LIMIT 1', (x, n[0]))
             names_last = s.fetchone()
             t1 = time.time()
             t2 = float(names_last[2])
@@ -189,27 +186,23 @@ def main():
         data_paddress.append(row[3])
         data_bismuthreward.append(row[4])
         data_blockheight.append(row[0])
-        data_ptime.append(format(time.strftime(
-            '%Y/%m/%d,%H:%M:%S', time.gmtime(float(row[1])))))
+        data_ptime.append(format(time.strftime('%Y/%m/%d,%H:%M:%S', time.gmtime(float(row[1])))))
 
     conn.close()
     shares.close()
     oldies.close()
 
-    return render_template('index.html',
-                           recentminers=zip(
-                               data_addres, data_shares, data_mrate, data_mname, data_wcount),
-                           bpstats=zip(data_block, data_reward, data_tShares,
-                                       data_rewardps, data_tReward, data_tHash, data_twcount),
-                           payouts=zip(data_addres, data_bismuthreward,
-                                       data_blockheight, data_ptime),
-                           payoutsfees=zip(data_pendingaddress,
-                                           data_pendingreward)
-                           )
+    return render_template(
+        'index.html',
+        recentminers=zip(data_addres, data_shares, data_mrate, data_mname, data_wcount),
+        bpstats=zip(data_block, data_reward, data_tShares, data_rewardps, data_tReward, data_tHash, data_twcount),
+        payouts=zip(data_addres, data_bismuthreward, data_blockheight, data_ptime),
+        payoutsfees=zip(data_pendingaddress, data_pendingreward)
+    )
 
 
 if __name__ == '__main__':
     #app.run(host='0.0.0.0', port=9080, debug=True)
-	http_server = HTTPServer(WSGIContainer(app))
-	http_server.listen(9080)
-	IOLoop.instance().start()
+    http_server = HTTPServer(WSGIContainer(app))
+    http_server.listen(9080)
+    IOLoop.instance().start()

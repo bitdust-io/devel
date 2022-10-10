@@ -9,13 +9,11 @@ from logs import lg
 from main import settings
 from dht import dht_service
 
-
 parser = optparse.OptionParser()
 parser.add_option('-s', '--start', dest='start', type='int', help='start position', default=1)
 parser.add_option('-e', '--end', dest='end', type='int', help='end position', default=3)
 parser.add_option('-l', '--layer', dest='layer', type='int', help='layer number', default=0)
 (options, args) = parser.parse_args()
-
 
 
 def connected(nodes, seeds=[]):
@@ -53,7 +51,9 @@ def run():
     try:
         list_of_deffered_set_value = []
         for i in range(options.start, options.end + 1):
-            j = {'key'+str(i): 'value'+str(i), }
+            j = {
+                'key' + str(i): 'value' + str(i),
+            }
             d = dht_service.set_json_value(str(i), json_data=j, age=60 * 60, layer_id=options.layer)
             d.addBoth(callback, j)
             d.addErrback(errback)

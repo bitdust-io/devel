@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 ..
 
@@ -75,7 +74,10 @@ class NetworkService(LocalService):
     def _on_my_external_ip_changed(self, evt):
         from logs import lg
         if evt.data['old'].strip():
-            lg.info('need to reconnect because my external IP changed %r -> %r' % (evt.data['old'], evt.data['new'], ))
+            lg.info('need to reconnect because my external IP changed %r -> %r' % (
+                evt.data['old'],
+                evt.data['new'],
+            ))
             from p2p import network_connector
             network_connector.A('reconnect')
 
@@ -84,19 +86,19 @@ class NetworkService(LocalService):
         from services import driver
         if driver.is_enabled('service_gateway'):
             lg.warn('my identity sources were rotated, need to restart service_gateway()')
-#             if driver.is_enabled('service_identity_propagate'):
-#                 from p2p import propagate
-#                 from contacts import contactsdb
-#                 selected_contacts = set(filter(None, contactsdb.contacts_remote(include_all=True)))
-#                 if propagate.startup_list():
-#                     selected_contacts.update(propagate.startup_list())
-#                     propagate.startup_list().clear()
-#                 propagate.propagate(
-#                     selected_contacts=selected_contacts,
-#                     wide=True,
-#                     refresh_cache=True,
-#                 ).addBoth(lambda err: driver.restart('service_gateway'))
-#             else:
+            #             if driver.is_enabled('service_identity_propagate'):
+            #                 from p2p import propagate
+            #                 from contacts import contactsdb
+            #                 selected_contacts = set(filter(None, contactsdb.contacts_remote(include_all=True)))
+            #                 if propagate.startup_list():
+            #                     selected_contacts.update(propagate.startup_list())
+            #                     propagate.startup_list().clear()
+            #                 propagate.propagate(
+            #                     selected_contacts=selected_contacts,
+            #                     wide=True,
+            #                     refresh_cache=True,
+            #                 ).addBoth(lambda err: driver.restart('service_gateway'))
+            #             else:
             driver.restart('service_gateway')
         else:
             lg.warn('my identity sources were rotated, but service_gateway() is disabled')
@@ -114,7 +116,6 @@ class NetworkService(LocalService):
             lg.info('current network interfaces on START UP: %r' % self.current_network_interfaces)
         else:
             if self.current_network_interfaces != known_interfaces and known_interfaces:
-                lg.info('need to reconnect, recognized changes in network interfaces: %r -> %r' % (
-                    self.current_network_interfaces, known_interfaces))
+                lg.info('need to reconnect, recognized changes in network interfaces: %r -> %r' % (self.current_network_interfaces, known_interfaces))
                 self.current_network_interfaces = known_interfaces
                 network_connector.A('reconnect')

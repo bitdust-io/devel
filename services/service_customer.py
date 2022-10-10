@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 ..
 
@@ -87,7 +86,9 @@ class CustomerService(LocalService):
         from userid import my_id
         for sc in supplier_connector.connectors(my_id.getIDURL()).values():
             # at least one supplier must be online to consider my customer service to be healthy
-            if sc.state in ['CONNECTED', ]:
+            if sc.state in [
+                'CONNECTED',
+            ]:
                 return True
         return False
 
@@ -109,21 +110,33 @@ class CustomerService(LocalService):
             if old_idurl == customer_idurl:
                 customer_idurl.refresh()
                 lg.info('found customer family idurl rotated : %r -> %r' % (
-                    evt.data['old_idurl'], evt.data['new_idurl'], ))
+                    evt.data['old_idurl'],
+                    evt.data['new_idurl'],
+                ))
             for supplier_pos, supplier_idurl in enumerate(suppliers_list):
                 if old_idurl == supplier_idurl:
                     supplier_idurl.refresh()
                     lg.info('found supplier idurl rotated for customer family %r at position %r : %r -> %r' % (
-                        customer_idurl, supplier_pos, evt.data['old_idurl'], evt.data['new_idurl'], ))
+                        customer_idurl,
+                        supplier_pos,
+                        evt.data['old_idurl'],
+                        evt.data['new_idurl'],
+                    ))
             for customer_idurl, sc_dict in supplier_connector.connectors(as_dict=True).items():
                 if old_idurl == customer_idurl:
                     customer_idurl.refresh()
                     lg.info('found customer idurl rotated in supplier_connector.connectors() : %r -> %r' % (
-                        evt.data['old_idurl'], evt.data['new_idurl'], ))
+                        evt.data['old_idurl'],
+                        evt.data['new_idurl'],
+                    ))
                 for supplier_idurl, sc in sc_dict.items():
                     if old_idurl == supplier_idurl:
                         supplier_idurl.refresh()
                         sc.customer_idurl.refresh()
                         sc.supplier_idurl.refresh()
                         lg.info('found supplier idurl rotated in %r for customer %r : %r -> %r' % (
-                            sc, customer_idurl, evt.data['old_idurl'], evt.data['new_idurl'], ))
+                            sc,
+                            customer_idurl,
+                            evt.data['old_idurl'],
+                            evt.data['new_idurl'],
+                        ))

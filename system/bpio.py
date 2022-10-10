@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 .. module:: bpio.
 
@@ -241,6 +240,7 @@ def isConsoled():
         return False
     return True
 
+
 #-------------------------------------------------------------------------------
 
 
@@ -318,7 +318,10 @@ def rmdir_recursive(dirpath, ignore_errors=False, pre_callback=None):
                         os.remove(full_name)
                         counter += 1
                     except Exception as exc:
-                        lg.err('can not remove file %r : %r' % (full_name, exc, ))
+                        lg.err('can not remove file %r : %r' % (
+                            full_name,
+                            exc,
+                        ))
                         continue
     if pre_callback:
         if not pre_callback(dirpath):
@@ -329,7 +332,10 @@ def rmdir_recursive(dirpath, ignore_errors=False, pre_callback=None):
         try:
             os.rmdir(dirpath)
         except Exception as exc:
-            lg.err('can not remove dir %r : %r' % (dirpath, exc, ))
+            lg.err('can not remove dir %r : %r' % (
+                dirpath,
+                exc,
+            ))
     return counter
 
 
@@ -376,6 +382,7 @@ def getDirectorySize(directory, include_subfolders=True):
                     if name not in DIR_EXCLUDES:
                         total_size += _get_dir_size(path + '\\' + name)
             return total_size
+
         return _get_dir_size(directory)
     dir_size = 0
     if not include_subfolders:
@@ -397,7 +404,9 @@ def getDirectorySize(directory, include_subfolders=True):
                         pass
     return dir_size
 
+
 #-------------------------------------------------------------------------------
+
 
 def WriteBinaryFile(filename, data):
     return local_fs.WriteBinaryFile(filename=filename, data=data)
@@ -413,6 +422,7 @@ def WriteTextFile(filepath, data):
 
 def ReadTextFile(filename):
     return local_fs.ReadTextFile(filename=filename)
+
 
 #-------------------------------------------------------------------------------
 
@@ -445,7 +455,11 @@ def _unpack_list(src):
         return words, None
     res = words[1:]
     if len(res) < length:
-        res += [u'', ] * (length - len(res))
+        res += [
+            u'',
+        ] * (
+            length - len(res)
+        )
     elif len(res) > length:
         return res[:length], res[length:]
     return res, None
@@ -557,6 +571,7 @@ def _dir_remove(path):
     """
     rmdir_recursive(path)
 
+
 #------------------------------------------------------------------------------
 
 
@@ -628,6 +643,7 @@ def remove_backuped_file(path):
         lg.out(1, 'bpio.remove_backuped_file ERROR can not remove file ' + bkpath)
         lg.exc()
 
+
 #------------------------------------------------------------------------------
 
 
@@ -673,6 +689,7 @@ def HigherPriority():
     else:
         import os
         os.nice(1)
+
 
 #-------------------------------------------------------------------------------
 
@@ -854,6 +871,7 @@ def pathIsNetworkLocation(path):
         return False
     return True
 
+
 #------------------------------------------------------------------------------
 
 
@@ -863,9 +881,9 @@ def main_is_frozen():
 
     http://www.py2exe.org/index.cgi/HowToDetermineIfRunningFromExe
     """
-    return (hasattr(sys, 'frozen') or       # new py2exe
-            hasattr(sys, 'importers') or    # old py2exe
-            imp.is_frozen('__main__'))      # tools/freeze
+    return (hasattr(sys, 'frozen') or  # new py2exe
+            hasattr(sys, 'importers') or  # old py2exe
+            imp.is_frozen('__main__'))  # tools/freeze
 
 
 def isGUIpossible():
@@ -902,6 +920,7 @@ def X11_is_running():
         result = False
     X11isRunning = result
     return X11isRunning
+
 
 #------------------------------------------------------------------------------
 
@@ -951,6 +970,7 @@ def getUserName():
     except:
         pass
     return os.path.basename(strng.to_text(os.path.expanduser('~')))
+
 
 #------------------------------------------------------------------------------
 
@@ -1069,6 +1089,7 @@ def getMountPointLinux(path):
     while not os.path.ismount(path):
         path = os.path.dirname(path)
     return path
+
 
 #-------------------------------------------------------------------------------
 
@@ -1248,7 +1269,9 @@ def kill_process_win32(pid):
         return False
     return True
 
+
 #------------------------------------------------------------------------------
+
 
 def find_main_process(pid_file_path=None, extra_lookups=[], check_processid_file=True):
     if Android():
@@ -1285,7 +1308,9 @@ def find_main_process(pid_file_path=None, extra_lookups=[], check_processid_file
         return appList
     if processid not in appList:
         return []
-    return [processid, ]
+    return [
+        processid,
+    ]
 
 
 def lookup_main_process():
@@ -1305,6 +1330,7 @@ def lookup_main_process():
             'regexp:^.*(?<!\/root\/\.bitdust\/venv\/bin\/)Python.*bitdust.py.*?$',
         ])
     return find_process(q)
+
 
 #------------------------------------------------------------------------------
 

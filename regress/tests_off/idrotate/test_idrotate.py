@@ -19,7 +19,6 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
-
 """
 SCENARIO 9: ID server id-dead is dead and few nodes has rotated identities
 
@@ -75,17 +74,27 @@ def test_idrotate():
     #--- SCENARIO 11 end: customer-1 talk to customer-rotated
     scenarios.scenario11_end(old_customer_rotated_info, new_customer_rotated_info, old_customer_1_info_s11)
 
+
 #------------------------------------------------------------------------------
+
 
 def prepare():
     set_active_scenario('PREPARE')
     kw.wait_suppliers_connected(scenarios.CUSTOMERS_IDS_1, expected_min_suppliers=2, expected_max_suppliers=2)
-    kw.wait_service_state(scenarios.SUPPLIERS_IDS_12 + ['supplier-rotated', ], 'service_supplier', 'ON')
+    kw.wait_service_state(scenarios.SUPPLIERS_IDS_12 + [
+        'supplier-rotated',
+    ], 'service_supplier', 'ON')
     kw.wait_service_state(scenarios.CUSTOMERS_IDS_1, 'service_customer', 'ON')
     kw.wait_service_state(scenarios.CUSTOMERS_IDS_1, 'service_shared_data', 'ON')
     kw.wait_service_state(scenarios.CUSTOMERS_IDS_1, 'service_personal_messages', 'ON')
     kw.wait_service_state(scenarios.CUSTOMERS_IDS_1, 'service_private_groups', 'ON')
     kw.wait_service_state(scenarios.CUSTOMERS_IDS_1, 'service_message_history', 'ON')
-    kw.wait_service_state(scenarios.BROKERS_IDS + ['broker-rotated', ], 'service_message_broker', 'ON')
+    kw.wait_service_state(scenarios.BROKERS_IDS + [
+        'broker-rotated',
+    ], 'service_message_broker', 'ON')
     kw.config_set_v1('customer-1', 'services/employer/candidates', '')
-    kw.wait_packets_finished(scenarios.PROXY_IDS + scenarios.CUSTOMERS_IDS_1 + scenarios.BROKERS_IDS + ['broker-rotated', ] + scenarios.SUPPLIERS_IDS_12 + ['supplier-rotated', ])
+    kw.wait_packets_finished(scenarios.PROXY_IDS + scenarios.CUSTOMERS_IDS_1 + scenarios.BROKERS_IDS + [
+        'broker-rotated',
+    ] + scenarios.SUPPLIERS_IDS_12 + [
+        'supplier-rotated',
+    ])

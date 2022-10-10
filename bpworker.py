@@ -31,6 +31,7 @@ import os
 
 import six
 import platform
+
 ostype = platform.uname()[0]
 if ostype == 'Windows':
     if six.PY3:
@@ -45,7 +46,6 @@ if ostype == 'Windows':
 else:
     if six.PY3:
         sys.stdout = sys.stdout.buffer
-
 
 if __name__ == '__main__':
     try:

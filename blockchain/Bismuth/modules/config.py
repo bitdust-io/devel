@@ -1,7 +1,6 @@
 import sys
 import os.path as path
 
-
 __version__ = '0.0.5'
 
 

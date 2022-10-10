@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 .. module:: keys_synchronizer
 .. role:: red
@@ -91,12 +90,15 @@ _KeysSynchronizer = None
 
 #------------------------------------------------------------------------------
 
+
 def is_synchronized():
     if not A():
         return False
     return A().state == 'IN_SYNC!'
 
+
 #------------------------------------------------------------------------------
+
 
 def A(event=None, *args, **kwargs):
     """
@@ -117,7 +119,9 @@ def A(event=None, *args, **kwargs):
         _KeysSynchronizer.automat(event, *args, **kwargs)
     return _KeysSynchronizer
 
+
 #------------------------------------------------------------------------------
+
 
 class KeysSynchronizer(automat.Automat):
     """
@@ -148,7 +152,7 @@ class KeysSynchronizer(automat.Automat):
             if event == 'init':
                 self.state = 'NO_INFO'
                 self.doInit(*args, **kwargs)
-                self.SyncAgain=False
+                self.SyncAgain = False
         #---NO_INFO---
         elif self.state == 'NO_INFO':
             if event == 'shutdown':
@@ -158,8 +162,8 @@ class KeysSynchronizer(automat.Automat):
                 self.state = 'RESTORE'
                 self.doPrepare(*args, **kwargs)
                 self.doRestoreKeys(*args, **kwargs)
-            elif event == 'sync' or ( event == 'instant' and self.SyncAgain ):
-                self.SyncAgain=False
+            elif event == 'sync' or (event == 'instant' and self.SyncAgain):
+                self.SyncAgain = False
                 self.doSaveCallback(*args, **kwargs)
                 self.doCheckAndRun(*args, **kwargs)
         #---IN_SYNC!---
@@ -169,9 +173,9 @@ class KeysSynchronizer(automat.Automat):
                 self.doDestroyMe(*args, **kwargs)
             elif event == 'disconnected':
                 self.state = 'NO_INFO'
-            elif event == 'sync' or ( event == 'instant' and self.SyncAgain ):
+            elif event == 'sync' or (event == 'instant' and self.SyncAgain):
                 self.state = 'RESTORE'
-                self.SyncAgain=False
+                self.SyncAgain = False
                 self.doSaveCallback(*args, **kwargs)
                 self.doPrepare(*args, **kwargs)
                 self.doRestoreKeys(*args, **kwargs)
@@ -188,7 +192,7 @@ class KeysSynchronizer(automat.Automat):
                 self.doReportNoInfo(*args, **kwargs)
             elif event == 'sync':
                 self.doSaveCallback(*args, **kwargs)
-                self.SyncAgain=True
+                self.SyncAgain = True
         #---BACKUP---
         elif self.state == 'BACKUP':
             if event == 'shutdown':
@@ -202,7 +206,7 @@ class KeysSynchronizer(automat.Automat):
                 self.doReportNoInfo(*args, **kwargs)
             elif event == 'sync':
                 self.doSaveCallback(*args, **kwargs)
-                self.SyncAgain=True
+                self.SyncAgain = True
         #---CLEAN---
         elif self.state == 'CLEAN':
             if event == 'clean-ok':
@@ -216,7 +220,7 @@ class KeysSynchronizer(automat.Automat):
                 self.doReportNoInfo(*args, **kwargs)
             elif event == 'sync':
                 self.doSaveCallback(*args, **kwargs)
-                self.SyncAgain=True
+                self.SyncAgain = True
         #---CLOSED---
         elif self.state == 'CLOSED':
             pass
@@ -240,7 +244,10 @@ class KeysSynchronizer(automat.Automat):
         Action method.
         """
         from customer import list_files_orator
-        if list_files_orator.A().state in ['SAW_FILES', 'NO_FILES', ]:
+        if list_files_orator.A().state in [
+            'SAW_FILES',
+            'NO_FILES',
+        ]:
             self.automat('run')
         else:
             reactor.callLater(1, self.automat, 'sync')  # @UndefinedVariable
@@ -291,10 +298,7 @@ class KeysSynchronizer(automat.Automat):
                     if _Debug:
                         lg.args(_DebugLevel, i=i)
         if _Debug:
-            lg.args(_DebugLevel,
-                    stored_keys=len(self.stored_keys),
-                    not_stored_keys=list(self.not_stored_keys.keys()),
-                    unreliable_keys=len(self.unreliable_keys))
+            lg.args(_DebugLevel, stored_keys=len(self.stored_keys), not_stored_keys=list(self.not_stored_keys.keys()), unreliable_keys=len(self.unreliable_keys))
 
     def doRestoreKeys(self, *args, **kwargs):
         """
@@ -305,14 +309,20 @@ class KeysSynchronizer(automat.Automat):
             if _Debug:
                 lg.args(_DebugLevel, unreliable_keys=self.unreliable_keys)
             lg.err('not possible to restore any keys, all backup copies unreliable stored_keys=%d not_stored_keys=%d unreliable_keys=%d' % (
-                len(self.stored_keys), len(self.not_stored_keys), len(self.unreliable_keys), ))
+                len(self.stored_keys),
+                len(self.not_stored_keys),
+                len(self.unreliable_keys),
+            ))
             self.automat('error', Exception('not possible to restore any keys, all backup copies unreliable'))
             return
         keys_to_be_restored = []
         for key_id, is_private in self.stored_keys.items():
             latest_key_id = my_keys.latest_key_id(key_id)
             if latest_key_id != key_id:
-                self.keys_to_rename[key_id] = (latest_key_id, is_private, )
+                self.keys_to_rename[key_id] = (
+                    latest_key_id,
+                    is_private,
+                )
             if my_keys.is_key_registered(key_id):
                 if _Debug:
                     lg.out(_DebugLevel, '        skip restoring already known key_id=%r' % key_id)
@@ -321,19 +331,25 @@ class KeysSynchronizer(automat.Automat):
                 if _Debug:
                     lg.out(_DebugLevel, '        skip restoring already known latest key_id=%r' % latest_key_id)
                 continue
-            keys_to_be_restored.append((key_id, is_private, ))
+            keys_to_be_restored.append((
+                key_id,
+                is_private,
+            ))
 
         if _Debug:
             lg.args(_DebugLevel, keys_to_be_restored=len(keys_to_be_restored))
 
         def _on_restored_one(res, pos, key_id):
             self.restored_count += 1
-            _do_restore_one(pos+1)
+            _do_restore_one(pos + 1)
             return None
 
         def _on_failed_one(err, pos, key_id):
-            lg.err('failed to restore key %r : %r' % (key_id, err, ))
-            _do_restore_one(pos+1)
+            lg.err('failed to restore key %r : %r' % (
+                key_id,
+                err,
+            ))
+            _do_restore_one(pos + 1)
             return None
 
         def _do_restore_one(pos):
@@ -416,9 +432,7 @@ class KeysSynchronizer(automat.Automat):
             err_msg = err.getErrorMessage()
         else:
             err_msg = str(err)
-        events.send('my-keys-synchronize-failed', data=dict(
-            error=err_msg,
-        ))
+        events.send('my-keys-synchronize-failed', data=dict(error=err_msg,))
         self.result_callbacks = []
 
     def doDestroyMe(self, *args, **kwargs):

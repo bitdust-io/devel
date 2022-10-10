@@ -24,7 +24,6 @@
 #
 #
 #
-
 """
 .. module:: dirsize.
 
@@ -63,6 +62,7 @@ _Dirs = {}
 
 #------------------------------------------------------------------------------
 
+
 def ask(dirpath, callback=None, arg=None):
     """
     Start a thread to scan all sub folders and calculate total size of given
@@ -96,7 +96,10 @@ def done(size, dirpath):
     global _Dirs
     global _Jobs
     if _Debug:
-        lg.out(_DebugLevel, 'dirsize.done %s %s' % (str(size), dirpath.decode(),))
+        lg.out(_DebugLevel, 'dirsize.done %s %s' % (
+            str(size),
+            dirpath.decode(),
+        ))
     _Dirs[dirpath] = str(size)
     try:
         _, cb, arg = _Jobs.pop(dirpath, (None, None, None))
@@ -143,6 +146,7 @@ def getInBytes(dirpath, default=-1):
     """
     return diskspace.GetBytesFromString(get(dirpath), default)
 
+
 #------------------------------------------------------------------------------
 
 
@@ -150,12 +154,15 @@ def main():
     """
     Run the test - use command line to pass a location.
     """
+
     def _done(path, sz, *args, **kwargs):
         print(path, sz)
         reactor.stop()  # @UndefinedVariable
+
     bpio.init()
     ask(sys.argv[1], _done)
     reactor.run()  # @UndefinedVariable
+
 
 if __name__ == '__main__':
     main()

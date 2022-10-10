@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 .. module:: events.
 
@@ -76,11 +75,14 @@ _EventsCount = {}
 
 #------------------------------------------------------------------------------
 
+
 def subscribers():
     global _Subscribers
     return _Subscribers
 
+
 #------------------------------------------------------------------------------
+
 
 def init():
     if _Debug:
@@ -94,7 +96,9 @@ def shutdown():
     clear_subscribers()
     subscribers().clear()
 
+
 #------------------------------------------------------------------------------
+
 
 class Event(object):
 
@@ -106,7 +110,9 @@ class Event(object):
     def __repr__(self):
         return '<Event({})>'.format(self.event_id)
 
+
 #------------------------------------------------------------------------------
+
 
 def add_subscriber(subscriber_callback, event_id='*'):
     """
@@ -142,7 +148,9 @@ def clear_subscribers(event_id='*'):
                 removed = True
     return removed
 
+
 #------------------------------------------------------------------------------
+
 
 def dispatch(evt):
     global _EventLogFileEnabled
@@ -180,11 +188,9 @@ def dispatch(evt):
             lg.warn('event "{}" was not handled'.format(evt.event_id))
         else:
             if _EventLogUseColors:
-                lg.out(_DebugLevel, '\033[0;49;36mevents.dispatch "{}" was handled by {} subscribers\033[0m'.format(
-                    evt.event_id, handled))
+                lg.out(_DebugLevel, '\033[0;49;36mevents.dispatch "{}" was handled by {} subscribers\033[0m'.format(evt.event_id, handled))
             else:
-                lg.out(_DebugLevel, 'events.dispatch "{}" was handled by {} subscribers'.format(
-                    evt.event_id, handled))
+                lg.out(_DebugLevel, 'events.dispatch "{}" was handled by {} subscribers'.format(evt.event_id, handled))
     return handled
 
 
@@ -195,6 +201,7 @@ def send(event_id, data=None, created=None, fast=False):
     else:
         reactor.callLater(0, dispatch, evt)  # @UndefinedVariable
     return evt
+
 
 #------------------------------------------------------------------------------
 
@@ -215,8 +222,7 @@ def consume_events(consumer_id):
     d = Deferred()
     consumers_callbacks()[consumer_id].append(d)
     if _Debug:
-        lg.out(_DebugLevel, 'events.consume_events added callback for consumer "%s", %d total callbacks' % (
-            consumer_id, len(consumers_callbacks()[consumer_id])))
+        lg.out(_DebugLevel, 'events.consume_events added callback for consumer "%s", %d total callbacks' % (consumer_id, len(consumers_callbacks()[consumer_id])))
     reactor.callLater(0, pop_event)  # @UndefinedVariable
     return d
 
@@ -232,8 +238,7 @@ def push_event(event_object):
             'time': event_object.created,
         })
         if _Debug:
-            lg.out(_DebugLevel, 'events.push_event "%s" for consumer "%s", %d pending events' % (
-                event_object.event_id, consumer_id, len(event_queue()[consumer_id])))
+            lg.out(_DebugLevel, 'events.push_event "%s" for consumer "%s", %d pending events' % (event_object.event_id, consumer_id, len(event_queue()[consumer_id])))
     reactor.callLater(0, pop_event)  # @UndefinedVariable
 
 
@@ -252,13 +257,11 @@ def pop_event():
         for consumer_callback in registered_callbacks:
             if not consumer_callback:
                 if _Debug:
-                    lg.out(_DebugLevel, 'events.pop_event %d events waiting consuming by "%s", no callback yet' % (
-                        len(event_queue()[consumer_id]), consumer_id))
+                    lg.out(_DebugLevel, 'events.pop_event %d events waiting consuming by "%s", no callback yet' % (len(event_queue()[consumer_id]), consumer_id))
                 continue
             if consumer_callback.called:
                 if _Debug:
-                    lg.out(_DebugLevel, 'events.pop_event %d events waiting consuming by "%s", callback state is "called"' % (
-                        len(event_queue()[consumer_id]), consumer_id))
+                    lg.out(_DebugLevel, 'events.pop_event %d events waiting consuming by "%s", callback state is "called"' % (len(event_queue()[consumer_id]), consumer_id))
                 continue
             consumer_callback.callback(pending_messages)
             event_queue()[consumer_id] = []
@@ -266,7 +269,9 @@ def pop_event():
                 lg.out(_DebugLevel, 'events.pop_event %d events consumed by "%s"' % (len(pending_messages), consumer_id))
         consumers_callbacks()[consumer_id] = []
 
+
 #------------------------------------------------------------------------------
+
 
 def count(event_id=None):
     global _EventsCount

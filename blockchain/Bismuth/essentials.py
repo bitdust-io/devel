@@ -22,17 +22,15 @@ from polysign.signer import SignerType
 from polysign.signerfactory import SignerFactory
 
 __version__ = '0.0.7'
-
 """
 0.0.7 : decrease checkpoint limit to 30 blocks at 1450000 (meaning max 59 blocks rollback)
 """
-
 """
 For temp. code compatibility, dup code moved to polysign module
 """
 
 
-def address_validate(address:str) -> bool:
+def address_validate(address: str) -> bool:
     return SignerFactory.address_is_valid(address)
 
 
@@ -57,7 +55,7 @@ def format_raw_tx(raw: list) -> dict:
     try:
         transaction['pubkey'] = base64.b64decode(raw[6]).decode('utf-8')
     except:
-        transaction['pubkey'] = raw[6] #support new pubkey schemes
+        transaction['pubkey'] = raw[6]  #support new pubkey schemes
     transaction['block_hash'] = raw[7]
     transaction['fee'] = raw[8]
     transaction['reward'] = raw[9]
@@ -70,7 +68,7 @@ def percentage(percent, whole):
     return Decimal(percent) * Decimal(whole) / 100
 
 
-def replace_regex(string: str, replace:str) -> str:
+def replace_regex(string: str, replace: str) -> str:
     replaced_string = re.sub(r'^{}'.format(replace), '', string)
     return replaced_string
 
@@ -204,7 +202,7 @@ def keys_check(app_log, keyfile_name: str) -> None:
         # export to single file
 
 
-def keys_save(private_key_readable :str, public_key_readable: str, address: str, file) -> None:
+def keys_save(private_key_readable: str, public_key_readable: str, address: str, file) -> None:
     wallet_dict = dict()
     wallet_dict['Private Key'] = private_key_readable
     wallet_dict['Public Key'] = public_key_readable
@@ -215,7 +213,7 @@ def keys_save(private_key_readable :str, public_key_readable: str, address: str,
         json.dump(wallet_dict, keyfile)
 
 
-def keys_load(privkey_filename: str= 'privkey.der', pubkey_filename: str= 'pubkey.der'):
+def keys_load(privkey_filename: str = 'privkey.der', pubkey_filename: str = 'pubkey.der'):
     keyfile = 'wallet.der'
     if os.path.exists('wallet.der'):
         print('Using modern wallet method')
@@ -292,7 +290,7 @@ def keys_load_new(keyfile='wallet.der'):
     return key, public_key_readable, private_key_readable, encrypted, unlocked, public_key_b64encoded, address, keyfile
 
 
-def fee_calculate(openfield: str, operation: str='', block: int=0) -> Decimal:
+def fee_calculate(openfield: str, operation: str = '', block: int = 0) -> Decimal:
     # block var will be removed after HF
     fee = Decimal('0.01') + (Decimal(len(openfield)) / Decimal('100000'))  # 0.01 dust
     if operation == 'token:issue':

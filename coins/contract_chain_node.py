@@ -47,6 +47,7 @@ from coins import contract_chain_consumer
 
 #------------------------------------------------------------------------------
 
+
 def reconnect():
     contract_chain_consumer.A('start')
 
@@ -78,7 +79,10 @@ def get_coins_by_chain(chain, provider_idurl, consumer_idurl):
     return Query(dict(
         method='get_many',
         index=chain,
-        key='%s_%s' % (provider_idurl, consumer_idurl, ),
+        key='%s_%s' % (
+            provider_idurl,
+            consumer_idurl,
+        ),
     )).result
 
 
@@ -87,16 +91,16 @@ def send_to_miner(coins):
         return succeed(None)
     result = Deferred()
     p2p_service.SendCoin(
-        contract_chain_consumer.A().connected_miner,
-        coins,
-        callbacks={
+        contract_chain_consumer.A().connected_miner, coins, callbacks={
             commands.Ack(): lambda response, info: result.callback(response),
             commands.Fail(): lambda response, info: result.errback(Exception(response)),
         }
     )
     return result
 
+
 #------------------------------------------------------------------------------
+
 
 class Query(object):
 
@@ -107,10 +111,12 @@ class Query(object):
         self.out_packets = {}
         for idurl in contract_chain_consumer.A().connected_accountants:
             single_accountant = Deferred()
-            outpacket = p2p_service.SendRetrieveCoin(idurl, query_dict, callbacks={
-                commands.Coin(): self._on_coin_received,
-                commands.Fail(): self._on_coin_failed,
-            })
+            outpacket = p2p_service.SendRetrieveCoin(
+                idurl, query_dict, callbacks={
+                    commands.Coin(): self._on_coin_received,
+                    commands.Fail(): self._on_coin_failed,
+                }
+            )
             assert outpacket.PacketID not in self.out_packets
             self.out_packets[outpacket.PacketID] = single_accountant
         DeferredList(list(self.out_packets.values())).addBoth(self._on_results_collected)
@@ -135,7 +141,10 @@ class Query(object):
         if _Debug:
             lg.out(_DebugLevel, 'contract_chain_node._on_coin_received %r' % response_packet)
         assert response_packet.PacketID in self.out_packets
-        self.out_packets[response_packet.PacketID].callback((response_packet.CreatorID, response_packet, ))
+        self.out_packets[response_packet.PacketID].callback((
+            response_packet.CreatorID,
+            response_packet,
+        ))
 
     def _on_coin_failed(self, response_packet, info):
         """
@@ -143,7 +152,10 @@ class Query(object):
         if _Debug:
             lg.out(_DebugLevel, 'contract_chain_node._on_coin_failed %r' % response_packet)
         assert response_packet.PacketID in self.out_packets
-        self.out_packets[response_packet.PacketID].callback((response_packet.CreatorID, None, ))
+        self.out_packets[response_packet.PacketID].callback((
+            response_packet.CreatorID,
+            None,
+        ))
 
     def _on_results_collected(self, accountant_results):
         """

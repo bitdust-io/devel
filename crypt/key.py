@@ -22,7 +22,6 @@
 #
 #
 #
-
 """
 .. module:: key.
 
@@ -183,7 +182,6 @@ def ForgetMyKey(keyfilename=None, erase_file=False, do_backup=False):
             lg.info('local private key erased, deleted file : %r' % keyfilename)
 
 
-
 def isMyKeyReady():
     """
     Check if the Key is already loaded into memory.
@@ -220,6 +218,7 @@ def MyPrivateKeyObject():
     if not _MyKeyObject:
         InitMyKey()
     return _MyKeyObject
+
 
 #------------------------------------------------------------------------------
 
@@ -263,6 +262,7 @@ def Verify(ConIdentity, hashcode, signature):
     Result = VerifySignature(pubkey, hashcode, signature)
     return Result
 
+
 #------------------------------------------------------------------------------
 
 
@@ -295,6 +295,7 @@ def Hash(inp, hexdigest=False):
     """
     return HashSHA(inp, hexdigest=hexdigest)
 
+
 #------------------------------------------------------------------------------
 
 
@@ -311,7 +312,9 @@ def NewSessionKey(session_key_type):
     """
     return cipher.make_key(session_key_type)
 
+
 #------------------------------------------------------------------------------
+
 
 def EncryptWithSessionKey(session_key, inp, session_key_type):
     """
@@ -335,7 +338,9 @@ def DecryptWithSessionKey(session_key, inp, session_key_type):
     ret = cipher.decrypt_json(inp, session_key, session_key_type)
     return ret
 
+
 #------------------------------------------------------------------------------
+
 
 def EncryptOpenSSHPublicKey(pubkeystring, inp):
     """
@@ -356,7 +361,9 @@ def DecryptOpenSSHPrivateKey(privkeystring, inp):
     result = priv_key.decrypt(inp)
     return result
 
+
 #------------------------------------------------------------------------------
+
 
 def EncryptLocalPublicKey(inp):
     """
@@ -379,6 +386,7 @@ def DecryptLocalPrivateKey(inp):
         InitMyKey()
     result = _MyKeyObject.decrypt(inp)
     return result
+
 
 #------------------------------------------------------------------------------
 
@@ -418,6 +426,7 @@ def SpeedTest():
         # open(str(i), 'wb').write(EncryptedData)
         i += 1
     print(time.time() - dt, 'seconds')
+
 
 #------------------------------------------------------------------------------
 

@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 ..
 
@@ -74,8 +73,7 @@ class MyDataService(SlowStartingLocalService):
                 listeners.populate_later().remove('private_file')
                 backup_fs.populate_private_files()
         else:
-            lg.warn('can not start service_my_data right now, keys_synchronizer.is_synchronized=%r index_synchronizer.is_synchronized=%r' % (
-                keys_synchronizer.is_synchronized(), index_synchronizer.is_synchronized()))
+            lg.warn('can not start service_my_data right now, keys_synchronizer.is_synchronized=%r index_synchronizer.is_synchronized=%r' % (keys_synchronizer.is_synchronized(), index_synchronizer.is_synchronized()))
         return self.starting_deferred
 
     def stop(self):

@@ -6,7 +6,6 @@ EggdraSyl - June 2018
 pip3 install -r requirements.txt
 """
 
-
 import asyncio
 import datetime
 import json
@@ -33,9 +32,7 @@ from modules.sqlitebase import SqliteBase
 from modules.ledgerbase import LedgerBase
 from modules.node_interface import NodeInterface
 
-
 __version__ = '0.1.22'
-
 
 # Server
 # -----------------------------------------------------------------------------
@@ -95,11 +92,9 @@ class WalletServer(TCPServer):
         :return:
         """
         try:
-            header = await tornado.gen.with_timeout(datetime.timedelta(seconds=35), stream.read_bytes(10),
-                                                    quiet_exceptions=tornado.iostream.StreamClosedError)
+            header = await tornado.gen.with_timeout(datetime.timedelta(seconds=35), stream.read_bytes(10), quiet_exceptions=tornado.iostream.StreamClosedError)
             data_len = int(header)
-            data = await tornado.gen.with_timeout(datetime.timedelta(seconds=10), stream.read_bytes(data_len),
-                                                  quiet_exceptions=tornado.iostream.StreamClosedError)
+            data = await tornado.gen.with_timeout(datetime.timedelta(seconds=10), stream.read_bytes(data_len), quiet_exceptions=tornado.iostream.StreamClosedError)
             data = json.loads(data.decode('utf-8'))
             return data
         except Exception as e:
@@ -154,7 +149,6 @@ class WalletServer(TCPServer):
         res = await self.node_interface.call_user(params)
         await self._send(res, stream, ip)
         return
-
         """
         if data == "mpclear":
             # TODO: only for admin
@@ -211,12 +205,11 @@ def start_server(port):
     global stop_event
     global PORT
     global CONFIG
-    mempool = SqliteBase(options.verbose, db_path=CONFIG.mempool_path.replace('mempool.db', ''),
-                         db_name='mempool.db', app_log=app_log)
+    mempool = SqliteBase(options.verbose, db_path=CONFIG.mempool_path.replace('mempool.db', ''), db_name='mempool.db', app_log=app_log)
     db_name = 'ledger.db'
     if CONFIG.testnet:
         db_name = 'test.db'
-    ledger = LedgerBase(options.verbose, db_path=CONFIG.db_path+'/', db_name=db_name, app_log=app_log)
+    ledger = LedgerBase(options.verbose, db_path=CONFIG.db_path + '/', db_name=db_name, app_log=app_log)
 
     node_interface = NodeInterface(mempool, ledger, CONFIG, app_log=app_log)
     server = WalletServer()

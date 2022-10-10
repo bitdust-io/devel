@@ -4,10 +4,8 @@ Helpers for the wallet server
 Mainly from bismuth core code
 """
 
-
 import re
 from decimal import Decimal
-
 
 __version__ = '0.0.4'
 

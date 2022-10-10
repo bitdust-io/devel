@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 .. module:: local_fs.
 
@@ -51,6 +50,7 @@ from logs import lg
 _PlatformInfo = None
 
 #------------------------------------------------------------------------------
+
 
 def WriteBinaryFile(filename, data):
     """
@@ -137,6 +137,7 @@ def ReadBinaryFile(filename, decode_encoding=None):
         lg.exc('file read failed: %r' % filename)
         return b''
 
+
 #------------------------------------------------------------------------------
 
 
@@ -192,6 +193,7 @@ def ReadTextFile(filename):
     except:
         lg.exc('file read failed: %r' % filename)
     return u''
+
 
 #------------------------------------------------------------------------------
 

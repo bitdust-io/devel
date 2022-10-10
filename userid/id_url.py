@@ -25,7 +25,6 @@
 #
 #
 #
-
 """
 .. module:: id_url.
 
@@ -81,6 +80,7 @@ _Ready = False
 
 #------------------------------------------------------------------------------
 
+
 def init():
     global _IdentityHistoryDir
     global _KnownUsers
@@ -110,7 +110,10 @@ def init():
                 continue
             one_user_identity_files.append(one_ident_number)
         if _Debug:
-            lg.out(_DebugLevel, 'id_url.init   found %d historical records in %r' % (len(one_user_identity_files), one_user_dir_path, ))
+            lg.out(_DebugLevel, 'id_url.init   found %d historical records in %r' % (
+                len(one_user_identity_files),
+                one_user_dir_path,
+            ))
         one_user_identity_files.sort()
         for one_ident_file in one_user_identity_files:
             one_ident_path = os.path.join(one_user_dir_path, strng.to_text(one_ident_file))
@@ -118,11 +121,9 @@ def init():
                 xmlsrc = local_fs.ReadTextFile(one_ident_path)
                 known_id_obj = identity.identity(xmlsrc=xmlsrc)
                 if not known_id_obj.isCorrect():
-                    raise Exception('identity history in %r is broken, identity is not correct: %r' % (
-                        one_user_dir, one_ident_path))
+                    raise Exception('identity history in %r is broken, identity is not correct: %r' % (one_user_dir, one_ident_path))
                 if not known_id_obj.Valid():
-                    raise Exception('identity history in %r is broken, identity is not valid: %r' % (
-                        one_user_dir, one_ident_path))
+                    raise Exception('identity history in %r is broken, identity is not valid: %r' % (one_user_dir, one_ident_path))
             except Exception as exc:
                 lg.warn(str(exc))
                 for_cleanup.append(one_ident_path)
@@ -148,21 +149,22 @@ def init():
                 if one_revision in _MergedIDURLs[one_pub_key]:
                     if _MergedIDURLs[one_pub_key][one_revision] != known_idurl:
                         if _MergedIDURLs[one_pub_key][one_revision] not in known_sources:
-                            lg.warn('rewriting existing identity revision %d : %r -> %r' % (
-                                one_revision, _MergedIDURLs[one_pub_key][one_revision], known_idurl))
+                            lg.warn('rewriting existing identity revision %d : %r -> %r' % (one_revision, _MergedIDURLs[one_pub_key][one_revision], known_idurl))
                     _MergedIDURLs[one_pub_key][one_revision] = known_idurl
                 else:
                     _MergedIDURLs[one_pub_key][one_revision] = known_idurl
                     if _Debug:
-                        lg.out(_DebugLevel, '        revision %d merged with other %d known items' % (
-                            one_revision, len(_MergedIDURLs[one_pub_key])))
+                        lg.out(_DebugLevel, '        revision %d merged with other %d known items' % (one_revision, len(_MergedIDURLs[one_pub_key])))
                 if one_pub_key not in _KnownSources:
                     _KnownSources[one_pub_key] = []
                 for one_source in known_id_obj.getSources(as_originals=True):
                     if one_source not in _KnownSources[one_pub_key]:
                         _KnownSources[one_pub_key].append(one_source)
                         if _Debug:
-                            lg.out(_DebugLevel, '    new source %r added for %r' % (one_source, one_pub_key[-10:], ))
+                            lg.out(_DebugLevel, '    new source %r added for %r' % (
+                                one_source,
+                                one_pub_key[-10:],
+                            ))
     for one_ident_path in for_cleanup:
         if os.path.isfile(one_ident_path):
             lg.warn('about to erase broken historical identity file: %r' % one_ident_path)
@@ -187,7 +189,9 @@ def shutdown():
     _KnownSources.clear()
     _Ready = False
 
+
 #------------------------------------------------------------------------------
+
 
 def known():
     global _KnownIDURLs
@@ -214,7 +218,9 @@ def sources(pub_key=None):
         return _KnownSources
     return _KnownSources.get(pub_key, [])
 
+
 #------------------------------------------------------------------------------
+
 
 def identity_cached(new_id_obj):
     """
@@ -243,13 +249,12 @@ def identity_cached(new_id_obj):
     latest_sources = []
     for_cleanup = []
     if pub_key not in _KnownUsers:
-        user_path = tempfile.mkdtemp(prefix=user_name+'@', dir=_IdentityHistoryDir)
+        user_path = tempfile.mkdtemp(prefix=user_name + '@', dir=_IdentityHistoryDir)
         _KnownUsers[pub_key] = user_path
         first_identity_file_path = os.path.join(user_path, '0')
         local_fs.WriteBinaryFile(first_identity_file_path, new_id_obj.serialize())
         if _Debug:
-            lg.out(_DebugLevel, 'id_url.identity_cached wrote first item for user %r in identity history: %r' % (
-                user_name, first_identity_file_path))
+            lg.out(_DebugLevel, 'id_url.identity_cached wrote first item for user %r in identity history: %r' % (user_name, first_identity_file_path))
     else:
         user_path = _KnownUsers[pub_key]
         user_identity_files = sorted(map(int, os.listdir(user_path)))
@@ -297,16 +302,14 @@ def identity_cached(new_id_obj):
                 if latest_sources == new_sources:
                     local_fs.WriteBinaryFile(latest_identity_file_path, new_id_obj.serialize())
                     if _Debug:
-                        lg.out(_DebugLevel, 'id_url.identity_cached latest identity sources for user %r did not changed, updated file %r' % (
-                            user_name, latest_identity_file_path))
+                        lg.out(_DebugLevel, 'id_url.identity_cached latest identity sources for user %r did not changed, updated file %r' % (user_name, latest_identity_file_path))
                 else:
                     next_identity_file = user_identity_files[-1] + 1
                     next_identity_file_path = os.path.join(user_path, strng.to_text(next_identity_file))
                     local_fs.WriteBinaryFile(next_identity_file_path, new_id_obj.serialize())
                     is_identity_rotated = True
                     if _Debug:
-                        lg.out(_DebugLevel, 'id_url.identity_cached identity sources for user %r changed, wrote new item in the history: %r' % (
-                            user_name, next_identity_file_path))
+                        lg.out(_DebugLevel, 'id_url.identity_cached identity sources for user %r changed, wrote new item in the history: %r' % (user_name, next_identity_file_path))
     new_revision = new_id_obj.getRevisionValue()
     new_sources = new_id_obj.getSources(as_originals=True)
     for new_idurl in reversed(new_sources):
@@ -327,21 +330,22 @@ def identity_cached(new_id_obj):
             if _MergedIDURLs[pub_key][new_revision] != new_idurl:
                 if nameurl.GetName(_MergedIDURLs[pub_key][new_revision]) == nameurl.GetName(new_idurl):
                     if _MergedIDURLs[pub_key][new_revision] not in new_sources:
-                        lg.warn('rewriting existing identity revision %d : %r -> %r' % (
-                        new_revision, _MergedIDURLs[pub_key][new_revision], new_idurl))
+                        lg.warn('rewriting existing identity revision %d : %r -> %r' % (new_revision, _MergedIDURLs[pub_key][new_revision], new_idurl))
             _MergedIDURLs[pub_key][new_revision] = new_idurl
         else:
             _MergedIDURLs[pub_key][new_revision] = new_idurl
             if _Debug:
-                lg.out(_DebugLevel, 'id_url.identity_cached added new revision %d for user %r, total revisions %d: %r -> %r' % (
-                    new_revision, user_name, len(_MergedIDURLs[pub_key]), prev_idurl, new_idurl))
+                lg.out(_DebugLevel, 'id_url.identity_cached added new revision %d for user %r, total revisions %d: %r -> %r' % (new_revision, user_name, len(_MergedIDURLs[pub_key]), prev_idurl, new_idurl))
     if pub_key not in _KnownSources:
         _KnownSources[pub_key] = []
     for one_source in new_sources:
         if one_source not in _KnownSources[pub_key]:
             _KnownSources[pub_key].append(one_source)
             if _Debug:
-                lg.out(_DebugLevel, 'id_url.identity_cached added new source %r for user %r' % (one_source, user_name, ))
+                lg.out(_DebugLevel, 'id_url.identity_cached added new source %r for user %r' % (
+                    one_source,
+                    user_name,
+                ))
     if _Debug:
         lg.args(_DebugLevel, is_identity_rotated=is_identity_rotated, latest_id_obj=bool(latest_id_obj))
     if is_identity_rotated and latest_id_obj is not None:
@@ -349,40 +353,51 @@ def identity_cached(new_id_obj):
         if _Debug:
             lg.args(_DebugLevel, new_revision=new_revision, latest_revision=latest_revision)
         if new_revision > latest_revision:
-            lg.info('found rotated identity after caching %r -> %r' % (
-                latest_id_obj.getSources(as_originals=True)[0], new_sources[0]))
+            lg.info('found rotated identity after caching %r -> %r' % (latest_id_obj.getSources(as_originals=True)[0], new_sources[0]))
             from main import events
-            events.send('identity-rotated', data=dict(
-                old_idurls=latest_id_obj.getSources(as_originals=True),
-                new_idurls=new_id_obj.getSources(as_originals=True),
-                old_revision=latest_id_obj.getRevisionValue(),
-                new_revision=new_revision,
-            ))
-            if latest_id_obj.getIDURL(as_original=True) != new_id_obj.getIDURL(as_original=True):
-                events.send('identity-url-changed', data=dict(
-                    old_idurl=latest_id_obj.getIDURL(as_original=True),
-                    new_idurl=new_id_obj.getIDURL(as_original=True),
+            events.send(
+                'identity-rotated', data=dict(
+                    old_idurls=latest_id_obj.getSources(as_originals=True),
+                    new_idurls=new_id_obj.getSources(as_originals=True),
                     old_revision=latest_id_obj.getRevisionValue(),
                     new_revision=new_revision,
-                ))
+                )
+            )
+            if latest_id_obj.getIDURL(as_original=True) != new_id_obj.getIDURL(as_original=True):
+                events.send(
+                    'identity-url-changed', data=dict(
+                        old_idurl=latest_id_obj.getIDURL(as_original=True),
+                        new_idurl=new_id_obj.getIDURL(as_original=True),
+                        old_revision=latest_id_obj.getRevisionValue(),
+                        new_revision=new_revision,
+                    )
+                )
             from userid import my_id
             if my_id.isLocalIdentityReady():
                 if my_id.getIDURL() == new_id_obj.getIDURL():
-                    events.send('my-identity-rotated', data=dict(
-                        old_idurls=latest_id_obj.getSources(as_originals=True),
-                        new_idurls=new_id_obj.getSources(as_originals=True),
-                        old_revision=latest_id_obj.getRevisionValue(),
-                        new_revision=new_revision,
-                    ))
-                    if latest_id_obj.getIDURL(as_original=True) != new_id_obj.getIDURL(as_original=True):
-                        events.send('my-identity-url-changed', data=dict(
-                            old_idurl=latest_id_obj.getIDURL(as_original=True),
-                            new_idurl=new_id_obj.getIDURL(as_original=True),
+                    events.send(
+                        'my-identity-rotated', data=dict(
+                            old_idurls=latest_id_obj.getSources(as_originals=True),
+                            new_idurls=new_id_obj.getSources(as_originals=True),
                             old_revision=latest_id_obj.getRevisionValue(),
                             new_revision=new_revision,
-                        ))
+                        )
+                    )
+                    if latest_id_obj.getIDURL(as_original=True) != new_id_obj.getIDURL(as_original=True):
+                        events.send(
+                            'my-identity-url-changed', data=dict(
+                                old_idurl=latest_id_obj.getIDURL(as_original=True),
+                                new_idurl=new_id_obj.getIDURL(as_original=True),
+                                old_revision=latest_id_obj.getRevisionValue(),
+                                new_revision=new_revision,
+                            )
+                        )
         else:
-            lg.warn('cached out-dated revision %d for %r, most recent revision is %d' % (new_revision, new_sources[0], latest_revision, ))
+            lg.warn('cached out-dated revision %d for %r, most recent revision is %d' % (
+                new_revision,
+                new_sources[0],
+                latest_revision,
+            ))
     else:
         if _Debug:
             lg.out(_DebugLevel, 'id_url.identity_cached revision %d for %r' % (new_revision, new_sources[0]))
@@ -393,6 +408,7 @@ def identity_cached(new_id_obj):
             except:
                 lg.exc()
     return True
+
 
 #------------------------------------------------------------------------------
 
@@ -405,7 +421,14 @@ def field(idurl):
     global _KnownIDURLs
     if isinstance(idurl, ID_URL_FIELD):
         return idurl
-    if idurl in [None, 'None', '', b'None', b'', False, ]:
+    if idurl in [
+        None,
+        'None',
+        '',
+        b'None',
+        b'',
+        False,
+    ]:
         return ID_URL_FIELD(idurl)
     idurl = strng.to_bin(idurl.strip())
     if idurl not in _KnownIDURLs:
@@ -420,7 +443,11 @@ def field(idurl):
                 cod = sys._getframe(1).f_back.f_code
                 modul = os.path.basename(cod.co_filename).replace('.py', '')
                 caller = cod.co_name
-                lg.warn('unknown yet idurl %s, call from %s.%s' % (idurl, modul, caller, ))
+                lg.warn('unknown yet idurl %s, call from %s.%s' % (
+                    idurl,
+                    modul,
+                    caller,
+                ))
     return ID_URL_FIELD(idurl)
 
 
@@ -442,7 +469,14 @@ def is_idurl(value):
     """
     Return True if input is `ID_URL_FIELD` field or string in valid format.
     """
-    if value in [None, 'None', '', b'None', b'', False, ]:
+    if value in [
+        None,
+        'None',
+        '',
+        b'None',
+        b'',
+        False,
+    ]:
         return False
     if isinstance(value, ID_URL_FIELD):
         return True
@@ -460,7 +494,14 @@ def to_bin(idurl):
     """
     if isinstance(idurl, ID_URL_FIELD):
         return idurl.to_bin()
-    if idurl in [None, 'None', '', b'None', b'', False, ]:
+    if idurl in [
+        None,
+        'None',
+        '',
+        b'None',
+        b'',
+        False,
+    ]:
         return b''
     return strng.to_bin(idurl)
 
@@ -471,7 +512,14 @@ def to_original(idurl):
     """
     if isinstance(idurl, ID_URL_FIELD):
         return idurl.original()
-    if idurl in [None, 'None', '', b'None', b'', False, ]:
+    if idurl in [
+        None,
+        'None',
+        '',
+        b'None',
+        b'',
+        False,
+    ]:
         return b''
     return strng.to_bin(idurl)
 
@@ -573,7 +621,14 @@ def is_empty(idurl):
     """
     if isinstance(idurl, ID_URL_FIELD):
         return not bool(idurl)
-    if idurl in [None, 'None', '', b'None', b'', False, ]:
+    if idurl in [
+        None,
+        'None',
+        '',
+        b'None',
+        b'',
+        False,
+    ]:
         return True
     return not bool(idurl)
 
@@ -680,29 +735,61 @@ def list_known_idurls(idurl, num_revisions=5, include_revisions=False):
     idurl_bin = to_bin(idurl)
     if not idurl_bin:
         if _Debug:
-            lg.args(_DebugLevel, idurl=idurl, ret=[idurl_bin, ])
+            lg.args(
+                _DebugLevel, idurl=idurl, ret=[
+                    idurl_bin,
+                ]
+            )
         if include_revisions:
-            return [(idurl_bin, -1, ), ]
-        return [idurl_bin, ]
+            return [
+                (
+                    idurl_bin,
+                    -1,
+                ),
+            ]
+        return [
+            idurl_bin,
+        ]
     if idurl_bin not in _KnownIDURLs:
         if _Debug:
-            lg.args(_DebugLevel, idurl=idurl, ret=[idurl_bin, ])
+            lg.args(
+                _DebugLevel, idurl=idurl, ret=[
+                    idurl_bin,
+                ]
+            )
         if include_revisions:
-            return [(idurl_bin, -1, ), ]
-        return [idurl_bin, ]
+            return [
+                (
+                    idurl_bin,
+                    -1,
+                ),
+            ]
+        return [
+            idurl_bin,
+        ]
     pub_key = _KnownIDURLs[idurl_bin]
     if pub_key not in _MergedIDURLs:
         lg.warn('idurl %r does not have any known revisions' % idurl_bin)
         if include_revisions:
-            return [(idurl_bin, -1, ), ]
-        return [idurl_bin, ]
+            return [
+                (
+                    idurl_bin,
+                    -1,
+                ),
+            ]
+        return [
+            idurl_bin,
+        ]
     known_revisions = sorted(_MergedIDURLs[pub_key].keys(), reverse=True)
     results = []
     for rev in known_revisions:
         another_idurl = _MergedIDURLs[pub_key][rev]
         if include_revisions:
             if another_idurl not in [i[0] for i in results]:
-                results.append((another_idurl, rev, ))
+                results.append((
+                    another_idurl,
+                    rev,
+                ))
         else:
             if another_idurl not in results:
                 results.append(another_idurl)
@@ -729,7 +816,9 @@ def idurl_to_id(idurl_text):
         host = '%s_%s' % (host, port)
     return '%s@%s' % (username, host)
 
+
 #------------------------------------------------------------------------------
+
 
 class ID_URL_FIELD(object):
 
@@ -744,7 +833,14 @@ class ID_URL_FIELD(object):
         if isinstance(idurl, ID_URL_FIELD):
             self.current = idurl.current
         else:
-            if idurl in [None, 'None', '', b'None', b'', False, ]:
+            if idurl in [
+                None,
+                'None',
+                '',
+                b'None',
+                b'',
+                False,
+            ]:
                 self.current = b''
             else:
                 self.current = strng.to_bin(idurl.strip())
@@ -770,7 +866,14 @@ class ID_URL_FIELD(object):
         # always check type : must be `ID_URL_FIELD`
         if not isinstance(idurl, ID_URL_FIELD):
             # to be able to compare with empty value lets make an exception
-            if idurl in [None, 'None', '', b'None', b'', False, ]:
+            if idurl in [
+                None,
+                'None',
+                '',
+                b'None',
+                b'',
+                False,
+            ]:
                 return not bool(self.latest)
             # in other cases must raise an exception
             caller_code = sys._getframe().f_back.f_code
@@ -778,8 +881,7 @@ class ID_URL_FIELD(object):
             caller_modul = os.path.basename(caller_code.co_filename).replace('.py', '')
             if caller_method.count('lambda'):
                 caller_method = sys._getframe(1).f_back.f_code.co_name
-            exc = TypeError('tried to compare ID_URL_FIELD(%r) with %r of type %r' % (
-                self.latest_as_string, idurl, type(idurl)))
+            exc = TypeError('tried to compare ID_URL_FIELD(%r) with %r of type %r' % (self.latest_as_string, idurl, type(idurl)))
             lg.exc(msg='called from %s.%s()' % (caller_modul, caller_method), exc_value=exc)
             raise exc
 
@@ -798,9 +900,17 @@ class ID_URL_FIELD(object):
             if caller_method.count('lambda') or caller_method.startswith('_'):
                 caller_method = sys._getframe(1).f_back.f_code.co_name
             if my_pub_key is None:
-                exc = KeyError('unknown idurl %r in %s.%s' % (self.current, caller_modul, caller_method, ))
+                exc = KeyError('unknown idurl %r in %s.%s' % (
+                    self.current,
+                    caller_modul,
+                    caller_method,
+                ))
             else:
-                exc = KeyError('unknown idurl %r in %s.%s' % (idurl.current, caller_modul, caller_method, ))
+                exc = KeyError('unknown idurl %r in %s.%s' % (
+                    idurl.current,
+                    caller_modul,
+                    caller_method,
+                ))
             lg.exc(msg='called from %s.%s()' % (caller_modul, caller_method), exc_value=exc)
             raise exc
 
@@ -814,7 +924,14 @@ class ID_URL_FIELD(object):
         # always check type : must be `ID_URL_FIELD`
         if not isinstance(idurl, ID_URL_FIELD):
             # to be able to compare with empty value lets make an exception
-            if idurl in [None, 'None', '', b'None', b'', False, ]:
+            if idurl in [
+                None,
+                'None',
+                '',
+                b'None',
+                b'',
+                False,
+            ]:
                 return bool(self.latest)
             # in other cases must raise an exception
             caller_code = sys._getframe().f_back.f_code
@@ -822,8 +939,7 @@ class ID_URL_FIELD(object):
             caller_modul = os.path.basename(caller_code.co_filename).replace('.py', '')
             if caller_method.count('lambda') or caller_method.startswith('_'):
                 caller_method = sys._getframe(1).f_back.f_code.co_name
-            exc = TypeError('tried to compare ID_URL_FIELD(%r) with %r of type %r' % (
-                self.latest_as_string, idurl, type(idurl)))
+            exc = TypeError('tried to compare ID_URL_FIELD(%r) with %r of type %r' % (self.latest_as_string, idurl, type(idurl)))
             lg.exc(msg='called from %s.%s()' % (caller_modul, caller_method), exc_value=exc)
             raise exc
 
@@ -842,9 +958,17 @@ class ID_URL_FIELD(object):
             if caller_method.count('lambda') or caller_method.startswith('_'):
                 caller_method = sys._getframe(1).f_back.f_code.co_name
             if my_pub_key is None:
-                exc = KeyError('unknown idurl %r in %s.%s' % (self.current, caller_modul, caller_method, ))
+                exc = KeyError('unknown idurl %r in %s.%s' % (
+                    self.current,
+                    caller_modul,
+                    caller_method,
+                ))
             else:
-                exc = KeyError('unknown idurl %r in %s.%s' % (idurl.current, caller_modul, caller_method, ))
+                exc = KeyError('unknown idurl %r in %s.%s' % (
+                    idurl.current,
+                    caller_modul,
+                    caller_method,
+                ))
             lg.exc(msg='called from %s.%s()' % (caller_modul, caller_method), exc_value=exc)
             raise exc
 
@@ -965,7 +1089,11 @@ class ID_URL_FIELD(object):
             caller_modul = os.path.basename(caller_code.co_filename).replace('.py', '')
             if caller_method.count('lambda') or caller_method.startswith('_'):
                 caller_method = sys._getframe(1).f_back.f_code.co_name
-            exc = KeyError('unknown idurl %r in %s.%s' % (self.current, caller_modul, caller_method, ))
+            exc = KeyError('unknown idurl %r in %s.%s' % (
+                self.current,
+                caller_modul,
+                caller_method,
+            ))
             lg.exc(msg='called from %s.%s()' % (caller_modul, caller_method), exc_value=exc)
             raise exc
         pub_key = _KnownIDURLs[self.current]

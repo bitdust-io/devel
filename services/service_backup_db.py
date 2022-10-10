@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 ..
 
@@ -65,4 +64,8 @@ class BackupDBService(LocalService):
 
     def health_check(self):
         from storage import index_synchronizer
-        return index_synchronizer.A().state in ['IN_SYNC!', 'SENDING', 'REQUEST?', ]
+        return index_synchronizer.A().state in [
+            'IN_SYNC!',
+            'SENDING',
+            'REQUEST?',
+        ]

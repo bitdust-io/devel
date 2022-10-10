@@ -19,8 +19,6 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
-
-
 """
 .. module:: nickname_observer.
 
@@ -106,6 +104,7 @@ def stop_all():
             if _Debug:
                 lg.out(_DebugLevel, 'nickname_observer.stop_all sends "stop" to %r' % a)
             a.automat('stop')
+
 
 #------------------------------------------------------------------------------
 
@@ -251,7 +250,10 @@ class NicknameObserver(automat.Automat):
         Action method.
         """
         if _Debug:
-            lg.out(_DebugLevel, 'nickname_observer.doReportNicknameExist : (%s, %s)' % (self.key, args[0], ))
+            lg.out(_DebugLevel, 'nickname_observer.doReportNicknameExist : (%s, %s)' % (
+                self.key,
+                args[0],
+            ))
         if self.result_callback is not None:
             try:
                 key_info = dht_service.split_key(self.key)
@@ -316,6 +318,7 @@ class NicknameObserver(automat.Automat):
         self.automat('dht-read-failed', x)
         self.dht_read_defer = None
 
+
 #------------------------------------------------------------------------------
 
 
@@ -333,6 +336,7 @@ def main():
         print(result, nickname)
         if result == 'finished':
             reactor.stop()  # @UndefinedVariable
+
     if sys.argv[1] == 'many':
         observe_many(sys.argv[2], int(sys.argv[3]), results_callback=_result)
     else:

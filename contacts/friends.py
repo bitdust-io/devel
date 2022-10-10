@@ -22,7 +22,6 @@
 #
 #
 #
-
 """
 .. module:: friends
 
@@ -51,11 +50,7 @@ if __name__ == '__main__':
 
 #------------------------------------------------------------------------------
 
-
 from lib import strng
-
-
-
 
 from userid import global_id
 from userid import id_url
@@ -98,7 +93,6 @@ from userid import id_url
 #     return OK(message='this friend has been already added', api_method='friend_add')
 
 
-
 def add_friend(trusted_user_id, alias='', share_person_key=True):
     idurl = strng.to_text(trusted_user_id)
     if global_id.IsValidGlobalUser(trusted_user_id):
@@ -108,6 +102,7 @@ def add_friend(trusted_user_id, alias='', share_person_key=True):
         return None
 
     ret = Deferred()
+
 
 #     if id_url.is_cached(idurl):
 #         _add(idurl, ret)

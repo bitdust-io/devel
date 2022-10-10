@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 .. module:: network_service.
 
@@ -56,6 +55,7 @@ from interface import api
 from userid import my_id
 
 #------------------------------------------------------------------------------
+
 
 def do_service_test(service_name, result_defer, wait_timeout):
     try:
@@ -180,7 +180,9 @@ def do_p2p_connector_test(result_defer):
                 reason='p2p_connector_not_exist',
             ))
             return None
-        if p2p_connector_machine.state in ['DISCONNECTED', ]:
+        if p2p_connector_machine.state in [
+            'DISCONNECTED',
+        ]:
             lg.warn('disconnected, reason is "p2p_connector_disconnected", sending "check-synchronize" event to p2p_connector()')
             p2p_connector_machine.automat('check-synchronize')
             result_defer.callback(dict(
@@ -197,7 +199,9 @@ def do_p2p_connector_test(result_defer):
         ))
     return None
 
+
 #------------------------------------------------------------------------------
+
 
 def on_service_restarted(resp, service_name, result_defer, wait_timeout):
     if _Debug:
@@ -222,7 +226,9 @@ def on_service_proxy_transport_check_healthy(healthy, wait_timeout):
     do_service_restart('service_proxy_transport', d, wait_timeout=wait_timeout)
     return None
 
+
 #------------------------------------------------------------------------------
+
 
 def connected(wait_timeout=5):
     ret = Deferred()
@@ -238,13 +244,15 @@ def connected(wait_timeout=5):
                     if proxy_receiver_machine and proxy_receiver_machine.state == 'LISTEN':
                         # service_proxy_transport() is enabled, proxy_receiver() is listening: all good
                         wait_timeout_defer = Deferred()
-                        wait_timeout_defer.addBoth(lambda _: ret.callback({
-                            'service_network': 'started',
-                            'service_gateway': 'started',
-                            'service_p2p_hookups': 'started',
-                            'service_proxy_transport': 'started',
-                            'proxy_receiver_state': proxy_receiver_machine.state,
-                        }))
+                        wait_timeout_defer.addBoth(
+                            lambda _: ret.callback({
+                                'service_network': 'started',
+                                'service_gateway': 'started',
+                                'service_p2p_hookups': 'started',
+                                'service_proxy_transport': 'started',
+                                'proxy_receiver_state': proxy_receiver_machine.state,
+                            })
+                        )
                         if not wait_timeout:
                             wait_timeout = 0.01
                         wait_timeout_defer.addTimeout(wait_timeout, clock=reactor)

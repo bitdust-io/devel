@@ -22,7 +22,6 @@
 #
 #
 #
-
 """
 .. module:: number.
 
@@ -38,13 +37,17 @@ import struct
 #------------------------------------------------------------------------------
 
 if sys.version_info[0] == 2:
+
     def b(s):
         return s
 else:
+
     def b(s):
-        return s.encode('latin-1') # utf-8 would cause some side-effects we don't want
+        return s.encode('latin-1')  # utf-8 would cause some side-effects we don't want
+
 
 #------------------------------------------------------------------------------
+
 
 def long_to_bytes(n, blocksize=0):
     """long_to_bytes(n:long, blocksize:int) : string
@@ -91,5 +94,5 @@ def bytes_to_long(s):
         s = b('\000') * extra + s
         length = length + extra
     for i in range(0, length, 4):
-        acc = (acc << 32) + unpack('>I', s[i:i+4])[0]
+        acc = (acc << 32) + unpack('>I', s[i:i + 4])[0]
     return acc

@@ -20,17 +20,16 @@ from essentials import most_common_dict, percentage_in
 
 __version__ = '0.0.19'
 
-
 _LogStatusMessages = False
 
 
 class Peers:
     """The peers manager. A thread safe peers manager"""
 
-    __slots__ = ('app_log','config','logstats','node','peersync_lock','startup_time','reset_time','warning_list','stats',
-                 'connection_pool','peer_opinion_dict','consensus_percentage','consensus',
-                 'tried','peer_dict','peerfile','suggested_peerfile','banlist','whitelist','ban_threshold',
-                 'ip_to_mainnet', 'peers', 'accept_peers', 'peerlist_updated')
+    __slots__ = (
+        'app_log', 'config', 'logstats', 'node', 'peersync_lock', 'startup_time', 'reset_time', 'warning_list', 'stats', 'connection_pool', 'peer_opinion_dict', 'consensus_percentage', 'consensus', 'tried', 'peer_dict', 'peerfile',
+        'suggested_peerfile', 'banlist', 'whitelist', 'ban_threshold', 'ip_to_mainnet', 'peers', 'accept_peers', 'peerlist_updated'
+    )
 
     def __init__(self, app_log, config=None, logstats=True, node=None):
         self.app_log = app_log
@@ -170,7 +169,7 @@ class Peers:
                 self.app_log.warning(f'{file} peerlist updated ({len(peers_pairs)}) total')  # the whole dict is saved
                 with open(f'{file}.tmp', 'w') as peer_file:
                     json.dump(peers_pairs, peer_file)
-                shutil.move(f'{file}.tmp',file)
+                shutil.move(f'{file}.tmp', file)
             else:
                 self.app_log.warning(f'{file} peerlist update skipped, no changes')
 
@@ -363,7 +362,7 @@ class Peers:
 
             self.consensus = most_common_dict(self.peer_opinion_dict)
 
-            self.consensus_percentage = percentage_in(self.peer_opinion_dict[peer_ip],self.peer_opinion_dict.values())
+            self.consensus_percentage = percentage_in(self.peer_opinion_dict[peer_ip], self.peer_opinion_dict.values())
 
             if int(consensus_blockheight) > int(self.consensus) + 30 and self.consensus_percentage > 50 and len(self.peer_opinion_dict) > 10:
                 if self.warning(sdef, peer_ip, f'Consensus deviation too high, {peer_ip} banned', 10):
@@ -430,11 +429,11 @@ class Peers:
         if tries <= 0:  # First time can be temp, retry again
             delay = 30
         elif tries == 1:  # second time, give it 5 minutes
-            delay = 5*60
+            delay = 5 * 60
         elif tries == 2:  # third time, give it 15 minutes
             delay = 15 * 60
         else:  # 30 minutes before trying again
-            delay = 30*60
+            delay = 30 * 60
         tries += 1
         if tries > 3:
             tries = 3
@@ -467,7 +466,7 @@ class Peers:
         Remove the older timeouts from the tried list.
         Keep the recent ones or we end up trying the first ones again and again
         """
-        limit = time() + 12*60  # matches 2.5 tries :)
+        limit = time() + 12 * 60  # matches 2.5 tries :)
         remove = [client for client in self.tried if self.tried[client][1] > limit]
         for client in remove:
             del self.tried[client]

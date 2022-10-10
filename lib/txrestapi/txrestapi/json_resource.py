@@ -13,7 +13,6 @@ from twisted.internet.defer import Deferred
 from twisted.python import log as twlog
 from twisted.python.failure import Failure
 
-
 _Debug = False
 
 
@@ -26,14 +25,13 @@ def _to_text(v):
 
 
 def _to_json(output_object):
-    return (
-        json.dumps(
-            output_object,
-            indent=2,
-            separators=(',', ': '),
-            sort_keys=True,
-            default=_to_text,
-        ) + '\n').encode()
+    return (json.dumps(
+        output_object,
+        indent=2,
+        separators=(',', ': '),
+        sort_keys=True,
+        default=_to_text,
+    ) + '\n').encode()
 
 
 class _JsonResource(Resource):
@@ -100,7 +98,9 @@ class _DelayedJsonResource(_JsonResource):
         self._setHeaders(request)
         execution = '%3.6f' % (time.time() - self._executed)
         err_msg = err.getErrorMessage() if isinstance(err, Failure) else str(err)
-        raw = _to_json(dict(status='ERROR', execution=execution, errors=[err_msg, ]))
+        raw = _to_json(dict(status='ERROR', execution=execution, errors=[
+            err_msg,
+        ]))
         if not request.channel:
             if _Debug:
                 twlog.err('REST API connection channel already closed')
@@ -116,6 +116,7 @@ class _DelayedJsonResource(_JsonResource):
 
 
 def maybeResource(f):
+
     @wraps(f)
     def inner(*args, **kwargs):
         _executed = time.time()
@@ -124,7 +125,9 @@ def maybeResource(f):
 
         except Exception as exc:
             return _JsonResource(
-                result=dict(status='ERROR', errors=[str(exc), ]),
+                result=dict(status='ERROR', errors=[
+                    str(exc),
+                ]),
                 executed=_executed,
             )
 
@@ -204,7 +207,9 @@ class JsonAPIResource(Resource):
             callback, args = self._get_callback(request)
             self.log_request(request, callback, args)
             if callback is None:
-                return _JsonResource(dict(status='ERROR', errors=['path %r not found' % name, ]), time.time())
+                return _JsonResource(dict(status='ERROR', errors=[
+                    'path %r not found' % name,
+                ]), time.time())
             else:
                 return maybeResource(callback)(request, **args)
         else:

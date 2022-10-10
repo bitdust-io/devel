@@ -24,7 +24,6 @@
 #
 #
 #
-
 """
 .. module:: network_transport.
 
@@ -232,7 +231,9 @@ class NetworkTransport(automat.Automat):
         """
         Action method.
         """
-        options = {'idurl': my_id.getIDURL(), }
+        options = {
+            'idurl': my_id.getIDURL(),
+        }
         id_contact = ''
         default_host = ''
         if self.proto == 'tcp':

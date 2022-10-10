@@ -24,7 +24,6 @@
 #
 #
 #
-
 """
 .. module:: installer.
 
@@ -112,7 +111,9 @@ def IsExist():
     global _Installer
     return _Installer is not None
 
+
 #------------------------------------------------------------------------------
+
 
 def A(event=None, *args, **kwargs):
     """
@@ -131,7 +132,9 @@ def A(event=None, *args, **kwargs):
         _Installer.automat(event, *args, **kwargs)
     return _Installer
 
+
 #------------------------------------------------------------------------------
+
 
 class Installer(automat.Automat):
     """
@@ -150,7 +153,8 @@ class Installer(automat.Automat):
         'idurl_not_exist': ('Identity URL address not exist or not reachable at this moment', 'blue'),
         'signing_error': ('unable to sign the local Identity file', 'red'),
         'signature_not_match': ('remote Identity and Private Key did not match', 'red'),
-        'success': ('account restored!', 'green'), }
+        'success': ('account restored!', 'green'),
+    }
 
     def getOutput(self, state=None):
         if state is None:
@@ -169,15 +173,15 @@ class Installer(automat.Automat):
         if self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'WHAT_TO_DO?'
-                self.flagCmdLine=False
+                self.flagCmdLine = False
             elif event == 'register-cmd-line':
                 self.state = 'REGISTER'
-                self.flagCmdLine=True
+                self.flagCmdLine = True
                 self.doInit(*args, **kwargs)
                 id_registrator.A('start', *args, **kwargs)
             elif event == 'recover-cmd-line':
                 self.state = 'RECOVER'
-                self.flagCmdLine=True
+                self.flagCmdLine = True
                 self.doInit(*args, **kwargs)
                 id_restorer.A('start', *args, **kwargs)
         #---WHAT_TO_DO?---
@@ -232,15 +236,15 @@ class Installer(automat.Automat):
             if event == 'print':
                 self.doPrint(*args, **kwargs)
                 self.doUpdate(*args, **kwargs)
-            elif ( event == 'id_registrator.state' and args[0] == 'FAILED' ) and not self.flagCmdLine:
+            elif (event == 'id_registrator.state' and args[0] == 'FAILED') and not self.flagCmdLine:
                 self.state = 'INPUT_NAME'
                 self.doShowOutput(*args, **kwargs)
                 self.doUpdate(*args, **kwargs)
-            elif ( event == 'id_registrator.state' and args[0] == 'DONE' ) and not self.flagCmdLine:
+            elif (event == 'id_registrator.state' and args[0] == 'DONE') and not self.flagCmdLine:
                 self.state = 'AUTHORIZED'
                 self.doPrepareSettings(*args, **kwargs)
                 self.doUpdate(*args, **kwargs)
-            elif ( event == 'id_registrator.state' and args[0] in [ 'DONE' , 'FAILED' ] ) and self.flagCmdLine:
+            elif (event == 'id_registrator.state' and args[0] in ['DONE', 'FAILED']) and self.flagCmdLine:
                 self.state = 'DONE'
                 self.doUpdate(*args, **kwargs)
         #---AUTHORIZED---
@@ -256,14 +260,14 @@ class Installer(automat.Automat):
             if event == 'print':
                 self.doPrint(*args, **kwargs)
                 self.doUpdate(*args, **kwargs)
-            elif ( event == 'id_restorer.state' and args[0] in [ 'RESTORED!' , 'FAILED' ] ) and self.flagCmdLine:
+            elif (event == 'id_restorer.state' and args[0] in ['RESTORED!', 'FAILED']) and self.flagCmdLine:
                 self.state = 'DONE'
                 self.doUpdate(*args, **kwargs)
-            elif ( event == 'id_restorer.state' and args[0] == 'RESTORED!' ) and not self.flagCmdLine:
+            elif (event == 'id_restorer.state' and args[0] == 'RESTORED!') and not self.flagCmdLine:
                 self.state = 'RESTORED'
                 self.doRestoreSettings(*args, **kwargs)
                 self.doUpdate(*args, **kwargs)
-            elif ( event == 'id_restorer.state' and args[0] == 'FAILED' ) and not self.flagCmdLine:
+            elif (event == 'id_restorer.state' and args[0] == 'FAILED') and not self.flagCmdLine:
                 self.state = 'LOAD_KEY'
                 self.doUpdate(*args, **kwargs)
         #---DONE---
@@ -276,7 +280,7 @@ class Installer(automat.Automat):
             if event == 'print':
                 self.doPrint(*args, **kwargs)
                 self.doUpdate(*args, **kwargs)
-            elif ( event == 'install_wizard.state' and args[0] == 'DONE' ):
+            elif (event == 'install_wizard.state' and args[0] == 'DONE'):
                 self.state = 'DONE'
                 self.doUpdate(*args, **kwargs)
         #---RESTORED---
@@ -406,6 +410,7 @@ class Installer(automat.Automat):
         """
         Action method.
         """
+
 
 #    def doIncreaseDebugLevel(self, *args, **kwargs):
 #        """

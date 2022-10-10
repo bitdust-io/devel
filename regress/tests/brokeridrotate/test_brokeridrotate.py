@@ -19,7 +19,6 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
-
 """
 SCENARIO 19: ID server id-dead is dead and broker-rotated has rotated identity
 
@@ -51,7 +50,9 @@ def test_brokeridrotate():
     #--- SCENARIO 12 end: customer-1 group chat with customer-2, but broker-rotated IDURL was rotated
     scenarios.scenario12_end(old_customer_1_info_s12)
 
+
 #------------------------------------------------------------------------------
+
 
 def prepare():
     set_active_scenario('PREPARE')
@@ -62,4 +63,6 @@ def prepare():
     # kw.wait_service_state(scenarios.CUSTOMERS_IDS_12, 'service_personal_messages', 'ON')
     kw.wait_service_state(scenarios.CUSTOMERS_IDS_12, 'service_private_groups', 'ON')
     kw.wait_service_state(scenarios.CUSTOMERS_IDS_12, 'service_message_history', 'ON')
-    kw.wait_packets_finished(scenarios.CUSTOMERS_IDS_12 + scenarios.BROKERS_IDS + ['broker-rotated', ] + scenarios.SUPPLIERS_IDS_12)
+    kw.wait_packets_finished(scenarios.CUSTOMERS_IDS_12 + scenarios.BROKERS_IDS + [
+        'broker-rotated',
+    ] + scenarios.SUPPLIERS_IDS_12)

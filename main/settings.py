@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 .. module:: settings.
 
@@ -80,6 +79,7 @@ _BackupMaxBlockSize = None
 
 #------------------------------------------------------------------------------
 
+
 def init(base_dir=None):
     """
     Must be called before all other things.
@@ -114,9 +114,11 @@ def shutdown():
     deploy.set_base_dir(None)
     config.shutdown()
 
+
 #------------------------------------------------------------------------------
 #---USER CONFIG----------------------------------------------------------------
 #------------------------------------------------------------------------------
+
 
 def override(key, value):
     """
@@ -207,6 +209,7 @@ Below is a set of global constants.
 #------------------------------------------------------------------------------
 #--- LOGS --------------------------------------------------------------------
 #------------------------------------------------------------------------------
+
 
 def UpdateLogFilename():
     """
@@ -556,6 +559,7 @@ def MaxDeletedBackupIDsToKeep():
     """
     return 100
 
+
 #------------------------------------------------------------------------------
 #---CONSTANTS ( STRINGS ) -----------------------------------------------------
 #------------------------------------------------------------------------------
@@ -655,6 +659,7 @@ def LegalNickNameChars():
 #------------------------------------------------------------------------------
 #--- FOLDERS ------------------------------------------------------------------
 #------------------------------------------------------------------------------
+
 
 def BaseDir():
     """
@@ -854,9 +859,11 @@ def ServicesDataDir():
 def ServiceDir(service_name):
     return os.path.join(ServicesDataDir(), service_name.replace('service_', ''))
 
+
 #------------------------------------------------------------------------------
 #--- FILES --------------------------------------------------------------------
 #------------------------------------------------------------------------------
+
 
 def KeyFileName():
     """
@@ -962,7 +969,10 @@ def BackupIndexFilePath(customer_idurl=None, key_alias='master'):
     customer_idurl = id_url.field(customer_idurl)
     customer_id = customer_idurl.to_id()
     index_dir_path = os.path.join(ServiceDir('service_backups'), 'index')
-    index_file_path = os.path.join(index_dir_path, '%s$%s' % (key_alias, customer_id, ))
+    index_file_path = os.path.join(index_dir_path, '%s$%s' % (
+        key_alias,
+        customer_id,
+    ))
     return index_file_path
 
 
@@ -1039,9 +1049,11 @@ def CertificateFiles():
     The idea is to have a global certificate for BitDust server, just like
     https works.
     """
-    return [os.path.join(MetaDataDir(), 'bitdust.cer'),
-            os.path.join('.', 'bitdust.cer'),
-            os.path.join(bpio.getExecutableDir(), 'bitdust.cer'), ]
+    return [
+        os.path.join(MetaDataDir(), 'bitdust.cer'),
+        os.path.join('.', 'bitdust.cer'),
+        os.path.join(bpio.getExecutableDir(), 'bitdust.cer'),
+    ]
 
 
 def DHTDBFile():
@@ -1074,6 +1086,7 @@ def APISecretFile():
 
 def ChatMessagesHistoryDatabaseFile():
     return os.path.join(ChatMessagesDir(), 'message_v1.db')
+
 
 #------------------------------------------------------------------------------
 #--- BINARY FILES -------------------------------------------------------------
@@ -1149,6 +1162,7 @@ def FontImageFile():
     A font to use to print text labels in the GUI.
     """
     return os.path.join(FontsFolderPath(), 'Arial_Narrow.ttf')
+
 
 #------------------------------------------------------------------------------
 #---PORT NUMBERS---------------------------------------------------------------
@@ -1266,6 +1280,7 @@ def DefaultWebTrafficPort():
     """
     return 9997
 
+
 #------------------------------------------------------------------------------
 #--- USER FOLDERS -------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -1314,6 +1329,7 @@ def getTempDir():
     An alias for ``TempDir()``.
     """
     return TempDir()
+
 
 #------------------------------------------------------------------------------
 #--- OS PROXY SERVER OPTIONS --------------------------------------------------
@@ -1369,7 +1385,8 @@ def getProxySettingsDict():
         'port': config.conf().getData('services/network/proxy/port').strip(),
         'username': config.conf().getData('services/network/proxy/username').strip(),
         'password': config.conf().getData('services/network/proxy/password').strip(),
-        'ssl': config.conf().getData('services/network/proxy/ssl').strip(), }
+        'ssl': config.conf().getData('services/network/proxy/ssl').strip(),
+    }
 
 
 def update_proxy_settings():
@@ -1397,6 +1414,7 @@ def update_proxy_settings():
             lg.out(_DebugLevel, '    USERNAME:  ' + net_misc.get_proxy_username())
             lg.out(_DebugLevel, '    PASSWORD:  ' + ('*' * len(net_misc.get_proxy_password())))
             lg.out(_DebugLevel, '    SSL:       ' + net_misc.get_proxy_ssl())
+
 
 #------------------------------------------------------------------------------
 #---OTHER USER CONFIGURATIONS--------------------------------------------------
@@ -1862,7 +1880,8 @@ def getUpdatesModeValues():
     return (
         'install automatically',
         'only notify',
-        'turn off updates', )
+        'turn off updates',
+    )
 
 
 def getUpdatesSheduleData():
@@ -1980,6 +1999,7 @@ def enableBroadcastRouting(enable=None):
         return config.conf().getBool('services/broadcasting/routing-enabled')
     config.conf().setBool('services/broadcasting/routing-enabled', enable)
 
+
 #------------------------------------------------------------------------------
 #--- INITIALIZE BASE DIR ------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -2018,6 +2038,7 @@ def RenameBaseDir(newdir):
     if logfilename:
         lg.open_log_file(logfilename, True)
     return True
+
 
 #------------------------------------------------------------------------------
 #--- USER SETTINGS VALIDATION -------------------------------------------------
@@ -2149,6 +2170,8 @@ def _checkStaticDirectories():
         if _Debug:
             lg.out(_DebugLevel, 'settings.init want to create folder: ' + ChatHistoryDir())
         os.makedirs(ChatHistoryDir())
+
+
 #     if not os.path.exists(BlockchainDir()):
 #         if _Debug:
 #             lg.out(_DebugLevel, 'settings.init want to create folder: ' + BlockchainDir())
@@ -2180,7 +2203,9 @@ def _checkCustomDirectories():
     if config.conf().getString('paths/restore', '') == '':
         config.conf().setString('paths/restore', DefaultRestoreDir())
 
+
 #-------------------------------------------------------------------------------
+
 
 def main():
     lg.set_debug_level(24)
@@ -2202,8 +2227,8 @@ def main():
         else:
             print(child, config.conf().getData(child))
 
-#------------------------------------------------------------------------------
 
+#------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     main()

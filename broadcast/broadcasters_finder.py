@@ -19,8 +19,6 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
-
-
 """
 .. module:: broadcasters_finder
 
@@ -40,7 +38,6 @@ EVENTS:
     * :red:`timer-3sec`
     * :red:`users-not-found`
 """
-
 
 #------------------------------------------------------------------------------
 
@@ -89,6 +86,7 @@ def A(event=None, *args, **kwargs):
     if event is not None:
         _BroadcastersFinder.automat(event, *args, **kwargs)
     return _BroadcastersFinder
+
 
 #------------------------------------------------------------------------------
 

@@ -5,6 +5,7 @@ import platform
 
 
 class Node:
+
     def platform(self):
         if 'Linux' in platform.system():
             return True
@@ -68,7 +69,7 @@ class Node:
         self.ledger_temp = None
         self.hyper_temp = None
         self.q = queue.Queue()
-        self.py_version= int(str(sys.version_info.major) + str(sys.version_info.minor) + str(sys.version_info.micro))
+        self.py_version = int(str(sys.version_info.major) + str(sys.version_info.minor) + str(sys.version_info.micro))
 
         self.keys = None
         self.linux = self.platform()

@@ -4,7 +4,6 @@ import os
 
 from unittest import TestCase
 
-
 if six.PY2:
     from CodernityDB.database import Database
     from CodernityDB.hash_index import HashIndex

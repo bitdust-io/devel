@@ -13,15 +13,12 @@ from quantizer import quantize_eight
 LEDGER_PATH = '../static/ledger.db'
 HYPER_PATH = '../static/hyper.db'
 
-ADDRESSES = ['edf2d63cdf0b6275ead22c9e6d66aa8ea31dc0ccb367fad2e7c08a25',
-             'da8a39cc9d880cd55c324afc2f9596c64fac05b8d41b3c9b6c481b4e',
-             'e13e79dc7e4b8265d7cdafe31819939fcce98abc2c7662f7fb53fa38',
-             '4edadac9093d9326ee4b17f869b14f1a2534f96f9c5d7b48dc9acaed']
+ADDRESSES = [
+    'edf2d63cdf0b6275ead22c9e6d66aa8ea31dc0ccb367fad2e7c08a25', 'da8a39cc9d880cd55c324afc2f9596c64fac05b8d41b3c9b6c481b4e', 'e13e79dc7e4b8265d7cdafe31819939fcce98abc2c7662f7fb53fa38', '4edadac9093d9326ee4b17f869b14f1a2534f96f9c5d7b48dc9acaed'
+]
 
 # subset , faster.
-ADDRESSES = ['edf2d63cdf0b6275ead22c9e6d66aa8ea31dc0ccb367fad2e7c08a25',
-             'da8a39cc9d880cd55c324afc2f9596c64fac05b8d41b3c9b6c481b4e']
-
+ADDRESSES = ['edf2d63cdf0b6275ead22c9e6d66aa8ea31dc0ccb367fad2e7c08a25', 'da8a39cc9d880cd55c324afc2f9596c64fac05b8d41b3c9b6c481b4e']
 """
 ledger_balance_node: 61.1779580116272s
 {'edf2d63cdf0b6275ead22c9e6d66aa8ea31dc0ccb367fad2e7c08a25': Decimal('4024805.98934682'), 'da8a39cc9d880cd55c324afc2f9596c64fac05b8d41b3c9b6c481b4e': Decimal('4679.79590757'), 'e13e79dc7e4b8265d7cdafe31819939fcce98abc2c7662f7fb53fa38': Decimal('855.83117533'), '4edadac9093d9326ee4b17f869b14f1a2534f96f9c5d7b48dc9acaed': Decimal('528412.64728875')}

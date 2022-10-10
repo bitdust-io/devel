@@ -76,23 +76,24 @@ def decrypt(password, data):
     return cipher.decrypt(raw[SALT_LEN[version] // 8:-HASH.digest_size])
 
 
-class DecryptionException(Exception): pass
+class DecryptionException(Exception):
+    pass
 
 
-class EncryptionException(Exception): pass
+class EncryptionException(Exception):
+    pass
 
 
 def _assert_not_unicode(data):
     # warn confused users
     u_type = type(b''.decode('utf8'))
     if isinstance(data, u_type):
-        raise DecryptionException('Data to decrypt must be bytes; ' +
-                                  'you cannot use a string because no string encoding will accept all possible characters.')
+        raise DecryptionException('Data to decrypt must be bytes; ' + 'you cannot use a string because no string encoding will accept all possible characters.')
 
 
 def _assert_encrypt_length(data):
     # for AES this is never going to fail
-    if len(data) > 2 ** HALF_BLOCK:
+    if len(data) > 2**HALF_BLOCK:
         raise EncryptionException('Message too long.')
 
 
@@ -111,9 +112,7 @@ def _assert_header_version(data):
         try:
             return HEADER.index(data[:HEADER_LEN])
         except:
-            raise DecryptionException(
-                'The data appear to be encrypted with a more recent version of simple-crypt (bad header). ' +
-                'Please update the library and try again.')
+            raise DecryptionException('The data appear to be encrypted with a more recent version of simple-crypt (bad header). ' + 'Please update the library and try again.')
     else:
         raise DecryptionException('Missing header.')
 
@@ -126,13 +125,14 @@ def _assert_hmac(key, hmac, hmac2):
 
 def _pbkdf2(password, salt, n_bytes, count):
     # the form of the prf below is taken from the code for PBKDF2
-    return PBKDF2(password, salt, dkLen=n_bytes,
-                  count=count, prf=lambda p, s: HMAC.new(p, s, HASH).digest())
+    return PBKDF2(password, salt, dkLen=n_bytes, count=count, prf=lambda p, s: HMAC.new(p, s, HASH).digest())
 
 
 def _expand_keys(password, salt, expansion_count):
-    if not salt: raise ValueError('Missing salt.')
-    if not password: raise ValueError('Missing password.')
+    if not salt:
+        raise ValueError('Missing salt.')
+    if not password:
+        raise ValueError('Missing password.')
     key_len = AES_KEY_LEN // 8
     keys = _pbkdf2(_str_to_bytes(password), salt, 2 * key_len, expansion_count)
     return keys[:key_len], keys[key_len:]

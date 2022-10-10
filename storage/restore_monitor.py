@@ -20,7 +20,6 @@
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
 #
-
 """
 .. module:: restore_monitor.
 
@@ -80,7 +79,9 @@ def shutdown():
     if _Debug:
         lg.out(_DebugLevel, 'restore_monitor.shutdown')
 
+
 #------------------------------------------------------------------------------
+
 
 def block_restored_callback(backupID, block):
     global OnRestoreBlockFunc
@@ -117,10 +118,12 @@ def extract_done(retcode, backupID, source_filename, output_location, callback_m
             callback_method(backupID, 'restore done')
         except:
             lg.exc()
-    events.send('restore-done', data=dict(
-        backup_id=backupID,
-        output_location=output_location,
-    ))
+    events.send(
+        'restore-done', data=dict(
+            backup_id=backupID,
+            output_location=output_location,
+        )
+    )
     return retcode
 
 
@@ -137,12 +140,14 @@ def extract_failed(err, backupID, source_filename, output_location, callback_met
             callback_method(backupID, 'extract failed')
         except:
             lg.exc()
-    events.send('restore-failed', data=dict(
-        backup_id=backupID,
-        output_location=output_location,
-        reason='extracting file failed',
-        error=str(err),
-    ))
+    events.send(
+        'restore-failed', data=dict(
+            backup_id=backupID,
+            output_location=output_location,
+            reason='extracting file failed',
+            error=str(err),
+        )
+    )
     return err
 
 
@@ -175,7 +180,9 @@ def restore_done(result, backupID, outfd, tarfilename, outputlocation, callback_
             lg.exc()
     return result
 
+
 #------------------------------------------------------------------------------
+
 
 def Start(backupID, outputLocation, callback=None, keyID=None):
     if _Debug:
@@ -211,6 +218,7 @@ def Abort(backupID):
     if _Debug:
         lg.out(_DebugLevel, 'restore_monitor.Abort %s' % backupID)
     return True
+
 
 #------------------------------------------------------------------------------
 

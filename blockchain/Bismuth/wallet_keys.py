@@ -14,8 +14,8 @@ def generate():
 
 def read():
     # import keys
-    with open ('wallet.der', 'r') as wallet_file:
-            wallet_dict = json.load (wallet_file)
+    with open('wallet.der', 'r') as wallet_file:
+        wallet_dict = json.load(wallet_file)
     private_key_readable = wallet_dict['Private Key']
     public_key_readable = wallet_dict['Public Key']
     key = private_key_readable

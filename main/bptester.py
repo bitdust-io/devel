@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 .. module:: bptester.
 
@@ -56,6 +55,7 @@ from io import open
 AppData = ''
 
 #------------------------------------------------------------------------------
+
 
 def sharedPath(filename, subdir='logs'):
     global AppData
@@ -105,6 +105,7 @@ def printlog(txt):
     except:
         pass
 
+
 #------------------------------------------------------------------------------
 
 from logs import lg
@@ -123,6 +124,7 @@ from userid import global_id
 from userid import id_url
 
 #-------------------------------------------------------------------------------
+
 
 def SpaceTime():
     """
@@ -207,7 +209,9 @@ def SpaceTime():
                 used_space[latest_customer_idurl_bin] = used_space.pop(customer_idurl_bin)
                 if _Debug:
                     printlog('found customer idurl rotated in customer usage dictionary : %r -> %r' % (
-                        latest_customer_idurl_bin, customer_idurl_bin, ))
+                        latest_customer_idurl_bin,
+                        customer_idurl_bin,
+                    ))
 
     for path in remove_list.keys():
         if not os.path.exists(path):
@@ -239,7 +243,9 @@ def SpaceTime():
 
     return True
 
+
 #------------------------------------------------------------------------------
+
 
 def UpdateCustomers():
     """
@@ -279,7 +285,10 @@ def UpdateCustomers():
             try:
                 bpio._dir_remove(path)
                 if _Debug:
-                    printlog('UpdateCustomers %r folder removed (%s)' % (path, remove_list[path], ))
+                    printlog('UpdateCustomers %r folder removed (%s)' % (
+                        path,
+                        remove_list[path],
+                    ))
             except:
                 if _Debug:
                     printlog('UpdateCustomers ERROR removing %r' % path)
@@ -292,13 +301,17 @@ def UpdateCustomers():
         try:
             os.remove(path)
             if _Debug:
-                printlog('UpdateCustomers %r file removed (%s)' % (path, remove_list[path], ))
+                printlog('UpdateCustomers %r file removed (%s)' % (
+                    path,
+                    remove_list[path],
+                ))
         except:
             if _Debug:
                 printlog('UpdateCustomers ERROR removing %r' % path)
     if _Debug:
         printlog('UpdateCustomers %r' % time.strftime('%a, %d %b %Y %H:%M:%S +0000'))
     return True
+
 
 #------------------------------------------------------------------------------
 
@@ -364,6 +377,7 @@ def Validate():
 
     return True
 
+
 #------------------------------------------------------------------------------
 
 
@@ -392,6 +406,7 @@ def main():
     cmd()
     settings.shutdown()
     id_url.shutdown()
+
 
 #------------------------------------------------------------------------------
 

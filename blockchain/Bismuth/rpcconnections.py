@@ -15,7 +15,6 @@ LTIMEOUT = 45
 # Fixed header length
 SLEN = 10
 
-
 __version__ = '0.1.7'
 
 
@@ -54,10 +53,10 @@ class Connection(object):
             self.sdef.settimeout(LTIMEOUT)
             # Make sure the packet is sent in one call
             sdata = str(json.dumps(data))
-            res = self.sdef.sendall(str(len(sdata)).encode('utf-8').zfill(slen)+sdata.encode('utf-8'))
+            res = self.sdef.sendall(str(len(sdata)).encode('utf-8').zfill(slen) + sdata.encode('utf-8'))
             if self.raw:
                 print('sending raw:')
-                print(str(len(sdata)).encode('utf-8').zfill(slen)+sdata.encode('utf-8'))
+                print(str(len(sdata)).encode('utf-8').zfill(slen) + sdata.encode('utf-8'))
             self.last_activity = time.time()
             # res is always 0 on linux
             if self.verbose:
@@ -78,7 +77,7 @@ class Connection(object):
             try:
                 self.sdef.settimeout(LTIMEOUT)
                 # Make sure the packet is sent in one call
-                self.sdef.sendall(str(len(str(json.dumps(data)))).encode('utf-8').zfill(slen)+str(json.dumps(data)).encode('utf-8'))
+                self.sdef.sendall(str(len(str(json.dumps(data)))).encode('utf-8').zfill(slen) + str(json.dumps(data)).encode('utf-8'))
                 return True
             except Exception as e:
                 self.sdef = None

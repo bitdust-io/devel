@@ -19,8 +19,6 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
-
-
 """
 .. module:: strng.
 
@@ -40,6 +38,7 @@ else:
     binary_type = str
 
 #------------------------------------------------------------------------------
+
 
 def is_text(s):
     """
@@ -65,7 +64,9 @@ def is_string(s):
     """
     return is_text(s) or is_bin(s)
 
+
 #------------------------------------------------------------------------------
+
 
 def to_text(s, encoding='utf-8', errors='strict'):
     """

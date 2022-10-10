@@ -1,4 +1,4 @@
-    #!/usr/bin/env python
+#!/usr/bin/env python
 # rebuild.py
 #
 # Copyright (C) 2008 Stanislav Evseev, Veselin Penev  https://bitdust.io
@@ -51,6 +51,7 @@ _WorkerQueue = multiprocessing.Queue()
 _WorkerLock = Lock()
 
 #------------------------------------------------------------------------------
+
 
 class my_decorator_class(object):
 

@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 ..
 
@@ -46,12 +45,7 @@ from twisted.internet import reactor  # @UnresolvedImport
 
 if __name__ == '__main__':
     import os.path as _p
-    sys.path.insert(
-        0, _p.abspath(
-            _p.join(
-                _p.dirname(
-                    _p.abspath(
-                        sys.argv[0])), '..')))
+    sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
 #------------------------------------------------------------------------------
 
@@ -108,6 +102,7 @@ def on_incoming_message(msg):
     global _SimpleTerminalChat
     _SimpleTerminalChat.on_inbox_message(msg['sender'], msg['message'])
     return msg
+
 
 #------------------------------------------------------------------------------
 
@@ -221,8 +216,7 @@ class SimpleTerminalChat(object):
                 for h in self.history[self.printed:]:
                     out = ''
                     if h.get('time'):
-                        out += '[%s] ' % time.strftime('%H:%M:%S',
-                                                       time.gmtime(h['time']))
+                        out += '[%s] ' % time.strftime('%H:%M:%S', time.gmtime(h['time']))
                     if h.get('name'):
                         out += h['name'] + ': '
                     out += h.get('text', '')
@@ -276,7 +270,11 @@ class SimpleTerminalChat(object):
                         continue
                     msg = ''.join(self.chars)
                     self.chars = []
-                    if msg.strip() in ['!q', '!quit', '!exit', ]:
+                    if msg.strip() in [
+                        '!q',
+                        '!quit',
+                        '!exit',
+                    ]:
                         sys.stdout.write('\n\r')
                         sys.stdout.flush()
                         self.quitnow = True
@@ -292,10 +290,8 @@ class SimpleTerminalChat(object):
                     self.chars.append(c)
 
     def welcome(self):
-        sys.stdout.write(
-            'type your message and press Enter to send on channel\n\r')
-        sys.stdout.write(
-            'use "!add <idurl>" command to invite people here\n\r')
+        sys.stdout.write('type your message and press Enter to send on channel\n\r')
+        sys.stdout.write('use "!add <idurl>" command to invite people here\n\r')
         sys.stdout.write('press ESC or send "!q" to quit\n\r')
         sys.stdout.flush()
 
@@ -326,6 +322,7 @@ class SimpleTerminalChat(object):
 
     def stop(self):
         self.quitnow = 1
+
 
 #------------------------------------------------------------------------------
 

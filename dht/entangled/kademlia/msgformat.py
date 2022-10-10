@@ -74,8 +74,7 @@ class DefaultFormat(MessageTranslator):
         return msg
 
     def toPrimitive(self, message):
-        msg = {self.headerMsgID: message.id,
-               self.headerNodeID: message.nodeID}
+        msg = {self.headerMsgID: message.id, self.headerNodeID: message.nodeID}
         if isinstance(message, msgtypes.RequestMessage):
             msg[self.headerType] = self.typeRequest
             msg[self.headerPayload] = message.request
@@ -114,8 +113,7 @@ class MultiLayerFormat(MessageTranslator):
         return msg
 
     def toPrimitive(self, message):
-        msg = {self.headerMsgID: message.id,
-               self.headerNodeID: message.nodeID}
+        msg = {self.headerMsgID: message.id, self.headerNodeID: message.nodeID}
         if isinstance(message, msgtypes.RequestMessage):
             msg[self.headerType] = self.typeRequest
             msg[self.headerPayload] = message.request

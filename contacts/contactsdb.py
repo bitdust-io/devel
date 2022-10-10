@@ -19,7 +19,6 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
-
 """
 .. module:: contactsdb.
 
@@ -69,9 +68,9 @@ from contacts import identitycache
 
 #-------------------------------------------------------------------------------
 
-_CustomersList = []      # comes from settings.CustomerIDsFilename()
-_SuppliersList = {}      # comes from settings.SuppliersDir()
-_CorrespondentsList = []   # comes from settings.CorrespondentIDsFilename()
+_CustomersList = []  # comes from settings.CustomerIDsFilename()
+_SuppliersList = {}  # comes from settings.SuppliersDir()
+_CorrespondentsList = []  # comes from settings.CorrespondentIDsFilename()
 _CorrespondentsDict = {}
 
 _SuppliersChangedCallback = None
@@ -117,7 +116,9 @@ def shutdown():
     if _CustomersChangedCallback is not None:
         _CustomersChangedCallback = None
 
+
 #------------------------------------------------------------------------------
+
 
 def suppliers(customer_idurl=None):
     """
@@ -209,20 +210,33 @@ def add_supplier(idurl, position=None, customer_idurl=None):
     if _Debug:
         lg.args(_DebugLevel, idurl=idurl, position=position, customer_idurl=customer_idurl)
     if position is None or position == -1:
-        lg.warn('position unknown, added supplier "%s" to the end of the list for customer %s' % (idurl, customer_idurl, ))
+        lg.warn('position unknown, added supplier "%s" to the end of the list for customer %s' % (
+            idurl,
+            customer_idurl,
+        ))
         _SuppliersList[customer_idurl].append(idurl)
         return len(_SuppliersList[customer_idurl]) - 1
     current_suppliers = _SuppliersList[customer_idurl]
     if position >= len(current_suppliers):
-        empty_suppliers = [id_url.field(b''), ] * (1 + position - len(current_suppliers))
+        empty_suppliers = [
+            id_url.field(b''),
+        ] * (1 + position - len(current_suppliers))
         current_suppliers.extend(empty_suppliers)
         if _Debug:
             lg.out(_DebugLevel, 'contactsdb.add_supplier   %d empty suppliers added for customer %r' % (len(empty_suppliers), customer_idurl))
     if current_suppliers[position] and current_suppliers[position] != idurl:
         lg.info('replacing known supplier "%s" by "%s" at position %d for customer %s' % (
-            current_suppliers[position], idurl, position, customer_idurl, ))
+            current_suppliers[position],
+            idurl,
+            position,
+            customer_idurl,
+        ))
     else:
-        lg.info('added supplier "%s" at position %d for customer %s' % (idurl, position, customer_idurl, ))
+        lg.info('added supplier "%s" at position %d for customer %s' % (
+            idurl,
+            position,
+            customer_idurl,
+        ))
     current_suppliers[position] = idurl
     update_suppliers(idlist=current_suppliers, customer_idurl=customer_idurl)
     return position
@@ -274,6 +288,7 @@ def clear_all_suppliers():
 
 
 #------------------------------------------------------------------------------
+
 
 def known_customers():
     """
@@ -338,6 +353,7 @@ def clear_customers():
 
 #------------------------------------------------------------------------------
 
+
 def contacts(include_all=False, include_enabled=True):
     """
     Return a union of suppliers and customers ID's.
@@ -371,6 +387,7 @@ def contacts_remote(include_all=False, include_enabled=True):
     """
     l = id_url.to_bin_list(contacts(include_all=include_all, include_enabled=include_enabled))
     return [i for i in id_url.fields_list(l) if not id_url.is_the_same(i, my_id.getIDURL())]
+
 
 #------------------------------------------------------------------------------
 
@@ -416,13 +433,18 @@ def add_correspondent(idurl, nickname=''):
     global _CorrespondentsChangedCallback
     curlist = list(_CorrespondentsList)
     idurl = id_url.field(idurl)
-    _CorrespondentsList.append((idurl.to_bin(), nickname, ))
+    _CorrespondentsList.append((
+        idurl.to_bin(),
+        nickname,
+    ))
     if _CorrespondentsChangedCallback is not None:
         _CorrespondentsChangedCallback(curlist, _CorrespondentsList)
-    listeners.push_snapshot('correspondent', snap_id=idurl.to_bin(), data=dict(
-        idurl=idurl.to_bin(),
-        nickname=nickname,
-    ))
+    listeners.push_snapshot(
+        'correspondent', snap_id=idurl.to_bin(), data=dict(
+            idurl=idurl.to_bin(),
+            nickname=nickname,
+        )
+    )
     return len(curlist)
 
 
@@ -440,22 +462,28 @@ def remove_correspondent(idurl):
             _CorrespondentsList.remove(tupl)
             if _CorrespondentsChangedCallback is not None:
                 _CorrespondentsChangedCallback(curlist, _CorrespondentsList)
-            listeners.push_snapshot('correspondent', snap_id=idurl.to_bin(), deleted=True, data=dict(
-                idurl=idurl.to_bin(),
-                nickname=tupl[1],
-            ))
+            listeners.push_snapshot(
+                'correspondent', snap_id=idurl.to_bin(), deleted=True, data=dict(
+                    idurl=idurl.to_bin(),
+                    nickname=tupl[1],
+                )
+            )
             return True
     return False
 
 
 def populate_correspondents():
     for corr in correspondents():
-        listeners.push_snapshot('correspondent', snap_id=corr[0], data=dict(
-            idurl=corr[0],
-            nickname=corr[1],
-        ))
+        listeners.push_snapshot(
+            'correspondent', snap_id=corr[0], data=dict(
+                idurl=corr[0],
+                nickname=corr[1],
+            )
+        )
+
 
 #-------------------------------------------------------------------------------
+
 
 def is_customer(idurl):
     """
@@ -483,7 +511,9 @@ def is_correspondent(idurl):
         return False
     return id_url.field(idurl).to_bin() in id_url.to_bin_list(correspondents_ids())
 
+
 #------------------------------------------------------------------------------
+
 
 def num_customers():
     """
@@ -513,7 +543,9 @@ def num_correspondents():
     """
     return len(correspondents())
 
+
 #------------------------------------------------------------------------------
+
 
 def supplier_position(idurl, customer_idurl=None):
     """
@@ -566,7 +598,9 @@ def contact_position(idurl):
         index = -1
     return index
 
+
 #-------------------------------------------------------------------------------
+
 
 def save_suppliers(path=None, customer_idurl=None):
     """
@@ -584,7 +618,10 @@ def save_suppliers(path=None, customer_idurl=None):
         bpio._dirs_make(os.path.dirname(path))
     bpio._write_list(path, lst)
     if _Debug:
-        lg.out(_DebugLevel, 'contactsdb.save_suppliers for customer [%s]:\n%r' % (customer_id, lst, ))
+        lg.out(_DebugLevel, 'contactsdb.save_suppliers for customer [%s]:\n%r' % (
+            customer_id,
+            lst,
+        ))
     return True
 
 
@@ -669,7 +706,9 @@ def cache_suppliers(path=None):
         lg.out(_DebugLevel, 'contactsdb.cache_suppliers prepared %d idurls to be cached' % len(dl))
     return DeferredList(dl, consumeErrors=True)
 
+
 #------------------------------------------------------------------------------
+
 
 def save_customers(path=None, save_meta_info=False):
     """
@@ -684,9 +723,16 @@ def save_customers(path=None, save_meta_info=False):
     if save_meta_info:
         json_info = id_url.to_bin_dict(_CustomersMetaInfo)
         local_fs.WriteTextFile(settings.CustomersMetaInfoFilename(), jsn.dumps(
-            json_info, indent=2, sort_keys=True, keys_to_text=True, ))
+            json_info,
+            indent=2,
+            sort_keys=True,
+            keys_to_text=True,
+        ))
     if _Debug:
-        lg.out(_DebugLevel, 'contactsdb.save_customers save_meta_info=%r : %r' % (save_meta_info, lst, ))
+        lg.out(_DebugLevel, 'contactsdb.save_customers save_meta_info=%r : %r' % (
+            save_meta_info,
+            lst,
+        ))
 
 
 def load_customers(path=None):
@@ -727,7 +773,9 @@ def cache_customers(path=None):
         lg.out(_DebugLevel, 'contactsdb.cache_customers prepared %d idurls to be cached' % len(dl))
     return DeferredList(dl, consumeErrors=True)
 
+
 #------------------------------------------------------------------------------
+
 
 def save_correspondents(path=None):
     """
@@ -736,7 +784,10 @@ def save_correspondents(path=None):
     """
     if path is None:
         path = settings.CorrespondentIDsFilename()
-    lst = ['%s %s' % (strng.to_text(t[0]), strng.to_text(t[1]),) for t in correspondents()]
+    lst = ['%s %s' % (
+        strng.to_text(t[0]),
+        strng.to_text(t[1]),
+    ) for t in correspondents()]
     bpio._write_list(path, lst)
 
 
@@ -782,9 +833,15 @@ def cache_correspondents(path=None):
         lg.out(_DebugLevel, 'contactsdb.cache_correspondents prepared %d idurls to be cached' % len(dl))
     return DeferredList(dl, consumeErrors=True)
 
+
 #------------------------------------------------------------------------------
 
-def cache_contacts(suppliers_path=None, customers_path=None, correspondents_path=None, ):
+
+def cache_contacts(
+    suppliers_path=None,
+    customers_path=None,
+    correspondents_path=None,
+):
     """
     Make sure identities of all my known contacts are cached.
     """
@@ -813,7 +870,9 @@ def load_contacts():
         listeners.populate_later().remove('correspondent')
         populate_correspondents()
 
+
 #------------------------------------------------------------------------------
+
 
 def get_contact_identity(idurl):
     """
@@ -825,6 +884,8 @@ def get_contact_identity(idurl):
     idurl = id_url.field(idurl)
     if idurl.to_bin() == my_id.getIDURL().to_bin():
         return my_id.getLocalIdentity()
+
+
 #     if is_supplier(idurl):
 #         return identitycache.FromCache(idurl)
 #     if is_customer(idurl):
@@ -884,16 +945,22 @@ def find_correspondent_by_nickname(nickname):
             return idurl
     return None
 
+
 #------------------------------------------------------------------------------
+
 
 def on_contacts_changed(old_contacts_list, new_contacts_list):
     from main import events
-    events.send('contacts-changed', data=dict(
-        old_contacts=old_contacts_list,
-        new_contacts=new_contacts_list,
-    ))
+    events.send(
+        'contacts-changed', data=dict(
+            old_contacts=old_contacts_list,
+            new_contacts=new_contacts_list,
+        )
+    )
+
 
 #------------------------------------------------------------------------------
+
 
 def read_customers_meta_info_all():
     global _CustomersMetaInfo
@@ -906,7 +973,11 @@ def write_customers_meta_info_all(new_customers_info):
     json_info = {k: jsn.dict_keys_to_text(v) for k, v in id_url.to_bin_dict(_CustomersMetaInfo).items()}
     try:
         raw_data = jsn.dumps(
-            json_info, indent=2, sort_keys=True, keys_to_text=True, values_to_text=True,
+            json_info,
+            indent=2,
+            sort_keys=True,
+            keys_to_text=True,
+            values_to_text=True,
         )
     except:
         lg.exc()
@@ -922,8 +993,7 @@ def add_customer_meta_info(customer_idurl, info):
         if customer_idurl.original() in _CustomersMetaInfo:
             if customer_idurl.to_bin() not in _CustomersMetaInfo:
                 _CustomersMetaInfo[customer_idurl.to_bin()] = _CustomersMetaInfo.pop(customer_idurl.original())
-                lg.info('detected and processed idurl rotate for customer meta info : %r -> %r' % (
-                    customer_idurl.original(), customer_idurl.to_bin()))
+                lg.info('detected and processed idurl rotate for customer meta info : %r -> %r' % (customer_idurl.original(), customer_idurl.to_bin()))
     customer_idurl = id_url.to_bin(customer_idurl)
     if 'family_snapshot' in info:
         info['family_snapshot'] = id_url.to_bin_list(info['family_snapshot'])
@@ -932,17 +1002,25 @@ def add_customer_meta_info(customer_idurl, info):
     if customer_idurl not in _CustomersMetaInfo:
         if _Debug:
             lg.out(_DebugLevel, 'contactsdb.add_customer_meta_info   store new meta info for customer %r: %r' % (
-                customer_idurl, info, ))
+                customer_idurl,
+                info,
+            ))
         _CustomersMetaInfo[customer_idurl] = {}
     else:
         if _Debug:
             lg.out(_DebugLevel, 'contactsdb.add_customer_meta_info   update existing meta info for customer %r: %r' % (
-                customer_idurl, info, ))
+                customer_idurl,
+                info,
+            ))
         _CustomersMetaInfo[customer_idurl].update(info)
     json_info = {k: jsn.dict_keys_to_text(v) for k, v in id_url.to_bin_dict(_CustomersMetaInfo).items()}
     try:
         raw_data = jsn.dumps(
-            json_info, indent=2, sort_keys=True, keys_to_text=True, values_to_text=True,
+            json_info,
+            indent=2,
+            sort_keys=True,
+            keys_to_text=True,
+            values_to_text=True,
         )
     except:
         lg.exc()
@@ -958,8 +1036,7 @@ def remove_customer_meta_info(customer_idurl):
         if customer_idurl.original() in _CustomersMetaInfo:
             if customer_idurl.to_bin() not in _CustomersMetaInfo:
                 _CustomersMetaInfo[customer_idurl.to_bin()] = _CustomersMetaInfo.pop(customer_idurl.original())
-                lg.info('detected and processed idurl rotate for customer meta info : %r -> %r' % (
-                    customer_idurl.original(), customer_idurl.to_bin()))
+                lg.info('detected and processed idurl rotate for customer meta info : %r -> %r' % (customer_idurl.original(), customer_idurl.to_bin()))
     customer_idurl = id_url.to_bin(customer_idurl)
     if customer_idurl not in _CustomersMetaInfo:
         lg.warn('meta info for customer %r not exist' % customer_idurl)
@@ -969,7 +1046,11 @@ def remove_customer_meta_info(customer_idurl):
     _CustomersMetaInfo.pop(customer_idurl)
     json_info = {k: jsn.dict_keys_to_text(v) for k, v in id_url.to_bin_dict(_CustomersMetaInfo).items()}
     local_fs.WriteTextFile(settings.CustomersMetaInfoFilename(), jsn.dumps(
-        json_info, indent=2, sort_keys=True, keys_to_text=True, values_to_text=True,
+        json_info,
+        indent=2,
+        sort_keys=True,
+        keys_to_text=True,
+        values_to_text=True,
     ))
     return True
 
@@ -981,12 +1062,13 @@ def get_customer_meta_info(customer_idurl):
         if customer_idurl.original() in _CustomersMetaInfo:
             if customer_idurl.to_bin() not in _CustomersMetaInfo:
                 _CustomersMetaInfo[customer_idurl.to_bin()] = _CustomersMetaInfo.pop(customer_idurl.original())
-                lg.info('detected and processed idurl rotate for customer meta info : %r -> %r' % (
-                    customer_idurl.original(), customer_idurl.to_bin()))
+                lg.info('detected and processed idurl rotate for customer meta info : %r -> %r' % (customer_idurl.original(), customer_idurl.to_bin()))
     customer_idurl = id_url.to_bin(customer_idurl)
     return jsn.dict_keys_to_text(jsn.dict_values_to_text(_CustomersMetaInfo.get(customer_idurl, {})))
 
+
 #------------------------------------------------------------------------------
+
 
 def add_supplier_meta_info(supplier_idurl, info, customer_idurl=None):
     global _SuppliersMetaInfo
@@ -1000,8 +1082,7 @@ def add_supplier_meta_info(supplier_idurl, info, customer_idurl=None):
         _SuppliersMetaInfo[customer_idurl][supplier_idurl] = {}
     _SuppliersMetaInfo[customer_idurl][supplier_idurl].update(info)
     if _Debug:
-        lg.out(_DebugLevel, 'contactsdb.add_supplier_meta_info   for supplier %s of customer %s: %s' % (
-            supplier_idurl, customer_idurl, _SuppliersMetaInfo[customer_idurl][supplier_idurl]))
+        lg.out(_DebugLevel, 'contactsdb.add_supplier_meta_info   for supplier %s of customer %s: %s' % (supplier_idurl, customer_idurl, _SuppliersMetaInfo[customer_idurl][supplier_idurl]))
 
 
 def remove_supplier_meta_info(supplier_idurl, customer_idurl=None):
@@ -1028,10 +1109,11 @@ def get_supplier_meta_info(supplier_idurl, customer_idurl=None):
         return {}
     customer_idurl = id_url.field(customer_idurl)
     supplier_idurl = id_url.field(supplier_idurl)
-    return jsn.dict_keys_to_text(jsn.dict_values_to_text(
-        _SuppliersMetaInfo.get(customer_idurl, {}).get(supplier_idurl, {})))
+    return jsn.dict_keys_to_text(jsn.dict_values_to_text(_SuppliersMetaInfo.get(customer_idurl, {}).get(supplier_idurl, {})))
+
 
 #------------------------------------------------------------------------------
+
 
 def SetSuppliersChangedCallback(cb):
     """

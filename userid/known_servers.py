@@ -30,6 +30,7 @@ _KnownServers = None
 
 #------------------------------------------------------------------------------
 
+
 def default_nodes():
     """
     A set of identity servers currently maintained, see file `default_network.json` in the root folder.
@@ -98,7 +99,10 @@ def by_host():
                     id_server_tcp_port = 6661
             except:
                 continue
-            overridden_identity_servers[id_server_host] = (id_server_web_port, id_server_tcp_port, )
+            overridden_identity_servers[id_server_host] = (
+                id_server_web_port,
+                id_server_tcp_port,
+            )
 
     if overridden_identity_servers:
         _KnownServers = overridden_identity_servers

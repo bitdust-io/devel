@@ -1,5 +1,6 @@
 import socks, connections
 import options
+
 config = options.Get()
 config.read()
 version = config.version
@@ -14,7 +15,6 @@ elif 'regnet' in version:
     is_regnet = True
     print('Regtest mode')
     port = 3030
-
 
 while True:
     try:

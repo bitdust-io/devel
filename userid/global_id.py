@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 .. module:: global_id.
 
@@ -58,6 +57,7 @@ _REGEX_OBJ_GLOBAL_ID_QUEUE_ID = None
 
 #------------------------------------------------------------------------------
 
+
 def idurl2glob(idurl):
     """
     Alias.
@@ -71,7 +71,9 @@ def glob2idurl(glob_id, as_field=True):
     """
     return GlobalUserToIDURL(glob_id, as_field=as_field)
 
+
 #------------------------------------------------------------------------------
+
 
 def MakeGlobalKeyID(key_alias, user_id):
     return _FORMAT_GLOBAL_ID_KEY_USER.format(
@@ -79,7 +81,9 @@ def MakeGlobalKeyID(key_alias, user_id):
         user=user_id,
     )
 
+
 #------------------------------------------------------------------------------
+
 
 def MakeGlobalID(
     idurl=None,
@@ -331,7 +335,9 @@ def SubstitutePacketID(packet_id, idurl=None, customer=None, key_id=None, path=N
             g['key_id'] = MakeGlobalKeyID(g['key_alias'], g['customer'])
     return MakeGlobalID(**g)
 
+
 #------------------------------------------------------------------------------
+
 
 def UrlToGlobalID(url, include_key=False):
     if not url:
@@ -376,7 +382,9 @@ def GlobalUserToIDURL(inp, as_field=True):
     from userid import id_url
     return id_url.field('http://{}/{}.xml'.format(idhost, user))
 
+
 #------------------------------------------------------------------------------
+
 
 def IsValidGlobalUser(inp):
     if not inp:
@@ -404,7 +412,9 @@ def IsFullGlobalID(inp):
         return False
     return True
 
+
 #------------------------------------------------------------------------------
+
 
 def MakeGlobalQueueID(queue_alias, owner_id, supplier_id):
     global _FORMAT_GLOBAL_ID_QUEUE_ID
@@ -413,6 +423,7 @@ def MakeGlobalQueueID(queue_alias, owner_id, supplier_id):
         owner_id=strng.to_text(owner_id),
         supplier_id=strng.to_text(supplier_id),
     )
+
 
 def ParseGlobalQueueID(queue_id):
     global _REGEX_GLOBAL_ID_QUEUE_ID
@@ -454,7 +465,9 @@ def GetGlobalQueueKeyID(queue_id):
     key_id = MakeGlobalKeyID(queue_alias, owner_id)
     return key_id
 
+
 #------------------------------------------------------------------------------
 
+
 def latest_glob_id(glob_id):
-    return  glob2idurl(glob_id, as_field=True).to_id()
+    return glob2idurl(glob_id, as_field=True).to_id()

@@ -66,6 +66,7 @@ define('app_title', default=u'Tornado Bismuth Wallet', help='Custom app title', 
 
 # Decorator to limit available methods when in read only mode
 def write_protected(func):
+
     async def decorator(obj, *args, **kwargs):
         _ = obj.locale.translate
         if obj.ro_mode:
@@ -78,18 +79,18 @@ def write_protected(func):
             )
             return
         await func(obj, *args, **kwargs)
+
     return decorator
 
 
 class Application(tornado.web.Application):
+
     def __init__(self):
         # wallet_servers = bismuthapi.get_wallet_servers_legacy()
         servers = None
         if options.server:
             servers = [options.server]
-        bismuth_client = bismuthclient.BismuthClient(
-            verbose=options.verbose, servers_list=servers
-        )
+        bismuth_client = bismuthclient.BismuthClient(verbose=options.verbose, servers_list=servers)
         wallet_dir = helpers.get_private_dir()
         self.wallet_settings = None
         print("Please store your wallets under '{}'".format(wallet_dir))
@@ -125,7 +126,9 @@ class Application(tornado.web.Application):
                 tornado.web.StaticFileHandler,
                 dict(path=static_path),
             ),
-            (r'/common/(.*)', tornado.web.StaticFileHandler, {'path': common_path}),
+            (r'/common/(.*)', tornado.web.StaticFileHandler, {
+                'path': common_path
+            }),
         ]
         # Parse crystals dir, import and plug handlers.
         self.crystals_manager = CrystalManager(init=options.crystals)
@@ -176,6 +179,7 @@ class Application(tornado.web.Application):
 
 
 class HomeHandler(BaseHandler):
+
     async def get(self):
         """
         :return:
@@ -186,18 +190,14 @@ class HomeHandler(BaseHandler):
             # self.redirect("/wallet/info")
             self.redirect(options.missing_address_route)
             return
-        self.bismuth_vars['transactions'] = self.bismuth.latest_transactions(
-            5, for_display=True, mempool_included=True
-        )
+        self.bismuth_vars['transactions'] = self.bismuth.latest_transactions(5, for_display=True, mempool_included=True)
         home_crystals = {
             'address': self.bismuth_vars['address'],
             'content': b'',
             'request_handler': self,
             'extra': self.bismuth_vars['extra'],
         }
-        self.application.crystals_manager.execute_filter_hook(
-            'home', home_crystals, first_only=False
-        )
+        self.application.crystals_manager.execute_filter_hook('home', home_crystals, first_only=False)
         self.bismuth_vars['extra'] = home_crystals['extra']
         self.render('home.html', bismuth=self.bismuth_vars, home_crystals=home_crystals)
         # self.app_log.info("> home")
@@ -208,6 +208,7 @@ class TransactionsHandler(BaseHandler):
     def randhex(self, size):
         return ''.join(random.choices(string.ascii_lowercase + string.digits, k=size))
     """
+
     @write_protected
     async def send(self, params=None):
         _ = self.locale.translate
@@ -239,11 +240,7 @@ class TransactionsHandler(BaseHandler):
                 'Check this is what you intended to do and hit the "confirm" button'
             )
 
-            if self.get_argument(
-                'data', ''
-            ) == '' and self.bismuth.reject_empty_message_for(
-                self.get_argument('recipient')
-            ):
+            if self.get_argument('data', '') == '' and self.bismuth.reject_empty_message_for(self.get_argument('recipient')):
                 await self.message(
                     _('Error:') + ' ' + _('No message'),
                     _('Sending to this recipient needs a proper message'),
@@ -313,11 +310,7 @@ class TransactionsHandler(BaseHandler):
             self.bismuth_vars['params']['amount'] = decoded['amount']
             self.bismuth_vars['params']['operation'] = decoded['operation']
             self.bismuth_vars['params']['data'] = decoded['openfield']
-            if self.bismuth_vars['params'][
-                'data'
-            ] == '' and self.bismuth.reject_empty_message_for(
-                self.bismuth_vars['params']['recipient']
-            ):
+            if self.bismuth_vars['params']['data'] == '' and self.bismuth.reject_empty_message_for(self.bismuth_vars['params']['recipient']):
                 await self.message_pop(
                     _('Error:') + ' ' + _('No message'),
                     _('Sending to this recipient needs a proper message'),
@@ -343,18 +336,10 @@ class TransactionsHandler(BaseHandler):
             )
 
             self.bismuth_vars['params']['recipient'] = self.get_argument('recipient')
-            self.bismuth_vars['params']['amount'] = self.get_argument(
-                'amount', '0.00000000'
-            )
-            self.bismuth_vars['params']['operation'] = self.get_argument(
-                'operation', ''
-            )
+            self.bismuth_vars['params']['amount'] = self.get_argument('amount', '0.00000000')
+            self.bismuth_vars['params']['operation'] = self.get_argument('operation', '')
             self.bismuth_vars['params']['data'] = self.get_argument('data', '')
-            if self.bismuth_vars['params'][
-                'data'
-            ] == '' and self.bismuth.reject_empty_message_for(
-                self.bismuth_vars['params']['recipient']
-            ):
+            if self.bismuth_vars['params']['data'] == '' and self.bismuth.reject_empty_message_for(self.bismuth_vars['params']['recipient']):
                 await self.message_pop(
                     _('Error:') + ' ' + _('No message'),
                     _('Sending to this recipient needs a proper message'),
@@ -384,9 +369,7 @@ class TransactionsHandler(BaseHandler):
     @write_protected
     async def confirmpop(self, params=None):
         _ = self.locale.translate
-        spend_token = self.get_argument(
-            'token', ''
-        )  # Beware naming inconsistencies token, spend_token
+        spend_token = self.get_argument('token', '')  # Beware naming inconsistencies token, spend_token
         if not self.bismuth_vars['address']:
             await self.message_pop(
                 _('Error:') + ' ' + _('No Wallet'),
@@ -451,9 +434,7 @@ class TransactionsHandler(BaseHandler):
     @write_protected
     async def confirm(self, params=None):
         _ = self.locale.translate
-        spend_token = self.get_argument(
-            'token', ''
-        )  # Beware naming inconsistencies token, spend_token
+        spend_token = self.get_argument('token', '')  # Beware naming inconsistencies token, spend_token
         if not self.bismuth_vars['address']:
             await self.message_pop(
                 _('Error:') + ' ' + _('No Wallet'),
@@ -552,9 +533,7 @@ class TransactionsHandler(BaseHandler):
                 count = 50
             _ = self.locale.translate
             self.settings['page_title'] = _('Transaction list')
-            self.bismuth_vars['transactions'] = self.bismuth.latest_transactions(
-                count, offset=start, for_display=True, mempool_included=True
-            )
+            self.bismuth_vars['transactions'] = self.bismuth.latest_transactions(count, offset=start, for_display=True, mempool_included=True)
             addresses = set()
             for tx in self.bismuth_vars['transactions']:
                 addresses.update([tx['recipient'], tx['address']])
@@ -577,6 +556,7 @@ class TransactionsHandler(BaseHandler):
 
 
 class JsonHandler(BaseHandler):
+
     async def get(self, command=''):
         """
         :return:
@@ -749,9 +729,7 @@ class WalletHandler(BaseHandler):
         wallet_password = self.get_argument('wallet_password')
         # print(wallet_file, wallet_password)
         try:
-            self.bismuth._wallet.import_der(
-                wallet_der=wallet_file, source_password=wallet_password
-            )
+            self.bismuth._wallet.import_der(wallet_der=wallet_file, source_password=wallet_password)
         except Exception as e:
             self.render(
                 'message.html',
@@ -959,9 +937,7 @@ class WalletHandler(BaseHandler):
                 )
                 return
             try:
-                self.bismuth._wallet.set_spend(
-                    spend_type, spend_value, password=password
-                )
+                self.bismuth._wallet.set_spend(spend_type, spend_value, password=password)
             except Exception as e:
                 self.render(
                     'message.html',
@@ -987,6 +963,7 @@ class WalletHandler(BaseHandler):
 
 
 class AboutHandler(BaseHandler):
+
     async def connect(self, params=None):
         # self.render("message.html", type="warning", title="WIP", message="WIP", bismuth=self.bismuth_vars)
         # print("params", params)
@@ -1046,48 +1023,35 @@ class TokensHandler(BaseHandler):
 
 
 class CrystalsHandler(BaseHandler):
+
     async def list(self, params=None, post=False):
         loaded_crystals = self.application.crystals_manager.get_loaded_crystals()
         available_crystals = self.application.crystals_manager.get_available_crystals()
         # crystal_names = [name.split('_')[1] for name in available_crystals.keys()]
         # crystals = {name.split('_')[1]: name in loaded_crystals for name in available_crystals}
-        crystals = {
-            name.split('_')[1]: {
-                'active': name in loaded_crystals,
-                'fullname': name,
-                'about': available_crystals[name]['about'],
-            }
-            for name in available_crystals
-        }
+        crystals = {name.split('_')[1]: {
+            'active': name in loaded_crystals,
+            'fullname': name,
+            'about': available_crystals[name]['about'],
+        } for name in available_crystals}
         if post:
-            new_actives = {
-                data['fullname']: bool(
-                    self.get_argument('active_' + data['fullname'], False)
-                )
-                for data in crystals.values()
-            }
+            new_actives = {data['fullname']: bool(self.get_argument('active_' + data['fullname'], False)) for data in crystals.values()}
             # print("New actives", new_actives)
             added = self.application.crystals_manager.load_crystals(new_actives)
             # print("wild ", self.application.wildcard_router.__dict__)
             # print("def ", self.application.default_router.__dict__)
-            current_handlers = [
-                rule.target.__name__.replace('Handler', '').lower()
-                for rule in self.application.wildcard_router.rules
-            ]
+            current_handlers = [rule.target.__name__.replace('Handler', '').lower() for rule in self.application.wildcard_router.rules]
             for new in added:
                 if new.split('_')[1] not in current_handlers:
                     handler = self.application.crystals_manager.get_handler(new)
                     self.application.add_handlers(r'.*', handler)  # match any host
             loaded_crystals = self.application.crystals_manager.get_loaded_crystals()
             self.update_crystals()
-            crystals = {
-                name.split('_')[1]: {
-                    'active': name in loaded_crystals,
-                    'fullname': name,
-                    'about': available_crystals[name]['about'],
-                }
-                for name in available_crystals
-            }
+            crystals = {name.split('_')[1]: {
+                'active': name in loaded_crystals,
+                'fullname': name,
+                'about': available_crystals[name]['about'],
+            } for name in available_crystals}
 
         self.render('crystals_list.html', bismuth=self.bismuth_vars, crystals=crystals)
 
@@ -1105,16 +1069,19 @@ class CrystalsHandler(BaseHandler):
 
 
 class AddressHandler(BaseHandler):
+
     async def get(self, command=''):
         self.render('wip.html', bismuth=self.bismuth_vars)
 
 
 class SearchHandler(BaseHandler):
+
     async def get(self, command=''):
         self.render('wip.html', bismuth=self.bismuth_vars)
 
 
 class MessagesHandler(BaseHandler):
+
     async def index(self, params=None, post=False):
         self.render('messages.html', bismuth=self.bismuth_vars)
 
@@ -1122,9 +1089,7 @@ class MessagesHandler(BaseHandler):
     async def sign_pop(self, params=None):
         _ = self.locale.translate
         message = self.get_argument('data', '')
-        spend_token = self.get_argument(
-            'token', ''
-        )  # Beware naming inconsistencies token, spend_token
+        spend_token = self.get_argument('token', '')  # Beware naming inconsistencies token, spend_token
         self.settings['page_title'] = _('Sign message')
         if not self.bismuth_vars['address']:
             self.message_pop(
@@ -1170,9 +1135,7 @@ class MessagesHandler(BaseHandler):
     async def decrypt_pop(self, params=None, post=True):
         _ = self.locale.translate
         message = self.get_argument('data', '')
-        spend_token = self.get_argument(
-            'token', ''
-        )  # Beware naming inconsistencies token, spend_token
+        spend_token = self.get_argument('token', '')  # Beware naming inconsistencies token, spend_token
         self.settings['page_title'] = _('Decrypt message')
         if not self.bismuth_vars['address']:
             self.message_pop(
@@ -1249,6 +1212,7 @@ class MessagesHandler(BaseHandler):
 
 
 class ToolsHandler(BaseHandler):
+
     async def index(self, params=None, post=False):
         self.render('tools.html', bismuth=self.bismuth_vars)
 
@@ -1289,6 +1253,7 @@ class ToolsHandler(BaseHandler):
 
 
 class TxModule(tornado.web.UIModule):
+
     def render(self, tx):
         return self.render_string('modules/transaction.html', tx=tx)
 

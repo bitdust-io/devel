@@ -138,12 +138,10 @@ def worker(host, port, node):
                     send(s, node.hdd_block)
 
                     received_block_height = receive(s)  # receive node's block height
-                    node.logger.app_log.info(
-                        f'Outbound: Node {peer_ip} is at block height: {received_block_height}')
+                    node.logger.app_log.info(f'Outbound: Node {peer_ip} is at block height: {received_block_height}')
 
                     if int(received_block_height) < node.hdd_block:
-                        node.logger.app_log.warning(
-                            f'Outbound: We have a higher block ({node.hdd_block}) than {peer_ip} ({received_block_height}), sending')
+                        node.logger.app_log.warning(f'Outbound: We have a higher block ({node.hdd_block}) than {peer_ip} ({received_block_height}), sending')
 
                         data = receive(s)  # receive client's last block_hash
 
@@ -169,8 +167,7 @@ def worker(host, port, node):
                                 raise ValueError(f'{peer_ip} is banned')
 
                         else:
-                            node.logger.app_log.warning(
-                                f'Outbound: Node is at block {client_block}')  # now check if we have any newer
+                            node.logger.app_log.warning(f'Outbound: Node is at block {client_block}')  # now check if we have any newer
 
                             if node.hdd_hash == data or not node.egress:
                                 if not node.egress:
@@ -195,8 +192,7 @@ def worker(host, port, node):
                                     send(s, blocks_fetched)
 
                                 elif confirmation == 'blocksrj':
-                                    node.logger.app_log.info(
-                                        "Outbound: Client rejected to sync from us because we're dont have the latest block")
+                                    node.logger.app_log.info("Outbound: Client rejected to sync from us because we're dont have the latest block")
 
                     elif int(received_block_height) >= node.hdd_block:
                         if int(received_block_height) == node.hdd_block:

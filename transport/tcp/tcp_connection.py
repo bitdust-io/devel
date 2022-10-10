@@ -19,8 +19,6 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
-
-
 """
 .. module:: tcp_connection.
 
@@ -70,7 +68,13 @@ CMD_WAZAP = b'w'
 CMD_DATA = b'd'
 CMD_OK = b'o'
 CMD_ABORT = b'a'
-CMD_LIST = [CMD_HELLO, CMD_WAZAP, CMD_DATA, CMD_OK, CMD_ABORT, ]
+CMD_LIST = [
+    CMD_HELLO,
+    CMD_WAZAP,
+    CMD_DATA,
+    CMD_OK,
+    CMD_ABORT,
+]
 
 #------------------------------------------------------------------------------
 
@@ -94,7 +98,9 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         self.last_wazap_received = 0
 
     def is_connected(self):
-        return self.state in ['CONNECTED', ]
+        return self.state in [
+            'CONNECTED',
+        ]
 
     def get_proto(self):
         return 'tcp'
@@ -169,7 +175,7 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
                 self.doReadWazap(*args, **kwargs)
                 self.doOpenStream(*args, **kwargs)
                 self.doStartPendingFiles(*args, **kwargs)
-            elif event == 'timer-10sec' or event == 'disconnect' or ( event == 'data-received' and not ( self.isWazap(*args, **kwargs) and self.isSomePendingFiles(*args, **kwargs) ) ):
+            elif event == 'timer-10sec' or event == 'disconnect' or (event == 'data-received' and not (self.isWazap(*args, **kwargs) and self.isSomePendingFiles(*args, **kwargs))):
                 self.state = 'DISCONNECT'
                 self.doDisconnect(*args, **kwargs)
         #---SERVER?---
@@ -183,7 +189,7 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
                 self.doSendWazap(*args, **kwargs)
                 self.doOpenStream(*args, **kwargs)
                 self.doStartPendingFiles(*args, **kwargs)
-            elif event == 'timer-10sec' or event == 'disconnect' or ( event == 'data-received' and not self.isHello(*args, **kwargs) ):
+            elif event == 'timer-10sec' or event == 'disconnect' or (event == 'data-received' and not self.isHello(*args, **kwargs)):
                 self.state = 'DISCONNECT'
                 self.doDisconnect(*args, **kwargs)
         #---CLOSED---
@@ -250,7 +256,9 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         tcp_node.increase_connections_counter()
         if _Debug:
             lg.out(_DebugLevel, 'tcp_connection.doInit with %s, total connections to that address : %d' % (
-                self.peer_address, len(tcp_node.opened_connections()[self.peer_address]), ))
+                self.peer_address,
+                len(tcp_node.opened_connections()[self.peer_address]),
+            ))
 
     def doCloseOutgoing(self, *args, **kwargs):
         """
@@ -292,8 +300,7 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
                 tcp_node.opened_connections()[self.peer_address] = []
             tcp_node.opened_connections()[self.peer_address].append(self)
             if _Debug:
-                lg.out(_DebugLevel, '%s : external peer address changed from %s to %s' % (
-                    self, old_address, self.peer_address))
+                lg.out(_DebugLevel, '%s : external peer address changed from %s to %s' % (self, old_address, self.peer_address))
         # lg.out(18, 'tcp_connection.doReadHello from %s' % (self.peer_idurl))
 
     def doReadWazap(self, *args, **kwargs):
@@ -386,7 +393,11 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
             lg.out(_DebugLevel, 'tcp_connection.doDisconnect with %s %s' % (str(self.peer_address), self.peer_idurl))
         if self.factory:
             for filename, description, result_defer, keep_alive in self.factory.pendingoutboxfiles:
-                result_defer.callback((None, 'failed', 'disconnected', ))
+                result_defer.callback((
+                    None,
+                    'failed',
+                    'disconnected',
+                ))
             self.factory.pendingoutboxfiles = []
         try:
             self.transport.stopListening()
@@ -419,7 +430,10 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
 
     def getTransportAddress(self):
         peer = self.transport.getPeer()
-        return net_misc.normalize_address((peer.host, int(peer.port), ))
+        return net_misc.normalize_address((
+            peer.host,
+            int(peer.port),
+        ))
 
     def getConnectionAddress(self):
         return net_misc.normalize_address(self.factory.connection_address)
@@ -497,7 +511,6 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         if _Debug:
             lg.out(_DebugLevel, 'tcp_connection.failed_outbox_queue_item %s because %s' % (filename, error_message))
         try:
-            tcp_interface.interface_cancelled_file_sending(
-                self.getAddress(), filename, 0, description, error_message).addErrback(lambda err: lg.exc(err))
+            tcp_interface.interface_cancelled_file_sending(self.getAddress(), filename, 0, description, error_message).addErrback(lambda err: lg.exc(err))
         except Exception as exc:
             lg.warn(str(exc))

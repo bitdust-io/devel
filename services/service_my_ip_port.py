@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 ..
 
@@ -73,7 +72,9 @@ class MyIPPortService(LocalService):
 
     def on_resume(self, *args, **kwargs):
         from stun import stun_client
-        if not stun_client.A() or stun_client.A().state in ['STOPPED', ]:
+        if not stun_client.A() or stun_client.A().state in [
+            'STOPPED',
+        ]:
             stun_client.A().dropMyExternalAddress()
             stun_client.A('start')
         return True
@@ -90,4 +91,8 @@ class MyIPPortService(LocalService):
             lg.warn('stun my external IP failed, retry after 10 seconds')
             reactor.callLater(10, self._do_stun)  # @UndefinedVariable
         else:
-            lg.info('stun success  nat_type=%r, my_ip=%r, details=%r' % (nat_type, my_ip, details, ))
+            lg.info('stun success  nat_type=%r, my_ip=%r, details=%r' % (
+                nat_type,
+                my_ip,
+                details,
+            ))

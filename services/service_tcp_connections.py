@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 ..
 
@@ -50,8 +49,7 @@ class TCPConnectionsService(LocalService):
 
     def start(self):
         from main.config import conf
-        conf().addConfigNotifier('services/tcp-connections/tcp-port',
-                           self._on_tcp_port_modified)
+        conf().addConfigNotifier('services/tcp-connections/tcp-port', self._on_tcp_port_modified)
         return True
 
     def stop(self):
@@ -62,7 +60,5 @@ class TCPConnectionsService(LocalService):
     def _on_tcp_port_modified(self, path, value, oldvalue, result):
         from p2p import network_connector
         from logs import lg
-        lg.out(
-            2, 'service_tcp_connections._on_tcp_port_modified : %s->%s : %s' %
-            (oldvalue, value, path))
+        lg.out(2, 'service_tcp_connections._on_tcp_port_modified : %s->%s : %s' % (oldvalue, value, path))
         network_connector.A('reconnect')

@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 ..
 
@@ -146,10 +145,8 @@ class ProxyTransportService(LocalService):
         from userid import identity
         from userid import my_id
         from userid import id_url
-        orig_ident_xmlsrc = conf().getData(
-            'services/proxy-transport/my-original-identity', '').strip()
-        current_router_idurl = conf().getString(
-            'services/proxy-transport/current-router', '').strip()
+        orig_ident_xmlsrc = conf().getData('services/proxy-transport/my-original-identity', '').strip()
+        current_router_idurl = conf().getString('services/proxy-transport/current-router', '').strip()
         if current_router_idurl:
             current_router_idurl = id_url.field(current_router_idurl.split(' ')[0])
         if not orig_ident_xmlsrc:
@@ -233,7 +230,9 @@ class ProxyTransportService(LocalService):
                 self.starting_deferred.callback(True)
                 self.starting_deferred = None
                 p2p_connector.A('check-synchronize')
-            if newstate == 'OFFLINE' and oldstate != newstate and oldstate not in ['INIT', ]:
+            if newstate == 'OFFLINE' and oldstate != newstate and oldstate not in [
+                'INIT',
+            ]:
                 self.starting_deferred.errback(Exception(newstate))
                 self.starting_deferred = None
                 p2p_connector.A('check-synchronize')

@@ -22,7 +22,6 @@
 #
 #
 #
-
 """
 .. module:: identitydb.
 
@@ -87,6 +86,7 @@ def cache_contacts():
     global _Contact2IDURL
     return _Contact2IDURL
 
+
 #------------------------------------------------------------------------------
 
 
@@ -112,6 +112,7 @@ def init():
 def shutdown():
     if _Debug:
         lg.out(_DebugLevel, 'identitydb.shutdown')
+
 
 #------------------------------------------------------------------------------
 
@@ -369,7 +370,10 @@ def update(idurl, xml_src):
 
     new_idurl = newid.getIDURL(as_original=True)
     if idurl != new_idurl:
-        lg.warn('original IDURL is not matching, updated: %r -> %r' % (idurl, new_idurl, ))
+        lg.warn('original IDURL is not matching, updated: %r -> %r' % (
+            idurl,
+            new_idurl,
+        ))
         idurl = new_idurl
 
     filename = os.path.join(settings.IdentityCacheDir(), nameurl.UrlFilename(idurl))
@@ -456,6 +460,7 @@ def get_last_modified_time(idurl):
     idurl = id_url.to_original(idurl)
     return _IdentityCacheModifiedTime.get(idurl, None)
 
+
 #------------------------------------------------------------------------------
 
 
@@ -492,6 +497,7 @@ def print_cache():
         if _Debug:
             lg.out(_DebugLevel, '---------------------')
         print_id(key)
+
 
 #------------------------------------------------------------------------------
 

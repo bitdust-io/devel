@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 ..
 
@@ -61,15 +60,13 @@ class AccountantService(LocalService):
         accountants_finder.A('init')
         accountant_node.A('init')
         accountant_node.A('start')
-        accountant_node.A().addStateChangedCallback(
-            self._on_accountant_node_switched)
+        accountant_node.A().addStateChangedCallback(self._on_accountant_node_switched)
         return True
 
     def stop(self):
         from coins import coins_db
         from coins import accountant_node
-        accountant_node.A().removeStateChangedCallback(
-            self._on_accountant_node_switched)
+        accountant_node.A().removeStateChangedCallback(self._on_accountant_node_switched)
         accountant_node.A('stop')
         accountant_node.A('shutdown')
         coins_db.shutdown()
@@ -98,15 +95,19 @@ class AccountantService(LocalService):
         # currently unavailable")
         if mode == 'join':
             accountant_node.A('accountant-connected', newpacket.OwnerID)
-#             if accountant_node.A().state == 'OFFLINE':
-#                 accountant_node.A('start')
+            #             if accountant_node.A().state == 'OFFLINE':
+            #                 accountant_node.A('start')
             return p2p_service.SendAck(newpacket, 'accepted')
         return p2p_service.SendFail(newpacket, 'bad request')
 
     def health_check(self):
         from coins import accountant_node
         return accountant_node.A().state in [
-            'READY', 'READ_COINS', 'VALID_COIN?', 'WRITE_COIN!', ]
+            'READY',
+            'READ_COINS',
+            'VALID_COIN?',
+            'WRITE_COIN!',
+        ]
 
     def _on_accountant_node_switched(self, oldstate, newstate, evt, *args, **kwargs):
         from logs import lg

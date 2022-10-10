@@ -4,34 +4,31 @@ i18n / l18n helpers
 
 from collections import OrderedDict
 
-LANGUAGES = OrderedDict(
-    [
-        ('*', ['Auto', 'Auto']),
-        ('cn', ['Chinese', 'cn']),
-        ('cs', ['Czech', 'cz']),
-        ('de', ['German', 'de']),
-        ('el', ['Greek', 'gr']),
-        ('en', ['English', 'us']),
-        ('es', ['Spanish', 'es']),
-        ('fi', ['Finish', 'fi']),
-        ('fr', ['French', 'fr']),
-        ('hi', ['Hindi', 'hi']),
-        ('hu', ['Hungarian', 'hu']),
-        ('id', ['Indonesian', 'id']),
-        ('it', ['Italian', 'it']),
-        ('jp', ['Japanese', 'jp']),
-        ('ko', ['Korean', 'kr']),
-        ('nl', ['Dutch', 'nl']),
-        ('no', ['Norsk', 'no']),
-        ('pl', ['Polish', 'pl']),
-        ('br', ['Brazilian pt', 'br']),
-        ('ro', ['Romanian', 'ro']),
-        ('ru', ['Russian', 'ru']),
-        ('sr', ['Serbian', 'sr']),
-        ('tr', ['Turkish', 'tr']),
-    ]
-)
-
+LANGUAGES = OrderedDict([
+    ('*', ['Auto', 'Auto']),
+    ('cn', ['Chinese', 'cn']),
+    ('cs', ['Czech', 'cz']),
+    ('de', ['German', 'de']),
+    ('el', ['Greek', 'gr']),
+    ('en', ['English', 'us']),
+    ('es', ['Spanish', 'es']),
+    ('fi', ['Finish', 'fi']),
+    ('fr', ['French', 'fr']),
+    ('hi', ['Hindi', 'hi']),
+    ('hu', ['Hungarian', 'hu']),
+    ('id', ['Indonesian', 'id']),
+    ('it', ['Italian', 'it']),
+    ('jp', ['Japanese', 'jp']),
+    ('ko', ['Korean', 'kr']),
+    ('nl', ['Dutch', 'nl']),
+    ('no', ['Norsk', 'no']),
+    ('pl', ['Polish', 'pl']),
+    ('br', ['Brazilian pt', 'br']),
+    ('ro', ['Romanian', 'ro']),
+    ('ru', ['Russian', 'ru']),
+    ('sr', ['Serbian', 'sr']),
+    ('tr', ['Turkish', 'tr']),
+])
 """
     {
     '*'  : ['Auto', 'Auto'],

@@ -1,0 +1,7 @@
+[style]
+based_on_style = yapf
+indent_width = 4
+dedent_closing_brackets = True
+coalesce_brackets = True
+split_arguments_when_comma_terminated = False
+column_limit = 250

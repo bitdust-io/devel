@@ -232,7 +232,8 @@ def rate_all_users():
                 total_percent,
                 talive,
                 tall,
-                nameurl.GetName(idurl),))
+                nameurl.GetName(idurl),
+            ))
     read_index()
 
 
@@ -319,6 +320,7 @@ def total_percent(idurl):
 
 def main():
     pass
+
 
 if __name__ == '__main__':
     main()

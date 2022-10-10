@@ -5,6 +5,7 @@ class LedgerBase(SqliteBase):
     """
     Generic Sqlite storage backend.
     """
+
     def __init__(self, verbose=False, db_path='./data/', db_name='posmempool.db', app_log=None, ram=False):
         super().__init__(verbose=verbose, db_path=db_path, db_name=db_name, app_log=app_log, ram=ram)
         self.legacy_db = True

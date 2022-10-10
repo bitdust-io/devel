@@ -23,6 +23,7 @@ from twisted.internet import protocol, defer
 from twisted.python import failure
 
 import twisted.internet.reactor
+
 reactor = twisted.internet.reactor
 
 from . import constants  # @UnresolvedImport
@@ -36,6 +37,7 @@ from .contact import Contact, LayeredContact  # @UnresolvedImport
 _Debug = False
 
 #------------------------------------------------------------------------------
+
 
 class TimeoutError(Exception):
     """
@@ -121,7 +123,10 @@ class KademliaProtocol(protocol.DatagramProtocol):
 
         if _Debug:
             print('[DHT PROTO] >>> [%s] dht.dispatch %r from %r' % (
-                time.time(), message.id, address, ))
+                time.time(),
+                message.id,
+                address,
+            ))
 
         if isinstance(message, msgtypes.RequestMessage):
             # This is an RPC method request
@@ -139,7 +144,9 @@ class KademliaProtocol(protocol.DatagramProtocol):
             else:
                 if _Debug:
                     print('[DHT PROTO]             RPC Request message %r was not identified, recently sent: %d' % (
-                        message.id, len([k for k in self._sentMessages.keys()]), ))
+                        message.id,
+                        len([k for k in self._sentMessages.keys()]),
+                    ))
 
         elif isinstance(message, msgtypes.ResponseMessage):
             message_response = message.response
@@ -175,7 +182,9 @@ class KademliaProtocol(protocol.DatagramProtocol):
                 # TODO: we should probably do something with this...
                 if _Debug:
                     print('[DHT PROTO]             SKIP    message %r was not identified, recently sent: %d' % (
-                        message.id, len([k for k in self._sentMessages.keys()]), ))
+                        message.id,
+                        len([k for k in self._sentMessages.keys()]),
+                    ))
         return True
 
     def datagramReceived(self, datagram, address):
@@ -208,8 +217,7 @@ class KademliaProtocol(protocol.DatagramProtocol):
             msgID = encoding.to_text(header[5:45], encoding='utf-8')
 
             if _Debug:
-                print('[DHT PROTO]     datagramReceived with %d bytes   totalPackets=%d seqNumber=%d msgID=%r from %r' % (
-                    len(datagram), totalPackets, seqNumber, msgID, address))
+                print('[DHT PROTO]     datagramReceived with %d bytes   totalPackets=%d seqNumber=%d msgID=%r from %r' % (len(datagram), totalPackets, seqNumber, msgID, address))
 
             if seqNumber < 0 or seqNumber >= totalPackets:
                 if _Debug:
@@ -238,7 +246,6 @@ class KademliaProtocol(protocol.DatagramProtocol):
         except Exception as exc:
             print('[DHT PROTO]       datagramReceived error:', exc)
 
-
     def _send(self, data, rpcID, address):
         """
         Transmit the specified data over UDP, breaking it up into several
@@ -259,7 +266,10 @@ class KademliaProtocol(protocol.DatagramProtocol):
         """
         try:
             if data is None:
-                print('[DHT PROTO]       SENDING EMPTY DATA to %r at %r' % (rpcID, address, ))
+                print('[DHT PROTO]       SENDING EMPTY DATA to %r at %r' % (
+                    rpcID,
+                    address,
+                ))
                 data = b''
             if len(data) > self.msgSizeLimit:
                 # We have to spread the data over multiple UDP datagrams, and provide sequencing information
@@ -335,6 +345,7 @@ class KademliaProtocol(protocol.DatagramProtocol):
         """
         Executes a local function in response to an RPC request.
         """
+
         # Set up the deferred callchain
         def handleError(f):
             self._sendError(senderContact, rpcID, f.type, f.getErrorMessage())
@@ -389,7 +400,11 @@ class KademliaProtocol(protocol.DatagramProtocol):
         if self._counter:
             self._counter('_msgTimeout')
         if _Debug:
-            print('[DHT PROTO]         !!! [%s] _msgTimeout' % time.time(), messageID, [k for k in self._sentMessages.keys()], )
+            print(
+                '[DHT PROTO]         !!! [%s] _msgTimeout' % time.time(),
+                messageID,
+                [k for k in self._sentMessages.keys()],
+            )
         # Find the message that timed out
         if messageID in self._sentMessages:
             remoteContactID, df = self._sentMessages[messageID][0:2]
@@ -440,8 +455,7 @@ class KademliaMultiLayerProtocol(KademliaProtocol):
         if rawResponse:
             df._rpcRawResponse = True
         if _Debug:
-            print('[DHT PROTO] <<< [%s] sendRPC  layerID=%d method=%r msg_id=%r addr=%r port=%r kwargs=%r' % (
-                msg, layerID, method, msg.id, contact.address, contact.port, kwargs))
+            print('[DHT PROTO] <<< [%s] sendRPC  layerID=%d method=%r msg_id=%r addr=%r port=%r kwargs=%r' % (msg, layerID, method, msg.id, contact.address, contact.port, kwargs))
         if self._counter:
             self._counter('sendRPC')
         timeoutCall = reactor.callLater(constants.rpcTimeout * 3, self._msgTimeout, msg.id)  # IGNORE:E1101
@@ -464,7 +478,9 @@ class KademliaMultiLayerProtocol(KademliaProtocol):
             # TODO: add protection here
             if _Debug:
                 print('[DHT PROTO]    dispatch datagram %r was not identified, layer %d not opened: %r' % (
-                    message.id, layerID, ))
+                    message.id,
+                    layerID,
+                ))
             return True
 
         if layerID not in self._node.packets_in:
@@ -478,15 +494,22 @@ class KademliaMultiLayerProtocol(KademliaProtocol):
             self._node.addContact(remoteContact, layerID=layerID)
             if _Debug:
                 print('[DHT PROTO]    dispatch  add or update contact %r at layer %d to my routing table' % (
-                    remoteContact, layerID, ))
+                    remoteContact,
+                    layerID,
+                ))
         else:
             if _Debug:
                 print('[DHT PROTO]    dispatch  skip adding contact %r at layer %d to my routing table' % (
-                    remoteContact, layerID, ))
+                    remoteContact,
+                    layerID,
+                ))
 
         if _Debug:
             print('[DHT PROTO]    dispatch  >>> [%s] dht.dispatch %r from %r' % (
-                time.time(), message.id, address, ))
+                time.time(),
+                message.id,
+                address,
+            ))
 
         if isinstance(message, msgtypes.RequestMessage) or isinstance(message, msgtypes.QuestionMessage):
             # This is an RPC method request
@@ -511,7 +534,9 @@ class KademliaMultiLayerProtocol(KademliaProtocol):
             else:
                 if _Debug:
                     print('[DHT PROTO]    dispatch   RPC Request message %r is not a reply, latest outgoing messages: %r' % (
-                        message.id, [k for k in self._sentMessages.keys()], ))
+                        message.id,
+                        [k for k in self._sentMessages.keys()],
+                    ))
 
         elif isinstance(message, msgtypes.ResponseMessage):
             message_response = message.response
@@ -559,7 +584,9 @@ class KademliaMultiLayerProtocol(KademliaProtocol):
                 # TODO: we should probably do something with this...
                 if _Debug:
                     print('[DHT PROTO]    dispatch  message %r was not identified, currently sent: %r' % (
-                        message.id, [k for k in self._sentMessages.keys()], ))
+                        message.id,
+                        [k for k in self._sentMessages.keys()],
+                    ))
         return True
 
     def _sendResponse(self, contact, rpcID, response):
@@ -613,8 +640,7 @@ class KademliaMultiLayerProtocol(KademliaProtocol):
             msgID = encoding.to_text(header[5:45], encoding='utf-8')
 
             if _Debug:
-                print('[DHT PROTO]     datagramReceived with %d bytes   totalPackets=%d seqNumber=%d msgID=%r from %r' % (
-                    len(datagram), totalPackets, seqNumber, msgID, address))
+                print('[DHT PROTO]     datagramReceived with %d bytes   totalPackets=%d seqNumber=%d msgID=%r from %r' % (len(datagram), totalPackets, seqNumber, msgID, address))
 
             if seqNumber < 0 or seqNumber >= totalPackets:
                 if _Debug:
@@ -650,7 +676,11 @@ class KademliaMultiLayerProtocol(KademliaProtocol):
         if self._counter:
             self._counter('_msgTimeout')
         if _Debug:
-            print('[DHT PROTO]         !!! [%s] _msgTimeout' % time.time(), messageID, [k for k in self._sentMessages.keys()], )
+            print(
+                '[DHT PROTO]         !!! [%s] _msgTimeout' % time.time(),
+                messageID,
+                [k for k in self._sentMessages.keys()],
+            )
         # Find the message that timed out
         if messageID in self._sentMessages:
             remoteContactID, df, _, method = self._sentMessages[messageID][0:4]

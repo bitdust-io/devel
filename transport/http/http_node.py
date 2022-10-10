@@ -24,8 +24,6 @@
 #
 #
 #
-
-
 """
 .. module:: http_node.
 
@@ -98,7 +96,6 @@ _CurrentDelay = 5
 
 #------------------------------------------------------------------------------
 
-
 # def init(receiving=True, sending_port=None):
 #     """
 #     """
@@ -109,7 +106,6 @@ _CurrentDelay = 5
 #     if receiving:
 #         start_receiving()
 
-
 # def shutdown():
 #     """
 #     """
@@ -118,6 +114,7 @@ _CurrentDelay = 5
 #     stop_receiving()
 
 #------------------------------------------------------------------------------
+
 
 def start_sending(port):
     global _ServerListener
@@ -149,7 +146,9 @@ def stop_sending():
     _ServerListener = None
     return d
 
+
 #------------------------------------------------------------------------------
+
 
 def send_file(idurl, filename):
     lg.out(12, 'http_node.send to %s %s' % (idurl, filename))
@@ -161,6 +160,8 @@ def send_file(idurl, filename):
     if len(_Outbox[idurl]) > 10:
         lostedfilename = _Outbox[idurl].pop(0)
         lg.warn('losted: "%s"' % lostedfilename)
+
+
 #         transport_control.sendStatusReport(
 #             'unknown',
 #             lostedfilename,
@@ -168,6 +169,7 @@ def send_file(idurl, filename):
 #             'http',)
 
 #------------------------------------------------------------------------------
+
 
 class SenderServer(resource.Resource):
     isLeaf = True
@@ -201,17 +203,23 @@ class SenderServer(resource.Resource):
         _Outbox.pop(idurl, None)
         return r
 
+
 #------------------------------------------------------------------------------
+
 
 class TransportHTTPClientFactory(HTTPClientFactory):
     pass
 
+
 class TransportHTTPProxyClientFactory(HTTPClientFactory):
+
     def setURL(self, url):
         HTTPClientFactory.setURL(self, url)
         self.path = url
 
+
 #------------------------------------------------------------------------------
+
 
 class Receiver(object):
 
@@ -279,25 +287,36 @@ class Receiver(object):
         url = b'http://' + host + b':' + strng.to_bin(str(port))
 
         if net_misc.proxy_is_on():
-            f = TransportHTTPProxyClientFactory(url, method='POST', headers={
-                'User-Agent': 'BitDust transport_http', 'idurl': my_id.getIDURL(), } )
+            f = TransportHTTPProxyClientFactory(
+                url, method='POST', headers={
+                    'User-Agent': 'BitDust transport_http',
+                    'idurl': my_id.getIDURL(),
+                }
+            )
             conn = reactor.connectTCP(net_misc.get_proxy_host(), int(net_misc.get_proxy_port()), f)
         else:
-            f = TransportHTTPClientFactory(url, method='POST', headers={
-                'User-Agent': 'BitDust transport_http', 'idurl': my_id.getIDURL(), } )
+            f = TransportHTTPClientFactory(
+                url, method='POST', headers={
+                    'User-Agent': 'BitDust transport_http',
+                    'idurl': my_id.getIDURL(),
+                }
+            )
             conn = reactor.connectTCP(host, int(port), f)
 
         f.deferred.addCallback(self.on_ping_success, idurl, host, port, conn)
         f.deferred.addErrback(self.on_ping_failed, idurl, host, port, conn)
         return conn
 
+
 #------------------------------------------------------------------------------
+
 
 def decrease_receiving_delay(idurl):
     global _PingDelayDict
     global _CurrentDelay
     lg.out(14, 'http_node.decrease_receiving_delay ' + idurl)
     _PingDelayDict[idurl] = _CurrentDelay
+
 
 def increase_receiving_delay(idurl):
     global _PingDelayDict
@@ -309,7 +328,9 @@ def increase_receiving_delay(idurl):
         lg.out(14, 'http_node.increase_receiving_delay   %s for %s' % (str(d), idurl))
         _PingDelayDict[idurl] *= 2
 
+
 #------------------------------------------------------------------------------
+
 
 def start_receiving():
     global _Receiver
@@ -334,7 +355,9 @@ def stop_receiving():
     del _ReceivingLoop
     _ReceivingLoop = None
 
+
 #------------------------------------------------------------------------------
+
 
 def push_contact(idurl):
     global _Contacts
@@ -363,7 +386,9 @@ def push_contact(idurl):
             lg.out(_DebugLevel, 'http_node.add_contact UPDATED "%s" on %s:%s' % (idurl, host, port))
     return idurl
 
+
 #------------------------------------------------------------------------------
+
 
 def do_update_contacts():
     global _Contacts
@@ -378,23 +403,27 @@ def do_update_contacts():
         latest_identity = identitycache.GetLatest(idurl)
         if isinstance(latest_identity, Deferred):
             latest_identity.addCallback(lambda src: push_contact(idurl))
-            latest_identity.addErrback(lambda err: lg.out(
-                _DebugLevel, 'http_node.update_contacts "%s" failed to cache' % idurl) if _Debug else None)
+            latest_identity.addErrback(lambda err: lg.out(_DebugLevel, 'http_node.update_contacts "%s" failed to cache' % idurl) if _Debug else None)
         else:
             push_contact(idurl)
 
+
 #------------------------------------------------------------------------------
+
 
 def on_contacts_changed(oldlist, newlist):
     do_update_contacts()
 
+
 #------------------------------------------------------------------------------
+
 
 def usage():
     print('''usage:
 http_node.py send [server_port] [to idurl] [filename]
 http_node.py receive
 ''')
+
 
 def main():
     import logging
@@ -423,8 +452,8 @@ def main():
     reactor.run()  # @UndefinedVariable
     settings.shutdown()
 
-#------------------------------------------------------------------------------
 
+#------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     main()

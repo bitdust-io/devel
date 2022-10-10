@@ -118,7 +118,9 @@ class _WorkerProcess(object):
                     sys.excepthook(*sys.exc_info())
                     __result = None
 
-                __sresult = json.dumps({'v': (__result, self.sout.getvalue().decode('latin1')), })
+                __sresult = json.dumps({
+                    'v': (__result, self.sout.getvalue().decode('latin1')),
+                })
 
                 self.t.send(__sresult)
                 self.sout.truncate(0)
@@ -128,7 +130,9 @@ class _WorkerProcess(object):
                 open('/tmp/raid.log', 'a').write(u'%s\n' % traceback.format_exc())
             sys.excepthook(*sys.exc_info())
             __result = None
-            __sresult = json.dumps({'v': (__result, self.sout.getvalue().decode('latin1')), })
+            __sresult = json.dumps({
+                'v': (__result, self.sout.getvalue().decode('latin1')),
+            })
 
             self.t.send(__sresult)
 

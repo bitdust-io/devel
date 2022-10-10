@@ -31,7 +31,6 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
 # License for the specific language governing permissions and limitations under
 # the License.
-
 """
 Blind reimplementation of WebSockets as a standalone wrapper for Twisted
 protocols.
@@ -58,7 +57,6 @@ from twisted.web.http import datetimeToString
 
 _Debug = False
 
-
 array_tostring = lambda x: x.tostring()
 if sys.version_info[1] >= 2:
     array_tostring = lambda x: x.tobytes()
@@ -71,6 +69,7 @@ class WSException(Exception):
     If this class escapes txWS, then something stupid happened in multiple
     places.
     """
+
 
 # Flavors of WS supported here.
 # HYBI00  - Hixie-76, HyBi-00. Challenge/response after headers, very minimal
@@ -115,6 +114,7 @@ decoders = {
 # Fake HTTP stuff, and a couple convenience methods for examining fake HTTP
 # headers.
 
+
 def http_headers(s):
     """
     Create a dictionary of data from raw HTTP headers.
@@ -131,13 +131,14 @@ def http_headers(s):
 
     return d
 
+
 def is_websocket(headers):
     """
     Determine whether a given set of headers is asking for WebSockets.
     """
 
-    return ('upgrade' in headers.get('Connection', '').lower()
-            and headers.get('Upgrade').lower() == 'websocket')
+    return ('upgrade' in headers.get('Connection', '').lower() and headers.get('Upgrade').lower() == 'websocket')
+
 
 def is_hybi00(headers):
     """
@@ -149,7 +150,9 @@ def is_hybi00(headers):
 
     return 'Sec-WebSocket-Key1' in headers and 'Sec-WebSocket-Key2' in headers
 
+
 # Authentication for WS.
+
 
 def complete_hybi00(headers, challenge):
     """
@@ -166,6 +169,7 @@ def complete_hybi00(headers, challenge):
 
     return md5(nonce).digest()
 
+
 def make_accept(key):
     """
     Create an "accept" response for a given key.
@@ -180,9 +184,11 @@ def make_accept(key):
 
     return b64encode(hashed_bytes).strip().decode('utf-8')
 
+
 # Frame helpers.
 # Separated out to make unit testing a lot easier.
 # Frames are bonghits in newer WS versions, so helpers are appreciated.
+
 
 def make_hybi00_frame(buf):
     """
@@ -196,6 +202,7 @@ def make_hybi00_frame(buf):
         buf = buf.encode('utf-8')
 
     return six.b('\x00') + buf + six.b('\xff')
+
 
 def parse_hybi00_frames(buf):
     """
@@ -225,6 +232,7 @@ def parse_hybi00_frames(buf):
     buf = buf[tail:]
     return frames, buf
 
+
 def mask(buf, key):
     """
     Mask or unmask a buffer of bytes with a masking key.
@@ -238,6 +246,7 @@ def mask(buf, key):
     for i in range(len(buf)):
         buf[i] ^= key[i % 4]
     return array_tostring(buf)
+
 
 def make_hybi07_frame(buf, opcode=0x1):
     """
@@ -255,7 +264,9 @@ def make_hybi07_frame(buf, opcode=0x1):
         if six.PY2:
             length = chr(len(buf))
         else:
-            length = bytes([len(buf), ])
+            length = bytes([
+                len(buf),
+            ])
 
     if isinstance(buf, six.text_type):
         buf = buf.encode('utf-8')
@@ -264,9 +275,12 @@ def make_hybi07_frame(buf, opcode=0x1):
     if six.PY2:
         header = chr(0x80 | opcode)
     else:
-        header = bytes([0x80 | opcode, ])
+        header = bytes([
+            0x80 | opcode,
+        ])
 
     return header + length + buf
+
 
 def make_hybi07_frame_dwim(buf):
     """
@@ -280,6 +294,7 @@ def make_hybi07_frame_dwim(buf):
         return make_hybi07_frame(buf.encode('utf-8'), opcode=0x1)
     else:
         raise TypeError('In binary support mode, frame data must be either str or unicode')
+
 
 def parse_hybi07_frames(buf):
     """
@@ -379,6 +394,7 @@ def parse_hybi07_frames(buf):
 
     return frames, buf[start:]
 
+
 class WebSocketProtocol(ProtocolWrapper):
     """
     Protocol which wraps another protocol to provide a WebSockets transport
@@ -448,8 +464,7 @@ class WebSocketProtocol(ProtocolWrapper):
 
         self.writeEncodedSequence([
             'Sec-WebSocket-Origin: %s\r\n' % self.origin,
-            'Sec-WebSocket-Location: %s://%s%s\r\n' % (protocol, self.host,
-                                                       self.location),
+            'Sec-WebSocket-Location: %s://%s%s\r\n' % (protocol, self.host, self.location),
             'WebSocket-Protocol: %s\r\n' % self.codec,
             'Sec-WebSocket-Protocol: %s\r\n' % self.codec,
             '\r\n',
@@ -715,6 +730,7 @@ class WebSocketProtocol(ProtocolWrapper):
             self.writeEncoded(frame)
 
         self.loseConnection()
+
 
 class WebSocketFactory(WrappingFactory):
     """

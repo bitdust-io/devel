@@ -14,13 +14,11 @@
 # The docstrings in this module contain epytext markup; API documentation
 # may be created by processing this file with epydoc: http://epydoc.sf.net
 
-
 from __future__ import absolute_import
 from __future__ import unicode_literals
 import six
 import codecs
 import sys
-
 
 if sys.version_info[0] == 3:
     text_type = str
@@ -29,9 +27,7 @@ else:
     text_type = unicode  # @UndefinedVariable
     binary_type = str
 
-
 _Debug = False
-
 
 
 def is_text(s):
@@ -193,13 +189,14 @@ class Bencode(Encoding):
         try:
             ret = _e()
             if _Debug:
-                print('[DHT ENCODING]         encode  %r  into  %d bytes' % (type(data), len(ret), ))
+                print('[DHT ENCODING]         encode  %r  into  %d bytes' % (
+                    type(data),
+                    len(ret),
+                ))
             return ret
         except Exception as exc:
             if _Debug:
                 print('[DHT ENCODING]         encode failed with: %r' % exc)
-
-
 
     def decode(self, data, encoding=None):
         """
@@ -217,12 +214,14 @@ class Bencode(Encoding):
         try:
             ret, endPos = self._decodeRecursive(data, encoding=encoding)
             if _Debug:
-                print('[DHT ENCODING]         decode %r  endPos=%d' % (type(ret), endPos, ))
+                print('[DHT ENCODING]         decode %r  endPos=%d' % (
+                    type(ret),
+                    endPos,
+                ))
             return ret
         except Exception as exc:
             if _Debug:
                 print('[DHT ENCODING]         decode failed with: %r' % exc)
-
 
     @staticmethod
     def _decodeRecursive(data, startIndex=0, encoding=None):
@@ -231,25 +230,25 @@ class Bencode(Encoding):
 
         Do not call this; use C{decode()} instead
         """
-        if data[startIndex:startIndex+1] == b'i':
+        if data[startIndex:startIndex + 1] == b'i':
             endPos = data[startIndex:].find(b'e') + startIndex
             return (int(to_text(data[startIndex + 1:endPos]) or '0'), endPos + 1)
-        elif data[startIndex:startIndex+1] == b'l':
+        elif data[startIndex:startIndex + 1] == b'l':
             startIndex += 1
             decodedList = []
-            while data[startIndex:startIndex+1] != b'e':
+            while data[startIndex:startIndex + 1] != b'e':
                 listData, startIndex = Bencode._decodeRecursive(data, startIndex, encoding=encoding)
                 decodedList.append(listData)
             return (decodedList, startIndex + 1)
-        elif data[startIndex:startIndex+1] == b'd':
+        elif data[startIndex:startIndex + 1] == b'd':
             startIndex += 1
             decodedDict = {}
-            while data[startIndex:startIndex+1] != b'e':
+            while data[startIndex:startIndex + 1] != b'e':
                 key, startIndex = Bencode._decodeRecursive(data, startIndex, encoding=encoding)
                 value, startIndex = Bencode._decodeRecursive(data, startIndex, encoding=encoding)
                 decodedDict[key] = value
             return (decodedDict, startIndex)
-        elif data[startIndex:startIndex+1] == b'f':
+        elif data[startIndex:startIndex + 1] == b'f':
             # This (float data type) is a non-standard extension to the original Bencode algorithm
             endPos = data[startIndex:].find(b'e') + startIndex
             return (float(to_text(data[startIndex + 1:endPos]) or '0'), endPos + 1)

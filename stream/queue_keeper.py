@@ -24,8 +24,6 @@
 #
 #
 #
-
-
 """
 .. module:: queue_keeper
 .. role:: red
@@ -112,6 +110,7 @@ DHT_RECORD_REFRESH_INTERVAL = 10 * 60
 
 #------------------------------------------------------------------------------
 
+
 def init():
     """
     Called from top level code when the software is starting.
@@ -128,7 +127,9 @@ def shutdown():
     if _Debug:
         lg.out(_DebugLevel, 'queue_keeper.shutdown')
 
+
 #------------------------------------------------------------------------------
+
 
 def queue_keepers():
     global _QueueKeepers
@@ -149,7 +150,9 @@ def existing(customer_idurl):
     customer_idurl = id_url.field(customer_idurl)
     return customer_idurl in _QueueKeepers
 
+
 #------------------------------------------------------------------------------
+
 
 def check_create(customer_idurl, auto_create=True, event='init'):
     """
@@ -195,7 +198,9 @@ def close(customer_idurl):
     del qk
     return True
 
+
 #------------------------------------------------------------------------------
+
 
 def read_state(customer_id, broker_id):
     service_dir = settings.ServiceDir('service_message_broker')
@@ -255,13 +260,18 @@ def write_state(customer_id, broker_id, json_value):
             return None
     if not local_fs.WriteTextFile(keeper_state_file_path, jsn.dumps(json_value)):
         lg.err('failed writing queue_keeper state for customer %r of broker %r to %r' % (
-            customer_id, broker_id, keeper_state_file_path, ))
+            customer_id,
+            broker_id,
+            keeper_state_file_path,
+        ))
         return None
     if _Debug:
         lg.args(_DebugLevel, customer_id=customer_id, broker_id=broker_id, json_value=json_value)
     return json_value
 
+
 #------------------------------------------------------------------------------
+
 
 def A(customer_idurl, event=None, *args, **kwargs):
     """
@@ -270,7 +280,11 @@ def A(customer_idurl, event=None, *args, **kwargs):
     global _QueueKeepers
     customer_idurl = id_url.field(customer_idurl)
     if customer_idurl not in _QueueKeepers:
-        if not event or event in ['shutdown', 'failed', 'rejected', ]:
+        if not event or event in [
+            'shutdown',
+            'failed',
+            'rejected',
+        ]:
             return None
         _QueueKeepers[customer_idurl] = QueueKeeper(
             customer_idurl=customer_idurl,
@@ -282,7 +296,9 @@ def A(customer_idurl, event=None, *args, **kwargs):
         _QueueKeepers[customer_idurl].automat(event, *args, **kwargs)
     return _QueueKeepers[customer_idurl]
 
+
 #------------------------------------------------------------------------------
+
 
 class QueueKeeper(automat.Automat):
     """
@@ -304,15 +320,7 @@ class QueueKeeper(automat.Automat):
         self.pending_connect_requests = []
         self.latest_dht_records = {}
         self.InSync = False
-        super(QueueKeeper, self).__init__(
-            name='queue_keeper_%s' % self.customer_id,
-            state='AT_STARTUP',
-            debug_level=debug_level,
-            log_events=log_events,
-            log_transitions=log_transitions,
-            publish_events=publish_events,
-            **kwargs
-        )
+        super(QueueKeeper, self).__init__(name='queue_keeper_%s' % self.customer_id, state='AT_STARTUP', debug_level=debug_level, log_events=log_events, log_transitions=log_transitions, publish_events=publish_events, **kwargs)
 
     def __repr__(self):
         return '%s[%d](%s)' % (self.id, self.known_position, self.state)
@@ -336,12 +344,12 @@ class QueueKeeper(automat.Automat):
         if self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'DISCONNECTED'
-                self.InSync=False
+                self.InSync = False
                 self.doEraseState(*args, **kwargs)
                 self.doInit(*args, **kwargs)
             elif event == 'restore':
                 self.state = 'DHT_READ'
-                self.InSync=False
+                self.InSync = False
                 self.doInit(*args, **kwargs)
                 self.doReadState(*args, **kwargs)
                 self.doBuildVerifyRequest(*args, **kwargs)
@@ -371,7 +379,7 @@ class QueueKeeper(automat.Automat):
                 self.doRunBrokerNegotiator(*args, **kwargs)
             elif event == 'dht-read-failed':
                 self.state = 'DISCONNECTED'
-                self.InSync=False
+                self.InSync = False
                 self.doNotify(event, *args, **kwargs)
                 self.doPullRequests(*args, **kwargs)
         #---COOPERATE?---
@@ -383,15 +391,15 @@ class QueueKeeper(automat.Automat):
                 self.doDestroyMe(*args, **kwargs)
             elif event == 'connect':
                 self.doPushRequest(*args, **kwargs)
-            elif event == 'request-invalid' or ( event == 'rejected' and self.InSync ) or event == 'accepted':
+            elif event == 'request-invalid' or (event == 'rejected' and self.InSync) or event == 'accepted':
                 self.state = 'DHT_WRITE'
                 self.doRememberCooperation(event, *args, **kwargs)
                 self.doDHTWrite(event, *args, **kwargs)
-            elif ( event == 'rejected' and not self.InSync ) or event == 'failed' or event == 'dht-mismatch' or event == 'cooperation-mismatch':
+            elif (event == 'rejected' and not self.InSync) or event == 'failed' or event == 'dht-mismatch' or event == 'cooperation-mismatch':
                 self.state = 'DISCONNECTED'
                 self.doCancelCooperation(event, *args, **kwargs)
                 self.doEraseState(*args, **kwargs)
-                self.InSync=False
+                self.InSync = False
                 self.doNotify(event, *args, **kwargs)
                 self.doPullRequests(*args, **kwargs)
         #---DHT_WRITE---
@@ -405,7 +413,7 @@ class QueueKeeper(automat.Automat):
                 self.doProc(*args, **kwargs)
             elif event == 'dht-write-failed':
                 self.state = 'DISCONNECTED'
-                self.InSync=False
+                self.InSync = False
                 self.doEraseState(*args, **kwargs)
                 self.doCancelCooperation(event, *args, **kwargs)
                 self.doNotify(event, *args, **kwargs)
@@ -416,7 +424,7 @@ class QueueKeeper(automat.Automat):
                 self.state = 'CONNECTED'
                 self.doDHTRefresh(*args, **kwargs)
                 self.doRememberOwnPosition(*args, **kwargs)
-                self.InSync=True
+                self.InSync = True
                 self.doWriteState(*args, **kwargs)
                 self.doNotify(event, *args, **kwargs)
                 self.doPullRequests(*args, **kwargs)
@@ -448,7 +456,7 @@ class QueueKeeper(automat.Automat):
         Action method.
         """
         json_value = read_state(customer_id=self.customer_id, broker_id=self.broker_id) or {}
-        self.cooperated_brokers = {int(k): id_url.field(v) for k,v in (json_value.get('cooperated_brokers') or {}).items()}
+        self.cooperated_brokers = {int(k): id_url.field(v) for k, v in (json_value.get('cooperated_brokers') or {}).items()}
         try:
             self.known_position = int(json_value.get('position', -1))
         except:
@@ -469,13 +477,15 @@ class QueueKeeper(automat.Automat):
         Action method.
         """
         # store queue keeper info locally here to be able to start up again after application restart
-        write_state(customer_id=self.customer_id, broker_id=self.broker_id, json_value={
-            'state': self.state,
-            'position': self.known_position,
-            'cooperated_brokers': self.cooperated_brokers,
-            'streams': self.known_streams,
-            'time': utime.get_sec1970(),
-        })
+        write_state(
+            customer_id=self.customer_id, broker_id=self.broker_id, json_value={
+                'state': self.state,
+                'position': self.known_position,
+                'cooperated_brokers': self.cooperated_brokers,
+                'streams': self.known_streams,
+                'time': utime.get_sec1970(),
+            }
+        )
 
     def doBuildConnectRequest(self, *args, **kwargs):
         """
@@ -563,7 +573,9 @@ class QueueKeeper(automat.Automat):
         """
         self.cooperated_brokers = self.cooperated_brokers or {}
         archive_folder_path = None
-        if event in ['accepted', ]:
+        if event in [
+            'accepted',
+        ]:
             accepted_brokers = kwargs.get('cooperated_brokers', {}) or {}
             archive_folder_path = accepted_brokers.pop('archive_folder_path', None)
             self.cooperated_brokers.update(accepted_brokers)
@@ -731,11 +743,11 @@ class QueueKeeper(automat.Automat):
         if prev_revision is None:
             prev_revision = 0
         if _Debug:
-            lg.args(_DebugLevel, c=self.customer_id, p=desired_position, b=self.broker_id, r=prev_revision+1)
+            lg.args(_DebugLevel, c=self.customer_id, p=desired_position, b=self.broker_id, r=prev_revision + 1)
         self._do_dht_write(
             desired_position=desired_position,
             archive_folder_path=archive_folder_path,
-            revision=prev_revision+1,
+            revision=prev_revision + 1,
             retry=True,
             event=event,
             **kwargs,
@@ -858,10 +870,17 @@ class QueueKeeper(automat.Automat):
             if evt == 'request-invalid':
                 self.automat('request-invalid', *args, **kwargs)
                 return None
-            if evt in ['top-record-busy', 'prev-record-own',]:
+            if evt in [
+                'top-record-busy',
+                'prev-record-own',
+            ]:
                 self.automat('dht-mismatch', **kwargs)
                 return None
-            if evt in ['broker-rejected', 'new-broker-rejected', 'broker-rotate-denied', ]:
+            if evt in [
+                'broker-rejected',
+                'new-broker-rejected',
+                'broker-rotate-denied',
+            ]:
                 self.automat('cooperation-mismatch', **kwargs)
                 return None
             if evt.count('-failed'):

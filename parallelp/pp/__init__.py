@@ -26,7 +26,6 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 # THE POSSIBILITY OF SUCH DAMAGE.
-
 """
 Parallel Python Software, Execution Server.
 
@@ -81,8 +80,7 @@ class _Task(object):
     Class describing single task (job)
     """
 
-    def __init__(self, server, tid, callback=None,
-                 callbackargs=(), group='default'):
+    def __init__(self, server, tid, callback=None, callbackargs=(), group='default'):
         """
         Initializes the task.
         """
@@ -152,7 +150,7 @@ class _Task(object):
             self.result = None
         self.unpickled = True
         if self.callback:
-            args = self.callbackargs + (self.result, )
+            args = self.callbackargs + (self.result,)
             self.callback(*args)
 
 
@@ -263,8 +261,7 @@ class _RWorker(pptransport.CSocketTransport):
         self.secret = secret
         self.address = (host, port)
         self.id = host + ':' + six.text_type(port)
-        logging.info('Creating Rworker id=%s persistent=%s'
-                     % (self.id, persistent))
+        logging.info('Creating Rworker id=%s persistent=%s' % (self.id, persistent))
         self.connect(message)
         self.is_free = True
 
@@ -283,8 +280,7 @@ class _RWorker(pptransport.CSocketTransport):
                 pptransport.SocketTransport.__init__(self)
                 self._connect(self.host, self.port)
                 if not self.authenticate(self.secret):
-                    logging.error('Authentication failed for host=%s, port=%s'
-                                  % (self.host, self.port))
+                    logging.error('Authentication failed for host=%s, port=%s' % (self.host, self.port))
                     return False
                 if message:
                     self.send(message)
@@ -292,12 +288,10 @@ class _RWorker(pptransport.CSocketTransport):
                 return True
             except:
                 if not self.persistent:
-                    logging.info('Deleting from queue Rworker %s'
-                                 % (self.id, ))
+                    logging.info('Deleting from queue Rworker %s' % (self.id,))
                     return False
                 logging.info('Failed to reconnect with '
-                             '(host=%s, port=%i), will try again in %i s'
-                             % (self.host, self.port, _RECONNECT_WAIT_TIME))
+                             '(host=%s, port=%i), will try again in %i s' % (self.host, self.port, _RECONNECT_WAIT_TIME))
                 time.sleep(_RECONNECT_WAIT_TIME)
 
 
@@ -321,8 +315,7 @@ class Template(object):
     Template class.
     """
 
-    def __init__(self, job_server, func, depfuncs=(), modules=(),
-                 callback=None, callbackargs=(), group='default', globals=None):
+    def __init__(self, job_server, func, depfuncs=(), modules=(), callback=None, callbackargs=(), group='default', globals=None):
         """
         Creates Template instance.
 
@@ -352,9 +345,7 @@ class Template(object):
         """
         Submits function with *arg arguments to the execution queue.
         """
-        return self.job_server.submit(self.func, args, self.depfuncs,
-                                      self.modules, self.callback, self.callbackargs,
-                                      self.group, self.globals)
+        return self.job_server.submit(self.func, args, self.depfuncs, self.modules, self.callback, self.callbackargs, self.group, self.globals)
 
 
 class Server(object):
@@ -365,9 +356,7 @@ class Server(object):
     default_port = 60000
     default_secret = 'epo20pdosl;dksldkmm'
 
-    def __init__(self, ncpus='autodetect', ppservers=(), secret=None,
-                 loglevel=logging.WARNING, logstream=sys.stderr, logfile=None,
-                 restart=False, proto=0):
+    def __init__(self, ncpus='autodetect', ppservers=(), secret=None, loglevel=logging.WARNING, logstream=sys.stderr, logfile=None, restart=False, proto=0):
         """
         Creates Server instance.
 
@@ -443,8 +432,7 @@ class Server(object):
                     host = '*.*.*.*'
                 interface = host.replace('*', '0')
                 broadcast = host.replace('*', '255')
-                self.auto_ppservers.append(((interface, port),
-                                            (broadcast, port)))
+                self.auto_ppservers.append(((interface, port), (broadcast, port)))
         self.__stats_lock = six.moves._thread.allocate_lock()
         if secret is not None:
             # if not isinstance(secret, bytes):
@@ -460,11 +448,9 @@ class Server(object):
             self.secret = Server.default_secret
         self.__connect()
         self.__creation_time = time.time()
-        logging.info('pp local server started with %d workers'
-                     % (self.__ncpus, ))
+        logging.info('pp local server started with %d workers' % (self.__ncpus,))
 
-    def submit(self, func, args=(), depfuncs=(), modules=(),
-               callback=None, callbackargs=(), group='default', globals=None):
+    def submit(self, func, args=(), depfuncs=(), modules=(), callback=None, callbackargs=(), group='default', globals=None):
         """
         Submits function to the execution queue.
 
@@ -507,12 +493,11 @@ class Server(object):
         if globals:
             modules += tuple(self.__find_modules('', globals))
             modules = tuple(set(modules))
-            self.__logger.info('Task %i will autoimport next modules: %s' %
-                               (tid, six.text_type(modules)))
+            self.__logger.info('Task %i will autoimport next modules: %s' % (tid, six.text_type(modules)))
             for object1 in globals.values():
                 if isinstance(object1, types.FunctionType) \
                         or isinstance(object1, type):
-                    depfuncs += (object1, )
+                    depfuncs += (object1,)
 
         task = _Task(self, tid, callback, callbackargs, group)
 
@@ -522,7 +507,7 @@ class Server(object):
 
         # if the function is a method of a class add self to the arguments list
         if isinstance(func, types.MethodType) and func.__self__ is not None:
-            args = (func.__self__, ) + args
+            args = (func.__self__,) + args
 
         # if there is an instance of a user defined class in the arguments add
         # whole class to dependancies
@@ -535,18 +520,19 @@ class Server(object):
         # function to dependancies
         for arg in args:
             if isinstance(arg, types.FunctionType):
-                depfuncs += (arg, )
+                depfuncs += (arg,)
 
-        sfunc = self.__dumpsfunc((func, ) + depfuncs, modules)
+        sfunc = self.__dumpsfunc((func,) + depfuncs, modules)
         # sargs = pickle.dumps(args, self.__pickle_proto)
-        sargs = json.dumps({'v': args, })
+        sargs = json.dumps({
+            'v': args,
+        })
 
         self.__queue_lock.acquire()
         self.__queue.append((task, sfunc, sargs))
         self.__queue_lock.release()
 
-        self.__logger.info("Task %i submited, function='%s'" %
-                           (tid, func.__name__))
+        self.__logger.info("Task %i submited, function='%s'" % (tid, func.__name__))
         self.__scheduler()
         return task
 
@@ -721,7 +707,7 @@ class Server(object):
         self.__queue.append((task, sfunc, sargs))
         self.__queue_lock.release()
 
-        self.__logger.info('Task %i inserted' % (task.tid, ))
+        self.__logger.info('Task %i inserted' % (task.tid,))
         self.__scheduler()
         return task
 
@@ -748,7 +734,7 @@ class Server(object):
             # creating reserved4 rworkers
             for x in range(ncpus * 0):
                 rworker = _RWorker(host, port, self.secret, 'EXEC', persistent)
-#                    self.__update_active_rworkers(rworker.id, 1)
+                #                    self.__update_active_rworkers(rworker.id, 1)
                 self.__rworkers_reserved4.append(rworker)
             logging.info('Connected to ppserver (host=%s, port=%i) \
                     with %i workers' % (host, port, ncpus))
@@ -830,8 +816,7 @@ class Server(object):
                     and name not in ('__builtins__', 'pp'):
                 if object.__name__ == prefix + name or prefix == '':
                     modules.append(object.__name__)
-                    modules.extend(self.__find_modules(
-                        object.__name__ + '.', object.__dict__))
+                    modules.extend(self.__find_modules(object.__name__ + '.', object.__dict__))
         return modules
 
     def __scheduler(self):
@@ -853,7 +838,7 @@ class Server(object):
                 self.__add_to_active_tasks(1)
                 try:
                     self.__stats['local'].njobs += 1
-                    six.moves._thread.start_new_thread(self.__run, task + (worker, ))
+                    six.moves._thread.start_new_thread(self.__run, task + (worker,))
                 except:
                     pass
                 for i in range(len(self.__waittasks)):
@@ -866,7 +851,7 @@ class Server(object):
                         rworker.is_free = False
                         task = self.__queue.pop(0)
                         self.__stats[rworker.id].njobs += 1
-                        six.moves._thread.start_new_thread(self.__rrun, task + (rworker, ))
+                        six.moves._thread.start_new_thread(self.__rrun, task + (rworker,))
                         break
                 else:
                     if len(self.__queue) > self.__ncpus:
@@ -875,8 +860,7 @@ class Server(object):
                                 rworker.is_free = False
                                 task = self.__queue.pop(0)
                                 self.__stats[rworker.id].njobs += 1
-                                six.moves._thread.start_new_thread(self.__rrun,
-                                                        task + (rworker, ))
+                                six.moves._thread.start_new_thread(self.__rrun, task + (rworker,))
                                 break
                         else:
                             break
@@ -888,8 +872,7 @@ class Server(object):
                                         rworker.is_free = False
                                         task = self.__queue.pop(0)
                                         self.__stats[rworker.id].njobs += 1
-                                        six.moves._thread.start_new_thread(self.__rrun,
-                                                                task + (rworker, ))
+                                        six.moves._thread.start_new_thread(self.__rrun, task + (rworker,))
                                         break
                     else:
                         break
@@ -913,7 +896,7 @@ class Server(object):
         """
         Runs a job remotelly.
         """
-        self.__logger.info('Task (remote) %i started' % (job.tid, ))
+        self.__logger.info('Task (remote) %i started' % (job.tid,))
 
         try:
             rworker.send(sfunc)
@@ -922,7 +905,7 @@ class Server(object):
             rworker.is_free = True
         except:
             self.__logger.info('Task %i failed due to broken network '
-                               'connection - rescheduling' % (job.tid, ))
+                               'connection - rescheduling' % (job.tid,))
             self.insert(sfunc, sargs, job)
             self.__scheduler()
             self.__update_active_rworkers(rworker.id, -1)
@@ -939,7 +922,7 @@ class Server(object):
             self.__waittasks.remove(job)
             self.__waittasks_lock.release()
 
-        self.__logger.info('Task (remote) %i ended' % (job.tid, ))
+        self.__logger.info('Task (remote) %i ended' % (job.tid,))
         self.__scheduler()
 
     def __run(self, job, sfunc, sargs, worker):
@@ -949,7 +932,7 @@ class Server(object):
 
         if self.__exiting:
             return
-        self.__logger.info('Task %i started' % (job.tid, ))
+        self.__logger.info('Task %i started' % (job.tid,))
 
         start_time = time.time()
 
@@ -978,7 +961,7 @@ class Server(object):
         self.__add_to_active_tasks(-1)
         if not self.__exiting:
             self.__stat_add_time('local', time.time() - start_time)
-        self.__logger.info('Task %i ended' % (job.tid, ))
+        self.__logger.info('Task %i ended' % (job.tid,))
         self.__scheduler()
 
     def __add_to_active_tasks(self, num):
@@ -1043,5 +1026,6 @@ class Server(object):
                     os.waitpid(worker.pid, 0)
                 except:
                     pass
+
 
 # Parallel Python Software: http://www.parallelpython.com

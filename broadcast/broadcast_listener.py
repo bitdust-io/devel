@@ -19,8 +19,6 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
-
-
 """
 .. module:: broadcast_listener.
 
@@ -84,6 +82,7 @@ def A(event=None, *args, **kwargs):
     if event is not None:
         _BroadcastListener.automat(event, *args, **kwargs)
     return _BroadcastListener
+
 
 #------------------------------------------------------------------------------
 
@@ -163,7 +162,10 @@ class BroadcastListener(automat.Automat):
         scope = args[0]
         if not scope:
             scope = []
-        broadcasters_finder.A('start', (self.automat, {'action': 'listen', 'scopes': json.dumps(scope), }, []))
+        broadcasters_finder.A('start', (self.automat, {
+            'action': 'listen',
+            'scopes': json.dumps(scope),
+        }, []))
 
     def doSetBroadcaster(self, *args, **kwargs):
         """
@@ -182,8 +184,7 @@ class BroadcastListener(automat.Automat):
         Action method.
         """
         from broadcast import broadcast_service
-        outpacket = broadcast_service.packet_for_broadcaster(
-            self.broadcaster_idurl, *args, **kwargs)
+        outpacket = broadcast_service.packet_for_broadcaster(self.broadcaster_idurl, *args, **kwargs)
         p2p_service.SendBroadcastMessage(outpacket)
 
     def doNotifyInputMessage(self, *args, **kwargs):
@@ -219,6 +220,5 @@ class BroadcastListener(automat.Automat):
                 self.automat('incoming-message', (msg, newpacket))
                 return True
             else:
-                lg.warn('received broadcast message from another broadcaster? : %s != %s' % (
-                    newpacket.CreatorID, self.broadcaster_idurl))
+                lg.warn('received broadcast message from another broadcaster? : %s != %s' % (newpacket.CreatorID, self.broadcaster_idurl))
         return False

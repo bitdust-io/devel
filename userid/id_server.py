@@ -19,8 +19,6 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
-
-
 """
 .. module:: id_server.
 
@@ -194,7 +192,9 @@ class IdServer(automat.Automat):
         try:
             self.web_listener = reactor.listenTCP(self.web_port, server.Site(root))  # @UndefinedVariable
             lg.out(4, '            have started web server at port %d   hostname=%s' % (
-                self.web_port, strng.to_text(self.hostname), ))
+                self.web_port,
+                strng.to_text(self.hostname),
+            ))
         except:
             lg.out(4, 'id_server.set_up ERROR exception trying to listen on port ' + str(self.web_port))
             lg.exc()
@@ -302,14 +302,15 @@ class IdServer(automat.Automat):
                 lg.out(6, 'id_server._save_identity will save NEW Identity: ' + filename)
             bpio.WriteTextFile(localfilename, newxml)
 
+
 #------------------------------------------------------------------------------
 
 
 class IdServerProtocol(basic.Int32StringReceiver):
 
     def __init__(self):
-        self.fpath = None       # string with path/filename
-        self.fin = None         # integer file descriptor like os.open() returns
+        self.fpath = None  # string with path/filename
+        self.fin = None  # integer file descriptor like os.open() returns
         self.received = 0
 
     def disconnect(self):
@@ -372,6 +373,7 @@ class IdServerProtocol(basic.Int32StringReceiver):
         """
         """
 
+
 #------------------------------------------------------------------------------
 
 
@@ -381,6 +383,7 @@ class IdServerFactory(ServerFactory):
         p = IdServerProtocol()
         p.factory = self
         return p
+
 
 #------------------------------------------------------------------------------
 
@@ -412,7 +415,9 @@ font-family: "Tw Cen MT", "Century Gothic", Futura, Arial, sans-serif;}
 <body>
 <div id="content">
 <h1 align=center>Identities on %(hostname)s</h1>
-''' % {'hostname': strng.to_text(A().hostname)}
+''' % {
+            'hostname': strng.to_text(A().hostname)
+        }
         src += '<table cellspacing=0 width=100% border=0><tr valign=top>\n'
         src += '<td width=152px nowrap>\n'
         HTDOCS_DIR = settings.IdentityServerDir()
@@ -452,7 +457,9 @@ font-family: "Tw Cen MT", "Century Gothic", Futura, Arial, sans-serif;}
         del files
         return strng.to_bin(src)
 
+
 #------------------------------------------------------------------------------
+
 
 class WebRoot(resource.Resource):
 
@@ -474,6 +481,7 @@ class WebRoot(resource.Resource):
             return static.File(filepath)
         return resource.NoResource('Not found')
 
+
 #------------------------------------------------------------------------------
 
 
@@ -490,13 +498,18 @@ def main():
         tcp_port = settings.getIdServerTCPPort()
     lg.set_debug_level(20)
     lg.out(2, 'starting ID server ...')
-    reactor.addSystemEventTrigger('before', 'shutdown',  # @UndefinedVariable
-                                  A().automat, 'shutdown')
+    reactor.addSystemEventTrigger(
+        'before',
+        'shutdown',  # @UndefinedVariable
+        A().automat,
+        'shutdown'
+    )
     reactor.callWhenRunning(A, 'init', (web_port, tcp_port))  # @UndefinedVariable
     reactor.callLater(0, A, 'start')  # @UndefinedVariable
     reactor.run()  # @UndefinedVariable
     settings.shutdown()
     lg.out(2, 'reactor stopped, EXIT')
+
 
 #------------------------------------------------------------------------------
 

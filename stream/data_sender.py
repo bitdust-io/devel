@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 .. module:: data_sender.
 
@@ -100,6 +99,7 @@ _ShutdownFlag = False
 
 #------------------------------------------------------------------------------
 
+
 def A(event=None, *args, **kwargs):
     """
     Access method to interact with the state machine.
@@ -164,7 +164,7 @@ class DataSender(automat.Automat):
                 self.state = 'CLOSED'
                 self.doCleanUpSendingQueue(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-            elif ( event == 'timer-1sec' or event == 'block-acked' or event == 'block-failed' or event == 'new-data' ) and self.isQueueEmpty(*args, **kwargs):
+            elif (event == 'timer-1sec' or event == 'block-acked' or event == 'block-failed' or event == 'new-data') and self.isQueueEmpty(*args, **kwargs):
                 self.state = 'SCAN_BLOCKS'
                 self.doScanAndQueue(*args, **kwargs)
         #---AT_STARTUP---
@@ -186,7 +186,10 @@ class DataSender(automat.Automat):
         remoteID, _ = args[0]
         can_send_to = io_throttle.OkToSend(remoteID)
         if _Debug:
-            lg.out(_DebugLevel * 2, 'data_sender.isQueueEmpty can_send_to=%s remoteID=%r' % (can_send_to, remoteID, ))
+            lg.out(_DebugLevel * 2, 'data_sender.isQueueEmpty can_send_to=%s remoteID=%r' % (
+                can_send_to,
+                remoteID,
+            ))
         return can_send_to
 
     def doInit(self, *args, **kwargs):
@@ -223,8 +226,7 @@ class DataSender(automat.Automat):
                 continue
             known_backups = misc.sorted_backup_ids(list(backup_matrix.local_files().keys()), True)
             if _Debug:
-                lg.out(_DebugLevel, 'data_sender.doScanAndQueue    found %d known suppliers for customer %r with %d backups' % (
-                    len(known_suppliers), customer_idurl, len(known_backups)))
+                lg.out(_DebugLevel, 'data_sender.doScanAndQueue    found %d known suppliers for customer %r with %d backups' % (len(known_suppliers), customer_idurl, len(known_backups)))
             for backupID in known_backups:
                 this_customer_idurl = packetid.CustomerIDURL(backupID)
                 if this_customer_idurl != customer_idurl:
@@ -239,7 +241,10 @@ class DataSender(automat.Automat):
                 if item.key_id and customerGlobalID and customerGlobalID != item.key_id:
                     if _Debug:
                         lg.out(_DebugLevel, 'data_sender.doScanAndQueue    skip sending backup %r key is different in the catalog: %r ~ %r' % (
-                            backupID, customerGlobalID, item.key_id, ))
+                            backupID,
+                            customerGlobalID,
+                            item.key_id,
+                        ))
                     continue
                 packetsBySupplier = backup_matrix.ScanBlocksToSend(backupID, limit_per_supplier=None)
                 total_for_customer = sum([len(v) for v in packetsBySupplier.values()])
@@ -253,18 +258,15 @@ class DataSender(automat.Automat):
                         else:
                             supplier_idurl = None
                         if not supplier_idurl:
-                            lg.warn('skip sending, unknown supplier_idurl supplierNum=%s for %s, customer_idurl=%r' % (
-                                supplierNum, backupID, customer_idurl))
+                            lg.warn('skip sending, unknown supplier_idurl supplierNum=%s for %s, customer_idurl=%r' % (supplierNum, backupID, customer_idurl))
                             continue
                         for packetID in packetsBySupplier[supplierNum]:
                             backupID_, _, supplierNum_, _ = packetid.BidBnSnDp(packetID)
                             if backupID_ != backupID:
-                                lg.warn('skip sending, unexpected backupID supplierNum=%s for %s, customer_idurl=%r' % (
-                                    packetID, backupID, customer_idurl))
+                                lg.warn('skip sending, unexpected backupID supplierNum=%s for %s, customer_idurl=%r' % (packetID, backupID, customer_idurl))
                                 continue
                             if supplierNum_ != supplierNum:
-                                lg.warn('skip sending, unexpected supplierNum %s for %s, customer_idurl=%r' % (
-                                    packetID, backupID, customer_idurl))
+                                lg.warn('skip sending, unexpected supplierNum %s for %s, customer_idurl=%r' % (packetID, backupID, customer_idurl))
                                 continue
                             if io_throttle.HasPacketInSendQueue(supplier_idurl, packetID):
                                 if _Debug:
@@ -300,13 +302,18 @@ class DataSender(automat.Automat):
                             ):
                                 progress += 1
                                 if _Debug:
-                                    lg.out(_DebugLevel, 'data_sender.doScanAndQueue   for %r put %s in the queue  progress=%d' % (item.name(), packetID, progress, ))
+                                    lg.out(_DebugLevel, 'data_sender.doScanAndQueue   for %r put %s in the queue  progress=%d' % (
+                                        item.name(),
+                                        packetID,
+                                        progress,
+                                    ))
                             else:
                                 if _Debug:
                                     lg.out(_DebugLevel, 'data_sender.doScanAndQueue    io_throttle.QueueSendFile FAILED %s' % packetID)
         if _Debug:
             lg.out(_DebugLevel, 'data_sender.doScanAndQueue    progress=%s' % progress)
         self.automat('scan-done', progress)
+
 
 #     def doPrintStats(self, *args, **kwargs):
 #         """

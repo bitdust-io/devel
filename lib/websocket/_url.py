@@ -26,7 +26,6 @@ import struct
 
 from six.moves.urllib.parse import urlparse
 
-
 __all__ = ['parse_url', 'get_proxy_info']
 
 
@@ -116,9 +115,7 @@ def _is_no_proxy_host(hostname, no_proxy):
     return False
 
 
-def get_proxy_info(
-        hostname, is_secure, proxy_host=None, proxy_port=0, proxy_auth=None,
-        no_proxy=None, proxy_type='http'):
+def get_proxy_info(hostname, is_secure, proxy_host=None, proxy_port=0, proxy_auth=None, no_proxy=None, proxy_type='http'):
     """
     try to retrieve proxy host and port from environment
     if not provided in options.

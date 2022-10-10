@@ -14,8 +14,7 @@ from bismuthvoting.bip39 import BIP39
 
 __version__ = '0.0.4'
 
-
-FIELD_ORDER = 2 ** 256
+FIELD_ORDER = 2**256
 
 
 # from ecdsa.ecdsa
@@ -54,6 +53,7 @@ def random_padding(data: bytes, block_size: int = 16, pad_with_zeros=False) -> b
 
 
 class DerivableKey:
+
     def __init__(self, entropy: bytes = None, seed: bytes = None):
         if seed is None:
             # reconstruct seed from entropy via BIP39
@@ -101,9 +101,7 @@ class DerivableKey:
         return encrypted
 
     @classmethod
-    def encrypt_vote(
-        cls, aes_key: bytes, data: str, pad_with_zeroes=False, iv: bytes = None
-    ) -> bytes:
+    def encrypt_vote(cls, aes_key: bytes, data: str, pad_with_zeroes=False, iv: bytes = None) -> bytes:
         """Dedicated method to encrypt vote message"""
         # Add space to vote option
         data += ' '

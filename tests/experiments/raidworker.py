@@ -51,9 +51,8 @@ def main():
 
     def _add(blocknum):
         tasks[blocknum] = (sys.argv[1], sys.argv[2], sys.argv[3], blocknum, sys.argv[5])
-        raid_worker.A('new-task',
-                      ('make', (sys.argv[1], sys.argv[2], sys.argv[3], blocknum, sys.argv[5]),
-                       _cb))
+        raid_worker.A('new-task', ('make', (sys.argv[1], sys.argv[2], sys.argv[3], blocknum, sys.argv[5]), _cb))
+
     from system import bpio
     bpio.init()
     lg.set_debug_level(20)

@@ -19,8 +19,6 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
-
-
 """
 .. module:: contract_chain_consumer
 .. role:: red
@@ -84,7 +82,9 @@ def A(event=None, *args, **kwargs):
         _ContractChainConsumer.automat(event, *args, **kwargs)
     return _ContractChainConsumer
 
+
 #------------------------------------------------------------------------------
+
 
 class ContractChainConsumer(automat.Automat):
     """
@@ -229,8 +229,7 @@ class ContractChainConsumer(automat.Automat):
         if self.accountant_lookups >= 10:  # TODO: read from settings.
             if len(self.connected_accountants) >= 1:  # TODO: read from settings: min accountants
                 if _Debug:
-                    lg.out(_DebugLevel, 'contract_chain_consumer._lookup_next_accountant FAILED after %d retries, but %d accountants connected' % (
-                        self.accountant_lookups, len(self.connected_accountants)))
+                    lg.out(_DebugLevel, 'contract_chain_consumer._lookup_next_accountant FAILED after %d retries, but %d accountants connected' % (self.accountant_lookups, len(self.connected_accountants)))
                 self.automat('accountants-connected')
                 return
             if _Debug:
@@ -241,7 +240,9 @@ class ContractChainConsumer(automat.Automat):
         p2p_service_seeker.connect_random_node(
             'service_accountant',
             lookup_method=lookup.random_merchant,
-            service_params={'action': 'read', },
+            service_params={
+                'action': 'read',
+            },
             exclude_nodes=self.connected_accountants,
         ).addBoth(self._on_accountant_lookup_finished)
 

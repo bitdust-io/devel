@@ -130,8 +130,8 @@ def test_db_blockhash(myserver, verbose=False):
 
 
 if __name__ == '__main__':
-    test_blocklast_json(None,True)
-    test_balance_json(None,True)
-    test_addlistlim_json(None,True)
-    test_api_getblockfromhash(None,True)
-    test_db_blockhash(None,True)
+    test_blocklast_json(None, True)
+    test_balance_json(None, True)
+    test_addlistlim_json(None, True)
+    test_api_getblockfromhash(None, True)
+    test_db_blockhash(None, True)

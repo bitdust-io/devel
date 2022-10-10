@@ -24,7 +24,6 @@
 #
 #
 #
-
 """
 ..
 
@@ -81,7 +80,9 @@ def counters_out():
     global _CountersOut
     return _CountersOut
 
+
 #------------------------------------------------------------------------------
+
 
 def get_total_bytes_in():
     return counters_in()['total_bytes']
@@ -89,6 +90,7 @@ def get_total_bytes_in():
 
 def get_total_bytes_out():
     return counters_out()['total_bytes']
+
 
 #------------------------------------------------------------------------------
 
@@ -104,6 +106,7 @@ def EraseAllMyProtosStates():
 
 def EraseMyProtosStates(idurl):
     my_protos().pop(idurl, None)
+
 
 #------------------------------------------------------------------------------
 

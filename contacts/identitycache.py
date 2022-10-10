@@ -22,7 +22,6 @@
 #
 #
 #
-
 """
 .. module:: identitycache.
 
@@ -90,7 +89,9 @@ def shutdown():
     if _Debug:
         lg.out(_DebugLevel, 'identitycache.shutdown')
 
+
 #------------------------------------------------------------------------------
+
 
 def caching():
     global _CachingTasks
@@ -106,7 +107,9 @@ def add_callback(idurl, ignore_errors=False):
     caching()[idurl].append(defer_obj)
     return defer_obj
 
+
 #------------------------------------------------------------------------------
+
 
 def get_one(idurl):
     """
@@ -134,7 +137,9 @@ def start_multiple(idurl_list, timeout=10, try_other_sources=True):
             dl.append(immediatelyCaching(idurl, timeout=timeout, try_other_sources=try_other_sources))
     return DeferredList(dl, consumeErrors=True)
 
+
 #------------------------------------------------------------------------------
+
 
 def Clear(excludeList=None):
     """
@@ -286,8 +291,7 @@ def RemapContactAddress(address):
     if idurl is not None and HasLocalIP(idurl):
         newaddress = (GetLocalIP(idurl), address[1])
         if _Debug:
-            lg.out(_DebugLevel, 'identitycache.RemapContactAddress for %s [%s] -> [%s]' % (
-                nameurl.GetName(idurl), str(address), str(newaddress)))
+            lg.out(_DebugLevel, 'identitycache.RemapContactAddress for %s [%s] -> [%s]' % (nameurl.GetName(idurl), str(address), str(newaddress)))
         return newaddress
     return address
 
@@ -302,8 +306,7 @@ def OverrideIdentity(idurl, xml_src):
         if idurl.original() in _OverriddenIdentities:
             if idurl.to_bin() not in _OverriddenIdentities:
                 _OverriddenIdentities[idurl.to_bin()] = _OverriddenIdentities.pop(idurl.original())
-                lg.info('detected and processed idurl rotate for overridden identity : %r -> %r' % (
-                    idurl.original(), idurl.to_bin()))
+                lg.info('detected and processed idurl rotate for overridden identity : %r -> %r' % (idurl.original(), idurl.to_bin()))
     idurl = id_url.to_bin(idurl)
     xml_src = strng.to_text(xml_src.strip())
     if idurl in _OverriddenIdentities:
@@ -340,8 +343,7 @@ def StopOverridingIdentity(idurl):
         if idurl.original() in _OverriddenIdentities:
             if idurl.to_bin() not in _OverriddenIdentities:
                 _OverriddenIdentities[idurl.to_bin()] = _OverriddenIdentities.pop(idurl.original())
-                lg.info('detected and processed idurl rotate for overridden identity : %r -> %r' % (
-                    idurl.original(), idurl.to_bin()))
+                lg.info('detected and processed idurl rotate for overridden identity : %r -> %r' % (idurl.original(), idurl.to_bin()))
     idurl = id_url.to_bin(idurl)
     result = _OverriddenIdentities.pop(idurl, None)
     if _Debug:
@@ -359,8 +361,7 @@ def IsOverridden(idurl):
         if idurl.original() in _OverriddenIdentities:
             if idurl.to_bin() not in _OverriddenIdentities:
                 _OverriddenIdentities[idurl.to_bin()] = _OverriddenIdentities.pop(idurl.original())
-                lg.info('detected and processed idurl rotate for overridden identity : %r -> %r' % (
-                    idurl.original(), idurl.to_bin()))
+                lg.info('detected and processed idurl rotate for overridden identity : %r -> %r' % (idurl.original(), idurl.to_bin()))
     idurl = id_url.to_bin(idurl)
     return idurl in _OverriddenIdentities
 
@@ -372,10 +373,10 @@ def ReadOverriddenIdentityXMLSource(idurl):
         if idurl.original() in _OverriddenIdentities:
             if idurl.to_bin() not in _OverriddenIdentities:
                 _OverriddenIdentities[idurl.to_bin()] = _OverriddenIdentities.pop(idurl.original())
-                lg.info('detected and processed idurl rotate for overridden identity : %r -> %r' % (
-                    idurl.original(), idurl.to_bin()))
+                lg.info('detected and processed idurl rotate for overridden identity : %r -> %r' % (idurl.original(), idurl.to_bin()))
     idurl = id_url.to_bin(idurl)
     return _OverriddenIdentities.get(idurl, None)
+
 
 #------------------------------------------------------------------------------
 
@@ -417,7 +418,9 @@ def scheduleForCaching(idurl, timeout=0):
         lg.out(_DebugLevel, 'identitycache.scheduleForCaching %r' % idurl)
     return pageRequestTwisted(idurl, timeout)
 
+
 #------------------------------------------------------------------------------
+
 
 def last_time_cached(idurl):
     global _LastTimeCached
@@ -494,7 +497,7 @@ def immediatelyCaching(idurl, timeout=10, try_other_sources=True, ignore_errors=
 
         d = net_misc.getPageTwisted(url=next_idurl, timeout=timeout)
         d.addCallback(_success, idurl)
-        d.addErrback(_next_source, idurl, sources, pos+1)
+        d.addErrback(_next_source, idurl, sources, pos + 1)
         return None
 
     def _fail(err, idurl):
@@ -506,7 +509,10 @@ def immediatelyCaching(idurl, timeout=10, try_other_sources=True, ignore_errors=
         if not try_other_sources:
             p2p_stats.count_identity_cache(idurl, 0)
             _LastTimeCached.pop(idurl, None)
-            lg.warn('[cache failed] %s : %s' % (idurl, err.getErrorMessage(), ))
+            lg.warn('[cache failed] %s : %s' % (
+                idurl,
+                err.getErrorMessage(),
+            ))
             defer_results = caching().pop(idurl, [])
             for result in defer_results:
                 if result and not result.called:
@@ -539,13 +545,20 @@ def immediatelyCaching(idurl, timeout=10, try_other_sources=True, ignore_errors=
             lg.args(_DebugLevel, idurl=idurl, latest_idurl=latest_idurl, latest_ident=latest_ident, sources=sources)
 
         if sources:
-            lg.warn('[cache failed] %s : %s  but will try %d more sources' % (idurl, err.getErrorMessage(), len(sources), ))
+            lg.warn('[cache failed] %s : %s  but will try %d more sources' % (
+                idurl,
+                err.getErrorMessage(),
+                len(sources),
+            ))
             _next_source(None, idurl, sources, 0)
             return None
 
         p2p_stats.count_identity_cache(idurl, 0)
         _LastTimeCached.pop(idurl, None)
-        lg.warn('[cache failed] and also no other sources found %s : %s' % (idurl, err.getErrorMessage(), ))
+        lg.warn('[cache failed] and also no other sources found %s : %s' % (
+            idurl,
+            err.getErrorMessage(),
+        ))
         defer_results = caching().pop(idurl, [])
         if _Debug:
             lg.args(_DebugLevel, known=len(id_url.known().keys()), defer_results=len(defer_results))
@@ -575,7 +588,9 @@ def immediatelyCaching(idurl, timeout=10, try_other_sources=True, ignore_errors=
         lg.out(_DebugLevel, 'identitycache.immediatelyCaching started new task for %r' % idurl)
     return _start_one(idurl, ignore_errors=ignore_errors)
 
+
 #------------------------------------------------------------------------------
+
 
 def SetLocalIPs(local_ips):
     """
@@ -604,7 +619,9 @@ def SearchLocalIP(ip):
     """
     return identitydb.search_local_ip(ip)
 
+
 #------------------------------------------------------------------------------
+
 
 def _test():
     import logging
@@ -631,8 +648,8 @@ def _test():
     shutdown()
     settings.shutdown()
 
-#------------------------------------------------------------------------------
 
+#------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     _test()

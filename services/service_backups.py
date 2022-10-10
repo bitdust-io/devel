@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 ..
 
@@ -66,14 +65,10 @@ class BackupsService(LocalService):
         # backup_matrix.SetLocalFilesNotifyCallback(control.on_read_local_files)
         backup_monitor.A('init')
         backup_monitor.A('restart')
-        conf().addConfigNotifier('services/backups/keep-local-copies-enabled',
-                           self._on_keep_local_copies_modified)
-        conf().addConfigNotifier('services/backups/wait-suppliers-enabled',
-                           self._on_wait_suppliers_modified)
-        p2p_connector.A().addStateChangedCallback(
-            self._on_p2p_connector_state_changed, 'INCOMMING?', 'CONNECTED')
-        p2p_connector.A().addStateChangedCallback(
-            self._on_p2p_connector_state_changed, 'MY_IDENTITY', 'CONNECTED')
+        conf().addConfigNotifier('services/backups/keep-local-copies-enabled', self._on_keep_local_copies_modified)
+        conf().addConfigNotifier('services/backups/wait-suppliers-enabled', self._on_wait_suppliers_modified)
+        p2p_connector.A().addStateChangedCallback(self._on_p2p_connector_state_changed, 'INCOMMING?', 'CONNECTED')
+        p2p_connector.A().addStateChangedCallback(self._on_p2p_connector_state_changed, 'MY_IDENTITY', 'CONNECTED')
         callback.append_inbox_callback(self._on_inbox_packet_received)
         events.add_subscriber(self._on_my_identity_rotated, 'my-identity-rotated')
         events.add_subscriber(self._on_key_erased, 'key-erased')
@@ -101,7 +96,13 @@ class BackupsService(LocalService):
 
     def health_check(self):
         from storage import backup_monitor
-        return backup_monitor.A().state in ['READY', 'FIRE_HIRE', 'LIST_FILES', 'LIST_BACKUPS', 'REBUILDING', ]
+        return backup_monitor.A().state in [
+            'READY',
+            'FIRE_HIRE',
+            'LIST_FILES',
+            'LIST_BACKUPS',
+            'REBUILDING',
+        ]
 
     def _on_key_erased(self, evt):
         from interface import api
@@ -148,10 +149,16 @@ class BackupsService(LocalService):
             latestID = packetid.LatestBackupID(currentID)
             if latestID != currentID:
                 backup_matrix.remote_files()[latestID] = backup_matrix.remote_files().pop(currentID)
-                lg.info('detected backup ID change in remote_files() after identity rotate : %r -> %r' % (currentID, latestID, ))
+                lg.info('detected backup ID change in remote_files() after identity rotate : %r -> %r' % (
+                    currentID,
+                    latestID,
+                ))
         remote_max_block_numbers_ids = list(backup_matrix.remote_max_block_numbers().keys())
         for currentID in remote_max_block_numbers_ids:
             latestID = packetid.LatestBackupID(currentID)
             if latestID != currentID:
                 backup_matrix.remote_max_block_numbers()[latestID] = backup_matrix.remote_max_block_numbers().pop(currentID)
-                lg.info('detected backup ID change in remote_max_block_numbers() after identity rotate : %r -> %r' % (currentID, latestID, ))
+                lg.info('detected backup ID change in remote_max_block_numbers() after identity rotate : %r -> %r' % (
+                    currentID,
+                    latestID,
+                ))

@@ -159,6 +159,7 @@ class DistributedTupleSpacePeer(EntangledNode):
         df.addCallback(addListener)
         return outerDf
 
+
 #    def get(self, template):
 #        """ Reads and removes (consumes) a tuple from the tuple space.
 #
@@ -529,7 +530,7 @@ class DistributedTupleSpacePeer(EntangledNode):
         for element in template:
             # See the description in _keywordHashesFromTuple() for how these "keyword" subtuples are constructed
             # if element != None:
-                # This element in the template describes the element's value or type
+            # This element in the template describes the element's value or type
             if not isinstance(element, type) and element is not None:
                 deterministicElementCount += 1
             subtuple = (tupleLength, i, element)
@@ -558,7 +559,6 @@ class DistributedTupleSpacePeer(EntangledNode):
             df = self._blockingReadRequests[listenerKey]
             df.callback(dTuple)
             return 'read'
-
 
 if __name__ == '__main__':
     import sys

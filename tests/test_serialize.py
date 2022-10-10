@@ -16,7 +16,6 @@ from crypt import encrypted
 
 from userid import my_id
 
-
 _some_priv_key = """-----BEGIN RSA PRIVATE KEY-----
 MIIEowIBAAKCAQEA/ZsJKyCakqA8vO2r0CTOG0qE2l+4y1dIqh7VC0oaVkXy0Cim
 s3N+NNt6vJ617H5FeMALasRf4+5nHkleTB+BKTKBxt4fLm9Mz3mkw8U+pstJfYzS
@@ -99,7 +98,11 @@ class Test(TestCase):
 
     def test_jsn(self):
         data1 = os.urandom(1024)
-        dct1 = {'d': {'data': data1, }, }
+        dct1 = {
+            'd': {
+                'data': data1,
+            },
+        }
         raw = jsn.dumps(dct1, encoding='latin1')
         dct2 = jsn.loads(raw, encoding='latin1')
         data2 = dct2['d']['data']
@@ -107,7 +110,11 @@ class Test(TestCase):
 
     def test_serialization(self):
         data1 = os.urandom(1024)
-        dct1 = {'d': {'data': data1, }, }
+        dct1 = {
+            'd': {
+                'data': data1,
+            },
+        }
         raw = serialization.DictToBytes(dct1, encoding='latin1')
         dct2 = serialization.BytesToDict(raw, encoding='latin1')
         data2 = dct2['d']['data']

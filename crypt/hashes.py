@@ -22,7 +22,6 @@
 #
 #
 #
-
 """
 .. module:: hashes.
 
@@ -56,6 +55,7 @@ from lib import strng
 from logs import lg
 
 #------------------------------------------------------------------------------
+
 
 def md5(inp, hexdigest=False, return_object=False):
     global _CryptoLog

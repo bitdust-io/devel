@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 ..
 
@@ -55,6 +54,7 @@ from interface import cmd_line_json_templates as templ
 
 #------------------------------------------------------------------------------
 
+
 def parser():
     """
     Create an ``optparse.OptionParser`` object to read command line arguments.
@@ -63,30 +63,47 @@ def parser():
     from main.help import usage_text
     parser = OptionParser(usage=usage_text())
     group = OptionGroup(parser, 'Logs')
-    group.add_option('-d', '--debug',
-                     dest='debug',
-                     type='int',
-                     help='set debug level',)
-    group.add_option('-q', '--quite',
-                     dest='quite',
-                     action='store_true',
-                     help='quite mode, do not print any messages to stdout',)
-    group.add_option('-v', '--verbose',
-                     dest='verbose',
-                     action='store_true',
-                     help='verbose mode, print more messages',)
-    group.add_option('-n', '--no-logs',
-                     dest='no_logs',
-                     action='store_true',
-                     help='do not use logs',)
-    group.add_option('-o', '--output',
-                     dest='output',
-                     type='string',
-                     help='print log messages to the file',)
-    group.add_option('--twisted',
-                     dest='twisted',
-                     action='store_true',
-                     help='show twisted log messages too',)
+    group.add_option(
+        '-d',
+        '--debug',
+        dest='debug',
+        type='int',
+        help='set debug level',
+    )
+    group.add_option(
+        '-q',
+        '--quite',
+        dest='quite',
+        action='store_true',
+        help='quite mode, do not print any messages to stdout',
+    )
+    group.add_option(
+        '-v',
+        '--verbose',
+        dest='verbose',
+        action='store_true',
+        help='verbose mode, print more messages',
+    )
+    group.add_option(
+        '-n',
+        '--no-logs',
+        dest='no_logs',
+        action='store_true',
+        help='do not use logs',
+    )
+    group.add_option(
+        '-o',
+        '--output',
+        dest='output',
+        type='string',
+        help='print log messages to the file',
+    )
+    group.add_option(
+        '--twisted',
+        dest='twisted',
+        action='store_true',
+        help='show twisted log messages too',
+    )
     parser.add_option_group(group)
     return parser
 
@@ -104,7 +121,9 @@ def override_options(opts, args):
         overDict['logs.debug-level'] = str(opts.debug)
     return overDict
 
+
 #------------------------------------------------------------------------------
+
 
 def print_copyright():
     """
@@ -186,7 +205,9 @@ def fail_and_stop(err):
         print(err)
     reactor.stop()  # @UndefinedVariable
 
+
 #------------------------------------------------------------------------------
+
 
 def call_websocket_method(method, **kwargs):
     """
@@ -199,7 +220,7 @@ def call_websocket_method(method, **kwargs):
     ret = Deferred()
     timeout = kwargs.pop('websocket_timeout', None)
     if timeout:
-        ret.addTimeout(timeout=(timeout+1), clock=reactor)
+        ret.addTimeout(timeout=(timeout + 1), clock=reactor)
 
     def _on_result(resp):
         if _Debug:
@@ -209,7 +230,9 @@ def call_websocket_method(method, **kwargs):
         except Exception as exc:
             if _Debug:
                 print('call_websocket_method._on_result', exc)
-        if method in ['process_stop', ]:
+        if method in [
+            'process_stop',
+        ]:
             if not ret.called:
                 ret.callback({'status': 'OK'})
             return None
@@ -258,7 +281,9 @@ def call_websocket_method(method, **kwargs):
         except Exception as exc:
             if _Debug:
                 print('call_websocket_method._on_error', exc)
-        if method in ['process_stop', ]:
+        if method in [
+            'process_stop',
+        ]:
             return None
         if not ret.called:
             ret.errback(err)
@@ -300,7 +325,9 @@ def call_websocket_method_transform_template_and_stop(method, template, transfor
     reactor.run()  # @UndefinedVariable
     return 0
 
+
 #------------------------------------------------------------------------------
+
 
 def kill():
     """
@@ -359,6 +386,7 @@ def wait_then_kill(x):
             return ret
         time.sleep(1)
 
+
 #------------------------------------------------------------------------------
 
 
@@ -371,11 +399,14 @@ def run_now(opts, args):
     overDict = override_options(opts, args)
     from main.bpmain import run
     ui = ''
-    if len(args) > 0 and args[0].lower() in ['restart', ]:
+    if len(args) > 0 and args[0].lower() in [
+        'restart',
+    ]:
         ui = 'show'
     ret = run(ui, opts, args, overDict)
     bpio.shutdown()
     return ret
+
 
 #------------------------------------------------------------------------------
 
@@ -384,12 +415,14 @@ def cmd_deploy(opts, args, overDict):
     from system import deploy
     return deploy.run(args)
 
+
 #------------------------------------------------------------------------------
 
 
 def cmd_reconnect(opts, args, overDict):
     tpl = jsontemplate.Template(templ.TPL_RAW)
     return call_websocket_method_template_and_stop('network_reconnect', tpl)
+
 
 #------------------------------------------------------------------------------
 
@@ -408,14 +441,24 @@ def cmd_identity(opts, args, overDict, running, executablePath):
                 print_text('local identity is not valid or not exist')
             return 0
 
-        if args[0] in ['globid', 'globalid', 'gid', 'glid', ] or (args[0] == 'id' and len(args) <= 1):
+        if args[0] in [
+            'globid',
+            'globalid',
+            'gid',
+            'glid',
+        ] or (args[0] == 'id' and len(args) <= 1):
             if my_id.isLocalIdentityReady():
                 print_text(my_id.getGlobalID())
             else:
                 print_text('local identity is not valid or not exist')
             return 0
 
-        if len(args) == 1 or args[1].lower() in ['info', '?', 'show', 'print', ]:
+        if len(args) == 1 or args[1].lower() in [
+            'info',
+            '?',
+            'show',
+            'print',
+        ]:
             if my_id.isLocalIdentityReady():
                 print_text(my_id.getLocalIdentity().serialize(as_text=True))
             else:
@@ -424,7 +467,11 @@ def cmd_identity(opts, args, overDict, running, executablePath):
 
         from twisted.internet import reactor  # @UnresolvedImport
 
-        if args[1] in ['server', 'srv', ] and args[0]:
+        if args[1] in [
+            'server',
+            'srv',
+        ] and args[0]:
+
             def _run_stand_alone_id_server():
                 from logs import lg
                 from userid import id_server
@@ -432,7 +479,8 @@ def cmd_identity(opts, args, overDict, running, executablePath):
                 lg.set_debug_level(settings.getDebugLevel())
                 reactor.addSystemEventTrigger('before', 'shutdown', id_server.A().automat, 'shutdown')  # @UndefinedVariable
                 reactor.callWhenRunning(  # @UndefinedVariable
-                    id_server.A, 'init', (settings.getIdServerWebPort(), settings.getIdServerTCPPort()))
+                    id_server.A, 'init', (settings.getIdServerWebPort(), settings.getIdServerTCPPort())
+                )
                 reactor.callLater(0, id_server.A, 'start')  # @UndefinedVariable
                 reactor.run()  # @UndefinedVariable
 
@@ -528,7 +576,12 @@ def cmd_identity(opts, args, overDict, running, executablePath):
                 print_text('identity recovery FAILED')
             return 0
 
-        if args[1].lower() in ['create', 'new', 'register', 'generate', ]:
+        if args[1].lower() in [
+            'create',
+            'new',
+            'register',
+            'generate',
+        ]:
             if my_id.isLocalIdentityReady():
                 print_text('local identity [%s] already exist\n' % my_id.getIDName())
                 return 1
@@ -537,7 +590,11 @@ def cmd_identity(opts, args, overDict, running, executablePath):
                 return 0
             return _register()
 
-        if len(args) >= 2 and args[1].lower() in ['bk', 'backup', 'save', ]:
+        if len(args) >= 2 and args[1].lower() in [
+            'bk',
+            'backup',
+            'save',
+        ]:
             from interface import api
             key_id = 'master'
             key_json = api.key_get(key_id=key_id, include_private=True)
@@ -545,7 +602,11 @@ def cmd_identity(opts, args, overDict, running, executablePath):
                 print_text('\n'.join(key_json['errors']))
                 return 1
             TextToSave = key_json['result']['creator'] + u'\n' + key_json['result']['private']
-            if args[1] in ['bk', 'backup', 'save', ]:
+            if args[1] in [
+                'bk',
+                'backup',
+                'save',
+            ]:
                 from system import bpio
                 curpath = os.getcwd()
                 os.chdir(executablePath)
@@ -560,12 +621,16 @@ def cmd_identity(opts, args, overDict, running, executablePath):
                     del TextToSave
                     print_text('error writing to %s\n' % filenameto)
                     return 1
-                print_text('IDURL "%s" and "master" key was stored in "%s"' % (
-                    key_json['result']['creator'], filenameto))
+                print_text('IDURL "%s" and "master" key was stored in "%s"' % (key_json['result']['creator'], filenameto))
                 return 0
             return 2
 
-        if args[1].lower() in ['restore', 'recover', 'read', 'load', ]:
+        if args[1].lower() in [
+            'restore',
+            'recover',
+            'read',
+            'load',
+        ]:
             if running:
                 print_text('BitDust is running at the moment, need to stop the software first\n')
                 return 0
@@ -590,6 +655,7 @@ def cmd_identity(opts, args, overDict, running, executablePath):
     settings.shutdown()
     return ret
 
+
 #------------------------------------------------------------------------------
 
 
@@ -598,11 +664,20 @@ def cmd_key(opts, args, overDict, running, executablePath):
         print_text('BitDust is not running at the moment\n')
         return 0
 
-    if len(args) == 1 or (len(args) == 2 and args[1] in ['list', 'ls', ]):
+    if len(args) == 1 or (len(args) == 2 and args[1] in [
+        'list',
+        'ls',
+    ]):
         tpl = jsontemplate.Template(templ.TPL_KEYS_LIST)
         return call_websocket_method_template_and_stop('keys_list', tpl, include_private=False)
 
-    if len(args) >= 3 and args[1] in ['create', 'new', 'gen', 'generate', 'make', ]:
+    if len(args) >= 3 and args[1] in [
+        'create',
+        'new',
+        'gen',
+        'generate',
+        'make',
+    ]:
         key_id = args[2]
         key_sz = 4096
         if len(args) > 3:
@@ -610,12 +685,22 @@ def cmd_key(opts, args, overDict, running, executablePath):
         tpl = jsontemplate.Template(templ.TPL_KEY_CREATE)
         return call_websocket_method_template_and_stop('key_create', tpl, key_alias=key_id, key_size=key_sz)
 
-    if len(args) >= 2 and args[1] in ['copy', 'cp', 'bk', 'backup', 'save', ]:
+    if len(args) >= 2 and args[1] in [
+        'copy',
+        'cp',
+        'bk',
+        'backup',
+        'save',
+    ]:
         from twisted.internet import reactor  # @UnresolvedImport
 
         def _on_key(key_json):
             TextToSave = key_json['result']['creator'] + u'\n' + key_json['result']['private']
-            if len(args) >= 4 and args[1] in ['bk', 'backup', 'save', ]:
+            if len(args) >= 4 and args[1] in [
+                'bk',
+                'backup',
+                'save',
+            ]:
                 from system import bpio
                 curpath = os.getcwd()
                 os.chdir(executablePath)
@@ -644,20 +729,38 @@ def cmd_key(opts, args, overDict, running, executablePath):
         reactor.run()  # @UndefinedVariable
         return 0
 
-    if len(args) >= 2 and args[1] in ['print', 'get', 'show', ]:
+    if len(args) >= 2 and args[1] in [
+        'print',
+        'get',
+        'show',
+    ]:
         tpl = jsontemplate.Template(templ.TPL_KEY_GET)
         key_id = 'master' if len(args) < 3 else args[2]
         return call_websocket_method_template_and_stop('key_get', tpl, key_id=key_id, include_private=True)
 
-    if len(args) >= 3 and args[1] in ['delete', 'erase', 'remove', 'clear', 'del', 'rm', 'kill', ]:
+    if len(args) >= 3 and args[1] in [
+        'delete',
+        'erase',
+        'remove',
+        'clear',
+        'del',
+        'rm',
+        'kill',
+    ]:
         tpl = jsontemplate.Template(templ.TPL_RAW)
         return call_websocket_method_template_and_stop('key_erase', tpl, key_id=args[2])
 
-    if len(args) >= 4 and args[1] in ['share', 'send', 'transfer', 'access', ]:
+    if len(args) >= 4 and args[1] in [
+        'share',
+        'send',
+        'transfer',
+        'access',
+    ]:
         tpl = jsontemplate.Template(templ.TPL_RAW)
         return call_websocket_method_template_and_stop('key_share', tpl, key_id=args[2], idurl=args[3])
 
     return 2
+
 
 #------------------------------------------------------------------------------
 
@@ -673,10 +776,26 @@ def cmd_api(opts, args, overDict, executablePath):
         for item in dir(api):
             if item.startswith('_'):
                 continue
-            if item in ['ERROR', 'OK', 'RESULT', 'driver', 'lg',
-                        'absolute_import', 'Failure', 'Deferred',
-                        'os', 'time', 'on_api_result_prepared', 'succeed', 'sys',
-                        'strng', 'map', 'jsn', 'json', 'gc', ]:
+            if item in [
+                'ERROR',
+                'OK',
+                'RESULT',
+                'driver',
+                'lg',
+                'absolute_import',
+                'Failure',
+                'Deferred',
+                'os',
+                'time',
+                'on_api_result_prepared',
+                'succeed',
+                'sys',
+                'strng',
+                'map',
+                'jsn',
+                'json',
+                'gc',
+            ]:
                 continue
             method = getattr(api, item, None)
             if not method:
@@ -691,32 +810,55 @@ def cmd_api(opts, args, overDict, executablePath):
                 doc_line = ''
             else:
                 doc_line = doc_line.strip().split('\n')[0]
-            print_text('\n    %s(%s)' % (item, ', '.join(params.args),))
+            print_text('\n    %s(%s)' % (
+                item,
+                ', '.join(params.args),
+            ))
             print_text('        %s' % doc_line)
         return 0
+
     def _clean_value(v):
-        if isinstance(v, str) and v in ['true', 'True', ]:
+        if isinstance(v, str) and v in [
+            'true',
+            'True',
+        ]:
             return True
         return v
+
     try:
         pairs = [i.split('=') for i in args[2:]]
-        kwargs = {k:_clean_value(v) for k, v in pairs}
+        kwargs = {k: _clean_value(v) for k, v in pairs}
     except Exception as e:
         print_text('failed reading input arguments: %s\n' % e)
         return 1
     return call_websocket_method_and_stop(args[1], **kwargs)
 
+
 #------------------------------------------------------------------------------
 
 
 def cmd_file(opts, args, overDict, executablePath):
-    if args[0] in ['dir', 'folder', ]:
-        if len(args) > 2 and args[1] in ['create', 'make', 'cr', 'mk', 'add', 'bind', 'map', ]:
+    if args[0] in [
+        'dir',
+        'folder',
+    ]:
+        if len(args) > 2 and args[1] in [
+            'create',
+            'make',
+            'cr',
+            'mk',
+            'add',
+            'bind',
+            'map',
+        ]:
             tpl = jsontemplate.Template(templ.TPL_RAW)
             return call_websocket_method_template_and_stop('file_create', tpl, remote_path=args[2], as_folder=True)
         return 2
 
-    if len(args) < 2 or args[1] in ['list', 'ls', ]:
+    if len(args) < 2 or args[1] in [
+        'list',
+        'ls',
+    ]:
         remote_path = args[2] if len(args) > 2 else None
         tpl = jsontemplate.Template(templ.TPL_BACKUPS_LIST)
         return call_websocket_method_template_and_stop('files_list', tpl, remote_path=remote_path)
@@ -725,36 +867,72 @@ def cmd_file(opts, args, overDict, executablePath):
 #         tpl = jsontemplate.Template(templ.TPL_BACKUPS_LIST_IDS)
 #         return call_websocket_method_template_and_stop('backups_id_list', tpl)
 
-    if len(args) == 2 and args[1] in ['update', 'upd', 'refresh', 'sync', ]:
+    if len(args) == 2 and args[1] in [
+        'update',
+        'upd',
+        'refresh',
+        'sync',
+    ]:
         tpl = jsontemplate.Template(templ.TPL_RAW)
         return call_websocket_method_template_and_stop('files_sync', tpl)
 
-    if len(args) >= 2 and args[1] in ['running', 'progress', 'status', 'prog', ]:
+    if len(args) >= 2 and args[1] in [
+        'running',
+        'progress',
+        'status',
+        'prog',
+    ]:
         if len(args) >= 3:
-            if args[2] in ['download', 'down', ]:
+            if args[2] in [
+                'download',
+                'down',
+            ]:
                 tpl = jsontemplate.Template(templ.TPL_BACKUPS_TASKS_LIST)
                 return call_websocket_method_template_and_stop('files_downloads', tpl)
-            elif args[2] in ['upload', 'up', ]:
+            elif args[2] in [
+                'upload',
+                'up',
+            ]:
                 tpl = jsontemplate.Template(templ.TPL_BACKUPS_RUNNING_LIST)
                 return call_websocket_method_template_and_stop('files_uploads', tpl)
             return 2
         tpl = jsontemplate.Template(templ.TPL_BACKUPS_RUNNING_LIST)
         return call_websocket_method_template_and_stop('files_uploads', tpl)
 
-    if len(args) > 2 and args[1] in ['create', 'make', 'cr', 'mk', 'add', 'bind', 'map', ]:
+    if len(args) > 2 and args[1] in [
+        'create',
+        'make',
+        'cr',
+        'mk',
+        'add',
+        'bind',
+        'map',
+    ]:
         tpl = jsontemplate.Template(templ.TPL_RAW)
-        return call_websocket_method_template_and_stop('file_create', tpl,
-                                                     remote_path=args[2], as_folder=False)
+        return call_websocket_method_template_and_stop('file_create', tpl, remote_path=args[2], as_folder=False)
 
-    if len(args) > 3 and args[1] in ['upload', 'up', 'store', 'start', 'send', 'write', ]:
+    if len(args) > 3 and args[1] in [
+        'upload',
+        'up',
+        'store',
+        'start',
+        'send',
+        'write',
+    ]:
         tpl = jsontemplate.Template(templ.TPL_RAW)
         if not os.path.exists(os.path.abspath(args[2])):
             print_text('path %s not exist\n' % args[2])
             return 1
-        return call_websocket_method_template_and_stop('file_upload_start', tpl,
-                                                     local_path=args[2], remote_path=args[3], wait_result=False)
+        return call_websocket_method_template_and_stop('file_upload_start', tpl, local_path=args[2], remote_path=args[3], wait_result=False)
 
-    if len(args) > 2 and args[1] in ['download', 'down', 'load', 'request', 'read', 'restore', ]:
+    if len(args) > 2 and args[1] in [
+        'download',
+        'down',
+        'load',
+        'request',
+        'read',
+        'restore',
+    ]:
         tpl = jsontemplate.Template(templ.TPL_RAW)
         if len(args) > 3:
             local_path = args[3]
@@ -762,16 +940,31 @@ def cmd_file(opts, args, overDict, executablePath):
             local_path = os.path.join(os.getcwd(), os.path.basename(args[2]))
         return call_websocket_method_template_and_stop('file_download_start', tpl, remote_path=args[2], destination_path=local_path)
 
-    if len(args) > 2 and args[1] in ['delete', 'del', 'rm', 'remove', 'erase', ]:
+    if len(args) > 2 and args[1] in [
+        'delete',
+        'del',
+        'rm',
+        'remove',
+        'erase',
+    ]:
         tpl = jsontemplate.Template(templ.TPL_RAW)
         return call_websocket_method_template_and_stop('file_delete', tpl, remote_path=args[2])
 
-    if len(args) >= 3 and args[1] in ['cancel', 'abort', ]:
+    if len(args) >= 3 and args[1] in [
+        'cancel',
+        'abort',
+    ]:
         tpl = jsontemplate.Template(templ.TPL_RAW)
         if len(args) > 3:
-            if args[2] in ['download', 'down', ]:
+            if args[2] in [
+                'download',
+                'down',
+            ]:
                 return call_websocket_method_template_and_stop('file_download_stop', tpl, remote_path=args[3])
-            elif args[2] in ['upload', 'up', ]:
+            elif args[2] in [
+                'upload',
+                'up',
+            ]:
                 return call_websocket_method_template_and_stop('file_upload_stop', tpl, remote_path=args[3])
             return 2
         return call_websocket_method_template_and_stop('file_upload_stop', tpl, remote_path=args[2])
@@ -786,7 +979,6 @@ def cmd_file(opts, args, overDict, executablePath):
 #         return call_websocket_method_template_and_stop('backup_start_path', tpl, args[1])
 
     return 2
-
 
 
 # def cmd_restore(opts, args, overDict, executablePath):
@@ -829,6 +1021,7 @@ def cmd_integrate(opts, args, overDict):
         #!/bin/sh
         python [path to `bitdust` folder]/bitdust.py "$@"
     """
+
     def print_text(msg, nl='\n'):
         sys.stdout.write(msg + nl)
         sys.stdout.flush()
@@ -851,26 +1044,44 @@ def cmd_integrate(opts, args, overDict):
     print_text(src)
     return 0
 
+
 #------------------------------------------------------------------------------
 
 
 def option_name_to_path(name, default=''):
     path = default
-    if name in ['donated', 'shared', 'given', ]:
+    if name in [
+        'donated',
+        'shared',
+        'given',
+    ]:
         path = 'services/supplier/donated-space'
-    elif name in ['needed', ]:
+    elif name in [
+        'needed',
+    ]:
         path = 'services/customer/needed-space'
-    elif name in ['suppliers', ]:
+    elif name in [
+        'suppliers',
+    ]:
         path = 'services/customer/suppliers-number'
     elif name in ['debug']:
         path = 'logs/debug-level'
-    elif name in ['block-size', ]:
+    elif name in [
+        'block-size',
+    ]:
         path = 'services/backups/block-size'
-    elif name in ['block-size-max', 'max-block-size', ]:
+    elif name in [
+        'block-size-max',
+        'max-block-size',
+    ]:
         path = 'services/backups/max-block-size'
     elif name in ['max-backups', 'max-copies', 'copies']:
         path = 'services/backups/max-copies'
-    elif name in ['local-backups', 'local-data', 'keep-local-data', ]:
+    elif name in [
+        'local-backups',
+        'local-data',
+        'keep-local-data',
+    ]:
         path = 'services/backups/keep-local-copies-enabled'
     elif name in ['tcp']:
         path = 'services/tcp-transport/enabled'
@@ -904,7 +1115,13 @@ def cmd_set(opts, args, overDict):
     from interface import api
     settings.init()
     name = args[1].lower()
-    if name in ['list', 'ls', 'all', 'show', 'print', ]:
+    if name in [
+        'list',
+        'ls',
+        'all',
+        'show',
+        'print',
+    ]:
         # sort = True if (len(args) > 2 and args[2] in ['sort', 'sorted', ]) else False
         sort = True
         result = api.configs_list(sort=sort)
@@ -936,7 +1153,13 @@ def cmd_set(opts, args, overDict):
 def cmd_set_request(opts, args, overDict):
     print_text('connecting to already started BitDust process ...')
     name = args[1].lower()
-    if name in ['list', 'ls', 'all', 'show', 'print', ]:
+    if name in [
+        'list',
+        'ls',
+        'all',
+        'show',
+        'print',
+    ]:
         # sort = True if (len(args) > 2 and args[2] in ['sort', 'sorted', ]) else False
         sort = True
         tpl = jsontemplate.Template(templ.TPL_OPTIONS_LIST_KEY_TYPE_VALUE)
@@ -958,7 +1181,9 @@ def cmd_set_request(opts, args, overDict):
     tpl = jsontemplate.Template(templ.TPL_OPTION_MODIFIED)
     return call_websocket_method_template_and_stop('config_set', tpl, key=path, value=value)
 
+
 #------------------------------------------------------------------------------
+
 
 def cmd_suppliers(opts, args, overDict):
     if len(args) < 2 or args[1] in ['list', 'ls']:
@@ -973,13 +1198,19 @@ def cmd_suppliers(opts, args, overDict):
         tpl = jsontemplate.Template(templ.TPL_RAW)
         return call_websocket_method_template_and_stop('supplier_change', tpl, position=args[2])
 
-    elif args[1] in ['hire', 'change', 'ch', ] and len(args) >= 4:
+    elif args[1] in [
+        'hire',
+        'change',
+        'ch',
+    ] and len(args) >= 4:
         tpl = jsontemplate.Template(templ.TPL_RAW)
         return call_websocket_method_template_and_stop('supplier_change', tpl, position=args[2], new_supplier_id=args[3])
 
     return 2
 
+
 #------------------------------------------------------------------------------
+
 
 def cmd_customers(opts, args, overDict):
     if len(args) < 2 or args[1] in ['list', 'ls']:
@@ -990,13 +1221,23 @@ def cmd_customers(opts, args, overDict):
         tpl = jsontemplate.Template(templ.TPL_RAW)
         return call_websocket_method_template_and_stop('customers_ping', tpl)
 
-    elif args[1] in ['reject', 'refuse', 'remove', 'delete', 'rm', 'free', 'del', ] and len(args) >= 3:
+    elif args[1] in [
+        'reject',
+        'refuse',
+        'remove',
+        'delete',
+        'rm',
+        'free',
+        'del',
+    ] and len(args) >= 3:
         tpl = jsontemplate.Template(templ.TPL_RAW)
         return call_websocket_method_template_and_stop('customer_reject', tpl, customer_id=args[2])
 
     return 2
 
+
 #------------------------------------------------------------------------------
+
 
 def cmd_storage(opts, args, overDict):
     if len(args) < 2:
@@ -1032,6 +1273,7 @@ def cmd_storage(opts, args, overDict):
         return 0
     return 2
 
+
 #------------------------------------------------------------------------------
 
 
@@ -1041,11 +1283,15 @@ def cmd_automats(opts, args, overDict):
         return call_websocket_method_template_and_stop('automats_list', tpl)
     return 2
 
+
 #------------------------------------------------------------------------------
 
 
 def cmd_services(opts, args, overDict):
-    if len(args) < 2 or args[1] in ['list', 'ls', ]:
+    if len(args) < 2 or args[1] in [
+        'list',
+        'ls',
+    ]:
 
         def _services_update(result):
             for i in range(len(result['result'])):
@@ -1058,11 +1304,19 @@ def cmd_services(opts, args, overDict):
         tpl = jsontemplate.Template(templ.TPL_SERVICES)
         return call_websocket_method_transform_template_and_stop('services_list', tpl, _services_update)
 
-    if len(args) >= 3 and args[1] in ['start', 'enable', 'on', ]:
+    if len(args) >= 3 and args[1] in [
+        'start',
+        'enable',
+        'on',
+    ]:
         tpl = jsontemplate.Template(templ.TPL_RAW)
         return call_websocket_method_template_and_stop('service_start', tpl, service_name=args[2])
 
-    if len(args) >= 3 and args[1] in ['stop', 'disable', 'off', ]:
+    if len(args) >= 3 and args[1] in [
+        'stop',
+        'disable',
+        'off',
+    ]:
         tpl = jsontemplate.Template(templ.TPL_RAW)
         return call_websocket_method_template_and_stop('service_stop', tpl, service_name=args[2])
 
@@ -1072,6 +1326,7 @@ def cmd_services(opts, args, overDict):
 
     return 2
 
+
 #------------------------------------------------------------------------------
 
 
@@ -1080,11 +1335,17 @@ def cmd_message(opts, args, overDict):
     #     if len(args) < 2 or args[1] == 'list':
     #         tpl = jsontemplate.Template(templ.TPL_RAW)
     #         return call_websocket_method_template_and_stop('list_messages', tpl)
-    if len(args) >= 4 and args[1] in ['send', 'to', ]:
+    if len(args) >= 4 and args[1] in [
+        'send',
+        'to',
+    ]:
         tpl = jsontemplate.Template(templ.TPL_RAW)
         return call_websocket_method_template_and_stop('message_send', tpl, recipient_id=args[2], data=args[3])
 
-    if len(args) < 2 or args[1] in ['listen', 'read', ]:
+    if len(args) < 2 or args[1] in [
+        'listen',
+        'read',
+    ]:
         from chat import terminal_chat
 
         def _send_message(to, msg):
@@ -1136,6 +1397,7 @@ def cmd_message(opts, args, overDict):
 
     return 2
 
+
 #------------------------------------------------------------------------------
 
 
@@ -1145,9 +1407,17 @@ def cmd_friend(opts, args, overDict):
     if len(args) < 2:
         tpl = jsontemplate.Template(templ.TPL_FRIEND_LOOKUP_REPEATED_SECTION)
         return call_websocket_method_template_and_stop('list_correspondents', tpl)
-    elif len(args) > 2 and args[1] in ['check', 'nick', 'nickname', 'test', ]:
+    elif len(args) > 2 and args[1] in [
+        'check',
+        'nick',
+        'nickname',
+        'test',
+    ]:
         return call_websocket_method_template_and_stop('user_search', tpl_lookup, nickname=strng.text_type(args[2]))
-    elif len(args) > 2 and args[1] in ['add', 'append', ]:
+    elif len(args) > 2 and args[1] in [
+        'add',
+        'append',
+    ]:
         inp = strng.text_type(args[2])
         if inp.startswith('http://'):
             return call_websocket_method_template_and_stop('friend_add', tpl_add, trusted_user_id=inp)
@@ -1174,6 +1444,7 @@ def cmd_friend(opts, args, overDict):
         return 0
     return 2
 
+
 #------------------------------------------------------------------------------
 
 
@@ -1184,7 +1455,12 @@ def cmd_dhtseed(opts, args, overDict):
     settings.init()
     appdata = settings.BaseDir()
 
-    if len(args) > 1 and args[1] in ['daemon', 'background', 'detach', 'spawn', ]:
+    if len(args) > 1 and args[1] in [
+        'daemon',
+        'background',
+        'detach',
+        'spawn',
+    ]:
         appList = bpio.find_main_process()
         if len(appList) > 0:
             print_text('main BitDust process already started: %s' % str(appList))
@@ -1213,6 +1489,7 @@ def cmd_dhtseed(opts, args, overDict):
     settings.shutdown()
     return 0
 
+
 #------------------------------------------------------------------------------
 
 
@@ -1225,7 +1502,12 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
     bpio.init()
 
     #---install---
-    if cmd in ['deploy', 'install', 'venv', 'virtualenv', ]:
+    if cmd in [
+        'deploy',
+        'install',
+        'venv',
+        'virtualenv',
+    ]:
         return cmd_deploy(opts, args, overDict)
 
     #---start---
@@ -1363,8 +1645,7 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
         else:
             appListAllChilds = bpio.find_main_process(
                 check_processid_file=False,
-                extra_lookups=[
-                ],
+                extra_lookups=[],
             )
             if appListAllChilds:
                 print_text('found child BitDust processes: %s, perform "kill process" action ... ' % str(appList), '')
@@ -1396,11 +1677,25 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
     overDict = override_options(opts, args)
 
     #---identity---
-    if cmd in ['identity', 'id', 'idurl', 'globalid', 'globid', 'glid', 'gid', ]:
+    if cmd in [
+        'identity',
+        'id',
+        'idurl',
+        'globalid',
+        'globid',
+        'glid',
+        'gid',
+    ]:
         return cmd_identity(opts, args, overDict, running, executablePath)
 
     #---key---
-    elif cmd in ['key', 'keys', 'pk', 'private_key', 'priv', ]:
+    elif cmd in [
+        'key',
+        'keys',
+        'pk',
+        'private_key',
+        'priv',
+    ]:
         return cmd_key(opts, args, overDict, running, executablePath)
 
     #---ping---
@@ -1411,7 +1706,14 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
         return call_websocket_method_template_and_stop('user_ping', tpl, user_id=args[1])
 
     #---config---
-    elif cmd in ['set', 'get', 'conf', 'config', 'option', 'setting', ]:
+    elif cmd in [
+        'set',
+        'get',
+        'conf',
+        'config',
+        'option',
+        'setting',
+    ]:
         if len(args) == 1 or args[1].lower() in ['help', '?']:
             from main import help
             print_text(help.settings_help())
@@ -1421,21 +1723,34 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
         return cmd_set_request(opts, args, overDict)
 
     #---reconnect---
-    if cmd in ['reconnect', 'rejoin', 'connect', ]:
+    if cmd in [
+        'reconnect',
+        'rejoin',
+        'connect',
+    ]:
         if not running:
             print_text('BitDust is not running at the moment\n')
             return 0
         return cmd_reconnect(opts, args, overDict)
 
     #---api---
-    elif cmd in ['api', 'call', ]:
+    elif cmd in [
+        'api',
+        'call',
+    ]:
         if not running:
             print_text('BitDust is not running at the moment\n')
             return 0
         return cmd_api(opts, args, overDict, executablePath)
 
     #---messages---
-    elif cmd in ['msg', 'message', 'messages', 'chat', 'talk', ]:
+    elif cmd in [
+        'msg',
+        'message',
+        'messages',
+        'chat',
+        'talk',
+    ]:
         if not running:
             print_text('BitDust is not running at the moment\n')
             return 0
@@ -1463,14 +1778,27 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
         return cmd_storage(opts, args, overDict)
 
     #---automats---
-    elif cmd in ['st', 'state', 'automats', 'aut', 'states', 'machines', ]:
+    elif cmd in [
+        'st',
+        'state',
+        'automats',
+        'aut',
+        'states',
+        'machines',
+    ]:
         if not running:
             print_text('BitDust is not running at the moment\n')
             return 0
         return cmd_automats(opts, args, overDict)
 
     #---services---
-    elif cmd in ['services', 'service', 'svc', 'serv', 'srv', ]:
+    elif cmd in [
+        'services',
+        'service',
+        'svc',
+        'serv',
+        'srv',
+    ]:
         if not running:
             print_text('BitDust is not running at the moment\n')
             return 0
@@ -1484,7 +1812,15 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
         return cmd_friend(opts, args, overDict)
 
     #---file---
-    elif cmd in ['file', 'files', 'fi', 'fs', 'f', 'folder', 'dir', ]:
+    elif cmd in [
+        'file',
+        'files',
+        'fi',
+        'fs',
+        'f',
+        'folder',
+        'dir',
+    ]:
         if not running:
             print_text('BitDust is not running at the moment\n')
             return 0
@@ -1494,8 +1830,7 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
     elif cmd == 'dhtseed':
         appList = bpio.find_main_process(
             check_processid_file=False,
-            extra_lookups=[
-            ],
+            extra_lookups=[],
         )
         running = (len(appList) > 0)
         if running:
@@ -1522,6 +1857,7 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
 
     return 2
 
+
 #------------------------------------------------------------------------------
 
 
@@ -1547,5 +1883,6 @@ def main():
         print_copyright()
 
     return run(opts, args)
+
 
 #------------------------------------------------------------------------------

@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 ..
 
@@ -63,8 +62,7 @@ class PersonalMessagesService(LocalService):
         from crypt import my_keys
         from userid import my_id
         self.starting_deferred = Deferred()
-        self.starting_deferred.addErrback(lambda err: lg.warn('service %r was not started: %r' % (
-            self.service_name, err.getErrorMessage() if err else 'unknown reason')))
+        self.starting_deferred.addErrback(lambda err: lg.warn('service %r was not started: %r' % (self.service_name, err.getErrorMessage() if err else 'unknown reason')))
         self.personal_group_key_id = my_keys.make_key_id(alias='person', creator_glob_id=my_id.getGlobalID())
 
         # TODO: needs more work, service_private_groups() must be reliable first

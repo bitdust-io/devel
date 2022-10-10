@@ -13,7 +13,6 @@ from storage import backup_fs
 
 from userid import my_id
 
-
 _some_priv_key = """-----BEGIN RSA PRIVATE KEY-----
 MIIEowIBAAKCAQEA/ZsJKyCakqA8vO2r0CTOG0qE2l+4y1dIqh7VC0oaVkXy0Cim
 s3N+NNt6vJ617H5FeMALasRf4+5nHkleTB+BKTKBxt4fLm9Mz3mkw8U+pstJfYzS
@@ -113,7 +112,9 @@ class Test(TestCase):
         self.assertEqual(newPathID, itemInfo.path_id)
         self.assertEqual(itemInfo.name(), 'cat.jpeg')
         self.assertEqual(itemInfo.key_alias(), 'master')
-        self.assertEqual(backup_fs.fs(customer_idurl, key_alias), {'cat.jpeg': int(newPathID), })
+        self.assertEqual(backup_fs.fs(customer_idurl, key_alias), {
+            'cat.jpeg': int(newPathID),
+        })
         self.assertEqual(backup_fs.fsID(customer_idurl, key_alias)[int(newPathID)].name(), 'cat.jpeg')
 
     def test_file_create_with_key_alias(self):

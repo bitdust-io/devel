@@ -24,7 +24,6 @@
 #
 #
 #
-
 """
 .. module:: tcp_interface.
 
@@ -79,6 +78,7 @@ _GateProxy = None
 
 #------------------------------------------------------------------------------
 
+
 def proxy(instance=None):
     global _GateProxy
     if instance is False:
@@ -91,6 +91,7 @@ def proxy(instance=None):
         if _Debug:
             lg.out(4, 'tcp_interface.proxy created new gate instance: %d' % id(_GateProxy))
     return _GateProxy
+
 
 #------------------------------------------------------------------------------
 
@@ -140,7 +141,10 @@ class GateInterface():
         """
         result = []
         nowip = strng.to_bin(misc.readExternalIP())
-        result.append(b'tcp://%s:%d' % (nowip, settings.getTCPPort(), ))
+        result.append(b'tcp://%s:%d' % (
+            nowip,
+            settings.getTCPPort(),
+        ))
         # TODO:
         #    # if IP is not external and upnp configuration was failed for some reasons
         #    # we may want to use another contact methods, NOT tcp
@@ -155,7 +159,10 @@ class GateInterface():
         """
         """
         nowip = strng.to_bin(misc.readExternalIP())
-        tcp_contact = b'tcp://%s:%d' % (nowip, settings.getTCPPort(), )
+        tcp_contact = b'tcp://%s:%d' % (
+            nowip,
+            settings.getTCPPort(),
+        )
         if id_obj.getContactIndex(contact=tcp_contact) < 0:
             if _Debug:
                 lg.out(4, 'tcp_interface.verify_contacts returning False: tcp contact not found or changed')
@@ -236,12 +243,16 @@ class GateInterface():
                     if channel.get_idurl() and channel.get_idurl() == idurl:
                         if _Debug:
                             lg.dbg(_DebugLevel, 'found active connection for %r' % idurl)
-                        return [channel, ]
+                        return [
+                            channel,
+                        ]
             return []
         search_for_host = net_misc.normalize_address(host)
         if _Debug:
             lg.dbg(_DebugLevel, 'looking for %r, known connections: %r' % (
-                search_for_host, list(tcp_node.opened_connections().keys()), ))
+                search_for_host,
+                list(tcp_node.opened_connections().keys()),
+            ))
         return tcp_node.opened_connections().get(search_for_host, [])
 
     def find_stream(self, stream_id=None, transfer_id=None):
@@ -249,19 +260,25 @@ class GateInterface():
         """
         return tcp_node.find_stream(file_id=stream_id, transfer_id=transfer_id)
 
+
 #------------------------------------------------------------------------------
+
 
 def proxy_errback(x):
     if _Debug:
         lg.out(6, 'tcp_interface.proxy_errback ERROR %s' % x)
     return None
 
+
 #------------------------------------------------------------------------------
+
 
 def interface_transport_initialized(xmlrpcurl):
     if proxy():
         return proxy().callRemote(
-            'transport_initialized', 'tcp', xmlrpcurl,
+            'transport_initialized',
+            'tcp',
+            xmlrpcurl,
         ).addErrback(proxy_errback)
     lg.warn('transport_tcp is not ready')
     return fail(Exception('transport_tcp is not ready')).addErrback(proxy_errback)
@@ -270,7 +287,10 @@ def interface_transport_initialized(xmlrpcurl):
 def interface_receiving_started(host, new_options={}):
     if proxy():
         return proxy().callRemote(
-            'receiving_started', 'tcp', net_misc.pack_address(host), new_options,
+            'receiving_started',
+            'tcp',
+            net_misc.pack_address(host),
+            new_options,
         ).addErrback(proxy_errback)
     lg.warn('transport_tcp is not ready')
     return fail(Exception('transport_tcp is not ready')).addErrback(proxy_errback)
@@ -279,7 +299,9 @@ def interface_receiving_started(host, new_options={}):
 def interface_receiving_failed(error_code=None):
     if proxy():
         return proxy().callRemote(
-            'receiving_failed', 'tcp', error_code,
+            'receiving_failed',
+            'tcp',
+            error_code,
         ).addErrback(proxy_errback)
     lg.warn('transport_tcp is not ready')
     return fail(Exception('transport_tcp is not ready')).addErrback(proxy_errback)
@@ -288,7 +310,9 @@ def interface_receiving_failed(error_code=None):
 def interface_disconnected(result=None):
     if proxy():
         return proxy().callRemote(
-            'disconnected', 'tcp', result,
+            'disconnected',
+            'tcp',
+            result,
         ).addErrback(proxy_errback)
     return succeed(result)
 
@@ -296,7 +320,13 @@ def interface_disconnected(result=None):
 def interface_register_file_sending(host, receiver_idurl, filename, size=0, description=''):
     if proxy():
         return proxy().callRemote(
-            'register_file_sending', 'tcp', net_misc.pack_address(host), receiver_idurl, filename, size, description,
+            'register_file_sending',
+            'tcp',
+            net_misc.pack_address(host),
+            receiver_idurl,
+            filename,
+            size,
+            description,
         ).addErrback(proxy_errback)
     lg.warn('transport_tcp is not ready')
     return fail(Exception('transport_tcp is not ready')).addErrback(proxy_errback)
@@ -305,7 +335,12 @@ def interface_register_file_sending(host, receiver_idurl, filename, size=0, desc
 def interface_register_file_receiving(host, sender_idurl, filename, size=0):
     if proxy():
         return proxy().callRemote(
-            'register_file_receiving', 'tcp', net_misc.pack_address(host), sender_idurl, filename, size,
+            'register_file_receiving',
+            'tcp',
+            net_misc.pack_address(host),
+            sender_idurl,
+            filename,
+            size,
         ).addErrback(proxy_errback)
     lg.warn('transport_tcp is not ready')
     return fail(Exception('transport_tcp is not ready')).addErrback(proxy_errback)
@@ -314,7 +349,11 @@ def interface_register_file_receiving(host, sender_idurl, filename, size=0):
 def interface_unregister_file_sending(transfer_id, status, size=0, error_message=None):
     if proxy():
         return proxy().callRemote(
-            'unregister_file_sending', transfer_id, status, size, error_message,
+            'unregister_file_sending',
+            transfer_id,
+            status,
+            size,
+            error_message,
         ).addErrback(proxy_errback)
     lg.warn('transport_tcp is not ready')
     return fail(Exception('transport_tcp is not ready')).addErrback(proxy_errback)
@@ -323,7 +362,11 @@ def interface_unregister_file_sending(transfer_id, status, size=0, error_message
 def interface_unregister_file_receiving(transfer_id, status, size=0, error_message=None):
     if proxy():
         return proxy().callRemote(
-            'unregister_file_receiving', transfer_id, status, size, error_message,
+            'unregister_file_receiving',
+            transfer_id,
+            status,
+            size,
+            error_message,
         ).addErrback(proxy_errback)
     lg.warn('transport_tcp is not ready')
     return fail(Exception('transport_tcp is not ready')).addErrback(proxy_errback)
@@ -331,9 +374,7 @@ def interface_unregister_file_receiving(transfer_id, status, size=0, error_messa
 
 def interface_cancelled_file_sending(host, filename, size=0, description=None, error_message=None):
     if proxy():
-        return proxy().callRemote(
-            'cancelled_file_sending', 'tcp', net_misc.pack_address(host), filename, size, description, error_message
-        ).addErrback(proxy_errback)
+        return proxy().callRemote('cancelled_file_sending', 'tcp', net_misc.pack_address(host), filename, size, description, error_message).addErrback(proxy_errback)
     lg.warn('transport_tcp is not ready')
     return fail(Exception('transport_tcp is not ready')).addErrback(proxy_errback)
 
@@ -341,13 +382,19 @@ def interface_cancelled_file_sending(host, filename, size=0, description=None, e
 def interface_cancelled_file_receiving(host, filename, size, error_message=None):
     if proxy():
         return proxy().callRemote(
-            'cancelled_file_receiving', 'tcp', net_misc.pack_address(host), filename, size, error_message,
+            'cancelled_file_receiving',
+            'tcp',
+            net_misc.pack_address(host),
+            filename,
+            size,
+            error_message,
         ).addErrback(proxy_errback)
     lg.warn('transport_tcp is not ready')
     return fail(Exception('transport_tcp is not ready')).addErrback(proxy_errback)
 
 
 #------------------------------------------------------------------------------
+
 
 def main():
     lg.set_debug_level(24)
@@ -369,6 +416,7 @@ def main():
     print('    connect host port')
     print('    send filename host port')
     print('')
+
 
 if __name__ == '__main__':
     main()

@@ -19,8 +19,6 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
-
-
 """
 .. module:: customers_rejector.
 
@@ -185,8 +183,10 @@ class CustomersRejector(automat.Automat):
             self.automat('space-overflow', failed_customers)
             return
         used_space_ratio_dict = accounting.calculate_customers_usage_ratio(space_dict, used_dict)
-        customers_sorted = sorted(current_customers,
-                                  key=lambda idurl: used_space_ratio_dict[idurl],)
+        customers_sorted = sorted(
+            current_customers,
+            key=lambda idurl: used_space_ratio_dict[idurl],
+        )
         while len(customers_sorted) > 0 and consumed_bytes > donated_bytes:
             idurl = customers_sorted.pop()
             allocated_bytes = int(space_dict[idurl])
@@ -215,7 +215,9 @@ class CustomersRejector(automat.Automat):
                 continue
             if utime.get_sec1970() - connected_time > customer_idle_days * 24 * 60 * 60:
                 lg.warn('customer %r connected last time %r seconds ago, rejecting customer' % (
-                    customer_idurl, utime.get_sec1970() - connected_time, ))
+                    customer_idurl,
+                    utime.get_sec1970() - connected_time,
+                ))
                 dead_customers.append(customer_idurl)
         if dead_customers:
             lg.warn('found idle customers: %r' % dead_customers)

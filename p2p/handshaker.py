@@ -20,8 +20,6 @@
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
 #
-
-
 """
 .. module:: handshaker
 .. role:: red
@@ -81,13 +79,21 @@ _KnownChannels = {}
 
 #------------------------------------------------------------------------------
 
-def ping(idurl,
-         ack_timeout=15, cache_timeout=5, cache_retries=2, ping_retries=2,
-         force_cache=False, skip_outbox=False, keep_alive=True,
-         fake_identity=None,
-         channel='identity', channel_counter=True,
-         cancel_running=False,
-    ):
+
+def ping(
+    idurl,
+    ack_timeout=15,
+    cache_timeout=5,
+    cache_retries=2,
+    ping_retries=2,
+    force_cache=False,
+    skip_outbox=False,
+    keep_alive=True,
+    fake_identity=None,
+    channel='identity',
+    channel_counter=True,
+    cancel_running=False,
+):
     """
     Doing peer-to-peer ping with acknowledgment and return `Deferred` object to receive result.
     First read remote identity file from `idurl` location.
@@ -111,15 +117,30 @@ def ping(idurl,
         else:
             _RunningHandshakers[remote_idurl]['results'].append(result)
             if _Debug:
-                lg.args(_DebugLevel, already_opened=True, idurl=remote_idurl, channel=channel, skip_outbox=skip_outbox, )
+                lg.args(
+                    _DebugLevel,
+                    already_opened=True,
+                    idurl=remote_idurl,
+                    channel=channel,
+                    skip_outbox=skip_outbox,
+                )
             return result
-    pending_results += [result, ]
+    pending_results += [
+        result,
+    ]
     _RunningHandshakers[remote_idurl] = {
         'instance': None,
         'results': pending_results,
     }
     if _Debug:
-        lg.args(_DebugLevel, already_opened=False, idurl=remote_idurl, channel=channel, skip_outbox=skip_outbox, pending_results=len(pending_results), )
+        lg.args(
+            _DebugLevel,
+            already_opened=False,
+            idurl=remote_idurl,
+            channel=channel,
+            skip_outbox=skip_outbox,
+            pending_results=len(pending_results),
+        )
     h = Handshaker(
         remote_idurl=remote_idurl,
         ack_timeout=ack_timeout,
@@ -175,6 +196,7 @@ def cancel_all():
 
 #------------------------------------------------------------------------------
 
+
 def on_identity_packet_outbox_status(pkt_out, status, error):
     global _RunningHandshakers
     remote_idurl = strng.to_bin(pkt_out.outpacket.RemoteID)
@@ -186,19 +208,16 @@ def on_identity_packet_outbox_status(pkt_out, status, error):
             else:
                 inst.automat('outbox-failed', status=status, error=error)
 
+
 #------------------------------------------------------------------------------
+
 
 class Handshaker(automat.Automat):
     """
     This class implements all the functionality of ``handshaker()`` state machine.
     """
 
-    def __init__(self,
-                 remote_idurl,
-                 ack_timeout, cache_timeout,
-                 cache_retries, ping_retries,
-                 skip_outbox, keep_alive, fake_identity, channel, channel_counter,
-                 debug_level=0, log_events=False, log_transitions=False, publish_events=False, **kwargs):
+    def __init__(self, remote_idurl, ack_timeout, cache_timeout, cache_retries, ping_retries, skip_outbox, keep_alive, fake_identity, channel, channel_counter, debug_level=0, log_events=False, log_transitions=False, publish_events=False, **kwargs):
         """
         Builds `handshaker()` state machine.
         """
@@ -241,7 +260,7 @@ class Handshaker(automat.Automat):
         """
         #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
-            if event == 'cache-and-ping' or ( event == 'ping' and not self.isCached(*args, **kwargs) ):
+            if event == 'cache-and-ping' or (event == 'ping' and not self.isCached(*args, **kwargs)):
                 self.state = 'CACHE'
                 self.doInit(*args, **kwargs)
                 self.doCacheRemoteIDURL(*args, **kwargs)
@@ -385,12 +404,16 @@ class Handshaker(automat.Automat):
         """
         global _RunningHandshakers
         lg.warn('failed to cache remote identity %r after %d attempts' % (
-            self.remote_idurl, self.cache_attempts, ))
+            self.remote_idurl,
+            self.cache_attempts,
+        ))
         if self.remote_idurl in _RunningHandshakers:
             for result_defer in _RunningHandshakers[self.remote_idurl]['results']:
                 if not result_defer.called:
                     result_defer.errback(Exception('failed to cache remote identity %r after %d attempts' % (
-                        self.remote_idurl, self.cache_attempts, )))
+                        self.remote_idurl,
+                        self.cache_attempts,
+                    )))
 
     def doReportFailed(self, *args, **kwargs):
         """
@@ -400,7 +423,10 @@ class Handshaker(automat.Automat):
         response = kwargs.get('response')
         info = kwargs.get('info')
         if response and info:
-            lg.warn('handshake failed because received Fail() from remote user %r : %r' % (response, info, ))
+            lg.warn('handshake failed because received Fail() from remote user %r : %r' % (
+                response,
+                info,
+            ))
             if self.remote_idurl in _RunningHandshakers:
                 for result_defer in _RunningHandshakers[self.remote_idurl]['results']:
                     if not result_defer.called:
@@ -409,9 +435,16 @@ class Handshaker(automat.Automat):
         status = kwargs.get('status')
         error = kwargs.get('error')
         if status == 'cancelled':
-            lg.warn('handshake was cancelled, my Identity() packet was not sent to %r : %r' % (self.remote_idurl, error, ))
+            lg.warn('handshake was cancelled, my Identity() packet was not sent to %r : %r' % (
+                self.remote_idurl,
+                error,
+            ))
         else:
-            lg.err('handshake failed with status %r, my Identity() packet was not sent to remote user %r : %r' % (status, self.remote_idurl, error, ))
+            lg.err('handshake failed with status %r, my Identity() packet was not sent to remote user %r : %r' % (
+                status,
+                self.remote_idurl,
+                error,
+            ))
         if self.remote_idurl in _RunningHandshakers:
             for result_defer in _RunningHandshakers[self.remote_idurl]['results']:
                 if not result_defer.called:
@@ -422,12 +455,17 @@ class Handshaker(automat.Automat):
         Action method.
         """
         global _RunningHandshakers
-        lg.warn('remote node %r did not respond after %d ping attempts' % (self.remote_global_id, self.ping_attempts, ))
+        lg.warn('remote node %r did not respond after %d ping attempts' % (
+            self.remote_global_id,
+            self.ping_attempts,
+        ))
         if self.remote_idurl in _RunningHandshakers:
             for result_defer in _RunningHandshakers[self.remote_idurl]['results']:
                 if not result_defer.called:
                     result_defer.errback(Exception('remote node %s did not respond after %d ping attempt(s)' % (
-                        self.remote_global_id, self.ping_attempts, )))
+                        self.remote_global_id,
+                        self.ping_attempts,
+                    )))
 
     def doReportSuccess(self, *args, **kwargs):
         """
@@ -437,12 +475,14 @@ class Handshaker(automat.Automat):
         response = kwargs.get('response')
         info = kwargs.get('info')
         if _Debug:
-            lg.args(_DebugLevel, channel=self.channel, idurl=self.remote_idurl,
-                    response=response, info=info)
+            lg.args(_DebugLevel, channel=self.channel, idurl=self.remote_idurl, response=response, info=info)
         if self.remote_idurl in _RunningHandshakers:
             for result_defer in _RunningHandshakers[self.remote_idurl]['results']:
                 if not result_defer.called:
-                    result_defer.callback((response, info, ))
+                    result_defer.callback((
+                        response,
+                        info,
+                    ))
 
     def doDestroyMe(self, *args, **kwargs):
         """

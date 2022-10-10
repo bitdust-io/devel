@@ -19,8 +19,6 @@ Copyright (C) 2010 Hiroki Ohtani(liris)
     Boston, MA  02110-1335  USA
 
 """
-
-
 """
 define websocket exceptions
 """

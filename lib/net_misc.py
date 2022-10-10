@@ -82,13 +82,7 @@ _ConnectionFailedCallbackFunc = None
 #------------------------------------------------------------------------------
 
 _UserAgentString = 'BitDust-http-agent'
-_ProxySettings = {
-    'host': '',
-    'port': '',
-    'ssl': 'False',
-    'username': '',
-    'password': ''
-}
+_ProxySettings = {'host': '', 'port': '', 'ssl': 'False', 'username': '', 'password': ''}
 
 #------------------------------------------------------------------------------
 
@@ -100,7 +94,9 @@ def init():
 def shutdown():
     pass
 
+
 #------------------------------------------------------------------------------
+
 
 def SetConnectionDoneCallbackFunc(f):
     """
@@ -145,7 +141,9 @@ def ConnectionFailed(param=None, proto=None, info=None):
         return None
     return param
 
+
 #------------------------------------------------------------------------------
+
 
 def normalize_address(host_port, default_port=80):
     """
@@ -158,13 +156,25 @@ def normalize_address(host_port, default_port=80):
         host_port = host_port.decode('utf-8')
     if isinstance(host_port, six.string_types):
         host_port = host_port.split(':')
-        host_port = (host_port[0], int(host_port[1]), )
+        host_port = (
+            host_port[0],
+            int(host_port[1]),
+        )
     if not host_port[1]:
-        host_port = (host_port[0], default_port, )
+        host_port = (
+            host_port[0],
+            default_port,
+        )
     if isinstance(host_port[0], six.binary_type):
-        host_port = (host_port[0].decode('utf-8'), int(host_port[1]), )
+        host_port = (
+            host_port[0].decode('utf-8'),
+            int(host_port[1]),
+        )
     if isinstance(host_port[0], six.text_type):
-        host_port = (host_port[0].encode('utf-8'), int(host_port[1]), )
+        host_port = (
+            host_port[0].encode('utf-8'),
+            int(host_port[1]),
+        )
     return host_port
 
 
@@ -190,7 +200,9 @@ def pack_address_text(host_port, proto=None, default_port=80):
         return None
     return strng.to_text(pack_address(host_port, proto=proto, default_port=default_port))
 
+
 #------------------------------------------------------------------------------
+
 
 def parse_url(url, defaultPort=None):
     """
@@ -231,6 +243,7 @@ def parse_credentials(host):
     username, password = credentials.split(':', 1)
     return host, username, password
 
+
 #------------------------------------------------------------------------------
 
 
@@ -239,12 +252,7 @@ def detect_proxy_settings():
     Do some work and return dictionary with Proxy server settings for that
     machine.
     """
-    d = {
-        'host': '',
-        'port': '',
-        'username': '',
-        'password': '',
-        'ssl': 'False'}
+    d = {'host': '', 'port': '', 'username': '', 'password': '', 'ssl': 'False'}
     return d
 
     # TODO: to be fixed later
@@ -343,6 +351,7 @@ def proxy_is_on():
     """
     return get_proxy_host() != ''
 
+
 #------------------------------------------------------------------------------
 
 
@@ -352,6 +361,7 @@ def downloadPageTwisted(url, filename):
     """
     global _UserAgentString
     return downloadPage(url, filename, agent=_UserAgentString)
+
 
 #-------------------------------------------------------------------------------
 
@@ -413,6 +423,7 @@ def downloadWithProgressTwisted(url, file, progress_func):
         reactor.connectTCP(host, port, factory)  # @UndefinedVariable
     return factory.deferred
 
+
 #-------------------------------------------------------------------------------
 
 
@@ -464,7 +475,9 @@ def downloadSSL(url, fileOrName, progress_func, certificates_filenames):
 
     scheme, host, port, path = parse_url(url)
     if not isinstance(certificates_filenames, list):
-        certificates_filenames = [certificates_filenames, ]
+        certificates_filenames = [
+            certificates_filenames,
+        ]
     cert_found = False
     for cert in certificates_filenames:
         if os.path.isfile(cert) and os.access(cert, os.R_OK):
@@ -478,6 +491,7 @@ def downloadSSL(url, fileOrName, progress_func, certificates_filenames):
     reactor.connectSSL(host, port, factory, contextFactory)  # @UndefinedVariable
     return factory.deferred
 
+
 #------------------------------------------------------------------------------
 
 # class ProxyClientFactory(client.HTTPClientFactory):
@@ -485,6 +499,7 @@ def downloadSSL(url, fileOrName, progress_func, certificates_filenames):
 #     def setURL(self, url):
 #         client.HTTPClientFactory.setURL(self, url)
 #         self.path = url
+
 
 class custom_ReadBodyProtocol(_ReadBodyProtocol):
 
@@ -519,14 +534,16 @@ def readBodyFailed(result):
 
 
 def readResponse(response, timeout):
-#     print('Response version:', response.version)
-#     print('Response code:', response.code)
-#     print('Response phrase:', response.phrase)
-#     print('Response headers:')
-#     print(list(response.headers.getAllRawHeaders()))
+    #     print('Response version:', response.version)
+    #     print('Response code:', response.code)
+    #     print('Response phrase:', response.phrase)
+    #     print('Response headers:')
+    #     print(list(response.headers.getAllRawHeaders()))
     if response.code != 200:
         return fail(Exception('Bad response from the server: [%d] %s' % (
-            response.code, response.phrase.strip(),)))
+            response.code,
+            response.phrase.strip(),
+        )))
     d = readBody(response)
     d.addTimeout(timeout=timeout, clock=reactor)
     d.addErrback(readBodyFailed)
@@ -537,44 +554,45 @@ def getPageTwisted(url, timeout=10, method=b'GET'):
     """
     A smart way to download pages from HTTP hosts.
     """
-#     def getPageTwistedTimeout(_d):
-#         _d.cancel()
-#     def getPageTwistedTimeoutDisconnect(_tcpcall):
-#         _tcpcall.disconnect()
-#     def getPageTwistedCancelTimeout(x, _t):
-#         if _t.active():
-#             _t.cancel()
-#         return x
+    #     def getPageTwistedTimeout(_d):
+    #         _d.cancel()
+    #     def getPageTwistedTimeoutDisconnect(_tcpcall):
+    #         _tcpcall.disconnect()
+    #     def getPageTwistedCancelTimeout(x, _t):
+    #         if _t.active():
+    #             _t.cancel()
+    #         return x
     global _UserAgentString
 
     url = strng.to_bin(url)
 
-#     if proxy_is_on():
-#         factory = ProxyClientFactory(url, agent=_UserAgentString, timeout=timeout)
-#         tcp_call = reactor.connectTCP(get_proxy_host(), get_proxy_port(), factory)
-# #         if timeout:
-# #             timeout_call = reactor.callLater(timeout, getPageTwistedTimeoutDisconnect, tcp_call)
-# #             factory.deferred.addBoth(getPageTwistedCancelTimeout, timeout_call)
-#         factory.deferred.addCallback(ConnectionDone, 'http', 'getPageTwisted proxy %s' % (url))
-#         factory.deferred.addErrback(ConnectionFailed, 'http', 'getPageTwisted proxy %s' % (url))
-#         return factory.deferred
+    #     if proxy_is_on():
+    #         factory = ProxyClientFactory(url, agent=_UserAgentString, timeout=timeout)
+    #         tcp_call = reactor.connectTCP(get_proxy_host(), get_proxy_port(), factory)
+    # #         if timeout:
+    # #             timeout_call = reactor.callLater(timeout, getPageTwistedTimeoutDisconnect, tcp_call)
+    # #             factory.deferred.addBoth(getPageTwistedCancelTimeout, timeout_call)
+    #         factory.deferred.addCallback(ConnectionDone, 'http', 'getPageTwisted proxy %s' % (url))
+    #         factory.deferred.addErrback(ConnectionFailed, 'http', 'getPageTwisted proxy %s' % (url))
+    #         return factory.deferred
 
     agent = Agent(reactor, connectTimeout=timeout)
 
     d = agent.request(
         method=method,
         uri=url,
-        headers=Headers({b'User-Agent': [_UserAgentString, ]}),
+        headers=Headers({b'User-Agent': [_UserAgentString,]}),
     )
-#     d = getPage(url, agent=_UserAgentString, timeout=timeout)
-#     if timeout:
-#         timeout_call = reactor.callLater(timeout, getPageTwistedTimeout, d)
-#         d.addBoth(getPageTwistedCancelTimeout, timeout_call)
+    #     d = getPage(url, agent=_UserAgentString, timeout=timeout)
+    #     if timeout:
+    #         timeout_call = reactor.callLater(timeout, getPageTwistedTimeout, d)
+    #         d.addBoth(getPageTwistedCancelTimeout, timeout_call)
     d.addCallback(readResponse, timeout)
     # d.addTimeout(timeout=timeout, clock=reactor)
     d.addCallback(ConnectionDone, 'http', 'getPageTwisted %r' % url)
     d.addErrback(ConnectionFailed, 'http', 'getPageTwisted %r' % url)
     return d
+
 
 #------------------------------------------------------------------------------
 
@@ -592,6 +610,7 @@ def downloadHTTP(url, fileOrName):
         factory.path = url
     reactor.connectTCP(host, port, factory)  # @UndefinedVariable
     return factory.deferred
+
 
 #-------------------------------------------------------------------------------
 
@@ -620,6 +639,7 @@ def IpIsLocal(ip):
             return True
     return False
 
+
 #-------------------------------------------------------------------------------
 
 
@@ -638,7 +658,7 @@ def getLocalIp():
 
     try:
         ipaddr = socket.gethostbyname(socket.gethostname())
-        if not(ipaddr.startswith('127')):
+        if not (ipaddr.startswith('127')):
             #print('Can use Method 1: ' + ipaddr)
             return ipaddr
     except:
@@ -695,6 +715,7 @@ def getLocalIp():
 
     return '127.0.0.1'  # uh oh, we're in trouble, but don't want to return none
 
+
 #-------------------------------------------------------------------------------
 
 
@@ -715,6 +736,7 @@ def TestInternetConnectionOld(remote_host='www.google.com'):  # 74.125.113.99
         return False
 
     return result is None or result == 0
+
 
 #------------------------------------------------------------------------------
 
@@ -748,9 +770,11 @@ def TestInternetConnectionOld2(remote_hosts=None, timeout=10):
         d = getPageTwisted(hosts[index])
         d.addCallback(_response, result)
         d.addErrback(_fail, hosts, index, result)
+
     result = Deferred()
     reactor.callLater(0, _call, remote_hosts, 0, result)  # @UndefinedVariable
     return result
+
 
 #------------------------------------------------------------------------------
 
@@ -760,14 +784,19 @@ def TestInternetConnection(remote_hosts=None, timeout=10):
         remote_hosts = []
         from userid import known_servers
         for host, ports in known_servers.by_host().items():
-            remote_hosts.append('http://%s:%d' % (host, ports[0], ))
+            remote_hosts.append('http://%s:%d' % (
+                host,
+                ports[0],
+            ))
     random.shuffle(remote_hosts)
     dl = []
     for host in remote_hosts[:5]:
         dl.append(getPageTwisted(host, timeout=timeout))
     return DeferredList(dl, fireOnOneCallback=True, fireOnOneErrback=False, consumeErrors=True)
 
+
 #------------------------------------------------------------------------------
+
 
 def uploadHTTP(url, files, data, progress=None, receiverDeferred=None):
     """
@@ -794,11 +823,10 @@ def uploadHTTP(url, files, data, progress=None, receiverDeferred=None):
             else:
                 self._deferred.errback(Exception(self.buffer))
 
-
     @implementer(iweb.IBodyProducer)
     class MultiPartProducer:
 
-        CHUNK_SIZE = 2 ** 8
+        CHUNK_SIZE = 2**8
 
         def __init__(self, files={}, data={}, callback=None, deferred=None):
             self._files = files
@@ -986,10 +1014,13 @@ def uploadHTTP(url, files, data, progress=None, receiverDeferred=None):
     request.addCallback(lambda response: response.deliverBody(myReceiver))
     return request
 
+
 #------------------------------------------------------------------------------
+
 
 @implementer(iweb.IBodyProducer)
 class BytesProducer(object):
+
     def __init__(self, body):
         self.body = body
         self.length = len(body)
@@ -1008,18 +1039,18 @@ class BytesProducer(object):
 def http_post_data(url, data, connectTimeout=15):
     agent = Agent(reactor, connectTimeout=connectTimeout)
     body = BytesProducer(data)
-    requested = agent.request(b'POST', url, Headers({'User-Agent': ['BitDust HTTP client', ], }), body)
+    requested = agent.request(b'POST', url, Headers({
+        'User-Agent': ['BitDust HTTP client',],
+    }), body)
     return requested
+
 
 #------------------------------------------------------------------------------
 
 
 def getIfconfig(iface='en0'):
     try:
-        result = subprocess.check_output(
-            'ifconfig %s | grep -w inet' % (iface),
-            shell=True, stderr=subprocess.STDOUT
-        )
+        result = subprocess.check_output('ifconfig %s | grep -w inet' % (iface), shell=True, stderr=subprocess.STDOUT)
     except:
         return None
     ip = ''
@@ -1090,14 +1121,18 @@ def getNetworkInterfaces():
     elif plat == 'Darwin':
         try:
             # TODO: try to avoid socket connect to remote host
-            return [_f for _f in [
-                l for l in (
-                    [ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith('127.')][:1],
-                    # TODO: replace 8.8.8.8 with random seed node
-                    [[(s.connect(('8.8.8.8', 53)), s.getsockname()[0], s.close()) for s in [socket.socket(socket.AF_INET, socket.SOCK_DGRAM)]][0][1]],
-                ) if l
-            ][0] if _f]
+            return [
+                _f for _f in [
+                    l for l in (
+                        [ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith('127.')][:1],
+                        # TODO: replace 8.8.8.8 with random seed node
+                        [[(s.connect(('8.8.8.8', 53)), s.getsockname()[0], s.close()) for s in [socket.socket(socket.AF_INET, socket.SOCK_DGRAM)]][0][1]],
+                    ) if l
+                ][0] if _f
+            ]
         except:
             eth0 = getIfconfig('eth0')
             en0 = getIfconfig('en0')
-            return [_f for _f in [en0 or eth0, ] if _f]
+            return [_f for _f in [
+                en0 or eth0,
+            ] if _f]

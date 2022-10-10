@@ -25,7 +25,6 @@
 #
 #
 #
-
 """
 .. module:: weblog.
 
@@ -140,6 +139,7 @@ def shutdown():
         del myweblistener
         myweblistener = None
 
+
 #------------------------------------------------------------------------------
 
 
@@ -157,6 +157,7 @@ def log(level, s):
     while numlines > maxlines:
         logtext = logtext[logtext.find('\n') + 1:]
         numlines -= 1
+
 
 #------------------------------------------------------------------------------
 
@@ -263,6 +264,7 @@ class LogPage(resource.Resource):
 
         return out + '</pre></body></html>'
 
+
 #------------------------------------------------------------------------------
 
 
@@ -272,6 +274,7 @@ class RootResource(resource.Resource):
         resource.Resource.__init__(self)
         logpage = LogPage(self)
         self.putChild('', logpage)
+
 
 #------------------------------------------------------------------------------
 

@@ -3,7 +3,8 @@ import time
 from worker import worker
 
 
-class ConnectionManager (threading.Thread):
+class ConnectionManager(threading.Thread):
+
     def __init__(self, node, mp):
         threading.Thread.__init__(self, name='ConnectionManagerThread')
         self.node = node
@@ -43,22 +44,24 @@ class ConnectionManager (threading.Thread):
                 if self.node.last_block_ago:
                     self.node.last_block_ago = time.time() - int(self.node.last_block_timestamp)
                     self.node.logger.app_log.warning(f'Status: Last block {self.node.last_block} was generated '
-                                                f"{'%.2f' % (self.node.last_block_ago / 60) } minutes ago")
+                                                     f"{'%.2f' % (self.node.last_block_ago / 60) } minutes ago")
                 # status Hook
                 uptime = int(time.time() - self.node.startup_time)
-                status = {'protocolversion': self.node.version,
-                          'walletversion': self.node.app_version,
-                          'testnet': self.node.is_testnet,
-                          # config data
-                          'blocks': self.node.last_block,
-                          'timeoffset': 0,
-                          'connections': self.node.peers.consensus_size,
-                          'difficulty': self.node.difficulty[0],  # live status, bitcoind format
-                          'threads': threading.active_count(),
-                          'uptime': uptime,
-                          'consensus': self.node.peers.consensus,
-                          'consensus_percent': self.node.peers.consensus_percentage,
-                          'last_block_ago': self.node.last_block_ago}  # extra data
+                status = {
+                    'protocolversion': self.node.version,
+                    'walletversion': self.node.app_version,
+                    'testnet': self.node.is_testnet,
+                    # config data
+                    'blocks': self.node.last_block,
+                    'timeoffset': 0,
+                    'connections': self.node.peers.consensus_size,
+                    'difficulty': self.node.difficulty[0],  # live status, bitcoind format
+                    'threads': threading.active_count(),
+                    'uptime': uptime,
+                    'consensus': self.node.peers.consensus,
+                    'consensus_percent': self.node.peers.consensus_percentage,
+                    'last_block_ago': self.node.last_block_ago
+                }  # extra data
                 if self.node.is_regnet:
                     status['regnet'] = True
                 self.node.plugin_manager.execute_action_hook('status', status)

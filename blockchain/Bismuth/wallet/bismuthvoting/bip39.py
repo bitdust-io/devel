@@ -4,14 +4,13 @@ A Simple wrapper around BIP39 Mnemonic module to have a simple consistent interf
 
 from mnemonic import Mnemonic
 
-
 __version__ = '0.0.1'
-
 
 DEFAULT_PASSPHRASE = 'BismuthGVP'
 
 
 class BIP39:
+
     def __init__(self, entropy: bytes = None):
         self.mnemonic = Mnemonic('english')
         self.entropy = entropy

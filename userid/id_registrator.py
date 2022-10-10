@@ -19,8 +19,6 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
-
-
 """
 .. module:: id_registrator.
 
@@ -373,12 +371,8 @@ class IdRegistrator(automat.Automat):
                         self.preferred_servers.append(srv.strip())
             except:
                 pass
-        self.min_servers = max(
-            settings.MinimumIdentitySources(),
-            config.conf().getInt('services/identity-propagate/min-servers') or settings.MinimumIdentitySources())
-        self.max_servers = min(
-            settings.MaximumIdentitySources(),
-            config.conf().getInt('services/identity-propagate/max-servers') or settings.MaximumIdentitySources())
+        self.min_servers = max(settings.MinimumIdentitySources(), config.conf().getInt('services/identity-propagate/min-servers') or settings.MinimumIdentitySources())
+        self.max_servers = min(settings.MaximumIdentitySources(), config.conf().getInt('services/identity-propagate/max-servers') or settings.MaximumIdentitySources())
         lg.out(4, 'id_registrator.doSaveMyName [%s]' % login)
         lg.out(4, '    known_servers=%s' % self.known_servers)
         lg.out(4, '    preferred_servers=%s' % self.preferred_servers)
@@ -421,7 +415,10 @@ class IdRegistrator(automat.Automat):
             self.automat('id-server-response', (id_server_host, htmlsrc))
 
         def _eb(err, id_server_host):
-            lg.out(4, '               FAILED: %s : %s' % (id_server_host, err.getErrorMessage(), ))
+            lg.out(4, '               FAILED: %s : %s' % (
+                id_server_host,
+                err.getErrorMessage(),
+            ))
             self.discovered_servers.remove(id_server_host)
             self.automat('id-server-failed', (id_server_host, err))
 
@@ -473,8 +470,7 @@ class IdRegistrator(automat.Automat):
             self.automat('id-not-exist', idurl)
 
         for host in self.good_servers:
-            webport, tcpport = known_servers.by_host().get(
-                host, (settings.IdentityWebPort(), settings.IdentityServerPort()))
+            webport, tcpport = known_servers.by_host().get(host, (settings.IdentityWebPort(), settings.IdentityServerPort()))
             if webport == 80:
                 webport = ''
             idurl = nameurl.UrlMake('http', strng.to_text(host), webport, login + '.xml')
@@ -622,8 +618,7 @@ class IdRegistrator(automat.Automat):
         if not key.isMyKeyReady():
             key.GenerateNewKey()
         lg.out(4, '    my key is ready')
-        ident = my_id.buildDefaultIdentity(
-            name=login, ip=externalIP, idurls=self.free_idurls)
+        ident = my_id.buildDefaultIdentity(name=login, ip=externalIP, idurls=self.free_idurls)
         my_identity_xmlsrc = ident.serialize(as_text=True)
         newfilename = settings.LocalIdentityFilename() + '.new'
         bpio.WriteTextFile(newfilename, my_identity_xmlsrc)
@@ -645,7 +640,10 @@ class IdRegistrator(automat.Automat):
         for idurl in self.new_identity.getSources(as_originals=True):
             self.free_idurls.remove(strng.to_bin(idurl))
             _, host, webport, filename = nameurl.UrlParse(idurl)
-            url = net_misc.pack_address((host, webport, ), proto='http')
+            url = net_misc.pack_address((
+                host,
+                webport,
+            ), proto='http')
             dlist.append(net_misc.http_post_data(
                 url=url,
                 data=payload,
@@ -654,6 +652,7 @@ class IdRegistrator(automat.Automat):
             if _Debug:
                 lg.args(_DebugLevel, url=url, filename=filename, size=len(payload))
         return DeferredList(dlist, fireOnOneCallback=True)
+
 
 #------------------------------------------------------------------------------
 
@@ -673,8 +672,8 @@ def main():
     reactor.run()  # @UndefinedVariable
     settings.shutdown()
 
-#------------------------------------------------------------------------------
 
+#------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     main()

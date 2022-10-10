@@ -19,7 +19,6 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
-
 """
 SCENARIO 4: customer-1 share files to customer-2
 
@@ -69,8 +68,8 @@ def test_suppliers5():
     scenarios.scenario16()
 
 
-
 #------------------------------------------------------------------------------
+
 
 def prepare():
     set_active_scenario('PREPARE')

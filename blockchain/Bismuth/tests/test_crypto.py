@@ -5,6 +5,7 @@
 from common import get_client
 from bismuthclient import bismuthcrypto
 
+
 def test_ecdsa_dict(myserver, verbose=False):
     client = get_client(verbose=verbose)
     res = client.command(command='regtest_generate', options=[1])  # Mine a block so we have some funds

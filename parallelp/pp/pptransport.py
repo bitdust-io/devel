@@ -67,8 +67,7 @@ class Transport(object):
     def authenticate(self, secret):
         remote_version = self.receive()
         if version != remote_version:
-            logging.error('PP version mismatch (local: pp-%s, remote: pp-%s)'
-                          % (version, remote_version))
+            logging.error('PP version mismatch (local: pp-%s, remote: pp-%s)' % (version, remote_version))
             logging.error('Please install the same version of PP on all nodes')
             return False
         srandom = self.receive()
@@ -111,7 +110,7 @@ class CTransport(Transport):
         else:
             msg = msg[1:]
             hash1 = self.hash(msg)
-            self.rcache[hash1] = [r for r in map(preprocess or (lambda m: m), (msg, ))][0]
+            self.rcache[hash1] = [r for r in map(preprocess or (lambda m: m), (msg,))][0]
         return self.rcache[hash1]
 
 
@@ -147,7 +146,7 @@ class PipeTransport(Transport):
         msg = self.r.read(msg_len)
         if isinstance(msg, six.binary_type):
             msg = msg.decode('latin1')
-        return [r for r in map(preprocess or (lambda m: m), (msg, ))][0]
+        return [r for r in map(preprocess or (lambda m: m), (msg,))][0]
 
     def close(self):
         self.w.close()
@@ -216,5 +215,6 @@ class CPipeTransport(PipeTransport, CTransport):
 
 class CSocketTransport(SocketTransport, CTransport):
     pass
+
 
 # Parallel Python Software: http://www.parallelpython.com

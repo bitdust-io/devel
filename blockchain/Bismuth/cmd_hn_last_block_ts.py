@@ -9,14 +9,11 @@ python3 cmd_hn_last_block_ts
 
 """
 
-
 import connections
 import json
 import socks
 
-
 __version__ = '0.0.1'
-
 
 ORIGIN_OF_TIME = 1534716000  # Real Origin: August 20
 POS_SLOT_TIME_MIN = 3  # Real world setting?

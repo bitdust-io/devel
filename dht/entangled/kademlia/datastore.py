@@ -28,12 +28,10 @@ import json
 from . import constants  # @UnresolvedImport
 from . import encoding  # @UnresolvedImport
 
-
 try:
     buffer = buffer  # @UndefinedVariable
 except:
     buffer = memoryview
-
 
 PROTOCOL_VERSION = 1
 
@@ -120,7 +118,6 @@ class DataStore(DictMixin):
         """
 
 
-
 class DictDataStore(DataStore):
     """
     A datastore using an in-memory Python dictionary.
@@ -198,7 +195,6 @@ class DictDataStore(DataStore):
         return result
 
 
-
 class SQLiteVersionedJsonDataStore(DataStore):
     """
     SQLite database-based datastore.
@@ -213,7 +209,10 @@ class SQLiteVersionedJsonDataStore(DataStore):
         self.dbFile = dbFile
         createDB = not os.path.exists(dbFile)
         if _Debug:
-            print('[DHT DB] dbFile=%r   createDB=%r' % (dbFile, createDB, ))
+            print('[DHT DB] dbFile=%r   createDB=%r' % (
+                dbFile,
+                createDB,
+            ))
         self._db = sqlite3.connect(dbFile)
         self._db.isolation_level = None
         self._db.text_factory = encoding.to_text
@@ -299,14 +298,7 @@ class SQLiteVersionedJsonDataStore(DataStore):
         except KeyError:
             return 0
 
-    def setItem(self,
-                key,
-                value,
-                lastPublished,
-                originallyPublished,
-                originalPublisherID,
-                expireSeconds=constants.dataExpireSecondsDefaut,
-                **kwargs):
+    def setItem(self, key, value, lastPublished, originallyPublished, originalPublisherID, expireSeconds=constants.dataExpireSecondsDefaut, **kwargs):
         key_hex = encoding.to_text(key)
         new_revision = kwargs.get('revision', None)
         if new_revision is None:
@@ -314,27 +306,39 @@ class SQLiteVersionedJsonDataStore(DataStore):
         self._cursor.execute('select key from data where key=:reqKey', {'reqKey': key_hex})
         opID = originalPublisherID or None
         if self._cursor.fetchone() is None:
-            self._cursor.execute('INSERT INTO data(key, value, lastPublished, originallyPublished, originalPublisherID, expireSeconds, revision) VALUES (?, ?, ?, ?, ?, ?, ?)', (
-                key_hex,
-                json.dumps({'k': key_hex, 'd': value, 'v': PROTOCOL_VERSION, }, ),
-                lastPublished,
-                originallyPublished,
-                opID,
-                expireSeconds,
-                new_revision,
-            ))
+            self._cursor.execute(
+                'INSERT INTO data(key, value, lastPublished, originallyPublished, originalPublisherID, expireSeconds, revision) VALUES (?, ?, ?, ?, ?, ?, ?)', (
+                    key_hex,
+                    json.dumps({
+                        'k': key_hex,
+                        'd': value,
+                        'v': PROTOCOL_VERSION,
+                    },),
+                    lastPublished,
+                    originallyPublished,
+                    opID,
+                    expireSeconds,
+                    new_revision,
+                )
+            )
             if _Debug:
                 print('[DHT DB] %r setItem  stored new value for key [%s] with revision %d' % (self.dbFile, key, new_revision))
         else:
-            self._cursor.execute('UPDATE data SET value=?, lastPublished=?, originallyPublished=?, originalPublisherID=?, expireSeconds=?, revision=? WHERE key=?', (
-                json.dumps({'k': key_hex, 'd': value, 'v': PROTOCOL_VERSION, }, ),
-                lastPublished,
-                originallyPublished,
-                opID,
-                expireSeconds,
-                new_revision,
-                key_hex,
-            ))
+            self._cursor.execute(
+                'UPDATE data SET value=?, lastPublished=?, originallyPublished=?, originalPublisherID=?, expireSeconds=?, revision=? WHERE key=?', (
+                    json.dumps({
+                        'k': key_hex,
+                        'd': value,
+                        'v': PROTOCOL_VERSION,
+                    },),
+                    lastPublished,
+                    originallyPublished,
+                    opID,
+                    expireSeconds,
+                    new_revision,
+                    key_hex,
+                )
+            )
             if _Debug:
                 print('[DHT DB] %r setItem  updated existing value for key [%s] with revision %d' % (self.dbFile, key, new_revision))
 

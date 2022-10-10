@@ -24,7 +24,6 @@
 #
 #
 #
-
 """
 .. module:: proxy_interface.
 
@@ -63,6 +62,7 @@ _GateProxy = None
 def proxy():
     global _GateProxy
     return _GateProxy
+
 
 #------------------------------------------------------------------------------
 
@@ -156,8 +156,7 @@ class GateInterface():
         # he will receive all packets addressed to me and redirect to me
         result = proxy_receiver.GetRouterIdentity().getContacts()
         if _Debug:
-            lg.out(4, 'proxy_interface.build_contacts %s : %r' % (
-                proxy_receiver.GetRouterIdentity().getIDName(), result))
+            lg.out(4, 'proxy_interface.build_contacts %s : %r' % (proxy_receiver.GetRouterIdentity().getIDName(), result))
         return result
 
     def verify_contacts(self, id_obj):
@@ -222,6 +221,7 @@ class GateInterface():
                 lg.exc()
                 res.callback(True)
                 return True
+
         d = identitycache.immediatelyCaching(proxy_receiver.GetRouterIDURL())
         d.addCallback(lambda src: _finish_verification(result))
         d.addErrback(lambda err: result.callback(False) and None)
@@ -244,43 +244,43 @@ class GateInterface():
         """
         return []
 
+
 #------------------------------------------------------------------------------
+
 
 def proxy_errback(x):
     if _Debug:
         lg.out(6, 'proxy_interface.proxy_errback ERROR %s' % x)
     return None
 
+
 #------------------------------------------------------------------------------
+
 
 def interface_transport_initialized(xmlrpcurl):
     if proxy():
-        return proxy().callRemote(
-            'transport_initialized', 'proxy', xmlrpcurl).addErrback(proxy_errback)
+        return proxy().callRemote('transport_initialized', 'proxy', xmlrpcurl).addErrback(proxy_errback)
     lg.warn('transport_proxy is not ready')
     return fail(Exception('transport_proxy is not ready')).addErrback(proxy_errback)
 
 
 def interface_receiving_started(host, new_options={}):
     if proxy():
-        return proxy().callRemote(
-            'receiving_started', 'proxy', host, new_options).addErrback(proxy_errback)
+        return proxy().callRemote('receiving_started', 'proxy', host, new_options).addErrback(proxy_errback)
     lg.warn('transport_proxy is not ready')
     return fail(Exception('transport_proxy is not ready')).addErrback(proxy_errback)
 
 
 def interface_receiving_failed(error_code=None):
     if proxy():
-        return proxy().callRemote(
-            'receiving_failed', 'proxy', error_code).addErrback(proxy_errback)
+        return proxy().callRemote('receiving_failed', 'proxy', error_code).addErrback(proxy_errback)
     lg.warn('transport_proxy is not ready')
     return fail(Exception('transport_proxy is not ready')).addErrback(proxy_errback)
 
 
 def interface_disconnected(result=None):
     if proxy():
-        return proxy().callRemote(
-            'disconnected', 'proxy', result).addErrback(proxy_errback)
+        return proxy().callRemote('disconnected', 'proxy', result).addErrback(proxy_errback)
     lg.warn('transport_proxy is not ready')
     # return fail(Exception('transport_proxy is not ready')).addErrback(proxy_errback)
     return succeed(result)
@@ -289,7 +289,13 @@ def interface_disconnected(result=None):
 def interface_register_file_sending(host, receiver_idurl, filename, size=0, description=''):
     if proxy():
         return proxy().callRemote(
-            'register_file_sending', 'proxy', host, receiver_idurl, filename, size, description,
+            'register_file_sending',
+            'proxy',
+            host,
+            receiver_idurl,
+            filename,
+            size,
+            description,
         ).addErrback(proxy_errback)
     lg.warn('transport_proxy is not ready')
     return fail(Exception('transport_proxy is not ready')).addErrback(proxy_errback)
@@ -298,7 +304,12 @@ def interface_register_file_sending(host, receiver_idurl, filename, size=0, desc
 def interface_register_file_receiving(host, sender_idurl, filename, size=0):
     if proxy():
         return proxy().callRemote(
-            'register_file_receiving', 'proxy', host, sender_idurl, filename, size,
+            'register_file_receiving',
+            'proxy',
+            host,
+            sender_idurl,
+            filename,
+            size,
         ).addErrback(proxy_errback)
     lg.warn('transport_proxy is not ready')
     return fail(Exception('transport_proxy is not ready')).addErrback(proxy_errback)
@@ -307,7 +318,11 @@ def interface_register_file_receiving(host, sender_idurl, filename, size=0):
 def interface_unregister_file_sending(transfer_id, status, size=0, error_message=None):
     if proxy():
         return proxy().callRemote(
-            'unregister_file_sending', transfer_id, status, size, error_message,
+            'unregister_file_sending',
+            transfer_id,
+            status,
+            size,
+            error_message,
         ).addErrback(proxy_errback)
     lg.warn('transport_proxy is not ready')
     return fail(Exception('transport_proxy is not ready')).addErrback(proxy_errback)
@@ -316,7 +331,11 @@ def interface_unregister_file_sending(transfer_id, status, size=0, error_message
 def interface_unregister_file_receiving(transfer_id, status, size=0, error_message=None):
     if proxy():
         return proxy().callRemote(
-            'unregister_file_receiving', transfer_id, status, size, error_message,
+            'unregister_file_receiving',
+            transfer_id,
+            status,
+            size,
+            error_message,
         ).addErrback(proxy_errback)
     lg.warn('transport_proxy is not ready')
     return fail(Exception('transport_proxy is not ready')).addErrback(proxy_errback)
@@ -325,7 +344,13 @@ def interface_unregister_file_receiving(transfer_id, status, size=0, error_messa
 def interface_cancelled_file_sending(host, filename, size=0, description=None, error_message=None):
     if proxy():
         return proxy().callRemote(
-            'cancelled_file_sending', 'proxy', host, filename, size, description, error_message,
+            'cancelled_file_sending',
+            'proxy',
+            host,
+            filename,
+            size,
+            description,
+            error_message,
         ).addErrback(proxy_errback)
     lg.warn('transport_proxy is not ready')
     return fail(Exception('transport_proxy is not ready')).addErrback(proxy_errback)

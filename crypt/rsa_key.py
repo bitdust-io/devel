@@ -22,7 +22,6 @@
 #
 #
 #
-
 """
 .. module:: rsa_key.
 
@@ -62,6 +61,7 @@ from crypt import hashes
 from crypt import number
 
 #------------------------------------------------------------------------------
+
 
 class RSAKey(object):
 
@@ -122,7 +122,10 @@ class RSAKey(object):
             self.active = key_dict.get('active', True)
             self.local_key_id = key_dict.get('local_key_id', None)
             if 'signature' in key_dict and 'signature_pubkey' in key_dict:
-                self.signed = (key_dict['signature'], key_dict['signature_pubkey'], )
+                self.signed = (
+                    key_dict['signature'],
+                    key_dict['signature_pubkey'],
+                )
         del key_src
         # gc.collect()
         return result
@@ -227,9 +230,15 @@ class RSAKey(object):
         try:
             pkcs1_15.new(self.keyObject).verify(h, signature_bytes)
             result = True
-        except (ValueError, TypeError, ):
+        except (
+            ValueError,
+            TypeError,
+        ):
             # do not raise any exception... just return False
-            lg.exc('signature=%r message=%r' % (signature, message, ))
+            lg.exc('signature=%r message=%r' % (
+                signature,
+                message,
+            ))
         if _Debug:
             if _CryptoLog:
                 lg.args(_DebugLevel, result=result, signature=signature)

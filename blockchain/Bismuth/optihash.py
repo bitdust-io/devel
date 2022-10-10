@@ -42,6 +42,7 @@ try:
 except:
     how_much_coins = 100000000
 
+
 def bin_convert(string):
     return ''.join(bin_format_dict[x] for x in string)
 
@@ -72,7 +73,7 @@ def miner(q, pool_address, db_block_hash, diff, mining_condition, netdiff, hq, t
         process_mmap = True
     try:
         tries = 0
-        try_arr = [('%0x' % getrandbits(32)) for i in range(nonce_time*hashcount)]
+        try_arr = [('%0x' % getrandbits(32)) for i in range(nonce_time * hashcount)]
         address = pool_address
         timeout = time.time() + nonce_time
         # print(pool_address)
@@ -83,18 +84,16 @@ def miner(q, pool_address, db_block_hash, diff, mining_condition, netdiff, hq, t
                 t1 = time.time()
                 tries = tries + 1
                 # generate the "address" of a random backyard that we will sample in this try
-                seed = ('%0x' % getrandbits(128-32))
+                seed = ('%0x' % getrandbits(128 - 32))
                 # this part won't change, so concat once only
-                prefix = pool_address+seed
+                prefix = pool_address + seed
                 # This is where the actual hashing takes place
                 # possibles = [nonce for nonce in try_arr if mining_condition in (sha224((prefix + nonce + db_block_hash).encode("utf-8")).hexdigest())]
-                possibles = [nonce for nonce in try_arr if
-                             mining_condition in (mining.anneal3(mining.MMAP, int.from_bytes(
-                                 sha224((prefix + nonce + db_block_hash).encode('utf-8')).digest(), 'big')))]
+                possibles = [nonce for nonce in try_arr if mining_condition in (mining.anneal3(mining.MMAP, int.from_bytes(sha224((prefix + nonce + db_block_hash).encode('utf-8')).digest(), 'big')))]
                 # hash rate calculation
                 try:
                     t2 = time.time()
-                    h1 = int(((nonce_time*hashcount) / (t2 - t1))/1000)
+                    h1 = int(((nonce_time * hashcount) / (t2 - t1)) / 1000)
                 except Exception as e:
                     h1 = 1
                 if possibles:
@@ -109,7 +108,7 @@ def miner(q, pool_address, db_block_hash, diff, mining_condition, netdiff, hq, t
                         else:
                             print('Thread {} solved work with difficulty {} in {} cycles - YAY!'.format(q, xdiffx, tries))
                             wname = '{}{}'.format(mname, str(q))
-                            print('{} running at {} kh/s'.format(wname,str(h1)))
+                            print('{} running at {} kh/s'.format(wname, str(h1)))
                             block_send = []
                             del block_send[:]  # empty
                             block_timestamp = '%.2f' % time.time()
@@ -139,7 +138,7 @@ def miner(q, pool_address, db_block_hash, diff, mining_condition, netdiff, hq, t
                 print(e)
                 time.sleep(0.1)
                 raise
-        hq.put(str(h1)+'_'+str(mined_coins))
+        hq.put(str(h1) + '_' + str(mined_coins))
     finally:
         if process_mmap:
             mining.mining_close()
@@ -174,10 +173,10 @@ def runit():
             thr = int(mining_threads_conf)
 
             for q in instances:
-                p = Process(target=miner, args=(str(q + 1), paddress, db_block_hash, diff, mining_condition,  netdiff, hq, thr, dh))
+                p = Process(target=miner, args=(str(q + 1), paddress, db_block_hash, diff, mining_condition, netdiff, hq, thr, dh))
                 p.daemon = True
                 p.start()
-            print('{} miners searching for solutions at difficulty {} and condition {}'.format(mining_threads_conf,str(diff),str(mining_condition)))
+            print('{} miners searching for solutions at difficulty {} and condition {}'.format(mining_threads_conf, str(diff), str(mining_condition)))
 
             time.sleep(nonce_time)
 

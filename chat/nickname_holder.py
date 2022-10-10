@@ -19,8 +19,6 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
-
-
 """
 .. module:: nickname_holder
 
@@ -109,6 +107,7 @@ def Destroy():
     _NicknameHolder.destroy()
     del _NicknameHolder
     _NicknameHolder = None
+
 
 #------------------------------------------------------------------------------
 
@@ -281,7 +280,10 @@ class NicknameHolder(automat.Automat):
         Action method.
         """
         if _Debug:
-            lg.out(_DebugLevel, 'nickname_holder.doReportNicknameOwn : %s with %s' % (self.key, args[0], ))
+            lg.out(_DebugLevel, 'nickname_holder.doReportNicknameOwn : %s with %s' % (
+                self.key,
+                args[0],
+            ))
         for cb in self.result_callbacks:
             cb('my own', self.key)
 
@@ -309,7 +311,9 @@ class NicknameHolder(automat.Automat):
         """
         if _Debug:
             lg.out(_DebugLevel, 'nickname_holder.doReportNicknameFailed : %s with %s' % (
-                self.key, args[0] if args else None, ))
+                self.key,
+                args[0] if args else None,
+            ))
         for cb in self.result_callbacks:
             cb('failed', self.key)
 
@@ -343,6 +347,7 @@ class NicknameHolder(automat.Automat):
             self.automat('dht-erase-failed')
         else:
             self.automat('dht-erase-success')
+
 
 #------------------------------------------------------------------------------
 

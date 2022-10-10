@@ -19,8 +19,6 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
-
-
 """
 .. module:: stun_client.
 
@@ -184,7 +182,7 @@ class StunClient(automat.Automat):
             elif event == 'port-number-received':
                 self.doAddStunServer(*args, **kwargs)
                 self.doStun(*args, **kwargs)
-            elif ( event == 'timer-1sec' and self.isSomeServersResponded(*args, **kwargs) ) or ( event == 'datagram-received' and self.isMyIPPort(*args, **kwargs) and not self.isNeedMoreResults(*args, **kwargs) ):
+            elif (event == 'timer-1sec' and self.isSomeServersResponded(*args, **kwargs)) or (event == 'datagram-received' and self.isMyIPPort(*args, **kwargs) and not self.isNeedMoreResults(*args, **kwargs)):
                 self.state = 'KNOW_MY_IP'
                 self.doRecordResult(*args, **kwargs)
                 self.doReportSuccess(*args, **kwargs)
@@ -332,8 +330,7 @@ class StunClient(automat.Automat):
             udp.send_command(self.listen_port, udp.CMD_STUN, b'', *args, **kwargs)
             return
         if _Debug:
-            lg.out(_DebugLevel + 4, 'stun_client.doStun to %d stun_servers' % (
-                len(self.stun_servers)))  # , self.stun_servers))
+            lg.out(_DebugLevel + 4, 'stun_client.doStun to %d stun_servers' % (len(self.stun_servers)))  # , self.stun_servers))
         for address in self.stun_servers:
             if address is None:
                 continue
@@ -384,11 +381,19 @@ class StunClient(automat.Automat):
             result = ('stun-failed', None, None, [])
             self.my_address = None
         if _Debug:
-            lg.out(_DebugLevel, 'stun_client.doReportSuccess based on %d nodes: %r' % (len(self.stun_results), result, ))
+            lg.out(_DebugLevel, 'stun_client.doReportSuccess based on %d nodes: %r' % (
+                len(self.stun_results),
+                result,
+            ))
         if self.my_address:
             current_external_ip = misc.readExternalIP()
             if current_external_ip != self.my_address[0]:
-                events.send('my-external-ip-changed', data=dict(old=current_external_ip, new=self.my_address[0], ))
+                events.send(
+                    'my-external-ip-changed', data=dict(
+                        old=current_external_ip,
+                        new=self.my_address[0],
+                    )
+                )
             bpio.WriteTextFile(settings.ExternalIPFilename(), self.my_address[0])
             bpio.WriteTextFile(settings.ExternalUDPPortFilename(), str(self.my_address[1]))
         for cb in self.callbacks:
@@ -421,7 +426,10 @@ class StunClient(automat.Automat):
         self.destroy()
 
     def _datagram_received(self, datagram, address):
-        self.automat('datagram-received', (datagram, address, ))
+        self.automat('datagram-received', (
+            datagram,
+            address,
+        ))
         return False
 
     def _find_random_nodes(self, tries, result_list, prev_key=None):
@@ -467,11 +475,18 @@ class StunClient(automat.Automat):
 
     def _stun_port_received(self, result, node):
         if _Debug:
-            lg.out(_DebugLevel, 'stun_client._stun_port_received  %r from %s node_id=%r' % (result, node, node.id, ))
+            lg.out(_DebugLevel, 'stun_client._stun_port_received  %r from %s node_id=%r' % (
+                result,
+                node,
+                node.id,
+            ))
         self.deferreds.pop(node.id, None)
         if not isinstance(result, dict):
             if _Debug:
-                lg.dbg(_DebugLevel, 'empty result received from node %r : %r' % (node, result, ))
+                lg.dbg(_DebugLevel, 'empty result received from node %r : %r' % (
+                    node,
+                    result,
+                ))
             return
         try:
             port = int(strng.to_text(result['stun_port']))
@@ -482,10 +497,15 @@ class StunClient(automat.Automat):
         if port == 0:
             return
         if _Debug:
-            lg.out(_DebugLevel, '        new stun port server found  %s:%s' % (address, port, ))
+            lg.out(_DebugLevel, '        new stun port server found  %s:%s' % (
+                address,
+                port,
+            ))
         self.automat('port-number-received', (address, port))
 
+
 #------------------------------------------------------------------------------
+
 
 def udp_dht_stun(udp_port=None, dht_port=None, result_defer=None):
     if not driver.is_on('service_my_ip_port'):
@@ -558,7 +578,7 @@ def http_stun(result_defer=None):
             'result': 'stun-failed',
             'type': None,
             'ip': None,
-            'details': ['unknown client host from response', ],
+            'details': ['unknown client host from response',],
         }
         mo = re.search(b'\<\!\-\-CLIENT_HOST\=([\d\.]+):(\d+)\-\-\>', html_response)
         if not mo:
@@ -586,7 +606,7 @@ def http_stun(result_defer=None):
             'result': 'stun-failed',
             'type': None,
             'ip': None,
-            'details': [err.getErrorMessage(), ],
+            'details': [err.getErrorMessage(),],
         }
         if result_defer:
             result_defer.callback(ret)
@@ -635,7 +655,9 @@ def test_safe_stun():
     safe_stun().addCallbacks(_cb, _eb)
     reactor.run()  # @UndefinedVariable
 
+
 #------------------------------------------------------------------------------
+
 
 def main():
     from twisted.internet import reactor  # @UnresolvedImport
@@ -662,8 +684,8 @@ def main():
     reactor.run()  # @UndefinedVariable
     settings.shutdown()
 
-#------------------------------------------------------------------------------
 
+#------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     from twisted.internet.defer import setDebugging

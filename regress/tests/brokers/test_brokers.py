@@ -19,7 +19,6 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
-
 """
 SCENARIO 3: customer-1 is able to send private message to customer-2
 
@@ -67,7 +66,9 @@ def test_brokers():
     #--- SCENARIO 22: customer-1 group chat with customer-2 but broker-2 was restarted quickly
     scenarios.scenario22()
 
+
 #------------------------------------------------------------------------------
+
 
 def prepare():
     set_active_scenario('PREPARE')

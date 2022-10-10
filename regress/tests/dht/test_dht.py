@@ -19,7 +19,6 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
-
 """
 SCENARIO 1: user can search another user by nickname
 
@@ -52,7 +51,9 @@ def test_dht():
     #--- SCENARIO 6: users are able to use DHT network to store data
     scenarios.scenario6()
 
+
 #------------------------------------------------------------------------------
+
 
 def prepare():
     set_active_scenario('PREPARE')

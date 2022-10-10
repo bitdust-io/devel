@@ -1,5 +1,6 @@
 from six import PY2, b
 
+
 def method_factory_factory(method):
 
     def factory_py2(regex):
@@ -36,7 +37,10 @@ def method_factory_factory(method):
 
         def decorator(f):
             current_methods = getattr(f, '__txrestapi__', [])
-            current_methods.append((method, regex, ))
+            current_methods.append((
+                method,
+                regex,
+            ))
             f.__txrestapi__ = current_methods
             return f
 
@@ -45,8 +49,9 @@ def method_factory_factory(method):
     factory = factory_py2 if PY2 else factory_py3
     return factory
 
-ALL    = method_factory_factory(b('ALL'))
-GET    = method_factory_factory(b('GET'))
-POST   = method_factory_factory(b('POST'))
-PUT    = method_factory_factory(b('PUT'))
+
+ALL = method_factory_factory(b('ALL'))
+GET = method_factory_factory(b('GET'))
+POST = method_factory_factory(b('POST'))
+PUT = method_factory_factory(b('PUT'))
 DELETE = method_factory_factory(b('DELETE'))

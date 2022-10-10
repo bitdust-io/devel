@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 ..
 
@@ -81,6 +80,7 @@ _LocalStorage = None
 
 #------------------------------------------------------------------------------
 
+
 def init():
     global _LocalStorage
     if _LocalStorage is not None:
@@ -121,13 +121,17 @@ def shutdown():
         pass
     _LocalStorage = None
 
+
 #------------------------------------------------------------------------------
+
 
 def db(instance='current'):
     global _LocalStorage
     return _LocalStorage
 
+
 #------------------------------------------------------------------------------
+
 
 def rewrite_indexes(db_instance, source_db_instance):
     if _Debug:
@@ -203,7 +207,9 @@ def regenerate_indexes(temp_dir):
     tmpdb.close()
     return tmpdb
 
+
 #------------------------------------------------------------------------------
+
 
 def to_list(ret):
     if ret and ret[0]:
@@ -214,28 +220,38 @@ def to_list(ret):
         # print ret[1]
         return ret[1]
 
+
 #------------------------------------------------------------------------------
+
 
 def get(index_name, key, with_doc=True, with_storage=True):
     # TODO: here and bellow need to add input validation
     try:
         res = db().get(index_name, key, with_doc, with_storage)
-    except (RecordNotFound, RecordDeleted, ):
+    except (
+        RecordNotFound,
+        RecordDeleted,
+    ):
         return iter(())
-    except (IndexNotFoundException, DatabaseIsNotOpened, ):
+    except (
+        IndexNotFoundException,
+        DatabaseIsNotOpened,
+    ):
         return iter(())
-    return (r for r in [res, ])
+    return (r for r in [
+        res,
+    ])
 
 
-def get_many(index_name, key=None, limit=-1, offset=0,
-             start=None, end=None,
-             with_doc=True, with_storage=True, **kwargs):
+def get_many(index_name, key=None, limit=-1, offset=0, start=None, end=None, with_doc=True, with_storage=True, **kwargs):
     try:
-        for r in db().get_many(index_name, key, limit, offset,
-                               with_doc, with_storage,
-                               start, end, **kwargs):
+        for r in db().get_many(index_name, key, limit, offset, with_doc, with_storage, start, end, **kwargs):
             yield r
-    except (PreconditionsException, IndexNotFoundException, DatabaseIsNotOpened, ):
+    except (
+        PreconditionsException,
+        IndexNotFoundException,
+        DatabaseIsNotOpened,
+    ):
         pass
 
 
@@ -246,7 +262,9 @@ def get_all(index_name, limit=-1, offset=0, with_doc=True, with_storage=True):
     except (PreconditionsException, IndexNotFoundException, DatabaseIsNotOpened):
         pass
 
+
 #------------------------------------------------------------------------------
+
 
 def insert(coin_json):
     return db().insert(coin_json)
@@ -258,26 +276,30 @@ def remove(coin_json):
 
 
 def exist(coin_json):
-#     if 'tm' in coin_json:
-#         if not list(get('time', key=coin_json['tm'])):
-#             return False
-#     if 'idurl' in coin_json:
-#         if not list(get('idurl', key=coin_json['idurl'])):
-#             return False
-#     if 'hash' in coin_json:
-#         if not list(get('hash', key=coin_json['hash'])):
-#             return False
-#     return True
+    #     if 'tm' in coin_json:
+    #         if not list(get('time', key=coin_json['tm'])):
+    #             return False
+    #     if 'idurl' in coin_json:
+    #         if not list(get('idurl', key=coin_json['idurl'])):
+    #             return False
+    #     if 'hash' in coin_json:
+    #         if not list(get('hash', key=coin_json['hash'])):
+    #             return False
+    #     return True
     return False
 
+
 #------------------------------------------------------------------------------
+
 
 def _clean_doc(doc):
     doc.pop('_id')
     doc.pop('_rev')
     return doc
 
+
 #------------------------------------------------------------------------------
+
 
 def query_json(jdata):
     """
@@ -298,7 +320,11 @@ def query_json(jdata):
     if not db() or not db().opened:
         return None, 'database is closed'
     method = jdata.pop('method', None)
-    if method not in ['get', 'get_many', 'get_all', ]:
+    if method not in [
+        'get',
+        'get_many',
+        'get_all',
+    ]:
         return None, 'unknown method'
     callmethod = globals().get(method)
     if not callmethod:
@@ -319,9 +345,11 @@ def query_json(jdata):
         return (_clean_doc(r['doc']) for r in result), None
     return result, None
 
+
 #------------------------------------------------------------------------------
 
 _prev_hash = ''
+
 
 def _test_coin_worker(customer_idurl, duration, amount, price=1.0, trustee=None):
     global _prev_hash

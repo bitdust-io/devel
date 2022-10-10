@@ -78,6 +78,7 @@ import raid.raidutils
 
 #------------------------------------------------------------------------------
 
+
 def RoundupFile(filename, stepsize):
     """
     For some things we need to have files which are round sizes, for example
@@ -120,6 +121,7 @@ def WriteFile(filename, data):
     f = open(filename, 'wb')
     f.write(s)
     f.close()
+
 
 #------------------------------------------------------------------------------
 
@@ -186,13 +188,7 @@ def do_in_memory(filename, eccmapname, version, blockNumber, targetDir, threshol
 
 
 def main():
-    do_in_memory(
-        filename=sys.argv[1],
-        eccmapname=sys.argv[2],
-        version=sys.argv[3],
-        blockNumber=int(sys.argv[4]),
-        targetDir=sys.argv[5]
-    )
+    do_in_memory(filename=sys.argv[1], eccmapname=sys.argv[2], version=sys.argv[3], blockNumber=int(sys.argv[4]), targetDir=sys.argv[5])
 
 
 if __name__ == '__main__':

@@ -49,7 +49,6 @@ for filename in os.listdir(sys.argv[1]):
                     line = 'from %s import %s' % (pkg, modl)
         newsrc += line + '\n'
 
-
 #    doclines = False
 #    for line in lines:
 #        if line.strip() == '"""':
@@ -65,13 +64,13 @@ for filename in os.listdir(sys.argv[1]):
 #                newsrc += line+'\n'
 #    newsrc = newsrc.replace('``', '``')
 
-    # lines = src.splitlines()
-    # first_docstring_pos = False
-    # for line in lines:
-    #     newsrc += line+'\n'
-    #     if line.startswith('"""') and first_docstring_pos is False:
-    #         first_docstring_pos = True
-    #         newsrc += '.. module:: %s\n\n' % (filename[:-3])
-    #         continue
+# lines = src.splitlines()
+# first_docstring_pos = False
+# for line in lines:
+#     newsrc += line+'\n'
+#     if line.startswith('"""') and first_docstring_pos is False:
+#         first_docstring_pos = True
+#         newsrc += '.. module:: %s\n\n' % (filename[:-3])
+#         continue
 
     open(path, 'w').write(newsrc)

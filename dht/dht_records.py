@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 ..
 
@@ -81,36 +80,88 @@ RELATION_RECORD_CACHE_TTL = {
 
 _Rules = {
     'nickname': {
-        'key': [{'op': 'exist', }, ],
-        'type': [{'op': 'equal', 'arg': 'nickname', }, ],
-        'timestamp': [{'op': 'exist', }, ],
-        'idurl': [{'op': 'exist', }, ],
-        'nickname': [{'op': 'exist', }, ],
-        'position': [{'op': 'exist', }, ],
+        'key': [{
+            'op': 'exist',
+        },],
+        'type': [{
+            'op': 'equal',
+            'arg': 'nickname',
+        },],
+        'timestamp': [{
+            'op': 'exist',
+        },],
+        'idurl': [{
+            'op': 'exist',
+        },],
+        'nickname': [{
+            'op': 'exist',
+        },],
+        'position': [{
+            'op': 'exist',
+        },],
     },
     'identity': {
-        'key': [{'op': 'exist', }, ],
-        'type': [{'op': 'equal', 'arg': 'identity', }, ],
-        'timestamp': [{'op': 'exist', }, ],
-        'idurl': [{'op': 'exist', }, ],
-        'identity': [{'op': 'exist', }, ],
+        'key': [{
+            'op': 'exist',
+        },],
+        'type': [{
+            'op': 'equal',
+            'arg': 'identity',
+        },],
+        'timestamp': [{
+            'op': 'exist',
+        },],
+        'idurl': [{
+            'op': 'exist',
+        },],
+        'identity': [{
+            'op': 'exist',
+        },],
     },
     'suppliers': {
-        'key': [{'op': 'exist', }, ],
-        'type': [{'op': 'equal', 'arg': 'suppliers', }, ],
-        'timestamp': [{'op': 'exist', }, ],
-        'customer_idurl': [{'op': 'exist', }, ],
-        'ecc_map': [{'op': 'exist', }, ],
-        'suppliers': [{'op': 'exist', }, ],
-        'revision': [{'op': 'exist', }, ],
+        'key': [{
+            'op': 'exist',
+        },],
+        'type': [{
+            'op': 'equal',
+            'arg': 'suppliers',
+        },],
+        'timestamp': [{
+            'op': 'exist',
+        },],
+        'customer_idurl': [{
+            'op': 'exist',
+        },],
+        'ecc_map': [{
+            'op': 'exist',
+        },],
+        'suppliers': [{
+            'op': 'exist',
+        },],
+        'revision': [{
+            'op': 'exist',
+        },],
     },
     'message_broker': {
-        'key': [{'op': 'exist', }, ],
-        'type': [{'op': 'equal', 'arg': 'message_broker', }, ],
-        'timestamp': [{'op': 'exist', }, ],
-        'customer_idurl': [{'op': 'exist', }, ],
-        'broker_idurl': [{'op': 'exist', }, ],
-        'position': [{'op': 'exist', }, ],
+        'key': [{
+            'op': 'exist',
+        },],
+        'type': [{
+            'op': 'equal',
+            'arg': 'message_broker',
+        },],
+        'timestamp': [{
+            'op': 'exist',
+        },],
+        'customer_idurl': [{
+            'op': 'exist',
+        },],
+        'broker_idurl': [{
+            'op': 'exist',
+        },],
+        'position': [{
+            'op': 'exist',
+        },],
         # 'archive_folder_path': [{'op': 'exist', }, ],
     },
     # customers relations are not stored, so this is actually not needed, but decided to leave it here just in case:
@@ -122,11 +173,15 @@ _Rules = {
     #     'revision': [{'op': 'exist', }, ],
     # },
     'skip_validation': {
-        'type': [{'op': 'equal', 'arg': 'skip_validation', }, ],
+        'type': [{
+            'op': 'equal',
+            'arg': 'skip_validation',
+        },],
     },
 }
 
 #------------------------------------------------------------------------------
+
 
 def get_rules(record_type):
     global _Rules
@@ -137,7 +192,9 @@ def layer_name(layer_id):
     global LAYERS_REGISTRY
     return LAYERS_REGISTRY.get(layer_id, 'UNKNOWN')
 
+
 #------------------------------------------------------------------------------
+
 
 def get_nickname(key, use_cache=True):
     if _Debug:
@@ -148,20 +205,27 @@ def get_nickname(key, use_cache=True):
         use_cache_ttl=RELATION_RECORD_CACHE_TTL['nickname'] if use_cache else None,
     )
 
+
 def set_nickname(key, idurl):
     if _Debug:
         lg.args(_DebugLevel, key, idurl)
     nickname, _, pos = key.partition(':')
-    json_data={
+    json_data = {
         'type': 'nickname',
         'timestamp': utime.get_sec1970(),
         'idurl': idurl.to_bin(),
         'nickname': nickname,
         'position': pos,
     }
-    return dht_service.set_valid_data(key=key, json_data=json_data, rules=get_rules('nickname'), )
+    return dht_service.set_valid_data(
+        key=key,
+        json_data=json_data,
+        rules=get_rules('nickname'),
+    )
+
 
 #------------------------------------------------------------------------------
+
 
 def get_identity(idurl, use_cache=True):
     if _Debug:
@@ -172,6 +236,7 @@ def get_identity(idurl, use_cache=True):
         return_details=True,
         use_cache_ttl=RELATION_RECORD_CACHE_TTL['identity'] if use_cache else None,
     )
+
 
 def set_identity(idurl, raw_xml_data):
     if _Debug:
@@ -187,15 +252,20 @@ def set_identity(idurl, raw_xml_data):
         rules=get_rules('identity'),
     )
 
+
 #------------------------------------------------------------------------------
+
 
 def get_udp_incoming():
     return
 
+
 def set_udp_incoming():
     return
 
+
 #------------------------------------------------------------------------------
+
 
 def get_suppliers(customer_idurl, return_details=True, use_cache=True):
     if _Debug:
@@ -210,7 +280,8 @@ def get_suppliers(customer_idurl, return_details=True, use_cache=True):
         use_cache_ttl=RELATION_RECORD_CACHE_TTL['suppliers'] if use_cache else None,
     )
 
-def set_suppliers(customer_idurl, ecc_map, suppliers_list, revision=None, publisher_idurl=None, expire=60*60):
+
+def set_suppliers(customer_idurl, ecc_map, suppliers_list, revision=None, publisher_idurl=None, expire=60 * 60):
     if _Debug:
         lg.args(_DebugLevel, customer_idurl=customer_idurl, ecc_map=ecc_map, suppliers_list=suppliers_list, revision=revision)
     return dht_service.set_valid_data(
@@ -232,7 +303,9 @@ def set_suppliers(customer_idurl, ecc_map, suppliers_list, revision=None, publis
         collect_results=True,
     )
 
+
 #------------------------------------------------------------------------------
+
 
 def get_message_broker(customer_idurl, position=0, return_details=True, use_cache=True):
     if _Debug:
@@ -248,7 +321,7 @@ def get_message_broker(customer_idurl, position=0, return_details=True, use_cach
     )
 
 
-def set_message_broker(customer_idurl, broker_idurl, position=0, revision=None, expire=60*60):
+def set_message_broker(customer_idurl, broker_idurl, position=0, revision=None, expire=60 * 60):
     if _Debug:
         lg.args(_DebugLevel, customer=customer_idurl, pos=position, broker=broker_idurl, rev=revision)
     return dht_service.set_valid_data(

@@ -19,8 +19,6 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
-
-
 """
 .. module:: message_producer
 .. role:: red
@@ -87,6 +85,7 @@ _ActiveMessageProducersByIDURL = {}
 
 #------------------------------------------------------------------------------
 
+
 def register_message_producer(A):
     global _ActiveMessageProducers
     global _ActiveMessageProducersByIDURL
@@ -114,7 +113,9 @@ def unregister_message_producer(A):
             lg.warn('message_producer() instance not found for customer %r' % A.group_creator_idurl)
     _ActiveMessageProducers.pop(A.group_key_id, None)
 
+
 #------------------------------------------------------------------------------
+
 
 def list_active_message_producers():
     global _ActiveMessageProducers
@@ -139,7 +140,9 @@ def find_active_message_producers(group_creator_idurl):
             result.append(A)
     return result
 
+
 #------------------------------------------------------------------------------
+
 
 def start_message_producers():
     started = 0
@@ -151,7 +154,11 @@ def start_message_producers():
         if not existing_message_producer:
             existing_message_producer = MessageProducer(group_key_id)
             existing_message_producer.automat('init')
-        if existing_message_producer.state in ['DHT_READ?', 'BROKER?', 'CONNECTED', ]:
+        if existing_message_producer.state in [
+            'DHT_READ?',
+            'BROKER?',
+            'CONNECTED',
+        ]:
             continue
         existing_message_producer.automat('connect')
         started += 1
@@ -169,7 +176,9 @@ def shutdown_message_producers():
         stopped += 1
     return stopped
 
+
 #------------------------------------------------------------------------------
+
 
 def do_send_message(active_message_producer, data, result_defer):
     if _Debug:
@@ -220,7 +229,9 @@ def push_message(group_key_id, data):
     do_start_message_producer(group_key_id, data, ret)
     return ret
 
+
 #------------------------------------------------------------------------------
+
 
 class MessageProducer(automat.Automat):
     """
@@ -237,15 +248,7 @@ class MessageProducer(automat.Automat):
         self.group_creator_id = self.group_glob_id['customer']
         self.group_creator_idurl = self.group_glob_id['idurl']
         self.active_broker_id = None
-        super(MessageProducer, self).__init__(
-            name='message_producer_%s' % self.group_creator_id,
-            state='AT_STARTUP',
-            debug_level=debug_level,
-            log_events=log_events,
-            log_transitions=log_transitions,
-            publish_events=False,
-            **kwargs
-        )
+        super(MessageProducer, self).__init__(name='message_producer_%s' % self.group_creator_id, state='AT_STARTUP', debug_level=debug_level, log_events=log_events, log_transitions=log_transitions, publish_events=False, **kwargs)
 
     def to_json(self):
         j = super().to_json()
@@ -341,7 +344,6 @@ class MessageProducer(automat.Automat):
         elif self.state == 'CLOSED':
             pass
 
-
     def doInit(self, *args, **kwargs):
         """
         Action method.
@@ -369,7 +371,9 @@ class MessageProducer(automat.Automat):
         existing_brokers = args[0]
         if _Debug:
             lg.args(_DebugLevel, existing_brokers=existing_brokers)
-        known_brokers = [None, ] * groups.REQUIRED_BROKERS_COUNT
+        known_brokers = [
+            None,
+        ] * groups.REQUIRED_BROKERS_COUNT
         top_broker_pos = None
         top_broker_idurl = None
         for broker_pos in range(groups.REQUIRED_BROKERS_COUNT):
@@ -385,11 +389,18 @@ class MessageProducer(automat.Automat):
             except IndexError:
                 broker_idurl = None
             if not broker_idurl:
-                lg.warn('broker is empty for %r at position %d' % (self.group_key_id, broker_pos, ))
+                lg.warn('broker is empty for %r at position %d' % (
+                    self.group_key_id,
+                    broker_pos,
+                ))
                 continue
             known_brokers[broker_pos] = broker_idurl
             if _Debug:
-                lg.dbg(_DebugLevel, 'found broker %r at position %r for %r' % (broker_idurl, broker_pos, self.group_key_id, ))
+                lg.dbg(_DebugLevel, 'found broker %r at position %r for %r' % (
+                    broker_idurl,
+                    broker_pos,
+                    self.group_key_id,
+                ))
             if top_broker_pos is None:
                 top_broker_pos = broker_pos
                 top_broker_idurl = broker_idurl

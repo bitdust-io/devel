@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 
 .. raw:: html
@@ -99,13 +98,13 @@ from stream import io_throttle
 
 #------------------------------------------------------------------------------
 
+
 class FileUp(automat.Automat):
     """
     This class implements all the functionality of ``file_up()`` state machine.
     """
 
-    def __init__(self, parent, fileName, packetID, remoteID, ownerID, callOnAck=None, callOnFail=None,
-                 debug_level=_DebugLevel, log_events=_Debug, log_transitions=_Debug, publish_events=False, **kwargs):
+    def __init__(self, parent, fileName, packetID, remoteID, ownerID, callOnAck=None, callOnFail=None, debug_level=_DebugLevel, log_events=_Debug, log_transitions=_Debug, publish_events=False, **kwargs):
         """
         Builds `file_up()` state machine.
         """
@@ -288,7 +287,9 @@ class FileUp(automat.Automat):
             if pkt_out.outpacket.Command == commands.Data():
                 if _Debug:
                     lg.dbg(_DebugLevel, 'sending "cancel" to %s addressed to %s because downloading cancelled' % (
-                        pkt_out, pkt_out.remote_idurl, ))
+                        pkt_out,
+                        pkt_out.remote_idurl,
+                    ))
                 pkt_out.automat('cancel')
 
     def doQueueNext(self, *args, **kwargs):

@@ -7,14 +7,12 @@ Copyright 2018, BismuthFoundation
 See https://github.com/bismuthfoundation/BismuthPlugins for compatible plugins and doc.
 """
 
-
 import importlib
 import importlib.util
 import importlib.machinery
 import os
 import logging
 import collections
-
 
 __version__ = '1.0.3'
 
@@ -24,8 +22,7 @@ class PluginManager:
     A simple plugin manager
     """
 
-    def __init__(self, app_log=None, main_module: str='__init__', plugin_folder: str='./plugins', config=None,
-                 verbose: bool=True, init: bool=False):
+    def __init__(self, app_log=None, main_module: str = '__init__', plugin_folder: str = './plugins', config=None, verbose: bool = True, init: bool = False):
         if app_log:
             self.app_log = app_log
         else:
@@ -89,11 +86,7 @@ class PluginManager:
                 spec = self.available_plugins[plugin_name]['info']
                 module = importlib.util.module_from_spec(spec)
                 spec.loader.exec_module(module)
-                self.loaded_plugins[plugin_name] = {
-                    'name': plugin_name,
-                    'info': self.available_plugins[plugin_name]['info'],
-                    'module': module
-                }
+                self.loaded_plugins[plugin_name] = {'name': plugin_name, 'info': self.available_plugins[plugin_name]['info'], 'module': module}
                 if self.verbose:
                     self.app_log.info("Plugin '{}' loaded".format(plugin_name))
             else:
@@ -154,8 +147,7 @@ class PluginManager:
                         hook_params = hook_func(hook_params)
                         for nkey in hook_params_keys:
                             if nkey not in hook_params.keys():
-                                msg = "Function '{}' in plugin '{}' is missing '{}' in the dict it returns".format(
-                                    hook_func_name, plugin_info['name'], nkey)
+                                msg = "Function '{}' in plugin '{}' is missing '{}' in the dict it returns".format(hook_func_name, plugin_info['name'], nkey)
                                 self.app_log.error(msg)
                                 raise Exception(msg)
                             if first_only:

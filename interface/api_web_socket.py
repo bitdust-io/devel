@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 ..
 
@@ -71,6 +70,7 @@ _APISecret = None
 
 #------------------------------------------------------------------------------
 
+
 def init(port=None):
     global _WebSocketListener
     global _AllAPIMethods
@@ -90,15 +90,38 @@ def init(port=None):
     _AllAPIMethods = set(dir(api))
     _AllAPIMethods.difference_update([
         # TODO: keep that list up to date when changing the api
-        'on_api_result_prepared', 'Deferred', 'ERROR', 'Failure', 'OK', 'RESULT', '_Debug', '_DebugLevel',
-        'strng', 'sys', 'time', 'gc', 'map', 'os',
-        '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__spec__',
-        'absolute_import', 'driver', 'filemanager', 'jsn', 'lg',
-        'event_listen', 'message_receive',
+        'on_api_result_prepared',
+        'Deferred',
+        'ERROR',
+        'Failure',
+        'OK',
+        'RESULT',
+        '_Debug',
+        '_DebugLevel',
+        'strng',
+        'sys',
+        'time',
+        'gc',
+        'map',
+        'os',
+        '__builtins__',
+        '__cached__',
+        '__doc__',
+        '__file__',
+        '__loader__',
+        '__name__',
+        '__package__',
+        '__spec__',
+        'absolute_import',
+        'driver',
+        'filemanager',
+        'jsn',
+        'lg',
+        'event_listen',
+        'message_receive',
     ])
     if _Debug:
-        lg.out(_DebugLevel, 'api_web_socket.init  _WebSocketListener=%r with %d methods' % (
-            _WebSocketListener, len(_AllAPIMethods)))
+        lg.out(_DebugLevel, 'api_web_socket.init  _WebSocketListener=%r with %d methods' % (_WebSocketListener, len(_AllAPIMethods)))
     read_api_secret()
     events.add_subscriber(on_event, event_id='*')
 
@@ -117,13 +140,17 @@ def shutdown():
     else:
         lg.warn('_WebSocketListener is None')
 
+
 #------------------------------------------------------------------------------
+
 
 def read_api_secret():
     global _APISecret
     _APISecret = local_fs.ReadTextFile(settings.APISecretFile())
 
+
 #------------------------------------------------------------------------------
+
 
 class BitDustWrappedWebSocketProtocol(txws.WebSocketProtocol):
 
@@ -150,6 +177,7 @@ class BitDistWrappedWebSocketFactory(txws.WebSocketFactory):
 
 #------------------------------------------------------------------------------
 
+
 class BitDustWebSocketProtocol(Protocol):
 
     _key = None
@@ -169,7 +197,11 @@ class BitDustWebSocketProtocol(Protocol):
         global _WebSocketTransports
         Protocol.connectionMade(self)
         peer = self.transport.getPeer()
-        self._key = (peer.type, peer.host, peer.port, )
+        self._key = (
+            peer.type,
+            peer.host,
+            peer.port,
+        )
         peer = '%s://%s:%s' % (self._key[0], self._key[1], self._key[2])
         _WebSocketTransports[self._key] = self.transport
         if _Debug:
@@ -186,7 +218,9 @@ class BitDustWebSocketProtocol(Protocol):
         self._key = None
         events.send('web-socket-disconnected', data=dict(peer=peer))
 
+
 #------------------------------------------------------------------------------
+
 
 class BitDustWebSocketFactory(Factory):
 
@@ -202,7 +236,9 @@ class BitDustWebSocketFactory(Factory):
         proto = Factory.buildProtocol(self, addr)
         return proto
 
+
 #------------------------------------------------------------------------------
+
 
 def do_process_incoming_message(json_data):
     global _AllAPIMethods
@@ -215,30 +251,28 @@ def do_process_incoming_message(json_data):
         if not method:
             lg.warn('api method name was not provided')
             return push({
-                    'type': 'api_call',
-                    'payload': {
-                        'call_id': call_id,
-                        'errors': ['api method name was not provided', ],
-                    },
-                })
+                'type': 'api_call',
+                'payload': {
+                    'call_id': call_id,
+                    'errors': ['api method name was not provided',],
+                },
+            })
 
         if method not in _AllAPIMethods:
             lg.warn('invalid api method name: %r' % method)
             return push({
-                    'type': 'api_call',
-                    'payload': {
-                        'call_id': call_id,
-                        'errors': ['invalid api method name', ],
-                    },
-                })
+                'type': 'api_call',
+                'payload': {
+                    'call_id': call_id,
+                    'errors': ['invalid api method name',],
+                },
+            })
 
         if _Debug:
-            lg.out(_DebugLevel, '*** %s  API WS IN  %s(%r)' % (
-                call_id, method, kwargs))
+            lg.out(_DebugLevel, '*** %s  API WS IN  %s(%r)' % (call_id, method, kwargs))
 
         if _APILogFileEnabled:
-            lg.out(0, '*** %s  WS IN  %s(%r)' % (
-                call_id, method, kwargs), log_name='api', showtime=True)
+            lg.out(0, '*** %s  WS IN  %s(%r)' % (call_id, method, kwargs), log_name='api', showtime=True)
 
         func = getattr(api, method)
         try:
@@ -246,12 +280,12 @@ def do_process_incoming_message(json_data):
         except Exception as err:
             lg.err(f'{method}({kwargs}) : {err}')
             return push({
-                    'type': 'api_call',
-                    'payload': {
-                        'call_id': call_id,
-                        'errors': [str(err), ],
-                    },
-                })
+                'type': 'api_call',
+                'payload': {
+                    'call_id': call_id,
+                    'errors': [str(err),],
+                },
+            })
 
         if isinstance(response, Deferred):
 
@@ -270,7 +304,7 @@ def do_process_incoming_message(json_data):
                     'type': 'api_call',
                     'payload': {
                         'call_id': call_id,
-                        'errors': [err_msg, ],
+                        'errors': [err_msg,],
                     },
                 })
 
@@ -288,7 +322,9 @@ def do_process_incoming_message(json_data):
 
     return False
 
+
 #------------------------------------------------------------------------------
+
 
 def on_event(evt):
     return push({
@@ -320,7 +356,9 @@ def on_model_changed(snapshot_object):
         'payload': snapshot_object.to_json(),
     })
 
+
 #------------------------------------------------------------------------------
+
 
 def push(json_data):
     global _WebSocketTransports
@@ -331,9 +369,16 @@ def push(json_data):
         transp.write(raw_bytes)
         if _Debug:
             lg.dbg(_DebugLevel, 'sent %d bytes to web socket %s' % (
-                len(raw_bytes), '%s://%s:%s' % (_key[0], _key[1], _key[2]), ))
+                len(raw_bytes),
+                '%s://%s:%s' % (_key[0], _key[1], _key[2]),
+            ))
     if _Debug:
         lg.out(_DebugLevel, '***   API WS PUSH  %d bytes' % len(raw_bytes))
     if _APILogFileEnabled:
-        lg.out(0, '*** WS PUSH  %d bytes : %r' % (len(raw_bytes), json_data, ), log_name='api', showtime=True)
+        lg.out(
+            0, '*** WS PUSH  %d bytes : %r' % (
+                len(raw_bytes),
+                json_data,
+            ), log_name='api', showtime=True
+        )
     return True

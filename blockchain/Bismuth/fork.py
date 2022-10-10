@@ -1,4 +1,5 @@
 class Fork():
+
     def __init__(self):
         self.POW_FORK = 1450000
         self.POW_FORK_TESTNET = 894170

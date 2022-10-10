@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 ..
 
@@ -119,11 +118,16 @@ class DataMotionService(LocalService):
             if old_idurl == supplier_idurl:
                 supplier_idurl.refresh()
                 lg.info('found supplier idurl rotated in io_throttle: %r -> %r' % (
-                    evt.data['old_idurl'], evt.data['new_idurl'], ))
+                    evt.data['old_idurl'],
+                    evt.data['new_idurl'],
+                ))
             if old_idurl == supplier_queue.customerIDURL:
                 supplier_queue.customerIDURL.refresh()
                 lg.info('found customer idurl rotated in io_throttle %r supplier queue: %r -> %r' % (
-                    supplier_idurl, evt.data['old_idurl'], evt.data['new_idurl'], ))
+                    supplier_idurl,
+                    evt.data['old_idurl'],
+                    evt.data['new_idurl'],
+                ))
 
     def _on_supplier_modified(self, evt):
         from stream import data_sender

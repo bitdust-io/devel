@@ -24,7 +24,6 @@
 #
 #
 #
-
 """
 .. module:: list_files_orator.
 
@@ -92,6 +91,7 @@ _ListFilesOrator = None
 
 #------------------------------------------------------------------------------
 
+
 def is_synchronized(customer_idurl=None):
     if not A():
         return False
@@ -100,7 +100,10 @@ def is_synchronized(customer_idurl=None):
         if A().last_time_saw_files.get(customer_idurl, -1) > 0:
             return True
         return False
-    if A().state in ['LOCAL_FILES', 'REMOTE_FILES', ]:
+    if A().state in [
+        'LOCAL_FILES',
+        'REMOTE_FILES',
+    ]:
         if A().target_customer_idurl != customer_idurl:
             return A().last_time_saw_files.get(customer_idurl, -1) > 0
         lt_saw_files = A().last_time_saw_files.get(customer_idurl, -1)
@@ -115,21 +118,29 @@ def synchronize_files(customer_idurl=None):
         ret.errback(Exception('not initialized'))
         return ret
     customer_idurl = customer_idurl or my_id.getIDURL()
-    if A().state in ['SAW_FILES', 'NO_FILES', ]:
+    if A().state in [
+        'SAW_FILES',
+        'NO_FILES',
+    ]:
         A('need-files', customer_idurl=customer_idurl, result_defer=ret)
         return ret
 
     def _on_list_files_orator_state_changed(oldstate, newstate, event_string, *args, **kwargs):
         if _Debug:
             lg.args(_DebugLevel, oldstate=oldstate, newstate=newstate, event=event_string)
-        if newstate != oldstate and newstate in ['SAW_FILES', 'NO_FILES', ]:
+        if newstate != oldstate and newstate in [
+            'SAW_FILES',
+            'NO_FILES',
+        ]:
             A().removeStateChangedCallback(_on_list_files_orator_state_changed)
             A('need-files', customer_idurl=customer_idurl, result_defer=ret)
 
     A().addStateChangedCallback(_on_list_files_orator_state_changed)
     return ret
 
+
 #------------------------------------------------------------------------------
+
 
 def A(event=None, *args, **kwargs):
     """
@@ -202,11 +213,18 @@ class ListFilesOrator(automat.Automat):
         if newstate == 'SAW_FILES':
             lt_saw_files = self.last_time_saw_files.get(self.target_customer_idurl, -1)
             if lt_saw_files <= 0 or time.time() - lt_saw_files < 20:
-                events.send('my-list-files-refreshed', data={'customer_idurl': self.target_customer_idurl, })
+                events.send(
+                    'my-list-files-refreshed', data={
+                        'customer_idurl': self.target_customer_idurl,
+                    }
+                )
             self.last_time_saw_files[self.target_customer_idurl] = time.time()
         if newstate == 'NO_FILES':
             self.last_time_saw_files[self.target_customer_idurl] = -1
-        if newstate in ['SAW_FILES', 'NO_FILES', ]:
+        if newstate in [
+            'SAW_FILES',
+            'NO_FILES',
+        ]:
             self.target_customer_idurl = None
             if self.result_defer:
                 if not self.result_defer.called:
@@ -234,7 +252,7 @@ class ListFilesOrator(automat.Automat):
                 self.doRequestFilesOneSupplier(*args, **kwargs)
             elif event == 'timer-20sec' and not self.isEnoughListFilesReceived(*args, **kwargs) and not self.isSomeConnecting(*args, **kwargs):
                 self.state = 'NO_FILES'
-            elif ( event == 'timer-2sec' and self.isEnoughListFilesReceived(*args, **kwargs) ) or ( event == 'inbox-files' and self.isAllListFilesReceived(*args, **kwargs) ):
+            elif (event == 'timer-2sec' and self.isEnoughListFilesReceived(*args, **kwargs)) or (event == 'inbox-files' and self.isAllListFilesReceived(*args, **kwargs)):
                 self.state = 'SAW_FILES'
         #---SAW_FILES---
         elif self.state == 'SAW_FILES':
@@ -254,7 +272,11 @@ class ListFilesOrator(automat.Automat):
         """
         from customer import supplier_connector
         for one_supplier_connector in supplier_connector.connectors(customer_idurl=self.target_customer_idurl).values():
-            if one_supplier_connector.state not in ['CONNECTED', 'DISCONNECTED', 'NO_SERVICE', ]:
+            if one_supplier_connector.state not in [
+                'CONNECTED',
+                'DISCONNECTED',
+                'NO_SERVICE',
+            ]:
                 return True
         return False
 
@@ -271,8 +293,7 @@ class ListFilesOrator(automat.Automat):
         self.target_customer_idurl = kwargs.get('customer_idurl') or my_id.getIDURL()
         self.result_defer = kwargs.get('result_defer')
         self.critical_suppliers_number = 0
-        maybeDeferred(backup_matrix.ReadLocalFiles).addBoth(
-            lambda x: self.automat('local-files-done'))
+        maybeDeferred(backup_matrix.ReadLocalFiles).addBoth(lambda x: self.automat('local-files-done'))
 
     def doRequestFilesAllSuppliers(self, *args, **kwargs):
         """
@@ -336,11 +357,12 @@ class ListFilesOrator(automat.Automat):
     def _on_supplier_connected(self, evt):
         if id_url.field(evt.data['customer_idurl']) == self.target_customer_idurl:
             if _Debug:
-                lg.dbg(_DebugLevel, 'for customer %r single supplier %r was connected' % (
-                    self.target_customer_idurl, evt.data['supplier_idurl']))
+                lg.dbg(_DebugLevel, 'for customer %r single supplier %r was connected' % (self.target_customer_idurl, evt.data['supplier_idurl']))
             self.automat('supplier-connected', evt.data['supplier_idurl'])
 
+
 #------------------------------------------------------------------------------
+
 
 def IncomingListFiles(newpacket):
     """
@@ -355,4 +377,7 @@ def IncomingListFiles(newpacket):
         A('inbox-files', newpacket)
     else:
         if _Debug:
-            lg.dbg(_DebugLevel, 'received and ignored %r, currently target customer is %r' % (newpacket, A().target_customer_idurl, ))
+            lg.dbg(_DebugLevel, 'received and ignored %r, currently target customer is %r' % (
+                newpacket,
+                A().target_customer_idurl,
+            ))

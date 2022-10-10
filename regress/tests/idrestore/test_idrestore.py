@@ -19,7 +19,6 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
-
 """
 SCENARIO 17: customer-restore recover identity from customer-2
 
@@ -45,7 +44,9 @@ def test_idrestore():
     #--- SCENARIO 17: customer-2 went offline and customer-restore recover identity from customer-2
     scenarios.scenario17(customer_1_shared_file_info, customer_2_shared_file_info)
 
+
 #------------------------------------------------------------------------------
+
 
 def prepare():
     set_active_scenario('PREPARE')

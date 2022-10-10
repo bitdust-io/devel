@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 .. module:: encrypted.
 
@@ -75,7 +74,6 @@ from logs import lg
 from lib import strng
 from lib import serialization
 
-
 from userid import my_id
 from userid import id_url
 
@@ -106,21 +104,21 @@ class Block(object):
     """
 
     def __init__(
-            self,
-            CreatorID=None,
-            BackupID='',
-            BlockNumber=0,
-            SessionKey='',
-            SessionKeyType=None,
-            LastBlock=True,
-            Data=b'',
-            EncryptKey=None,
-            DecryptKey=None,
-            EncryptedSessionKey=None,
-            EncryptedData=None,
-            Length=None,
-            Signature=None,
-        ):
+        self,
+        CreatorID=None,
+        BackupID='',
+        BlockNumber=0,
+        SessionKey='',
+        SessionKeyType=None,
+        LastBlock=True,
+        Data=b'',
+        EncryptKey=None,
+        DecryptKey=None,
+        EncryptedSessionKey=None,
+        EncryptedData=None,
+        Length=None,
+        Signature=None,
+    ):
         self.CreatorID = CreatorID
         if not self.CreatorID:
             self.CreatorID = my_id.getIDURL()
@@ -159,8 +157,7 @@ class Block(object):
             lg.out(_DebugLevel, 'new data in %s' % self)
 
     def __repr__(self):
-        return 'encrypted{ BackupID=%s BlockNumber=%s Length=%s LastBlock=%s }' % (
-            str(self.BackupID), str(self.BlockNumber), str(self.Length), self.LastBlock)
+        return 'encrypted{ BackupID=%s BlockNumber=%s Length=%s LastBlock=%s }' % (str(self.BackupID), str(self.BlockNumber), str(self.Length), self.LastBlock)
 
     def SessionKey(self):
         """
@@ -237,7 +234,7 @@ class Block(object):
         if ConIdentity is None:
             lg.warn('could not get Identity so returning False')
             return False
-        result = key.Verify(ConIdentity, hashsrc, self.Signature)    # At block level only work on own stuff
+        result = key.Verify(ConIdentity, hashsrc, self.Signature)  # At block level only work on own stuff
         return result
 
     def Data(self):
@@ -247,7 +244,7 @@ class Block(object):
         """
         SessionKey = self.SessionKey()
         ClearLongData = key.DecryptWithSessionKey(SessionKey, self.EncryptedData, session_key_type=self.SessionKeyType)
-        return ClearLongData[0:self.Length]    # remove padding
+        return ClearLongData[0:self.Length]  # remove padding
 
     def Serialize(self):
         """
@@ -268,6 +265,7 @@ class Block(object):
         if _Debug:
             lg.out(_DebugLevel, 'encrypted.Serialize %s' % repr(dct)[:100])
         return serialization.DictToBytes(dct, encoding='utf-8')
+
 
 #------------------------------------------------------------------------------
 

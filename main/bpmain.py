@@ -25,7 +25,6 @@
 #
 #
 #
-
 """
 .. module:: bpmain.
 
@@ -53,6 +52,7 @@ AppDataDir = ''
 
 #-------------------------------------------------------------------------------
 
+
 def print_text(msg, nl='\n'):
     """
     Send some text output to the console.
@@ -60,7 +60,9 @@ def print_text(msg, nl='\n'):
     sys.stdout.write(msg + nl)
     sys.stdout.flush()
 
+
 #-------------------------------------------------------------------------------
+
 
 def show():
     """
@@ -98,29 +100,28 @@ def init(UI='', options=None, args=None, overDict=None, executablePath=None):
     if not options or options.debug is None:
         lg.set_debug_level(settings.getDebugLevel())
     from main import config
-    config.conf().addConfigNotifier('logs/debug-level',
-                                    lambda p, value, o, r: lg.set_debug_level(value))
+    config.conf().addConfigNotifier('logs/debug-level', lambda p, value, o, r: lg.set_debug_level(value))
 
     #---USE_TRAY_ICON---
-#     if os.path.isfile(settings.LocalIdentityFilename()) and os.path.isfile(settings.KeyFileName()):
-#         try:
-#             from system.tray_icon import USE_TRAY_ICON
-#             if bpio.Mac() or not bpio.isGUIpossible():
-#                 if _Debug:
-#                     lg.out(_DebugLevel, '    GUI is not possible')
-#                 USE_TRAY_ICON = False
-#             if USE_TRAY_ICON:
-#                 from twisted.internet import wxreactor
-#                 wxreactor.install()
-#                 if _Debug:
-#                     lg.out(_DebugLevel, '    wxreactor installed')
-#         except:
-#             USE_TRAY_ICON = False
-#             lg.exc()
-#     else:
-#         if _Debug:
-#             lg.out(_DebugLevel, '    local identity or key file is not ready')
-#         USE_TRAY_ICON = False#         USE_TRAY_ICON = False
+    #     if os.path.isfile(settings.LocalIdentityFilename()) and os.path.isfile(settings.KeyFileName()):
+    #         try:
+    #             from system.tray_icon import USE_TRAY_ICON
+    #             if bpio.Mac() or not bpio.isGUIpossible():
+    #                 if _Debug:
+    #                     lg.out(_DebugLevel, '    GUI is not possible')
+    #                 USE_TRAY_ICON = False
+    #             if USE_TRAY_ICON:
+    #                 from twisted.internet import wxreactor
+    #                 wxreactor.install()
+    #                 if _Debug:
+    #                     lg.out(_DebugLevel, '    wxreactor installed')
+    #         except:
+    #             USE_TRAY_ICON = False
+    #             lg.exc()
+    #     else:
+    #         if _Debug:
+    #             lg.out(_DebugLevel, '    local identity or key file is not ready')
+    #         USE_TRAY_ICON = False#         USE_TRAY_ICON = False
     USE_TRAY_ICON = False
     if _Debug:
         lg.out(_DebugLevel, '    USE_TRAY_ICON=' + str(USE_TRAY_ICON))
@@ -135,6 +136,7 @@ def init(UI='', options=None, args=None, overDict=None, executablePath=None):
             if cmd == 'exit':
                 from main import shutdowner
                 shutdowner.A('stop', 'exit')
+
         tray_icon.SetControlFunc(_tray_control_func)
 
     #---OS Windows init---
@@ -168,7 +170,7 @@ def init(UI='', options=None, args=None, overDict=None, executablePath=None):
 #         if bpio.Windows() and bpio.isFrozen():
 #             lg.stdout_start_redirecting()
 
-    #---memdebug---
+#---memdebug---
     if config.conf().getBool('logs/memdebug-enabled'):
         try:
             from logs import memdebug
@@ -229,6 +231,7 @@ def init(UI='', options=None, args=None, overDict=None, executablePath=None):
         reactor.callWhenRunning(IA.automat, 'run', UI)  # @UndefinedVariable
     return IA
 
+
 #------------------------------------------------------------------------------
 
 
@@ -287,6 +290,7 @@ def shutdown():
 
     return 0
 
+
 #------------------------------------------------------------------------------
 
 
@@ -329,6 +333,7 @@ def run(UI='', options=None, args=None, overDict=None, executablePath=None, star
 
     return result
 
+
 #------------------------------------------------------------------------------
 
 
@@ -339,74 +344,92 @@ def parser():
     from optparse import OptionParser, OptionGroup
     parser = OptionParser(usage=usage_text(), prog='BitDust')
     group = OptionGroup(parser, 'Logs')
-    group.add_option('-d', '--debug',
-                     dest='debug',
-                     type='int',
-                     help='set debug level',)
-    group.add_option('-q', '--quite',
-                     dest='quite',
-                     action='store_true',
-                     help='quite mode, do not print any messages to stdout',)
-    group.add_option('-v', '--verbose',
-                     dest='verbose',
-                     action='store_true',
-                     help='verbose mode, print more messages',)
-    group.add_option('--coverage',
-                     dest='coverage',
-                     action='store_true',
-                     help='record code coverage',)
-    group.add_option('--coverage_config',
-                     dest='coverage_config',
-                     type='string',
-                     help='coverage configuration file path')
-    group.add_option('--coverage_report',
-                     dest='coverage_report',
-                     type='string',
-                     help='file path to be used to store coverage report')
-    group.add_option('-n', '--no-logs',
-                     dest='no_logs',
-                     action='store_true',
-                     help='do not use logs',)
-    group.add_option('-o', '--output',
-                     dest='output',
-                     type='string',
-                     help='print log messages to the file',)
-    group.add_option('-a', '--appdir',
-                     dest='appdir',
-                     type='string',
-                     help='set alternative location for application data files, default is ~/.bitdust/',)
-#    group.add_option('-t', '--tempdir',
-#                        dest='tempdir',
-#                        type='string',
-#                        help='set location for temporary files, default is ~/.bitdust/temp',)
-    group.add_option('--twisted',
-                     dest='twisted',
-                     action='store_true',
-                     help='show twisted log messages too',)
-    group.add_option('--cpu-profile',
-                     dest='cpu_profile',
-                     action='store_true',
-                     help='use cProfile to profile performance, output is in the file /tmp/bitdust.profile',)
-#    group.add_option('--memdebug',
-#                        dest='memdebug',
-#                        action='store_true',
-#                        help='start web server to debug memory usage, need cherrypy and dozer modules',)
+    group.add_option(
+        '-d',
+        '--debug',
+        dest='debug',
+        type='int',
+        help='set debug level',
+    )
+    group.add_option(
+        '-q',
+        '--quite',
+        dest='quite',
+        action='store_true',
+        help='quite mode, do not print any messages to stdout',
+    )
+    group.add_option(
+        '-v',
+        '--verbose',
+        dest='verbose',
+        action='store_true',
+        help='verbose mode, print more messages',
+    )
+    group.add_option(
+        '--coverage',
+        dest='coverage',
+        action='store_true',
+        help='record code coverage',
+    )
+    group.add_option('--coverage_config', dest='coverage_config', type='string', help='coverage configuration file path')
+    group.add_option('--coverage_report', dest='coverage_report', type='string', help='file path to be used to store coverage report')
+    group.add_option(
+        '-n',
+        '--no-logs',
+        dest='no_logs',
+        action='store_true',
+        help='do not use logs',
+    )
+    group.add_option(
+        '-o',
+        '--output',
+        dest='output',
+        type='string',
+        help='print log messages to the file',
+    )
+    group.add_option(
+        '-a',
+        '--appdir',
+        dest='appdir',
+        type='string',
+        help='set alternative location for application data files, default is ~/.bitdust/',
+    )
+    #    group.add_option('-t', '--tempdir',
+    #                        dest='tempdir',
+    #                        type='string',
+    #                        help='set location for temporary files, default is ~/.bitdust/temp',)
+    group.add_option(
+        '--twisted',
+        dest='twisted',
+        action='store_true',
+        help='show twisted log messages too',
+    )
+    group.add_option(
+        '--cpu-profile',
+        dest='cpu_profile',
+        action='store_true',
+        help='use cProfile to profile performance, output is in the file /tmp/bitdust.profile',
+    )
+    #    group.add_option('--memdebug',
+    #                        dest='memdebug',
+    #                        action='store_true',
+    #                        help='start web server to debug memory usage, need cherrypy and dozer modules',)
     parser.add_option_group(group)
-#    group = OptionGroup(parser, "Network")
-#    group.add_option('--tcp-port',
-#                        dest='tcp_port',
-#                        type='int',
-#                        help='set tcp port number for incoming connections',)
-#    group.add_option('--no-upnp',
-#                        dest='no_upnp',
-#                        action='store_true',
-#                        help='do not use UPnP',)
-#    group.add_option('--memdebug-port',
-#                        dest='memdebug_port',
-#                        type='int',
-#                        default=9996,
-#                        help='set port number for memdebug web server, default is 9995',)
-#    parser.add_option_group(group)
+    #    group = OptionGroup(parser, "Network")
+    #    group.add_option('--tcp-port',
+    #                        dest='tcp_port',
+    #                        type='int',
+    #                        help='set tcp port number for incoming connections',)
+    #    group.add_option('--no-upnp',
+    #                        dest='no_upnp',
+    #                        action='store_true',
+    #                        help='do not use UPnP',)
+    #    group.add_option('--memdebug-port',
+    #                        dest='memdebug_port',
+    #                        type='int',
+    #                        default=9996,
+    #                        help='set port number for memdebug web server, default is 9995',)
+    #    parser.add_option_group(group)
     return parser
 
 
@@ -419,10 +442,10 @@ def override_options(opts, args):
     for new options.
     """
     overDict = {}
-#    if opts.tcp_port:
-#        overDict['services/tcp-connections/tcp-port'] = str(opts.tcp_port)
-#    if opts.no_upnp:
-#        overDict['services/tcp-connections/upnp-enabled'] = 'false'
+    #    if opts.tcp_port:
+    #        overDict['services/tcp-connections/tcp-port'] = str(opts.tcp_port)
+    #    if opts.no_upnp:
+    #        overDict['services/tcp-connections/upnp-enabled'] = 'false'
     if opts.debug or str(opts.debug) == '0':
         overDict['logs/debug-level'] = str(opts.debug)
 #    if opts.memdebug:
@@ -432,6 +455,7 @@ def override_options(opts, args):
 #        else:
 #            overDict['logs/memdebug-port'] = '9996'
     return overDict
+
 
 #------------------------------------------------------------------------------
 
@@ -492,8 +516,8 @@ def wait_then_kill(x):
             return ret
         time.sleep(1)
 
-#------------------------------------------------------------------------------
 
+#------------------------------------------------------------------------------
 
 _OriginalCallLater = None
 _LastCallableID = 0
@@ -553,7 +577,9 @@ def monitorDelayedCalls(r):
         lg.out(_DebugLevel, '\nslowest calls:\n%s' % stats)
     r.callLater(30, monitorDelayedCalls, r)
 
+
 #------------------------------------------------------------------------------
+
 
 class TwistedUnhandledErrorsObserver:
 
@@ -567,8 +593,13 @@ class TwistedUnhandledErrorsObserver:
                 from logs import lg
                 lg.exc(
                     msg=f'Unhandled error in Deferred:\n{event_dict.get("debugInfo", "")}',
-                    exc_info=(f.type, f.value, f.getTracebackObject(), ),
+                    exc_info=(
+                        f.type,
+                        f.value,
+                        f.getTracebackObject(),
+                    ),
                 )
+
 
 #-------------------------------------------------------------------------------
 
@@ -650,7 +681,12 @@ def main(executable_path=None, start_reactor=True):
             return 1
 
     #---install---
-    if cmd in ['deploy', 'install', 'venv', 'virtualenv', ]:
+    if cmd in [
+        'deploy',
+        'install',
+        'venv',
+        'virtualenv',
+    ]:
         from system import deploy
         return deploy.run(args)
 
@@ -710,10 +746,7 @@ def main(executable_path=None, start_reactor=True):
     # try to read debug level value at the early stage - no problem if fail here
     try:
         if cmd == '' or cmd == 'start' or cmd == 'go' or cmd == 'show' or cmd == 'open':
-            lg.set_debug_level(int(
-                bpio.ReadTextFile(
-                    os.path.abspath(
-                        os.path.join(appdata, 'config', 'logs', 'debug-level')))))
+            lg.set_debug_level(int(bpio.ReadTextFile(os.path.abspath(os.path.join(appdata, 'config', 'logs', 'debug-level')))))
     except:
         pass
 
@@ -741,7 +774,18 @@ def main(executable_path=None, start_reactor=True):
 
     if logpath:
         if not appList:
-            if cmd not in ['detach', 'daemon', 'stop', 'kill', 'shutdown', 'restart', 'reboot', 'reconnect', 'show', 'open', ]:
+            if cmd not in [
+                'detach',
+                'daemon',
+                'stop',
+                'kill',
+                'shutdown',
+                'restart',
+                'reboot',
+                'reconnect',
+                'show',
+                'open',
+            ]:
                 lg.open_log_file(logpath)
         if bpio.Windows() and bpio.isFrozen():
             need_redirecting = True
@@ -854,6 +898,7 @@ def main(executable_path=None, start_reactor=True):
                     # std_err=os.path.join(appdata, 'logs', 'stderr.log'),
                 )
                 reactor.stop()  # @UndefinedVariable
+
             try:
                 from twisted.internet import reactor  # @UnresolvedImport
                 # from interface.command_line import run_url_command
@@ -933,9 +978,7 @@ def main(executable_path=None, start_reactor=True):
                 if opts.coverage_report:
                     cov.report(file=open(opts.coverage_report, 'w'))
             return ret
-        appList = bpio.find_main_process(
-            pid_file_path=os.path.join(appdata, 'metadata', 'processid'),
-        )
+        appList = bpio.find_main_process(pid_file_path=os.path.join(appdata, 'metadata', 'processid'),)
         if len(appList) > 0:
             if cmd == 'kill':
                 print_text('found main BitDust process: %s, about to kill running process ... ' % appList, nl='')
@@ -985,8 +1028,7 @@ def main(executable_path=None, start_reactor=True):
         else:
             appListAllChilds = bpio.find_main_process(
                 check_processid_file=False,
-                extra_lookups=[
-                ],
+                extra_lookups=[],
             )
             if len(appListAllChilds) > 0:
                 print_text('BitDust child processes found: %s, performing "kill process" action ...\n' % appListAllChilds, nl='')
@@ -1023,8 +1065,8 @@ def main(executable_path=None, start_reactor=True):
 
     return ret
 
-#------------------------------------------------------------------------------
 
+#------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     ret = main()

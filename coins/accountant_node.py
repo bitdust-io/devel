@@ -19,8 +19,6 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
-
-
 """
 .. module:: accountant_node.
 
@@ -100,6 +98,7 @@ def A(event=None, *args, **kwargs):
         _AccountantNode.automat(event, *args, **kwargs)
     return _AccountantNode
 
+
 #------------------------------------------------------------------------------
 
 
@@ -121,7 +120,7 @@ class AccountantNode(automat.Automat):
         self.connected_accountants = []
         self.min_accountants_connected = 1  # TODO: read from settings
         self.max_accountants_connected = 1  # TODO: read from settings
-        self.max_coins_per_packet = 100     # TODO: read from settings
+        self.max_coins_per_packet = 100  # TODO: read from settings
         self.download_offset = datetime.datetime(2016, 1, 1)
         self.download_limit = 100
         self.pending_coins = []
@@ -155,7 +154,7 @@ class AccountantNode(automat.Automat):
             elif event == 'accountant-connected':
                 self.doAddAccountant(*args, **kwargs)
                 self.doRetrieveCoins(*args, **kwargs)
-            elif event == 'stop' or ( event == 'timer-1min' and not self.isAnyCoinsReceived(*args, **kwargs) ):
+            elif event == 'stop' or (event == 'timer-1min' and not self.isAnyCoinsReceived(*args, **kwargs)):
                 self.state = 'OFFLINE'
             elif event == 'new-coin-mined':
                 self.doPushCoin(*args, **kwargs)
@@ -214,12 +213,12 @@ class AccountantNode(automat.Automat):
                 self.doDestroyMe(*args, **kwargs)
             elif event == 'start':
                 self.state = 'ACCOUNTANTS?'
-                self.Attempts=0
+                self.Attempts = 0
                 self.doLookupAccountants(*args, **kwargs)
             elif event == 'accountant-connected':
                 self.state = 'ACCOUNTANTS?'
                 self.doAddAccountant(*args, **kwargs)
-                self.Attempts=2
+                self.Attempts = 2
                 self.doLookupAccountants(*args, **kwargs)
         #---CLOSED---
         elif self.state == 'CLOSED':
@@ -236,9 +235,9 @@ class AccountantNode(automat.Automat):
                 self.state = 'READ_COINS'
                 self.doRetrieveCoins(*args, **kwargs)
             elif event == 'lookup-failed' and self.Attempts < 5 and self.isAnyAccountants(*args, **kwargs):
-                self.Attempts+=1
+                self.Attempts += 1
                 self.doLookupAccountants(*args, **kwargs)
-            elif ( event == 'lookup-failed' and ( self.Attempts>=5 or not self.isAnyAccountants(*args, **kwargs) ) ) or event == 'timer-2min':
+            elif (event == 'lookup-failed' and (self.Attempts >= 5 or not self.isAnyAccountants(*args, **kwargs))) or event == 'timer-2min':
                 self.state = 'OFFLINE'
         return None
 
@@ -276,7 +275,9 @@ class AccountantNode(automat.Automat):
         Action method.
         """
         from coins import accountants_finder
-        accountants_finder.A('start', (self.automat, {'action': 'join', }))
+        accountants_finder.A('start', (self.automat, {
+            'action': 'join',
+        }))
 
     def doAddAccountant(self, *args, **kwargs):
         """
@@ -288,8 +289,7 @@ class AccountantNode(automat.Automat):
             return
         self.connected_accountants.append(args[0])
         if _Debug:
-            lg.out(_DebugLevel, 'accountant_node.doAddAccountant NEW %s connected, %d total accountants' % (
-                args[0], len(self.connected_accountants)))
+            lg.out(_DebugLevel, 'accountant_node.doAddAccountant NEW %s connected, %d total accountants' % (args[0], len(self.connected_accountants)))
 
     def doRetrieveCoins(self, *args, **kwargs):
         """
@@ -350,7 +350,10 @@ class AccountantNode(automat.Automat):
         """
         Action method.
         """
-        broadcast_service.send_broadcast_message({'type': 'coin', 'data': args[0], })
+        broadcast_service.send_broadcast_message({
+            'type': 'coin',
+            'data': args[0],
+        })
 
     def doWriteCoin(self, *args, **kwargs):
         """
@@ -419,7 +422,9 @@ class AccountantNode(automat.Automat):
                 p2p_service.SendFail(newpacket, 'coin verification failed')
                 return True
             if coins_db.exist(acoin):
-                self.automat('valid-coins-received', [acoin, ])
+                self.automat('valid-coins-received', [
+                    acoin,
+                ])
             else:
                 self.automat('new-coin-mined', acoin)
             return True

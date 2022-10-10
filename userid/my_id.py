@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 ..
 
@@ -75,7 +74,12 @@ _LocalIdentity = None
 _LocalIDURL = None
 _LocalID = None
 _LocalName = None
-_ValidTransports = ['tcp', 'udp', 'http', 'proxy', ]
+_ValidTransports = [
+    'tcp',
+    'udp',
+    'http',
+    'proxy',
+]
 
 #------------------------------------------------------------------------------
 
@@ -95,6 +99,7 @@ def shutdown():
     if _Debug:
         lg.out(_DebugLevel, 'my_id.shutdown')
     forgetLocalIdentity()
+
 
 #-------------------------------------------------------------------------------
 
@@ -218,6 +223,7 @@ def getID():
     """
     return getGlobalID()
 
+
 #------------------------------------------------------------------------------
 
 
@@ -340,6 +346,7 @@ def eraseLocalIdentity(do_backup=True):
         lg.out(_DebugLevel, 'my_id.eraseLocalIdentity file %s was deleted' % filename)
     return True
 
+
 #------------------------------------------------------------------------------
 
 
@@ -376,6 +383,8 @@ def validateTransports(orderL):
         if _Debug:
             lg.out(_DebugLevel, 'my_id.validateTransports ERROR no valid transports, using default transports ' + str(_ValidTransports))
         transports = _ValidTransports
+
+
 #    if len(transports) != len(orderL):
 #        lg.out(1, 'my_id.validateTransports ERROR Transports contained an invalid entry, need to figure out where it came from.')
     return transports
@@ -418,6 +427,7 @@ def getOrderFromContacts(ident):
     A wrapper for ``identity.getProtoOrder`` method.
     """
     return ident.getProtoOrder()
+
 
 #------------------------------------------------------------------------------
 
@@ -569,7 +579,9 @@ def rebuildLocalIdentity(identity_object=None, skip_transports=[], new_sources=N
     current_identity_xmlsrc = getLocalIdentity().serialize()
     if _Debug:
         lg.out(_DebugLevel, 'my_id.rebuildLocalIdentity current identity is %d bytes long new_revision=%r' % (
-            len(current_identity_xmlsrc), new_revision,))
+            len(current_identity_xmlsrc),
+            new_revision,
+        ))
     # getting a copy of local identity to be modified or another object to be used
     lid = identity_object or identity.identity(xmlsrc=current_identity_xmlsrc)
     # create a full list of needed transport methods

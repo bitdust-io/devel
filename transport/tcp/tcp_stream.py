@@ -19,8 +19,6 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
-
-
 """
 ..module:: tcp_stream
 """
@@ -75,6 +73,7 @@ _StreamCounter = 0
 
 #------------------------------------------------------------------------------
 
+
 def start_process_streams():
     reactor.callLater(0, process_streams)  # @UndefinedVariable
     return True
@@ -103,12 +102,16 @@ def process_streams():
             if has_timeouts or has_sends or has_outbox:
                 has_activity = True
     _ProcessStreamsDelay = misc.LoopAttenuation(
-        _ProcessStreamsDelay, has_activity,
+        _ProcessStreamsDelay,
+        has_activity,
         MIN_PROCESS_STREAMS_DELAY,
-        MAX_PROCESS_STREAMS_DELAY,)
+        MAX_PROCESS_STREAMS_DELAY,
+    )
     # attenuation
     _ProcessStreamsTask = reactor.callLater(  # @UndefinedVariable
-        _ProcessStreamsDelay, process_streams)
+        _ProcessStreamsDelay, process_streams
+    )
+
 
 #------------------------------------------------------------------------------
 
@@ -154,7 +157,9 @@ def find_stream(file_id=None, transfer_id=None):
                         return in_file
     return None
 
+
 #------------------------------------------------------------------------------
+
 
 def make_stream_id():
     global _StreamCounter
@@ -175,6 +180,7 @@ def make_file_id():
     else:
         _LastFileID = newid
     return _LastFileID
+
 
 #------------------------------------------------------------------------------
 
@@ -275,8 +281,7 @@ class TCPFileStream():
     def create_inbox_file(self, file_id, file_size):
         from transport.tcp import tcp_interface
         infile = InboxFile(self, file_id, file_size)
-        d = tcp_interface.interface_register_file_receiving(
-            self.connection.getAddress(), self.connection.peer_idurl, infile.filename)
+        d = tcp_interface.interface_register_file_receiving(self.connection.getAddress(), self.connection.peer_idurl, infile.filename)
         d.addCallback(self.on_inbox_file_registered, file_id)
         d.addErrback(self.on_inbox_file_register_failed, file_id)
         infile.registration = d
@@ -298,13 +303,19 @@ class TCPFileStream():
         lg.warn('failed to register file_id=%r session=%r err: %s' % (file_id, self.session, str(err)))
         self.connection.automat('disconnect')
 
-    def create_outbox_file(self, filename, filesize, description, result_defer, keep_alive,):
+    def create_outbox_file(
+        self,
+        filename,
+        filesize,
+        description,
+        result_defer,
+        keep_alive,
+    ):
         from transport.tcp import tcp_interface
         file_id = make_file_id()
         outfile = OutboxFile(self, filename, file_id, filesize, description, result_defer, keep_alive)
         if keep_alive:
-            d = tcp_interface.interface_register_file_sending(
-                self.connection.getAddress(), self.connection.peer_idurl, filename, description)
+            d = tcp_interface.interface_register_file_sending(self.connection.getAddress(), self.connection.peer_idurl, filename, description)
             d.addCallback(self.on_outbox_file_registered, file_id)
             d.addErrback(self.on_outbox_file_register_failed, file_id)
             outfile.registration = d
@@ -341,13 +352,11 @@ class TCPFileStream():
 
     def report_outbox_file(self, transfer_id, status, bytes_sent, error_message=None):
         from transport.tcp import tcp_interface
-        tcp_interface.interface_unregister_file_sending(
-            transfer_id, status, bytes_sent, error_message)
+        tcp_interface.interface_unregister_file_sending(transfer_id, status, bytes_sent, error_message)
 
     def report_inbox_file(self, transfer_id, status, bytes_received, error_message=None):
         from transport.tcp import tcp_interface
-        tcp_interface.interface_unregister_file_receiving(
-            transfer_id, status, bytes_received, error_message)
+        tcp_interface.interface_unregister_file_receiving(transfer_id, status, bytes_received, error_message)
 
     def inbox_file_done(self, file_id, status, error_message=None):
         if _Debug:
@@ -384,6 +393,7 @@ class TCPFileStream():
             self.connection.automat('disconnect')
         del outfile
 
+
 #------------------------------------------------------------------------------
 
 
@@ -402,13 +412,11 @@ class InboxFile():
         self.last_block_time = time.time()
         self.timeout = max(int(self.size / settings.SendingSpeedLimit()), 3)
         if _Debug:
-            lg.out(_DebugLevel, '<<<TCP-IN %s with %d bytes write to %s' % (
-                self.file_id, self.size, self.filename))
+            lg.out(_DebugLevel, '<<<TCP-IN %s with %d bytes write to %s' % (self.file_id, self.size, self.filename))
 
     def close(self):
         if _Debug:
-            lg.out(_DebugLevel, '<<<TCP-IN %s CLOSED with %s | %s' % (
-                self.file_id, self.stream.connection.peer_address, self.stream.connection.peer_external_address))
+            lg.out(_DebugLevel, '<<<TCP-IN %s CLOSED with %s | %s' % (self.file_id, self.stream.connection.peer_address, self.stream.connection.peer_external_address))
         if self.fin:
             os.close(self.fin)
             self.fin = None
@@ -428,6 +436,7 @@ class InboxFile():
 
     def is_timed_out(self):
         return time.time() - self.started > self.timeout
+
 
 #------------------------------------------------------------------------------
 
@@ -452,14 +461,11 @@ class OutboxFile():
         self.timeout = max(int(self.size / settings.SendingSpeedLimit()), 6)
         self.fout = open(self.filename, 'rb')
         if _Debug:
-            lg.out(
-                _DebugLevel, '>>>TCP-OUT %s with %d bytes reading from %s' %
-                (self.file_id, self.size, self.filename))
+            lg.out(_DebugLevel, '>>>TCP-OUT %s with %d bytes reading from %s' % (self.file_id, self.size, self.filename))
 
     def close(self):
         if _Debug:
-            lg.out(_DebugLevel, '>>>TCP-OUT %s CLOSED with %s | %s' % (
-                self.file_id, self.stream.connection.peer_address, self.stream.connection.peer_external_address))
+            lg.out(_DebugLevel, '>>>TCP-OUT %s CLOSED with %s | %s' % (self.file_id, self.stream.connection.peer_address, self.stream.connection.peer_external_address))
         self.stop()
         if self.fout:
             self.fout.close()
@@ -521,12 +527,14 @@ class OutboxFile():
         self.stream.connection.total_bytes_sent += datalength
         return datagram
 
+
 #------------------------------------------------------------------------------
+
 
 @implementer(interfaces.IProducer)
 class MultipleFilesSender:
 
-    CHUNK_SIZE = 2 ** 14
+    CHUNK_SIZE = 2**14
 
     def __init__(self, consumer):
         self.active_files = {}
@@ -557,7 +565,12 @@ class MultipleFilesSender:
     def stopFileTransfer(self, file_id, reason='cancelled'):
         if file_id not in self.active_files:
             raise ValueError('file_id=%r is not registered for transfer' % file_id)
-        deferred, _, _, _ = self.active_files.pop(file_id, (None, None, None, None, ))
+        deferred, _, _, _ = self.active_files.pop(file_id, (
+            None,
+            None,
+            None,
+            None,
+        ))
         if _Debug:
             lg.args(_DebugLevel * 2, file_id, [fid for fid in self.active_files.keys()])
         if deferred:
@@ -568,7 +581,12 @@ class MultipleFilesSender:
             lg.args(_DebugLevel * 2, [fid for fid in self.active_files.keys()])
         files_to_be_removed = []
         for file_id in self.active_files.keys():
-            deferred, file_object, writer, transform = self.active_files.get(file_id, (None, None, None, None, ))
+            deferred, file_object, writer, transform = self.active_files.get(file_id, (
+                None,
+                None,
+                None,
+                None,
+            ))
             if not file_object:
                 lg.warn('did not found file object for file_id=%r' % file_id)
                 files_to_be_removed.append(file_id)

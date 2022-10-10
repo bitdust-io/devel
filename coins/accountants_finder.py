@@ -19,8 +19,6 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
-
-
 """
 .. module:: accountants_finder.
 
@@ -88,6 +86,7 @@ def A(event=None, *args, **kwargs):
     if event is not None:
         _AccountantsFinder.automat(event, *args, **kwargs)
     return _AccountantsFinder
+
 
 #------------------------------------------------------------------------------
 

@@ -4,8 +4,8 @@ from twisted.trial.unittest import TestCase
 from twisted.internet import reactor  # @UnresolvedImport
 from twisted.internet.defer import Deferred
 from twisted.internet.base import DelayedCall
-DelayedCall.debug = True
 
+DelayedCall.debug = True
 
 from logs import lg
 
@@ -27,7 +27,6 @@ from storage import backup
 from storage import restore_worker
 
 from userid import my_id
-
 
 _some_priv_key = """-----BEGIN RSA PRIVATE KEY-----
 MIIEowIBAAKCAQEA/ZsJKyCakqA8vO2r0CTOG0qE2l+4y1dIqh7VC0oaVkXy0Cim
@@ -167,7 +166,7 @@ class Test(TestCase):
 
         reactor.callWhenRunning(raid_worker.A, 'init')  # @UndefinedVariable
 
-        job = backup.backup(backupID, backupPipe, blockSize=1024*1024, ecc_map=eccmap.eccmap(test_ecc_map))
+        job = backup.backup(backupID, backupPipe, blockSize=1024 * 1024, ecc_map=eccmap.eccmap(test_ecc_map))
         job.finishCallback = _bk_done
         job.addStateChangedCallback(lambda *a, **k: _bk_closed(job), oldstate=None, newstate='DONE')
         reactor.callLater(0.5, job.automat, 'start')  # @UndefinedVariable

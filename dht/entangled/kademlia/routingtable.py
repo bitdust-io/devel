@@ -23,7 +23,6 @@ from . import constants  # @UnresolvedImport
 from . import kbucket  # @UnresolvedImport
 from .protocol import TimeoutError  # @UnresolvedImport
 
-
 _Debug = False
 
 
@@ -158,7 +157,9 @@ class TreeRoutingTable(RoutingTable):
         @type parentNodeID: str
         """
         # Create the initial (single) k-bucket covering the range of the entire 160-bit ID space
-        self._buckets = [kbucket.KBucket(rangeMin=0, rangeMax=2**160), ]
+        self._buckets = [
+            kbucket.KBucket(rangeMin=0, rangeMax=2**160),
+        ]
         self._parentNodeID = parentNodeID
         self._layerID = kwargs.get('layerID', 0)
 
@@ -218,7 +219,10 @@ class TreeRoutingTable(RoutingTable):
                     # Remove the old contact...
                     deadContactID = failure.getErrorMessage()
                     if _Debug:
-                        print('[DHT RTABLE] layerID=%d   replacing dead contact %r' % (self._layerID, deadContactID, ))
+                        print('[DHT RTABLE] layerID=%d   replacing dead contact %r' % (
+                            self._layerID,
+                            deadContactID,
+                        ))
                     try:
                         self._buckets[bucketIndex].removeContact(deadContactID)
                     except ValueError:
@@ -261,7 +265,12 @@ class TreeRoutingTable(RoutingTable):
 
         if _Debug:
             print('[DHT RTABLE] layerID=%d   findCloseNodes %r   _rpcNodeID=%r   bucketIndex=%d buckets=%d' % (
-                self._layerID, key, _rpcNodeID if _rpcNodeID else None, bucketIndex, len(self._buckets), ))
+                self._layerID,
+                key,
+                _rpcNodeID if _rpcNodeID else None,
+                bucketIndex,
+                len(self._buckets),
+            ))
 
         closestNodes = self._buckets[bucketIndex].getContacts(constants.k, _rpcNodeID)
         # This method must return k contacts (even if we have the node with the specified key as node ID),
@@ -272,7 +281,10 @@ class TreeRoutingTable(RoutingTable):
         # Fill up the node list to k nodes, starting with the closest neighbouring nodes known
         while len(closestNodes) < constants.k and (canGoLower or canGoHigher):
             if _Debug:
-                print('[DHT RTABLE] layerID=%d  closestNodes=%r' % (self._layerID, closestNodes, ))
+                print('[DHT RTABLE] layerID=%d  closestNodes=%r' % (
+                    self._layerID,
+                    closestNodes,
+                ))
             # TODO: this may need to be optimized
             more_contacts = []
             if canGoLower:
@@ -286,9 +298,16 @@ class TreeRoutingTable(RoutingTable):
             i += 1
             if _Debug:
                 print('[DHT RTABLE] layerID=%d   canGoLower=%s canGoHigher=%s more_contacts=%r' % (
-                    self._layerID, canGoLower, canGoHigher, more_contacts, ))
+                    self._layerID,
+                    canGoLower,
+                    canGoHigher,
+                    more_contacts,
+                ))
         if _Debug:
-            print('[DHT RTABLE] layerID=%d   result=%r' % (self._layerID, closestNodes, ))
+            print('[DHT RTABLE] layerID=%d   result=%r' % (
+                self._layerID,
+                closestNodes,
+            ))
         return closestNodes
 
     def getContact(self, contactID):
@@ -351,8 +370,7 @@ class TreeRoutingTable(RoutingTable):
                 print('[DHT RTABLE] layerID=%d   removeContact(%r) from bucket %d' % (self._layerID, contactID, bucketIndex))
         except ValueError:
             if _Debug:
-                print('[DHT RTABLE] layerID=%d   removeContact(%r): Contact not in routing table bucketIndex=%r' % (
-                    self._layerID, contactID, bucketIndex))
+                print('[DHT RTABLE] layerID=%d   removeContact(%r): Contact not in routing table bucketIndex=%r' % (self._layerID, contactID, bucketIndex))
             return
 
     def touchKBucket(self, key):
@@ -433,7 +451,12 @@ class TreeRoutingTable(RoutingTable):
             oldBucket.removeContact(contact)
         if _Debug:
             print('[DHT RTABLE] layerID=%d   split bucket %d,    old: %d     new: %d / %d' % (
-                self._layerID, oldBucketIndex, oldCount, len(oldBucket), len(newBucket), ))
+                self._layerID,
+                oldBucketIndex,
+                oldCount,
+                len(oldBucket),
+                len(newBucket),
+            ))
 
 
 class OptimizedTreeRoutingTable(TreeRoutingTable):

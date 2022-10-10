@@ -19,8 +19,6 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
-
-
 """
 .. module:: archive_writer
 .. role:: red
@@ -84,6 +82,7 @@ from userid import my_id
 
 #------------------------------------------------------------------------------
 
+
 class ArchiveWriter(automat.Automat):
     """
     This class implements all the functionality of ``archive_writer()`` state machine.
@@ -94,15 +93,7 @@ class ArchiveWriter(automat.Automat):
         Builds `archive_writer()` state machine.
         """
         self.local_data_callback = local_data_callback
-        super(ArchiveWriter, self).__init__(
-            name='archive_writer',
-            state='AT_STARTUP',
-            debug_level=debug_level,
-            log_events=log_events,
-            log_transitions=log_transitions,
-            publish_events=publish_events,
-            **kwargs
-        )
+        super(ArchiveWriter, self).__init__(name='archive_writer', state='AT_STARTUP', debug_level=debug_level, log_events=log_events, log_transitions=log_transitions, publish_events=publish_events, **kwargs)
 
     def A(self, event, *args, **kwargs):
         """
@@ -222,8 +213,7 @@ class ArchiveWriter(automat.Automat):
         Action method.
         """
         if _Debug:
-            lg.args(_DebugLevel, backup_job=self.backup_job, backup_max_block_num=self.backup_max_block_num,
-                    packets_out=list(self.packets_out.values()))
+            lg.args(_DebugLevel, backup_job=self.backup_job, backup_max_block_num=self.backup_max_block_num, packets_out=list(self.packets_out.values()))
         if self.backup_job:
             # backup is not finished yet
             return
@@ -239,7 +229,10 @@ class ArchiveWriter(automat.Automat):
         for block_num in self.packets_out.keys():
             block_packets_failed = list(self.packets_out[block_num].values()).count(False)
             if block_packets_failed > self.correctable_errors * 2:  # because each packet also have Parity()
-                lg.err('all packets for block %d are sent, but too many errors: %d' % (block_num, block_packets_failed, ))
+                lg.err('all packets for block %d are sent, but too many errors: %d' % (
+                    block_num,
+                    block_packets_failed,
+                ))
                 self.automat('sending-failed')
                 return
         self.automat('packets-delivered')
@@ -302,7 +295,7 @@ class ArchiveWriter(automat.Automat):
             pipe=backupPipe,
             blockResultCallback=self._on_archive_backup_block_result,
             finishCallback=self._on_archive_backup_done,
-            blockSize=1024*1024*10,
+            blockSize=1024 * 1024 * 10,
             sourcePath=local_path,
             keyID=self.group_key_id,
             ecc_map=eccmap.eccmap(self.ecc_map),
@@ -328,10 +321,15 @@ class ArchiveWriter(automat.Automat):
                 failed_supliers += 1
                 lg.warn('unknown supplier supplier_num=%d' % supplier_num)
                 continue
-            for dataORparity in ('Data', 'Parity', ):
+            for dataORparity in (
+                'Data',
+                'Parity',
+            ):
                 packet_id = packetid.MakePacketID(backup_id, block_num, supplier_num, dataORparity)
                 packet_filename = os.path.join(archive_snapshot_dir, '%d-%d-%s' % (
-                    block_num, supplier_num, dataORparity,
+                    block_num,
+                    supplier_num,
+                    dataORparity,
                 ))
                 if not os.path.isfile(packet_filename):
                     lg.err('%s is not a file' % packet_filename)
@@ -356,7 +354,10 @@ class ArchiveWriter(automat.Automat):
                 )
         if failed_supliers > self.correctable_errors:
             self.block_failed = True
-            lg.err('too many failed suppliers %d in block %d' % (failed_supliers, block_num, ))
+            lg.err('too many failed suppliers %d in block %d' % (
+                failed_supliers,
+                block_num,
+            ))
 
     def _on_read_queue_owner_suppliers_success(self, dht_value):
         # TODO: add more validations of dht_value

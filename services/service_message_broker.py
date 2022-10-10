@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 ..
 
@@ -54,7 +53,9 @@ class MessageBrokerService(LocalService):
 
     def attached_dht_layers(self):
         from dht import dht_records
-        return [dht_records.LAYER_MESSAGE_BROKERS, ]
+        return [
+            dht_records.LAYER_MESSAGE_BROKERS,
+        ]
 
     def start(self):
         from main import events
@@ -102,7 +103,7 @@ class MessageBrokerService(LocalService):
                 archive_folder_path = json_payload.get('archive_folder_path', None)
                 last_sequence_id = json_payload.get('last_sequence_id', -1)
                 known_brokers = json_payload.get('known_brokers', {}) or {}
-                known_brokers = {int(k): id_url.field(v) for k,v in known_brokers.items()}
+                known_brokers = {int(k): id_url.field(v) for k, v in known_brokers.items()}
             except:
                 lg.warn('wrong payload: %r' % json_payload)
                 return p2p_service.SendFail(newpacket, 'wrong payload')
@@ -125,7 +126,7 @@ class MessageBrokerService(LocalService):
                 broker_id = json_payload['broker_id']
                 position = json_payload['position']
                 known_streams = json_payload['streams']
-                known_brokers = {int(k): id_url.field(v) for k,v in json_payload['known_brokers'].items()}
+                known_brokers = {int(k): id_url.field(v) for k, v in json_payload['known_brokers'].items()}
             except:
                 lg.warn('wrong payload: %r' % json_payload)
                 return p2p_service.SendFail(newpacket, 'wrong payload')

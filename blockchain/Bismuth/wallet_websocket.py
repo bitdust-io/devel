@@ -40,9 +40,7 @@ from modules.sqlitebase import SqliteBase
 from modules.ledgerbase import LedgerBase
 from modules.node_interface import NodeInterface
 
-
 __version__ = '0.0.20'
-
 
 NODE_INTERFACE: NodeInterface = None
 
@@ -130,7 +128,7 @@ def start_server(port):
     db_name = 'ledger.db'
     if CONFIG.testnet:
         db_name = 'test.db'
-    ledger = LedgerBase(options.verbose, db_path=CONFIG.db_path+'/', db_name=db_name, app_log=app_log)
+    ledger = LedgerBase(options.verbose, db_path=CONFIG.db_path + '/', db_name=db_name, app_log=app_log)
     try:
         # Force a db connection attempt and updates db version of ledger
         _ = io_loop.run_sync(ledger.check_db_version, 30)
@@ -138,7 +136,7 @@ def start_server(port):
         app_log.error("Can't connect to ledger: {}".format(e))
         return
 
-    NODE_INTERFACE = NodeInterface(mempool, ledger, CONFIG,app_log=app_log)
+    NODE_INTERFACE = NodeInterface(mempool, ledger, CONFIG, app_log=app_log)
 
     app = tornado.web.Application(ChannelHandler.urls())
 

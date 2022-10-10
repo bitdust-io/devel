@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 ..
 
@@ -103,7 +102,10 @@ class PrivateMessagesService(LocalService):
                 contactsdb.remove_correspondent(idurl)
                 contactsdb.add_correspondent(new_idurl.to_bin(), alias)
                 contacts_changed = True
-                lg.info('found correspondent idurl was rotated : %r -> %r' % (old_idurl, new_idurl, ))
+                lg.info('found correspondent idurl was rotated : %r -> %r' % (
+                    old_idurl,
+                    new_idurl,
+                ))
         if contacts_changed:
             contactsdb.save_correspondents()
 
@@ -111,20 +113,24 @@ class PrivateMessagesService(LocalService):
         from main import events
         from contacts import contactsdb
         if contactsdb.is_correspondent(evt.data['idurl']):
-            events.send('friend-connected', data=dict(
-                idurl=evt.data['idurl'],
-                global_id=evt.data['global_id'],
-                old_state=evt.data['old_state'],
-                new_state=evt.data['new_state'],
-            ))
+            events.send(
+                'friend-connected', data=dict(
+                    idurl=evt.data['idurl'],
+                    global_id=evt.data['global_id'],
+                    old_state=evt.data['old_state'],
+                    new_state=evt.data['new_state'],
+                )
+            )
 
     def _on_user_disconnected(self, evt):
         from main import events
         from contacts import contactsdb
         if contactsdb.is_correspondent(evt.data['idurl']):
-            events.send('friend-disconnected', data=dict(
-                idurl=evt.data['idurl'],
-                global_id=evt.data['global_id'],
-                old_state=evt.data['old_state'],
-                new_state=evt.data['new_state'],
-            ))
+            events.send(
+                'friend-disconnected', data=dict(
+                    idurl=evt.data['idurl'],
+                    global_id=evt.data['global_id'],
+                    old_state=evt.data['old_state'],
+                    new_state=evt.data['new_state'],
+                )
+            )

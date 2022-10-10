@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 .. module:: backup_monitor.
 
@@ -126,7 +125,8 @@ def A(event=None, *args, **kwargs):
     global _BackupMonitor
     if _BackupMonitor is None:
         _BackupMonitor = BackupMonitor(
-            'backup_monitor', 'AT_STARTUP',
+            'backup_monitor',
+            'AT_STARTUP',
             debug_level=_DebugLevel,
             log_events=False,
             log_transitions=_Debug,
@@ -289,7 +289,9 @@ class BackupMonitor(automat.Automat):
         for supplierNum in changedSupplierNums:
             suplier_idurl = self.current_suppliers[supplierNum]
             if suplier_idurl:
-                io_throttle.DeleteSuppliers([suplier_idurl, ])
+                io_throttle.DeleteSuppliers([
+                    suplier_idurl,
+                ])
             # erase (set to 0) remote info for this guys
             backup_matrix.ClearSupplierRemoteInfo(supplierNum)
 
@@ -345,8 +347,7 @@ class BackupMonitor(automat.Automat):
                 while len(versions) > versionsToKeep:
                     backupID = packetid.MakeBackupID(customerGlobID, pathID, versions.pop(0))
                     if _Debug:
-                        lg.out(_DebugLevel, 'backup_monitor.doCleanUpBackups %d of %d backups for %s, so remove older %s' % (
-                            len(versions), versionsToKeep, localPath, backupID))
+                        lg.out(_DebugLevel, 'backup_monitor.doCleanUpBackups %d of %d backups for %s, so remove older %s' % (len(versions), versionsToKeep, localPath, backupID))
                     backup_control.DeleteBackup(backupID, saveDB=False, calculate=False)
                     delete_count += 1
         # we need also to fit used space into needed space (given from other users)
@@ -367,8 +368,7 @@ class BackupMonitor(automat.Automat):
                     versionInfo = itemInfo.get_version_info(version)
                     if versionInfo[1] > 0:
                         if _Debug:
-                            lg.out(_DebugLevel, 'backup_monitor.doCleanUpBackups over use %d of %d, so remove %s of %s' % (
-                                bytesUsed, bytesNeeded, backupID, localPath))
+                            lg.out(_DebugLevel, 'backup_monitor.doCleanUpBackups over use %d of %d, so remove %s of %s' % (bytesUsed, bytesNeeded, backupID, localPath))
                         backup_control.DeleteBackup(backupID, saveDB=False, calculate=False)
                         delete_count += 1
                         bytesUsed -= versionInfo[1]
@@ -384,8 +384,7 @@ class BackupMonitor(automat.Automat):
         collected = gc.collect()
         if self.backups_progress_last_iteration > 0:
             if _Debug:
-                lg.out(_DebugLevel, 'backup_monitor.doCleanUpBackups  sending "restart", backups_progress_last_iteration=%s' %
-                    self.backups_progress_last_iteration)
+                lg.out(_DebugLevel, 'backup_monitor.doCleanUpBackups  sending "restart", backups_progress_last_iteration=%s' % self.backups_progress_last_iteration)
             reactor.callLater(1, self.automat, 'restart')  # @UndefinedVariable
         if _Debug:
             lg.out(_DebugLevel, 'backup_monitor.doCleanUpBackups collected %d objects' % collected)

@@ -27,15 +27,11 @@ from twisted.internet import reactor  # @UnresolvedImport
 
 if __name__ == '__main__':
     import os.path as _p
-    sys.path.insert(
-        0, _p.abspath(
-            _p.join(
-                _p.dirname(
-                    _p.abspath(
-                        sys.argv[0])), '..', '..')))
+    sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..', '..')))
 
 
 def main():
+
     def _ok(x):
         print('ok', x)
         reactor.stop()  # @UndefinedVariable

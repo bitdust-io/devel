@@ -23,13 +23,11 @@
 #
 #
 #
-
 """
 ..
 
 module:: config_types
 """
-
 
 TYPE_UNDEFINED = 0
 TYPE_BOOLEAN = 1
@@ -71,10 +69,8 @@ def defaults():
         'interface/api/rest-http-port': TYPE_PORT_NUMBER,
         'interface/api/web-socket-enabled': TYPE_BOOLEAN,
         'interface/api/web-socket-port': TYPE_PORT_NUMBER,
-
         'interface/ftp/enabled': TYPE_BOOLEAN,
         'interface/ftp/port': TYPE_PORT_NUMBER,
-
         'logs/api-enabled': TYPE_BOOLEAN,
         'logs/automat-events-enabled': TYPE_BOOLEAN,
         'logs/automat-transitions-enabled': TYPE_BOOLEAN,
@@ -89,15 +85,12 @@ def defaults():
         'logs/traffic-port': TYPE_PORT_NUMBER,
 
         # 'other/upnp-at-startup': TYPE_BOOLEAN,
-
         'paths/backups': TYPE_FOLDER_PATH,
         'paths/customers': TYPE_FOLDER_PATH,
         'paths/messages': TYPE_FOLDER_PATH,
         'paths/receipts': TYPE_FOLDER_PATH,
         'paths/restore': TYPE_FOLDER_PATH,
-
         'personal/private-key-size': TYPE_STRING,
-
         'services/accountant/enabled': TYPE_BOOLEAN,
         'services/backup-db/enabled': TYPE_BOOLEAN,
         'services/backups/block-size': TYPE_DISK_SPACE,

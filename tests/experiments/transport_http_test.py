@@ -30,12 +30,7 @@ from twisted.internet import reactor  # @UnresolvedImport
 
 if __name__ == '__main__':
     import os.path as _p
-    sys.path.insert(
-        0, _p.abspath(
-            _p.join(
-                _p.dirname(
-                    _p.abspath(
-                        sys.argv[0])), '..')))
+    sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
 #------------------------------------------------------------------------------
 
@@ -57,11 +52,15 @@ def main():
     tmpfile.init()
     from services import driver
 
-    required_services = ['service_http_connections', 'service_http_transport', 'service_gateway', 'service_network', ]
+    required_services = [
+        'service_http_connections',
+        'service_http_transport',
+        'service_gateway',
+        'service_network',
+    ]
     available_services_dir = os.path.join(bpio.getExecutableDir(), 'services')
     for filename in os.listdir(available_services_dir):
-        if not filename.endswith('.py') and not filename.endswith(
-                '.pyo') and not filename.endswith('.pyc'):
+        if not filename.endswith('.py') and not filename.endswith('.pyo') and not filename.endswith('.pyc'):
             continue
         if not filename.startswith('service_'):
             continue
@@ -95,6 +94,7 @@ def main():
         if len(sys.argv) >= 3:
             pass
             # bpio.WriteFile(sys.argv[1]+'.signed', p.Serialize())
+
 
 #             def _try_reconnect():
 #                 sess = udp_session.get_by_peer_id(sys.argv[2])
@@ -143,7 +143,6 @@ def main():
 
     gateway.add_transport_state_changed_callback(_ok_to_send)
     reactor.run()
-
 
 if __name__ == '__main__':
     main()

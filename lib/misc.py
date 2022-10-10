@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 .. module:: misc.
 
@@ -37,7 +36,7 @@ TODO:
 
 from __future__ import absolute_import
 from __future__ import print_function
-import six.moves.urllib.parse # @UnresolvedImport
+import six.moves.urllib.parse  # @UnresolvedImport
 from six.moves import range  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
@@ -97,6 +96,7 @@ def init():
     """
     lg.out(4, 'misc.init')
 
+
 #------------------------------------------------------------------------------
 
 
@@ -136,7 +136,9 @@ def writeSupplierData(supplier_idurl, filename, data, customer_idurl):
     path = settings.SupplierPath(supplier_idurl, customer_idurl, filename)
     return bpio.WriteTextFile(path, data)
 
+
 #-------------------------------------------------------------------------------
+
 
 def cmp(a, b):
     return (a > b) - (a < b)
@@ -258,7 +260,9 @@ def sorted_versions(versions, reverse=False):
     sorted_versions_list = sorted(versions, key=functools.cmp_to_key(version_compare), reverse=reverse)
     return sorted_versions_list
 
+
 #------------------------------------------------------------------------------
+
 
 def DigitsOnly(inpt, includes=''):
     """
@@ -298,7 +302,9 @@ def ToFloat(inpt, default=0.0):
     except:
         return default
 
+
 #------------------------------------------------------------------------------
+
 
 def ValidKeyAlias(key_alias):
     if len(key_alias) > 50:
@@ -442,6 +448,7 @@ def ValidateBitCoinAddress(strAddr):
     # if one of the character is not valid, the next ones are not tested.
     return all((char in CHARS_OK for char in strAddr[1:]))
 
+
 #------------------------------------------------------------------------------
 
 
@@ -480,7 +487,9 @@ def Parity():
     """
     return 'Parity'
 
+
 #------------------------------------------------------------------------------
+
 
 def pack_url_param(s):
     """
@@ -510,7 +519,9 @@ def unpack_url_param(s, default=None):
         lg.exc()
         return default
 
+
 #------------------------------------------------------------------------------
+
 
 def rndstr(length):
     """
@@ -561,13 +572,7 @@ def calculate_best_dimension(sz, maxsize=8):
     :param sz: number of items to be organized
     :param maxsize: the maximum width of the matrix.
     """
-    cached = {2: (2, 1),
-              4: (4, 1),
-              7: (4, 2),
-              13: (5, 3),
-              18: (6, 3),
-              26: (7, 4),
-              64: (8, 8)}.get(sz, None)
+    cached = {2: (2, 1), 4: (4, 1), 7: (4, 2), 13: (5, 3), 18: (6, 3), 26: (7, 4), 64: (8, 8)}.get(sz, None)
     if cached:
         return cached
     try:
@@ -763,7 +768,9 @@ def unicode_to_str_safe(unicode_string, encodings=None):
         except:
             pass
     if encodings is None:
-        encodings = [locale.getpreferredencoding(), ]  # 'utf-8'
+        encodings = [
+            locale.getpreferredencoding(),
+        ]  # 'utf-8'
     output = ''
     for i in range(len(unicode_string)):
         unicode_char = unicode_string[i]
@@ -805,7 +812,9 @@ def isEnglishString(s):
     else:
         return True
 
+
 #------------------------------------------------------------------------------
+
 
 def getClipboardText():
     """
@@ -881,6 +890,7 @@ def setClipboardText(txt):
         except:
             lg.exc()
 
+
 #------------------------------------------------------------------------------
 
 
@@ -913,6 +923,7 @@ def file_hash(path):
     if not src:
         return None
     return get_hash(src)
+
 
 #-------------------------------------------------------------------------------
 
@@ -962,7 +973,9 @@ def str2gmtime(time_string, format):
     """
     return time.mktime(time.strptime(time_string, format))
 
+
 #------------------------------------------------------------------------------
+
 
 def ReadRepoLocation():
     """
@@ -987,6 +1000,7 @@ def ReadRepoLocation():
         return settings.DefaultRepo(), settings.DefaultRepoURL(settings.DefaultRepo())
     return l[0], l[1]
 
+
 #------------------------------------------------------------------------------
 
 
@@ -1003,19 +1017,25 @@ def DoRestart(param='', detach=False, std_out='/dev/null', std_err='/dev/null'):
             if not os.path.isfile(starter_filepath):
                 # lg.out(2, "misc.DoRestart ERROR %s not found" % starter_filepath)
                 main_filepath = os.path.join(bpio.getExecutableDir(), settings.WindowsMainScriptFileName())
-                cmdargs = [os.path.basename(main_filepath), ]
+                cmdargs = [
+                    os.path.basename(main_filepath),
+                ]
                 if param != '':
                     cmdargs.append(param)
                 # lg.out(2, "misc.DoRestart cmdargs="+str(cmdargs))
                 return os.spawnve(os.P_DETACH, main_filepath, cmdargs, os.environ)  # @UndefinedVariable
-            cmdargs = [os.path.basename(starter_filepath), ]
+            cmdargs = [
+                os.path.basename(starter_filepath),
+            ]
             if param != '':
                 cmdargs.append(param)
             # lg.out(2, "misc.DoRestart cmdargs="+str(cmdargs))
             return os.spawnve(os.P_DETACH, starter_filepath, cmdargs, os.environ)  # @UndefinedVariable
 
         pypath = sys.executable
-        cmdargs = [sys.executable, ]
+        cmdargs = [
+            sys.executable,
+        ]
         cmdargs.append(sys.argv[0])
         cmdargs += sys.argv[1:]
         if param != '' and not sys.argv.count(param):
@@ -1033,7 +1053,9 @@ def DoRestart(param='', detach=False, std_out='/dev/null', std_err='/dev/null'):
         return os.execvpe(pypath, cmdargs, os.environ)
 
     pypyth = sys.executable
-    cmdargs = [sys.executable, ]
+    cmdargs = [
+        sys.executable,
+    ]
     if sys.argv[0] == '/usr/share/bitdust/bitdust.py':
         cmdargs.append('/usr/bin/bitdust')
     else:
@@ -1056,10 +1078,16 @@ def DoRestart(param='', detach=False, std_out='/dev/null', std_err='/dev/null'):
         cmd = '/usr/bin/nohup ' + (' '.join(cmdargs)) + ' &'
         BITDUST_COVERAGE_PROCESS_START = os.environ.get('COVERAGE_PROCESS_START')
         if BITDUST_COVERAGE_PROCESS_START:
-            cmd = 'COVERAGE_PROCESS_START="%s" %s' % (BITDUST_COVERAGE_PROCESS_START, cmd, )
+            cmd = 'COVERAGE_PROCESS_START="%s" %s' % (
+                BITDUST_COVERAGE_PROCESS_START,
+                cmd,
+            )
         BITDUST_LOG_USE_COLORS = os.environ.get('BITDUST_LOG_USE_COLORS')
         if BITDUST_LOG_USE_COLORS:
-            cmd = 'BITDUST_LOG_USE_COLORS="%s" %s' % (BITDUST_LOG_USE_COLORS, cmd, )
+            cmd = 'BITDUST_LOG_USE_COLORS="%s" %s' % (
+                BITDUST_LOG_USE_COLORS,
+                cmd,
+            )
         return os.system(cmd)
     return os.execvpe(pypyth, cmdargs, os.environ)
 
@@ -1090,7 +1118,9 @@ def ExplorePathInOS(filepath):
             lg.exc()
     return
 
+
 #------------------------------------------------------------------------------
+
 
 def LoopAttenuation(current_delay, go_faster, min_delay, max_delay):
     """
@@ -1118,8 +1148,8 @@ def LoopAttenuation(current_delay, go_faster, min_delay, max_delay):
             current_delay = max_delay
     return current_delay
 
-#------------------------------------------------------------------------------
 
+#------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     lg.set_debug_level(10)

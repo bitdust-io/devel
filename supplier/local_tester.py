@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 .. module:: local_tester.
 
@@ -83,6 +82,7 @@ TesterSpaceTime = 'space_time'
 
 #------------------------------------------------------------------------------
 
+
 def init():
     global _Loop
     if _Debug:
@@ -110,7 +110,9 @@ def shutdown():
         if _Debug:
             lg.out(_DebugLevel, 'local_tester.shutdown is killing bptester')
 
+
 #------------------------------------------------------------------------------
+
 
 def start():
     global _LoopValidate
@@ -142,7 +144,9 @@ def stop():
             _LoopSpaceTime.cancel()
             _LoopSpaceTime = None
 
+
 #------------------------------------------------------------------------------
+
 
 def _pushTester(cmd):
     global _TesterQueue
@@ -159,7 +163,9 @@ def _popTester():
     del _TesterQueue[0]
     return cmd
 
+
 #-------------------------------------------------------------------------------
+
 
 def on_thread_finished(ret, cmd):
     global _CurrentProcess
@@ -184,7 +190,9 @@ def run_in_thread(cmd):
     if _Debug:
         lg.out(_DebugLevel, 'local_tester.run_in_thread started %r' % cmd)
 
+
 #------------------------------------------------------------------------------
+
 
 def alive():
     global _CurrentProcess
@@ -219,6 +227,7 @@ def loop_space_time():
     TestSpaceTime()
     _LoopSpaceTime = reactor.callLater(settings.DefaultLocaltesterSpaceTimeTimeout(), loop_space_time)  # @UndefinedVariable
 
+
 #-------------------------------------------------------------------------------
 
 
@@ -232,6 +241,7 @@ def TestValid():
 
 def TestSpaceTime():
     _pushTester(TesterSpaceTime)
+
 
 #-------------------------------------------------------------------------------
 

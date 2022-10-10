@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 .. module:: nameurl.
 
@@ -75,7 +74,12 @@ def UrlParse(url):
         nameurl.UrlParse('http://id.bitdust.io/veselin.xml')
         ('http', 'id.bitdust.io', '', 'veselin.xml')
     """
-    if not url or (isinstance(url, six.string_types) and url in ['None', b'None', '', b'', ]):
+    if not url or (isinstance(url, six.string_types) and url in [
+        'None',
+        b'None',
+        '',
+        b'',
+    ]):
         return '', '', '', ''
     url = strng.to_bin(url)
     o = six.moves.urllib.parse.urlparse(url)
@@ -143,7 +147,12 @@ def UrlFilename(url):
     'http###id.bitdust.io#veselin.xml'
     """
     # TODO: switch all that to global ID format
-    if not url or (isinstance(url, six.string_types) and url in ['None', b'None', '', b'', ]):
+    if not url or (isinstance(url, six.string_types) and url in [
+        'None',
+        b'None',
+        '',
+        b'',
+    ]):
         return None
     result = strng.to_text(url)
     result = result.replace('://', '###')
@@ -184,7 +193,9 @@ def UrlFilenameHTML(url):
             o += x
     return o
 
+
 #------------------------------------------------------------------------------
+
 
 def IdContactSplit(contact):
     try:
@@ -200,7 +211,12 @@ def GetName(url):
 
     nameurl.GetName('http://id.bitdust.io/kinggeorge.xml') 'kinggeorge'
     """
-    if not url or (isinstance(url, six.string_types) and url in ['None', b'None', '', b'', ]):
+    if not url or (isinstance(url, six.string_types) and url in [
+        'None',
+        b'None',
+        '',
+        b'',
+    ]):
         return ''
     url = strng.to_text(url)
     if not url.endswith('.xml'):
@@ -212,7 +228,12 @@ def GetFileName(url):
     """
     Almost the same, but keeps the file extension.
     """
-    if not url or (isinstance(url, six.string_types) and url in ['None', b'None', '', b'', ]):
+    if not url or (isinstance(url, six.string_types) and url in [
+        'None',
+        b'None',
+        '',
+        b'',
+    ]):
         return ''
     url = strng.to_text(url)
     return url[url.rfind('/') + 1:]
@@ -224,7 +245,9 @@ def GetHost(url):
     """
     return UrlParse(url)[1]
 
+
 #------------------------------------------------------------------------------
+
 
 def Quote(s):
     """
@@ -241,6 +264,7 @@ def UnQuote(s):
 
 
 #------------------------------------------------------------------------------
+
 
 def DjangoQuote(s):
     """
@@ -281,6 +305,7 @@ def DjangoUnQuote(s):
             myappend('_' + item)
     return ''.join(res)
 
+
 #------------------------------------------------------------------------------
 
 
@@ -289,6 +314,7 @@ def main():
     I used this place for tests.
     """
     print(GetName(str(None)))
+
 
 if __name__ == '__main__':
     main()

@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 .. module:: miner.
 
@@ -77,6 +76,7 @@ And remote node should declare that as well to confirm this, this is sort of "po
 """
 
 from __future__ import absolute_import
+
 _Debug = False
 _DebugLevel = 14
 
@@ -85,7 +85,6 @@ _DebugLevel = 14
 import datetime
 
 #------------------------------------------------------------------------------
-
 
 #------------------------------------------------------------------------------
 
@@ -110,6 +109,7 @@ def finished_contracts():
     global _MyFinishedContracts
     return _MyFinishedContracts
 
+
 #------------------------------------------------------------------------------
 
 
@@ -127,6 +127,7 @@ def shutdown():
     del _CoinsMinerNode
     _CoinsMinerNode = None
 
+
 #------------------------------------------------------------------------------
 
 
@@ -136,6 +137,7 @@ def inbox_packet(newpacket, info, status, error_message):
     if not node():
         return False
     return node().inbox_packet(newpacket, info)
+
 
 #------------------------------------------------------------------------------
 
@@ -164,6 +166,7 @@ def finish_contract(typ, partner, **kwargs):
         setattr(found, key, value)
     finished_contracts().append(found)
 
+
 #------------------------------------------------------------------------------
 
 
@@ -172,6 +175,7 @@ class Contract(object):
     def __init__(self, **kwargs):
         for key, value in kwargs.items():
             setattr(self, key, value)
+
 
 #------------------------------------------------------------------------------
 

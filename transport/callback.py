@@ -19,7 +19,6 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
-
 """
 ..
 
@@ -68,6 +67,7 @@ class InterestedParty:
         self.CallBackFunction = CallBackFunctionOrDefer  # function(or Deferred) to call when we see this packet
         self.ComboID = combine_IDs(CreatorID, PacketID)
 
+
 #------------------------------------------------------------------------------
 
 
@@ -75,11 +75,13 @@ def interested_parties():
     global _InterestedParties
     return _InterestedParties
 
+
 #------------------------------------------------------------------------------
 
 
 def combine_IDs(CreatorID, PacketID):
     return str(CreatorID) + ':' + str(PacketID)
+
 
 #------------------------------------------------------------------------------
 
@@ -91,11 +93,13 @@ def append_inbox_callback(cb):
 
     callback(newpacket, info, status, error_message).
     """
-#     if _Debug:
-#         lg.out(_DebugLevel, 'callback.append_inbox_callback new callback, current callbacks:')
+    #     if _Debug:
+    #         lg.out(_DebugLevel, 'callback.append_inbox_callback new callback, current callbacks:')
     global _InboxPacketCallbacksList
     if cb not in _InboxPacketCallbacksList:
         _InboxPacketCallbacksList.append(cb)
+
+
 #     if _Debug:
 #         import pprint
 #         lg.out(_DebugLevel, '        %s' % pprint.pformat(_InboxPacketCallbacksList))
@@ -112,22 +116,26 @@ def insert_inbox_callback(index, cb):
 
         callback(newpacket, info, status, error_message).
     """
-#     if _Debug:
-#         lg.out(_DebugLevel, 'callback.insert_inbox_callback new callback at position %d, current callbacks:' % index)
+    #     if _Debug:
+    #         lg.out(_DebugLevel, 'callback.insert_inbox_callback new callback at position %d, current callbacks:' % index)
     global _InboxPacketCallbacksList
     if cb not in _InboxPacketCallbacksList:
         _InboxPacketCallbacksList.insert(index, cb)
+
+
 #     if _Debug:
 #         import pprint
 #         lg.out(_DebugLevel, '        %s' % pprint.pformat(_InboxPacketCallbacksList))
 
 
 def remove_inbox_callback(cb):
-#     if _Debug:
-#         lg.out(_DebugLevel, 'callback.remove_inbox_callback removing a callback, current callbacks:')
+    #     if _Debug:
+    #         lg.out(_DebugLevel, 'callback.remove_inbox_callback removing a callback, current callbacks:')
     global _InboxPacketCallbacksList
     if cb in _InboxPacketCallbacksList:
         _InboxPacketCallbacksList.remove(cb)
+
+
 #     if _Debug:
 #         import pprint
 #         lg.out(_DebugLevel, '        %s' % pprint.pformat(_InboxPacketCallbacksList))
@@ -252,6 +260,7 @@ def add_finish_file_receiving_callback(cb, index=0):
     if cb not in _FinishFileReceivingCallbacksList:
         _FinishFileReceivingCallbacksList.insert(index, cb)
 
+
 def remove_finish_file_receiving_callback(cb):
     global _FinishFileReceivingCallbacksList
     if cb in _FinishFileReceivingCallbacksList:
@@ -271,6 +280,7 @@ def remove_file_sending_filter_callback(cb):
     global _FileSendingFilterCallbacksList
     if cb in _FileSendingFilterCallbacksList:
         _FileSendingFilterCallbacksList.remove(cb)
+
 
 #------------------------------------------------------------------------------
 
@@ -358,8 +368,7 @@ def run_queue_item_status_callbacks(pkt_out, status, error_message):
 def run_file_sending_filter_callbacks(remote_idurl, proto, host, filename, description, pkt_out):
     global _FileSendingFilterCallbacksList
     if _Debug:
-        lg.out(_DebugLevel, 'callback.run_file_sending_filter_callbacks %s to %s:%s at %s' % (
-            description, proto, host, remote_idurl))
+        lg.out(_DebugLevel, 'callback.run_file_sending_filter_callbacks %s to %s:%s at %s' % (description, proto, host, remote_idurl))
     one_result = None
     for cb in _FileSendingFilterCallbacksList:
         try:
@@ -369,7 +378,10 @@ def run_file_sending_filter_callbacks(remote_idurl, proto, host, filename, descr
             continue
         if one_result is not None:
             if _Debug:
-                lg.out(_DebugLevel, '    filtered by %r : %r' % (cb, one_result, ))
+                lg.out(_DebugLevel, '    filtered by %r : %r' % (
+                    cb,
+                    one_result,
+                ))
             break
     return one_result
 
@@ -377,8 +389,7 @@ def run_file_sending_filter_callbacks(remote_idurl, proto, host, filename, descr
 def run_begin_file_sending_callbacks(result_defer, remote_idurl, proto, host, filename, description, pkt_out):
     global _BeginFileSendingCallbacksList
     if _Debug:
-        lg.out(_DebugLevel, 'callback.run_begin_file_sending_callbacks %s to %s:%s at %s' % (
-            description, proto, host, remote_idurl))
+        lg.out(_DebugLevel, 'callback.run_begin_file_sending_callbacks %s to %s:%s at %s' % (description, proto, host, remote_idurl))
     handled = False
     for cb in _BeginFileSendingCallbacksList:
         try:
@@ -428,7 +439,10 @@ def run_begin_file_receiving_callbacks(pkt_in):
 def run_finish_file_receiving_callbacks(info, data):
     global _FinishFileReceivingCallbacksList
     if _Debug:
-        lg.out(_DebugLevel, 'callback.run_finish_file_receiving_callbacks %d bytes : %s' % (len(data), info, ))
+        lg.out(_DebugLevel, 'callback.run_finish_file_receiving_callbacks %d bytes : %s' % (
+            len(data),
+            info,
+        ))
     handled = False
     for cb in _FinishFileReceivingCallbacksList:
         try:

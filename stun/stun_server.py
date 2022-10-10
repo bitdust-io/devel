@@ -19,8 +19,6 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
-
-
 """
 .. module:: stun_server.
 
@@ -183,8 +181,7 @@ class StunServer(automat.Automat):
         youripport = net_misc.pack_address((address[0], address[1]))
         udp.send_command(self.listen_port, udp.CMD_MYIPPORT, youripport, address)
         if _Debug:
-            lg.out(_DebugLevel, 'stun_server.doSendYourIPPort [%s] to %s' % (
-                youripport, address))
+            lg.out(_DebugLevel, 'stun_server.doSendYourIPPort [%s] to %s' % (youripport, address))
 
     def _datagramReceived(self, datagram, address):
         """
@@ -192,7 +189,9 @@ class StunServer(automat.Automat):
         self.automat('datagram-received', (datagram, address))
         return False
 
+
 #------------------------------------------------------------------------------
+
 
 def main():
     from twisted.internet import reactor  # @UnresolvedImport
@@ -216,8 +215,8 @@ def main():
     reactor.run()  # @UndefinedVariable
     settings.shutdown()
 
-#------------------------------------------------------------------------------
 
+#------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     main()

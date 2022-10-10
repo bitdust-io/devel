@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 ..
 
@@ -59,8 +58,7 @@ class KeysStorageService(LocalService):
         from storage import keys_synchronizer
         keys_synchronizer.A('init')
         self.starting_deferred = Deferred()
-        self.starting_deferred.addErrback(lambda err: lg.warn('service %r was not started: %r' % (
-            self.service_name, err.getErrorMessage() if err else 'unknown reason')))
+        self.starting_deferred.addErrback(lambda err: lg.warn('service %r was not started: %r' % (self.service_name, err.getErrorMessage() if err else 'unknown reason')))
         events.add_subscriber(self._on_identity_url_changed, 'identity-url-changed')
         events.add_subscriber(self._on_key_generated, 'key-generated')
         events.add_subscriber(self._on_key_registered, 'key-registered')
@@ -135,8 +133,7 @@ class KeysStorageService(LocalService):
         from userid import global_id
         from userid import my_id
         self.sync_keys_requested = False
-        global_keys_folder_path = global_id.MakeGlobalID(
-            key_alias='master', customer=my_id.getGlobalID(), path='.keys')
+        global_keys_folder_path = global_id.MakeGlobalID(key_alias='master', customer=my_id.getGlobalID(), path='.keys')
         res = api.file_exists(global_keys_folder_path)
         if res['status'] != 'OK' or not res['result'] or not res['result'].get('exist'):
             res = api.file_create(global_keys_folder_path, as_folder=True)
@@ -232,7 +229,10 @@ class KeysStorageService(LocalService):
 
     def _on_index_synchronizer_state_changed(self, oldstate, newstate, event_string, *args, **kwargs):
         from twisted.internet.defer import Deferred
-        if oldstate in ['REQUEST?', 'SENDING', ] and newstate == 'IN_SYNC!':
+        if oldstate in [
+            'REQUEST?',
+            'SENDING',
+        ] and newstate == 'IN_SYNC!':
             if self.sync_keys_requested:
                 result = Deferred()
                 result.addCallback(self._on_keys_synchronized)
@@ -247,8 +247,7 @@ class KeysStorageService(LocalService):
         from userid import my_id
         if not config.conf().getBool('services/keys-storage/reset-unreliable-backup-copies'):
             return
-        global_keys_folder_path = global_id.MakeGlobalID(
-            key_alias='master', customer=my_id.getGlobalID(), path='.keys')
+        global_keys_folder_path = global_id.MakeGlobalID(key_alias='master', customer=my_id.getGlobalID(), path='.keys')
         lg.info('about to erase ".keys" folder in the catalog: %r' % global_keys_folder_path)
         res = api.file_delete(global_keys_folder_path)
         if res['status'] == 'OK':

@@ -37,6 +37,7 @@ def connect():
 
     return rpcconnections.Connection(('127.0.0.1', int(port)))
 
+
 if __name__ == '__main__':
     config = options.Get()
     config.read()
@@ -63,8 +64,8 @@ if __name__ == '__main__':
     # get balance
 
     s = connect()
-    s._send ('balanceget')
-    s._send (address)  # change address here to view other people's transactions
+    s._send('balanceget')
+    s._send(address)  # change address here to view other people's transactions
     stats_account = s._receive()
     balance = stats_account[0]
 
@@ -112,7 +113,7 @@ if __name__ == '__main__':
         is_float = 0
         sys.exit(1)
 
-    timestamp = '%.2f' % (time.time() - 5) #remote proofing
+    timestamp = '%.2f' % (time.time() - 5)  #remote proofing
     # TODO: use transaction object, no dup code for buffer assembling
     transaction = (str(timestamp), str(address), str(recipient_input), '%.8f' % float(amount_input), str(operation_input), str(openfield_input))  # this is signed
     # TODO: use polysign here
@@ -135,13 +136,13 @@ if __name__ == '__main__':
             print('Mempool: Sending more than owned')
 
         else:
-            tx_submit = (str (timestamp), str (address), str (recipient_input), '%.8f' % float (amount_input), str (signature_enc.decode ('utf-8')), str (public_key_b64encoded.decode('utf-8')), str (operation_input), str (openfield_input))
+            tx_submit = (str(timestamp), str(address), str(recipient_input), '%.8f' % float(amount_input), str(signature_enc.decode('utf-8')), str(public_key_b64encoded.decode('utf-8')), str(operation_input), str(openfield_input))
             while True:
                 try:
                     s._send('mpinsert')
-                    s._send (tx_submit)
+                    s._send(tx_submit)
                     reply = s._receive()
-                    print ('Client: {}'.format (reply))
+                    print('Client: {}'.format(reply))
                     if reply != '*':  # response can be empty due to different timeout setting
                         break
                     else:

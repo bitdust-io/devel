@@ -63,7 +63,7 @@ signature = signer.sign(h)
 signature_enc = base64.b64encode(signature)
 print('Encoded Signature: {}'.format(signature_enc))
 block_hash = hashlib.sha224(str((timestamp, transaction)).encode('utf-8')).hexdigest()  # first hash is simplified
-print ('Transaction Hash: {}'.format(block_hash))
+print('Transaction Hash: {}'.format(block_hash))
 
 if os.path.isfile('static/ledger.db'):
     print('You are beyond genesis')
@@ -76,7 +76,9 @@ else:
         cursor = conn.cursor()
 
         cursor.execute('CREATE TABLE IF NOT EXISTS "misc" ("block_height" INTEGER, "difficulty" TEXT)')
-        cursor.execute('CREATE TABLE IF NOT EXISTS "transactions" ("block_height" INTEGER, "timestamp" NUMERIC, "address" TEXT, "recipient" TEXT, "amount" NUMERIC, "signature" TEXT, "public_key" TEXT, "block_hash" TEXT, "fee" NUMERIC, "reward" NUMERIC, "operation" TEXT, "openfield" TEXT)')
+        cursor.execute(
+            'CREATE TABLE IF NOT EXISTS "transactions" ("block_height" INTEGER, "timestamp" NUMERIC, "address" TEXT, "recipient" TEXT, "amount" NUMERIC, "signature" TEXT, "public_key" TEXT, "block_hash" TEXT, "fee" NUMERIC, "reward" NUMERIC, "operation" TEXT, "openfield" TEXT)'
+        )
         cursor.execute('CREATE INDEX "Timestamp Index" ON "transactions" ("timestamp")')
         cursor.execute('CREATE INDEX "Signature Index" ON "transactions" ("signature")')
         cursor.execute('CREATE INDEX "Reward Index" ON "transactions" ("reward")')
@@ -119,7 +121,6 @@ else:
         if mem_cur is not None:
             mem_cur.close()
 
-
 if os.path.isfile('static/hyper.db'):
     print('You are beyond hyper genesis')
 else:
@@ -145,7 +146,6 @@ else:
     finally:
         if hyper_cursor is not None:
             hyper_cursor.close()
-
 
 if os.path.isfile('static/index.db'):
     print('Index already exists')

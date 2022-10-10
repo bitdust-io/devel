@@ -24,6 +24,7 @@
 
 from __future__ import absolute_import
 from __future__ import print_function
+
 _Debug = False
 _DebugLevel = 10
 
@@ -43,10 +44,7 @@ if __name__ == '__main__':
 
 #------------------------------------------------------------------------------
 
-
-
 from userid import my_id
-
 
 from lib import utime
 
@@ -62,12 +60,12 @@ def init():
 def shutdown():
     pass
 
+
 #------------------------------------------------------------------------------
 
+
 def build_starter(length=5):
-    return (''.join(
-        [random.choice(string.uppercase + string.lowercase + string.digits)
-         for _ in range(length)])) + '_'
+    return (''.join([random.choice(string.uppercase + string.lowercase + string.digits) for _ in range(length)])) + '_'
 
 
 def build_hash(payload):
@@ -99,13 +97,7 @@ def get_hash_difficulty(hexdigest, simplification=2):
     return difficulty - 1
 
 
-def work_with_known_difficulty(coin_json,
-                               difficulty,
-                               simplification=2,
-                               starter_length=10,
-                               starter_limit=99999,
-                               stop_marker=None,
-                               prev_hash=''):
+def work_with_known_difficulty(coin_json, difficulty, simplification=2, starter_length=10, starter_limit=99999, stop_marker=None, prev_hash=''):
     coin_json['miner'] = {
         'idurl': my_id.getIDURL().to_bin(),
     }
@@ -136,12 +128,7 @@ def work_with_known_difficulty(coin_json,
     return coin_json
 
 
-def work_from_known_hash(coin_json,
-                         prev_hash,
-                         simplification=2,
-                         starter_length=10,
-                         starter_limit=99999,
-                         stop_marker=None):
+def work_from_known_hash(coin_json, prev_hash, simplification=2, starter_length=10, starter_limit=99999, stop_marker=None):
     # data.update({'prev': prev_hash, })
     difficulty = get_hash_difficulty(prev_hash)
     complexity = get_hash_complexity(prev_hash, simplification)
@@ -157,6 +144,7 @@ def work_from_known_hash(coin_json,
         stop_marker=stop_marker,
         prev_hash=prev_hash,
     )
+
 
 #------------------------------------------------------------------------------
 
@@ -189,15 +177,11 @@ def _test():
             starter_limit = 99999
             coins = 0
             hexhash = ''
-            data = {'a': 'b', }
+            data = {
+                'a': 'b',
+            }
             while True:
-                coin = work_from_known_hash(
-                    data,
-                    hexhash,
-                    simplification=simplification,
-                    starter_length=starter_length,
-                    starter_limit=starter_limit,
-                    stop_marker=mc.marker)
+                coin = work_from_known_hash(data, hexhash, simplification=simplification, starter_length=starter_length, starter_limit=starter_limit, stop_marker=mc.marker)
                 if not coin:
                     break
                 coins += 1

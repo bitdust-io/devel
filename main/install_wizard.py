@@ -24,7 +24,6 @@
 #
 #
 #
-
 """
 .. module:: install_wizard.
 

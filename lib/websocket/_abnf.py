@@ -57,7 +57,9 @@ except ImportError:
 
 
 __all__ = [
-    'ABNF', 'continuous_frame', 'frame_buffer',
+    'ABNF',
+    'continuous_frame',
+    'frame_buffer',
     'STATUS_NORMAL',
     'STATUS_GOING_AWAY',
     'STATUS_PROTOCOL_ERROR',
@@ -118,26 +120,17 @@ class ABNF(object):
     OPCODE_PONG = 0xa
 
     # available operation code value tuple
-    OPCODES = (OPCODE_CONT, OPCODE_TEXT, OPCODE_BINARY, OPCODE_CLOSE,
-               OPCODE_PING, OPCODE_PONG)
+    OPCODES = (OPCODE_CONT, OPCODE_TEXT, OPCODE_BINARY, OPCODE_CLOSE, OPCODE_PING, OPCODE_PONG)
 
     # opcode human readable string
-    OPCODE_MAP = {
-        OPCODE_CONT: 'cont',
-        OPCODE_TEXT: 'text',
-        OPCODE_BINARY: 'binary',
-        OPCODE_CLOSE: 'close',
-        OPCODE_PING: 'ping',
-        OPCODE_PONG: 'pong'
-    }
+    OPCODE_MAP = {OPCODE_CONT: 'cont', OPCODE_TEXT: 'text', OPCODE_BINARY: 'binary', OPCODE_CLOSE: 'close', OPCODE_PING: 'ping', OPCODE_PONG: 'pong'}
 
     # data length threshold.
     LENGTH_7 = 0x7e
     LENGTH_16 = 1 << 16
     LENGTH_63 = 1 << 63
 
-    def __init__(self, fin=0, rsv1=0, rsv2=0, rsv3=0,
-                 opcode=OPCODE_TEXT, mask=1, data=''):
+    def __init__(self, fin=0, rsv1=0, rsv2=0, rsv3=0, opcode=OPCODE_TEXT, mask=1, data=''):
         """
         Constructor for ABNF.
         please check RFC for arguments.
@@ -220,9 +213,7 @@ class ABNF(object):
         if length >= ABNF.LENGTH_63:
             raise ValueError('data is too long')
 
-        frame_header = chr(self.fin << 7
-                           | self.rsv1 << 6 | self.rsv2 << 5 | self.rsv3 << 4
-                           | self.opcode)
+        frame_header = chr(self.fin << 7 | self.rsv1 << 6 | self.rsv2 << 5 | self.rsv3 << 4 | self.opcode)
         if length < ABNF.LENGTH_7:
             frame_header += chr(self.mask << 7 | length)
             frame_header = six.b(frame_header)
@@ -276,7 +267,7 @@ class ABNF(object):
             a = numpy.frombuffer(data, dtype='uint32')
             masked = numpy.bitwise_xor(a, [_mask_key]).astype('uint32')
             if len(data) > origlen:
-              return masked.tobytes()[:origlen]
+                return masked.tobytes()[:origlen]
             return masked.tobytes()
         else:
             _m = array.array('B', mask_key)
@@ -441,7 +432,6 @@ class continuous_frame(object):
         self.cont_data = None
         frame.data = data[1]
         if not self.fire_cont_frame and data[0] == ABNF.OPCODE_TEXT and not self.skip_utf8_validation and not validate_utf8(frame.data):
-            raise WebSocketPayloadException(
-                'cannot decode: ' + repr(frame.data))
+            raise WebSocketPayloadException('cannot decode: ' + repr(frame.data))
 
         return [data[0], frame]

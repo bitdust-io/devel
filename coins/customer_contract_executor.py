@@ -19,8 +19,6 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
-
-
 """
 .. module:: customer_contract_executor
 .. role:: red
@@ -76,6 +74,7 @@ _ActiveCustomerContracts = dict()  # provides CustomerContractExecutor object by
 
 #------------------------------------------------------------------------------
 
+
 def all_contracts():
     global _ActiveCustomerContracts
     return _ActiveCustomerContracts
@@ -115,7 +114,9 @@ def recheck_contract(supplier_idurl):
         contract_executor = init_contract(supplier_idurl)
     contract_executor.automat('recheck')
 
+
 #------------------------------------------------------------------------------
+
 
 class CustomerContractExecutor(automat.Automat):
     """

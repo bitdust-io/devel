@@ -24,8 +24,6 @@
 #
 #
 #
-
-
 """
 .. module:: online_status
 .. role:: red
@@ -61,7 +59,6 @@ EVENTS:
     * :red:`timer-1min`
     * :red:`timer-20sec`
 """
-
 
 #------------------------------------------------------------------------------
 
@@ -117,6 +114,7 @@ _OfflineCheckTask = None
 
 #------------------------------------------------------------------------------
 
+
 def init():
     """
     Called from top level code when the software is starting.
@@ -156,6 +154,7 @@ def shutdown():
 
 #------------------------------------------------------------------------------
 
+
 def online_statuses():
     global _OnlineStatusDict
     return _OnlineStatusDict
@@ -177,7 +176,9 @@ def check_create(idurl, keep_alive=True):
             lg.out(_DebugLevel, 'online_status.check_create instance for %r was not found, made a new with state OFFLINE' % idurl)
     return True
 
+
 #------------------------------------------------------------------------------
+
 
 def on_ping_failed(err, idurl=None, channel=None):
     if _Debug:
@@ -247,7 +248,9 @@ def handshake(idurl, channel=None, ack_timeout=15, ping_retries=2, keep_alive=Fa
     A(idurl, 'handshake', result, channel=channel, ack_timeout=ack_timeout, ping_retries=ping_retries, original_idurl=idurl.to_original())
     return result
 
+
 #------------------------------------------------------------------------------
+
 
 def isKnown(idurl):
     """
@@ -280,7 +283,10 @@ def isOnline(idurl):
     idurl = id_url.field(idurl)
     if not isKnown(idurl):
         return False
-    return A(idurl).state in ['CONNECTED', 'PING?', ]
+    return A(idurl).state in [
+        'CONNECTED',
+        'PING?',
+    ]
 
 
 def isOffline(idurl):
@@ -420,7 +426,9 @@ def countOnlineAmong(idurls_list):
                 num += 1
     return num
 
+
 #------------------------------------------------------------------------------
+
 
 def add_online_status_listener_callback(idurl, callback_method, oldstate=None, newstate=None, callback_id=None):
     """
@@ -447,13 +455,17 @@ def remove_online_status_listener_callback(idurl, callback_method=None, callback
         return False
     return online_status_instance.removeStateChangedCallback(cb=callback_method, callback_id=callback_id) > 0
 
+
 #------------------------------------------------------------------------------
+
 
 def populate_online_statuses():
     for online_s in online_statuses().values():
         listeners.push_snapshot('online_status', snap_id=online_s.idurl.to_text(), data=online_s.to_json())
 
+
 #------------------------------------------------------------------------------
+
 
 def OutboxStatus(pkt_out, status, error=''):
     """
@@ -474,7 +486,10 @@ def OutboxStatus(pkt_out, status, error=''):
             if pkt_out.outpacket.OwnerID == my_id.getIDURL() and pkt_out.outpacket.CreatorID == my_id.getIDURL():
                 # if not handshaker.is_running(pkt_out.outpacket.RemoteID):
                 if _Debug:
-                    lg.dbg(_DebugLevel, 'ping packet %s addressed to %r was "unanswered"' % (pkt_out, pkt_out.outpacket.RemoteID, ))
+                    lg.dbg(_DebugLevel, 'ping packet %s addressed to %r was "unanswered"' % (
+                        pkt_out,
+                        pkt_out.outpacket.RemoteID,
+                    ))
     else:
         if _Debug:
             lg.dbg(_DebugLevel, 'packet %s is "%s" with %s error: %r' % (pkt_out, status, pkt_out.outpacket, error))
@@ -523,7 +538,9 @@ def PacketSendingTimeout(remoteID, packetID):
     A(remoteID, 'sent-timeout', packetID)
     return True
 
+
 #------------------------------------------------------------------------------
+
 
 def RunOfflineChecks():
     for o_status in list(_OnlineStatusDict.values()):
@@ -544,7 +561,9 @@ def RunOfflineChecks():
             continue
     return True
 
+
 #------------------------------------------------------------------------------
+
 
 def A(idurl, event=None, *args, **kwargs):
     """
@@ -570,7 +589,9 @@ def A(idurl, event=None, *args, **kwargs):
         _OnlineStatusDict[idurl].automat(event, *args, **kwargs)
     return _OnlineStatusDict[idurl]
 
+
 #------------------------------------------------------------------------------
+
 
 class OnlineStatus(automat.Automat):
     """
@@ -580,7 +601,7 @@ class OnlineStatus(automat.Automat):
     timers = {
         'timer-1min': (60, ['CONNECTED']),
         'timer-20sec': (20.0, ['PING?']),
-        }
+    }
 
     def __init__(self, idurl, name, state, debug_level=0, log_events=False, log_transitions=False, **kwargs):
         """
@@ -590,14 +611,7 @@ class OnlineStatus(automat.Automat):
         self.latest_inbox_time = None
         self.latest_check_time = None
         self.keep_alive = False
-        super(OnlineStatus, self).__init__(
-            name=name,
-            state=state,
-            debug_level=debug_level,
-            log_events=log_events,
-            log_transitions=log_transitions,
-            **kwargs
-        )
+        super(OnlineStatus, self).__init__(name=name, state=state, debug_level=debug_level, log_events=log_events, log_transitions=log_transitions, **kwargs)
         if _Debug:
             lg.out(_DebugLevel, 'online_status.ContactStatus %s %s %s' % (name, state, idurl))
 
@@ -626,21 +640,25 @@ class OnlineStatus(automat.Automat):
             lg.out(_DebugLevel, '%s : [%s]->[%s]' % (self.name, oldstate, newstate))
         if newstate == 'CONNECTED':
             lg.info('remote node connected : %s' % self.idurl)
-            events.send('node-connected', data=dict(
-                global_id=self.idurl.to_id(),
-                idurl=self.idurl,
-                old_state=oldstate,
-                new_state=newstate,
-            ))
+            events.send(
+                'node-connected', data=dict(
+                    global_id=self.idurl.to_id(),
+                    idurl=self.idurl,
+                    old_state=oldstate,
+                    new_state=newstate,
+                )
+            )
             listeners.push_snapshot('online_status', snap_id=self.idurl.to_text(), data=self.to_json())
         if newstate == 'OFFLINE' and oldstate != 'AT_STARTUP':
             lg.info('remote node disconnected : %s' % self.idurl)
-            events.send('node-disconnected', data=dict(
-                global_id=self.idurl.to_id(),
-                idurl=self.idurl,
-                old_state=oldstate,
-                new_state=newstate,
-            ))
+            events.send(
+                'node-disconnected', data=dict(
+                    global_id=self.idurl.to_id(),
+                    idurl=self.idurl,
+                    old_state=oldstate,
+                    new_state=newstate,
+                )
+            )
             listeners.push_snapshot('online_status', snap_id=self.idurl.to_text(), data=self.to_json())
         if newstate == 'PING?' and oldstate != 'AT_STARTUP':
             listeners.push_snapshot('online_status', snap_id=self.idurl.to_text(), data=self.to_json())
@@ -868,8 +886,14 @@ class OnlineStatus(automat.Automat):
         except:
             lg.exc()
         if _Debug:
-            lg.out(_DebugLevel, 'online_status._on_ping_success %r : %r' % (self.idurl, result, ))
-        self.automat('shook-up-hands', (response, info, ))
+            lg.out(_DebugLevel, 'online_status._on_ping_success %r : %r' % (
+                self.idurl,
+                result,
+            ))
+        self.automat('shook-up-hands', (
+            response,
+            info,
+        ))
         return None
 
     def _on_ping_failed(self, err):
@@ -878,6 +902,9 @@ class OnlineStatus(automat.Automat):
         except:
             msg = str(err)
         if _Debug:
-            lg.out(_DebugLevel, 'online_status._on_ping_failed %r : %s' % (self.idurl, msg, ))
+            lg.out(_DebugLevel, 'online_status._on_ping_failed %r : %s' % (
+                self.idurl,
+                msg,
+            ))
         self.automat('ping-failed', err)
         return None

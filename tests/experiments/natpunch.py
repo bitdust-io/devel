@@ -20,7 +20,6 @@
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
 
-
 from __future__ import absolute_import
 from __future__ import print_function
 import sys
@@ -41,6 +40,7 @@ from lib import udp
 
 
 def listen(local_port, servers, incomings_filename):
+
     def _loop():
         incomings = []
         for line in open(incomings_filename).read().split('\n'):
@@ -51,16 +51,19 @@ def listen(local_port, servers, incomings_filename):
             for inc in incomings:
                 udp.send_command(local_port, udp.CMD_PING, 'ping', inc)
         reactor.callLater(5, _loop)
+
     for srv in servers:
         udp.send_command(local_port, udp.CMD_PING, 'ping', srv)
     _loop()
 
 
 def connect(local_port, remote_ip, servers, min_port, max_port):
+
     def _loop():
         for port_num in range(min_port, max_port + 1):
             udp.send_command(local_port, udp.CMD_PING, 'ping', (remote_ip, port_num))
         reactor.callLater(5, _loop)
+
     for srv in servers:
         udp.send_command(local_port, udp.CMD_PING, 'ping', srv)
     _loop()
@@ -132,6 +135,7 @@ def main():
         connect(port_num, remote_ip, servers, min_port, max_port)
 
     reactor.run()
+
 
 if __name__ == '__main__':
     main()

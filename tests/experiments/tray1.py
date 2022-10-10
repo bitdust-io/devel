@@ -66,7 +66,8 @@ W\xdb\xbf\xd3:\xb7{49\x0e\xeem\x1dkAG+Z\xb4l\xdf\xc6o-\xc3\xea\x9fK\xbf\x84\
 \xf2\xf2\xfc\x07\x85B\xdel\x8e\xc7%]\xd7/\xa7R\xa9\xe4\x96\xc04M\xc7q\x9c\
 \xb5\x89\x89\x89N!\xc4\xd3S\xdf|4\xcd\xfftw\xff\x97_]\xd3\xf5I\xc0\xf2}\xdf\
 \x02\xf8\x0b\xc1.\x9e\xd8Y.\x85\x85\x00\x00\x00\x00IEND\xaeB`\x822\x86\xba\
-\xb3')
+\xb3'
+    )
 
 
 def getBitmap():
@@ -82,6 +83,7 @@ def getIcon():
     icon = EmptyIcon()
     icon.CopyFromBitmap(getBitmap())
     return icon
+
 
 # ============================================================================
 
@@ -103,12 +105,15 @@ class MainWindow(wx.Frame):
         self.Show()
 
 #   --------------------------------------------------------------------------
+
     def OnClose(self, e):
         self.tbicon.Destroy()
         self.Destroy()
         wx.Exit()
 
+
 #   --------------------------------------------------------------------------
+
     def OnButton(self, e):
         # HERE WE GO!
         self.number += 1
@@ -131,11 +136,9 @@ class MainWindow(wx.Frame):
         image = bitmap.ConvertToImage()
         for x in range(image.GetWidth()):
             for y in range(image.GetHeight()):
-                p = wx.Colour(image.GetRed(x, y),
-                              image.GetGreen(x, y),
-                              image.GetBlue(x, y))
+                p = wx.Colour(image.GetRed(x, y), image.GetGreen(x, y), image.GetBlue(x, y))
                 if p == my_solid_color:
-                    image.SetAlpha(x, y, 255)   # Clear the alpha
+                    image.SetAlpha(x, y, 255)  # Clear the alpha
                     image.SetRGB(x, y, 0, 0, 0)  # Set the color that we want
 
         # Convert back to Bitmap and save to Icon

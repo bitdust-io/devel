@@ -24,7 +24,6 @@
 #
 #
 #
-
 """
 .. module:: http_interface.
 
@@ -73,6 +72,7 @@ _GateProxy = None
 def proxy():
     global _GateProxy
     return _GateProxy
+
 
 #------------------------------------------------------------------------------
 
@@ -165,6 +165,7 @@ class GateInterface():
         """
         return http_node.send_file(remote_idurl, filename)
 
+
 #     def connect_to(self, host):
 #         """
 #         """
@@ -242,16 +243,14 @@ def interface_disconnected(result=None):
 
 def interface_register_file_sending(host, receiver_idurl, filename, size=0, description=''):
     if proxy():
-        return proxy().callRemote(
-            'register_file_sending', 'http', net_misc.pack_address(host), receiver_idurl, filename, size, description)
+        return proxy().callRemote('register_file_sending', 'http', net_misc.pack_address(host), receiver_idurl, filename, size, description)
     lg.warn('transport_http is not ready')
     return fail(Exception('transport_http is not ready'))
 
 
 def interface_register_file_receiving(host, sender_idurl, filename, size=0):
     if proxy():
-        return proxy().callRemote(
-            'register_file_receiving', 'http', net_misc.pack_address(host), sender_idurl, filename, size)
+        return proxy().callRemote('register_file_receiving', 'http', net_misc.pack_address(host), sender_idurl, filename, size)
     lg.warn('transport_http is not ready')
     return fail(Exception('transport_http is not ready'))
 
@@ -272,7 +271,6 @@ def interface_unregister_file_receiving(transfer_id, status, size=0, error_messa
 
 def interface_cancelled_file_sending(host, filename, size=0, description=None, error_message=None):
     if proxy():
-        return proxy().callRemote(
-            'cancelled_file_sending', 'http', net_misc.pack_address(host), filename, size, description, error_message)
+        return proxy().callRemote('cancelled_file_sending', 'http', net_misc.pack_address(host), filename, size, description, error_message)
     lg.warn('transport_http is not ready')
     return fail(Exception('transport_http is not ready'))

@@ -31,6 +31,7 @@ from lib import strng
 
 #------------------------------------------------------------------------------
 
+
 def DictToBytes(dct, encoding='latin1', errors='strict', keys_to_text=False, values_to_text=False, pack_types=False):
     """
     Calls `json.dupms()` method for input dict to build bytes output.

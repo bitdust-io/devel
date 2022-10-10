@@ -24,7 +24,6 @@
 #
 #
 #
-
 """
 .. module:: bandwidth.
 

@@ -25,7 +25,6 @@
 #
 #
 #
-
 """
 .. module:: identity.
 
@@ -204,29 +203,18 @@ class identity(object):
     * publickey : the public part of user's key, string in twisted.conch.ssh format
     * signature : digital signature to protect the file
     """
-    sources = []        # list of URLs, first is primary URL and name
-    contacts = []       # list of ways to contact this identity
-    certificates = []   # signatures by identity servers
-    scrubbers = []      # list of URLs for people allowed to scrub
-    postage = b'1'      # a price for message delivery if not on correspondents list
-    date = b''          # date
-    version = b''       # version string
-    revision = b'0'     # revision number, every time my id were modified this value will be increased by 1
-    publickey = b''     # string in twisted.conch.ssh format
-    signature = b''     # digital signature
+    sources = []  # list of URLs, first is primary URL and name
+    contacts = []  # list of ways to contact this identity
+    certificates = []  # signatures by identity servers
+    scrubbers = []  # list of URLs for people allowed to scrub
+    postage = b'1'  # a price for message delivery if not on correspondents list
+    date = b''  # date
+    version = b''  # version string
+    revision = b'0'  # revision number, every time my id were modified this value will be increased by 1
+    publickey = b''  # string in twisted.conch.ssh format
+    signature = b''  # digital signature
 
-    def __init__(self,
-                 sources=[],
-                 contacts=[],
-                 certificates=[],
-                 scrubbers=[],
-                 postage=b'1',
-                 date=b'',
-                 version=b'',
-                 revision=b'0',
-                 publickey=b'',
-                 xmlsrc=None,
-                 filename=b''):
+    def __init__(self, sources=[], contacts=[], certificates=[], scrubbers=[], postage=b'1', date=b'', version=b'', revision=b'0', publickey=b'', xmlsrc=None, filename=b''):
 
         self.sources = []
         if sources:
@@ -262,16 +250,16 @@ class identity(object):
         """
         Erase all fields data, clear identity.
         """
-        self.sources = []       # list of URLs for fetching this identiy, first is primary URL and name - called IDURL
+        self.sources = []  # list of URLs for fetching this identiy, first is primary URL and name - called IDURL
         self.certificates = []  # identity servers each sign the source they are with - hash just (IDURL + publickey)
-        self.publickey = b''    # string
-        self.contacts = []      # list of ways to contact this identity
-        self.scrubbers = []     # list of URLs for people allowed to scrub
-        self.date = b''         # date
-        self.postage = b'1'     # postage price for message delivery if not on correspondents list
-        self.version = b''      # version string
-        self.signature = b''    # digital signature
-        self.revision = b'0'    # revision number
+        self.publickey = b''  # string
+        self.contacts = []  # list of ways to contact this identity
+        self.scrubbers = []  # list of URLs for people allowed to scrub
+        self.date = b''  # date
+        self.postage = b'1'  # postage price for message delivery if not on correspondents list
+        self.version = b''  # version string
+        self.signature = b''  # digital signature
+        self.revision = b'0'  # revision number
 
     def default(self):
         """
@@ -1011,6 +999,7 @@ class identity(object):
 
 #-------------------------------------------------------------------------------
 
+
 def test1():
     """
     Some tests.
@@ -1022,7 +1011,7 @@ def test1():
         print('myidentity is Valid!!!!')
     else:
         print('myidentity is not Valid')
-        my_id.saveLocalIdentity()            # sign and save
+        my_id.saveLocalIdentity()  # sign and save
         raise Exception('myidentity is not Valid')
     print('myidentity.contacts')
     print(myidentity.contacts)
@@ -1048,7 +1037,9 @@ def test2():
     ident = my_id.buildDefaultIdentity()
     print(ident.serialize())
 
+
 #------------------------------------------------------------------------------
+
 
 def main():
     """
@@ -1101,7 +1092,6 @@ def update():
 
 
 #------------------------------------------------------------------------------
-
 
 if __name__ == '__main__':
     lg.set_debug_level(18)

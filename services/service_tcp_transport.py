@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 ..
 
@@ -61,13 +60,10 @@ class TCPTransportService(LocalService):
         self.starting_deferred = Deferred()
         self.interface = tcp_interface.GateInterface()
         self.transport = network_transport.NetworkTransport('tcp', self.interface)
-        self.transport.automat(
-            'init', (gateway.listener(), self._on_transport_state_changed))
+        self.transport.automat('init', (gateway.listener(), self._on_transport_state_changed))
         reactor.callLater(0, self.transport.automat, 'start')  # @UndefinedVariable
-        conf().addConfigNotifier('services/tcp-transport/enabled',
-                           self._on_enabled_disabled)
-        conf().addConfigNotifier('services/tcp-transport/receiving-enabled',
-                           self._on_receiving_enabled_disabled)
+        conf().addConfigNotifier('services/tcp-transport/enabled', self._on_enabled_disabled)
+        conf().addConfigNotifier('services/tcp-transport/receiving-enabled', self._on_receiving_enabled_disabled)
         return self.starting_deferred
 
     def stop(self):
@@ -92,12 +88,20 @@ class TCPTransportService(LocalService):
         from logs import lg
         lg.info('%s -> %s in %r  starting_deferred=%r' % (oldstate, newstate, transport, bool(self.starting_deferred)))
         if self.starting_deferred:
-            if newstate in ['LISTENING', ] and oldstate != newstate:
+            if newstate in [
+                'LISTENING',
+            ] and oldstate != newstate:
                 self.starting_deferred.callback(True)
                 self.starting_deferred = None
-            elif newstate in ['OFFLINE', ] and oldstate != newstate and oldstate not in ['INIT', ]:
+            elif newstate in [
+                'OFFLINE',
+            ] and oldstate != newstate and oldstate not in [
+                'INIT',
+            ]:
                 self.starting_deferred.errback(Exception(newstate))
                 self.starting_deferred = None
+
+
 #        if self.transport:
 #            from p2p import network_connector
 #            network_connector.A('network-transport-state-changed', self.transport)
@@ -105,13 +109,11 @@ class TCPTransportService(LocalService):
     def _on_enabled_disabled(self, path, value, oldvalue, result):
         from p2p import network_connector
         from logs import lg
-        lg.out(2, 'service_tcp_transport._on_enabled_disabled : %s->%s : %s' % (
-            oldvalue, value, path))
+        lg.out(2, 'service_tcp_transport._on_enabled_disabled : %s->%s : %s' % (oldvalue, value, path))
         network_connector.A('reconnect')
 
     def _on_receiving_enabled_disabled(self, path, value, oldvalue, result):
         from p2p import network_connector
         from logs import lg
-        lg.out(2, 'service_tcp_transport._on_receiving_enabled_disabled : %s->%s : %s' % (
-            oldvalue, value, path))
+        lg.out(2, 'service_tcp_transport._on_receiving_enabled_disabled : %s->%s : %s' % (oldvalue, value, path))
         network_connector.A('reconnect')

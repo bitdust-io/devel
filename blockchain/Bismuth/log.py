@@ -2,7 +2,6 @@ import logging, sys
 from logging.handlers import RotatingFileHandler
 
 
-
 def filter_status(record):
     """"
     Only displays log messages about status info
@@ -40,7 +39,7 @@ def log(logFile, level_input='WARNING', terminal_output=False):
     ch = logging.StreamHandler(sys.stdout)
     ch.setLevel(level)
     # TODO: We could have 2 level in the config, one for screen and one for files.
-    print ('Logging level: {} ({})'.format(level_input,level))
+    print('Logging level: {} ({})'.format(level_input, level))
     if terminal_output != True:
         ch.addFilter(filter_status)
         # No need for complete func and line info here.

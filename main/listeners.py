@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 .. module:: listeners.
 
@@ -60,11 +59,14 @@ _ModelsToBePopulated = []
 
 #------------------------------------------------------------------------------
 
+
 def listeners():
     global _Listeners
     return _Listeners
 
+
 #------------------------------------------------------------------------------
+
 
 def init():
     if _Debug:
@@ -76,7 +78,9 @@ def shutdown():
         lg.out(_DebugLevel, 'listeners.shutdown')
     clear_listeners()
 
+
 #------------------------------------------------------------------------------
+
 
 class Snapshot(object):
 
@@ -101,7 +105,9 @@ class Snapshot(object):
             j['deleted'] = utime.get_sec1970()
         return j
 
+
 #------------------------------------------------------------------------------
+
 
 def add_listener(listener_callback, model_name='*'):
     """
@@ -147,7 +153,9 @@ def clear_listeners(model_name='*'):
     listeners().clear()
     return removed
 
+
 #------------------------------------------------------------------------------
+
 
 def dispatch_snapshot(snap):
     handled = 0
@@ -171,7 +179,9 @@ def dispatch_snapshot(snap):
         lg.args(_DebugLevel, handled=handled, snap=snap)
     return handled
 
+
 #------------------------------------------------------------------------------
+
 
 def push_snapshot(model_name, snap_id=None, data=None, created=None, deleted=False, fast=False):
     snap = Snapshot(model_name, snap_id=snap_id, data=data, created=created, deleted=deleted)
@@ -181,7 +191,9 @@ def push_snapshot(model_name, snap_id=None, data=None, created=None, deleted=Fal
         reactor.callLater(0, dispatch_snapshot, snap)  # @UndefinedVariable
     return snap
 
+
 #------------------------------------------------------------------------------
+
 
 def populate_later(model_name=None):
     global _ModelsToBePopulated

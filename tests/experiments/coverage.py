@@ -38,6 +38,7 @@ def run_tests():
     from interface import api
     reactor.callLater(15, api.ping, 'http://p2p-id.ru/atg314.xml')
 
+
 #------------------------------------------------------------------------------
 
 
@@ -55,6 +56,7 @@ def main():
     reactor.callLater(60, api.stop)
     bpmain.run_twisted_reactor()
     bpmain.shutdown()
+
 
 if __name__ == '__main__':
     import coverage

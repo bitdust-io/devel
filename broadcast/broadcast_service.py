@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 .. module:: broadcast_service.
 
@@ -89,7 +88,12 @@ def prepare_broadcast_message(owner, payload):
 
 def verfify_broadcast_message(jmsg):
     s = set(jmsg.keys())
-    s = s.intersection(['owner', 'started', 'id', 'payload', ])
+    s = s.intersection([
+        'owner',
+        'started',
+        'id',
+        'payload',
+    ])
     if len(s) != 4:
         return False
     return True
@@ -108,23 +112,28 @@ def read_message_from_packet(newpacket):
 def packet_for_broadcaster(broadcaster_idurl, json_data):
     if 'broadcaster' not in json_data:
         json_data['broadcaster'] = broadcaster_idurl
-    return signed.Packet(commands.Broadcast(),
-                         json_data['owner'],
-                         my_id.getIDURL(),
-                         json_data['id'],
-                         json.dumps(json_data),
-                         broadcaster_idurl,)
+    return signed.Packet(
+        commands.Broadcast(),
+        json_data['owner'],
+        my_id.getIDURL(),
+        json_data['id'],
+        json.dumps(json_data),
+        broadcaster_idurl,
+    )
 
 
 def packet_for_listener(listener_idurl, json_data):
     # if 'broadcaster' not in json_data:
     json_data['broadcaster'] = my_id.getIDURL()
-    return signed.Packet(commands.Broadcast(),
-                         json_data['owner'],
-                         my_id.getIDURL(),
-                         json_data['id'],
-                         json.dumps(json_data),
-                         listener_idurl,)
+    return signed.Packet(
+        commands.Broadcast(),
+        json_data['owner'],
+        my_id.getIDURL(),
+        json_data['id'],
+        json.dumps(json_data),
+        listener_idurl,
+    )
+
 
 #------------------------------------------------------------------------------
 
@@ -144,17 +153,20 @@ def send_broadcast_message(payload):
         return None
     return msg
 
+
 #------------------------------------------------------------------------------
 
 
 def on_incoming_broadcast_message(json_msg):
     lg.out(2, 'service_broadcasting._on_incoming_broadcast_message : %r' % json_msg)
 
+
 #------------------------------------------------------------------------------
 
 
 def _test():
     print(prepare_broadcast_message(my_id.getIDURL(), {'test': 'okidoki'}))
+
 
 #------------------------------------------------------------------------------
 

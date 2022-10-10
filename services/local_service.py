@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 .. module:: local_service.
 
@@ -76,6 +75,7 @@ from services import driver
 
 #------------------------------------------------------------------------------
 
+
 class LocalService(automat.Automat):
     """
     This class implements all the functionality of the ``local_service()``
@@ -101,8 +101,14 @@ class LocalService(automat.Automat):
             my_data_dir_path = self.data_dir_path()
             if not os.path.isdir(my_data_dir_path):
                 os.makedirs(my_data_dir_path)
-        automat.Automat.__init__(self, name=self.service_name, state='OFF',
-                                 debug_level=_DebugLevel, log_events=_Debug, log_transitions=_Debug, )
+        automat.Automat.__init__(
+            self,
+            name=self.service_name,
+            state='OFF',
+            debug_level=_DebugLevel,
+            log_events=_Debug,
+            log_transitions=_Debug,
+        )
 
     def to_json(self):
         j = super().to_json()
@@ -305,7 +311,10 @@ class LocalService(automat.Automat):
             if self.service_name in svc.dependent_on():
                 if svc.state != 'OFF' and svc.state != 'DEPENDS_OFF' and svc.state != 'NOT_INSTALLED':
                     if _Debug:
-                        lg.out(_DebugLevel, '    dependent %r not stopped yet, %r will have to wait' % (svc, self, ))
+                        lg.out(_DebugLevel, '    dependent %r not stopped yet, %r will have to wait' % (
+                            svc,
+                            self,
+                        ))
                     return False
         return True
 
@@ -344,7 +353,10 @@ class LocalService(automat.Automat):
         if result:
             self.automat('service-started')
         else:
-            lg.warn('failed to start %r, result from .start() method is %r' % (self, result, ))
+            lg.warn('failed to start %r, result from .start() method is %r' % (
+                self,
+                result,
+            ))
             self.automat('service-failed', Exception('service %r failed to start' % self))
 
     def doStopService(self, *args, **kwargs):
@@ -454,14 +466,15 @@ class LocalService(automat.Automat):
         self.result_deferred = None
         self.destroy()
 
-
     def _do_start(self):
         return self.start()
 
     def _do_stop(self):
         return self.stop()
 
+
 #------------------------------------------------------------------------------
+
 
 class SlowStartingLocalService(LocalService):
 
@@ -471,8 +484,7 @@ class SlowStartingLocalService(LocalService):
         if getattr(self, 'starting_deferred', None):
             raise Exception('service already starting')
         self.starting_deferred = Deferred()
-        self.starting_deferred.addErrback(lambda err: lg.warn('service %r was not started: %r' % (
-            self.service_name, err.getErrorMessage() if err else 'unknown reason')))
+        self.starting_deferred.addErrback(lambda err: lg.warn('service %r was not started: %r' % (self.service_name, err.getErrorMessage() if err else 'unknown reason')))
         return self.start()
 
     def _do_stop(self):

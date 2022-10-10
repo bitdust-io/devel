@@ -22,7 +22,6 @@
 #
 #
 #
-
 """
 .. module:: tar_file.
 
@@ -83,6 +82,7 @@ else:
     binary_type = str
 
 #------------------------------------------------------------------------------
+
 
 def is_text(s):
     """
@@ -176,7 +176,9 @@ def printexc():
     if _Debug:
         printlog('\n' + traceback.format_exc() + '\n')
 
+
 #------------------------------------------------------------------------------
+
 
 def LinuxExcludeFunction(source_path, tar_path):
     """
@@ -220,6 +222,7 @@ def WindowsExcludeFunction(source_path, tar_path):
         return True
     return False  # don't exclude the file
 
+
 #------------------------------------------------------------------------------
 
 _ExcludeFunction = LinuxExcludeFunction
@@ -228,13 +231,16 @@ if platform.uname()[0] == 'Windows':
 
 #------------------------------------------------------------------------------
 
+
 def writetar_filter(tarinfo, sourcepath):
     global _ExcludeFunction
     if _ExcludeFunction(sourcepath, tarinfo.name):
         return None
     return tarinfo
 
+
 #------------------------------------------------------------------------------
+
 
 def writetar(sourcepath, arcname=None, subdirs=True, compression='none', encoding=None, fileobj=None):
     """
@@ -242,8 +248,7 @@ def writetar(sourcepath, arcname=None, subdirs=True, compression='none', encodin
     """
     global _ExcludeFunction
     if _Debug:
-        printlog('WRITE: %s arcname=%s, subdirs=%s, compression=%s, encoding=%s\n' % (
-            sourcepath, arcname, subdirs, compression, encoding))
+        printlog('WRITE: %s arcname=%s, subdirs=%s, compression=%s, encoding=%s\n' % (sourcepath, arcname, subdirs, compression, encoding))
     if not fileobj:
         fileobj = sys.stdout
     mode = 'w|'
@@ -255,7 +260,7 @@ def writetar(sourcepath, arcname=None, subdirs=True, compression='none', encodin
     else:
         arcname = to_text(arcname)
     # DEBUG: tar = tarfile.open('', mode, fileobj=open('out.tar', 'wb'), encoding=encoding)
-    tar = tarfile.open('', mode, fileobj=fileobj, encoding=encoding, bufsize=1024*1024)
+    tar = tarfile.open('', mode, fileobj=fileobj, encoding=encoding, bufsize=1024 * 1024)
     tar.add(
         name=sourcepath,
         arcname=arcname,
@@ -276,7 +281,9 @@ def writetar(sourcepath, arcname=None, subdirs=True, compression='none', encodin
     tar.close()
     return True
 
+
 #------------------------------------------------------------------------------
+
 
 def readtar(archivepath, outputdir, encoding=None):
     """
@@ -284,13 +291,13 @@ def readtar(archivepath, outputdir, encoding=None):
     folder.
     """
     if _Debug:
-        printlog('READ: %s to %s, encoding=%s\n' % (
-            archivepath, outputdir, encoding))
+        printlog('READ: %s to %s, encoding=%s\n' % (archivepath, outputdir, encoding))
     mode = 'r:*'
     tar = tarfile.open(archivepath, mode, encoding=encoding)
     tar.extractall(outputdir)
     tar.close()
     return True
+
 
 #------------------------------------------------------------------------------
 
@@ -350,8 +357,8 @@ def main():
 
     return 0
 
-#------------------------------------------------------------------------------
 
+#------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     main()

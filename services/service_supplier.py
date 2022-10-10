@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 ..
 
@@ -56,7 +55,9 @@ class SupplierService(LocalService):
 
     def attached_dht_layers(self):
         from dht import dht_records
-        return [dht_records.LAYER_SUPPLIERS, ]
+        return [
+            dht_records.LAYER_SUPPLIERS,
+        ]
 
     def start(self):
         from logs import lg
@@ -75,12 +76,14 @@ class SupplierService(LocalService):
         space_dict, _ = accounting.read_customers_quotas()
         for customer_idurl in contactsdb.customers():
             known_customer_meta_info = contactsdb.get_customer_meta_info(customer_idurl)
-            events.send('existing-customer-accepted', data=dict(
-                idurl=customer_idurl,
-                allocated_bytes=space_dict.get(customer_idurl.to_bin()),
-                ecc_map=known_customer_meta_info.get('ecc_map'),
-                position=known_customer_meta_info.get('position'),
-            ))
+            events.send(
+                'existing-customer-accepted', data=dict(
+                    idurl=customer_idurl,
+                    allocated_bytes=space_dict.get(customer_idurl.to_bin()),
+                    ecc_map=known_customer_meta_info.get('ecc_map'),
+                    position=known_customer_meta_info.get('position'),
+                )
+            )
         if driver.is_on('service_entangled_dht'):
             self._do_connect_suppliers_dht_layer()
         else:
@@ -165,12 +168,18 @@ class SupplierService(LocalService):
                 # this is "third" customer accessing data belongs to "second" customer
                 # TODO: for now just stop it
                 lg.warn('under construction, key_id=%s customer_idurl=%s target_customer_idurl=%s' % (
-                    key_id, customer_idurl, target_customer_idurl, ))
+                    key_id,
+                    customer_idurl,
+                    target_customer_idurl,
+                ))
                 p2p_service.SendFail(newpacket, 'under construction')
                 return False
             customer_space.register_customer_key(customer_public_key_id, customer_public_key)
             # do not create connection with that customer, only accept the request
-            lg.info('external customer %s requested access to shared data at %s' % (customer_id, key_id, ))
+            lg.info('external customer %s requested access to shared data at %s' % (
+                customer_id,
+                key_id,
+            ))
             return p2p_service.SendAck(newpacket, 'accepted')
         # key_id is not present in the request:
         # this is a request to connect new customer (or reconnect existing one) to that supplier
@@ -194,8 +203,7 @@ class SupplierService(LocalService):
             # need to find that old idurl value and replace with the new one
             for other_customer_idurl in space_dict.keys():
                 if other_customer_idurl and other_customer_idurl != 'free' and id_url.field(other_customer_idurl) == customer_idurl:
-                    lg.info('found rotated customer identity in space file, switching: %r -> %r' % (
-                        other_customer_idurl, customer_idurl.to_bin()))
+                    lg.info('found rotated customer identity in space file, switching: %r -> %r' % (other_customer_idurl, customer_idurl.to_bin()))
                     space_dict[customer_idurl.to_bin()] = space_dict.pop(other_customer_idurl)
                     break
             if customer_idurl.to_bin() not in list(space_dict.keys()):
@@ -239,27 +247,29 @@ class SupplierService(LocalService):
         customer_space.register_customer_key(customer_public_key_id, customer_public_key)
         reactor.callLater(0, local_tester.TestUpdateCustomers)  # @UndefinedVariable
         if new_customer:
-            lg.info('NEW CUSTOMER: ACCEPTED   %s family_position=%s ecc_map=%s allocated_bytes=%s' % (
-                customer_idurl, family_position, ecc_map, bytes_for_customer))
-            events.send('new-customer-accepted', data=dict(
-                idurl=customer_idurl,
-                allocated_bytes=bytes_for_customer,
-                ecc_map=ecc_map,
-                position=family_position,
-                family_snapshot=family_snapshot,
-                key_id=customer_public_key_id,
-            ))
+            lg.info('NEW CUSTOMER: ACCEPTED   %s family_position=%s ecc_map=%s allocated_bytes=%s' % (customer_idurl, family_position, ecc_map, bytes_for_customer))
+            events.send(
+                'new-customer-accepted', data=dict(
+                    idurl=customer_idurl,
+                    allocated_bytes=bytes_for_customer,
+                    ecc_map=ecc_map,
+                    position=family_position,
+                    family_snapshot=family_snapshot,
+                    key_id=customer_public_key_id,
+                )
+            )
         else:
-            lg.info('OLD CUSTOMER: ACCEPTED  %s family_position=%s ecc_map=%s allocated_bytes=%s' % (
-                customer_idurl, family_position, ecc_map, bytes_for_customer))
-            events.send('existing-customer-accepted', data=dict(
-                idurl=customer_idurl,
-                allocated_bytes=bytes_for_customer,
-                ecc_map=ecc_map,
-                position=family_position,
-                key_id=customer_public_key_id,
-                family_snapshot=family_snapshot,
-            ))
+            lg.info('OLD CUSTOMER: ACCEPTED  %s family_position=%s ecc_map=%s allocated_bytes=%s' % (customer_idurl, family_position, ecc_map, bytes_for_customer))
+            events.send(
+                'existing-customer-accepted', data=dict(
+                    idurl=customer_idurl,
+                    allocated_bytes=bytes_for_customer,
+                    ecc_map=ecc_map,
+                    position=family_position,
+                    key_id=customer_public_key_id,
+                    family_snapshot=family_snapshot,
+                )
+            )
         return p2p_service.SendAck(newpacket, 'accepted')
 
     def cancel(self, json_payload, newpacket, info):

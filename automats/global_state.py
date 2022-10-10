@@ -24,7 +24,6 @@
 #
 #
 #
-
 """
 .. module:: global_state.
 
@@ -123,5 +122,6 @@ def SetSingleStateNotifyFunc(f):
     Set callback to catch state change of any automat.
     """
     automat.SetStateChangedCallback(f)
+
 
 #------------------------------------------------------------------------------

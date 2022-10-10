@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 ..
 
@@ -70,10 +69,8 @@ class P2PHookupsService(LocalService):
         ratings.init()
         self._starting_defer = Deferred()
         p2p_connector.A('init')
-        p2p_connector.A().addStateChangedCallback(
-            self._on_p2p_connector_switched)
-        network_connector.A().addStateChangedCallback(
-            self._on_network_connector_switched)
+        p2p_connector.A().addStateChangedCallback(self._on_p2p_connector_switched)
+        network_connector.A().addStateChangedCallback(self._on_network_connector_switched)
         callback.append_inbox_callback(self._on_inbox_packet_received)
         callback.append_inbox_callback(p2p_service.inbox)
         events.add_subscriber(self._on_identity_url_changed, 'identity-url-changed')
@@ -96,10 +93,8 @@ class P2PHookupsService(LocalService):
         callback.remove_inbox_callback(self._on_inbox_packet_received)
         callback.remove_inbox_callback(p2p_service.inbox)
         if network_connector.A():
-            network_connector.A().removeStateChangedCallback(
-                self._on_network_connector_switched)
-        p2p_connector.A().removeStateChangedCallback(
-            self._on_p2p_connector_switched)
+            network_connector.A().removeStateChangedCallback(self._on_network_connector_switched)
+        p2p_connector.A().removeStateChangedCallback(self._on_p2p_connector_switched)
         ratings.shutdown()
         online_status.shutdown()
         p2p_connector.Destroy()
@@ -134,7 +129,10 @@ class P2PHookupsService(LocalService):
             p2p_service.SendFail(newpacket, 'json payload invalid')
             return True
         service_name = str(json_payload['name'])
-        lg.out(self.debug_level, 'service_p2p_hookups.RequestService {%s} from %s' % (service_name, newpacket.OwnerID, ))
+        lg.out(self.debug_level, 'service_p2p_hookups.RequestService {%s} from %s' % (
+            service_name,
+            newpacket.OwnerID,
+        ))
         if not driver.is_exist(service_name):
             lg.warn('got wrong payload in %s' % service_name)
             p2p_service.SendFail(newpacket, 'service %s not exist' % service_name)
@@ -175,7 +173,10 @@ class P2PHookupsService(LocalService):
             p2p_service.SendFail(newpacket, 'json payload invalid')
             return True
         service_name = json_payload['name']
-        lg.out(self.debug_level, 'service_p2p_hookups.CancelService {%s} from %s' % (service_name, newpacket.OwnerID, ))
+        lg.out(self.debug_level, 'service_p2p_hookups.CancelService {%s} from %s' % (
+            service_name,
+            newpacket.OwnerID,
+        ))
         if not driver.is_exist(service_name):
             lg.warn('got wrong payload in %s' % newpacket)
             p2p_service.SendFail(newpacket, 'service %s not exist' % service_name)
@@ -223,7 +224,10 @@ class P2PHookupsService(LocalService):
                 inst.name = 'online_%s' % global_id.UrlToGlobalID(idurl)
                 inst.automat('shook-up-hands')
                 reactor.callLater(0, inst.automat, 'ping-now')  # @UndefinedVariable
-                lg.info('found %r with rotated identity and refreshed: %r' % (inst, idurl, ))
+                lg.info('found %r with rotated identity and refreshed: %r' % (
+                    inst,
+                    idurl,
+                ))
 
     def _on_my_identity_url_changed(self, evt):
         from services import driver

@@ -9,7 +9,6 @@
 #
 #
 
-
 from __future__ import absolute_import
 from __future__ import print_function
 import os
@@ -32,7 +31,6 @@ from twisted.internet.defer import Deferred, succeed
 from twisted.web import server, resource
 from twisted.web.client import HTTPClientFactory
 
-
 import misc
 import dhnio
 import dhnnet
@@ -45,7 +43,6 @@ import tmpfile
 
 from logs import lg
 
-
 _Outbox = {}
 _Contacts = {}
 _ReceivingLoop = None
@@ -56,6 +53,7 @@ _ConnectionsDict = {}
 _CurrentDelay = 5
 
 #-------------------------------------------------------------------------------
+
 
 def send(idurl, filename):
     lg.out(12, 'http_node.send to %s %s' % (idurl, filename))
@@ -70,7 +68,9 @@ def send(idurl, filename):
             'unknown',
             lostedfilename,
             'failed',
-            'http',)
+            'http',
+        )
+
 
 class SenderServer(resource.Resource):
     isLeaf = True
@@ -100,16 +100,18 @@ class SenderServer(resource.Resource):
                 request.getClient(),
                 filename,
                 'finished',
-                'http',)
+                'http',
+            )
         _Outbox.pop(idurl, None)
         return r
+
 
 def start_http_server(port):
     global _ServerListener
     lg.out(6, 'http_node.start_http_server going to listen on port ' + str(port))
     if _ServerListener is not None:
         lg.out(8, 'http_node.start_http_server is already started')
-#        return _ServerListener
+        #        return _ServerListener
         return succeed(_ServerListener)
 
     def _try_listening(port, count):
@@ -125,14 +127,14 @@ def start_http_server(port):
     def _loop(port, result, count):
         l = _try_listening(port, count)
         if l is not None:
-            lg.out(8, 'http_node.start_http_server started on port '+ str(port))
+            lg.out(8, 'http_node.start_http_server started on port ' + str(port))
             result.callback(l)
             return
         if count > 10:
             lg.out(1, 'http_node.start_http_server WARNING port %s is busy!' % str(port))
             result.errback(None)
             return
-        reactor.callLater(10, _loop, port, result, count+1)
+        reactor.callLater(10, _loop, port, result, count + 1)
 
     res = Deferred()
     _loop(port, res, 0)
@@ -151,13 +153,17 @@ def stop_http_server():
     _ServerListener = None
     return d
 
+
 class TransportHTTPClientFactory(HTTPClientFactory):
     pass
 
+
 class TransportHTTPProxyClientFactory(HTTPClientFactory):
+
     def setURL(self, url):
         HTTPClientFactory.setURL(self, url)
         self.path = url
+
 
 def receive():
     global _ReceivingLoop
@@ -165,7 +171,6 @@ def receive():
 
     if _ReceivingLoop is not None:
         return _ReceivingLoop
-
 
     def success(src, idurl, host, port, conn):
         global _LastPingTimeDict
@@ -182,9 +187,9 @@ def receive():
                     part = base64.b64decode(part64.strip())
                 except:
                     lg.out(14, 'http_node.receive.success ERROR in base64.b64decode()')
-#                    lg.out(1, 'len(part64)=%d' % len(part64))
-#                    lg.out(1, 'len(part64.strip())=%d' % len(part64.strip()))
-#                    lg.out(1, 'part64=[%s]' % part64)
+                    #                    lg.out(1, 'len(part64)=%d' % len(part64))
+                    #                    lg.out(1, 'len(part64.strip())=%d' % len(part64.strip()))
+                    #                    lg.out(1, 'part64=[%s]' % part64)
                     decrease_receiving_delay(idurl)
                     continue
 #                fd, filename = tempfile.mkstemp(".dhn-http-in")
@@ -196,12 +201,12 @@ def receive():
                     filename,
                     'finished',
                     'http',
-                    host+':'+port,)
+                    host + ':' + port,
+                )
             transport_control.log('http', 'finish connection with %s:%s ' % (host, port))
 
         conn.disconnect()
         _ConnectionsDict.pop(idurl, None)
-
 
     def fail(x, idurl, host, port, conn):
         global _LastPingTimeDict
@@ -210,19 +215,27 @@ def receive():
         conn.disconnect()
         _ConnectionsDict.pop(idurl, None)
 
-
     def ping(idurl, host, port):
         lg.out(14, 'http_node.receive.ping     %s (%s:%s)' % (idurl, host, port))
         url = 'http://' + str(host) + ':' + str(port)
 
         if dhnnet.proxy_is_on():
-            f = TransportHTTPProxyClientFactory(url, method='POST', headers={
-                'User-Agent': 'BitDust transport_http', 'idurl': misc.getLocalID(), } )
+            f = TransportHTTPProxyClientFactory(
+                url, method='POST', headers={
+                    'User-Agent': 'BitDust transport_http',
+                    'idurl': misc.getLocalID(),
+                }
+            )
             conn = reactor.connectTCP(dhnnet.get_proxy_host(), int(dhnnet.get_proxy_port()), f)
         else:
-            f = TransportHTTPClientFactory(url, method='POST', headers={
-                'User-Agent': 'BitDust transport_http', 'idurl': misc.getLocalID(), } )
+            f = TransportHTTPClientFactory(
+                url, method='POST', headers={
+                    'User-Agent': 'BitDust transport_http',
+                    'idurl': misc.getLocalID(),
+                }
+            )
             conn = reactor.connectTCP(host, int(port), f)
+
 
 #        f = HTTPClientFactory(url, method='POST', headers={
 #            'User-Agent': 'BitDust transport_http',
@@ -262,11 +275,13 @@ def receive():
 
     return loop()
 
+
 def decrease_receiving_delay(idurl):
     global _PingDelayDict
     global _CurrentDelay
     lg.out(14, 'http_node.decrease_receiving_delay ' + idurl)
     _PingDelayDict[idurl] = _CurrentDelay
+
 
 def increase_receiving_delay(idurl):
     global _PingDelayDict
@@ -278,6 +293,7 @@ def increase_receiving_delay(idurl):
         lg.out(14, 'http_node.increase_receiving_delay   %s for %s' % (str(d), idurl))
         _PingDelayDict[idurl] *= 2
 
+
 def stop_receiving():
     global _ReceivingLoop
     lg.out(6, 'http_node.stop_receiving')
@@ -287,6 +303,7 @@ def stop_receiving():
     _ReceivingLoop.cancel()
     del _ReceivingLoop
     _ReceivingLoop = None
+
 
 def add_contact(idurl):
     global _Contacts
@@ -305,6 +322,7 @@ def add_contact(idurl):
     _Contacts[idurl] = (host, port)
     _PingDelayDict[idurl] = _CurrentDelay
     lg.out(10, 'http_node.add_contact %s on %s:%s' % (idurl, host, port))
+
 
 def update_contacts():
     lg.out(10, 'http_node.update_contacts ')
@@ -334,13 +352,16 @@ def update_contacts():
 
         update_contact('', idurl)
 
+
 def contacts_changed_callback(oldlist, newlist):
     update_contacts()
+
 
 def init():
     lg.out(4, 'http_node.init')
     contacts.SetContactsChangedCallback(contacts_changed_callback)
     update_contacts()
+
 
 def shutdown():
     global _ReceivingLoop
@@ -352,7 +373,9 @@ def shutdown():
         _ServerListener.stopListening()
         _ServerListener = None
 
+
 #-------------------------------------------------------------------------------
+
 
 def usage():
     print('''usage:
@@ -360,9 +383,10 @@ http_node.py send [server_port] [to idurl] [filename]
 http_node.py receive
 ''')
 
+
 def main():
     if sys.argv.count('receive'):
-##        log.startLogging(sys.stdout)
+        ##        log.startLogging(sys.stdout)
         settings.init()
         settings.update_proxy_settings()
         contacts.init()
@@ -370,7 +394,7 @@ def main():
         receive()
         reactor.run()
     elif sys.argv.count('send'):
-##        log.startLogging(sys.stdout)
+        ##        log.startLogging(sys.stdout)
         settings.init()
         settings.update_proxy_settings()
         contacts.init()
@@ -380,6 +404,7 @@ def main():
         reactor.run()
     else:
         usage()
+
 
 if __name__ == '__main__':
     main()

@@ -19,7 +19,6 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
-
 """
 .. module:: customer_assistant
 .. role:: red
@@ -78,6 +77,7 @@ _CustomerAssistants = {}
 
 #------------------------------------------------------------------------------
 
+
 def assistants():
     global _CustomerAssistants
     return _CustomerAssistants
@@ -93,7 +93,9 @@ def create(customer_idurl):
 def by_idurl(customer_idurl):
     return assistants().get(customer_idurl, None)
 
+
 #------------------------------------------------------------------------------
+
 
 class CustomerAssistant(automat.Automat):
     """
@@ -178,10 +180,12 @@ class CustomerAssistant(automat.Automat):
         """
         Action method.
         """
-        p2p_service.SendIdentity(self.customer_idurl, wide=True, callbacks={
-            commands.Ack(): self._customer_acked,
-            commands.Fail(): self._customer_failed,
-        })
+        p2p_service.SendIdentity(
+            self.customer_idurl, wide=True, callbacks={
+                commands.Ack(): self._customer_acked,
+                commands.Fail(): self._customer_failed,
+            }
+        )
 
     def doSendHisFiles(self, *args, **kwargs):
         """
@@ -194,7 +198,10 @@ class CustomerAssistant(automat.Automat):
         if False:
             list_files.send(
                 customer_idurl=self.customer_idurl,
-                packet_id='%s:%s' % (customer_key_id, packetid.UniqueID(), ),
+                packet_id='%s:%s' % (
+                    customer_key_id,
+                    packetid.UniqueID(),
+                ),
                 format_type=settings.ListFilesFormat(),
                 key_id=customer_key_id,
                 remote_idurl=self.customer_idurl,  # send to the customer
@@ -205,13 +212,19 @@ class CustomerAssistant(automat.Automat):
             if my_keys.is_key_registered(customer_master_key_id):
                 list_files.send(
                     customer_idurl=self.customer_idurl,
-                    packet_id='%s:%s' % (customer_master_key_id, packetid.UniqueID(), ),
+                    packet_id='%s:%s' % (
+                        customer_master_key_id,
+                        packetid.UniqueID(),
+                    ),
                     format_type=settings.ListFilesFormat(),
                     key_id=customer_master_key_id,
                     remote_idurl=self.customer_idurl,  # send to the customer
                 )
             else:
-                lg.err('key %s (and also %s) is not registered, not able to send customer files' % (customer_key_id, customer_master_key_id, ))
+                lg.err('key %s (and also %s) is not registered, not able to send customer files' % (
+                    customer_key_id,
+                    customer_master_key_id,
+                ))
 
     def doDestroyMe(self, *args, **kwargs):
         """

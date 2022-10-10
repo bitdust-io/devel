@@ -70,6 +70,7 @@ CMD_MYIPPORT = b'm'
 
 #------------------------------------------------------------------------------
 
+
 def listen(port, proto=None):
     if port in list(listeners().keys()):
         lg.warn('already started on port %d' % port)
@@ -118,6 +119,7 @@ def close_all():
         lg.out(6, 'udp.close_all  %d UDP listeners were closed' % len(shutlist))
     return DeferredList(shutlist)
 
+
 #------------------------------------------------------------------------------
 
 
@@ -137,6 +139,7 @@ def listener(port):
         return None
     return listeners()[port]
 
+
 #------------------------------------------------------------------------------
 
 
@@ -153,6 +156,7 @@ def send_command(from_port, command, data, address):
 def get_last_datagram_time():
     global _LastDatagramReceivedTime
     return _LastDatagramReceivedTime
+
 
 #------------------------------------------------------------------------------
 
@@ -227,6 +231,7 @@ class BasicProtocol(protocol.DatagramProtocol):
         self.stopping = True
         self.callbacks = []
 
+
 #------------------------------------------------------------------------------
 
 
@@ -283,8 +288,7 @@ class CommandsProtocol(BasicProtocol):
             lg.warn('different software version: %s' % version)
             return
         if _Debug:
-            lg.out(_DebugLevel, '<<< [%s] (%d bytes) from %s, total %d bytes received' % (
-                command, datagramsz, str(address), self.bytes_in))
+            lg.out(_DebugLevel, '<<< [%s] (%d bytes) from %s, total %d bytes received' % (command, datagramsz, str(address), self.bytes_in))
         # self.bytes_in += datagramsz
         handled = False
         try:
@@ -306,8 +310,7 @@ class CommandsProtocol(BasicProtocol):
             outp.write(strng.to_bin(command))
             outp.write(strng.to_bin(data))
             if _Debug:
-                lg.out(_DebugLevel, '>>> [%s] (%d bytes) to %s, total %d bytes sent' % (
-                    command, payloadsz + 2, address, self.bytes_out))
+                lg.out(_DebugLevel, '>>> [%s] (%d bytes) to %s, total %d bytes sent' % (command, payloadsz + 2, address, self.bytes_out))
             result = self.sendDatagram(outp.getvalue(), address)
         except:
             outp.close()
@@ -317,7 +320,9 @@ class CommandsProtocol(BasicProtocol):
         self.bytes_out += payloadsz + 2
         return result
 
+
 #------------------------------------------------------------------------------
+
 
 def main():
     bpio.init()
@@ -354,6 +359,7 @@ def main():
         # task.LoopingCall(restart, listnport).start(5)
 
     reactor.run()  # @UndefinedVariable
+
 
 if __name__ == '__main__':
     main()

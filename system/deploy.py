@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 ..
 
@@ -51,6 +50,7 @@ import platform
 _BaseDirPath = None
 
 #------------------------------------------------------------------------------
+
 
 def print_text(msg, nl='\n'):
     """
@@ -204,7 +204,9 @@ def init_base_dir(base_dir=None):
     # seems we found needed files in a path1 - lets use this as a base dir
     return _BaseDirPath
 
+
 #------------------------------------------------------------------------------
+
 
 def run(args):
     """

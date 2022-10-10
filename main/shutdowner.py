@@ -24,7 +24,6 @@
 #
 #
 #
-
 """
 .. module:: shutdowner.
 
@@ -156,7 +155,9 @@ def shutdown(x=None):
     # TODO: rework all shutdown() methods to return deferred objects
     return DeferredList(dl)
 
+
 #------------------------------------------------------------------------------
+
 
 def A(event=None, *args, **kwargs):
     global _Shutdowner
@@ -174,7 +175,9 @@ def A(event=None, *args, **kwargs):
         _Shutdowner.event(event, *args, **kwargs)
     return _Shutdowner
 
+
 #------------------------------------------------------------------------------
+
 
 class Shutdowner(automat.Automat):
     """
@@ -284,9 +287,7 @@ class Shutdowner(automat.Automat):
         _Shutdowner = None
         self.destroy()
         if _Debug:
-            lg.out(_DebugLevel, 'shutdowner.doDestroyMe %d machines left in memory:\n        %s' % (
-                len(automat.objects()), '\n        '.join(
-                    ['%d: %r' % (k, automat.by_index(k)) for k in automat.objects().keys()])))
+            lg.out(_DebugLevel, 'shutdowner.doDestroyMe %d machines left in memory:\n        %s' % (len(automat.objects()), '\n        '.join(['%d: %r' % (k, automat.by_index(k)) for k in automat.objects().keys()])))
 
         if self.enableMemoryProfile:
             try:
@@ -294,9 +295,9 @@ class Shutdowner(automat.Automat):
                 hp = hpy()
                 hp.setrelheap()
                 if _Debug:
-                    lg.out(_DebugLevel, 'hp.heap():\n'+str(hp.heap()))
-                    lg.out(_DebugLevel, 'hp.heap().byrcs:\n'+str(hp.heap().byrcs))
-                    lg.out(_DebugLevel, 'hp.heap().byvia:\n'+str(hp.heap().byvia))
+                    lg.out(_DebugLevel, 'hp.heap():\n' + str(hp.heap()))
+                    lg.out(_DebugLevel, 'hp.heap().byrcs:\n' + str(hp.heap().byrcs))
+                    lg.out(_DebugLevel, 'hp.heap().byvia:\n' + str(hp.heap().byvia))
             except:
                 if _Debug:
                     lg.out(_DebugLevel, 'guppy package is not installed')

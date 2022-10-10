@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 .. module:: backup_tar.
 
@@ -72,6 +71,7 @@ BYTES_LOOP_CLOSED = 2
 
 #------------------------------------------------------------------------------
 
+
 class BytesLoop:
 
     def __init__(self, s=b''):
@@ -84,7 +84,10 @@ class BytesLoop:
     def read_defer(self, n=-1):
         if self._reader:
             raise Exception('already reading')
-        self._reader = (Deferred(), n, )
+        self._reader = (
+            Deferred(),
+            n,
+        )
         if len(self._buffer) > 0:
             chunk = self.read(n=n)
             d = self._reader[0]
@@ -152,7 +155,9 @@ class BytesLoop:
             return BYTES_LOOP_READY2READ
         return BYTES_LOOP_EMPTY
 
+
 #------------------------------------------------------------------------------
+
 
 def backuptarfile_thread(filepath, arcname=None, compress=None):
     """
@@ -236,7 +241,9 @@ def extracttar_thread(tarfile, outdir):
 
     return threads.deferToThread(_run)  # @UndefinedVariable
 
+
 #------------------------------------------------------------------------------
+
 
 def test_in_thread():
     fout = open('out.tar', 'wb')

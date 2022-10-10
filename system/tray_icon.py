@@ -25,7 +25,6 @@
 #
 #
 #
-
 """
 .. module:: tray_icon.
 
@@ -87,6 +86,7 @@ def icons_dict():
 def popup_icons_dict():
     global _PopUpIconsDict
     return _PopUpIconsDict
+
 
 #------------------------------------------------------------------------------
 
@@ -242,6 +242,7 @@ def main_porcess_stopped():
         del _IconObject
         _IconObject = None
 
+
 #------------------------------------------------------------------------------
 
 
@@ -271,7 +272,10 @@ def restore_icon():
 
 def state_changed(network, p2p):
     # print 'state_changed', network, p2p
-    if [network, p2p, ].count('CONNECTED') == 2:
+    if [
+        network,
+        p2p,
+    ].count('CONNECTED') == 2:
         set_icon('connected')
         return
     # if network == 'DISCONNECTED':
@@ -290,9 +294,11 @@ def SetControlFunc(f):
     global _ControlFunc
     _ControlFunc = f
 
+
 #------------------------------------------------------------------------------
 
 if __name__ == '__main__':
+
     def test_control(cmd):
         print('test_control', cmd)
         if cmd == 'exit':

@@ -14,7 +14,6 @@
 #
 # The docstrings in this module contain epytext markup; API documentation
 # may be created by processing this file with epydoc: http://epydoc.sf.net
-
 """
 Kademlia DHT implementation.
 
@@ -41,5 +40,5 @@ module for documentation on what these values control.
 """
 
 from __future__ import absolute_import
-from . node import Node  # @UnresolvedImport
-from . datastore import DictDataStore, SQLiteVersionedJsonDataStore  # @UnresolvedImport
+from .node import Node  # @UnresolvedImport
+from .datastore import DictDataStore, SQLiteVersionedJsonDataStore  # @UnresolvedImport

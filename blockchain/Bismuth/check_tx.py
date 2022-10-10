@@ -19,63 +19,63 @@ mempool_path = 'mempool.db'
 
 
 def list_to_tx(result):
-	"""
+    """
 	Converts the query result into a dict
 	"""
-	result[4] = result[4][:50]
-	keys = ['Timestamp', 'Address', 'Recipient', 'Amount', 'Openfield', 'Block']
-	return dict(zip(keys,result))
+    result[4] = result[4][:50]
+    keys = ['Timestamp', 'Address', 'Recipient', 'Amount', 'Openfield', 'Block']
+    return dict(zip(keys, result))
 
 
 def is_in_mempool(txid):
-	"""
+    """
 	If txid is in mempool, sends back details of the tx
 	"""
-	mempool = sqlite3.connect(mempool_path)
-	mempool.text_factory = str
-	m = mempool.cursor()
-	m.execute('SELECT timestamp, address, recipient, amount, openfield FROM transactions WHERE signature like ?;', (txid+'%',))
-	result = m.fetchone()
-	if result:
-		return (True, list_to_tx(list(result)))
-	else:
-		return (False, None)
+    mempool = sqlite3.connect(mempool_path)
+    mempool.text_factory = str
+    m = mempool.cursor()
+    m.execute('SELECT timestamp, address, recipient, amount, openfield FROM transactions WHERE signature like ?;', (txid + '%',))
+    result = m.fetchone()
+    if result:
+        return (True, list_to_tx(list(result)))
+    else:
+        return (False, None)
 
 
 def is_in_ledger(txid):
-	"""
+    """
 	If txid is in ledger, sends back details of the tx and number of confirmations
 	"""
-	ledger = sqlite3.connect(ledger_path)
-	ledger.text_factory = str
-	m = ledger.cursor()
-	m.execute('SELECT timestamp, address, recipient, amount, openfield, block_height FROM transactions WHERE signature like ?;', (txid+'%',))
-	result = m.fetchone()
-	if result:
-		m.execute('SELECT block_height FROM transactions ORDER BY block_height desc LIMIT 1')
-		last = m.fetchone()
-		return (True, list_to_tx(list(result)), last[0])
-	else:
-		return (False, None, None)
+    ledger = sqlite3.connect(ledger_path)
+    ledger.text_factory = str
+    m = ledger.cursor()
+    m.execute('SELECT timestamp, address, recipient, amount, openfield, block_height FROM transactions WHERE signature like ?;', (txid + '%',))
+    result = m.fetchone()
+    if result:
+        m.execute('SELECT block_height FROM transactions ORDER BY block_height desc LIMIT 1')
+        last = m.fetchone()
+        return (True, list_to_tx(list(result)), last[0])
+    else:
+        return (False, None, None)
 
 
 if __name__ == '__main__':
-	if len(sys.argv) != 2:
-		txid = input('No argument detected, please insert command manually\n')
-	else:
-		txid = sys.argv[1]
+    if len(sys.argv) != 2:
+        txid = input('No argument detected, please insert command manually\n')
+    else:
+        txid = sys.argv[1]
 
-	res = {'TxId':txid, 'Status':'Unknown'}
+    res = {'TxId': txid, 'Status': 'Unknown'}
 
-	isit, details = is_in_mempool(txid)
-	if isit:
-		res['Status'] = 'Mempool'
-		res.update(details)
+    isit, details = is_in_mempool(txid)
+    if isit:
+        res['Status'] = 'Mempool'
+        res.update(details)
 
-	isit, details, lastblock = is_in_ledger(txid)
-	if isit:
-		res['Status'] = 'Confirmed'
-		res.update(details)
-		res['Confirmations'] = lastblock - res['Block']
+    isit, details, lastblock = is_in_ledger(txid)
+    if isit:
+        res['Status'] = 'Confirmed'
+        res.update(details)
+        res['Confirmations'] = lastblock - res['Block']
 
-	print(json.dumps(res))
+    print(json.dumps(res))

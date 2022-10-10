@@ -24,7 +24,6 @@
 #
 #
 #
-
 """
 .. module:: initializer.
 
@@ -150,17 +149,17 @@ class Initializer(automat.Automat):
                 self.state = 'LOCAL'
                 shutdowner.A('init')
                 self.doInitLocal(*args, **kwargs)
-                self.flagCmdLine=False
+                self.flagCmdLine = False
             elif event == 'run-cmd-line-register':
                 self.state = 'INSTALL'
                 shutdowner.A('init')
-                self.flagCmdLine=True
+                self.flagCmdLine = True
                 installer.A('register-cmd-line', *args, **kwargs)
                 shutdowner.A('ready')
             elif event == 'run-cmd-line-recover':
                 self.state = 'INSTALL'
                 shutdowner.A('init')
-                self.flagCmdLine=True
+                self.flagCmdLine = True
                 installer.A('recover-cmd-line', *args, **kwargs)
                 shutdowner.A('ready')
         #---LOCAL---
@@ -172,10 +171,10 @@ class Initializer(automat.Automat):
                 self.doInitInterfaces(*args, **kwargs)
                 self.doShowGUI(*args, **kwargs)
                 self.doUpdate(*args, **kwargs)
-            elif ( event == 'shutdowner.state' and args[0] == 'FINISHED' ):
+            elif (event == 'shutdowner.state' and args[0] == 'FINISHED'):
                 self.state = 'STOPPING'
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'init-local-done' and ( ( not self.isInstalled(*args, **kwargs) and not self.isGUIPossible(*args, **kwargs) ) or self.isInstalled(*args, **kwargs) ):
+            elif event == 'init-local-done' and ((not self.isInstalled(*args, **kwargs) and not self.isGUIPossible(*args, **kwargs)) or self.isInstalled(*args, **kwargs)):
                 self.state = 'INTERFACES'
                 shutdowner.A('ready')
                 self.doInitInterfaces(*args, **kwargs)
@@ -185,28 +184,28 @@ class Initializer(automat.Automat):
                 self.state = 'READY'
                 self.doUpdate(*args, **kwargs)
                 self.doShowGUI(*args, **kwargs)
-            elif ( event == 'shutdowner.state' and args[0] == 'FINISHED' ):
+            elif (event == 'shutdowner.state' and args[0] == 'FINISHED'):
                 self.state = 'EXIT'
                 self.doDestroyMe(*args, **kwargs)
         #---INSTALL---
         elif self.state == 'INSTALL':
-            if not self.flagCmdLine and ( event == 'installer.state' and args[0] == 'DONE' ):
+            if not self.flagCmdLine and (event == 'installer.state' and args[0] == 'DONE'):
                 self.state = 'STOPPING'
                 shutdowner.A('stop', 'restartnshow')
-            elif self.flagCmdLine and ( event == 'installer.state' and args[0] == 'DONE' ):
+            elif self.flagCmdLine and (event == 'installer.state' and args[0] == 'DONE'):
                 self.state = 'STOPPING'
                 shutdowner.A('stop', 'exit')
-            elif ( event == 'shutdowner.state' and args[0] == 'FINISHED' ):
+            elif (event == 'shutdowner.state' and args[0] == 'FINISHED'):
                 self.state = 'EXIT'
                 self.doDestroyMe(*args, **kwargs)
         #---READY---
         elif self.state == 'READY':
-            if ( event == 'shutdowner.state' and args[0] == 'FINISHED' ):
+            if (event == 'shutdowner.state' and args[0] == 'FINISHED'):
                 self.state = 'EXIT'
                 self.doDestroyMe(*args, **kwargs)
         #---STOPPING---
         elif self.state == 'STOPPING':
-            if ( event == 'shutdowner.state' and args[0] == 'FINISHED' ):
+            if (event == 'shutdowner.state' and args[0] == 'FINISHED'):
                 self.state = 'EXIT'
                 self.doUpdate(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
@@ -219,7 +218,7 @@ class Initializer(automat.Automat):
                 self.state = 'MODULES'
                 self.doInitModules(*args, **kwargs)
                 shutdowner.A('ready')
-            elif ( event == 'shutdowner.state' and args[0] == 'FINISHED' ):
+            elif (event == 'shutdowner.state' and args[0] == 'FINISHED'):
                 self.state = 'EXIT'
                 self.doDestroyMe(*args, **kwargs)
         #---INTERFACES---
@@ -227,7 +226,7 @@ class Initializer(automat.Automat):
             if event == 'init-interfaces-done':
                 self.state = 'SERVICES'
                 self.doInitServices(*args, **kwargs)
-            elif ( event == 'shutdowner.state' and args[0] == 'FINISHED' ):
+            elif (event == 'shutdowner.state' and args[0] == 'FINISHED'):
                 self.state = 'EXIT'
                 self.doDestroyMe(*args, **kwargs)
         return None
@@ -432,9 +431,9 @@ class Initializer(automat.Automat):
         # if sys.argv.count('--twisted'):
         #     from twisted.python import log as twisted_log
         #     twisted_log.startLogging(MyTwistedOutputLog(), setStdout=0)
-            # import twisted.python.failure as twisted_failure
-            # twisted_failure.startDebugMode()
-            # twisted_log.defaultObserver.stop()
+        # import twisted.python.failure as twisted_failure
+        # twisted_failure.startDebugMode()
+        # twisted_log.defaultObserver.stop()
         # if settings.getDebugLevel() > 10:
         #     defer.setDebugging(True)
         if settings.enableMemoryProfile():
@@ -443,9 +442,9 @@ class Initializer(automat.Automat):
                 hp = hpy()
                 hp.setrelheap()
                 if _Debug:
-                    lg.out(_DebugLevel, 'hp.heap():\n'+str(hp.heap()))
-                    lg.out(_DebugLevel, 'hp.heap().byrcs:\n'+str(hp.heap().byrcs))
-                    lg.out(_DebugLevel, 'hp.heap().byvia:\n'+str(hp.heap().byvia))
+                    lg.out(_DebugLevel, 'hp.heap():\n' + str(hp.heap()))
+                    lg.out(_DebugLevel, 'hp.heap().byrcs:\n' + str(hp.heap().byrcs))
+                    lg.out(_DebugLevel, 'hp.heap().byvia:\n' + str(hp.heap().byvia))
             except:
                 if _Debug:
                     lg.out(_DebugLevel, 'guppy package is not installed')
@@ -525,6 +524,7 @@ class Initializer(automat.Automat):
                 lg.warn('wrong command: ' + str(cmd))
         except:
             lg.exc()
+
 
 #------------------------------------------------------------------------------
 

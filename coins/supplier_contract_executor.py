@@ -19,8 +19,6 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
-
-
 """
 .. module:: supplier_contract_executor
 .. role:: red
@@ -86,6 +84,7 @@ _ActiveSupplierContracts = dict()  # provides SupplierContractExecutor object by
 
 #------------------------------------------------------------------------------
 
+
 def all_contracts():
     global _ActiveSupplierContracts
     return _ActiveSupplierContracts
@@ -125,7 +124,9 @@ def recheck_contract(customer_idurl):
         contract_executor = init_contract(customer_idurl)
     contract_executor.automat('recheck')
 
+
 #------------------------------------------------------------------------------
+
 
 class SupplierContractExecutor(automat.Automat):
     """
@@ -285,9 +286,9 @@ class SupplierContractExecutor(automat.Automat):
         )
         coin_json_sined = coins_io.add_signature(coin_json, 'creator')
         p2p_service.SendCoin(
-            self.customer_idurl,
-            [coin_json_sined, ],
-            callbacks={
+            self.customer_idurl, [
+                coin_json_sined,
+            ], callbacks={
                 commands.Ack(): self._on_signature_ack,
                 commands.Fail(): self._on_signature_fail,
             }
@@ -298,9 +299,9 @@ class SupplierContractExecutor(automat.Automat):
         Action method.
         """
         coin_json = args[0]
-        contract_chain_node.send_to_miner(
-            [coin_json, ],
-        ).addCallbacks(
+        contract_chain_node.send_to_miner([
+            coin_json,
+        ],).addCallbacks(
             self._on_coin_mined,
             self._on_coin_failed,
         )

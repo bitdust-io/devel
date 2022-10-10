@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 ..
 
@@ -56,7 +55,9 @@ class ProxyServerService(LocalService):
 
     def attached_dht_layers(self):
         from dht import dht_records
-        return [dht_records.LAYER_PROXY_ROUTERS, ]
+        return [
+            dht_records.LAYER_PROXY_ROUTERS,
+        ]
 
     def start(self):
         from logs import lg
@@ -87,12 +88,20 @@ class ProxyServerService(LocalService):
 
     def request(self, json_payload, newpacket, info):
         from transport.proxy import proxy_router
-        proxy_router.A('request-route-received', (json_payload, newpacket, info, ))
+        proxy_router.A('request-route-received', (
+            json_payload,
+            newpacket,
+            info,
+        ))
         return True
 
     def cancel(self, json_payload, newpacket, info):
         from transport.proxy import proxy_router
-        proxy_router.A('cancel-route-received', (json_payload, newpacket, info, ))
+        proxy_router.A('cancel-route-received', (
+            json_payload,
+            newpacket,
+            info,
+        ))
         return True
 
     def _do_connect_proxy_routers_dht_layer(self):

@@ -18,10 +18,10 @@ from decimal import Decimal
 import regnet
 
 from fork import Fork
+
 fork = Fork()
 
 __version__ = '0.1.4'
-
 
 print('Mining_Heavy3 v{}'.format(__version__))
 
@@ -93,8 +93,7 @@ def diffme_heavy3(pool_address, nonce, db_block_hash):
     return diff_result
 
 
-def check_block(block_height_new, miner_address, nonce, db_block_hash, diff0, received_timestamp, q_received_timestamp,
-                q_db_timestamp_last, peer_ip='N/A', app_log=None):
+def check_block(block_height_new, miner_address, nonce, db_block_hash, diff0, received_timestamp, q_received_timestamp, q_db_timestamp_last, peer_ip='N/A', app_log=None):
     """
     Checks that the given block matches the mining algo.
 
@@ -123,8 +122,7 @@ def check_block(block_height_new, miner_address, nonce, db_block_hash, diff0, re
         # simplified comparison, no backwards mining
         if real_diff >= int(diff0):
             if app_log:
-                app_log.info('Difficulty requirement satisfied for block {} from {}. {} >= {}'
-                             .format(block_height_new, peer_ip, real_diff, int(diff0)))
+                app_log.info('Difficulty requirement satisfied for block {} from {}. {} >= {}'.format(block_height_new, peer_ip, real_diff, int(diff0)))
             diff_save = diff0
 
         elif Decimal(received_timestamp) > q_db_timestamp_last + Decimal(diff_drop_time):
@@ -135,30 +133,27 @@ def check_block(block_height_new, miner_address, nonce, db_block_hash, diff0, re
             # Emergency diff drop
             if Decimal(received_timestamp) > q_db_timestamp_last + Decimal(2 * diff_drop_time):
                 factor = 10
-                diff_dropped = quantize_ten(diff0) - quantize_ten(1) - quantize_ten(factor * (time_difference-2*diff_drop_time) / diff_drop_time)
+                diff_dropped = quantize_ten(diff0) - quantize_ten(1) - quantize_ten(factor * (time_difference - 2 * diff_drop_time) / diff_drop_time)
 
             if diff_dropped < 10:
                 diff_dropped = 10
             if real_diff >= int(diff_dropped):
                 if app_log:
-                    app_log.info ('Readjusted difficulty requirement satisfied for block {} from {}, {} >= {} (factor {})'
-                                  .format(block_height_new, peer_ip, real_diff, int(diff_dropped), factor))
+                    app_log.info('Readjusted difficulty requirement satisfied for block {} from {}, {} >= {} (factor {})'.format(block_height_new, peer_ip, real_diff, int(diff_dropped), factor))
                 diff_save = diff0
                 # lie about what diff was matched not to mess up the diff algo
             else:
-                raise ValueError ('Readjusted difficulty too low for block {} from {}, {} should be at least {}'
-                                  .format(block_height_new, peer_ip, real_diff, diff_dropped))
+                raise ValueError('Readjusted difficulty too low for block {} from {}, {} should be at least {}'.format(block_height_new, peer_ip, real_diff, diff_dropped))
         else:
-            raise ValueError ('Difficulty {} too low for block {} from {}, should be at least {}'
-                              .format(real_diff, block_height_new, peer_ip, diff0))
+            raise ValueError('Difficulty {} too low for block {} from {}, should be at least {}'.format(real_diff, block_height_new, peer_ip, diff0))
         return diff_save
     except Exception as e:
-            # Left for edge cases debug
-            print('MH3 check block', e)
-            exc_type, exc_obj, exc_tb = sys.exc_info()
-            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-            print(exc_type, fname, exc_tb.tb_lineno)
-            raise
+        # Left for edge cases debug
+        print('MH3 check block', e)
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+        print(exc_type, fname, exc_tb.tb_lineno)
+        raise
 
 
 def create_heavy3a(file_name='heavy3a.bin'):
@@ -170,7 +165,7 @@ def create_heavy3a(file_name='heavy3a.bin'):
     # Size in Gb - No more than 4Gb from a single seed
     GB = 1
     # Do not change chunk size, it would change the file content.
-    CHUNK_SIZE = 1024*4  # time 3m20.990s
+    CHUNK_SIZE = 1024 * 4  # time 3m20.990s
     COUNT = GB * 1024 * 1024 * 1024 // CHUNK_SIZE
     with open(file_name, 'wb') as f:
         for chunks in range(COUNT):

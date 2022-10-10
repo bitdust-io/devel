@@ -19,8 +19,6 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
-
-
 """
 .. module:: proxy_router.
 
@@ -137,6 +135,7 @@ def A(event=None, *args, **kwargs):
     if event is not None:
         _ProxyRouter.automat(event, *args, **kwargs)
     return _ProxyRouter
+
 
 #------------------------------------------------------------------------------
 
@@ -295,14 +294,20 @@ class ProxyRouter(automat.Automat):
         """
         idurl, _, item, _, _, _ = args[0]
         idurl = id_url.field(idurl).original()
-        new_address = (strng.to_text(item.proto), strng.to_text(item.host), )
+        new_address = (
+            strng.to_text(item.proto),
+            strng.to_text(item.host),
+        )
         if idurl not in self.routes:
             lg.exc(exc_value=Exception('route with %r is not registered yet' % idurl))
         else:
             if new_address not in self.routes[idurl]['address']:
                 self.routes[idurl]['address'].append(new_address)
                 lg.info('added new active address %r for %s, currently %d active addresses' % (
-                    new_address, nameurl.GetName(idurl), len(self.routes[idurl]['address']), ))
+                    new_address,
+                    nameurl.GetName(idurl),
+                    len(self.routes[idurl]['address']),
+                ))
 
     def doSetContactsOverride(self, *args, **kwargs):
         """
@@ -317,7 +322,9 @@ class ProxyRouter(automat.Automat):
         result = identitycache.StopOverridingIdentity(args[0].CreatorID)
         if _Debug:
             lg.out(_DebugLevel, 'proxy_router.doClearContactsOverride identity for %s, result=%s' % (
-                args[0].CreatorID, result, ))
+                args[0].CreatorID,
+                result,
+            ))
 
     def doSendFail(self, *args, **kwargs):
         """
@@ -371,7 +378,10 @@ class ProxyRouter(automat.Automat):
                 if not active_user_sessions:
                     active_user_sessions = gateway.find_active_session(info.proto, idurl=sender_idurl.to_bin())
             if not active_user_sessions:
-                lg.warn('route with %s found but no active sessions found : %r' % (sender_idurl, info, ))
+                lg.warn('route with %s found but no active sessions found : %r' % (
+                    sender_idurl,
+                    info,
+                ))
                 return None, None
             active_user_session_machine = automat.by_index(active_user_sessions[0].index)
         if not active_user_session_machine:
@@ -385,7 +395,10 @@ class ProxyRouter(automat.Automat):
             return None, None
         hosts = []
         try:
-            hosts.append((active_user_session_machine.get_proto(), active_user_session_machine.get_host(), ))
+            hosts.append((
+                active_user_session_machine.get_proto(),
+                active_user_session_machine.get_host(),
+            ))
         except:
             lg.exc()
         if not hosts:
@@ -398,7 +411,10 @@ class ProxyRouter(automat.Automat):
             lg.warn('has no known contacts for route with %s' % sender_idurl)
             return None, None
         if len(hosts) > 1:
-            lg.warn('found more then one channel with %s : %r' % (sender_idurl, hosts, ))
+            lg.warn('found more then one channel with %s : %r' % (
+                sender_idurl,
+                hosts,
+            ))
         receiver_proto, receiver_host = strng.to_bin(hosts[0][0]), strng.to_bin(hosts[0][1])
         if _Debug:
             lg.args(_DebugLevel, proto=receiver_proto, host=receiver_host, user_session=active_user_session_machine)
@@ -429,8 +445,7 @@ class ProxyRouter(automat.Automat):
                     lg.warn('incoming identity is not correct')
                     return
                 if user_idurl.original() != cached_ident.getIDURL().original():
-                    lg.warn('incoming identity is not belong to request packet creator: %r != %r' % (
-                        user_idurl.original(), cached_ident.getIDURL().original()))
+                    lg.warn('incoming identity is not belong to request packet creator: %r != %r' % (user_idurl.original(), cached_ident.getIDURL().original()))
                     return
                 identitycache.UpdateAfterChecking(cached_ident.getIDURL().original(), idsrc)
                 if user_idurl.original() not in list(self.routes.keys()) and user_idurl.to_bin() not in list(self.routes.keys()):
@@ -455,8 +470,7 @@ class ProxyRouter(automat.Automat):
                     if active_user_session_machine:
                         self.routes[user_idurl.original()]['connection_info'] = user_connection_info
                         active_user_session_machine.addStateChangedCallback(
-                            cb=lambda oldstate, newstate, event_string, *args, **kwargs:
-                                self._on_user_session_disconnected(user_idurl.original(), oldstate, newstate, event_string, *args, **kwargs),
+                            cb=lambda oldstate, newstate, event_string, *args, **kwargs: self._on_user_session_disconnected(user_idurl.original(), oldstate, newstate, event_string, *args, **kwargs),
                             oldstate='CONNECTED',
                             callback_id='proxy_router',
                         )
@@ -466,13 +480,19 @@ class ProxyRouter(automat.Automat):
                 else:
                     if _Debug:
                         lg.dbg(_DebugLevel, 'active connection with user %s at %s:%s not yet exist' % (
-                            user_idurl.original(), info.proto, info.host, ))
+                            user_idurl.original(),
+                            info.proto,
+                            info.host,
+                        ))
                         lg.dbg(_DebugLevel, 'current active sessions: %d' % len(gateway.list_active_sessions(info.proto)))
                 out_ack = p2p_service.SendAck(request, 'accepted', wide=True)
                 self.acks[out_ack.PacketID] = out_ack.RemoteID
                 if _Debug:
                     lg.out(_DebugLevel, 'proxy_server.doProcessRequest !!!!!!! ACCEPTED %s ROUTE for %r  contacts=%s' % (
-                        oldnew.upper(), user_idurl, self.routes.get(user_idurl.original(), {}).get('contacts'), ))
+                        oldnew.upper(),
+                        user_idurl,
+                        self.routes.get(user_idurl.original(), {}).get('contacts'),
+                    ))
         #--- commands.CancelService()
         elif request.Command == commands.CancelService():
             if user_idurl.original() in list(self.routes.keys()) or user_idurl.to_bin() in list(self.routes.keys()):
@@ -521,7 +541,10 @@ class ProxyRouter(automat.Automat):
                 active_user_sessions = gateway.find_active_session(info.proto, idurl=receiver_idurl.to_bin())
             if not active_user_sessions:
                 lg.warn('route with %s found but no active sessions found with %s://%s, fire "routed-session-disconnected" event' % (
-                    receiver_idurl, info.proto, info.host, ))
+                    receiver_idurl,
+                    info.proto,
+                    info.host,
+                ))
                 self.automat('routed-session-disconnected', receiver_idurl)
                 return
             user_connection_info = {
@@ -552,7 +575,10 @@ class ProxyRouter(automat.Automat):
             return
         hosts = []
         try:
-            hosts.append((active_user_session_machine.get_proto(), active_user_session_machine.get_host(), ))
+            hosts.append((
+                active_user_session_machine.get_proto(),
+                active_user_session_machine.get_host(),
+            ))
         except:
             lg.exc()
         if not hosts:
@@ -566,7 +592,10 @@ class ProxyRouter(automat.Automat):
             self.automat('routed-session-disconnected', receiver_idurl)
             return
         if len(hosts) > 1:
-            lg.warn('found more then one channel with receiver %s : %r' % (receiver_idurl, hosts, ))
+            lg.warn('found more then one channel with receiver %s : %r' % (
+                receiver_idurl,
+                hosts,
+            ))
         receiver_proto, receiver_host = strng.to_bin(hosts[0][0]), strng.to_bin(hosts[0][1])
         #--- route is healthy, sending forward incoming routed packet
         raw_data, pout = self._do_send_relay_packet(
@@ -581,9 +610,11 @@ class ProxyRouter(automat.Automat):
         )
         if _Debug:
             lg.out(_DebugLevel, '<<<Route-IN %s %s:%s' % (
-                str(newpacket), strng.to_text(info.proto), strng.to_text(info.host),))
-            lg.out(_DebugLevel, '           sent to %s://%s with %d bytes in %s' % (
-                strng.to_text(receiver_proto), strng.to_text(receiver_host), len(raw_data), pout))
+                str(newpacket),
+                strng.to_text(info.proto),
+                strng.to_text(info.host),
+            ))
+            lg.out(_DebugLevel, '           sent to %s://%s with %d bytes in %s' % (strng.to_text(receiver_proto), strng.to_text(receiver_host), len(raw_data), pout))
         active_user_session_machine = None
         del raw_data
         del pout
@@ -634,10 +665,10 @@ class ProxyRouter(automat.Automat):
             # see proxy_sender.ProxySender : _on_first_outbox_packet() for sending part
             json_payload = serialization.BytesToDict(inpt.read(), keys_to_text=True)
             inpt.close()
-            sender_idurl = strng.to_bin(json_payload['f'])   # from
-            receiver_idurl = strng.to_bin(json_payload['t']) # to
-            wide = json_payload['w']                         # wide
-            routed_data = json_payload['p']                  # payload
+            sender_idurl = strng.to_bin(json_payload['f'])  # from
+            receiver_idurl = strng.to_bin(json_payload['t'])  # to
+            wide = json_payload['w']  # wide
+            routed_data = json_payload['p']  # payload
             response_timeout = json_payload.get('i', None)
             keep_alive = json_payload.get('a', False)
             is_retry = json_payload.get('r', False)
@@ -655,7 +686,11 @@ class ProxyRouter(automat.Automat):
         del block
         if identitycache.HasKey(sender_idurl) and identitycache.HasKey(receiver_idurl) and not is_retry:
             return self._do_verify_routed_data(newpacket, info, sender_idurl, receiver_idurl, routed_data, wide, response_timeout, keep_alive, is_retry)
-        lg.warn('will send routed data after caching, is_retry=%s sender_idurl=%r receiver_idurl=%r' % (is_retry, sender_idurl, receiver_idurl, ))
+        lg.warn('will send routed data after caching, is_retry=%s sender_idurl=%r receiver_idurl=%r' % (
+            is_retry,
+            sender_idurl,
+            receiver_idurl,
+        ))
         dl = []
         if not identitycache.HasKey(sender_idurl) or is_retry:
             dl.append(identitycache.immediatelyCaching(sender_idurl))
@@ -715,9 +750,7 @@ class ProxyRouter(automat.Automat):
         routes_keys = list(self.routes.keys())
         closed_route_keys = list(self.closed_routes.keys())
         if _Debug:
-            lg.args(_DebugLevel, newpacket=newpacket, info=info, sender_idurl=sender_idurl,
-                    receiver_idurl=receiver_idurl, route_contacts=route['contacts'],
-                    closed_routes=closed_route_keys, is_retry=is_retry, route_changed=route_changed)
+            lg.args(_DebugLevel, newpacket=newpacket, info=info, sender_idurl=sender_idurl, receiver_idurl=receiver_idurl, route_contacts=route['contacts'], closed_routes=closed_route_keys, is_retry=is_retry, route_changed=route_changed)
         routed_packet = signed.Unserialize(routed_data)
         #--- invalid packet
         if not routed_packet:
@@ -733,22 +766,20 @@ class ProxyRouter(automat.Automat):
             is_signature_valid = False
         #--- signature invalid
         if not is_signature_valid:
-            lg.err('new packet from %s is NOT VALID:\n\n%r\n\n\n%r\n' % (
-                sender_idurl, routed_data, routed_packet.Serialize()))
+            lg.err('new packet from %s is NOT VALID:\n\n%r\n\n\n%r\n' % (sender_idurl, routed_data, routed_packet.Serialize()))
             self._do_send_fail_packet(newpacket, info, wide, response_timeout, keep_alive, sender_idurl, receiver_idurl, 'signature invalid')
             return
         #--- packet addressed to me
         if receiver_idurl.to_bin() == my_id.getIDURL().to_bin():
             if _Debug:
-                lg.out(_DebugLevel, '        proxy_router() passing by INCOMING packet %r from %s to me' % (
-                    routed_packet, sender_idurl))
+                lg.out(_DebugLevel, '        proxy_router() passing by INCOMING packet %r from %s to me' % (routed_packet, sender_idurl))
             # node A sending routed data but I am the actual recipient, so need to handle the packet right away
             packet_in.process(routed_packet, info)
             return
         #--- route already closed
         if False:
-        # if receiver_idurl.original() in closed_route_keys or receiver_idurl.to_bin() in closed_route_keys:
-        # if not route_changed and ( receiver_idurl.original() in closed_route_keys or receiver_idurl.to_bin() in closed_route_keys ):
+            # if receiver_idurl.original() in closed_route_keys or receiver_idurl.to_bin() in closed_route_keys:
+            # if not route_changed and ( receiver_idurl.original() in closed_route_keys or receiver_idurl.to_bin() in closed_route_keys ):
             route_closed_time = max(self.closed_routes.get(receiver_idurl.original(), 0), self.closed_routes.get(receiver_idurl.to_bin(), 0))
             if _Debug:
                 lg.args(_DebugLevel, route_closed_time=route_closed_time, time=time.time())
@@ -761,8 +792,7 @@ class ProxyRouter(automat.Automat):
         if receiver_idurl.original() in routes_keys or receiver_idurl.to_bin() in routes_keys:
             # if both node A and node B are behind my router node I need to send routed packet directly to B
             if _Debug:
-                lg.out(_DebugLevel, '        proxy_router() ROUTED (same router) packet %s from %s to %s' % (
-                    routed_packet, sender_idurl, receiver_idurl))
+                lg.out(_DebugLevel, '        proxy_router() ROUTED (same router) packet %s from %s to %s' % (routed_packet, sender_idurl, receiver_idurl))
             self.event('routed-inbox-packet-received', (receiver_idurl, routed_packet, info))
             return
         #--- forward outgoing routed packet
@@ -773,10 +803,30 @@ class ProxyRouter(automat.Automat):
             wide=wide,
             callbacks={
                 'item-failed': lambda pkt_out, out_info: self._on_routed_out_packet_failed(
-                    pkt_out, out_info.status, newpacket, info, sender_idurl, routed_command, routed_packet_id, routed_remote_id, wide, response_timeout, keep_alive,
+                    pkt_out,
+                    out_info.status,
+                    newpacket,
+                    info,
+                    sender_idurl,
+                    routed_command,
+                    routed_packet_id,
+                    routed_remote_id,
+                    wide,
+                    response_timeout,
+                    keep_alive,
                 ),
                 'item-sent': lambda pkt_out, out_info: self._on_routed_out_packet_sent(
-                    pkt_out, out_info.status, newpacket, info, sender_idurl, routed_command, routed_packet_id, routed_remote_id, wide, response_timeout, keep_alive,
+                    pkt_out,
+                    out_info.status,
+                    newpacket,
+                    info,
+                    sender_idurl,
+                    routed_command,
+                    routed_packet_id,
+                    routed_remote_id,
+                    wide,
+                    response_timeout,
+                    keep_alive,
                 ),
             },
             target=receiver_idurl,
@@ -786,16 +836,26 @@ class ProxyRouter(automat.Automat):
         )
         if _Debug:
             lg.out(_DebugLevel, '>>>Route-OUT %d bytes from %s at %s://%s :' % (
-                len(routed_data), nameurl.GetName(sender_idurl), strng.to_text(info.proto), strng.to_text(info.host),))
+                len(routed_data),
+                nameurl.GetName(sender_idurl),
+                strng.to_text(info.proto),
+                strng.to_text(info.host),
+            ))
             lg.out(_DebugLevel, '    routed to %s : %s' % (nameurl.GetName(receiver_idurl), pout))
         if _PacketLogFileEnabled:
-            lg.out(0, '                \033[0;49;36mROUTE OUT %s(%s) %s %s for %s forwarded to %s\033[0m' % (
-                routed_packet.Command, routed_packet.PacketID,
-                global_id.UrlToGlobalID(routed_packet.OwnerID),
-                global_id.UrlToGlobalID(routed_packet.CreatorID),
-                global_id.UrlToGlobalID(routed_packet.RemoteID),
-                global_id.UrlToGlobalID(receiver_idurl),
-            ), log_name='packet', showtime=True)
+            lg.out(
+                0,
+                '                \033[0;49;36mROUTE OUT %s(%s) %s %s for %s forwarded to %s\033[0m' % (
+                    routed_packet.Command,
+                    routed_packet.PacketID,
+                    global_id.UrlToGlobalID(routed_packet.OwnerID),
+                    global_id.UrlToGlobalID(routed_packet.CreatorID),
+                    global_id.UrlToGlobalID(routed_packet.RemoteID),
+                    global_id.UrlToGlobalID(receiver_idurl),
+                ),
+                log_name='packet',
+                showtime=True
+            )
         del routed_data
         del route
         del routed_packet
@@ -805,7 +865,10 @@ class ProxyRouter(automat.Automat):
             lg.args(_DebugLevel, error=error, newpacket=newpacket, sender_idurl=sender_idurl, receiver_idurl=receiver_idurl)
         publickey = identitycache.GetPublicKey(newpacket.CreatorID)
         if not publickey:
-            lg.err('%r : but can not send RelayFail(), identity %r is not cached' % (error, newpacket.CreatorID, ))
+            lg.err('%r : but can not send RelayFail(), identity %r is not cached' % (
+                error,
+                newpacket.CreatorID,
+            ))
             return
         receiver_proto, receiver_host = self._get_session_proto_host(sender_idurl, info)
         raw_data, pout = self._do_send_relay_packet(
@@ -829,8 +892,14 @@ class ProxyRouter(automat.Automat):
         )
         if _Debug:
             lg.out(_DebugLevel, '<<<Route-FAIL %s from %s:%s   sent to %s://%s with %d bytes in %s' % (
-                str(newpacket), strng.to_text(info.proto), strng.to_text(info.host),
-                strng.to_text(info.proto), strng.to_text(info.host), len(raw_data), pout, ))
+                str(newpacket),
+                strng.to_text(info.proto),
+                strng.to_text(info.host),
+                strng.to_text(info.proto),
+                strng.to_text(info.host),
+                len(raw_data),
+                pout,
+            ))
         del raw_data
         del pout
 
@@ -864,9 +933,7 @@ class ProxyRouter(automat.Automat):
         route = {
             'packet': routed_packet,
             'remoteid': receiver_idurl,
-            'description': ('%s_%s[%s]_%s' % (
-                relay_cmd, inbox_packet.Command, inbox_packet.PacketID,
-                nameurl.GetName(receiver_idurl))),
+            'description': ('%s_%s[%s]_%s' % (relay_cmd, inbox_packet.Command, inbox_packet.PacketID, nameurl.GetName(receiver_idurl))),
         }
         if receiver_proto is not None and receiver_host is not None:
             route['proto'] = receiver_proto
@@ -881,16 +948,23 @@ class ProxyRouter(automat.Automat):
         if _PacketLogFileEnabled:
             label = relay_cmd.upper().replace('RELAY', 'ROUTE ')
             reason = error if relay_cmd == commands.RelayFail() else ''
-            lg.out(0, '                \033[0;49;32m%s %s(%s) %s %s for %s forwarded to %s at %s://%s %s\033[0m' % (
-                label,
-                inbox_packet.Command, inbox_packet.PacketID,
-                global_id.UrlToGlobalID(inbox_packet.OwnerID),
-                global_id.UrlToGlobalID(inbox_packet.CreatorID),
-                global_id.UrlToGlobalID(inbox_packet.RemoteID),
-                global_id.UrlToGlobalID(receiver_idurl),
-                strng.to_text(receiver_proto), strng.to_text(receiver_host),
-                reason,
-            ), log_name='packet', showtime=True)
+            lg.out(
+                0,
+                '                \033[0;49;32m%s %s(%s) %s %s for %s forwarded to %s at %s://%s %s\033[0m' % (
+                    label,
+                    inbox_packet.Command,
+                    inbox_packet.PacketID,
+                    global_id.UrlToGlobalID(inbox_packet.OwnerID),
+                    global_id.UrlToGlobalID(inbox_packet.CreatorID),
+                    global_id.UrlToGlobalID(inbox_packet.RemoteID),
+                    global_id.UrlToGlobalID(receiver_idurl),
+                    strng.to_text(receiver_proto),
+                    strng.to_text(receiver_host),
+                    reason,
+                ),
+                log_name='packet',
+                showtime=True
+            )
         del block
         del routed_packet
         return raw_data, pout
@@ -943,13 +1017,12 @@ class ProxyRouter(automat.Automat):
         self.closed_routes[idurl.to_bin()] = time.time()
 
     def _on_routed_in_packet_failed(self, pkt_out, msg, newpacket, info, receiver_idurl):
-        lg.err('routed packet transfer failed: %r %r %r %r %r' % ( pkt_out, msg, newpacket, info, receiver_idurl))
+        lg.err('routed packet transfer failed: %r %r %r %r %r' % (pkt_out, msg, newpacket, info, receiver_idurl))
         p2p_service.SendFail(newpacket, 'routed packet transfer failed', remote_idurl=newpacket.CreatorID)
 
     def _on_routed_out_packet_sent(self, pkt_out, msg, newpacket, info, sender_idurl, routed_command, routed_packet_id, routed_remote_id, wide, response_timeout, keep_alive):
         if _Debug:
-            lg.args(_DebugLevel, pkt_out=pkt_out, msg=msg, newpacket=newpacket, sender_idurl=sender_idurl,
-                    routed_command=routed_command, routed_packet_id=routed_packet_id, routed_remote_id=routed_remote_id)
+            lg.args(_DebugLevel, pkt_out=pkt_out, msg=msg, newpacket=newpacket, sender_idurl=sender_idurl, routed_command=routed_command, routed_packet_id=routed_packet_id, routed_remote_id=routed_remote_id)
         publickey = identitycache.GetPublicKey(newpacket.CreatorID)
         if not publickey:
             lg.err('routed packet sent but can not send RelayAck(), identity %r is not cached' % newpacket.CreatorID)
@@ -975,7 +1048,11 @@ class ProxyRouter(automat.Automat):
             error='',
         )
         if _Debug:
-            lg.out(_DebugLevel, '<<<Route-ACK %s %s:%s' % (str(newpacket), receiver_proto, receiver_host, ))
+            lg.out(_DebugLevel, '<<<Route-ACK %s %s:%s' % (
+                str(newpacket),
+                receiver_proto,
+                receiver_host,
+            ))
             lg.out(_DebugLevel, '           sent to %s://%s with %d bytes in %s' % (receiver_proto, receiver_host, len(raw_data), pout))
         del raw_data
         del pout
@@ -983,8 +1060,7 @@ class ProxyRouter(automat.Automat):
 
     def _on_routed_out_packet_failed(self, pkt_out, msg, newpacket, info, sender_idurl, routed_command, routed_packet_id, routed_remote_id, wide, response_timeout, keep_alive):
         if _Debug:
-            lg.args(_DebugLevel, pkt_out=pkt_out, msg=msg, newpacket=newpacket, sender_idurl=sender_idurl,
-                    routed_command=routed_command, routed_packet_id=routed_packet_id, routed_remote_id=routed_remote_id)
+            lg.args(_DebugLevel, pkt_out=pkt_out, msg=msg, newpacket=newpacket, sender_idurl=sender_idurl, routed_command=routed_command, routed_packet_id=routed_packet_id, routed_remote_id=routed_remote_id)
         publickey = identitycache.GetPublicKey(newpacket.CreatorID)
         if not publickey:
             lg.err('routed packet delivery failed but can not send RelayFail(), identity %r is not cached' % newpacket.CreatorID)
@@ -1010,7 +1086,11 @@ class ProxyRouter(automat.Automat):
             error='routed packet delivery failed',
         )
         if _Debug:
-            lg.out(_DebugLevel, '<<<Route-FAIL %s %s:%s' % (str(newpacket), receiver_proto, receiver_host, ))
+            lg.out(_DebugLevel, '<<<Route-FAIL %s %s:%s' % (
+                str(newpacket),
+                receiver_proto,
+                receiver_host,
+            ))
             lg.out(_DebugLevel, '           sent to %s://%s with %d bytes in %s' % (receiver_proto, receiver_host, len(raw_data), pout))
         del raw_data
         del pout
@@ -1018,19 +1098,35 @@ class ProxyRouter(automat.Automat):
 
     def _on_first_inbox_packet_received(self, newpacket, info, status, error_message):
         if _Debug:
-            lg.out(_DebugLevel, 'proxy_router._on_first_inbox_packet_received %s from %s://%s' % (newpacket, info.proto, info.host, ))
-            lg.out(_DebugLevel, '    creator=%s owner=%s' % (newpacket.CreatorID.original(), newpacket.OwnerID.original(), ))
-            lg.out(_DebugLevel, '    sender=%s remote_id=%s' % (info.sender_idurl, newpacket.RemoteID.original(), ))
+            lg.out(_DebugLevel, 'proxy_router._on_first_inbox_packet_received %s from %s://%s' % (
+                newpacket,
+                info.proto,
+                info.host,
+            ))
+            lg.out(_DebugLevel, '    creator=%s owner=%s' % (
+                newpacket.CreatorID.original(),
+                newpacket.OwnerID.original(),
+            ))
+            lg.out(_DebugLevel, '    sender=%s remote_id=%s' % (
+                info.sender_idurl,
+                newpacket.RemoteID.original(),
+            ))
             for k, v in self.routes.items():
-                lg.out(_DebugLevel * 2, '        route with %r :  address=%s  contacts=%s' % (k, v.get('address'), v.get('contacts'), ))
+                lg.out(_DebugLevel * 2, '        route with %r :  address=%s  contacts=%s' % (
+                    k,
+                    v.get('address'),
+                    v.get('contacts'),
+                ))
         # first filter all traffic addressed to me
         if newpacket.RemoteID == my_id.getIDURL():
             # check command type, filter Routed traffic first
-            if newpacket.Command in [commands.Relay(), commands.RelayOut(), ]:
+            if newpacket.Command in [
+                commands.Relay(),
+                commands.RelayOut(),
+            ]:
                 # look like this is a routed packet from node behind my proxy addressed to someone else
-                if (newpacket.CreatorID.original() in list(self.routes.keys()) or
-                    newpacket.CreatorID.to_bin() in list(self.routes.keys()) or
-                    newpacket.OwnerID.original() in list(self.routes.keys()) or
+                if (
+                    newpacket.CreatorID.original() in list(self.routes.keys()) or newpacket.CreatorID.to_bin() in list(self.routes.keys()) or newpacket.OwnerID.original() in list(self.routes.keys()) or
                     newpacket.OwnerID.to_bin() in list(self.routes.keys())
                 ):
                     # sent by proxy_sender() from node A : a man behind proxy_router()
@@ -1041,16 +1137,13 @@ class ProxyRouter(automat.Automat):
                     self.event('routed-outbox-packet-received', (newpacket, info))
                     return True
                 # looks like we do not know this guy, so why he is sending us routed traffic?
-                lg.err('unknown %s from %s received, no known routes with %s' % (
-                    newpacket, newpacket.CreatorID, newpacket.CreatorID))
+                lg.err('unknown %s from %s received, no known routes with %s' % (newpacket, newpacket.CreatorID, newpacket.CreatorID))
                 self.automat('unknown-packet-received', (newpacket, info))
                 return True
             # and this is not a Relay packet, Identity
             elif newpacket.Command == commands.Identity():
                 # this is a "propagate" packet from node A addressed to this proxy router
-                if (newpacket.CreatorID.original() in list(self.routes.keys()) or
-                    newpacket.CreatorID.to_bin() in list(self.routes.keys())
-                ):
+                if (newpacket.CreatorID.original() in list(self.routes.keys()) or newpacket.CreatorID.to_bin() in list(self.routes.keys())):
                     # also we need to "reset" overriden identity
                     # return False so that other services also can process that Identity()
                     if _Debug:
@@ -1068,8 +1161,7 @@ class ProxyRouter(automat.Automat):
             # for example if I am a supplier for node A he will send me packets in usual way
             # need to skip this packet here and process it as a normal inbox packet
             if _Debug:
-                lg.out(_DebugLevel, '        proxy_router() SKIP packet %s from %s addressed to me' % (
-                    newpacket, newpacket.CreatorID))
+                lg.out(_DebugLevel, '        proxy_router() SKIP packet %s from %s addressed to me' % (newpacket, newpacket.CreatorID))
             return False
         # this packet was addressed to someone else
         # it can be different scenarios, if can not found valid scenario - must skip the packet
@@ -1081,8 +1173,7 @@ class ProxyRouter(automat.Automat):
             # incoming packet from node B addressed to node A behind that proxy, capture it!
             receiver_idurl = newpacket.RemoteID
             if _Debug:
-                lg.out(_DebugLevel, '        proxy_router() ROUTED packet %s from %s to %s' % (
-                    newpacket, info.sender_idurl, receiver_idurl))
+                lg.out(_DebugLevel, '        proxy_router() ROUTED packet %s from %s to %s' % (newpacket, info.sender_idurl, receiver_idurl))
             self.event('routed-inbox-packet-received', (receiver_idurl, newpacket, info))
             return True
         # unknown RemoteID...
@@ -1102,8 +1193,7 @@ class ProxyRouter(automat.Automat):
                 receiver_idurl = newpacket.OwnerID
                 based_on = 'owner'
             if _Debug:
-                lg.out(_DebugLevel, '        proxy_router() based on %s ROUTED packet %s from %s to %s' % (
-                    based_on, newpacket, info.sender_idurl, receiver_idurl))
+                lg.out(_DebugLevel, '        proxy_router() based on %s ROUTED packet %s from %s to %s' % (based_on, newpacket, info.sender_idurl, receiver_idurl))
             self.event('routed-inbox-packet-received', (receiver_idurl, newpacket, info))
             return True
         # this packet is not related to any of the routes
@@ -1152,17 +1242,23 @@ class ProxyRouter(automat.Automat):
             keep_alive=keep_alive,
         )
         if _PacketLogFileEnabled:
-            lg.out(0, '\033[1;49;94mOUTBOX DIRECT %s(%s) %s %s to %s at %s://%s\033[0m' % (
-                outpacket.Command, outpacket.PacketID,
-                global_id.UrlToGlobalID(outpacket.OwnerID),
-                global_id.UrlToGlobalID(outpacket.CreatorID),
-                global_id.UrlToGlobalID(receiver_idurl),
-                receiver_proto, receiver_host,
-            ), log_name='packet', showtime=True)
+            lg.out(
+                0,
+                '\033[1;49;94mOUTBOX DIRECT %s(%s) %s %s to %s at %s://%s\033[0m' % (
+                    outpacket.Command,
+                    outpacket.PacketID,
+                    global_id.UrlToGlobalID(outpacket.OwnerID),
+                    global_id.UrlToGlobalID(outpacket.CreatorID),
+                    global_id.UrlToGlobalID(receiver_idurl),
+                    receiver_proto,
+                    receiver_host,
+                ),
+                log_name='packet',
+                showtime=True
+            )
         if _Debug:
             lg.args(_DebugLevel, state=self.state, outpacket=outpacket, wide=wide, route=route, pkt_out=pkt_out)
         return pkt_out
-
 
     def _on_file_sending_filter(self, remote_idurl, proto, host, filename, description, pkt_out):
         if id_url.to_bin(remote_idurl) == my_id.getIDURL().to_bin():
@@ -1184,12 +1280,16 @@ class ProxyRouter(automat.Automat):
         if _Debug:
             lg.dbg(_DebugLevel, 'switched %s://%s to %s://%s for outgoing %r' % (proto, host, receiver_proto, receiver_host, pkt_out))
         if _PacketLogFileEnabled:
-            lg.out(0, '\033[1;49;94mOUTBOX HOST SWITCH %s://%s to %s://%s for %s towards %s\033[0m' % (
-                proto, host,
-                receiver_proto, receiver_host,
-                description,
-                global_id.UrlToGlobalID(remote_idurl),
-            ), log_name='packet', showtime=True)
+            lg.out(
+                0, '\033[1;49;94mOUTBOX HOST SWITCH %s://%s to %s://%s for %s towards %s\033[0m' % (
+                    proto,
+                    host,
+                    receiver_proto,
+                    receiver_host,
+                    description,
+                    global_id.UrlToGlobalID(remote_idurl),
+                ), log_name='packet', showtime=True
+            )
         result_defer = gateway.transport(receiver_proto).call('send_file', remote_idurl, filename, receiver_host, description)
         callback.run_begin_file_sending_callbacks(result_defer, remote_idurl, receiver_proto, receiver_host, filename, description, pkt_out)
         # accept the packet and return "filtered" status
@@ -1316,7 +1416,9 @@ class ProxyRouter(automat.Automat):
             if _Debug:
                 lg.out(_DebugLevel, 'proxy_router._remove_route %d bytes wrote' % len(newsrc))
 
+
 #------------------------------------------------------------------------------
+
 
 def main():
     from twisted.internet import reactor  # @UnresolvedImport

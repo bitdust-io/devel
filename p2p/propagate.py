@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 .. module:: propagate.
 
@@ -113,7 +112,9 @@ def startup_list():
     global _StartupPropagateList
     return _StartupPropagateList
 
+
 #------------------------------------------------------------------------------
+
 
 def propagate(selected_contacts, ack_handler=None, wide=False, refresh_cache=False, wait_packets=False, response_timeout=10):
     """
@@ -136,7 +137,10 @@ def propagate(selected_contacts, ack_handler=None, wide=False, refresh_cache=Fal
         )
         if _Debug:
             lg.out(_DebugLevel, 'propagate.contacts_fetched with %d identities, sending my identity to %d remote nodes: %r' % (
-                len(x), len(selected_contacts), res, ))
+                len(x),
+                len(selected_contacts),
+                res,
+            ))
         if wait_packets:
             if not res:
                 result.callback([])
@@ -225,7 +229,9 @@ def single(idurl, ack_handler=None, wide=False, fail_handler=None):
     Do "propagate" for a single contact.
     """
     d = FetchSingle(idurl)
-    d.addCallback(lambda x: SendToIDs([idurl, ], ack_handler=ack_handler, wide=wide))
+    d.addCallback(lambda x: SendToIDs([
+        idurl,
+    ], ack_handler=ack_handler, wide=wide))
     if ack_handler:
         d.addErrback(fail_handler or ack_handler)
     return d
@@ -251,6 +257,7 @@ def write_to_dht():
         LocalIdentity.getIDURL(),
         LocalIdentity.serialize(as_text=True),
     )
+
 
 #------------------------------------------------------------------------------
 
@@ -284,7 +291,9 @@ def FetchCustomers():
     """
     return fetch(contactsdb.customers())
 
+
 #------------------------------------------------------------------------------
+
 
 def SendServers():
     """
@@ -297,7 +306,10 @@ def SendServers():
     dlist = []
     for idurl in LocalIdentity.getSources(as_originals=True):
         _, host, webport, filename = nameurl.UrlParse(idurl)
-        url = net_misc.pack_address((host, webport, ), proto='http')
+        url = net_misc.pack_address((
+            host,
+            webport,
+        ), proto='http')
         dlist.append(net_misc.http_post_data(
             url=url,
             data=payload,
@@ -414,7 +426,14 @@ def OnFileSent(pkt_out, item, status, size, error_message):
     return False
 
 
-def SendToID(idurl, Payload=None, wide=False, ack_handler=None, timeout_handler=None, response_timeout=20, ):
+def SendToID(
+    idurl,
+    Payload=None,
+    wide=False,
+    ack_handler=None,
+    timeout_handler=None,
+    response_timeout=20,
+):
     """
     Create ``packet`` with my Identity file and calls
     ``transport.gateway.outbox()`` to send it.
@@ -438,11 +457,13 @@ def SendToID(idurl, Payload=None, wide=False, ack_handler=None, timeout_handler=
         RemoteID=idurl,
     )
     _PropagateCounter += 1
-    result = gateway.outbox(p, wide, response_timeout=response_timeout, callbacks={
-        commands.Ack(): ack_handler,
-        commands.Fail(): ack_handler,
-        None: timeout_handler,
-    })
+    result = gateway.outbox(
+        p, wide, response_timeout=response_timeout, callbacks={
+            commands.Ack(): ack_handler,
+            commands.Fail(): ack_handler,
+            None: timeout_handler,
+        }
+    )
     if wide:
         # this is a ping packet - need to clear old info
         p2p_stats.ErasePeerProtosStates(idurl)
@@ -496,12 +517,17 @@ def SendToIDs(idlist, wide=False, ack_handler=None, timeout_handler=None, respon
         )
         _PropagateCounter += 1
         if _Debug:
-            lg.out(_DebugLevel, '        sending %r to %s' % (p, nameurl.GetName(contact), ))
-        res = gateway.outbox(p, wide, response_timeout=response_timeout, callbacks={
-            commands.Ack(): ack_handler,
-            commands.Fail(): ack_handler,
-            None: timeout_handler,
-        })
+            lg.out(_DebugLevel, '        sending %r to %s' % (
+                p,
+                nameurl.GetName(contact),
+            ))
+        res = gateway.outbox(
+            p, wide, response_timeout=response_timeout, callbacks={
+                commands.Ack(): ack_handler,
+                commands.Fail(): ack_handler,
+                None: timeout_handler,
+            }
+        )
         if not res:
             lg.warn('my Identity() was not sent to %r' % contact)
             continue
@@ -521,7 +547,9 @@ def SendToIDs(idlist, wide=False, ack_handler=None, timeout_handler=None, respon
         return totalsent
     return DeferredList(wait_list, consumeErrors=True)
 
+
 #------------------------------------------------------------------------------
+
 
 def ping_suppliers(customer_idurl=None, timeout=20):
     from p2p import online_status

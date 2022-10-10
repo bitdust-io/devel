@@ -25,7 +25,6 @@
 #
 #
 #
-
 """
 .. module:: webtraffic.
 
@@ -253,6 +252,7 @@ def outbox(pkt_out, item, status, size, error_message):
     _OutboxPacketsCount += 1
     return False
 
+
 #-------------------------------------------------------------------------------
 
 
@@ -313,37 +313,29 @@ class TrafficPage(resource.Resource):
         if direction == 'in':
             if typ == 'idurl':
                 for i, v in _InboxByIDURL.items():
-                    out += '<tr><td><a href="%s">%s</a><td>%d<td>%d<td>%d<td>%d\n' % (
-                        i, i, v[0], v[3], v[1], v[2])
+                    out += '<tr><td><a href="%s">%s</a><td>%d<td>%d<td>%d<td>%d\n' % (i, i, v[0], v[3], v[1], v[2])
             elif typ == 'host':
                 for i, v in _InboxByHost.items():
-                    out += '<tr><td>%s<td>%d<td>%d<td>%d<td>%d\n' % (
-                        i, v[0], v[3], v[1], v[2])
+                    out += '<tr><td>%s<td>%d<td>%d<td>%d<td>%d\n' % (i, v[0], v[3], v[1], v[2])
             elif typ == 'proto':
                 for i, v in _InboxByProto.items():
-                    out += '<tr><td>%s<td>%d<td>%d<td>%d<td>%d\n' % (
-                        i, v[0], v[3], v[1], v[2])
+                    out += '<tr><td>%s<td>%d<td>%d<td>%d<td>%d\n' % (i, v[0], v[3], v[1], v[2])
             elif typ == 'type':
                 for i, v in _InboxByType.items():
-                    out += '<tr><td>%s<td>%d<td>%d<td>%d<td>%d\n' % (
-                        i, v[0], v[3], v[1], v[2])
+                    out += '<tr><td>%s<td>%d<td>%d<td>%d<td>%d\n' % (i, v[0], v[3], v[1], v[2])
         else:
             if typ == 'idurl':
                 for i, v in _OutboxByIDURL.items():
-                    out += '<tr><td><a href="%s">%s</a><td>%d<td>%d<td>%d<td>%d\n' % (
-                        i, i, v[0], v[3], v[1], v[2])
+                    out += '<tr><td><a href="%s">%s</a><td>%d<td>%d<td>%d<td>%d\n' % (i, i, v[0], v[3], v[1], v[2])
             elif typ == 'host':
                 for i, v in _OutboxByHost.items():
-                    out += '<tr><td>%s<td>%d<td>%d<td>%d<td>%d\n' % (
-                        i, v[0], v[3], v[1], v[2])
+                    out += '<tr><td>%s<td>%d<td>%d<td>%d<td>%d\n' % (i, v[0], v[3], v[1], v[2])
             elif typ == 'proto':
                 for i, v in _OutboxByProto.items():
-                    out += '<tr><td>%s<td>%d<td>%d<td>%d<td>%d\n' % (
-                        i, v[0], v[3], v[1], v[2])
+                    out += '<tr><td>%s<td>%d<td>%d<td>%d<td>%d\n' % (i, v[0], v[3], v[1], v[2])
             elif typ == 'type':
                 for i, v in _OutboxByType.items():
-                    out += '<tr><td>%s<td>%d<td>%d<td>%d<td>%d\n' % (
-                        i, v[0], v[3], v[1], v[2])
+                    out += '<tr><td>%s<td>%d<td>%d<td>%d<td>%d\n' % (i, v[0], v[3], v[1], v[2])
 
         out += '</table>'
         if direction == 'in':
@@ -353,6 +345,7 @@ class TrafficPage(resource.Resource):
         out += '</body></html>'
 
         return out
+
 
 #------------------------------------------------------------------------------
 

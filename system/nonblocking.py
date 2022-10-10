@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 .. module:: nonblocking.
 
@@ -84,19 +83,10 @@ class Popen(subprocess.Popen):
     """
     err_report = ''
 
-    def __init__(self, args, bufsize=0, executable=None,
-                 stdin=None, stdout=None, stderr=None,
-                 preexec_fn=None, close_fds=False, shell=False,
-                 cwd=None, env=None, universal_newlines=False,
-                 startupinfo=None, creationflags=0):
+    def __init__(self, args, bufsize=0, executable=None, stdin=None, stdout=None, stderr=None, preexec_fn=None, close_fds=False, shell=False, cwd=None, env=None, universal_newlines=False, startupinfo=None, creationflags=0):
 
         self.args = args
-        subprocess.Popen.__init__(self,
-                                  args, bufsize, executable,
-                                  stdin, stdout, stderr,
-                                  preexec_fn, close_fds, shell,
-                                  cwd, env, universal_newlines,
-                                  startupinfo, creationflags)
+        subprocess.Popen.__init__(self, args, bufsize, executable, stdin, stdout, stderr, preexec_fn, close_fds, shell, cwd, env, universal_newlines, startupinfo, creationflags)
         if _Debug:
             lg.out(_DebugLevel, 'nonblocking.Popen created')
             lg.out(_DebugLevel, '    stdin=%r' % self.stdin)
@@ -153,7 +143,6 @@ class Popen(subprocess.Popen):
         flags = fcntl.fcntl(conn, fcntl.F_GETFL)
         if not conn.closed:
             fcntl.fcntl(conn, fcntl.F_SETFL, flags | os.O_NONBLOCK)
-
 
     if getattr(subprocess, 'mswindows', None) or platform.uname()[0] == 'Windows':
 
@@ -214,8 +203,8 @@ class Popen(subprocess.Popen):
             except:
                 pass
 
-
     else:
+
         def send(self, input):
             if not self.stdin:
                 return None
@@ -283,6 +272,7 @@ def ExecuteString(execstr):
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            creationflags=win32process.CREATE_NO_WINDOW,)
+            creationflags=win32process.CREATE_NO_WINDOW,
+        )
     except:
         return None

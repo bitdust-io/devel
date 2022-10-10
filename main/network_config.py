@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 ..
 
@@ -46,6 +45,7 @@ from lib import serialization
 from main import settings
 
 #------------------------------------------------------------------------------
+
 
 def find_network_config_file():
     networks_json_path = os.path.join(settings.MetaDataDir(), 'networkconfig')

@@ -19,8 +19,6 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
-
-
 """
 .. module:: shared_access_donor
 .. role:: red
@@ -89,6 +87,7 @@ from storage import backup_fs
 
 #------------------------------------------------------------------------------
 
+
 class SharedAccessDonor(automat.Automat):
     """
     This class implements all the functionality of the ``shared_access_donor()`` state machine.
@@ -106,14 +105,7 @@ class SharedAccessDonor(automat.Automat):
         Create shared_access_donor() state machine.
         Use this method if you need to call Automat.__init__() in a special way.
         """
-        super(SharedAccessDonor, self).__init__(
-            name='shared_access_donor',
-            state='AT_STARTUP',
-            debug_level=debug_level or _DebugLevel,
-            log_events=log_events or _Debug,
-            publish_events=publish_events,
-            **kwargs
-        )
+        super(SharedAccessDonor, self).__init__(name='shared_access_donor', state='AT_STARTUP', debug_level=debug_level or _DebugLevel, log_events=log_events or _Debug, publish_events=publish_events, **kwargs)
 
     def init(self):
         """
@@ -191,11 +183,11 @@ class SharedAccessDonor(automat.Automat):
         elif self.state == 'PUB_KEY':
             if event == 'ack':
                 self.doCheckAllAcked(*args, **kwargs)
-            elif event == 'fail' or ( event == 'timer-15sec' and not self.isSomeSuppliersAcked(*args, **kwargs) ):
+            elif event == 'fail' or (event == 'timer-15sec' and not self.isSomeSuppliersAcked(*args, **kwargs)):
                 self.state = 'CLOSED'
                 self.doReportFailed(event, *args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'all-suppliers-acked' or ( event == 'timer-2sec' and self.isSomeSuppliersAcked(*args, **kwargs) ):
+            elif event == 'all-suppliers-acked' or (event == 'timer-2sec' and self.isSomeSuppliersAcked(*args, **kwargs)):
                 self.state = 'PRIV_KEY'
                 self.doSendPrivKeyToUser(*args, **kwargs)
         #---PRIV_KEY---
@@ -243,6 +235,7 @@ class SharedAccessDonor(automat.Automat):
         """
         Action method.
         """
+
         def _on_ack(response):
             self.ping_response = time.time()
             self.automat('ack', response)
@@ -274,10 +267,7 @@ class SharedAccessDonor(automat.Automat):
         """
         master_key_id = my_keys.make_key_id(alias='master', creator_idurl=self.remote_idurl)
         d = key_ring.audit_private_key(master_key_id, self.remote_idurl)
-        d.addCallback(lambda audit_result: (
-            self.automat('audit-ok') if audit_result else self.automat('fail', Exception(
-                'remote user master key audit process failed')),
-        ))
+        d.addCallback(lambda audit_result: (self.automat('audit-ok') if audit_result else self.automat('fail', Exception('remote user master key audit process failed')),))
         if _Debug:
             d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='shared_access_donor.doAuditUserMasterKey')
         d.addErrback(lambda err: self.automat('fail', err))
@@ -326,8 +316,7 @@ class SharedAccessDonor(automat.Automat):
         )
         raw_list_files = serialization.DictToBytes(json_list_files, keys_to_text=True, values_to_text=True, encoding='utf-8')
         if _Debug:
-            lg.out(_DebugLevel, 'shared_access_donor.doSendMyListFiles prepared list of files for %s :\n%s' % (
-                self.remote_idurl, raw_list_files))
+            lg.out(_DebugLevel, 'shared_access_donor.doSendMyListFiles prepared list of files for %s :\n%s' % (self.remote_idurl, raw_list_files))
         block = encrypted.Block(
             CreatorID=my_id.getIDURL(),
             BackupID=self.key_id,
@@ -337,7 +326,10 @@ class SharedAccessDonor(automat.Automat):
             EncryptKey=self.key_id,
         )
         encrypted_list_files = block.Serialize()
-        packet_id = '%s:%s' % (self.key_id, packetid.UniqueID(), )
+        packet_id = '%s:%s' % (
+            self.key_id,
+            packetid.UniqueID(),
+        )
         p2p_service.SendFiles(
             idurl=self.remote_idurl,
             raw_list_files_info=encrypted_list_files,
@@ -353,12 +345,17 @@ class SharedAccessDonor(automat.Automat):
         """
         Action method.
         """
-        lg.info('share key [%s] with %r finished with success' % (self.key_id, self.remote_idurl, ))
-        events.send('private-key-shared', data=dict(
-            global_id=global_id.UrlToGlobalID(self.remote_idurl),
-            remote_idurl=self.remote_idurl,
-            key_id=self.key_id,
+        lg.info('share key [%s] with %r finished with success' % (
+            self.key_id,
+            self.remote_idurl,
         ))
+        events.send(
+            'private-key-shared', data=dict(
+                global_id=global_id.UrlToGlobalID(self.remote_idurl),
+                remote_idurl=self.remote_idurl,
+                key_id=self.key_id,
+            )
+        )
         if self.result_defer:
             self.result_defer.callback(True)
 
@@ -366,28 +363,34 @@ class SharedAccessDonor(automat.Automat):
         """
         Action method.
         """
-        lg.warn('share key [%s] with %s failed: %s' % (self.key_id, self.remote_idurl, args, ))
+        lg.warn('share key [%s] with %s failed: %s' % (
+            self.key_id,
+            self.remote_idurl,
+            args,
+        ))
         reason = 'key transfer failed with unknown reason'
         if args and args[0]:
             reason = args[0]
         else:
             if self.remote_identity is None:
-                reason='remote identity caching failed',
+                reason = 'remote identity caching failed',
             else:
                 if self.ping_response is None:
-                    reason='remote node not responding',
+                    reason = 'remote node not responding',
                 else:
                     if self.suppliers_responses:
                         reason = 'connection timeout with my suppliers'
                     else:
                         if event.count('timer-'):
                             reason = 'key transfer failed because of network connection timeout'
-        events.send('private-key-share-failed', data=dict(
-            global_id=global_id.UrlToGlobalID(self.remote_idurl),
-            remote_idurl=self.remote_idurl,
-            key_id=self.key_id,
-            reason=reason,
-        ))
+        events.send(
+            'private-key-share-failed', data=dict(
+                global_id=global_id.UrlToGlobalID(self.remote_idurl),
+                remote_idurl=self.remote_idurl,
+                key_id=self.key_id,
+                reason=reason,
+            )
+        )
         if self.result_defer:
             self.result_defer.errback(Exception(reason))
 
@@ -428,7 +431,10 @@ class SharedAccessDonor(automat.Automat):
         return None
 
     def _on_user_priv_key_shared(self, response):
-        lg.info('your private key %s was sent to %s' % (self.key_id, self.remote_idurl, ))
+        lg.info('your private key %s was sent to %s' % (
+            self.key_id,
+            self.remote_idurl,
+        ))
         self.automat('priv-key-ok', response)
         return None
 

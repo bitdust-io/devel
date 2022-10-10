@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 ..
 
@@ -109,12 +108,17 @@ class CustomerFamilyService(LocalService):
             fm.automat('init')
         else:
             lg.warn('family_member() instance already exists, but new customer just accepted %s' % customer_idurl)
-        reactor.callLater(0, fm.automat, 'family-join', {  # @UndefinedVariable
-            'supplier_idurl': my_id.getIDURL().to_bin(),
-            'ecc_map': evt.data.get('ecc_map'),
-            'position': evt.data.get('position', -1),
-            'family_snapshot': id_url.to_bin_list(evt.data.get('family_snapshot')),
-        })
+        reactor.callLater(
+            0,
+            fm.automat,
+            'family-join',
+            {  # @UndefinedVariable
+                'supplier_idurl': my_id.getIDURL().to_bin(),
+                'ecc_map': evt.data.get('ecc_map'),
+                'position': evt.data.get('position', -1),
+                'family_snapshot': id_url.to_bin_list(evt.data.get('family_snapshot')),
+            }
+        )
 
     def _on_existing_customer_accepted(self, evt):
         from twisted.internet import reactor  # @UnresolvedImport
@@ -133,12 +137,17 @@ class CustomerFamilyService(LocalService):
         if not fm:
             lg.err('family_member() instance was not found for existing customer %s' % customer_idurl)
             return
-        reactor.callLater(0, fm.automat, 'family-join', {  # @UndefinedVariable
-            'supplier_idurl': my_id.getIDURL().to_bin(),
-            'ecc_map': evt.data.get('ecc_map'),
-            'position': evt.data.get('position'),
-            'family_snapshot': id_url.to_bin_list(evt.data.get('family_snapshot')),
-        })
+        reactor.callLater(
+            0,
+            fm.automat,
+            'family-join',
+            {  # @UndefinedVariable
+                'supplier_idurl': my_id.getIDURL().to_bin(),
+                'ecc_map': evt.data.get('ecc_map'),
+                'position': evt.data.get('position'),
+                'family_snapshot': id_url.to_bin_list(evt.data.get('family_snapshot')),
+            }
+        )
 
     def _on_existing_customer_terminated(self, evt):
         from twisted.internet import reactor  # @UnresolvedImport
@@ -153,10 +162,15 @@ class CustomerFamilyService(LocalService):
         if not fm:
             lg.err('family_member() instance not found for existing customer %s' % customer_idurl)
             return
-        reactor.callLater(0, fm.automat, 'family-leave', {  # @UndefinedVariable
-            'supplier_idurl': my_id.getIDURL().to_bin(),
-            'ecc_map': evt.data.get('ecc_map'),
-        })
+        reactor.callLater(
+            0,
+            fm.automat,
+            'family-leave',
+            {  # @UndefinedVariable
+                'supplier_idurl': my_id.getIDURL().to_bin(),
+                'ecc_map': evt.data.get('ecc_map'),
+            }
+        )
 
     def _on_incoming_contacts_packet(self, newpacket, info):
         from twisted.internet import reactor  # @UnresolvedImport
@@ -195,16 +209,24 @@ class CustomerFamilyService(LocalService):
             fm = family_member.by_customer_idurl(customer_idurl)
             if not fm:
                 lg.warn('family_member() instance not found for incoming %s from %s for customer %r' % (
-                    newpacket, info, customer_idurl, ))
+                    newpacket,
+                    info,
+                    customer_idurl,
+                ))
                 return False
-            reactor.callLater(0, fm.automat, 'contacts-received', {  # @UndefinedVariable
-                'type': contacts_type,
-                'packet': newpacket,
-                'customer_idurl': customer_idurl,
-                'customer_ecc_map': ecc_map,
-                'suppliers_list': suppliers_list,
-                'transaction_revision': transaction_revision,
-            })
+            reactor.callLater(
+                0,
+                fm.automat,
+                'contacts-received',
+                {  # @UndefinedVariable
+                    'type': contacts_type,
+                    'packet': newpacket,
+                    'customer_idurl': customer_idurl,
+                    'customer_ecc_map': ecc_map,
+                    'suppliers_list': suppliers_list,
+                    'transaction_revision': transaction_revision,
+                }
+            )
             return True
 
         elif contacts_type == 'supplier_position':
@@ -223,7 +245,10 @@ class CustomerFamilyService(LocalService):
             fm = family_member.by_customer_idurl(customer_idurl)
             if not fm:
                 lg.warn('family_member() instance not found for incoming %s from %s for customer %r' % (
-                    newpacket, info, customer_idurl, ))
+                    newpacket,
+                    info,
+                    customer_idurl,
+                ))
                 return False
             reactor.callLater(0, fm.automat, 'contacts-received', {  # @UndefinedVariable
                 'type': contacts_type,
@@ -253,5 +278,8 @@ class CustomerFamilyService(LocalService):
             if customer_idurl == id_url.field(evt.data['old_idurl']):
                 customer_idurl.refresh(replace_original=True)
                 fm.customer_idurl.refresh(replace_original=True)
-                lg.info('found %r for customer with rotated identity and refreshed: %r' % (fm, customer_idurl, ))
+                lg.info('found %r for customer with rotated identity and refreshed: %r' % (
+                    fm,
+                    customer_idurl,
+                ))
                 reactor.callLater(0, fm.automat, 'family-refresh')  # @UndefinedVariable

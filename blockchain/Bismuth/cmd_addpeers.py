@@ -13,12 +13,10 @@ python3 cmd_addpeers.py ip:port,ip:port,ip:port
 if port is omitted, 5658 will be used.
 """
 
-
 import connections
 import json
 import socks
 import sys
-
 
 __version__ = '0.0.1'
 

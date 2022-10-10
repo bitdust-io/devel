@@ -23,7 +23,6 @@
 #
 #
 #
-
 """
 ..
 
@@ -90,22 +89,14 @@ class P2PNotificationsService(LocalService):
             try:
                 if r_scope == 'queue':
                     if r_action == 'open':
-                        resp['result'] = 'denied' if not p2p_queue.open_queue(
-                            queue_id=r_json.get('queue_id'),
-                        ) else 'OK'
+                        resp['result'] = 'denied' if not p2p_queue.open_queue(queue_id=r_json.get('queue_id'),) else 'OK'
                     elif r_action == 'close':
-                        resp['result'] = 'denied' if not p2p_queue.close_queue(
-                            queue_id=r_json.get('queue_id'),
-                        ) else 'OK'
+                        resp['result'] = 'denied' if not p2p_queue.close_queue(queue_id=r_json.get('queue_id'),) else 'OK'
                 elif r_scope == 'consumer':
                     if r_action == 'start':
-                        resp['result'] = 'denied' if not p2p_queue.add_consumer(
-                            consumer_id=r_json.get('consumer_id'),
-                        ) else 'OK'
+                        resp['result'] = 'denied' if not p2p_queue.add_consumer(consumer_id=r_json.get('consumer_id'),) else 'OK'
                     elif r_action == 'stop':
-                        resp['result'] = 'denied' if not p2p_queue.remove_consumer(
-                            consumer_id=r_json.get('consumer_id'),
-                        ) else 'OK'
+                        resp['result'] = 'denied' if not p2p_queue.remove_consumer(consumer_id=r_json.get('consumer_id'),) else 'OK'
                     elif r_action == 'add_callback':
                         resp['result'] = 'denied' if not p2p_queue.add_callback_method(
                             consumer_id=r_json.get('consumer_id'),
@@ -132,13 +123,9 @@ class P2PNotificationsService(LocalService):
                     if False:
                         # TODO: do we need that ?
                         if r_action == 'start':
-                            resp['result'] = 'denied' if not p2p_queue.add_producer(
-                                producer_id=r_json.get('producer_id'),
-                            ) else 'OK'
+                            resp['result'] = 'denied' if not p2p_queue.add_producer(producer_id=r_json.get('producer_id'),) else 'OK'
                         elif r_action == 'stop':
-                            resp['result'] = 'denied' if not p2p_queue.remove_producer(
-                                producer_id=r_json.get('producer_id'),
-                            ) else 'OK'
+                            resp['result'] = 'denied' if not p2p_queue.remove_producer(producer_id=r_json.get('producer_id'),) else 'OK'
                         elif r_action == 'connect':
                             resp['result'] = 'denied' if not p2p_queue.connect_producer(
                                 producer_id=r_json.get('producer_id'),
@@ -154,8 +141,14 @@ class P2PNotificationsService(LocalService):
                 resp['reason'] = str(exc)
             service_responses_list.append(resp)
             lg.out(self.debug_level, 'service_p2p_notifications.request  %s:%s  is  [%s] : %s' % (
-                r_scope, r_action, resp['result'], resp.get('reason', 'OK'), ))
-        payload = serialization.DictToBytes({'items': service_responses_list, }, values_to_text=True)
+                r_scope,
+                r_action,
+                resp['result'],
+                resp.get('reason', 'OK'),
+            ))
+        payload = serialization.DictToBytes({
+            'items': service_responses_list,
+        }, values_to_text=True)
         return p2p_service.SendAck(newpacket, payload)
 
     def cancel(self, json_payload, newpacket, info):
