@@ -54,7 +54,6 @@ class PrivateGroupsService(LocalService):
         from services import driver
         from access import groups
         from access import group_member
-
         groups.init()
         events.add_subscriber(self._on_supplier_modified, 'supplier-modified')
         events.add_subscriber(self._on_dht_layer_connected, 'dht-layer-connected')
@@ -68,7 +67,6 @@ class PrivateGroupsService(LocalService):
         from main import events
         from access import groups
         from access import group_member
-
         events.remove_subscriber(groups.on_identity_url_changed, 'identity-url-changed')
         group_member.shutdown_group_members()
         events.remove_subscriber(self._on_dht_layer_connected, 'dht-layer-connected')
@@ -85,7 +83,6 @@ class PrivateGroupsService(LocalService):
         from dht import dht_service
         from dht import dht_records
         from dht import known_nodes
-
         lg.info('going to join message brokers DHT layer: %d' % dht_records.LAYER_MESSAGE_BROKERS)
         known_seeds = known_nodes.nodes()
         dht_service.open_layer(
@@ -105,7 +102,6 @@ class PrivateGroupsService(LocalService):
         from crypt import my_keys
         from userid import global_id
         from userid import my_id
-
         if evt.data['new_idurl']:
             my_keys_to_be_republished = []
             for key_id in my_keys.known_keys():

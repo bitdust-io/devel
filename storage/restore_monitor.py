@@ -28,20 +28,20 @@ Manages currently restoring backups.
 
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 8
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import os
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -57,18 +57,18 @@ from storage import backup_control
 
 from userid import global_id
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _WorkingBackupIDs = {}
 _WorkingRestoreProgress = {}
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 OnRestorePacketFunc = None
 OnRestoreDoneFunc = None
 OnRestoreBlockFunc = None
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def init():
@@ -80,9 +80,7 @@ def shutdown():
     if _Debug:
         lg.out(_DebugLevel, 'restore_monitor.shutdown')
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def block_restored_callback(backupID, block):
     global OnRestoreBlockFunc
@@ -119,13 +117,10 @@ def extract_done(retcode, backupID, source_filename, output_location, callback_m
             callback_method(backupID, 'restore done')
         except:
             lg.exc()
-    events.send(
-        'restore-done',
-        data=dict(
-            backup_id=backupID,
-            output_location=output_location,
-        ),
-    )
+    events.send('restore-done', data=dict(
+        backup_id=backupID,
+        output_location=output_location,
+    ))
     return retcode
 
 
@@ -142,15 +137,12 @@ def extract_failed(err, backupID, source_filename, output_location, callback_met
             callback_method(backupID, 'extract failed')
         except:
             lg.exc()
-    events.send(
-        'restore-failed',
-        data=dict(
-            backup_id=backupID,
-            output_location=output_location,
-            reason='extracting file failed',
-            error=str(err),
-        ),
-    )
+    events.send('restore-failed', data=dict(
+        backup_id=backupID,
+        output_location=output_location,
+        reason='extracting file failed',
+        error=str(err),
+    ))
     return err
 
 
@@ -183,9 +175,7 @@ def restore_done(result, backupID, outfd, tarfilename, outputlocation, callback_
             lg.exc()
     return result
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def Start(backupID, outputLocation, callback=None, keyID=None):
     if _Debug:
@@ -200,7 +190,6 @@ def Start(backupID, outputLocation, callback=None, keyID=None):
         prefix=backupID.replace('@', '_').replace('.', '_').replace('/', '_').replace(':', '_') + '_',
     )
     from storage import restore_worker
-
     r = restore_worker.RestoreWorker(backupID, outfd, KeyID=keyID)
     r.MyDeferred.addCallback(restore_done, backupID, outfd, outfilename, outputLocation, callback)
     r.set_block_restored_callback(block_restored_callback)
@@ -223,8 +212,7 @@ def Abort(backupID):
         lg.out(_DebugLevel, 'restore_monitor.Abort %s' % backupID)
     return True
 
-
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def GetWorkingIDs():
@@ -277,13 +265,10 @@ def GetBackupStatusInfo(backupID, item_info, item_name, parent_path_existed=None
         'fragments': totalNumberOfFiles,
         'weak_block': weakBlock,
         'max_block': maxBlockNum,
-        'suppliers': [
-            {
-                'stored': misc.percent2string(i[0]),
-                'fragments': i[1],
-            }
-            for i in statsArray
-        ],
+        'suppliers': [{
+            'stored': misc.percent2string(i[0]),
+            'fragments': i[1],
+        } for i in statsArray],
     }
     backupObj = backup_control.GetRunningBackupObject(backupID)
     if backupObj:

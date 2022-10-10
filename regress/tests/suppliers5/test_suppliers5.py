@@ -50,27 +50,27 @@ def test_suppliers5():
 
     prepare()
 
-    # --- SCENARIO 7: customer-1 upload/download with master key
+    #--- SCENARIO 7: customer-1 upload/download with master key
     customer_1_file_info = scenarios.scenario7()
 
-    # --- SCENARIO 4: customer-1 share files to customer-2
+    #--- SCENARIO 4: customer-1 share files to customer-2
     customer_1_shared_file_info, _ = scenarios.scenario4()
 
-    # --- SCENARIO 23: customer-1 able to upload/download files when one supplier is down
+    #--- SCENARIO 23: customer-1 able to upload/download files when one supplier is down
     scenarios.scenario23(customer_1_file_info, customer_1_shared_file_info)
 
-    # --- SCENARIO 14: customer-1 replace supplier at position 0 by random node
+    #--- SCENARIO 14: customer-1 replace supplier at position 0 by random node
     scenarios.scenario14(customer_1_file_info, customer_1_shared_file_info)
 
-    # --- SCENARIO 15: customer-1 switch supplier at position 1 to specific node
+    #--- SCENARIO 15: customer-1 switch supplier at position 1 to specific node
     scenarios.scenario15(customer_1_file_info, customer_1_shared_file_info)
 
-    # --- SCENARIO 16: customer-1 increase and decrease suppliers amount
+    #--- SCENARIO 16: customer-1 increase and decrease suppliers amount
     scenarios.scenario16()
 
 
-# ------------------------------------------------------------------------------
 
+#------------------------------------------------------------------------------
 
 def prepare():
     set_active_scenario('PREPARE')

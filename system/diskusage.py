@@ -39,7 +39,7 @@ import os
 import time
 import glob
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from lib import diskspace
 
@@ -47,12 +47,12 @@ from main import settings
 
 from system import bpio
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 if bpio.Windows():
     import win32file  # @UnresolvedImport
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def GetWinDriveSpace(drive):
@@ -89,8 +89,6 @@ def GetLinuxDriveSpace(path):
         return free, total
     except:
         return None, None
-
-
 #    if free > total:
 #        return total, free
 #    else:
@@ -127,12 +125,7 @@ def SumFileSizes(fileList):
     return fileSizeTotal
 
 
-def GetOurTempFileSizeTotal(
-    tempDirectory,
-    masks=[
-        '*',
-    ],
-):
+def GetOurTempFileSizeTotal(tempDirectory, masks=['*', ]):
     """
     Not used right now.
 
@@ -172,8 +165,7 @@ def GetDirectorySize(directoryPath):
     """
     return bpio.getDirectorySize(directoryPath) / (1024 * 1024)
 
-
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def main():

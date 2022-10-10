@@ -24,7 +24,6 @@ from __future__ import print_function
 import os
 import sys
 import os.path as _p
-
 sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 from p2p import p2p_service
 from main import settings

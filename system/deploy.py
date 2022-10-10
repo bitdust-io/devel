@@ -40,18 +40,17 @@ MacOS: /Users/$USER/.bitdust
 
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import os
 import sys
 import platform
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _BaseDirPath = None
 
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def print_text(msg, nl='\n'):
     """
@@ -188,9 +187,8 @@ def init_base_dir(base_dir=None):
         return _BaseDirPath
 
     # if we did not found our key - use default path, new copy of BitDust
-    if not os.access(os.path.join(current_base_dir(), 'metadata', 'mykeyfile'), os.R_OK) or not os.access(
-        os.path.join(current_base_dir(), 'metadata', 'mykeyfile_location'), os.R_OK
-    ):
+    if not os.access(os.path.join(current_base_dir(), 'metadata', 'mykeyfile'), os.R_OK) or \
+        not os.access(os.path.join(current_base_dir(), 'metadata', 'mykeyfile_location'), os.R_OK):
         _BaseDirPath = path2
         if not os.path.exists(_BaseDirPath):
             os.makedirs(_BaseDirPath, 0o777)
@@ -206,9 +204,7 @@ def init_base_dir(base_dir=None):
     # seems we found needed files in a path1 - lets use this as a base dir
     return _BaseDirPath
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def run(args):
     """

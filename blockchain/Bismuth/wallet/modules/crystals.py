@@ -47,7 +47,11 @@ class CrystalManager:
         self.verbose = verbose
         self.available_crystals = self.get_available_crystals()
         if self.verbose:
-            self.app_log.info('Available crystals: {}'.format(', '.join(self.available_crystals.keys())))
+            self.app_log.info(
+                'Available crystals: {}'.format(
+                    ', '.join(self.available_crystals.keys())
+                )
+            )
         self.loaded_crystals = collections.OrderedDict({})
         if init:
             self.init()
@@ -68,7 +72,10 @@ class CrystalManager:
     def _save_active(self):
         """Saves active state in the json dict for next run"""
         state_filename = path.join(helpers.get_private_dir(), 'crystals.json')
-        states = {name: name in self.loaded_crystals for name in self.available_crystals.keys()}
+        states = {
+            name: name in self.loaded_crystals
+            for name in self.available_crystals.keys()
+        }
         try:
             with open(state_filename, 'w') as f:
                 json.dump(states, f)
@@ -94,8 +101,12 @@ class CrystalManager:
         try:
             for possible in sorted(listdir(self.crystal_folder)):
                 location = path.join(self.crystal_folder, possible)
-                if path.isdir(location) and self.main_module + '.py' in listdir(location):
-                    info = importlib.machinery.PathFinder().find_spec(self.main_module, [location])
+                if path.isdir(location) and self.main_module + '.py' in listdir(
+                    location
+                ):
+                    info = importlib.machinery.PathFinder().find_spec(
+                        self.main_module, [location]
+                    )
                     about_filename = path.join(location, 'about.json')
                     about = {
                         'author': 'N/A',
@@ -115,7 +126,9 @@ class CrystalManager:
                         'autoload': True,  # Todo
                     }
         except Exception as e:
-            self.app_log.info("Can't list crystals from '{}'.".format(self.crystal_folder))
+            self.app_log.info(
+                "Can't list crystals from '{}'.".format(self.crystal_folder)
+            )
         # TODO: sort by name or priority, add json specs file.
         return crystals
 
@@ -160,7 +173,7 @@ class CrystalManager:
                     'info': self.available_crystals[crystal_name]['info'],
                     'module': module,
                     'active': active,
-                    'icon': self.available_crystals[crystal_name]['about'].get('icon', False),
+                    'icon': self.available_crystals[crystal_name]['about'].get('icon', False)
                 }
                 if self.verbose:
                     self.app_log.info("Crystal '{}' loaded".format(crystal_name))
@@ -189,7 +202,7 @@ class CrystalManager:
             pass
 
     def get_handler(self, key):
-        """get a tornado handler from a single (full) name"""
+        """ get a tornado handler from a single (full) name"""
         crystal_info = self.loaded_crystals[key]
         handlers = []
         try:
@@ -200,7 +213,9 @@ class CrystalManager:
                 hook_class = getattr(module, hook_func_name)
                 handlers.append((r'/crystal/{}/(.*)'.format(name), hook_class))
         except Exception as e:
-            self.app_log.warning("Crystal '{}' exception '{}' on get_handlers".format(key, e))
+            self.app_log.warning(
+                "Crystal '{}' exception '{}' on get_handlers".format(key, e)
+            )
         return handlers
 
     def get_handlers(self):
@@ -215,7 +230,9 @@ class CrystalManager:
                     hook_class = getattr(module, hook_func_name)
                     # Add a static handler if there is a static method
                     if hasattr(hook_class, 'static'):
-                        static_path = path.join(base_path(), 'crystals/{}/static/'.format(key))
+                        static_path = path.join(
+                            base_path(), 'crystals/{}/static/'.format(key)
+                        )
                         # print('need static', static_path)
                         handlers.append(
                             (
@@ -227,7 +244,9 @@ class CrystalManager:
                     handlers.append((r'/crystal/{}/(.*)'.format(name), hook_class))
 
             except Exception as e:
-                self.app_log.warning("Crystal '{}' exception '{}' on get_handlers".format(key, e))
+                self.app_log.warning(
+                    "Crystal '{}' exception '{}' on get_handlers".format(key, e)
+                )
         return handlers
 
     def execute_action_hook(self, hook_name, hook_params=None, first_only=False):
@@ -246,7 +265,11 @@ class CrystalManager:
                         # Avoid deadlocks on specific use cases
                         return
             except Exception as e:
-                self.app_log.warning("Crystal '{}' exception '{}' on action '{}'".format(key, e, hook_name))
+                self.app_log.warning(
+                    "Crystal '{}' exception '{}' on action '{}'".format(
+                        key, e, hook_name
+                    )
+                )
 
     def execute_filter_hook(self, hook_name, hook_params, first_only=False):
         """
@@ -266,14 +289,20 @@ class CrystalManager:
                         hook_params = hook_func(hook_params)
                         for nkey in hook_params_keys:
                             if nkey not in hook_params.keys():
-                                msg = "Function '{}' in crystal '{}' is missing '{}' in the dict it returns".format(hook_func_name, crystal_info['name'], nkey)
+                                msg = "Function '{}' in crystal '{}' is missing '{}' in the dict it returns".format(
+                                    hook_func_name, crystal_info['name'], nkey
+                                )
                                 self.app_log.error(msg)
                                 raise Exception(msg)
                             if first_only:
                                 # Avoid deadlocks on specific use cases
                                 return  # will trigger the finally section
                 except Exception as e:
-                    self.app_log.warning("Crystal '{}' exception '{}' on filter '{}'".format(key, e, hook_name))
+                    self.app_log.warning(
+                        "Crystal '{}' exception '{}' on filter '{}'".format(
+                            key, e, hook_name
+                        )
+                    )
                     exc_type, exc_obj, exc_tb = sys.exc_info()
                     fname = path.split(exc_tb.tb_frame.f_code.co_filename)[1]
                     print(exc_type, fname, exc_tb.tb_lineno)

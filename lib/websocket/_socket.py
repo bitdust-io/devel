@@ -41,10 +41,12 @@ if hasattr(socket, 'TCP_KEEPCNT'):
 
 _default_timeout = None
 
-__all__ = ['DEFAULT_SOCKET_OPTION', 'sock_opt', 'setdefaulttimeout', 'getdefaulttimeout', 'recv', 'recv_line', 'send']
+__all__ = ['DEFAULT_SOCKET_OPTION', 'sock_opt', 'setdefaulttimeout', 'getdefaulttimeout',
+           'recv', 'recv_line', 'send']
 
 
 class sock_opt(object):
+
     def __init__(self, sockopt, sslopt):
         if sockopt is None:
             sockopt = []
@@ -88,7 +90,7 @@ def recv(sock, bufsize):
             if error_code != errno.EAGAIN or error_code != errno.EWOULDBLOCK:
                 raise
 
-        r, w, e = select.select((sock,), (), (), sock.gettimeout())
+        r, w, e = select.select((sock, ), (), (), sock.gettimeout())
         if r:
             return sock.recv(bufsize)
 
@@ -108,7 +110,8 @@ def recv(sock, bufsize):
             raise
 
     if not bytes_:
-        raise WebSocketConnectionClosedException('Connection is already closed.')
+        raise WebSocketConnectionClosedException(
+            'Connection is already closed.')
 
     return bytes_
 
@@ -142,7 +145,7 @@ def send(sock, data):
             if error_code != errno.EAGAIN or error_code != errno.EWOULDBLOCK:
                 raise
 
-        r, w, e = select.select((), (sock,), (), sock.gettimeout())
+        r, w, e = select.select((), (sock, ), (), sock.gettimeout())
         if w:
             return sock.send(data)
 

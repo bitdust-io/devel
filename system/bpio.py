@@ -40,12 +40,12 @@ Most used method here is ``log`` - prints a log string.
 TODO: need to do some refactoring here
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 from io import open
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import os
 import sys
@@ -55,7 +55,7 @@ import glob
 import re
 import shutil
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from lib import strng
 
@@ -63,13 +63,13 @@ from logs import lg
 
 from system import local_fs
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 LocaleInstalled = False
 PlatformInfo = None
 X11isRunning = None
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def init():
@@ -106,13 +106,11 @@ def InstallLocale():
         return False
     try:
         import sys
-
         if sys.version_info[0] == 2:
             reload(sys)  # @UndefinedVariable
             if Windows():
                 if hasattr(sys, 'setdefaultencoding'):
                     import locale
-
                     denc = locale.getpreferredencoding()
                     if not denc:
                         sys.setdefaultencoding('UTF8')
@@ -167,7 +165,6 @@ def osinfofull():
     Return detailed system info.
     """
     import pprint
-
     o = ''
     o += '=====================================================\n'
     o += '=====================================================\n'
@@ -244,8 +241,7 @@ def isConsoled():
         return False
     return True
 
-
-# -------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 
 def list_dir_safe(dirpath):
@@ -322,13 +318,7 @@ def rmdir_recursive(dirpath, ignore_errors=False, pre_callback=None):
                         os.remove(full_name)
                         counter += 1
                     except Exception as exc:
-                        lg.err(
-                            'can not remove file %r : %r'
-                            % (
-                                full_name,
-                                exc,
-                            )
-                        )
+                        lg.err('can not remove file %r : %r' % (full_name, exc, ))
                         continue
     if pre_callback:
         if not pre_callback(dirpath):
@@ -339,13 +329,7 @@ def rmdir_recursive(dirpath, ignore_errors=False, pre_callback=None):
         try:
             os.rmdir(dirpath)
         except Exception as exc:
-            lg.err(
-                'can not remove dir %r : %r'
-                % (
-                    dirpath,
-                    exc,
-                )
-            )
+            lg.err('can not remove dir %r : %r' % (dirpath, exc, ))
     return counter
 
 
@@ -374,7 +358,6 @@ def getDirectorySize(directory, include_subfolders=True):
         import win32file  # @UnresolvedImport
         import win32con  # @UnresolvedImport
         import pywintypes  # @UnresolvedImport
-
         DIR_EXCLUDES = set(['.', '..'])
         MASK = win32con.FILE_ATTRIBUTE_DIRECTORY | win32con.FILE_ATTRIBUTE_SYSTEM
         REQUIRED = win32con.FILE_ATTRIBUTE_DIRECTORY
@@ -393,7 +376,6 @@ def getDirectorySize(directory, include_subfolders=True):
                     if name not in DIR_EXCLUDES:
                         total_size += _get_dir_size(path + '\\' + name)
             return total_size
-
         return _get_dir_size(directory)
     dir_size = 0
     if not include_subfolders:
@@ -415,9 +397,7 @@ def getDirectorySize(directory, include_subfolders=True):
                         pass
     return dir_size
 
-
-# -------------------------------------------------------------------------------
-
+#-------------------------------------------------------------------------------
 
 def WriteBinaryFile(filename, data):
     return local_fs.WriteBinaryFile(filename=filename, data=data)
@@ -434,8 +414,7 @@ def WriteTextFile(filepath, data):
 def ReadTextFile(filename):
     return local_fs.ReadTextFile(filename=filename)
 
-
-# -------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 
 def _pack_list(lst):
@@ -466,9 +445,7 @@ def _unpack_list(src):
         return words, None
     res = words[1:]
     if len(res) < length:
-        res += [
-            u'',
-        ] * (length - len(res))
+        res += [u'', ] * (length - len(res))
     elif len(res) > length:
         return res[:length], res[length:]
     return res, None
@@ -580,8 +557,7 @@ def _dir_remove(path):
     """
     rmdir_recursive(path)
 
-
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def backup_and_remove(path):
@@ -652,8 +628,7 @@ def remove_backuped_file(path):
         lg.out(1, 'bpio.remove_backuped_file ERROR can not remove file ' + bkpath)
         lg.exc()
 
-
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def LowerPriority():
@@ -673,13 +648,11 @@ def LowerPriority():
         import win32api  # @UnresolvedImport
         import win32process  # @UnresolvedImport
         import win32con  # @UnresolvedImport
-
         pid = win32api.GetCurrentProcessId()
         handle = win32api.OpenProcess(win32con.PROCESS_ALL_ACCESS, True, pid)
         win32process.SetPriorityClass(handle, win32process.BELOW_NORMAL_PRIORITY_CLASS)
     else:
         import os
-
         os.nice(20)
 
 
@@ -694,17 +667,14 @@ def HigherPriority():
         import win32api  # @UnresolvedImport
         import win32process  # @UnresolvedImport
         import win32con  # @UnresolvedImport
-
         pid = win32api.GetCurrentProcessId()
         handle = win32api.OpenProcess(win32con.PROCESS_ALL_ACCESS, True, pid)
         win32process.SetPriorityClass(handle, win32process.REALTIME_PRIORITY_CLASS)
     else:
         import os
-
         os.nice(1)
 
-
-# -------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 
 def shortPath(path):
@@ -721,7 +691,6 @@ def shortPath(path):
         return strng.to_text(path_)
     try:
         import win32api  # @UnresolvedImport
-
         spath = win32api.GetShortPathName(path_)
         return strng.to_text(spath)
     except:
@@ -741,7 +710,6 @@ def longPath(path):
         return strng.to_text(path_)
     try:
         import win32api  # @UnresolvedImport
-
         lpath = win32api.GetLongPathName(path_)
         return strng.to_text(lpath)
     except:
@@ -847,7 +815,6 @@ def pathIsDir(localpath):
     if Linux():
         try:
             import stat
-
             st = os.path.stat(localpath)
             return stat.S_ISDIR(st.st_mode)
         except:
@@ -887,8 +854,7 @@ def pathIsNetworkLocation(path):
         return False
     return True
 
-
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def main_is_frozen():
@@ -897,7 +863,9 @@ def main_is_frozen():
 
     http://www.py2exe.org/index.cgi/HowToDetermineIfRunningFromExe
     """
-    return hasattr(sys, 'frozen') or hasattr(sys, 'importers') or imp.is_frozen('__main__')  # new py2exe  # old py2exe  # tools/freeze
+    return (hasattr(sys, 'frozen') or       # new py2exe
+            hasattr(sys, 'importers') or    # old py2exe
+            imp.is_frozen('__main__'))      # tools/freeze
 
 
 def isGUIpossible():
@@ -927,7 +895,6 @@ def X11_is_running():
         return X11isRunning
     try:
         from subprocess import Popen, PIPE
-
         p = Popen(['xset', '-q'], stdout=PIPE, stderr=PIPE)
         p.communicate()
         result = p.returncode == 0
@@ -936,8 +903,7 @@ def X11_is_running():
     X11isRunning = result
     return X11isRunning
 
-
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def getExecutableDir():
@@ -986,8 +952,7 @@ def getUserName():
         pass
     return os.path.basename(strng.to_text(os.path.expanduser('~')))
 
-
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def listHomeDirLinux():
@@ -1017,7 +982,6 @@ def listLocalDrivesWindows():
     try:
         import win32api  # @UnresolvedImport
         import win32file  # @UnresolvedImport
-
         drives = (drive for drive in win32api.GetLogicalDriveStrings().split('\000') if drive)
         for drive in drives:
             if win32file.GetDriveType(drive) == 3:
@@ -1034,7 +998,6 @@ def listRemovableDrivesWindows():
     l = []
     try:
         import win32file  # @UnresolvedImport
-
         drivebits = win32file.GetLogicalDrives()
         for d in range(1, 26):
             mask = 1 << d
@@ -1107,8 +1070,7 @@ def getMountPointLinux(path):
         path = os.path.dirname(path)
     return path
 
-
-# -------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 
 def find_process(applist):
@@ -1121,7 +1083,6 @@ def find_process(applist):
         return []
     try:
         import psutil
-
         pidsL = []
         for p in psutil.process_iter():
             try:
@@ -1228,7 +1189,6 @@ def find_process_win32(applist):
     pidsL = []
     try:
         import win32com.client  # @UnresolvedImport
-
         objWMI = win32com.client.GetObject('winmgmts:\\\\.\\root\\CIMV2')
         colProcs = objWMI.ExecQuery('SELECT * FROM Win32_Process')
         for Item in colProcs:
@@ -1256,7 +1216,6 @@ def kill_process_linux(pid):
     """
     try:
         import signal
-
         os.kill(pid, signal.SIGTERM)
     except:
         lg.exc()
@@ -1289,9 +1248,7 @@ def kill_process_win32(pid):
         return False
     return True
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def find_main_process(pid_file_path=None, extra_lookups=[], check_processid_file=True):
     if Android():
@@ -1303,18 +1260,14 @@ def find_main_process(pid_file_path=None, extra_lookups=[], check_processid_file
         # 'bitdust.py',
     ]
     if os.environ.get('BITDUST_IN_DOCKER') == '1':
-        q.extend(
-            [
-                'regexp:^.*python.*bitdust.py.*?$',
-            ]
-        )
+        q.extend([
+            'regexp:^.*python.*bitdust.py.*?$',
+        ])
     else:
-        q.extend(
-            [
-                'regexp:^.*(?<!\/root\/\.bitdust\/venv\/bin\/)python.*bitdust.py.*?$',
-                'regexp:^.*(?<!\/root\/\.bitdust\/venv\/bin\/)Python.*bitdust.py.*?$',
-            ]
-        )
+        q.extend([
+            'regexp:^.*(?<!\/root\/\.bitdust\/venv\/bin\/)python.*bitdust.py.*?$',
+            'regexp:^.*(?<!\/root\/\.bitdust\/venv\/bin\/)Python.*bitdust.py.*?$',
+        ])
     q += extra_lookups
     appList = find_process(q)
     if not appList:
@@ -1324,7 +1277,6 @@ def find_main_process(pid_file_path=None, extra_lookups=[], check_processid_file
     try:
         if not pid_file_path:
             from main import settings
-
             pid_file_path = os.path.join(settings.MetaDataDir(), 'processid')
         processid = int(ReadTextFile(pid_file_path))
     except:
@@ -1333,9 +1285,7 @@ def find_main_process(pid_file_path=None, extra_lookups=[], check_processid_file
         return appList
     if processid not in appList:
         return []
-    return [
-        processid,
-    ]
+    return [processid, ]
 
 
 def lookup_main_process():
@@ -1346,22 +1296,17 @@ def lookup_main_process():
         'bpmain.py',
     ]
     if os.environ.get('BITDUST_IN_DOCKER') == '1':
-        q.extend(
-            [
-                'regexp:^.*python.*bitdust.py.*?$',
-            ]
-        )
+        q.extend([
+            'regexp:^.*python.*bitdust.py.*?$',
+        ])
     else:
-        q.extend(
-            [
-                'regexp:^.*(?<!\/root\/\.bitdust\/venv\/bin\/)python.*bitdust.py.*?$',
-                'regexp:^.*(?<!\/root\/\.bitdust\/venv\/bin\/)Python.*bitdust.py.*?$',
-            ]
-        )
+        q.extend([
+            'regexp:^.*(?<!\/root\/\.bitdust\/venv\/bin\/)python.*bitdust.py.*?$',
+            'regexp:^.*(?<!\/root\/\.bitdust\/venv\/bin\/)Python.*bitdust.py.*?$',
+        ])
     return find_process(q)
 
-
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def detect_number_of_cpu_cores():
@@ -1371,7 +1316,7 @@ def detect_number_of_cpu_cores():
     # for Linux, Unix and MacOS
     if hasattr(os, 'sysconf'):
         if 'SC_NPROCESSORS_ONLN' in os.sysconf_names:
-            # Linux and Unix
+            #Linux and Unix
             ncpus = os.sysconf('SC_NPROCESSORS_ONLN')
             if isinstance(ncpus, int) and ncpus > 0:
                 return ncpus

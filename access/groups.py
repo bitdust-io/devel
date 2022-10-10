@@ -87,24 +87,24 @@ In short group is:
 
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = True
 _DebugLevel = 10
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import os
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from twisted.internet.defer import DeferredList
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -129,15 +129,14 @@ from userid import id_url
 
 from interface import api
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 REQUIRED_BROKERS_COUNT = 3
 
 _ActiveGroups = {}
 _KnownBrokers = {}
 
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def init():
     if _Debug:
@@ -150,9 +149,7 @@ def shutdown():
     if _Debug:
         lg.out(_DebugLevel, 'groups.shutdown')
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def active_groups():
     global _ActiveGroups
@@ -167,18 +164,12 @@ def known_brokers(customer_id=None, erase_brokers=False):
     if erase_brokers:
         return _KnownBrokers.pop(customer_id, None)
     if customer_id not in _KnownBrokers:
-        _KnownBrokers[customer_id] = [
-            None,
-        ] * REQUIRED_BROKERS_COUNT
+        _KnownBrokers[customer_id] = [None, ] * REQUIRED_BROKERS_COUNT
     if len(_KnownBrokers[customer_id]) < REQUIRED_BROKERS_COUNT:
-        _KnownBrokers[customer_id] += [
-            None,
-        ] * (REQUIRED_BROKERS_COUNT - len(_KnownBrokers[customer_id]))
+        _KnownBrokers[customer_id] += [None, ] * (REQUIRED_BROKERS_COUNT - len(_KnownBrokers[customer_id]))
     return _KnownBrokers[customer_id]
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def is_group_exist(group_key_id):
     group_key_id = my_keys.latest_key_id(group_key_id)
@@ -218,7 +209,8 @@ def generate_group_key(creator_id=None, label=None, key_size=4096, group_alias=N
 def create_archive_folder(group_key_id, force_path_id=None):
     group_key_alias, group_creator_idurl = my_keys.split_key_id(group_key_id)
     catalog_path = os.path.join('.archive', group_key_alias)
-    archive_folder_catalog_path = global_id.MakeGlobalID(key_alias=group_key_alias, customer=group_creator_idurl.to_id(), path=catalog_path)
+    archive_folder_catalog_path = global_id.MakeGlobalID(
+        key_alias=group_key_alias, customer=group_creator_idurl.to_id(), path=catalog_path)
     res = api.file_exists(archive_folder_catalog_path)
     if res['status'] != 'OK':
         lg.err('failed to check archive folder in the catalog: %r' % res)
@@ -266,20 +258,15 @@ def create_new_group(label, creator_id=None, key_size=2048, group_alias=None, wi
     if remote_path is None:
         return None
     if with_group_info:
-        set_group_info(
-            group_key_id,
-            {
-                'last_sequence_id': -1,
-                'active': False,
-                'archive_folder_path': remote_path,
-            },
-        )
+        set_group_info(group_key_id, {
+            'last_sequence_id': -1,
+            'active': False,
+            'archive_folder_path': remote_path,
+        })
         save_group_info(group_key_id)
     return group_key_id
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def send_group_pub_key_to_suppliers(group_key_id):
     l = []
@@ -295,9 +282,7 @@ def send_group_pub_key_to_suppliers(group_key_id):
             l.append(d)
     return DeferredList(l, consumeErrors=True)
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def load_groups():
     loaded_brokers = 0
@@ -313,13 +298,7 @@ def load_groups():
         latest_group_key_id = my_keys.latest_key_id(group_key_id)
         latest_group_path = os.path.join(groups_dir, latest_group_key_id)
         if latest_group_key_id != group_key_id:
-            lg.info(
-                'going to rename rotated group key: %r -> %r'
-                % (
-                    group_key_id,
-                    latest_group_key_id,
-                )
-            )
+            lg.info('going to rename rotated group key: %r -> %r' % (group_key_id, latest_group_key_id, ))
             old_group_path = os.path.join(groups_dir, group_key_id)
             try:
                 os.rename(old_group_path, latest_group_path)
@@ -336,13 +315,7 @@ def load_groups():
         latest_customer_id = global_id.latest_glob_id(customer_id)
         latest_customer_dir = os.path.join(brokers_dir, latest_customer_id)
         if latest_customer_id != customer_id:
-            lg.info(
-                'going to rename rotated customer id: %r -> %r'
-                % (
-                    customer_id,
-                    latest_customer_id,
-                )
-            )
+            lg.info('going to rename rotated customer id: %r -> %r' % (customer_id, latest_customer_id, ))
             old_customer_dir = os.path.join(brokers_dir, customer_id)
             try:
                 bpio.move_dir_recursive(old_customer_dir, latest_customer_dir)
@@ -356,13 +329,7 @@ def load_groups():
             latest_broker_id = global_id.latest_glob_id(broker_id)
             latest_broker_path = os.path.join(latest_customer_dir, latest_broker_id)
             if latest_broker_id != broker_id:
-                lg.info(
-                    'going to rename rotated broker id: %r -> %r'
-                    % (
-                        broker_id,
-                        latest_broker_id,
-                    )
-                )
+                lg.info('going to rename rotated broker id: %r -> %r' % (broker_id, latest_broker_id, ))
                 old_broker_path = os.path.join(latest_customer_dir, broker_id)
                 try:
                     os.rename(old_broker_path, latest_broker_path)
@@ -376,14 +343,8 @@ def load_groups():
             existing_broker_id = known_brokers(latest_customer_id)[int(latest_broker_info['position'])]
             if existing_broker_id:
                 if os.path.isfile(latest_broker_path):
-                    lg.err(
-                        'found duplicated broker for customer %r on position %d, erasing file %r'
-                        % (
-                            latest_customer_id,
-                            int(latest_broker_info['position']),
-                            latest_broker_path,
-                        )
-                    )
+                    lg.err('found duplicated broker for customer %r on position %d, erasing file %r' % (
+                        latest_customer_id, int(latest_broker_info['position']), latest_broker_path, ))
                     try:
                         os.remove(latest_broker_path)
                     except:
@@ -401,9 +362,7 @@ def unload_groups():
     if _Debug:
         lg.dbg(_DebugLevel, 'known groups and brokers are erased')
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def save_group_info(group_key_id):
     group_key_id = my_keys.latest_key_id(group_key_id)
@@ -446,9 +405,7 @@ def read_group_info(group_key_id):
     group_info = jsn.loads_text(local_fs.ReadTextFile(group_info_path))
     return group_info
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def get_last_sequence_id(group_key_id):
     group_key_id = my_keys.latest_key_id(group_key_id)
@@ -481,9 +438,7 @@ def set_archive_folder_path(group_key_id, archive_folder_path):
     active_groups()[group_key_id]['archive_folder_path'] = archive_folder_path
     return True
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def set_broker(customer_id, broker_id, position=0):
     customer_id = global_id.latest_glob_id(customer_id)
@@ -496,14 +451,7 @@ def set_broker(customer_id, broker_id, position=0):
         bpio._dirs_make(customer_dir)
     if os.path.isfile(broker_path):
         if _Debug:
-            lg.dbg(
-                _DebugLevel,
-                'broker %r already exist for customer %r, overwriting'
-                % (
-                    broker_id,
-                    customer_id,
-                ),
-            )
+            lg.dbg(_DebugLevel, 'broker %r already exist for customer %r, overwriting' % (broker_id, customer_id, ))
     broker_info = {
         'position': position,
     }
@@ -515,29 +463,15 @@ def set_broker(customer_id, broker_id, position=0):
             return True
         prev_broker_path = os.path.join(customer_dir, prev_borker_id)
         if os.path.isfile(prev_broker_path):
-            lg.info(
-                'replacing existing broker for customer %r at position %d : %r -> %r'
-                % (
-                    customer_id,
-                    position,
-                    prev_borker_id,
-                    broker_id,
-                )
-            )
+            lg.info('replacing existing broker for customer %r at position %d : %r -> %r' % (
+                customer_id, position, prev_borker_id, broker_id, ))
             try:
                 os.remove(prev_broker_path)
             except:
                 lg.exc()
                 return False
     if not local_fs.WriteTextFile(broker_path, jsn.dumps(broker_info)):
-        lg.err(
-            'failed to set broker %r at position %d for customer %r'
-            % (
-                broker_id,
-                position,
-                customer_id,
-            )
-        )
+        lg.err('failed to set broker %r at position %d for customer %r' % (broker_id, position, customer_id, ))
         return False
     known_brokers(customer_id)[position] = broker_id
     if _Debug:
@@ -560,13 +494,7 @@ def clear_broker(customer_id, position):
         broker_info = jsn.loads_text(local_fs.ReadTextFile(broker_path))
         if not broker_info:
             to_be_erased.append(broker_id)
-            lg.warn(
-                'found empty broker info for customer %r : %r'
-                % (
-                    customer_id,
-                    broker_id,
-                )
-            )
+            lg.warn('found empty broker info for customer %r : %r' % (customer_id, broker_id, ))
             continue
         if broker_info.get('position') != position:
             continue
@@ -599,9 +527,7 @@ def clear_brokers(customer_id):
     if os.path.isdir(customer_dir):
         bpio.rmdir_recursive(customer_dir, ignore_errors=True)
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def is_group_active(group_key_id):
     group_key_id = my_keys.latest_key_id(group_key_id)
@@ -618,23 +544,13 @@ def set_group_active(group_key_id, value):
     old_value = active_groups()[group_key_id]['active']
     active_groups()[group_key_id]['active'] = value
     if old_value != value:
-        lg.info(
-            'group %r "active" status changed: %r -> %r'
-            % (
-                group_key_id,
-                old_value,
-                value,
-            )
-        )
+        lg.info('group %r "active" status changed: %r -> %r' % (group_key_id, old_value, value, ))
     return True
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def on_identity_url_changed(evt):
     from access import group_member
-
     service_dir = settings.ServiceDir('service_private_groups')
     groups_dir = os.path.join(service_dir, 'groups')
     brokers_dir = os.path.join(service_dir, 'brokers')
@@ -650,13 +566,7 @@ def on_identity_url_changed(evt):
             old_group_path = os.path.join(groups_dir, group_key_id)
             latest_group_key_id = my_keys.latest_key_id(group_key_id)
             latest_group_path = os.path.join(groups_dir, latest_group_key_id)
-            lg.info(
-                'going to rename rotated group file: %r -> %r'
-                % (
-                    old_group_path,
-                    latest_group_path,
-                )
-            )
+            lg.info('going to rename rotated group file: %r -> %r' % (old_group_path, latest_group_path, ))
             if os.path.isfile(old_group_path):
                 try:
                     os.rename(old_group_path, latest_group_path)
@@ -669,13 +579,7 @@ def on_identity_url_changed(evt):
             group_member.rotate_active_group_memeber(group_key_id, latest_group_key_id)
         gm = group_member.get_active_group_member(group_key_id)
         if gm and gm.connected_brokers and id_url.is_in(old_idurl, gm.connected_brokers.values()):
-            lg.info(
-                'connected broker %r IDURL is rotated, going to reconnect %r'
-                % (
-                    old_idurl,
-                    gm,
-                )
-            )
+            lg.info('connected broker %r IDURL is rotated, going to reconnect %r' % (old_idurl, gm, ))
             if group_key_id not in to_be_reconnected:
                 to_be_reconnected.append(group_key_id)
     known_customers = list(known_brokers().keys())
@@ -684,13 +588,7 @@ def on_identity_url_changed(evt):
         customer_idurl = global_id.glob2idurl(customer_id)
         if id_url.is_the_same(customer_idurl, old_idurl):
             latest_customer_dir = os.path.join(brokers_dir, latest_customer_id)
-            lg.info(
-                'going to rename rotated customer id: %r -> %r'
-                % (
-                    customer_id,
-                    latest_customer_id,
-                )
-            )
+            lg.info('going to rename rotated customer id: %r -> %r' % (customer_id, latest_customer_id, ))
             old_customer_dir = os.path.join(brokers_dir, customer_id)
             if os.path.isdir(old_customer_dir):
                 try:
@@ -707,13 +605,7 @@ def on_identity_url_changed(evt):
             if broker_idurl == old_idurl:
                 latest_broker_id = global_id.idurl2glob(new_idurl)
                 latest_broker_path = os.path.join(latest_customer_dir, latest_broker_id)
-                lg.info(
-                    'going to rename rotated broker id: %r -> %r'
-                    % (
-                        broker_id,
-                        latest_broker_id,
-                    )
-                )
+                lg.info('going to rename rotated broker id: %r -> %r' % (broker_id, latest_broker_id, ))
                 old_broker_path = os.path.join(latest_customer_dir, broker_id)
                 if os.path.isfile(old_broker_path):
                     try:

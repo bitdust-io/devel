@@ -33,14 +33,14 @@ TODO:
     Really need to do some refactoring here - too many things in one place.
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 from __future__ import print_function
-import six.moves.urllib.parse  # @UnresolvedImport
+import six.moves.urllib.parse # @UnresolvedImport
 from six.moves import range  # @UnresolvedImport
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import os
 import re
@@ -57,14 +57,13 @@ import textwrap
 import functools
 import subprocess
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     import os.path as _p
-
     sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -76,7 +75,7 @@ from main import settings
 from lib import packetid
 from lib import strng
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 # if we come up with more valid transports,
 # we'll need to add them here
@@ -87,7 +86,7 @@ from lib import strng
 # more stable transports must be higher
 _AttenuationFactor = 2.0
 
-# -------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 
 def init():
@@ -98,8 +97,7 @@ def init():
     """
     lg.out(4, 'misc.init')
 
-
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def readLocalIP():
@@ -138,9 +136,7 @@ def writeSupplierData(supplier_idurl, filename, data, customer_idurl):
     path = settings.SupplierPath(supplier_idurl, customer_idurl, filename)
     return bpio.WriteTextFile(path, data)
 
-
-# -------------------------------------------------------------------------------
-
+#-------------------------------------------------------------------------------
 
 def cmp(a, b):
     return (a > b) - (a < b)
@@ -170,8 +166,8 @@ def TimeStructFromVersion(backupID):
             st_time = list(time.strptime(backupID[1:-2], '%Y%m%d%I%M%S'))
         else:
             i = backupID.rfind('M')
-            ampm = backupID[i - 1 : i + 1]
-            st_time = list(time.strptime(backupID[1 : i - 1], '%Y%m%d%I%M%S'))
+            ampm = backupID[i - 1:i + 1]
+            st_time = list(time.strptime(backupID[1:i - 1], '%Y%m%d%I%M%S'))
         if ampm == 'PM':
             st_time[3] += 12
         return tuple(st_time)
@@ -204,8 +200,8 @@ def modified_version(a):
             int_b = 0
         else:
             i = a.rfind('M')
-            int_a = int(a[1 : i - 1])
-            int_b = int(a[i + 1 :])
+            int_a = int(a[1:i - 1])
+            int_b = int(a[i + 1:])
     except:
         lg.exc()
         return -1
@@ -262,9 +258,7 @@ def sorted_versions(versions, reverse=False):
     sorted_versions_list = sorted(versions, key=functools.cmp_to_key(version_compare), reverse=reverse)
     return sorted_versions_list
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def DigitsOnly(inpt, includes=''):
     """
@@ -304,9 +298,7 @@ def ToFloat(inpt, default=0.0):
     except:
         return default
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def ValidKeyAlias(key_alias):
     if len(key_alias) > 50:
@@ -450,8 +442,7 @@ def ValidateBitCoinAddress(strAddr):
     # if one of the character is not valid, the next ones are not tested.
     return all((char in CHARS_OK for char in strAddr[1:]))
 
-
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def RoundupFile(filename, stepsize):
@@ -489,9 +480,7 @@ def Parity():
     """
     return 'Parity'
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def pack_url_param(s):
     """
@@ -521,9 +510,7 @@ def unpack_url_param(s, default=None):
         lg.exc()
         return default
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def rndstr(length):
     """
@@ -574,7 +561,13 @@ def calculate_best_dimension(sz, maxsize=8):
     :param sz: number of items to be organized
     :param maxsize: the maximum width of the matrix.
     """
-    cached = {2: (2, 1), 4: (4, 1), 7: (4, 2), 13: (5, 3), 18: (6, 3), 26: (7, 4), 64: (8, 8)}.get(sz, None)
+    cached = {2: (2, 1),
+              4: (4, 1),
+              7: (4, 2),
+              13: (5, 3),
+              18: (6, 3),
+              26: (7, 4),
+              64: (8, 8)}.get(sz, None)
     if cached:
         return cached
     try:
@@ -770,9 +763,7 @@ def unicode_to_str_safe(unicode_string, encodings=None):
         except:
             pass
     if encodings is None:
-        encodings = [
-            locale.getpreferredencoding(),
-        ]  # 'utf-8'
+        encodings = [locale.getpreferredencoding(), ]  # 'utf-8'
     output = ''
     for i in range(len(unicode_string)):
         unicode_char = unicode_string[i]
@@ -814,9 +805,7 @@ def isEnglishString(s):
     else:
         return True
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def getClipboardText():
     """
@@ -826,7 +815,6 @@ def getClipboardText():
         try:
             import win32clipboard  # @UnresolvedImport
             import win32con  # @UnresolvedImport
-
             win32clipboard.OpenClipboard()
             d = win32clipboard.GetClipboardData(win32con.CF_TEXT)
             win32clipboard.CloseClipboard()
@@ -837,7 +825,6 @@ def getClipboardText():
     elif bpio.Linux():
         try:
             import wx
-
             # may crash, otherwise
             # this needs app.MainLoop() to be started
             if not wx.TheClipboard.IsOpened():  # @UndefinedVariable
@@ -865,7 +852,6 @@ def setClipboardText(txt):
         try:
             import win32clipboard  # @UnresolvedImport
             import win32con  # @UnresolvedImport
-
             win32clipboard.OpenClipboard()
             win32clipboard.EmptyClipboard()
             win32clipboard.SetClipboardData(win32con.CF_TEXT, txt)
@@ -876,7 +862,6 @@ def setClipboardText(txt):
     elif bpio.Linux():
         try:
             import wx
-
             clipdata = wx.TextDataObject()  # @UndefinedVariable
             clipdata.SetText(txt)
             if wx.TheClipboard:  # @UndefinedVariable
@@ -896,8 +881,7 @@ def setClipboardText(txt):
         except:
             lg.exc()
 
-
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def encode64(s):
@@ -930,8 +914,7 @@ def file_hash(path):
         return None
     return get_hash(src)
 
-
-# -------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 
 def time2daystring(tm=None):
@@ -979,9 +962,7 @@ def str2gmtime(time_string, format):
     """
     return time.mktime(time.strptime(time_string, format))
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def ReadRepoLocation():
     """
@@ -1006,8 +987,7 @@ def ReadRepoLocation():
         return settings.DefaultRepo(), settings.DefaultRepoURL(settings.DefaultRepo())
     return l[0], l[1]
 
-
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def DoRestart(param='', detach=False, std_out='/dev/null', std_err='/dev/null'):
@@ -1023,25 +1003,19 @@ def DoRestart(param='', detach=False, std_out='/dev/null', std_err='/dev/null'):
             if not os.path.isfile(starter_filepath):
                 # lg.out(2, "misc.DoRestart ERROR %s not found" % starter_filepath)
                 main_filepath = os.path.join(bpio.getExecutableDir(), settings.WindowsMainScriptFileName())
-                cmdargs = [
-                    os.path.basename(main_filepath),
-                ]
+                cmdargs = [os.path.basename(main_filepath), ]
                 if param != '':
                     cmdargs.append(param)
                 # lg.out(2, "misc.DoRestart cmdargs="+str(cmdargs))
                 return os.spawnve(os.P_DETACH, main_filepath, cmdargs, os.environ)  # @UndefinedVariable
-            cmdargs = [
-                os.path.basename(starter_filepath),
-            ]
+            cmdargs = [os.path.basename(starter_filepath), ]
             if param != '':
                 cmdargs.append(param)
             # lg.out(2, "misc.DoRestart cmdargs="+str(cmdargs))
             return os.spawnve(os.P_DETACH, starter_filepath, cmdargs, os.environ)  # @UndefinedVariable
 
         pypath = sys.executable
-        cmdargs = [
-            sys.executable,
-        ]
+        cmdargs = [sys.executable, ]
         cmdargs.append(sys.argv[0])
         cmdargs += sys.argv[1:]
         if param != '' and not sys.argv.count(param):
@@ -1054,15 +1028,12 @@ def DoRestart(param='', detach=False, std_out='/dev/null', std_err='/dev/null'):
             cmdargs.remove('daemon')
         if detach:
             from system import child_process
-
             cmdargs = [strng.to_text(a) for a in cmdargs]
             return child_process.detach(cmdargs)
         return os.execvpe(pypath, cmdargs, os.environ)
 
     pypyth = sys.executable
-    cmdargs = [
-        sys.executable,
-    ]
+    cmdargs = [sys.executable, ]
     if sys.argv[0] == '/usr/share/bitdust/bitdust.py':
         cmdargs.append('/usr/bin/bitdust')
     else:
@@ -1085,16 +1056,10 @@ def DoRestart(param='', detach=False, std_out='/dev/null', std_err='/dev/null'):
         cmd = '/usr/bin/nohup ' + (' '.join(cmdargs)) + ' &'
         BITDUST_COVERAGE_PROCESS_START = os.environ.get('COVERAGE_PROCESS_START')
         if BITDUST_COVERAGE_PROCESS_START:
-            cmd = 'COVERAGE_PROCESS_START="%s" %s' % (
-                BITDUST_COVERAGE_PROCESS_START,
-                cmd,
-            )
+            cmd = 'COVERAGE_PROCESS_START="%s" %s' % (BITDUST_COVERAGE_PROCESS_START, cmd, )
         BITDUST_LOG_USE_COLORS = os.environ.get('BITDUST_LOG_USE_COLORS')
         if BITDUST_LOG_USE_COLORS:
-            cmd = 'BITDUST_LOG_USE_COLORS="%s" %s' % (
-                BITDUST_LOG_USE_COLORS,
-                cmd,
-            )
+            cmd = 'BITDUST_LOG_USE_COLORS="%s" %s' % (BITDUST_LOG_USE_COLORS, cmd, )
         return os.system(cmd)
     return os.execvpe(pypyth, cmdargs, os.environ)
 
@@ -1120,15 +1085,12 @@ def ExplorePathInOS(filepath):
     except:
         try:
             import webbrowser
-
             webbrowser.open(filepath)
         except:
             lg.exc()
     return
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def LoopAttenuation(current_delay, go_faster, min_delay, max_delay):
     """
@@ -1156,8 +1118,7 @@ def LoopAttenuation(current_delay, go_faster, min_delay, max_delay):
             current_delay = max_delay
     return current_delay
 
-
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 if __name__ == '__main__':

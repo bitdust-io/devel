@@ -12,15 +12,15 @@ ports_offset = int(conf.get('ports_offset', 0))
 
 tester_links_src = ''
 for link in conf['tester_links']:
-    tester_links_src += '      - %s\n' % link
+    tester_links_src +=  '      - %s\n' % link
 
 tester_volumes_src = ''
 for volume in conf.get('tester_volumes', []):
-    tester_volumes_src += '      - %s\n' % volume
+    tester_volumes_src +=  '      - %s\n' % volume
 
 containers_volumes_src = ''
 for volume in conf.get('containers_volumes', []):
-    containers_volumes_src += '  %s\n' % volume
+    containers_volumes_src +=  '  %s\n' % volume
 
 all_containers_src = ''
 for container_name, container_info in conf['containers'].items():

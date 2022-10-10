@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 
 from __future__ import absolute_import
-
-USERS = {'admin': 'admin', 'user': 'user', 'test': 'eW91IGFyZSBjcmF6eQo='}
+USERS={'admin': 'admin',
+        'user': 'user',
+        'test': 'eW91IGFyZSBjcmF6eQo='}
 
 """
 Twisted SSL webserver with basic authentication using plain in-memory passwords.
@@ -45,9 +46,9 @@ sslContext = ssl.DefaultOpenSSLContextFactory(
     os.path.join(home_dir, '.ssl/cacert.pem'),
 )
 
-
 @implementer(IRealm)
 class SimpleRealm(object):
+
     def __init__(self, path):
         self.path = path
 
@@ -63,12 +64,15 @@ def main(root):
     log.startLogging(sys.stdout)
     checkers = [InMemoryUsernamePasswordDatabaseDontUse(**USERS)]
 
-    wrapper = guard.HTTPAuthSessionWrapper(Portal(SimpleRealm(root), checkers), [guard.DigestCredentialFactory('md5', 'whatever.com')])
+    wrapper = guard.HTTPAuthSessionWrapper(
+        Portal(SimpleRealm(root), checkers),
+        [guard.DigestCredentialFactory('md5', 'whatever.com')])
 
-    reactor.listenSSL(443, server.Site(resource=wrapper), contextFactory=sslContext)
+    reactor.listenSSL(443, server.Site(resource=wrapper),
+                      contextFactory=sslContext)
     reactor.run()
 
 
 if __name__ == '__main__':
-    root = sys.argv[1] if len(sys.argv) > 1 else '.'
+    root = sys.argv[1] if len(sys.argv) > 1  else '.'
     main(root)

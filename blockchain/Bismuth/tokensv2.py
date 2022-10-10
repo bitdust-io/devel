@@ -16,12 +16,9 @@ def blake2bhash_generate(data):
     return blake2bhash
     # new hash
 
-
 def tokens_update(node, db_handler_instance):
 
-    db_handler_instance.index_cursor.execute(
-        'CREATE TABLE IF NOT EXISTS tokens (block_height INTEGER, timestamp, token, address, recipient, txid, amount INTEGER)'
-    )
+    db_handler_instance.index_cursor.execute('CREATE TABLE IF NOT EXISTS tokens (block_height INTEGER, timestamp, token, address, recipient, txid, amount INTEGER)')
     db_handler_instance.index.commit()
 
     db_handler_instance.index_cursor.execute('SELECT block_height FROM tokens ORDER BY block_height DESC LIMIT 1;')
@@ -33,13 +30,7 @@ def tokens_update(node, db_handler_instance):
     node.logger.app_log.warning('Token anchor block: {}'.format(token_last_block))
 
     # node.logger.app_log.warning all token issuances
-    db_handler_instance.c.execute(
-        'SELECT block_height, timestamp, address, recipient, signature, operation, openfield FROM transactions WHERE block_height >= ? AND operation = ? AND reward = 0 ORDER BY block_height ASC;',
-        (
-            token_last_block,
-            'token:issue',
-        ),
-    )
+    db_handler_instance.c.execute('SELECT block_height, timestamp, address, recipient, signature, operation, openfield FROM transactions WHERE block_height >= ? AND operation = ? AND reward = 0 ORDER BY block_height ASC;', (token_last_block, 'token:issue',))
     results = db_handler_instance.c.fetchall()
     node.logger.app_log.warning(results)
 
@@ -51,11 +42,7 @@ def tokens_update(node, db_handler_instance):
             try:
                 db_handler_instance.index_cursor.execute('SELECT * from tokens WHERE token = ?', (token_name,))
                 dummy = db_handler_instance.index_cursor.fetchall()[0]  # check for uniqueness
-                node.logger.app_log.warning(
-                    'Token issuance already processed: {}'.format(
-                        token_name,
-                    )
-                )
+                node.logger.app_log.warning('Token issuance already processed: {}'.format(token_name,))
             except:
                 if token_name not in tokens_processed:
                     block_height = x[0]
@@ -76,12 +63,13 @@ def tokens_update(node, db_handler_instance):
                     total = x[6].split(':')[1]
                     node.logger.app_log.warning('Total amount: {}'.format(total))
 
-                    db_handler_instance.index_cursor.execute(
-                        'INSERT INTO tokens VALUES (?,?,?,?,?,?,?)', (block_height, timestamp, token_name, 'issued', issued_by, txid, total)
-                    )
+                    db_handler_instance.index_cursor.execute('INSERT INTO tokens VALUES (?,?,?,?,?,?,?)',
+                              (block_height, timestamp, token_name, 'issued', issued_by, txid, total))
 
                     if node.plugin_manager:
-                        node.plugin_manager.execute_action_hook('token_issue', {'token': token_name, 'issuer': issued_by, 'txid': txid, 'total': total})
+                        node.plugin_manager.execute_action_hook('token_issue',
+                                                           {'token': token_name, 'issuer': issued_by,
+                                                            'txid': txid, 'total': total})
 
                 else:
                     node.logger.app_log.warning('This token is already registered: {}'.format(x[1]))
@@ -96,14 +84,8 @@ def tokens_update(node, db_handler_instance):
     # node.logger.app_log.warning all transfers of a given token
     # token = "worthless"
 
-    db_handler_instance.c.execute(
-        'SELECT operation, openfield FROM transactions WHERE (block_height >= ? OR block_height <= ?) AND operation = ? and reward = 0 ORDER BY block_height ASC;',
-        (
-            token_last_block,
-            -token_last_block,
-            'token:transfer',
-        ),
-    )  # includes mirror blocks
+    db_handler_instance.c.execute('SELECT operation, openfield FROM transactions WHERE (block_height >= ? OR block_height <= ?) AND operation = ? and reward = 0 ORDER BY block_height ASC;',
+              (token_last_block, -token_last_block, 'token:transfer',)) #includes mirror blocks
     openfield_transfers = db_handler_instance.c.fetchall()
     # print(openfield_transfers)
 
@@ -119,15 +101,8 @@ def tokens_update(node, db_handler_instance):
     for token in tokens_transferred:
         try:
             node.logger.app_log.warning('processing {}'.format(token))
-            db_handler_instance.c.execute(
-                'SELECT block_height, timestamp, address, recipient, signature, operation, openfield FROM transactions WHERE (block_height >= ? OR block_height <= ?) AND operation = ? AND openfield LIKE ? AND reward = 0 ORDER BY block_height ASC;',
-                (
-                    token_last_block,
-                    -token_last_block,
-                    'token:transfer',
-                    token + ':%',
-                ),
-            )
+            db_handler_instance.c.execute('SELECT block_height, timestamp, address, recipient, signature, operation, openfield FROM transactions WHERE (block_height >= ? OR block_height <= ?) AND operation = ? AND openfield LIKE ? AND reward = 0 ORDER BY block_height ASC;',
+                      (token_last_block, -token_last_block, 'token:transfer',token + ':%',))
             results2 = db_handler_instance.c.fetchall()
             node.logger.app_log.warning(results2)
 
@@ -160,14 +135,8 @@ def tokens_update(node, db_handler_instance):
                 node.logger.app_log.warning('Transfer amount {}'.format(transfer_amount))
 
                 # calculate balances
-                db_handler_instance.index_cursor.execute(
-                    'SELECT sum(amount) FROM tokens WHERE recipient = ? AND block_height < ? AND token = ?',
-                    (
-                        sender,
-                        block_height,
-                        token,
-                    ),
-                )
+                db_handler_instance.index_cursor.execute('SELECT sum(amount) FROM tokens WHERE recipient = ? AND block_height < ? AND token = ?',
+                          (sender,block_height,token,))
 
                 try:
                     credit_sender = int(db_handler_instance.index_cursor.fetchone()[0])
@@ -175,14 +144,8 @@ def tokens_update(node, db_handler_instance):
                     credit_sender = 0
                 node.logger.app_log.warning("Sender's credit {}".format(credit_sender))
 
-                db_handler_instance.index_cursor.execute(
-                    'SELECT sum(amount) FROM tokens WHERE address = ? AND block_height <= ? AND token = ?',
-                    (
-                        sender,
-                        block_height,
-                        token,
-                    ),
-                )
+                db_handler_instance.index_cursor.execute('SELECT sum(amount) FROM tokens WHERE address = ? AND block_height <= ? AND token = ?',
+                          (sender,block_height,token,))
                 try:
                     debit_sender = int(db_handler_instance.index_cursor.fetchone()[0])
                 except:
@@ -201,14 +164,13 @@ def tokens_update(node, db_handler_instance):
                     if dummy:
                         node.logger.app_log.warning('Token operation already processed: {} {}'.format(token, txid))
                     else:
-                        if balance_sender - transfer_amount >= 0 and transfer_amount > 0:
-                            db_handler_instance.index_cursor.execute(
-                                'INSERT INTO tokens VALUES (?,?,?,?,?,?,?)', (abs(block_height), timestamp, token, sender, recipient, txid, transfer_amount)
-                            )
+                        if (balance_sender - transfer_amount >= 0 and transfer_amount > 0):
+                            db_handler_instance.index_cursor.execute('INSERT INTO tokens VALUES (?,?,?,?,?,?,?)',
+                                      (abs(block_height), timestamp, token, sender, recipient, txid, transfer_amount))
                             if node.plugin_manager:
-                                node.plugin_manager.execute_action_hook(
-                                    'token_transfer', {'token': token, 'from': sender, 'to': recipient, 'txid': txid, 'amount': transfer_amount}
-                                )
+                                node.plugin_manager.execute_action_hook('token_transfer',
+                                                                   {'token': token, 'from': sender,
+                                                                    'to': recipient, 'txid': txid, 'amount': transfer_amount})
 
                         else:  # save block height and txid so that we do not have to process the invalid transactions again
                             node.logger.app_log.warning('Invalid transaction by {}'.format(sender))
@@ -224,7 +186,7 @@ def tokens_update(node, db_handler_instance):
 
 
 if __name__ == '__main__':
-    from libs import node, logger
+    from libs import node,logger
     import dbhandler
 
     node = node.Node()
@@ -235,7 +197,7 @@ if __name__ == '__main__':
     node.logger.app_log = log.log('local_test.log', node.debug_level, node.terminal_output)
     node.logger.app_log.warning('Configuration settings loaded')
 
-    db_handler = dbhandler.DbHandler('static/index_local_test.db', 'static/ledger.db', 'static/hyper.db', False, None, node.logger, False)
+    db_handler = dbhandler.DbHandler('static/index_local_test.db','static/ledger.db','static/hyper.db', False, None, node.logger, False)
 
     tokens_update(node, db_handler)
     # tokens_update("tokens.db","reindex")

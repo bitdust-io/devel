@@ -47,17 +47,17 @@ EVENTS:
     * :red:`timer-1min`
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 from __future__ import print_function
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 8
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import os
 import sys
@@ -73,14 +73,13 @@ except:
 
 from twisted.internet import threads
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     import os.path as _p
-
     sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -92,7 +91,7 @@ from raid import read
 from raid import make
 from raid import rebuild
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _MODULES = (
     'raid.read',
@@ -111,30 +110,16 @@ _MODULES = (
 )
 
 _VALID_TASKS = {
-    'make': (
-        make.do_in_memory,
-        (
-            make.RoundupFile,
-            make.ReadBinaryFile,
-            make.WriteFile,
-            make.ReadBinaryFileAsArray,
-        ),
-    ),
-    'read': (
-        read.raidread,
-        (
-            read.RebuildOne,
-            read.ReadBinaryFile,
-        ),
-    ),
+    'make': (make.do_in_memory, (make.RoundupFile, make.ReadBinaryFile, make.WriteFile, make.ReadBinaryFileAsArray, )),
+    'read': (read.raidread, (read.RebuildOne, read.ReadBinaryFile, )),
     'rebuild': (rebuild.rebuild, ()),
 }
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _RaidWorker = None
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def add_task(cmd, params, callback):
@@ -173,8 +158,7 @@ def cancel_task(cmd, first_parameter):
         return False
     return True
 
-
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def A(event=None, *args, **kwargs):
@@ -221,12 +205,12 @@ class RaidWorker(automat.Automat):
         self.callbacks = {}
 
     def A(self, event, *args, **kwargs):
-        # ---AT_STARTUP---
+        #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'OFF'
                 self.doInit(*args, **kwargs)
-        # ---OFF---
+        #---OFF---
         elif self.state == 'OFF':
             if event == 'shutdown':
                 self.state = 'CLOSED'
@@ -240,7 +224,7 @@ class RaidWorker(automat.Automat):
                 self.doStartTask(*args, **kwargs)
             elif event == 'process-started' and not self.isMoreTasks(*args, **kwargs):
                 self.state = 'READY'
-        # ---READY---
+        #---READY---
         elif self.state == 'READY':
             if event == 'new-task':
                 self.state = 'WORK'
@@ -253,7 +237,7 @@ class RaidWorker(automat.Automat):
             elif event == 'timer-1min':
                 self.state = 'OFF'
                 self.doKillProcess(*args, **kwargs)
-        # ---WORK---
+        #---WORK---
         elif self.state == 'WORK':
             if event == 'new-task':
                 self.doAddTask(*args, **kwargs)
@@ -276,7 +260,7 @@ class RaidWorker(automat.Automat):
             elif event == 'task-done' and self.isMoreActive(*args, **kwargs) and not self.isMoreTasks(*args, **kwargs):
                 self.doReportTaskDone(*args, **kwargs)
                 self.doPopTask(*args, **kwargs)
-        # ---CLOSED---
+        #---CLOSED---
         elif self.state == 'CLOSED':
             pass
         return None
@@ -384,11 +368,8 @@ class RaidWorker(automat.Automat):
 
         self.activetasks[task_id] = (proc, cmd, params)
         if _Debug:
-            lg.out(
-                _DebugLevel,
-                'raid_worker.doStartTask job_id=%r active=%d cpus=%d %s'
-                % (task_id, len(self.activetasks), self.processor.get_ncpus(), threading.currentThread().getName()),
-            )
+            lg.out(_DebugLevel, 'raid_worker.doStartTask job_id=%r active=%d cpus=%d %s' % (
+                task_id, len(self.activetasks), self.processor.get_ncpus(), threading.currentThread().getName()))
 
         # reactor.callLater(0, self.automat, 'task-started', task_id)  # @UndefinedVariable
         self.automat('task-started', task_id)
@@ -402,17 +383,12 @@ class RaidWorker(automat.Automat):
         reactor.callLater(0, cb, cmd, params, result)  # @UndefinedVariable
         if result is not None:
             if _Debug:
-                lg.out(
-                    _DebugLevel,
-                    'raid_worker.doReportTaskDone callbacks: %d tasks: %d active: %d' % (len(self.callbacks), len(self.tasks), len(self.activetasks)),
-                )
+                lg.out(_DebugLevel, 'raid_worker.doReportTaskDone callbacks: %d tasks: %d active: %d' % (
+                    len(self.callbacks), len(self.tasks), len(self.activetasks)))
         else:
             if _Debug:
-                lg.out(
-                    _DebugLevel,
-                    'raid_worker.doReportTaskDone result=None !!!!! callbacks: %d tasks: %d active: %d'
-                    % (len(self.callbacks), len(self.tasks), len(self.activetasks)),
-                )
+                lg.out(_DebugLevel, 'raid_worker.doReportTaskDone result=None !!!!! callbacks: %d tasks: %d active: %d' % (
+                    len(self.callbacks), len(self.tasks), len(self.activetasks)))
 
     def doReportTasksFailed(self, *args, **kwargs):
         """
@@ -438,11 +414,8 @@ class RaidWorker(automat.Automat):
 
     def _job_done(self, task_id, cmd, params, result):
         if _Debug:
-            lg.out(
-                _DebugLevel,
-                'raid_worker._job_done %r : %r active:%r cmd=%r params=%r %s'
-                % (task_id, result, list(self.activetasks.keys()), cmd, params, threading.currentThread().getName()),
-            )
+            lg.out(_DebugLevel, 'raid_worker._job_done %r : %r active:%r cmd=%r params=%r %s' % (
+                task_id, result, list(self.activetasks.keys()), cmd, params, threading.currentThread().getName()))
         reactor.callFromThread(self.automat, 'task-done', (task_id, cmd, params, result))  # @UndefinedVariable
 
     # def _job_failed(self, task_id, cmd, params, err):
@@ -457,10 +430,10 @@ class RaidWorker(automat.Automat):
                 lg.out(_DebugLevel, 'raid_worker._kill_processor processor was destroyed')
 
 
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 class RaidTask(object):
+
     def __init__(self, task_id, worker_method, worker_args=None, on_success=None, on_fail=None):
         self.task_id = task_id
         self.result = None
@@ -484,7 +457,7 @@ class RaidTask(object):
         return True
 
     def run(self):
-        args = self._worker_args + (self.threshold_control,)
+        args = self._worker_args + (self.threshold_control, )
         self.result = self._worker_method(*args)
         return self.result
 
@@ -499,19 +472,18 @@ class RaidTask(object):
     def stop(self):
         self._stopped = True
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 class RaidTaskInfo(object):
+
     def __init__(self, task_id):
         self.tid = task_id
 
 
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 class ThreadedRaidProcessor(object):
+
     def __init__(self):
         self.latest_task_id = 0
         self.tasks = {}
@@ -575,9 +547,7 @@ class ThreadedRaidProcessor(object):
         reactor.callLater(0, self.process)  # @UndefinedVariable
         return RaidTaskInfo(task_id)
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def _read_done(cmd, taskdata, result):
     lg.out(0, '_read_done %r %r %r' % (cmd, taskdata, result))
@@ -604,7 +574,6 @@ def main():
     reactor.callLater(0.5, add_task, 'make', ('/tmp/source.txt', 'ecc/18x18', 'F12345678', '5', '/tmp/raidtest/F12345678'), _make_done)  # @UndefinedVariable
 
     reactor.run()  # @UndefinedVariable
-
 
 if __name__ == '__main__':
     main()

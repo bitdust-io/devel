@@ -29,26 +29,26 @@
 
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 10
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import time
 import base64
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from twisted.internet.defer import fail
 from twisted.internet.defer import Deferred
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -73,11 +73,11 @@ from userid import id_url
 from userid import my_id
 from userid import global_id
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 MAX_PENDING_MESSAGES_PER_CONSUMER = 100
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _ConsumersCallbacks = {}
 _ReceivedMessagesIDs = []
@@ -90,7 +90,7 @@ _MessageQueuePerConsumer = {}
 _LastUserPingTime = {}
 _PingTrustIntervalSeconds = 60 * 5
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def init():
@@ -106,9 +106,7 @@ def shutdown():
     RemoveOutgoingMessageCallback(push_outgoing_message)
     RemoveIncomingMessageCallback(push_incoming_message)
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def received_messages_ids(erase_old_records=False):
     global _ReceivedMessagesIDs
@@ -126,9 +124,7 @@ def consumers_callbacks():
     global _ConsumersCallbacks
     return _ConsumersCallbacks
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def ConnectCorrespondent(idurl):
     pass
@@ -137,9 +133,7 @@ def ConnectCorrespondent(idurl):
 def UniqueID():
     return str(int(time.time() * 100.0))
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def AddIncomingMessageCallback(cb):
     """
@@ -189,9 +183,7 @@ def RemoveOutgoingMessageCallback(cb):
     else:
         lg.warn('callback method not exist')
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 class PrivateMessage(object):
     """
@@ -208,10 +200,7 @@ class PrivateMessage(object):
         self.encrypted_body = encrypted_body
 
     def __str__(self):
-        return 'PrivateMessage(%s->%s)' % (
-            self.sender,
-            self.recipient,
-        )
+        return 'PrivateMessage(%s->%s)' % (self.sender, self.recipient, )
 
     def sender_id(self):
         return self.sender
@@ -303,20 +292,14 @@ class PrivateMessage(object):
             return None
         return message_obj
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 class GroupMessage(PrivateMessage):
+
     def __str__(self):
-        return 'GroupMessage(%s->%s)' % (
-            self.sender,
-            self.recipient,
-        )
+        return 'GroupMessage(%s->%s)' % (self.sender, self.recipient, )
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def on_incoming_message(request, info, status, error_message):
     """
@@ -324,14 +307,7 @@ def on_incoming_message(request, info, status, error_message):
     """
     global _IncomingMessageCallbacks
     if _Debug:
-        lg.out(
-            _DebugLevel,
-            'message.on_incoming_message new PrivateMessage %r from %s'
-            % (
-                request.PacketID,
-                request.OwnerID,
-            ),
-        )
+        lg.out(_DebugLevel, 'message.on_incoming_message new PrivateMessage %r from %s' % (request.PacketID, request.OwnerID, ))
     private_message_object = PrivateMessage.deserialize(request.Payload)
     if private_message_object is None:
         lg.err('PrivateMessage deserialize failed, can not extract message from request payload of %d bytes' % len(request.Payload))
@@ -347,13 +323,7 @@ def on_incoming_message(request, info, status, error_message):
         )
         json_message = jsn.dict_keys_to_text(jsn.dict_values_to_text(json_message))
     except Exception as exc:
-        lg.err(
-            'decrypt %r failed: %r'
-            % (
-                private_message_object,
-                exc,
-            )
-        )
+        lg.err('decrypt %r failed: %r' % (private_message_object, exc, ))
         return False
     if request.PacketID in received_messages_ids():
         lg.warn('skip incoming message %s because found in recent history' % request.PacketID)
@@ -384,13 +354,7 @@ def on_ping_success(ok, idurl):
     global _LastUserPingTime
     idurl = id_url.to_bin(idurl)
     _LastUserPingTime[idurl] = time.time()
-    lg.info(
-        'shake up hands %r before sending a message : %s'
-        % (
-            idurl,
-            ok,
-        )
-    )
+    lg.info('shake up hands %r before sending a message : %s' % (idurl, ok, ))
     return ok
 
 
@@ -407,24 +371,15 @@ def on_message_delivered(idurl, json_data, recipient_global_id, packet_id, respo
 def on_message_failed(idurl, json_data, recipient_global_id, packet_id, response, info, result_defer=None, error=None):
     global _LastUserPingTime
     idurl = id_url.to_bin(idurl)
-    lg.err(
-        'message %s failed sending to %s in %s because : %r'
-        % (
-            packet_id,
-            recipient_global_id,
-            response,
-            error,
-        )
-    )
+    lg.err('message %s failed sending to %s in %s because : %r' % (
+        packet_id, recipient_global_id, response, error, ))
     if idurl in _LastUserPingTime:
         _LastUserPingTime[idurl] = 0
     if result_defer and not result_defer.called:
         err = Exception(response) if response else (error if not strng.is_string(error) else Exception(error))
         result_defer.errback(err)
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def do_send_message(json_data, recipient_global_id, packet_id, message_ack_timeout, result_defer=None, fire_callbacks=True):
     global _OutgoingMessageCallbacks
@@ -440,9 +395,8 @@ def do_send_message(json_data, recipient_global_id, packet_id, message_ack_timeo
         encoding='utf-8',
     )
     if _Debug:
-        lg.out(
-            _DebugLevel, 'message.do_send_message to %s with %d bytes message ack_timeout=%s' % (recipient_global_id, len(message_body), message_ack_timeout)
-        )
+        lg.out(_DebugLevel, 'message.do_send_message to %s with %d bytes message ack_timeout=%s' % (
+            recipient_global_id, len(message_body), message_ack_timeout))
     try:
         private_message_object = PrivateMessage(recipient=recipient_global_id)
         private_message_object.encrypt(message_body)
@@ -456,37 +410,16 @@ def do_send_message(json_data, recipient_global_id, packet_id, message_ack_timeo
     if message_ack_timeout:
         callbacks = {
             commands.Ack(): lambda response, info: on_message_delivered(
-                remote_idurl,
-                json_data,
-                recipient_global_id,
-                packet_id,
-                response,
-                info,
-                result_defer,
-            ),
+                remote_idurl, json_data, recipient_global_id, packet_id, response, info, result_defer, ),
             commands.Fail(): lambda response, info: on_message_failed(
-                remote_idurl, json_data, recipient_global_id, packet_id, response, info, result_defer=result_defer, error='fail received'
-            ),
+                remote_idurl, json_data, recipient_global_id, packet_id, response, info,
+                result_defer=result_defer, error='fail received'),
             None: lambda pkt_out: on_message_failed(
-                remote_idurl,
-                json_data,
-                recipient_global_id,
-                packet_id,
-                None,
-                None,
-                result_defer=result_defer,
-                error='timeout',
-            ),
+                remote_idurl, json_data, recipient_global_id, packet_id, None, None,
+                result_defer=result_defer, error='timeout', ),
             'failed': lambda pkt_out, errmsg: on_message_failed(
-                remote_idurl,
-                json_data,
-                recipient_global_id,
-                packet_id,
-                None,
-                None,
-                result_defer=result_defer,
-                error=errmsg,
-            ),
+                remote_idurl, json_data, recipient_global_id, packet_id, None, None,
+                result_defer=result_defer, error=errmsg, ),
         }
     result, outpacket = p2p_service.SendMessage(
         remote_idurl=remote_idurl,
@@ -505,17 +438,9 @@ def do_send_message(json_data, recipient_global_id, packet_id, message_ack_timeo
     return result
 
 
-def send_message(
-    json_data,
-    recipient_global_id,
-    packet_id=None,
-    message_ack_timeout=None,
-    ping_timeout=15,
-    ping_retries=0,
-    skip_handshake=False,
-    fire_callbacks=True,
-    require_handshake=False,
-):
+def send_message(json_data, recipient_global_id, packet_id=None,
+                 message_ack_timeout=None, ping_timeout=15, ping_retries=0,
+                 skip_handshake=False, fire_callbacks=True, require_handshake=False):
     """
     Send command.Message() packet to remote peer. Returns Deferred object.
     """
@@ -524,17 +449,8 @@ def send_message(
     if not packet_id:
         packet_id = packetid.UniqueID()
     if _Debug:
-        lg.out(
-            _DebugLevel,
-            'message.send_message to %s with PacketID=%s timeout=%d ack_timeout=%r retries=%d'
-            % (
-                recipient_global_id,
-                packet_id,
-                ping_timeout,
-                message_ack_timeout,
-                ping_retries,
-            ),
-        )
+        lg.out(_DebugLevel, 'message.send_message to %s with PacketID=%s timeout=%d ack_timeout=%r retries=%d' % (
+            recipient_global_id, packet_id, ping_timeout, message_ack_timeout, ping_retries, ))
     remote_idurl = global_id.GlobalUserToIDURL(recipient_global_id, as_field=False)
     if not remote_idurl:
         lg.warn('invalid recipient')
@@ -547,16 +463,8 @@ def send_message(
     remote_identity = identitycache.FromCache(remote_idurl)
     is_online = online_status.isOnline(remote_idurl)
     if _Debug:
-        lg.out(
-            _DebugLevel,
-            '    is_ping_expired=%r  remote_identity=%r  is_online=%r  skip_handshake=%r'
-            % (
-                is_ping_expired,
-                bool(remote_identity),
-                is_online,
-                skip_handshake,
-            ),
-        )
+        lg.out(_DebugLevel, '    is_ping_expired=%r  remote_identity=%r  is_online=%r  skip_handshake=%r' % (
+            is_ping_expired, bool(remote_identity), is_online, skip_handshake, ))
     if require_handshake or remote_identity is None or ((is_ping_expired or not is_online) and not skip_handshake):
         d = online_status.handshake(
             idurl=remote_idurl,
@@ -566,17 +474,16 @@ def send_message(
             keep_alive=True,
         )
         d.addCallback(lambda ok: on_ping_success(ok, remote_idurl))
-        d.addCallback(
-            lambda _: do_send_message(
-                json_data=json_data,
-                recipient_global_id=recipient_global_id,
-                packet_id=packet_id,
-                message_ack_timeout=message_ack_timeout,
-                result_defer=ret,
-                fire_callbacks=fire_callbacks,
-            )
-        )
-        d.addErrback(lambda err: on_message_failed(remote_idurl, json_data, recipient_global_id, packet_id, None, None, result_defer=ret, error=err))
+        d.addCallback(lambda _: do_send_message(
+            json_data=json_data,
+            recipient_global_id=recipient_global_id,
+            packet_id=packet_id,
+            message_ack_timeout=message_ack_timeout,
+            result_defer=ret,
+            fire_callbacks=fire_callbacks,
+        ))
+        d.addErrback(lambda err: on_message_failed(
+            remote_idurl, json_data, recipient_global_id, packet_id, None, None, result_defer=ret, error=err))
         return ret
     try:
         do_send_message(
@@ -593,9 +500,7 @@ def send_message(
         ret.errback(exc)
     return ret
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def consume_messages(consumer_callback_id, callback=None, direction=None, message_types=None, reset_callback=False):
     """
@@ -654,44 +559,31 @@ def clear_consumer_callbacks(consumer_callback_id):
             lg.args(_DebugLevel, consumer_callback_id=consumer_callback_id, cb=cb_info['callback'])
     return True
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def push_message(direction, msg_type, recipient_id, sender_id, packet_id, owner_idurl, json_message, run_consumers=True):
     for consumers_callback_id in consumers_callbacks().keys():
         if consumers_callback_id not in message_queue():
             message_queue()[consumers_callback_id] = []
-        message_queue()[consumers_callback_id].append(
-            {
-                'type': msg_type,
-                'dir': direction,
-                'to': recipient_id,
-                'from': sender_id,
-                'data': json_message,
-                'packet_id': packet_id,
-                'owner_idurl': owner_idurl,
-                'time': utime.get_sec1970(),
-            }
-        )
+        message_queue()[consumers_callback_id].append({
+            'type': msg_type,
+            'dir': direction,
+            'to': recipient_id,
+            'from': sender_id,
+            'data': json_message,
+            'packet_id': packet_id,
+            'owner_idurl': owner_idurl,
+            'time': utime.get_sec1970(),
+        })
         if _Debug:
-            lg.args(
-                _DebugLevel,
-                dir=direction,
-                msg_type=msg_type,
-                to_id=recipient_id,
-                from_id=sender_id,
-                cb=consumers_callback_id,
-                pending=len(message_queue()[consumers_callback_id]),
-            )
+            lg.args(_DebugLevel, dir=direction, msg_type=msg_type, to_id=recipient_id,
+                    from_id=sender_id, cb=consumers_callback_id, pending=len(message_queue()[consumers_callback_id]))
     if not run_consumers:
         return 0
     total_consumed = do_read()
     return total_consumed > 0
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def push_incoming_message(request, private_message_object, json_message):
     msg_type = None
@@ -742,9 +634,7 @@ def push_group_message(json_message, direction, group_key_id, producer_id, seque
         json_message=json_message,
     )
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def do_read():
     known_consumers = list(message_queue().keys())
@@ -759,14 +649,7 @@ def do_read():
             consumers_callbacks().pop(consumer_id, None)
             message_queue().pop(consumer_id, None)
             if _Debug:
-                lg.out(
-                    _DebugLevel,
-                    'message.do_read STOPPED consumer "%s", pending_messages=%d'
-                    % (
-                        consumer_id,
-                        len(pending_messages),
-                    ),
-                )
+                lg.out(_DebugLevel, 'message.do_read STOPPED consumer "%s", pending_messages=%d' % (consumer_id, len(pending_messages), ))
             continue
         # filter messages which consumer is not interested in
         if cb_info['direction']:
@@ -783,10 +666,8 @@ def do_read():
         if isinstance(cb_info['callback'], Deferred):
             if cb_info['callback'].called:
                 if _Debug:
-                    lg.out(
-                        _DebugLevel,
-                        'message.do_read %d messages waiting consuming by "%s", callback state is "called"' % (len(message_queue()[consumer_id]), consumer_id),
-                    )
+                    lg.out(_DebugLevel, 'message.do_read %d messages waiting consuming by "%s", callback state is "called"' % (
+                        len(message_queue()[consumer_id]), consumer_id))
                 consumers_callbacks().pop(consumer_id, None)
                 continue
             try:

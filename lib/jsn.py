@@ -26,28 +26,30 @@
 
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import sys
 import json
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from lib import strng
 
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def dict_keys_to_text(dct, encoding='utf-8', errors='strict'):
     """
     Returns dict where all keys are converted to text strings.
     Only works for keys in a "root" level of the dict.
     """
-    return {(k.decode(encoding, errors=errors) if strng.is_bin(k) else k): v for k, v in dct.items()}
+    return {
+        (k.decode(encoding, errors=errors) if strng.is_bin(k) else k) : v
+        for k, v in dct.items()
+    }
 
 
 def dict_keys_to_bin(dct, encoding='utf-8', errors='strict'):
@@ -55,7 +57,10 @@ def dict_keys_to_bin(dct, encoding='utf-8', errors='strict'):
     Returns dict where all keys are converted to binary strings.
     Only works for keys in a "root" level of the dict.
     """
-    return {(k.encode(encoding, errors=errors) if strng.is_text(k) else k): v for k, v in dct.items()}
+    return {
+        (k.encode(encoding, errors=errors) if strng.is_text(k) else k) : v
+        for k, v in dct.items()
+    }
 
 
 def dict_values_to_text(dct, encoding='utf-8', errors='strict'):
@@ -117,9 +122,7 @@ def dict_items_to_text(dct, encoding='utf-8', errors='strict'):
         _d[_k] = _v
     return _d
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def pack_dict(dct, encoding='utf-8', errors='strict'):
     """
@@ -163,11 +166,7 @@ def pack_dict(dct, encoding='utf-8', errors='strict'):
             _vtyp = 't'
         elif _v is None:
             _vtyp = 'n'
-        _d[_k] = (
-            _ktyp,
-            _vtyp,
-            _v,
-        )
+        _d[_k] = (_ktyp, _vtyp, _v, )
     return _d
 
 
@@ -197,12 +196,10 @@ def unpack_dict(dct, encoding='utf-8', errors='strict'):
     return _d
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
-
-def dumps(
-    obj, indent=None, separators=None, sort_keys=None, ensure_ascii=False, encoding='utf-8', keys_to_text=False, values_to_text=False, empty_result='{}', **kw
-):
+def dumps(obj, indent=None, separators=None, sort_keys=None, ensure_ascii=False, encoding='utf-8',
+          keys_to_text=False, values_to_text=False, empty_result='{}', **kw):
     """
     Calls `json.dumps()` with parameters.
     Always translates every byte string json value into text using encoding.
@@ -228,15 +225,29 @@ def dumps(
     try:
         if sys.version_info[0] < 3:
             return json.dumps(
-                obj=obj, indent=indent, separators=separators, sort_keys=sort_keys, ensure_ascii=ensure_ascii, default=_to_text, encoding=encoding, **kw
+                obj=obj,
+                indent=indent,
+                separators=separators,
+                sort_keys=sort_keys,
+                ensure_ascii=ensure_ascii,
+                default=_to_text,
+                encoding=encoding,
+                **kw
             )
         else:
-            return json.dumps(obj=obj, indent=indent, separators=separators, sort_keys=sort_keys, ensure_ascii=ensure_ascii, default=_to_text, **kw)
+            return json.dumps(
+                obj=obj,
+                indent=indent,
+                separators=separators,
+                sort_keys=sort_keys,
+                ensure_ascii=ensure_ascii,
+                default=_to_text,
+                **kw
+            )
     except Exception as exc:
         if _Debug:
             import os
             import tempfile
-
             fd, _ = tempfile.mkstemp(suffix='err', prefix='jsn_dumps_', text=True)
             try:
                 os.write(fd, repr(obj))
@@ -249,8 +260,7 @@ def dumps(
         raise exc
 
 
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def loads(s, encoding='utf-8', keys_to_bin=False, **kw):
     """
@@ -266,17 +276,20 @@ def loads(s, encoding='utf-8', keys_to_bin=False, **kw):
             if strng.is_text(dct[k]):
                 dct[k] = dct[k].encode(encoding)
         if keys_to_bin:
-            return {(k.encode(encoding) if strng.is_text(k) else k): v for k, v in dct.items()}
+            return {(k.encode(encoding) if strng.is_text(k) else k) : v for k, v in dct.items()}
         return dct
 
     try:
-        return json.loads(s=s, object_hook=_to_bin, **kw)
+        return json.loads(
+            s=s,
+            object_hook=_to_bin,
+            **kw
+        )
     except Exception as exc:
         if _Debug:
             try:
                 import os
                 import tempfile
-
                 fd, _ = tempfile.mkstemp(suffix='err', prefix='jsn_loads_', text=True)
                 os.write(fd, s)
                 os.close(fd)
@@ -284,9 +297,7 @@ def loads(s, encoding='utf-8', keys_to_bin=False, **kw):
                 pass
         raise exc
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def loads_text(s, encoding='utf-8', **kw):
     """
@@ -299,12 +310,15 @@ def loads_text(s, encoding='utf-8', **kw):
     enc_errors = kw.pop('errors', 'strict')
 
     try:
-        return json.loads(s=s, object_hook=lambda itm: dict_items_to_text(itm, encoding=encoding, errors=enc_errors), **kw)
+        return json.loads(
+            s=s,
+            object_hook=lambda itm: dict_items_to_text(itm, encoding=encoding, errors=enc_errors),
+            **kw
+        )
     except Exception as exc:
         if _Debug:
             import os
             import tempfile
-
             fd, _ = tempfile.mkstemp(suffix='err', prefix='jsn_loads_', text=True)
             os.write(fd, s)
             os.close(fd)

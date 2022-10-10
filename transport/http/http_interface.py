@@ -30,15 +30,15 @@
 
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = True
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import six
 import sys
@@ -51,7 +51,7 @@ except:
 from twisted.web import xmlrpc
 from twisted.internet.defer import succeed, fail
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -63,24 +63,25 @@ from lib import net_misc
 
 from transport.http import http_node
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _GateProxy = None
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def proxy():
     global _GateProxy
     return _GateProxy
 
+#------------------------------------------------------------------------------
 
-# ------------------------------------------------------------------------------
 
+class GateInterface():
 
-class GateInterface:
     def init(self, xml_rpc_url_or_object):
-        """ """
+        """
+        """
         if _Debug:
             lg.out(4, 'http_interface.init')
         if not proxy():
@@ -93,7 +94,8 @@ class GateInterface:
         return True
 
     def shutdown(self):
-        """ """
+        """
+        """
         if _Debug:
             lg.out(4, 'http_interface.shutdown')
         if proxy():
@@ -103,7 +105,8 @@ class GateInterface:
         return True
 
     def connect(self, options):
-        """ """
+        """
+        """
         if _Debug:
             lg.out(4, 'http_interface.connect %s' % str(options))
         if settings.enableHTTPreceiving():
@@ -117,7 +120,8 @@ class GateInterface:
         return succeed(True)
 
     def disconnect(self):
-        """ """
+        """
+        """
         if _Debug:
             lg.out(4, 'http_interface.disconnect')
         http_node.stop_sending()
@@ -125,7 +129,8 @@ class GateInterface:
         return succeed(True)
 
     def build_contacts(self, id_obj):
-        """ """
+        """
+        """
         result = []
         nowip = strng.to_bin(misc.readExternalIP())
         result.append(b'http://%s:%d' % (nowip, settings.getHTTPPort()))
@@ -134,29 +139,31 @@ class GateInterface:
         return result
 
     def verify_contacts(self, id_obj):
-        """ """
+        """
+        """
         nowip = strng.to_bin(misc.readExternalIP())
         http_contact = 'http://%s:%s' % (nowip, str(settings.getHTTPPort()))
         if id_obj.getContactIndex(contact=http_contact) < 0:
             if _Debug:
                 lg.out(4, 'http_interface.verify_contacts returning False: http contact not found or changed')
             return False
-        #         if http_node.get_internal_port() != settings.getHTTPPort():
-        #             if _Debug:
-        #                 lg.out(4, 'http_interface.verify_contacts returning False: http port has been changed')
-        #             return False
+#         if http_node.get_internal_port() != settings.getHTTPPort():
+#             if _Debug:
+#                 lg.out(4, 'http_interface.verify_contacts returning False: http port has been changed')
+#             return False
         if _Debug:
             lg.out(4, 'http_interface.verify_contacts returning True')
         return True
 
     def send_file(self, remote_idurl, filename, host, description='', keep_alive=True):
-        """ """
+        """
+        """
         return http_node.send_file(remote_idurl, filename)
 
     def send_file_single(self, remote_idurl, filename, host, description='', keep_alive=False):
-        """ """
+        """
+        """
         return http_node.send_file(remote_idurl, filename)
-
 
 #     def connect_to(self, host):
 #         """
@@ -202,7 +209,7 @@ class GateInterface:
 #         result.extend(http_node.list_output_streams(sorted_by_time))
 #         return result
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def interface_transport_initialized(xmlrpcurl):
@@ -235,14 +242,16 @@ def interface_disconnected(result=None):
 
 def interface_register_file_sending(host, receiver_idurl, filename, size=0, description=''):
     if proxy():
-        return proxy().callRemote('register_file_sending', 'http', net_misc.pack_address(host), receiver_idurl, filename, size, description)
+        return proxy().callRemote(
+            'register_file_sending', 'http', net_misc.pack_address(host), receiver_idurl, filename, size, description)
     lg.warn('transport_http is not ready')
     return fail(Exception('transport_http is not ready'))
 
 
 def interface_register_file_receiving(host, sender_idurl, filename, size=0):
     if proxy():
-        return proxy().callRemote('register_file_receiving', 'http', net_misc.pack_address(host), sender_idurl, filename, size)
+        return proxy().callRemote(
+            'register_file_receiving', 'http', net_misc.pack_address(host), sender_idurl, filename, size)
     lg.warn('transport_http is not ready')
     return fail(Exception('transport_http is not ready'))
 
@@ -263,6 +272,7 @@ def interface_unregister_file_receiving(transfer_id, status, size=0, error_messa
 
 def interface_cancelled_file_sending(host, filename, size=0, description=None, error_message=None):
     if proxy():
-        return proxy().callRemote('cancelled_file_sending', 'http', net_misc.pack_address(host), filename, size, description, error_message)
+        return proxy().callRemote(
+            'cancelled_file_sending', 'http', net_misc.pack_address(host), filename, size, description, error_message)
     lg.warn('transport_http is not ready')
     return fail(Exception('transport_http is not ready'))

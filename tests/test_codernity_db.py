@@ -17,6 +17,7 @@ else:
 
 
 class WithXTreeIndex(TreeBasedIndex):
+
     def __init__(self, *args, **kwargs):
         kwargs['node_capacity'] = 10
         kwargs['key_format'] = 'I'
@@ -33,6 +34,7 @@ class WithXTreeIndex(TreeBasedIndex):
 
 
 class WithXHashIndex(HashIndex):
+
     def __init__(self, *args, **kwargs):
         kwargs['key_format'] = 'I'
         super(WithXHashIndex, self).__init__(*args, **kwargs)
@@ -64,6 +66,7 @@ def create_test_db(db_name='codernity_test_db_0', with_x_hash_index=False, with_
 
 
 class TestCodernityDB(TestCase):
+
     def setUp(self):
         pass
 

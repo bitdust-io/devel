@@ -28,7 +28,7 @@ import six
 
 from ._exceptions import *
 from ._logging import *
-from ._socket import *
+from ._socket import*
 from ._ssl_compat import *
 from ._url import *
 
@@ -41,21 +41,18 @@ __all__ = ['proxy_info', 'connect', 'read_headers']
 
 try:
     import socks
-
     ProxyConnectionError = socks.ProxyConnectionError
     HAS_PYSOCKS = True
 except:
-
     class ProxyConnectionError(BaseException):
         pass
-
     HAS_PYSOCKS = False
 
-
 class proxy_info(object):
+
     def __init__(self, **options):
         self.type = options.get('proxy_type') or 'http'
-        if not (self.type in ['http', 'socks4', 'socks5', 'socks5h']):
+        if not(self.type in ['http', 'socks4', 'socks5', 'socks5h']):
             raise ValueError("proxy_type must be 'http', 'socks4', 'socks5' or 'socks5h'")
         self.host = options.get('http_proxy_host', None)
         if self.host:
@@ -84,15 +81,15 @@ def _open_proxied_socket(url, options, proxy):
         rdns = True
 
     sock = socks.create_connection(
-        (hostname, port),
-        proxy_type=ptype,
-        proxy_addr=proxy.host,
-        proxy_port=proxy.port,
-        proxy_rdns=rdns,
-        proxy_username=proxy.auth[0] if proxy.auth else None,
-        proxy_password=proxy.auth[1] if proxy.auth else None,
-        timeout=options.timeout,
-        socket_options=DEFAULT_SOCKET_OPTION + options.sockopt,
+            (hostname, port),
+            proxy_type = ptype,
+            proxy_addr = proxy.host,
+            proxy_port = proxy.port,
+            proxy_rdns = rdns,
+            proxy_username = proxy.auth[0] if proxy.auth else None,
+            proxy_password = proxy.auth[1] if proxy.auth else None,
+            timeout = options.timeout,
+            socket_options = DEFAULT_SOCKET_OPTION + options.sockopt
     )
 
     if is_secure:
@@ -113,9 +110,11 @@ def connect(url, options, proxy, socket):
     if socket:
         return socket, (hostname, port, resource)
 
-    addrinfo_list, need_tunnel, auth = _get_addrinfo_list(hostname, port, is_secure, proxy)
+    addrinfo_list, need_tunnel, auth = _get_addrinfo_list(
+        hostname, port, is_secure, proxy)
     if not addrinfo_list:
-        raise WebSocketException('Host not found.: ' + hostname + ':' + str(port))
+        raise WebSocketException(
+            'Host not found.: ' + hostname + ':' + str(port))
 
     sock = None
     try:
@@ -137,13 +136,15 @@ def connect(url, options, proxy, socket):
 
 
 def _get_addrinfo_list(hostname, port, is_secure, proxy):
-    phost, pport, pauth = get_proxy_info(hostname, is_secure, proxy.host, proxy.port, proxy.auth, proxy.no_proxy)
+    phost, pport, pauth = get_proxy_info(
+        hostname, is_secure, proxy.host, proxy.port, proxy.auth, proxy.no_proxy)
     try:
         # when running on windows 10, getaddrinfo without socktype returns a socktype 0.
         # This generates an error exception: `_on_error: exception Socket type must be stream or datagram, not 0`
         # or `OSError: [Errno 22] Invalid argument` when creating socket. Force the socket type to SOCK_STREAM.
         if not phost:
-            addrinfo_list = socket.getaddrinfo(hostname, port, 0, socket.SOCK_STREAM, socket.SOL_TCP)
+            addrinfo_list = socket.getaddrinfo(
+                hostname, port, 0, socket.SOCK_STREAM, socket.SOL_TCP)
             return addrinfo_list, False, None
         else:
             pport = pport and pport or 80
@@ -182,7 +183,7 @@ def _open_socket(addrinfo_list, sockopt, timeout):
                 try:
                     eConnRefused = (errno.ECONNREFUSED, errno.WSAECONNREFUSED)
                 except:
-                    eConnRefused = (errno.ECONNREFUSED,)
+                    eConnRefused = (errno.ECONNREFUSED, )
                 if error.errno == errno.EINTR:
                     continue
                 elif error.errno in eConnRefused:
@@ -248,12 +249,16 @@ def _ssl_socket(sock, user_sslopt, hostname):
     sslopt.update(user_sslopt)
 
     certPath = os.environ.get('WEBSOCKET_CLIENT_CA_BUNDLE')
-    if certPath and os.path.isfile(certPath) and user_sslopt.get('ca_certs', None) is None and user_sslopt.get('ca_cert', None) is None:
+    if certPath and os.path.isfile(certPath) \
+            and user_sslopt.get('ca_certs', None) is None \
+            and user_sslopt.get('ca_cert', None) is None:
         sslopt['ca_certs'] = certPath
-    elif certPath and os.path.isdir(certPath) and user_sslopt.get('ca_cert_path', None) is None:
+    elif certPath and os.path.isdir(certPath) \
+            and user_sslopt.get('ca_cert_path', None) is None:
         sslopt['ca_cert_path'] = certPath
 
-    check_hostname = sslopt['cert_reqs'] != ssl.CERT_NONE and sslopt.pop('check_hostname', True)
+    check_hostname = sslopt['cert_reqs'] != ssl.CERT_NONE and sslopt.pop(
+        'check_hostname', True)
 
     if _can_use_sni():
         sock = _wrap_sni_socket(sock, sslopt, hostname, check_hostname)
@@ -288,7 +293,8 @@ def _tunnel(sock, host, port, auth):
         raise WebSocketProxyException(str(e))
 
     if status != 200:
-        raise WebSocketProxyException('failed CONNECT via proxy status: %r' % status)
+        raise WebSocketProxyException(
+            'failed CONNECT via proxy status: %r' % status)
 
     return sock
 

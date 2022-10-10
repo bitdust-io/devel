@@ -4,7 +4,6 @@
 
 import sys
 from time import sleep
-
 # from base64 import b64encode
 sys.path.append('../')
 from common import get_client
@@ -88,7 +87,7 @@ def test_spend_entire_balance(myserver, verbose=False):
     balance = float(client.balance())
     fee = 0.01
     recipient = '8342c1610de5d7aa026ca7ae6d21bd99b1b3a4654701751891f08742'
-    client.send(recipient=recipient, amount=balance - fee)
+    client.send(recipient=recipient, amount=balance-fee)
     client.command(command='regtest_generate', options=[1])  # Mine the next block
     sleep(1)
     client.clear_cache()
@@ -124,7 +123,7 @@ def test_send_more_than_owned_in_two_transactions(myserver, verbose=False):
     balance = float(client.balance())
     recipient = '8342c1610de5d7aa026ca7ae6d21bd99b1b3a4654701751891f08742'
     client.send(recipient=recipient, amount=1.0)
-    client.send(recipient=recipient, amount=balance - 1.0)
+    client.send(recipient=recipient, amount=balance-1.0)
     client.command(command='regtest_generate', options=[1])  # Mine the next block
     sleep(1)
     client.clear_cache()

@@ -28,7 +28,7 @@ END_ROUND_SLOTS = 1
 ROUND_TIME_SEC = POS_SLOT_TIME_SEC * (MAX_ROUND_SLOTS + END_ROUND_SLOTS)
 
 
-def hn_reg_round(round: int, pow_height: int = 0):
+def hn_reg_round(round: int, pow_height: int=0):
     s = socks.socksocket()
     s.settimeout(10)
     s.connect(('127.0.0.1', 5658))

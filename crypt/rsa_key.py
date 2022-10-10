@@ -29,17 +29,17 @@
 
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 10
 _CryptoLog = None
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 try:
     from Cryptodome.PublicKey import RSA
@@ -50,7 +50,7 @@ except:
     from Crypto.Signature import pkcs1_15  # @UnresolvedImport @Reimport
     from Crypto.Cipher import PKCS1_OAEP  # @UnresolvedImport @Reimport
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -61,10 +61,10 @@ from system import local_fs
 from crypt import hashes
 from crypt import number
 
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 class RSAKey(object):
+
     def __init__(self):
         self.keyObject = None
         self.local_key_id = None
@@ -122,10 +122,7 @@ class RSAKey(object):
             self.active = key_dict.get('active', True)
             self.local_key_id = key_dict.get('local_key_id', None)
             if 'signature' in key_dict and 'signature_pubkey' in key_dict:
-                self.signed = (
-                    key_dict['signature'],
-                    key_dict['signature_pubkey'],
-                )
+                self.signed = (key_dict['signature'], key_dict['signature_pubkey'], )
         del key_src
         # gc.collect()
         return result
@@ -186,12 +183,10 @@ class RSAKey(object):
             'active': self.active,
         }
         if self.isSigned():
-            key_dict.update(
-                {
-                    'signature': self.signed[0],
-                    'signature_pubkey': self.signed[1],
-                }
-            )
+            key_dict.update({
+                'signature': self.signed[0],
+                'signature_pubkey': self.signed[1],
+            })
         return key_dict
 
     def sign(self, message, as_digits=True):
@@ -232,18 +227,9 @@ class RSAKey(object):
         try:
             pkcs1_15.new(self.keyObject).verify(h, signature_bytes)
             result = True
-        except (
-            ValueError,
-            TypeError,
-        ):
+        except (ValueError, TypeError, ):
             # do not raise any exception... just return False
-            lg.exc(
-                'signature=%r message=%r'
-                % (
-                    signature,
-                    message,
-                )
-            )
+            lg.exc('signature=%r message=%r' % (signature, message, ))
         if _Debug:
             if _CryptoLog:
                 lg.args(_DebugLevel, result=result, signature=signature)

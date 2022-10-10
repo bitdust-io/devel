@@ -49,20 +49,21 @@ for filename in os.listdir(sys.argv[1]):
                     line = 'from %s import %s' % (pkg, modl)
         newsrc += line + '\n'
 
-    #    doclines = False
-    #    for line in lines:
-    #        if line.strip() == '"""':
-    #            if not doclines:
-    #                doclines = True
-    #            else:
-    #                doclines = False
-    #            newsrc += line+'\n'
-    #        else:
-    #            if doclines:
-    #                newsrc += line.replace('`', '``')+'\n'
-    #            else:
-    #                newsrc += line+'\n'
-    #    newsrc = newsrc.replace('``', '``')
+
+#    doclines = False
+#    for line in lines:
+#        if line.strip() == '"""':
+#            if not doclines:
+#                doclines = True
+#            else:
+#                doclines = False
+#            newsrc += line+'\n'
+#        else:
+#            if doclines:
+#                newsrc += line.replace('`', '``')+'\n'
+#            else:
+#                newsrc += line+'\n'
+#    newsrc = newsrc.replace('``', '``')
 
     # lines = src.splitlines()
     # first_docstring_pos = False

@@ -35,16 +35,16 @@ default) 2) establish connections to remote peers 3) keeps TCP session
 opened to be able to send asap
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 10
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import sys
 
@@ -57,7 +57,7 @@ from twisted.internet import protocol  # @UnresolvedImport
 from twisted.internet.defer import Deferred  # @UnresolvedImport
 from twisted.internet.error import CannotListenError  # @UnresolvedImport
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -65,7 +65,7 @@ from lib import net_misc
 
 from transport.tcp import tcp_stream
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _MyIDURL = None
 _MyHost = None
@@ -77,7 +77,7 @@ _StartedConnections = {}
 _ConnectionsCounter = 0
 _ConnectionTimeout = 10
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def started_connections():
@@ -94,8 +94,7 @@ def opened_connections_count():
     global _ConnectionsCounter
     return _ConnectionsCounter
 
-
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def increase_connections_counter():
@@ -107,8 +106,7 @@ def decrease_connections_counter():
     global _ConnectionsCounter
     _ConnectionsCounter -= 1
 
-
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def get_internal_port():
@@ -129,9 +127,7 @@ def my_host(normalize=False):
         return net_misc.normalize_address(_MyHost)
     return _MyHost
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def receive(options):
     global _MyIDURL
@@ -139,7 +135,6 @@ def receive(options):
     global _InternalPort
     global _Listener
     from transport.tcp import tcp_interface
-
     if _Debug:
         lg.out(_DebugLevel, 'tcp_node.receive %r' % options)
     if _Listener:
@@ -220,7 +215,6 @@ def disconnect_from(host):
 def disconnect():
     global _Listener
     from transport.tcp import tcp_interface
-
     if not _Listener:
         tcp_interface.interface_disconnected(None)
         return True
@@ -244,25 +238,15 @@ def send(filename, remoteaddress, description=None, keep_alive=True):
     remoteaddress = net_misc.normalize_address(remoteaddress)
     result_defer = Deferred()
     if remoteaddress == my_host(normalize=True):
-        lg.err(
-            'sending file %r %r to my own host connection at %r is blocked'
-            % (
-                filename,
-                description,
-                remoteaddress,
-            )
-        )
+        lg.err('sending file %r %r to my own host connection at %r is blocked' % (filename, description, remoteaddress, ))
         result_defer.callback((filename, description, 'failed', 'cancelled'))
         return result_defer
     if remoteaddress in started_connections():
         started_connections()[remoteaddress].add_outbox_file(filename, description, result_defer, keep_alive)
         if not keep_alive:
             if _Debug:
-                lg.out(
-                    _DebugLevel,
-                    'tcp_node.send single, use started connection to %s, %d already started and %d opened'
-                    % (str(remoteaddress), len(started_connections()), len(opened_connections())),
-                )
+                lg.out(_DebugLevel, 'tcp_node.send single, use started connection to %s, %d already started and %d opened' % (
+                    str(remoteaddress), len(started_connections()), len(opened_connections())))
         return result_defer
     for peeraddr, connections in opened_connections().items():
         for connection in connections:
@@ -270,22 +254,16 @@ def send(filename, remoteaddress, description=None, keep_alive=True):
                 connection.append_outbox_file(filename, description, result_defer, keep_alive)
                 if not keep_alive:
                     if _Debug:
-                        lg.out(
-                            _DebugLevel,
-                            'tcp_node.send single, use opened connection to %s, %d already started and %d opened'
-                            % (str(remoteaddress), len(started_connections()), len(opened_connections())),
-                        )
+                        lg.out(_DebugLevel, 'tcp_node.send single, use opened connection to %s, %d already started and %d opened' % (
+                            str(remoteaddress), len(started_connections()), len(opened_connections())))
                 return result_defer
             if connection.getConnectionAddress():
                 if connection.getConnectionAddress() == remoteaddress:
                     connection.append_outbox_file(filename, description, result_defer, keep_alive)
                     if not keep_alive:
                         if _Debug:
-                            lg.out(
-                                _DebugLevel,
-                                'tcp_node.send single, use opened connection to %s, %d already started and %d opened'
-                                % (str(remoteaddress), len(started_connections()), len(opened_connections())),
-                            )
+                            lg.out(_DebugLevel, 'tcp_node.send single, use opened connection to %s, %d already started and %d opened' % (
+                                str(remoteaddress), len(started_connections()), len(opened_connections())))
                     return result_defer
     if _Debug:
         lg.out(_DebugLevel, 'tcp_node.send start connecting to "%s"' % str(remoteaddress))
@@ -295,11 +273,8 @@ def send(filename, remoteaddress, description=None, keep_alive=True):
     connection.connector = reactor.connectTCP(remoteaddress[0], remoteaddress[1], connection, timeout=_ConnectionTimeout)  # @UndefinedVariable
     if not keep_alive:
         if _Debug:
-            lg.out(
-                _DebugLevel,
-                'tcp_node.send opened a single connection to %s, %d already started and %d opened'
-                % (str(remoteaddress), len(started_connections()), len(opened_connections())),
-            )
+            lg.out(_DebugLevel, 'tcp_node.send opened a single connection to %s, %d already started and %d opened' % (
+                str(remoteaddress), len(started_connections()), len(opened_connections())))
     return result_defer
 
 
@@ -335,14 +310,14 @@ def cancel_file_receiving(transferID):
     # at the moment for TCP transport we can not stop particular file transfer
     # we can only close connection itself, which is not we really want
     # need to find a way to notify remote side about to stop
-    #     for connections in opened_connections().values():
-    #         for connection in connections:
-    #             for in_file in connection.stream.inboxFiles.values():
-    #                 if in_file.transfer_id and in_file.transfer_id == transferID:
-    #                     connection.automat('disconnect')
-    #                     return True
-    #     lg.warn('%r not found' % transferID)
-    #     return False
+#     for connections in opened_connections().values():
+#         for connection in connections:
+#             for in_file in connection.stream.inboxFiles.values():
+#                 if in_file.transfer_id and in_file.transfer_id == transferID:
+#                     connection.automat('disconnect')
+#                     return True
+#     lg.warn('%r not found' % transferID)
+#     return False
     return False
 
 
@@ -363,10 +338,10 @@ def cancel_outbox_file(host, filename):
     if _Debug:
         lg.args(_DebugLevel, host=host, filename=filename)
     from transport.tcp import tcp_interface
-
     for connections in opened_connections().values():
         for connection in connections:
-            if connection.peer_address and connection.peer_address == host or connection.peer_external_address and connection.peer_external_address == host:
+            if connection.peer_address and connection.peer_address == host or \
+                    connection.peer_external_address and connection.peer_external_address == host:
                 i = 0
                 while i < len(connection.outboxQueue):
                     fn, description, result_defer, keep_alive = connection.outboxQueue[i]
@@ -383,7 +358,8 @@ def cancel_outbox_file(host, filename):
                 if fn == filename:
                     connection.pendingoutboxfiles.pop(i)
                     try:
-                        tcp_interface.interface_cancelled_file_sending(host, filename, 0, description, 'cancelled')
+                        tcp_interface.interface_cancelled_file_sending(
+                            host, filename, 0, description, 'cancelled')
                     except Exception as exc:
                         lg.warn(str(exc))
                     if result_defer:
@@ -391,8 +367,7 @@ def cancel_outbox_file(host, filename):
                     continue
                 i += 1
 
-
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 class TCPFactory(protocol.ClientFactory):
@@ -400,7 +375,6 @@ class TCPFactory(protocol.ClientFactory):
 
     def __init__(self, connection_address, keep_alive=True):
         from transport.tcp import tcp_connection
-
         self.protocol = tcp_connection.TCPConnection
         self.connection_address = connection_address
         self.keep_alive = keep_alive
@@ -412,25 +386,19 @@ class TCPFactory(protocol.ClientFactory):
 
     def clientConnectionFailed(self, connector, reason):
         from transport.tcp import tcp_interface
-
         protocol.ClientFactory.clientConnectionFailed(self, connector, reason)
         destaddress = (connector.getDestination().host, int(connector.getDestination().port))
         connection = started_connections().pop(self.connection_address, None)
         if connection:
             connection.connector = None
         if _Debug:
-            lg.out(
-                _DebugLevel,
-                'tcp_node.clientConnectionFailed with %s, %d more connections started : %r'
-                % (
-                    str(destaddress),
-                    len(started_connections()),
-                    reason,
-                ),
-            )
+            lg.out(_DebugLevel, 'tcp_node.clientConnectionFailed with %s, %d more connections started : %r' % (
+                str(destaddress), len(started_connections()), reason, ))
         for filename, description, result_defer, keep_alive in self.pendingoutboxfiles:
             try:
-                tcp_interface.interface_cancelled_file_sending(destaddress, filename, 0, description, 'connection failed').addErrback(lambda err: lg.exc(err))
+                tcp_interface.interface_cancelled_file_sending(
+                    destaddress, filename, 0, description, 'connection failed'
+                ).addErrback(lambda err: lg.exc(err))
             except Exception as exc:
                 lg.warn(str(exc))
             if result_defer:

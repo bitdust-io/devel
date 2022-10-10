@@ -46,7 +46,9 @@ class BaseHandler(RequestHandler):
         self.bismuth_vars['server_status'] = self.bismuth.status()
         print('status', self.bismuth.status())
         self.bismuth_vars['balance'] = self.bismuth.balance(for_display=True)
-        self.bismuth_vars['address'] = self.bismuth._wallet.info()['address']  # self.bismuth_vars['server']['address']
+        self.bismuth_vars['address'] = self.bismuth._wallet.info()[
+            'address'
+        ]  # self.bismuth_vars['server']['address']
         self.bismuth_vars['params'] = {}
         self.bismuth_vars['extra'] = {'header': '', 'footer': ''}
         try:
@@ -60,12 +62,16 @@ class BaseHandler(RequestHandler):
             'label': get_spend_type(_, spend_type),
         }
         # print(self.bismuth.wallet())
-        self.bismuth_vars['master_set'] = self.bismuth.wallet()['encrypted']  # self.application.wallet_settings['master_hash']
+        self.bismuth_vars['master_set'] = self.bismuth.wallet()[
+            'encrypted'
+        ]  # self.application.wallet_settings['master_hash']
         self.bismuth_vars['wallet_locked'] = self.bismuth._wallet._locked
         self.crystals = self.settings['bismuth_crystals']
         self.ro_mode = self.settings['ro_mode']
         if self.bismuth_vars['address'] is None:
-            self.bismuth_vars['address'] = _('No Bismuth address, please create or load a wallet first.')
+            self.bismuth_vars['address'] = _(
+                'No Bismuth address, please create or load a wallet first.'
+            )
         self.update_crystals()
         # self.bismuth_vars['dtlanguage'] = get_dt_language(_)
         self.error = False
@@ -105,7 +111,8 @@ class BaseHandler(RequestHandler):
         path names.
         """
         self.require_setting('static_path', 'static_url')
-        static_handler_class = self.settings.get('static_handler_class', StaticFileHandler)
+        static_handler_class = self.settings.get(
+            'static_handler_class', StaticFileHandler)
         if getattr(self, 'include_host', False):
             base = self.request.protocol + '://' + self.request.host
         else:
@@ -217,7 +224,9 @@ class BaseHandler(RequestHandler):
             self.bismuth_vars['params'] = {}
             return {}
         _, param = self.request.uri.split('?')
-        res = {key: value for key, value in [item.split('=') for item in param.split('&')]}
+        res = {
+            key: value for key, value in [item.split('=') for item in param.split('&')]
+        }
         # TODO: see https://www.tornadoweb.org/en/stable/web.html#tornado.web.RequestHandler.decode_argument
         self.bismuth_vars['params'] = res
         return res
@@ -261,7 +270,9 @@ class CrystalHandler(BaseHandler):
             # print("RequestHandler._template_loaders:", RequestHandler._template_loaders)
             if template_path not in RequestHandler._template_loaders:
                 # loader = self.create_template_loader(template_path)
-                loader = CrystalLoader(template_path, self.application.settings.get('template_path'))
+                loader = CrystalLoader(
+                    template_path, self.application.settings.get('template_path')
+                )
                 RequestHandler._template_loaders[template_path] = loader
             else:
                 loader = RequestHandler._template_loaders[template_path]
@@ -274,7 +285,8 @@ class CrystalHandler(BaseHandler):
 
 
 class CrystalLoader(Loader):
-    """A template loader that loads from several root directory to account for crystals and base template."""
+    """A template loader that loads from several root directory to account for crystals and base template.
+    """
 
     def __init__(self, root_directory, fallback_directory, **kwargs):
         super(Loader, self).__init__(**kwargs)
@@ -291,7 +303,12 @@ class CrystalLoader(Loader):
             my_root = self.fallback
         # print("resolve path root", my_root)
         self.current = my_root
-        if parent_path and not parent_path.startswith('<') and not parent_path.startswith('/') and not name.startswith('/'):
+        if (
+            parent_path
+            and not parent_path.startswith('<')
+            and not parent_path.startswith('/')
+            and not name.startswith('/')
+        ):
             current_path = path.join(my_root, parent_path)
             file_dir = path.dirname(path.abspath(current_path))
             relative_path = path.abspath(path.join(file_dir, name))

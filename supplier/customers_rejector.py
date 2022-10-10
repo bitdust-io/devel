@@ -46,7 +46,7 @@ EVENTS:
 
 from __future__ import absolute_import
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -65,16 +65,16 @@ from p2p import ratings
 
 from storage import accounting
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 8
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _CustomersRejector = None
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def A(event=None, *args, **kwargs):
@@ -115,12 +115,12 @@ class CustomersRejector(automat.Automat):
         """
 
     def A(self, event, *args, **kwargs):
-        # ---READY---
+        #---READY---
         if self.state == 'READY':
             if event == 'start' or event == 'restart':
                 self.state = 'CAPACITY?'
                 self.doTestMyCapacity(*args, **kwargs)
-        # ---CAPACITY?---
+        #---CAPACITY?---
         elif self.state == 'CAPACITY?':
             if event == 'space-enough':
                 self.state = 'IDLE?'
@@ -128,7 +128,7 @@ class CustomersRejector(automat.Automat):
             elif event == 'space-overflow':
                 self.state = 'REJECT!'
                 self.doRemoveCustomers(*args, **kwargs)
-        # ---REJECT!---
+        #---REJECT!---
         elif self.state == 'REJECT!':
             if event == 'restart':
                 self.state = 'CAPACITY?'
@@ -136,7 +136,7 @@ class CustomersRejector(automat.Automat):
             elif event == 'customers-rejected':
                 self.state = 'READY'
                 self.doRestartLocalTester(*args, **kwargs)
-        # ---IDLE?---
+        #---IDLE?---
         elif self.state == 'IDLE?':
             if event == 'found-idle-customers':
                 self.state = 'REJECT!'
@@ -185,10 +185,8 @@ class CustomersRejector(automat.Automat):
             self.automat('space-overflow', failed_customers)
             return
         used_space_ratio_dict = accounting.calculate_customers_usage_ratio(space_dict, used_dict)
-        customers_sorted = sorted(
-            current_customers,
-            key=lambda idurl: used_space_ratio_dict[idurl],
-        )
+        customers_sorted = sorted(current_customers,
+                                  key=lambda idurl: used_space_ratio_dict[idurl],)
         while len(customers_sorted) > 0 and consumed_bytes > donated_bytes:
             idurl = customers_sorted.pop()
             allocated_bytes = int(space_dict[idurl])
@@ -216,13 +214,8 @@ class CustomersRejector(automat.Automat):
                 dead_customers.append(customer_idurl)
                 continue
             if utime.get_sec1970() - connected_time > customer_idle_days * 24 * 60 * 60:
-                lg.warn(
-                    'customer %r connected last time %r seconds ago, rejecting customer'
-                    % (
-                        customer_idurl,
-                        utime.get_sec1970() - connected_time,
-                    )
-                )
+                lg.warn('customer %r connected last time %r seconds ago, rejecting customer' % (
+                    customer_idurl, utime.get_sec1970() - connected_time, ))
                 dead_customers.append(customer_idurl)
         if dead_customers:
             lg.warn('found idle customers: %r' % dead_customers)
@@ -245,5 +238,4 @@ class CustomersRejector(automat.Automat):
         Action method.
         """
         from supplier import local_tester
-
         local_tester.TestSpaceTime()

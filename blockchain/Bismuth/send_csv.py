@@ -20,13 +20,14 @@ The node has to be running with mempool on disk, not on ram or send_nogui does n
 """
 
 
+
 import argparse
 import os
 
 __version__ = '0.0.1'
 
 
-SEND_PATH = 'send_nogui_noconf.py'  # path to modified send_no_gui.py in the Bismuth Dir.
+SEND_PATH = 'send_nogui_noconf.py' # path to modified send_no_gui.py in the Bismuth Dir.
 # That node has to be running with mempool on disk, not on ram!!!
 
 PYTHON_EXECUTABLE = 'python3'
@@ -41,14 +42,14 @@ print(sys.argv[3])
 
 total = 0
 nb = 0
-for line in open('rewards.csv', 'r'):
+for line in open('rewards.csv' , 'r'):
     data = line.strip().split(',')
-    print(data)
+    print (data)
     if len(data) > 1:
         try:
             total += float(data[1])
             data[1] = float(data[1]) - 0.01
-            command = f'{PYTHON_EXECUTABLE} {SEND_PATH} {data[1]} {data[0]} {None} {None} {sys.argv[3]} '  # arguments are passed here
+            command = f'{PYTHON_EXECUTABLE} {SEND_PATH} {data[1]} {data[0]} {None} {None} {sys.argv[3]} ' #arguments are passed here
             if args.yes:
                 print(f'Running: {command} tx')
                 os.system(command)
@@ -58,6 +59,6 @@ for line in open('rewards.csv', 'r'):
             nb += 1
             time.sleep(1)
         except Exception as e:
-            print(e)
+            print (e)
 
 print(f'{nb} Transactions, {total} $BIS total.')

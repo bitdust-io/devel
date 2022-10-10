@@ -43,13 +43,12 @@ These are the valid values for the command field of a packet:
     - Coin/Ack                  (for contracts publishing/management)
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 P2PCommandAcks = None
 RelayCommands = None
 
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def init():
     """
@@ -64,112 +63,44 @@ def init():
     # No Ack for Fail
     P2PCommandAcks[Fail()] = []
     # Ack Data with Ack or Fail unless it is our data coming back (would be only after Retrieve)
-    P2PCommandAcks[Data()] = [
-        Ack(),
-        Fail(),
-    ]
+    P2PCommandAcks[Data()] = [Ack(), Fail(), ]
     # Ack Retrieve with Data or Fail
-    P2PCommandAcks[Retrieve()] = [
-        Data(),
-        Fail(),
-    ]
+    P2PCommandAcks[Retrieve()] = [Data(), Fail(), ]
     # Ack ListFiles with Files
-    P2PCommandAcks[ListFiles()] = [
-        Files(),
-        Fail(),
-    ]
+    P2PCommandAcks[ListFiles()] = [Files(), Fail(), ]
     # Ack Files with Ack or Fail
-    P2PCommandAcks[Files()] = [
-        Ack(),
-        Fail(),
-    ]
+    P2PCommandAcks[Files()] = [Ack(), Fail(), ]
     # If identity comes in and no interested party then transport sends an Ack
-    P2PCommandAcks[Identity()] = [
-        Ack(),
-        Fail(),
-    ]
+    P2PCommandAcks[Identity()] = [Ack(), Fail(), ]
     # Ack with Ack (maybe should be Files)
-    P2PCommandAcks[DeleteFile()] = [
-        Ack(),
-        Fail(),
-    ]
+    P2PCommandAcks[DeleteFile()] = [Ack(), Fail(), ]
     # Ack with Ack (maybe should be Files)
-    P2PCommandAcks[DeleteBackup()] = [
-        Ack(),
-        Fail(),
-    ]
+    P2PCommandAcks[DeleteBackup()] = [Ack(), Fail(), ]
     # Ack with Ack or Fail, but also Message() packet may have no ack when sending back archived messages
-    P2PCommandAcks[Message()] = [
-        Ack(),
-        Fail(),
-    ]
+    P2PCommandAcks[Message()] = [Ack(), Fail(), ]
     # Ack with Ack or Fail
-    P2PCommandAcks[Receipt()] = [
-        Ack(),
-        Fail(),
-    ]
-    P2PCommandAcks[Correspondent()] = [
-        Correspondent(),
-        Fail(),
-    ]
+    P2PCommandAcks[Receipt()] = [Ack(), Fail(), ]
+    P2PCommandAcks[Correspondent()] = [Correspondent(), Fail(), ]
     # RequestService must receive back Ack or Fail
-    P2PCommandAcks[RequestService()] = [
-        Ack(),
-        Fail(),
-    ]
+    P2PCommandAcks[RequestService()] = [Ack(), Fail(), ]
     # CancelService must receive back Ack or Fail
-    P2PCommandAcks[CancelService()] = [
-        Ack(),
-        Fail(),
-    ]
+    P2PCommandAcks[CancelService()] = [Ack(), Fail(), ]
     P2PCommandAcks[Broadcast()] = []
     P2PCommandAcks[Relay()] = []
     P2PCommandAcks[RelayIn()] = []
-    P2PCommandAcks[RelayOut()] = [
-        RelayAck(),
-        RelayFail(),
-    ]
+    P2PCommandAcks[RelayOut()] = [RelayAck(), RelayFail(), ]
     P2PCommandAcks[RelayAck()] = []
     P2PCommandAcks[RelayFail()] = []
-    P2PCommandAcks[Coin()] = [
-        Ack(),
-        Fail(),
-    ]
-    P2PCommandAcks[RetrieveCoin()] = [
-        Coin(),
-        Fail(),
-    ]
-    P2PCommandAcks[Key()] = [
-        Ack(),
-        Fail(),
-    ]
-    P2PCommandAcks[AuditKey()] = [
-        Ack(),
-        Fail(),
-    ]
-    P2PCommandAcks[Event()] = [
-        Ack(),
-        Fail(),
-    ]
-    P2PCommandAcks[Contacts()] = [
-        Contacts(),
-        Ack(),
-        Fail(),
-    ]
+    P2PCommandAcks[Coin()] = [Ack(), Fail(), ]
+    P2PCommandAcks[RetrieveCoin()] = [Coin(), Fail(), ]
+    P2PCommandAcks[Key()] = [Ack(), Fail(), ]
+    P2PCommandAcks[AuditKey()] = [Ack(), Fail(), ]
+    P2PCommandAcks[Event()] = [Ack(), Fail(), ]
+    P2PCommandAcks[Contacts()] = [Contacts(), Ack(), Fail(), ]
     # pre-define a set of commands for filtering out routed traffic
-    RelayCommands = set(
-        [
-            RelayIn(),
-            RelayOut(),
-            RelayAck(),
-            RelayFail(),
-            Relay(),
-        ]
-    )
+    RelayCommands = set([RelayIn(), RelayOut(), RelayAck(), RelayFail(), Relay(), ])
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def IsCommand(com):
     """
@@ -208,8 +139,7 @@ def IsRelay(com):
         init()
     return com in RelayCommands
 
-
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def Ack():

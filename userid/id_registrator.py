@@ -85,16 +85,16 @@ EVENTS:
     * :red:`timer-5sec`
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 12
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import sys
 import random
@@ -102,14 +102,13 @@ import random
 from twisted.internet.defer import DeferredList
 from six.moves import range
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     import os.path as _p
-
     sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -134,11 +133,11 @@ from userid import identity
 from userid import id_url
 from userid import known_servers
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _IdRegistrator = None
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def A(event=None, *args, **kwargs):
@@ -225,11 +224,10 @@ class IdRegistrator(automat.Automat):
         This method intended to catch the moment when automat's state was changed.
         """
         from main import installer
-
         installer.A('id_registrator.state', newstate)
 
     def A(self, event, *args, **kwargs):
-        # ---AT_STARTUP---
+        #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'start':
                 self.state = 'ID_SERVERS?'
@@ -237,13 +235,13 @@ class IdRegistrator(automat.Automat):
                 self.doSelectRandomServers(*args, **kwargs)
                 self.doPingServers(*args, **kwargs)
                 self.doPrint(self.msg('MSG_0', *args, **kwargs))
-        # ---DONE---
+        #---DONE---
         elif self.state == 'DONE':
             pass
-        # ---FAILED---
+        #---FAILED---
         elif self.state == 'FAILED':
             pass
-        # ---ID_SERVERS?---
+        #---ID_SERVERS?---
         elif self.state == 'ID_SERVERS?':
             if (event == 'id-server-response' or event == 'id-server-failed') and self.isAllTested(*args, **kwargs) and self.isSomeAlive(*args, **kwargs):
                 self.state = 'NAME_FREE?'
@@ -253,7 +251,7 @@ class IdRegistrator(automat.Automat):
                 self.state = 'FAILED'
                 self.doPrint(self.msg('MSG_7', *args, **kwargs))
                 self.doDestroyMe(*args, **kwargs)
-        # ---NAME_FREE?---
+        #---NAME_FREE?---
         elif self.state == 'NAME_FREE?':
             if event == 'id-not-exist' and self.isAllResponded(*args, **kwargs) and self.isFreeIDURLs(*args, **kwargs):
                 self.state = 'LOCAL_IP'
@@ -263,13 +261,13 @@ class IdRegistrator(automat.Automat):
                 self.state = 'FAILED'
                 self.doPrint(self.msg('MSG_8', *args, **kwargs))
                 self.doDestroyMe(*args, **kwargs)
-        # ---LOCAL_IP---
+        #---LOCAL_IP---
         elif self.state == 'LOCAL_IP':
             if event == 'local-ip-detected':
                 self.state = 'EXTERNAL_IP'
                 self.doStunExternalIP(*args, **kwargs)
                 self.doPrint(self.msg('MSG_3', *args, **kwargs))
-        # ---EXTERNAL_IP---
+        #---EXTERNAL_IP---
         elif self.state == 'EXTERNAL_IP':
             if event == 'stun-success':
                 self.state = 'SEND_ID'
@@ -281,7 +279,7 @@ class IdRegistrator(automat.Automat):
                 self.state = 'FAILED'
                 self.doPrint(self.msg('MSG_9', *args, **kwargs))
                 self.doDestroyMe(*args, **kwargs)
-        # ---SEND_ID---
+        #---SEND_ID---
         elif self.state == 'SEND_ID':
             if event == 'my-id-sent':
                 self.state = 'REQUEST_ID'
@@ -295,7 +293,7 @@ class IdRegistrator(automat.Automat):
                 self.state = 'FAILED'
                 self.doPrint(self.msg('MSG_13', *args, **kwargs))
                 self.doDestroyMe(*args, **kwargs)
-        # ---REQUEST_ID---
+        #---REQUEST_ID---
         elif self.state == 'REQUEST_ID':
             if event == 'my-id-exist' and self.isMyIdentityValid(*args, **kwargs):
                 self.state = 'DONE'
@@ -376,11 +374,11 @@ class IdRegistrator(automat.Automat):
             except:
                 pass
         self.min_servers = max(
-            settings.MinimumIdentitySources(), config.conf().getInt('services/identity-propagate/min-servers') or settings.MinimumIdentitySources()
-        )
+            settings.MinimumIdentitySources(),
+            config.conf().getInt('services/identity-propagate/min-servers') or settings.MinimumIdentitySources())
         self.max_servers = min(
-            settings.MaximumIdentitySources(), config.conf().getInt('services/identity-propagate/max-servers') or settings.MaximumIdentitySources()
-        )
+            settings.MaximumIdentitySources(),
+            config.conf().getInt('services/identity-propagate/max-servers') or settings.MaximumIdentitySources())
         lg.out(4, 'id_registrator.doSaveMyName [%s]' % login)
         lg.out(4, '    known_servers=%s' % self.known_servers)
         lg.out(4, '    preferred_servers=%s' % self.preferred_servers)
@@ -423,14 +421,7 @@ class IdRegistrator(automat.Automat):
             self.automat('id-server-response', (id_server_host, htmlsrc))
 
         def _eb(err, id_server_host):
-            lg.out(
-                4,
-                '               FAILED: %s : %s'
-                % (
-                    id_server_host,
-                    err.getErrorMessage(),
-                ),
-            )
+            lg.out(4, '               FAILED: %s : %s' % (id_server_host, err.getErrorMessage(), ))
             self.discovered_servers.remove(id_server_host)
             self.automat('id-server-failed', (id_server_host, err))
 
@@ -482,7 +473,8 @@ class IdRegistrator(automat.Automat):
             self.automat('id-not-exist', idurl)
 
         for host in self.good_servers:
-            webport, tcpport = known_servers.by_host().get(host, (settings.IdentityWebPort(), settings.IdentityServerPort()))
+            webport, tcpport = known_servers.by_host().get(
+                host, (settings.IdentityWebPort(), settings.IdentityServerPort()))
             if webport == 80:
                 webport = ''
             idurl = nameurl.UrlMake('http', strng.to_text(host), webport, login + '.xml')
@@ -608,7 +600,6 @@ class IdRegistrator(automat.Automat):
         Action method.
         """
         from main import installer
-
         installer.A().event('print', *args, **kwargs)
         self.last_message = args[0][0]
         lg.out(6, 'id_registrator.doPrint: %s' % str(*args, **kwargs))
@@ -631,7 +622,8 @@ class IdRegistrator(automat.Automat):
         if not key.isMyKeyReady():
             key.GenerateNewKey()
         lg.out(4, '    my key is ready')
-        ident = my_id.buildDefaultIdentity(name=login, ip=externalIP, idurls=self.free_idurls)
+        ident = my_id.buildDefaultIdentity(
+            name=login, ip=externalIP, idurls=self.free_idurls)
         my_identity_xmlsrc = ident.serialize(as_text=True)
         newfilename = settings.LocalIdentityFilename() + '.new'
         bpio.WriteTextFile(newfilename, my_identity_xmlsrc)
@@ -653,26 +645,17 @@ class IdRegistrator(automat.Automat):
         for idurl in self.new_identity.getSources(as_originals=True):
             self.free_idurls.remove(strng.to_bin(idurl))
             _, host, webport, filename = nameurl.UrlParse(idurl)
-            url = net_misc.pack_address(
-                (
-                    host,
-                    webport,
-                ),
-                proto='http',
-            )
-            dlist.append(
-                net_misc.http_post_data(
-                    url=url,
-                    data=payload,
-                    connectTimeout=15,
-                )
-            )
+            url = net_misc.pack_address((host, webport, ), proto='http')
+            dlist.append(net_misc.http_post_data(
+                url=url,
+                data=payload,
+                connectTimeout=15,
+            ))
             if _Debug:
                 lg.args(_DebugLevel, url=url, filename=filename, size=len(payload))
         return DeferredList(dlist, fireOnOneCallback=True)
 
-
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def main():
@@ -680,19 +663,17 @@ def main():
     settings.init()
     lg.set_debug_level(20)
     from twisted.internet import reactor  # @UnresolvedImport
-
     if len(sys.argv) > 2:
         args = (sys.argv[1], sys.argv[2])
     else:
-        args = sys.argv[1]
+        args = (sys.argv[1])
     A().addStateChangedCallback(lambda *a: reactor.stop(), oldstate=None, newstate='DONE')  # @UndefinedVariable
     A().addStateChangedCallback(lambda *a: reactor.stop(), oldstate=None, newstate='FAILED')  # @UndefinedVariable
     reactor.callWhenRunning(A, 'start', args)  # @UndefinedVariable
     reactor.run()  # @UndefinedVariable
     settings.shutdown()
 
-
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 if __name__ == '__main__':

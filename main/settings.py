@@ -34,30 +34,29 @@ TODO:
 need to move out user config stuff from that file
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 from __future__ import print_function
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import os
 import sys
 import random
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     import os.path as _p
-
     sys.path.append(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..'))
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 4
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 from logs import lg
 
 from system import bpio
@@ -67,20 +66,19 @@ from lib import diskspace
 
 from main import config
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _UserConfig = None  # user settings read from file .bitdust/metadata/userconfig
 _OverrideDict = {}  # list of values to replace some of user settings
 _InitDone = False
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _BandwidthLimit = None
 _BackupBlockSize = None
 _BackupMaxBlockSize = None
 
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def init(base_dir=None):
     """
@@ -116,11 +114,9 @@ def shutdown():
     deploy.set_base_dir(None)
     config.shutdown()
 
-
-# ------------------------------------------------------------------------------
-# ---USER CONFIG----------------------------------------------------------------
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
+#---USER CONFIG----------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 def override(key, value):
     """
@@ -208,10 +204,9 @@ def convert_key(key):
 Below is a set of global constants.
 """
 
-# ------------------------------------------------------------------------------
-# --- LOGS --------------------------------------------------------------------
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
+#--- LOGS --------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 def UpdateLogFilename():
     """
@@ -248,9 +243,9 @@ def LocalTesterLogFilename():
     return os.path.join(LogsDir(), 'bptester.log')
 
 
-# ------------------------------------------------------------------------------
-# --- CONSTANTS (NUMBERS) ------------------------------------------------------
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+#--- CONSTANTS (NUMBERS) ------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def MinimumIdentitySources():
@@ -561,10 +556,9 @@ def MaxDeletedBackupIDsToKeep():
     """
     return 100
 
-
-# ------------------------------------------------------------------------------
-# ---CONSTANTS ( STRINGS ) -----------------------------------------------------
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+#---CONSTANTS ( STRINGS ) -----------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def ApplicationName():
@@ -658,10 +652,9 @@ def LegalNickNameChars():
     return set('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.,{}[]()@!$^&*=+')
 
 
-# ------------------------------------------------------------------------------
-# --- FOLDERS ------------------------------------------------------------------
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
+#--- FOLDERS ------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 def BaseDir():
     """
@@ -861,11 +854,9 @@ def ServicesDataDir():
 def ServiceDir(service_name):
     return os.path.join(ServicesDataDir(), service_name.replace('service_', ''))
 
-
-# ------------------------------------------------------------------------------
-# --- FILES --------------------------------------------------------------------
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
+#--- FILES --------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 def KeyFileName():
     """
@@ -966,20 +957,12 @@ def BackupIndexFileName():
 def BackupIndexFilePath(customer_idurl=None, key_alias='master'):
     from userid import my_id
     from userid import id_url
-
     if customer_idurl is None:
         customer_idurl = my_id.getIDURL()
     customer_idurl = id_url.field(customer_idurl)
     customer_id = customer_idurl.to_id()
     index_dir_path = os.path.join(ServiceDir('service_backups'), 'index')
-    index_file_path = os.path.join(
-        index_dir_path,
-        '%s$%s'
-        % (
-            key_alias,
-            customer_id,
-        ),
-    )
+    index_file_path = os.path.join(index_dir_path, '%s$%s' % (key_alias, customer_id, ))
     return index_file_path
 
 
@@ -996,7 +979,6 @@ def SupplierPath(supplier_idurl, customer_idurl, filename=None):
     """
     from userid import global_id
     from lib import nameurl
-
     customer = global_id.UrlToGlobalID(customer_idurl)
     if filename is not None:
         return os.path.join(SuppliersDir(), customer, nameurl.UrlFilename(supplier_idurl), filename)
@@ -1057,11 +1039,9 @@ def CertificateFiles():
     The idea is to have a global certificate for BitDust server, just like
     https works.
     """
-    return [
-        os.path.join(MetaDataDir(), 'bitdust.cer'),
-        os.path.join('.', 'bitdust.cer'),
-        os.path.join(bpio.getExecutableDir(), 'bitdust.cer'),
-    ]
+    return [os.path.join(MetaDataDir(), 'bitdust.cer'),
+            os.path.join('.', 'bitdust.cer'),
+            os.path.join(bpio.getExecutableDir(), 'bitdust.cer'), ]
 
 
 def DHTDBFile():
@@ -1095,10 +1075,9 @@ def APISecretFile():
 def ChatMessagesHistoryDatabaseFile():
     return os.path.join(ChatMessagesDir(), 'message_v1.db')
 
-
-# ------------------------------------------------------------------------------
-# --- BINARY FILES -------------------------------------------------------------
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+#--- BINARY FILES -------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def WindowsStarterFileName():
@@ -1171,10 +1150,9 @@ def FontImageFile():
     """
     return os.path.join(FontsFolderPath(), 'Arial_Narrow.ttf')
 
-
-# ------------------------------------------------------------------------------
-# ---PORT NUMBERS---------------------------------------------------------------
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+#---PORT NUMBERS---------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def DefaultXMLRPCPort():
@@ -1288,10 +1266,9 @@ def DefaultWebTrafficPort():
     """
     return 9997
 
-
-# ------------------------------------------------------------------------------
-# --- USER FOLDERS -------------------------------------------------------------
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+#--- USER FOLDERS -------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def getCustomersFilesDir():
@@ -1307,7 +1284,6 @@ def getCustomerFilesDir(idurl):
     settings.
     """
     from userid import global_id
-
     return os.path.join(getCustomersFilesDir(), global_id.UrlToGlobalID(idurl))
 
 
@@ -1339,10 +1315,9 @@ def getTempDir():
     """
     return TempDir()
 
-
-# ------------------------------------------------------------------------------
-# --- OS PROXY SERVER OPTIONS --------------------------------------------------
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+#--- OS PROXY SERVER OPTIONS --------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def enableLocalProxy(enable=None):
@@ -1394,8 +1369,7 @@ def getProxySettingsDict():
         'port': config.conf().getData('services/network/proxy/port').strip(),
         'username': config.conf().getData('services/network/proxy/username').strip(),
         'password': config.conf().getData('services/network/proxy/password').strip(),
-        'ssl': config.conf().getData('services/network/proxy/ssl').strip(),
-    }
+        'ssl': config.conf().getData('services/network/proxy/ssl').strip(), }
 
 
 def update_proxy_settings():
@@ -1404,7 +1378,6 @@ def update_proxy_settings():
     proxy server settings.
     """
     from lib import net_misc
-
     net_misc.init()
     if enableLocalProxy():
         if getProxyHost() == '' or getProxyPort() == '':
@@ -1425,10 +1398,9 @@ def update_proxy_settings():
             lg.out(_DebugLevel, '    PASSWORD:  ' + ('*' * len(net_misc.get_proxy_password())))
             lg.out(_DebugLevel, '    SSL:       ' + net_misc.get_proxy_ssl())
 
-
-# ------------------------------------------------------------------------------
-# ---OTHER USER CONFIGURATIONS--------------------------------------------------
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+#---OTHER USER CONFIGURATIONS--------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def getBandOutLimit():
@@ -1890,8 +1862,7 @@ def getUpdatesModeValues():
     return (
         'install automatically',
         'only notify',
-        'turn off updates',
-    )
+        'turn off updates', )
 
 
 def getUpdatesSheduleData():
@@ -2009,10 +1980,9 @@ def enableBroadcastRouting(enable=None):
         return config.conf().getBool('services/broadcasting/routing-enabled')
     config.conf().setBool('services/broadcasting/routing-enabled', enable)
 
-
-# ------------------------------------------------------------------------------
-# --- INITIALIZE BASE DIR ------------------------------------------------------
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+#--- INITIALIZE BASE DIR ------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def RenameBaseDir(newdir):
@@ -2025,7 +1995,6 @@ def RenameBaseDir(newdir):
     olddir = deploy.current_base_dir()
     try:
         import shutil
-
         shutil.copytree(olddir, newdir)
     except:
         lg.exc()
@@ -2050,10 +2019,9 @@ def RenameBaseDir(newdir):
         lg.open_log_file(logfilename, True)
     return True
 
-
-# ------------------------------------------------------------------------------
-# --- USER SETTINGS VALIDATION -------------------------------------------------
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+#--- USER SETTINGS VALIDATION -------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def _checkMetaDataDirectory():
@@ -2094,7 +2062,6 @@ def _setUpDefaultSettings():
     Every option must have a default value, howerver there are exceptions possible :-)
     """
     from main import config_defaults
-
     config_defaults.reset(config.conf())
 
 
@@ -2146,14 +2113,14 @@ def _checkStaticDirectories():
         if _Debug:
             lg.out(_DebugLevel, 'settings.init want to create folder: ' + TempDir())
         os.makedirs(TempDir())
-    #     if not os.path.exists(BandwidthInDir()):
-    #         if _Debug:
-    #             lg.out(_DebugLevel, 'settings.init want to create folder: ' + BandwidthInDir())
-    #         os.makedirs(BandwidthInDir())
-    #     if not os.path.exists(BandwidthOutDir()):
-    #         if _Debug:
-    #             lg.out(_DebugLevel, 'settings.init want to create folder: ' + BandwidthOutDir())
-    #         os.makedirs(BandwidthOutDir())
+#     if not os.path.exists(BandwidthInDir()):
+#         if _Debug:
+#             lg.out(_DebugLevel, 'settings.init want to create folder: ' + BandwidthInDir())
+#         os.makedirs(BandwidthInDir())
+#     if not os.path.exists(BandwidthOutDir()):
+#         if _Debug:
+#             lg.out(_DebugLevel, 'settings.init want to create folder: ' + BandwidthOutDir())
+#         os.makedirs(BandwidthOutDir())
     if not os.path.exists(LogsDir()):
         if _Debug:
             lg.out(_DebugLevel, 'settings.init want to create folder: ' + LogsDir())
@@ -2182,8 +2149,6 @@ def _checkStaticDirectories():
         if _Debug:
             lg.out(_DebugLevel, 'settings.init want to create folder: ' + ChatHistoryDir())
         os.makedirs(ChatHistoryDir())
-
-
 #     if not os.path.exists(BlockchainDir()):
 #         if _Debug:
 #             lg.out(_DebugLevel, 'settings.init want to create folder: ' + BlockchainDir())
@@ -2215,9 +2180,7 @@ def _checkCustomDirectories():
     if config.conf().getString('paths/restore', '') == '':
         config.conf().setString('paths/restore', DefaultRestoreDir())
 
-
-# -------------------------------------------------------------------------------
-
+#-------------------------------------------------------------------------------
 
 def main():
     lg.set_debug_level(24)
@@ -2239,8 +2202,7 @@ def main():
         else:
             print(child, config.conf().getData(child))
 
-
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 if __name__ == '__main__':

@@ -1,3 +1,4 @@
+
 # From https://github.com/davidlazar/python-drbg
 
 import hashlib

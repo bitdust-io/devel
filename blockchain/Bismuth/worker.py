@@ -12,7 +12,7 @@ from libs import client
 
 
 def sendsync(sdef, peer_ip, status, node):
-    """Save peer_ip to peerlist and send `sendsync`
+    """ Save peer_ip to peerlist and send `sendsync`
 
     :param sdef: socket object
     :param peer_ip: IP of peer synchronization has been completed with
@@ -108,7 +108,7 @@ def worker(host, port, node):
 
     while not node.peers.is_banned(host) and node.peers.version_allowed(host, node.version_allow) and not node.IS_STOPPING:
         try:
-            # ensure_good_peer_version(host)
+            #ensure_good_peer_version(host)
 
             data = receive(s)  # receive data, one and the only root point
             # print(data)
@@ -138,10 +138,12 @@ def worker(host, port, node):
                     send(s, node.hdd_block)
 
                     received_block_height = receive(s)  # receive node's block height
-                    node.logger.app_log.info(f'Outbound: Node {peer_ip} is at block height: {received_block_height}')
+                    node.logger.app_log.info(
+                        f'Outbound: Node {peer_ip} is at block height: {received_block_height}')
 
                     if int(received_block_height) < node.hdd_block:
-                        node.logger.app_log.warning(f'Outbound: We have a higher block ({node.hdd_block}) than {peer_ip} ({received_block_height}), sending')
+                        node.logger.app_log.warning(
+                            f'Outbound: We have a higher block ({node.hdd_block}) than {peer_ip} ({received_block_height}), sending')
 
                         data = receive(s)  # receive client's last block_hash
 
@@ -167,7 +169,8 @@ def worker(host, port, node):
                                 raise ValueError(f'{peer_ip} is banned')
 
                         else:
-                            node.logger.app_log.warning(f'Outbound: Node is at block {client_block}')  # now check if we have any newer
+                            node.logger.app_log.warning(
+                                f'Outbound: Node is at block {client_block}')  # now check if we have any newer
 
                             if node.hdd_hash == data or not node.egress:
                                 if not node.egress:
@@ -192,20 +195,19 @@ def worker(host, port, node):
                                     send(s, blocks_fetched)
 
                                 elif confirmation == 'blocksrj':
-                                    node.logger.app_log.info("Outbound: Client rejected to sync from us because we're dont have the latest block")
+                                    node.logger.app_log.info(
+                                        "Outbound: Client rejected to sync from us because we're dont have the latest block")
 
                     elif int(received_block_height) >= node.hdd_block:
                         if int(received_block_height) == node.hdd_block:
                             node.logger.app_log.info(f'Outbound: We have the same block as {peer_ip} ({received_block_height}), hash will be verified')
                         else:
-                            node.logger.app_log.warning(
-                                f'Outbound: We have a lower block ({node.hdd_block}) than {peer_ip} ({received_block_height}), hash will be verified'
-                            )
+                            node.logger.app_log.warning(f'Outbound: We have a lower block ({node.hdd_block}) than {peer_ip} ({received_block_height}), hash will be verified')
 
                         node.logger.app_log.info(f'Outbound: block_hash to send: {node.hdd_hash}')
                         send(s, node.hdd_hash)
 
-                        # ensure_good_peer_version(host)
+                        #ensure_good_peer_version(host)
 
                         # consensus pool 2 (active connection)
                         consensus_blockheight = int(received_block_height)  # str int to remove leading zeros
@@ -260,7 +262,7 @@ def worker(host, port, node):
                         block_req = node.peers.consensus_max
                         node.logger.app_log.warning('Longest chain rule triggered')
 
-                    # ensure_good_peer_version(host)
+                    #ensure_good_peer_version(host)
 
                     if int(received_block_height) >= block_req and int(received_block_height) > node.last_block:
                         try:  # they claim to have the longest chain, things must go smooth or ban
@@ -268,7 +270,7 @@ def worker(host, port, node):
 
                             send(s, 'blockscf')
                             segments = receive(s)
-                            # ensure_good_peer_version(host)
+                            #ensure_good_peer_version(host)
 
                         except:
                             if node.peers.warning(s, peer_ip, 'Failed to deliver the longest chain', 2):
@@ -279,9 +281,7 @@ def worker(host, port, node):
                             # receive theirs
                     else:
                         send(s, 'blocksrj')
-                        node.logger.app_log.warning(
-                            f'Inbound: Distant peer {peer_ip} is at {received_block_height}, should be at least {max(block_req,node.last_block+1)}'
-                        )
+                        node.logger.app_log.warning(f'Inbound: Distant peer {peer_ip} is at {received_block_height}, should be at least {max(block_req,node.last_block+1)}')
 
                 sendsync(s, peer_ip, 'Block found', node)
 

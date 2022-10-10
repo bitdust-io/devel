@@ -300,7 +300,6 @@ if __name__ == '__main__':
     import twisted.internet.reactor
     from kademlia.datastore import SQLiteVersionedJsonDataStore  # @UnresolvedImport
     import sys
-
     if len(sys.argv) < 2:
         print('Usage:\n%s UDP_PORT  [KNOWN_NODE_IP  KNOWN_NODE_PORT]' % sys.argv[0])
         print('or:\n%s UDP_PORT  [FILE_WITH_KNOWN_NODES]' % sys.argv[0])
@@ -332,6 +331,6 @@ if __name__ == '__main__':
     #     os.remove('/tmp/dbFile%s.db' % sys.argv[1])
     dataStore = SQLiteVersionedJsonDataStore(dbFile='/tmp/dbFile%s.db' % sys.argv[1])
     node = EntangledNode(udpPort=int(sys.argv[1]), dataStore=dataStore)
-    # node = EntangledNode( udpPort=int(sys.argv[1]) )
+    #node = EntangledNode( udpPort=int(sys.argv[1]) )
     node.joinNetwork(knownNodes)
     twisted.internet.reactor.run()  # @UndefinedVariable

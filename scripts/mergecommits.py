@@ -70,11 +70,8 @@ for i in sorted(list(parts.keys()), reverse=False):
     print(re.match('\w+? \[.+?\] (.+?)$', headcommit[1]).group(1))
     print('\n%s Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)\n' % (time.strftime('%Y-%m-%d', time.localtime(headcommit[0]))))
     for dt, commit in commits:
-        print(
-            '* %s'
-            % (
-                # time.strftime('%c', time.localtime(dt)),
-                re.match('\w+? \[.+?\] (.+?)$', commit).group(1),
-            )
-        )
+        print('* %s' % (
+            # time.strftime('%c', time.localtime(dt)),
+            re.match('\w+? \[.+?\] (.+?)$', commit).group(1),
+        ))
     print()

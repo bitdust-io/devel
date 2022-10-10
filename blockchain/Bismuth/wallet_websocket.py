@@ -35,7 +35,6 @@ import tornado.websocket
 
 # Bismuth specific modules
 import modules.config as config
-
 # from modules.helpers import *
 from modules.sqlitebase import SqliteBase
 from modules.ledgerbase import LedgerBase
@@ -70,7 +69,7 @@ class ChannelHandler(tornado.websocket.WebSocketHandler):
         """
         global access_log
         global app_log
-        # client id could be remote_ip/port instead, but need to handle proxies/ports
+        #client id could be remote_ip/port instead, but need to handle proxies/ports
         ChannelHandler.client_id_counter += 1
         self.client_id = f'{ChannelHandler.client_id_counter}({self.request.remote_ip})'
         self.message_id = 0
@@ -131,7 +130,7 @@ def start_server(port):
     db_name = 'ledger.db'
     if CONFIG.testnet:
         db_name = 'test.db'
-    ledger = LedgerBase(options.verbose, db_path=CONFIG.db_path + '/', db_name=db_name, app_log=app_log)
+    ledger = LedgerBase(options.verbose, db_path=CONFIG.db_path+'/', db_name=db_name, app_log=app_log)
     try:
         # Force a db connection attempt and updates db version of ledger
         _ = io_loop.run_sync(ledger.check_db_version, 30)
@@ -139,7 +138,7 @@ def start_server(port):
         app_log.error("Can't connect to ledger: {}".format(e))
         return
 
-    NODE_INTERFACE = NodeInterface(mempool, ledger, CONFIG, app_log=app_log)
+    NODE_INTERFACE = NodeInterface(mempool, ledger, CONFIG,app_log=app_log)
 
     app = tornado.web.Application(ChannelHandler.urls())
 
@@ -183,7 +182,7 @@ if __name__ == '__main__':
         sys.exit()
     """
 
-    # TODO: print settings
+    # TODO: print settings
 
     if not os.path.isfile(CONFIG.mempool_path):
         print('mempool.db not found at {}'.format(CONFIG.mempool_path))

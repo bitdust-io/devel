@@ -30,18 +30,18 @@
 Here is a bunch of methods to interact with BitDust software.
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 12
 
 _APILogFileEnabled = None
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import os
 import sys
@@ -52,7 +52,7 @@ from twisted.internet import reactor  # @UnresolvedImport
 from twisted.internet.defer import Deferred  # @UnresolvedImport
 from twisted.python.failure import Failure  # @UnresolvedImport
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from lib import strng
 from lib import jsn
@@ -63,33 +63,23 @@ from services import driver
 
 from main import config
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def on_api_result_prepared(result):
     # TODO
     return result
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def OK(result='', message=None, status='OK', **kwargs):
     global _APILogFileEnabled
-    o = {
-        'status': status,
-    }
+    o = {'status': status, }
     if result:
         if isinstance(result, dict):
             o['result'] = result
         else:
-            o['result'] = (
-                result
-                if isinstance(result, list)
-                else [
-                    result,
-                ]
-            )
+            o['result'] = result if isinstance(result, list) else [result, ]
     if message is not None:
         o['message'] = message
     o = on_api_result_prepared(o)
@@ -106,28 +96,15 @@ def OK(result='', message=None, status='OK', **kwargs):
         if api_method.count('lambda') or api_method.startswith('_'):
             api_method = sys._getframe(1).f_back.f_code.co_name
     if _Debug:
-        if (
-            api_method
-            not in [
-                'process_health',
-                'network_connected',
-            ]
-            or _DebugLevel > 10
-        ):
+        if api_method not in [
+            'process_health',
+            'network_connected',
+        ] or _DebugLevel > 10:
             lg.out(_DebugLevel, 'api.%s return OK(%s)' % (api_method, sample[:80]))
     if _APILogFileEnabled is None:
         _APILogFileEnabled = config.conf().getBool('logs/api-enabled')
     if _APILogFileEnabled:
-        lg.out(
-            0,
-            'api.%s return OK(%s)\n'
-            % (
-                api_method,
-                sample,
-            ),
-            log_name='api',
-            showtime=True,
-        )
+        lg.out(0, 'api.%s return OK(%s)\n' % (api_method, sample, ), log_name='api', showtime=True)
     return o
 
 
@@ -157,36 +134,18 @@ def RESULT(result=[], message=None, status='OK', errors=None, source=None, extra
         if api_method.count('lambda') or api_method.startswith('_'):
             api_method = sys._getframe(1).f_back.f_code.co_name
     if _Debug:
-        lg.out(
-            _DebugLevel,
-            'api.%s return RESULT(%s)'
-            % (
-                api_method,
-                sample[:150],
-            ),
-        )
+        lg.out(_DebugLevel, 'api.%s return RESULT(%s)' % (api_method, sample[:150], ))
     if _APILogFileEnabled is None:
         _APILogFileEnabled = config.conf().getBool('logs/api-enabled')
     if _APILogFileEnabled:
-        lg.out(
-            0,
-            'api.%s return RESULT(%s)\n'
-            % (
-                api_method,
-                sample,
-            ),
-            log_name='api',
-            showtime=True,
-        )
+        lg.out(0, 'api.%s return RESULT(%s)\n' % (api_method, sample, ), log_name='api', showtime=True)
     return o
 
 
 def ERROR(errors=[], message=None, status='ERROR', reason=None, details=None, **kwargs):
     global _APILogFileEnabled
     if not isinstance(errors, list):
-        errors = [
-            errors,
-        ]
+        errors = [errors, ]
     for i in range(len(errors)):
         if isinstance(errors[i], Failure):
             try:
@@ -198,10 +157,7 @@ def ERROR(errors=[], message=None, status='ERROR', reason=None, details=None, **
                 errors[i] = strng.to_text(errors[i])
             except:
                 errors[i] = 'unknown exception'
-    o = {
-        'status': status,
-        'errors': errors,
-    }
+    o = {'status': status, 'errors': errors, }
     if message is not None:
         o['message'] = message
     if reason is not None:
@@ -222,32 +178,14 @@ def ERROR(errors=[], message=None, status='ERROR', reason=None, details=None, **
         if api_method.count('lambda') or api_method.startswith('_'):
             api_method = sys._getframe(1).f_back.f_code.co_name
     if _Debug:
-        lg.out(
-            _DebugLevel,
-            'api.%s return ERROR(%s)'
-            % (
-                api_method,
-                sample[:150],
-            ),
-        )
+        lg.out(_DebugLevel, 'api.%s return ERROR(%s)' % (api_method, sample[:150], ))
     if _APILogFileEnabled is None:
         _APILogFileEnabled = config.conf().getBool('logs/api-enabled')
     if _APILogFileEnabled:
-        lg.out(
-            0,
-            'api.%s return ERROR(%s)\n'
-            % (
-                api_method,
-                sample,
-            ),
-            log_name='api',
-            showtime=True,
-        )
+        lg.out(0, 'api.%s return ERROR(%s)\n' % (api_method, sample, ), log_name='api', showtime=True)
     return o
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def enable_model_listener(model_name, request_all=False):
     """
@@ -264,7 +202,6 @@ def enable_model_listener(model_name, request_all=False):
     """
     from main import listeners
     from interface import api_web_socket
-
     listeners.add_listener(api_web_socket.on_model_changed, model_name)
     if not request_all:
         return OK()
@@ -273,63 +210,54 @@ def enable_model_listener(model_name, request_all=False):
     elif model_name == 'key':
         if driver.is_on('service_keys_registry'):
             from crypt import my_keys
-
             my_keys.populate_keys()
         else:
             listeners.populate_later('key')
     elif model_name == 'conversation':
         if driver.is_on('service_message_history'):
             from chat import message_database
-
             message_database.populate_conversations()
         else:
             listeners.populate_later('conversation')
     elif model_name == 'message':
         if driver.is_on('service_message_history'):
             from chat import message_database  # @Reimport
-
             message_database.populate_messages()
         else:
             listeners.populate_later('message')
     elif model_name == 'correspondent':
         if driver.is_on('service_identity_propagate'):
             from contacts import contactsdb
-
             contactsdb.populate_correspondents()
         else:
             listeners.populate_later('correspondent')
     elif model_name == 'online_status':
         if driver.is_on('service_p2p_hookups'):
             from p2p import online_status
-
             online_status.populate_online_statuses()
         else:
             listeners.populate_later('online_status')
     elif model_name == 'private_file':
         if driver.is_on('service_my_data'):
             from storage import backup_fs
-
             backup_fs.populate_private_files()
         else:
             listeners.populate_later('private_file')
     elif model_name == 'shared_file':
         if driver.is_on('service_shared_data'):
             from storage import backup_fs  # @Reimport
-
             backup_fs.populate_shared_files()
         else:
             listeners.populate_later('shared_file')
     elif model_name == 'remote_version':
         if driver.is_on('service_backups'):
             from storage import backup_matrix
-
             backup_matrix.populate_remote_versions()
         else:
             listeners.populate_later('remote_version')
     elif model_name == 'shared_location':
         if driver.is_on('service_shared_data'):
             from access import shared_access_coordinator
-
             shared_access_coordinator.populate_shares()
         else:
             listeners.populate_later('shared_location')
@@ -345,13 +273,10 @@ def disable_model_listener(model_name):
     """
     from main import listeners
     from interface import api_web_socket
-
     listeners.remove_listener(api_web_socket.on_model_changed, model_name)
     return OK()
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def process_stop(instant=True):
     """
@@ -366,7 +291,6 @@ def process_stop(instant=True):
     if _Debug:
         lg.out(_DebugLevel, 'api.process_stop sending event "stop" to the shutdowner() machine')
     from main import shutdowner
-
     if not shutdowner.A():
         return ERROR('application shutdown failed')
     if instant:
@@ -389,7 +313,6 @@ def process_restart():
         websocket.send('{"command": "api_call", "method": "process_restart", "kwargs": {} }');
     """
     from main import shutdowner
-
     # if showgui:
     #     if _Debug:
     #         lg.out(_DebugLevel, 'api.process_restart sending event "stop" to the shutdowner() machine')
@@ -400,11 +323,7 @@ def process_restart():
         lg.out(_DebugLevel, 'api.process_restart sending event "stop" to the shutdowner() machine')
     # shutdowner.A('stop', 'restart')
     reactor.callLater(0.1, shutdowner.A, 'stop', 'restart')  # @UndefinedVariable
-    return OK(
-        {
-            'restarted': True,
-        }
-    )
+    return OK({'restarted': True, })
 
 
 def process_health():
@@ -434,7 +353,6 @@ def process_info():
     from contacts import contactsdb
     from automats import automat
     from userid import my_id
-
     result = {
         'config': {
             'options': len(config.conf().cache()),
@@ -501,25 +419,20 @@ def process_info():
     }
     if driver.is_on('service_customer'):
         from customer import supplier_connector
-
         result['contact']['suppliers_active'] = supplier_connector.total_connectors()
     if driver.is_on('service_customer_support'):
         from supplier import customer_assistant
-
         result['contact']['customer_assistants'] = len(customer_assistant.assistants())
     if driver.is_on('service_identity_propagate'):
         from p2p import online_status
-
         result['contact']['active'] = len(online_status.online_statuses())
     if driver.is_on('service_keys_registry'):
         from crypt import my_keys
-
         result['key'] = {
             'registered': len(my_keys.known_keys()),
         }
     if driver.is_on('service_entangled_dht'):
         from dht import dht_service
-
         result['dht']['bytes_out'] = dht_service.node().bytes_out
         result['dht']['bytes_in'] = dht_service.node().bytes_in
         for layer_id in dht_service.node().active_layers:
@@ -530,7 +443,6 @@ def process_info():
             }
     if driver.is_on('service_backup_db'):
         from storage import backup_fs
-
         result['file'] = {
             'items': backup_fs.counter(),
             'files': backup_fs.numberfiles(),
@@ -542,13 +454,11 @@ def process_info():
         }
     if driver.is_on('service_shared_data'):
         from access import shared_access_coordinator
-
         result['share'] = {
             'active': len(shared_access_coordinator.list_active_shares()),
         }
     if driver.is_on('service_private_groups'):
         from access import group_member
-
         result['group'] = {
             'active': len(group_member.list_active_group_members()),
         }
@@ -556,7 +466,6 @@ def process_info():
         from transport import gateway
         from transport import packet_in
         from transport import packet_out
-
         result['network']['packets_out'] = len(packet_out.queue())
         result['network']['packets_out_total'] = packet_out.get_packets_counter()
         result['network']['packets_in'] = len(packet_in.inbox_items())
@@ -564,19 +473,16 @@ def process_info():
         result['network']['protocols'] = len(gateway.transports())
     if driver.is_on('service_p2p_notifications'):
         from stream import p2p_queue
-
         result['stream']['queues'] = len(p2p_queue.queue())
         result['stream']['consumers'] = len(p2p_queue.consumer())
         result['stream']['producers'] = len(p2p_queue.producer())
     if driver.is_on('service_message_broker'):
         from stream import queue_keeper
         from stream import message_peddler
-
         result['stream']['peddlers'] = len(message_peddler.streams())
         result['stream']['keepers'] = len(queue_keeper.queue_keepers())
     if driver.is_on('service_data_motion'):
         from stream import io_throttle
-
         result['stream']['supplier_queues'] = len(io_throttle.throttle().ListSupplierQueues())
     return OK(result)
 
@@ -597,13 +503,10 @@ def process_debug():
         websocket.send('{"command": "api_call", "method": "process_debug", "kwargs": {} }');
     """
     import pdb
-
     pdb.set_trace()
     return OK()
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def config_get(key, include_info=False):
     """
@@ -626,11 +529,7 @@ def config_get(key, include_info=False):
     if not config.conf().exist(key):
         return ERROR('option %s does not exist' % key)
     if not config.conf().hasChilds(key):
-        return RESULT(
-            [
-                config.conf().toJson(key, include_info=include_info),
-            ],
-        )
+        return RESULT([config.conf().toJson(key, include_info=include_info), ], )
     known_childs = sorted(config.conf().listEntries(key))
     if key.startswith('services/') and key.count('/') == 1:
         svc_enabled_key = key + '/enabled'
@@ -640,12 +539,10 @@ def config_get(key, include_info=False):
     childs = []
     for child in known_childs:
         if config.conf().hasChilds(child):
-            childs.append(
-                {
-                    'key': child,
-                    'childs': len(config.conf().listEntries(child)),
-                }
-            )
+            childs.append({
+                'key': child,
+                'childs': len(config.conf().listEntries(child)),
+            })
         else:
             childs.append(config.conf().toJson(child, include_info=include_info))
     return RESULT(childs)
@@ -670,11 +567,7 @@ def config_set(key, value):
         lg.out(_DebugLevel, 'api.config_set [%s]=%s type is %s' % (key, value, typ_label))
     config.conf().setValueOfType(key, value)
     v.update(config.conf().toJson(key, include_info=False))
-    return RESULT(
-        [
-            v,
-        ]
-    )
+    return RESULT([v, ])
 
 
 def configs_list(sort=False, include_info=False):
@@ -716,15 +609,9 @@ def configs_tree(include_info=False):
                 cursor[part] = {}
             cursor = cursor[part]
         cursor.update(config.conf().toJson(key, include_info=include_info))
-    return RESULT(
-        [
-            r,
-        ]
-    )
+    return RESULT([r, ])
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def identity_get(include_xml_source=False):
     """
@@ -737,7 +624,6 @@ def identity_get(include_xml_source=False):
         websocket.send('{"command": "api_call", "method": "identity_get", "kwargs": {} }');
     """
     from userid import my_id
-
     if not my_id.isLocalIdentityReady():
         return ERROR('local identity is not valid or not exist')
     r = my_id.getLocalIdentity().serialize_json()
@@ -765,7 +651,6 @@ def identity_create(username, preferred_servers=[], join_network=False):
     from lib import misc
     from userid import my_id
     from userid import id_registrator
-
     if my_id.isLocalIdentityReady() or my_id.isLocalIdentityExists():
         return ERROR('local identity already exist')
     try:
@@ -794,7 +679,6 @@ def identity_create(username, preferred_servers=[], join_network=False):
             r['xml'] = my_id.getLocalIdentity().serialize(as_text=True)
             if join_network:
                 from p2p import network_service
-
                 network_service.connected(wait_timeout=0.1)
             ret.callback(OK(r, api_method='identity_create'))
             return
@@ -822,7 +706,6 @@ def identity_backup(destination_filepath):
     from userid import my_id
     from crypt import key
     from system import bpio
-
     if not my_id.isLocalIdentityReady():
         return ERROR('local identity is not ready')
     TextToSave = ''
@@ -853,7 +736,6 @@ def identity_recover(private_key_source, known_idurl=None, join_network=False):
     from userid import my_id
     from userid import id_url
     from userid import id_restorer
-
     if my_id.isLocalIdentityReady() or my_id.isLocalIdentityExists():
         return ERROR('local identity already exist')
     if not private_key_source:
@@ -898,20 +780,13 @@ def identity_recover(private_key_source, known_idurl=None, join_network=False):
             r['xml'] = my_id.getLocalIdentity().serialize(as_text=True)
             if join_network:
                 from p2p import network_service
-
                 network_service.connected(wait_timeout=0.1)
             ret.callback(OK(r, api_method='identity_recover'))
             return
 
     try:
         my_id_restorer.addStateChangedCallback(_id_restorer_state_changed)
-        my_id_restorer.A(
-            'start',
-            {
-                'idurl': idurl_list[0],
-                'keysrc': pk_source,
-            },
-        )
+        my_id_restorer.A('start', {'idurl': idurl_list[0], 'keysrc': pk_source, })
         # TODO: iterate over idurl_list to find at least one reliable source
     except Exception as exc:
         lg.exc()
@@ -948,11 +823,9 @@ def identity_rotate():
         websocket.send('{"command": "api_call", "method": "identity_rotate", "kwargs": {} }');
     """
     from userid import my_id
-
     if not my_id.isLocalIdentityReady():
         return ERROR('local identity is not ready')
     from p2p import id_rotator
-
     old_sources = my_id.getLocalIdentity().getSources(as_originals=True)
     ret = Deferred()
     d = id_rotator.run(force=True)
@@ -987,7 +860,6 @@ def identity_cache_list():
         websocket.send('{"command": "api_call", "method": "identity_cache_list", "kwargs": {} }');
     """
     from contacts import identitycache
-
     results = []
     for id_obj in identitycache.Items().values():
         r = id_obj.serialize_json()
@@ -995,9 +867,7 @@ def identity_cache_list():
     results.sort(key=lambda r: r['name'])
     return RESULT(results)
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def key_get(key_id, include_private=False, include_signature=False, generate_signature=False):
     """
@@ -1016,7 +886,6 @@ def key_get(key_id, include_private=False, include_signature=False, generate_sig
     if _Debug:
         lg.out(_DebugLevel, 'api.key_get')
     from crypt import my_keys
-
     try:
         key_info = my_keys.get_key_info(
             key_id=key_id,
@@ -1047,7 +916,6 @@ def keys_list(sort=False, include_private=False):
     if _Debug:
         lg.out(_DebugLevel, 'api.keys_list')
     from crypt import my_keys
-
     r = []
     for key_id, key_object in my_keys.known_keys().items():
         key_alias, creator_idurl = my_keys.split_key_id(key_id)
@@ -1089,7 +957,6 @@ def key_create(key_alias, key_size=None, label='', active=True, include_private=
     from crypt import my_keys
     from main import settings
     from userid import my_id
-
     key_alias = strng.to_text(key_alias)
     key_alias = key_alias.strip().lower()
     key_id = my_keys.make_key_id(key_alias, creator_idurl=my_id.getIDURL())
@@ -1113,10 +980,7 @@ def key_create(key_alias, key_size=None, label='', active=True, include_private=
         include_state=True,
     )
     key_info.pop('include_private', None)
-    return OK(
-        key_info,
-        message='new private key %s was generated successfully' % key_alias,
-    )
+    return OK(key_info, message='new private key %s was generated successfully' % key_alias, )
 
 
 def key_label(key_id, label):
@@ -1133,7 +997,6 @@ def key_label(key_id, label):
         return ERROR('service_keys_registry() is not started')
     from crypt import my_keys
     from userid import my_id
-
     key_label = strng.to_text(label)
     if not my_keys.is_valid_key_id(key_id):
         return ERROR('key %s is not valid' % key_id)
@@ -1165,7 +1028,6 @@ def key_state(key_id, active):
         return ERROR('service_keys_registry() is not started')
     from crypt import my_keys
     from userid import my_id
-
     if not my_keys.is_valid_key_id(key_id):
         return ERROR('key %s is not valid' % key_id)
     if not my_keys.is_key_registered(key_id):
@@ -1194,7 +1056,6 @@ def key_erase(key_id):
     if not driver.is_on('service_keys_registry'):
         return ERROR('service_keys_registry() is not started')
     from crypt import my_keys
-
     key_id = strng.to_text(key_id)
     if _Debug:
         lg.out(_DebugLevel, 'api.keys_list')
@@ -1222,7 +1083,6 @@ def key_share(key_id, trusted_user_id, include_private=False, include_signature=
         websocket.send('{"command": "api_call", "method": "key_share", "kwargs": {"key_id": "abcd1234$alice@server-a.com", "trusted_user_id": "bob@machine-b.net"} }');
     """
     from userid import global_id
-
     try:
         trusted_user_id = strng.to_text(trusted_user_id)
         full_key_id = strng.to_text(key_id)
@@ -1239,7 +1099,6 @@ def key_share(key_id, trusted_user_id, include_private=False, include_signature=
     if global_id.IsValidGlobalUser(idurl):
         idurl = global_id.GlobalUserToIDURL(idurl, as_field=False)
     from access import key_ring
-
     ret = Deferred()
     d = key_ring.share_key(key_id=full_key_id, trusted_idurl=idurl, include_private=include_private, include_signature=include_signature, timeout=timeout)
     d.addCallback(lambda resp: ret.callback(OK(strng.to_text(resp), api_method='key_share')))
@@ -1260,7 +1119,6 @@ def key_audit(key_id, untrusted_user_id, is_private=False, timeout=10):
         websocket.send('{"command": "api_call", "method": "key_audit", "kwargs": {"key_id": "abcd1234$alice@server-a.com", "untrusted_user_id": "carol@computer-c.net", "is_private": 1} }');
     """
     from userid import global_id
-
     try:
         untrusted_user_id = strng.to_text(untrusted_user_id)
         full_key_id = strng.to_text(key_id)
@@ -1276,7 +1134,6 @@ def key_audit(key_id, untrusted_user_id, is_private=False, timeout=10):
     else:
         idurl = strng.to_bin(untrusted_user_id)
     from access import key_ring
-
     ret = Deferred()
     if is_private:
         d = key_ring.audit_private_key(key_id=key_id, untrusted_idurl=idurl, timeout=timeout)
@@ -1286,9 +1143,7 @@ def key_audit(key_id, untrusted_user_id, is_private=False, timeout=10):
     d.addErrback(lambda err: ret.callback(ERROR(err, api_method='key_audit')))
     return ret
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def files_sync():
     """
@@ -1310,7 +1165,6 @@ def files_sync():
     if _Debug:
         lg.out(_DebugLevel, 'api.files_sync')
     from storage import backup_monitor
-
     backup_monitor.A('restart')
     if _Debug:
         lg.out(_DebugLevel, 'api.files_sync')
@@ -1343,7 +1197,6 @@ def files_list(remote_path=None, key_id=None, recursive=True, all_customers=Fals
     from lib import misc
     from userid import global_id
     from crypt import my_keys
-
     result = []
     if remote_path:
         norm_path = global_id.NormalizeGlobalID(remote_path)
@@ -1356,25 +1209,13 @@ def files_list(remote_path=None, key_id=None, recursive=True, all_customers=Fals
     customer_idurl = norm_path['idurl']
     key_alias = norm_path['key_alias'] if not key_id else key_id.split('$')[0]
     if _Debug:
-        lg.out(
-            _DebugLevel,
-            'api.files_list remote_path=%s key_id=%s key_alias=%s recursive=%s all_customers=%s include_uploads=%s include_downloads=%s'
-            % (
-                remote_path,
-                key_id,
-                key_alias,
-                recursive,
-                all_customers,
-                include_uploads,
-                include_downloads,
-            ),
-        )
+        lg.out(_DebugLevel, 'api.files_list remote_path=%s key_id=%s key_alias=%s recursive=%s all_customers=%s include_uploads=%s include_downloads=%s' % (
+            remote_path, key_id, key_alias, recursive, all_customers, include_uploads, include_downloads, ))
     if not all_customers and customer_idurl not in backup_fs.known_customers():
         return ERROR('customer %s was not found' % customer_idurl)
     backup_info_callback = None
     if driver.is_on('service_restores'):
         from storage import restore_monitor
-
         backup_info_callback = restore_monitor.GetBackupStatusInfo
     if all_customers:
         lookup = []
@@ -1421,16 +1262,8 @@ def files_list(remote_path=None, key_id=None, recursive=True, all_customers=Fals
             real_key_id = my_keys.make_key_id(alias=k_alias, creator_idurl=customer_idurl)
             real_idurl = customer_idurl
             real_customer_id = global_id.UrlToGlobalID(customer_idurl)
-        full_glob_id = global_id.MakeGlobalID(
-            path=i['path_id'],
-            customer=real_customer_id,
-            key_alias=k_alias,
-        )
-        full_remote_path = global_id.MakeGlobalID(
-            path=i['path'],
-            customer=real_customer_id,
-            key_alias=k_alias,
-        )
+        full_glob_id = global_id.MakeGlobalID(path=i['path_id'], customer=real_customer_id, key_alias=k_alias, )
+        full_remote_path = global_id.MakeGlobalID(path=i['path'], customer=real_customer_id, key_alias=k_alias, )
         r = {
             'remote_path': full_remote_path,
             'global_id': full_glob_id,
@@ -1459,70 +1292,60 @@ def files_list(remote_path=None, key_id=None, recursive=True, all_customers=Fals
             for backupID in backup_control.FindRunningBackup(pathID=full_glob_id):
                 j = backup_control.jobs().get(backupID)
                 if j:
-                    running.append(
-                        {
-                            'backup_id': j.backupID,
-                            'key_id': j.keyID,
-                            'source_path': j.sourcePath,
-                            'eccmap': j.eccmap.name,
-                            'pipe': 'closed' if not j.pipe else j.pipe.state(),
-                            'block_size': j.blockSize,
-                            'aborting': j.ask4abort,
-                            'terminating': j.terminating,
-                            'eof_state': j.stateEOF,
-                            'reading': j.stateReading,
-                            'closed': j.closed,
-                            'work_blocks': len(j.workBlocks),
-                            'block_number': j.blockNumber,
-                            'bytes_processed': j.dataSent,
-                            'progress': misc.percent2string(j.progress()),
-                            'total_size': j.totalSize,
-                        }
-                    )
+                    running.append({
+                        'backup_id': j.backupID,
+                        'key_id': j.keyID,
+                        'source_path': j.sourcePath,
+                        'eccmap': j.eccmap.name,
+                        'pipe': 'closed' if not j.pipe else j.pipe.state(),
+                        'block_size': j.blockSize,
+                        'aborting': j.ask4abort,
+                        'terminating': j.terminating,
+                        'eof_state': j.stateEOF,
+                        'reading': j.stateReading,
+                        'closed': j.closed,
+                        'work_blocks': len(j.workBlocks),
+                        'block_number': j.blockNumber,
+                        'bytes_processed': j.dataSent,
+                        'progress': misc.percent2string(j.progress()),
+                        'total_size': j.totalSize,
+                    })
             pending = []
             t = backup_control.GetPendingTask(full_glob_id)
             if t:
-                pending.append(
-                    {
-                        'task_id': t.number,
-                        'path_id': t.pathID,
-                        'source_path': t.localPath,
-                        'created': time.asctime(time.localtime(t.created)),
-                    }
-                )
+                pending.append({
+                    'task_id': t.number,
+                    'path_id': t.pathID,
+                    'source_path': t.localPath,
+                    'created': time.asctime(time.localtime(t.created)),
+                })
             r['uploads']['running'] = running
             r['uploads']['pending'] = pending
         if include_downloads:
             from storage import restore_monitor
-
             downloads = []
             for backupID in restore_monitor.FindWorking(pathID=full_glob_id):
                 d = restore_monitor.GetWorkingRestoreObject(backupID)
                 if d:
-                    downloads.append(
-                        {
-                            'backup_id': d.backup_id,
-                            'creator_id': d.creator_id,
-                            'path_id': d.path_id,
-                            'version': d.version,
-                            'block_number': d.block_number,
-                            'bytes_processed': d.bytes_written,
-                            'created': time.asctime(time.localtime(d.Started)),
-                            'aborted': d.abort_flag,
-                            'done': d.done_flag,
-                            'eccmap': '' if not d.EccMap else d.EccMap.name,
-                        }
-                    )
+                    downloads.append({
+                        'backup_id': d.backup_id,
+                        'creator_id': d.creator_id,
+                        'path_id': d.path_id,
+                        'version': d.version,
+                        'block_number': d.block_number,
+                        'bytes_processed': d.bytes_written,
+                        'created': time.asctime(time.localtime(d.Started)),
+                        'aborted': d.abort_flag,
+                        'done': d.done_flag,
+                        'eccmap': '' if not d.EccMap else d.EccMap.name,
+                    })
             r['downloads'] = downloads
         result.append(r)
     if _Debug:
         lg.out(_DebugLevel, '    %d items returned' % len(result))
-    return RESULT(
-        result,
-        extra_fields={
-            'revision': backup_fs.revision(),
-        },
-    )
+    return RESULT(result, extra_fields={
+        'revision': backup_fs.revision(),
+    })
 
 
 def file_exists(remote_path):
@@ -1542,42 +1365,18 @@ def file_exists(remote_path):
     from storage import backup_fs
     from system import bpio
     from userid import global_id
-
     norm_path = global_id.NormalizeGlobalID(remote_path)
     remotePath = bpio.remotePath(norm_path['path'])
     customer_idurl = norm_path['idurl']
     if customer_idurl not in backup_fs.known_customers():
-        return OK(
-            {
-                'exist': False,
-                'path_id': None,
-            },
-            message='customer %s was not found' % customer_idurl,
-        )
+        return OK({'exist': False, 'path_id': None, }, message='customer %s was not found' % customer_idurl, )
     pathID = backup_fs.ToID(remotePath, iter=backup_fs.fs(customer_idurl, norm_path['key_alias']))
     if not pathID:
-        return OK(
-            {
-                'exist': False,
-                'path_id': None,
-            },
-            message='path %s was not found in the catalog' % remotePath,
-        )
+        return OK({'exist': False, 'path_id': None, }, message='path %s was not found in the catalog' % remotePath, )
     item = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(customer_idurl, norm_path['key_alias']))
     if not item:
-        return OK(
-            {
-                'exist': False,
-                'path_id': None,
-            },
-            message='item %s was not found in the catalog' % pathID,
-        )
-    return OK(
-        {
-            'exist': True,
-            'path_id': pathID,
-        },
-    )
+        return OK({'exist': False, 'path_id': None, }, message='item %s was not found in the catalog' % pathID, )
+    return OK({'exist': True, 'path_id': pathID, }, )
 
 
 def file_info(remote_path, include_uploads=True, include_downloads=True):
@@ -1596,13 +1395,13 @@ def file_info(remote_path, include_uploads=True, include_downloads=True):
     if not driver.is_on('service_backup_db'):
         return ERROR('service_backup_db() is not started')
     if _Debug:
-        lg.out(_DebugLevel, 'api.file_info remote_path=%s include_uploads=%s include_downloads=%s' % (remote_path, include_uploads, include_downloads))
+        lg.out(_DebugLevel, 'api.file_info remote_path=%s include_uploads=%s include_downloads=%s' % (
+            remote_path, include_uploads, include_downloads))
     from storage import backup_fs
     from storage import backup_control
     from lib import misc
     from system import bpio
     from userid import global_id
-
     norm_path = global_id.NormalizeGlobalID(remote_path)
     remotePath = bpio.remotePath(norm_path['path'])
     customer_idurl = norm_path['idurl']
@@ -1617,7 +1416,6 @@ def file_info(remote_path, include_uploads=True, include_downloads=True):
     backup_info_callback = None
     if driver.is_on('service_restores'):
         from storage import restore_monitor
-
         backup_info_callback = restore_monitor.GetBackupStatusInfo
     (item_size, item_time, versions) = backup_fs.ExtractVersions(pathID, item, backup_info_callback=backup_info_callback)
     glob_path_item = norm_path.copy()
@@ -1629,13 +1427,11 @@ def file_info(remote_path, include_uploads=True, include_downloads=True):
         'remote_path': global_id.MakeGlobalID(
             path=norm_path['path'],
             customer=norm_path['customer'],
-            key_alias=key_alias,
-        ),
+            key_alias=key_alias, ),
         'global_id': global_id.MakeGlobalID(
             path=pathID,
             customer=norm_path['customer'],
-            key_alias=key_alias,
-        ),
+            key_alias=key_alias, ),
         'customer': norm_path['customer'],
         'path_id': pathID,
         'path': remotePath,
@@ -1656,60 +1452,53 @@ def file_info(remote_path, include_uploads=True, include_downloads=True):
         for backupID in backup_control.FindRunningBackup(pathID=pathID):
             j = backup_control.jobs().get(backupID)
             if j:
-                running.append(
-                    {
-                        'backup_id': j.backupID,
-                        'key_id': j.keyID,
-                        'source_path': j.sourcePath,
-                        'eccmap': j.eccmap.name,
-                        'pipe': 'closed' if not j.pipe else j.pipe.state(),
-                        'block_size': j.blockSize,
-                        'aborting': j.ask4abort,
-                        'terminating': j.terminating,
-                        'eof_state': j.stateEOF,
-                        'reading': j.stateReading,
-                        'closed': j.closed,
-                        'work_blocks': len(j.workBlocks),
-                        'block_number': j.blockNumber,
-                        'bytes_processed': j.dataSent,
-                        'progress': misc.percent2string(j.progress()),
-                        'total_size': j.totalSize,
-                    }
-                )
+                running.append({
+                    'backup_id': j.backupID,
+                    'key_id': j.keyID,
+                    'source_path': j.sourcePath,
+                    'eccmap': j.eccmap.name,
+                    'pipe': 'closed' if not j.pipe else j.pipe.state(),
+                    'block_size': j.blockSize,
+                    'aborting': j.ask4abort,
+                    'terminating': j.terminating,
+                    'eof_state': j.stateEOF,
+                    'reading': j.stateReading,
+                    'closed': j.closed,
+                    'work_blocks': len(j.workBlocks),
+                    'block_number': j.blockNumber,
+                    'bytes_processed': j.dataSent,
+                    'progress': misc.percent2string(j.progress()),
+                    'total_size': j.totalSize,
+                })
         pending = []
         t = backup_control.GetPendingTask(pathID)
         if t:
-            pending.append(
-                {
-                    'task_id': t.number,
-                    'path_id': t.pathID,
-                    'source_path': t.localPath,
-                    'created': time.asctime(time.localtime(t.created)),
-                }
-            )
+            pending.append({
+                'task_id': t.number,
+                'path_id': t.pathID,
+                'source_path': t.localPath,
+                'created': time.asctime(time.localtime(t.created)),
+            })
         r['uploads']['running'] = running
         r['uploads']['pending'] = pending
     if include_downloads:
         from storage import restore_monitor
-
         downloads = []
         for backupID in restore_monitor.FindWorking(pathID=pathID):
             d = restore_monitor.GetWorkingRestoreObject(backupID)
             if d:
-                downloads.append(
-                    {
-                        'backup_id': d.backup_id,
-                        'creator_id': d.creator_id,
-                        'path_id': d.path_id,
-                        'version': d.version,
-                        'block_number': d.block_number,
-                        'bytes_processed': d.bytes_written,
-                        'created': time.asctime(time.localtime(d.Started)),
-                        'aborted': d.abort_flag,
-                        'done': d.done_flag,
-                        'eccmap': '' if not d.EccMap else d.EccMap.name,
-                    }
-                )
+                downloads.append({
+                    'backup_id': d.backup_id,
+                    'creator_id': d.creator_id,
+                    'path_id': d.path_id,
+                    'version': d.version,
+                    'block_number': d.block_number,
+                    'bytes_processed': d.bytes_written,
+                    'created': time.asctime(time.localtime(d.Started)),
+                    'aborted': d.abort_flag,
+                    'done': d.done_flag,
+                    'eccmap': '' if not d.EccMap else d.EccMap.name,
+                })
         r['downloads'] = downloads
     if _Debug:
         lg.out(_DebugLevel, 'api.file_info : %r' % pathID)
@@ -1736,14 +1525,12 @@ def file_create(remote_path, as_folder=False, exist_ok=False, force_path_id=None
     from storage import backup_fs
     from storage import backup_control
     from system import bpio
-
     # from main import control
     from main import listeners
     from crypt import my_keys
     from userid import id_url
     from userid import global_id
     from userid import my_id
-
     parts = global_id.NormalizeGlobalID(remote_path)
     if not parts['path']:
         return ERROR('invalid "remote_path" format')
@@ -1755,29 +1542,26 @@ def file_create(remote_path, as_folder=False, exist_ok=False, force_path_id=None
     itemInfo = None
     if _Debug:
         lg.args(_DebugLevel, remote_path=remote_path, as_folder=as_folder, path_id=pathID, customer_idurl=customer_idurl, force_path_id=force_path_id)
-    #     if pathID is not None:
-    #         existingItemInfo = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(customer_idurl, key_alias))
-    #         if not existingItemInfo:
-    #             return ERROR('failed reading already existing item from catalog: %r' % pathID)
-    #         if existingItemInfo.key_id != keyID:
-    #             return ERROR('another item with same remote path but different key already exist in catalog')
+#     if pathID is not None:
+#         existingItemInfo = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(customer_idurl, key_alias))
+#         if not existingItemInfo:
+#             return ERROR('failed reading already existing item from catalog: %r' % pathID)
+#         if existingItemInfo.key_id != keyID:
+#             return ERROR('another item with same remote path but different key already exist in catalog')
     if pathID is not None:
         if exist_ok:
             fullRemotePath = global_id.MakeGlobalID(customer=parts['customer'], path=parts['path'], key_alias=key_alias)
             fullGlobID = global_id.MakeGlobalID(customer=parts['customer'], path=pathID, key_alias=key_alias)
-            return OK(
-                {
-                    'path_id': pathID,
-                    'key_id': keyID,
-                    'path': path,
-                    'remote_path': fullRemotePath,
-                    'global_id': fullGlobID,
-                    'customer': customer_idurl,
-                    'created': False,
-                    'type': ('dir' if as_folder else 'file'),
-                },
-                message='remote path %s already exists in the catalog: %s' % (('folder' if as_folder else 'file'), fullGlobID),
-            )
+            return OK({
+                'path_id': pathID,
+                'key_id': keyID,
+                'path': path,
+                'remote_path': fullRemotePath,
+                'global_id': fullGlobID,
+                'customer': customer_idurl,
+                'created': False,
+                'type': ('dir' if as_folder else 'file'),
+            }, message='remote path %s already exists in the catalog: %s' % (('folder' if as_folder else 'file'), fullGlobID), )
         return ERROR('remote path %s already exists in the catalog: %s' % (path, pathID))
     if as_folder:
         newPathID, itemInfo, _, _ = backup_fs.AddDir(
@@ -1825,46 +1609,35 @@ def file_create(remote_path, as_folder=False, exist_ok=False, force_path_id=None
     full_glob_id = global_id.MakeGlobalID(customer=parts['customer'], path=newPathID, key_alias=key_alias)
     full_remote_path = global_id.MakeGlobalID(customer=parts['customer'], path=parts['path'], key_alias=key_alias)
     if id_url.is_the_same(customer_idurl, my_id.getIDURL()) and key_alias == 'master':
-        listeners.push_snapshot(
-            'private_file',
-            snap_id=full_glob_id,
-            data=dict(
-                global_id=full_glob_id,
-                remote_path=full_remote_path,
-                size=max(0, itemInfo.size),
-                type=backup_fs.TYPES.get(itemInfo.type, 'unknown').lower(),
-                customer=parts['customer'],
-                versions=[],
-            ),
-        )
+        listeners.push_snapshot('private_file', snap_id=full_glob_id, data=dict(
+            global_id=full_glob_id,
+            remote_path=full_remote_path,
+            size=max(0, itemInfo.size),
+            type=backup_fs.TYPES.get(itemInfo.type, 'unknown').lower(),
+            customer=parts['customer'],
+            versions=[],
+        ))
     else:
-        listeners.push_snapshot(
-            'shared_file',
-            snap_id=full_glob_id,
-            data=dict(
-                global_id=full_glob_id,
-                remote_path=full_remote_path,
-                size=max(0, itemInfo.size),
-                type=backup_fs.TYPES.get(itemInfo.type, 'unknown').lower(),
-                customer=parts['customer'],
-                versions=[],
-            ),
-        )
+        listeners.push_snapshot('shared_file', snap_id=full_glob_id, data=dict(
+            global_id=full_glob_id,
+            remote_path=full_remote_path,
+            size=max(0, itemInfo.size),
+            type=backup_fs.TYPES.get(itemInfo.type, 'unknown').lower(),
+            customer=parts['customer'],
+            versions=[],
+        ))
     if _Debug:
         lg.out(_DebugLevel, 'api.file_create : %r' % full_glob_id)
-    return OK(
-        {
-            'path_id': newPathID,
-            'key_id': keyID,
-            'path': path,
-            'remote_path': full_remote_path,
-            'global_id': full_glob_id,
-            'customer': parts['idurl'],
-            'created': True,
-            'type': ('dir' if as_folder else 'file'),
-        },
-        message='new %s created in %s successfully' % (('folder' if as_folder else 'file'), full_glob_id),
-    )
+    return OK({
+        'path_id': newPathID,
+        'key_id': keyID,
+        'path': path,
+        'remote_path': full_remote_path,
+        'global_id': full_glob_id,
+        'customer': parts['idurl'],
+        'created': True,
+        'type': ('dir' if as_folder else 'file'),
+    }, message='new %s created in %s successfully' % (('folder' if as_folder else 'file'), full_glob_id), )
 
 
 def file_delete(remote_path):
@@ -1891,7 +1664,6 @@ def file_delete(remote_path):
     from userid import global_id
     from userid import id_url
     from userid import my_id
-
     parts = global_id.NormalizeGlobalID(remote_path)
     if not parts['idurl'] or not parts['path']:
         return ERROR('invalid "remote_path" format')
@@ -1917,45 +1689,32 @@ def file_delete(remote_path):
     backup_control.Save(customer_idurl, key_alias)
     backup_monitor.A('restart')
     if id_url.is_the_same(parts['idurl'], my_id.getIDURL()) and key_alias == 'master':
-        listeners.push_snapshot(
-            'private_file',
-            snap_id=full_glob_id,
-            deleted=True,
-            data=dict(
-                global_id=full_glob_id,
-                remote_path=full_remote_path,
-                size=0 if not itemInfo else itemInfo.size,
-                type='file' if not itemInfo else backup_fs.TYPES.get(itemInfo.type, 'unknown').lower(),
-                customer=parts['customer'],
-                versions=[],
-            ),
-        )
+        listeners.push_snapshot('private_file', snap_id=full_glob_id, deleted=True, data=dict(
+            global_id=full_glob_id,
+            remote_path=full_remote_path,
+            size=0 if not itemInfo else itemInfo.size,
+            type='file' if not itemInfo else backup_fs.TYPES.get(itemInfo.type, 'unknown').lower(),
+            customer=parts['customer'],
+            versions=[],
+        ))
     else:
-        listeners.push_snapshot(
-            'shared_file',
-            snap_id=full_glob_id,
-            deleted=True,
-            data=dict(
-                global_id=full_glob_id,
-                remote_path=full_remote_path,
-                size=0 if not itemInfo else itemInfo.size,
-                type='file' if not itemInfo else backup_fs.TYPES.get(itemInfo.type, 'unknown').lower(),
-                customer=parts['customer'],
-                versions=[],
-            ),
-        )
+        listeners.push_snapshot('shared_file', snap_id=full_glob_id, deleted=True, data=dict(
+            global_id=full_glob_id,
+            remote_path=full_remote_path,
+            size=0 if not itemInfo else itemInfo.size,
+            type='file' if not itemInfo else backup_fs.TYPES.get(itemInfo.type, 'unknown').lower(),
+            customer=parts['customer'],
+            versions=[],
+        ))
     if _Debug:
         lg.out(_DebugLevel, 'api.file_delete %s' % parts)
-    return OK(
-        {
-            'path_id': pathIDfull,
-            'path': path,
-            'remote_path': full_remote_path,
-            'global_id': full_glob_id,
-            'customer': parts['idurl'],
-        },
-        message='item %s was deleted from remote suppliers' % pathIDfull,
-    )
+    return OK({
+        'path_id': pathIDfull,
+        'path': path,
+        'remote_path': full_remote_path,
+        'global_id': full_glob_id,
+        'customer': parts['idurl'],
+    }, message='item %s was deleted from remote suppliers' % pathIDfull, )
 
 
 def files_uploads(include_running=True, include_pending=True):
@@ -1972,57 +1731,37 @@ def files_uploads(include_running=True, include_pending=True):
         return ERROR('service_backups() is not started')
     from lib import misc
     from storage import backup_control
-
     if _Debug:
-        lg.out(
-            _DebugLevel,
-            'api.file_uploads include_running=%s include_pending=%s'
-            % (
-                include_running,
-                include_pending,
-            ),
-        )
-        lg.out(_DebugLevel, '     %d jobs running, %d tasks pending' % (len(backup_control.jobs()), len(backup_control.tasks())))
-    r = {
-        'running': [],
-        'pending': [],
-    }
+        lg.out(_DebugLevel, 'api.file_uploads include_running=%s include_pending=%s' % (include_running, include_pending, ))
+        lg.out(_DebugLevel, '     %d jobs running, %d tasks pending' % (
+            len(backup_control.jobs()), len(backup_control.tasks())))
+    r = {'running': [], 'pending': [], }
     if include_running:
-        r['running'].extend(
-            [
-                {
-                    'version': j.backupID,
-                    'key_id': j.keyID,
-                    'source_path': j.sourcePath,
-                    'eccmap': j.eccmap.name,
-                    'pipe': 'closed' if not j.pipe else j.pipe.state(),
-                    'block_size': j.blockSize,
-                    'aborting': j.ask4abort,
-                    'terminating': j.terminating,
-                    'eof_state': j.stateEOF,
-                    'reading': j.stateReading,
-                    'closed': j.closed,
-                    'work_blocks': len(j.workBlocks),
-                    'block_number': j.blockNumber,
-                    'bytes_processed': j.dataSent,
-                    'progress': misc.percent2string(j.progress()),
-                    'total_size': j.totalSize,
-                }
-                for j in backup_control.jobs().values()
-            ]
-        )
+        r['running'].extend([{
+            'version': j.backupID,
+            'key_id': j.keyID,
+            'source_path': j.sourcePath,
+            'eccmap': j.eccmap.name,
+            'pipe': 'closed' if not j.pipe else j.pipe.state(),
+            'block_size': j.blockSize,
+            'aborting': j.ask4abort,
+            'terminating': j.terminating,
+            'eof_state': j.stateEOF,
+            'reading': j.stateReading,
+            'closed': j.closed,
+            'work_blocks': len(j.workBlocks),
+            'block_number': j.blockNumber,
+            'bytes_processed': j.dataSent,
+            'progress': misc.percent2string(j.progress()),
+            'total_size': j.totalSize,
+        } for j in backup_control.jobs().values()])
     if include_pending:
-        r['pending'].extend(
-            [
-                {
-                    'task_id': t.number,
-                    'path_id': t.pathID,
-                    'source_path': t.localPath,
-                    'created': time.asctime(time.localtime(t.created)),
-                }
-                for t in backup_control.tasks()
-            ]
-        )
+        r['pending'].extend([{
+            'task_id': t.number,
+            'path_id': t.pathID,
+            'source_path': t.localPath,
+            'created': time.asctime(time.localtime(t.created)),
+        } for t in backup_control.tasks()])
     return RESULT(r)
 
 
@@ -2043,24 +1782,15 @@ def file_upload_start(local_path, remote_path, wait_result=False, publish_events
     if not driver.is_on('service_backups'):
         return ERROR('service_backups() is not started')
     if _Debug:
-        lg.out(
-            _DebugLevel,
-            'api.file_upload_start local_path=%s remote_path=%s wait_result=%s'
-            % (
-                local_path,
-                remote_path,
-                wait_result,
-            ),
-        )
+        lg.out(_DebugLevel, 'api.file_upload_start local_path=%s remote_path=%s wait_result=%s' % (
+            local_path, remote_path, wait_result, ))
     from system import bpio
     from storage import backup_fs
     from storage import backup_control
     from lib import packetid
-
     # from main import control
     from userid import global_id
     from crypt import my_keys
-
     if not bpio.pathExist(local_path):
         return ERROR('local file or folder %s not exist' % local_path)
     parts = global_id.NormalizeGlobalID(remote_path)
@@ -2089,7 +1819,6 @@ def file_upload_start(local_path, remote_path, wait_result=False, publish_events
             lg.args(_DebugLevel, result=result, key_id=keyID, path=path, pathID=pathID)
         if key_alias != 'master':
             from access import shared_access_coordinator
-
             active_share = shared_access_coordinator.get_active_share(keyID)
             if not active_share:
                 active_share = shared_access_coordinator.SharedAccessCoordinator(
@@ -2109,45 +1838,27 @@ def file_upload_start(local_path, remote_path, wait_result=False, publish_events
         if key_alias != 'master':
             tsk.result_defer.addCallback(_restart_active_share)
         tsk.result_defer.addCallback(
-            lambda result: task_created_defer.callback(
-                OK(
-                    {
-                        'remote_path': remote_path,
-                        'version': result[0],
-                        'key_id': tsk.keyID,
-                        'source_path': local_path,
-                        'path_id': pathID,
-                    },
-                    message='item %s was uploaded, local path is: %s' % (remote_path, local_path),
-                    api_method='file_upload_start',
-                )
-            )
-        )
+            lambda result: task_created_defer.callback(OK({
+                'remote_path': remote_path,
+                'version': result[0],
+                'key_id': tsk.keyID,
+                'source_path': local_path,
+                'path_id': pathID,
+            },
+            message='item %s was uploaded, local path is: %s' % (remote_path, local_path),
+            api_method='file_upload_start',
+        )))
         tsk.result_defer.addErrback(
-            lambda result: task_created_defer.callback(
-                ERROR(
-                    'uploading task %d for %s failed: %s'
-                    % (
-                        tsk.number,
-                        tsk.pathID,
-                        result[1],
-                    ),
-                    api_method='file_upload_start',
-                )
-            )
-        )
+            lambda result: task_created_defer.callback(ERROR('uploading task %d for %s failed: %s' % (
+                tsk.number, tsk.pathID, result[1],
+            ),
+            api_method='file_upload_start',
+        )))
         backup_fs.Calculate(iterID=backup_fs.fsID(customer_idurl, key_alias))
         backup_control.Save(customer_idurl, key_alias)
         # control.request_update([('pathID', pathIDfull), ])
         if _Debug:
-            lg.out(
-                _DebugLevel,
-                'api.file_upload_start %s with %s, wait_result=True'
-                % (
-                    remote_path,
-                    pathIDfull,
-                ),
-            )
+            lg.out(_DebugLevel, 'api.file_upload_start %s with %s, wait_result=True' % (remote_path, pathIDfull, ))
         return task_created_defer
 
     tsk = backup_control.StartSingle(
@@ -2157,27 +1868,13 @@ def file_upload_start(local_path, remote_path, wait_result=False, publish_events
     )
     if key_alias != 'master':
         tsk.result_defer.addCallback(_restart_active_share)
-    tsk.result_defer.addErrback(
-        lambda result: lg.err(
-            'errback from api.file_upload_start.task(%s) failed with %s'
-            % (
-                result[0],
-                result[1],
-            )
-        )
-    )
+    tsk.result_defer.addErrback(lambda result: lg.err(
+        'errback from api.file_upload_start.task(%s) failed with %s' % (result[0], result[1], )))
     backup_fs.Calculate(iterID=backup_fs.fsID(customer_idurl, key_alias))
     backup_control.Save(customer_idurl, key_alias)
     # control.request_update([('pathID', pathIDfull), ])
     if _Debug:
-        lg.out(
-            _DebugLevel,
-            'api.file_upload_start %s with %s'
-            % (
-                remote_path,
-                pathIDfull,
-            ),
-        )
+        lg.out(_DebugLevel, 'api.file_upload_start %s with %s' % (remote_path, pathIDfull, ))
     return OK(
         {
             'remote_path': remote_path,
@@ -2185,11 +1882,7 @@ def file_upload_start(local_path, remote_path, wait_result=False, publish_events
             'source_path': local_path,
             'path_id': pathID,
         },
-        message='uploading task for %s started, local path is %s'
-        % (
-            remote_path,
-            local_path,
-        ),
+        message='uploading task for %s started, local path is %s' % (remote_path, local_path, ),
     )
 
 
@@ -2212,7 +1905,6 @@ def file_upload_stop(remote_path):
     from system import bpio
     from userid import global_id
     from lib import packetid
-
     parts = global_id.NormalizeGlobalID(remote_path)
     if not parts['idurl'] or not parts['path']:
         return ERROR('invalid "remote_path" format')
@@ -2254,28 +1946,22 @@ def files_downloads():
     if not driver.is_on('service_backups'):
         return ERROR('service_backups() is not started')
     from storage import restore_monitor
-
     if _Debug:
         lg.out(_DebugLevel, 'api.files_downloads')
         lg.out(_DebugLevel, '    %d items downloading at the moment' % len(restore_monitor.GetWorkingObjects()))
-    return RESULT(
-        [
-            {
-                'backup_id': r.backup_id,
-                'creator_id': r.creator_id,
-                'path_id': r.path_id,
-                'version': r.version,
-                'block_number': r.block_number,
-                'bytes_processed': r.bytes_written,
-                'created': time.asctime(time.localtime(r.Started)),
-                'aborted': r.abort_flag,
-                'done': r.done_flag,
-                'key_id': r.key_id,
-                'eccmap': '' if not r.EccMap else r.EccMap.name,
-            }
-            for r in restore_monitor.GetWorkingObjects()
-        ]
-    )
+    return RESULT([{
+        'backup_id': r.backup_id,
+        'creator_id': r.creator_id,
+        'path_id': r.path_id,
+        'version': r.version,
+        'block_number': r.block_number,
+        'bytes_processed': r.bytes_written,
+        'created': time.asctime(time.localtime(r.Started)),
+        'aborted': r.abort_flag,
+        'done': r.done_flag,
+        'key_id': r.key_id,
+        'eccmap': '' if not r.EccMap else r.EccMap.name,
+    } for r in restore_monitor.GetWorkingObjects()])
 
 
 def file_download_start(remote_path, destination_path=None, wait_result=False, publish_events=False):
@@ -2304,19 +1990,11 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, p
     if not driver.is_on('service_restores'):
         return ERROR('service_restores() is not started')
     if _Debug:
-        lg.out(
-            _DebugLevel,
-            'api.file_download_start remote_path=%s destination_path=%s wait_result=%s'
-            % (
-                remote_path,
-                destination_path,
-                wait_result,
-            ),
-        )
+        lg.out(_DebugLevel, 'api.file_download_start remote_path=%s destination_path=%s wait_result=%s' % (
+            remote_path, destination_path, wait_result, ))
     from storage import backup_fs
     from storage import backup_control
     from storage import restore_monitor
-
     # from main import control
     from system import bpio
     from lib import packetid
@@ -2324,7 +2002,6 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, p
     from userid import my_id
     from userid import global_id
     from crypt import my_keys
-
     glob_path = global_id.NormalizeGlobalID(remote_path)
     customer_idurl = glob_path['idurl']
     key_alias = glob_path['key_alias']
@@ -2375,13 +2052,10 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, p
     keyAlias, customerGlobalID, pathID_target, version = packetid.SplitBackupIDFull(backupID)
     if not customerGlobalID:
         customerGlobalID = global_id.UrlToGlobalID(my_id.getIDURL())
-    knownPath = backup_fs.ToPath(
-        pathID_target,
-        iterID=backup_fs.fsID(
-            customer_idurl=global_id.GlobalUserToIDURL(customerGlobalID),
-            key_alias=keyAlias,
-        ),
-    )
+    knownPath = backup_fs.ToPath(pathID_target, iterID=backup_fs.fsID(
+        customer_idurl=global_id.GlobalUserToIDURL(customerGlobalID),
+        key_alias=keyAlias,
+    ))
     if not knownPath:
         return ERROR('location %s was not found in the catalog' % knownPath)
     if not destination_path:
@@ -2393,53 +2067,22 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, p
 
     def _on_result(backupID, result):
         if result == 'restore done':
-            ret.callback(
-                OK(
-                    {
-                        'downloaded': True,
-                        'key_id': key_id,
-                        'backup_id': backupID,
-                        'local_path': destination_path,
-                        'path_id': pathID_target,
-                        'remote_path': knownPath,
-                    },
-                    message='version %s downloaded to %s successfully' % (backupID, destination_path),
-                    api_method='file_download_start',
-                )
-            )
-        else:
-            ret.callback(
-                ERROR(
-                    'downloading task %s failed, result is %s' % (backupID, result),
-                    details={
-                        'downloaded': False,
-                        'key_id': key_id,
-                        'backup_id': backupID,
-                        'local_path': destination_path,
-                        'path_id': pathID_target,
-                        'remote_path': knownPath,
-                    },
-                    api_method='file_download_start',
-                )
-            )
-        return True
-
-    def _start_restore():
-        if _Debug:
-            lg.out(_DebugLevel, 'api.file_download_start._start_restore %s to %s, wait_result=%s' % (backupID, destination_path, wait_result))
-        if wait_result:
-            restore_monitor.Start(backupID, destination_path, keyID=key_id, callback=_on_result)
-            # control.request_update([('pathID', knownPath), ])
-            return ret
-        restore_monitor.Start(
-            backupID,
-            destination_path,
-            keyID=key_id,
-        )
-        # control.request_update([('pathID', knownPath), ])
-        ret.callback(
-            OK(
+            ret.callback(OK(
                 {
+                    'downloaded': True,
+                    'key_id': key_id,
+                    'backup_id': backupID,
+                    'local_path': destination_path,
+                    'path_id': pathID_target,
+                    'remote_path': knownPath,
+                },
+                message='version %s downloaded to %s successfully' % (backupID, destination_path),
+                api_method='file_download_start'
+            ))
+        else:
+            ret.callback(ERROR(
+                'downloading task %s failed, result is %s' % (backupID, result),
+                details={
                     'downloaded': False,
                     'key_id': key_id,
                     'backup_id': backupID,
@@ -2447,55 +2090,55 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, p
                     'path_id': pathID_target,
                     'remote_path': knownPath,
                 },
-                message='downloading task %s started, destination is %s' % (backupID, destination_path),
                 api_method='file_download_start',
-            )
-        )
+            ))
+        return True
+
+    def _start_restore():
+        if _Debug:
+            lg.out(_DebugLevel, 'api.file_download_start._start_restore %s to %s, wait_result=%s' % (
+                backupID, destination_path, wait_result))
+        if wait_result:
+            restore_monitor.Start(backupID, destination_path, keyID=key_id, callback=_on_result)
+            # control.request_update([('pathID', knownPath), ])
+            return ret
+        restore_monitor.Start(backupID, destination_path, keyID=key_id, )
+        # control.request_update([('pathID', knownPath), ])
+        ret.callback(OK(
+            {
+                'downloaded': False,
+                'key_id': key_id,
+                'backup_id': backupID,
+                'local_path': destination_path,
+                'path_id': pathID_target,
+                'remote_path': knownPath,
+            },
+            message='downloading task %s started, destination is %s' % (backupID, destination_path),
+            api_method='file_download_start',
+        ))
         return True
 
     def _on_share_connected(active_share, callback_id, result):
         if _Debug:
-            lg.out(
-                _DebugLevel,
-                'api.download_start._on_share_connected callback_id=%s result=%s'
-                % (
-                    callback_id,
-                    result,
-                ),
-            )
+            lg.out(_DebugLevel, 'api.download_start._on_share_connected callback_id=%s result=%s' % (callback_id, result, ))
         if not result:
             if _Debug:
-                lg.out(
-                    _DebugLevel,
-                    '    share %s is now DISCONNECTED, removing callback %s'
-                    % (
-                        active_share.key_id,
-                        callback_id,
-                    ),
-                )
+                lg.out(_DebugLevel, '    share %s is now DISCONNECTED, removing callback %s' % (active_share.key_id, callback_id,))
             active_share.remove_connected_callback(callback_id)
-            ret.callback(
-                ERROR(
-                    'downloading task %s failed, result is: %s' % (backupID, 'share is disconnected'),
-                    details={
-                        'key_id': active_share.key_id,
-                        'backup_id': backupID,
-                        'local_path': destination_path,
-                        'path_id': pathID_target,
-                        'remote_path': knownPath,
-                    },
-                )
-            )
+            ret.callback(ERROR(
+                'downloading task %s failed, result is: %s' % (backupID, 'share is disconnected'),
+                details={
+                    'key_id': active_share.key_id,
+                    'backup_id': backupID,
+                    'local_path': destination_path,
+                    'path_id': pathID_target,
+                    'remote_path': knownPath,
+                },
+            ))
             return True
         if _Debug:
-            lg.out(
-                _DebugLevel,
-                '        share %s is now CONNECTED, removing callback %s and starting restore process'
-                % (
-                    active_share.key_id,
-                    callback_id,
-                ),
-            )
+            lg.out(_DebugLevel, '        share %s is now CONNECTED, removing callback %s and starting restore process' % (
+                active_share.key_id, callback_id,))
         reactor.callLater(0, active_share.remove_connected_callback, callback_id)  # @UndefinedVariable
         _start_restore()
         return True
@@ -2505,7 +2148,6 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, p
             ret.callback(ERROR('service_shared_data() is not started'))
             return False
         from access import shared_access_coordinator
-
         active_share = shared_access_coordinator.get_active_share(key_id)
         if not active_share:
             active_share = shared_access_coordinator.SharedAccessCoordinator(
@@ -2558,7 +2200,6 @@ def file_download_stop(remote_path):
     from lib import packetid
     from userid import my_id
     from userid import global_id
-
     glob_path = global_id.NormalizeGlobalID(remote_path)
     customer_idurl = glob_path['idurl']
     key_alias = glob_path['key_alias']
@@ -2596,12 +2237,7 @@ def file_download_stop(remote_path):
         return ERROR('did not found any remote versions for %s' % remote_path)
     r = []
     for backupID in backupIDs:
-        r.append(
-            {
-                'backup_id': backupID,
-                'aborted': restore_monitor.Abort(backupID),
-            }
-        )
+        r.append({'backup_id': backupID, 'aborted': restore_monitor.Abort(backupID), })
     if _Debug:
         lg.out(_DebugLevel, '    stopping %s' % r)
     return RESULT(r)
@@ -2622,16 +2258,13 @@ def file_explore(local_path):
     """
     from lib import misc
     from system import bpio
-
     locpath = bpio.portablePath(local_path)
     if not bpio.pathExist(locpath):
         return ERROR('local path not exist')
     misc.ExplorePathInOS(locpath)
     return OK(message='system file explorer opened')
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def shares_list(only_active=False, include_mine=True, include_granted=True):
     """
@@ -2654,7 +2287,6 @@ def shares_list(only_active=False, include_mine=True, include_granted=True):
     from crypt import my_keys
     from userid import global_id
     from userid import my_id
-
     results = []
     if only_active:
         for key_id in shared_access_coordinator.list_active_shares():
@@ -2722,41 +2354,36 @@ def share_info(key_id):
     from crypt import my_keys
     from access import shared_access_coordinator
     from userid import global_id
-
     if not my_keys.is_active(key_id):
         glob_id = global_id.NormalizeGlobalID(key_id)
-        return OK(
-            {
-                'active': False,
-                'key_id': key_id,
-                'alias': glob_id['key_alias'],
-                'label': my_keys.get_label(key_id) or '',
-                'creator': glob_id['idurl'].to_id(),
-                'suppliers': [],
-                'ecc_map': None,
-                'index': None,
-                'id': None,
-                'name': None,
-                'state': None,
-            }
-        )
+        return OK({
+            'active': False,
+            'key_id': key_id,
+            'alias': glob_id['key_alias'],
+            'label': my_keys.get_label(key_id) or '',
+            'creator': glob_id['idurl'].to_id(),
+            'suppliers': [],
+            'ecc_map': None,
+            'index': None,
+            'id': None,
+            'name': None,
+            'state': None,
+        })
     this_share = shared_access_coordinator.get_active_share(key_id)
     if not this_share:
-        return OK(
-            {
-                'active': my_keys.is_active(key_id),
-                'key_id': key_id,
-                'alias': glob_id['key_alias'],
-                'label': my_keys.get_label(key_id) or '',
-                'creator': glob_id['idurl'].to_id(),
-                'suppliers': None,
-                'ecc_map': None,
-                'index': None,
-                'id': None,
-                'name': None,
-                'state': None,
-            }
-        )
+        return OK({
+            'active': my_keys.is_active(key_id),
+            'key_id': key_id,
+            'alias': glob_id['key_alias'],
+            'label': my_keys.get_label(key_id) or '',
+            'creator': glob_id['idurl'].to_id(),
+            'suppliers': None,
+            'ecc_map': None,
+            'index': None,
+            'id': None,
+            'name': None,
+            'state': None,
+        })
     return OK(this_share.to_json())
 
 
@@ -2790,7 +2417,6 @@ def share_create(owner_id=None, key_size=None, label='', active=True):
     from storage import backup_fs
     from userid import global_id
     from userid import my_id
-
     if not owner_id:
         owner_id = my_id.getID()
     key_id = None
@@ -2817,10 +2443,7 @@ def share_create(owner_id=None, key_size=None, label='', active=True):
     )
     key_info.pop('include_private', None)
     backup_fs.SaveIndex(customer_idurl=global_id.glob2idurl(owner_id), key_alias=key_alias)
-    return OK(
-        key_info,
-        message='new share %s created successfully' % key_id,
-    )
+    return OK(key_info, message='new share %s created successfully' % key_id, )
 
 
 def share_delete(key_id):
@@ -2840,17 +2463,13 @@ def share_delete(key_id):
         return ERROR('invalid share id')
     from access import shared_access_coordinator
     from crypt import my_keys
-
     this_share = shared_access_coordinator.get_active_share(key_id)
     if not this_share:
         return ERROR('share %s was not opened' % key_id)
     this_share.automat('shutdown')
     my_keys.erase_key(key_id)
     # TODO: cleanup backup_fs as well
-    return OK(
-        this_share.to_json(),
-        message='share %s deleted successfully' % key_id,
-    )
+    return OK(this_share.to_json(), message='share %s deleted successfully' % key_id, )
 
 
 def share_grant(key_id, trusted_user_id, timeout=45, publish_events=True):
@@ -2874,7 +2493,6 @@ def share_grant(key_id, trusted_user_id, timeout=45, publish_events=True):
         return ERROR('invalid share id')
     from userid import global_id
     from userid import id_url
-
     trusted_user_id = strng.to_text(trusted_user_id)
     remote_idurl = None
     if trusted_user_id.count('@'):
@@ -2885,7 +2503,6 @@ def share_grant(key_id, trusted_user_id, timeout=45, publish_events=True):
     if not remote_idurl:
         return ERROR('wrong user id')
     from access import shared_access_donor
-
     ret = Deferred()
 
     def _on_shared_access_donor_success(result):
@@ -2900,10 +2517,7 @@ def share_grant(key_id, trusted_user_id, timeout=45, publish_events=True):
     d.addCallback(_on_shared_access_donor_success)
     d.addErrback(_on_shared_access_donor_failed)
     d.addTimeout(timeout, clock=reactor)
-    shared_access_donor_machine = shared_access_donor.SharedAccessDonor(
-        log_events=True,
-        publish_events=publish_events,
-    )
+    shared_access_donor_machine = shared_access_donor.SharedAccessDonor(log_events=True, publish_events=publish_events, )
     shared_access_donor_machine.automat('init', trusted_idurl=remote_idurl, key_id=key_id, result_defer=d)
     return ret
 
@@ -2927,7 +2541,6 @@ def share_open(key_id, publish_events=False):
     from contacts import identitycache
     from crypt import my_keys
     from userid import global_id
-
     idurl = global_id.glob2idurl(key_id)
     ret = Deferred()
 
@@ -2983,21 +2596,13 @@ def share_close(key_id):
         return ERROR('invalid share id')
     from crypt import my_keys
     from access import shared_access_coordinator
-
     my_keys.set_active(key_id, False)
     this_share = shared_access_coordinator.get_active_share(key_id)
     if not this_share:
         return ERROR('share %s was not opened' % key_id)
     ret = Deferred()
     ret.addTimeout(20, clock=reactor)
-    this_share.addStateChangedCallback(
-        lambda *a, **kw: ret.callback(
-            OK(
-                this_share.to_json(),
-                message='share %s closed' % key_id,
-            )
-        )
-    )
+    this_share.addStateChangedCallback(lambda *a, **kw: ret.callback(OK(this_share.to_json(), message='share %s closed' % key_id, )))
     this_share.automat('shutdown')
     return ret
 
@@ -3012,9 +2617,7 @@ def share_history():
     # return RESULT([],)
     return ERROR('method is not implemented yet')
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def groups_list(only_active=False, include_mine=True, include_granted=True):
     """
@@ -3038,7 +2641,6 @@ def groups_list(only_active=False, include_mine=True, include_granted=True):
     from crypt import my_keys
     from userid import global_id
     from userid import my_id
-
     results = []
     if only_active:
         for group_key_id in group_member.list_active_group_members():
@@ -3074,11 +2676,7 @@ def groups_list(only_active=False, include_mine=True, include_granted=True):
             'label': my_keys.get_label(group_key_id) or '',
             'active': False,
         }
-        result.update(
-            {
-                'group_key_info': my_keys.get_key_info(group_key_id),
-            }
-        )
+        result.update({'group_key_info': my_keys.get_key_info(group_key_id), })
         this_group_member = group_member.get_active_group_member(group_key_id)
         if this_group_member:
             result.update(this_group_member.to_json())
@@ -3124,7 +2722,6 @@ def group_create(creator_id=None, key_size=None, label='', timeout=20):
     from crypt import my_keys
     from access import groups
     from userid import my_id
-
     if not creator_id:
         creator_id = my_id.getID()
     if not key_size:
@@ -3158,7 +2755,6 @@ def group_info(group_key_id):
     from access import groups
     from access import group_member
     from crypt import my_keys
-
     group_key_id = strng.to_text(group_key_id)
     if not group_key_id.startswith('group_'):
         return ERROR('invalid group id')
@@ -3172,11 +2768,7 @@ def group_info(group_key_id):
     }
     if not my_keys.is_key_registered(group_key_id):
         return ERROR('group key %s was not found' % group_key_id)
-    response.update(
-        {
-            'group_key_info': my_keys.get_key_info(group_key_id),
-        }
-    )
+    response.update({'group_key_info': my_keys.get_key_info(group_key_id), })
     this_group_member = group_member.get_active_group_member(group_key_id)
     if this_group_member:
         response.update(this_group_member.to_json())
@@ -3213,7 +2805,6 @@ def group_info_dht(group_creator_id):
     from userid import global_id
     from userid import id_url
     from userid import my_id
-
     customer_idurl = None
     if not group_creator_id:
         customer_idurl = my_id.getID()
@@ -3251,7 +2842,6 @@ def group_join(group_key_id, publish_events=False, use_dht_cache=True, wait_resu
         return ERROR('invalid group id')
     from crypt import my_keys
     from userid import id_url
-
     group_key_id = my_keys.latest_key_id(group_key_id)
     if not my_keys.is_key_registered(group_key_id):
         return ERROR('group key is not registered')
@@ -3281,7 +2871,6 @@ def group_join(group_key_id, publish_events=False, use_dht_cache=True, wait_resu
 
     def _do_start_group_member():
         from access import group_member
-
         existing_group_member = group_member.get_active_group_member(group_key_id)
         if _Debug:
             lg.args(_DebugLevel, existing_group_member=existing_group_member)
@@ -3294,12 +2883,7 @@ def group_join(group_key_id, publish_events=False, use_dht_cache=True, wait_resu
                 use_dht_cache=use_dht_cache,
             )
             started_group_members.append(existing_group_member)
-        if existing_group_member.state in [
-            'DHT_READ?',
-            'BROKERS?',
-            'QUEUE?',
-            'IN_SYNC!',
-        ]:
+        if existing_group_member.state in ['DHT_READ?', 'BROKERS?', 'QUEUE?', 'IN_SYNC!', ]:
             connecting_word = 'active' if existing_group_member.state == 'IN_SYNC!' else 'connecting'
             ret.callback(OK(existing_group_member.to_json(), message='group is already %s' % connecting_word, api_method='group_join'))
             return None
@@ -3314,7 +2898,6 @@ def group_join(group_key_id, publish_events=False, use_dht_cache=True, wait_resu
 
     def _do_cache_creator_idurl():
         from contacts import identitycache
-
         d = identitycache.immediatelyCaching(creator_idurl)
         d.addErrback(lambda *args: ret.callback(ERROR('failed caching group creator identity')) and None)
         d.addCallback(lambda *args: _do_start_group_member())
@@ -3341,7 +2924,6 @@ def group_leave(group_key_id, erase_key=False):
     from access import group_member
     from access import groups
     from crypt import my_keys
-
     group_key_id = strng.to_text(group_key_id)
     if not group_key_id.startswith('group_'):
         return ERROR('invalid group id')
@@ -3380,7 +2962,6 @@ def group_reconnect(group_key_id, use_dht_cache=False):
         return ERROR('service_private_groups() is not started')
     from access import group_member
     from crypt import my_keys
-
     group_key_id = strng.to_text(group_key_id)
     if not group_key_id.startswith('group_'):
         return ERROR('invalid group id')
@@ -3415,7 +2996,6 @@ def group_share(group_key_id, trusted_user_id, timeout=45, publish_events=False)
         return ERROR('invalid group id')
     from userid import global_id
     from userid import id_url
-
     trusted_user_id = strng.to_text(trusted_user_id)
     remote_idurl = None
     if trusted_user_id.count('@'):
@@ -3426,7 +3006,6 @@ def group_share(group_key_id, trusted_user_id, timeout=45, publish_events=False)
     if not remote_idurl:
         return ERROR('wrong user id')
     from access import group_access_donor
-
     ret = Deferred()
 
     def _on_group_access_donor_success(result):
@@ -3447,9 +3026,7 @@ def group_share(group_key_id, trusted_user_id, timeout=45, publish_events=False)
     group_access_donor_machine.automat('init', trusted_idurl=remote_idurl, group_key_id=group_key_id, result_defer=d)
     return ret
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def friends_list():
     """
@@ -3463,7 +3040,6 @@ def friends_list():
     """
     from contacts import contactsdb
     from userid import global_id
-
     result = []
     for idurl, alias in contactsdb.correspondents():
         glob_id = global_id.ParseIDURL(idurl)
@@ -3480,7 +3056,6 @@ def friends_list():
         }
         if driver.is_on('service_identity_propagate'):
             from p2p import online_status
-
             state_machine_inst = online_status.getInstance(idurl, autocreate=False)
             if state_machine_inst:
                 friend.update(state_machine_inst.to_json())
@@ -3511,7 +3086,6 @@ def friend_add(trusted_user_id, alias='', share_person_key=True):
     from userid import global_id
     from userid import id_url
     from userid import my_id
-
     idurl = strng.to_text(trusted_user_id)
     if global_id.IsValidGlobalUser(trusted_user_id):
         idurl = global_id.GlobalUserToIDURL(trusted_user_id, as_field=False)
@@ -3530,32 +3104,26 @@ def friend_add(trusted_user_id, alias='', share_person_key=True):
             contactsdb.add_correspondent(idurl, alias)
             contactsdb.save_correspondents()
             added = True
-            events.send(
-                'friend-added',
-                data=dict(
-                    idurl=idurl,
-                    global_id=global_id.idurl2glob(idurl),
-                    alias=alias,
-                ),
-            )
+            events.send('friend-added', data=dict(
+                idurl=idurl,
+                global_id=global_id.idurl2glob(idurl),
+                alias=alias,
+            ))
         d = online_status.handshake(idurl, channel='friend_add', keep_alive=True)
         if share_person_key:
             from access import key_ring
             from crypt import my_keys
-
             my_person_key_id = my_id.getGlobalID(key_alias='person')
             if my_keys.is_key_registered(my_person_key_id):
-                d.addCallback(
-                    lambda *args: [
-                        key_ring.share_key(
-                            key_id=my_person_key_id,
-                            trusted_idurl=idurl,
-                            include_private=False,
-                            include_signature=False,
-                            timeout=15,
-                        ),
-                    ]
-                )
+                d.addCallback(lambda *args: [
+                    key_ring.share_key(
+                        key_id=my_person_key_id,
+                        trusted_idurl=idurl,
+                        include_private=False,
+                        include_signature=False,
+                        timeout=15,
+                    ),
+                ])
 
         if _Debug:
             d.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='api.friend_add')
@@ -3592,7 +3160,6 @@ def friend_remove(user_id):
     from main import events
     from userid import global_id
     from userid import id_url
-
     idurl = strng.to_text(user_id)
     if global_id.IsValidGlobalUser(user_id):
         idurl = global_id.GlobalUserToIDURL(user_id, as_field=False)
@@ -3604,13 +3171,10 @@ def friend_remove(user_id):
         if contactsdb.is_correspondent(idurl):
             contactsdb.remove_correspondent(idurl)
             contactsdb.save_correspondents()
-            events.send(
-                'friend-removed',
-                data=dict(
-                    idurl=idurl,
-                    global_id=global_id.idurl2glob(idurl),
-                ),
-            )
+            events.send('friend-removed', data=dict(
+                idurl=idurl,
+                global_id=global_id.idurl2glob(idurl),
+            ))
             return OK(message='friend has been removed', api_method='friend_remove')
         return ERROR('friend %s was not found' % idurl.to_id(), api_method='friend_remove')
 
@@ -3623,9 +3187,7 @@ def friend_remove(user_id):
     d.addCallback(lambda *args: ret.callback(_remove()))
     return ret
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def user_ping(user_id, timeout=15, retries=1):
     """
@@ -3643,7 +3205,6 @@ def user_ping(user_id, timeout=15, retries=1):
         return ERROR('service_identity_propagate() is not started')
     from p2p import online_status
     from userid import global_id
-
     idurl = user_id
     if global_id.IsValidGlobalUser(idurl):
         idurl = global_id.GlobalUserToIDURL(idurl, as_field=False)
@@ -3676,7 +3237,6 @@ def user_status(user_id):
     from p2p import online_status
     from userid import global_id
     from userid import id_url
-
     idurl = user_id
     if global_id.IsValidGlobalUser(idurl):
         idurl = global_id.GlobalUserToIDURL(idurl)
@@ -3686,14 +3246,12 @@ def user_status(user_id):
     # state_machine_inst = contact_status.getInstance(idurl)
     # if not state_machine_inst:
     #     return ERROR('error fetching user status')
-    return OK(
-        {
-            'contact_status': online_status.getStatusLabel(idurl),
-            'contact_state': online_status.getCurrentState(idurl),
-            'idurl': idurl,
-            'global_id': global_id.UrlToGlobalID(idurl),
-        }
-    )
+    return OK({
+        'contact_status': online_status.getStatusLabel(idurl),
+        'contact_state': online_status.getCurrentState(idurl),
+        'idurl': idurl,
+        'global_id': global_id.UrlToGlobalID(idurl),
+    })
 
 
 def user_status_check(user_id, timeout=5):
@@ -3711,7 +3269,6 @@ def user_status_check(user_id, timeout=5):
     from p2p import online_status
     from userid import global_id
     from userid import id_url
-
     idurl = user_id
     if global_id.IsValidGlobalUser(idurl):
         idurl = global_id.GlobalUserToIDURL(idurl)
@@ -3721,19 +3278,15 @@ def user_status_check(user_id, timeout=5):
         return ERROR('peer is not connected')
     ret = Deferred()
     ping_result = Deferred()
-    ping_result.addCallback(
-        lambda resp: ret.callback(
-            OK(
-                dict(
-                    idurl=idurl,
-                    global_id=global_id.UrlToGlobalID(idurl),
-                    contact_state=peer_status.state,
-                    contact_status=online_status.stateToLabel(peer_status.state),
-                ),
-                api_method='user_status_check',
-            )
-        )
-    )
+    ping_result.addCallback(lambda resp: ret.callback(OK(
+        dict(
+            idurl=idurl,
+            global_id=global_id.UrlToGlobalID(idurl),
+            contact_state=peer_status.state,
+            contact_status=online_status.stateToLabel(peer_status.state),
+        ),
+        api_method='user_status_check',
+    )))
     if _Debug:
         ping_result.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='api.user_status_check')
     ping_result.addErrback(lambda err: ret.errback(err))
@@ -3753,7 +3306,6 @@ def user_search(nickname, attempts=1):
     """
     from lib import misc
     from userid import global_id
-
     if not nickname:
         return ERROR('requires nickname of the user')
     if not misc.ValidNickName(nickname):
@@ -3762,23 +3314,17 @@ def user_search(nickname, attempts=1):
         return ERROR('service_private_messages() is not started')
 
     from chat import nickname_observer
-
     # nickname_observer.stop_all()
     ret = Deferred()
 
     def _result(result, nik, pos, idurl):
-        return ret.callback(
-            OK(
-                {
-                    'result': result,
-                    'nickname': nik,
-                    'position': pos,
-                    'global_id': global_id.UrlToGlobalID(idurl),
-                    'idurl': idurl,
-                },
-                api_method='user_search',
-            )
-        )
+        return ret.callback(OK({
+            'result': result,
+            'nickname': nik,
+            'position': pos,
+            'global_id': global_id.UrlToGlobalID(idurl),
+            'idurl': idurl,
+        }, api_method='user_search'))
 
     nickname_observer.find_one(
         nickname,
@@ -3802,7 +3348,6 @@ def user_observe(nickname, attempts=3):
     """
     from lib import misc
     from userid import global_id
-
     if not nickname:
         return ERROR('requires nickname of the user')
     if not misc.ValidNickName(nickname):
@@ -3811,29 +3356,24 @@ def user_observe(nickname, attempts=3):
         return ERROR('service_private_messages() is not started')
 
     from chat import nickname_observer
-
     nickname_observer.stop_all()
     ret = Deferred()
     results = []
 
     def _result(result, nik, pos, idurl):
         if result != 'finished':
-            results.append(
-                {
-                    'result': result,
-                    'nickname': nik,
-                    'position': pos,
-                    'global_id': global_id.UrlToGlobalID(idurl),
-                    'idurl': idurl,
-                }
-            )
+            results.append({
+                'result': result,
+                'nickname': nik,
+                'position': pos,
+                'global_id': global_id.UrlToGlobalID(idurl),
+                'idurl': idurl,
+            })
             return None
         ret.callback(RESULT(results, api_method='user_observe'))
         return None
 
-    reactor.callLater(
-        0.05,
-        nickname_observer.observe_many,  # @UndefinedVariable
+    reactor.callLater(0.05, nickname_observer.observe_many,  # @UndefinedVariable
         nickname,
         attempts=attempts,
         results_callback=_result,
@@ -3891,8 +3431,7 @@ def user_observe(nickname, attempts=3):
 #     nickname_holder.A('set', nickname)
 #     return ret
 
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def message_history(recipient_id=None, sender_id=None, message_type=None, offset=0, limit=100):
     """
@@ -3909,13 +3448,11 @@ def message_history(recipient_id=None, sender_id=None, message_type=None, offset
     from chat import message_database
     from userid import my_id, global_id
     from crypt import my_keys
-
     if not recipient_id and not sender_id:
         return ERROR('recipient_id or sender_id is required')
     if recipient_id:
         if not recipient_id.count('@'):
             from contacts import contactsdb
-
             recipient_idurl = contactsdb.find_correspondent_by_nickname(recipient_id)
             if not recipient_idurl:
                 return ERROR('recipient was not found')
@@ -3927,10 +3464,7 @@ def message_history(recipient_id=None, sender_id=None, message_type=None, offset
         if not my_keys.is_valid_key_id(recipient_id):
             return ERROR('invalid recipient_id: %s' % recipient_id)
     bidirectional = False
-    if message_type in [
-        None,
-        'private_message',
-    ]:
+    if message_type in [None, 'private_message', ]:
         bidirectional = True
         if sender_id is None:
             sender_id = my_id.getGlobalID(key_alias='master')
@@ -3943,34 +3477,17 @@ def message_history(recipient_id=None, sender_id=None, message_type=None, offset
         if recipient_local_key_id is None:
             lg.warn('local key id for recipient %s was not registered' % recipient_id)
             return RESULT([])
-    messages = [
-        {
-            'doc': m,
-        }
-        for m in message_database.query_messages(
-            sender_id=sender_id,
-            recipient_id=recipient_id,
-            bidirectional=bidirectional,
-            message_types=[
-                message_type,
-            ]
-            if message_type
-            else [],
-            offset=offset,
-            limit=limit,
-        )
-    ]
+    messages = [{'doc': m, } for m in message_database.query_messages(
+        sender_id=sender_id,
+        recipient_id=recipient_id,
+        bidirectional=bidirectional,
+        message_types=[message_type, ] if message_type else [],
+        offset=offset,
+        limit=limit,
+    )]
     if _Debug:
-        lg.out(
-            _DebugLevel,
-            'api.message_history with recipient_id=%s sender_id=%s message_type=%s found %d messages'
-            % (
-                recipient_id,
-                sender_id,
-                message_type,
-                len(messages),
-            ),
-        )
+        lg.out(_DebugLevel, 'api.message_history with recipient_id=%s sender_id=%s message_type=%s found %d messages' % (
+            recipient_id, sender_id, message_type, len(messages), ))
     return RESULT(messages)
 
 
@@ -3988,7 +3505,6 @@ def message_conversations_list(message_types=[], offset=0, limit=100):
     if not driver.is_on('service_message_history'):
         return ERROR('service_message_history() is not started')
     from chat import message_database
-
     conversations = message_database.fetch_conversations(
         order_by_time=True,
         message_types=message_types,
@@ -3996,14 +3512,8 @@ def message_conversations_list(message_types=[], offset=0, limit=100):
         limit=limit,
     )
     if _Debug:
-        lg.out(
-            _DebugLevel,
-            'api.message_conversations with message_types=%s found %d conversations'
-            % (
-                message_types,
-                len(conversations),
-            ),
-        )
+        lg.out(_DebugLevel, 'api.message_conversations with message_types=%s found %d conversations' % (
+            message_types, len(conversations), ))
     return RESULT(conversations)
 
 
@@ -4032,10 +3542,8 @@ def message_send(recipient_id, data, ping_timeout=15, message_ack_timeout=15):
     from stream import message
     from crypt import my_keys
     from userid import global_id
-
     if not recipient_id.count('@'):
         from contacts import contactsdb
-
         recipient_idurl = contactsdb.find_correspondent_by_nickname(recipient_id)
         if not recipient_idurl:
             recipient_idurl = strng.to_bin(recipient_id)
@@ -4054,22 +3562,14 @@ def message_send(recipient_id, data, ping_timeout=15, message_ack_timeout=15):
         if _Debug:
             lg.out(_DebugLevel, 'api.message_send to %r via message_producer' % recipient_id)
         from stream import message_producer
-
         ret = Deferred()
         result = message_producer.push_message(recipient_id, data)
         result.addCallback(lambda ok: ret.callback(OK(message='message sent', api_method='message_send')))
         result.addErrback(lambda err: ret.callback(ERROR(err, api_method='message_send')))
         return ret
     if _Debug:
-        lg.out(
-            _DebugLevel,
-            'api.message_send to %r ping_timeout=%d message_ack_timeout=%d'
-            % (
-                target_glob_id,
-                ping_timeout,
-                message_ack_timeout,
-            ),
-        )
+        lg.out(_DebugLevel, 'api.message_send to %r ping_timeout=%d message_ack_timeout=%d' % (
+            target_glob_id, ping_timeout, message_ack_timeout, ))
     data['msg_type'] = 'private_message'
     data['action'] = 'read'
     result = message.send_message(
@@ -4080,17 +3580,13 @@ def message_send(recipient_id, data, ping_timeout=15, message_ack_timeout=15):
         packet_id='private_%s' % packetid.UniqueID(),
     )
     ret = Deferred()
-    result.addCallback(
-        lambda packet: ret.callback(
-            OK(
-                result={
-                    'consumed': bool(strng.to_text(packet.Payload) != 'unread'),
-                },
-                message='message sent',
-                api_method='message_send',
-            )
-        )
-    )
+    result.addCallback(lambda packet: ret.callback(OK(
+        result={
+            'consumed': bool(strng.to_text(packet.Payload) != 'unread'),
+        },
+        message='message sent',
+        api_method='message_send',
+    )))
     result.addErrback(lambda err: ret.callback(ERROR(err, api_method='message_send')))
     return ret
 
@@ -4112,7 +3608,6 @@ def message_send_group(group_key_id, data):
     from userid import global_id
     from crypt import my_keys
     from access import group_member
-
     if not group_key_id.startswith('group_'):
         return ERROR('invalid group id')
     group_key_id = my_keys.latest_key_id(group_key_id)
@@ -4124,9 +3619,7 @@ def message_send_group(group_key_id, data):
     this_group_member = group_member.get_active_group_member(group_key_id)
     if not this_group_member:
         return ERROR('group is not active')
-    if this_group_member.state not in [
-        'IN_SYNC!',
-    ]:
+    if this_group_member.state not in ['IN_SYNC!', ]:
         return ERROR('group is not synchronized yet')
     if _Debug:
         lg.out(_DebugLevel, 'api.message_send_group to %r' % group_key_id)
@@ -4187,7 +3680,6 @@ def message_receive(consumer_callback_id, direction='incoming', message_types='p
         return ERROR('service_private_messages() is not started')
     from stream import message
     from p2p import p2p_service
-
     ret = Deferred()
     if strng.is_text(message_types):
         message_types = message_types.split(',')
@@ -4197,16 +3689,14 @@ def message_receive(consumer_callback_id, direction='incoming', message_types='p
         packets_to_ack = {}
         for msg in pending_messages:
             try:
-                result.append(
-                    {
-                        'data': msg['data'],
-                        'recipient': msg['to'],
-                        'sender': msg['from'],
-                        'time': msg['time'],
-                        'message_id': msg['packet_id'],
-                        'dir': msg['dir'],
-                    }
-                )
+                result.append({
+                    'data': msg['data'],
+                    'recipient': msg['to'],
+                    'sender': msg['from'],
+                    'time': msg['time'],
+                    'message_id': msg['packet_id'],
+                    'dir': msg['dir'],
+                })
             except:
                 lg.exc()
                 continue
@@ -4253,9 +3743,7 @@ def message_receive(consumer_callback_id, direction='incoming', message_types='p
         lg.out(_DebugLevel, 'api.message_receive %r started' % consumer_callback_id)
     return ret
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def suppliers_list(customer_id=None, verbose=False):
     """
@@ -4281,7 +3769,6 @@ def suppliers_list(customer_id=None, verbose=False):
     from userid import id_url
     from userid import global_id
     from storage import backup_matrix
-
     customer_idurl = strng.to_bin(customer_id)
     if not customer_idurl:
         customer_idurl = my_id.getIDURL().to_bin()
@@ -4290,10 +3777,7 @@ def suppliers_list(customer_id=None, verbose=False):
             customer_idurl = global_id.GlobalUserToIDURL(customer_id, as_field=False)
     customer_idurl = id_url.field(customer_idurl)
     results = []
-    for (
-        pos,
-        supplier_idurl,
-    ) in enumerate(contactsdb.suppliers(customer_idurl)):
+    for (pos, supplier_idurl, ) in enumerate(contactsdb.suppliers(customer_idurl)):
         if not supplier_idurl:
             r = {
                 'position': pos,
@@ -4310,9 +3794,9 @@ def suppliers_list(customer_id=None, verbose=False):
             'position': pos,
             'idurl': supplier_idurl,
             'global_id': global_id.UrlToGlobalID(supplier_idurl),
-            'supplier_state': None
-            if not supplier_connector.is_supplier(supplier_idurl, customer_idurl)
-            else supplier_connector.by_idurl(supplier_idurl, customer_idurl).state,
+            'supplier_state':
+                None if not supplier_connector.is_supplier(supplier_idurl, customer_idurl)
+                else supplier_connector.by_idurl(supplier_idurl, customer_idurl).state,
             'connected': misc.readSupplierData(supplier_idurl, 'connected', customer_idurl),
             'contact_status': 'offline',
             'contact_state': 'OFFLINE',
@@ -4358,7 +3842,6 @@ def supplier_change(position=None, supplier_id=None, new_supplier_id=None):
     from contacts import contactsdb
     from userid import my_id
     from userid import global_id
-
     customer_idurl = my_id.getIDURL()
     supplier_idurl = None
     if position is not None:
@@ -4382,7 +3865,6 @@ def supplier_change(position=None, supplier_id=None, new_supplier_id=None):
     def _do_change(x):
         from customer import fire_hire
         from customer import supplier_finder
-
         if new_supplier_idurl is not None:
             supplier_finder.InsertSupplierToHire(new_supplier_idurl)
         fire_hire.AddSupplierToFire(supplier_idurl)
@@ -4397,7 +3879,6 @@ def supplier_change(position=None, supplier_id=None, new_supplier_id=None):
         _do_change(None)
         return ret
     from p2p import online_status
-
     d = online_status.handshake(
         idurl=new_supplier_idurl,
         channel='supplier_change',
@@ -4421,7 +3902,6 @@ def suppliers_ping():
     if not driver.is_on('service_customer'):
         return ERROR('service_customer() is not started')
     from p2p import propagate
-
     propagate.SlowSendSuppliers(0.1)
     return OK(message='sent requests to all suppliers')
 
@@ -4442,7 +3922,6 @@ def suppliers_list_dht(customer_id=None):
     from userid import my_id
     from userid import id_url
     from userid import global_id
-
     customer_idurl = None
     if not customer_id:
         customer_idurl = my_id.getIDURL().to_bin()
@@ -4457,8 +3936,7 @@ def suppliers_list_dht(customer_id=None):
     d.addErrback(lambda err: ret.callback(ERROR(err)))
     return ret
 
-
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def customers_list(verbose=False):
@@ -4480,7 +3958,6 @@ def customers_list(verbose=False):
     from contacts import contactsdb
     from p2p import online_status
     from userid import global_id
-
     results = []
     for pos, customer_idurl in enumerate(contactsdb.customers()):
         if not customer_idurl:
@@ -4536,7 +4013,6 @@ def customer_reject(customer_id, erase_customer_key=True):
     from crypt import my_keys
     from userid import global_id
     from userid import id_url
-
     customer_idurl = customer_id
     if global_id.IsValidGlobalUser(customer_id):
         customer_idurl = global_id.GlobalUserToIDURL(customer_id)
@@ -4564,13 +4040,10 @@ def customer_reject(customer_id, erase_customer_key=True):
         resp = key_erase(customer_key_id)
         if resp['status'] != 'OK':
             lg.warn('key %r removal failed' % customer_key_id)
-    events.send(
-        'existing-customer-terminated',
-        data=dict(
-            idurl=customer_idurl,
-            ecc_map=eccmap.Current().name,
-        ),
-    )
+    events.send('existing-customer-terminated', data=dict(
+        idurl=customer_idurl,
+        ecc_map=eccmap.Current().name,
+    ))
     # restart local tester
     local_tester.TestUpdateCustomers()
     return OK(message='all services for client %s have been stopped, %r bytes freed' % (customer_idurl, consumed_by_cutomer))
@@ -4589,13 +4062,10 @@ def customers_ping():
     if not driver.is_on('service_supplier'):
         return ERROR('service_supplier() is not started')
     from p2p import propagate
-
     propagate.SlowSendCustomers(0.1)
     return OK(message='sent requests to all customers')
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def space_donated():
     """
@@ -4608,25 +4078,15 @@ def space_donated():
         websocket.send('{"command": "api_call", "method": "space_donated", "kwargs": {} }');
     """
     from storage import accounting
-
     result = accounting.report_donated_storage()
     if _Debug:
-        lg.out(
-            _DebugLevel,
-            'api.space_donated finished with %d customers and %d errors'
-            % (
-                len(result['customers']),
-                len(result['errors']),
-            ),
-        )
+        lg.out(_DebugLevel, 'api.space_donated finished with %d customers and %d errors' % (
+        len(result['customers']), len(result['errors']),))
     for err in result['errors']:
         if _Debug:
             lg.out(_DebugLevel, '    %s' % err)
     errors = result.pop('errors', [])
-    return OK(
-        result,
-        errors=errors,
-    )
+    return OK(result, errors=errors,)
 
 
 def space_consumed():
@@ -4640,7 +4100,6 @@ def space_consumed():
         websocket.send('{"command": "api_call", "method": "space_consumed", "kwargs": {} }');
     """
     from storage import accounting
-
     result = accounting.report_consumed_storage()
     if _Debug:
         lg.out(_DebugLevel, 'api.space_consumed finished')
@@ -4658,15 +4117,12 @@ def space_local():
         websocket.send('{"command": "api_call", "method": "space_local", "kwargs": {} }');
     """
     from storage import accounting
-
     result = accounting.report_local_storage()
     if _Debug:
         lg.out(_DebugLevel, 'api.space_local finished')
     return OK(result)
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def services_list(with_configs=False):
     """
@@ -4833,9 +4289,7 @@ def service_health(service_name):
     d.addErrback(lambda err: ret.callback(ERROR(err, api_method='service_health')))
     return ret
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def packets_list():
     """
@@ -4851,48 +4305,41 @@ def packets_list():
         return ERROR('service_gateway() is not started')
     from transport import packet_in
     from transport import packet_out
-
     result = []
     for pkt_out in packet_out.queue():
         items = []
         for itm in pkt_out.items:
-            items.append(
-                {
-                    'transfer_id': itm.transfer_id,
-                    'proto': itm.proto,
-                    'host': itm.host,
-                    'size': itm.size,
-                    'bytes_sent': itm.bytes_sent,
-                }
-            )
-        result.append(
-            {
-                'direction': 'outgoing',
-                'command': pkt_out.outpacket.Command,
-                'packet_id': pkt_out.outpacket.PacketID,
-                'label': pkt_out.label,
-                'target': pkt_out.remote_idurl,
-                'description': pkt_out.description,
-                'label': pkt_out.label,
-                'response_timeout': pkt_out.response_timeout,
-                'items': items,
-            }
-        )
+            items.append({
+                'transfer_id': itm.transfer_id,
+                'proto': itm.proto,
+                'host': itm.host,
+                'size': itm.size,
+                'bytes_sent': itm.bytes_sent,
+            })
+        result.append({
+            'direction': 'outgoing',
+            'command': pkt_out.outpacket.Command,
+            'packet_id': pkt_out.outpacket.PacketID,
+            'label': pkt_out.label,
+            'target': pkt_out.remote_idurl,
+            'description': pkt_out.description,
+            'label': pkt_out.label,
+            'response_timeout': pkt_out.response_timeout,
+            'items': items,
+        })
     for pkt_in in list(packet_in.inbox_items().values()):
-        result.append(
-            {
-                'direction': 'incoming',
-                'transfer_id': pkt_in.transfer_id,
-                'label': pkt_in.label,
-                'target': pkt_in.sender_idurl,
-                'label': pkt_in.label,
-                'timeout': pkt_in.timeout,
-                'proto': pkt_in.proto,
-                'host': pkt_in.host,
-                'size': pkt_in.size,
-                'bytes_received': pkt_in.bytes_received,
-            }
-        )
+        result.append({
+            'direction': 'incoming',
+            'transfer_id': pkt_in.transfer_id,
+            'label': pkt_in.label,
+            'target': pkt_in.sender_idurl,
+            'label': pkt_in.label,
+            'timeout': pkt_in.timeout,
+            'proto': pkt_in.proto,
+            'host': pkt_in.host,
+            'size': pkt_in.size,
+            'bytes_received': pkt_in.bytes_received,
+        })
     return RESULT(result)
 
 
@@ -4909,17 +4356,12 @@ def packets_stats():
     if not driver.is_on('service_gateway'):
         return ERROR('service_gateway() is not started')
     from p2p import p2p_stats
+    return OK({
+        'in': p2p_stats.counters_in(),
+        'out': p2p_stats.counters_out(),
+    })
 
-    return OK(
-        {
-            'in': p2p_stats.counters_in(),
-            'out': p2p_stats.counters_out(),
-        }
-    )
-
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def transfers_list():
     """
@@ -4935,7 +4377,6 @@ def transfers_list():
         return ERROR('service_data_motion() is not started')
     from stream import io_throttle
     from userid import global_id
-
     result = []
     for supplier_idurl in io_throttle.throttle().ListSupplierQueues():
         r = {
@@ -4948,33 +4389,29 @@ def transfers_list():
         for packet_id in q.ListSendItems():
             i = q.GetSendItem(packet_id)
             if i:
-                r['outgoing'].append(
-                    {
-                        'packet_id': i.packetID,
-                        'owner_id': i.ownerID,
-                        'remote_id': i.remoteID,
-                        'customer': i.customerID,
-                        'remote_path': i.remotePath,
-                        'filename': i.fileName,
-                        'created': i.created,
-                        'sent': i.sendTime,
-                    }
-                )
+                r['outgoing'].append({
+                    'packet_id': i.packetID,
+                    'owner_id': i.ownerID,
+                    'remote_id': i.remoteID,
+                    'customer': i.customerID,
+                    'remote_path': i.remotePath,
+                    'filename': i.fileName,
+                    'created': i.created,
+                    'sent': i.sendTime,
+                })
         for packet_id in q.ListRequestItems():
             i = q.GetRequestItem(packet_id)
             if i:
-                r['incoming'].append(
-                    {
-                        'packet_id': i.packetID,
-                        'owner_id': i.ownerID,
-                        'remote_id': i.remoteID,
-                        'customer': i.customerID,
-                        'remote_path': i.remotePath,
-                        'filename': i.fileName,
-                        'created': i.created,
-                        'requested': i.requestTime,
-                    }
-                )
+                r['incoming'].append({
+                    'packet_id': i.packetID,
+                    'owner_id': i.ownerID,
+                    'remote_id': i.remoteID,
+                    'customer': i.customerID,
+                    'remote_path': i.remotePath,
+                    'filename': i.fileName,
+                    'created': i.created,
+                    'requested': i.requestTime,
+                })
         result.append(r)
     return RESULT(result)
 
@@ -4996,7 +4433,6 @@ def connections_list(protocols=None):
     from lib import net_misc
     from transport import gateway
     from userid import global_id
-
     result = []
     if not protocols:
         protocols = gateway.list_active_transports()
@@ -5022,65 +4458,51 @@ def connections_list(protocols=None):
                         host = net_misc.pack_address_text(connection.peer_address)
                     except:
                         host = 'unknown'
-                    item.update(
-                        {
-                            'status': 'active',
-                            'state': connection.state,
-                            'host': host,
-                            'global_id': global_id.UrlToGlobalID(connection.peer_idurl or ''),
-                            'idurl': connection.peer_idurl or '',
-                            'bytes_sent': connection.total_bytes_sent or 0,
-                            'bytes_received': connection.total_bytes_received or 0,
-                        }
-                    )
-                else:
-                    try:
-                        host = net_misc.pack_address_text(connection.connection_address)
-                    except:
-                        host = 'unknown'
-                    item.update(
-                        {
-                            'status': 'connecting',
-                            'host': host,
-                        }
-                    )
-            elif proto == 'udp':
-                try:
-                    host = net_misc.pack_address_text(connection.peer_address)
-                except:
-                    host = 'unknown'
-                item.update(
-                    {
+                    item.update({
                         'status': 'active',
                         'state': connection.state,
                         'host': host,
                         'global_id': global_id.UrlToGlobalID(connection.peer_idurl or ''),
                         'idurl': connection.peer_idurl or '',
-                        'bytes_sent': connection.bytes_sent or 0,
-                        'bytes_received': connection.bytes_received or 0,
-                    }
-                )
+                        'bytes_sent': connection.total_bytes_sent or 0,
+                        'bytes_received': connection.total_bytes_received or 0,
+                    })
+                else:
+                    try:
+                        host = net_misc.pack_address_text(connection.connection_address)
+                    except:
+                        host = 'unknown'
+                    item.update({
+                        'status': 'connecting',
+                        'host': host,
+                    })
+            elif proto == 'udp':
+                try:
+                    host = net_misc.pack_address_text(connection.peer_address)
+                except:
+                    host = 'unknown'
+                item.update({
+                    'status': 'active',
+                    'state': connection.state,
+                    'host': host,
+                    'global_id': global_id.UrlToGlobalID(connection.peer_idurl or ''),
+                    'idurl': connection.peer_idurl or '',
+                    'bytes_sent': connection.bytes_sent or 0,
+                    'bytes_received': connection.bytes_received or 0,
+                })
             elif proto == 'proxy':
                 info = connection.to_json()
-                item.update(
-                    {
-                        'status': 'active',
-                        'state': info['state'],
-                        'host': info['host'] or '',
-                        'global_id': global_id.UrlToGlobalID(info['idurl'] or ''),
-                        'idurl': info['idurl'] or '',
-                        'bytes_sent': info['bytes_sent'] or 0,
-                        'bytes_received': info['bytes_received'] or 0,
-                    }
-                )
+                item.update({
+                    'status': 'active',
+                    'state': info['state'],
+                    'host': info['host'] or '',
+                    'global_id': global_id.UrlToGlobalID(info['idurl'] or ''),
+                    'idurl': info['idurl'] or '',
+                    'bytes_sent': info['bytes_sent'] or 0,
+                    'bytes_received': info['bytes_received'] or 0,
+                })
             else:
-                lg.warn(
-                    'unknown proto %r: %r'
-                    % (
-                        proto,
-                        connection,
-                    )
-                )
+                lg.warn('unknown proto %r: %r' % (proto, connection, ))
             result.append(item)
     return RESULT(result)
 
@@ -5099,7 +4521,6 @@ def streams_list(protocols=None):
         return ERROR('service_gateway() is not started')
     from transport import gateway
     from lib import misc
-
     result = []
     if not protocols:
         protocols = gateway.list_active_transports()
@@ -5119,54 +4540,44 @@ def streams_list(protocols=None):
             }
             if proto == 'tcp':
                 if hasattr(stream, 'bytes_received'):
-                    item.update(
-                        {
-                            'stream_id': stream.file_id,
-                            'type': 'in',
-                            'bytes_current': stream.bytes_received,
-                            'bytes_total': stream.size,
-                            'progress': misc.value2percent(stream.bytes_received, stream.size, 0),
-                        }
-                    )
+                    item.update({
+                        'stream_id': stream.file_id,
+                        'type': 'in',
+                        'bytes_current': stream.bytes_received,
+                        'bytes_total': stream.size,
+                        'progress': misc.value2percent(stream.bytes_received, stream.size, 0)
+                    })
                 elif hasattr(stream, 'bytes_sent'):
-                    item.update(
-                        {
-                            'stream_id': stream.file_id,
-                            'type': 'out',
-                            'bytes_current': stream.bytes_sent,
-                            'bytes_total': stream.size,
-                            'progress': misc.value2percent(stream.bytes_sent, stream.size, 0),
-                        }
-                    )
+                    item.update({
+                        'stream_id': stream.file_id,
+                        'type': 'out',
+                        'bytes_current': stream.bytes_sent,
+                        'bytes_total': stream.size,
+                        'progress': misc.value2percent(stream.bytes_sent, stream.size, 0)
+                    })
             elif proto == 'udp':
                 if hasattr(stream.consumer, 'bytes_received'):
-                    item.update(
-                        {
-                            'stream_id': stream.stream_id,
-                            'type': 'in',
-                            'bytes_current': stream.consumer.bytes_received,
-                            'bytes_total': stream.consumer.size,
-                            'progress': misc.value2percent(stream.consumer.bytes_received, stream.consumer.size, 0),
-                        }
-                    )
+                    item.update({
+                        'stream_id': stream.stream_id,
+                        'type': 'in',
+                        'bytes_current': stream.consumer.bytes_received,
+                        'bytes_total': stream.consumer.size,
+                        'progress': misc.value2percent(stream.consumer.bytes_received, stream.consumer.size, 0)
+                    })
                 elif hasattr(stream.consumer, 'bytes_sent'):
-                    item.update(
-                        {
-                            'stream_id': stream.stream_id,
-                            'type': 'out',
-                            'bytes_current': stream.consumer.bytes_sent,
-                            'bytes_total': stream.consumer.size,
-                            'progress': misc.value2percent(stream.consumer.bytes_sent, stream.consumer.size, 0),
-                        }
-                    )
+                    item.update({
+                        'stream_id': stream.stream_id,
+                        'type': 'out',
+                        'bytes_current': stream.consumer.bytes_sent,
+                        'bytes_total': stream.consumer.size,
+                        'progress': misc.value2percent(stream.consumer.bytes_sent, stream.consumer.size, 0)
+                    })
             elif proto == 'proxy':
                 pass
             result.append(item)
     return RESULT(result)
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def queues_list():
     """
@@ -5181,16 +4592,10 @@ def queues_list():
     if not driver.is_on('service_p2p_notifications'):
         return ERROR('service_p2p_notifications() is not started')
     from stream import p2p_queue
-
-    return RESULT(
-        [
-            {
-                'queue_id': queue_id,
-                'messages': len(p2p_queue.queue(queue_id)),
-            }
-            for queue_id in p2p_queue.queue().keys()
-        ]
-    )
+    return RESULT([{
+        'queue_id': queue_id,
+        'messages': len(p2p_queue.queue(queue_id)),
+    } for queue_id in p2p_queue.queue().keys()])
 
 
 def queue_consumers_list():
@@ -5206,18 +4611,12 @@ def queue_consumers_list():
     if not driver.is_on('service_p2p_notifications'):
         return ERROR('service_p2p_notifications() is not started')
     from stream import p2p_queue
-
-    return RESULT(
-        [
-            {
-                'consumer_id': consumer_info.consumer_id,
-                'queues': consumer_info.queues,
-                'state': consumer_info.state,
-                'consumed': consumer_info.consumed_messages,
-            }
-            for consumer_info in p2p_queue.consumer().values()
-        ]
-    )
+    return RESULT([{
+        'consumer_id': consumer_info.consumer_id,
+        'queues': consumer_info.queues,
+        'state': consumer_info.state,
+        'consumed': consumer_info.consumed_messages,
+    } for consumer_info in p2p_queue.consumer().values()])
 
 
 def queue_producers_list():
@@ -5233,18 +4632,12 @@ def queue_producers_list():
     if not driver.is_on('service_p2p_notifications'):
         return ERROR('service_p2p_notifications() is not started')
     from stream import p2p_queue
-
-    return RESULT(
-        [
-            {
-                'producer_id': producer_info.producer_id,
-                'queues': producer_info.queues,
-                'state': producer_info.state,
-                'produced': producer_info.produced_messages,
-            }
-            for producer_info in p2p_queue.producer().values()
-        ]
-    )
+    return RESULT([{
+        'producer_id': producer_info.producer_id,
+        'queues': producer_info.queues,
+        'state': producer_info.state,
+        'produced': producer_info.produced_messages,
+    } for producer_info in p2p_queue.producer().values()])
 
 
 def queue_keepers_list():
@@ -5260,7 +4653,6 @@ def queue_keepers_list():
     if not driver.is_on('service_message_broker'):
         return ERROR('service_message_broker() is not started')
     from stream import queue_keeper
-
     return RESULT([qk.to_json() for qk in queue_keeper.queue_keepers().values()])
 
 
@@ -5277,25 +4669,17 @@ def queue_peddlers_list():
     if not driver.is_on('service_message_broker'):
         return ERROR('service_message_broker() is not started')
     from stream import message_peddler
+    return RESULT([{
+        'queue_id': queue_id,
+        'active': mp['active'],
+        'consumers': list(mp['consumers'].keys()),
+        'producers': list(mp['producers'].keys()),
+        'messages': len(mp['messages']),
+        'archive': len(mp['archive']),
+        'sequence_id': mp['last_sequence_id'],
+    } for queue_id, mp in message_peddler.streams().items()])
 
-    return RESULT(
-        [
-            {
-                'queue_id': queue_id,
-                'active': mp['active'],
-                'consumers': list(mp['consumers'].keys()),
-                'producers': list(mp['producers'].keys()),
-                'messages': len(mp['messages']),
-                'archive': len(mp['archive']),
-                'sequence_id': mp['last_sequence_id'],
-            }
-            for queue_id, mp in message_peddler.streams().items()
-        ]
-    )
-
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def events_list():
     """
@@ -5308,7 +4692,6 @@ def events_list():
         websocket.send('{"command": "api_call", "method": "events_list", "kwargs": {} }');
     """
     from main import events
-
     return OK(events.count())
 
 
@@ -5325,7 +4708,6 @@ def event_send(event_id, data=None):
         websocket.send('{"command": "api_call", "method": "event_send", "kwargs": {"event_id": "client-event-produced", "data": {"some_key": "some_value"}} }');
     """
     from main import events
-
     json_payload = data
     if data and strng.is_string(data):
         try:
@@ -5335,12 +4717,10 @@ def event_send(event_id, data=None):
     evt = events.send(event_id, data=json_payload)
     if _Debug:
         lg.out(_DebugLevel, 'api.event_send %r was fired to local node' % event_id)
-    return OK(
-        {
-            'event_id': event_id,
-            'created': evt.created,
-        }
-    )
+    return OK({
+        'event_id': event_id,
+        'created': evt.created,
+    })
 
 
 def event_listen(consumer_callback_id):
@@ -5361,7 +4741,6 @@ def event_listen(consumer_callback_id):
 
     """
     from main import events
-
     ret = Deferred()
 
     def _on_pending_events(pending_events):
@@ -5369,13 +4748,11 @@ def event_listen(consumer_callback_id):
         for evt in pending_events:
             if evt['type'] != 'event':
                 continue
-            result.append(
-                {
-                    'id': evt['id'],
-                    'data': evt['data'],
-                    'time': evt['time'],
-                }
-            )
+            result.append({
+                'id': evt['id'],
+                'data': evt['data'],
+                'time': evt['time'],
+            })
         ret.callback(OK(result, api_method='event_listen'))
         return len(result) > 0
 
@@ -5384,9 +4761,7 @@ def event_listen(consumer_callback_id):
     d.addErrback(lambda err: ret.callback(ERROR(err, api_method='event_listen')))
     return ret
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def network_stun(udp_port=None, dht_port=None):
     """
@@ -5399,7 +4774,6 @@ def network_stun(udp_port=None, dht_port=None):
         websocket.send('{"command": "api_call", "method": "network_stun", "kwargs": {} }');
     """
     from stun import stun_client
-
     ret = Deferred()
     d = stun_client.safe_stun(udp_port=udp_port, dht_port=dht_port)
     d.addBoth(lambda r: ret.callback(OK(r, api_method='network_stun')))
@@ -5419,7 +4793,6 @@ def network_reconnect():
     if not driver.is_on('service_network'):
         return ERROR('service_network() is not started')
     from p2p import network_connector
-
     if _Debug:
         lg.out(_DebugLevel, 'api.network_reconnect')
     network_connector.A('reconnect')
@@ -5452,7 +4825,6 @@ def network_connected(wait_timeout=5):
         return None
 
     from p2p import network_service
-
     d = network_service.connected(wait_timeout=wait_timeout)
     d.addCallback(_on_network_service_connected)
     d.addErrback(lambda err: ret.callback(ERROR(err, api_method='network_connected')))
@@ -5499,19 +4871,18 @@ def network_status(suppliers=False, customers=False, cache=False, tcp=False, udp
         r['identity_sources'] = my_id.getLocalIdentity().getSources(as_originals=True)
         r['identity_contacts'] = my_id.getLocalIdentity().getContacts()
         r['identity_revision'] = my_id.getLocalIdentity().getRevisionValue()
-    if True in [
-        suppliers,
-        customers,
-        cache,
-    ] and driver.is_on('service_p2p_hookups'):
+    if True in [suppliers, customers, cache, ] and driver.is_on('service_p2p_hookups'):
         from contacts import contactsdb
         from p2p import online_status
-
         if suppliers:
             connected = 0
             items = []
             for idurl in contactsdb.all_suppliers():
-                i = {'idurl': idurl, 'global_id': global_id.UrlToGlobalID(idurl), 'state': None}
+                i = {
+                    'idurl': idurl,
+                    'global_id': global_id.UrlToGlobalID(idurl),
+                    'state': None
+                }
                 inst = online_status.getInstance(idurl)
                 if inst:
                     i['state'] = inst.state
@@ -5529,7 +4900,11 @@ def network_status(suppliers=False, customers=False, cache=False, tcp=False, udp
             connected = 0
             items = []
             for idurl in contactsdb.customers():
-                i = {'idurl': idurl, 'global_id': global_id.UrlToGlobalID(idurl), 'state': None}
+                i = {
+                    'idurl': idurl,
+                    'global_id': global_id.UrlToGlobalID(idurl),
+                    'state': None
+                }
                 inst = online_status.getInstance(idurl)
                 if inst:
                     i['state'] = inst.state
@@ -5543,11 +4918,14 @@ def network_status(suppliers=False, customers=False, cache=False, tcp=False, udp
             }
         if cache:
             from contacts import identitycache
-
             connected = 0
             items = []
             for idurl in identitycache.Items().keys():
-                i = {'idurl': idurl, 'global_id': global_id.UrlToGlobalID(idurl), 'state': None}
+                i = {
+                    'idurl': idurl,
+                    'global_id': global_id.UrlToGlobalID(idurl),
+                    'state': None
+                }
                 inst = online_status.getInstance(idurl)
                 if inst:
                     i['state'] = inst.state
@@ -5559,13 +4937,8 @@ def network_status(suppliers=False, customers=False, cache=False, tcp=False, udp
                 'connected': connected,
                 'peers': items,
             }
-    if True in [
-        tcp,
-        udp,
-        proxy,
-    ]:
+    if True in [tcp, udp, proxy, ]:
         from transport import gateway
-
         if tcp:
             r['tcp'] = {
                 'sessions': [],
@@ -5575,19 +4948,17 @@ def network_status(suppliers=False, customers=False, cache=False, tcp=False, udp
                 sessions = []
                 for s in gateway.list_active_sessions('tcp'):
                     i = s.to_json()
-                    i.update(
-                        {
-                            'peer': getattr(s, 'peer', None),
-                            'state': getattr(s, 'state', None),
-                            'id': getattr(s, 'id', None),
-                            'idurl': getattr(s, 'peer_idurl', None),
-                            'address': net_misc.pack_address_text(getattr(s, 'peer_address', None)),
-                            'external_address': net_misc.pack_address_text(getattr(s, 'peer_external_address', None)),
-                            'connection_address': net_misc.pack_address_text(getattr(s, 'connection_address', None)),
-                            'bytes_received': getattr(s, 'total_bytes_received', 0),
-                            'bytes_sent': getattr(s, 'total_bytes_sent', 0),
-                        }
-                    )
+                    i.update({
+                        'peer': getattr(s, 'peer', None),
+                        'state': getattr(s, 'state', None),
+                        'id': getattr(s, 'id', None),
+                        'idurl': getattr(s, 'peer_idurl', None),
+                        'address': net_misc.pack_address_text(getattr(s, 'peer_address', None)),
+                        'external_address': net_misc.pack_address_text(getattr(s, 'peer_external_address', None)),
+                        'connection_address': net_misc.pack_address_text(getattr(s, 'connection_address', None)),
+                        'bytes_received': getattr(s, 'total_bytes_received', 0),
+                        'bytes_sent': getattr(s, 'total_bytes_sent', 0),
+                    })
                     sessions.append(i)
                 streams = []
                 for s in gateway.list_active_streams('tcp'):
@@ -5603,7 +4974,6 @@ def network_status(suppliers=False, customers=False, cache=False, tcp=False, udp
                 r['tcp']['streams'] = streams
         if udp:
             from lib import udp
-
             r['udp'] = {
                 'sessions': [],
                 'streams': [],
@@ -5615,33 +4985,29 @@ def network_status(suppliers=False, customers=False, cache=False, tcp=False, udp
                 sessions = []
                 for s in gateway.list_active_sessions('udp'):
                     i = s.to_json()
-                    i.update(
-                        {
-                            'peer': s.peer_id,
-                            'state': s.state,
-                            'id': s.id,
-                            'idurl': s.peer_idurl,
-                            'address': net_misc.pack_address_text(s.peer_address),
-                            'bytes_received': s.bytes_sent,
-                            'bytes_sent': s.bytes_received,
-                            'outgoing': len(s.file_queue.outboxFiles),
-                            'incoming': len(s.file_queue.inboxFiles),
-                            'queue': len(s.file_queue.outboxQueue),
-                            'dead_streams': len(s.file_queue.dead_streams),
-                        }
-                    )
+                    i.update({
+                        'peer': s.peer_id,
+                        'state': s.state,
+                        'id': s.id,
+                        'idurl': s.peer_idurl,
+                        'address': net_misc.pack_address_text(s.peer_address),
+                        'bytes_received': s.bytes_sent,
+                        'bytes_sent': s.bytes_received,
+                        'outgoing': len(s.file_queue.outboxFiles),
+                        'incoming': len(s.file_queue.inboxFiles),
+                        'queue': len(s.file_queue.outboxQueue),
+                        'dead_streams': len(s.file_queue.dead_streams),
+                    })
                     sessions.append(i)
                 streams = []
                 for s in gateway.list_active_streams('udp'):
-                    streams.append(
-                        {
-                            'started': s.started,
-                            'stream_id': s.stream_id,
-                            'transfer_id': s.transfer_id,
-                            'size': s.size,
-                            'type': s.typ,
-                        }
-                    )
+                    streams.append({
+                        'started': s.started,
+                        'stream_id': s.stream_id,
+                        'transfer_id': s.transfer_id,
+                        'size': s.size,
+                        'type': s.typ,
+                    })
                 r['udp']['sessions'] = sessions
                 r['udp']['streams'] = streams
         if proxy:
@@ -5658,38 +5024,33 @@ def network_status(suppliers=False, customers=False, cache=False, tcp=False, udp
                     if getattr(s, 'pending_packets', None):
                         i['queue'] = len(s.pending_packets)
                     sessions.append(i)
-                r['proxy']['sessions'] = sessions
+                r['proxy']['sessions' ] = sessions
     if dht:
         from dht import dht_service
-
         r['dht'] = {}
         if driver.is_on('service_entangled_dht'):
             layers = []
             for layer_id in sorted(dht_service.node().layers):
-                layers.append(
-                    {
-                        'layer_id': layer_id,
-                        'data_store_items': len(dht_service.node()._dataStores[layer_id].keys()),
-                        'node_items': len(dht_service.node().data.get(layer_id, {})),
-                        'node_id': dht_service.node().layers[layer_id],
-                        'buckets': len(dht_service.node()._routingTables[layer_id]._buckets),
-                        'contacts': dht_service.node()._routingTables[layer_id].totalContacts(),
-                        'attached': (layer_id in dht_service.node().attached_layers),
-                        'active': (layer_id in dht_service.node().active_layers),
-                        'packets_received': dht_service.node().packets_in.get(layer_id, 0),
-                        'packets_sent': dht_service.node().packets_out.get(layer_id, 0),
-                        'rpc_calls': dht_service.node().rpc_calls.get(layer_id, {}),
-                        'rpc_responses': dht_service.node().rpc_responses.get(layer_id, {}),
-                    }
-                )
-            r['dht'].update(
-                {
-                    'udp_port': dht_service.node().port,
-                    'bytes_received': dht_service.node().bytes_in,
-                    'bytes_sent': dht_service.node().bytes_out,
-                    'layers': layers,
-                }
-            )
+                layers.append({
+                    'layer_id': layer_id,
+                    'data_store_items': len(dht_service.node()._dataStores[layer_id].keys()),
+                    'node_items': len(dht_service.node().data.get(layer_id, {})),
+                    'node_id': dht_service.node().layers[layer_id],
+                    'buckets': len(dht_service.node()._routingTables[layer_id]._buckets),
+                    'contacts': dht_service.node()._routingTables[layer_id].totalContacts(),
+                    'attached': (layer_id in dht_service.node().attached_layers),
+                    'active': (layer_id in dht_service.node().active_layers),
+                    'packets_received': dht_service.node().packets_in.get(layer_id, 0),
+                    'packets_sent': dht_service.node().packets_out.get(layer_id, 0),
+                    'rpc_calls': dht_service.node().rpc_calls.get(layer_id, {}),
+                    'rpc_responses': dht_service.node().rpc_responses.get(layer_id, {}),
+                })
+            r['dht'].update({
+                'udp_port': dht_service.node().port,
+                'bytes_received': dht_service.node().bytes_in,
+                'bytes_sent': dht_service.node().bytes_out,
+                'layers': layers,
+            })
     return OK(r)
 
 
@@ -5705,9 +5066,7 @@ def network_configuration():
     """
     return OK(driver.get_network_configuration())
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def dht_node_find(node_id_64=None, layer_id=0):
     """
@@ -5726,7 +5085,6 @@ def dht_node_find(node_id_64=None, layer_id=0):
     if not driver.is_on('service_entangled_dht'):
         return ERROR('service_entangled_dht() is not started')
     from dht import dht_service
-
     if node_id_64 is None:
         node_id = dht_service.random_key()
         node_id_64 = node_id
@@ -5737,22 +5095,14 @@ def dht_node_find(node_id_64=None, layer_id=0):
     def _cb(response):
         try:
             if isinstance(response, list):
-                return ret.callback(
-                    OK(
-                        {
-                            'my_dht_id': dht_service.node().layers[0],
-                            'lookup': node_id_64,
-                            'closest_nodes': [
-                                {
-                                    'dht_id': c.id,
-                                    'address': '%s:%d' % (strng.to_text(c.address, errors='ignore'), c.port),
-                                }
-                                for c in response
-                            ],
-                        },
-                        api_method='dht_node_find',
-                    )
-                )
+                return ret.callback(OK({
+                    'my_dht_id': dht_service.node().layers[0],
+                    'lookup': node_id_64,
+                    'closest_nodes': [{
+                        'dht_id': c.id,
+                        'address': '%s:%d' % (strng.to_text(c.address, errors='ignore'), c.port),
+                    } for c in response],
+                }, api_method='dht_node_find'))
             return ret.callback(ERROR('unexpected DHT response', api_method='dht_node_find'))
         except Exception as exc:
             lg.exc()
@@ -5786,7 +5136,6 @@ def dht_user_random(layer_id=0, count=1):
     if not driver.is_on('service_nodes_lookup'):
         return ERROR('service_nodes_lookup() is not started')
     from p2p import lookup
-
     ret = Deferred()
 
     def _cb(idurls):
@@ -5832,7 +5181,6 @@ def dht_value_get(key, record_type='skip_validation', layer_id=0, use_cache_ttl=
         return ERROR('service_entangled_dht() is not started')
     from dht import dht_service
     from dht import dht_records
-
     ret = Deferred()
 
     record_rules = dht_records.get_rules(record_type)
@@ -5843,39 +5191,26 @@ def dht_value_get(key, record_type='skip_validation', layer_id=0, use_cache_ttl=
         if isinstance(value, dict):
             if _Debug:
                 lg.out(_DebugLevel, 'api.dht_value_get OK: %r' % value)
-            return ret.callback(
-                OK(
-                    {
-                        'read': 'success',
-                        'my_dht_id': dht_service.node().layers[0],
-                        'key': strng.to_text(key, errors='ignore'),
-                        'value': value,
-                    },
-                    api_method='dht_value_get',
-                )
-            )
+            return ret.callback(OK({
+                'read': 'success',
+                'my_dht_id': dht_service.node().layers[0],
+                'key': strng.to_text(key, errors='ignore'),
+                'value': value,
+            }, api_method='dht_value_get'))
         closest_nodes = []
         if isinstance(value, list):
             closest_nodes = value
         if _Debug:
             lg.out(_DebugLevel, 'api.dht_value_get ERROR: %r' % value)
-        return ret.callback(
-            OK(
-                {
-                    'read': 'failed',
-                    'my_dht_id': dht_service.node().layers[0],
-                    'key': strng.to_text(key, errors='ignore'),
-                    'closest_nodes': [
-                        {
-                            'dht_id': c.id,
-                            'address': '%s:%d' % (strng.to_text(c.address, errors='ignore'), c.port),
-                        }
-                        for c in closest_nodes
-                    ],
-                },
-                api_method='dht_value_get',
-            )
-        )
+        return ret.callback(OK({
+            'read': 'failed',
+            'my_dht_id': dht_service.node().layers[0],
+            'key': strng.to_text(key, errors='ignore'),
+            'closest_nodes': [{
+                'dht_id': c.id,
+                'address': '%s:%d' % (strng.to_text(c.address, errors='ignore'), c.port),
+            } for c in closest_nodes],
+        }, api_method='dht_value_get'))
 
     def _eb(err):
         lg.err(err)
@@ -5921,7 +5256,6 @@ def dht_value_set(key, value, expire=None, record_type='skip_validation', layer_
 
     from dht import dht_service
     from dht import dht_records
-
     ret = Deferred()
 
     record_rules = dht_records.get_rules(record_type)
@@ -5933,24 +5267,16 @@ def dht_value_set(key, value, expire=None, record_type='skip_validation', layer_
             if isinstance(response, list):
                 if _Debug:
                     lg.out(_DebugLevel, 'api.dht_value_set OK: %r' % response)
-                return ret.callback(
-                    OK(
-                        {
-                            'write': 'success' if len(response) > 0 else 'failed',
-                            'my_dht_id': dht_service.node().layers[0],
-                            'key': strng.to_text(key, errors='ignore'),
-                            'value': value,
-                            'closest_nodes': [
-                                {
-                                    'dht_id': c.id,
-                                    'address': '%s:%d' % (strng.to_text(c.address, errors='ignore'), c.port),
-                                }
-                                for c in response
-                            ],
-                        },
-                        api_method='dht_value_set',
-                    )
-                )
+                return ret.callback(OK({
+                    'write': 'success' if len(response) > 0 else 'failed',
+                    'my_dht_id': dht_service.node().layers[0],
+                    'key': strng.to_text(key, errors='ignore'),
+                    'value': value,
+                    'closest_nodes': [{
+                        'dht_id': c.id,
+                        'address': '%s:%d' % (strng.to_text(c.address, errors='ignore'), c.port),
+                    } for c in response],
+                }, api_method='dht_value_set'))
             if _Debug:
                 lg.out(_DebugLevel, 'api.dht_value_set ERROR: %r' % response)
             return ret.callback(ERROR('unexpected DHT response', api_method='dht_value_set'))
@@ -5974,27 +5300,18 @@ def dht_value_set(key, value, expire=None, record_type='skip_validation', layer_
                 pass
             closest_nodes = []
             if nodes and isinstance(nodes, list) and hasattr(nodes[0], 'address') and hasattr(nodes[0], 'port'):
-                closest_nodes = [
-                    {
-                        'dht_id': c.id,
-                        'address': '%s:%d' % (strng.to_text(c.address, errors='ignore'), c.port),
-                    }
-                    for c in nodes
-                ]
+                closest_nodes = [{
+                    'dht_id': c.id,
+                    'address': '%s:%d' % (strng.to_text(c.address, errors='ignore'), c.port),
+                } for c in nodes]
             if _Debug:
                 lg.out(_DebugLevel, 'api.dht_value_set ERROR: %r' % errmsg)
-            return ret.callback(
-                ERROR(
-                    errmsg,
-                    details={
-                        'write': 'failed',
-                        'my_dht_id': dht_service.node().layers[0],
-                        'key': strng.to_text(key, errors='ignore'),
-                        'closest_nodes': closest_nodes,
-                    },
-                    api_method='dht_value_set',
-                )
-            )
+            return ret.callback(ERROR(errmsg, details={
+                'write': 'failed',
+                'my_dht_id': dht_service.node().layers[0],
+                'key': strng.to_text(key, errors='ignore'),
+                'closest_nodes': closest_nodes,
+            }, api_method='dht_value_set'))
         except Exception as exc:
             lg.exc()
             return ERROR(exc, api_method='dht_value_set')
@@ -6025,12 +5342,9 @@ def dht_local_db_dump():
     if not driver.is_on('service_entangled_dht'):
         return ERROR('service_entangled_dht() is not started')
     from dht import dht_service
-
     return RESULT(dht_service.dump_local_db(value_as_json=True))
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def automats_list():
     """
@@ -6045,7 +5359,6 @@ def automats_list():
         websocket.send('{"command": "api_call", "method": "automats_list", "kwargs": {} }');
     """
     from automats import automat
-
     result = [a.to_json() for a in automat.objects().values()]
     if _Debug:
         lg.out(_DebugLevel, 'api.automats_list responded with %d items' % len(result))
@@ -6069,7 +5382,6 @@ def automat_info(index=None, automat_id=None):
     if index is not None and automat_id is not None:
         return ERROR('only one of the identifiers must be provided')
     from automats import automat
-
     inst = None
     if automat_id is not None:
         inst = automat.by_id(automat_id)
@@ -6102,7 +5414,6 @@ def automat_events_start(index=None, automat_id=None, state_unchanged=False):
     if index is not None and automat_id is not None:
         return ERROR('only one of the identifiers must be provided')
     from automats import automat
-
     inst = None
     if automat_id is not None:
         inst = automat.by_id(automat_id)
@@ -6131,7 +5442,6 @@ def automat_events_stop(index=None, automat_id=None):
     if index is not None and automat_id is not None:
         return ERROR('only one of the identifiers must be provided')
     from automats import automat
-
     inst = None
     if automat_id is not None:
         inst = automat.by_id(automat_id)
@@ -6142,5 +5452,4 @@ def automat_events_stop(index=None, automat_id=None):
     inst.publishEvents(False, publish_event_state_not_changed=False)
     return OK(message='stopped publishing events from the state machine', result=inst.to_json())
 
-
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------

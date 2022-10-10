@@ -55,7 +55,8 @@ class Contact(object):
         return str(self)
 
     def __str__(self):
-        return '<%s at %r:%d>' % (self.id[:6], self.address, self.port)
+        return '<%s at %r:%d>' % (
+            self.id[:6], self.address, self.port)
 
     def __getattr__(self, name):
         """
@@ -72,20 +73,20 @@ class Contact(object):
         This happens via this contact's C{_networkProtocol} object (i.e. the
         host Node's C{_protocol} object).
         """
-
         def _sendRPC(*args, **kwargs):
             return self._networkProtocol.sendRPC(self, name, args, **kwargs)
-
         return _sendRPC
 
 
 class LayeredContact(Contact):
+
     def __init__(self, id, ipAddress, udpPort, networkProtocol, firstComm=0, layerID=0):
         self.layerID = layerID
         super(LayeredContact, self).__init__(id, ipAddress, udpPort, networkProtocol, firstComm)
 
     def __str__(self):
-        return '<Contact(%d) %s at %r:%d>' % (self.layerID, self.id[:6], self.address, self.port)
+        return '<Contact(%d) %s at %r:%d>' % (
+             self.layerID, self.id[:6], self.address, self.port)
 
     def __getattr__(self, name):
         def _sendRPC(*args, **kwargs):
@@ -96,5 +97,4 @@ class LayeredContact(Contact):
             if _Debug:
                 print('[DHT CONTACT]: %r RPC result is %r' % (self, ret))
             return ret
-
         return _sendRPC

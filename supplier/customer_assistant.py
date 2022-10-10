@@ -43,16 +43,16 @@ if not - remove that customer and stop assistant
 
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 10
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from automats import automat
 
@@ -72,12 +72,11 @@ from supplier import list_files
 
 from storage import accounting
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _CustomerAssistants = {}
 
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def assistants():
     global _CustomerAssistants
@@ -94,9 +93,7 @@ def create(customer_idurl):
 def by_idurl(customer_idurl):
     return assistants().get(customer_idurl, None)
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 class CustomerAssistant(automat.Automat):
     """
@@ -130,12 +127,12 @@ class CustomerAssistant(automat.Automat):
         """
         The state machine code, generated using `visio2python <https://bitdust.io/visio2python/>`_ tool.
         """
-        # ---AT_STARTUP---
+        #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'OFFLINE'
                 self.doInit(*args, **kwargs)
-        # ---OFFLINE---
+        #---OFFLINE---
         elif self.state == 'OFFLINE':
             if event == 'shutdown':
                 self.state = 'CLOSED'
@@ -145,7 +142,7 @@ class CustomerAssistant(automat.Automat):
                 self.doSendMyIdentity(*args, **kwargs)
             elif event == 'propagate':
                 self.state = 'PING?'
-        # ---PING?---
+        #---PING?---
         elif self.state == 'PING?':
             if event == 'shutdown':
                 self.state = 'CLOSED'
@@ -155,7 +152,7 @@ class CustomerAssistant(automat.Automat):
                 self.doSendHisFiles(*args, **kwargs)
             elif event == 'timer-10sec' or event == 'disconnect' or event == 'fail':
                 self.state = 'OFFLINE'
-        # ---CONNECTED---
+        #---CONNECTED---
         elif self.state == 'CONNECTED':
             if event == 'disconnect':
                 self.state = 'OFFLINE'
@@ -167,7 +164,7 @@ class CustomerAssistant(automat.Automat):
                 self.doSendMyIdentity(*args, **kwargs)
             elif event == 'propagate':
                 self.state = 'PING?'
-        # ---CLOSED---
+        #---CLOSED---
         elif self.state == 'CLOSED':
             pass
         return None
@@ -181,14 +178,10 @@ class CustomerAssistant(automat.Automat):
         """
         Action method.
         """
-        p2p_service.SendIdentity(
-            self.customer_idurl,
-            wide=True,
-            callbacks={
-                commands.Ack(): self._customer_acked,
-                commands.Fail(): self._customer_failed,
-            },
-        )
+        p2p_service.SendIdentity(self.customer_idurl, wide=True, callbacks={
+            commands.Ack(): self._customer_acked,
+            commands.Fail(): self._customer_failed,
+        })
 
     def doSendHisFiles(self, *args, **kwargs):
         """
@@ -201,11 +194,7 @@ class CustomerAssistant(automat.Automat):
         if False:
             list_files.send(
                 customer_idurl=self.customer_idurl,
-                packet_id='%s:%s'
-                % (
-                    customer_key_id,
-                    packetid.UniqueID(),
-                ),
+                packet_id='%s:%s' % (customer_key_id, packetid.UniqueID(), ),
                 format_type=settings.ListFilesFormat(),
                 key_id=customer_key_id,
                 remote_idurl=self.customer_idurl,  # send to the customer
@@ -216,23 +205,13 @@ class CustomerAssistant(automat.Automat):
             if my_keys.is_key_registered(customer_master_key_id):
                 list_files.send(
                     customer_idurl=self.customer_idurl,
-                    packet_id='%s:%s'
-                    % (
-                        customer_master_key_id,
-                        packetid.UniqueID(),
-                    ),
+                    packet_id='%s:%s' % (customer_master_key_id, packetid.UniqueID(), ),
                     format_type=settings.ListFilesFormat(),
                     key_id=customer_master_key_id,
                     remote_idurl=self.customer_idurl,  # send to the customer
                 )
             else:
-                lg.err(
-                    'key %s (and also %s) is not registered, not able to send customer files'
-                    % (
-                        customer_key_id,
-                        customer_master_key_id,
-                    )
-                )
+                lg.err('key %s (and also %s) is not registered, not able to send customer files' % (customer_key_id, customer_master_key_id, ))
 
     def doDestroyMe(self, *args, **kwargs):
         """

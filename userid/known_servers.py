@@ -20,16 +20,15 @@
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _KnownServers = None
 
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def default_nodes():
     """
@@ -37,7 +36,6 @@ def default_nodes():
     """
     from lib import strng
     from main import network_config
-
     network_info = network_config.read_network_config_file()
     identity_servers = {}
     for identity_server in network_info['service_identity_propagate']['known_servers']:
@@ -100,10 +98,7 @@ def by_host():
                     id_server_tcp_port = 6661
             except:
                 continue
-            overridden_identity_servers[id_server_host] = (
-                id_server_web_port,
-                id_server_tcp_port,
-            )
+            overridden_identity_servers[id_server_host] = (id_server_web_port, id_server_tcp_port, )
 
     if overridden_identity_servers:
         _KnownServers = overridden_identity_servers

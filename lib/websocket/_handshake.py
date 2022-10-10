@@ -49,25 +49,20 @@ __all__ = ['handshake_response', 'handshake', 'SUPPORTED_REDIRECT_STATUSES']
 if hasattr(hmac, 'compare_digest'):
     compare_digest = hmac.compare_digest
 else:
-
     def compare_digest(s1, s2):
         return s1 == s2
-
 
 # websocket supported version.
 VERSION = 13
 
-SUPPORTED_REDIRECT_STATUSES = (
-    HTTPStatus.MOVED_PERMANENTLY,
-    HTTPStatus.FOUND,
-    HTTPStatus.SEE_OTHER,
-)
+SUPPORTED_REDIRECT_STATUSES = (HTTPStatus.MOVED_PERMANENTLY, HTTPStatus.FOUND, HTTPStatus.SEE_OTHER,)
 SUCCESS_STATUSES = SUPPORTED_REDIRECT_STATUSES + (HTTPStatus.SWITCHING_PROTOCOLS,)
 
 CookieJar = SimpleCookieJar()
 
 
 class handshake_response(object):
+
     def __init__(self, status, headers, subprotocol):
         self.status = status
         self.headers = headers
@@ -99,9 +94,11 @@ def _pack_hostname(hostname):
 
     return hostname
 
-
 def _get_handshake_headers(resource, host, port, options):
-    headers = ['GET %s HTTP/1.1' % resource, 'Upgrade: websocket']
+    headers = [
+        'GET %s HTTP/1.1' % resource,
+        'Upgrade: websocket'
+    ]
     if port == 80 or port == 443:
         hostport = _pack_hostname(host)
     else:
@@ -141,7 +138,11 @@ def _get_handshake_headers(resource, host, port, options):
     if 'header' in options:
         header = options['header']
         if isinstance(header, dict):
-            header = [': '.join([k, v]) for k, v in header.items() if v is not None]
+            header = [
+                ': '.join([k, v])
+                for k, v in header.items()
+                if v is not None
+            ]
         headers.extend(header)
 
     server_cookie = CookieJar.get(host)

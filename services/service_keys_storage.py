@@ -57,12 +57,10 @@ class KeysStorageService(LocalService):
         from main import events
         from storage import index_synchronizer
         from storage import keys_synchronizer
-
         keys_synchronizer.A('init')
         self.starting_deferred = Deferred()
-        self.starting_deferred.addErrback(
-            lambda err: lg.warn('service %r was not started: %r' % (self.service_name, err.getErrorMessage() if err else 'unknown reason'))
-        )
+        self.starting_deferred.addErrback(lambda err: lg.warn('service %r was not started: %r' % (
+            self.service_name, err.getErrorMessage() if err else 'unknown reason')))
         events.add_subscriber(self._on_identity_url_changed, 'identity-url-changed')
         events.add_subscriber(self._on_key_generated, 'key-generated')
         events.add_subscriber(self._on_key_registered, 'key-registered')
@@ -85,7 +83,6 @@ class KeysStorageService(LocalService):
         from main import events
         from storage import index_synchronizer
         from storage import keys_synchronizer
-
         if index_synchronizer.A():
             index_synchronizer.A().removeStateChangedCallback(self._on_index_synchronizer_state_changed)
         events.remove_subscriber(self._on_my_keys_synchronize_failed, 'my-keys-synchronize-failed')
@@ -102,7 +99,6 @@ class KeysStorageService(LocalService):
     def health_check(self):
         from storage import index_synchronizer
         from storage import keys_synchronizer
-
         return keys_synchronizer.is_synchronized() and index_synchronizer.is_synchronized()
 
     def _do_synchronize_keys(self):
@@ -115,7 +111,6 @@ class KeysStorageService(LocalService):
         from logs import lg
         from storage import index_synchronizer
         from twisted.internet.defer import Deferred
-
         is_in_sync = index_synchronizer.is_synchronized()
         if is_in_sync:
             result = Deferred()
@@ -139,9 +134,9 @@ class KeysStorageService(LocalService):
         from storage import keys_synchronizer
         from userid import global_id
         from userid import my_id
-
         self.sync_keys_requested = False
-        global_keys_folder_path = global_id.MakeGlobalID(key_alias='master', customer=my_id.getGlobalID(), path='.keys')
+        global_keys_folder_path = global_id.MakeGlobalID(
+            key_alias='master', customer=my_id.getGlobalID(), path='.keys')
         res = api.file_exists(global_keys_folder_path)
         if res['status'] != 'OK' or not res['result'] or not res['result'].get('exist'):
             res = api.file_create(global_keys_folder_path, as_folder=True)
@@ -162,7 +157,6 @@ class KeysStorageService(LocalService):
         from interface import api
         from userid import global_id
         from userid import my_id
-
         if evt.data['is_private']:
             remote_path_for_key = '.keys/%s.private' % evt.data['key_id']
         else:
@@ -178,7 +172,6 @@ class KeysStorageService(LocalService):
     def _on_my_backup_index_synchronized(self, evt):
         import time
         from logs import lg
-
         if self.starting_deferred:
             self._do_synchronize_keys()
             return
@@ -186,7 +179,6 @@ class KeysStorageService(LocalService):
             self._do_synchronize_keys()
             return
         from storage import keys_synchronizer
-
         if not keys_synchronizer.is_synchronized():
             self._do_synchronize_keys()
             return
@@ -194,14 +186,12 @@ class KeysStorageService(LocalService):
             self._do_synchronize_keys()
             return
         from main import events
-
         lg.info('backup index and all my keys synchronized')
         events.send('my-storage-ready', data=dict())
 
     def _on_my_backup_index_out_of_sync(self, evt):
         from logs import lg
         from main import events
-
         if self.starting_deferred:
             self.starting_deferred.errback(Exception('not possible to synchronize keys because backup index is out of sync'))
             self.starting_deferred = None
@@ -212,7 +202,6 @@ class KeysStorageService(LocalService):
         import time
         from logs import lg
         from main import events
-
         self.last_time_keys_synchronized = time.time()
         if self.starting_deferred:
             self.starting_deferred.callback(True)
@@ -225,7 +214,6 @@ class KeysStorageService(LocalService):
     def _on_keys_synchronize_failed(self, err=None):
         from logs import lg
         from main import events
-
         if self.starting_deferred:
             self.starting_deferred.errback(err)
             self.starting_deferred = None
@@ -237,7 +225,6 @@ class KeysStorageService(LocalService):
     def _on_identity_url_changed(self, evt):
         from crypt import my_keys
         from storage import backup_control
-
         my_keys.check_rename_my_keys()
         self._do_synchronize_keys()
         backup_control.Save()
@@ -245,15 +232,7 @@ class KeysStorageService(LocalService):
 
     def _on_index_synchronizer_state_changed(self, oldstate, newstate, event_string, *args, **kwargs):
         from twisted.internet.defer import Deferred
-
-        if (
-            oldstate
-            in [
-                'REQUEST?',
-                'SENDING',
-            ]
-            and newstate == 'IN_SYNC!'
-        ):
+        if oldstate in ['REQUEST?', 'SENDING', ] and newstate == 'IN_SYNC!':
             if self.sync_keys_requested:
                 result = Deferred()
                 result.addCallback(self._on_keys_synchronized)
@@ -266,10 +245,10 @@ class KeysStorageService(LocalService):
         from interface import api
         from userid import global_id
         from userid import my_id
-
         if not config.conf().getBool('services/keys-storage/reset-unreliable-backup-copies'):
             return
-        global_keys_folder_path = global_id.MakeGlobalID(key_alias='master', customer=my_id.getGlobalID(), path='.keys')
+        global_keys_folder_path = global_id.MakeGlobalID(
+            key_alias='master', customer=my_id.getGlobalID(), path='.keys')
         lg.info('about to erase ".keys" folder in the catalog: %r' % global_keys_folder_path)
         res = api.file_delete(global_keys_folder_path)
         if res['status'] == 'OK':

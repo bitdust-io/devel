@@ -29,21 +29,21 @@ class DbHandler:
 
         self.index = sqlite3.connect(self.index_db, timeout=1)
         if self.trace_db_calls:
-            self.index.set_trace_callback(functools.partial(sql_trace_callback, self.logger.app_log, 'INDEX'))
+            self.index.set_trace_callback(functools.partial(sql_trace_callback,self.logger.app_log,'INDEX'))
         self.index.text_factory = str
         self.index.execute('PRAGMA case_sensitive_like = 1;')
         self.index_cursor = self.index.cursor()
 
         self.hdd = sqlite3.connect(self.ledger_path, timeout=1)
         if self.trace_db_calls:
-            self.hdd.set_trace_callback(functools.partial(sql_trace_callback, self.logger.app_log, 'HDD'))
+            self.hdd.set_trace_callback(functools.partial(sql_trace_callback,self.logger.app_log,'HDD'))
         self.hdd.text_factory = str
         self.hdd.execute('PRAGMA case_sensitive_like = 1;')
         self.h = self.hdd.cursor()
 
         self.hdd2 = sqlite3.connect(self.hyper_path, timeout=1)
         if self.trace_db_calls:
-            self.hdd2.set_trace_callback(functools.partial(sql_trace_callback, self.logger.app_log, 'HDD2'))
+            self.hdd2.set_trace_callback(functools.partial(sql_trace_callback,self.logger.app_log,'HDD2'))
         self.hdd2.text_factory = str
         self.hdd2.execute('PRAGMA case_sensitive_like = 1;')
         self.h2 = self.hdd2.cursor()
@@ -54,7 +54,7 @@ class DbHandler:
             self.conn = sqlite3.connect(self.hyper_path, uri=True, timeout=1)
 
         if self.trace_db_calls:
-            self.conn.set_trace_callback(functools.partial(sql_trace_callback, self.logger.app_log, 'CONN'))
+            self.conn.set_trace_callback(functools.partial(sql_trace_callback,self.logger.app_log,'CONN'))
         self.conn.execute('PRAGMA journal_mode = WAL;')
         self.conn.execute('PRAGMA case_sensitive_like = 1;')
         self.conn.text_factory = str
@@ -97,14 +97,7 @@ class DbHandler:
 
     def annverget(self, node):
         try:
-            self.execute_param(
-                self.h,
-                'SELECT openfield FROM transactions WHERE address = ? AND operation = ? ORDER BY block_height DESC LIMIT 1',
-                (
-                    node.genesis,
-                    'annver',
-                ),
-            )
+            self.execute_param(self.h, 'SELECT openfield FROM transactions WHERE address = ? AND operation = ? ORDER BY block_height DESC LIMIT 1', (node.genesis, 'annver',))
             result = self.h.fetchone()[0]
         except:
             result = '?'
@@ -112,14 +105,7 @@ class DbHandler:
 
     def annget(self, node):
         try:
-            self.execute_param(
-                self.h,
-                'SELECT openfield FROM transactions WHERE address = ? AND operation = ? ORDER BY block_height DESC LIMIT 1',
-                (
-                    node.genesis,
-                    'ann',
-                ),
-            )
+            self.execute_param(self.h, 'SELECT openfield FROM transactions WHERE address = ? AND operation = ? ORDER BY block_height DESC LIMIT 1', (node.genesis, 'ann',))
             result = self.h.fetchone()[0]
         except:
             result = 'No announcement'
@@ -139,7 +125,8 @@ class DbHandler:
     def aliasesget(self, aliases_request):
         results = []
         for alias_address in aliases_request:
-            self.execute_param(self.index_cursor, ('SELECT alias FROM aliases WHERE address = ? ORDER BY block_height ASC LIMIT 1'), (alias_address,))
+            self.execute_param(self.index_cursor, (
+                'SELECT alias FROM aliases WHERE address = ? ORDER BY block_height ASC LIMIT 1'), (alias_address,))
             try:
                 result = self.index_cursor.fetchall()[0][0]
             except:
@@ -149,7 +136,7 @@ class DbHandler:
 
     def block_height_from_hash(self, data):
         try:
-            self.execute_param(self.h, 'SELECT block_height FROM transactions WHERE block_hash = ?;', (data,))
+            self.execute_param(self.h, 'SELECT block_height FROM transactions WHERE block_hash = ?;',(data,))
             result = self.h.fetchone()[0]
         except:
             result = None
@@ -158,18 +145,12 @@ class DbHandler:
 
     def blocksync(self, block):
         blocks_fetched = []
-        while sys.getsizeof(str(blocks_fetched)) < 500000:  # limited size based on txs in blocks
+        while sys.getsizeof(
+                str(blocks_fetched)) < 500000:  # limited size based on txs in blocks
             # db_handler.execute_param(db_handler.h, ("SELECT block_height, timestamp,address,recipient,amount,signature,public_key,keep,openfield FROM transactions WHERE block_height > ? AND block_height <= ?;"),(str(int(client_block)),) + (str(int(client_block + 1)),))
-            self.execute_param(
-                self.h,
-                (
-                    'SELECT timestamp,address,recipient,amount,signature,public_key,operation,openfield FROM transactions WHERE block_height > ? AND block_height <= ?;'
-                ),
-                (
-                    str(int(block)),
-                    str(int(block + 1)),
-                ),
-            )
+            self.execute_param(self.h, (
+                'SELECT timestamp,address,recipient,amount,signature,public_key,operation,openfield FROM transactions WHERE block_height > ? AND block_height <= ?;'),
+                                              (str(int(block)), str(int(block + 1)),))
             result = self.h.fetchall()
             if not result:
                 break
@@ -198,36 +179,22 @@ class DbHandler:
         self.execute_param(self.c, 'SELECT * FROM transactions WHERE block_height >= ?;', (block_height,))
         backup_data = self.c.fetchall()
 
-        self.execute_param(
-            self.c, 'DELETE FROM transactions WHERE block_height >= ? OR block_height <= ?', (block_height, -block_height)
-        )  # this belongs to rollback_under
-        self.commit(self.conn)  # this belongs to rollback_under
+        self.execute_param(self.c, 'DELETE FROM transactions WHERE block_height >= ? OR block_height <= ?', (block_height, -block_height)) #this belongs to rollback_under
+        self.commit(self.conn) #this belongs to rollback_under
 
-        self.execute_param(self.c, 'DELETE FROM misc WHERE block_height >= ?;', (block_height,))  # this belongs to rollback_under
-        self.commit(self.conn)  # this belongs to rollback_under
+        self.execute_param(self.c, 'DELETE FROM misc WHERE block_height >= ?;', (block_height,)) #this belongs to rollback_under
+        self.commit(self.conn)  #this belongs to rollback_under
 
         return backup_data
 
     def rollback_under(self, block_height):
-        self.h.execute(
-            'DELETE FROM transactions WHERE block_height >= ? OR block_height <= ?',
-            (
-                block_height,
-                -block_height,
-            ),
-        )
+        self.h.execute('DELETE FROM transactions WHERE block_height >= ? OR block_height <= ?', (block_height, -block_height,))
         self.commit(self.hdd)
 
         self.h.execute('DELETE FROM misc WHERE block_height >= ?', (block_height,))
         self.commit(self.hdd)
 
-        self.h2.execute(
-            'DELETE FROM transactions WHERE block_height >= ? OR block_height <= ?',
-            (
-                block_height,
-                -block_height,
-            ),
-        )
+        self.h2.execute('DELETE FROM transactions WHERE block_height >= ? OR block_height <= ?', (block_height, -block_height,))
         self.commit(self.hdd2)
 
         self.h2.execute('DELETE FROM misc WHERE block_height >= ?', (block_height,))
@@ -274,35 +241,20 @@ class DbHandler:
         except Exception as e:
             node.logger.app_log.warning(f'Failed to roll back the alias index below {(height)} due to {e}')
 
-    def dev_reward(self, node, block_array, miner_tx, mining_reward, mirror_hash):
-        self.execute_param(
-            self.c,
-            self.SQL_TO_TRANSACTIONS,
-            (
-                -block_array.block_height_new,
-                str(miner_tx.q_block_timestamp),
-                'Development Reward',
-                str(node.genesis),
-                str(mining_reward),
-                '0',
-                '0',
-                mirror_hash,
-                '0',
-                '0',
-                '0',
-                '0',
-            ),
-        )
+    def dev_reward(self,node,block_array,miner_tx,mining_reward,mirror_hash):
+        self.execute_param(self.c, self.SQL_TO_TRANSACTIONS,
+                                 (-block_array.block_height_new, str(miner_tx.q_block_timestamp), 'Development Reward', str(node.genesis),
+                                  str(mining_reward), '0', '0', mirror_hash, '0', '0', '0', '0'))
         self.commit(self.conn)
 
-    def hn_reward(self, node, block_array, miner_tx, mirror_hash):
+    def hn_reward(self,node,block_array,miner_tx,mirror_hash):
         fork = Fork()
 
         if node.is_testnet and node.last_block >= fork.POW_FORK_TESTNET:
             self.reward_sum = 24 - 10 * (node.last_block + 5 - fork.POW_FORK_TESTNET) / 3000000
 
         elif node.is_mainnet and node.last_block >= fork.POW_FORK:
-            self.reward_sum = 24 - 10 * (node.last_block + 5 - fork.POW_FORK) / 3000000
+            self.reward_sum = 24 - 10*(node.last_block + 5 - fork.POW_FORK)/3000000
         else:
             self.reward_sum = 24
 
@@ -311,58 +263,34 @@ class DbHandler:
 
         self.reward_sum = '{:.8f}'.format(self.reward_sum)
 
-        self.execute_param(
-            self.c,
-            self.SQL_TO_TRANSACTIONS,
-            (
-                -block_array.block_height_new,
-                str(miner_tx.q_block_timestamp),
-                'Hypernode Payouts',
-                '3e08b5538a4509d9daa99e01ca5912cda3e98a7f79ca01248c2bde16',
-                self.reward_sum,
-                '0',
-                '0',
-                mirror_hash,
-                '0',
-                '0',
-                '0',
-                '0',
-            ),
-        )
+        self.execute_param(self.c, self.SQL_TO_TRANSACTIONS,
+                           (-block_array.block_height_new, str(miner_tx.q_block_timestamp), 'Hypernode Payouts',
+                            '3e08b5538a4509d9daa99e01ca5912cda3e98a7f79ca01248c2bde16',
+                            self.reward_sum, '0', '0', mirror_hash, '0', '0', '0', '0'))
         self.commit(self.conn)
 
     def to_db(self, block_array, diff_save, block_transactions):
-        self.execute_param(self.c, 'INSERT INTO misc VALUES (?, ?)', (block_array.block_height_new, diff_save))
+        self.execute_param(self.c, 'INSERT INTO misc VALUES (?, ?)',
+                                 (block_array.block_height_new, diff_save))
         self.commit(self.conn)
 
         # db_handler.execute_many(db_handler.c, self.SQL_TO_TRANSACTIONS, block_transactions)
 
         for transaction2 in block_transactions:
-            self.execute_param(
-                self.c,
-                self.SQL_TO_TRANSACTIONS,
-                (
-                    str(transaction2[0]),
-                    str(transaction2[1]),
-                    str(transaction2[2]),
-                    str(transaction2[3]),
-                    str(transaction2[4]),
-                    str(transaction2[5]),
-                    str(transaction2[6]),
-                    str(transaction2[7]),
-                    str(transaction2[8]),
-                    str(transaction2[9]),
-                    str(transaction2[10]),
-                    str(transaction2[11]),
-                ),
-            )
+            self.execute_param(self.c, self.SQL_TO_TRANSACTIONS,
+                                     (str(transaction2[0]), str(transaction2[1]), str(transaction2[2]),
+                                      str(transaction2[3]), str(transaction2[4]), str(transaction2[5]),
+                                      str(transaction2[6]), str(transaction2[7]), str(transaction2[8]),
+                                      str(transaction2[9]), str(transaction2[10]), str(transaction2[11])))
             # secure commit for slow nodes
             self.commit(self.conn)
 
     def db_to_drive(self, node):
+
         def transactions_to_h(data):
             for x in data:  # we want to save to ledger.db
-                self.execute_param(self.h, self.SQL_TO_TRANSACTIONS, (x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9], x[10], x[11]))
+                self.execute_param(self.h, self.SQL_TO_TRANSACTIONS,
+                                   (x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9], x[10], x[11]))
             self.commit(self.hdd)
 
         def misc_to_h(data):
@@ -372,7 +300,8 @@ class DbHandler:
 
         def transactions_to_h2(data):
             for x in data:
-                self.execute_param(self.h2, self.SQL_TO_TRANSACTIONS, (x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9], x[10], x[11]))
+                self.execute_param(self.h2, self.SQL_TO_TRANSACTIONS,
+                                   (x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9], x[10], x[11]))
             self.commit(self.hdd2)
 
         def misc_to_h2(data):
@@ -388,11 +317,11 @@ class DbHandler:
                 return
             node.logger.app_log.warning(f'Chain: Moving new data to HDD, {node.hdd_block + 1} to {node.last_block} ')
 
-            self.execute_param(
-                self.c,
-                'SELECT * FROM transactions ' 'WHERE block_height > ? OR block_height < ? ' 'ORDER BY block_height ASC',
-                (node.hdd_block, -node.hdd_block),
-            )
+            self.execute_param(self.c,
+                               'SELECT * FROM transactions '
+                               'WHERE block_height > ? OR block_height < ? '
+                               'ORDER BY block_height ASC',
+                               (node.hdd_block, -node.hdd_block))
 
             result1 = self.c.fetchall()
 
@@ -400,7 +329,9 @@ class DbHandler:
             if node.ram:  # we want to save to hyper.db from RAM/hyper.db depending on ram conf
                 transactions_to_h2(result1)
 
-            self.execute_param(self.c, 'SELECT * FROM misc WHERE block_height > ? ORDER BY block_height ASC', (node.hdd_block,))
+            self.execute_param(self.c,
+                               'SELECT * FROM misc WHERE block_height > ? ORDER BY block_height ASC',
+                               (node.hdd_block, ))
             result2 = self.c.fetchall()
 
             misc_to_h(result2)

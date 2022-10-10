@@ -27,8 +27,12 @@ from twisted.internet import reactor  # @UnresolvedImport
 
 if __name__ == '__main__':
     import os.path as _p
-
-    sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..', '..')))
+    sys.path.insert(
+        0, _p.abspath(
+            _p.join(
+                _p.dirname(
+                    _p.abspath(
+                        sys.argv[0])), '..', '..')))
 
 
 def main():
@@ -42,7 +46,6 @@ def main():
 
     from lib import net_misc
     from main import settings
-
     settings.init()
     settings.update_proxy_settings()
     url = 'http://localhost:8084'

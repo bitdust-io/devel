@@ -41,14 +41,14 @@ from logs import lg
 import six
 from io import open
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _SheduledTasks = {}
 _UsingGUI = False
 _GuiStatusClearPageData = None
 _GuiBackupUpdate = None
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def init(usingGui=False):
@@ -72,9 +72,9 @@ def shutdown():
 
 def loop():
     lg.out(8, 'backup_schedule.loop ')
-    # debugWrite("in loop about to run at "+str(time.asctime(time.localtime(time.time()))))
+    #debugWrite("in loop about to run at "+str(time.asctime(time.localtime(time.time()))))
     # run()
-    # debugWrite("in loop finished run, setting callLater")
+    #debugWrite("in loop finished run, setting callLater")
     # reactor.callLater(timeout(), loop)
 
 
@@ -215,17 +215,16 @@ def task(dirName=None):
 
 def next(dirName):
     global _SheduledTasks
-    #    lastRunId, lastRunSize, lastRunStatus, lastRunStart, lastRunFinish = backup_db.GetLastRunInfo(dirName)
-    #    schedule_type, schedule_time, schedule_interval, interval_details = backup_db.GetSchedule(dirName)
+#    lastRunId, lastRunSize, lastRunStatus, lastRunStart, lastRunFinish = backup_db.GetLastRunInfo(dirName)
+#    schedule_type, schedule_time, schedule_interval, interval_details = backup_db.GetSchedule(dirName)
     schedule = None  # backup_db.GetSchedule(dirName)
     if schedule is None:
         return None
 
-    #    lg.out(8, 'backup_schedule.next dirName=%s type=%s, time=%s, interval=%s, details=%s' % (str(dirName), schedule_type, schedule_time, schedule_interval, interval_details))
-    #    lg.out(8, 'backup_schedule.next %s %s' % (str(dirName), schedule))
+#    lg.out(8, 'backup_schedule.next dirName=%s type=%s, time=%s, interval=%s, details=%s' % (str(dirName), schedule_type, schedule_time, schedule_interval, interval_details))
+#    lg.out(8, 'backup_schedule.next %s %s' % (str(dirName), schedule))
 
     return schedule.next_time()
-
 
 #    next_start = None
 #    if schedule_type == 'none':
@@ -312,7 +311,7 @@ def debugWrite(debugtext):  # useful when debugging this module, otherwise don't
 # def format():
 #    return '''
 # Schedule compact format:
-# [mode].[interval].[time].[details]
+#[mode].[interval].[time].[details]
 #
 # mode:
 #  n-none, h-hourly, d-daily, w-weekly, m-monthly
@@ -386,7 +385,7 @@ def debugWrite(debugtext):  # useful when debugging this module, otherwise don't
 #        'details':      str(t[3]), }
 
 
-# -------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 
 # def main():

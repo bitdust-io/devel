@@ -36,7 +36,7 @@ import time
 import datetime
 from six.moves import range
 
-# -------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 
 def interval_to_next_hour():
@@ -49,8 +49,7 @@ def interval_to_next_hour():
     prev_hour_time = time.mktime(tuple(_struct_time))
     return prev_hour_time + 60 * 60 - time.time()
 
-
-# -------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 
 def shedule_continuously(last_time, interval):
@@ -64,8 +63,7 @@ def shedule_continuously(last_time, interval):
         return None
     return float(last_time) + (n + 1) * float(interval)
 
-
-# -------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 
 def shedule_next_hourly(last_time, interval):
@@ -85,8 +83,7 @@ def shedule_next_hourly(last_time, interval):
         pass
     return None
 
-
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def shedule_next_daily(last_time, period_string, start_time_string):
@@ -100,7 +97,6 @@ def shedule_next_daily(last_time, period_string, start_time_string):
             start_time_structtime = list(time.strptime(start_time_string, '%H:%M'))
         except:
             from logs import lg
-
             lg.exc()
             return None
     try:
@@ -109,14 +105,16 @@ def shedule_next_daily(last_time, period_string, start_time_string):
     except:
         print('DEBUG: next_daily1')
         from logs import lg
-
         lg.exc()
         return None
     if period == 0:
         print('DEBUG: next_daily2')
         return None
 
-    start_time = datetime.time(hour=start_time_structtime[3], minute=start_time_structtime[4], second=start_time_structtime[5])
+    start_time = datetime.time(
+        hour=start_time_structtime[3],
+        minute=start_time_structtime[4],
+        second=start_time_structtime[5])
 
     today = datetime.datetime.today()
     time_ok = today.time() < start_time
@@ -124,18 +122,25 @@ def shedule_next_daily(last_time, period_string, start_time_string):
     period_ok = day_offset % period == 0
 
     if time_ok and period_ok:
-        today = today.replace(hour=start_time.hour, minute=start_time.minute, second=start_time.second, microsecond=0)
+        today = today.replace(
+            hour=start_time.hour,
+            minute=start_time.minute,
+            second=start_time.second,
+            microsecond=0)
         return time.mktime(today.timetuple())
 
-    today = today.replace(hour=start_time.hour, minute=start_time.minute, second=start_time.second, microsecond=0)
+    today = today.replace(
+        hour=start_time.hour,
+        minute=start_time.minute,
+        second=start_time.second,
+        microsecond=0)
     delta_days = period - day_offset
     while delta_days < 0:
         delta_days += 365
     today = today + datetime.timedelta(days=delta_days)
     return time.mktime(today.timetuple())
 
-
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def shedule_next_weekly(last_time, period_string, start_time_string, week_days):
@@ -149,7 +154,6 @@ def shedule_next_weekly(last_time, period_string, start_time_string, week_days):
             start_time_structtime = list(time.strptime(start_time_string, '%H:%M'))
         except:
             from logs import lg
-
             lg.exc()
             return None
     try:
@@ -157,14 +161,16 @@ def shedule_next_weekly(last_time, period_string, start_time_string, week_days):
         period = int(period_string)
     except:
         from logs import lg
-
         lg.exc()
         return None
     if len(week_days) == 0 or period == 0:
         print('DEBUG: next_weekly2')
         return None
 
-    start_time = datetime.time(hour=start_time_structtime[3], minute=start_time_structtime[4], second=start_time_structtime[5])
+    start_time = datetime.time(
+        hour=start_time_structtime[3],
+        minute=start_time_structtime[4],
+        second=start_time_structtime[5])
 
     today = datetime.datetime.today()
 
@@ -176,7 +182,11 @@ def shedule_next_weekly(last_time, period_string, start_time_string, week_days):
     period_ok = (today_iso_week - last_iso_week) % period == 0
 
     if time_ok and week_ok and period_ok:
-        today = today.replace(hour=start_time.hour, minute=start_time.minute, second=start_time.second, microsecond=0)
+        today = today.replace(
+            hour=start_time.hour,
+            minute=start_time.minute,
+            second=start_time.second,
+            microsecond=0)
         return time.mktime(today.timetuple())
 
     today = today.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -191,11 +201,14 @@ def shedule_next_weekly(last_time, period_string, start_time_string, week_days):
         if week_ok and period_ok:
             break
 
-    today = today.replace(hour=start_time.hour, minute=start_time.minute, second=start_time.second, microsecond=0)
+    today = today.replace(
+        hour=start_time.hour,
+        minute=start_time.minute,
+        second=start_time.second,
+        microsecond=0)
     return time.mktime(today.timetuple())
 
-
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def shedule_next_monthly_old(last_time, day_string, start_time_string, months):
@@ -209,7 +222,6 @@ def shedule_next_monthly_old(last_time, day_string, start_time_string, months):
             start_time_structtime = list(time.strptime(start_time_string, '%H:%M'))
         except:
             from logs import lg
-
             lg.exc()
             return None
     try:
@@ -217,14 +229,16 @@ def shedule_next_monthly_old(last_time, day_string, start_time_string, months):
         day = int(day_string)
     except:
         from logs import lg
-
         lg.exc()
         return None
     if len(months) == 0 or day > 31 or day < 1:
         print('DEBUG: next_monthly2')
         return None
 
-    start_time = datetime.time(hour=start_time_structtime[3], minute=start_time_structtime[4], second=start_time_structtime[5])
+    start_time = datetime.time(
+        hour=start_time_structtime[3],
+        minute=start_time_structtime[4],
+        second=start_time_structtime[5])
 
     today = datetime.datetime.today()
 
@@ -233,7 +247,11 @@ def shedule_next_monthly_old(last_time, day_string, start_time_string, months):
     time_ok = today.time() < start_time
 
     if month_ok and day_ok and time_ok:
-        today = today.replace(hour=start_time.hour, minute=start_time.minute, second=start_time.second, microsecond=0)
+        today = today.replace(
+            hour=start_time.hour,
+            minute=start_time.minute,
+            second=start_time.second,
+            microsecond=0)
         return time.mktime(today.timetuple())
 
     today = today.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -253,11 +271,14 @@ def shedule_next_monthly_old(last_time, day_string, start_time_string, months):
 
         month += 1
 
-    today = today.replace(hour=start_time.hour, minute=start_time.minute, second=start_time.second, microsecond=0)
+    today = today.replace(
+        hour=start_time.hour,
+        minute=start_time.minute,
+        second=start_time.second,
+        microsecond=0)
     return time.mktime(today.timetuple())
 
-
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def shedule_next_monthly(last_time, interval_months_string, start_time_string, dates):
@@ -271,7 +292,6 @@ def shedule_next_monthly(last_time, interval_months_string, start_time_string, d
             start_time_structtime = list(time.strptime(start_time_string, '%H:%M'))
         except:
             from logs import lg
-
             lg.exc()
             return None
     try:
@@ -279,7 +299,6 @@ def shedule_next_monthly(last_time, interval_months_string, start_time_string, d
         interval_months = int(interval_months_string)
     except:
         from logs import lg
-
         lg.exc()
         return None
 
@@ -304,7 +323,10 @@ def shedule_next_monthly(last_time, interval_months_string, start_time_string, d
     if len(months) == 0:
         months.append(1)
 
-    start_time = datetime.time(hour=start_time_structtime[3], minute=start_time_structtime[4], second=start_time_structtime[5])
+    start_time = datetime.time(
+        hour=start_time_structtime[3],
+        minute=start_time_structtime[4],
+        second=start_time_structtime[5])
 
     today = datetime.datetime.today()
 
@@ -314,7 +336,11 @@ def shedule_next_monthly(last_time, interval_months_string, start_time_string, d
 
     if month_ok and day_ok and time_ok:
         del months
-        today = today.replace(hour=start_time.hour, minute=start_time.minute, second=start_time.second, microsecond=0)
+        today = today.replace(
+            hour=start_time.hour,
+            minute=start_time.minute,
+            second=start_time.second,
+            microsecond=0)
         return time.mktime(today.timetuple())
 
     day = today.day
@@ -322,7 +348,7 @@ def shedule_next_monthly(last_time, interval_months_string, start_time_string, d
 
     if not time_ok:
         day += 1
-        # today = today.replace(hour=0, minute=0, second=0, microsecond=0)
+        #today = today.replace(hour=0, minute=0, second=0, microsecond=0)
 
     if day not in dates:
         while True:
@@ -336,11 +362,16 @@ def shedule_next_monthly(last_time, interval_months_string, start_time_string, d
                 break
 
     del months
-    today = today.replace(month=month, day=day, hour=start_time.hour, minute=start_time.minute, second=start_time.second, microsecond=0)
+    today = today.replace(
+        month=month,
+        day=day,
+        hour=start_time.hour,
+        minute=start_time.minute,
+        second=start_time.second,
+        microsecond=0)
     return time.mktime(today.timetuple())
 
-
-# -------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 
 def toInt(s, default=0):
@@ -362,8 +393,7 @@ def toFloat(s, default=0.0):
     except:
         return default
 
-
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 # tests
 if __name__ == '__main__':

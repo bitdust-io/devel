@@ -30,7 +30,7 @@ import pprint
 import aiohttp  # @UnresolvedImport
 import requests
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _SSHTunnels = {}
 _NodeTunnelPort = {}
@@ -40,8 +40,7 @@ _ActiveScenario = ''
 _EngineDebugLevel = 12
 _Verbose = None
 
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def dbg(msg):
     global _Verbose
@@ -70,36 +69,19 @@ def warn(msg):
 def msg(msg):
     print(msg)
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def set_active_scenario(scenario):
     global _ActiveScenario
     _ActiveScenario = scenario
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 async def run_ssh_command_and_wait_async(host, cmd, loop, verbose=False):
-    if host in [
-        None,
-        '',
-        b'',
-        'localhost',
-    ]:
+    if host in [None, '', b'', 'localhost', ]:
         cmd_args = cmd
     else:
-        cmd_args = [
-            'ssh',
-            '-o',
-            'StrictHostKeyChecking=no',
-            '-p',
-            '22',
-            'root@%s' % host,
-            cmd,
-        ]
+        cmd_args = ['ssh', '-o', 'StrictHostKeyChecking=no', '-p', '22', 'root@%s' % host, cmd, ]
     create = asyncio.create_subprocess_exec(
         *cmd_args,
         stdout=asyncio.subprocess.PIPE,
@@ -119,23 +101,10 @@ async def run_ssh_command_and_wait_async(host, cmd, loop, verbose=False):
 
 
 def run_ssh_command_and_wait(host, cmd, verbose=False) -> object:
-    if host in [
-        None,
-        '',
-        b'',
-        'localhost',
-    ]:
+    if host in [None, '', b'', 'localhost', ]:
         cmd_args = cmd
     else:
-        cmd_args = [
-            'ssh',
-            '-o',
-            'StrictHostKeyChecking=no',
-            '-p',
-            '22',
-            f'root@{host}',
-            cmd,
-        ]
+        cmd_args = ['ssh', '-o', 'StrictHostKeyChecking=no', '-p', '22', f'root@{host}', cmd, ]
     ssh_proc = subprocess.Popen(
         cmd_args,
         stdout=subprocess.PIPE,
@@ -152,9 +121,7 @@ def run_ssh_command_and_wait(host, cmd, verbose=False) -> object:
         dbg(f'\nssh_command on [{host}] "{cmd}" returned:\n{output}\n')
     return output, err
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def request_get(node, url, timeout=None, attempts=1, verbose=True, raise_error=True):
     resp = None
@@ -264,9 +231,7 @@ def request_delete(node, url, json={}, timeout=None, attempts=3, verbose=True):
         count += 1
     return resp
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def ssl_connection(node):
     # ssl_ctx = ssl.create_default_context(cafile=f'/app/certificates/{node}/apiservercert')
@@ -274,29 +239,13 @@ def ssl_connection(node):
     # return aiohttp.TCPConnector(ssl=ssl_ctx)
     return None
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 async def open_tunnel_async(node, local_port, loop):
     global _SSHTunnels
     global _NodeTunnelPort
-    cmd_args = [
-        'ssh',
-        '-4',
-        '-o',
-        'StrictHostKeyChecking=no',
-        '-p',
-        '22',
-        '-N',
-        '-L',
-        '%d:localhost:%d'
-        % (
-            local_port,
-            8180,
-        ),
-        'root@%s' % node,
-    ]
+    cmd_args = ['ssh', '-4', '-o', 'StrictHostKeyChecking=no', '-p', '22', '-N', '-L',
+                '%d:localhost:%d' % (local_port, 8180, ), 'root@%s' % node, ]
     # dbg('\n[%s]:%s %s' % (node, time.time(), ' '.join(cmd_args), ))
     tunnel = asyncio.create_subprocess_exec(
         *cmd_args,
@@ -345,34 +294,12 @@ def load_tunnels_ports():
     global _NodeTunnelPort
     _NodeTunnelPort = json.loads(open('/tunnels_ports.json', 'r').read())
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def open_ssh_port_forwarding(node, port1, port2):
-    cmd_args = [
-        'ssh',
-        '-4',
-        '-o',
-        'StrictHostKeyChecking=no',
-        '-p',
-        '22',
-        '-N',
-        '-L',
-        '%d:localhost:%d'
-        % (
-            port1,
-            port2,
-        ),
-        'root@%s' % node,
-    ]
-    dbg(
-        '\n[%s] %s'
-        % (
-            node,
-            ' '.join(cmd_args),
-        )
-    )
+    cmd_args = ['ssh', '-4', '-o', 'StrictHostKeyChecking=no', '-p', '22', '-N', '-L',
+                '%d:localhost:%d' % (port1, port2, ), 'root@%s' % node, ]
+    dbg('\n[%s] %s' % (node, ' '.join(cmd_args), ))
     ssh_proc = subprocess.Popen(
         cmd_args,
         stdout=subprocess.PIPE,
@@ -387,9 +314,7 @@ def close_ssh_port_forwarding(node, ssh_proc):
     ssh_proc.kill()
     return True
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def open_all_tunnels(nodes):
     for node in nodes:
@@ -401,9 +326,7 @@ def close_all_tunnels():
     for node in list(_SSHTunnels.keys()):
         close_tunnel(node)
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def tunnel_port(node):
     global _NodeTunnelPort
@@ -412,34 +335,25 @@ def tunnel_port(node):
 
 def tunnel_url(node, endpoint, verbose=True):
     if verbose:
-        dbg(
-            '\n%s [%s]   /%s    {%s}'
-            % (
-                datetime.datetime.now().strftime('%H:%M:%S.%f'),
-                node,
-                endpoint,
-                _ActiveScenario,
-                # os.environ['PYTEST_CURRENT_TEST'].replace(' (setup)', '').replace(' (call)', ''),
-            )
-        )
+        dbg('\n%s [%s]   /%s    {%s}' % (
+            datetime.datetime.now().strftime('%H:%M:%S.%f'), node, endpoint, _ActiveScenario,
+            # os.environ['PYTEST_CURRENT_TEST'].replace(' (setup)', '').replace(' (call)', ''),
+        ))
     return f'http://127.0.0.1:{tunnel_port(node)}/{endpoint.lstrip("/")}'
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def start_daemon(node, skip_initialize=False, verbose=False):
     if not skip_initialize:
         run_ssh_command_and_wait(node, 'mkdir -pv /root/.bitdust/metadata/')
         if os.environ.get('_DEBUG', '0') == '0':
             run_ssh_command_and_wait(node, "find /app/bitdust -type f -name '*.py' -exec sed -i -e 's/_Debug = True/_Debug = False/g' {} +")
-    bitdust_daemon = run_ssh_command_and_wait(
-        node, 'BITDUST_CRITICAL_PUSH_MESSAGE_FAILS=1 BITDUST_LOG_USE_COLORS=1 COVERAGE_PROCESS_START=/app/bitdust/.coverage_config bitdust daemon'
-    )
+    bitdust_daemon = run_ssh_command_and_wait(node, 'BITDUST_CRITICAL_PUSH_MESSAGE_FAILS=1 BITDUST_LOG_USE_COLORS=1 COVERAGE_PROCESS_START=/app/bitdust/.coverage_config bitdust daemon')
     if verbose:
         dbg('\n' + bitdust_daemon[0].strip())
-    assert bitdust_daemon[0].strip().startswith('main BitDust process already started') or bitdust_daemon[0].strip().startswith(
-        'new BitDust process will be started in daemon mode'
+    assert (
+        bitdust_daemon[0].strip().startswith('main BitDust process already started') or
+        bitdust_daemon[0].strip().startswith('new BitDust process will be started in daemon mode')
     ), bitdust_daemon[0].strip()
     if verbose:
         dbg(f'\nstart_daemon [{node}] OK\n')
@@ -449,20 +363,17 @@ async def start_daemon_async(node, loop, verbose=False):
     await run_ssh_command_and_wait_async(node, 'mkdir -pv /root/.bitdust/metadata/', loop)
     if os.environ.get('_DEBUG', '0') == '0':
         await run_ssh_command_and_wait_async(node, "find /app/bitdust -type f -name '*.py' -exec sed -i -e 's/_Debug = True/_Debug = False/g' {} +", loop)
-    bitdust_daemon = await run_ssh_command_and_wait_async(
-        node, 'BITDUST_CRITICAL_PUSH_MESSAGE_FAILS=1 BITDUST_LOG_USE_COLORS=1 COVERAGE_PROCESS_START=/app/bitdust/.coverage_config bitdust daemon', loop
-    )
+    bitdust_daemon = await run_ssh_command_and_wait_async(node, 'BITDUST_CRITICAL_PUSH_MESSAGE_FAILS=1 BITDUST_LOG_USE_COLORS=1 COVERAGE_PROCESS_START=/app/bitdust/.coverage_config bitdust daemon', loop)
     if verbose:
         dbg('\n' + bitdust_daemon[0].strip())
-    assert bitdust_daemon[0].strip().startswith('main BitDust process already started') or bitdust_daemon[0].strip().startswith(
-        'new BitDust process will be started in daemon mode'
+    assert (
+        bitdust_daemon[0].strip().startswith('main BitDust process already started') or
+        bitdust_daemon[0].strip().startswith('new BitDust process will be started in daemon mode')
     ), bitdust_daemon[0].strip()
     if verbose:
         dbg(f'\nstart_daemon_async [{node}] OK\n')
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def get_client_certificate(node):
     dbg(f'\nget_client_certificate [{node}]\n')
@@ -525,9 +436,7 @@ async def get_client_certificate_async(node, loop):
         break
     dbg(f'\nget_client_certificate_async [{node}] OK\n')
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def health_check(node, verbose=False):
     count = 0
@@ -578,25 +487,21 @@ async def health_check_async(node, event_loop, verbose=False):
     if verbose:
         dbg(f'process/health/v1 [{node}] : OK\n')
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def create_identity(node, identity_name):
     count = 0
     while True:
         if count > 60:
             assert False, f'node {node} failed to create identity after many retries'
-        response = request_post(
-            node,
-            'identity/create/v1',
-            json={
-                'username': identity_name,
-            },
-        )
+        response = request_post(node, 'identity/create/v1', json={
+            'username': identity_name,
+        })
         if response.json()['status'] == 'OK':
             break
-        if not response.status_code == 200 or (response.json()['status'] == 'ERROR' and response.json()['errors'][0] == 'network connection error'):
+        if not response.status_code == 200 or (
+            response.json()['status'] == 'ERROR' and response.json()['errors'][0] == 'network connection error'
+        ):
             count += 1
             continue
         warn('\nidentity/create/v1 : %s\n' % pprint.pformat(response.json()))
@@ -615,14 +520,8 @@ async def create_identity_async(node, identity_name, event_loop, verbose=False):
             else:
                 assert response_json['errors'] == ['network connection error'], response_json
             if verbose:
-                dbg(
-                    '[%s] retry %d   POST:identity/create/v1  username=%s  after 1 sec.'
-                    % (
-                        node,
-                        i + 1,
-                        identity_name,
-                    )
-                )
+                dbg('[%s] retry %d   POST:identity/create/v1  username=%s  after 1 sec.' % (
+                    node, i + 1, identity_name,))
             await asyncio.sleep(1)
         else:
             if verbose:
@@ -705,13 +604,7 @@ async def packet_list_async(node, loop, wait_all_finish=True, attempts=60, delay
             response = await client.get(tunnel_url(node, 'packet/list/v1', verbose=verbose), timeout=20)
             response_json = await response.json()
             if verbose:
-                dbg(
-                    '\npacket/list/v1 [%s] : %s\n'
-                    % (
-                        node,
-                        pprint.pformat(response_json),
-                    )
-                )
+                dbg('\npacket/list/v1 [%s] : %s\n' % (node, pprint.pformat(response_json), ))
             assert response_json['status'] == 'OK', response_json
             if len(response_json['result']) == 0 or not wait_all_finish:
                 break
@@ -719,19 +612,24 @@ async def packet_list_async(node, loop, wait_all_finish=True, attempts=60, delay
         else:
             assert False, 'some packets are still have in/out progress on [%s]' % node
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def stop_daemon(node, skip_checks=False, verbose=False):
     bitdust_stop = run_ssh_command_and_wait(node, 'bitdust stop', verbose=verbose)
     if not skip_checks:
         resp = bitdust_stop[0].strip()
         assert (
-            (resp.startswith('BitDust child processes found') and resp.endswith('BitDust stopped'))
-            or (resp.startswith('found main BitDust process:') and resp.count('finished'))
-            or (resp == 'BitDust is not running at the moment')
-            or (resp == '')
+            (
+                resp.startswith('BitDust child processes found') and
+                resp.endswith('BitDust stopped')
+            ) or (
+                resp.startswith('found main BitDust process:') and
+                resp.count('finished')
+            ) or (
+                resp == 'BitDust is not running at the moment'
+            ) or (
+                resp == ''
+            )
         )
 
 
@@ -745,10 +643,17 @@ async def stop_daemon_async(node, loop, skip_checks=False, verbose=False):
             dbg(f'stop_daemon_async [{node}] DONE\n')
         return
     if not (
-        (resp.startswith('BitDust child processes found') and resp.endswith('BitDust stopped'))
-        or (resp.startswith('found main BitDust process:') and resp.count('finished'))
-        or (resp == 'BitDust is not running at the moment')
-        or (resp == '')
+        (
+            resp.startswith('BitDust child processes found') and
+            resp.endswith('BitDust stopped')
+        ) or (
+            resp.startswith('found main BitDust process:') and
+            resp.count('finished')
+        ) or (
+            resp == 'BitDust is not running at the moment'
+        ) or (
+            resp == ''
+        )
     ):
         if verbose:
             warn('process finished with unexpected response: %r' % resp)
@@ -757,9 +662,7 @@ async def stop_daemon_async(node, loop, skip_checks=False, verbose=False):
         dbg(f'stop_daemon_async [{node}] OK\n')
     return
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def start_dht_seed(node, wait_seconds=0, dht_seeds='', attached_layers='', verbose=False):
     info(f'NEW DHT SEED (with STUN SERVER) at [{node}]')
@@ -861,9 +764,8 @@ async def start_stun_server_async(node, loop, dht_seeds=''):
     info(f'STARTED STUN SERVER [{node}]')
 
 
-async def start_proxy_server_async(
-    node, identity_name, loop, min_servers=1, max_servers=1, known_servers='', preferred_servers='', health_check_interval_seconds=None, dht_seeds=''
-):
+async def start_proxy_server_async(node, identity_name, loop, min_servers=1, max_servers=1, known_servers='',
+                                   preferred_servers='', health_check_interval_seconds=None, dht_seeds=''):
     info(f'NEW PROXY SERVER {identity_name} at [{node}]')
     cmd = ''
     cmd += 'bitdust set interface/api/auth-secret-enabled false;'
@@ -907,19 +809,9 @@ async def start_proxy_server_async(
     info(f'STARTED PROXY SERVER [{node}]')
 
 
-async def start_supplier_async(
-    node,
-    identity_name,
-    loop,
-    join_network=True,
-    dht_seeds='',
-    min_servers=1,
-    max_servers=1,
-    known_servers='',
-    preferred_servers='',
-    health_check_interval_seconds=None,
-    preferred_routers='',
-):
+async def start_supplier_async(node, identity_name, loop, join_network=True, dht_seeds='',
+                               min_servers=1, max_servers=1, known_servers='',
+                               preferred_servers='', health_check_interval_seconds=None, preferred_routers=''):
     info(f'NEW SUPPLIER {identity_name} at [{node}]')
     cmd = ''
     cmd += 'bitdust set interface/api/auth-secret-enabled false;'
@@ -970,20 +862,9 @@ async def start_supplier_async(
     info(f'STARTED SUPPLIER [{node}]')
 
 
-async def start_message_broker_async(
-    node,
-    identity_name,
-    loop,
-    join_network=True,
-    min_servers=1,
-    max_servers=1,
-    known_servers='',
-    dht_seeds='',
-    preferred_servers='',
-    health_check_interval_seconds=None,
-    preferred_routers='',
-    preferred_brokers='',
-):
+async def start_message_broker_async(node, identity_name, loop, join_network=True,
+                                     min_servers=1, max_servers=1, known_servers='', dht_seeds='',
+                                     preferred_servers='', health_check_interval_seconds=None, preferred_routers='', preferred_brokers=''):
     info(f'NEW MESSAGE BROKER {identity_name} at [{node}]')
     cmd = ''
     cmd += 'bitdust set interface/api/auth-secret-enabled false;'
@@ -1039,34 +920,14 @@ async def start_message_broker_async(
     info(f'STARTED MESSAGE BROKER [{node}]')
 
 
-async def start_customer_async(
-    node,
-    identity_name,
-    loop,
-    join_network=True,
-    num_suppliers=2,
-    block_size=None,
-    min_servers=1,
-    max_servers=1,
-    known_servers='',
-    preferred_servers='',
-    dht_seeds='',
-    supplier_candidates='',
-    preferred_routers='',
-    health_check_interval_seconds=None,
-    preferred_brokers='',
-    sleep_before_start=None,
-):
+async def start_customer_async(node, identity_name, loop, join_network=True, num_suppliers=2, block_size=None,
+                               min_servers=1, max_servers=1, known_servers='', preferred_servers='', dht_seeds='',
+                               supplier_candidates='', preferred_routers='', health_check_interval_seconds=None,
+                               preferred_brokers='', sleep_before_start=None, ):
     if sleep_before_start:
         # dbg('\nsleep %d seconds before start customer %r\n' % (sleep_before_start, identity_name))
         await asyncio.sleep(sleep_before_start)
-    info(
-        'NEW CUSTOMER %r at [%s]'
-        % (
-            identity_name,
-            node,
-        )
-    )
+    info('NEW CUSTOMER %r at [%s]' % (identity_name, node, ))
     cmd = ''
     cmd += 'bitdust set interface/api/auth-secret-enabled false;'
     cmd += f'bitdust set logs/debug-level {_EngineDebugLevel};'
@@ -1133,9 +994,7 @@ async def start_customer_async(
         await packet_list_async(node, loop)
     info(f'STARTED CUSTOMER [{node}]')
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def start_one_dht_seed(dht_seed, wait_seconds, verbose=False):
     start_dht_seed(
@@ -1230,8 +1089,7 @@ async def start_one_message_broker_async(broker, loop):
     )
 
 
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def report_one_node(node):
     main_log = run_ssh_command_and_wait(node, 'cat /root/.bitdust/logs/stdout.log', verbose=False)[0].strip()
@@ -1251,14 +1109,12 @@ def report_one_node(node):
     num_packet_route_in = packet_log.count('ROUTE IN')
     event_log = run_ssh_command_and_wait(node, 'cat /root/.bitdust/logs/event.log', verbose=False)[0].strip()
     num_events = event_log.count('\n')
-    print(
-        f'[{node:>17}] api:{num_apis:<3} evt:{num_events:<3}'
-        f' out:{num_packet_out:<3} in:{num_packet_in:<3}'
-        f' pxout:{num_packet_relay_out:<3} pxin:{num_packet_relay_in:<3}'
-        f' reout:{num_packet_route_out:<3} rein:{num_packet_route_in:<3}'
-        f' wrn:{num_warnings:<2} err:{num_errors:<2} tbk:{num_tracebacks:<2}'
-        f' fail:{num_failures:<2} exc:{num_exceptions:<2}'
-    )
+    print(f'[{node:>17}] api:{num_apis:<3} evt:{num_events:<3}'
+          f' out:{num_packet_out:<3} in:{num_packet_in:<3}'
+          f' pxout:{num_packet_relay_out:<3} pxin:{num_packet_relay_in:<3}'
+          f' reout:{num_packet_route_out:<3} rein:{num_packet_route_in:<3}'
+          f' wrn:{num_warnings:<2} err:{num_errors:<2} tbk:{num_tracebacks:<2}'
+          f' fail:{num_failures:<2} exc:{num_exceptions:<2}')
     return num_exceptions
 
 
@@ -1270,18 +1126,14 @@ async def report_one_node_async(node, event_loop):
     num_exceptions = main_log.count('Exception:')
     num_tracebacks = main_log.count('Traceback')
     num_failures = main_log.count('Failure')
-    print(
-        f'[{node}]  Warnings: {num_warnings}     Errors: {num_errors}    Tracebacks: {num_tracebacks}     '
-        f'Failures: {num_failures}    Exceptions: {num_exceptions}'
-    )
+    print(f'[{node}]  Warnings: {num_warnings}     Errors: {num_errors}    Tracebacks: {num_tracebacks}     '
+          f'Failures: {num_failures}    Exceptions: {num_exceptions}')
     return num_exceptions
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def print_exceptions_one_node(node):
-    # TODO: find the root cause of invalid signature
+    #TODO: find the root cause of invalid signature
     # run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/logs/exception*invalid*signature.log')[0].strip()
     exceptions_out = run_ssh_command_and_wait(node, 'cat /root/.bitdust/logs/exception_*.log 2>/dev/null', verbose=False)[0].strip()
     if exceptions_out:
@@ -1293,7 +1145,7 @@ def print_exceptions_one_node(node):
 
 async def print_exceptions_one_node_async(node, event_loop):
     dbg(f'\nsearching errors at {node} in the folder: /root/.bitdust/logs/exception_*.log')
-    # TODO: find the root cause of invalid signature
+    #TODO: find the root cause of invalid signature
     # await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/logs/exception*invalid*signature.log', event_loop)
     exceptions_out = await run_ssh_command_and_wait_async(node, 'cat /root/.bitdust/logs/exception_*.log 2>/dev/null', event_loop, verbose=False)
     exceptions_out = exceptions_out[0].strip()
@@ -1312,9 +1164,7 @@ def print_stdout_one_node(node):
         print(f'\n[{node}]: file /root/.bitdust/logs/stdout.log not found\n')
     return std_out
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 async def clean_one_node_async(node, event_loop, verbose=False):
     # clean_up_folders = 'backups bandin bandout blockchain config customers identitycache identityhistory keys messages metadata ratings receipts servicedata suppliers temp'
@@ -1327,7 +1177,6 @@ async def clean_one_node_async(node, event_loop, verbose=False):
         event_loop,
         verbose=verbose,
     )
-
 
 #     await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/backups', event_loop)
 #     await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/metadata', event_loop)
@@ -1347,44 +1196,19 @@ async def collect_coverage_one_node_async(node, event_loop, wait_before=3, verbo
     if wait_before:
         # make sure all coverage files are written before collecting them
         await asyncio.sleep(wait_before)
+    await run_ssh_command_and_wait_async('localhost', ['mkdir', '-p', '/app/coverage/%s' % node, ], event_loop, verbose=verbose)
     await run_ssh_command_and_wait_async(
         'localhost',
-        [
-            'mkdir',
-            '-p',
-            '/app/coverage/%s' % node,
-        ],
-        event_loop,
-        verbose=verbose,
-    )
-    await run_ssh_command_and_wait_async(
-        'localhost',
-        [
-            'scp',
-            '-o',
-            'StrictHostKeyChecking=no',
-            '-P',
-            '22',
-            'root@%s:/tmp/.coverage.*' % node,
-            '/app/coverage/%s/.' % node,
-        ],
+        ['scp', '-o', 'StrictHostKeyChecking=no', '-P', '22', 'root@%s:/tmp/.coverage.*' % node, '/app/coverage/%s/.' % node, ],
         event_loop,
         verbose=verbose,
     )
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 async def log_network_info_one_node_async(node, event_loop):
     async with aiohttp.ClientSession(loop=event_loop, connector=ssl_connection(node)) as client:
         response = await client.get(tunnel_url(node, 'network/info/v1'), timeout=20)
         response_json = await response.json()
-        dbg(
-            '\nnetwork/info/v1 [%s] : %s\n'
-            % (
-                node,
-                pprint.pformat(response_json),
-            )
-        )
+        dbg('\nnetwork/info/v1 [%s] : %s\n' % (node, pprint.pformat(response_json), ))
         assert response_json['status'] == 'OK', response_json

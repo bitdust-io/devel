@@ -32,22 +32,22 @@ some extended functionality. Can read/write from pipe without blocking
 the main thread.
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import os
 import subprocess
 import platform
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 10
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 PIPE = subprocess.PIPE
 
@@ -56,7 +56,7 @@ PIPE_EMPTY = 0
 PIPE_READY2READ = 1
 PIPE_CLOSED = 2
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 if getattr(subprocess, 'mswindows', None) or platform.uname()[0] == 'Windows':
     from win32file import ReadFile, WriteFile  # @UnresolvedImport
@@ -68,11 +68,11 @@ else:
     import fcntl  # @UnresolvedImport
     import signal
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from logs import lg
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 class Popen(subprocess.Popen):
@@ -82,31 +82,21 @@ class Popen(subprocess.Popen):
     Added some wrappers and platform specific code. Most important
     method added is ``make_nonblocking``.
     """
-
     err_report = ''
 
-    def __init__(
-        self,
-        args,
-        bufsize=0,
-        executable=None,
-        stdin=None,
-        stdout=None,
-        stderr=None,
-        preexec_fn=None,
-        close_fds=False,
-        shell=False,
-        cwd=None,
-        env=None,
-        universal_newlines=False,
-        startupinfo=None,
-        creationflags=0,
-    ):
+    def __init__(self, args, bufsize=0, executable=None,
+                 stdin=None, stdout=None, stderr=None,
+                 preexec_fn=None, close_fds=False, shell=False,
+                 cwd=None, env=None, universal_newlines=False,
+                 startupinfo=None, creationflags=0):
 
         self.args = args
-        subprocess.Popen.__init__(
-            self, args, bufsize, executable, stdin, stdout, stderr, preexec_fn, close_fds, shell, cwd, env, universal_newlines, startupinfo, creationflags
-        )
+        subprocess.Popen.__init__(self,
+                                  args, bufsize, executable,
+                                  stdin, stdout, stderr,
+                                  preexec_fn, close_fds, shell,
+                                  cwd, env, universal_newlines,
+                                  startupinfo, creationflags)
         if _Debug:
             lg.out(_DebugLevel, 'nonblocking.Popen created')
             lg.out(_DebugLevel, '    stdin=%r' % self.stdin)
@@ -163,6 +153,7 @@ class Popen(subprocess.Popen):
         flags = fcntl.fcntl(conn, fcntl.F_GETFL)
         if not conn.closed:
             fcntl.fcntl(conn, fcntl.F_SETFL, flags | os.O_NONBLOCK)
+
 
     if getattr(subprocess, 'mswindows', None) or platform.uname()[0] == 'Windows':
 
@@ -223,8 +214,8 @@ class Popen(subprocess.Popen):
             except:
                 pass
 
-    else:
 
+    else:
         def send(self, input):
             if not self.stdin:
                 return None
@@ -287,13 +278,11 @@ def ExecuteString(execstr):
     """
     try:
         import win32process  # @UnresolvedImport
-
         return Popen(
             execstr,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            creationflags=win32process.CREATE_NO_WINDOW,
-        )
+            creationflags=win32process.CREATE_NO_WINDOW,)
     except:
         return None

@@ -53,13 +53,11 @@ class MyDataService(SlowStartingLocalService):
     def init(self, **kwargs):
         SlowStartingLocalService.init(self, **kwargs)
         from main import events
-
         events.add_subscriber(self._on_my_storage_ready, 'my-storage-ready')
         events.add_subscriber(self._on_my_storage_not_ready_yet, 'my-storage-not-ready-yet')
 
     def shutdown(self):
         from main import events
-
         events.remove_subscriber(self._on_my_storage_not_ready_yet, 'my-storage-not-ready-yet')
         events.remove_subscriber(self._on_my_storage_ready, 'my-storage-ready')
         SlowStartingLocalService.shutdown(self)
@@ -70,17 +68,14 @@ class MyDataService(SlowStartingLocalService):
         from storage import keys_synchronizer
         from storage import index_synchronizer
         from storage import backup_fs
-
         if keys_synchronizer.is_synchronized() and index_synchronizer.is_synchronized():
             self.confirm_service_started(result=True)
             if listeners.is_populate_requered('private_file'):
                 listeners.populate_later().remove('private_file')
                 backup_fs.populate_private_files()
         else:
-            lg.warn(
-                'can not start service_my_data right now, keys_synchronizer.is_synchronized=%r index_synchronizer.is_synchronized=%r'
-                % (keys_synchronizer.is_synchronized(), index_synchronizer.is_synchronized())
-            )
+            lg.warn('can not start service_my_data right now, keys_synchronizer.is_synchronized=%r index_synchronizer.is_synchronized=%r' % (
+                keys_synchronizer.is_synchronized(), index_synchronizer.is_synchronized()))
         return self.starting_deferred
 
     def stop(self):
@@ -94,7 +89,6 @@ class MyDataService(SlowStartingLocalService):
         from main import listeners
         from services import driver
         from storage import backup_fs
-
         if self.starting_deferred:
             self.confirm_service_started(result=True)
             if listeners.is_populate_requered('private_file'):
@@ -108,7 +102,6 @@ class MyDataService(SlowStartingLocalService):
     def _on_my_storage_not_ready_yet(self, evt):
         from logs import lg
         from services import driver
-
         if self.starting_deferred:
             self.confirm_service_started(result=Exception('my storage is not ready yet'))
         if driver.is_enabled('service_my_data'):

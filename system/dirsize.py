@@ -33,12 +33,12 @@ and it will do the job and than remember that size. Now you have a fast
 way to get the folder size, you can ask to scan same folder again.
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 12
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import os
 import sys
@@ -56,13 +56,12 @@ from lib import diskspace
 
 from system import bpio
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Jobs = {}
 _Dirs = {}
 
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def ask(dirpath, callback=None, arg=None):
     """
@@ -97,14 +96,7 @@ def done(size, dirpath):
     global _Dirs
     global _Jobs
     if _Debug:
-        lg.out(
-            _DebugLevel,
-            'dirsize.done %s %s'
-            % (
-                str(size),
-                dirpath.decode(),
-            ),
-        )
+        lg.out(_DebugLevel, 'dirsize.done %s %s' % (str(size), dirpath.decode(),))
     _Dirs[dirpath] = str(size)
     try:
         _, cb, arg = _Jobs.pop(dirpath, (None, None, None))
@@ -151,23 +143,19 @@ def getInBytes(dirpath, default=-1):
     """
     return diskspace.GetBytesFromString(get(dirpath), default)
 
-
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def main():
     """
     Run the test - use command line to pass a location.
     """
-
     def _done(path, sz, *args, **kwargs):
         print(path, sz)
         reactor.stop()  # @UndefinedVariable
-
     bpio.init()
     ask(sys.argv[1], _done)
     reactor.run()  # @UndefinedVariable
-
 
 if __name__ == '__main__':
     main()

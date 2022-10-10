@@ -1,4 +1,4 @@
-class Fork:
+class Fork():
     def __init__(self):
         self.POW_FORK = 1450000
         self.POW_FORK_TESTNET = 894170
@@ -10,9 +10,9 @@ class Fork:
         self.PASSED_TESTNET = False
         self.REWARD_MAX = 6
 
-        # self.POW_FORK = 1168860 #HACK
-        # self.versions_remove = [] #HACK
-        # self.REWARD_MAX = 5 #HACK
+        #self.POW_FORK = 1168860 #HACK
+        #self.versions_remove = [] #HACK
+        #self.REWARD_MAX = 5 #HACK
 
     def limit_version(self, node):
         for allowed_version in node.version_allow:
@@ -36,12 +36,12 @@ class Fork:
         return self.PASSED
 
     def check_postfork_reward_testnet(self, db_handler):
-        # ram
+        #ram
         try:
             db_handler.execute_param(db_handler.c, 'SELECT reward FROM transactions WHERE block_height = ? AND reward != 0', (self.POW_FORK_TESTNET + 1,))
             self.FORK_REWARD_TESTNET = db_handler.c.fetchone()[0]
         except:
-            # hdd in case we have not saved yet
+            #hdd in case we have not saved yet
             db_handler.execute_param(db_handler.h, 'SELECT reward FROM transactions WHERE block_height = ? AND reward != 0', (self.POW_FORK_TESTNET + 1,))
             self.FORK_REWARD_TESTNET = db_handler.h.fetchone()[0]
 

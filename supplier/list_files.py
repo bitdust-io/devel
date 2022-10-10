@@ -20,24 +20,24 @@
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 from six.moves import map
 from six.moves import range
 from io import StringIO
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 10
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import os
 import zlib
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -60,14 +60,11 @@ from contacts import identitycache
 from userid import my_id
 from userid import global_id
 
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def send(customer_idurl, packet_id, format_type, key_id, remote_idurl, query_items=[]):
     if not query_items:
-        query_items = [
-            '*',
-        ]
+        query_items = ['*', ]
     key_id = my_keys.latest_key_id(key_id)
     parts = global_id.NormalizeGlobalID(key_id)
     if parts['key_alias'] == 'master' and parts['idurl'] != my_id.getIDURL():
@@ -78,25 +75,12 @@ def send(customer_idurl, packet_id, format_type, key_id, remote_idurl, query_ite
             if not my_keys.register_key(key_id, known_ident.getPublicKey()):
                 lg.err('failed to register known public key of the customer: %r' % key_id)
     if not my_keys.is_key_registered(key_id):
-        lg.warn(
-            'not able to return Files() for customer %s, key %s not registered'
-            % (
-                customer_idurl,
-                key_id,
-            )
-        )
+        lg.warn('not able to return Files() for customer %s, key %s not registered' % (
+            customer_idurl, key_id, ))
         return p2p_service.SendFailNoRequest(customer_idurl, packet_id, response='key not registered')
     if _Debug:
-        lg.out(
-            _DebugLevel,
-            'list_files.send to %s, customer_idurl=%s, key_id=%s, query_items=%r'
-            % (
-                remote_idurl,
-                customer_idurl,
-                key_id,
-                query_items,
-            ),
-        )
+        lg.out(_DebugLevel, 'list_files.send to %s, customer_idurl=%s, key_id=%s, query_items=%r' % (
+            remote_idurl, customer_idurl, key_id, query_items, ))
     ownerdir = settings.getCustomerFilesDir(customer_idurl)
     plaintext = ''
     if os.path.isdir(ownerdir):
@@ -159,38 +143,21 @@ def process_query_item(query_path, key_alias, ownerdir):
         lg.args(_DebugLevel, ownerdir=ownerdir, query_path=query_path, local_path=local_path, result_bytes=len(ret))
     return ret
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def on_acked(response, info):
     if _Debug:
-        lg.out(
-            _DebugLevel,
-            'list_files.on_acked with %s in %s'
-            % (
-                response,
-                info,
-            ),
-        )
+        lg.out(_DebugLevel, 'list_files.on_acked with %s in %s' % (response, info, ))
 
 
 def on_failed(response, error):
-    lg.warn(
-        'send files %s failed with %s'
-        % (
-            response,
-            error,
-        )
-    )
+    lg.warn('send files %s failed with %s' % (response, error, ))
 
 
 def on_timeout(pkt_out):
     lg.warn('send files with %s was timed out' % pkt_out)
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def PackListFiles(plaintext, method):
     if method == 'Text':
@@ -207,9 +174,7 @@ def UnpackListFiles(payload, method):
         return strng.to_text(zlib.decompress(strng.to_bin(payload)))
     return payload
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def TreeSummary(ownerdir, key_alias=None):
     out = StringIO()
@@ -287,7 +252,8 @@ def TreeSummary(ownerdir, key_alias=None):
                     parityMissing[supplierNum].discard(blockNum)
         suppliers = set(list(dataBlocks.keys()) + list(parityBlocks.keys()))
         for supplierNum in suppliers:
-            versionString = '%s %d 0-%d %d' % (subpath, supplierNum, maxBlock, versionSize[supplierNum])
+            versionString = '%s %d 0-%d %d' % (
+                subpath, supplierNum, maxBlock, versionSize[supplierNum])
             if len(dataMissing[supplierNum]) > 0 or len(parityMissing[supplierNum]) > 0:
                 versionString += ' missing'
                 if len(dataMissing[supplierNum]) > 0:
@@ -306,5 +272,4 @@ def TreeSummary(ownerdir, key_alias=None):
     out.close()
     return src
 
-
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------

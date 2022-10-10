@@ -20,14 +20,12 @@
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
 
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def ls(tpl, tag='result'):
     return '{.section %s}{.repeated section @}%s{.end}{.end}' % (tag, tpl)
 
-
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 tpl_status = '{.section status}{@}{.end}'
@@ -42,82 +40,121 @@ tpl_5_items = """{0}{1}
 {2}{3}{4}
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 TPL_JSON = '{@}'
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
-TPL_RAW = tpl_5_items.format(tpl_status, tpl_execution, tpl_result, tpl_message, tpl_errors)
+TPL_RAW = tpl_5_items.format(
+    tpl_status, tpl_execution, tpl_result, tpl_message, tpl_errors)
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
-TPL_KEYS_LIST = tpl_4_items.format(tpl_status, tpl_execution, ls('{key_id}\n'), tpl_errors)
+TPL_KEYS_LIST = tpl_4_items.format(
+    tpl_status,
+    tpl_execution,
+    ls('{key_id}\n'),
+    tpl_errors)
 
-TPL_KEY_GET = tpl_4_items.format(tpl_status, tpl_execution, ls('{key_id} : {type}, {size} bits, {fingerprint}\n\n{public}\n\n{private}\n'), tpl_errors)
+TPL_KEY_GET = tpl_4_items.format(
+    tpl_status,
+    tpl_execution,
+    ls('{key_id} : {type}, {size} bits, {fingerprint}\n\n{public}\n\n{private}\n'),
+    tpl_errors)
 
 TPL_KEY_CREATE = tpl_5_items.format(
-    tpl_status, tpl_execution, tpl_message, ls('\n\n[{key_id}]\ntype:{type} size:{size} fingerprint:{fingerprint}\n{public}\n{private}\n'), tpl_errors
-)
+    tpl_status,
+    tpl_execution,
+    tpl_message,
+    ls('\n\n[{key_id}]\ntype:{type} size:{size} fingerprint:{fingerprint}\n{public}\n{private}\n'),
+    tpl_errors)
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 TPL_BACKUPS_LIST = tpl_4_items.format(
     tpl_status,
     tpl_execution,
     ls('{global_id} {type} {size} {path} {.section versions}{.repeated section @}[{backup_id}: {size}]{.end}{.end} {.section key_id}<{@}>{.end}\n'),
-    tpl_errors,
-)
+    tpl_errors)
 
-TPL_BACKUPS_LIST_IDS = tpl_4_items.format(tpl_status, tpl_execution, ls('{backup_id} {size} {path}\n'), tpl_errors)
+TPL_BACKUPS_LIST_IDS = tpl_4_items.format(
+    tpl_status,
+    tpl_execution,
+    ls('{backup_id} {size} {path}\n'),
+    tpl_errors)
 
 TPL_BACKUPS_RUNNING_LIST = tpl_5_items.format(
     tpl_status,
     tpl_execution,
-    '{.section result}\n%s\n\n%s{.end}'
-    % (
-        ls('{backup_id} from {source_path} of total {total_size}, currently {bytes_processed} bytes processed, ready by {progress}%\n', tag='running'),
+    '{.section result}\n%s\n\n%s{.end}' % (
+        ls('{backup_id} from {source_path} of total {total_size}, currently {bytes_processed} bytes processed, ready by {progress}%\n',
+           tag='running'),
         ls('{id}: {path_id} from {local_path} created at {created}\n', tag='pending'),
     ),
     tpl_message,
-    tpl_errors,
-)
+    tpl_errors)
 
-TPL_BACKUPS_TASKS_LIST = tpl_5_items.format(tpl_status, tpl_execution, ls('{id}: {path_id} from {local_path} created at {created}\n'), tpl_message, tpl_errors)
+TPL_BACKUPS_TASKS_LIST = tpl_5_items.format(
+    tpl_status,
+    tpl_execution,
+    ls('{id}: {path_id} from {local_path} created at {created}\n'),
+    tpl_message,
+    tpl_errors)
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 TPL_RESTORES_RUNNING_LIST = tpl_5_items.format(
-    tpl_status, tpl_execution, ls('{backup_id}, currently {bytes_processed} bytes processed\n'), tpl_message, tpl_errors
-)
+    tpl_status,
+    tpl_execution,
+    ls('{backup_id}, currently {bytes_processed} bytes processed\n'),
+    tpl_message,
+    tpl_errors)
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
-TPL_OPTIONS_LIST_KEY_TYPE_VALUE = tpl_4_items.format(tpl_status, tpl_execution, ls('{key} ({type}) : {value}\n'), tpl_errors)
+TPL_OPTIONS_LIST_KEY_TYPE_VALUE = tpl_4_items.format(
+    tpl_status,
+    tpl_execution,
+    ls('{key} ({type}) : {value}\n'),
+    tpl_errors)
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
-TPL_OPTION_MODIFIED = tpl_4_items.format(tpl_status, tpl_execution, ls('{key} ({type}) : {value}{.section old_value}, previous : {@}{.or}{.end}\n'), tpl_errors)
+TPL_OPTION_MODIFIED = tpl_4_items.format(
+    tpl_status,
+    tpl_execution,
+    ls('{key} ({type}) : {value}{.section old_value}, previous : {@}{.or}{.end}\n'),
+    tpl_errors)
 
-TPL_OPTION_SINGLE = tpl_4_items.format(tpl_status, tpl_execution, ls('{key} ({type}) : {value}{.section old_value}, previous : {@}{.or}{.end}\n'), tpl_errors)
+TPL_OPTION_SINGLE = tpl_4_items.format(
+    tpl_status,
+    tpl_execution,
+    ls('{key} ({type}) : {value}{.section old_value}, previous : {@}{.or}{.end}\n'),
+    tpl_errors)
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 TPL_SUPPLIERS = tpl_4_items.format(
-    tpl_status, tpl_execution, ls('{position}: {idurl}, since {connected}, keeps {.section fragments}{files}{.end} files, {contact_state}\n'), tpl_errors
-)
+    tpl_status,
+    tpl_execution,
+    ls('{position}: {idurl}, since {connected}, keeps {.section fragments}{files}{.end} files, {contact_state}\n'),
+    tpl_errors)
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
-TPL_CUSTOMERS = tpl_4_items.format(tpl_status, tpl_execution, ls('{position}: {idurl}, {status}\n'), tpl_errors)
+TPL_CUSTOMERS = tpl_4_items.format(
+    tpl_status,
+    tpl_execution,
+    ls('{position}: {idurl}, {status}\n'),
+    tpl_errors)
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 TPL_STORAGE = tpl_4_items.format(
     tpl_status,
     tpl_execution,
-    ls(
-        """{.section consumed}consumed:
+    ls("""{.section consumed}consumed:
     suppliers: {suppliers_num}
     needed: {needed} ({needed_str})
     used: {used} ({used_str}) {used_percent}
@@ -137,35 +174,38 @@ TPL_STORAGE = tpl_4_items.format(
       buffered files: {backups} ({backups_str})
       temporary files: {temp} ({temp_str})
       customers files: {customers} ({customers_str})
-{.end}"""
-    ),
-    tpl_errors,
-)
+{.end}"""),
+    tpl_errors)
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
-TPL_AUTOMATS = tpl_4_items.format(tpl_status, tpl_execution, ls('{index}: {id}({state}) {.section timers}   timers: {@}{.end}\n'), tpl_errors)
+TPL_AUTOMATS = tpl_4_items.format(
+    tpl_status,
+    tpl_execution,
+    ls('{index}: {id}({state}) {.section timers}   timers: {@}{.end}\n'),
+    tpl_errors)
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
-TPL_SERVICES = tpl_4_items.format(tpl_status, tpl_execution, ls('{index}: {name}({state}) {enabled_label}, {num_depends} depends\n'), tpl_errors)
+TPL_SERVICES = tpl_4_items.format(
+    tpl_status,
+    tpl_execution,
+    ls('{index}: {name}({state}) {enabled_label}, {num_depends} depends\n'),
+    tpl_errors)
 
 TPL_SERVICE_INFO = tpl_4_items.format(
     tpl_status,
     tpl_execution,
-    ls(
-        """ID: {index}
+    ls("""ID: {index}
 name: {name}
 state: {state}
 enabled: {enabled}
 dependent on: {.section depends}{.repeated section @}{@}{.alternates with}, {.end}{.end}
 config path: {config_path}
-"""
-    ),
-    tpl_errors,
-)
+"""),
+    tpl_errors)
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 TPL_FRIEND_LOOKUP = """{.section result}
 friend lookup:

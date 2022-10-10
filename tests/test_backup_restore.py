@@ -4,7 +4,6 @@ from twisted.trial.unittest import TestCase
 from twisted.internet import reactor  # @UnresolvedImport
 from twisted.internet.defer import Deferred
 from twisted.internet.base import DelayedCall
-
 DelayedCall.debug = True
 
 
@@ -78,6 +77,7 @@ _some_identity_xml = """<?xml version="1.0" encoding="utf-8"?>
 
 
 class Test(TestCase):
+
     def setUp(self):
         try:
             bpio.rmdir_recursive('/tmp/.bitdust_tmp')
@@ -167,7 +167,7 @@ class Test(TestCase):
 
         reactor.callWhenRunning(raid_worker.A, 'init')  # @UndefinedVariable
 
-        job = backup.backup(backupID, backupPipe, blockSize=1024 * 1024, ecc_map=eccmap.eccmap(test_ecc_map))
+        job = backup.backup(backupID, backupPipe, blockSize=1024*1024, ecc_map=eccmap.eccmap(test_ecc_map))
         job.finishCallback = _bk_done
         job.addStateChangedCallback(lambda *a, **k: _bk_closed(job), oldstate=None, newstate='DONE')
         reactor.callLater(0.5, job.automat, 'start')  # @UndefinedVariable

@@ -17,6 +17,7 @@ parser.add_option('-l', '--layer', dest='layer', type='int', help='layer number'
 (options, args) = parser.parse_args()
 
 
+
 def connected(nodes, seeds=[]):
     print('connected:', nodes, seeds)
     if options.layer != 0:
@@ -40,7 +41,6 @@ def run():
 
     def errback(*args, **kwargs):
         import traceback
-
         traceback.print_exc()
 
     def callback_dfl(*args):
@@ -53,9 +53,7 @@ def run():
     try:
         list_of_deffered_set_value = []
         for i in range(options.start, options.end + 1):
-            j = {
-                'key' + str(i): 'value' + str(i),
-            }
+            j = {'key'+str(i): 'value'+str(i), }
             d = dht_service.set_json_value(str(i), json_data=j, age=60 * 60, layer_id=options.layer)
             d.addBoth(callback, j)
             d.addErrback(errback)

@@ -28,16 +28,16 @@
 
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 8
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import os
 import sys
@@ -45,14 +45,13 @@ import base64
 
 from twisted.internet.defer import Deferred, fail
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     import os.path as _p
-
     sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -82,12 +81,11 @@ from interface import api
 from userid import global_id
 from userid import my_id
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _MyKeysInSync = False
 
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def init():
     if _Debug:
@@ -100,21 +98,16 @@ def shutdown():
         lg.out(_DebugLevel, 'key_ring.shutdown')
 
 
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def _do_request_service_keys_registry(key_id, idurl, include_private, include_signature, timeout, result):
-    p2p_service.SendRequestService(
-        idurl,
-        'service_keys_registry',
-        callbacks={
-            commands.Ack(): lambda response, info: _on_service_keys_registry_response(
-                response, info, key_id, idurl, include_private, include_signature, result, timeout
-            ),
-            commands.Fail(): lambda response, info: result.errback(Exception('"service_keys_registry" not started on remote node')),
-            None: lambda pkt_out: result.errback(Exception('timeout')),
-        },
-    )
+    p2p_service.SendRequestService(idurl, 'service_keys_registry', callbacks={
+        commands.Ack(): lambda response, info:
+            _on_service_keys_registry_response(response, info, key_id, idurl, include_private, include_signature, result, timeout),
+        commands.Fail(): lambda response, info:
+            result.errback(Exception('"service_keys_registry" not started on remote node')),
+        None: lambda pkt_out: result.errback(Exception('timeout')),
+    })
     return result
 
 
@@ -245,22 +238,13 @@ def share_key(key_id, trusted_idurl, include_private=False, include_signature=Fa
         channel='share_key',
         keep_alive=False,
     )
-    d.addCallback(
-        lambda ok: _do_request_service_keys_registry(
-            key_id,
-            trusted_idurl,
-            include_private,
-            include_signature,
-            timeout,
-            result,
-        )
-    )
+    d.addCallback(lambda ok: _do_request_service_keys_registry(
+        key_id, trusted_idurl, include_private, include_signature, timeout, result,
+    ))
     d.addErrback(result.errback)
     return result
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def _on_audit_public_key_response(response, info, key_id, untrusted_idurl, test_sample, result):
     try:
@@ -281,23 +265,10 @@ def _on_audit_public_key_response(response, info, key_id, untrusted_idurl, test_
         orig_sample = my_keys.encrypt(key_id, test_sample)
     if response_sample == orig_sample:
         if _Debug:
-            lg.out(
-                _DebugLevel,
-                'key_ring._on_audit_public_key_response : %s on %s'
-                % (
-                    key_id,
-                    untrusted_idurl,
-                ),
-            )
+            lg.out(_DebugLevel, 'key_ring._on_audit_public_key_response : %s on %s' % (key_id, untrusted_idurl, ))
         result.callback(True)
         return True
-    lg.warn(
-        'key %s on %s is not OK'
-        % (
-            key_id,
-            untrusted_idurl,
-        )
-    )
+    lg.warn('key %s on %s is not OK' % (key_id, untrusted_idurl, ))
     result.callback(False)
     return False
 
@@ -337,7 +308,7 @@ def audit_public_key(key_id, untrusted_idurl, timeout=10):
         'audit': {
             'public_sample': base64.b64encode(public_test_sample),
             'private_sample': '',
-        },
+        }
     }
     raw_payload = serialization.DictToBytes(json_payload, values_to_text=True)
     block = encrypted.Block(
@@ -355,16 +326,15 @@ def audit_public_key(key_id, untrusted_idurl, timeout=10):
         packet_id=key_id,
         timeout=timeout,
         callbacks={
-            commands.Ack(): lambda response, info: _on_audit_public_key_response(response, info, key_id, untrusted_idurl, public_test_sample, result),
+            commands.Ack(): lambda response, info:
+                _on_audit_public_key_response(response, info, key_id, untrusted_idurl, public_test_sample, result),
             commands.Fail(): lambda response, info: result.errback(Exception(response)),
             None: lambda pkt_out: result.errback(Exception('timeout')),  # timeout
         },
     )
     return result
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def _on_audit_private_key_response(response, info, key_id, untrusted_idurl, test_sample, result):
     try:
@@ -375,23 +345,10 @@ def _on_audit_private_key_response(response, info, key_id, untrusted_idurl, test
         return False
     if response_sample == test_sample:
         if _Debug:
-            lg.out(
-                _DebugLevel,
-                'key_ring._on_audit_private_key_response : %s on %s'
-                % (
-                    key_id,
-                    untrusted_idurl,
-                ),
-            )
+            lg.out(_DebugLevel, 'key_ring._on_audit_private_key_response : %s on %s' % (key_id, untrusted_idurl, ))
         result.callback(True)
         return True
-    lg.warn(
-        'key %s on %s is not OK'
-        % (
-            key_id,
-            untrusted_idurl,
-        )
-    )
+    lg.warn('key %s on %s is not OK' % (key_id, untrusted_idurl, ))
     result.callback(False)
     return False
 
@@ -421,33 +378,21 @@ def audit_private_key(key_id, untrusted_idurl, timeout=10):
     remote_idurl = recipient_id_obj.getIDURL()
     private_test_sample = key.NewSessionKey(session_key_type=key.SessionKeyType())
     if untrusted_idurl == creator_idurl and key_alias == 'master':
-        lg.info(
-            'doing audit of master key %r for remote user %r'
-            % (
-                key_id,
-                remote_idurl,
-            )
-        )
+        lg.info('doing audit of master key %r for remote user %r' % (key_id, remote_idurl, ))
         private_test_encrypted_sample = recipient_id_obj.encrypt(private_test_sample)
     else:
         if not my_keys.is_key_registered(key_id):
             lg.warn('unknown key: "%s"' % key_id)
             result.errback(Exception('unknown key: "%s"' % key_id))
             return result
-        lg.info(
-            'doing audit of private key %r for remote user %r'
-            % (
-                key_id,
-                remote_idurl,
-            )
-        )
+        lg.info('doing audit of private key %r for remote user %r' % (key_id, remote_idurl, ))
         private_test_encrypted_sample = my_keys.encrypt(key_id, private_test_sample)
     json_payload = {
         'key_id': key_id,
         'audit': {
             'public_sample': '',
             'private_sample': base64.b64encode(private_test_encrypted_sample),
-        },
+        }
     }
     raw_payload = serialization.DictToBytes(json_payload, values_to_text=True)
     block = encrypted.Block(
@@ -465,16 +410,15 @@ def audit_private_key(key_id, untrusted_idurl, timeout=10):
         packet_id=key_id,
         timeout=timeout,
         callbacks={
-            commands.Ack(): lambda response, info: _on_audit_private_key_response(response, info, key_id, untrusted_idurl, private_test_sample, result),
+            commands.Ack(): lambda response, info:
+                _on_audit_private_key_response(response, info, key_id, untrusted_idurl, private_test_sample, result),
             commands.Fail(): lambda response, info: result.errback(Exception(response)),
             None: lambda pkt_out: result.errback(Exception('timeout')),  # timeout
         },
     )
     return result
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def on_key_received(newpacket, info, status, error_message):
     """
@@ -601,9 +545,7 @@ def on_audit_key_received(newpacket, info, status, error_message):
     p2p_service.SendFail(newpacket, 'wrong audit request')
     return False
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def do_backup_key(key_id, keys_folder=None):
     """
@@ -627,7 +569,8 @@ def do_backup_key(key_id, keys_folder=None):
     else:
         local_key_filepath = os.path.join(keys_folder, '%s.public' % key_id)
         remote_path_for_key = '.keys/%s.public' % key_id
-    global_key_path = global_id.MakeGlobalID(key_alias='master', customer=my_id.getGlobalID(), path=remote_path_for_key)
+    global_key_path = global_id.MakeGlobalID(
+        key_alias='master', customer=my_id.getGlobalID(), path=remote_path_for_key)
     res = api.file_exists(global_key_path)
     if res['status'] == 'OK' and res['result'] and res['result'].get('exist'):
         lg.warn('key %s already exists in catalog' % global_key_path)
@@ -641,10 +584,8 @@ def do_backup_key(key_id, keys_folder=None):
                 if backup_job:
                     backup_result = Deferred()
                     backup_job.resultDefer.addCallback(
-                        lambda resp: backup_result.callback(True)
-                        if resp == 'done'
-                        else backup_result.errback(Exception('failed to upload key "%s", task was not started: %r' % (global_key_path, resp)))
-                    )
+                        lambda resp: backup_result.callback(True) if resp == 'done' else backup_result.errback(
+                            Exception('failed to upload key "%s", task was not started: %r' % (global_key_path, resp))))
                     if _Debug:
                         backup_job.resultDefer.addErrback(lg.errback, debug=_Debug, debug_level=_DebugLevel, method='key_ring.do_backup_key')
                     backup_job.resultDefer.addErrback(backup_result.errback)
@@ -706,14 +647,7 @@ def do_restore_key(key_id, is_private, keys_folder=None, wait_result=False):
     Restore given key from my suppliers if I do not have it locally.
     """
     if _Debug:
-        lg.out(
-            _DebugLevel,
-            'key_ring.do_restore_key     key_id=%r    is_private=%r'
-            % (
-                key_id,
-                is_private,
-            ),
-        )
+        lg.out(_DebugLevel, 'key_ring.do_restore_key     key_id=%r    is_private=%r' % (key_id, is_private, ))
     key_id = my_keys.latest_key_id(key_id)
     if my_keys.is_key_registered(key_id):
         lg.err('local key already exist: "%s"' % key_id)
@@ -726,7 +660,8 @@ def do_restore_key(key_id, is_private, keys_folder=None, wait_result=False):
         remote_path_for_key = '.keys/%s.private' % key_id
     else:
         remote_path_for_key = '.keys/%s.public' % key_id
-    global_key_path = global_id.MakeGlobalID(key_alias='master', customer=my_id.getGlobalID(), path=remote_path_for_key)
+    global_key_path = global_id.MakeGlobalID(
+        key_alias='master', customer=my_id.getGlobalID(), path=remote_path_for_key)
     ret = api.file_download_start(
         remote_path=global_key_path,
         destination_path=keys_folder,
@@ -777,7 +712,8 @@ def do_delete_key(key_id, is_private):
         remote_path_for_key = '.keys/%s.private' % key_id
     else:
         remote_path_for_key = '.keys/%s.public' % key_id
-    global_key_path = global_id.MakeGlobalID(key_alias='master', customer=my_id.getGlobalID(), path=remote_path_for_key)
+    global_key_path = global_id.MakeGlobalID(
+        key_alias='master', customer=my_id.getGlobalID(), path=remote_path_for_key)
     res = api.file_delete(global_key_path)
     if res['status'] != 'OK':
         lg.err('failed to delete key "%s": %r' % (global_key_path, res))
@@ -786,9 +722,7 @@ def do_delete_key(key_id, is_private):
         lg.out(_DebugLevel, 'key_ring.do_delete_key key_id=%s  is_private=%r : %r' % (key_id, is_private, res))
     return True
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def on_files_received(newpacket, info):
     list_files_global_id = global_id.ParseGlobalID(newpacket.PacketID)
@@ -826,32 +760,32 @@ def on_files_received(newpacket, info):
     except:
         lg.exc()
         return False
-    #     if block.CreatorID == trusted_customer_idurl:
-    #         # this is a trusted guy sending some shared files to me
-    #         return False
-    #         try:
-    #             json_data = serialization.BytesToDict(raw_files, keys_to_text=True, encoding='utf-8')
-    #         except:
-    #             lg.exc()
-    #             return False
-    #         count, updated_keys = backup_fs.Unserialize(
-    #             json_data=json_data,
-    #             customer_idurl=trusted_customer_idurl,
-    #         )
-    #         p2p_service.SendAck(newpacket)
-    #         if not updated_keys:
-    #             lg.warn('no files were imported during file sharing')
-    #         else:
-    #             for key_alias in updated_keys:
-    #                 backup_fs.SaveIndex(trusted_customer_idurl, key_alias)
-    #             # backup_control.Save()
-    #             lg.info('imported %d shared files from %s, key_id=%s' % (
-    #                 count, trusted_customer_idurl, incoming_key_id, ))
-    #         events.send('shared-list-files-received', data=dict(
-    #             customer_idurl=trusted_customer_idurl,
-    #             new_items=count,
-    #         ))
-    #         return True
+#     if block.CreatorID == trusted_customer_idurl:
+#         # this is a trusted guy sending some shared files to me
+#         return False
+#         try:
+#             json_data = serialization.BytesToDict(raw_files, keys_to_text=True, encoding='utf-8')
+#         except:
+#             lg.exc()
+#             return False
+#         count, updated_keys = backup_fs.Unserialize(
+#             json_data=json_data,
+#             customer_idurl=trusted_customer_idurl,
+#         )
+#         p2p_service.SendAck(newpacket)
+#         if not updated_keys:
+#             lg.warn('no files were imported during file sharing')
+#         else:
+#             for key_alias in updated_keys:
+#                 backup_fs.SaveIndex(trusted_customer_idurl, key_alias)
+#             # backup_control.Save()
+#             lg.info('imported %d shared files from %s, key_id=%s' % (
+#                 count, trusted_customer_idurl, incoming_key_id, ))
+#         events.send('shared-list-files-received', data=dict(
+#             customer_idurl=trusted_customer_idurl,
+#             new_items=count,
+#         ))
+#         return True
 
     # otherwise this must be an external supplier sending us a files he stores for trusted customer
     external_supplier_idurl = block.CreatorID
@@ -865,36 +799,19 @@ def on_files_received(newpacket, info):
     supplier_pos = backup_matrix.DetectSupplierPosition(supplier_raw_list_files)
     known_supplier_pos = contactsdb.supplier_position(external_supplier_idurl, trusted_customer_idurl)
     if known_supplier_pos < 0:
-        lg.warn(
-            'received %r from an unknown node %r which is not a supplier of %r'
-            % (
-                newpacket,
-                external_supplier_idurl,
-                trusted_customer_idurl,
-            )
-        )
+        lg.warn('received %r from an unknown node %r which is not a supplier of %r' % (newpacket, external_supplier_idurl, trusted_customer_idurl, ))
         return False
     if _Debug:
-        lg.args(
-            _DebugLevel,
-            supplier_pos=supplier_pos,
-            known_supplier_pos=known_supplier_pos,
-            external_supplier=external_supplier_idurl,
-            trusted_customer=trusted_customer_idurl,
-            key_id=incoming_key_id,
-        )
+        lg.args(_DebugLevel, supplier_pos=supplier_pos, known_supplier_pos=known_supplier_pos, external_supplier=external_supplier_idurl,
+                trusted_customer=trusted_customer_idurl, key_id=incoming_key_id)
     if supplier_pos >= 0:
         if known_supplier_pos != supplier_pos:
-            lg.err(
-                'known external supplier %r position %d is not matching with received list files position %d for customer %s'
-                % (external_supplier_idurl, known_supplier_pos, supplier_pos, trusted_customer_idurl)
-            )
+            lg.err('known external supplier %r position %d is not matching with received list files position %d for customer %s' % (
+                external_supplier_idurl, known_supplier_pos,  supplier_pos, trusted_customer_idurl))
             return False
     else:
-        lg.warn(
-            'not possible to detect external supplier position for customer %s from received list files, known position is %s'
-            % (trusted_customer_idurl, known_supplier_pos)
-        )
+        lg.warn('not possible to detect external supplier position for customer %s from received list files, known position is %s' % (
+            trusted_customer_idurl, known_supplier_pos))
         supplier_pos = known_supplier_pos
     remote_files_changed, _, _, _ = backup_matrix.process_raw_list_files(
         supplier_num=supplier_pos,

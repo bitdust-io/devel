@@ -33,27 +33,26 @@ EVENTS:
     * :red:`shutdown`
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 16
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from automats import automat
 
 from transport import callback
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _DataReceiver = None
 
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def A(event=None, *args, **kwargs):
     """
@@ -75,9 +74,7 @@ def A(event=None, *args, **kwargs):
         _DataReceiver.automat(event, *args, **kwargs)
     return _DataReceiver
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 class DataReceiver(automat.Automat):
     """
@@ -88,33 +85,33 @@ class DataReceiver(automat.Automat):
         """
         The state machine code, generated using `visio2python <http://bitdust.io/visio2python/>`_ tool.
         """
-        # ---AT_STARTUP---
+        #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'READY'
                 self.doInit(*args, **kwargs)
-                self.StreamsCounter = 0
-        # ---READY---
+                self.StreamsCounter=0
+        #---READY---
         elif self.state == 'READY':
             if event == 'input-stream-opened':
                 self.state = 'RECEIVING'
-                self.StreamsCounter += 1
+                self.StreamsCounter+=1
             elif event == 'shutdown':
                 self.state = 'CLOSE'
                 self.doDestroyMe(*args, **kwargs)
-        # ---RECEIVING---
+        #---RECEIVING---
         elif self.state == 'RECEIVING':
-            if event == 'input-stream-closed' and self.StreamsCounter > 1:
-                self.StreamsCounter -= 1
-            elif event == 'input-stream-closed' and self.StreamsCounter == 1:
+            if event == 'input-stream-closed' and self.StreamsCounter>1:
+                self.StreamsCounter-=1
+            elif event == 'input-stream-closed' and self.StreamsCounter==1:
                 self.state = 'READY'
-                self.StreamsCounter = 0
+                self.StreamsCounter=0
             elif event == 'input-stream-opened':
-                self.StreamsCounter += 1
+                self.StreamsCounter+=1
             elif event == 'shutdown':
                 self.state = 'CLOSE'
                 self.doDestroyMe(*args, **kwargs)
-        # ---CLOSE---
+        #---CLOSE---
         elif self.state == 'CLOSE':
             pass
         return None
@@ -141,10 +138,4 @@ class DataReceiver(automat.Automat):
         self.event('input-stream-opened', pkt_in)
 
     def _on_finish_file_receiving(self, pkt_in, data):
-        self.event(
-            'input-stream-closed',
-            (
-                pkt_in,
-                data,
-            ),
-        )
+        self.event('input-stream-closed', (pkt_in, data, ))

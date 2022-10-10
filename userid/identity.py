@@ -127,18 +127,18 @@ But 1000 servers owned and maintained by 1000 people in 100 different countries 
 So more distribution of ID servers we will have in BitDust - more secured and protected network will become.
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 from __future__ import print_function
 from six.moves import range  # @UnresolvedImport
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 10
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import os
 import sys
@@ -146,7 +146,7 @@ import sys
 from xml.dom import minidom, Node
 from xml.dom.minidom import getDOMImplementation
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 try:
     from logs import lg
@@ -155,7 +155,7 @@ except:
     sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..')))
     from logs import lg
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from main import settings
 
@@ -169,7 +169,7 @@ from crypt import key
 from userid import global_id
 from userid import id_url
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 default_identity_src = """<?xml version="1.0" encoding="ISO-8859-1"?>
 <identity>
@@ -185,7 +185,7 @@ default_identity_src = """<?xml version="1.0" encoding="ISO-8859-1"?>
   <signature></signature>
 </identity>"""
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 class identity(object):
@@ -204,32 +204,29 @@ class identity(object):
     * publickey : the public part of user's key, string in twisted.conch.ssh format
     * signature : digital signature to protect the file
     """
+    sources = []        # list of URLs, first is primary URL and name
+    contacts = []       # list of ways to contact this identity
+    certificates = []   # signatures by identity servers
+    scrubbers = []      # list of URLs for people allowed to scrub
+    postage = b'1'      # a price for message delivery if not on correspondents list
+    date = b''          # date
+    version = b''       # version string
+    revision = b'0'     # revision number, every time my id were modified this value will be increased by 1
+    publickey = b''     # string in twisted.conch.ssh format
+    signature = b''     # digital signature
 
-    sources = []  # list of URLs, first is primary URL and name
-    contacts = []  # list of ways to contact this identity
-    certificates = []  # signatures by identity servers
-    scrubbers = []  # list of URLs for people allowed to scrub
-    postage = b'1'  # a price for message delivery if not on correspondents list
-    date = b''  # date
-    version = b''  # version string
-    revision = b'0'  # revision number, every time my id were modified this value will be increased by 1
-    publickey = b''  # string in twisted.conch.ssh format
-    signature = b''  # digital signature
-
-    def __init__(
-        self,
-        sources=[],
-        contacts=[],
-        certificates=[],
-        scrubbers=[],
-        postage=b'1',
-        date=b'',
-        version=b'',
-        revision=b'0',
-        publickey=b'',
-        xmlsrc=None,
-        filename=b'',
-    ):
+    def __init__(self,
+                 sources=[],
+                 contacts=[],
+                 certificates=[],
+                 scrubbers=[],
+                 postage=b'1',
+                 date=b'',
+                 version=b'',
+                 revision=b'0',
+                 publickey=b'',
+                 xmlsrc=None,
+                 filename=b''):
 
         self.sources = []
         if sources:
@@ -265,16 +262,16 @@ class identity(object):
         """
         Erase all fields data, clear identity.
         """
-        self.sources = []  # list of URLs for fetching this identiy, first is primary URL and name - called IDURL
+        self.sources = []       # list of URLs for fetching this identiy, first is primary URL and name - called IDURL
         self.certificates = []  # identity servers each sign the source they are with - hash just (IDURL + publickey)
-        self.publickey = b''  # string
-        self.contacts = []  # list of ways to contact this identity
-        self.scrubbers = []  # list of URLs for people allowed to scrub
-        self.date = b''  # date
-        self.postage = b'1'  # postage price for message delivery if not on correspondents list
-        self.version = b''  # version string
-        self.signature = b''  # digital signature
-        self.revision = b'0'  # revision number
+        self.publickey = b''    # string
+        self.contacts = []      # list of ways to contact this identity
+        self.scrubbers = []     # list of URLs for people allowed to scrub
+        self.date = b''         # date
+        self.postage = b'1'     # postage price for message delivery if not on correspondents list
+        self.version = b''      # version string
+        self.signature = b''    # digital signature
+        self.revision = b'0'    # revision number
 
     def default(self):
         """
@@ -283,7 +280,7 @@ class identity(object):
         global default_identity_src
         self.unserialize(default_identity_src)
 
-    # ------------------------------------------------------------------------------
+    #------------------------------------------------------------------------------
 
     def isCorrect(self):
         """
@@ -394,7 +391,7 @@ class identity(object):
         )
         return result
 
-    # ------------------------------------------------------------------------------
+    #------------------------------------------------------------------------------
 
     def encrypt(self, inp):
         """
@@ -413,12 +410,11 @@ class identity(object):
         if callable(private_key):
             return private_key(inp)
         from crypt import my_keys
-
         if my_keys.is_valid_key_id(private_key):
             return my_keys.decrypt(private_key, inp)
         return key.DecryptOpenSSHPrivateKey(private_key, inp)
 
-    # ------------------------------------------------------------------------------
+    #------------------------------------------------------------------------------
 
     def unserialize(self, xmlsrc):
         """
@@ -570,55 +566,55 @@ class identity(object):
                 if xsection.tagName == 'sources':
                     for xsources in xsection.childNodes:
                         for xsource in xsources.childNodes:
-                            if xsource.nodeType == Node.TEXT_NODE:
+                            if (xsource.nodeType == Node.TEXT_NODE):
                                 self.sources.append(id_url.ID_URL_FIELD(xsource.wholeText.strip()))
                                 break
                 elif xsection.tagName == 'contacts':
                     for xcontacts in xsection.childNodes:
                         for xcontact in xcontacts.childNodes:
-                            if xcontact.nodeType == Node.TEXT_NODE:
+                            if (xcontact.nodeType == Node.TEXT_NODE):
                                 self.contacts.append(strng.to_bin(xcontact.wholeText.strip()))
                                 break
                 elif xsection.tagName == 'certificates':
                     for xcertificates in xsection.childNodes:
                         for xcertificate in xcertificates.childNodes:
-                            if xcertificate.nodeType == Node.TEXT_NODE:
+                            if (xcertificate.nodeType == Node.TEXT_NODE):
                                 self.certificates.append(strng.to_bin(xcertificate.wholeText.strip()))
                                 break
                 elif xsection.tagName == 'scrubbers':
                     for xscrubbers in xsection.childNodes:
                         for xscrubber in xscrubbers.childNodes:
-                            if xscrubber.nodeType == Node.TEXT_NODE:
+                            if (xscrubber.nodeType == Node.TEXT_NODE):
                                 self.scrubbers.append(strng.to_bin(xscrubber.wholeText.strip()))
                                 break
                 elif xsection.tagName == 'postage':
                     for xpostage in xsection.childNodes:
-                        if xpostage.nodeType == Node.TEXT_NODE:
+                        if (xpostage.nodeType == Node.TEXT_NODE):
                             self.postage = strng.to_bin(xpostage.wholeText.strip())
                             break
                 elif xsection.tagName == 'date':
                     for xkey in xsection.childNodes:
-                        if xkey.nodeType == Node.TEXT_NODE:
+                        if (xkey.nodeType == Node.TEXT_NODE):
                             self.date = strng.to_bin(xkey.wholeText.strip())
                             break
                 elif xsection.tagName == 'version':
                     for xkey in xsection.childNodes:
-                        if xkey.nodeType == Node.TEXT_NODE:
+                        if (xkey.nodeType == Node.TEXT_NODE):
                             self.version = strng.to_bin(xkey.wholeText.strip())
                             break
                 elif xsection.tagName == 'revision':
                     for xkey in xsection.childNodes:
-                        if xkey.nodeType == Node.TEXT_NODE:
+                        if (xkey.nodeType == Node.TEXT_NODE):
                             self.revision = strng.to_bin(xkey.wholeText.strip())
                             break
                 elif xsection.tagName == 'publickey':
                     for xkey in xsection.childNodes:
-                        if xkey.nodeType == Node.TEXT_NODE:
+                        if (xkey.nodeType == Node.TEXT_NODE):
                             self.publickey = strng.to_bin(xkey.wholeText.strip())
                             break
                 elif xsection.tagName == 'signature':
                     for xkey in xsection.childNodes:
-                        if xkey.nodeType == Node.TEXT_NODE:
+                        if (xkey.nodeType == Node.TEXT_NODE):
                             self.signature = strng.to_bin(xkey.wholeText.strip())
                             break
         except:
@@ -626,7 +622,7 @@ class identity(object):
             return False
         return True
 
-    # ------------------------------------------------------------------------------
+    #------------------------------------------------------------------------------
 
     def getSources(self, as_fields=True, as_originals=False):
         """
@@ -770,7 +766,8 @@ class identity(object):
         return orderL
 
     def getContactsAsTuples(self, as_text=False):
-        """ """
+        """
+        """
         result = []
         for c in self.contacts:
             proto, host = c.split(b'://')
@@ -850,10 +847,11 @@ class identity(object):
         """
         return int(self.revision)
 
-    # ------------------------------------------------------------------------------
+    #------------------------------------------------------------------------------
 
     def setSources(self, sources_list):
-        """ """
+        """
+        """
         self.sources = []
         for source in sources_list:
             s = id_url.field(source)
@@ -861,13 +859,15 @@ class identity(object):
             self.sources.append(s)
 
     def setContacts(self, contacts_list):
-        """ """
+        """
+        """
         self.contacts = []
         for cont in contacts_list:
             self.contacts.append(strng.to_bin(cont))
 
     def setContactsFromDict(self, contacts_dict, contacts_order=None):
-        """ """
+        """
+        """
         if contacts_order is None:
             contacts_order = list(contacts_dict.keys())
         for proto in contacts_order:
@@ -918,11 +918,13 @@ class identity(object):
         self.contacts[index] = strng.to_bin(url).strip()
 
     def setPublicKey(self, pub_key_raw):
-        """ """
+        """
+        """
         self.publickey = strng.to_bin(pub_key_raw)
 
     def setSignature(self, signature_raw):
-        """ """
+        """
+        """
         self.signature = strng.to_bin(signature_raw)
 
     def setCertificates(self, certificates_list):
@@ -942,22 +944,26 @@ class identity(object):
             self.scrubbers.append(strng.to_bin(scrub))
 
     def setDate(self, date_string):
-        """ """
+        """
+        """
         self.date = strng.to_bin(date_string)
 
     def setPostage(self, postage_value):
-        """ """
+        """
+        """
         self.postage = strng.to_bin(str(postage_value))
 
     def setVersion(self, version_string):
-        """ """
+        """
+        """
         self.version = strng.to_bin(version_string).strip()
 
     def setRevision(self, revision):
-        """ """
+        """
+        """
         self.revision = strng.to_bin(str(revision))
 
-    # ------------------------------------------------------------------------------
+    #------------------------------------------------------------------------------
 
     def clearContacts(self):
         """
@@ -1003,22 +1009,20 @@ class identity(object):
         self.contacts.insert(0, contact)
 
 
-# -------------------------------------------------------------------------------
-
+#-------------------------------------------------------------------------------
 
 def test1():
     """
     Some tests.
     """
     from userid import my_id
-
     myidentity = my_id.getLocalIdentity()
     print('getIP =', myidentity.getIP())
     if myidentity.Valid():
         print('myidentity is Valid!!!!')
     else:
         print('myidentity is not Valid')
-        my_id.saveLocalIdentity()  # sign and save
+        my_id.saveLocalIdentity()            # sign and save
         raise Exception('myidentity is not Valid')
     print('myidentity.contacts')
     print(myidentity.contacts)
@@ -1041,13 +1045,10 @@ def test2():
     More tests.
     """
     from userid import my_id
-
     ident = my_id.buildDefaultIdentity()
     print(ident.serialize())
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def main():
     """
@@ -1055,7 +1056,6 @@ def main():
     """
     settings.init(base_dir='/tmp/fake_id')
     from userid import my_id
-
     my_id.loadLocalIdentity()
     if my_id.isLocalIdentityReady():
         my_id.getLocalIdentity().sign()
@@ -1088,7 +1088,6 @@ def update():
     Also will test rebuilding of the identity
     """
     from userid import my_id
-
     bpio.init()
     settings.init()
     src = bpio.ReadTextFile(settings.LocalIdentityFilename())
@@ -1101,7 +1100,7 @@ def update():
     settings.shutdown()
 
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 if __name__ == '__main__':

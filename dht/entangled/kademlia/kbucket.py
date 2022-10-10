@@ -30,7 +30,8 @@ class BucketFull(Exception):
 
 
 class KBucket(object):
-    """Description - later"""
+    """ Description - later
+    """
 
     def __init__(self, rangeMin, rangeMax):
         """

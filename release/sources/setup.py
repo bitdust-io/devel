@@ -34,9 +34,11 @@ setup(
     long_description='p2p secure distributed storage and communication engine',
     download_url='https://bitdust.io',
     license='Copyright (C) 2008 Veselin Penev, https://bitdust.io',
+
     keywords='''p2p, peer to peer, backup, restore, storage, data, recover,
                 distributed, online, python, twisted, messaging, websocket,
                 encryption, crypto, protection''',
+
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Environment :: Console',
@@ -63,6 +65,7 @@ setup(
         'Topic :: System :: Distributed Computing',
         'Topic :: Utilities',
     ],
+
     packages=[
         'bitdust',
         'bitdust.access',
@@ -105,6 +108,7 @@ setup(
         'bitdust.updates',
         'bitdust.userid',
     ],
+
     package_data={
         'bitdust': [
             'bitdust/dht/entangled/AUTHORS',
@@ -124,6 +128,7 @@ setup(
             '*.md',
         ],
     },
+
     install_requires=[
         'Twisted==20.3.0',
         'zope.interface',
@@ -137,8 +142,10 @@ setup(
         'six',
         'virtualenv',
     ],
+
     scripts=[
         'scripts/bitdust',
         'scripts/bitdust_worker',
     ],
+
 )

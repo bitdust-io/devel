@@ -12,6 +12,7 @@ from crypt import key
 from userid import my_id
 
 
+
 _some_priv_key = """-----BEGIN RSA PRIVATE KEY-----
 MIIEowIBAAKCAQEA/ZsJKyCakqA8vO2r0CTOG0qE2l+4y1dIqh7VC0oaVkXy0Cim
 s3N+NNt6vJ617H5FeMALasRf4+5nHkleTB+BKTKBxt4fLm9Mz3mkw8U+pstJfYzS
@@ -60,6 +61,7 @@ _some_identity_xml = """<?xml version="1.0" encoding="utf-8"?>
 
 
 class Test(TestCase):
+
     def setUp(self):
         try:
             bpio.rmdir_recursive('/tmp/.bitdust_tmp')
@@ -89,7 +91,6 @@ class Test(TestCase):
 
     def test_identity_valid(self):
         from userid import identity
-
         some_identity = identity.identity(xmlsrc=_some_identity_xml)
         self.assertTrue(some_identity.isCorrect())
         self.assertTrue(some_identity.Valid())
@@ -98,7 +99,6 @@ class Test(TestCase):
 
     def test_identity_not_valid(self):
         from userid import identity
-
         _broken_identity_xml = _some_identity_xml.replace('alice', 'bob')
         broken_identity = identity.identity(xmlsrc=_broken_identity_xml)
         self.assertTrue(broken_identity.isCorrect())

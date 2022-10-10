@@ -50,7 +50,6 @@ class CustomerService(LocalService):
 
     def installed(self):
         from userid import my_id
-
         if not my_id.isLocalIdentityReady():
             return False
         return True
@@ -60,7 +59,6 @@ class CustomerService(LocalService):
         from customer import supplier_connector
         from userid import my_id
         from main import events
-
         for _, supplier_idurl in enumerate(contactsdb.suppliers()):
             if supplier_idurl and not supplier_connector.by_idurl(supplier_idurl, customer_idurl=my_id.getIDURL()):
                 supplier_connector.create(
@@ -77,7 +75,6 @@ class CustomerService(LocalService):
         from customer import supplier_connector
         from userid import my_id
         from main import events
-
         events.remove_subscriber(self._on_identity_url_changed, 'identity-url-changed')
         events.remove_subscriber(self._on_my_keys_synchronized, 'my-keys-synchronized')
         for sc in supplier_connector.connectors(my_id.getIDURL()).values():
@@ -88,19 +85,15 @@ class CustomerService(LocalService):
     def health_check(self):
         from customer import supplier_connector
         from userid import my_id
-
         for sc in supplier_connector.connectors(my_id.getIDURL()).values():
             # at least one supplier must be online to consider my customer service to be healthy
-            if sc.state in [
-                'CONNECTED',
-            ]:
+            if sc.state in ['CONNECTED', ]:
                 return True
         return False
 
     def _on_my_keys_synchronized(self, evt):
         from logs import lg
         from userid import my_id
-
         # customer_key_id = my_id.getGlobalID(key_alias='customer')
         # if not my_keys.is_key_registered(customer_key_id) and keys_synchronizer.is_synchronized():
         #     lg.info('customer key was not found but we know that all keys are in sync, generate new key: %s' % customer_key_id)
@@ -111,51 +104,26 @@ class CustomerService(LocalService):
         from userid import id_url
         from contacts import contactsdb
         from customer import supplier_connector
-
         old_idurl = id_url.field(evt.data['old_idurl'])
         for customer_idurl, suppliers_list in contactsdb.all_suppliers(as_dict=True).items():
             if old_idurl == customer_idurl:
                 customer_idurl.refresh()
-                lg.info(
-                    'found customer family idurl rotated : %r -> %r'
-                    % (
-                        evt.data['old_idurl'],
-                        evt.data['new_idurl'],
-                    )
-                )
+                lg.info('found customer family idurl rotated : %r -> %r' % (
+                    evt.data['old_idurl'], evt.data['new_idurl'], ))
             for supplier_pos, supplier_idurl in enumerate(suppliers_list):
                 if old_idurl == supplier_idurl:
                     supplier_idurl.refresh()
-                    lg.info(
-                        'found supplier idurl rotated for customer family %r at position %r : %r -> %r'
-                        % (
-                            customer_idurl,
-                            supplier_pos,
-                            evt.data['old_idurl'],
-                            evt.data['new_idurl'],
-                        )
-                    )
+                    lg.info('found supplier idurl rotated for customer family %r at position %r : %r -> %r' % (
+                        customer_idurl, supplier_pos, evt.data['old_idurl'], evt.data['new_idurl'], ))
             for customer_idurl, sc_dict in supplier_connector.connectors(as_dict=True).items():
                 if old_idurl == customer_idurl:
                     customer_idurl.refresh()
-                    lg.info(
-                        'found customer idurl rotated in supplier_connector.connectors() : %r -> %r'
-                        % (
-                            evt.data['old_idurl'],
-                            evt.data['new_idurl'],
-                        )
-                    )
+                    lg.info('found customer idurl rotated in supplier_connector.connectors() : %r -> %r' % (
+                        evt.data['old_idurl'], evt.data['new_idurl'], ))
                 for supplier_idurl, sc in sc_dict.items():
                     if old_idurl == supplier_idurl:
                         supplier_idurl.refresh()
                         sc.customer_idurl.refresh()
                         sc.supplier_idurl.refresh()
-                        lg.info(
-                            'found supplier idurl rotated in %r for customer %r : %r -> %r'
-                            % (
-                                sc,
-                                customer_idurl,
-                                evt.data['old_idurl'],
-                                evt.data['new_idurl'],
-                            )
-                        )
+                        lg.info('found supplier idurl rotated in %r for customer %r : %r -> %r' % (
+                            sc, customer_idurl, evt.data['old_idurl'], evt.data['new_idurl'], ))

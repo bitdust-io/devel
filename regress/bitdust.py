@@ -37,7 +37,6 @@ def main():
         pass
 
     from main.bpmain import main
-
     ret = main(executable_path)
     return ret
 

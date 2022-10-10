@@ -65,6 +65,7 @@ _some_identity_xml = """<?xml version="1.0" encoding="utf-8"?>
 
 
 class Test(TestCase):
+
     def setUp(self):
         try:
             bpio.rmdir_recursive('/tmp/.bitdust_tmp')
@@ -98,11 +99,7 @@ class Test(TestCase):
 
     def test_jsn(self):
         data1 = os.urandom(1024)
-        dct1 = {
-            'd': {
-                'data': data1,
-            },
-        }
+        dct1 = {'d': {'data': data1, }, }
         raw = jsn.dumps(dct1, encoding='latin1')
         dct2 = jsn.loads(raw, encoding='latin1')
         data2 = dct2['d']['data']
@@ -110,11 +107,7 @@ class Test(TestCase):
 
     def test_serialization(self):
         data1 = os.urandom(1024)
-        dct1 = {
-            'd': {
-                'data': data1,
-            },
-        }
+        dct1 = {'d': {'data': data1, }, }
         raw = serialization.DictToBytes(dct1, encoding='latin1')
         dct2 = serialization.BytesToDict(raw, encoding='latin1')
         data2 = dct2['d']['data']

@@ -56,26 +56,17 @@ class IdentityServerService(LocalService):
 
     def enabled(self):
         from main import settings
-
         return settings.enableIdServer()
 
     def start(self):
         from userid import id_server
         from main import settings
-
-        id_server.A(
-            'init',
-            (
-                settings.getIdServerWebPort(),
-                settings.getIdServerTCPPort(),
-            ),
-        )
+        id_server.A('init', (settings.getIdServerWebPort(), settings.getIdServerTCPPort(), ))
         id_server.A('start')
         return True
 
     def stop(self):
         from userid import id_server
-
         id_server.A('stop')
         id_server.A('shutdown')
         return True

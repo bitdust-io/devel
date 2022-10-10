@@ -45,7 +45,6 @@ def run():
 
     def errback(*args, **kwargs):
         import traceback
-
         traceback.print_exc()
 
     def callback_dfl(*args):

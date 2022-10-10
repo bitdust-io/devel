@@ -46,38 +46,37 @@
 #
 #
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 from io import open
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import os
 import sys
 import copy
 import array
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
     sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..')))
     sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..', '..')))
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import logs.lg
 
 import raid.eccmap
 import raid.raidutils
 
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def RoundupFile(filename, stepsize):
     """
@@ -122,8 +121,7 @@ def WriteFile(filename, data):
     f.write(s)
     f.close()
 
-
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def ReadBinaryFileAsArray(filename):
@@ -188,7 +186,13 @@ def do_in_memory(filename, eccmapname, version, blockNumber, targetDir, threshol
 
 
 def main():
-    do_in_memory(filename=sys.argv[1], eccmapname=sys.argv[2], version=sys.argv[3], blockNumber=int(sys.argv[4]), targetDir=sys.argv[5])
+    do_in_memory(
+        filename=sys.argv[1],
+        eccmapname=sys.argv[2],
+        version=sys.argv[3],
+        blockNumber=int(sys.argv[4]),
+        targetDir=sys.argv[5]
+    )
 
 
 if __name__ == '__main__':

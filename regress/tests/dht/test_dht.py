@@ -43,18 +43,16 @@ def test_dht():
 
     prepare()
 
-    # --- SCENARIO 1: user can search another user by nickname
+    #--- SCENARIO 1: user can search another user by nickname
     scenarios.scenario1()
 
-    # --- SCENARIO 2: user is able to detect external IP
+    #--- SCENARIO 2: user is able to detect external IP
     scenarios.scenario2()
 
-    # --- SCENARIO 6: users are able to use DHT network to store data
+    #--- SCENARIO 6: users are able to use DHT network to store data
     scenarios.scenario6()
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def prepare():
     set_active_scenario('PREPARE')

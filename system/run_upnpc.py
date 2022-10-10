@@ -30,31 +30,30 @@
 module:: run_upnpc
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 from __future__ import print_function
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 6
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import os
 import sys
 import re
 import random
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     import os.path as _p
-
     sys.path.append(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..'))
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -62,13 +61,13 @@ from system import bpio
 
 from main import settings
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _CurrentProcess = None
 _MyPortMapping = {}
 _LastUpdateResultDict = {}
 
-# -------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 
 def init():
@@ -94,15 +93,13 @@ def shutdown():
         if _Debug:
             lg.out(_DebugLevel, '    not started')
 
-
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def execute_in_shell(cmdargs, base_dir=None):
     global _CurrentProcess
     from system import nonblocking
     import subprocess
-
     if _Debug:
         lg.out(_DebugLevel, 'run_upnpc.execute_in_shell: "%s"' % (' '.join(cmdargs)))
     in_shell = True
@@ -113,8 +110,7 @@ def execute_in_shell(cmdargs, base_dir=None):
         shell=in_shell,
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-    )
+        stderr=subprocess.STDOUT,)
     out_data = _CurrentProcess.communicate()[0]
     returncode = _CurrentProcess.returncode
     if _Debug:
@@ -124,8 +120,7 @@ def execute_in_shell(cmdargs, base_dir=None):
             lg.out(_DebugLevel, '\n' + out_data)
     return (out_data, returncode)  # _CurrentProcess
 
-
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 # Windows: executable file "upnpc.exe" must be in same folder or system sub folder
 # Ubuntu: miniupnpc must be installed, https://launchpad.net/ubuntu/+source/miniupnpc
@@ -141,17 +136,11 @@ def run(args_list, base_dir=None, callback=None):
         return None
 
     if bpio.Windows():
-        cmdargs = [
-            'upnpc-static.exe',
-        ]
+        cmdargs = ['upnpc-static.exe', ]
     elif bpio.Linux():
-        cmdargs = [
-            'upnpc',
-        ]
+        cmdargs = ['upnpc', ]
     elif bpio.Mac():
-        cmdargs = [
-            'upnpc',
-        ]
+        cmdargs = ['upnpc', ]
     else:
         return None
 
@@ -181,8 +170,7 @@ def run(args_list, base_dir=None, callback=None):
 
     return out_data
 
-
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def info():
@@ -212,8 +200,7 @@ def info():
         external_ip = search_external_ip.group(1)
     return local_ip, external_ip, l
 
-
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def lst():
@@ -234,8 +221,7 @@ def lst():
             continue
     return l
 
-
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def add(port, proto):
@@ -247,8 +233,7 @@ def add(port, proto):
     _MyPortMapping[str(port)] = str(proto)
     return cmd_out
 
-
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def dlt(port, proto):
@@ -259,8 +244,7 @@ def dlt(port, proto):
     _MyPortMapping.pop(str(port), '')
     return cmd_out
 
-
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def clear():
@@ -270,8 +254,7 @@ def clear():
         s += str(dlt(i[0], i[2])) + '\n'
     return s
 
-
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def update(requested_port, attempt=0, new_port=-1):
@@ -296,7 +279,8 @@ def update(requested_port, attempt=0, new_port=-1):
             local_ports[i[0]] = (i[2], i[3])
 
     if _Debug:
-        lg.out(_DebugLevel, 'run_upnpc.update requested_port_busy=%s local_ports=%s' % (requested_port_busy, str(list(local_ports.keys()))))
+        lg.out(_DebugLevel, 'run_upnpc.update requested_port_busy=%s local_ports=%s' % (
+            requested_port_busy, str(list(local_ports.keys()))))
 
     if int(port) in list(local_ports.keys()):
         _MyPortMapping[str(port)] = 'TCP'
@@ -346,21 +330,18 @@ def update(requested_port, attempt=0, new_port=-1):
     _LastUpdateResultDict[port] = result
     return result, port
 
-
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def last_result(proto):
     global _LastUpdateResultDict
     return _LastUpdateResultDict.get(proto, 'upnp-no-info')
 
-
-# -------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 
 def main():
     import pprint
-
     lg.set_debug_level(14)
     if sys.argv.count('list'):
         maps = lst()

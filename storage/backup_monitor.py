@@ -67,29 +67,29 @@ EVENTS:
     * :red:`timer-5sec`
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 10
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import gc
 import sys
 import time
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 try:
     from twisted.internet import reactor  # @UnresolvedImport
 except:
     sys.exit('Error initializing twisted.internet.reactor in backup_monitor.py')
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -112,11 +112,11 @@ from userid import my_id
 
 from p2p import online_status
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _BackupMonitor = None
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def A(event=None, *args, **kwargs):
@@ -126,8 +126,7 @@ def A(event=None, *args, **kwargs):
     global _BackupMonitor
     if _BackupMonitor is None:
         _BackupMonitor = BackupMonitor(
-            'backup_monitor',
-            'AT_STARTUP',
+            'backup_monitor', 'AT_STARTUP',
             debug_level=_DebugLevel,
             log_events=False,
             log_transitions=_Debug,
@@ -176,13 +175,12 @@ class BackupMonitor(automat.Automat):
         from storage import backup_rebuilder
         from storage import index_synchronizer
         from stream import data_sender
-
-        # ---AT_STARTUP---
+        #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'READY'
                 self.RestartAgain = False
-        # ---READY---
+        #---READY---
         elif self.state == 'READY':
             if event == 'timer-5sec':
                 self.doOverallCheckUp(*args, **kwargs)
@@ -191,11 +189,11 @@ class BackupMonitor(automat.Automat):
                 self.RestartAgain = False
                 self.doRememberSuppliers(*args, **kwargs)
                 fire_hire.A('restart')
-        # ---LIST_FILES---
+        #---LIST_FILES---
         elif self.state == 'LIST_FILES':
-            if event == 'list_files_orator.state' and args[0] == 'NO_FILES':
+            if (event == 'list_files_orator.state' and args[0] == 'NO_FILES'):
                 self.state = 'READY'
-            elif event == 'list_files_orator.state' and args[0] == 'SAW_FILES':
+            elif (event == 'list_files_orator.state' and args[0] == 'SAW_FILES'):
                 self.state = 'LIST_BACKUPS'
                 index_synchronizer.A('pull')
                 data_sender.A('restart')
@@ -205,7 +203,7 @@ class BackupMonitor(automat.Automat):
             elif event == 'suppliers-changed':
                 self.state = 'READY'
                 self.RestartAgain = True
-        # ---LIST_BACKUPS---
+        #---LIST_BACKUPS---
         elif self.state == 'LIST_BACKUPS':
             if event == 'list-backups-done':
                 self.state = 'REBUILDING'
@@ -218,9 +216,9 @@ class BackupMonitor(automat.Automat):
             elif event == 'restart':
                 self.state = 'FIRE_HIRE'
                 fire_hire.A('restart')
-        # ---REBUILDING---
+        #---REBUILDING---
         elif self.state == 'REBUILDING':
-            if event == 'backup_rebuilder.state' and args[0] in ['DONE', 'STOPPED']:
+            if (event == 'backup_rebuilder.state' and args[0] in ['DONE', 'STOPPED']):
                 self.state = 'READY'
                 self.doCleanUpBackups(*args, **kwargs)
                 data_sender.A('restart')
@@ -228,7 +226,7 @@ class BackupMonitor(automat.Automat):
                 self.state = 'FIRE_HIRE'
                 backup_rebuilder.SetStoppedFlag()
                 fire_hire.A('restart')
-        # ---FIRE_HIRE---
+        #---FIRE_HIRE---
         elif self.state == 'FIRE_HIRE':
             if event == 'suppliers-changed' and self.isSuppliersNumberChanged(*args, **kwargs):
                 self.state = 'LIST_FILES'
@@ -277,7 +275,6 @@ class BackupMonitor(automat.Automat):
         backup_matrix.ClearLocalInfo()
         # finally save the list of current suppliers and clear all stats
         from stream import io_throttle
-
         io_throttle.DeleteAllSuppliers()
 
     def doUpdateSuppliers(self, *args, **kwargs):
@@ -285,7 +282,6 @@ class BackupMonitor(automat.Automat):
         Action method.
         """
         from stream import io_throttle
-
         # supplierList = contactsdb.suppliers()
         # take a list of suppliers positions that was changed
         changedSupplierNums = backup_matrix.SuppliersChangedNumbers(self.current_suppliers)
@@ -293,17 +289,12 @@ class BackupMonitor(automat.Automat):
         for supplierNum in changedSupplierNums:
             suplier_idurl = self.current_suppliers[supplierNum]
             if suplier_idurl:
-                io_throttle.DeleteSuppliers(
-                    [
-                        suplier_idurl,
-                    ]
-                )
+                io_throttle.DeleteSuppliers([suplier_idurl, ])
             # erase (set to 0) remote info for this guys
             backup_matrix.ClearSupplierRemoteInfo(supplierNum)
 
     def doPrepareListBackups(self, *args, **kwargs):
         from storage import backup_rebuilder
-
         if backup_control.HasRunningBackup():
             # if some backups are running right now no need to rebuild something - too much use of CPU
             backup_rebuilder.RemoveAllBackupsToWork()
@@ -330,7 +321,6 @@ class BackupMonitor(automat.Automat):
         # user can set how many versions of that file or folder to keep
         # other versions (older) will be removed here
         from storage import backup_rebuilder
-
         try:
             self.backups_progress_last_iteration = len(backup_rebuilder.A().backupsWasRebuilt)
         except:
@@ -355,11 +345,8 @@ class BackupMonitor(automat.Automat):
                 while len(versions) > versionsToKeep:
                     backupID = packetid.MakeBackupID(customerGlobID, pathID, versions.pop(0))
                     if _Debug:
-                        lg.out(
-                            _DebugLevel,
-                            'backup_monitor.doCleanUpBackups %d of %d backups for %s, so remove older %s'
-                            % (len(versions), versionsToKeep, localPath, backupID),
-                        )
+                        lg.out(_DebugLevel, 'backup_monitor.doCleanUpBackups %d of %d backups for %s, so remove older %s' % (
+                            len(versions), versionsToKeep, localPath, backupID))
                     backup_control.DeleteBackup(backupID, saveDB=False, calculate=False)
                     delete_count += 1
         # we need also to fit used space into needed space (given from other users)
@@ -380,10 +367,8 @@ class BackupMonitor(automat.Automat):
                     versionInfo = itemInfo.get_version_info(version)
                     if versionInfo[1] > 0:
                         if _Debug:
-                            lg.out(
-                                _DebugLevel,
-                                'backup_monitor.doCleanUpBackups over use %d of %d, so remove %s of %s' % (bytesUsed, bytesNeeded, backupID, localPath),
-                            )
+                            lg.out(_DebugLevel, 'backup_monitor.doCleanUpBackups over use %d of %d, so remove %s of %s' % (
+                                bytesUsed, bytesNeeded, backupID, localPath))
                         backup_control.DeleteBackup(backupID, saveDB=False, calculate=False)
                         delete_count += 1
                         bytesUsed -= versionInfo[1]
@@ -399,9 +384,8 @@ class BackupMonitor(automat.Automat):
         collected = gc.collect()
         if self.backups_progress_last_iteration > 0:
             if _Debug:
-                lg.out(
-                    _DebugLevel, 'backup_monitor.doCleanUpBackups  sending "restart", backups_progress_last_iteration=%s' % self.backups_progress_last_iteration
-                )
+                lg.out(_DebugLevel, 'backup_monitor.doCleanUpBackups  sending "restart", backups_progress_last_iteration=%s' %
+                    self.backups_progress_last_iteration)
             reactor.callLater(1, self.automat, 'restart')  # @UndefinedVariable
         if _Debug:
             lg.out(_DebugLevel, 'backup_monitor.doCleanUpBackups collected %d objects' % collected)
@@ -411,7 +395,6 @@ class BackupMonitor(automat.Automat):
         Action method.
         """
         from customer import fire_hire
-
         if not fire_hire.IsAllHired():
             if _Debug:
                 lg.out(_DebugLevel, 'backup_monitor.doOverallCheckUp some suppliers not hired yet, restart now')

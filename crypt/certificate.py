@@ -29,17 +29,17 @@
 
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 from __future__ import print_function
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 10
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
@@ -52,19 +52,22 @@ import datetime
 import ipaddress
 import uuid
 
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def generate_private_key(key_size=2048):
     """
     Create a private key
     """
-    pkey = rsa.generate_private_key(public_exponent=65537, key_size=key_size, backend=default_backend())
+    pkey = rsa.generate_private_key(
+        public_exponent=65537,
+        key_size=key_size,
+        backend=default_backend()
+    )
     pkey_pem = pkey.private_bytes(
         encoding=serialization.Encoding.PEM,
         # format=serialization.PrivateFormat.PKCS8,
         format=serialization.PrivateFormat.TraditionalOpenSSL,
-        encryption_algorithm=serialization.NoEncryption(),
+        encryption_algorithm=serialization.NoEncryption()
     )
     return pkey, pkey_pem
 
@@ -96,40 +99,49 @@ def generate_self_signed_cert(hostname, server_key, ip_addresses=None):
     """
     Generates self signed certificate for a hostname, and optional IP addresses.
     """
-    name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, hostname)])
+    name = x509.Name([
+        x509.NameAttribute(NameOID.COMMON_NAME, hostname)
+    ])
     alt_names = [x509.DNSName(hostname)]
     if ip_addresses:
         for addr in ip_addresses:
             alt_names.append(x509.DNSName(addr))
             alt_names.append(x509.IPAddress(ipaddress.ip_address(addr)))
 
-    ca_crt = (
-        x509.CertificateBuilder()
-        .subject_name(name)
-        .issuer_name(name)
-        .public_key(server_key.public_key())
-        .serial_number(uuid.uuid4().int)
-        .not_valid_before(datetime.datetime.utcnow())
-        .not_valid_after(datetime.datetime.utcnow() + datetime.timedelta(days=365 * 100))
-        .add_extension(
-            extension=x509.KeyUsage(
-                digital_signature=True,
-                key_encipherment=True,
-                key_cert_sign=True,
-                crl_sign=True,
-                content_commitment=True,
-                data_encipherment=False,
-                key_agreement=False,
-                encipher_only=False,
-                decipher_only=False,
-            ),
-            critical=False,
-        )
-        .add_extension(extension=x509.BasicConstraints(ca=True, path_length=0), critical=False)
-        .add_extension(extension=x509.SubjectKeyIdentifier.from_public_key(server_key.public_key()), critical=False)
-        .add_extension(extension=x509.AuthorityKeyIdentifier.from_issuer_public_key(server_key.public_key()), critical=False)
-        .add_extension(extension=x509.SubjectAlternativeName(alt_names), critical=False)
-        .sign(private_key=server_key, algorithm=hashes.SHA256(), backend=default_backend())
+    ca_crt = x509.CertificateBuilder().subject_name(
+        name
+    ).issuer_name(
+        name
+    ).public_key(
+        server_key.public_key()
+    ).serial_number(
+        uuid.uuid4().int
+    ).not_valid_before(
+        datetime.datetime.utcnow()
+    ).not_valid_after(
+        datetime.datetime.utcnow() + datetime.timedelta(days=365 * 100)
+    ).add_extension(
+        extension=x509.KeyUsage(
+            digital_signature=True, key_encipherment=True, key_cert_sign=True, crl_sign=True, content_commitment=True,
+            data_encipherment=False, key_agreement=False, encipher_only=False, decipher_only=False
+        ),
+        critical=False
+    ).add_extension(
+        extension=x509.BasicConstraints(ca=True, path_length=0),
+        critical=False
+    ).add_extension(
+        extension=x509.SubjectKeyIdentifier.from_public_key(server_key.public_key()),
+        critical=False
+    ).add_extension(
+        extension=x509.AuthorityKeyIdentifier.from_issuer_public_key(server_key.public_key()),
+        critical=False
+    ).add_extension(
+        extension=x509.SubjectAlternativeName(alt_names),
+        critical=False
+    ).sign(
+        private_key=server_key,
+        algorithm=hashes.SHA256(),
+        backend=default_backend()
     )
     ca_cert_pem = ca_crt.public_bytes(encoding=serialization.Encoding.PEM)
 
@@ -140,50 +152,42 @@ def generate_csr_client_cert(hostname, server_ca_cert, server_key, client_key):
     """
     Generate client-side certificate with CSR.
     """
-    csr = (
-        x509.CertificateSigningRequestBuilder()
-        .subject_name(
-            x509.Name(
-                [
-                    x509.NameAttribute(NameOID.COMMON_NAME, hostname),
-                ]
-            )
-        )
-        .add_extension(
-            x509.SubjectAlternativeName(
-                [
-                    x509.DNSName(hostname),
-                ]
-            ),
-            critical=False,
-        )
-        .sign(client_key, hashes.SHA256(), default_backend())
-    )
-    crt = (
-        x509.CertificateBuilder()
-        .subject_name(csr.subject)
-        .issuer_name(server_ca_cert.subject)
-        .public_key(csr.public_key())
-        .serial_number(uuid.uuid4().int)
-        .not_valid_before(datetime.datetime.utcnow())
-        .not_valid_after(datetime.datetime.utcnow() + datetime.timedelta(days=365 * 100))
-        .add_extension(
-            extension=x509.KeyUsage(
-                digital_signature=True,
-                key_encipherment=True,
-                content_commitment=True,
-                data_encipherment=False,
-                key_agreement=False,
-                encipher_only=False,
-                decipher_only=False,
-                key_cert_sign=False,
-                crl_sign=False,
-            ),
-            critical=True,
-        )
-        .add_extension(extension=x509.BasicConstraints(ca=False, path_length=None), critical=True)
-        .add_extension(extension=x509.AuthorityKeyIdentifier.from_issuer_public_key(server_key.public_key()), critical=False)
-        .sign(private_key=server_key, algorithm=hashes.SHA256(), backend=default_backend())
+    csr = x509.CertificateSigningRequestBuilder().subject_name(x509.Name([
+        x509.NameAttribute(NameOID.COMMON_NAME, hostname),
+    ])).add_extension(
+        x509.SubjectAlternativeName([
+            x509.DNSName(hostname),
+        ]),
+        critical=False,
+    ).sign(client_key, hashes.SHA256(), default_backend())
+    crt = x509.CertificateBuilder().subject_name(
+        csr.subject
+    ).issuer_name(
+        server_ca_cert.subject
+    ).public_key(
+        csr.public_key()
+    ).serial_number(
+        uuid.uuid4().int
+    ).not_valid_before(
+        datetime.datetime.utcnow()
+    ).not_valid_after(
+        datetime.datetime.utcnow() + datetime.timedelta(days=365 * 100)
+    ).add_extension(
+        extension=x509.KeyUsage(
+            digital_signature=True, key_encipherment=True, content_commitment=True,
+            data_encipherment=False, key_agreement=False, encipher_only=False, decipher_only=False, key_cert_sign=False, crl_sign=False
+        ),
+        critical=True
+    ).add_extension(
+        extension=x509.BasicConstraints(ca=False, path_length=None),
+        critical=True
+    ).add_extension(
+        extension=x509.AuthorityKeyIdentifier.from_issuer_public_key(server_key.public_key()),
+        critical=False
+    ).sign(
+        private_key=server_key,
+        algorithm=hashes.SHA256(),
+        backend=default_backend()
     )
     crt_pem = crt.public_bytes(serialization.Encoding.PEM)
     return crt_pem

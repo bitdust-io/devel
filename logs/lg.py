@@ -30,11 +30,11 @@
 module:: lg
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import six
 import os
@@ -46,7 +46,7 @@ import traceback
 import platform
 from io import open
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _GlobalDebugLevel = 0
 _LogLinesCounter = 0
@@ -73,15 +73,12 @@ _TimeTotalDict = {}
 _TimeDeltaDict = {}
 _TimeCountsDict = {}
 
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def fqn(o):
     return o.__module__ + '.' + o.__name__
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def out(_DebugLevel, msg, nl='\n', log_name='stdout', showtime=False):
     """
@@ -118,8 +115,8 @@ def out(_DebugLevel, msg, nl='\n', log_name='stdout', showtime=False):
     if level:
         s = ' ' * level + s
     if _IsAndroid is None:
-        _IsAndroid = sys.executable == 'android_python' or ('ANDROID_ARGUMENT' in os.environ)
-    if (_ShowTime and level > 0) or showtime:
+        _IsAndroid = (sys.executable == 'android_python' or ('ANDROID_ARGUMENT' in os.environ))
+    if ( _ShowTime and level > 0 ) or showtime:
         tm_string = time.strftime('%H:%M:%S')
         if _LifeBeginsTime != 0:
             dt = time.time() - _LifeBeginsTime
@@ -222,10 +219,7 @@ def args(_DebugLevel, *args, **kwargs):
     for k in kwargs:
         funcargs.append('%s=%r' % (k, kwargs.get(k)))
     funcname = '%s.%s' % (modul, caller)
-    o = '%s(%s)' % (
-        funcname,
-        ', '.join(funcargs),
-    )
+    o = '%s(%s)' % (funcname, ', '.join(funcargs), )
     if message:
         o += ' ' + message
     out(level, o, showtime=True)
@@ -239,17 +233,9 @@ def info(message, level=2):
     cod = sys._getframe().f_back.f_code
     modul = os.path.basename(cod.co_filename).replace('.py', '')
     caller = cod.co_name
-    output_string = 'INFO %s in %s.%s()' % (
-        message,
-        modul,
-        caller,
-    )
+    output_string = 'INFO %s in %s.%s()' % (message, modul, caller, )
     if _UseColors:
-        output_string = '\033[0;49;92mINFO %s \033[0m\033[0;49;37min %s.%s()\033[0m' % (
-            message,
-            modul,
-            caller,
-        )
+        output_string = '\033[0;49;92mINFO %s \033[0m\033[0;49;37min %s.%s()\033[0m' % (message, modul, caller, )
     out(level, output_string, showtime=True)
     # out(level, output_string, log_name='info', showtime=True)
     return message
@@ -262,17 +248,9 @@ def warn(message, level=2):
     cod = sys._getframe().f_back.f_code
     modul = os.path.basename(cod.co_filename).replace('.py', '')
     caller = cod.co_name
-    output_string = 'WARNING %s in %s.%s()' % (
-        message,
-        modul,
-        caller,
-    )
+    output_string = 'WARNING %s in %s.%s()' % (message, modul, caller, )
     if _UseColors:
-        output_string = '\033[0;35mWARNING %s \033[0m\033[0;49;37min %s.%s()\033[0m' % (
-            message,
-            modul,
-            caller,
-        )
+        output_string = '\033[0;35mWARNING %s \033[0m\033[0;49;37min %s.%s()\033[0m' % (message, modul, caller, )
     out(level, output_string, showtime=True)
     # out(level, output_string, log_name='warn', showtime=True)
     return message
@@ -316,15 +294,7 @@ def cb(result, *args, **kwargs):
     _debug_level = kwargs.pop('debug_level', 0)
     _method = kwargs.pop('method', 'unknown')
     if _debug and is_debug(_debug_level):
-        dbg(
-            _debug_level,
-            'Deferred.callback() from "%s" method : args=%r  kwargs=%r'
-            % (
-                _method,
-                args,
-                kwargs,
-            ),
-        )
+        dbg(_debug_level, 'Deferred.callback() from "%s" method : args=%r  kwargs=%r' % (_method, args, kwargs, ))
     return result
 
 
@@ -334,16 +304,8 @@ def errback(err, *args, **kwargs):
     _method = kwargs.pop('method', 'unknown')
     _ignore = kwargs.pop('ignore', False)
     if _debug and is_debug(_debug_level):
-        dbg(
-            _debug_level,
-            'Deferred.errback() from "%s" method with %r : args=%r  kwargs=%r'
-            % (
-                repr(err).replace('\n', ''),
-                _method,
-                args,
-                kwargs,
-            ),
-        )
+        dbg(_debug_level, 'Deferred.errback() from "%s" method with %r : args=%r  kwargs=%r' % (
+            repr(err).replace('\n', ''), _method, args, kwargs, ))
     if _ignore:
         return None
     return err
@@ -514,7 +476,6 @@ def get_loging_level(level):
         11... : NOTSET
     """
     import logging
-
     if level == 0:
         return logging.CRITICAL
     if level <= 2:
@@ -831,91 +792,72 @@ def set_weblog_func(webstreamfunc):
     global _WebStreamFunc
     _WebStreamFunc = webstreamfunc
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 class STDOUT_redirected(object):
     """
     Emulate system STDOUT, useful to log any program output.
     """
-
     softspace = 0
 
-    def read(self):
-        pass
+    def read(self): pass
 
     def write(self, s):
         out(0, s.rstrip())
 
-    def flush(self):
-        pass
+    def flush(self): pass
 
-    def close(self):
-        pass
+    def close(self): pass
 
 
 class STDERR_redirected(object):
     """
     Emulate system STDERR, useful to log any program error.
     """
-
     softspace = 0
 
-    def read(self):
-        pass
+    def read(self): pass
 
     def write(self, s):
         err(s.rstrip(), level=0)
 
-    def flush(self):
-        pass
+    def flush(self): pass
 
-    def close(self):
-        pass
+    def close(self): pass
 
 
 class STDOUT_black_hole(object):
     """
     Useful to disable any output to STDOUT.
     """
-
     softspace = 0
 
-    def read(self):
-        pass
+    def read(self): pass
 
-    def write(self, s):
-        pass
+    def write(self, s): pass
 
-    def flush(self):
-        pass
+    def flush(self): pass
 
-    def close(self):
-        pass
+    def close(self): pass
 
 
 class STDERR_black_hole(object):
     """
     Useful to disable any errors output to STDERR.
     """
-
     softspace = 0
 
-    def read(self):
-        pass
+    def read(self): pass
 
-    def write(self, s):
-        pass
+    def write(self, s): pass
 
-    def flush(self):
-        pass
+    def flush(self): pass
 
-    def close(self):
-        pass
+    def close(self): pass
 
 
 class STDOUT_unbuffered(object):
+
     def __init__(self, stream):
         self.stream = stream
 
@@ -938,6 +880,7 @@ class STDOUT_unbuffered(object):
 
 
 class STDERR_unbuffered(object):
+
     def __init__(self, stream):
         self.stream = stream
 

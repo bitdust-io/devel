@@ -11,7 +11,6 @@ import re
 import time
 
 import requests
-
 # from Crypto import Random
 from Cryptodome.PublicKey import RSA
 
@@ -33,7 +32,7 @@ For temp. code compatibility, dup code moved to polysign module
 """
 
 
-def address_validate(address: str) -> bool:
+def address_validate(address:str) -> bool:
     return SignerFactory.address_is_valid(address)
 
 
@@ -58,7 +57,7 @@ def format_raw_tx(raw: list) -> dict:
     try:
         transaction['pubkey'] = base64.b64decode(raw[6]).decode('utf-8')
     except:
-        transaction['pubkey'] = raw[6]  # support new pubkey schemes
+        transaction['pubkey'] = raw[6] #support new pubkey schemes
     transaction['block_hash'] = raw[7]
     transaction['fee'] = raw[8]
     transaction['reward'] = raw[9]
@@ -71,7 +70,7 @@ def percentage(percent, whole):
     return Decimal(percent) * Decimal(whole) / 100
 
 
-def replace_regex(string: str, replace: str) -> str:
+def replace_regex(string: str, replace:str) -> str:
     replaced_string = re.sub(r'^{}'.format(replace), '', string)
     return replaced_string
 
@@ -168,16 +167,9 @@ def sign_rsa(timestamp, address, recipient, amount, operation, openfield, key, p
         signature_enc = signer.sign_buffer_for_bis(buffer)
         # Extra: recheck - Raises if Error
         SignerFactory.verify_bis_signature(signature_enc, public_key_b64encoded, buffer, address)
-        full_tx = (
-            str(timestamp),
-            str(address),
-            str(recipient),
-            '%.8f' % float(amount),
-            str(signature_enc.decode('utf-8')),
-            str(public_key_b64encoded.decode('utf-8')),
-            str(operation),
-            str(openfield),
-        )
+        full_tx = str(timestamp), str(address), str(recipient), '%.8f' % float(amount), \
+                  str(signature_enc.decode('utf-8')), str(public_key_b64encoded.decode('utf-8')), \
+                  str(operation), str(openfield)
         return full_tx
     except:
         return False
@@ -212,7 +204,7 @@ def keys_check(app_log, keyfile_name: str) -> None:
         # export to single file
 
 
-def keys_save(private_key_readable: str, public_key_readable: str, address: str, file) -> None:
+def keys_save(private_key_readable :str, public_key_readable: str, address: str, file) -> None:
     wallet_dict = dict()
     wallet_dict['Private Key'] = private_key_readable
     wallet_dict['Public Key'] = public_key_readable
@@ -223,7 +215,7 @@ def keys_save(private_key_readable: str, public_key_readable: str, address: str,
         json.dump(wallet_dict, keyfile)
 
 
-def keys_load(privkey_filename: str = 'privkey.der', pubkey_filename: str = 'pubkey.der'):
+def keys_load(privkey_filename: str= 'privkey.der', pubkey_filename: str= 'pubkey.der'):
     keyfile = 'wallet.der'
     if os.path.exists('wallet.der'):
         print('Using modern wallet method')
@@ -300,14 +292,14 @@ def keys_load_new(keyfile='wallet.der'):
     return key, public_key_readable, private_key_readable, encrypted, unlocked, public_key_b64encoded, address, keyfile
 
 
-def fee_calculate(openfield: str, operation: str = '', block: int = 0) -> Decimal:
+def fee_calculate(openfield: str, operation: str='', block: int=0) -> Decimal:
     # block var will be removed after HF
     fee = Decimal('0.01') + (Decimal(len(openfield)) / Decimal('100000'))  # 0.01 dust
     if operation == 'token:issue':
         fee = Decimal(fee) + Decimal('10')
     if openfield.startswith('alias='):
         fee = Decimal(fee) + Decimal('1')
-    # if operation == "alias:register": #add in the future, careful about forking
+    #if operation == "alias:register": #add in the future, careful about forking
     #    fee = Decimal(fee) + Decimal("1")
     return quantize_eight(fee)
 

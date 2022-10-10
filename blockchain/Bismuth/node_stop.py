@@ -1,6 +1,5 @@
 import socks, connections
 import options
-
 config = options.Get()
 config.read()
 version = config.version

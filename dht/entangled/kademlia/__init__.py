@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# __init__.py
+#__init__.py
 #
 #
 # Copyright (C) 2007-2008 Francois Aucamp, Meraka Institute, CSIR
@@ -41,5 +41,5 @@ module for documentation on what these values control.
 """
 
 from __future__ import absolute_import
-from .node import Node  # @UnresolvedImport
-from .datastore import DictDataStore, SQLiteVersionedJsonDataStore  # @UnresolvedImport
+from . node import Node  # @UnresolvedImport
+from . datastore import DictDataStore, SQLiteVersionedJsonDataStore  # @UnresolvedImport

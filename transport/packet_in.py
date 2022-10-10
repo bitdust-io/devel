@@ -44,25 +44,25 @@ EVENTS:
     * :red:`valid-inbox-packet`
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 16
 
 _PacketLogFileEnabled = False
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import os
 import time
 
 from twisted.internet import reactor  # @UnresolvedImport
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -90,14 +90,13 @@ from p2p import p2p_stats
 
 from transport import callback
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _InboxItems = {}
 _PacketsCounter = 0
 _History = []
 
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def init():
     global _PacketLogFileEnabled
@@ -108,9 +107,7 @@ def shutdown():
     global _PacketLogFileEnabled
     _PacketLogFileEnabled = False
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def get_packets_counter():
     global _PacketsCounter
@@ -121,8 +118,7 @@ def increment_packets_counter():
     global _PacketsCounter
     _PacketsCounter += 1
 
-
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def inbox_items():
@@ -147,9 +143,7 @@ def search(sender_idurl=None, proto=None, host=None):
     Returns list of transfer ids of incoming packets which satisfies given criteria.
     """
     if sender_idurl and not isinstance(sender_idurl, list):
-        sender_idurl = [
-            sender_idurl,
-        ]
+        sender_idurl = [sender_idurl, ]
     results = set()
     for transfer_id, itm in inbox_items().items():
         if sender_idurl:
@@ -175,8 +169,7 @@ def history():
     global _History
     return _History
 
-
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def process(newpacket, info):
@@ -187,35 +180,23 @@ def process(newpacket, info):
     # from p2p import p2p_service
     from transport import gateway
     from userid import my_id
-
     if not driver.is_on('service_p2p_hookups'):
         if _Debug:
             lg.out(_DebugLevel, 'packet_in.process SKIP incoming packet, service_p2p_hookups is not started')
         return None
     if _Debug:
-        lg.out(
-            _DebugLevel,
-            'packet_in.process [%s/%s/%s]:%s(%s) from %s://%s is "%s"'
-            % (
-                nameurl.GetName(newpacket.OwnerID),
-                nameurl.GetName(newpacket.CreatorID),
-                nameurl.GetName(newpacket.RemoteID),
-                newpacket.Command,
-                newpacket.PacketID,
-                info.proto,
-                info.host,
-                info.status,
-            ),
-        )
+        lg.out(_DebugLevel, 'packet_in.process [%s/%s/%s]:%s(%s) from %s://%s is "%s"' % (
+            nameurl.GetName(newpacket.OwnerID), nameurl.GetName(newpacket.CreatorID), nameurl.GetName(newpacket.RemoteID),
+            newpacket.Command, newpacket.PacketID, info.proto, info.host, info.status, ))
     if info.status != 'finished':
         if _Debug:
             lg.out(_DebugLevel, '    skip, packet status is : [%s]' % info.status)
         return None
-    #     if _PacketLogFileEnabled:
-    #         lg.out(0, '        \033[0;49;92mIN %s(%s) with %d bytes from %s to %s TID:%s\033[0m' % (
-    #             newpacket.Command, newpacket.PacketID, info.bytes_received,
-    #             global_id.UrlToGlobalID(info.sender_idurl), global_id.UrlToGlobalID(newpacket.RemoteID),
-    #             info.transfer_id), log_name='packet', showtime=True)
+#     if _PacketLogFileEnabled:
+#         lg.out(0, '        \033[0;49;92mIN %s(%s) with %d bytes from %s to %s TID:%s\033[0m' % (
+#             newpacket.Command, newpacket.PacketID, info.bytes_received,
+#             global_id.UrlToGlobalID(info.sender_idurl), global_id.UrlToGlobalID(newpacket.RemoteID),
+#             info.transfer_id), log_name='packet', showtime=True)
     # we must know recipient identity
     if not id_url.is_cached(newpacket.RemoteID):
         d = identitycache.immediatelyCaching(newpacket.RemoteID)
@@ -255,7 +236,6 @@ def handle(newpacket, info):
     Actually process incoming packet. Here we can be sure that owner/creator of the packet is identified.
     """
     from transport import packet_out
-
     handled = False
     # check that signed by a contact of ours
     try:
@@ -266,14 +246,13 @@ def handle(newpacket, info):
         #     info.proto, info.host, newpacket.Serialize()))
     if not is_signature_valid:
         if _Debug:
-            lg.args(
-                _DebugLevel,
-                PacketID=newpacket.PacketID,
-                OwnerID=newpacket.OwnerID,
-                CreatorID=newpacket.CreatorID,
-                RemoteID=newpacket.RemoteID,
-            )
-        lg.warn('signature is not valid for %r from %r|%r to %r' % (newpacket, newpacket.OwnerID, newpacket.CreatorID, newpacket.RemoteID))
+            lg.args(_DebugLevel,
+                    PacketID=newpacket.PacketID,
+                    OwnerID=newpacket.OwnerID,
+                    CreatorID=newpacket.CreatorID,
+                    RemoteID=newpacket.RemoteID, )
+        lg.warn('signature is not valid for %r from %r|%r to %r' % (
+            newpacket, newpacket.OwnerID, newpacket.CreatorID, newpacket.RemoteID))
         return None
     try:
         if not commands.IsRelay(newpacket.Command):
@@ -288,62 +267,35 @@ def handle(newpacket, info):
         handled = callback.run_inbox_callbacks(newpacket, info, info.status, info.error_message) or handled
     except:
         lg.exc()
-    if not handled and newpacket.Command not in [
-        commands.Ack(),
-        commands.Fail(),
-        commands.Identity(),
-    ]:
+    if not handled and newpacket.Command not in [commands.Ack(), commands.Fail(), commands.Identity(), ]:
         lg.warn('incoming %s from [%s://%s] was NOT HANDLED' % (newpacket, info.proto, info.host))
         if _PacketLogFileEnabled:
-            lg.out(
-                0,
-                '                \033[1;49;91mIN NOT HANDLED %s(%s) with %d bytes from %s to %s TID:%s\033[0m'
-                % (
-                    newpacket.Command,
-                    newpacket.PacketID,
-                    info.bytes_received,
-                    global_id.UrlToGlobalID(info.sender_idurl),
-                    global_id.UrlToGlobalID(newpacket.RemoteID),
-                    info.transfer_id,
-                ),
-                log_name='packet',
-                showtime=True,
-            )
+            lg.out(0, '                \033[1;49;91mIN NOT HANDLED %s(%s) with %d bytes from %s to %s TID:%s\033[0m' % (
+                newpacket.Command, newpacket.PacketID, info.bytes_received,
+                global_id.UrlToGlobalID(info.sender_idurl), global_id.UrlToGlobalID(newpacket.RemoteID),
+                info.transfer_id), log_name='packet', showtime=True)
     else:
         if _PacketLogFileEnabled:
-            lg.out(
-                0,
-                '                \033[0;49;93mIN OK %s(%s) with %d bytes from %s to %s TID:%s\033[0m'
-                % (
-                    newpacket.Command,
-                    newpacket.PacketID,
-                    info.bytes_received,
-                    global_id.UrlToGlobalID(info.sender_idurl),
-                    global_id.UrlToGlobalID(newpacket.RemoteID),
-                    info.transfer_id,
-                ),
-                log_name='packet',
-                showtime=True,
-            )
+            lg.out(0, '                \033[0;49;93mIN OK %s(%s) with %d bytes from %s to %s TID:%s\033[0m' % (
+                newpacket.Command, newpacket.PacketID, info.bytes_received,
+                global_id.UrlToGlobalID(info.sender_idurl), global_id.UrlToGlobalID(newpacket.RemoteID),
+                info.transfer_id), log_name='packet', showtime=True)
     if _Debug and False:
-        history().append(
-            {
-                'time': newpacket.Date,
-                'command': newpacket.Command,
-                'packet_id': newpacket.PacketID,
-                'creator_id': newpacket.CreatorID,
-                'owner_id': newpacket.OwnerID,
-                'remote_id': newpacket.RemoteID,
-                'payload': len(newpacket.Payload),
-                'address': '%s://%s' % (info.proto, info.host),
-            }
-        )
+        history().append({
+            'time': newpacket.Date,
+            'command': newpacket.Command,
+            'packet_id': newpacket.PacketID,
+            'creator_id': newpacket.CreatorID,
+            'owner_id': newpacket.OwnerID,
+            'remote_id': newpacket.RemoteID,
+            'payload': len(newpacket.Payload),
+            'address': '%s://%s' % (info.proto, info.host),
+        })
         if len(history()) > 100:
             history().pop(0)
     return handled
 
-
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 class PacketIn(automat.Automat):
@@ -384,9 +336,9 @@ class PacketIn(automat.Automat):
         return '%s%s(%s)' % (self.id, self.label, self.state)
 
     def is_timed_out(self):
-        #         if self.time is None or self.timeout is None:
-        #             return False
-        #         return time.time() - self.time > self.timeout
+#         if self.time is None or self.timeout is None:
+#             return False
+#         return time.time() - self.time > self.timeout
         return False
 
     def init(self):
@@ -396,12 +348,12 @@ class PacketIn(automat.Automat):
         """
 
     def A(self, event, *args, **kwargs):
-        # ---AT_STARTUP---
+        #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'register-item':
                 self.state = 'RECEIVING'
                 self.doInit(*args, **kwargs)
-        # ---RECEIVING---
+        #---RECEIVING---
         elif self.state == 'RECEIVING':
             if event == 'cancel':
                 self.doCancelItem(*args, **kwargs)
@@ -416,7 +368,7 @@ class PacketIn(automat.Automat):
             elif event == 'unregister-item' and self.isTransferFinished(*args, **kwargs) and self.isRemoteIdentityCached(*args, **kwargs):
                 self.state = 'INBOX?'
                 self.doReadAndUnserialize(*args, **kwargs)
-        # ---INBOX?---
+        #---INBOX?---
         elif self.state == 'INBOX?':
             if event == 'valid-inbox-packet':
                 self.state = 'DONE'
@@ -428,13 +380,13 @@ class PacketIn(automat.Automat):
                 self.doReportFailed(*args, **kwargs)
                 self.doEraseInputFile(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-        # ---FAILED---
+        #---FAILED---
         elif self.state == 'FAILED':
             pass
-        # ---DONE---
+        #---DONE---
         elif self.state == 'DONE':
             pass
-        # ---CACHING---
+        #---CACHING---
         elif self.state == 'CACHING':
             if event == 'failed':
                 self.state = 'FAILED'
@@ -493,7 +445,6 @@ class PacketIn(automat.Automat):
         Action method.
         """
         from transport import gateway
-
         t = gateway.transports().get(self.proto, None)
         if t:
             t.call('cancel_file_receiving', self.transfer_id)
@@ -511,29 +462,17 @@ class PacketIn(automat.Automat):
         Action method.
         """
         from transport import gateway
-
         self.status, self.bytes_received, self.error_message = args[0]
         if _PacketLogFileEnabled:
-            lg.out(
-                0,
-                '                \033[2;49;32mRECEIVED %d bytes from %s://%s TID:%s\033[0m' % (self.bytes_received, self.proto, self.host, self.transfer_id),
-                log_name='packet',
-                showtime=True,
-            )
+            lg.out(0, '                \033[2;49;32mRECEIVED %d bytes from %s://%s TID:%s\033[0m' % (
+                self.bytes_received, self.proto, self.host, self.transfer_id), log_name='packet', showtime=True)
         # DO UNSERIALIZE HERE , no exceptions
         newpacket = gateway.inbox(self)
         if newpacket is None:
             if _Debug:
-                lg.out(
-                    _DebugLevel,
-                    '<<< IN <<< !!!NONE!!! [%s] %s from %s %s'
-                    % (
-                        self.proto.upper().ljust(5),
-                        self.status.ljust(8),
-                        self.host,
-                        os.path.basename(self.filename),
-                    ),
-                )
+                lg.out(_DebugLevel, '<<< IN <<< !!!NONE!!! [%s] %s from %s %s' % (
+                    self.proto.upper().ljust(5), self.status.ljust(8),
+                    self.host, os.path.basename(self.filename),))
             # net_misc.ConnectionFailed(None, proto, 'receiveStatusReport %s' % host)
             try:
                 fd, _ = tmpfile.make('error', extension='.inbox')
@@ -573,20 +512,10 @@ class PacketIn(automat.Automat):
             status = 'failed'
             bytes_received = 0
         p2p_stats.count_inbox(self.sender_idurl, self.proto, status, bytes_received)
-        lg.warn(
-            'incoming packet failed %s with %s'
-            % (
-                self.transfer_id,
-                status,
-            )
-        )
+        lg.warn('incoming packet failed %s with %s' % (self.transfer_id, status, ))
         if _PacketLogFileEnabled:
-            lg.out(
-                0,
-                '                \033[0;49;31mIN FAILED with status "%s" from %s://%s TID:%s\033[0m' % (status, self.proto, self.host, self.transfer_id),
-                log_name='packet',
-                showtime=True,
-            )
+            lg.out(0, '                \033[0;49;31mIN FAILED with status "%s" from %s://%s TID:%s\033[0m' % (
+                status, self.proto, self.host, self.transfer_id), log_name='packet', showtime=True)
 
     def doReportCacheFailed(self, *args, **kwargs):
         """
@@ -601,12 +530,8 @@ class PacketIn(automat.Automat):
             msg = 'unknown reason'
         lg.warn('cache failed : %s' % self.sender_idurl)
         if _PacketLogFileEnabled:
-            lg.out(
-                0,
-                '                \033[0;49;31mIN CACHE FAILED with "%s" for %s TID:%s\033[0m' % (msg, self.sender_idurl, self.transfer_id),
-                log_name='packet',
-                showtime=True,
-            )
+            lg.out(0, '                \033[0;49;31mIN CACHE FAILED with "%s" for %s TID:%s\033[0m' % (
+                msg, self.sender_idurl, self.transfer_id), log_name='packet', showtime=True)
 
     def doDestroyMe(self, *args, **kwargs):
         """

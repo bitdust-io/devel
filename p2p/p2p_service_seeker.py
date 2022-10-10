@@ -40,20 +40,20 @@ EVENTS:
     * :red:`users-not-found`
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 10
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from twisted.internet.defer import Deferred
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -72,12 +72,11 @@ from userid import id_url
 from userid import global_id
 from userid import my_id
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _P2PServiceSeekerInstaceCounter = 0
 
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 class P2PServiceSeeker(automat.Automat):
     """
@@ -88,7 +87,8 @@ class P2PServiceSeeker(automat.Automat):
     fast = True
 
     def __repr__(self):
-        return '%s[%s@%s%s%s](%s)' % (self.id, self.target_service or '', self.target_id or '', '#' if self.RandomLookup else '!', self.Attempts, self.state)
+        return '%s[%s@%s%s%s](%s)' % (self.id, self.target_service or '', self.target_id or '',
+                                      '#' if self.RandomLookup else '!', self.Attempts, self.state)
 
     def init(self):
         """
@@ -115,36 +115,36 @@ class P2PServiceSeeker(automat.Automat):
         The state machine code, generated using `visio2python
         <https://bitdust.io/visio2python/>`_ tool.
         """
-        # ---AT_STARTUP---
+        #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'connect-known-user':
                 self.state = 'HANDSHAKE?'
                 self.doInit(*args, **kwargs)
-                self.Attempts = 0
-                self.RandomLookup = False
+                self.Attempts=0
+                self.RandomLookup=False
                 self.doSelectOneUser(*args, **kwargs)
                 self.doHandshake(*args, **kwargs)
             elif event == 'lookup-random-user':
                 self.state = 'RANDOM_USER?'
                 self.doInit(*args, **kwargs)
-                self.Attempts = 0
-                self.RandomLookup = True
+                self.Attempts=0
+                self.RandomLookup=True
                 self.doLookupRandomNode(*args, **kwargs)
-        # ---RANDOM_USER?---
+        #---RANDOM_USER?---
         elif self.state == 'RANDOM_USER?':
             if event == 'found-users':
                 self.state = 'HANDSHAKE?'
                 self.doSelectOneUser(*args, **kwargs)
-                self.Attempts += 1
+                self.Attempts+=1
                 self.doHandshake(*args, **kwargs)
             elif event == 'users-not-found' and not self.isRetries(*args, **kwargs):
                 self.state = 'FAILED'
                 self.doNotifyLookupFailed(event, *args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
             elif event == 'users-not-found' and self.isRetries(*args, **kwargs):
-                self.Attempts += 1
+                self.Attempts+=1
                 self.doLookupRandomNode(*args, **kwargs)
-        # ---HANDSHAKE?---
+        #---HANDSHAKE?---
         elif self.state == 'HANDSHAKE?':
             if event == 'shook-hands':
                 self.state = 'SERVICE?'
@@ -152,29 +152,27 @@ class P2PServiceSeeker(automat.Automat):
             elif event == 'fail' and self.isRetries(*args, **kwargs) and self.RandomLookup:
                 self.state = 'RANDOM_USER?'
                 self.doLookupRandomNode(*args, **kwargs)
-            elif (not self.isRetries(*args, **kwargs) or not self.RandomLookup) and event == 'fail':
+            elif ( not self.isRetries(*args, **kwargs) or not self.RandomLookup ) and event == 'fail':
                 self.state = 'FAILED'
                 self.doNotifyHandshakeFailed(event, *args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-        # ---SERVICE?---
+        #---SERVICE?---
         elif self.state == 'SERVICE?':
             if event == 'service-accepted':
                 self.state = 'SUCCESS'
                 self.doNotifyServiceAccepted(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-            elif (event == 'request-timeout' or event == 'fail' or event == 'service-denied') and (
-                not self.RandomLookup or (not self.isRetries(*args, **kwargs) and self.RandomLookup)
-            ):
+            elif ( event == 'request-timeout' or event == 'fail' or event == 'service-denied' ) and ( not self.RandomLookup or ( not self.isRetries(*args, **kwargs) and self.RandomLookup ) ):
                 self.state = 'FAILED'
                 self.doNotifyServiceRequestFailed(event, *args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-            elif (event == 'request-timeout' or event == 'fail' or event == 'service-denied') and self.isRetries(*args, **kwargs) and self.RandomLookup:
+            elif ( event == 'request-timeout' or event == 'fail' or event == 'service-denied' ) and self.isRetries(*args, **kwargs) and self.RandomLookup:
                 self.state = 'RANDOM_USER?'
                 self.doLookupRandomNode(*args, **kwargs)
-        # ---SUCCESS---
+        #---SUCCESS---
         elif self.state == 'SUCCESS':
             pass
-        # ---FAILED---
+        #---FAILED---
         elif self.state == 'FAILED':
             pass
         return None
@@ -274,7 +272,8 @@ class P2PServiceSeeker(automat.Automat):
         Action method.
         """
         if _Debug:
-            lg.out(_DebugLevel, 'p2p_service_seeker.doNotifyServiceAccepted %r from %r with %s' % (self.target_service, self.target_id, args[0]))
+            lg.out(_DebugLevel, 'p2p_service_seeker.doNotifyServiceAccepted %r from %r with %s' % (
+                self.target_service, self.target_id, args[0]))
         if self.result_callback:
             self.result_callback('node-connected', *args, **kwargs)
         self.result_callback = None
@@ -327,7 +326,7 @@ class P2PServiceSeeker(automat.Automat):
         self.lookup_task = None
         self.destroy()
 
-    # ------------------------------------------------------------------------------
+    #------------------------------------------------------------------------------
 
     def _node_acked(self, response, info):
         if _Debug:
@@ -335,36 +334,16 @@ class P2PServiceSeeker(automat.Automat):
         if not strng.to_text(response.Payload).startswith('accepted'):
             if _Debug:
                 lg.out(_DebugLevel, 'p2p_service_seeker._node_acked with "service denied" response: %r %r' % (response, info))
-            self.automat(
-                'service-denied',
-                (
-                    response,
-                    info,
-                ),
-                reason='service-denied',
-            )
+            self.automat('service-denied', (response, info, ), reason='service-denied')
             return
         if _Debug:
             lg.out(_DebugLevel, 'p2p_service_seeker._node_acked %s is connected' % response.CreatorID)
-        self.automat(
-            'service-accepted',
-            (
-                response,
-                info,
-            ),
-        )
+        self.automat('service-accepted', (response, info, ))
 
     def _node_failed(self, response, info):
         if _Debug:
             lg.out(_DebugLevel, 'p2p_service_seeker._node_failed %r %r' % (response, info))
-        self.automat(
-            'service-denied',
-            (
-                response,
-                info,
-            ),
-            reason='service-denied',
-        )
+        self.automat('service-denied', (response, info, ), reason='service-denied')
 
     def _node_timed_out(self, pkt_out):
         if _Debug:
@@ -390,9 +369,7 @@ class P2PServiceSeeker(automat.Automat):
         else:
             self.automat('users-not-found')
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def on_lookup_result(event, result_defer, *args, **kwargs):
     if _Debug:
@@ -402,21 +379,10 @@ def on_lookup_result(event, result_defer, *args, **kwargs):
     else:
         result_defer.errback(Exception(event, args, kwargs))
 
+#------------------------------------------------------------------------------
 
-# ------------------------------------------------------------------------------
-
-
-def connect_random_node(
-    lookup_method,
-    service_name,
-    service_params=None,
-    exclude_nodes=[],
-    attempts=5,
-    request_service_timeout=None,
-    ping_retries=None,
-    ack_timeout=None,
-    force_handshake=False,
-):
+def connect_random_node(lookup_method, service_name, service_params=None, exclude_nodes=[], attempts=5,
+                        request_service_timeout=None, ping_retries=None, ack_timeout=None, force_handshake=False):
     global _P2PServiceSeekerInstaceCounter
     _P2PServiceSeekerInstaceCounter += 1
     result = Deferred()
@@ -446,17 +412,8 @@ def connect_random_node(
     return result
 
 
-def connect_known_node(
-    remote_idurl,
-    service_name,
-    service_params=None,
-    exclude_nodes=[],
-    attempts=2,
-    request_service_timeout=None,
-    ping_retries=None,
-    ack_timeout=None,
-    force_handshake=False,
-):
+def connect_known_node(remote_idurl, service_name, service_params=None, exclude_nodes=[], attempts=2,
+                       request_service_timeout=None, ping_retries=None, ack_timeout=None, force_handshake=False):
     global _P2PServiceSeekerInstaceCounter
     _P2PServiceSeekerInstaceCounter += 1
     result = Deferred()

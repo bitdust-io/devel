@@ -32,25 +32,13 @@ Other functions are exposed for tools which may want to process templates.
 from __future__ import absolute_import
 import six
 from six.moves import range
-
 __author__ = 'Andy Chu'
 
 __all__ = [
-    'Error',
-    'CompilationError',
-    'EvaluationError',
-    'BadFormatter',
-    'BadPredicate',
-    'MissingFormatter',
-    'ConfigurationError',
-    'TemplateSyntaxError',
-    'UndefinedVariable',
-    'CompileTemplate',
-    'FromString',
-    'FromFile',
-    'Template',
-    'expand',
-]
+    'Error', 'CompilationError', 'EvaluationError', 'BadFormatter',
+    'BadPredicate', 'MissingFormatter', 'ConfigurationError',
+    'TemplateSyntaxError', 'UndefinedVariable', 'CompileTemplate', 'FromString',
+    'FromFile', 'Template', 'expand']
 
 from io import StringIO
 import pprint
@@ -289,10 +277,13 @@ class _ProgramBuilder(object):
             formatters = CallableRegistry(formatters)
 
         # default formatters with arguments
-        default_formatters = PrefixRegistry([('pluralize', _Pluralize), ('cycle', _Cycle)])
+        default_formatters = PrefixRegistry([
+            ('pluralize', _Pluralize), ('cycle', _Cycle)
+        ])
 
         # First consult user formatters, then the default formatters
-        self.formatters = ChainedRegistry([formatters, DictRegistry(_DEFAULT_FORMATTERS), default_formatters])
+        self.formatters = ChainedRegistry(
+            [formatters, DictRegistry(_DEFAULT_FORMATTERS), default_formatters])
 
         # Same for predicates
         if isinstance(predicates, dict):
@@ -300,7 +291,8 @@ class _ProgramBuilder(object):
         elif callable(predicates):
             predicates = CallableRegistry(predicates)
 
-        self.predicates = ChainedRegistry([predicates, DictRegistry(_DEFAULT_PREDICATES)])
+        self.predicates = ChainedRegistry(
+            [predicates, DictRegistry(_DEFAULT_PREDICATES)])
 
     def Append(self, statement):
         """
@@ -390,6 +382,7 @@ class _ProgramBuilder(object):
 
 
 class _AbstractSection(object):
+
     def __init__(self):
         # Pairs of func, args, or a literal string
         self.current_clause = []
@@ -401,7 +394,8 @@ class _AbstractSection(object):
         self.current_clause.append(statement)
 
     def AlternatesWith(self):
-        raise TemplateSyntaxError('{.alternates with} can only appear with in {.repeated section ...}')
+        raise TemplateSyntaxError(
+            '{.alternates with} can only appear with in {.repeated section ...}')
 
     def NewOrClause(self):
         raise NotImplementedError
@@ -434,7 +428,8 @@ class _Section(_AbstractSection):
 
     def NewOrClause(self, pred):
         if pred:
-            raise TemplateSyntaxError('{.or} clause only takes a predicate inside predicate blocks')
+            raise TemplateSyntaxError(
+                '{.or} clause only takes a predicate inside predicate blocks')
         self.current_clause = []
         self.statements['or'] = self.current_clause
 
@@ -474,7 +469,7 @@ class _Frame(object):
     def __init__(self, context, index=-1):
         # Public attributes
         self.context = context
-        self.index = index  # An iteration index.  -1 means we're NOT iterating.
+        self.index = index   # An iteration index.  -1 means we're NOT iterating.
 
     def __str__(self):
         return 'Frame %s (%s)' % (self.context, self.index)
@@ -635,31 +630,41 @@ def _AbsUrl(relative_url, context, unused_args):
 # formatter lookup dictionaries, and pass them in to Template.
 _DEFAULT_FORMATTERS = {
     'html': html_escape,
+
     # The 'htmltag' name is deprecated.  The html-attr-value name is preferred
     # because it can be read with "as":
     #   {url|html-attr-value} means:
     #   "substitute 'url' as an HTML attribute value"
     'html-attr-value': _HtmlAttrValue,
     'htmltag': _HtmlAttrValue,
+
     'raw': lambda x: x,
     # Used for the length of a list.  Can be used for the size of a dictionary
     # too, though I haven't run into that use case.
     'size': lambda value: str(len(value)),
+
     # The argument is a dictionary, and we get a a=1&b=2 string back.
     'url-params': six.moves.urllib.parse.urlencode,
+
     # The argument is an atom, and it takes 'Search query?' -> 'Search+query%3F'
     'url-param-value': six.moves.urllib.parse.quote_plus,  # param is an atom
+
     # The default formatter, when no other default is specifier.  For debugging,
     # this could be lambda x: json.dumps(x, indent=2), but here we want to be
     # compatible to Python 2.4.
     'str': _ToString,
+
     # Just show a plain URL on an HTML page (without anchor text).
-    'plain-url': lambda x: '<a href="%s">%s</a>' % (html_escape(x, quote=True), html_escape(x)),
+    'plain-url': lambda x: '<a href="%s">%s</a>' % (
+        html_escape(x, quote=True), html_escape(x)),
+
     # A context formatter
     'AbsUrl': _AbsUrl,
+
     # Placeholders for "standard names".  We're not including them by default
     # since they require additional dependencies.  We can provide a part of the
     # "lookup chain" in formatters.py for people people want the dependency.
+
     # 'json' formats arbitrary data dictionary nodes as JSON strings.  'json'
     # and 'js-string' are identical (since a JavaScript string *is* JSON).  The
     # latter is meant to be serve as extra documentation when you want a string
@@ -722,8 +727,9 @@ def SplitMeta(meta):
     """
     n = len(meta)
     if n % 2 == 1:
-        raise ConfigurationError('%r has an odd number of metacharacters' % meta)
-    return meta[: int(n / 2)], meta[int(n / 2) :]
+        raise ConfigurationError(
+            '%r has an odd number of metacharacters' % meta)
+    return meta[:int(n/2)], meta[int(n/2):]
 
 
 _token_re_cache = {}
@@ -744,22 +750,26 @@ def MakeTokenRegex(meta_left, meta_right):
         # - Need () grouping for re.split
         # - For simplicity, we allow all characters except newlines inside
         #   metacharacters ({} / [])
-        _token_re_cache[key] = re.compile(r'(' + re.escape(meta_left) + r'.+?' + re.escape(meta_right) + r')')
+        _token_re_cache[key] = re.compile(
+            r'(' +
+            re.escape(meta_left) +
+            r'.+?' +
+            re.escape(meta_right) +
+            r')')
     return _token_re_cache[key]
 
 
 # Examples:
 
-(
-    LITERAL_TOKEN,  # "Hi"
-    SUBSTITUTION_TOKEN,  # {var|html}
-    SECTION_TOKEN,  # {.section name}
-    REPEATED_SECTION_TOKEN,  # {.repeated section name}
-    PREDICATE_TOKEN,  # {.predicate?}
-    ALTERNATES_TOKEN,  # {.or}
-    OR_TOKEN,  # {.or}
-    END_TOKEN,  # {.end}
-) = list(range(8))
+(LITERAL_TOKEN,  # "Hi"
+ SUBSTITUTION_TOKEN,  # {var|html}
+ SECTION_TOKEN,  # {.section name}
+ REPEATED_SECTION_TOKEN,  # {.repeated section name}
+ PREDICATE_TOKEN,  # {.predicate?}
+ ALTERNATES_TOKEN,  # {.or}
+ OR_TOKEN,  # {.or}
+ END_TOKEN,  # {.end}
+ ) = list(range(8))
 
 
 def _MatchDirective(token):
@@ -822,8 +832,9 @@ def _Tokenize(template_str, meta_left, meta_right):
 
         if len(tokens) == 3:
             # ''.isspace() == False, so work around that
-            if (tokens[0].isspace() or not tokens[0]) and (tokens[2].isspace() or not tokens[2]):
-                token = tokens[1][trimlen:-trimlen]
+            if (tokens[0].isspace() or not tokens[0]) and \
+               (tokens[2].isspace() or not tokens[2]):
+                token = tokens[1][trimlen: -trimlen]
 
                 if token.startswith('#'):
                     continue  # The whole line is omitted
@@ -843,7 +854,7 @@ def _Tokenize(template_str, meta_left, meta_right):
 
                 assert token.startswith(meta_left), repr(token)
                 assert token.endswith(meta_right), repr(token)
-                token = token[trimlen:-trimlen]
+                token = token[trimlen: -trimlen]
 
                 # It's a comment
                 if token.startswith('#'):
@@ -872,8 +883,9 @@ def _Tokenize(template_str, meta_left, meta_right):
 
 
 def CompileTemplate(
-    template_str, builder=None, meta='{}', format_char='|', more_formatters=lambda x: None, more_predicates=lambda x: None, default_formatter='str'
-):
+        template_str, builder=None, meta='{}', format_char='|',
+        more_formatters=lambda x: None, more_predicates=lambda x: None,
+        default_formatter='str'):
     """
     Compile the template string, calling methods on the 'program builder'.
 
@@ -921,7 +933,8 @@ def CompileTemplate(
     # | is more readable, but, more importantly, reminiscent of pipes, which is
     # useful for multiple formatters, e.g. {name|js-string|html}
     if format_char not in (':', '|'):
-        raise ConfigurationError('Only format characters : and | are accepted (got %r)' % format_char)
+        raise ConfigurationError(
+            'Only format characters : and | are accepted (got %r)' % format_char)
 
     # If we go to -1, then we got too many {end}.  If end at 1, then we're missing
     # an {end}.
@@ -958,8 +971,9 @@ def CompileTemplate(
             if balance_counter < 0:
                 # TODO: Show some context for errors
                 raise TemplateSyntaxError(
-                    'Got too many %send%s statements.  You may have mistyped an ' "earlier 'section' or 'repeated section' directive." % (meta_left, meta_right)
-                )
+                    'Got too many %send%s statements.  You may have mistyped an '
+                    "earlier 'section' or 'repeated section' directive."
+                    % (meta_left, meta_right))
             builder.EndSection()
             continue
 
@@ -979,7 +993,8 @@ def CompileTemplate(
             builder.AppendSubstitution(name, formatters)
 
     if balance_counter != 0:
-        raise TemplateSyntaxError('Got too few %send%s statements' % (meta_left, meta_right))
+        raise TemplateSyntaxError('Got too few %send%s statements' %
+                                  (meta_left, meta_right))
 
     return builder.Root()
 
@@ -1049,7 +1064,9 @@ def FromFile(f, more_formatters=lambda x: None, _constructor=None):
 
     if options:
         if line.strip():
-            raise CompilationError('Must be one blank line between template options and body (got %r)' % line)
+            raise CompilationError(
+                'Must be one blank line between template options and body (got %r)'
+                % line)
         body = f.read()
     else:
         # There were no options, so no blank line is necessary.
@@ -1073,7 +1090,8 @@ class Template(object):
     files, etc.
     """
 
-    def __init__(self, template_str, builder=None, undefined_str=None, **compile_options):
+    def __init__(self, template_str, builder=None, undefined_str=None,
+                 **compile_options):
         """
         Args: template_str: The template string. undefined_str: A string to
         appear in the output when a variable to be substituted is missing.  If
@@ -1085,7 +1103,8 @@ class Template(object):
         It also accepts all the compile options that CompileTemplate
         does.
         """
-        self._program = CompileTemplate(template_str, builder=builder, **compile_options)
+        self._program = CompileTemplate(
+            template_str, builder=builder, **compile_options)
         self.undefined_str = undefined_str
 
     #
@@ -1128,7 +1147,8 @@ class Template(object):
             if len(args) == 1:
                 data_dict = args[0]
             else:
-                raise TypeError('expand() only takes 1 positional argument (got %s)' % args)
+                raise TypeError(
+                    'expand() only takes 1 positional argument (got %s)' % args)
         else:
             data_dict = kwargs
 
@@ -1238,7 +1258,8 @@ def _DoSubstitute(args, context, callback):
         try:
             value = context.Lookup(name)
         except TypeError as e:
-            raise EvaluationError('Error evaluating %r in context %r: %r' % (name, context, e))
+            raise EvaluationError(
+                'Error evaluating %r in context %r: %r' % (name, context, e))
 
     for func, args, func_type in formatters:
         try:
@@ -1249,7 +1270,9 @@ def _DoSubstitute(args, context, callback):
         except KeyboardInterrupt:
             raise
         except Exception as e:
-            raise EvaluationError('Formatting value %r with formatter %s raised exception: %r' % (value, formatters, e), original_exception=e)
+            raise EvaluationError(
+                'Formatting value %r with formatter %s raised exception: %r' %
+                (value, formatters, e), original_exception=e)
 
     # TODO: Require a string/unicode instance here?
     if value is None:

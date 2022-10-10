@@ -31,21 +31,21 @@ Checks that customer packets on the local disk still have good signatures and ar
 
 """
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 8
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import os
 import sys
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 try:
     from twisted.internet import reactor  # @UnresolvedImport
@@ -54,7 +54,7 @@ except:
 
 from twisted.internet import threads
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 try:
     from logs import lg
@@ -66,7 +66,7 @@ from system import bpio
 
 from main import settings
 
-# -------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 _TesterQueue = []
 _CurrentProcess = None
@@ -75,14 +75,13 @@ _LoopValidate = None
 _LoopUpdateCustomers = None
 _LoopSpaceTime = None
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 TesterUpdateCustomers = 'update_customers'
 TesterValidate = 'validate'
 TesterSpaceTime = 'space_time'
 
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def init():
     global _Loop
@@ -111,9 +110,7 @@ def shutdown():
         if _Debug:
             lg.out(_DebugLevel, 'local_tester.shutdown is killing bptester')
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def start():
     global _LoopValidate
@@ -145,9 +142,7 @@ def stop():
             _LoopSpaceTime.cancel()
             _LoopSpaceTime = None
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def _pushTester(cmd):
     global _TesterQueue
@@ -164,9 +159,7 @@ def _popTester():
     del _TesterQueue[0]
     return cmd
 
-
-# -------------------------------------------------------------------------------
-
+#-------------------------------------------------------------------------------
 
 def on_thread_finished(ret, cmd):
     global _CurrentProcess
@@ -178,7 +171,6 @@ def on_thread_finished(ret, cmd):
 def run_in_thread(cmd):
     global _CurrentProcess
     from main import bptester
-
     if _CurrentProcess:
         raise Exception('another thread already started')
     _CurrentProcess = cmd
@@ -192,9 +184,7 @@ def run_in_thread(cmd):
     if _Debug:
         lg.out(_DebugLevel, 'local_tester.run_in_thread started %r' % cmd)
 
-
-# ------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 def alive():
     global _CurrentProcess
@@ -229,8 +219,7 @@ def loop_space_time():
     TestSpaceTime()
     _LoopSpaceTime = reactor.callLater(settings.DefaultLocaltesterSpaceTimeTimeout(), loop_space_time)  # @UndefinedVariable
 
-
-# -------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 
 def TestUpdateCustomers():
@@ -244,8 +233,7 @@ def TestValid():
 def TestSpaceTime():
     _pushTester(TesterSpaceTime)
 
-
-# -------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     lg.set_debug_level(18)

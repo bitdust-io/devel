@@ -45,7 +45,6 @@ class P2PHookupsService(LocalService):
 
     def dependent_on(self):
         from main import settings
-
         depends = [
             'service_gateway',
             'service_identity_propagate',
@@ -66,14 +65,15 @@ class P2PHookupsService(LocalService):
         from p2p import p2p_connector
         from p2p import network_connector
         from p2p import ratings
-
         p2p_service.init()
         online_status.init()
         ratings.init()
         self._starting_defer = Deferred()
         p2p_connector.A('init')
-        p2p_connector.A().addStateChangedCallback(self._on_p2p_connector_switched)
-        network_connector.A().addStateChangedCallback(self._on_network_connector_switched)
+        p2p_connector.A().addStateChangedCallback(
+            self._on_p2p_connector_switched)
+        network_connector.A().addStateChangedCallback(
+            self._on_network_connector_switched)
         callback.append_inbox_callback(self._on_inbox_packet_received)
         callback.append_inbox_callback(p2p_service.inbox)
         events.add_subscriber(self._on_identity_url_changed, 'identity-url-changed')
@@ -91,14 +91,15 @@ class P2PHookupsService(LocalService):
         from p2p import p2p_connector
         from p2p import network_connector
         from p2p import ratings
-
         events.remove_subscriber(self._on_my_identity_url_changed, 'my-identity-url-changed')
         events.remove_subscriber(self._on_identity_url_changed, 'identity-url-changed')
         callback.remove_inbox_callback(self._on_inbox_packet_received)
         callback.remove_inbox_callback(p2p_service.inbox)
         if network_connector.A():
-            network_connector.A().removeStateChangedCallback(self._on_network_connector_switched)
-        p2p_connector.A().removeStateChangedCallback(self._on_p2p_connector_switched)
+            network_connector.A().removeStateChangedCallback(
+                self._on_network_connector_switched)
+        p2p_connector.A().removeStateChangedCallback(
+            self._on_p2p_connector_switched)
         ratings.shutdown()
         online_status.shutdown()
         p2p_connector.Destroy()
@@ -107,7 +108,6 @@ class P2PHookupsService(LocalService):
 
     def _on_inbox_packet_received(self, newpacket, info, status, error_message):
         from p2p import commands
-
         if newpacket.Command == commands.RequestService():
             return self._on_request_service_received(newpacket, info)
         elif newpacket.Command == commands.CancelService():
@@ -121,7 +121,6 @@ class P2PHookupsService(LocalService):
         from services import driver
         from p2p import p2p_service
         from transport import packet_out
-
         if len(newpacket.Payload) > 1024 * 10:
             lg.warn('too long payload')
             p2p_service.SendFail(newpacket, 'too long payload')
@@ -135,14 +134,7 @@ class P2PHookupsService(LocalService):
             p2p_service.SendFail(newpacket, 'json payload invalid')
             return True
         service_name = str(json_payload['name'])
-        lg.out(
-            self.debug_level,
-            'service_p2p_hookups.RequestService {%s} from %s'
-            % (
-                service_name,
-                newpacket.OwnerID,
-            ),
-        )
+        lg.out(self.debug_level, 'service_p2p_hookups.RequestService {%s} from %s' % (service_name, newpacket.OwnerID, ))
         if not driver.is_exist(service_name):
             lg.warn('got wrong payload in %s' % service_name)
             p2p_service.SendFail(newpacket, 'service %s not exist' % service_name)
@@ -172,7 +164,6 @@ class P2PHookupsService(LocalService):
         from services import driver
         from p2p import p2p_service
         from transport import packet_out
-
         if len(newpacket.Payload) > 1024 * 10:
             p2p_service.SendFail(newpacket, 'too long payload')
             return True
@@ -184,14 +175,7 @@ class P2PHookupsService(LocalService):
             p2p_service.SendFail(newpacket, 'json payload invalid')
             return True
         service_name = json_payload['name']
-        lg.out(
-            self.debug_level,
-            'service_p2p_hookups.CancelService {%s} from %s'
-            % (
-                service_name,
-                newpacket.OwnerID,
-            ),
-        )
+        lg.out(self.debug_level, 'service_p2p_hookups.CancelService {%s} from %s' % (service_name, newpacket.OwnerID, ))
         if not driver.is_exist(service_name):
             lg.warn('got wrong payload in %s' % newpacket)
             p2p_service.SendFail(newpacket, 'service %s not exist' % service_name)
@@ -222,7 +206,6 @@ class P2PHookupsService(LocalService):
 
     def _on_network_connector_switched(self, oldstate, newstate, evt, *args, **kwargs):
         from p2p import p2p_connector
-
         if oldstate != newstate:
             if newstate == 'CONNECTED' or newstate == 'DISCONNECTED':
                 p2p_connector.A('network_connector.state', newstate)
@@ -233,7 +216,6 @@ class P2PHookupsService(LocalService):
         from userid import id_url
         from userid import global_id
         from p2p import online_status
-
         for idurl, inst in online_status.online_statuses().items():
             if idurl == id_url.field(evt.data['old_idurl']):
                 idurl.refresh(replace_original=True)
@@ -241,20 +223,12 @@ class P2PHookupsService(LocalService):
                 inst.name = 'online_%s' % global_id.UrlToGlobalID(idurl)
                 inst.automat('shook-up-hands')
                 reactor.callLater(0, inst.automat, 'ping-now')  # @UndefinedVariable
-                lg.info(
-                    'found %r with rotated identity and refreshed: %r'
-                    % (
-                        inst,
-                        idurl,
-                    )
-                )
+                lg.info('found %r with rotated identity and refreshed: %r' % (inst, idurl, ))
 
     def _on_my_identity_url_changed(self, evt):
         from services import driver
-
         if driver.is_on('service_entangled_dht'):
             from dht import dht_service
             from userid import my_id
-
             if my_id.getIDURL():
                 dht_service.set_node_data('idurl', my_id.getIDURL().to_text())
